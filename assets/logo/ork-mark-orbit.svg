@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256" role="img" aria-label="Ork">
+  <title>Ork</title>
+  <defs>
+    <radialGradient id="ork-orbit-screen" cx="50%" cy="45%" r="70%">
+      <stop offset="0" stop-color="#112016"/>
+      <stop offset="1" stop-color="#0a0d0b"/>
+    </radialGradient>
+    <filter id="ork-orbit-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="ork-orbit-scan" width="4" height="2.5" patternUnits="userSpaceOnUse">
+      <rect width="4" height="0.8" fill="#000" opacity="0.16"/>
+    </pattern>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#ork-orbit-screen)"/>
+  <g filter="url(#ork-orbit-glow)" fill="none" stroke-linecap="round">
+    <path d="M 44.7 15.1 A 20 20 0 1 0 51.6 28" stroke="#3dff8a" stroke-width="6.5"/>
+  </g>
+  <g filter="url(#ork-orbit-glow)">
+    <circle cx="48.6" cy="19.6" r="5.2" fill="#ffb000"/>
+    <circle cx="48.6" cy="19.6" r="2" fill="#e6fff0"/>
+  </g>
+  <rect width="64" height="64" rx="14" fill="url(#ork-orbit-scan)"/>
+</svg>

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 172 64" width="688" height="256" role="img" aria-label="Ork">
+  <title>Ork</title>
+  <defs>
+    <radialGradient id="ork-word-screen" cx="50%" cy="45%" r="70%">
+      <stop offset="0" stop-color="#112016"/>
+      <stop offset="1" stop-color="#0a0d0b"/>
+    </radialGradient>
+    <filter id="ork-word-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="ork-word-scan" width="4" height="2.5" patternUnits="userSpaceOnUse">
+      <rect width="4" height="0.8" fill="#000" opacity="0.16"/>
+    </pattern>
+  </defs>
+  <rect width="172" height="64" rx="14" fill="url(#ork-word-screen)"/>
+  <g transform="translate(6 6) scale(0.8125)">
+  <g filter="url(#ork-word-glow)" fill="none" stroke-linecap="round" stroke-width="4">
+    <path d="M 32 19 L 13 47" stroke="#3dff8a"/>
+    <path d="M 32 19 V 51" stroke="#3dff8a" opacity="0.8"/>
+    <path d="M 32 19 L 51 47" stroke="#24a85a"/>
+  </g>
+  <g filter="url(#ork-word-glow)">
+    <circle cx="13" cy="47" r="5" fill="#3dff8a"/>
+    <circle cx="32" cy="51" r="4.2" fill="#3dff8a" opacity="0.85"/>
+    <circle cx="51" cy="47" r="3.6" fill="#24a85a"/>
+    <circle cx="32" cy="17" r="8" fill="#ffb000"/>
+    <circle cx="32" cy="17" r="3" fill="#e6fff0"/>
+  </g></g>
+  <g filter="url(#ork-word-glow)" fill="none" stroke="#3dff8a" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="80" cy="38" r="12"/>
+    <path d="M 108 50 V 26 M 108 36 Q 108 26 120 26 H 124"/>
+    <path d="M 138 14 V 50 M 138 40 L 156 26 M 145 35 L 158 50"/>
+  </g>
+  <rect width="172" height="64" rx="14" fill="url(#ork-word-scan)"/>
+</svg>
