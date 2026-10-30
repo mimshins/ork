@@ -21,7 +21,8 @@ Good fits:
 
 - `worktree` for anything that writes code.
 - `readonly` for reviewers: they see the work in their owner's checkout and
-  cannot change it.
+  cannot change it. A readonly node with no owner works in the worktree its
+  input came from, so an approver after a leader reads the leader's branch.
 - `shared` for a step whose output you want in your checkout, such as a spec
   written to `spec.md`.
 

@@ -144,20 +144,25 @@ describe("the scheduler", () => {
       approver: [
         { output: { status: "pass", summary: "ok", verdict: "approve" } },
       ],
-      merge: [{ output: { exitCode: 0, stdout: "", stderr: "" }, ok: true }],
+      ship: [{ output: { choice: "open", answeredBy: "terminal" } }],
+      push: [{ output: { exitCode: 0, stdout: "", stderr: "" }, ok: true }],
+      pr: [{ output: { exitCode: 0, stdout: "", stderr: "" }, ok: true }],
     });
     const { result, of } = await run(factory, allTypes(executor));
 
     expect(result.status).toBe("succeeded");
     expect(ran.filter(id => id === "builder")).toHaveLength(2);
-    expect(ran.slice(-2)).toEqual(["approver", "merge"]);
-    expect(ran).not.toContain("human");
-    // Round 1 skips the approver's branch; round 2 runs it, skipping `human`.
+    expect(ran.slice(-4)).toEqual(["approver", "ship", "push", "pr"]);
+    expect(ran).not.toContain("escalated");
+    // Round 1 skips the approver's branch; round 2 runs it, skipping
+    // `escalated`.
     expect(ids(of("node.skipped"))).toEqual([
       "approver",
-      "merge",
-      "human",
-      "human",
+      "ship",
+      "escalated",
+      "push",
+      "pr",
+      "escalated",
     ]);
     expect(result.nodes.find(n => n.id === "reviews")?.runs).toBe(2);
   });

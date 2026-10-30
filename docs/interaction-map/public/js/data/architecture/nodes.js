@@ -323,7 +323,7 @@ export const NODES = [
     summary:
       "Gives each node with `isolation: worktree` its own git worktree and branch, beside the clone, based on its owner's branch; commits its leftovers and merges a passing child into its owner.",
     facts: [
-      "`shared` works in the owner's worktree (or the project root); `readonly` shares it with write tools denied.",
+      "`shared` works in the owner's worktree (or the project root); `readonly` shares it with write tools denied, and with no owner follows its input's worktree.",
       "Copies `CLAUDE.local.md`, `.claude/settings.local.json` and what `.worktreeinclude` lists; carries upstream artifacts in.",
       "Refuses to start while instructions or skills are uncommitted (`--allow-dirty`).",
       "Removes merged children's worktrees; keeps the run's result. `ork worktrees` lists and cleans the rest.",

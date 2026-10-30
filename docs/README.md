@@ -29,6 +29,8 @@ them.
   `ork worktrees`.
 - [Models, effort and budgets](./guides/models-and-budgets.md): picking models
   per node, limits, and saving tokens.
+- [The example workflows](./guides/examples.md): `software-factory` and
+  `pr-review`, what they do and how to run them.
 - [Feedback from your runs](./guides/feedback.md): what Ork and the agents note
   as runs go, and `ork feedback`.
 - [Accounts and credentials](./guides/accounts.md): the two Claude drivers, `gh`

@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
 schemaVersion: 1
 name: software-factory
-description: Spec, build, parallel review with a bounded fix loop, then approve or escalate to a human.
+description: Spec, build, parallel review with a bounded fix loop, an approver, then your go-ahead before the branch is pushed and a pull request opened.
 inputs:
   feature:
     type: string
@@ -62,18 +62,30 @@ nodes:
         verdict:
           - approve
           - escalate
-  merge:
-    type: tool.gh
-    command: pr merge {{nodes.builder.output.branch}} --squash
-    allow:
-      - pr merge
-  human:
+  ship:
     type: human.gate
-    question: The approver escalated. Merge anyway?
+    question: The approver approved {{nodes.builder.output.branch}}. Push it and open a pull request?
     options:
-      - merge
-      - reject
-    recommended: reject
+      - open
+      - keep
+    recommended: open
+  escalated:
+    type: human.gate
+    question: "The approver escalated: {{nodes.approver.output.summary}} Push {{nodes.builder.output.branch}} and open a pull request anyway?"
+    options:
+      - open
+      - keep
+    recommended: keep
+  push:
+    type: tool.shell
+    command: git push --set-upstream origin {{nodes.builder.output.branch}}
+    allow:
+      - git push
+  pr:
+    type: tool.gh
+    command: pr create --head {{nodes.builder.output.branch}} --fill
+    allow:
+      - pr create
 edges:
   - spec -> builder
   - builder -> security, ux, code
@@ -86,11 +98,18 @@ edges:
     to: approver
     when: all(statuses, 'pass')
   - from: approver
-    to: merge
+    to: ship
     when: verdict == 'approve'
   - from: approver
-    to: human
+    to: escalated
     when: verdict == 'escalate'
+  - from: ship
+    to: push
+    when: choice == 'open'
+  - from: escalated
+    to: push
+    when: choice == 'open'
+  - push -> pr
 messages:
   - between:
       - security

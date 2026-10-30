@@ -18,7 +18,16 @@ checkout instead.
 | ---------------------------------------- | ------------------------------------------------- |
 | a Claude node with `isolation: worktree` | its own worktree (kept across loop rounds)        |
 | `shared` or `readonly`                   | its nearest owner's worktree, or the project root |
+| `readonly` with no owner                 | the worktree its input came from, or the root     |
 | tool and gate nodes                      | the same as `shared`                              |
+
+- **A readonly node with no owner follows its input**
+  ([upstream.ts](../packages/core/src/worktree/upstream.ts),
+  [ADR-029](../decisions/ADR-029-readonly-follows-its-input.md)): its incoming
+  edges are followed back through control nodes to the nodes that ran, and when
+  they all worked in one worktree, it works there too. So a reviewer or approver
+  after a leader sees the leader's branch. Upstream nodes in different
+  worktrees, or none, leave it in the project root.
 
 - A worktree lives **beside the clone**:
   `../<clone>-worktrees/ork-<run>-<node>`, on branch `ork/<run>/<node>`. Claude

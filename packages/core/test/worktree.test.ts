@@ -274,6 +274,36 @@ describe("worktrees", () => {
     expect(existsSync(worktreePath(root, "r1", "fix"))).toBe(false);
   });
 
+  it("puts a readonly node with no owner in the worktree its input came from", async () => {
+    const root = repo();
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: review",
+        "nodes:",
+        "  lead: { type: claude.leader }",
+        "  other: { type: claude.worker }",
+        "  reviews: { type: control.join }",
+        "  approve: { type: claude.worker, isolation: readonly }",
+        "  both: { type: control.join }",
+        "  judge: { type: claude.worker, isolation: readonly }",
+        "edges:",
+        "  - lead -> reviews",
+        "  - reviews -> approve",
+        "  - lead, other -> both",
+        "  - both -> judge",
+      ].join("\n"),
+    );
+    const { executor, cwds, prompts } = working({});
+    const { result } = await runIn(root, graph, executor);
+    expect(result.status).toBe("succeeded");
+    // Through a join to the leader's worktree; with two worktrees upstream,
+    // the project root.
+    expect(cwds["approve"]).toBe(worktreePath(root, "r1", "lead"));
+    expect(prompts["approve"]).toBe("ork/r1/lead");
+    expect(cwds["judge"]).toBe(root);
+  });
+
   it("resumes in the worktrees a run left, and reuses a removed one's branch", async () => {
     const root = repo();
     const lead = worktreePath(root, "r1", "lead");

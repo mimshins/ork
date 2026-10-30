@@ -136,6 +136,6 @@ ork worktrees clean             # removes merged ones; asks first
   conditions and loops.
 - [Leaders and delegation](../guides/leaders-and-delegation.md): owners,
   children, and spawned workers.
-- A bigger example: spec, build, three parallel reviews with a fix loop, then
-  approve or ask a human:
-  [examples/software-factory.ork.yaml](../../examples/software-factory.ork.yaml).
+- Bigger examples: `software-factory` (spec, build, three parallel reviews with
+  a fix loop, an approver, then your go-ahead to open a pull request) and
+  `pr-review`, in [The example workflows](../guides/examples.md).

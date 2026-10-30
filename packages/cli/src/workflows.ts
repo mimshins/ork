@@ -11,7 +11,8 @@ export const WORKFLOW_SUFFIX = ".ork.yaml";
 
 /**
  * Expands the given paths to workflow files: a directory contributes its
- * `*.ork.yaml` files. With no paths, uses `.ork/workflows/` under `cwd`.
+ * `*.ork.yaml` files, and a name one in `.ork/workflows/`. With no paths, uses
+ * `.ork/workflows/` under `cwd`.
  */
 export const findWorkflowFiles = (
   paths: readonly string[],
@@ -26,7 +27,7 @@ export const findWorkflowFiles = (
         .toSorted()
         .map(name => path.join(target, name));
     }
-    return [target];
+    return [resolveWorkflowArg(target, cwd)];
   });
 };
 

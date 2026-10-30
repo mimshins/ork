@@ -42,7 +42,7 @@ const expandOk = (input: string) => {
 describe("parseWorkflow", () => {
   it("accepts the software-factory example", () => {
     const workflow = parseOk(example);
-    expect(Object.keys(workflow.nodes)).toHaveLength(9);
+    expect(Object.keys(workflow.nodes)).toHaveLength(11);
   });
 
   it("reports YAML syntax errors with a line number", () => {

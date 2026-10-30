@@ -35,7 +35,7 @@ describe("compileWorkflow", () => {
       "ux",
       "code",
     ]);
-    expect(result.graph?.edges).toHaveLength(11);
+    expect(result.graph?.edges).toHaveLength(14);
   });
 
   it("rejects a cycle with no maxRounds", () => {

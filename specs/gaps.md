@@ -75,6 +75,9 @@ carried to the next milestone.
 - **L10 · Claims are advisory.** They steer agents but lock nothing: a node that
   edits without claiming is not stopped.
   ([ADR-027](../decisions/ADR-027-advisory-claims.md))
+- **L11 · Readonly nodes run no commands.** `readonly` denies Bash, so a
+  reviewer reads the code but cannot run `git diff` or the tests.
+  ([context](./context.md))
 
 ## Chores
 
@@ -90,3 +93,6 @@ carried to the next milestone.
 - **C4 · `ork --version` says `0.0.0`.** The root command hardcodes it, while
   feedback reads the CLI's `package.json`; it should read the same.
   ([main.ts](../packages/cli/src/main.ts))
+- **C5 · The examples have not run on the SDK driver.** Both ran end to end on
+  the CLI driver (2026-10-31); the SDK pass needs `ANTHROPIC_API_KEY` on the
+  machine that runs it. ([examples](../docs/guides/examples.md))

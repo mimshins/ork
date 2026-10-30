@@ -1,7 +1,8 @@
 /**
  * @file Where each node of a run works (ADR-020). A `worktree` node gets its
  *   own worktree beside the clone; `shared` and `readonly` nodes, and tool and
- *   gate nodes, work in their owner's worktree or the project root. After a
+ *   gate nodes, work in their owner's worktree or the project root, and a
+ *   `readonly` node with no owner in the worktree its input came from. After a
  *   node, Ork commits its leftovers and merges a passing child into its owner.
  *   A spawned worker works like the declared child it is an instance of.
  */
@@ -28,6 +29,7 @@ import {
   removeWorktree,
   type Worktree,
 } from "./manager.ts";
+import { upstreamPlace } from "./upstream.ts";
 
 export type WorkspaceOptions = {
   graph: CompiledGraph;
@@ -142,6 +144,14 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     return worktree;
   };
 
+  /** A readonly node with no owner reads the worktree its input came from. */
+  const readFrom = (id: string): string | undefined => {
+    if (isolationOf(id) !== "readonly") return undefined;
+    const declared = templateOf.get(id) ?? id;
+    const place = upstreamPlace(graph, declared, placeOf, root);
+    return [...worktrees].find(([, w]) => w.path === place)?.[0];
+  };
+
   const prepare: Workspace["prepare"] = async (id, template) => {
     if (template !== undefined) templateOf.set(id, template);
     if (isolationOf(id) === "worktree") {
@@ -152,7 +162,7 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
         checkout: { ...worktree, own: true, owner: id },
       };
     }
-    const host = hostOf(id);
+    const host = hostOf(id) ?? readFrom(id);
     const hosted = host === undefined ? undefined : worktrees.get(host);
     if (host === undefined || hosted === undefined) {
       placeOf.set(id, root);

@@ -21,7 +21,7 @@ for agents and engineering tasks:
 > **Status: pre-alpha.** The workflow format, `ork run` with delegation and
 > worktrees, the context compiler, `ork doctor`, run logs, decisions from any
 > terminal, messages between nodes, chat, resume, claims and local feedback work
-> today; end-to-end examples come next, then a web UI. See the
+> today, with two example workflows; a web UI comes next. See the
 > [roadmap](./docs/interaction-map/roadmap.md).
 
 ## Quickstart
@@ -52,6 +52,7 @@ Everything is in the [documentation center](./docs/README.md):
   [skills and context](./docs/guides/skills-and-context.md),
   [worktrees](./docs/guides/worktrees.md),
   [models and budgets](./docs/guides/models-and-budgets.md),
+  [the examples](./docs/guides/examples.md),
   [feedback from your runs](./docs/guides/feedback.md),
   [accounts and credentials](./docs/guides/accounts.md),
   [troubleshooting](./docs/guides/troubleshooting.md).
@@ -67,8 +68,8 @@ Everything is in the [documentation center](./docs/README.md):
   [runbook](./runbook/development/release.md). Report vulnerabilities as
   [SECURITY.md](./SECURITY.md) describes.
 
-A full example workflow:
-[examples/software-factory.ork.yaml](./examples/software-factory.ork.yaml).
+Two full example workflows, `software-factory` and `pr-review`:
+[the examples guide](./docs/guides/examples.md).
 
 ## License
 

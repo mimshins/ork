@@ -11,7 +11,7 @@ export const JOURNEYS = [
     title: "Run software-factory end to end",
     who: "You · spec · builder · reviewers · approver",
     summary:
-      "From `ork run` to a squashed merge on GitHub, when every review passes the first time and the approver approves.",
+      "From `ork run` to a pull request on GitHub, when every review passes the first time, the approver approves and you say go.",
     steps: [
       {
         from: "you",
@@ -89,16 +89,16 @@ export const JOURNEYS = [
       {
         from: "approver",
         to: "merge",
-        title: "The approver approves",
+        title: "The approver approves, and you say go",
         detail:
-          "It reports `verdict: approve`, which picks the edge to `merge`.",
+          "It reports `verdict: approve`, which picks the edge to the `ship` gate; you answer `open`.",
       },
       {
         from: "merge",
         to: "github",
-        title: "Your `gh` merges the branch",
+        title: "Your `git` pushes, your `gh` opens a pull request",
         detail:
-          "`gh pr merge <branch> --squash`, allowed by the node's `allow` list. The run ends; its events stay in the run store.",
+          "`git push` and `gh pr create`, each allowed by its node's `allow` list. The run ends; you review and merge on GitHub.",
       },
     ],
   },
@@ -181,15 +181,14 @@ export const JOURNEYS = [
         to: "inbox",
         title: "The gate opens a decision",
         detail:
-          '"The approver escalated. Merge anyway?" with `merge` and `reject`, and `reject` recommended.',
+          '"The approver escalated: … Push … and open a pull request anyway?" with `open` and `keep`, and `keep` recommended.',
       },
       {
         from: "you",
         to: "inbox",
         title: "You choose",
         detail:
-          "The terminal or `ork decide` preselects the recommendation; in the UI (M2) it is one click.",
-        status: "partial",
+          "The terminal or `ork decide` preselects the recommendation; in the UI (M2) it will be one click.",
         docs: [DESIGN.messaging],
       },
       {
@@ -197,8 +196,13 @@ export const JOURNEYS = [
         to: "human",
         title: "The gate outputs your answer",
         detail:
-          "In the example the gate has no outgoing edges, so the run ends here. An edge from the gate with a `when:` on the answer would carry on, for example to `merge`.",
-        status: "partial",
+          "`keep` ends the run with the branch kept; `open` takes the edge `choice == 'open'` to the push and the pull request.",
+      },
+      {
+        from: "human",
+        to: "merge",
+        title: "On `open`, the same as `ship`",
+        detail: "The push and `gh pr create` run with your logins.",
       },
     ],
   },

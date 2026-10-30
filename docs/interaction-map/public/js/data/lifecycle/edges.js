@@ -184,7 +184,8 @@ export const EDGES = [
     to: "merge",
     kind: "local",
     label: "`verdict == 'approve'`",
-    detail: "The approver's structured `verdict` picks the edge.",
+    detail:
+      "The approver's structured `verdict` picks the edge; the `ship` gate then asks you.",
     docs: [EXAMPLE],
   },
   {
@@ -201,13 +202,22 @@ export const EDGES = [
     from: "merge",
     to: "github",
     kind: "process",
-    label: "`gh pr merge … --squash`",
+    label: "`git push` · `gh pr create`",
     detail:
-      "Your `gh`, with arguments rendered from the builder's output and checked against `allow`.",
+      "Your `git` and `gh`, with arguments rendered from the builder's output and checked against `allow`.",
     via: [
       [710, 950],
       [1510, 950],
     ],
+    docs: [EXAMPLE],
+  },
+  {
+    id: "human-merge",
+    from: "human",
+    to: "merge",
+    kind: "local",
+    label: "`choice == 'open'`",
+    detail: "Your `open` goes on to the push and the pull request.",
     docs: [EXAMPLE],
   },
   {
@@ -218,7 +228,7 @@ export const EDGES = [
     label: "decision ⇄ answer",
     detail:
       "The gate opens a decision with its question, options and recommendation, and waits for the answer.",
-    status: "specified",
+    status: "built",
     both: true,
     via: [
       [1230, 975],

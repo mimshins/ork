@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: pr-review
+description: Review a checked-out pull request with parallel reviewers, write one comment, and post it only if you say so.
+inputs:
+  pr:
+    type: string
+    required: true
+    description: The pull request's number. Check it out first with `gh pr checkout <number>`.
+  base:
+    type: string
+    default: main
+    description: The branch it goes into.
+defaults:
+  model: sonnet
+  isolation: readonly
+  budgetUsd: 1
+limits:
+  budgetUsd: 5
+  concurrency: 3
+nodes:
+  diff:
+    type: tool.shell
+    command: git diff --stat --patch {{inputs.base}}...HEAD
+    allow:
+      - git diff
+  security:
+    type: claude.worker
+    prompt: |-
+      Review this change to the checked-out branch for security issues: injection, secrets, unsafe input handling, permissions. Read the surrounding code as you need. Report changes_requested with the concrete problems, or pass.
+
+      {{nodes.diff.output.stdout}}
+  correctness:
+    type: claude.worker
+    prompt: |-
+      Review this change to the checked-out branch for correctness: bugs, missed cases, broken behavior, missing tests. Read the surrounding code as you need. Report changes_requested with the concrete problems, or pass.
+
+      {{nodes.diff.output.stdout}}
+  reviews:
+    type: control.join
+    mode: all
+  summary:
+    type: claude.worker
+    prompt: |-
+      Write one review comment for pull request #{{inputs.pr}} from these reviews. Lead with what must change, then what could; be specific and kind; no preamble.
+
+      Security ({{nodes.security.output.status}}): {{nodes.security.output.summary}}
+
+      Correctness ({{nodes.correctness.output.status}}): {{nodes.correctness.output.summary}}
+    model: haiku
+    output:
+      schema:
+        comment: string
+  post:
+    type: human.gate
+    question: |-
+      Post this review on pull request #{{inputs.pr}}?
+
+      {{nodes.summary.output.comment}}
+    options:
+      - post
+      - keep
+    recommended: keep
+  comment:
+    type: tool.gh
+    command: pr comment {{inputs.pr}} --body {{nodes.summary.output.comment}}
+    allow:
+      - pr comment
+edges:
+  - diff -> security, correctness
+  - security, correctness -> reviews
+  - reviews -> summary
+  - summary -> post
+  - from: post
+    to: comment
+    when: choice == 'post'

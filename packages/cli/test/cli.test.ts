@@ -25,12 +25,12 @@ describe("ork validate", () => {
     const report = validateFile("examples/software-factory.ork.yaml", repoRoot);
     expect(report.diagnostics).toEqual([]);
     expect(report.summary).toEqual({
-      nodes: 9,
-      edges: 11,
+      nodes: 11,
+      edges: 14,
       entries: ["spec"],
     });
     expect(formatReport(report)).toEqual([
-      "✓ examples/software-factory.ork.yaml (9 nodes, 11 edges, starts at spec)",
+      "✓ examples/software-factory.ork.yaml (11 nodes, 14 edges, starts at spec)",
     ]);
   });
 
@@ -85,6 +85,7 @@ describe("ork init", () => {
     );
     const starter = ".ork/workflows/hello.ork.yaml";
     expect(findWorkflowFiles([], dir)).toEqual([starter]);
+    expect(findWorkflowFiles(["hello"], dir)).toEqual([starter]);
     expect(validateFile(starter, dir).diagnostics).toEqual([]);
     expect(
       parseWorkflow(readFileSync(path.join(dir, starter), "utf8")).ok,
