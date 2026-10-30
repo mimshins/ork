@@ -3,11 +3,15 @@
  *   node's session, and streams it to the terminal.
  */
 
+import { randomUUID } from "node:crypto";
+import path from "node:path";
+
 import {
   type ClaudeRuntime,
   type HumanChannel,
   parseInputPairs,
   planNodeSession,
+  projectRootOf,
   resolveInputs,
   type Session,
   type SessionOutcome,
@@ -66,10 +70,21 @@ export const runNode = async (
   const inputs = resolveInputs(workflow, pairs.raw);
   if (!inputs.ok) return failed(inputs.errors);
 
+  const projectRoot = projectRootOf(options.cwd);
   const plan = planNodeSession(workflow, options.nodeId, {
     cwd: options.cwd,
     inputs: inputs.inputs,
     inPlace: options.inPlace,
+    workflowDir: path.dirname(path.resolve(options.cwd, options.file)),
+    projectRoot,
+    pluginDir: path.join(
+      projectRoot,
+      ".ork",
+      "runs",
+      `node-${randomUUID().slice(0, 8)}`,
+      "plugins",
+      options.nodeId,
+    ),
   });
   if (!plan.ok) return failed([plan.error]);
   for (const warning of plan.warnings) {

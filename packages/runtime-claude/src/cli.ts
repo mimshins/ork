@@ -98,6 +98,10 @@ export const buildCliArgs = (
     args.push("--max-budget-usd", String(spec.budgetUsd));
   }
   if (spec.resume !== undefined) args.push("--resume", spec.resume);
+  for (const dir of spec.plugins ?? []) args.push("--plugin-dir", dir);
+  if (spec.settings !== undefined) {
+    args.push("--settings", JSON.stringify(spec.settings));
+  }
   return args;
 };
 

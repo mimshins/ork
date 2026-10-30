@@ -7,7 +7,15 @@
  *   reach each other straight across.
  */
 
-import { CLI, CORE, DESIGN, README, SCHEMA, WORKTREES } from "../refs.js";
+import {
+  CLI,
+  CONTEXT,
+  CORE,
+  DESIGN,
+  README,
+  SCHEMA,
+  WORKTREES,
+} from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
 
@@ -151,8 +159,7 @@ export const EDGES = [
     label: "a node's session spec",
     detail:
       "Before starting a Claude node, the scheduler asks for its compiled context: layers, brief, model and limits.",
-    status: "specified",
-    docs: [DESIGN.context],
+    docs: [CONTEXT.resolver, DESIGN.context],
   },
   {
     id: "scheduler-worktrees",
@@ -244,19 +251,17 @@ export const EDGES = [
     kind: "file",
     label: "Ork, user, workflow skills",
     detail:
-      "Reads the layers above the project and writes them into a per-run local plugin directory.",
-    status: "specified",
-    docs: [DESIGN.context],
+      "Reads the layers above the project and writes the winning skills into the node's plugin folder.",
+    docs: [CONTEXT.session, DESIGN.context],
   },
   {
     id: "context-project",
     from: "contextCompiler",
     to: "projectFiles",
     kind: "file",
-    label: "detects CLAUDE.md, AGENTS.md",
+    label: "lists project skills",
     detail:
-      "Looks only at what exists, to decide whether to add `AGENTS.md` and which project skills a higher layer shadows; it does not copy the project's files.",
-    status: "specified",
+      "Lists the checkout's `.claude/skills` to find which project skills a higher layer shadows; it never copies or changes the project's files.",
     via: [
       [1130, 276],
       [1130, 756],
@@ -400,8 +405,7 @@ export const EDGES = [
     kind: "file",
     label: "loads instructions, skills",
     detail:
-      "Claude Code reads the repo's `CLAUDE.md` and `.claude/` itself, from the project and local setting sources.",
-    status: "specified",
+      "Claude Code reads the repo's `CLAUDE.md` (or `AGENTS.md` when there is none) and `.claude/` itself, from the project and local setting sources.",
     docs: [DESIGN.context],
   },
   {

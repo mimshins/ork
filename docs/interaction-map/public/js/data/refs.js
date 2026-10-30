@@ -141,6 +141,41 @@ export const PRACTICES = {
   spec: d("specs/context.md#built-in-practices", "Spec: built-in practices"),
 };
 
+export const CONTEXT = {
+  resolver: d(
+    "packages/core/src/context/resolve.ts",
+    "Code: the layer resolver",
+  ),
+  skills: d(
+    "packages/core/src/context/skills.ts",
+    "Code: skills, references and built-ins",
+  ),
+  files: d(
+    "packages/core/src/context/files.ts",
+    "Code: context files and lessons",
+  ),
+  session: d(
+    "packages/core/src/context/session.ts",
+    "Code: prompt sections, the plugin and settings",
+  ),
+  tests: d(
+    "packages/core/test/context.test.ts",
+    "Tests: layers, shadowing, references, the plugin",
+  ),
+  explain: d(
+    "packages/cli/src/commands/context.ts",
+    "Code: `ork context explain`",
+  ),
+  explainTests: d(
+    "packages/cli/test/context.test.ts",
+    "Tests: `ork context explain`",
+  ),
+  version: d(
+    "packages/integrations/src/drivers.ts",
+    "Code: the `claude` version check",
+  ),
+};
+
 export const WORKTREES = {
   manager: d(
     "packages/core/src/worktree/manager.ts",

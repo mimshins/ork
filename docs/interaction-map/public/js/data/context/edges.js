@@ -5,7 +5,7 @@
  *   and 860 between the session spec and the session.
  */
 
-import { DESIGN } from "../refs.js";
+import { CONTEXT, DESIGN, RUNTIME } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
 
@@ -23,14 +23,22 @@ const shadowedBy = (from, to) => ({
   kind: "local",
   label: "shadowed by",
   detail:
-    "Not a call: for a skill with the same name, or an instruction that conflicts, the layer below this one wins and this one is dropped.",
-  status: "specified",
-  docs: [DESIGN.context],
+    "Not a call: for a skill with the same name, the layer below this one wins and this one does not load.",
+  docs: [CONTEXT.resolver, DESIGN.context],
 });
 
 /** @type {ReadonlyArray<MapEdge>} */
 export const EDGES = [
-  shadowedBy("builtins", "user"),
+  {
+    id: "builtins-user",
+    from: "builtins",
+    to: "user",
+    kind: "local",
+    label: "named by a higher layer",
+    detail:
+      "Not a call: a built-in skill loads only where the workflow or a node names it (`ork:<name>`), and competes at that layer.",
+    docs: [CONTEXT.skills],
+  },
   shadowedBy("user", "project"),
   shadowedBy("project", "workflow"),
   shadowedBy("workflow", "nodeLayer"),
@@ -39,22 +47,20 @@ export const EDGES = [
     from: "nodeLayer",
     to: "resolver",
     kind: "file",
-    label: "all five layers",
+    label: "every layer",
     detail:
-      "The resolver reads every layer's skills and instructions and keeps the highest of each name.",
-    status: "specified",
-    docs: [DESIGN.context],
+      "The resolver reads every layer's skills and context files and keeps the highest of each skill name.",
+    docs: [CONTEXT.resolver, DESIGN.context],
   },
   {
     id: "project-agents",
     from: "project",
     to: "agentsRule",
     kind: "file",
-    label: "is there a CLAUDE.md?",
+    label: "read by Claude Code",
     detail:
-      "Checks the working directory and its parents for `CLAUDE.md`, `CLAUDE.local.md` and `AGENTS.md`.",
-    status: "specified",
-    docs: [DESIGN.context],
+      "Claude Code itself reads `CLAUDE.md`, or `AGENTS.md` when there is none; Ork adds neither and only checks the version of your `claude`.",
+    docs: [CONTEXT.version, DESIGN.context],
   },
   {
     id: "brief-assembler",
@@ -64,7 +70,6 @@ export const EDGES = [
     label: "rendered brief",
     detail:
       "Templates are rendered against the run's inputs and finished nodes' outputs.",
-    status: "specified",
     docs: [DESIGN.concepts],
   },
   {
@@ -75,7 +80,6 @@ export const EDGES = [
     label: "dry run",
     detail:
       "Runs the same resolution without starting a session, and prints it.",
-    status: "specified",
     docs: [DESIGN.cli],
   },
   {
@@ -84,17 +88,16 @@ export const EDGES = [
     to: "assembler",
     kind: "local",
     label: "winning instructions",
-    detail: "The instructions and context files that survived precedence.",
-    status: "specified",
+    detail: "The context files of each layer, in order.",
   },
   {
     id: "resolver-settings",
     from: "resolver",
     to: "settings",
     kind: "local",
-    label: "skill allow-list",
-    detail: "Every project skill that is ignored or shadowed is left out.",
-    status: "specified",
+    label: "skills switched off",
+    detail:
+      "Every project skill that is shadowed or left out goes into `skillOverrides` as `off`.",
   },
   {
     id: "resolver-plugin",
@@ -103,8 +106,7 @@ export const EDGES = [
     kind: "file",
     label: "writes the plugin",
     detail:
-      "Copies the winning Ork, user, workflow and node skills into the run's plugin directory.",
-    status: "specified",
+      "Copies the winning user, workflow and node skills into the node's plugin folder.",
   },
   {
     id: "resolver-limits",
@@ -114,22 +116,10 @@ export const EDGES = [
     label: "node over defaults",
     detail:
       "Each limit comes from the node if set, else from the workflow's `defaults`.",
-    status: "specified",
     via: [
       [556, 656],
       [556, 876],
     ],
-  },
-  {
-    id: "agents-sysprompt",
-    from: "agentsRule",
-    to: "sysprompt",
-    kind: "local",
-    label: "AGENTS.md, if needed",
-    detail:
-      "Added once, only when the repo has `AGENTS.md` and no `CLAUDE.md`.",
-    status: "specified",
-    docs: [DESIGN.context],
   },
   {
     id: "assembler-sysprompt",
@@ -138,8 +128,7 @@ export const EDGES = [
     kind: "local",
     label: "stable prefix",
     detail:
-      "Workflow context and node instructions, in a fixed order, so the same node gets the same prefix every round.",
-    status: "specified",
+      "The practices, the context of each layer and Ork's harness text, in a fixed order, so the same node gets the same prefix every round.",
     via: [
       [570, 740],
       [570, 416],
@@ -152,7 +141,6 @@ export const EDGES = [
     kind: "local",
     label: "suffix",
     detail: "The only part that changes from task to task.",
-    status: "specified",
   },
   {
     id: "sysprompt-session",
@@ -161,21 +149,20 @@ export const EDGES = [
     kind: "process",
     label: "at start",
     detail: "Passed to the driver when the session starts.",
-    status: "specified",
     via: [
       [846, 396],
       [846, 616],
     ],
-    docs: [DESIGN.runtime],
+    docs: [RUNTIME.sdk, RUNTIME.cli, DESIGN.runtime],
   },
   {
     id: "settings-session",
     from: "settings",
     to: "session",
     kind: "process",
-    label: "setting sources",
-    detail: "`settingSources` for the SDK, `--setting-sources` for the CLI.",
-    status: "specified",
+    label: "sources · settings",
+    detail:
+      "`settingSources` and `settings` for the SDK, `--setting-sources` and `--settings` for the CLI.",
     docs: [DESIGN.runtime],
   },
   {
@@ -183,9 +170,8 @@ export const EDGES = [
     from: "plugin",
     to: "session",
     kind: "process",
-    label: "`plugins`",
-    detail: "The plugin directory, loaded like any local Claude Code plugin.",
-    status: "specified",
+    label: "`plugins` · `--plugin-dir`",
+    detail: "The plugin folder, loaded like any local Claude Code plugin.",
   },
   {
     id: "brief-session",
@@ -194,7 +180,6 @@ export const EDGES = [
     kind: "process",
     label: "first message",
     detail: "Sent after the session starts, through its input stream.",
-    status: "specified",
   },
   {
     id: "limits-session",
@@ -203,8 +188,7 @@ export const EDGES = [
     kind: "process",
     label: "model · turns · budget",
     detail:
-      "`model`, `maxTurns`, `maxBudgetUsd` and the tool rules of the session.",
-    status: "specified",
+      "`model`, `effort`, `maxTurns`, `maxBudgetUsd` and the tool rules of the session.",
     via: [
       [860, 876],
       [860, 656],
@@ -218,17 +202,16 @@ export const EDGES = [
     kind: "net",
     label: "prefix (cached) + brief",
     detail: "Turns after the first read the prefix from the cache.",
-    status: "specified",
   },
   {
     id: "session-report",
     from: "session",
     to: "report",
-    kind: "mcp",
-    label: "`report`",
-    detail: "The session ends its task by calling Ork's `report` tool.",
-    status: "specified",
-    docs: [DESIGN.messaging],
+    kind: "process",
+    label: "structured output",
+    detail:
+      "The session ends with its report as structured output (`outputFormat`, `--json-schema`), which the driver reads from the final result.",
+    docs: [RUNTIME.report, DESIGN.runtime],
   },
   {
     id: "report-artifacts",

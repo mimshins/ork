@@ -146,15 +146,14 @@ export const JOURNEYS = [
         to: "compiler",
         title: "The next run loads it",
         detail:
-          "As part of the workflow layer, within the 1,500-token cap, for every node of that workflow.",
-        status: "planned",
+          "As part of the workflow layer, for every node of that workflow; the 1,500-token cap is planned.",
+        status: "partial",
         docs: [DESIGN.context],
       },
       {
         from: "compiler",
         title: "`ork context explain` shows it",
         detail: "Listed under the workflow layer, with its estimated tokens.",
-        status: "planned",
       },
     ],
   },

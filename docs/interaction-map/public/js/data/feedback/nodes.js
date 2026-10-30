@@ -7,7 +7,7 @@
  *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
  */
 
-import { DESIGN } from "../refs.js";
+import { CONTEXT, DESIGN } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -212,14 +212,14 @@ export const NODES = [
     zone: "core",
     x: 880,
     y: 480,
-    status: "specified",
+    status: "partial",
     pkg: "core",
     summary:
       "Builds each node's session. Accepted lessons load as part of the workflow layer, so the next run of that workflow starts knowing them.",
     facts: [
-      "Under a token cap, by default 1,500 tokens.",
-      "`ork context explain` lists lessons like any other context.",
-      "The compiler is milestone 1c; lessons are milestone 2.",
+      "Built: `.ork/lessons/<workflow>.md` loads in the workflow layer when it exists, and `ork context explain` lists it like any other context.",
+      "Planned: a token cap, by default 1,500 tokens.",
+      "Writing and accepting lessons is milestone 2.",
     ],
     see: [
       {
@@ -229,7 +229,7 @@ export const NODES = [
       },
       { map: "context", label: "The context map" },
     ],
-    docs: [DESIGN.context, DESIGN.feedback],
+    docs: [CONTEXT.files, CONTEXT.explain, DESIGN.context, DESIGN.feedback],
   },
   {
     id: "apply",

@@ -63,6 +63,8 @@ warnings do not. Schema problems come first, from
 | `ref.input`              | error    | a reference to an undeclared input                             |
 | `ref.node`               | error    | a reference to an unknown node, or not through `.output`       |
 | `ref.field`              | warning  | a field the node type does not report                          |
+| `ref.skill`              | error    | a skill reference that resolves to nothing (context compiler)  |
+| `ref.context`            | error    | a context file that does not exist (context compiler)          |
 | `template.syntax`        | error    | a template does not parse                                      |
 | `template.scope`         | error    | a template reads outside `inputs`, `nodes` and `run`           |
 | `template.not-upstream`  | warning  | a template reads a node that does not run first                |

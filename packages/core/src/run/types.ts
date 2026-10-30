@@ -59,6 +59,10 @@ export type ExecuteContext = {
   checkout?: Checkout;
   /** `.ork/runs/<run>/` in the project: run files that never go on a branch. */
   runDir: string;
+  /** The workflow file's folder; skill and context paths start there. */
+  workflowDir: string;
+  /** The project's root; skill and context paths may not leave it. */
+  projectRoot: string;
   /** What is left of `limits.budgetUsd`, when the run has one. */
   budgetLeftUsd: number | undefined;
   human: HumanChannel;
@@ -183,6 +187,10 @@ export type RunOptions = {
   workspace?: Workspace;
   /** Run files (tool output beyond the limit); default `<cwd>/.ork/runs/<run>`. */
   runDir?: string;
+  /** The workflow file's folder; default `cwd`. */
+  workflowDir?: string;
+  /** The project's root, which skill and context paths stay in; default `cwd`. */
+  projectRoot?: string;
 };
 
 export type RunHandle = {

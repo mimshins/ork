@@ -85,6 +85,7 @@
  *   | "nodes"
  *   | "server"
  *   | "cli"
+ *   | "integrations"
  *   | "ui"} Package
  */
 

@@ -80,8 +80,7 @@ export const JOURNEYS = [
         to: "contextCompiler",
         title: "The node's context is compiled",
         detail:
-          "The five layers are resolved by precedence, the owner's brief is rendered from its templates, and the stable parts are put first.",
-        status: "specified",
+          "The layers are resolved by precedence, the owner's brief is rendered from its templates, and the stable parts are put first.",
         docs: [DESIGN.context],
       },
       {

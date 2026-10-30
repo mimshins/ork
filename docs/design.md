@@ -48,9 +48,9 @@ parts fit together is the [interaction map](./interaction-map/README.md).
     the Ork MCP tools.
   - `ork doctor`.
   - Run a single node end-to-end (`ork run <wf> --node <id>`).
-- **M1c: engine** ([scheduler](../specs/scheduler.md) and
-  [worktrees](../specs/worktrees.md): built, with delegation; the context
-  compiler next).
+- **M1c: engine** (built: [scheduler](../specs/scheduler.md),
+  [worktrees](../specs/worktrees.md), delegation and the
+  [context compiler](../specs/context.md)).
   - Scheduler: flow edges, join and router, loops with `maxRounds`.
   - Ownership: delegation, reports, `spawn_worker`.
   - Worktree manager.

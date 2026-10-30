@@ -5,7 +5,7 @@
  *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
  */
 
-import { DESIGN, PRACTICES, RUNTIME, SCHEMA } from "../refs.js";
+import { CONTEXT, DESIGN, PRACTICES, RUNTIME, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -52,12 +52,12 @@ export const NODES = [
     status: "partial",
     pkg: "core",
     summary:
-      "What ships with Ork: the built-in practices today, and skills such as spec writing or security review, namespaced `ork:` so they never collide with anyone else's.",
+      "What ships with Ork: the built-in practices today, and skills such as spec writing or security review, named `ork:<name>` so they never collide with anyone else's.",
     facts: [
       "Built: the caveman (terse voice) and ponytail (smallest complete change) practices, on for every Claude node and appended to its system prompt.",
       "`practices:` on `defaults` or a node turns them off or sets ponytail's level; the setting cascades down the ownership tree.",
-      "The lowest layer: a project skill with the same name replaces it.",
-      "Specified: `ork:*` skills, delivered through the per-run plugin.",
+      "Built: `ork:<name>` references. A built-in skill loads only where the workflow or a node names it, and competes at that layer.",
+      "No built-in skill ships yet; naming one is a `ref.skill` error.",
     ],
     see: [
       {
@@ -66,7 +66,13 @@ export const NODES = [
         label: "Where the layers live",
       },
     ],
-    docs: [PRACTICES.code, PRACTICES.tests, PRACTICES.spec, DESIGN.context],
+    docs: [
+      PRACTICES.code,
+      PRACTICES.tests,
+      CONTEXT.skills,
+      PRACTICES.spec,
+      DESIGN.context,
+    ],
   },
   {
     id: "user",
@@ -75,13 +81,15 @@ export const NODES = [
     zone: "layers",
     x: 40,
     y: 240,
-    status: "specified",
-    pkg: null,
+    status: "built",
+    pkg: "core",
     summary: "Your own skills and context, for every workflow on this machine.",
     facts: [
+      "Every skill in `~/.ork/skills` loads, unless a higher layer has one of the same name.",
+      "`~/.ork/context/*.md` is appended in name order, under `# Your context`.",
       "Separate from `~/.claude`: Ork never loads Claude Code's user settings into a node (`settingSources` has no `user`).",
     ],
-    docs: [DESIGN.context],
+    docs: [CONTEXT.resolver, CONTEXT.files, CONTEXT.tests, DESIGN.context],
   },
   {
     id: "project",
@@ -95,6 +103,7 @@ export const NODES = [
     summary:
       "The repo's own instructions and skills, loaded by Claude Code itself so the project works the way it always does. The workflow decides whether to inherit, ignore or allow-list them.",
     facts: [
+      "The skills are the `.claude/skills` of the node's checkout; Claude Code loads them, and Ork switches off the shadowed or left-out ones.",
       "`layers.project.instructions`: `inherit` (default) or `ignore`.",
       "`layers.project.skills`: `inherit` (default), `ignore`, or `{ allow: [...] }`.",
       "`.claude/agents` are available to the session like any Claude Code project.",
@@ -111,19 +120,26 @@ export const NODES = [
     zone: "layers",
     x: 40,
     y: 480,
-    status: "partial",
-    pkg: null,
+    status: "built",
+    pkg: "core",
     summary:
       "Skills and context files the workflow brings for all of its nodes, as paths relative to the workflow file.",
     facts: [
-      "The schema accepts `layers:` today; nothing reads it yet.",
+      "`layers.skills`: `./path` to a skill folder or `ork:<name>`; `layers.context`: files appended under `# Workflow context`.",
+      "References stay inside the project; one that resolves to nothing is a `ref.skill` or `ref.context` error in `ork validate`.",
+      "Also the workflow's accepted lessons, `.ork/lessons/<workflow>.md`, when the file exists; their token cap comes with the feedback loop.",
       "Committed with the workflow, so everyone who runs it gets the same process.",
-      "Also the workflow's accepted lessons, `.ork/lessons/<workflow>.md`, up to 1,500 tokens (milestone 2).",
     ],
     see: [
       { map: "feedback", node: "lessons", label: "Where lessons come from" },
     ],
-    docs: [SCHEMA.workflow, SCHEMA.example, DESIGN.feedback],
+    docs: [
+      CONTEXT.resolver,
+      CONTEXT.files,
+      SCHEMA.workflow,
+      SCHEMA.example,
+      DESIGN.feedback,
+    ],
   },
   {
     id: "nodeLayer",
@@ -132,15 +148,16 @@ export const NODES = [
     zone: "layers",
     x: 40,
     y: 600,
-    status: "partial",
-    pkg: null,
+    status: "built",
+    pkg: "core",
     summary:
       "What one node adds for itself. The most explicit and most local layer, so it wins every conflict.",
     facts: [
-      "The schema accepts these fields today; nothing reads them yet.",
-      "Also sets the limits: `model`, `maxTurns`, `budgetUsd`, `tools`, `isolation`.",
+      "`skills` and `context` take the same references as the workflow's; the context goes last, under `# Context for this node`.",
+      "`instructions` end Ork's harness text.",
+      "Also sets the limits: `model`, `effort`, `maxTurns`, `budgetUsd`, `tools`, `isolation`.",
     ],
-    docs: [SCHEMA.nodes],
+    docs: [CONTEXT.resolver, CONTEXT.tests, SCHEMA.nodes],
   },
   {
     id: "brief",
@@ -165,19 +182,20 @@ export const NODES = [
   {
     id: "agentsRule",
     title: "AGENTS.md rule",
-    sub: "add it only when no CLAUDE.md",
+    sub: "left to Claude Code",
     zone: "compiler",
     x: 320,
     y: 360,
-    status: "specified",
-    pkg: "core",
+    status: "built",
+    pkg: "integrations",
     summary:
-      "Claude Code reads `AGENTS.md` only when there is no `CLAUDE.md`, and the SDK may not read it at all. So Ork appends `AGENTS.md` itself in exactly that case, and never otherwise.",
+      "Claude Code reads `AGENTS.md` itself when there is no `CLAUDE.md` or `CLAUDE.local.md`, in every session from v2.1.281. So Ork appends nothing, and the file is never loaded twice.",
     facts: [
-      "With a `CLAUDE.md` (for example one that imports `@AGENTS.md`), Ork adds nothing.",
-      "Only once per session, so it is never loaded twice.",
+      "`ork doctor` warns when your `claude` is older than 2.1.281.",
+      "With a `CLAUDE.md` (for example one that imports `@AGENTS.md`), Claude Code reads that instead.",
+      "`project.instructions: ignore` keeps it out too.",
     ],
-    docs: [DESIGN.context],
+    docs: [CONTEXT.version, DESIGN.context],
   },
   {
     id: "explain",
@@ -186,14 +204,16 @@ export const NODES = [
     zone: "compiler",
     x: 320,
     y: 480,
-    status: "specified",
+    status: "built",
     pkg: "cli",
     summary:
-      "Prints what one node will see: each file, the layer it came from, what it shadowed, and an estimate of its tokens.",
+      "Prints what one node will see: its project instructions, each skill with the layer it came from and whether it is live, shadowed or off, its context files and practices, and estimated tokens.",
     facts: [
-      "`ork context explain <wf> <node>`; the UI's context inspector shows the same.",
+      "`ork context explain <wf> <node>`, or `--json`; it plans the session without writing anything.",
+      "Tokens are estimates, about four characters each; a skill's count is what it costs when used.",
+      "The UI's context inspector (milestone 2) will show the same.",
     ],
-    docs: [DESIGN.context, DESIGN.cli],
+    docs: [CONTEXT.explain, CONTEXT.explainTests, DESIGN.context, DESIGN.cli],
   },
   {
     id: "resolver",
@@ -202,16 +222,17 @@ export const NODES = [
     zone: "compiler",
     x: 320,
     y: 600,
-    status: "specified",
+    status: "built",
     pkg: "core",
     summary:
-      "Merges the five layers: for a skill name or an instruction that appears in more than one, the highest layer wins and the others are dropped.",
+      "Merges the layers: for a skill name that appears in more than one, the highest layer wins and the others do not load.",
     facts: [
-      "Rule: more explicit and more local wins.",
-      "A project skill shadowed by a higher layer is left out of the session's skill allow-list.",
-      "Writes the Ork, user, workflow and node skills into a per-run local plugin.",
+      "Precedence, low to high: user, project, workflow, node. Rule: more explicit and more local wins.",
+      "A project skill shadowed by a higher layer, or left out by `project.skills`, is switched off in the session.",
+      "The winners outside the project go into the node's plugin.",
+      "`ork validate` and `ork run` report references that resolve to nothing (`ref.skill`, `ref.context`).",
     ],
-    docs: [DESIGN.context],
+    docs: [CONTEXT.resolver, CONTEXT.skills, CONTEXT.tests, DESIGN.context],
   },
   {
     id: "assembler",
@@ -220,16 +241,16 @@ export const NODES = [
     zone: "compiler",
     x: 320,
     y: 720,
-    status: "specified",
+    status: "partial",
     pkg: "core",
     summary:
-      "Orders everything so the prompt cache works: what is the same for every task goes first, the task itself last.",
+      "Orders everything so the prompt cache works: what is the same for many nodes goes first, the task itself last.",
     facts: [
-      "Prefix: system preset, skills, project docs, workflow context, node instructions.",
-      "Suffix: the brief.",
-      "Leaders, which live long, ask for the 1-hour cache.",
+      "Built, after Claude Code's own prompt: the practices, your context, the workflow's context, Ork's harness text, then the node's context.",
+      "Suffix: the brief, as the first user message.",
+      "Specified: leaders, which live long, ask for the 1-hour cache.",
     ],
-    docs: [DESIGN.context],
+    docs: [CONTEXT.session, RUNTIME.plan, DESIGN.context],
   },
 
   // ── Session spec ─────────────────────────────────────────────────────────
@@ -240,49 +261,51 @@ export const NODES = [
     zone: "spec",
     x: 600,
     y: 360,
-    status: "specified",
+    status: "built",
     pkg: "runtime-claude",
     summary:
-      "What Ork appends to Claude Code's own system prompt: workflow context, node instructions, and `AGENTS.md` when the rule says so.",
+      "What Ork appends to Claude Code's own system prompt: the practices, the context files of each layer, and Ork's harness text with the node's instructions.",
     facts: [
       "SDK: `systemPrompt: { type: 'preset', preset: 'claude_code', append }`.",
-      "CLI: `--append-system-prompt-file`.",
+      "CLI: `--append-system-prompt`.",
     ],
-    docs: [DESIGN.runtime],
+    docs: [RUNTIME.sdk, RUNTIME.cli, DESIGN.runtime],
   },
   {
     id: "settings",
     title: "Claude Code settings",
-    sub: "project, local · skill allow-list",
+    sub: "sources · `skillOverrides`",
     zone: "spec",
     x: 600,
     y: 480,
-    status: "specified",
+    status: "built",
     pkg: "runtime-claude",
     summary:
-      "Which of Claude Code's own setting sources load, and which skills are enabled, so the project layer works natively and shadowed skills stay off.",
+      "Which of Claude Code's own setting sources load, and extra settings for the session, so the project layer works natively and shadowed skills stay off.",
     facts: [
       "`settingSources: ['project', 'local']`, never `user`.",
-      "The skill allow-list removes shadowed and ignored project skills.",
+      '`skillOverrides: { <name>: "off" }` hides each shadowed or left-out project skill; a plugin\'s `ork:<name>` is untouched.',
+      "`project.instructions: ignore` adds `claudeMdExcludes` for the checkout and stops Claude Code reading `AGENTS.md`.",
+      "SDK: `settings`; CLI: `--settings`.",
     ],
-    docs: [DESIGN.context, DESIGN.runtime],
+    docs: [CONTEXT.session, RUNTIME.sdk, RUNTIME.cli, DESIGN.context],
   },
   {
     id: "plugin",
     title: "Per-run plugin",
-    sub: "Ork, user, workflow, node skills",
+    sub: "`ork:*` skills, one per node",
     zone: "spec",
     x: 600,
     y: 600,
-    status: "specified",
-    pkg: "runtime-claude",
+    status: "built",
+    pkg: "core",
     summary:
-      "A local plugin directory generated for the run, holding every skill that comes from above or beside the project.",
+      "A local plugin written for each node of the run, holding the winning skills from the user, workflow and node layers.",
     facts: [
-      "Plugin skills are namespaced, so they never collide with project skills at run time.",
-      "Passed with `plugins`.",
+      "In `.ork/runs/<run>/plugins/<node>/`, named `ork`, so its skills load as `ork:<name>` and never collide with the project's.",
+      "SDK: `plugins: [{ type: 'local', path }]`; CLI: `--plugin-dir`.",
     ],
-    docs: [DESIGN.context],
+    docs: [CONTEXT.session, CONTEXT.tests, DESIGN.context],
   },
   {
     id: "briefMsg",
@@ -291,12 +314,15 @@ export const NODES = [
     zone: "spec",
     x: 600,
     y: 720,
-    status: "specified",
+    status: "built",
     pkg: "runtime-claude",
     summary:
       "The brief, sent as the session's first user message, after the cached prefix.",
-    facts: ["Later messages from the bus arrive between turns, after it."],
-    docs: [DESIGN.context],
+    facts: [
+      "A resumed leader gets only what is new: the round's input, or its new task.",
+      "Later messages from the bus (milestone 1d) will arrive between turns.",
+    ],
+    docs: [RUNTIME.plan, DESIGN.context],
   },
   {
     id: "limits",
@@ -362,15 +388,16 @@ export const NODES = [
     zone: "session",
     x: 880,
     y: 840,
-    status: "specified",
-    pkg: null,
+    status: "built",
+    pkg: "core",
     summary:
       "What the node hands back to its owner: a status, a short summary, artifact paths, its branch, and its usage. The owner reads the summary, not the session.",
     facts: [
-      "Usage includes sub-agents' tokens.",
+      "The session's structured output, checked against a JSON Schema; not a tool call.",
       "Structured fields from `output.schema`, such as `verdict`.",
+      "Usage from the final result: cost, tokens, turns and time.",
     ],
-    docs: [DESIGN.concepts],
+    docs: [RUNTIME.report, DESIGN.runtime, DESIGN.concepts],
   },
   {
     id: "artifacts",

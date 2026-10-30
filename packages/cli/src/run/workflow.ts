@@ -5,6 +5,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import path from "node:path";
 
 import {
   type ClaudeRuntime,
@@ -18,6 +19,7 @@ import {
   type RunResult,
   startRun,
   type Workspace,
+  projectRootOf,
 } from "@krapht/ork-core";
 import { builtinExecutors, type ToolRunner } from "@krapht/ork-nodes";
 import { type Driver, isClaudeNode, type Workflow } from "@krapht/ork-schema";
@@ -146,6 +148,8 @@ export const runWorkflowFile = async (
     executors: builtinExecutors(executorOptions),
     human: options.human,
     onEvent,
+    workflowDir: path.dirname(path.resolve(options.cwd, options.file)),
+    projectRoot: workspace === undefined ? projectRootOf(cwd) : cwd,
     ...(workspace === undefined ? {} : { workspace }),
   });
   options.onRun?.(handle);

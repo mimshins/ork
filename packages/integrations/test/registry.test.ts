@@ -11,6 +11,8 @@ import {
   DRIVER_IDS,
   INTEGRATIONS,
   integrationFor,
+  MIN_CLAUDE_VERSION,
+  olderThan,
 } from "../src/index.ts";
 
 describe("the registries", () => {
@@ -34,5 +36,14 @@ describe("the registries", () => {
       "eu-west-1",
     ]);
     expect(aws.args({})).toEqual([]);
+  });
+});
+
+describe("the claude version check", () => {
+  it("compares `claude --version` output with the minimum", () => {
+    expect(olderThan("2.1.280 (Claude Code)", MIN_CLAUDE_VERSION)).toBe(true);
+    expect(olderThan("2.1.281 (Claude Code)", MIN_CLAUDE_VERSION)).toBe(false);
+    expect(olderThan("2.2.0 (Claude Code)", MIN_CLAUDE_VERSION)).toBe(false);
+    expect(olderThan("unknown", MIN_CLAUDE_VERSION)).toBe(false);
   });
 });

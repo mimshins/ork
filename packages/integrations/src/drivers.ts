@@ -36,6 +36,26 @@ const sdk: ClaudeDriver = {
   },
 };
 
+/**
+ * The first Claude Code that reads AGENTS.md in every session (when there is no
+ * CLAUDE.md); Ork relies on it rather than adding AGENTS.md itself.
+ */
+export const MIN_CLAUDE_VERSION = "2.1.281";
+
+/** Whether `claude --version` output names a version below `min`. */
+export const olderThan = (text: string, min: string): boolean => {
+  const found = /(\d+)\.(\d+)\.(\d+)/u.exec(text);
+  if (found === null) return false;
+  const have = found.slice(1).map(Number);
+  const want = min.split(".").map(Number);
+  for (let i = 0; i < 3; i += 1) {
+    const a = have[i] ?? 0;
+    const b = want[i] ?? 0;
+    if (a !== b) return a < b;
+  }
+  return false;
+};
+
 const cli: ClaudeDriver = {
   id: "cli",
   label: "your own `claude` CLI, logged in by you",
@@ -59,6 +79,14 @@ const cli: ClaudeDriver = {
         status: "warn",
         detail: `${firstLine(version.stdout)}, not logged in`,
         hint: "Run `claude auth login` yourself; Ork never handles your login.",
+      };
+    }
+    if (olderThan(version.stdout, MIN_CLAUDE_VERSION)) {
+      return {
+        name,
+        status: "warn",
+        detail: `${firstLine(version.stdout)}, older than ${MIN_CLAUDE_VERSION}`,
+        hint: "Update Claude Code: older versions may not read AGENTS.md, which Ork leaves to Claude Code.",
       };
     }
     const method = field(status, "authMethod");

@@ -62,6 +62,8 @@ const context = (
     round: 1,
     cwd,
     runDir: path.join(cwd, ".ork/runs/r1"),
+    workflowDir: cwd,
+    projectRoot: cwd,
     budgetLeftUsd: undefined,
     human: human(options => Promise.resolve(options[0] ?? "")),
     emit: event => {

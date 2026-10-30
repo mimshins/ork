@@ -167,6 +167,8 @@ export const startRun = (options: RunOptions): RunHandle => {
       round: rounds.get(id) ?? 1,
       cwd,
       runDir,
+      workflowDir: options.workflowDir ?? options.cwd,
+      projectRoot: options.projectRoot ?? options.cwd,
       budgetLeftUsd:
         limits.budgetUsd === undefined ? undefined : limits.budgetUsd - spent,
       human: options.human,

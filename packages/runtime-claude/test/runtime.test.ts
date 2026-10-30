@@ -275,6 +275,25 @@ describe("the CLI driver", () => {
     expect(args).not.toContain("Review the branch");
   });
 
+  it("loads the node's plugin and settings in both drivers", () => {
+    const compiled: SessionSpec = {
+      ...spec,
+      plugins: ["/runs/r1/plugins/approver"],
+      settings: { skillOverrides: { review: "off" } },
+    };
+    const args = buildCliArgs(compiled, { url: "u", token: "t" }, []);
+    const value = (flag: string) => args[args.indexOf(flag) + 1];
+    expect(value("--plugin-dir")).toBe("/runs/r1/plugins/approver");
+    expect(value("--settings")).toBe('{"skillOverrides":{"review":"off"}}');
+    const { human } = recordingHuman();
+    expect(
+      buildSdkOptions(compiled, { human }, { ANTHROPIC_API_KEY: "k" }),
+    ).toMatchObject({
+      plugins: [{ type: "local", path: "/runs/r1/plugins/approver" }],
+      settings: { skillOverrides: { review: "off" } },
+    });
+  });
+
   it("runs a session end to end against a stand-in claude", async () => {
     const { human, asked } = recordingHuman();
     const session = createCliRuntime({ bin: FAKE_CLAUDE }).start(spec, {

@@ -7,6 +7,7 @@
 
 import {
   CLI,
+  CONTEXT,
   CORE,
   DESIGN,
   ENGINE,
@@ -99,12 +100,12 @@ export const NODES = [
     summary:
       "The `ork` command. It validates and runs workflows with the engine embedded in its own process, or talks to a running `ork ui` server over HTTP.",
     facts: [
-      "Built: `ork init` scaffolds `.ork/` and never overwrites a file; `ork validate` prints schema and graph diagnostics with file, line and column; `ork doctor` reports your own logins and never prints a token or your email.",
+      "Built: `ork init` scaffolds `.ork/` and never overwrites a file; `ork validate` prints schema, graph and skill or context reference diagnostics with file, line and column; `ork doctor` reports your own logins and never prints a token or your email.",
       "Built: `ork run <wf>` runs a whole workflow through the scheduler, and `--node <id>` one Claude node; questions and permission prompts are answered on the terminal.",
       "Built: `ork worktrees` lists the worktrees and `ork/` branches runs left, and `clean` removes them, asking first.",
       "Specified: `ps`, `logs --follow`, `tree`, `stop`, `resume` to watch and steer runs.",
       "`ork decide` answers pending decisions; the recommended option is preselected.",
-      "`ork context explain <wf> <node>` shows the resolved layer stack for one node.",
+      "Built: `ork context explain <wf> <node>` shows the resolved layer stack for one node.",
     ],
     see: [{ map: "lifecycle", node: "cli", label: "The CLI in a run" }],
     docs: [
@@ -244,20 +245,20 @@ export const NODES = [
     zone: "core",
     x: 880,
     y: 240,
-    status: "specified",
+    status: "built",
     pkg: "core",
     summary:
-      "Builds what one node's session sees: the five layers of skills and instructions resolved by precedence, the owner's brief, and the limits, ordered so the prompt cache hits.",
+      "Builds what one node's session sees: the layers of skills and context resolved by precedence, the owner's brief, and the limits, ordered so the prompt cache hits.",
     facts: [
-      "Precedence, low to high: Ork built-ins, user, project, workflow, node.",
-      "Adds `AGENTS.md` itself only when the repo has no `CLAUDE.md`.",
-      "Writes Ork, user, workflow and node skills into a per-run local plugin.",
+      "Precedence, low to high: user, project, workflow, node; a built-in `ork:*` skill competes at the layer that names it.",
+      "Writes the winning user, workflow and node skills into a plugin per node, loaded as `ork:<name>`, and switches off the project skills they shadow.",
+      "Leaves `AGENTS.md` to Claude Code, which reads it when there is no `CLAUDE.md`.",
     ],
     see: [
       { map: "context", label: "The context map" },
       { map: "feedback", node: "compiler", label: "Where lessons load" },
     ],
-    docs: [DESIGN.context],
+    docs: [CONTEXT.resolver, CONTEXT.session, CONTEXT.tests, DESIGN.context],
   },
   {
     id: "messageBus",
@@ -404,16 +405,16 @@ export const NODES = [
     zone: "machine",
     x: 1160,
     y: 240,
-    status: "specified",
+    status: "built",
     pkg: null,
     summary:
       "The skills and context Ork adds on top of the project's own: the `ork:*` built-ins, your user layer in `~/.ork/skills` and `~/.ork/context`, and the workflow's `layers:`.",
     facts: [
-      "Built-in skills are namespaced `ork:*`.",
-      "Workflow layers are paths relative to the workflow file.",
+      "Built-in skills are named `ork:<name>`; none ships yet.",
+      "Workflow layers are paths relative to the workflow file, kept inside the project.",
     ],
     see: [{ map: "context", node: "builtins", label: "The layers in order" }],
-    docs: [DESIGN.context],
+    docs: [CONTEXT.resolver, CONTEXT.files, DESIGN.context],
   },
   {
     id: "projectFiles",

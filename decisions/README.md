@@ -30,30 +30,28 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 
 ## Index
 
-| ADR                                                | Title                                                                       | Status            | RFC    |
-| -------------------------------------------------- | --------------------------------------------------------------------------- | ----------------- | ------ |
-| [001](./ADR-001-spec-driven-development.md)        | Spec-driven development and the knowledge layout                            | Accepted          | waived |
-| [002](./ADR-002-typescript-from-source.md)         | A TypeScript monorepo run from source, with supply-chain policies           | Accepted          | waived |
-| [003](./ADR-003-oxlint-oxfmt-and-boundaries.md)    | oxlint and oxfmt, with package boundaries enforced by lint                  | Accepted          | waived |
-| [004](./ADR-004-no-credentials.md)                 | Ork never handles credentials                                               | Accepted          | waived |
-| [005](./ADR-005-one-runtime-port-two-drivers.md)   | One runtime port, two Claude drivers                                        | Accepted          | waived |
-| [006](./ADR-006-workflow-file-format.md)           | The workflow file format                                                    | Accepted          | waived |
-| [007](./ADR-007-safe-expression-language.md)       | A safe expression language for conditions and templates                     | Accepted          | waived |
-| [008](./ADR-008-ownership-hierarchy.md)            | Ownership hierarchy rules                                                   | Accepted          | waived |
-| [009](./ADR-009-worktree-per-writing-node.md)      | A git worktree per writing node                                             | Superseded by 020 | waived |
-| [010](./ADR-010-reports-as-structured-output.md)   | Node reports as structured output                                           | Accepted          | waived |
-| [011](./ADR-011-in-house-mcp-server.md)            | A minimal in-house MCP server for the CLI driver                            | Accepted          | waived |
-| [012](./ADR-012-no-ai-attribution.md)              | No AI or agent attribution                                                  | Accepted          | waived |
-| [013](./ADR-013-feedback-loop.md)                  | The feedback loop                                                           | Accepted          | waived |
-| [014](./ADR-014-interaction-map.md)                | The interaction map as the onboarding and audit view                        | Accepted          | waived |
-| [015](./ADR-015-changesets-and-one-bundled-cli.md) | Releases with changesets and one bundled CLI                                | Accepted          | waived |
-| [016](./ADR-016-scheduler-semantics.md)            | How a workflow runs: activations, edges, dead paths and loops               | Accepted          | waived |
-| [017](./ADR-017-blocking-delegate.md)              | Leaders delegate with a blocking tool call                                  | Accepted          | waived |
-| [018](./ADR-018-ork-merges-children.md)            | Ork merges a passing child's branch into its owner's                        | Accepted          | waived |
-| [019](./ADR-019-leaders-resume-on-reentry.md)      | On a loop re-entry, leaders resume and workers start fresh                  | Accepted          | waived |
-| [020](./ADR-020-worktrees-beside-the-clone.md)     | Worktrees beside the clone, with the local layer and committed instructions | Accepted          | waived |
-| [021](./ADR-021-built-in-practices.md)             | Built-in practices: caveman and ponytail, on by default                     | Accepted          | waived |
-
-| [022](./ADR-022-integration-registry.md) | Integrations as adapters behind
-registries | Accepted |
-[001](../rfcs/archived/RFC-001-integrations-as-adapters.md) |
+| ADR                                                | Title                                                                       | Status            | RFC                                                         |
+| -------------------------------------------------- | --------------------------------------------------------------------------- | ----------------- | ----------------------------------------------------------- |
+| [001](./ADR-001-spec-driven-development.md)        | Spec-driven development and the knowledge layout                            | Accepted          | waived                                                      |
+| [002](./ADR-002-typescript-from-source.md)         | A TypeScript monorepo run from source, with supply-chain policies           | Accepted          | waived                                                      |
+| [003](./ADR-003-oxlint-oxfmt-and-boundaries.md)    | oxlint and oxfmt, with package boundaries enforced by lint                  | Accepted          | waived                                                      |
+| [004](./ADR-004-no-credentials.md)                 | Ork never handles credentials                                               | Accepted          | waived                                                      |
+| [005](./ADR-005-one-runtime-port-two-drivers.md)   | One runtime port, two Claude drivers                                        | Accepted          | waived                                                      |
+| [006](./ADR-006-workflow-file-format.md)           | The workflow file format                                                    | Accepted          | waived                                                      |
+| [007](./ADR-007-safe-expression-language.md)       | A safe expression language for conditions and templates                     | Accepted          | waived                                                      |
+| [008](./ADR-008-ownership-hierarchy.md)            | Ownership hierarchy rules                                                   | Accepted          | waived                                                      |
+| [009](./ADR-009-worktree-per-writing-node.md)      | A git worktree per writing node                                             | Superseded by 020 | waived                                                      |
+| [010](./ADR-010-reports-as-structured-output.md)   | Node reports as structured output                                           | Accepted          | waived                                                      |
+| [011](./ADR-011-in-house-mcp-server.md)            | A minimal in-house MCP server for the CLI driver                            | Accepted          | waived                                                      |
+| [012](./ADR-012-no-ai-attribution.md)              | No AI or agent attribution                                                  | Accepted          | waived                                                      |
+| [013](./ADR-013-feedback-loop.md)                  | The feedback loop                                                           | Accepted          | waived                                                      |
+| [014](./ADR-014-interaction-map.md)                | The interaction map as the onboarding and audit view                        | Accepted          | waived                                                      |
+| [015](./ADR-015-changesets-and-one-bundled-cli.md) | Releases with changesets and one bundled CLI                                | Accepted          | waived                                                      |
+| [016](./ADR-016-scheduler-semantics.md)            | How a workflow runs: activations, edges, dead paths and loops               | Accepted          | waived                                                      |
+| [017](./ADR-017-blocking-delegate.md)              | Leaders delegate with a blocking tool call                                  | Accepted          | waived                                                      |
+| [018](./ADR-018-ork-merges-children.md)            | Ork merges a passing child's branch into its owner's                        | Accepted          | waived                                                      |
+| [019](./ADR-019-leaders-resume-on-reentry.md)      | On a loop re-entry, leaders resume and workers start fresh                  | Accepted          | waived                                                      |
+| [020](./ADR-020-worktrees-beside-the-clone.md)     | Worktrees beside the clone, with the local layer and committed instructions | Accepted          | waived                                                      |
+| [021](./ADR-021-built-in-practices.md)             | Built-in practices: caveman and ponytail, on by default                     | Accepted          | waived                                                      |
+| [022](./ADR-022-integration-registry.md)           | Integrations as adapters behind registries                                  | Accepted          | [001](../rfcs/archived/RFC-001-integrations-as-adapters.md) |
+| [023](./ADR-023-context-compiler.md)               | How the context compiler hands layers to Claude Code                        | Accepted          | waived                                                      |

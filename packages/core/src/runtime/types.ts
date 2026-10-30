@@ -41,6 +41,10 @@ export type SessionSpec = {
   budgetUsd?: number;
   /** JSON Schema of the final report (structured output). */
   reportSchema: Record<string, unknown>;
+  /** Local plugin folders to load: Ork's skills for this node. */
+  plugins?: string[];
+  /** Extra Claude Code settings (`--settings`), e.g. `skillOverrides`. */
+  settings?: Record<string, unknown>;
   /** A session id to resume. */
   resume?: string;
 };

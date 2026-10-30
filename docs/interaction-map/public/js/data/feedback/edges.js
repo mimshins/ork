@@ -229,8 +229,8 @@ export const EDGES = [
     kind: "file",
     label: "read into the workflow layer",
     detail:
-      "Every later run of the workflow loads its lessons, up to the token cap.",
-    status: "planned",
+      "Every later run of the workflow loads its lessons; the token cap is planned.",
+    status: "partial",
     docs: [DESIGN.context],
   },
   {

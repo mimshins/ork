@@ -1,41 +1,69 @@
 # Context, skills and precedence
 
-Status: **Partial** (M1c): the [built-in practices](#built-in-practices) are
-built ([practices/](../packages/core/src/practices/index.ts),
-[tests](../packages/core/test/practices.test.ts)); the context compiler is not,
-so a node's session also gets Ork's harness instructions and the node's own
-`instructions` ([plan.ts](../packages/core/src/run/plan.ts)).
+Status: **Built** (M1c): the context compiler
+([context/](../packages/core/src/context/index.ts),
+[tests](../packages/core/test/context.test.ts)), `ork context explain`
+([cli](./cli.md#context)), and the [built-in practices](#built-in-practices)
+([practices/](../packages/core/src/practices/index.ts)). Why:
+[ADR-023](../decisions/ADR-023-context-compiler.md).
 
-**Layers** (lowest to highest precedence for same-named skills or conflicting
-instructions):
+**Layers** (lowest to highest precedence for same-named skills):
 
-1. **Ork built-ins:** skills that ship with Ork, namespaced `ork:*`.
-2. **User global:** `~/.ork/skills`, `~/.ork/context`.
-3. **Project repo:** `CLAUDE.md`, `AGENTS.md`, `.claude/skills`,
-   `.claude/agents`.
-4. **Workflow:** `layers.skills`, `layers.context`, and the workflow's accepted
+1. **User global:** every skill in `~/.ork/skills/` and every `.md` file in
+   `~/.ork/context/`. (Claude Code's own `~/.claude` user settings are never
+   loaded; `settingSources` is `project` and `local`.)
+2. **Project repo:** `CLAUDE.md` or `AGENTS.md`, `.claude/skills`,
+   `.claude/agents`, loaded by Claude Code itself from the node's checkout.
+3. **Workflow:** `layers.skills`, `layers.context`, and the workflow's accepted
    lessons in `.ork/lessons/<workflow>.md`.
-5. **Node:** explicit `skills`, `context` and `instructions` on the node.
+4. **Node:** the node's own `skills`, `context` and `instructions`.
 
-The rule is that more explicit and more local wins. Only one source of the same
-kind is ever loaded, so nothing is loaded twice.
+Ork's **built-in skills** (`ork:<name>`) load only where a workflow or node
+names one, at that layer; Ork ships none yet. The rule is that more explicit and
+more local wins, and only the winner of each name loads, so nothing is loaded
+twice.
 
-**How the context compiler builds each node's session:**
+## References
 
-- **Project layer:** passed through Claude Code's own loading
-  (`settingSources: ['project','local']`, never `'user'`) so the repo works
-  natively. In a worktree it is the branch's committed layer plus the copied
-  local files ([worktrees](./worktrees.md#what-a-worktree-gets)). The node's
-  `skills` allowlist enforces `project.skills: allowlist|ignore` and removes
-  project skills shadowed by a higher layer.
-- **AGENTS.md:** the CLI reads it only when no CLAUDE.md exists, and the SDK may
-  not read it at all. So if the repo has AGENTS.md and no CLAUDE.md, Ork appends
-  it once itself, and otherwise never adds it.
-- **Ork, user, workflow and node layers:** generated into a per-run local plugin
-  directory and passed through `plugins`. Plugin skills are namespaced, so they
-  never collide at runtime. Precedence is resolved at compile time.
-- **`ork context explain <node>`** prints the resolved stack: which file came
-  from which layer, what was shadowed, and the estimated tokens.
+- A skill reference is `ork:<name>` (a built-in) or a path to a skill folder
+  (with a `SKILL.md`) starting `./` or `../`, relative to the workflow file. A
+  skill's name is its `SKILL.md` `name`, else its folder's name. Project skills
+  load by themselves and are not referenced.
+- A context reference is a path to a file, relative to the workflow file.
+- References stay inside the project (the nearest folder up with a `.git`).
+- `ork validate` reports what resolves to nothing as `ref.skill` or
+  `ref.context` errors, with the line; `ork run` refuses to start on them. Two
+  skills with one name in the same layer are an error; a name in
+  `project.skills.allow` the project does not have is a warning.
+
+## How a node's session is compiled
+
+- **Skills from the user, workflow and node layers** that win their name are
+  copied into a plugin for the node, `.ork/runs/<run>/plugins/<node>/`, named
+  `ork`, so the session sees them as `ork:<name>` (SDK `plugins`, CLI
+  `--plugin-dir`).
+- **Project skills** stay where Claude Code finds them. One that a higher layer
+  shadows, or that `project.skills` leaves out (`ignore`, or not in `allow`), is
+  switched off with Claude Code's `skillOverrides` setting (SDK `settings`, CLI
+  `--settings`): it is neither listed nor invocable. Switching off a project
+  skill also hides a bundled skill whose alias has its name (a project `review`
+  hides `/code-review`).
+- **Project instructions** are Claude Code's own: it reads `CLAUDE.md`, or
+  `AGENTS.md` when there is no `CLAUDE.md` (Claude Code 2.1.281 and later;
+  `ork doctor` warns on an older `claude`). Ork never adds `AGENTS.md` itself.
+  `project.instructions: ignore` excludes the checkout's `CLAUDE.md`,
+  `CLAUDE.local.md` and `.claude/rules` (`claudeMdExcludes`) and turns
+  `AGENTS.md` reading off.
+- **Context files** are appended to Claude Code's system prompt, shared before
+  specific so nodes share a cached prefix: the practices, the user's context,
+  the workflow's context and lessons, Ork's harness instructions (the node's
+  role, its owner, its checkout, its children), then the node's own context and
+  `instructions`. The brief is the first user message.
+- In a worktree the project layer is the branch's committed one plus the copied
+  local files ([worktrees](./worktrees.md#what-a-worktree-gets)).
+- **`ork context explain <wf> <node>`** prints the resolved stack: each skill
+  with its layer, source and state (live, or off and why), the context files,
+  the practices, and estimated tokens.
 
 **Token-saving practices built into the engine:**
 
@@ -50,8 +78,9 @@ kind is ever loaded, so nothing is loaded twice.
   think hard on opus while a reviewer runs sonnet at `low`. Reviewers and
   sub-agents default to sonnet or haiku. Each node has `maxTurns` and
   `budgetUsd`, and the run has a total budget cap.
-- **Bounded loops:** every cycle needs `maxRounds`. When a node hits its limit,
-  it escalates to its owner, and the root escalates to a Decision.
+- **Bounded loops:** every cycle needs `maxRounds`. A loop out of rounds asks
+  the user ([scheduler](./scheduler.md#loops)); a child that fails inside
+  `delegate` is reported to its leader.
 - **Claims:** a node can claim files or resources via the `ork__claim` tool, so
   parallel workers don't collide.
 

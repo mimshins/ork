@@ -6,6 +6,8 @@
  *   (ADR-019).
  */
 
+import path from "node:path";
+
 import {
   type ClaudeRuntime,
   type ExecuteContext,
@@ -118,6 +120,9 @@ export const claudeExecutor =
       inputs: context.inputs,
       outputs: context.outputs,
       inPlace: options.inPlace,
+      workflowDir: context.workflowDir,
+      projectRoot: context.projectRoot,
+      pluginDir: path.join(context.runDir, "plugins", context.id),
     };
     if (context.budgetLeftUsd !== undefined) {
       planOptions.budgetLeftUsd = context.budgetLeftUsd;

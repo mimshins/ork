@@ -1,13 +1,18 @@
 /**
- * @file `ork validate`: loads, parses and compiles workflow files and reports
- *   diagnostics compiler-style, with file, line and column. `loadWorkflow` is
- *   shared with `ork run`.
+ * @file `ork validate`: loads, parses and compiles workflow files, checks their
+ *   skill and context references, and reports diagnostics compiler-style, with
+ *   file, line and column. `loadWorkflow` is shared with `ork run`.
  */
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { type CompiledGraph, compileWorkflow } from "@krapht/ork-core";
+import {
+  type CompiledGraph,
+  compileWorkflow,
+  contextDiagnostics,
+  projectRootOf,
+} from "@krapht/ork-core";
 import {
   type Diagnostic,
   parseWorkflow,
@@ -66,7 +71,18 @@ export const loadWorkflow = (file: string, cwd: string): LoadedWorkflow => {
     };
   }
 
-  const { graph, diagnostics } = compileWorkflow(parsed.workflow);
+  const compiled = compileWorkflow(parsed.workflow);
+  const { graph } = compiled;
+  const workflowDir = path.dirname(path.resolve(cwd, file));
+  const diagnostics = [
+    ...compiled.diagnostics,
+    ...(graph === null
+      ? []
+      : contextDiagnostics(parsed.workflow, {
+          workflowDir,
+          projectRoot: projectRootOf(workflowDir),
+        })),
+  ];
   const located: Diagnostic[] = [];
   for (const diagnostic of diagnostics) {
     const position = parsed.locate(diagnostic.path);

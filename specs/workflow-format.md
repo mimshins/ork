@@ -44,7 +44,9 @@ edges:
   - cycles that have no `maxRounds`;
   - an unknown `parent`;
   - message edges that point to missing nodes;
-  - skill references that don't resolve.
+  - skill and context references that don't resolve: paths are relative to the
+    workflow file, and built-in skills are `ork:<name>`
+    ([context](./context.md#references)).
 
 **Built-in node types in v1:**
 

@@ -2,6 +2,7 @@
 
 import { defineCommand } from "citty";
 
+import { context } from "./commands/context.ts";
 import { doctor } from "./commands/doctor.ts";
 import { init } from "./commands/init.ts";
 import { run } from "./commands/run.ts";
@@ -14,5 +15,13 @@ export const main = defineCommand({
     version: "0.0.0",
     description: "Orchestrate Claude agents on your machine",
   },
-  subCommands: { init, validate, run, worktrees, wt: worktrees, doctor },
+  subCommands: {
+    init,
+    validate,
+    run,
+    context,
+    worktrees,
+    wt: worktrees,
+    doctor,
+  },
 });

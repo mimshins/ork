@@ -1,7 +1,8 @@
 /**
  * @file Planning one Claude node's session: the rendered brief (and the task
- *   its owner delegated), the practices and Ork's harness instructions, tool
- *   rules from its isolation, limits, and the report schema.
+ *   its owner delegated), the practices, the compiled context layers and Ork's
+ *   harness instructions, its plugin and settings, tool rules from its
+ *   isolation, limits, and the report schema.
  */
 
 import {
@@ -10,6 +11,13 @@ import {
   type Workflow,
 } from "@krapht/ork-schema";
 
+import {
+  type ContextStack,
+  contextSections,
+  resolveContext,
+  sessionSettings,
+  writePlugin,
+} from "../context/index.ts";
 import { parseTemplate, renderTemplate } from "../expr/evaluate.ts";
 import { practiceInstructions, resolvePractices } from "../practices/index.ts";
 import { reportSchemaFor } from "../runtime/report.ts";
@@ -40,10 +48,24 @@ export type PlanOptions = {
   template?: string;
   /** A leader's children, when the run lets it delegate. */
   ownership?: Ownership;
+  /** The workflow file's folder, which skill and context paths start from. */
+  workflowDir?: string;
+  /** The project's root; references may not leave it. Default: `cwd`. */
+  projectRoot?: string;
+  /** Where to write the node's plugin; without it, no plugin is written. */
+  pluginDir?: string;
+  /** The user layer's home (`~`); tests pass a folder. */
+  home?: string;
 };
 
 export type PlanResult =
-  | { ok: true; spec: SessionSpec; driver: "sdk" | "cli"; warnings: string[] }
+  | {
+      ok: true;
+      spec: SessionSpec;
+      driver: "sdk" | "cli";
+      warnings: string[];
+      context: ContextStack;
+    }
   | { ok: false; error: string };
 
 /** Tells a session where it works, so a repo's own worktree rules don't apply. */
@@ -171,16 +193,33 @@ export const planNodeSession = (
     .filter(part => part !== "")
     .join("\n\n");
 
+  const projectRoot = options.projectRoot ?? options.cwd;
+  const context = resolveContext({
+    workflow,
+    nodeId: declared,
+    workflowDir: options.workflowDir ?? projectRoot,
+    projectRoot,
+    checkout: options.cwd,
+    ...(options.home === undefined ? {} : { home: options.home }),
+  });
+  const problem = context.diagnostics.find(d => d.severity === "error");
+  if (problem !== undefined) return { ok: false, error: problem.message };
+  warnings.push(...context.diagnostics.map(d => d.message));
+
   const spec: SessionSpec = {
     nodeId: id,
     cwd: options.cwd,
     prompt: prompt === "" ? "Do the task your role describes." : prompt,
-    // Practices first: they are the same for many nodes, so the cached prefix
-    // is shared; the node's own instructions come after.
+    // Shared before specific, for the prompt cache: the practices and the
+    // user and workflow context are the same for many nodes; Ork's harness
+    // and the node's own context come after.
     systemAppend: [
       ...practiceInstructions(resolvePractices(workflow, declared), options.cwd)
         .text,
+      ...contextSections(context.files, "user"),
+      ...contextSections(context.files, "workflow"),
       harnessInstructions(workflow, id, node, options),
+      ...contextSections(context.files, "node"),
     ].join("\n\n"),
     settingSources: ["project", "local"],
     tools: toolRules(node, isolation === "readonly"),
@@ -198,11 +237,23 @@ export const planNodeSession = (
     options.budgetLeftUsd,
   ].filter(b => b !== undefined);
   if (budgets.length > 0) spec.budgetUsd = Math.min(...budgets);
+  const plugin =
+    options.pluginDir === undefined
+      ? null
+      : writePlugin(
+          context,
+          options.pluginDir,
+          `Skills Ork compiled for ${id}`,
+        );
+  if (plugin !== null) spec.plugins = [plugin];
+  const settings = sessionSettings(context, options.cwd);
+  if (settings !== undefined) spec.settings = settings;
 
   return {
     ok: true,
     spec,
     driver: node.driver ?? defaults.driver ?? "sdk",
     warnings,
+    context,
   };
 };

@@ -98,6 +98,10 @@ export const buildSdkOptions = (
   if (spec.maxTurns !== undefined) options.maxTurns = spec.maxTurns;
   if (spec.budgetUsd !== undefined) options.maxBudgetUsd = spec.budgetUsd;
   if (spec.resume !== undefined) options.resume = spec.resume;
+  if (spec.plugins !== undefined) {
+    options.plugins = spec.plugins.map(dir => ({ type: "local", path: dir }));
+  }
+  if (spec.settings !== undefined) options.settings = spec.settings;
   return options;
 };
 
