@@ -262,8 +262,8 @@ export const MILESTONES = [
         title: "Logo",
         status: "done",
         detail:
-          "A phosphor fan mark: an amber owner node handing work down three fading green beams, with a wordmark for the README.",
-        commits: ["61bcdd9"],
+          "A phosphor fan mark: an amber owner node handing work down three fading green beams, with a pixel, monospaced wordmark for the README.",
+        commits: ["61bcdd9", "25435a9"],
         date: "2026-10-30",
         docs: ["assets/logo/README.md"],
       },
@@ -294,10 +294,12 @@ export const MILESTONES = [
       {
         id: "event-store",
         title: "Event store, `ork logs`, `ps`, `tree`",
-        status: "next",
+        status: "done",
         detail:
-          "Every run event in SQLite and a JSONL file per run, and the commands that replay them.",
-        docs: ["specs/messaging.md"],
+          "Every run event in `~/.ork/state.db` (built-in SQLite) and a JSONL file per run, secrets masked, and the commands that replay them; tool programs a workflow needs are checked before it starts.",
+        commits: ["41c35c9"],
+        date: "2026-10-30",
+        docs: ["specs/event-store.md", "decisions/ADR-024-event-store.md"],
       },
       {
         id: "bus",
@@ -318,7 +320,7 @@ export const MILESTONES = [
       {
         id: "decisions",
         title: "Decision queue and `ork decide`",
-        status: "planned",
+        status: "next",
         detail:
           "Every question, permission prompt and gate in one inbox, with the recommended answer preselected.",
         docs: ["specs/messaging.md"],
