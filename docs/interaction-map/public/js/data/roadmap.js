@@ -262,8 +262,8 @@ export const MILESTONES = [
         title: "Logo",
         status: "done",
         detail:
-          "A phosphor fan mark: an amber owner node handing work down three fading green beams, with a pixel, monospaced wordmark for the README.",
-        commits: ["61bcdd9", "25435a9"],
+          "A phosphor fan mark: an amber owner node handing work down three fading green beams, then the final prompt mark on the logotype's pixel grid, with the favicon and device icons.",
+        commits: ["61bcdd9", "25435a9", "902a563"],
         date: "2026-10-30",
         docs: ["assets/logo/README.md"],
       },
@@ -304,7 +304,7 @@ export const MILESTONES = [
       {
         id: "bus",
         title: "Message bus",
-        status: "planned",
+        status: "next",
         detail:
           "`send_message` and `read_inbox` along the ownership tree and declared channels, delivered between turns.",
         docs: ["specs/messaging.md"],
@@ -319,17 +319,20 @@ export const MILESTONES = [
       },
       {
         id: "decisions",
-        title: "Decision queue and `ork decide`",
-        status: "next",
+        title: "Decision queue, `ork decide`, `stop`, `--detach`",
+        status: "done",
         detail:
-          "Every question, permission prompt and gate in one inbox, with the recommended answer preselected.",
-        docs: ["specs/messaging.md"],
+          "Every question, permission prompt and gate in one inbox, answered from the run's terminal or `ork decide` in any other (first wins); `ork stop` and background runs, woken on a per-run socket.",
+        commits: ["393e7e3"],
+        date: "2026-10-30",
+        docs: ["specs/messaging.md", "specs/cli.md"],
       },
       {
         id: "chat",
-        title: "`ork chat`, `stop`, `resume`",
+        title: "`ork chat` and `ork resume`",
         status: "planned",
-        detail: "Talk to a node's live session, or resume a finished one.",
+        detail:
+          "Talk to a node's live session or resume a finished one, and continue a stopped or crashed run from its events.",
         docs: ["specs/cli.md"],
       },
       {
