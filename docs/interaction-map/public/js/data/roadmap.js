@@ -384,9 +384,24 @@ export const MILESTONES = [
       {
         id: "examples",
         title: "`software-factory` and `pr-review` examples",
-        status: "next",
-        detail: "Both run end to end on both drivers.",
-        docs: ["examples/software-factory.ork.yaml"],
+        status: "done",
+        detail:
+          "Both ran end to end on the CLI driver, locally, with every gate kept; the run showed readonly nodes after a leader need its worktree, now theirs.",
+        commits: ["ca3542a"],
+        date: "2026-10-31",
+        docs: [
+          "docs/guides/examples.md",
+          "examples/pr-review.ork.yaml",
+          "decisions/ADR-029-readonly-follows-its-input.md",
+        ],
+      },
+      {
+        id: "examples-sdk",
+        title: "The examples on the SDK driver",
+        status: "waiting",
+        detail:
+          "Needs `ANTHROPIC_API_KEY` (or Bedrock or Vertex) on the machine that runs it.",
+        docs: ["specs/gaps.md"],
       },
     ],
   },
@@ -463,6 +478,7 @@ export const OFF_ROADMAP = [
   "64e1c4b",
   "7f03734",
   "250b30e",
+  "a19864a",
 ];
 
 /** The day the roadmap was last brought up to date. */
