@@ -177,6 +177,11 @@ export const NODES = [
         node: "decisionQueue",
         label: "The decision queue in the architecture",
       },
+      {
+        map: "feedback",
+        node: "decisions",
+        label: "Proposed fixes and publish previews",
+      },
     ],
     docs: [DESIGN.messaging],
   },
@@ -192,6 +197,9 @@ export const NODES = [
     summary:
       "Messages and decisions are events like everything else, so the chat and decision history of a run can be replayed.",
     facts: ["Chats in the UI are views over these events."],
+    see: [
+      { map: "feedback", node: "events", label: "Feedback from run events" },
+    ],
     docs: [DESIGN.messaging],
   },
 
@@ -227,6 +235,7 @@ export const NODES = [
     facts: [
       "`send_message(to, body)`, `read_inbox()`, `ask_user(question, options, recommended, context)`, `report(...)`.",
       "Leaders: `delegate(child, brief)`, `spawn_worker(template, brief)`.",
+      "`feedback(kind, target, …)` reports what got in the way, capped per session.",
     ],
     see: [
       {
@@ -234,6 +243,7 @@ export const NODES = [
         node: "mcpTools",
         label: "The tools in the architecture",
       },
+      { map: "feedback", node: "tool", label: "The feedback tool" },
     ],
     docs: [DESIGN.messaging],
   },

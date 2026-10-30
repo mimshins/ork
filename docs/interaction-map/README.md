@@ -9,6 +9,7 @@ build as it goes. Pick one with the map switcher (`M`):
 | **Run lifecycle**           | One run of the `software-factory` example, from `ork run` to a merge, a review loop, or a decision.                      |
 | **Context and skills**      | The five layers and their precedence, and how one node's session is compiled.                                            |
 | **Messaging and decisions** | How nodes message each other and you, and how every question reaches one inbox.                                          |
+| **Feedback loop**           | How a run's friction is captured, grouped, and turned into fixes, lessons, or a post to Ork's Discussions (planned).     |
 
 Click any card or connection for what it is, what it holds and guarantees, what
 it talks to, and links into the repository. **Journeys** walk through a flow

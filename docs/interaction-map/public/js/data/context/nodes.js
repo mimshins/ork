@@ -113,8 +113,12 @@ export const NODES = [
     facts: [
       "The schema accepts `layers:` today; nothing reads it yet.",
       "Committed with the workflow, so everyone who runs it gets the same process.",
+      "Also the workflow's accepted lessons, `.ork/lessons/<workflow>.md`, up to 1,500 tokens (milestone 2).",
     ],
-    docs: [SCHEMA.workflow, SCHEMA.example],
+    see: [
+      { map: "feedback", node: "lessons", label: "Where lessons come from" },
+    ],
+    docs: [SCHEMA.workflow, SCHEMA.example, DESIGN.feedback],
   },
   {
     id: "nodeLayer",

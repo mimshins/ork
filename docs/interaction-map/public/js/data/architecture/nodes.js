@@ -132,7 +132,10 @@ export const NODES = [
       "Panels, in build order: monitor, logs, decisions, chats, designer, context inspector.",
       "Milestone 2.",
     ],
-    see: [{ map: "messaging", node: "inbox", label: "The decisions inbox" }],
+    see: [
+      { map: "messaging", node: "inbox", label: "The decisions inbox" },
+      { map: "feedback", node: "panel", label: "The feedback panel" },
+    ],
     docs: [DESIGN.ui],
   },
 
@@ -219,7 +222,10 @@ export const NODES = [
       "Adds `AGENTS.md` itself only when the repo has no `CLAUDE.md`.",
       "Writes Ork, user, workflow and node skills into a per-run local plugin.",
     ],
-    see: [{ map: "context", label: "The context map" }],
+    see: [
+      { map: "context", label: "The context map" },
+      { map: "feedback", node: "compiler", label: "Where lessons load" },
+    ],
     docs: [DESIGN.context],
   },
   {
@@ -259,6 +265,11 @@ export const NODES = [
     ],
     see: [
       { map: "messaging", node: "decisions", label: "Decisions in detail" },
+      {
+        map: "feedback",
+        node: "decisions",
+        label: "Proposed fixes and publish previews",
+      },
     ],
     docs: [DESIGN.messaging],
   },
@@ -313,6 +324,9 @@ export const NODES = [
       "Events such as `node.started`, `msg.sent`, `tool.called`, `usage`, `decision.opened`.",
       "Usage comes from each session's final result, so sub-agent tokens count.",
       "Streamed to the UI over SSE.",
+    ],
+    see: [
+      { map: "feedback", node: "events", label: "Feedback from run events" },
     ],
     docs: [DESIGN.messaging],
   },
@@ -369,7 +383,10 @@ export const NODES = [
       "Loaded with `settingSources: ['project', 'local']`; your user settings are never mixed in.",
       "`project.instructions` and `project.skills` in the workflow can inherit, ignore or allow-list it.",
     ],
-    see: [{ map: "context", node: "project", label: "The project layer" }],
+    see: [
+      { map: "context", node: "project", label: "The project layer" },
+      { map: "feedback", node: "repoFiles", label: "What a fix changes" },
+    ],
     docs: [DESIGN.context],
   },
   {
@@ -421,6 +438,7 @@ export const NODES = [
       "`gh` uses `gh auth login`; `aws` uses SSO or a profile (`profile`, `region` on the node).",
       "`ork doctor` reports whether each one is installed and signed in.",
     ],
+    see: [{ map: "feedback", node: "gh", label: "Publishing feedback" }],
     docs: [README.accounts],
   },
 
@@ -455,7 +473,7 @@ export const NODES = [
     summary:
       "The tools every Claude node gets for working inside the hierarchy: messaging, reporting, delegating, asking you, and claiming files.",
     facts: [
-      "`send_message`, `read_inbox`, `report`, `ask_user`, `claim`, `release`.",
+      "`send_message`, `read_inbox`, `report`, `ask_user`, `claim`, `release`, `feedback`.",
       "Leaders also get `delegate` and `spawn_worker`.",
       "In-process for the SDK driver; a local MCP server over HTTP for the CLI driver.",
     ],
@@ -465,6 +483,7 @@ export const NODES = [
         node: "mcpTools",
         label: "The tools in a conversation",
       },
+      { map: "feedback", node: "tool", label: "The feedback tool" },
     ],
     docs: [DESIGN.messaging, DESIGN.runtime],
   },

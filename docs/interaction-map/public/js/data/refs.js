@@ -28,6 +28,10 @@ export const DESIGN = {
     "docs/design.md#messaging-decisions-logs",
     "Design: messaging, decisions and logs",
   ),
+  feedback: d(
+    "docs/design.md#feedback-and-self-improvement",
+    "Design: feedback and self-improvement",
+  ),
   cli: d("docs/design.md#cli-milestone-1", "Design: the CLI commands"),
   ui: d(
     "docs/design.md#ui-milestone-2-ork-ui-on-localhost",

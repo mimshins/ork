@@ -10,6 +10,7 @@ two cards with `see`.
 | `lifecycle`    | Run lifecycle           | What happens, step by step, when you run a workflow?              | You · Ork engine · the run graph · Repo and GitHub                                 |
 | `context`      | Context and skills      | What does one node's session see, where from, and in what order?  | Layers · Context compiler · Session spec · The session and after                   |
 | `messaging`    | Messaging and decisions | How do nodes talk to each other and to you?                       | You · CLI and UI · Ork engine · Runtime · Node sessions                            |
+| `feedback`     | Feedback loop           | How does a run's friction become a fix, a lesson or a report?     | You · CLI and UI · Ork engine · Your machine · Claude runtime · GitHub             |
 
 ## Per map
 
@@ -44,6 +45,21 @@ You and the commands you chat and answer from; the bus, address check, priority
 gate and decision queue; `Session.send`, Ork's tools and the permission gate;
 three node sessions from the example. Journeys: a sibling message, `ask_user`, a
 permission prompt, and chatting with the builder.
+
+### `feedback`
+
+The planned feedback and self-improvement loop; nothing on it is built. The
+three sources (system signals from the event store, the agent's `feedback` tool,
+your notes), the recorder that masks and fingerprints them, and the local
+`feedback` table that groups records into items; `ork feedback` and its
+milestone-2 actions; the `ork:feedback-triage` workflow, fixes and lessons, and
+the publish preview, all through the decision queue; the lessons file the
+context compiler reads into the workflow layer, the repo files a fix changes,
+JSONL export, and your `gh` posting to the "Agent feedback" Discussions
+category. Capture is milestone 1d (`specified`); the rest is milestone 2
+(`planned`). Rows 1, 2 and 4 of "Your machine" and all but row 2 of "Claude
+runtime" stay empty as corridors. Journeys: an agent reports friction, triage
+then a lesson, applying a fix, and publishing to Ork's Discussions.
 
 ## Adding a map
 

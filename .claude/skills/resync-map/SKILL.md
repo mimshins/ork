@@ -10,7 +10,7 @@ with the code in this repository. Read `docs/interaction-map/sync.md` and
 `docs/interaction-map/content-style.md` first; follow `sync.md` step by step.
 
 Arguments (optional): a map id to limit the sync to (`architecture`,
-`lifecycle`, `context`, `messaging`).
+`lifecycle`, `context`, `messaging`, `feedback`).
 
 ## Procedure
 
