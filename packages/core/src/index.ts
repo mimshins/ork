@@ -5,6 +5,7 @@
  */
 
 export * from "./context/index.ts";
+export * from "./control/index.ts";
 export * from "./expr/evaluate.ts";
 export * from "./expr/parse.ts";
 export { compileWorkflow } from "./graph/compile.ts";

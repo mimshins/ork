@@ -11,38 +11,14 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import type { RunEvent } from "../run/types.ts";
+import { decisionQueries } from "./decisions.ts";
 import { maskReplacer } from "./mask.ts";
+import { migrate, type Row, text } from "./schema.ts";
 import type { EventStore, RunRecord, StoredRunStatus } from "./types.ts";
 
 /** `~/.ork/state.db`; `home` is `~` (tests pass a folder). */
 export const storePath = (home: string = homedir()): string =>
   path.join(home, ".ork", "state.db");
-
-const MIGRATIONS = [
-  `CREATE TABLE runs (
-     id TEXT PRIMARY KEY,
-     workflow TEXT NOT NULL,
-     file TEXT NOT NULL,
-     project TEXT NOT NULL,
-     status TEXT NOT NULL,
-     pid INTEGER NOT NULL,
-     started_at TEXT NOT NULL,
-     finished_at TEXT,
-     cost_usd REAL NOT NULL DEFAULT 0
-   );
-   CREATE INDEX runs_by_project ON runs (project, started_at);
-   CREATE TABLE events (
-     run_id TEXT NOT NULL REFERENCES runs (id),
-     seq INTEGER NOT NULL,
-     at TEXT NOT NULL,
-     type TEXT NOT NULL,
-     node TEXT,
-     data TEXT NOT NULL,
-     PRIMARY KEY (run_id, seq)
-   ) WITHOUT ROWID;`,
-];
-
-type Row = Record<string, unknown> | undefined;
 
 const STATUSES: readonly StoredRunStatus[] = [
   "running",
@@ -51,11 +27,6 @@ const STATUSES: readonly StoredRunStatus[] = [
   "budget_exhausted",
   "interrupted",
 ];
-
-const text = (row: Row, key: string): string => {
-  const value = row?.[key];
-  return typeof value === "string" ? value : "";
-};
 
 const statusOf = (value: string): StoredRunStatus =>
   STATUSES.find(s => s === value) ?? "failed";
@@ -82,20 +53,10 @@ const eventOf = (data: string): RunEvent =>
   JSON.parse(data) as RunEvent;
 
 /** The node an event is about, for filtering. */
-const nodeOf = (event: RunEvent): string | null =>
-  "id" in event && typeof event.id === "string" ? event.id : null;
-
-const migrate = (db: DatabaseSync): void => {
-  const version = Number(
-    db.prepare("PRAGMA user_version").get()?.["user_version"] ?? 0,
-  );
-  for (const [index, sql] of MIGRATIONS.entries()) {
-    if (index < version) continue;
-    db.exec("BEGIN");
-    db.exec(sql);
-    db.exec(`PRAGMA user_version = ${String(index + 1)}`);
-    db.exec("COMMIT");
-  }
+export const nodeOf = (event: RunEvent): string | null => {
+  if ("id" in event && typeof event.id === "string") return event.id;
+  if ("node" in event && typeof event.node === "string") return event.node;
+  return null;
 };
 
 /** Opens (and creates) the store at `file`; `:memory:` for tests. */
@@ -139,6 +100,7 @@ export const openStore = (file: string = storePath()): EventStore => {
   );
 
   return {
+    ...decisionQueries(db),
     begin: run => {
       const startedAt = new Date().toISOString();
       insertRun.run(

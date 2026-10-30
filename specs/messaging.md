@@ -2,9 +2,11 @@
 
 Status: **Partial**: `ask_user`, the permission prompt, `delegate` and
 `spawn_worker` are built
-([tools/](../packages/runtime-claude/src/tools/index.ts)), and so is the
-[event store](./event-store.md); the message bus and decision queue are
-specified for M1d.
+([tools/](../packages/runtime-claude/src/tools/index.ts)), and so are the
+[event store](./event-store.md), the decision queue, `ork decide`, `ork stop`
+and the run's socket ([control/](../packages/core/src/control/index.ts),
+[tests](../packages/core/test/control.test.ts)); the message bus is specified
+for M1d.
 
 **Ork MCP tools.** One registry
 ([tools/index.ts](../packages/runtime-claude/src/tools/index.ts)), one file per
@@ -35,22 +37,46 @@ prompt itself.
   messages and decision answers first. It is injected between turns through
   `Session.send`.
 
-**Decisions:**
+**Decisions** ([queue.ts](../packages/core/src/control/queue.ts)):
 
-- `ask_user` calls, permission prompts and `human.gate` nodes all become
-  Decision records, and the asking node waits.
-- Answer them in the CLI with `ork decide` (an interactive picker; the
-  recommended option is preselected) or in the UI inbox.
-- An optional `timeout` and `default` let unattended runs continue.
+- `ask_user` calls, permission prompts, `human.gate` nodes and exhausted loops
+  all become decision records in the store (`<run>-<n>`, the question masked
+  like events), with `decision.opened` in the run's events, and the asking node
+  waits.
+- The **first answer wins**: the run's own terminal (when it has one, with the
+  prompts below) races `ork decide` in any other terminal. The loser's prompt is
+  withdrawn, and `decision.answered` records the answer and who gave it
+  (`terminal` or `decide`).
+- A permission prompt is a decision with the options `allow` and `deny`; its
+  context is the tool's input (at most 400 characters).
+- A gate's `timeout` + `default` withdraws the question (`decision.withdrawn`)
+  and answers it by itself; so does a stopped run.
+- A run with no terminal (`ork run --detach`) waits for `ork decide`. A run
+  whose stdin is not a terminal but that is not detached (a pipe, CI) keeps the
+  terminal channel's rule: tools denied, the recommended option taken.
+- `ork decide` (in [cli.md](./cli.md#decisions-and-stopping)) lists the open
+  decisions of live runs and answers them; the UI inbox (M2) reads the same
+  table.
 
 **Event store:** every run event, in SQLite at `~/.ork/state.db` with a JSONL
 copy per run; logs, the system monitor, chats and replay are all views over it.
 See [Event store](./event-store.md).
 
-**Reaching a live run:** `ork decide`, `ork stop` and `ork chat` in another
-terminal write their answer or command to the store, and the run watches for it;
-a per-run local socket wakes the run at once
-([ADR-024](../decisions/ADR-024-event-store.md)).
+**Reaching a live run** ([control.ts](../packages/core/src/control/control.ts),
+[ADR-024](../decisions/ADR-024-event-store.md)): `ork decide` and `ork stop` in
+another terminal write their answer or command to the store; the run looks at
+the store every second, and at once when woken on its socket.
+
+- **The socket:** `~/.ork/sockets/<run>.sock`, one JSON message per line:
+  `{"type":"wake"}` makes the run look at the store now;
+  `{"type":"follow", "after": <seq>}` sends every stored event after `seq`, then
+  each new one, until the run ends (`ork logs --follow` uses it). It is removed
+  when the run ends; a stale one is replaced when a run with that id starts.
+- **Without the socket** (it could not listen, or the run is gone) nothing is
+  lost: the store has every answer, command and event.
+- **Commands:** `stop` interrupts the run as Ctrl-C does (`run.command` in its
+  events, then `run.finished` with `interrupted`). `ork chat` (M1d) adds
+  messages.
 
 **Chat:** `ork chat <run> <node>` (or the UI chat panel) sends a user message to
 a node's live session or resumes a finished one with `resume`.

@@ -56,6 +56,10 @@ workflow.
 
 ## During a run
 
+**A run seems stuck.** It may be waiting on a question: `ork decide --list`
+shows the open ones, and `ork logs <run>` shows `? asks: …` where it stopped. A
+detached run always waits for `ork decide`. To end it, `ork stop <run>`.
+
 **A loop used all its rounds.** Ork asks whether to stop (recommended), allow
 one more round, or carry on along the other edges. Raise `maxRounds` if it
 happens often, or tighten what the reviewers ask for.

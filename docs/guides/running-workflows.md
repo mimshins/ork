@@ -56,22 +56,46 @@ scripts. Ctrl-C stops the run and its sessions.
 
 ## Answering questions
 
-Three things can ask you something during a run, all on the terminal:
+Four things can ask you something during a run:
 
 - A **gate** (`human.gate`) in the workflow.
 - An agent calling **`ask_user`** when it needs a decision.
 - A **permission** prompt when an agent wants a tool that is not pre-approved.
+- A **loop** that used all its rounds: stop, one more round, or go on.
 
 For a question, the options are listed with the recommended one marked: press
 Enter to take it, or type a number or an option's id. For a permission, the
 prompt shows the tool and a preview of its input; type `y` to allow it, anything
 else denies it.
 
+You can also answer from **any other terminal** with `ork decide`: it lists the
+open questions of this project's running runs and asks them in turn. Whichever
+answers first wins; the other prompt goes away, and the transcript says who
+answered.
+
+```sh
+ork decide                          # answer them one by one
+ork decide --list                   # just look
+ork decide --id 3f2a91c0-1 --choose ship
+```
+
 When nobody is at the terminal (stdin is not a TTY, as in CI), tools are denied,
 questions take their recommended option, and a gate with a `timeout` takes its
 `default`.
 
-A shared inbox of pending decisions across runs (`ork decide`) is coming in M1d.
+## In the background
+
+```sh
+ork run release --detach        # prints the run id and returns
+ork logs 3f2a -f                # watch it live
+ork decide                      # its questions wait here
+ork stop 3f2a                   # stop it from anywhere
+```
+
+A detached run has no terminal, so its questions wait for `ork decide` (a gate
+with a `timeout` still takes its `default`). Its own output goes to
+`.ork/runs/<run>/output.log`. `ork stop` works on any running run, detached or
+not, as Ctrl-C does in its terminal.
 
 ## One node on its own
 
@@ -109,5 +133,4 @@ ork tree               # the ownership tree: each node's state, tokens and cost
 A run whose process died without finishing shows as `crashed`. Details:
 [Event store](../../specs/event-store.md).
 
-Coming later in M1d: `ork decide`, `ork chat`, `ork stop`, `ork resume`, and
-`ork run --detach`.
+Coming later in M1d: `ork chat` and `ork resume`.

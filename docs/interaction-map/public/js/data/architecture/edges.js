@@ -95,8 +95,8 @@ export const EDGES = [
     kind: "local",
     label: "`ork decide`",
     detail:
-      "An interactive picker over every pending decision; the recommended option is preselected.",
-    status: "specified",
+      "An interactive picker over every open decision of live runs; the answer goes to the store and the run is woken on its socket.",
+    status: "built",
     via: [
       [570, 396],
       [570, 636],

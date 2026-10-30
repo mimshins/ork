@@ -86,15 +86,13 @@ export const JOURNEYS = [
         title: "A decision opens",
         detail:
           "Logged as `decision.opened`; the tool call stays open, so `code` waits.",
-        status: "specified",
       },
       {
         from: "you",
         to: "decideCmd",
         title: "You run `ork decide`",
         detail:
-          "It shows every pending decision, with the recommended option preselected.",
-        status: "specified",
+          "It shows every open decision, with the recommended option preselected.",
         docs: [DESIGN.cli],
       },
       {
@@ -102,14 +100,12 @@ export const JOURNEYS = [
         to: "decisions",
         title: "You answer",
         detail: "The decision is resolved and logged.",
-        status: "specified",
       },
       {
         from: "decisions",
         to: "mcpTools",
         title: "The tool call returns your answer",
         detail: "`code` carries on with its review knowing what you meant.",
-        status: "specified",
       },
     ],
   },

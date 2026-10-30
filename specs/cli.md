@@ -2,7 +2,7 @@
 
 Status: **Partial**: `ork init`, `ork validate`, `ork doctor`, `ork run` (a
 whole workflow, or one node with `--node`), `ork ps`, `ork logs`, `ork tree`,
-`ork worktrees` and `ork context explain` are built
+`ork decide`, `ork stop`, `ork worktrees` and `ork context explain` are built
 ([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts)); the other commands are
 specified. Published as `@krapht/ork`
@@ -18,9 +18,10 @@ ork run <wf> --node <id> [--input k=v] [--driver sdk|cli] [--in-place] [--json]
 ork ps [--all] [--limit n] [--json]               # this project's runs, newest first
 ork logs [<run>] [--node n] [--follow] [--json]   # a run's transcript, replayed or live
 ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node
-ork decide [<run>]               # answer pending decisions
+ork decide [<run>] [--all] [--list] [--json] [--id <d> --choose <option>]  # answer open decisions
 ork chat <run> <node>
-ork stop|resume <run>
+ork stop [<run>]                 # stop a live run from any terminal
+ork resume <run>
 ork worktrees [list|clean]       # Ork's worktrees and branches; clean them up safely
 ork context explain <wf> <node> [--json]  # what one node's session loads, layer by layer
 ork feedback [list|show|dismiss] # local feedback items (triage, apply, lesson, publish: M2)
@@ -56,7 +57,10 @@ with the built-in node types
 - Tool nodes run as declared (their `allow` list is checked first); gates and
   questions use the terminal channel below.
 - Exit code 0 when the run succeeded, 1 otherwise. Ctrl-C interrupts the run.
-- `--detach` waits for the control channel (M1d, slice 2).
+- `--detach` starts the same run in the background with no terminal and prints
+  its id once it is recorded; its output goes to `.ork/runs/<run>/output.log`
+  and its questions wait for `ork decide`. Follow it with `ork logs <run> -f`.
+  Works with `--node` too.
 
 ## Running one node
 
@@ -84,8 +88,11 @@ with the built-in node types
 
 ### Questions and permissions on the terminal
 
-The CLI's `HumanChannel` ([human.ts](../packages/cli/src/human.ts)) prompts on
-stderr, one prompt at a time, until the decision queue (M1d) replaces it:
+Every question is a decision in the store ([messaging](./messaging.md)); the
+run's terminal ([human.ts](../packages/cli/src/human.ts)) answers it on stderr,
+one prompt at a time, unless `ork decide` in another terminal answers first
+(then the prompt is withdrawn and the transcript shows
+`→ <answer> (ork decide)`):
 
 - `ask_user` lists the options with the recommended one marked; Enter takes the
   recommended option, and a number or an option id picks one. An invalid answer
@@ -101,6 +108,24 @@ stderr, one prompt at a time, until the decision queue (M1d) replaces it:
 `ork ps`, `ork logs` and `ork tree` read the runs every project recorded; see
 [Event store: reading runs](./event-store.md#reading-runs). A run of one node
 (`--node`) is recorded too, as a run with that one node.
+
+## Decisions and stopping
+
+([control.ts](../packages/cli/src/commands/control.ts),
+[tests](../packages/cli/test/control.test.ts))
+
+- **`ork decide`** lists the open decisions of this project's live runs (`<run>`
+  for one run, `--all` for every project), oldest first, and asks each in turn
+  with the same picker as the terminal; the recommended option is the default.
+  The answer goes to the store, first one wins, and the run is woken on its
+  socket. `--list` (or no terminal) only lists them, `--json` prints them, and
+  `--id <decision> --choose <option>` answers one without a prompt. An option
+  that is not one of the decision's, or a decision already answered or
+  withdrawn, is refused with the reason. Decisions of crashed runs are not
+  listed.
+- **`ork stop [<run>]`** asks a live run to stop (this project's newest without
+  `<run>`), wakes it, and waits up to 15 s for it to end; a run that is not
+  running is refused with its status.
 
 ## Worktrees
 

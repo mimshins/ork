@@ -56,14 +56,17 @@ export type DecisionChoice = {
 };
 
 /**
- * How a session reaches the human: a permission prompt or a question. The CLI
- * implements it on the terminal; the decision queue replaces it in M1d.
+ * How a session reaches the human: a permission prompt or a question. In a run
+ * it is the decision queue, which records each one and takes the first answer
+ * from the terminal or `ork decide`.
  */
 export type HumanChannel = {
   permit: (request: {
     nodeId: string;
     toolName: string;
     input: Record<string, unknown>;
+    /** Withdraws the prompt, e.g. when another terminal answered it. */
+    signal?: AbortSignal;
   }) => Promise<{ allow: true } | { allow: false; message: string }>;
   ask: (question: {
     nodeId: string;

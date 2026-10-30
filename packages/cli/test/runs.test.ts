@@ -78,6 +78,7 @@ const setup = (overrides: Partial<RunWorkflowOptions> = {}) => {
     runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
     human: recommending,
     store,
+    home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
     out: line => {
       out.push(line);
     },

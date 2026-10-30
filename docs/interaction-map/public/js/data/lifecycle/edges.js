@@ -232,8 +232,8 @@ export const EDGES = [
     to: "inbox",
     kind: "human",
     label: "answer",
-    detail: "In `ork decide` or the UI inbox.",
-    status: "specified",
+    detail: "On the run's terminal or in `ork decide`; the UI inbox in M2.",
+    status: "partial",
     docs: [DESIGN.messaging],
   },
 ];

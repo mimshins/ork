@@ -17,6 +17,7 @@ import {
   RUNTIME,
   SCHEMA,
   WORKTREES,
+  CONTROL,
   STORE,
 } from "../refs.js";
 
@@ -104,8 +105,8 @@ export const NODES = [
       "Built: `ork init` scaffolds `.ork/` and never overwrites a file; `ork validate` prints schema, graph and skill or context reference diagnostics with file, line and column; `ork doctor` reports your own logins and never prints a token or your email.",
       "Built: `ork run <wf>` runs a whole workflow through the scheduler, and `--node <id>` one Claude node; questions and permission prompts are answered on the terminal.",
       "Built: `ork worktrees` lists the worktrees and `ork/` branches runs left, and `clean` removes them, asking first.",
-      "Specified: `ps`, `logs --follow`, `tree`, `stop`, `resume` to watch and steer runs.",
-      "`ork decide` answers pending decisions; the recommended option is preselected.",
+      "Built: `ps`, `logs --follow`, `tree` read runs from the store; `run --detach` runs in the background; `stop` stops a live run from any terminal.",
+      "Built: `ork decide` answers open decisions from any terminal; the recommended option is preselected. Specified: `chat`, `resume`.",
       "Built: `ork context explain <wf> <node>` shows the resolved layer stack for one node.",
     ],
     see: [{ map: "lifecycle", node: "cli", label: "The CLI in a run" }],
@@ -287,14 +288,16 @@ export const NODES = [
     zone: "core",
     x: 880,
     y: 600,
-    status: "specified",
+    status: "built",
     pkg: "core",
+    src: "packages/core/src/control/queue.ts",
     summary:
-      "Every question for you, from every node: `ask_user` calls, permission prompts and `human.gate` nodes. The asking node waits until it is answered or times out.",
+      "Every question for you, from every node: `ask_user` calls, permission prompts, `human.gate` nodes and exhausted loops. Each is a record in the store; the asking node waits until it is answered or withdrawn.",
     facts: [
       "A decision has a question, options, a recommended option and context.",
-      "An optional `timeout` and `default` let unattended runs continue.",
-      "Answered from `ork decide` or the UI inbox.",
+      "First answer wins: the run's terminal races `ork decide` in any other terminal; the loser's prompt is withdrawn.",
+      "An optional `timeout` and `default` let unattended runs continue; a detached run waits for `ork decide`.",
+      "The UI inbox (M2) reads the same records.",
     ],
     see: [
       { map: "messaging", node: "decisions", label: "Decisions in detail" },
@@ -304,7 +307,7 @@ export const NODES = [
         label: "Proposed fixes and publish previews",
       },
     ],
-    docs: [DESIGN.messaging],
+    docs: [DESIGN.messaging, CONTROL.queue, CONTROL.control, CONTROL.tests],
   },
   {
     id: "worktreeMgr",

@@ -13,6 +13,7 @@ import {
   NODE_TYPES,
   SCHEMA,
   WORKTREES,
+  CONTROL,
   STORE,
 } from "../refs.js";
 
@@ -95,7 +96,7 @@ export const NODES = [
       "Starts a run of a workflow file with its inputs, and follows it until it ends or you detach.",
     facts: [
       "Built: `ork run <wf>` runs the whole workflow, and `--node <id>` one Claude node on its own; `--input`, `--driver`, `--in-place` and `--json` work for both.",
-      "Specified: `--detach` returns at once; `ork logs --follow` and `ork tree` (built) watch it later.",
+      "Built: `--detach` returns at once; `ork logs --follow`, `ork tree`, `ork decide` and `ork stop` reach it later.",
       "Built: before anything starts, it checks that the programs the tool nodes run are installed; integrations a workflow does not use are never needed.",
       "`--driver sdk|cli` overrides every node's driver for this run.",
     ],
@@ -189,17 +190,20 @@ export const NODES = [
     zone: "engine",
     x: 320,
     y: 840,
-    status: "specified",
+    status: "partial",
     pkg: "core",
+    src: "packages/core/src/control/queue.ts",
     summary:
       "Questions waiting for you, from every node of every run, each with its options and a recommended answer.",
     facts: [
+      "Built: answered on the run's terminal or with `ork decide` from any other; the first answer wins.",
       "A gate with `timeout` and `default` answers itself when the time runs out.",
+      "Planned: the UI inbox (M2).",
     ],
     see: [
       { map: "messaging", node: "decisions", label: "Decisions in detail" },
     ],
-    docs: [DESIGN.messaging],
+    docs: [DESIGN.messaging, CONTROL.queue, CONTROL.commands],
   },
 
   // ── The run graph ────────────────────────────────────────────────────────

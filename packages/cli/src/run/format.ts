@@ -163,6 +163,26 @@ export const formatRunEvent = (
       `${tag(event.id)} ${event.action === "conflict" ? style("yellow", `! ${line}`) : style("dim", `⎇ ${line}`)}`,
     ];
   }
+  if (event.type === "decision.opened") {
+    const what = event.kind === "permission" ? "asks to" : "asks:";
+    const question =
+      event.kind === "permission"
+        ? event.question.replace(/^Allow /u, "run ").replace(/\?$/u, "")
+        : event.question;
+    return [
+      `${tag(event.node)} ${style(["yellow", "bold"], "?")} ${what} ${question} ${style("dim", `(decision ${event.decision}; ork decide)`)}`,
+    ];
+  }
+  if (event.type === "decision.answered") {
+    const by = event.by === "decide" ? "ork decide" : "terminal";
+    return [`${tag(event.node)} ${style("dim", `→ ${event.answer} (${by})`)}`];
+  }
+  if (event.type === "decision.withdrawn") {
+    return [`${tag(event.node)} ${style("dim", "→ question withdrawn")}`];
+  }
+  if (event.type === "run.command") {
+    return [style(["yellow", "bold"], `! ork ${event.command} received`)];
+  }
   return formatRunResult(event.result);
 };
 

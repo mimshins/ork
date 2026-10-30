@@ -62,9 +62,9 @@ A join outputs `statuses` (the `status` of each input that ran, in edge order),
   edges leaves a DAG, and dead paths only travel along the DAG.
 - A loop edge whose condition holds is taken until it has been taken `maxRounds`
   times in the run. Then the run emits `loop.exhausted` and asks the
-  `HumanChannel`: **stop** the run (recommended, and the answer when no one is
-  at the terminal), allow **one more round**, or go **onward** along the other
-  edges.
+  `HumanChannel` (a decision): **stop** the run (recommended, and the answer
+  when no one is at the terminal), allow **one more round**, or go **onward**
+  along the other edges.
 - A re-entered **worker** starts a fresh session whose brief ends with a
   `## Round n` section carrying its input (e.g. the join's `statuses` and
   `results`), so reviews stay unbiased.

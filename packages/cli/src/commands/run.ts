@@ -11,8 +11,9 @@ import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
 import { style, write } from "../output.ts";
+import { DETACHED_ENV, detachRun } from "../run/detach.ts";
 import { runNode } from "../run/node.ts";
-import { runWorkflowFile } from "../run/workflow.ts";
+import { newRunId, runWorkflowFile } from "../run/workflow.ts";
 import { resolveWorkflowArg } from "../workflows.ts";
 
 export const flagValues = (
@@ -83,6 +84,16 @@ export const run = defineCommand({
       description: "Print the events as JSON lines",
       default: false,
     },
+    detach: {
+      type: "boolean",
+      description:
+        "Run in the background; follow it with ork logs -f, answer with ork decide",
+      default: false,
+    },
+    "run-id": {
+      type: "string",
+      description: "Internal: the id `--detach` picked for the run",
+    },
   },
   run: async ({ args, rawArgs }) => {
     if (args.driver !== undefined && !isDriver(args.driver)) {
@@ -93,12 +104,43 @@ export const run = defineCommand({
       return;
     }
     const cwd = process.cwd();
-    const human = createTerminalHuman({
-      input: process.stdin,
-      output: process.stderr,
-      interactive: process.stdin.isTTY,
-    });
     const store = openStore();
+    if (args.detach) {
+      try {
+        const single = args.node !== undefined && args.node !== "";
+        const detached = await detachRun({
+          store,
+          runId: newRunId(store, single ? "node-" : ""),
+          rawArgs,
+          cwd,
+        });
+        if (detached.ok) {
+          write(`▸ run ${detached.runId} started in the background`);
+          write(
+            style(
+              "dim",
+              `  ork logs ${detached.runId} -f · ork tree ${detached.runId} · ork decide · ork stop ${detached.runId}`,
+            ),
+          );
+        } else {
+          writeErr(detached.error);
+          writeErr(style("dim", `(output: ${detached.log})`));
+          process.exitCode = 1;
+        }
+      } finally {
+        store.close();
+      }
+      return;
+    }
+    // A detached run has no terminal: its questions wait for `ork decide`.
+    const human =
+      process.env[DETACHED_ENV] === "1"
+        ? undefined
+        : createTerminalHuman({
+            input: process.stdin,
+            output: process.stderr,
+            interactive: process.stdin.isTTY,
+          });
     const common = {
       file: resolveWorkflowArg(args.workflow, cwd),
       cwd,
@@ -106,8 +148,9 @@ export const run = defineCommand({
       inPlace: args["in-place"],
       json: args.json,
       runtime: loadRuntime,
-      human,
       store,
+      ...(human === undefined ? {} : { human }),
+      ...(args["run-id"] === undefined ? {} : { runId: args["run-id"] }),
       out: write,
       err: writeErr,
       ...(args.driver === undefined ? {} : { driver: args.driver }),
@@ -139,7 +182,7 @@ export const run = defineCommand({
             });
       process.exitCode = exitCode;
     } finally {
-      human.close();
+      human?.close();
       store.close();
     }
   },

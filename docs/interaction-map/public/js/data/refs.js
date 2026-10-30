@@ -108,6 +108,25 @@ export const STORE = {
   adr: d("decisions/ADR-024-event-store.md", "ADR-024: the event store"),
 };
 
+export const CONTROL = {
+  queue: d("packages/core/src/control/queue.ts", "Code: the decision queue"),
+  control: d(
+    "packages/core/src/control/control.ts",
+    "Code: a live run's watcher and control",
+  ),
+  socket: d("packages/core/src/control/socket.ts", "Code: the run's socket"),
+  tests: d(
+    "packages/core/test/control.test.ts",
+    "Tests: decisions and the socket",
+  ),
+  commands: d(
+    "packages/cli/src/commands/control.ts",
+    "Code: `ork decide` and `ork stop`",
+  ),
+  detach: d("packages/cli/src/run/detach.ts", "Code: `ork run --detach`"),
+  cliTests: d("packages/cli/test/control.test.ts", "Tests: decide and stop"),
+};
+
 export const ENGINE = {
   scheduler: d("packages/core/src/run/scheduler.ts", "Code: the scheduler"),
   routing: d(

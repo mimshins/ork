@@ -59,8 +59,9 @@ export const EDGES = [
     to: "decisions",
     kind: "local",
     label: "resolve",
-    detail: "Resolves the decision with your option; the waiting call returns.",
-    status: "specified",
+    detail:
+      "Writes your option to the store (first answer wins) and wakes the run on its socket; the waiting call returns.",
+    status: "built",
   },
   {
     id: "inbox-decisions",

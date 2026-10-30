@@ -409,7 +409,13 @@ export const MILESTONES = [
  *
  * @type {string[]}
  */
-export const OFF_ROADMAP = ["9785a0b", "84bad82", "0fccdc7", "5e045ab"];
+export const OFF_ROADMAP = [
+  "9785a0b",
+  "84bad82",
+  "0fccdc7",
+  "5e045ab",
+  "ce72ab7",
+];
 
 /** The day the roadmap was last brought up to date. */
 export const ROADMAP_UPDATED = "2026-10-30";

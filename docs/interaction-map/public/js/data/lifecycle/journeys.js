@@ -182,14 +182,13 @@ export const JOURNEYS = [
         title: "The gate opens a decision",
         detail:
           '"The approver escalated. Merge anyway?" with `merge` and `reject`, and `reject` recommended.',
-        status: "partial",
       },
       {
         from: "you",
         to: "inbox",
         title: "You choose",
         detail:
-          "`ork decide` preselects the recommendation; in the UI it is one click.",
+          "The terminal or `ork decide` preselects the recommendation; in the UI (M2) it is one click.",
         status: "partial",
         docs: [DESIGN.messaging],
       },

@@ -56,9 +56,9 @@ parts fit together is the [interaction map](./interaction-map/README.md).
   - Worktree manager.
   - Context compiler and layer precedence; `ork context explain`.
 - **M1d: human loop** (in progress; built: the
-  [event store](../specs/event-store.md) with `ps`, `logs`, `tree`). Message
-  bus, decisions; `decide`, `chat`, `stop`, `resume`. Ship the
-  `software-factory` and `pr-review` examples.
+  [event store](../specs/event-store.md) with `ps`, `logs`, `tree`; the decision
+  queue with `decide`, `stop` and `run --detach`). Message bus; `chat`,
+  `resume`. Ship the `software-factory` and `pr-review` examples.
   - Feedback capture: the `feedback` tool, system signals, the local table and
     fingerprints, `ork feedback list | show | dismiss`.
 - **M2: UI.**

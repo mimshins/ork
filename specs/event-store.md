@@ -1,10 +1,11 @@
 # Event store: what a run keeps
 
-Status: **Partial**: the store, the recorder, `ork ps`, `ork logs` and
-`ork tree` are built ([store/](../packages/core/src/store/index.ts),
+Status: **Partial**: the store, the recorder, decisions and commands, `ork ps`,
+`ork logs` and `ork tree` are built
+([store/](../packages/core/src/store/index.ts),
 [tests](../packages/core/test/store.test.ts),
-[CLI tests](../packages/cli/test/runs.test.ts)); decisions, commands from other
-processes, messages and feedback records are specified for the rest of M1d. Why:
+[CLI tests](../packages/cli/test/runs.test.ts)); messages and feedback records
+are specified for the rest of M1d. Why:
 [ADR-024](../decisions/ADR-024-event-store.md).
 
 Every run, a whole workflow or one node (`ork run --node`), is recorded as it
@@ -33,8 +34,14 @@ all views over the same events.
 - **An event:** the run, a sequence number (1, 2, 3, … in the run), the time,
   and the [run event](./scheduler.md#run-events) itself. Events are only
   appended, never changed.
-- **Before the terminal:** each event is stored, then printed, so a crash loses
-  at most the event in flight.
+- **Before the terminal:** each event is stored, then printed (and sent to the
+  run's socket followers), so a crash loses at most the event in flight.
+- **Decisions and commands** have tables of their own: a decision's question,
+  options, recommended option, status (`open`, `answered`, `withdrawn`), answer
+  and who answered; a command's kind (`stop`) and when the run handled it. The
+  run events `decision.opened`, `decision.answered`, `decision.withdrawn` and
+  `run.command` record the same in the run's stream
+  ([messaging](./messaging.md)).
 - **A run that never starts** (an invalid workflow, a missing input or program,
   an unclean checkout) is not recorded.
 
@@ -53,8 +60,9 @@ records use the same patterns.
   with the project; `--limit n` (default 20); `--json`.
 - **`ork logs [<run>]`** prints the run's transcript, line for line what
   `ork run` printed. `--node <id>` keeps one node's events; `--follow` (`-f`)
-  keeps printing a live run's events until it finishes or its process is gone;
-  `--json` prints the stored events.
+  keeps printing a live run's events, pushed over the run's socket (or polled
+  every 250 ms without one), until it finishes or its process is gone; `--json`
+  prints the stored events.
 - **`ork tree [<run>]`** draws the ownership tree from `run.started`'s declared
   nodes, with spawned workers (`<template>-<n>`) under the leader that spawned
   them: each node's state (waiting, running, ok, failed, skipped), its verdict,
@@ -64,11 +72,5 @@ records use the same patterns.
 
 ## Specified for M1d
 
-- **Decisions** (`decision.opened`, `decision.answered`) and **commands** from
-  other processes (`ork decide`, `ork stop`, `ork chat`) go through the store;
-  the run watches for them, and a per-run local socket wakes it at once
-  ([messaging](./messaging.md)).
-- `ork logs --follow` polls the store every 250 ms until that socket can push
-  events instead.
-- Messages (`msg.sent`), claims, feedback records and `run.resumed` are run
-  events like the others.
+Messages (`msg.sent`), claims, feedback records and `run.resumed` are run events
+like the others.

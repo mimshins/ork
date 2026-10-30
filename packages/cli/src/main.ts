@@ -3,6 +3,7 @@
 import { defineCommand } from "citty";
 
 import { context } from "./commands/context.ts";
+import { decide, stop } from "./commands/control.ts";
 import { doctor } from "./commands/doctor.ts";
 import { init } from "./commands/init.ts";
 import { run } from "./commands/run.ts";
@@ -23,6 +24,8 @@ export const main = defineCommand({
     ps,
     logs,
     tree,
+    decide,
+    stop,
     context,
     worktrees,
     wt: worktrees,

@@ -1,19 +1,21 @@
 /**
  * @file The scheduler's ports and events. The engine runs a compiled graph;
  *   what each node type does is a `NodeExecutor` supplied by
- *   `@krapht/ork-nodes`, and every change is a `RunEvent` (persisted by the
- *   event store in M1d).
+ *   `@krapht/ork-nodes`, and every change is a `RunEvent`, which the event
+ *   store keeps.
  */
 
 import type { Node, NodeType, Workflow } from "@krapht/ork-schema";
 
 import type { CompiledGraph } from "../graph/types.ts";
 import type {
+  DecisionChoice,
   HumanChannel,
   Ownership,
   RuntimeEvent,
   SessionUsage,
 } from "../runtime/types.ts";
+import type { AnsweredBy, DecisionKind, RunCommand } from "../store/types.ts";
 
 export type Inputs = Record<string, string | number | boolean>;
 
@@ -182,6 +184,25 @@ export type RunEvent =
       branch: string;
       detail?: string;
     }
+  | {
+      type: "decision.opened";
+      node: string;
+      decision: string;
+      kind: DecisionKind;
+      question: string;
+      options: DecisionChoice[];
+      recommended?: string;
+    }
+  | {
+      type: "decision.answered";
+      node: string;
+      decision: string;
+      answer: string;
+      by: AnsweredBy;
+    }
+  | { type: "decision.withdrawn"; node: string; decision: string }
+  /** Another process asked the run to do something, e.g. `ork stop`. */
+  | { type: "run.command"; command: RunCommand }
   | { type: "run.finished"; result: RunResult };
 
 export type RunOptions = {

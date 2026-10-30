@@ -5,7 +5,7 @@
  *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
  */
 
-import { CLI, DESIGN, RUNTIME, SCHEMA } from "../refs.js";
+import { CLI, CONTROL, DESIGN, RUNTIME, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -74,12 +74,16 @@ export const NODES = [
     zone: "surfaces",
     x: 320,
     y: 600,
-    status: "specified",
+    status: "built",
     pkg: "cli",
+    src: "packages/cli/src/commands/control.ts",
     summary:
-      "Lists every pending decision across runs and lets you answer each with its options; the recommended one is preselected.",
-    facts: ["`ork decide <run>` limits it to one run."],
-    docs: [DESIGN.cli],
+      "Lists every open decision of this project's live runs and lets you answer each with its options; the recommended one is preselected.",
+    facts: [
+      "`ork decide <run>` limits it to one run, `--all` to every project; `--id … --choose …` answers without a prompt.",
+      "The first answer wins, whether from here or the run's own terminal.",
+    ],
+    docs: [DESIGN.cli, CONTROL.commands, CONTROL.cliTests],
   },
   {
     id: "inbox",
@@ -163,13 +167,15 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 600,
-    status: "specified",
+    status: "built",
     pkg: "core",
+    src: "packages/core/src/control/queue.ts",
     summary:
       "Every open question for you. The node that asked waits; the answer goes back to exactly that call.",
     facts: [
-      "Question, options (each with an optional description), recommended option, context.",
-      "Optional `timeout` and `default` for unattended runs.",
+      "Question, options (each with an optional description), recommended option, context; stored in `~/.ork/state.db`.",
+      "Optional `timeout` and `default` for unattended runs; a withdrawn question is closed unanswered.",
+      "Other processes write answers to the store and wake the run on its socket.",
     ],
     see: [
       {
@@ -183,7 +189,7 @@ export const NODES = [
         label: "Proposed fixes and publish previews",
       },
     ],
-    docs: [DESIGN.messaging],
+    docs: [DESIGN.messaging, CONTROL.queue, CONTROL.control, CONTROL.tests],
   },
   {
     id: "events",

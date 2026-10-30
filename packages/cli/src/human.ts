@@ -1,7 +1,8 @@
 /**
  * @file The terminal `HumanChannel`: answers `ask_user` questions, gates and
  *   permission prompts on the terminal, one at a time, and denies or defers
- *   when no one is there. The decision queue (M1d) replaces it.
+ *   when no one is there. In a run it is the decision queue's local answerer,
+ *   racing `ork decide`.
  */
 
 import { createInterface, type Interface } from "node:readline/promises";
@@ -75,8 +76,8 @@ const optionLine = (
 
 /**
  * Answers permission prompts and `ask_user` questions on the terminal, one at a
- * time. Without a terminal it denies tools and leaves questions to the node.
- * The decision queue (M1d) replaces it.
+ * time. Without a terminal it denies tools and leaves questions to the node. A
+ * withdrawn prompt (answered elsewhere) rejects, which frees the turn.
  */
 export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
   let rl: Interface | undefined;
@@ -114,8 +115,11 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
   };
 
   return {
-    permit: ({ nodeId, toolName, input }) =>
+    permit: ({ nodeId, toolName, input, signal }) =>
       oneAtATime(async () => {
+        if (signal?.aborted === true) {
+          throw new Error("the prompt was withdrawn");
+        }
         say(
           `${style(["yellow", "bold"], "?")} ${style("bold", nodeId)} wants to run ${previewInput(toolName, input)}`,
         );
@@ -123,7 +127,9 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
           say(style("dim", `  denied: ${NO_ONE_TO_PERMIT}`));
           return { allow: false, message: NO_ONE_TO_PERMIT };
         }
-        const answer = (await prompt("  Allow? [y/N] ")).trim().toLowerCase();
+        const answer = (await prompt("  Allow? [y/N] ", signal))
+          .trim()
+          .toLowerCase();
         return answer === "y" || answer === "yes"
           ? { allow: true }
           : { allow: false, message: "The user did not allow this tool." };

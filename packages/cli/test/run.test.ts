@@ -85,6 +85,7 @@ const options = (overrides: Partial<RunNodeOptions>) => {
     runtime,
     human: recommending,
     store: openStore(":memory:"),
+    home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
     out: line => {
       out.push(line);
     },
@@ -344,6 +345,7 @@ const pipeline = (overrides: Partial<RunWorkflowOptions>) => {
     runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
     human: recommending,
     store: openStore(":memory:"),
+    home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
     out: line => {
       out.push(line);
     },

@@ -11,6 +11,7 @@ import {
   type ClaudeRuntime,
   createRecorder,
   createWorkspace,
+  startControl,
   type EventStore,
   inspectProject,
   type RunEvent,
@@ -48,7 +49,11 @@ export type RunWorkflowOptions = {
   /** Print the run's events as JSON lines instead of a transcript. */
   json: boolean;
   runtime: (driver: Driver) => Promise<ClaudeRuntime>;
-  human: HumanChannel;
+  /**
+   * The run's own terminal; it races `ork decide` for every question. None for
+   * a detached run, whose questions wait for `ork decide`.
+   */
+  human?: HumanChannel;
   out: (line: string) => void;
   err: (line: string) => void;
   /** Where the run is recorded (`~/.ork/state.db`; tests pass their own). */
@@ -60,6 +65,12 @@ export type RunWorkflowOptions = {
    * real runner.
    */
   installed?: (program: string) => boolean;
+  /** The run's id; `ork run --detach` picks it before the run starts. */
+  runId?: string;
+  /** `~`, for the run's socket; tests pass a folder. */
+  home?: string;
+  /** How often the run looks at the store for answers and commands. */
+  intervalMs?: number;
   onRun?: (handle: RunHandle) => void;
 };
 
@@ -80,10 +91,10 @@ export const missingProgramMessage = (
   "Install them, or take those nodes out. Integrations are optional: only the ones a workflow uses must be installed (`ork doctor` shows what you have).",
 ];
 
-/** A run id no stored run has yet. */
-const newRunId = (store: EventStore): string => {
+/** A run id no stored run has yet; `node-…` for a run of one node. */
+export const newRunId = (store: EventStore, prefix = ""): string => {
   for (;;) {
-    const id = randomUUID().slice(0, 8);
+    const id = `${prefix}${randomUUID().slice(0, 8)}`;
     if (store.lookup(id).length === 0) return id;
   }
 };
@@ -152,7 +163,7 @@ export const runWorkflowFile = async (
     cwd = gitProject.root;
   }
 
-  const runId = newRunId(options.store);
+  const runId = options.runId ?? newRunId(options.store);
   const record = createRecorder(
     options.store,
     {
@@ -165,8 +176,26 @@ export const runWorkflowFile = async (
   );
   const width = Math.max(...Object.keys(workflow.nodes).map(id => id.length));
   const tools = new Map<string, string>();
+  const started = Promise.withResolvers<RunHandle>();
+  const control = await startControl({
+    store: options.store,
+    runId,
+    emit: event => {
+      onEvent(event);
+    },
+    onStop: () => {
+      void (async () => {
+        (await started.promise).interrupt();
+      })();
+    },
+    ...(options.human === undefined ? {} : { local: options.human }),
+    ...(options.home === undefined ? {} : { home: options.home }),
+    ...(options.intervalMs === undefined
+      ? {}
+      : { intervalMs: options.intervalMs }),
+  });
   const onEvent = (event: RunEvent): void => {
-    record(event);
+    control.publish(record(event));
     if (options.json) {
       options.out(JSON.stringify(event));
       return;
@@ -197,13 +226,15 @@ export const runWorkflowFile = async (
     inputs: inputs.inputs,
     cwd,
     executors: builtinExecutors(executorOptions),
-    human: options.human,
+    human: control.human,
     onEvent,
     workflowDir: path.dirname(path.resolve(options.cwd, options.file)),
     projectRoot: workspace === undefined ? projectRootOf(cwd) : cwd,
     ...(workspace === undefined ? {} : { workspace }),
   });
+  started.resolve(handle);
   options.onRun?.(handle);
   const result = await handle.done;
+  await control.close();
   return { exitCode: result.status === "succeeded" ? 0 : 1, result };
 };

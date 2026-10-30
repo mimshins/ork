@@ -4,7 +4,6 @@
  *   node.
  */
 
-import { randomUUID } from "node:crypto";
 import path from "node:path";
 
 import {
@@ -12,6 +11,8 @@ import {
   createRecorder,
   type EventStore,
   type HumanChannel,
+  type RunEvent,
+  startControl,
   parseInputPairs,
   planNodeSession,
   projectRootOf,
@@ -25,6 +26,7 @@ import type { Driver } from "@krapht/ork-schema";
 import { formatReport, loadWorkflow } from "../commands/validate.ts";
 import { style } from "../output.ts";
 import { formatEvent } from "./format.ts";
+import { newRunId } from "./workflow.ts";
 
 export type RunNodeOptions = {
   file: string;
@@ -38,7 +40,12 @@ export type RunNodeOptions = {
   /** Print the runtime events as JSON lines instead of a transcript. */
   json: boolean;
   runtime: (driver: Driver) => Promise<ClaudeRuntime>;
-  human: HumanChannel;
+  /** The terminal; it races `ork decide`. None: questions wait for `ork decide`. */
+  human?: HumanChannel;
+  /** `~`, for the run's socket; tests pass a folder. */
+  home?: string;
+  /** The run's id; `ork run --detach` picks it before the run starts. */
+  runId?: string;
   /** Where the run is recorded (`~/.ork/state.db`; tests pass their own). */
   store: EventStore;
   out: (line: string) => void;
@@ -77,7 +84,7 @@ export const runNode = async (
   if (!inputs.ok) return failed(inputs.errors);
 
   const projectRoot = projectRootOf(options.cwd);
-  const runId = `node-${randomUUID().slice(0, 8)}`;
+  const runId = options.runId ?? newRunId(options.store, "node-");
   const runDir = path.join(projectRoot, ".ork", "runs", runId);
   const plan = planNodeSession(workflow, options.nodeId, {
     cwd: options.cwd,
@@ -93,7 +100,7 @@ export const runNode = async (
   }
 
   const id = options.nodeId;
-  const record = createRecorder(
+  const recorder = createRecorder(
     options.store,
     {
       id: runId,
@@ -103,6 +110,22 @@ export const runNode = async (
     },
     runDir,
   );
+  const started = Promise.withResolvers<Session>();
+  const control = await startControl({
+    store: options.store,
+    runId,
+    emit: event => {
+      record(event);
+    },
+    onStop: () => {
+      void started.promise.then(session => session.interrupt());
+    },
+    ...(options.human === undefined ? {} : { local: options.human }),
+    ...(options.home === undefined ? {} : { home: options.home }),
+  });
+  const record = (event: RunEvent): void => {
+    control.publish(recorder(event));
+  };
   const nodeType = workflow.nodes[id]?.type ?? "claude.worker";
   record({
     type: "run.started",
@@ -114,7 +137,8 @@ export const runNode = async (
   record({ type: "node.started", id, nodeType, round: 1 });
 
   const runtime = await options.runtime(options.driver ?? plan.driver);
-  const session = runtime.start(plan.spec, { human: options.human });
+  const session = runtime.start(plan.spec, { human: control.human });
+  started.resolve(session);
   options.onSession?.(session);
 
   const tools = new Map<string, string>();
@@ -159,6 +183,7 @@ export const runNode = async (
       worktrees: [],
     },
   });
+  await control.close();
   return { exitCode: succeeded(outcome) ? 0 : 1, outcome };
 };
 
