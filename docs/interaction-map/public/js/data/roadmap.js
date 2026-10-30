@@ -333,10 +333,20 @@ export const MILESTONES = [
       },
       {
         id: "chat",
-        title: "`ork chat` and `ork resume`",
+        title: "`ork chat`",
+        status: "done",
+        detail:
+          "Talk to a node while it runs (your message reaches it at its next step) or after, by resuming its own session; the exchange goes in the run's log.",
+        commits: ["8491499"],
+        date: "2026-10-30",
+        docs: ["specs/cli.md", "specs/messaging.md#chat"],
+      },
+      {
+        id: "resume",
+        title: "`ork resume`",
         status: "next",
         detail:
-          "Talk to a node's live session or resume a finished one, and continue a stopped or crashed run from its events.",
+          "Continue a stopped or crashed run from its events: finished nodes keep their outputs, the rest run again.",
         docs: ["specs/cli.md"],
       },
       {
@@ -423,6 +433,7 @@ export const OFF_ROADMAP = [
   "5e045ab",
   "ce72ab7",
   "a1bf031",
+  "e922c51",
 ];
 
 /** The day the roadmap was last brought up to date. */
