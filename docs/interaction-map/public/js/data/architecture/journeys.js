@@ -73,7 +73,6 @@ export const JOURNEYS = [
         title: "`ork run` starts the run",
         detail:
           "The graph is compiled and the run's first event is written; entry nodes are ready to start.",
-        status: "specified",
         docs: [DESIGN.cli],
       },
       {
@@ -99,7 +98,6 @@ export const JOURNEYS = [
         title: "Its session starts",
         detail:
           "The adapter picks the node's driver and passes the session spec: cwd, model, budget, tools, plugin directory.",
-        status: "specified",
         docs: [DESIGN.runtime],
       },
       {
@@ -131,7 +129,6 @@ export const JOURNEYS = [
         title: "The report is routed",
         detail:
           "The node is done; the scheduler follows every outgoing edge whose `when:` holds for its output.",
-        status: "specified",
       },
       {
         from: "scheduler",

@@ -6,9 +6,9 @@ Status: **Built** ([graph/](../packages/core/src/graph/compile.ts),
 [ADR-008](../decisions/ADR-008-ownership-hierarchy.md).
 
 `compileWorkflow(workflow)` checks what the schema cannot and, when there is no
-error, returns the run graph: each node with its children, incoming and outgoing
-edges (expanded from shorthand, with parsed conditions), the entry nodes, and
-the declared message channels.
+error, returns the run graph that the [scheduler](./scheduler.md) runs: each
+node with its children, incoming and outgoing edges (expanded from shorthand,
+with parsed conditions), the entry nodes, and the declared message channels.
 
 ## Rules
 

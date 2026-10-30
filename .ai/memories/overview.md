@@ -23,7 +23,7 @@ Dependency direction, enforced by `oxlint.config.ts`:
 | `@krapht/ork-schema`         | `packages/schema`         | Workflow file format: Zod model, JSON Schema, canonical YAML            |
 | `@krapht/ork-core`           | `packages/core`           | Expressions, graph compiler, runtime port, session planning, the engine |
 | `@krapht/ork-runtime-claude` | `packages/runtime-claude` | Claude drivers: Agent SDK and headless `claude` CLI                     |
-| `@krapht/ork-nodes`          | `packages/nodes`          | Built-in node types (not created yet)                                   |
+| `@krapht/ork-nodes`          | `packages/nodes`          | Built-in node types: Claude, tool and gate executors                    |
 | `@krapht/ork-server`         | `packages/server`         | Local HTTP + SSE API for the UI (milestone 2)                           |
 | `@krapht/ork`                | `packages/cli`            | The `ork` command; the only published package, bundling the others      |
 

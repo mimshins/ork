@@ -47,3 +47,7 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [013](./ADR-013-feedback-loop.md)                  | The feedback loop                                                 | Accepted | waived |
 | [014](./ADR-014-interaction-map.md)                | The interaction map as the onboarding and audit view              | Accepted | waived |
 | [015](./ADR-015-changesets-and-one-bundled-cli.md) | Releases with changesets and one bundled CLI                      | Accepted | waived |
+| [016](./ADR-016-scheduler-semantics.md)            | How a workflow runs: activations, edges, dead paths and loops     | Accepted | waived |
+| [017](./ADR-017-blocking-delegate.md)              | Leaders delegate with a blocking tool call                        | Accepted | waived |
+| [018](./ADR-018-ork-merges-children.md)            | Ork merges a passing child's branch into its owner's              | Accepted | waived |
+| [019](./ADR-019-leaders-resume-on-reentry.md)      | On a loop re-entry, leaders resume and workers start fresh        | Accepted | waived |

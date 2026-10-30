@@ -5,7 +5,16 @@
  *   {@link SIZE} wide and tall. Rows sit at y 120, 240, … 1080.
  */
 
-import { CLI, CORE, DESIGN, README, RUNTIME, SCHEMA } from "../refs.js";
+import {
+  CLI,
+  CORE,
+  DESIGN,
+  ENGINE,
+  NODE_TYPES,
+  README,
+  RUNTIME,
+  SCHEMA,
+} from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -89,8 +98,8 @@ export const NODES = [
       "The `ork` command. It validates and runs workflows with the engine embedded in its own process, or talks to a running `ork ui` server over HTTP.",
     facts: [
       "Built: `ork init` scaffolds `.ork/` and never overwrites a file; `ork validate` prints schema and graph diagnostics with file, line and column; `ork doctor` reports your own logins and never prints a token or your email.",
-      "Built: `ork run <wf> --node <id>` runs one Claude node through either driver and prints its transcript and report; questions and permission prompts are answered on the terminal.",
-      "Whole-workflow `ork run`, `ps`, `logs --follow`, `tree`, `stop`, `resume` drive and watch runs.",
+      "Built: `ork run <wf>` runs a whole workflow through the scheduler, and `--node <id>` one Claude node; questions and permission prompts are answered on the terminal.",
+      "Specified: `ps`, `logs --follow`, `tree`, `stop`, `resume` to watch and steer runs.",
       "`ork decide` answers pending decisions; the recommended option is preselected.",
       "`ork context explain <wf> <node>` shows the resolved layer stack for one node.",
     ],
@@ -100,6 +109,7 @@ export const NODES = [
       CLI.init,
       CLI.doctor,
       CLI.run,
+      CLI.runWorkflow,
       CLI.human,
       CLI.tests,
       CLI.runTests,
@@ -201,20 +211,20 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 360,
-    status: "specified",
+    status: "partial",
     pkg: "core",
     summary:
       "The heart of a run. It starts entry nodes, follows flow edges whose `when:` holds, waits on joins, counts loop rounds, and escalates to the owner when a node hits a limit.",
     facts: [
-      "Caps concurrent sessions at `limits.concurrency` and spend at `limits.budgetUsd`.",
-      "Handles ownership: `delegate`, `spawn_worker` (up to `maxWorkers`) and reports.",
-      "A node over its round, turn or budget limit escalates to its owner; the root escalates to a decision.",
-      "Every state change is an event.",
+      "Built: activations, edges that fire on success unless `when:` says otherwise, dead-path skips, joins, routers, loop rounds, the run budget and concurrency, interrupt.",
+      "Built: every state change is a run event; `ork run` prints them, the event store (M1d) will keep them.",
+      "Built: a loop out of rounds asks you; escalation to the owner comes with delegation.",
+      "Specified: ownership (`delegate`, `spawn_worker` up to `maxWorkers`), worktrees per node.",
     ],
     see: [
       { map: "lifecycle", node: "scheduler", label: "The scheduler in a run" },
     ],
-    docs: [DESIGN.concepts, DESIGN.format],
+    docs: [ENGINE.scheduler, ENGINE.routing, ENGINE.tests, DESIGN.scheduler],
   },
   {
     id: "contextCompiler",
@@ -304,20 +314,27 @@ export const NODES = [
   {
     id: "nodeTypes",
     title: "Node types",
-    sub: "tool · control · human nodes",
+    sub: "Claude · tool · gate nodes",
     zone: "core",
     x: 880,
     y: 1080,
-    status: "specified",
+    status: "built",
     pkg: "nodes",
     summary:
-      "The built-in node types' behaviour. Claude nodes run through the runtime; tool nodes run your own CLIs; control nodes split, join and route.",
+      "What each built-in node type does when it runs. Claude nodes run a session through the runtime; tool nodes run your own CLIs; gates ask you. Control nodes are the scheduler's own.",
     facts: [
       "`tool.gh`, `tool.aws`, `tool.shell` run a program with arguments, no shell, limited to an `allow` list of subcommands.",
       "`control.join` waits for all, any or `n` inputs; `control.router` follows the first or every matching edge.",
-      "`human.gate` opens a decision.",
+      "`human.gate` asks you, with `timeout` and `default` answering by themselves; the decision inbox comes in M1d.",
+      "Output over 64 KiB is cut, and the full text kept under `.ork/runs/`.",
     ],
-    docs: [SCHEMA.nodes, DESIGN.format],
+    docs: [
+      NODE_TYPES.claude,
+      NODE_TYPES.tools,
+      NODE_TYPES.gate,
+      NODE_TYPES.tests,
+      DESIGN.scheduler,
+    ],
   },
   {
     id: "eventStore",

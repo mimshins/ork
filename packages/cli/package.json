@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@krapht/ork-core": "workspace:*",
+    "@krapht/ork-nodes": "workspace:*",
     "@krapht/ork-runtime-claude": "workspace:*",
     "@krapht/ork-schema": "workspace:*",
     "tsdown": "0.23.1"

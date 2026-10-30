@@ -66,6 +66,8 @@ export type HumanChannel = {
     options: DecisionChoice[];
     recommended?: string;
     context?: string;
+    /** Withdraws the question, e.g. when a gate's timeout answers it. */
+    signal?: AbortSignal;
   }) => Promise<string>;
 };
 

@@ -18,7 +18,6 @@ export const JOURNEYS = [
         to: "cli",
         title: "You start the run",
         detail: '`ork run software-factory --input feature="…"`.',
-        status: "specified",
         docs: [DESIGN.cli],
       },
       {
@@ -27,7 +26,6 @@ export const JOURNEYS = [
         title: "The workflow compiles",
         detail:
           "Schema, graph, templates and predicates are checked; `spec` is the only entry node.",
-        status: "specified",
         docs: [DESIGN.format],
       },
       {
@@ -36,7 +34,6 @@ export const JOURNEYS = [
         title: "The run graph goes to the scheduler",
         detail:
           "With the ownership tree: `builder` owns `security`, `ux` and `code`.",
-        status: "specified",
       },
       {
         from: "scheduler",
@@ -44,7 +41,6 @@ export const JOURNEYS = [
         title: "`spec` starts",
         detail:
           "A fresh opus session in the project checkout writes the spec and reports it as an artifact.",
-        status: "specified",
         docs: [SCHEMA.example],
       },
       {
@@ -53,7 +49,6 @@ export const JOURNEYS = [
         title: "The builder gets the spec",
         detail:
           "Its prompt template is filled with the spec's artifact path, not the spec's text.",
-        status: "specified",
         docs: [DESIGN.context],
       },
       {
@@ -69,7 +64,6 @@ export const JOURNEYS = [
         title: "Three reviewers start in parallel",
         detail:
           "`security`, `ux` and `code`, each in a fresh `readonly` session with a brief from the builder; within the run's concurrency of 4.",
-        status: "specified",
       },
       {
         from: "security",
@@ -85,14 +79,12 @@ export const JOURNEYS = [
         to: "reviews",
         title: "The join collects the reviews",
         detail: "It waits for all three reports and outputs their `statuses`.",
-        status: "specified",
       },
       {
         from: "reviews",
         to: "approver",
         title: "All pass: on to the approver",
         detail: "`all(statuses, 'pass')` holds, so the loop edge is skipped.",
-        status: "specified",
       },
       {
         from: "approver",
@@ -100,7 +92,6 @@ export const JOURNEYS = [
         title: "The approver approves",
         detail:
           "It reports `verdict: approve`, which picks the edge to `merge`.",
-        status: "specified",
       },
       {
         from: "merge",
@@ -108,7 +99,6 @@ export const JOURNEYS = [
         title: "Your `gh` merges the branch",
         detail:
           "`gh pr merge <branch> --squash`, allowed by the node's `allow` list. The run ends; its events stay in the run store.",
-        status: "specified",
       },
     ],
   },
@@ -125,7 +115,7 @@ export const JOURNEYS = [
         title: "Round 1: changes requested",
         detail:
           "`any(statuses, 'changes_requested')` holds. The builder's long-lived session resumes with the three reports.",
-        status: "specified",
+        status: "partial",
         docs: [DESIGN.format],
       },
       {
@@ -133,7 +123,7 @@ export const JOURNEYS = [
         title: "The builder fixes its branch",
         detail:
           "It keeps its own context from round 1; only the reviews are new.",
-        status: "specified",
+        status: "partial",
       },
       {
         from: "builder",
@@ -141,7 +131,6 @@ export const JOURNEYS = [
         title: "The reviewers run again, fresh",
         detail:
           "Workers never carry a transcript between tasks: each review starts from a new brief.",
-        status: "specified",
         docs: [DESIGN.context],
       },
       {
@@ -149,14 +138,12 @@ export const JOURNEYS = [
         to: "builder",
         title: "Round 2: changes requested again",
         detail: "The loop edge is taken for the second and last time.",
-        status: "specified",
       },
       {
         from: "reviews",
         title: "The round limit is reached",
         detail:
           "A third round would exceed `maxRounds: 2`, so the edge is not taken. The node escalates to its owner; `builder` has none, so the scheduler raises a decision.",
-        status: "specified",
       },
       {
         from: "scheduler",
@@ -164,7 +151,7 @@ export const JOURNEYS = [
         title: "You are asked what to do",
         detail:
           "A decision with the reviews' summaries as context and options such as another round, stop, or go on to the approver.",
-        status: "specified",
+        status: "partial",
         docs: [DESIGN.messaging],
       },
       {
@@ -173,7 +160,7 @@ export const JOURNEYS = [
         title: "You answer",
         detail:
           "The run continues the way you chose, and the answer is logged.",
-        status: "specified",
+        status: "partial",
       },
     ],
   },
@@ -189,7 +176,6 @@ export const JOURNEYS = [
         to: "human",
         title: "`verdict: escalate`",
         detail: "The approver's structured output picks the edge to the gate.",
-        status: "specified",
         docs: [SCHEMA.example],
       },
       {
@@ -198,7 +184,7 @@ export const JOURNEYS = [
         title: "The gate opens a decision",
         detail:
           '"The approver escalated. Merge anyway?" with `merge` and `reject`, and `reject` recommended.',
-        status: "specified",
+        status: "partial",
       },
       {
         from: "you",
@@ -206,7 +192,7 @@ export const JOURNEYS = [
         title: "You choose",
         detail:
           "`ork decide` preselects the recommendation; in the UI it is one click.",
-        status: "specified",
+        status: "partial",
         docs: [DESIGN.messaging],
       },
       {
@@ -215,7 +201,7 @@ export const JOURNEYS = [
         title: "The gate outputs your answer",
         detail:
           "In the example the gate has no outgoing edges, so the run ends here. An edge from the gate with a `when:` on the answer would carry on, for example to `merge`.",
-        status: "specified",
+        status: "partial",
       },
     ],
   },

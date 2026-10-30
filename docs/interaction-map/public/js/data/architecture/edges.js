@@ -77,8 +77,7 @@ export const EDGES = [
     label: "`ork run` · stop · resume",
     detail:
       "With no server running, `ork run` hosts the engine in its own process for the length of the run.",
-    status: "specified",
-    docs: [DESIGN.cli],
+    docs: [CLI.runWorkflow, DESIGN.cli],
   },
   {
     id: "cli-decisions",
@@ -175,10 +174,9 @@ export const EDGES = [
     from: "scheduler",
     to: "nodeTypes",
     kind: "local",
-    label: "tool, control, human nodes",
+    label: "Claude, tool, gate nodes",
     detail:
-      "Nodes that are not Claude sessions run here: a tool node's command, a join's wait, a router's choice, a gate's decision.",
-    status: "specified",
+      "The scheduler runs each activation through its node type's executor: a Claude session, a tool node's command, a gate's question. Joins, routers and splits are the scheduler's own.",
     via: [
       [834, 428],
       [834, 1116],
@@ -193,7 +191,6 @@ export const EDGES = [
     label: "`start(SessionSpec)`",
     detail:
       "The scheduler starts one session per running Claude node, with its working directory, model, budget and tools.",
-    status: "specified",
     docs: [DESIGN.runtime],
   },
   {
@@ -297,7 +294,6 @@ export const EDGES = [
     label: "`gh …` · `aws …` · programs",
     detail:
       "Runs the program with templated arguments and no shell, refusing any subcommand outside the node's `allow` list.",
-    status: "specified",
     docs: [SCHEMA.nodes, README.accounts],
   },
 

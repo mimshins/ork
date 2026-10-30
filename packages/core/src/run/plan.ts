@@ -7,6 +7,8 @@ import {
 import { parseTemplate, renderTemplate } from "../expr/evaluate.ts";
 import { reportSchemaFor } from "../runtime/report.ts";
 import type { SessionSpec, ToolRules } from "../runtime/types.ts";
+import { runScope } from "./scope.ts";
+import type { NodeOutput } from "./types.ts";
 
 /** Claude Code tools that change files or run commands. */
 export const WRITE_TOOLS = ["Write", "Edit", "NotebookEdit", "Bash"] as const;
@@ -16,6 +18,13 @@ export type PlanOptions = {
   inputs: Record<string, string | number | boolean>;
   /** Run a `worktree` node in the project checkout (until M1c). */
   inPlace?: boolean;
+  /**
+   * The outputs of the nodes that ran before, inside a run. Without them (a
+   * node run on its own) `{{nodes.*}}` renders empty, with a warning.
+   */
+  outputs?: Readonly<Record<string, NodeOutput>>;
+  /** What is left of the run's budget; caps the node's own `budgetUsd`. */
+  budgetLeftUsd?: number;
 };
 
 export type PlanResult =
@@ -83,17 +92,17 @@ export const planNodeSession = (
   for (const part of template.parts) {
     if (typeof part !== "string" && part.expr.kind === "path") {
       const [root] = part.expr.segments;
-      if (root === "nodes") {
+      if (root === "nodes" && options.outputs === undefined) {
         warnings.push(
           `the brief reads ${part.expr.segments.join(".")}, which is empty when the node runs alone`,
         );
       }
     }
   }
-  const prompt = renderTemplate(template.parts, {
-    inputs: options.inputs,
-    nodes: {},
-  });
+  const prompt = renderTemplate(
+    template.parts,
+    runScope(options.inputs, options.outputs ?? {}),
+  );
 
   const spec: SessionSpec = {
     nodeId: id,
@@ -109,8 +118,11 @@ export const planNodeSession = (
   if (model !== undefined) spec.model = model;
   const maxTurns = node.maxTurns ?? defaults.maxTurns;
   if (maxTurns !== undefined) spec.maxTurns = maxTurns;
-  const budgetUsd = node.budgetUsd ?? defaults.budgetUsd;
-  if (budgetUsd !== undefined) spec.budgetUsd = budgetUsd;
+  const budgets = [
+    node.budgetUsd ?? defaults.budgetUsd,
+    options.budgetLeftUsd,
+  ].filter(b => b !== undefined);
+  if (budgets.length > 0) spec.budgetUsd = Math.min(...budgets);
 
   return {
     ok: true,

@@ -1,0 +1,14 @@
+{
+  "name": "@krapht/ork-nodes",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Ork's built-in node types: what Claude, tool and gate nodes do when they run",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@krapht/ork-core": "workspace:*",
+    "@krapht/ork-schema": "workspace:*"
+  }
+}

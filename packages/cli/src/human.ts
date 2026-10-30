@@ -79,23 +79,26 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
   const say = (text: string): void => {
     io.output.write(`${text}\n`);
   };
-  const prompt = (text: string): Promise<string> => {
+  const prompt = (text: string, signal?: AbortSignal): Promise<string> => {
     rl ??= createInterface({ input: io.input, output: io.output });
-    return rl.question(text);
+    return signal === undefined
+      ? rl.question(text)
+      : rl.question(text, { signal });
   };
   const choose = async (
     hint: string,
     options: readonly DecisionChoice[],
     recommended: string | undefined,
+    signal: AbortSignal | undefined,
   ): Promise<string> => {
     const picked = pickOption(
-      await prompt(`  Choose${hint}: `),
+      await prompt(`  Choose${hint}: `, signal),
       options,
       recommended,
     );
     if (picked !== undefined) return picked;
     say(style("dim", "  Type an option's number or id."));
-    return choose(hint, options, recommended);
+    return choose(hint, options, recommended, signal);
   };
   // Prompts from parallel tool calls wait for each other.
   const oneAtATime = <T>(work: () => Promise<T>): Promise<T> => {
@@ -120,8 +123,12 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
           : { allow: false, message: "The user did not allow this tool." };
       }),
 
-    ask: ({ nodeId, question, options, recommended, context }) =>
+    // A withdrawn question (a gate's timeout) rejects, which frees the turn.
+    ask: ({ nodeId, question, options, recommended, context, signal }) =>
       oneAtATime(() => {
+        if (signal?.aborted === true) {
+          return Promise.reject(new Error("the question was withdrawn"));
+        }
         say(
           `${style(["yellow", "bold"], "?")} ${style("bold", nodeId)} asks: ${question}`,
         );
@@ -136,7 +143,7 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
         }
         const fallback = options.findIndex(o => o.id === recommended);
         const hint = fallback === -1 ? "" : ` [${String(fallback + 1)}]`;
-        return choose(hint, options, recommended);
+        return choose(hint, options, recommended, signal);
       }),
 
     close: () => {

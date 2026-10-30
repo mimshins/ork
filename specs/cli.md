@@ -1,8 +1,8 @@
 # The ork CLI
 
-Status: **Partial**: `ork init`, `ork validate`, `ork doctor` and
-`ork run --node` are built ([code](../packages/cli/src/main.ts),
-[tests](../packages/cli/test/cli.test.ts),
+Status: **Partial**: `ork init`, `ork validate`, `ork doctor` and `ork run` (a
+whole workflow, or one node with `--node`) are built
+([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts)); the other commands are
 specified. Published as `@krapht/ork`
 ([release](../runbook/development/release.md),
@@ -12,7 +12,7 @@ specified. Published as `@krapht/ork`
 ork init                         # scaffold .ork/, .gitignore entries, example workflow
 ork doctor                       # check node, git, claude (login or API key), gh auth, aws identity
 ork validate <wf>                # schema + graph compile; prints errors with yaml line numbers
-ork run <wf> [--input k=v] [--detach] [--driver sdk|cli]
+ork run <wf> [--input k=v] [--driver sdk|cli] [--in-place] [--json] [--detach]
 ork run <wf> --node <id> [--input k=v] [--driver sdk|cli] [--in-place] [--json]
 ork ps / ork logs <run> [--node n] [--follow]
 ork tree <run>                   # live ownership tree with status, tokens, $ per node
@@ -24,10 +24,31 @@ ork feedback [list|show|dismiss] # local feedback items (triage, apply, lesson, 
 ork ui [--port 4417]             # milestone 2
 ```
 
+## Running a workflow
+
+`ork run <wf>` runs the whole workflow through the [scheduler](./scheduler.md)
+with the built-in node types
+([workflow.ts](../packages/cli/src/run/workflow.ts)):
+
+- The workflow and its inputs are checked as for `--node`; nothing starts on an
+  error.
+- Until the worktree manager (M1c slice 2), a workflow with `worktree` Claude
+  nodes runs only with `--in-place`, which runs them in this checkout.
+- stdout gets one transcript line per event, prefixed with the node id
+  (`builder │ …`): each start (with its round), session text and tool calls,
+  each result (`✓ pass: …`, `✓ exit 0`, `✓ merge (user)`), skips and exhausted
+  loops; then the run summary: status, total cost, how many nodes ran and were
+  skipped, each node's branch, and the reasons it did not succeed. `--json`
+  prints the [run events](./scheduler.md#run-events) as JSON lines.
+- Tool nodes run as declared (their `allow` list is checked first); gates and
+  questions use the terminal channel below.
+- Exit code 0 when the run succeeded, 1 otherwise. Ctrl-C interrupts the run.
+- `--detach` waits for the event store (M1d).
+
 ## Running one node
 
-Until the scheduler (M1c) runs whole workflows, `ork run <wf> --node <id>` runs
-one Claude node on its own ([run.ts](../packages/cli/src/commands/run.ts)):
+`ork run <wf> --node <id>` runs one Claude node on its own
+([run.ts](../packages/cli/src/commands/run.ts)):
 
 - `<wf>` is a path, or the name of a workflow in `.ork/workflows/` (`hello` is
   `.ork/workflows/hello.ork.yaml`).

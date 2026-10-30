@@ -23,7 +23,6 @@ export const EDGES = [
     label: "`ork run software-factory`",
     detail:
       "With `--input feature=…`; a missing required input stops the run before it starts.",
-    status: "specified",
     via: [
       [290, 456],
       [290, 156],
@@ -46,7 +45,6 @@ export const EDGES = [
     label: "run graph",
     detail:
       "Single edges, the ownership tree, the entry nodes and each loop edge's round limit.",
-    status: "specified",
   },
   {
     id: "scheduler-spec",
@@ -55,7 +53,6 @@ export const EDGES = [
     kind: "local",
     label: "starts the entry node",
     detail: "`spec` has no parent and no incoming edge, so it starts first.",
-    status: "specified",
     via: [
       [570, 440],
       [570, 156],
@@ -79,7 +76,6 @@ export const EDGES = [
     label: "`spec -> builder`",
     detail:
       "The spec's report fills `{{nodes.spec.output.artifacts.spec}}` in the builder's prompt.",
-    status: "specified",
     docs: [EXAMPLE],
   },
   {
@@ -100,7 +96,6 @@ export const EDGES = [
     label: "brief",
     detail:
       "`builder -> security, ux, code` fans out; each reviewer gets a context packet from its owner, not the builder's transcript.",
-    status: "specified",
     docs: [EXAMPLE, DESIGN.context],
   },
   {
@@ -110,7 +105,6 @@ export const EDGES = [
     kind: "local",
     label: "brief",
     detail: "Same fan-out edge.",
-    status: "specified",
   },
   {
     id: "builder-code",
@@ -119,7 +113,6 @@ export const EDGES = [
     kind: "local",
     label: "brief",
     detail: "Same fan-out edge.",
-    status: "specified",
   },
   {
     id: "security-code",
@@ -145,7 +138,6 @@ export const EDGES = [
     label: "report",
     detail:
       "`security, ux, code -> reviews` fans in; the join waits for all three.",
-    status: "specified",
   },
   {
     id: "ux-reviews",
@@ -154,7 +146,6 @@ export const EDGES = [
     kind: "local",
     label: "report",
     detail: "Same fan-in edge.",
-    status: "specified",
   },
   {
     id: "code-reviews",
@@ -163,7 +154,6 @@ export const EDGES = [
     kind: "local",
     label: "report",
     detail: "Same fan-in edge.",
-    status: "specified",
   },
   {
     id: "reviews-builder",
@@ -173,7 +163,6 @@ export const EDGES = [
     label: "changes requested · max 2 rounds",
     detail:
       "Taken when `any(statuses, 'changes_requested')`. The builder's session resumes with the reviews; after two rounds the edge is exhausted and the builder escalates.",
-    status: "specified",
     via: [
       [1355, 606],
       [1355, 306],
@@ -188,7 +177,6 @@ export const EDGES = [
     kind: "local",
     label: "all pass",
     detail: "Taken when `all(statuses, 'pass')`.",
-    status: "specified",
     docs: [EXAMPLE],
   },
   {
@@ -198,7 +186,6 @@ export const EDGES = [
     kind: "local",
     label: "`verdict == 'approve'`",
     detail: "The approver's structured `verdict` picks the edge.",
-    status: "specified",
     docs: [EXAMPLE],
   },
   {
@@ -208,7 +195,6 @@ export const EDGES = [
     kind: "local",
     label: "`verdict == 'escalate'`",
     detail: "A person decides instead.",
-    status: "specified",
     docs: [EXAMPLE],
   },
   {
@@ -219,7 +205,6 @@ export const EDGES = [
     label: "`gh pr merge … --squash`",
     detail:
       "Your `gh`, with arguments rendered from the builder's output and checked against `allow`.",
-    status: "specified",
     via: [
       [710, 950],
       [1510, 950],

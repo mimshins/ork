@@ -1,0 +1,25 @@
+import type { NodeExecutors } from "@krapht/ork-core";
+
+import { type ClaudeExecutorOptions, claudeExecutor } from "./claude.ts";
+import { gateExecutor } from "./gate.ts";
+import { spawnTool, toolExecutor, type ToolRunner } from "./tools.ts";
+
+export * from "./claude.ts";
+export * from "./gate.ts";
+export * from "./tools.ts";
+
+/** Every built-in node type that does work; control nodes are the scheduler's. */
+export const builtinExecutors = (
+  options: ClaudeExecutorOptions & { tools?: ToolRunner },
+): NodeExecutors => {
+  const claude = claudeExecutor(options);
+  const tool = toolExecutor(options.tools ?? spawnTool);
+  return {
+    "claude.leader": claude,
+    "claude.worker": claude,
+    "tool.gh": tool,
+    "tool.aws": tool,
+    "tool.shell": tool,
+    "human.gate": gateExecutor,
+  };
+};

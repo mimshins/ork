@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { compileWorkflow } from "@krapht/ork-core";
+import { type CompiledGraph, compileWorkflow } from "@krapht/ork-core";
 import {
   type Diagnostic,
   parseWorkflow,
@@ -22,6 +22,8 @@ export type LoadedWorkflow = {
   report: FileReport;
   /** The parsed workflow, or `null` when it has errors. */
   workflow: Workflow | null;
+  /** The compiled graph, or `null` when the workflow has errors. */
+  graph: CompiledGraph | null;
 };
 
 const hasErrors = (diagnostics: readonly Diagnostic[]): boolean =>
@@ -45,6 +47,7 @@ export const loadWorkflow = (file: string, cwd: string): LoadedWorkflow => {
         ],
       },
       workflow: null,
+      graph: null,
     };
   }
 
@@ -53,6 +56,7 @@ export const loadWorkflow = (file: string, cwd: string): LoadedWorkflow => {
     return {
       report: { file, diagnostics: parsed.diagnostics },
       workflow: null,
+      graph: null,
     };
   }
 
@@ -65,7 +69,11 @@ export const loadWorkflow = (file: string, cwd: string): LoadedWorkflow => {
     );
   }
   if (graph === null) {
-    return { report: { file, diagnostics: located }, workflow: null };
+    return {
+      report: { file, diagnostics: located },
+      workflow: null,
+      graph: null,
+    };
   }
   return {
     report: {
@@ -78,6 +86,7 @@ export const loadWorkflow = (file: string, cwd: string): LoadedWorkflow => {
       },
     },
     workflow: hasErrors(located) ? null : parsed.workflow,
+    graph: hasErrors(located) ? null : graph,
   };
 };
 

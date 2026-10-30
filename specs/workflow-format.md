@@ -2,8 +2,9 @@
 
 Status: **Built**: the Zod model, edge shorthand, canonical YAML, diagnostics
 and the JSON Schema ([code](../packages/schema/src/index.ts),
-[tests](../packages/schema/test/yaml.test.ts)); node types execute from M1c.
-Why: [ADR-006](../decisions/ADR-006-workflow-file-format.md).
+[tests](../packages/schema/test/yaml.test.ts)); node types execute in the
+[scheduler](./scheduler.md). Why:
+[ADR-006](../decisions/ADR-006-workflow-file-format.md).
 
 **Files:**
 
@@ -54,3 +55,6 @@ edges:
   `control.router`. Loops are edges with `maxRounds`, not a node.
 - **Human:** `human.gate`.
 - **Edges:** `input`/`output` artifacts.
+
+What each type does when it runs, and how edges, joins and loops behave, is in
+[Scheduler: running a workflow](./scheduler.md).

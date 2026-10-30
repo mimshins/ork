@@ -25,6 +25,7 @@ Long specs follow the hub and chunk layout
 | [Expressions](./expressions.md)                 | Built     | M1a       |
 | [Graph compiler](./graph-compiler.md)           | Built     | M1a       |
 | [Runtime: the Claude drivers](./runtime.md)     | Built     | M1b       |
+| [Scheduler: running a workflow](./scheduler.md) | Partial   | M1c       |
 | [Context, skills and precedence](./context.md)  | Specified | M1c       |
 | [Messaging, decisions and logs](./messaging.md) | Partial   | M1d       |
 | [Feedback and self-improvement](./feedback.md)  | Specified | M1d, M2   |

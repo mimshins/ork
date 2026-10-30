@@ -1,8 +1,8 @@
 # Architecture
 
 Status: **Partial**: `@krapht/ork-schema`, `@krapht/ork-core`,
-`@krapht/ork-runtime-claude` and the CLI `@krapht/ork` exist;
-`@krapht/ork-nodes`, `@krapht/ork-server` and the UI are specified. Why:
+`@krapht/ork-runtime-claude`, `@krapht/ork-nodes` and the CLI `@krapht/ork`
+exist; `@krapht/ork-server` and the UI are specified. Why:
 [ADR-002](../decisions/ADR-002-typescript-from-source.md),
 [ADR-003](../decisions/ADR-003-oxlint-oxfmt-and-boundaries.md).
 

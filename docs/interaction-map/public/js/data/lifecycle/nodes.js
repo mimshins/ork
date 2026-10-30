@@ -5,7 +5,7 @@
  *   map is {@link SIZE} wide and tall.
  */
 
-import { CLI, CORE, DESIGN, SCHEMA } from "../refs.js";
+import { CLI, CORE, DESIGN, ENGINE, NODE_TYPES, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -85,7 +85,7 @@ export const NODES = [
     summary:
       "Starts a run of a workflow file with its inputs, and follows it until it ends or you detach.",
     facts: [
-      "Built: `--node <id>` runs one Claude node on its own, with `--input`, `--driver` and `--in-place`, until the scheduler runs whole workflows.",
+      "Built: `ork run <wf>` runs the whole workflow, and `--node <id>` one Claude node on its own; `--input`, `--driver`, `--in-place` and `--json` work for both.",
       "`--detach` returns at once; `ork logs --follow` and `ork tree` watch it later.",
       "`--driver sdk|cli` overrides every node's driver for this run.",
     ],
@@ -96,7 +96,7 @@ export const NODES = [
         label: "The CLI in the architecture",
       },
     ],
-    docs: [CLI.run, CLI.runTests, DESIGN.cli],
+    docs: [CLI.run, CLI.runWorkflow, CLI.runTests, DESIGN.cli],
   },
   {
     id: "compiler",
@@ -130,14 +130,15 @@ export const NODES = [
     zone: "engine",
     x: 320,
     y: 420,
-    status: "specified",
+    status: "partial",
     pkg: "core",
     summary:
       "Starts nodes when their inputs are ready, evaluates each outgoing edge's `when:` on the finished node's output, and counts how often a loop edge has been taken.",
     facts: [
       "Runs at most `limits.concurrency` sessions at once (4 here).",
       "Stops the run when spend reaches `limits.budgetUsd` ($20 here).",
-      "When a loop edge has used its `maxRounds`, the node escalates to its owner; the root escalates to you.",
+      "An edge without `when:` fires only on success; a skipped branch skips everything that only it feeds, so the join never waits on it.",
+      "When a loop edge has used its `maxRounds`, you are asked: stop, one more round, or go on. Escalation to the owner comes with delegation.",
     ],
     see: [
       {
@@ -146,7 +147,7 @@ export const NODES = [
         label: "The scheduler in the architecture",
       },
     ],
-    docs: [DESIGN.concepts, DESIGN.format],
+    docs: [ENGINE.scheduler, ENGINE.routing, ENGINE.tests, DESIGN.scheduler],
   },
   {
     id: "events",
@@ -195,7 +196,7 @@ export const NODES = [
     zone: "graph",
     x: 860,
     y: 120,
-    status: "specified",
+    status: "built",
     pkg: null,
     summary:
       "Writes a spec for the feature. It is the entry node, so it starts as soon as the run does.",
@@ -204,7 +205,7 @@ export const NODES = [
       "`isolation: shared`: it writes into the project checkout, not a worktree.",
       "Reports the spec as an artifact, which the builder's prompt references.",
     ],
-    docs: [EXAMPLE],
+    docs: [EXAMPLE, NODE_TYPES.claude],
   },
   {
     id: "builder",
@@ -213,13 +214,14 @@ export const NODES = [
     zone: "graph",
     x: 860,
     y: 250,
-    status: "specified",
+    status: "partial",
     pkg: null,
     summary:
       "Implements the spec on its own branch and owns the three reviewers. As a leader its session lives across review rounds, so it keeps what it learned.",
     facts: [
       "Prompt: `Implement the spec at {{nodes.spec.output.artifacts.spec}}.`",
-      "Gets the default `isolation: worktree`: a branch of its own.",
+      "Gets the default `isolation: worktree`: a branch of its own (with the worktree manager; until then `--in-place`).",
+      "Built: it runs each round; a re-entry's brief carries the reviews. Resuming its session across rounds comes with delegation.",
       "Owns `security`, `ux` and `code`: it briefs them, and their escalations come to it.",
     ],
     docs: [EXAMPLE, DESIGN.concepts],
@@ -231,13 +233,13 @@ export const NODES = [
     zone: "graph",
     x: 600,
     y: 420,
-    status: "specified",
+    status: "partial",
     pkg: null,
     summary:
       "Reviews the builder's branch for security issues, in a fresh session each round.",
     facts: [
       "`parent: builder`.",
-      "May message `code` over the declared channel.",
+      "May message `code` over the declared channel (with the message bus).",
     ],
     docs: [EXAMPLE],
   },
@@ -248,7 +250,7 @@ export const NODES = [
     zone: "graph",
     x: 860,
     y: 420,
-    status: "specified",
+    status: "built",
     pkg: null,
     summary:
       "Reviews the builder's branch for UX issues, on the cheaper default model.",
@@ -262,12 +264,12 @@ export const NODES = [
     zone: "graph",
     x: 1120,
     y: 420,
-    status: "specified",
+    status: "partial",
     pkg: null,
     summary: "Reviews the builder's branch for code quality.",
     facts: [
       "`parent: builder`.",
-      "May message `security` over the declared channel.",
+      "May message `security` over the declared channel (with the message bus).",
     ],
     docs: [EXAMPLE],
   },
@@ -278,7 +280,7 @@ export const NODES = [
     zone: "graph",
     x: 860,
     y: 570,
-    status: "specified",
+    status: "built",
     pkg: null,
     summary:
       "Waits for all three reviews, then outputs their statuses. Its two outgoing edges decide: back to the builder, or on to the approver.",
@@ -287,7 +289,7 @@ export const NODES = [
       "`any(statuses, 'changes_requested')` loops back, at most 2 rounds.",
       "`all(statuses, 'pass')` goes on to the approver.",
     ],
-    docs: [EXAMPLE, SCHEMA.nodes],
+    docs: [EXAMPLE, ENGINE.routing, SCHEMA.nodes],
   },
   {
     id: "approver",
@@ -296,7 +298,7 @@ export const NODES = [
     zone: "graph",
     x: 860,
     y: 700,
-    status: "specified",
+    status: "built",
     pkg: null,
     summary:
       "Decides whether the builder's branch is ready to merge, and must say so in a structured field.",
@@ -313,15 +315,16 @@ export const NODES = [
     zone: "graph",
     x: 600,
     y: 840,
-    status: "specified",
+    status: "built",
     pkg: "nodes",
     summary:
       "Merges the builder's branch through your `gh`, if the approver approved.",
     facts: [
       "Command: `pr merge {{nodes.builder.output.branch}} --squash`.",
-      "`allow: [pr merge]`: any other subcommand is refused.",
+      "`allow: [pr merge]`: any other subcommand is refused before it runs.",
+      "No shell: the branch is rendered inside one argument, so it can never add arguments.",
     ],
-    docs: [EXAMPLE, SCHEMA.nodes],
+    docs: [EXAMPLE, NODE_TYPES.tools, SCHEMA.nodes],
   },
   {
     id: "human",
@@ -330,15 +333,16 @@ export const NODES = [
     zone: "graph",
     x: 1120,
     y: 840,
-    status: "specified",
+    status: "partial",
     pkg: "nodes",
     summary:
       "Asks you whether to merge anyway when the approver escalates. It opens a decision with the recommended answer `reject`.",
     facts: [
       "No outgoing edges in the example, so the run ends with your answer.",
       "A `timeout` and `default` would let it answer itself.",
+      "Built: `ork run` asks on the terminal; the decision inbox comes in M1d.",
     ],
-    docs: [EXAMPLE],
+    docs: [EXAMPLE, NODE_TYPES.gate],
   },
 
   // ── Repo and GitHub ──────────────────────────────────────────────────────

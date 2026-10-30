@@ -32,7 +32,8 @@ export const resolvePath = (
   return path.reduce<unknown>((value, segment) => read(value, segment), scope);
 };
 
-const truthy = (value: unknown): boolean =>
+/** Truthiness as expressions see it: an empty list is false. */
+export const truthy = (value: unknown): boolean =>
   Array.isArray(value) ? value.length > 0 : Boolean(value);
 
 const asList = (value: unknown): unknown[] =>

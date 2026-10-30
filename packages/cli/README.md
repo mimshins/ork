@@ -3,8 +3,8 @@
 The `ork` command: orchestrate Claude agents on your machine with hierarchical,
 serializable workflows.
 
-> **Pre-alpha.** `ork init`, `ork validate`, `ork doctor` and running a single
-> node work today; running whole workflows is being built. See the
+> **Pre-alpha.** `ork init`, `ork validate`, `ork doctor` and `ork run` work
+> today; worktrees, delegation and the context compiler are being built. See the
 > [project README](https://github.com/mimshins/ork#readme).
 
 ```sh
@@ -13,8 +13,10 @@ npm install --global @krapht/ork
 ork doctor              # node, git, and your own claude / gh / aws logins
 ork init                # scaffold .ork/ with a starter workflow
 ork validate            # check .ork/workflows/*.ork.yaml
+ork run hello --input task="add a README" --in-place
+                        # run the workflow; questions come to the terminal
 ork run hello --node lead --input task="add a README" --in-place
-                        # run one Claude node; it asks you on the terminal
+                        # run one Claude node on its own
 ```
 
 `--driver sdk` (the default) needs `ANTHROPIC_API_KEY` or a cloud provider;

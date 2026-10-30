@@ -215,6 +215,9 @@ importers:
       '@krapht/ork-core':
         specifier: workspace:*
         version: link:../core
+      '@krapht/ork-nodes':
+        specifier: workspace:*
+        version: link:../nodes
       '@krapht/ork-runtime-claude':
         specifier: workspace:*
         version: link:../runtime-claude
@@ -227,6 +230,15 @@ importers:
 
   packages/core:
     dependencies:
+      '@krapht/ork-schema':
+        specifier: workspace:*
+        version: link:../schema
+
+  packages/nodes:
+    dependencies:
+      '@krapht/ork-core':
+        specifier: workspace:*
+        version: link:../core
       '@krapht/ork-schema':
         specifier: workspace:*
         version: link:../schema

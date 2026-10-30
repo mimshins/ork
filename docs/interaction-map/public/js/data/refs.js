@@ -18,6 +18,7 @@ export const DESIGN = {
   messaging: d("specs/messaging.md", "Spec: messaging, decisions and logs"),
   feedback: d("specs/feedback.md", "Spec: feedback and self-improvement"),
   cli: d("specs/cli.md", "Spec: the CLI commands"),
+  scheduler: d("specs/scheduler.md", "Spec: running a workflow"),
   ui: d("specs/ui.md", "Spec: the UI panels"),
   milestones: d("docs/design.md#milestones", "Design: milestones"),
 };
@@ -76,12 +77,32 @@ export const CLI = {
   init: d("packages/cli/src/commands/init.ts", "Code: `ork init`"),
   doctor: d("packages/cli/src/doctor/checks.ts", "Code: `ork doctor`'s checks"),
   tests: d("packages/cli/test/cli.test.ts", "Tests: init and validate"),
-  run: d("packages/cli/src/commands/run.ts", "Code: `ork run --node`"),
+  run: d("packages/cli/src/commands/run.ts", "Code: the `ork run` command"),
   human: d(
     "packages/cli/src/human.ts",
     "Code: questions and permissions on the terminal",
   ),
-  runTests: d("packages/cli/test/run.test.ts", "Tests: `ork run --node`"),
+  runWorkflow: d(
+    "packages/cli/src/run/workflow.ts",
+    "Code: `ork run` for a whole workflow",
+  ),
+  runTests: d("packages/cli/test/run.test.ts", "Tests: `ork run`"),
+};
+
+export const ENGINE = {
+  scheduler: d("packages/core/src/run/scheduler.ts", "Code: the scheduler"),
+  routing: d(
+    "packages/core/src/run/routing.ts",
+    "Code: edges, joins, routers and dead paths",
+  ),
+  tests: d("packages/core/test/scheduler.test.ts", "Tests: the scheduler"),
+};
+
+export const NODE_TYPES = {
+  claude: d("packages/nodes/src/claude.ts", "Code: Claude nodes"),
+  tools: d("packages/nodes/src/tools.ts", "Code: tool nodes"),
+  gate: d("packages/nodes/src/gate.ts", "Code: human gates"),
+  tests: d("packages/nodes/test/nodes.test.ts", "Tests: the node types"),
 };
 
 export const RUNTIME = {
