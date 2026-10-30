@@ -134,6 +134,7 @@ export const claudeExecutor =
       planOptions.ownership = context.ownership;
     }
     if (context.mailbox !== undefined) planOptions.mailbox = context.mailbox;
+    if (context.claims !== undefined) planOptions.claims = context.claims;
     const plan = planNodeSession(context.workflow, context.id, planOptions);
     if (!plan.ok) {
       return {
@@ -147,6 +148,7 @@ export const claudeExecutor =
     const ports: SessionPorts = { human: context.human };
     if (context.ownership !== undefined) ports.ownership = context.ownership;
     if (context.mailbox !== undefined) ports.mailbox = context.mailbox;
+    if (context.claims !== undefined) ports.claims = context.claims;
     const session = runtime.start(spec, ports);
     context.signal.addEventListener(
       "abort",

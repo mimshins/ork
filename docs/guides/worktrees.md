@@ -97,4 +97,6 @@ run, even one from a crashed process.
 ## Running without worktrees
 
 `ork run <wf> --in-place` runs every node in your checkout instead. It is handy
-for a quick try, but parallel writers will edit the same files.
+for a quick try, but parallel writers share the same files; they claim what they
+edit ([claims](./leaders-and-delegation.md#claims-parallel-writers-stay-apart)),
+which keeps them apart only as far as they follow it.

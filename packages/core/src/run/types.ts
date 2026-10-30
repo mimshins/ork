@@ -9,6 +9,7 @@ import type { Driver, Node, NodeType, Workflow } from "@krapht/ork-schema";
 
 import type { CompiledGraph } from "../graph/types.ts";
 import type {
+  Claims,
   DecisionChoice,
   HumanChannel,
   Mailbox,
@@ -17,6 +18,7 @@ import type {
   SessionUsage,
 } from "../runtime/types.ts";
 import type { AnsweredBy, DecisionKind } from "../store/types.ts";
+import type { BusEvent } from "./bus-events.ts";
 
 export type Inputs = Record<string, string | number | boolean>;
 
@@ -59,6 +61,8 @@ export type ExecuteContext = {
   ownership?: Ownership;
   /** The node's place on the run's message bus. */
   mailbox?: Mailbox;
+  /** The node's claims on files and resources, shared by the run. */
+  claims?: Claims;
   cwd: string;
   /** The git checkout the node works in, when the run uses worktrees. */
   checkout?: Checkout;
@@ -211,40 +215,9 @@ export type RunEvent =
       by: AnsweredBy;
     }
   | { type: "decision.withdrawn"; node: string; decision: string }
-  /** `node` wrote to `to` on the message bus; `message` is its number. */
-  | {
-      type: "message.sent";
-      node: string;
-      to: string;
-      message: number;
-      body: string;
-    }
-  | { type: "message.read"; node: string; ids: number[] }
-  /** Ork asked `node`, the owner of `about`, a question (a loop out of rounds). */
-  | {
-      type: "owner.asked";
-      node: string;
-      about: string;
-      question: string;
-      text: string;
-      options: DecisionChoice[];
-      recommended?: string;
-    }
-  | { type: "owner.answered"; node: string; question: string; answer: string }
-  /** The owner's session ended first; the question goes to the human. */
-  | { type: "owner.unanswered"; node: string; question: string }
   /** Another process asked the run to do something, e.g. `ork stop`. */
   | { type: "run.command"; command: "stop" }
-  /**
-   * The user wrote to a node (`ork chat`): pushed into its live session now,
-   * queued for its next session, or sent by resuming its finished one.
-   */
-  | {
-      type: "user.message";
-      node: string;
-      body: string;
-      delivered: "now" | "queued" | "resumed";
-    }
+  | BusEvent
   | { type: "run.finished"; result: RunResult };
 
 export type RunOptions = {

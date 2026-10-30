@@ -4,6 +4,7 @@
  */
 
 import { askUserTool } from "./ask-user.ts";
+import { claimTool, releaseTool } from "./claims.ts";
 import { delegateTool, spawnWorkerTool } from "./delegate.ts";
 import { answerTool, readInboxTool, sendMessageTool } from "./messages.ts";
 import { permissionTool } from "./permission.ts";
@@ -22,6 +23,8 @@ export const ORK_TOOLS: readonly OrkTool[] = [
   sendMessageTool,
   readInboxTool,
   answerTool,
+  claimTool,
+  releaseTool,
 ];
 
 /** The tools one session gets. */

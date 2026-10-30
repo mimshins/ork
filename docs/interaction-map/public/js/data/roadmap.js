@@ -449,6 +449,7 @@ export const OFF_ROADMAP = [
   "e922c51",
   "455bf70",
   "64e1c4b",
+  "7f03734",
 ];
 
 /** The day the roadmap was last brought up to date. */

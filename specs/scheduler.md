@@ -181,6 +181,9 @@ under the same run id, with a `Replay` built from the run's events:
 | `owner.answered`   | the owner answered with `answer`                                       |
 | `owner.unanswered` | the owner's session ended first; the human is asked instead            |
 | `user.message`     | `ork chat` wrote to a node: delivered now, queued, or by resuming      |
+| `claim.taken`      | a node claimed a resource                                              |
+| `claim.refused`    | a claim overlapped another node's: who holds what                      |
+| `claim.released`   | a node released a claim, itself or by finishing                        |
 | `run.resumed`      | `ork resume` continues the run: the nodes that keep their results      |
 | `run.finished`     | the run ends: `succeeded`, `failed`, `budget_exhausted`, `interrupted` |
 

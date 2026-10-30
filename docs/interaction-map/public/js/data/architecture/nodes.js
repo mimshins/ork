@@ -540,8 +540,8 @@ export const NODES = [
     summary:
       "The tools every Claude node gets for working inside the hierarchy: messaging, reporting, delegating, asking you, and claiming files.",
     facts: [
-      "Built: one registry binds each session's tools, one file per tool: `ask_user`, `permission` (CLI driver), and for leaders `delegate` and `spawn_worker`; arguments are validated with Zod.",
-      "Specified: `send_message`, `read_inbox`, `claim`, `release`, `feedback`. The report is structured output, not a tool.",
+      "Built: one registry binds each session's tools, one file per tool: `ask_user`, `permission` (CLI driver), for leaders `delegate`, `spawn_worker` and `answer`, `send_message` and `read_inbox` for nodes with someone to reach, and `claim` and `release` for parallel writers; arguments are validated with Zod.",
+      "Specified: `feedback`. The report is structured output, not a tool.",
       "In-process for the SDK driver; for the CLI driver, a local MCP server on 127.0.0.1 behind a per-session bearer token.",
     ],
     see: [

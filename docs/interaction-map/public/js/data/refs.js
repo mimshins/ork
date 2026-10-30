@@ -145,6 +145,19 @@ export const BUS = {
     "packages/runtime-claude/test/messages.test.ts",
     "Tests: the message tools",
   ),
+  claims: d("packages/core/src/run/claims.ts", "Code: the run's claims"),
+  claimTests: d(
+    "packages/core/test/claims.test.ts",
+    "Tests: overlapping claims, notices and release",
+  ),
+  claimTools: d(
+    "packages/runtime-claude/src/tools/claims.ts",
+    "Code: claim and release",
+  ),
+  claimAdr: d(
+    "decisions/ADR-027-advisory-claims.md",
+    "Decision: advisory claims",
+  ),
   chat: d("packages/cli/src/runs/chat.ts", "Code: `ork chat`, live or resumed"),
   chatTests: d("packages/cli/test/chat.test.ts", "Tests: `ork chat`"),
 };

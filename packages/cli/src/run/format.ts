@@ -209,13 +209,26 @@ const firstLine = (body: string): string => {
   return line.length > 100 ? `${line.slice(0, 99)}…` : line;
 };
 
-/** Messages and owner questions, without the node prefix. */
+/** Messages, owner questions and claims, without the node prefix. */
 const formatBusEvent = (
   event: Extract<
     RunEvent,
-    { type: `message.${string}` } | { type: `owner.${string}` }
+    | { type: `message.${string}` }
+    | { type: `owner.${string}` }
+    | { type: `claim.${string}` }
   >,
 ): string[] => {
+  if (event.type === "claim.taken") {
+    return [style("dim", `⚑ claimed ${event.resource}`)];
+  }
+  if (event.type === "claim.refused") {
+    const held =
+      event.held === event.resource ? "" : ` (it holds ${event.held})`;
+    return [style("yellow", `⚑ ${event.resource} is ${event.holder}'s${held}`)];
+  }
+  if (event.type === "claim.released") {
+    return [style("dim", `⚑ released ${event.resource}`)];
+  }
   if (event.type === "message.sent") {
     return [style("dim", `✉ to ${event.to}: ${firstLine(event.body)}`)];
   }

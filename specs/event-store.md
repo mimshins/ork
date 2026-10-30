@@ -4,10 +4,9 @@ Status: **Partial**: the store, the recorder, decisions and commands, `ork ps`,
 `ork logs` and `ork tree` are built
 ([store/](../packages/core/src/store/sqlite.ts),
 [tests](../packages/core/test/store.test.ts),
-[CLI tests](../packages/cli/test/runs.test.ts)), and so are messages and
-`ork chat`'s exchanges and resumed runs; claims and feedback records are
-specified for the rest of M1d. Why:
-[ADR-024](../decisions/ADR-024-event-store.md).
+[CLI tests](../packages/cli/test/runs.test.ts)), and so are messages,
+`ork chat`'s exchanges, resumed runs and claims; feedback records are specified
+for the rest of M1d. Why: [ADR-024](../decisions/ADR-024-event-store.md).
 
 Every run, a whole workflow or one node (`ork run --node`), is recorded as it
 happens. The terminal transcript, `ork logs`, `ork tree`, and later the UI are
@@ -78,4 +77,4 @@ records use the same patterns.
 
 ## Specified for M1d
 
-Claims and feedback records are run events like the others.
+Feedback records are run events like the others.

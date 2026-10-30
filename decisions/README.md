@@ -58,3 +58,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [024](./ADR-024-event-store.md)                    | Runs are recorded in one SQLite store, with a JSONL copy                    | Accepted          | waived                                                      |
 | [025](./ADR-025-message-bus.md)                    | Nodes message each other with a notice, then a pull                         | Accepted          | waived                                                      |
 | [026](./ADR-026-resume-by-replay.md)               | `ork resume` replays a run's recorded results                               | Accepted          | waived                                                      |
+| [027](./ADR-027-advisory-claims.md)                | Claims are advisory, by path, and released when a node ends                 | Accepted          | none                                                        |

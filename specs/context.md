@@ -81,8 +81,9 @@ twice.
 - **Bounded loops:** every cycle needs `maxRounds`. A loop out of rounds asks
   the user ([scheduler](./scheduler.md#loops)); a child that fails inside
   `delegate` is reported to its leader.
-- **Claims:** a node can claim files or resources via the `ork__claim` tool, so
-  parallel workers don't collide.
+- **Claims:** a node that may write while another does claims files, folders or
+  other resources with `claim` before it edits them, so parallel workers do not
+  collide ([messaging](./messaging.md#claims)).
 
 ## Built-in practices
 

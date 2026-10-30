@@ -95,6 +95,18 @@ and reads the message with `read_inbox`; a node that is not running sees it when
 it next starts. So a reviewer can warn the coder about something before its
 report, without the leader passing it on.
 
+## Claims: parallel writers stay apart
+
+When nodes that write can run at the same time, Ork gives them `claim` and
+`release` and tells them to claim a file or folder before they edit it. A claim
+on a folder covers everything in it, and a name such as `db:migrations` works
+for anything else shared. If another node holds it, the agent is told who, so it
+can work on something else or message them; Ork tells it when the claim is
+released. Claims are released when a node finishes, and `ork logs` shows them
+(`⚑ claimed src/auth`). They steer agents rather than lock files, so they matter
+most with `isolation: shared` or `--in-place`, where writers share one checkout,
+and they head off merge conflicts between worktrees.
+
 ## A leader decides about its own loops
 
 When a loop runs out of rounds and the leader that owns its nodes is still

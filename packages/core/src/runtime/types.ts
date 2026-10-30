@@ -199,6 +199,25 @@ export type Mailbox = {
   connect: (deliver: (text: string) => void) => () => void;
 };
 
+export type ClaimResult =
+  | { ok: true; resource: string; already: boolean }
+  | { ok: false; error: string };
+
+/**
+ * A node's claims on files, folders and other resources, shared by the run, so
+ * nodes that run at the same time do not change the same thing. A path claim
+ * covers everything under it.
+ */
+export type Claims = {
+  /** Whether another node may write at the same time: then it gets the tools. */
+  contended: () => boolean;
+  /** Takes `resource`, or says who holds it (or something it overlaps). */
+  claim: (resource: string) => ClaimResult;
+  release: (resource: string) => ClaimResult;
+  /** What the node holds now. */
+  held: () => string[];
+};
+
 /** What a session can reach besides its spec: the human, its children, peers. */
 export type SessionPorts = {
   human: HumanChannel;
@@ -206,6 +225,8 @@ export type SessionPorts = {
   ownership?: Ownership;
   /** Only for a leader or worker inside a run. */
   mailbox?: Mailbox;
+  /** Only for a leader or worker inside a run. */
+  claims?: Claims;
 };
 
 export type ClaudeRuntime = {

@@ -8,7 +8,8 @@ the run's socket ([control/](../packages/core/src/control/control.ts),
 [tests](../packages/core/test/control.test.ts)) and the message bus
 ([bus.ts](../packages/core/src/run/bus.ts),
 [tests](../packages/core/test/bus.test.ts)) with the user's messages
-(`ork chat`); `claim` and `feedback` are specified for M1d.
+(`ork chat`), and claims ([claims.ts](../packages/core/src/run/claims.ts),
+[tests](../packages/core/test/claims.test.ts)); `feedback` is specified for M1d.
 
 ## Ork MCP tools
 
@@ -27,7 +28,8 @@ binds. A node's report is its structured output, not a tool
 - ✓ `spawn_worker({ tasks: [{ template, brief }] })`: leaders with a child
   worker and `maxWorkers` left only.
 - ✓ `ask_user(question, options[], recommended, context)`
-- `claim(resource)` and `release(resource)`
+- ✓ `claim(resource)` and ✓ `release(resource)`: sessions in a run that may
+  write while another does ([claims](#claims)).
 - `feedback(kind, target, title, body, severity, evidence[])`: capped per
   session; see [Feedback and self-improvement](./feedback.md).
 - ✓ `permission`: CLI driver only.
@@ -65,6 +67,29 @@ ports.
 - **Priority:** the user's messages (`ork chat`) and answers are pushed in full;
   agent messages only as notices, so a busy session pays for a body only when it
   reads it.
+
+## Claims
+
+One registry per run, in-process in `core/`
+([claims.ts](../packages/core/src/run/claims.ts),
+[ADR-027](../decisions/ADR-027-advisory-claims.md)); the scheduler gives each
+leader and worker its `Claims` through the session's ports.
+
+- **Who gets the tools:** a leader or worker whose isolation is not `readonly`,
+  when the run has another such node, or a leader that may spawn copies of one
+  (`maxWorkers`). Their system prompt tells them to claim before they edit.
+- **What a claim names:** a path from the project root, or a name for something
+  else shared (`db:migrations`). An absolute path inside the node's checkout is
+  made relative to it, so nodes in different worktrees claim the same file the
+  same way. A folder covers everything in it; `.` is the whole project.
+- **Refused:** a claim that overlaps another node's is refused with who holds
+  what (`claim.refused`); claiming again what the node already covers says so.
+  When the claim in its way is released, a refused node's live session gets
+  `[ork] src/auth was released by api. Claim what you need again before you change it.`
+- **Released:** with `release`, or all at once when the node's activation ends,
+  however it ends (`claim.released`, with `reason`).
+- **Advisory:** claims steer agents; they do not lock files. A node that edits
+  without claiming is not stopped, and a resumed run starts with none.
 
 ## Decisions
 

@@ -200,7 +200,7 @@ describe("run lookup and formatting", () => {
     ]);
   });
 
-  it("prints messages and owner questions with the node they are from", () => {
+  it("prints messages, owner questions and claims with their node", () => {
     const lines = (
       [
         {
@@ -232,6 +232,20 @@ describe("run lookup and formatting", () => {
           body: "tabs",
           delivered: "queued",
         },
+        { type: "claim.taken", node: "api", resource: "src" },
+        {
+          type: "claim.refused",
+          node: "ui",
+          resource: "src/a.ts",
+          holder: "api",
+          held: "src",
+        },
+        {
+          type: "claim.released",
+          node: "api",
+          resource: "src",
+          reason: "finished",
+        },
       ] satisfies RunEvent[]
     ).flatMap(event => formatRunEvent(event, 4, new Map()));
     expect(lines).toEqual([
@@ -240,6 +254,9 @@ describe("run lookup and formatting", () => {
       "lead │ → stop (owner)",
       "lead │ → its session ended first; asking you",
       "fix  │ you: tabs (for its next session)",
+      "api  │ ⚑ claimed src",
+      "ui   │ ⚑ src/a.ts is api's (it holds src)",
+      "api  │ ⚑ released src",
     ]);
   });
 });

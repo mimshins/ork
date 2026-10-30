@@ -2,14 +2,15 @@
  * @file The scheduler: runs a compiled workflow to the end. It starts entries,
  *   runs each activation through its node type's executor, routes outputs along
  *   edges (`routing.ts`), bounds loops (`escalation.ts`), runs the children a
- *   leader delegates to (`delegation.ts`), carries messages between sessions
- *   (`bus.ts`), and enforces the run's budget and concurrency (`slots.ts`).
+ *   leader delegates to (`delegation.ts`), keeps messages and claims (`bus.ts`,
+ *   `claims.ts`), and enforces the budget and concurrency (`slots.ts`).
  *   Specified in `specs/scheduler.md`.
  */
 
 import { isClaudeNode } from "@krapht/ork-schema";
 
 import { createBus } from "./bus.ts";
+import { createClaims } from "./claims.ts";
 import { createOwnership, type DelegationHooks } from "./delegation.ts";
 import { createLoops } from "./escalation.ts";
 import {
@@ -75,6 +76,7 @@ export const startRun = (options: RunOptions): RunHandle => {
   };
 
   const bus = createBus({ graph, onEvent });
+  const claims = createClaims({ graph, onEvent, notify: bus.notify });
   const loops = createLoops({
     human: options.human,
     bus,
@@ -169,6 +171,7 @@ export const startRun = (options: RunOptions): RunHandle => {
         limits.budgetUsd === undefined ? undefined : limits.budgetUsd - spent,
       human: options.human,
       mailbox: bus.mailbox(id, activation.template),
+      claims: claims.port(id, activation.template, cwd),
       emit: event => {
         onEvent({ type: "node.event", id, event });
       },
@@ -229,6 +232,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     const type = nodeOf(activation)?.type ?? "control.split";
     if (recorded === null) onEvent(startedEvent(activation, type, round));
     const result = recorded ?? (await execute(activation));
+    claims.releaseAll(id);
     running.delete(id);
     outputs[id] = result.output;
     if (result.sessionId !== undefined) sessionIds.set(id, result.sessionId);

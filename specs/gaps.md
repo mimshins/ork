@@ -69,6 +69,9 @@ carried to the next milestone.
   ([ADR-022](../decisions/ADR-022-integration-registry.md))
 - **L9 · Windows only through WSL.** Native Windows is untested.
   ([installation](../docs/getting-started/installation.md))
+- **L10 · Claims are advisory.** They steer agents but lock nothing: a node that
+  edits without claiming is not stopped.
+  ([ADR-027](../decisions/ADR-027-advisory-claims.md))
 
 ## Chores
 

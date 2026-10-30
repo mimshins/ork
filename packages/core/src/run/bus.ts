@@ -36,6 +36,8 @@ export type Bus = {
    * or into its next one. `null` when the node has no session.
    */
   tell: (node: string, body: string) => "now" | "queued" | null;
+  /** Pushes Ork's own line into the node's live session; dropped otherwise. */
+  notify: (node: string, text: string) => void;
 };
 
 type Open = {
@@ -240,5 +242,12 @@ export const createBus = ({
     return delivered;
   };
 
-  return { mailbox, askOwner, tell };
+  return {
+    mailbox,
+    askOwner,
+    tell,
+    notify: (node, text) => {
+      live.get(node)?.(text);
+    },
+  };
 };

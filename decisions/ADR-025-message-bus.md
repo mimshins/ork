@@ -26,7 +26,8 @@ messages delivered between turns.
 3. **Notice, then pull:** a message lands in the recipient's inbox; a live
    session gets a one-line notice through `Session.send`, and reads the bodies
    with `read_inbox`. Messages and reads are run events, so `ork logs` shows
-   them and `ork resume` can rebuild the inboxes.
+   them; `ork resume` does not rebuild the inboxes yet
+   ([gaps](../specs/gaps.md), G2).
 4. **Mid-turn delivery:** `Session.send` writes the user message with
    `priority: "next"` in both drivers, so Claude Code shows it at the session's
    next step instead of after the turn (checked by hand with `claude` 2.1.314: a
