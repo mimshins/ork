@@ -6,6 +6,7 @@
     "packages/*/scripts",
     "vitest.config.ts",
     "oxlint.config.ts",
-    "oxfmt.config.ts"
+    "oxfmt.config.ts",
+    "types"
   ]
 }
