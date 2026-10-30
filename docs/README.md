@@ -29,6 +29,8 @@ them.
   `ork worktrees`.
 - [Models, effort and budgets](./guides/models-and-budgets.md): picking models
   per node, limits, and saving tokens.
+- [Feedback from your runs](./guides/feedback.md): what Ork and the agents note
+  as runs go, and `ork feedback`.
 - [Accounts and credentials](./guides/accounts.md): the two Claude drivers, `gh`
   and `aws`, and what Ork never stores.
 - [Troubleshooting](./guides/troubleshooting.md): common messages and what to do

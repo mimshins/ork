@@ -28,9 +28,9 @@ Long specs follow the hub and chunk layout
 | [Scheduler: running a workflow](./scheduler.md)   | Partial   | M1c       |
 | [Worktrees: where nodes work](./worktrees.md)     | Built     | M1c       |
 | [Context, skills and precedence](./context.md)    | Partial   | M1c       |
-| [Messaging, decisions and logs](./messaging.md)   | Partial   | M1d       |
-| [Event store: what a run keeps](./event-store.md) | Partial   | M1d       |
-| [Feedback and self-improvement](./feedback.md)    | Specified | M1d, M2   |
+| [Messaging, decisions and logs](./messaging.md)   | Built     | M1d       |
+| [Event store: what a run keeps](./event-store.md) | Built     | M1d       |
+| [Feedback and self-improvement](./feedback.md)    | Partial   | M1d, M2   |
 | [The ork CLI](./cli.md)                           | Partial   | M1        |
 | [The UI](./ui.md)                                 | Planned   | M2        |
 | [Known gaps and limits](./gaps.md)                | Open      | All       |

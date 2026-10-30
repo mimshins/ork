@@ -59,3 +59,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [025](./ADR-025-message-bus.md)                    | Nodes message each other with a notice, then a pull                         | Accepted          | waived                                                      |
 | [026](./ADR-026-resume-by-replay.md)               | `ork resume` replays a run's recorded results                               | Accepted          | waived                                                      |
 | [027](./ADR-027-advisory-claims.md)                | Claims are advisory, by path, and released when a node ends                 | Accepted          | none                                                        |
+| [028](./ADR-028-feedback-capture.md)               | Feedback is captured beside the run's events, grouped by item               | Accepted          | none                                                        |

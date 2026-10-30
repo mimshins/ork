@@ -17,8 +17,7 @@ export const JOURNEYS = [
         from: "tool",
         title: "The builder calls `feedback`",
         detail:
-          'Its brief did not name the spec\'s artifact path, so it spent turns finding it: `feedback(kind: "context-gap", target: "workflow", …)`, with event ids as evidence.',
-        status: "specified",
+          'Its brief did not name the spec\'s artifact path, so it spent turns finding it: `feedback(kind: "context-gap", target: "workflow", …)`, with the files it searched as evidence.',
         docs: [DESIGN.feedback],
       },
       {
@@ -27,14 +26,12 @@ export const JOURNEYS = [
         title: "Within the cap, not a duplicate",
         detail:
           "Its first report this session (the cap is 3), and nothing like it earlier in the run, so it is kept.",
-        status: "specified",
       },
       {
         from: "recorder",
         title: "Masked and fingerprinted",
         detail:
-          "Secrets are masked before anything is written. The agent chose the target, so the pre-filled one is overridden. The fingerprint is target, kind, error code and normalized title.",
-        status: "specified",
+          "Secrets are masked before anything is written. The agent chose the target, so its kind's default is not used. The fingerprint is target, kind, signal code and the title without numbers or punctuation.",
       },
       {
         from: "recorder",
@@ -42,22 +39,19 @@ export const JOURNEYS = [
         title: "It joins an item",
         detail:
           "Two earlier runs reported the same thing, so the item's count goes to 3 and its last seen moves.",
-        status: "specified",
       },
       {
         from: "recorder",
         to: "events",
         title: "`feedback.recorded` in the run's stream",
         detail: "So logs and the UI show it in context.",
-        status: "specified",
       },
       {
         from: "events",
         to: "signals",
         title: "The run's events yield a signal",
         detail:
-          "Later, the review loop hits `maxRounds` and escalates. No model is asked; the event says it.",
-        status: "specified",
+          "Later, the review loop hits `maxRounds`. No model is asked; the `loop.exhausted` event says it, and the signal is recorded right after it.",
         docs: [DESIGN.feedback],
       },
       {
@@ -65,15 +59,13 @@ export const JOURNEYS = [
         to: "recorder",
         title: "Recorded the same way",
         detail:
-          "Masked, fingerprinted and grouped like the agent's report; the target is pre-filled as `workflow`.",
-        status: "specified",
+          "Fingerprinted with its code and grouped like the agent's report, with the same origin filled in; its target is `workflow`.",
       },
       {
         from: "you",
         to: "feedbackCmd",
         title: "You run `ork feedback list`",
         detail: "To see what the runs have reported.",
-        status: "specified",
         docs: [DESIGN.cli],
       },
       {
@@ -82,7 +74,6 @@ export const JOURNEYS = [
         title: "A short list of items",
         detail:
           "Each with its count, first and last seen, and the runs and models it came from. `show` opens one; `dismiss` closes it.",
-        status: "specified",
       },
     ],
   },

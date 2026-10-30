@@ -4,6 +4,13 @@
  *   M2, by the server.
  */
 
+import type {
+  FeedbackKind,
+  FeedbackReport,
+  FeedbackSeverity,
+  FeedbackSource,
+  FeedbackTarget,
+} from "../feedback/types.ts";
 import type { RunEvent, RunStatus } from "../run/types.ts";
 import type { DecisionChoice } from "../runtime/types.ts";
 
@@ -94,18 +101,70 @@ export type DecisionStore = {
   takeCommands: (runId: string) => RunCommand[];
 };
 
-export type EventStore = DecisionStore & {
-  /** Records a new run as `running` in this process. */
-  begin: (run: NewRun) => RunRecord;
-  /** Marks a stored run `running` again, in this process (`ork resume`). */
-  reopen: (runId: string) => void;
-  /** Appends one event; `run.finished` also settles the run's record. */
-  append: (runId: string, event: RunEvent) => StoredEvent;
-  /** Runs, newest first; only one project's when given. */
-  runs: (filter?: { project?: string; limit?: number }) => RunRecord[];
-  /** The runs whose id starts with `prefix` (the whole id matches one). */
-  lookup: (prefix: string) => RunRecord[];
-  /** A run's events in order, after `seq` when given. */
-  events: (runId: string, after?: number) => StoredEvent[];
-  close: () => void;
+/** An item's place in triage (M2 adds the steps after `new`). */
+export type FeedbackStatus =
+  | "new"
+  | "triaged"
+  | "accepted"
+  | "dismissed"
+  | "published"
+  | "resolved";
+
+/** One feedback record, as a run recorded it. */
+export type FeedbackRecord = {
+  id: number;
+  runId: string;
+  /** The run event that carried it. */
+  seq: number;
+  at: string;
+  node?: string;
+  feedback: FeedbackReport;
 };
+
+/** Records with one fingerprint, grouped. */
+export type FeedbackItem = {
+  /** The fingerprint. */
+  id: string;
+  status: FeedbackStatus;
+  /** The first record's. */
+  title: string;
+  target: FeedbackTarget;
+  kind: FeedbackKind;
+  /** The highest of its records'. */
+  severity: FeedbackSeverity;
+  sources: FeedbackSource[];
+  count: number;
+  firstSeen: string;
+  lastSeen: string;
+  runs: string[];
+  workflows: string[];
+  models: string[];
+};
+
+export type FeedbackStore = {
+  /** Items, most recently seen first; without `all`, not the dismissed ones. */
+  feedbackItems: (filter?: { all?: boolean }) => FeedbackItem[];
+  /** The items whose fingerprint starts with `prefix`. */
+  findFeedback: (prefix: string) => FeedbackItem[];
+  /** An item's records, oldest first. */
+  feedbackRecords: (fingerprint: string) => FeedbackRecord[];
+  /** False when there is no such item. */
+  setFeedbackStatus: (fingerprint: string, status: FeedbackStatus) => boolean;
+};
+
+export type EventStore = DecisionStore &
+  FeedbackStore & {
+    /** Records a new run as `running` in this process. */
+    begin: (run: NewRun) => RunRecord;
+    /** Marks a stored run `running` again, in this process (`ork resume`). */
+    reopen: (runId: string) => void;
+    /** Appends one event; `run.finished` also settles the run's record. */
+    append: (runId: string, event: RunEvent) => StoredEvent;
+    /** Runs, newest first; only one project's when given. */
+    runs: (filter?: { project?: string; limit?: number }) => RunRecord[];
+    /** The runs whose id starts with `prefix` (the whole id matches one). */
+    lookup: (prefix: string) => RunRecord[];
+    /** A run's events in order, after `seq` when given. */
+    events: (runId: string, after?: number) => StoredEvent[];
+    close: () => void;
+  };

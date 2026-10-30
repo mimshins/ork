@@ -19,8 +19,9 @@ for agents and engineering tasks:
   do in Claude Code, and Ork never stores a credential.
 
 > **Status: pre-alpha.** The workflow format, `ork run` with delegation and
-> worktrees, the context compiler and `ork doctor` work today; live run views,
-> the decisions inbox and chat come next, then a web UI. See the
+> worktrees, the context compiler, `ork doctor`, run logs, decisions from any
+> terminal, messages between nodes, chat, resume, claims and local feedback work
+> today; end-to-end examples come next, then a web UI. See the
 > [roadmap](./docs/interaction-map/roadmap.md).
 
 ## Quickstart
@@ -51,6 +52,7 @@ Everything is in the [documentation center](./docs/README.md):
   [skills and context](./docs/guides/skills-and-context.md),
   [worktrees](./docs/guides/worktrees.md),
   [models and budgets](./docs/guides/models-and-budgets.md),
+  [feedback from your runs](./docs/guides/feedback.md),
   [accounts and credentials](./docs/guides/accounts.md),
   [troubleshooting](./docs/guides/troubleshooting.md).
 - **How it works:** the [design overview](./docs/design.md), the

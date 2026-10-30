@@ -1,15 +1,15 @@
 # Messaging, decisions and logs
 
-Status: **Partial**: `ask_user`, the permission prompt, `delegate`,
-`spawn_worker`, `send_message`, `read_inbox` and `answer` are built
-([tools/](../packages/runtime-claude/src/tools/registry.ts)), and so are the
+Status: **Built**: Ork's MCP tools
+([tools/](../packages/runtime-claude/src/tools/registry.ts)), the
 [event store](./event-store.md), the decision queue, `ork decide`, `ork stop`,
 the run's socket ([control/](../packages/core/src/control/control.ts),
-[tests](../packages/core/test/control.test.ts)) and the message bus
+[tests](../packages/core/test/control.test.ts)), the message bus
 ([bus.ts](../packages/core/src/run/bus.ts),
 [tests](../packages/core/test/bus.test.ts)) with the user's messages
-(`ork chat`), and claims ([claims.ts](../packages/core/src/run/claims.ts),
-[tests](../packages/core/test/claims.test.ts)); `feedback` is specified for M1d.
+(`ork chat`), claims ([claims.ts](../packages/core/src/run/claims.ts),
+[tests](../packages/core/test/claims.test.ts)) and the `feedback` tool
+([feedback](./feedback.md)). The UI's inbox and chat panel are [M2](./ui.md).
 
 ## Ork MCP tools
 
@@ -30,8 +30,9 @@ binds. A node's report is its structured output, not a tool
 - ✓ `ask_user(question, options[], recommended, context)`
 - ✓ `claim(resource)` and ✓ `release(resource)`: sessions in a run that may
   write while another does ([claims](#claims)).
-- `feedback(kind, target, title, body, severity, evidence[])`: capped per
-  session; see [Feedback and self-improvement](./feedback.md).
+- ✓ `feedback(kind, target?, title, body?, severity?, evidence?)`: every session
+  in a run, capped at 3 per session; see
+  [Feedback and self-improvement](./feedback.md).
 - ✓ `permission`: CLI driver only.
 
 Ork's own tools need no permission prompt, except `permission`, which is the

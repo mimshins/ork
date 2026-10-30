@@ -13,6 +13,7 @@ import {
   appendRecorder,
   createRecorder,
   createReplay,
+  createSignals,
   replayLoopAnswers,
   type ResumeState,
   createWorkspace,
@@ -40,6 +41,7 @@ import { type Driver, isClaudeNode, type Workflow } from "@krapht/ork-schema";
 import { formatReport, loadWorkflow } from "../commands/validate.ts";
 import { style } from "../output.ts";
 import { formatRunEvent } from "./format.ts";
+import { feedbackOrigin } from "./origin.ts";
 
 export type RunWorkflowOptions = {
   file: string;
@@ -218,13 +220,20 @@ export const runWorkflowFile = async (
       ? {}
       : { intervalMs: options.intervalMs }),
   });
-  const onEvent = (event: RunEvent): void => {
-    control.publish(record(event));
-    if (options.json) {
-      options.out(JSON.stringify(event));
-      return;
+  // Feedback Ork derives from the run's events is recorded right after them.
+  const signals = createSignals(
+    feedbackOrigin(path.resolve(options.cwd, options.file)),
+  );
+  const onEvent = (raw: RunEvent): void => {
+    for (const event of signals(raw)) {
+      control.publish(record(event));
+      if (options.json) options.out(JSON.stringify(event));
+      else {
+        for (const line of formatRunEvent(event, width, tools)) {
+          options.out(line);
+        }
+      }
     }
-    for (const line of formatRunEvent(event, width, tools)) options.out(line);
   };
   const workspace: Workspace | undefined =
     gitProject === null

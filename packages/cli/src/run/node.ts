@@ -8,7 +8,9 @@ import path from "node:path";
 
 import {
   type ClaudeRuntime,
+  createFeedback,
   createRecorder,
+  createSignals,
   type EventStore,
   type HumanChannel,
   type RunEvent,
@@ -26,7 +28,8 @@ import type { Driver } from "@krapht/ork-schema";
 
 import { formatReport, loadWorkflow } from "../commands/validate.ts";
 import { style } from "../output.ts";
-import { formatEvent } from "./format.ts";
+import { formatEvent, formatRunEvent } from "./format.ts";
+import { feedbackOrigin } from "./origin.ts";
 import { newRunId } from "./workflow.ts";
 
 export type RunNodeOptions = {
@@ -76,7 +79,7 @@ export const runNode = async (
     return { exitCode: 1, outcome: null };
   };
 
-  const { report, workflow } = loadWorkflow(options.file, options.cwd);
+  const { report, workflow, graph } = loadWorkflow(options.file, options.cwd);
   if (workflow === null) return failed(formatReport(report));
 
   const pairs = parseInputPairs(options.inputs);
@@ -131,8 +134,19 @@ export const runNode = async (
     ...(options.human === undefined ? {} : { local: options.human }),
     ...(options.home === undefined ? {} : { home: options.home }),
   });
-  const record = (event: RunEvent): void => {
-    control.publish(recorder(event));
+  const signals = createSignals(
+    feedbackOrigin(path.resolve(options.cwd, options.file)),
+  );
+  const record = (raw: RunEvent): void => {
+    for (const event of signals(raw)) {
+      control.publish(recorder(event));
+      // The session's own events are printed as they stream.
+      if (event.type === "feedback.recorded" && !options.json) {
+        for (const line of formatRunEvent(event, id.length, new Map())) {
+          options.out(line);
+        }
+      }
+    }
   };
   const nodeType = workflow.nodes[id]?.type ?? "claude.worker";
   record({
@@ -145,7 +159,12 @@ export const runNode = async (
   record({ type: "node.started", id, nodeType, round: 1 });
 
   const runtime = await options.runtime(options.driver ?? plan.driver);
-  const session = runtime.start(plan.spec, { human: control.human });
+  const session = runtime.start(plan.spec, {
+    human: control.human,
+    ...(graph === null
+      ? {}
+      : { feedback: createFeedback({ graph, onEvent: record }).port(id) }),
+  });
   started.resolve(session);
   options.onSession?.(session);
 

@@ -194,6 +194,11 @@ export const formatRunEvent = (
           : `${event.kept.join(", ")} keep their results`;
     return ["", style("dim", `▸ resumed: ${kept}`)];
   }
+  if (event.type === "feedback.recorded") {
+    const { target, kind, title } = event.feedback;
+    const line = style("dim", `✎ feedback (${target}, ${kind}): ${title}`);
+    return [event.node === undefined ? line : `${tag(event.node)} ${line}`];
+  }
   if (event.type === "user.message") {
     const note = event.delivered === "queued" ? " (for its next session)" : "";
     return [

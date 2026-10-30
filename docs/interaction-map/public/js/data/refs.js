@@ -89,6 +89,39 @@ export const CLI = {
   runTests: d("packages/cli/test/run.test.ts", "Tests: `ork run`"),
 };
 
+export const FEEDBACK = {
+  agent: d(
+    "packages/core/src/feedback/agent.ts",
+    "Code: agents' reports, capped and masked",
+  ),
+  signals: d(
+    "packages/core/src/feedback/signals.ts",
+    "Code: system signals from a run's events",
+  ),
+  fingerprint: d(
+    "packages/core/src/feedback/fingerprint.ts",
+    "Code: fingerprints and default targets",
+  ),
+  store: d(
+    "packages/core/src/store/feedback.ts",
+    "Code: records and items in the store",
+  ),
+  tool: d(
+    "packages/runtime-claude/src/tools/feedback.ts",
+    "Code: the feedback tool",
+  ),
+  cli: d("packages/cli/src/runs/feedback.ts", "Code: `ork feedback`'s output"),
+  tests: d("packages/core/test/feedback.test.ts", "Tests: feedback capture"),
+  cliTests: d(
+    "packages/cli/test/feedback.test.ts",
+    "Tests: feedback in a run and `ork feedback`",
+  ),
+  adr: d(
+    "decisions/ADR-028-feedback-capture.md",
+    "Decision: how feedback is captured",
+  ),
+};
+
 export const STORE = {
   store: d(
     "packages/core/src/store/sqlite.ts",

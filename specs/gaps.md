@@ -40,6 +40,9 @@ carried to the next milestone.
 - **G5 · Human notes have no milestone.** Rating or annotating a result is part
   of feedback capture's design but not of any roadmap item.
   ([feedback](./feedback.md))
+- **G6 · A dismissed feedback item cannot be brought back.** `ork feedback` has
+  no way to set an item's status other than `dismiss`; triage (M2) sets the
+  rest. ([feedback](./feedback.md))
 
 ## Limits
 
@@ -84,3 +87,6 @@ carried to the next milestone.
 - **C3 · The interaction map is due a full resync.** Slices since its last sync
   were reviewed only where they touched the map, and its header badge still
   shows the old mark. ([sync](../docs/interaction-map/sync.md))
+- **C4 · `ork --version` says `0.0.0`.** The root command hardcodes it, while
+  feedback reads the CLI's `package.json`; it should read the same.
+  ([main.ts](../packages/cli/src/main.ts))

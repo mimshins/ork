@@ -8,7 +8,7 @@ import { decide, resume, stop } from "./commands/control.ts";
 import { doctor } from "./commands/doctor.ts";
 import { init } from "./commands/init.ts";
 import { run } from "./commands/run.ts";
-import { logs, ps, tree } from "./commands/runs.ts";
+import { feedback, logs, ps, tree } from "./commands/runs.ts";
 import { validate } from "./commands/validate.ts";
 import { worktrees } from "./commands/worktrees.ts";
 
@@ -29,6 +29,7 @@ export const main = defineCommand({
     stop,
     chat,
     resume,
+    feedback,
     context,
     worktrees,
     wt: worktrees,

@@ -1,12 +1,11 @@
 # Event store: what a run keeps
 
-Status: **Partial**: the store, the recorder, decisions and commands, `ork ps`,
-`ork logs` and `ork tree` are built
-([store/](../packages/core/src/store/sqlite.ts),
+Status: **Built**: the store, the recorder, decisions and commands, `ork ps`,
+`ork logs` and `ork tree` ([store/](../packages/core/src/store/sqlite.ts),
 [tests](../packages/core/test/store.test.ts),
-[CLI tests](../packages/cli/test/runs.test.ts)), and so are messages,
-`ork chat`'s exchanges, resumed runs and claims; feedback records are specified
-for the rest of M1d. Why: [ADR-024](../decisions/ADR-024-event-store.md).
+[CLI tests](../packages/cli/test/runs.test.ts)), with messages, `ork chat`'s
+exchanges, resumed runs, claims and feedback records. Why:
+[ADR-024](../decisions/ADR-024-event-store.md).
 
 Every run, a whole workflow or one node (`ork run --node`), is recorded as it
 happens. The terminal transcript, `ork logs`, `ork tree`, and later the UI are
@@ -74,7 +73,6 @@ records use the same patterns.
   how many times it ran, tokens and cost. `--json` prints the tree.
 - `<run>` is an id or a unique prefix of one; without it, this project's newest
   run. An ambiguous prefix lists the matches.
-
-## Specified for M1d
-
-Feedback records are run events like the others.
+- **Feedback** is recorded with the run: each `feedback.recorded` event is also
+  a row in the `feedback` table, grouped by fingerprint into `feedback_items`
+  ([feedback](./feedback.md)); `ork feedback` reads them.

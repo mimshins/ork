@@ -6,6 +6,7 @@
 
 import type { Driver, Effort } from "@krapht/ork-schema";
 
+import type { FeedbackPort } from "../feedback/types.ts";
 import type { REPORT_STATUSES } from "../graph/types.ts";
 
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
@@ -227,6 +228,8 @@ export type SessionPorts = {
   mailbox?: Mailbox;
   /** Only for a leader or worker inside a run. */
   claims?: Claims;
+  /** Only for a leader or worker inside a run. */
+  feedback?: FeedbackPort;
 };
 
 export type ClaudeRuntime = {

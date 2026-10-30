@@ -149,6 +149,7 @@ export const claudeExecutor =
     if (context.ownership !== undefined) ports.ownership = context.ownership;
     if (context.mailbox !== undefined) ports.mailbox = context.mailbox;
     if (context.claims !== undefined) ports.claims = context.claims;
+    if (context.feedback !== undefined) ports.feedback = context.feedback;
     const session = runtime.start(spec, ports);
     context.signal.addEventListener(
       "abort",

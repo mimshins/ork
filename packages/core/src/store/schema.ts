@@ -53,6 +53,36 @@ export const MIGRATIONS = [
   // 3: `ork chat` messages are commands with a node and a body.
   `ALTER TABLE commands ADD COLUMN node TEXT;
    ALTER TABLE commands ADD COLUMN body TEXT;`,
+  // 4: feedback records, grouped by fingerprint into items with a status.
+  `CREATE TABLE feedback (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     run_id TEXT NOT NULL REFERENCES runs (id),
+     seq INTEGER NOT NULL,
+     at TEXT NOT NULL,
+     node TEXT,
+     source TEXT NOT NULL,
+     kind TEXT NOT NULL,
+     target TEXT NOT NULL,
+     severity TEXT NOT NULL,
+     title TEXT NOT NULL,
+     body TEXT NOT NULL,
+     evidence TEXT NOT NULL,
+     code TEXT,
+     fingerprint TEXT NOT NULL,
+     workflow TEXT,
+     workflow_hash TEXT,
+     node_type TEXT,
+     model TEXT,
+     driver TEXT,
+     version TEXT,
+     feedback_version INTEGER NOT NULL
+   );
+   CREATE INDEX feedback_by_fingerprint ON feedback (fingerprint, at);
+   CREATE TABLE feedback_items (
+     fingerprint TEXT PRIMARY KEY,
+     status TEXT NOT NULL,
+     updated_at TEXT NOT NULL
+   );`,
 ];
 
 export type Row = Record<string, unknown> | undefined;

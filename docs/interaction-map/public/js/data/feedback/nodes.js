@@ -7,7 +7,7 @@
  *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
  */
 
-import { CONTEXT, DESIGN } from "../refs.js";
+import { CONTEXT, DESIGN, FEEDBACK, STORE } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -67,15 +67,15 @@ export const NODES = [
     zone: "surfaces",
     x: 320,
     y: 240,
-    status: "specified",
+    status: "built",
     pkg: "cli",
     summary:
       "Reads the local feedback items: what was reported, how often, in which runs, workflows and models. It is also one of the places you rate or annotate a node's result.",
     facts: [
-      "`list`, `show` and `dismiss` are milestone 1d.",
+      "Built: `list` (newest first; `--all` adds dismissed items), `show <item>` with every record, and `dismiss <item>`; an item is a prefix of its fingerprint.",
       "Human notes also come from `ork decide` and the UI; the design gives them no milestone.",
     ],
-    docs: [DESIGN.cli, DESIGN.feedback, DESIGN.milestones],
+    docs: [DESIGN.cli, DESIGN.feedback, FEEDBACK.cli, FEEDBACK.cliTests],
   },
   {
     id: "panel",
@@ -118,19 +118,19 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 120,
-    status: "specified",
+    status: "built",
     pkg: "core",
     summary:
       "Every run's events, in order. Feedback reads it for signals and writes back to it, so logs and the UI show each report next to what caused it.",
     facts: [
-      "Each record is also a `feedback.recorded` event in the run's stream.",
-      "Evidence points at event ids and artifact paths, never pasted file contents.",
+      "Each record is also a `feedback.recorded` event in the run's stream, so `ork logs` shows it beside what caused it.",
+      "Evidence is artifact paths and tool names, never pasted file contents.",
     ],
     see: [
       { map: "architecture", node: "eventStore", label: "The event store" },
       { map: "messaging", node: "events", label: "Messages and decisions" },
     ],
-    docs: [DESIGN.messaging, DESIGN.feedback],
+    docs: [DESIGN.messaging, DESIGN.feedback, STORE.store],
   },
   {
     id: "signals",
@@ -139,16 +139,15 @@ export const NODES = [
     zone: "core",
     x: 880,
     y: 120,
-    status: "specified",
+    status: "built",
     pkg: "core",
     summary:
       "Friction Ork can see for itself in the event stream, so it costs nothing and is objective.",
     facts: [
-      "A loop hit `maxRounds`, an escalation, a budget overrun, a permission denial, a tool error.",
-      "A decision that timed out, or you overriding a recommended option.",
-      "Milestone 1d.",
+      "Built: a loop out of rounds, a budget that ran out, a tool you denied, an Ork tool that failed, a gate that timed out, and an answer other than the recommended one.",
+      "Derived where the run's events are recorded, decisions included, and recorded right after the event that shows them.",
     ],
-    docs: [DESIGN.feedback, DESIGN.milestones],
+    docs: [DESIGN.feedback, FEEDBACK.signals, FEEDBACK.tests, FEEDBACK.adr],
   },
   {
     id: "recorder",
@@ -157,16 +156,21 @@ export const NODES = [
     zone: "core",
     x: 880,
     y: 240,
-    status: "specified",
+    status: "built",
     pkg: "core",
     summary:
       "Where the three sources meet. It masks secrets, drops duplicates, pre-fills the target, fingerprints the record and writes it.",
     facts: [
-      "Secrets are masked on write, with the same patterns the publish redaction uses.",
-      "Fingerprint: target, kind, tool or error code, normalized title.",
-      "Target from the evidence: a tool error is `ork`, a missing input in a brief is `workflow`.",
+      "Masks secrets with the store's patterns, caps an agent at 3 reports a session, and drops a run's duplicates.",
+      "Fingerprint: target, kind, signal code, and the title without numbers or punctuation.",
+      "Fills in each record's origin: workflow and its hash, node type, model, driver, Ork version. An agent's target defaults from its kind (`bug` is `ork`, `context-gap` and `skill` are `project`).",
     ],
-    docs: [DESIGN.feedback],
+    docs: [
+      DESIGN.feedback,
+      FEEDBACK.agent,
+      FEEDBACK.fingerprint,
+      FEEDBACK.signals,
+    ],
   },
   {
     id: "table",
@@ -175,17 +179,17 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 360,
-    status: "specified",
+    status: "built",
     pkg: "core",
     summary:
       "The local store, a `feedback` table in `~/.ork/state.db`. Records with one fingerprint form an item, so a thousand records become a short list.",
     facts: [
-      "A record: origin (run, workflow and its hash, node, model, driver, Ork version), content, status and fingerprint.",
-      "An item: its count, first and last seen, and the runs, workflows and models it was seen in.",
-      "Status: `new → triaged → accepted | dismissed`, then `published` or `resolved`.",
-      "Versioned by `feedbackVersion`; never holds a token.",
+      "A record: origin (run, workflow and its hash, node, model, driver, Ork version), content and fingerprint.",
+      "An item: its status, count, first and last seen, and the runs, workflows and models it was seen in.",
+      "Status, kept per item: `new`, `dismissed` now; `triaged`, `accepted`, `published`, `resolved` with triage in milestone 2.",
+      "Records carry a `feedbackVersion`; nothing holds a token.",
     ],
-    docs: [DESIGN.feedback],
+    docs: [DESIGN.feedback, FEEDBACK.store, FEEDBACK.tests],
   },
   {
     id: "triage",
@@ -375,15 +379,14 @@ export const NODES = [
     zone: "runtime",
     x: 1440,
     y: 240,
-    status: "specified",
+    status: "built",
     pkg: "runtime-claude",
     summary:
       "One of Ork's MCP tools, given to every Claude node, for the friction an agent sees that no event shows. Its description asks for only what materially got in the way, in one line and a short body.",
     facts: [
-      "`feedback(kind, target, title, body, severity, evidence[])`.",
+      "`feedback(kind, target?, title, body?, severity?, evidence?)`.",
       "Kinds: `friction`, `bug`, `context-gap`, `skill`, `workflow`, `idea`. Targets: `ork`, `workflow`, `project`.",
-      "Capped per session (default 3), so it stays cheap in tokens.",
-      "Milestone 1d.",
+      "Every Claude node inside a run gets it, `ork run --node` too; capped at 3 reports a session.",
     ],
     see: [
       { map: "messaging", node: "mcpTools", label: "Ork's MCP tools" },
@@ -393,7 +396,7 @@ export const NODES = [
         label: "The tools in the architecture",
       },
     ],
-    docs: [DESIGN.feedback, DESIGN.messaging],
+    docs: [DESIGN.feedback, DESIGN.messaging, FEEDBACK.tool],
   },
 
   // ── GitHub ───────────────────────────────────────────────────────────────

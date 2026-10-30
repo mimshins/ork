@@ -1,6 +1,7 @@
 /**
- * @file `ork ps`, `ork logs` and `ork tree`: read the runs every project has
- *   recorded in `~/.ork/state.db` (specs/event-store.md).
+ * @file `ork ps`, `ork logs`, `ork tree` and `ork feedback`: read what every
+ *   project's runs recorded in `~/.ork/state.db` (specs/event-store.md,
+ *   specs/feedback.md).
  */
 
 import {
@@ -13,6 +14,11 @@ import {
 import { defineCommand } from "citty";
 
 import { style, write } from "../output.ts";
+import {
+  findFeedbackItem,
+  formatFeedbackItem,
+  formatFeedbackItems,
+} from "../runs/feedback.ts";
 import { findRun } from "../runs/find.ts";
 import { cost, formatRuns, formatTree } from "../runs/format.ts";
 import { followRun } from "../runs/logs.ts";
@@ -128,4 +134,84 @@ export const tree = defineCommand({
       );
       for (const line of formatTree(roots)) write(line);
     }),
+});
+
+const itemArg = {
+  type: "positional",
+  description: "A feedback item's id, or a prefix of one",
+  required: true,
+} as const;
+
+const json = {
+  type: "boolean",
+  description: "Print JSON",
+  default: false,
+} as const;
+
+export const feedback = defineCommand({
+  meta: {
+    name: "feedback",
+    description:
+      "What got in the way in your runs, grouped: list, show, dismiss",
+  },
+  subCommands: {
+    list: defineCommand({
+      meta: { name: "list", description: "List feedback items, newest first" },
+      args: {
+        all: {
+          type: "boolean",
+          description: "Dismissed items too",
+          default: false,
+        },
+        json,
+      },
+      run: ({ args }) =>
+        withStore(store => {
+          const items = store.feedbackItems({ all: args.all });
+          if (args.json) write(JSON.stringify(items, undefined, 2));
+          else for (const line of formatFeedbackItems(items)) write(line);
+        }),
+    }),
+    show: defineCommand({
+      meta: { name: "show", description: "Show an item and its records" },
+      args: { item: itemArg, json },
+      run: ({ args }) =>
+        withStore(store => {
+          const found = findFeedbackItem(store, args.item);
+          if (!found.ok) {
+            writeErr(found.error);
+            process.exitCode = 1;
+            return;
+          }
+          const records = store.feedbackRecords(found.item.id);
+          if (args.json) {
+            write(JSON.stringify({ ...found.item, records }, undefined, 2));
+            return;
+          }
+          for (const line of formatFeedbackItem(found.item, records)) {
+            write(line);
+          }
+        }),
+    }),
+    dismiss: defineCommand({
+      meta: {
+        name: "dismiss",
+        description: "Dismiss an item: it leaves the list, and stays dismissed",
+      },
+      args: { item: itemArg },
+      run: ({ args }) =>
+        withStore(store => {
+          const found = findFeedbackItem(store, args.item);
+          if (!found.ok) {
+            writeErr(found.error);
+            process.exitCode = 1;
+            return;
+          }
+          store.setFeedbackStatus(found.item.id, "dismissed");
+          write(
+            `${style("green", "✓")} dismissed ${found.item.id}: ${found.item.title}`,
+          );
+        }),
+    }),
+  },
 });

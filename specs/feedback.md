@@ -1,7 +1,15 @@
 # Feedback and self-improvement
 
-Status: **Specified**: capture in M1d; triage, apply, lessons and publishing in
-M2. Why: [ADR-013](../decisions/ADR-013-feedback-loop.md).
+Status: **Partial**: capture is built: the `feedback` tool, system signals,
+fingerprints, records grouped into items, and
+`ork feedback list | show | dismiss`
+([agent.ts](../packages/core/src/feedback/agent.ts),
+[signals.ts](../packages/core/src/feedback/signals.ts),
+[store](../packages/core/src/store/feedback.ts),
+[tests](../packages/core/test/feedback.test.ts),
+[ADR-028](../decisions/ADR-028-feedback-capture.md)). Human notes have no
+milestone yet ([gaps](./gaps.md)); triage, apply, lessons and publishing are M2.
+Why: [ADR-013](../decisions/ADR-013-feedback-loop.md).
 
 Every run teaches something: a tool that got in the way, a brief that missed
 context, an `AGENTS.md` that is out of date. Ork captures that feedback locally,
@@ -16,15 +24,25 @@ feedback about Ork itself to its GitHub Discussions.
 | **Agent reports**  | The `feedback` tool every Claude node gets                                                                                                                                                                        | Agents see friction that no event shows           |
 | **Human notes**    | Rating or annotating a node's result in `ork decide`, `ork feedback`, or the UI                                                                                                                                   | The best signal for whether a result was _useful_ |
 
+**System signals** (built), each recorded right after the event that shows it: a
+loop out of rounds (`loop.exhausted`), a budget that ran out
+(`budget.exhausted`), a tool the user denied (`permission.denied`), an Ork tool
+that returned an error (`tool.error`), a gate that timed out and took its
+default (`gate.timeout`), and an answer other than the recommended one
+(`recommendation.overridden`). They are derived where a run's events are
+recorded, so the decision queue's events count too.
+
 **The `feedback` tool:**
-`feedback(kind, target, title, body, severity, evidence[])`.
+`feedback(kind, target?, title, body?, severity?, evidence?)`, for every Claude
+node inside a run, `ork run --node` included.
 
 - `kind`: `friction`, `bug`, `context-gap`, `skill`, `workflow`, or `idea`.
-- `evidence`: event ids and artifact paths, never pasted file contents.
+- `evidence`: artifact paths and tool names, never pasted file contents.
+- `severity`: `low`, `medium` (the default) or `high`.
 - The tool's description tells the agent to report only what materially got in
   its way, in one line plus a short body.
-- Ork caps reports per session (default 3) and drops duplicates within a run, so
-  feedback stays cheap in tokens.
+- Ork caps reports at 3 per session and drops duplicates within a run (a
+  duplicate is answered as recorded), so feedback stays cheap in tokens.
 
 **Three targets**, because each has a different audience:
 
@@ -34,8 +52,9 @@ feedback about Ork itself to its GitHub Discussions.
 | `workflow` | This workflow's design: briefs, models, budgets, loop bounds | Local: the workflow's author, `ork feedback apply`     |
 | `project`  | The repo's context: `AGENTS.md`, `CLAUDE.md`, skills, docs   | Local: the project's maintainers, `ork feedback apply` |
 
-Ork pre-fills the `target` from the evidence (a tool error is `ork`; a missing
-input in a brief is `workflow`), and the agent may override it.
+A report without a `target` takes its kind's: `bug` is about `ork`,
+`context-gap` and `skill` the `project`, the rest the `workflow`. A system
+signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
 
 **Storage, local first:**
 
@@ -43,9 +62,10 @@ input in a brief is `workflow`), and the agent may override it.
   - its origin: id, time, source, run, workflow name and content hash, node,
     node type, model, driver, Ork version;
   - its content: kind, target, severity, title, body, evidence;
-  - its lifecycle: status and fingerprint.
-- Status moves `new → triaged → accepted | dismissed`, then `published` or
-  `resolved`.
+  - its fingerprint, and the signal's code for a system signal.
+- Each fingerprint is an item in `feedback_items`, which holds its status:
+  `new → triaged → accepted | dismissed`, then `published` or `resolved`. A
+  dismissed item stays dismissed when it recurs. M1d sets `new` and `dismissed`.
 - Each record is also a `feedback.recorded` event in the run's stream, so logs
   and the UI show it in context.
 - Secrets are masked when a record is written, with the same patterns the
@@ -58,6 +78,11 @@ input in a brief is `workflow`), and the agent may override it.
   raw records into **items**.
 - An item records its count, first and last seen, and the runs, workflows and
   models it was seen in. A thousand records become a short list.
+- **Reading them:** `ork feedback list` prints the items, most recently seen
+  first (id, count, target and kind, title, when last seen); `--all` adds
+  dismissed ones, `--json` prints them. `ork feedback show <item>` prints an
+  item and each of its records; `ork feedback dismiss <item>` dismisses it.
+  `<item>` is its fingerprint or a unique prefix of it.
 - `ork feedback triage` runs the built-in `ork:feedback-triage` workflow over
   new items. It merges near-duplicates, writes a summary for each item, and
   proposes a fix. Ork improves itself with its own engine.

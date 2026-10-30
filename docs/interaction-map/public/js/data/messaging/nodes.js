@@ -251,7 +251,7 @@ export const NODES = [
     zone: "runtime",
     x: 1160,
     y: 480,
-    status: "partial",
+    status: "built",
     pkg: "runtime-claude",
     summary:
       "How a session reaches the rest of the run: ordinary tool calls that Ork answers.",
@@ -260,7 +260,7 @@ export const NODES = [
       "Built: `send_message(to, body)` and `read_inbox()` for nodes with someone to reach, and `answer(question, choice)` for leaders.",
       "Built: `claim(resource)` and `release(resource)` for nodes that may write while another does; an overlapping claim is refused with who holds it, and the claimant hears when it is released. The report is structured output, not a tool.",
       "Built, for leaders: `delegate([{ child, brief }])` and `spawn_worker([{ template, brief }])`, blocking until every child has reported.",
-      "`feedback(kind, target, …)` reports what got in the way, capped per session.",
+      "Built: `feedback(kind, target, …)` reports what got in the way, capped at 3 per session.",
     ],
     see: [
       {

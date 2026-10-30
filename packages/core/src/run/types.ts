@@ -7,6 +7,7 @@
 
 import type { Driver, Node, NodeType, Workflow } from "@krapht/ork-schema";
 
+import type { FeedbackPort, FeedbackReport } from "../feedback/types.ts";
 import type { CompiledGraph } from "../graph/types.ts";
 import type {
   Claims,
@@ -63,6 +64,8 @@ export type ExecuteContext = {
   mailbox?: Mailbox;
   /** The node's claims on files and resources, shared by the run. */
   claims?: Claims;
+  /** Where the node's session reports feedback (the `feedback` tool). */
+  feedback?: FeedbackPort;
   cwd: string;
   /** The git checkout the node works in, when the run uses worktrees. */
   checkout?: Checkout;
@@ -218,6 +221,8 @@ export type RunEvent =
   /** Another process asked the run to do something, e.g. `ork stop`. */
   | { type: "run.command"; command: "stop" }
   | BusEvent
+  /** A feedback record: an agent's report, or a signal Ork derived. */
+  | { type: "feedback.recorded"; node?: string; feedback: FeedbackReport }
   | { type: "run.finished"; result: RunResult };
 
 export type RunOptions = {

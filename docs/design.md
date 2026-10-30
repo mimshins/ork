@@ -59,7 +59,8 @@ parts fit together is the [interaction map](./interaction-map/README.md).
   [event store](../specs/event-store.md) with `ps`, `logs`, `tree`; the decision
   queue with `decide`, `stop` and `run --detach`; the message bus with
   `send_message`, `read_inbox` and loops asking a live owner; `chat` and
-  `resume`). Ship the `software-factory` and `pr-review` examples.
+  `resume`; `claim` and `release`; feedback capture). Ship the
+  `software-factory` and `pr-review` examples.
   - Feedback capture: the `feedback` tool, system signals, the local table and
     fingerprints, `ork feedback list | show | dismiss`.
 - **M2: UI.**

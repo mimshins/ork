@@ -1,8 +1,8 @@
 /**
  * @file The event store on `node:sqlite` (ADR-024): one database for every
  *   project, `~/.ork/state.db`, in WAL mode so other `ork` processes read while
- *   a run writes. Events are stored with secrets masked; the schema is
- *   versioned with `user_version`.
+ *   a run writes. Events are stored with secrets masked, and feedback records
+ *   beside them; the schema is versioned with `user_version`.
  */
 
 import { mkdirSync } from "node:fs";
@@ -12,6 +12,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import type { RunEvent } from "../run/types.ts";
 import { decisionQueries } from "./decisions.ts";
+import { feedbackQueries } from "./feedback.ts";
 import { maskReplacer } from "./mask.ts";
 import { migrate, type Row, text } from "./schema.ts";
 import type { EventStore, RunRecord, StoredRunStatus } from "./types.ts";
@@ -102,8 +103,11 @@ export const openStore = (file: string = storePath()): EventStore => {
     "SELECT seq, at, data FROM events WHERE run_id = ? AND seq > ? ORDER BY seq",
   );
 
+  const { insertFeedback, ...feedback } = feedbackQueries(db);
+
   return {
     ...decisionQueries(db),
+    ...feedback,
     begin: run => {
       const startedAt = new Date().toISOString();
       insertRun.run(
@@ -138,6 +142,9 @@ export const openStore = (file: string = storePath()): EventStore => {
       );
       if (event.type === "node.finished" && event.usage !== undefined) {
         addCost.run(event.usage.costUsd, runId);
+      }
+      if (event.type === "feedback.recorded") {
+        insertFeedback(runId, seq, at, event.node, event.feedback);
       }
       if (event.type === "run.finished") {
         finishRun.run(event.result.status, at, event.result.costUsd, runId);

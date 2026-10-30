@@ -21,7 +21,7 @@ export const EDGES = [
     label: "read · rate · annotate",
     detail:
       "List and inspect items, dismiss one, or rate or annotate a node's result.",
-    status: "specified",
+    status: "partial",
   },
   {
     id: "you-panel",
@@ -61,7 +61,7 @@ export const EDGES = [
     kind: "local",
     label: "list · show · dismiss",
     detail: "Reads items and their records; `dismiss` sets the item's status.",
-    status: "specified",
+    status: "built",
     docs: [DESIGN.cli],
   },
   {
@@ -127,7 +127,7 @@ export const EDGES = [
     label: "the run's events",
     detail:
       "Signals are derived from events already recorded, with no model call.",
-    status: "specified",
+    status: "built",
   },
   {
     id: "signals-recorder",
@@ -136,7 +136,7 @@ export const EDGES = [
     kind: "local",
     label: "system signal",
     detail: "For example: the review loop hit `maxRounds` and escalated.",
-    status: "specified",
+    status: "built",
     docs: [DESIGN.feedback],
   },
   {
@@ -147,7 +147,7 @@ export const EDGES = [
     label: "agent report",
     detail:
       "Over the session's cap, or a duplicate within the run, the report is dropped.",
-    status: "specified",
+    status: "built",
     docs: [DESIGN.feedback],
   },
   {
@@ -157,7 +157,7 @@ export const EDGES = [
     kind: "event",
     label: "`feedback.recorded`",
     detail: "So logs and the UI show the report in context.",
-    status: "specified",
+    status: "built",
   },
   {
     id: "recorder-table",
@@ -167,7 +167,7 @@ export const EDGES = [
     label: "masked record",
     detail:
       "Written with its fingerprint; it joins the item with that fingerprint or starts one.",
-    status: "specified",
+    status: "built",
     docs: [DESIGN.feedback],
   },
 

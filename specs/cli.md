@@ -2,8 +2,9 @@
 
 Status: **Partial**: `ork init`, `ork validate`, `ork doctor`, `ork run` (a
 whole workflow, or one node with `--node`), `ork ps`, `ork logs`, `ork tree`,
-`ork decide`, `ork stop`, `ork chat`, `ork resume`, `ork worktrees` and
-`ork context explain` are built ([code](../packages/cli/src/main.ts),
+`ork decide`, `ork stop`, `ork chat`, `ork resume`, `ork worktrees`,
+`ork context explain` and `ork feedback list | show | dismiss`
+([feedback](./feedback.md)) are built ([code](../packages/cli/src/main.ts),
 [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts)); the other commands are
 specified. Published as `@krapht/ork`
@@ -25,7 +26,7 @@ ork stop [<run>]                 # stop a live run from any terminal
 ork resume [<run>] [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json]  # continue a stopped or crashed run
 ork worktrees [list|clean]       # Ork's worktrees and branches; clean them up safely
 ork context explain <wf> <node> [--json]  # what one node's session loads, layer by layer
-ork feedback [list|show|dismiss] # local feedback items (triage, apply, lesson, publish: M2)
+ork feedback list [--all] [--json] | show <item> [--json] | dismiss <item>  # local feedback items (triage, apply, lesson, publish: M2)
 ork ui [--port 4417]             # milestone 2
 ```
 
