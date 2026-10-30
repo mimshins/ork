@@ -14,6 +14,7 @@ import {
   README,
   RUNTIME,
   SCHEMA,
+  WORKTREES,
 } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
@@ -99,6 +100,7 @@ export const NODES = [
     facts: [
       "Built: `ork init` scaffolds `.ork/` and never overwrites a file; `ork validate` prints schema and graph diagnostics with file, line and column; `ork doctor` reports your own logins and never prints a token or your email.",
       "Built: `ork run <wf>` runs a whole workflow through the scheduler, and `--node <id>` one Claude node; questions and permission prompts are answered on the terminal.",
+      "Built: `ork worktrees` lists the worktrees and `ork/` branches runs left, and `clean` removes them, asking first.",
       "Specified: `ps`, `logs --follow`, `tree`, `stop`, `resume` to watch and steer runs.",
       "`ork decide` answers pending decisions; the recommended option is preselected.",
       "`ork context explain <wf> <node>` shows the resolved layer stack for one node.",
@@ -110,6 +112,7 @@ export const NODES = [
       CLI.doctor,
       CLI.run,
       CLI.runWorkflow,
+      WORKTREES.command,
       CLI.human,
       CLI.tests,
       CLI.runTests,
@@ -300,16 +303,22 @@ export const NODES = [
     zone: "core",
     x: 880,
     y: 840,
-    status: "specified",
+    status: "built",
     pkg: "core",
     summary:
-      "Gives each node with `isolation: worktree` its own git worktree and branch, based on its owner's branch, and cleans them up after the run.",
+      "Gives each node with `isolation: worktree` its own git worktree and branch, beside the clone, based on its owner's branch; commits its leftovers and merges a passing child into its owner.",
     facts: [
-      "`shared` works in the owner's checkout; `readonly` shares it with write tools denied.",
-      "Owners merge their children's branches.",
-      "Claims (`claim`, `release`) keep parallel workers off the same files.",
+      "`shared` works in the owner's worktree (or the project root); `readonly` shares it with write tools denied.",
+      "Copies `CLAUDE.local.md`, `.claude/settings.local.json` and what `.worktreeinclude` lists; carries upstream artifacts in.",
+      "Refuses to start while instructions or skills are uncommitted (`--allow-dirty`).",
+      "Removes merged children's worktrees; keeps the run's result. `ork worktrees` lists and cleans the rest.",
     ],
-    docs: [DESIGN.concepts],
+    docs: [
+      WORKTREES.manager,
+      WORKTREES.workspace,
+      WORKTREES.tests,
+      DESIGN.worktrees,
+    ],
   },
   {
     id: "nodeTypes",
@@ -419,19 +428,19 @@ export const NODES = [
   {
     id: "worktrees",
     title: "Git worktrees",
-    sub: "`.ork/worktrees/` · a branch each",
+    sub: "beside the clone · a branch each",
     zone: "machine",
     x: 1160,
     y: 840,
-    status: "specified",
+    status: "built",
     pkg: null,
     summary:
       "The checkouts writing nodes work in. Each is a `git worktree` on its own branch, so parallel workers never edit the same files.",
     facts: [
-      "Git-ignored.",
-      "Removed when the run finishes, unless kept for inspection.",
+      "In `../<clone>-worktrees/ork-<run>-<node>`, on `ork/<run>/<node>`: beside the clone, so a session loads only its own branch's `CLAUDE.md`.",
+      "Merged children are removed when the run finishes; the result stays for you, listed by `ork worktrees`.",
     ],
-    docs: [DESIGN.concepts],
+    docs: [WORKTREES.list, WORKTREES.command, DESIGN.worktrees],
   },
   {
     id: "runStore",

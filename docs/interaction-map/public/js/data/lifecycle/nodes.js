@@ -5,7 +5,15 @@
  *   map is {@link SIZE} wide and tall.
  */
 
-import { CLI, CORE, DESIGN, ENGINE, NODE_TYPES, SCHEMA } from "../refs.js";
+import {
+  CLI,
+  CORE,
+  DESIGN,
+  ENGINE,
+  NODE_TYPES,
+  SCHEMA,
+  WORKTREES,
+} from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -220,7 +228,7 @@ export const NODES = [
       "Implements the spec on its own branch and owns the three reviewers. As a leader its session lives across review rounds, so it keeps what it learned.",
     facts: [
       "Prompt: `Implement the spec at {{nodes.spec.output.artifacts.spec}}.`",
-      "Gets the default `isolation: worktree`: a branch of its own (with the worktree manager; until then `--in-place`).",
+      "Gets the default `isolation: worktree`: a branch of its own, `ork/<run>/builder`.",
       "Built: it runs each round; a re-entry's brief carries the reviews. Resuming its session across rounds comes with delegation.",
       "Owns `security`, `ux` and `code`: it briefs them, and their escalations come to it.",
     ],
@@ -353,12 +361,14 @@ export const NODES = [
     zone: "repo",
     x: 1400,
     y: 120,
-    status: "specified",
+    status: "built",
     pkg: null,
     summary:
-      "The builder's checkout under `.ork/worktrees/`, on a new branch. The reviewers read it but cannot write to it.",
+      "The builder's checkout beside the clone, on a new branch. The reviewers work in it but cannot write to it.",
     facts: [
       "Its branch is the builder's `output.branch`, which the approver and `merge` use.",
+      "The spec the `spec` node wrote in the project root is carried in and committed.",
+      "Kept after the run as its result; `ork worktrees clean` removes it when you are done.",
     ],
     see: [
       {
@@ -367,7 +377,7 @@ export const NODES = [
         label: "Worktrees in the architecture",
       },
     ],
-    docs: [DESIGN.concepts],
+    docs: [WORKTREES.workspace, DESIGN.worktrees],
   },
   {
     id: "github",

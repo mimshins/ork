@@ -55,8 +55,8 @@ export const JOURNEYS = [
         from: "builder",
         to: "worktrees",
         title: "The builder works on its own branch",
-        detail: "Implements the spec in its worktree, then reports its branch.",
-        status: "specified",
+        detail:
+          "Implements the spec in its worktree, then reports; Ork commits what it left and sets its branch.",
       },
       {
         from: "builder",

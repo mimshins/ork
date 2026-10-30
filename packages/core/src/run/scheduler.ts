@@ -6,14 +6,20 @@
  */
 
 import { randomUUID } from "node:crypto";
+import path from "node:path";
 
 import { isClaudeNode } from "@krapht/ork-schema";
 
-import type { Scope } from "../expr/evaluate.ts";
 import type { CompiledEdge, CompiledGraph } from "../graph/types.ts";
 import type { HumanChannel } from "../runtime/types.ts";
 import { askAboutLoop, LOOP_CHOICES } from "./escalation.ts";
-import { failure, finishedEvent, passThrough, recordRun } from "./results.ts";
+import {
+  failure,
+  finishedEvent,
+  passThrough,
+  recordRun,
+  summaryOf,
+} from "./results.ts";
 import { createInbox, decideEdges, edgeKey, isLoopEdge } from "./routing.ts";
 import { runScope } from "./scope.ts";
 import type {
@@ -25,6 +31,7 @@ import type {
   RunEvent,
   RunResult,
   RunStatus,
+  Workspace,
 } from "./types.ts";
 
 export const DEFAULT_CONCURRENCY = 4;
@@ -37,6 +44,10 @@ export type RunOptions = {
   human: HumanChannel;
   onEvent: (event: RunEvent) => void;
   runId?: string;
+  /** Where nodes work; without one, every node works in `cwd`. */
+  workspace?: Workspace;
+  /** Run files (tool output beyond the limit); default `<cwd>/.ork/runs/<run>`. */
+  runDir?: string;
 };
 
 export type RunHandle = {
@@ -55,6 +66,8 @@ export const startRun = (options: RunOptions): RunHandle => {
   const concurrency = limits.concurrency ?? DEFAULT_CONCURRENCY;
   const abort = new AbortController();
   const inbox = createInbox(graph);
+  const runDir =
+    options.runDir ?? path.join(options.cwd, ".ork", "runs", runId);
 
   const outputs: Record<string, NodeOutput> = {};
   const rounds = new Map<string, number>();
@@ -70,21 +83,9 @@ export const startRun = (options: RunOptions): RunHandle => {
   let settled = false;
   const { promise: done, resolve: finish } = Promise.withResolvers<RunResult>();
 
-  const scope = (): Scope => runScope(options.inputs, outputs, runId);
+  const scope = () => runScope(options.inputs, outputs, runId);
 
-  const summary = (id: string): NodeSummary => {
-    const existing = summaries.get(id);
-    if (existing !== undefined) return existing;
-    const created: NodeSummary = {
-      id,
-      runs: 0,
-      ok: null,
-      output: null,
-      costUsd: 0,
-    };
-    summaries.set(id, created);
-    return created;
-  };
+  const summary = (id: string): NodeSummary => summaryOf(summaries, id);
 
   const stop = (status: RunStatus, reason: string): void => {
     if (stopped !== null) return;
@@ -93,9 +94,13 @@ export const startRun = (options: RunOptions): RunHandle => {
     queue.length = 0;
   };
 
-  const settle = (): void => {
-    if (settled || busy > 0 || queue.length > 0) return;
-    settled = true;
+  const close = async (): Promise<void> => {
+    const worktrees = await (
+      options.workspace?.close() ?? Promise.resolve([])
+    ).catch((error: unknown) => {
+      reasons.push(`cleaning up worktrees: ${String(error)}`);
+      return [];
+    });
     const status = stopped ?? (reasons.length > 0 ? "failed" : "succeeded");
     const result: RunResult = {
       runId,
@@ -103,9 +108,16 @@ export const startRun = (options: RunOptions): RunHandle => {
       costUsd: spent,
       nodes: [...summaries.values()],
       reasons,
+      worktrees,
     };
     onEvent({ type: "run.finished", result });
     finish(result);
+  };
+
+  const settle = (): void => {
+    if (settled || busy > 0 || queue.length > 0) return;
+    settled = true;
+    void close();
   };
 
   const budgetLeft = (): number | undefined =>
@@ -190,7 +202,10 @@ export const startRun = (options: RunOptions): RunHandle => {
     const executor = options.executors[node.type];
     if (executor === undefined) return failure(`no executor for ${node.type}`);
     try {
-      return await executor({
+      const place = (await options.workspace?.prepare(id)) ?? {
+        cwd: options.cwd,
+      };
+      const result = await executor({
         runId,
         id,
         node,
@@ -199,7 +214,9 @@ export const startRun = (options: RunOptions): RunHandle => {
         outputs,
         input: activation.input,
         round: rounds.get(id) ?? 1,
-        cwd: options.cwd,
+        cwd: place.cwd,
+        ...(place.checkout === undefined ? {} : { checkout: place.checkout }),
+        runDir,
         budgetLeftUsd: budgetLeft(),
         human: options.human,
         emit: event => {
@@ -207,6 +224,7 @@ export const startRun = (options: RunOptions): RunHandle => {
         },
         signal: abort.signal,
       });
+      return (await options.workspace?.finish(id, result)) ?? result;
     } catch (error) {
       return failure(error instanceof Error ? error.message : String(error));
     }

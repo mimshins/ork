@@ -8,7 +8,7 @@ import { style, write } from "../output.ts";
 import { WORKFLOW_DIR, WORKFLOW_SUFFIX } from "../workflows.ts";
 
 /** Run state that never belongs in git. */
-export const GITIGNORE_ENTRIES = [".ork/runs/", ".ork/worktrees/"] as const;
+export const GITIGNORE_ENTRIES = [".ork/runs/"] as const;
 
 export const STARTER: Workflow = {
   schemaVersion: 1,

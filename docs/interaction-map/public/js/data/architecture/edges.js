@@ -7,7 +7,7 @@
  *   reach each other straight across.
  */
 
-import { CLI, CORE, DESIGN, README, SCHEMA } from "../refs.js";
+import { CLI, CORE, DESIGN, README, SCHEMA, WORKTREES } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
 
@@ -161,13 +161,12 @@ export const EDGES = [
     kind: "local",
     label: "isolation per node",
     detail:
-      "A writing node gets a fresh worktree on a branch from its owner's; the owner merges it when the child reports.",
-    status: "specified",
+      "A writing node gets a worktree on a branch from its owner's; when the child passes, Ork merges it into the owner's.",
     via: [
       [848, 420],
       [848, 876],
     ],
-    docs: [DESIGN.concepts],
+    docs: [WORKTREES.workspace, DESIGN.worktrees],
   },
   {
     id: "scheduler-nodes",
@@ -271,9 +270,8 @@ export const EDGES = [
     kind: "git",
     label: "`git worktree add` · merge",
     detail:
-      "Creates a worktree and branch per writing node, merges children into their owner's branch, and removes them after the run.",
-    status: "specified",
-    docs: [DESIGN.concepts],
+      "Creates a worktree and branch per writing node beside the clone, commits leftovers, merges children into their owner's branch with `--no-ff`, and removes merged ones after the run.",
+    docs: [WORKTREES.manager, DESIGN.worktrees],
   },
   {
     id: "events-runstore",
@@ -414,7 +412,6 @@ export const EDGES = [
     label: "edits code in its cwd",
     detail:
       "A writing node's file edits land in its own worktree; a `readonly` node's write tools are denied.",
-    status: "specified",
     docs: [DESIGN.concepts],
   },
   {

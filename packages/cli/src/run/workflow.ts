@@ -1,16 +1,23 @@
+import { randomUUID } from "node:crypto";
+
 import {
   type ClaudeRuntime,
+  createWorkspace,
+  inspectProject,
+  type RunEvent,
   type HumanChannel,
   parseInputPairs,
   resolveInputs,
   type RunHandle,
   type RunResult,
   startRun,
+  type Workspace,
 } from "@krapht/ork-core";
 import { builtinExecutors, type ToolRunner } from "@krapht/ork-nodes";
 import { type Driver, isClaudeNode, type Workflow } from "@krapht/ork-schema";
 
 import { formatReport, loadWorkflow } from "../commands/validate.ts";
+import { style } from "../output.ts";
 import { formatRunEvent } from "./format.ts";
 
 export type RunWorkflowOptions = {
@@ -21,6 +28,8 @@ export type RunWorkflowOptions = {
   /** Overrides every node's driver. */
   driver?: Driver;
   inPlace: boolean;
+  /** Run even when agent files have uncommitted changes (ADR-020). */
+  allowDirty?: boolean;
   /** Print the run's events as JSON lines instead of a transcript. */
   json: boolean;
   runtime: (driver: Driver) => Promise<ClaudeRuntime>;
@@ -32,12 +41,20 @@ export type RunWorkflowOptions = {
   onRun?: (handle: RunHandle) => void;
 };
 
+/** Why a run refuses to start with uncommitted agent files. */
+export const dirtyAgentMessage = (files: readonly string[]): string[] => [
+  "These instructions, skills or agents have uncommitted changes, and the worktrees only get committed files:",
+  ...files.slice(0, 20).map(f => `  ${f}`),
+  ...(files.length > 20 ? [`  … and ${String(files.length - 20)} more`] : []),
+  "Commit or stash them, or pass --allow-dirty to run with the committed versions.",
+];
+
 export type RunWorkflowResult = {
   exitCode: number;
   result: RunResult | null;
 };
 
-/** Claude nodes that need a worktree, which arrives with the worktree manager. */
+/** Claude nodes that get their own worktree. */
 export const worktreeNodes = (workflow: Workflow): string[] =>
   Object.entries(workflow.nodes)
     .filter(
@@ -69,11 +86,43 @@ export const runWorkflowFile = async (
   const inputs = resolveInputs(workflow, pairs.raw);
   if (!inputs.ok) return failed(inputs.errors);
 
+  const runId = randomUUID().slice(0, 8);
+  const width = Math.max(...Object.keys(workflow.nodes).map(id => id.length));
+  const tools = new Map<string, string>();
+  const onEvent = (event: RunEvent): void => {
+    if (options.json) {
+      options.out(JSON.stringify(event));
+      return;
+    }
+    for (const line of formatRunEvent(event, width, tools)) options.out(line);
+  };
+
+  let cwd = options.cwd;
+  let workspace: Workspace | undefined;
   const isolated = worktreeNodes(workflow);
   if (isolated.length > 0 && !options.inPlace) {
-    return failed([
-      `${isolated.join(", ")} use worktree isolation, which arrives with the worktree manager; pass --in-place to run them in this checkout`,
-    ]);
+    const project = await inspectProject(options.cwd);
+    if (project === null) {
+      return failed([
+        `${isolated.join(", ")} need a git worktree, but ${options.cwd} is not in a git repository with a commit; pass --in-place to run them here`,
+      ]);
+    }
+    if (project.dirtyAgentFiles.length > 0 && options.allowDirty !== true) {
+      return failed(dirtyAgentMessage(project.dirtyAgentFiles));
+    }
+    if (project.dirtyOther > 0) {
+      options.err(
+        `${style(["yellow", "bold"], "warning")} ${String(project.dirtyOther)} uncommitted change(s) in this checkout are not in the worktrees`,
+      );
+    }
+    cwd = project.root;
+    workspace = createWorkspace({
+      graph,
+      runId,
+      root: project.root,
+      head: project.head,
+      onEvent,
+    });
   }
 
   const executorOptions: Parameters<typeof builtinExecutors>[0] = {
@@ -83,23 +132,15 @@ export const runWorkflowFile = async (
   if (options.driver !== undefined) executorOptions.driver = options.driver;
   if (options.tools !== undefined) executorOptions.tools = options.tools;
 
-  const width = Math.max(...Object.keys(workflow.nodes).map(id => id.length));
-  const tools = new Map<string, string>();
   const handle = startRun({
     graph,
+    runId,
     inputs: inputs.inputs,
-    cwd: options.cwd,
+    cwd,
     executors: builtinExecutors(executorOptions),
     human: options.human,
-    onEvent: event => {
-      if (options.json) {
-        options.out(JSON.stringify(event));
-        return;
-      }
-      for (const line of formatRunEvent(event, width, tools)) {
-        options.out(line);
-      }
-    },
+    onEvent,
+    ...(workspace === undefined ? {} : { workspace }),
   });
   options.onRun?.(handle);
   const result = await handle.done;

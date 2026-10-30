@@ -37,3 +37,21 @@ export const failure = (error: string): NodeResult => ({
   ok: false,
   error,
 });
+
+/** The node's entry in the run summary, created on first use. */
+export const summaryOf = (
+  summaries: Map<string, NodeSummary>,
+  id: string,
+): NodeSummary => {
+  const existing = summaries.get(id);
+  if (existing !== undefined) return existing;
+  const created: NodeSummary = {
+    id,
+    runs: 0,
+    ok: null,
+    output: null,
+    costUsd: 0,
+  };
+  summaries.set(id, created);
+  return created;
+};

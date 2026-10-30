@@ -86,7 +86,6 @@ export const EDGES = [
     label: "own worktree + branch",
     detail:
       "Created before its session starts; the session's working directory.",
-    status: "specified",
   },
   {
     id: "builder-security",

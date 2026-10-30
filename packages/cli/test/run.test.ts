@@ -1,4 +1,5 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -291,6 +292,28 @@ const PIPELINE = [
   "",
 ].join("\n");
 
+/** A committed project with the pipeline workflow and a CLAUDE.md. */
+const gitProject = (): string => {
+  const dir = path.join(
+    realpathSync(mkdtempSync(path.join(tmpdir(), "ork-git-"))),
+    "app",
+  );
+  mkdirSync(dir);
+  writeFileSync(path.join(dir, "pipeline.ork.yaml"), PIPELINE);
+  writeFileSync(path.join(dir, "CLAUDE.md"), "# App\n");
+  writeFileSync(path.join(dir, ".gitignore"), ".ork/runs/\n");
+  for (const args of [
+    ["init", "-q", "-b", "main"],
+    ["config", "user.email", "dev@example.com"],
+    ["config", "user.name", "Dev"],
+    ["add", "-A"],
+    ["commit", "-q", "-m", "init"],
+  ]) {
+    execFileSync("git", args, { cwd: dir });
+  }
+  return dir;
+};
+
 const pipeline = (overrides: Partial<RunWorkflowOptions>) => {
   const dir = mkdtempSync(path.join(tmpdir(), "ork-wf-"));
   writeFileSync(path.join(dir, "pipeline.ork.yaml"), PIPELINE);
@@ -339,11 +362,47 @@ describe("ork run (a whole workflow)", () => {
     );
   });
 
-  it("refuses worktree nodes until the worktree manager, unless --in-place", async () => {
-    const run = pipeline({ inPlace: false });
+  it("runs worktree nodes in worktrees beside the clone, and lists the kept ones", async () => {
+    const dir = gitProject();
+    const run = pipeline({ cwd: dir, inPlace: false });
+    const { exitCode, result } = await runWorkflowFile(run.value);
+    const runId = String(result?.runId);
+    const build = path.join(`${dir}-worktrees`, `ork-${runId}-build`);
+
+    expect(exitCode).toBe(0);
+    expect(result?.worktrees).toEqual([
+      {
+        id: "build",
+        path: build,
+        branch: `ork/${runId}/build`,
+        reason: "the run's result",
+      },
+    ]);
+    expect(
+      run.out.some(line => line.startsWith("build  │ ⎇ created ork/")),
+    ).toBe(true);
+    expect(run.out.at(-1)).toContain(`build: ork/${runId}/build at ${build}`);
+  });
+
+  it("refuses to start while instructions or skills are uncommitted", async () => {
+    const dir = gitProject();
+    writeFileSync(path.join(dir, "CLAUDE.md"), "# changed\n");
+    const run = pipeline({ cwd: dir, inPlace: false });
     expect((await runWorkflowFile(run.value)).exitCode).toBe(1);
     expect(run.err).toEqual([
-      "build use worktree isolation, which arrives with the worktree manager; pass --in-place to run them in this checkout",
+      "These instructions, skills or agents have uncommitted changes, and the worktrees only get committed files:",
+      "  CLAUDE.md",
+      "Commit or stash them, or pass --allow-dirty to run with the committed versions.",
     ]);
+    const allowed = pipeline({ cwd: dir, inPlace: false, allowDirty: true });
+    expect((await runWorkflowFile(allowed.value)).exitCode).toBe(0);
+  });
+
+  it("needs a git repository for worktree nodes, unless --in-place", async () => {
+    const run = pipeline({ inPlace: false });
+    expect((await runWorkflowFile(run.value)).exitCode).toBe(1);
+    expect(run.err[0]).toMatch(
+      /^build need a git worktree, but .+ is not in a git repository/u,
+    );
   });
 });

@@ -7,7 +7,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   findWorkflowFiles,
+  formatPlan,
   formatReport,
+  formatWorktrees,
   initProject,
   validateFile,
 } from "../src/index.ts";
@@ -69,7 +71,7 @@ describe("ork init", () => {
 
     expect(initProject(dir).created).toEqual([
       ".ork/workflows/hello.ork.yaml",
-      ".gitignore (.ork/runs/, .ork/worktrees/)",
+      ".gitignore (.ork/runs/)",
     ]);
     expect(initProject(dir)).toEqual({
       created: [],
@@ -77,7 +79,7 @@ describe("ork init", () => {
     });
 
     expect(readFileSync(path.join(dir, ".gitignore"), "utf8")).toBe(
-      "node_modules/\n# Ork run state\n.ork/runs/\n.ork/worktrees/\n",
+      "node_modules/\n# Ork run state\n.ork/runs/\n",
     );
     const starter = ".ork/workflows/hello.ork.yaml";
     expect(findWorkflowFiles([], dir)).toEqual([starter]);
@@ -85,5 +87,58 @@ describe("ork init", () => {
     expect(
       parseWorkflow(readFileSync(path.join(dir, starter), "utf8")).ok,
     ).toBe(true);
+  });
+});
+
+describe("ork worktrees", () => {
+  const item = {
+    branch: "ork/r1/lead",
+    runId: "r1",
+    nodeId: "lead",
+    path: "/w/ork-r1-lead",
+    missing: false,
+    dirty: true,
+    ahead: 2,
+    merged: false,
+    inMainCheckout: false,
+  };
+
+  it("shows each branch's state and the clean plan", () => {
+    expect(
+      formatWorktrees([
+        item,
+        {
+          ...item,
+          branch: "ork/r1/fix",
+          path: null,
+          dirty: false,
+          ahead: 0,
+          merged: true,
+        },
+      ]),
+    ).toEqual([
+      "ork/r1/lead  uncommitted changes · 2 commit(s) not merged",
+      "  /w/ork-r1-lead",
+      "ork/r1/fix   no worktree · merged",
+    ]);
+    expect(
+      formatPlan([
+        {
+          item,
+          removeWorktree: false,
+          deleteBranch: false,
+          skip: "uncommitted changes",
+        },
+        {
+          item: { ...item, branch: "ork/r1/fix" },
+          removeWorktree: true,
+          deleteBranch: true,
+        },
+      ]),
+    ).toEqual([
+      "  ork/r1/lead: keep (uncommitted changes)",
+      "  ork/r1/fix: remove worktree + delete branch",
+    ]);
+    expect(formatWorktrees([])).toEqual(["No Ork worktrees or branches."]);
   });
 });

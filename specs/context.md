@@ -22,9 +22,10 @@ kind is ever loaded, so nothing is loaded twice.
 
 - **Project layer:** passed through Claude Code's own loading
   (`settingSources: ['project','local']`, never `'user'`) so the repo works
-  natively. The node's `skills` allowlist enforces
-  `project.skills: allowlist|ignore` and removes project skills shadowed by a
-  higher layer.
+  natively. In a worktree it is the branch's committed layer plus the copied
+  local files ([worktrees](./worktrees.md#what-a-worktree-gets)). The node's
+  `skills` allowlist enforces `project.skills: allowlist|ignore` and removes
+  project skills shadowed by a higher layer.
 - **AGENTS.md:** the CLI reads it only when no CLAUDE.md exists, and the SDK may
   not read it at all. So if the repo has AGENTS.md and no CLAUDE.md, Ork appends
   it once itself, and otherwise never adds it.

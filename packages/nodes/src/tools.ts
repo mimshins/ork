@@ -189,14 +189,14 @@ export const toolExecutor =
       signal: context.signal,
     });
     const keep = (stream: "stdout" | "stderr") => () => {
-      const dir = path.join(context.cwd, ".ork", "runs", context.runId);
+      const dir = context.runDir;
       mkdirSync(dir, { recursive: true });
       const file = path.join(
         dir,
         `${context.id}.${String(context.round)}.${stream}.txt`,
       );
       writeFileSync(file, run[stream]);
-      return path.relative(context.cwd, file);
+      return file;
     };
     const output = {
       exitCode: run.exitCode,

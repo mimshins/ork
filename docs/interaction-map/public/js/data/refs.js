@@ -19,6 +19,7 @@ export const DESIGN = {
   feedback: d("specs/feedback.md", "Spec: feedback and self-improvement"),
   cli: d("specs/cli.md", "Spec: the CLI commands"),
   scheduler: d("specs/scheduler.md", "Spec: running a workflow"),
+  worktrees: d("specs/worktrees.md", "Spec: worktrees, where nodes work"),
   ui: d("specs/ui.md", "Spec: the UI panels"),
   milestones: d("docs/design.md#milestones", "Design: milestones"),
 };
@@ -103,6 +104,29 @@ export const NODE_TYPES = {
   tools: d("packages/nodes/src/tools.ts", "Code: tool nodes"),
   gate: d("packages/nodes/src/gate.ts", "Code: human gates"),
   tests: d("packages/nodes/test/nodes.test.ts", "Tests: the node types"),
+};
+
+export const WORKTREES = {
+  manager: d(
+    "packages/core/src/worktree/manager.ts",
+    "Code: Ork's git worktrees",
+  ),
+  workspace: d(
+    "packages/core/src/worktree/workspace.ts",
+    "Code: where each node works, commits and merges",
+  ),
+  list: d(
+    "packages/core/src/worktree/list.ts",
+    "Code: `ork worktrees` list and clean",
+  ),
+  command: d(
+    "packages/cli/src/commands/worktrees.ts",
+    "Code: the `ork worktrees` command",
+  ),
+  tests: d(
+    "packages/core/test/worktree.test.ts",
+    "Tests: worktrees in a real repository",
+  ),
 };
 
 export const RUNTIME = {

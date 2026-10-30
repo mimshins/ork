@@ -35,6 +35,7 @@ work. Conflicts, the part that needs judgment, still go to the owner.
 ## Consequences
 
 - Ork writes commits and merges, but only on `ork/<run>/<node>` branches and the
-  owner's branch inside `.ork/worktrees/`; it never pushes or rewrites a user
-  branch.
+  owner's branch in Ork's worktrees (located by
+  [ADR-020](./ADR-020-worktrees-beside-the-clone.md)); it never pushes or
+  rewrites a user branch.
 - Reviewers (`readonly`) never produce a merge.

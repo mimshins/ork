@@ -1,6 +1,6 @@
 # ADR-009 — A git worktree per writing node
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-020](./ADR-020-worktrees-beside-the-clone.md)
 - **Date:** 2026-10-30
 - **Topic:** engine / isolation
 - **RFC:** waived — decided in design review on 2026-10-30

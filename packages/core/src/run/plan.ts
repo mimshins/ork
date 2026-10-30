@@ -8,7 +8,7 @@ import { parseTemplate, renderTemplate } from "../expr/evaluate.ts";
 import { reportSchemaFor } from "../runtime/report.ts";
 import type { SessionSpec, ToolRules } from "../runtime/types.ts";
 import { runScope } from "./scope.ts";
-import type { NodeOutput } from "./types.ts";
+import type { Checkout, NodeOutput } from "./types.ts";
 
 /** Claude Code tools that change files or run commands. */
 export const WRITE_TOOLS = ["Write", "Edit", "NotebookEdit", "Bash"] as const;
@@ -16,7 +16,7 @@ export const WRITE_TOOLS = ["Write", "Edit", "NotebookEdit", "Bash"] as const;
 export type PlanOptions = {
   cwd: string;
   inputs: Record<string, string | number | boolean>;
-  /** Run a `worktree` node in the project checkout (until M1c). */
+  /** Run a `worktree` node in the project checkout, without a worktree. */
   inPlace?: boolean;
   /**
    * The outputs of the nodes that ran before, inside a run. Without them (a
@@ -25,6 +25,8 @@ export type PlanOptions = {
   outputs?: Readonly<Record<string, NodeOutput>>;
   /** What is left of the run's budget; caps the node's own `budgetUsd`. */
   budgetLeftUsd?: number;
+  /** The worktree the node works in, set up by the run (ADR-020). */
+  checkout?: Checkout;
 };
 
 export type PlanResult =
@@ -32,10 +34,17 @@ export type PlanResult =
   | { ok: false; error: string };
 
 /** Ork's own instructions for a node, kept short: they cost tokens every turn. */
+/** Tells a session where it works, so a repo's own worktree rules don't apply. */
+export const checkoutInstructions = (checkout: Checkout): string =>
+  checkout.own
+    ? `- You are already in your own git worktree for this task, on branch \`${checkout.branch}\`, created by Ork. Work and commit here. Do not create another worktree, switch branches, or push; Ork merges your branch when you pass.`
+    : `- You work in \`${checkout.owner}\`'s git worktree, on branch \`${checkout.branch}\`, created by Ork. Do not create another worktree, switch branches, or push.`;
+
 export const harnessInstructions = (
   workflow: Workflow,
   id: string,
   node: ClaudeNode,
+  checkout?: Checkout,
 ): string => {
   const extra = Object.keys(node.output?.schema ?? {});
   const owner =
@@ -47,6 +56,7 @@ export const harnessInstructions = (
     `- End with the structured report: \`status\`, a short \`summary\`, and \`artifacts\` (name -> repository-relative path)${extra.length > 0 ? `, plus ${extra.map(f => `\`${f}\``).join(", ")}` : ""}.`,
     "- If you are blocked on a choice only the user can make, call the `ask_user` tool with a clear question, two to four options, and the one you recommend. Never ask about what you can decide or look up yourself.",
   ];
+  if (checkout !== undefined) lines.push(checkoutInstructions(checkout));
   if (node.instructions !== undefined) lines.push("", node.instructions);
   return lines.join("\n");
 };
@@ -79,10 +89,11 @@ export const planNodeSession = (
 
   const defaults = workflow.defaults ?? {};
   const isolation = node.isolation ?? defaults.isolation ?? "worktree";
-  if (isolation === "worktree" && options.inPlace !== true) {
+  const ownWorktree = options.checkout?.own === true;
+  if (isolation === "worktree" && !ownWorktree && options.inPlace !== true) {
     return {
       ok: false,
-      error: `"${id}" uses worktree isolation, which arrives with the worktree manager; pass --in-place to run it in the project checkout`,
+      error: `"${id}" uses worktree isolation, which a run on its own does not set up; run the whole workflow, or pass --in-place to run it in this checkout`,
     };
   }
 
@@ -108,7 +119,7 @@ export const planNodeSession = (
     nodeId: id,
     cwd: options.cwd,
     prompt: prompt.trim() === "" ? "Do the task your role describes." : prompt,
-    systemAppend: harnessInstructions(workflow, id, node),
+    systemAppend: harnessInstructions(workflow, id, node, options.checkout),
     settingSources: ["project", "local"],
     tools: toolRules(node, isolation === "readonly"),
     permissionMode: "default",

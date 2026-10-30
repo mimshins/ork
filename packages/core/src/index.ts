@@ -10,3 +10,6 @@ export * from "./run/scope.ts";
 export type * from "./run/types.ts";
 export * from "./runtime/report.ts";
 export type * from "./runtime/types.ts";
+export * from "./worktree/list.ts";
+export * from "./worktree/manager.ts";
+export * from "./worktree/workspace.ts";

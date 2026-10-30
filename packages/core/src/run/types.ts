@@ -40,12 +40,42 @@ export type ExecuteContext = {
   /** 1 on the node's first activation, then 2, 3, … on loop re-entries. */
   round: number;
   cwd: string;
+  /** The git checkout the node works in, when the run uses worktrees. */
+  checkout?: Checkout;
+  /** `.ork/runs/<run>/` in the project: run files that never go on a branch. */
+  runDir: string;
   /** What is left of `limits.budgetUsd`, when the run has one. */
   budgetLeftUsd: number | undefined;
   human: HumanChannel;
   /** Forwards a session's runtime events into the run's event stream. */
   emit: (event: RuntimeEvent) => void;
   signal: AbortSignal;
+};
+
+export type Checkout = {
+  path: string;
+  branch: string;
+  /** The node's own worktree, or its owner's that it shares or reads. */
+  own: boolean;
+  /** The node that owns the worktree. */
+  owner: string;
+};
+
+/** Where nodes work, and what happens to their branches (worktrees, ADR-020). */
+export type Workspace = {
+  /** The node's checkout; creates its worktree the first time it is needed. */
+  prepare: (id: string) => Promise<{ cwd: string; checkout?: Checkout }>;
+  /** After a node: commits leftovers, sets `branch`, merges into the owner. */
+  finish: (id: string, result: NodeResult) => Promise<NodeResult>;
+  /** At the end: removes merged worktrees and lists the kept ones. */
+  close: () => Promise<KeptWorktree[]>;
+};
+
+export type KeptWorktree = {
+  id: string;
+  path: string;
+  branch: string;
+  reason: string;
 };
 
 export type NodeExecutor = (context: ExecuteContext) => Promise<NodeResult>;
@@ -77,6 +107,8 @@ export type RunResult = {
   nodes: NodeSummary[];
   /** Why the run did not succeed. */
   reasons: string[];
+  /** Worktrees left for the user: root nodes' results, unmerged children. */
+  worktrees: KeptWorktree[];
 };
 
 export type RunEvent =
@@ -95,4 +127,12 @@ export type RunEvent =
   | { type: "node.skipped"; id: string }
   | { type: "edge.taken"; from: string; to: string }
   | { type: "loop.exhausted"; from: string; to: string; maxRounds: number }
+  | {
+      type: "worktree";
+      id: string;
+      action: "created" | "committed" | "merged" | "conflict" | "removed";
+      path: string;
+      branch: string;
+      detail?: string;
+    }
   | { type: "run.finished"; result: RunResult };

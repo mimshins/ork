@@ -12,13 +12,14 @@ specified. Published as `@krapht/ork`
 ork init                         # scaffold .ork/, .gitignore entries, example workflow
 ork doctor                       # check node, git, claude (login or API key), gh auth, aws identity
 ork validate <wf>                # schema + graph compile; prints errors with yaml line numbers
-ork run <wf> [--input k=v] [--driver sdk|cli] [--in-place] [--json] [--detach]
+ork run <wf> [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json] [--detach]
 ork run <wf> --node <id> [--input k=v] [--driver sdk|cli] [--in-place] [--json]
 ork ps / ork logs <run> [--node n] [--follow]
 ork tree <run>                   # live ownership tree with status, tokens, $ per node
 ork decide [<run>]               # answer pending decisions
 ork chat <run> <node>
 ork stop|resume <run>
+ork worktrees [list|clean]       # Ork's worktrees and branches; clean them up safely
 ork context explain <wf> <node>
 ork feedback [list|show|dismiss] # local feedback items (triage, apply, lesson, publish: M2)
 ork ui [--port 4417]             # milestone 2
@@ -32,14 +33,18 @@ with the built-in node types
 
 - The workflow and its inputs are checked as for `--node`; nothing starts on an
   error.
-- Until the worktree manager (M1c slice 2), a workflow with `worktree` Claude
-  nodes runs only with `--in-place`, which runs them in this checkout.
+- `worktree` Claude nodes get their own worktree beside the clone, and the run
+  first checks the project ([worktrees](./worktrees.md#before-the-run)):
+  uncommitted instructions or skills stop it unless `--allow-dirty`.
+  `--in-place` runs every node in this checkout instead.
 - stdout gets one transcript line per event, prefixed with the node id
   (`builder │ …`): each start (with its round), session text and tool calls,
   each result (`✓ pass: …`, `✓ exit 0`, `✓ merge (user)`), skips and exhausted
-  loops; then the run summary: status, total cost, how many nodes ran and were
-  skipped, each node's branch, and the reasons it did not succeed. `--json`
-  prints the [run events](./scheduler.md#run-events) as JSON lines.
+  loops, and worktree changes (`⎇ created …`, `merged`, `removed`); then the run
+  summary: status, total cost, how many nodes ran and were skipped, the
+  worktrees left for you (branch, path, why), and the reasons it did not
+  succeed. `--json` prints the [run events](./scheduler.md#run-events) as JSON
+  lines.
 - Tool nodes run as declared (their `allow` list is checked first); gates and
   questions use the terminal channel below.
 - Exit code 0 when the run succeeded, 1 otherwise. Ctrl-C interrupts the run.
@@ -57,9 +62,9 @@ with the built-in node types
   starts otherwise; the errors go to stderr and the exit code is 1.
 - The session spec comes from `planNodeSession`
   ([plan.ts](../packages/core/src/run/plan.ts)). A brief that reads
-  `{{nodes.*}}` renders empty and prints a warning. A `worktree` node refuses to
-  run without `--in-place` until the worktree manager exists; `readonly` denies
-  the write tools.
+  `{{nodes.*}}` renders empty and prints a warning. A run of one node sets up no
+  worktree, so a `worktree` node needs `--in-place`; `readonly` denies the write
+  tools.
 - `--driver` overrides the node's and the workflow's driver. The drivers load
   only when a run starts.
 - stdout gets the transcript (session start, assistant text, one line per tool
@@ -82,3 +87,8 @@ stderr, one prompt at a time, until the decision queue (M1d) replaces it:
 - Without a terminal (stdin is not a TTY), tools are denied and a question gets
   the recommended option, or tells the node to use its judgment and say so in
   its report.
+
+## Worktrees
+
+`ork worktrees` lists and cleans the worktrees and `ork/` branches runs leave;
+see [Worktrees: ork worktrees](./worktrees.md#ork-worktrees).

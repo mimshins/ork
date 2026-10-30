@@ -5,15 +5,17 @@ are built ([scheduler.ts](../packages/core/src/run/scheduler.ts),
 [routing.ts](../packages/core/src/run/routing.ts),
 [nodes](../packages/nodes/src/index.ts),
 [tests](../packages/core/test/scheduler.test.ts),
-[node tests](../packages/nodes/test/nodes.test.ts)). Worktrees, delegation and
-the context compiler are the rest of M1c. Why:
+[node tests](../packages/nodes/test/nodes.test.ts)). Delegation and the context
+compiler are the rest of M1c; where each node works is
+[Worktrees](./worktrees.md). Why:
 [ADR-016](../decisions/ADR-016-scheduler-semantics.md).
 
-`startRun({ graph, inputs, cwd, executors, human, onEvent })` runs a compiled
-workflow ([graph compiler](./graph-compiler.md)) and returns
+`startRun({ graph, inputs, cwd, executors, human, onEvent, workspace })` runs a
+compiled workflow ([graph compiler](./graph-compiler.md)) and returns
 `{ runId, done, interrupt }`. The engine only knows ports: each node type's
-`NodeExecutor` (from `@krapht/ork-nodes`), the `HumanChannel`, and an `onEvent`
-sink.
+`NodeExecutor` (from `@krapht/ork-nodes`), the `HumanChannel`, an `onEvent`
+sink, and an optional `Workspace` that gives each node its checkout and handles
+its branch afterwards ([worktrees](./worktrees.md)).
 
 ## Activations
 
@@ -110,7 +112,8 @@ events:
 | `node.skipped`   | a dead path skips the node                                             |
 | `edge.taken`     | an edge is taken                                                       |
 | `loop.exhausted` | a loop edge is out of rounds                                           |
+| `worktree`       | a worktree is created, committed to, merged, conflicts, or removed     |
 | `run.finished`   | the run ends: `succeeded`, `failed`, `budget_exhausted`, `interrupted` |
 
 The run result lists each node (runs, ok, last output, cost), the total cost,
-and the reasons the run did not succeed.
+the reasons the run did not succeed, and the worktrees it left for the user.

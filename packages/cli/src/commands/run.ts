@@ -65,8 +65,13 @@ export const run = defineCommand({
     },
     "in-place": {
       type: "boolean",
+      description: "Run worktree nodes in this checkout, without worktrees",
+      default: false,
+    },
+    "allow-dirty": {
+      type: "boolean",
       description:
-        "Run worktree nodes in this checkout (until the worktree manager)",
+        "Run although instructions or skills have uncommitted changes (worktrees get the committed versions)",
       default: false,
     },
     json: {
@@ -110,6 +115,7 @@ export const run = defineCommand({
         args.node === undefined || args.node === ""
           ? await runWorkflowFile({
               ...common,
+              allowDirty: args["allow-dirty"],
               onRun: handle => {
                 onInterrupt(handle.interrupt);
               },

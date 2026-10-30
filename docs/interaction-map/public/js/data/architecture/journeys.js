@@ -89,8 +89,7 @@ export const JOURNEYS = [
         to: "worktreeMgr",
         title: "It gets its own worktree",
         detail:
-          "`isolation: worktree` is the default: a new branch from the owner's, checked out under `.ork/worktrees/`.",
-        status: "specified",
+          "`isolation: worktree` is the default: a new branch from the owner's, checked out beside the clone in `../<clone>-worktrees/`, with the local agent files copied in.",
       },
       {
         from: "scheduler",

@@ -38,6 +38,7 @@ const context = (
   overrides: Partial<ExecuteContext> = {},
 ): ExecuteContext & { events: RuntimeEvent[] } => {
   const events: RuntimeEvent[] = [];
+  const cwd = mkdtempSync(path.join(tmpdir(), "ork-nodes-"));
   const workflow: Workflow = {
     schemaVersion: 1,
     name: "t",
@@ -52,7 +53,8 @@ const context = (
     outputs: { builder: { branch: "ork/r1/builder" } },
     input: undefined,
     round: 1,
-    cwd: mkdtempSync(path.join(tmpdir(), "ork-nodes-")),
+    cwd,
+    runDir: path.join(cwd, ".ork/runs/r1"),
     budgetLeftUsd: undefined,
     human: human(options => Promise.resolve(options[0] ?? "")),
     emit: event => {
@@ -177,7 +179,7 @@ describe("tool commands", () => {
       error: "make exited with 2: boom",
     });
     expect(String(result.output["stdout"])).toContain(
-      "(truncated; the full output is in .ork/runs/r1/t.1.stdout.txt)",
+      `(truncated; the full output is in ${file})`,
     );
     expect(readFileSync(file, "utf8")).toBe(long);
     expect(existsSync(path.join(run.cwd, ".ork/runs/r1/t.1.stderr.txt"))).toBe(

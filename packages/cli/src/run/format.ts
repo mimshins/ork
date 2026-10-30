@@ -148,6 +148,13 @@ export const formatRunEvent = (
     ];
   }
   if (event.type === "edge.taken") return [];
+  if (event.type === "worktree") {
+    const detail = event.detail === undefined ? "" : ` (${event.detail})`;
+    const line = `${event.action} ${event.branch}${detail}`;
+    return [
+      `${tag(event.id)} ${event.action === "conflict" ? style("yellow", `! ${line}`) : style("dim", `⎇ ${line}`)}`,
+    ];
+  }
   return formatRunResult(event.result);
 };
 
@@ -169,9 +176,10 @@ export const formatRunResult = (result: RunResult): string[] => {
       `· $${result.costUsd.toFixed(4)} · ${String(ran)} ran, ${String(skipped)} skipped`,
     )}`,
   ];
-  for (const node of result.nodes) {
-    const branch = node.output?.["branch"];
-    if (typeof branch === "string") lines.push(`  ${node.id}: ${branch}`);
+  for (const kept of result.worktrees) {
+    lines.push(
+      `  ${kept.id}: ${kept.branch} ${style("dim", `at ${kept.path} (${kept.reason})`)}`,
+    );
   }
   for (const reason of result.reasons) lines.push(`  ${style("red", reason)}`);
   return lines;

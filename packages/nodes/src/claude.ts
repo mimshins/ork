@@ -11,7 +11,7 @@ export type ClaudeExecutorOptions = {
   runtimeFor: (driver: Driver) => Promise<ClaudeRuntime>;
   /** Overrides every node's driver, as `ork run --driver` does. */
   driver?: Driver;
-  /** Runs `worktree` nodes in the project checkout (until slice 2). */
+  /** Runs `worktree` nodes in the project checkout instead of worktrees. */
   inPlace: boolean;
 };
 
@@ -70,6 +70,7 @@ export const claudeExecutor =
     if (context.budgetLeftUsd !== undefined) {
       planOptions.budgetLeftUsd = context.budgetLeftUsd;
     }
+    if (context.checkout !== undefined) planOptions.checkout = context.checkout;
     const plan = planNodeSession(context.workflow, context.id, planOptions);
     if (!plan.ok) {
       return {
