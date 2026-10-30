@@ -2,9 +2,9 @@
 
 Status: **Partial**: `ask_user`, the permission prompt, `delegate`,
 `spawn_worker`, `send_message`, `read_inbox` and `answer` are built
-([tools/](../packages/runtime-claude/src/tools/index.ts)), and so are the
+([tools/](../packages/runtime-claude/src/tools/registry.ts)), and so are the
 [event store](./event-store.md), the decision queue, `ork decide`, `ork stop`,
-the run's socket ([control/](../packages/core/src/control/index.ts),
+the run's socket ([control/](../packages/core/src/control/control.ts),
 [tests](../packages/core/test/control.test.ts)) and the message bus
 ([bus.ts](../packages/core/src/run/bus.ts),
 [tests](../packages/core/test/bus.test.ts)) with the user's messages
@@ -12,8 +12,9 @@ the run's socket ([control/](../packages/core/src/control/index.ts),
 
 ## Ork MCP tools
 
-One registry ([tools/index.ts](../packages/runtime-claude/src/tools/index.ts)),
-one file per tool, binds the tools each session gets; both drivers serve what it
+One registry
+([tools/registry.ts](../packages/runtime-claude/src/tools/registry.ts)), one
+file per tool, binds the tools each session gets; both drivers serve what it
 binds. A node's report is its structured output, not a tool
 ([runtime](./runtime.md#the-node-report)). Built tools are marked ✓:
 

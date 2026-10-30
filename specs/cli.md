@@ -145,7 +145,7 @@ one prompt at a time, unless `ork decide` in another terminal answers first
 
 ## Resuming a run
 
-`ork resume [<run>]` ([resume.ts](../packages/cli/src/commands/resume.ts),
+`ork resume [<run>]` ([control.ts](../packages/cli/src/commands/control.ts),
 [tests](../packages/cli/test/resume.test.ts)) continues a run that is not
 running and did not succeed (stopped, failed, out of budget, or crashed), under
 the same id and in its own project, from wherever it is called:

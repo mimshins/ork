@@ -108,7 +108,7 @@ list of tasks, run them in parallel, and return when every child has reported:
 
 ## Built-in node types
 
-From `@krapht/ork-nodes` ([index.ts](../packages/nodes/src/index.ts)):
+From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 
 - **`claude.leader`, `claude.worker`**: one session through the
   [runtime](./runtime.md), planned with the run's outputs so
@@ -116,7 +116,7 @@ From `@krapht/ork-nodes` ([index.ts](../packages/nodes/src/index.ts)):
   `summary`, `artifacts`, `branch`, `usage` and the `output.schema` fields. A
   session without a valid report outputs `status: fail`.
 - **`tool.<id>`**, one per registered integration (`gh`, `aws`, `shell`;
-  [integrations](../packages/integrations/src/index.ts),
+  [integrations](../packages/integrations/src/registry.ts),
   [tools.ts](../packages/nodes/src/tools.ts)): `command` is split like a shell
   would (quotes, `\`, `{{ … }}` kept whole), with no shell; each argument is
   then rendered, so a value never becomes extra arguments. With `allow`, the

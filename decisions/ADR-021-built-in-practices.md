@@ -17,9 +17,9 @@ a skill file rather than installing its CLI or hooks.
 ## Decision
 
 1. **Vendor both as Ork practices**, adapted text in
-   [packages/core/src/practices/](../packages/core/src/practices/index.ts), at
-   pinned upstream tags at least 7 days old (Caveman v4.0.1, Ponytail v5.3.2),
-   with attribution in each file and in
+   [packages/core/src/practices/](../packages/core/src/practices/practices.ts),
+   at pinned upstream tags at least 7 days old (Caveman v4.0.1, Ponytail
+   v5.3.2), with attribution in each file and in
    [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md), which ships with the
    CLI. No upstream CLI, hooks, proxy or network call.
 2. **On by default** for every Claude node.

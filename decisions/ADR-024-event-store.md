@@ -31,7 +31,7 @@ with a JSONL copy per run, without choosing a driver.
    stays the source of truth.
 
 Contract: [specs/event-store.md](../specs/event-store.md). Code:
-[store/](../packages/core/src/store/index.ts).
+[store/](../packages/core/src/store/sqlite.ts).
 
 ## Options considered
 

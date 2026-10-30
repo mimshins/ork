@@ -33,7 +33,8 @@ Long specs follow the hub and chunk layout
 | [Feedback and self-improvement](./feedback.md)    | Specified | M1d, M2   |
 | [The ork CLI](./cli.md)                           | Partial   | M1        |
 | [The UI](./ui.md)                                 | Planned   | M2        |
+| [Known gaps and limits](./gaps.md)                | Open      | All       |
 
 **Status:** _Built_ means on `main` with tests; _Partial_ means some of it is
 built and the spec says which; _Specified_ means agreed, not built; _Planned_
-means designed for a later milestone.
+means designed for a later milestone; _Open_ means entries wait for a decision.

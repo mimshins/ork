@@ -2,21 +2,15 @@
 
 import { defineCommand } from "citty";
 
-import {
-  chat,
-  context,
-  decide,
-  doctor,
-  init,
-  logs,
-  ps,
-  resume,
-  run,
-  stop,
-  tree,
-  validate,
-  worktrees,
-} from "./commands/index.ts";
+import { chat } from "./commands/chat.ts";
+import { context } from "./commands/context.ts";
+import { decide, resume, stop } from "./commands/control.ts";
+import { doctor } from "./commands/doctor.ts";
+import { init } from "./commands/init.ts";
+import { run } from "./commands/run.ts";
+import { logs, ps, tree } from "./commands/runs.ts";
+import { validate } from "./commands/validate.ts";
+import { worktrees } from "./commands/worktrees.ts";
 
 export const main = defineCommand({
   meta: {

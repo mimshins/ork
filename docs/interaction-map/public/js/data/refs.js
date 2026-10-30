@@ -183,7 +183,7 @@ export const NODE_TYPES = {
 
 export const INTEGRATIONS = {
   registry: d(
-    "packages/integrations/src/index.ts",
+    "packages/integrations/src/registry.ts",
     "Code: the integration and driver registries",
   ),
   port: d(
@@ -198,7 +198,7 @@ export const INTEGRATIONS = {
 
 export const PRACTICES = {
   code: d(
-    "packages/core/src/practices/index.ts",
+    "packages/core/src/practices/practices.ts",
     "Code: the built-in practices",
   ),
   tests: d(
@@ -280,7 +280,7 @@ export const RUNTIME = {
     "Code: Ork's local MCP server",
   ),
   tools: d(
-    "packages/runtime-claude/src/tools/index.ts",
+    "packages/runtime-claude/src/tools/registry.ts",
     "Code: the registry of Ork's tools",
   ),
   delegate: d(

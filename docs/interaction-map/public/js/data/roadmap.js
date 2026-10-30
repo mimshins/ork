@@ -421,6 +421,14 @@ export const MILESTONES = [
           "Triage, `ork feedback apply`, lessons, sharing to Discussions, and the Feedback panel.",
         docs: ["specs/feedback.md"],
       },
+      {
+        id: "gaps-review",
+        title: "Decide the known gaps",
+        status: "planned",
+        detail:
+          "Close, keep or carry each open gap, limit and chore in the register.",
+        docs: ["specs/gaps.md"],
+      },
     ],
   },
 ];
@@ -440,7 +448,8 @@ export const OFF_ROADMAP = [
   "a1bf031",
   "e922c51",
   "455bf70",
+  "64e1c4b",
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-10-30";
+export const ROADMAP_UPDATED = "2026-10-31";

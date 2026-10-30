@@ -11,15 +11,17 @@ import {
   type Workflow,
 } from "@krapht/ork-schema";
 
+import { type ContextStack, resolveContext } from "../context/resolve.ts";
 import {
-  type ContextStack,
   contextSections,
-  resolveContext,
   sessionSettings,
   writePlugin,
-} from "../context/index.ts";
+} from "../context/session.ts";
 import { parseTemplate, renderTemplate } from "../expr/evaluate.ts";
-import { practiceInstructions, resolvePractices } from "../practices/index.ts";
+import {
+  practiceInstructions,
+  resolvePractices,
+} from "../practices/practices.ts";
 import { reportSchemaFor } from "../runtime/report.ts";
 import type {
   Mailbox,

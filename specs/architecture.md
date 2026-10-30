@@ -39,3 +39,7 @@ ork/
   ([ADR-022](../decisions/ADR-022-integration-registry.md)). The dependency
   direction is
   `integrations <- schema <- core <- runtime-claude, nodes <- server <- cli`.
+- **One entry point per package:** `packages/<name>/src/index.ts` only
+  re-exports the package's public pieces, and other packages import only from
+  it. No other module is named `index.ts`; logic lives in modules named for what
+  they do (`pnpm lint`: `tools/lint/entry-points.ts`).

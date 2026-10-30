@@ -66,6 +66,9 @@ bug fixes need no spec unless they are architectural.
 - **Add a changeset** for any change to shipped code: `pnpm changesets:create`,
   or `pnpm changesets:empty` for internal-only work
   ([runbook/development/release.md](./runbook/development/release.md)).
+- **Track gaps and limits.** Something found missing, or built a simpler way for
+  now, goes in [specs/gaps.md](./specs/gaps.md) in the same change; the review
+  at the end of the roadmap decides each one.
 - **Sync knowledge before handing off:** run
   [knowledge-drift-sync](./.ai/skills/knowledge-drift-sync/SKILL.md). A change
   that leaves specs, ADRs, the interaction map or memories stale is incomplete.
@@ -125,6 +128,10 @@ work is planned, update
   body (put them in a helper).
 - Every source file starts with a JSDoc `/** @file … */` block saying what the
   module is for (`pnpm lint` checks it: `tools/lint/file-overview.ts`).
+- `index.ts` is only a package's entry point (`packages/<name>/src/index.ts`),
+  and it only re-exports the public pieces; logic lives in named modules, and a
+  folder inside a package has no barrel (`pnpm lint` checks it:
+  `tools/lint/entry-points.ts`).
 - Extensible by design: a new integration (a CLI such as GitLab or GCP, a Claude
   driver, a node type) is an adapter behind an interface, found through a
   registry, not a new branch in shared code.

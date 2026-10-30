@@ -372,7 +372,7 @@ export const NODES = [
     y: 960,
     status: "partial",
     pkg: "core",
-    src: "packages/core/src/store/index.ts",
+    src: "packages/core/src/store/sqlite.ts",
     summary:
       "Every change in a run, appended in order: nodes starting and finishing, tool calls, usage, worktrees, messages, chats and decisions. Logs, the monitor, chats and replay are all views over it.",
     facts: [

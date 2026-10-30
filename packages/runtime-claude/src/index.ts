@@ -8,4 +8,6 @@ export * from "./mcp-http.ts";
 export * from "./normalize.ts";
 export * from "./registry.ts";
 export * from "./sdk.ts";
-export * from "./tools/index.ts";
+export * from "./tools/delegate.ts";
+export * from "./tools/registry.ts";
+export * from "./tools/tool.ts";

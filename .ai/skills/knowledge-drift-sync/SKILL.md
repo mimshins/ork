@@ -46,6 +46,7 @@ description: Use before finishing any non-trivial change to Ork. Reconciles code
 | feedback                                                   | [specs/feedback.md](../../../specs/feedback.md), ADR-013                                                                                                     |
 | a CLI command, its flags or output                         | [specs/cli.md](../../../specs/cli.md), `README.md`, the guide in [docs/guides/](../../../docs/README.md#guides) that shows it |
 | requirements, platforms, how Ork is installed or released | [docs/getting-started/installation.md](../../../docs/getting-started/installation.md), `README.md` |
+| something left out, or built a simpler way for now        | [specs/gaps.md](../../../specs/gaps.md)                                                                                                                      |
 | the UI                                                     | [specs/ui.md](../../../specs/ui.md)                                                                                                                          |
 | packages, the dependency direction, a new package          | [specs/architecture.md](../../../specs/architecture.md), `oxlint.config.ts` boundary table, `AGENTS.md`, `.ai/memories/overview.md`                          |
 | how Ork touches credentials or secrets                     | ADR-004, `SECURITY.md`, [specs/runtime.md](../../../specs/runtime.md)                                                                                        |

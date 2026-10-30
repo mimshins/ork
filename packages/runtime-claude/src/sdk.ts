@@ -20,7 +20,8 @@ import type {
 
 import { driverFailure, normalize, withDriver } from "./normalize.ts";
 import { createQueue } from "./queue.ts";
-import { ORK_SERVER, orkTools, preapprovedTools } from "./tools/index.ts";
+import { orkTools, preapprovedTools } from "./tools/registry.ts";
+import { ORK_SERVER } from "./tools/tool.ts";
 
 export type Env = Readonly<Record<string, string | undefined>>;
 

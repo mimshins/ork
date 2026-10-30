@@ -49,7 +49,7 @@ namespaced `plugin:skill`, and the `skillOverrides` setting can switch a skill
    practices, user context, workflow context and lessons, Ork's harness, then
    the node's context.
 
-Code: [packages/core/src/context/](../packages/core/src/context/index.ts),
+Code: [packages/core/src/context/](../packages/core/src/context/resolve.ts),
 [plan.ts](../packages/core/src/run/plan.ts); `ork context explain`:
 [context.ts](../packages/cli/src/commands/context.ts).
 

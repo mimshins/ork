@@ -14,7 +14,7 @@ import {
 
 import { z } from "zod";
 
-import { type BoundTool, ORK_SERVER } from "./tools/index.ts";
+import { type BoundTool, ORK_SERVER } from "./tools/tool.ts";
 
 export type OrkMcpEndpoint = {
   url: string;

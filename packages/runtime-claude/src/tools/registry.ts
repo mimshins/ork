@@ -14,9 +14,6 @@ import {
   toolId,
 } from "./tool.ts";
 
-export * from "./delegate.ts";
-export * from "./tool.ts";
-
 export const ORK_TOOLS: readonly OrkTool[] = [
   askUserTool,
   permissionTool,

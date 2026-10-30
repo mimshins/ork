@@ -2,7 +2,7 @@
 
 Status: **Partial**: the store, the recorder, decisions and commands, `ork ps`,
 `ork logs` and `ork tree` are built
-([store/](../packages/core/src/store/index.ts),
+([store/](../packages/core/src/store/sqlite.ts),
 [tests](../packages/core/test/store.test.ts),
 [CLI tests](../packages/cli/test/runs.test.ts)), and so are messages and
 `ork chat`'s exchanges and resumed runs; claims and feedback records are

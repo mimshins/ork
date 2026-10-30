@@ -1,10 +1,10 @@
 # Context, skills and precedence
 
 Status: **Built** (M1c): the context compiler
-([context/](../packages/core/src/context/index.ts),
+([context/](../packages/core/src/context/resolve.ts),
 [tests](../packages/core/test/context.test.ts)), `ork context explain`
 ([cli](./cli.md#context)), and the [built-in practices](#built-in-practices)
-([practices/](../packages/core/src/practices/index.ts)). Why:
+([practices/](../packages/core/src/practices/practices.ts)). Why:
 [ADR-023](../decisions/ADR-023-context-compiler.md).
 
 **Layers** (lowest to highest precedence for same-named skills):

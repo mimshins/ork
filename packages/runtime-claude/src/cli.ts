@@ -15,12 +15,8 @@ import type {
 
 import { type OrkMcpEndpoint, startOrkMcpHttp } from "./mcp-http.ts";
 import { driverFailure, normalize, withDriver } from "./normalize.ts";
-import {
-  ORK_SERVER,
-  orkTools,
-  preapprovedTools,
-  toolId,
-} from "./tools/index.ts";
+import { orkTools, preapprovedTools } from "./tools/registry.ts";
+import { ORK_SERVER, toolId } from "./tools/tool.ts";
 
 export type CliRuntimeOptions = {
   /** The program to run; defaults to `claude` on the PATH. */
