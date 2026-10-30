@@ -344,15 +344,20 @@ export const MILESTONES = [
       {
         id: "resume",
         title: "`ork resume`",
-        status: "next",
+        status: "done",
         detail:
-          "Continue a stopped or crashed run from its events: finished nodes keep their outputs, the rest run again.",
-        docs: ["specs/cli.md"],
+          "Continue a stopped, failed or crashed run under its own id: finished nodes keep their results (replayed from its events), the rest run again, in the worktrees it left.",
+        commits: ["bf1ab4f"],
+        date: "2026-10-30",
+        docs: [
+          "specs/cli.md#resuming-a-run",
+          "decisions/ADR-026-resume-by-replay.md",
+        ],
       },
       {
         id: "claims",
         title: "`claim` and `release`",
-        status: "planned",
+        status: "next",
         detail: "Parallel workers claim files so they do not collide.",
         docs: ["specs/messaging.md"],
       },
@@ -434,6 +439,7 @@ export const OFF_ROADMAP = [
   "ce72ab7",
   "a1bf031",
   "e922c51",
+  "455bf70",
 ];
 
 /** The day the roadmap was last brought up to date. */
