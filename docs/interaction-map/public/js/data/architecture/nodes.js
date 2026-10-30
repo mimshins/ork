@@ -5,7 +5,7 @@
  *   {@link SIZE} wide and tall. Rows sit at y 120, 240, … 1080.
  */
 
-import { DESIGN, README, SCHEMA } from "../refs.js";
+import { CLI, CORE, DESIGN, README, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -82,20 +82,19 @@ export const NODES = [
     zone: "surfaces",
     x: 320,
     y: 360,
-    status: "specified",
+    status: "partial",
     pkg: "cli",
     src: "packages/cli/src/bin.ts",
     summary:
       "The `ork` command. It validates and runs workflows with the engine embedded in its own process, or talks to a running `ork ui` server over HTTP.",
     facts: [
-      "`ork validate` prints schema and graph errors with YAML line numbers.",
+      "Built: `ork init` scaffolds `.ork/` and never overwrites a file; `ork validate` prints schema and graph diagnostics with file, line and column; `ork doctor` reports your own logins and never prints a token or your email.",
       "`ork run`, `ps`, `logs --follow`, `tree`, `stop`, `resume` drive and watch runs.",
       "`ork decide` answers pending decisions; the recommended option is preselected.",
-      "`ork doctor` checks node, git, `claude` (login or API key), `gh auth` and the AWS identity.",
       "`ork context explain <wf> <node>` shows the resolved layer stack for one node.",
     ],
     see: [{ map: "lifecycle", node: "cli", label: "The CLI in a run" }],
-    docs: [DESIGN.cli, DESIGN.milestones],
+    docs: [CLI.validate, CLI.init, CLI.doctor, CLI.tests, DESIGN.cli],
   },
   {
     id: "server",
@@ -145,7 +144,7 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 120,
-    status: "specified",
+    status: "built",
     pkg: "core",
     src: "packages/core/src/graph",
     summary:
@@ -153,13 +152,14 @@ export const NODES = [
     facts: [
       "Every cycle needs an edge with `maxRounds`.",
       "A `claude.subagent` needs a Claude parent; tool and control nodes own nothing.",
-      "Templates and predicates use a small expression language: paths, comparisons, `any()`, `all()`; no arbitrary JavaScript.",
+      "Templates and predicates use a small expression language: paths, comparisons, `&&`, `||`, `!`, and `any`, `all`, `count`, `len`, `contains`; no arbitrary JavaScript.",
+      "Template references must resolve: declared inputs, existing nodes, known report fields; reading a node that does not run first is a warning.",
       "Entry nodes: no incoming flow edge and no parent.",
     ],
     see: [
       { map: "lifecycle", node: "compiler", label: "The compiler in a run" },
     ],
-    docs: [DESIGN.format],
+    docs: [CORE.compile, CORE.flow, CORE.expr, CORE.tests, DESIGN.format],
   },
   {
     id: "schema",

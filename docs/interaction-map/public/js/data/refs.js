@@ -70,3 +70,24 @@ export const SCHEMA = {
     "Example: the software-factory workflow",
   ),
 };
+
+export const CORE = {
+  compile: d("packages/core/src/graph/compile.ts", "Code: the graph compiler"),
+  flow: d(
+    "packages/core/src/graph/flow.ts",
+    "Code: edges, bounded cycles, entries, reachability",
+  ),
+  tree: d("packages/core/src/graph/tree.ts", "Code: the ownership rules"),
+  expr: d("packages/core/src/expr/parse.ts", "Code: the expression language"),
+  tests: d(
+    "packages/core/test/compile.test.ts",
+    "Tests: the compiler's checks",
+  ),
+};
+
+export const CLI = {
+  validate: d("packages/cli/src/commands/validate.ts", "Code: `ork validate`"),
+  init: d("packages/cli/src/commands/init.ts", "Code: `ork init`"),
+  doctor: d("packages/cli/src/doctor/checks.ts", "Code: `ork doctor`'s checks"),
+  tests: d("packages/cli/test/cli.test.ts", "Tests: init and validate"),
+};

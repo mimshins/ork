@@ -721,7 +721,7 @@ const drawNode = (n, tone) => {
 const tag = (p, text, cls) =>
   svg("g", { class: cls, transform: `translate(${p.x},${p.y})` }, [
     svg("rect", { x: -40, y: -12, width: 80, height: 24, rx: 12 }),
-    svg("text", { "text-anchor": "middle", dy: "0.35em" }, [text]),
+    svg("text", { "text-anchor": "middle", dy: "0.35em" }, [plain(text)]),
   ]);
 
 /**

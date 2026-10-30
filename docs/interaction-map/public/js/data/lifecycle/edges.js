@@ -37,7 +37,6 @@ export const EDGES = [
     kind: "local",
     label: "compile",
     detail: "The same checks as `ork validate`.",
-    status: "specified",
   },
   {
     id: "compiler-scheduler",

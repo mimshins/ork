@@ -15,8 +15,10 @@ Besides validating the data, it prints:
 
 - the commits since `synced` (in `public/js/data/sources.js`) that touch
   `packages/`, `docs/` or `examples/`, and any uncommitted changes there;
-- **"Review these statuses"**: cards that are not `built` but whose `src` path
-  exists now. These are the first candidates to flip.
+- **"Review these statuses"**: cards that are `specified` or `planned` but whose
+  `src` path exists now. These are the first candidates to flip. A `partial`
+  card is not listed (it is expected to have code); like a `built` one, it must
+  link to that code.
 
 To read a change: `git log -p <synced>..HEAD -- <path>`, or `git show <commit>`.
 

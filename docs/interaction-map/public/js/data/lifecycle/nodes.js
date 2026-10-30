@@ -5,7 +5,7 @@
  *   map is {@link SIZE} wide and tall.
  */
 
-import { DESIGN, SCHEMA } from "../refs.js";
+import { CORE, DESIGN, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -81,7 +81,7 @@ export const NODES = [
     y: 120,
     status: "specified",
     pkg: "cli",
-    src: "packages/cli/src/bin.ts",
+    src: "packages/cli/src/commands/run.ts",
     summary:
       "Starts a run of a workflow file with its inputs, and follows it until it ends or you detach.",
     facts: [
@@ -104,7 +104,7 @@ export const NODES = [
     zone: "engine",
     x: 320,
     y: 250,
-    status: "specified",
+    status: "built",
     pkg: "core",
     src: "packages/core/src/graph",
     summary:
@@ -120,7 +120,7 @@ export const NODES = [
         label: "The compiler in the architecture",
       },
     ],
-    docs: [DESIGN.format, SCHEMA.edges],
+    docs: [CORE.compile, CORE.tests, DESIGN.format, SCHEMA.edges],
   },
   {
     id: "scheduler",

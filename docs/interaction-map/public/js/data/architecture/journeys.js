@@ -1,6 +1,6 @@
 /** @file The architecture map's journeys. */
 
-import { DESIGN, SCHEMA } from "../refs.js";
+import { CLI, CORE, DESIGN, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").Journey} Journey */
 
@@ -11,7 +11,7 @@ export const JOURNEYS = [
     title: "Validate a workflow file",
     who: "You",
     summary:
-      "From `ork validate` to a list of diagnostics, each with a line and column. Parsing and the schema check are built; the graph checks are next.",
+      "From `ork validate` to a list of diagnostics, each with a file, line and column. Every step is built.",
     steps: [
       {
         from: "user",
@@ -19,8 +19,7 @@ export const JOURNEYS = [
         title: "You run `ork validate`",
         detail:
           "Pointing at a file such as `.ork/workflows/software-factory.ork.yaml`.",
-        status: "specified",
-        docs: [DESIGN.cli],
+        docs: [CLI.validate, DESIGN.cli],
       },
       {
         from: "cli",
@@ -28,7 +27,6 @@ export const JOURNEYS = [
         title: "The CLI hands the file to the compiler",
         detail:
           "Validation is the same code a run uses, so a file that validates is a file that compiles.",
-        status: "specified",
       },
       {
         from: "compiler",
@@ -51,8 +49,7 @@ export const JOURNEYS = [
         title: "The compiler checks the graph",
         detail:
           "Edges are expanded from shorthand; parents, message channels and template references must resolve; every cycle needs `maxRounds`; at least one entry node must exist.",
-        status: "specified",
-        docs: [DESIGN.format, SCHEMA.edges],
+        docs: [CORE.compile, CORE.flow, CORE.tests],
       },
       {
         from: "compiler",
@@ -60,7 +57,6 @@ export const JOURNEYS = [
         title: "The CLI prints the diagnostics",
         detail:
           "Errors and warnings with file, line and column; the exit code is non-zero when there is an error.",
-        status: "specified",
       },
     ],
   },

@@ -7,7 +7,7 @@
  *   reach each other straight across.
  */
 
-import { DESIGN, README, SCHEMA } from "../refs.js";
+import { CLI, CORE, DESIGN, README, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
 
@@ -66,9 +66,8 @@ export const EDGES = [
     kind: "local",
     label: "`ork validate`",
     detail:
-      "The CLI parses the file with the schema, compiles the graph and prints every diagnostic with its line and column.",
-    status: "specified",
-    docs: [DESIGN.cli, DESIGN.format],
+      "The CLI parses the file with the schema, compiles the graph and prints every diagnostic with its file, line and column; the exit code is 1 when there is an error.",
+    docs: [CLI.validate, CORE.compile, DESIGN.cli],
   },
   {
     id: "cli-scheduler",
@@ -143,7 +142,6 @@ export const EDGES = [
     label: "parse + validate",
     detail:
       "The schema turns YAML into a typed workflow, or into diagnostics with line numbers; the compiler then checks the graph.",
-    status: "specified",
     docs: [SCHEMA.yaml],
   },
   {

@@ -205,7 +205,9 @@ const checkSee = (m, n) => {
 const checkStatus = (m, n) => {
   const where = `${m.id}: node ${n.id}`;
   const srcExists = n.src !== undefined && existsSync(join(ROOT, n.src));
-  if (n.status === "built") {
+  // A built or partial card points at its code; a partial one is expected to
+  // have some, so only cards with no code yet are flagged for review.
+  if (n.status === "built" || n.status === "partial") {
     if (
       !n.docs.some(
         ref =>
@@ -213,11 +215,11 @@ const checkStatus = (m, n) => {
       )
     ) {
       errors.push(
-        `${where}: built, but links to no code under packages/ or examples/`,
+        `${where}: ${n.status}, but links to no code under packages/ or examples/`,
       );
     }
     if (n.src !== undefined && !srcExists)
-      errors.push(`${where}: built, but ${n.src} does not exist`);
+      errors.push(`${where}: ${n.status}, but ${n.src} does not exist`);
   } else if (srcExists) {
     review.push(`${where} is ${n.status}, but ${n.src} exists now`);
   }
