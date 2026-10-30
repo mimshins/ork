@@ -5,8 +5,9 @@ Status: **Partial**: the store, the recorder, decisions and commands, `ork ps`,
 ([store/](../packages/core/src/store/index.ts),
 [tests](../packages/core/test/store.test.ts),
 [CLI tests](../packages/cli/test/runs.test.ts)), and so are messages and
-`ork chat`'s exchanges; claims, feedback records and `run.resumed` are specified
-for the rest of M1d. Why: [ADR-024](../decisions/ADR-024-event-store.md).
+`ork chat`'s exchanges and resumed runs; claims and feedback records are
+specified for the rest of M1d. Why:
+[ADR-024](../decisions/ADR-024-event-store.md).
 
 Every run, a whole workflow or one node (`ork run --node`), is recorded as it
 happens. The terminal transcript, `ork logs`, `ork tree`, and later the UI are
@@ -42,6 +43,9 @@ all views over the same events.
   its node and masked body) and when the run handled it. The run events
   `decision.opened`, `decision.answered`, `decision.withdrawn` and `run.command`
   record the same in the run's stream ([messaging](./messaging.md)).
+- **A resumed run** (`ork resume`) is the same run: its record is `running`
+  again in the new process, and its events go on from the last sequence number,
+  starting with `run.resumed`.
 - **After `run.finished`**, only `ork chat` adds events: the exchange with a
   resumed session. The run's status and cost stay as they were.
 - **A run that never starts** (an invalid workflow, a missing input or program,
@@ -74,4 +78,4 @@ records use the same patterns.
 
 ## Specified for M1d
 
-Claims, feedback records and `run.resumed` are run events like the others.
+Claims and feedback records are run events like the others.

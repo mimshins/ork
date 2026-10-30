@@ -107,7 +107,7 @@ export const NODES = [
       "Built: `ork run <wf>` runs a whole workflow through the scheduler, and `--node <id>` one Claude node; questions and permission prompts are answered on the terminal.",
       "Built: `ork worktrees` lists the worktrees and `ork/` branches runs left, and `clean` removes them, asking first.",
       "Built: `ps`, `logs --follow`, `tree` read runs from the store; `run --detach` runs in the background; `stop` stops a live run from any terminal.",
-      "Built: `ork decide` answers open decisions from any terminal; the recommended option is preselected. `ork chat` talks to a node, live or by resuming its session. Specified: `resume`.",
+      "Built: `ork decide` answers open decisions from any terminal; the recommended option is preselected. `ork chat` talks to a node, live or by resuming its session; `ork resume` continues a stopped or crashed run, handing back what finished.",
       "Built: `ork context explain <wf> <node>` shows the resolved layer stack for one node.",
     ],
     see: [{ map: "lifecycle", node: "cli", label: "The CLI in a run" }],

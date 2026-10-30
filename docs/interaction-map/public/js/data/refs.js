@@ -149,6 +149,14 @@ export const BUS = {
   chatTests: d("packages/cli/test/chat.test.ts", "Tests: `ork chat`"),
 };
 
+export const RESUME = {
+  resume: d(
+    "packages/core/src/run/resume.ts",
+    "Code: a run's events read back for `ork resume`",
+  ),
+  tests: d("packages/core/test/resume.test.ts", "Tests: resuming a run"),
+};
+
 export const ENGINE = {
   scheduler: d("packages/core/src/run/scheduler.ts", "Code: the scheduler"),
   routing: d(

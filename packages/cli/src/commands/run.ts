@@ -41,7 +41,7 @@ export const loadRuntime = async (driver: Driver): Promise<ClaudeRuntime> =>
     process.env,
   );
 
-const writeErr = (text: string): void => {
+export const writeErr = (text: string): void => {
   process.stderr.write(`${text}\n`);
 };
 

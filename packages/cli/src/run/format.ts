@@ -184,6 +184,16 @@ export const formatRunEvent = (
     return [style(["yellow", "bold"], `! ork ${event.command} received`)];
   }
   if (event.type === "run.finished") return formatRunResult(event.result);
+  if (event.type === "run.resumed") {
+    const [one] = event.kept;
+    const kept =
+      one === undefined
+        ? "every node runs again"
+        : event.kept.length === 1
+          ? `${one} keeps its result`
+          : `${event.kept.join(", ")} keep their results`;
+    return ["", style("dim", `▸ resumed: ${kept}`)];
+  }
   if (event.type === "user.message") {
     const note = event.delivered === "queued" ? " (for its next session)" : "";
     return [

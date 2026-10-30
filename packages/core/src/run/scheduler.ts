@@ -19,6 +19,7 @@ import {
   finishedEvent,
   passThrough,
   recordRun,
+  startedEvent,
   summaryOf,
 } from "./results.ts";
 import { createRouter } from "./router.ts";
@@ -30,7 +31,6 @@ import type {
   NodeOutput,
   NodeResult,
   NodeSummary,
-  RunEvent,
   RunHandle,
   RunOptions,
   RunResult,
@@ -224,22 +224,20 @@ export const startRun = (options: RunOptions): RunHandle => {
     const round = (rounds.get(id) ?? 0) + 1;
     rounds.set(id, round);
     running.add(id);
-    const started: RunEvent = {
-      type: "node.started",
-      id,
-      nodeType: nodeOf(activation)?.type ?? "control.split",
-      round,
-    };
-    if (activation.brief !== undefined) started.owner = activation.brief.from;
-    onEvent(started);
-
-    const result = await execute(activation);
+    // A resumed run hands back what an activation did last time.
+    const recorded = options.replay?.take(activation) ?? null;
+    const type = nodeOf(activation)?.type ?? "control.split";
+    if (recorded === null) onEvent(startedEvent(activation, type, round));
+    const result = recorded ?? (await execute(activation));
     running.delete(id);
     outputs[id] = result.output;
     if (result.sessionId !== undefined) sessionIds.set(id, result.sessionId);
     spent += result.usage?.costUsd ?? 0;
     recordRun(summary(id), result);
-    onEvent(finishedEvent(id, round, result));
+    if (recorded === null) {
+      options.replay?.ran(result);
+      onEvent(finishedEvent(id, round, result));
+    }
     return result;
   };
 
@@ -279,6 +277,8 @@ export const startRun = (options: RunOptions): RunHandle => {
     workflow: graph.workflow.name,
     entries: graph.entries,
     nodes: declaredNodes(graph),
+    inputs: options.inputs,
+    ...(options.settings === undefined ? {} : { settings: options.settings }),
   });
   for (const id of graph.entries) queue.push({ id, input: undefined });
   queueMicrotask(pump);

@@ -151,14 +151,27 @@ export const createWorktree = async (options: {
   runId: string;
   nodeId: string;
   base: string;
-}): Promise<Worktree & { copied: string[] }> => {
+}): Promise<Worktree & { copied: string[]; reused: boolean }> => {
   const { root, runId, nodeId, base } = options;
   const target = worktreePath(root, runId, nodeId);
   const branch = branchName(runId, nodeId);
   mkdirSync(worktreeHome(root), { recursive: true });
-  await gitOk(root, ["worktree", "add", "-b", branch, target, base]);
+  // A resumed run's branch outlives its removed worktree: check it out again,
+  // brought up to `base` by the caller's fast-forward.
+  const reused = await git(root, [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    `refs/heads/${branch}`,
+  ]);
+  await gitOk(
+    root,
+    reused.code === 0
+      ? ["worktree", "add", target, branch]
+      : ["worktree", "add", "-b", branch, target, base],
+  );
   const copied = copyInto(root, target, await localFiles(root));
-  return { path: target, branch, copied };
+  return { path: target, branch, copied, reused: reused.code === 0 };
 };
 
 /** Copies files that exist in `from` and are missing in the worktree. */

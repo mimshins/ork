@@ -82,6 +82,9 @@ export const openStore = (file: string = storePath()): EventStore => {
   const finishRun = db.prepare(
     "UPDATE runs SET status = ?, finished_at = ?, cost_usd = ? WHERE id = ?",
   );
+  const reopenRun = db.prepare(
+    "UPDATE runs SET status = 'running', pid = ?, finished_at = NULL WHERE id = ?",
+  );
   const addCost = db.prepare(
     "UPDATE runs SET cost_usd = cost_usd + ? WHERE id = ?",
   );
@@ -118,6 +121,9 @@ export const openStore = (file: string = storePath()): EventStore => {
         startedAt,
         costUsd: 0,
       };
+    },
+    reopen: runId => {
+      reopenRun.run(process.pid, runId);
     },
     append: (runId, event) => {
       const at = new Date().toISOString();

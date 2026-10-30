@@ -25,6 +25,7 @@ import {
   applyClean,
   compileWorkflow,
   type CompiledGraph,
+  createReplay,
   createWorkspace,
   createWorktree,
   inspectProject,
@@ -32,6 +33,7 @@ import {
   type NodeExecutor,
   planClean,
   type RunEvent,
+  resumeState,
   startRun,
   worktreePath,
 } from "../src/index.ts";
@@ -114,7 +116,10 @@ const runIn = async (
   root: string,
   graph: CompiledGraph,
   executor: NodeExecutor,
+  /** For a resumed run: the run's events so far. */
+  before?: RunEvent[],
 ) => {
+  const state = before === undefined ? undefined : resumeState(before);
   const project = await inspectProject(root);
   if (project === null) throw new Error("not a repo");
   const events: RunEvent[] = [];
@@ -138,14 +143,24 @@ const runIn = async (
       root,
       head: project.head,
       onEvent,
+      ...(state === undefined ? {} : { adopt: state.worktrees }),
     }),
+    ...(state === undefined ? {} : { replay: createReplay(state.history) }),
   });
   const result = await handle.done;
   const worktreeEvents = events.flatMap(e =>
     e.type === "worktree" ? [`${e.id} ${e.action}`] : [],
   );
-  return { result, worktreeEvents };
+  return { result, worktreeEvents, events };
 };
+
+/** `executor`, except that `check` fails. */
+const failingCheck =
+  (executor: NodeExecutor): NodeExecutor =>
+  context =>
+    context.id === "check"
+      ? Promise.resolve({ ok: false, output: { status: "fail" }, error: "no" })
+      : executor(context);
 
 const TEAM = compile(
   [
@@ -257,6 +272,33 @@ describe("worktrees", () => {
       },
     ]);
     expect(existsSync(worktreePath(root, "r1", "fix"))).toBe(false);
+  });
+
+  it("resumes in the worktrees a run left, and reuses a removed one's branch", async () => {
+    const root = repo();
+    const lead = worktreePath(root, "r1", "lead");
+    const { executor } = working({ fix: { files: { "src/fix.ts": "fix\n" } } });
+    const failing = failingCheck(executor);
+    const first = await runIn(root, TEAM, failing);
+    expect(first.result.status).toBe("failed");
+
+    const { executor: second, cwds } = working({});
+    const again = await runIn(root, TEAM, second, first.events);
+    expect(again.result.status).toBe("succeeded");
+    // Only the failed node ran, in the lead's worktree, which was adopted.
+    expect(cwds).toEqual({ check: lead });
+    expect(again.worktreeEvents).toEqual([]);
+    expect(again.result.worktrees.map(w => w.id)).toEqual(["lead"]);
+    // fix's worktree was removed after its merge; its branch is checked out
+    // again rather than created.
+    const reused = await createWorktree({
+      root,
+      runId: "r1",
+      nodeId: "fix",
+      base: "ork/r1/lead",
+    });
+    expect(reused.reused).toBe(true);
+    expect(sh(reused.path, "ls-files", "src/fix.ts")).toBe("src/fix.ts\n");
   });
 
   it("keeps a child whose merge conflicts, and tells the owner which files", async () => {

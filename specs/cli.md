@@ -2,8 +2,8 @@
 
 Status: **Partial**: `ork init`, `ork validate`, `ork doctor`, `ork run` (a
 whole workflow, or one node with `--node`), `ork ps`, `ork logs`, `ork tree`,
-`ork decide`, `ork stop`, `ork chat`, `ork worktrees` and `ork context explain`
-are built ([code](../packages/cli/src/main.ts),
+`ork decide`, `ork stop`, `ork chat`, `ork resume`, `ork worktrees` and
+`ork context explain` are built ([code](../packages/cli/src/main.ts),
 [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts)); the other commands are
 specified. Published as `@krapht/ork`
@@ -22,7 +22,7 @@ ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per nod
 ork decide [<run>] [--all] [--list] [--json] [--id <d> --choose <option>]  # answer open decisions
 ork chat <run> <node> [-m <text>] [--driver sdk|cli]  # talk to a node, live or by resuming its session
 ork stop [<run>]                 # stop a live run from any terminal
-ork resume <run>
+ork resume [<run>] [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json]  # continue a stopped or crashed run
 ork worktrees [list|clean]       # Ork's worktrees and branches; clean them up safely
 ork context explain <wf> <node> [--json]  # what one node's session loads, layer by layer
 ork feedback [list|show|dismiss] # local feedback items (triage, apply, lesson, publish: M2)
@@ -142,6 +142,22 @@ one prompt at a time, unless `ork decide` in another terminal answers first
 - **`ork stop [<run>]`** asks a live run to stop (this project's newest without
   `<run>`), wakes it, and waits up to 15 s for it to end; a run that is not
   running is refused with its status.
+
+## Resuming a run
+
+`ork resume [<run>]` ([resume.ts](../packages/cli/src/commands/resume.ts),
+[tests](../packages/cli/test/resume.test.ts)) continues a run that is not
+running and did not succeed (stopped, failed, out of budget, or crashed), under
+the same id and in its own project, from wherever it is called:
+
+- Nodes that finished keep their results; the rest run again, with what they
+  feed ([scheduler](./scheduler.md#resuming-a-run)). The transcript starts with
+  `▸ resumed: … keep their results`.
+- It starts with the run's inputs and flags; `--input`, `--driver` and
+  `--in-place` change them. The project checks of `ork run` apply
+  (`--allow-dirty`).
+- A running run, a succeeded one, and a run of one node (`ork run --node`) are
+  refused with the reason.
 
 ## Worktrees
 

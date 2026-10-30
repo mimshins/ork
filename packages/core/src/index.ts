@@ -16,6 +16,7 @@ export * from "./practices/ponytail.ts";
 export * from "./run/bus.ts";
 export * from "./run/inputs.ts";
 export * from "./run/plan.ts";
+export * from "./run/resume.ts";
 export * from "./run/routing.ts";
 export * from "./run/scheduler.ts";
 export * from "./run/scope.ts";

@@ -97,6 +97,8 @@ export type DecisionStore = {
 export type EventStore = DecisionStore & {
   /** Records a new run as `running` in this process. */
   begin: (run: NewRun) => RunRecord;
+  /** Marks a stored run `running` again, in this process (`ork resume`). */
+  reopen: (runId: string) => void;
   /** Appends one event; `run.finished` also settles the run's record. */
   append: (runId: string, event: RunEvent) => StoredEvent;
   /** Runs, newest first; only one project's when given. */

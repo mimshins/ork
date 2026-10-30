@@ -94,6 +94,14 @@ When a leader delegates ([scheduler](./scheduler.md#delegation)):
   summary lists each with its branch, path and reason.
 - Ork never pushes, and never creates, moves or deletes a branch outside `ork/`.
 
+## Resuming a run
+
+`ork resume` ([scheduler](./scheduler.md#resuming-a-run)) adopts the worktrees
+the run left whose folders are still there, merged or not, instead of creating
+them again. A node that runs again after its worktree was removed checks its
+`ork/<run>/<node>` branch out again and brings it up to its owner's branch; new
+worktrees of root nodes branch from the project's current `HEAD`.
+
 ## ork worktrees
 
 `ork worktrees` (or `ork wt`) tracks and cleans what runs leave behind, read

@@ -7,9 +7,10 @@ Status: **Partial**: the scheduler, delegation, the built-in node types and
 [nodes](../packages/nodes/src/index.ts),
 [tests](../packages/core/test/scheduler.test.ts),
 [delegation tests](../packages/core/test/delegation.test.ts),
-[node tests](../packages/nodes/test/nodes.test.ts)). The context compiler is the
-rest of M1c, and telling a live owner about its children's loops needs the
-message bus (M1d); where each node works is [Worktrees](./worktrees.md). Why:
+[node tests](../packages/nodes/test/nodes.test.ts)), and so is resuming a run
+([resume.ts](../packages/core/src/run/resume.ts),
+[tests](../packages/core/test/resume.test.ts)); where each node works is
+[Worktrees](./worktrees.md). Why:
 [ADR-016](../decisions/ADR-016-scheduler-semantics.md),
 [ADR-017](../decisions/ADR-017-blocking-delegate.md),
 [ADR-019](../decisions/ADR-019-leaders-resume-on-reentry.md).
@@ -139,6 +140,26 @@ From `@krapht/ork-nodes` ([index.ts](../packages/nodes/src/index.ts)):
 - `interrupt()` stops starting nodes, aborts the running ones, and ends the run
   `interrupted`.
 
+## Resuming a run
+
+`ork resume` ([cli.md](./cli.md#resuming-a-run),
+[ADR-026](../decisions/ADR-026-resume-by-replay.md)) runs the workflow again
+under the same run id, with a `Replay` built from the run's events:
+
+- Each flow activation gets the result its node recorded last time, in order,
+  without running and without `node.started`/`node.finished`; outputs, rounds,
+  leaders' session ids, joins, routers and loop counts are rebuilt as before.
+- A node's results are handed back up to its first that failed or never
+  finished; from there it runs. A new result marks its output, and an activation
+  whose input carries one (directly, or in a join's `results`) runs too.
+  Delegated runs are never handed back: their leader's session runs them.
+- `run.started` carries the run's `inputs` and `settings` (`inPlace`, `driver`),
+  which the resumed run starts with; the CLI records `run.resumed` with the
+  nodes that keep results first.
+- Questions about loops out of rounds that were answered last time get the same
+  answers again, in order.
+- The run's budget counts what it spent before.
+
 ## Run events
 
 `onEvent` receives every change; `ork run` stores each one in the
@@ -160,6 +181,7 @@ From `@krapht/ork-nodes` ([index.ts](../packages/nodes/src/index.ts)):
 | `owner.answered`   | the owner answered with `answer`                                       |
 | `owner.unanswered` | the owner's session ended first; the human is asked instead            |
 | `user.message`     | `ork chat` wrote to a node: delivered now, queued, or by resuming      |
+| `run.resumed`      | `ork resume` continues the run: the nodes that keep their results      |
 | `run.finished`     | the run ends: `succeeded`, `failed`, `budget_exhausted`, `interrupted` |
 
 The decision queue adds `decision.opened`, `decision.answered`,

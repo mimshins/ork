@@ -23,3 +23,4 @@ export * from "./runs/decide.ts";
 export * from "./runs/find.ts";
 export * from "./runs/format.ts";
 export * from "./runs/logs.ts";
+export * from "./runs/resume.ts";

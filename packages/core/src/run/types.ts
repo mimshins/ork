@@ -5,7 +5,7 @@
  *   store keeps.
  */
 
-import type { Node, NodeType, Workflow } from "@krapht/ork-schema";
+import type { Driver, Node, NodeType, Workflow } from "@krapht/ork-schema";
 
 import type { CompiledGraph } from "../graph/types.ts";
 import type {
@@ -149,6 +149,9 @@ export type RunResult = {
 
 export type RunNodeInfo = { id: string; type: NodeType; parent?: string };
 
+/** How the run was started, kept so `ork resume` starts it the same way. */
+export type RunSettings = { inPlace?: boolean; driver?: Driver };
+
 export type RunEvent =
   | {
       type: "run.started";
@@ -157,7 +160,11 @@ export type RunEvent =
       entries: string[];
       /** Every declared node, with its owner: the shape `ork tree` draws. */
       nodes: RunNodeInfo[];
+      inputs?: Inputs;
+      settings?: RunSettings;
     }
+  /** `ork resume` continues the run; `kept` nodes keep their results. */
+  | { type: "run.resumed"; kept: string[] }
   | {
       type: "node.started";
       id: string;
@@ -256,6 +263,20 @@ export type RunOptions = {
   workflowDir?: string;
   /** The project's root, which skill and context paths stay in; default `cwd`. */
   projectRoot?: string;
+  /** Recorded in `run.started`. */
+  settings?: RunSettings;
+  /** For `ork resume`: the results a run recorded, handed back in order. */
+  replay?: Replay;
+};
+
+/**
+ * A resumed run's recorded results. `take` gives an activation the result it
+ * had last time, or `null` when it must run (it failed, never finished, or its
+ * input is new); `ran` marks a new result, so what it feeds runs anew.
+ */
+export type Replay = {
+  take: (activation: Activation) => NodeResult | null;
+  ran: (result: NodeResult) => void;
 };
 
 export type RunHandle = {

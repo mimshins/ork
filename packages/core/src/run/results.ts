@@ -4,8 +4,11 @@
  *   `run.started` lists, and closing the workspace at the end.
  */
 
+import type { NodeType } from "@krapht/ork-schema";
+
 import type { CompiledGraph } from "../graph/types.ts";
 import type {
+  Activation,
   KeptWorktree,
   NodeOutput,
   NodeResult,
@@ -28,6 +31,21 @@ export const recordRun = (entry: NodeSummary, result: NodeResult): void => {
   entry.costUsd += result.usage?.costUsd ?? 0;
   if (result.error === undefined) delete entry.error;
   else entry.error = result.error;
+};
+
+export const startedEvent = (
+  activation: Activation,
+  nodeType: NodeType,
+  round: number,
+): RunEvent => {
+  const event: RunEvent = {
+    type: "node.started",
+    id: activation.id,
+    nodeType,
+    round,
+  };
+  if (activation.brief !== undefined) event.owner = activation.brief.from;
+  return event;
 };
 
 export const finishedEvent = (

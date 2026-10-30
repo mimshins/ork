@@ -1,7 +1,8 @@
 /**
  * @file `ork run` for a whole workflow: checks the workflow, its inputs and the
  *   project (git, uncommitted agent files), sets up the worktree workspace, and
- *   streams the scheduler's run.
+ *   streams the scheduler's run. `ork resume` comes through here too, with the
+ *   run's recorded state.
  */
 
 import { randomUUID } from "node:crypto";
@@ -9,7 +10,11 @@ import path from "node:path";
 
 import {
   type ClaudeRuntime,
+  appendRecorder,
   createRecorder,
+  createReplay,
+  replayLoopAnswers,
+  type ResumeState,
   createWorkspace,
   startControl,
   type EventStore,
@@ -71,6 +76,8 @@ export type RunWorkflowOptions = {
   home?: string;
   /** How often the run looks at the store for answers and commands. */
   intervalMs?: number;
+  /** `ork resume`: continue the run `runId` from its recorded state. */
+  resume?: ResumeState;
   onRun?: (handle: RunHandle) => void;
 };
 
@@ -133,7 +140,14 @@ export const runWorkflowFile = async (
 
   const pairs = parseInputPairs(options.inputs);
   if (!pairs.ok) return failed([`--input: ${pairs.error}`]);
-  const inputs = resolveInputs(workflow, pairs.raw);
+  // A resumed run keeps its inputs; `--input` changes one.
+  const recorded = Object.fromEntries(
+    Object.entries(options.resume?.inputs ?? {}).map(([k, v]) => [
+      k,
+      String(v),
+    ]),
+  );
+  const inputs = resolveInputs(workflow, { ...recorded, ...pairs.raw });
   if (!inputs.ok) return failed(inputs.errors);
 
   const installed =
@@ -164,16 +178,21 @@ export const runWorkflowFile = async (
   }
 
   const runId = options.runId ?? newRunId(options.store);
-  const record = createRecorder(
-    options.store,
-    {
-      id: runId,
-      workflow: workflow.name,
-      file: path.resolve(options.cwd, options.file),
-      project: gitProject === null ? projectRootOf(cwd) : cwd,
-    },
-    path.join(cwd, ".ork", "runs", runId),
-  );
+  const runDir = path.join(cwd, ".ork", "runs", runId);
+  if (options.resume !== undefined) options.store.reopen(runId);
+  const record =
+    options.resume === undefined
+      ? createRecorder(
+          options.store,
+          {
+            id: runId,
+            workflow: workflow.name,
+            file: path.resolve(options.cwd, options.file),
+            project: gitProject === null ? projectRootOf(cwd) : cwd,
+          },
+          runDir,
+        )
+      : appendRecorder(options.store, runId, runDir);
   const width = Math.max(...Object.keys(workflow.nodes).map(id => id.length));
   const tools = new Map<string, string>();
   const started = Promise.withResolvers<RunHandle>();
@@ -216,6 +235,9 @@ export const runWorkflowFile = async (
           root: gitProject.root,
           head: gitProject.head,
           onEvent,
+          ...(options.resume === undefined
+            ? {}
+            : { adopt: options.resume.worktrees }),
         });
 
   const executorOptions: Parameters<typeof builtinExecutors>[0] = {
@@ -225,14 +247,28 @@ export const runWorkflowFile = async (
   if (options.driver !== undefined) executorOptions.driver = options.driver;
   if (options.tools !== undefined) executorOptions.tools = options.tools;
 
+  const replay =
+    options.resume === undefined
+      ? undefined
+      : createReplay(options.resume.history);
+  if (replay !== undefined)
+    onEvent({ type: "run.resumed", kept: replay.kept() });
   const handle = startRun({
     graph,
     runId,
     inputs: inputs.inputs,
     cwd,
     executors: builtinExecutors(executorOptions),
-    human: control.human,
+    human:
+      options.resume === undefined
+        ? control.human
+        : replayLoopAnswers(control.human, options.resume.loopAnswers),
     onEvent,
+    settings: {
+      inPlace: options.inPlace,
+      ...(options.driver === undefined ? {} : { driver: options.driver }),
+    },
+    ...(replay === undefined ? {} : { replay }),
     workflowDir: path.dirname(path.resolve(options.cwd, options.file)),
     projectRoot: workspace === undefined ? projectRootOf(cwd) : cwd,
     ...(workspace === undefined ? {} : { workspace }),

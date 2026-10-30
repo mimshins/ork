@@ -148,4 +148,16 @@ session, so it remembers what it did, and `ork logs` shows the exchange. Only
 leaders and workers have sessions to talk to, and a session whose worktree was
 merged and removed cannot be resumed.
 
-Coming later in M1d: `ork resume`.
+## Pick a run up again
+
+```sh
+ork resume 3f2a                    # continue a stopped, failed or crashed run
+ork resume 3f2a --input pr=128     # with one input changed
+```
+
+Nodes that finished keep their results and do not run again, so you do not pay
+for them twice; the node that failed or was cut off runs again, and so does
+everything after it. The run keeps its id, its inputs and its flags, and picks
+up the worktrees it left. It reads the workflow file again, so you can fix a
+step before resuming. A run that ran out of budget counts what it already spent:
+raise `limits.budgetUsd` first.

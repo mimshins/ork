@@ -6,6 +6,8 @@
  *   A spawned worker works like the declared child it is an instance of.
  */
 
+import { existsSync } from "node:fs";
+
 import { isClaudeNode } from "@krapht/ork-schema";
 
 import type { CompiledGraph } from "../graph/types.ts";
@@ -34,6 +36,13 @@ export type WorkspaceOptions = {
   root: string;
   head: string;
   onEvent: (event: RunEvent) => void;
+  /** Worktrees a resumed run left whose folders are still there. */
+  adopt?: readonly {
+    id: string;
+    path: string;
+    branch: string;
+    merged: boolean;
+  }[];
 };
 
 type Isolation = "worktree" | "shared" | "readonly";
@@ -53,6 +62,11 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
   const unmerged = new Map<string, string>();
   const mergeLocks = new Map<string, Promise<unknown>>();
   const templateOf = new Map<string, string>();
+  for (const left of options.adopt ?? []) {
+    if (!existsSync(left.path)) continue;
+    worktrees.set(left.id, { path: left.path, branch: left.branch });
+    if (left.merged) merged.add(left.id);
+  }
 
   const nodeOf = (id: string) =>
     graph.nodes.get(templateOf.get(id) ?? id)?.node;
@@ -100,6 +114,9 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     const base =
       host === undefined ? head : (worktrees.get(host)?.branch ?? head);
     const created = await createWorktree({ root, runId, nodeId: id, base });
+    if (created.reused && host !== undefined) {
+      await fastForward(created.path, base);
+    }
     const worktree = { path: created.path, branch: created.branch };
     worktrees.set(id, worktree);
     // Artifacts of nodes that worked elsewhere (e.g. a shared `spec` in the

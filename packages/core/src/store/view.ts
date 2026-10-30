@@ -56,6 +56,8 @@ export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
   for (const event of events) {
     if (event.type === "run.started") {
       for (const info of event.nodes) {
+        // A resumed run starts again; what its nodes did so far stays.
+        if (nodes.has(info.id)) continue;
         const node = blank(info.id, info.type, info.parent);
         nodes.set(info.id, node);
         declared.set(info.id, node);

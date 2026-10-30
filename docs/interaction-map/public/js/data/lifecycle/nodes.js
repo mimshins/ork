@@ -15,6 +15,7 @@ import {
   WORKTREES,
   CONTROL,
   STORE,
+  RESUME,
 } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
@@ -151,6 +152,7 @@ export const NODES = [
       "An edge without `when:` fires only on success; a skipped branch skips everything that only it feeds, so the join never waits on it.",
       "When a loop edge has used its `maxRounds`, you are asked: stop, one more round, or go on. A live leader that owns the loop's nodes is asked first; here the builder's session has ended, so it is you.",
       "Runs the children a leader delegates to, on the slot the waiting leader lends them.",
+      "`ork resume` runs the workflow again under the same id: what finished is handed back from the run's events, and only the rest runs.",
     ],
     see: [
       {
@@ -159,7 +161,14 @@ export const NODES = [
         label: "The scheduler in the architecture",
       },
     ],
-    docs: [ENGINE.scheduler, ENGINE.routing, ENGINE.tests, DESIGN.scheduler],
+    docs: [
+      ENGINE.scheduler,
+      ENGINE.routing,
+      ENGINE.tests,
+      RESUME.resume,
+      RESUME.tests,
+      DESIGN.scheduler,
+    ],
   },
   {
     id: "events",
