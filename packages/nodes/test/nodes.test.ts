@@ -15,7 +15,7 @@ import type {
   SessionOutcome,
   SessionSpec,
 } from "@krapht/ork-core";
-import type { Node, Workflow } from "@krapht/ork-schema";
+import { type Node, NodeSchema, type Workflow } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -143,12 +143,15 @@ describe("tool commands", () => {
   it("adds the AWS profile and region, and runs a program for tool.shell", async () => {
     const { runner, calls } = recordingRunner();
     await toolExecutor(runner)(
-      context("a", {
-        type: "tool.aws",
-        command: "sts get-caller-identity",
-        profile: "dev",
-        region: "eu-west-1",
-      }),
+      context(
+        "a",
+        NodeSchema.parse({
+          type: "tool.aws",
+          command: "sts get-caller-identity",
+          profile: "dev",
+          region: "eu-west-1",
+        }),
+      ),
     );
     await toolExecutor(runner)(
       context("s", { type: "tool.shell", command: "pnpm test" }),

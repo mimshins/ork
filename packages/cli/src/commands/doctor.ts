@@ -4,9 +4,10 @@
  *   stores no credentials.
  */
 
+import type { CheckResult } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
-import { type CheckResult, exec, runChecks } from "../doctor/checks.ts";
+import { exec, runChecks } from "../doctor/checks.ts";
 import { style, write } from "../output.ts";
 
 const MARK: Record<CheckResult["status"], string> = {

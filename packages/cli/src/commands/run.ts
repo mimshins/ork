@@ -5,6 +5,7 @@
  */
 
 import type { ClaudeRuntime } from "@krapht/ork-core";
+import { CLAUDE_DRIVERS } from "@krapht/ork-integrations";
 import type { Driver } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
@@ -29,18 +30,15 @@ export const flagValues = (
   return values;
 };
 
-const DRIVERS: readonly Driver[] = ["sdk", "cli"];
-
 const isDriver = (value: string): value is Driver =>
-  DRIVERS.some(d => d === value);
+  CLAUDE_DRIVERS.some(d => d.id === value);
 
 /** Loads the drivers only when a run starts, so other commands stay fast. */
-const loadRuntime = async (driver: Driver): Promise<ClaudeRuntime> => {
-  const drivers = await import("@krapht/ork-runtime-claude");
-  return driver === "cli"
-    ? drivers.createCliRuntime()
-    : drivers.createSdkRuntime(process.env);
-};
+const loadRuntime = async (driver: Driver): Promise<ClaudeRuntime> =>
+  (await import("@krapht/ork-runtime-claude")).createRuntime(
+    driver,
+    process.env,
+  );
 
 const writeErr = (text: string): void => {
   process.stderr.write(`${text}\n`);
@@ -88,7 +86,9 @@ export const run = defineCommand({
   },
   run: async ({ args, rawArgs }) => {
     if (args.driver !== undefined && !isDriver(args.driver)) {
-      writeErr(`--driver must be sdk or cli, got "${args.driver}"`);
+      writeErr(
+        `--driver must be ${CLAUDE_DRIVERS.map(d => d.id).join(" or ")}, got "${args.driver}"`,
+      );
       process.exitCode = 1;
       return;
     }

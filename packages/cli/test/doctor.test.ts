@@ -1,8 +1,9 @@
 /** @file Tests for `ork doctor`'s checks, against a fake `exec`. */
 
+import type { Exec } from "@krapht/ork-integrations";
 import { describe, expect, it } from "vitest";
 
-import { checkNode, type Exec, formatCheck, runChecks } from "../src/index.ts";
+import { checkNode, formatCheck, runChecks } from "../src/index.ts";
 
 /** A fake `exec`: maps "program arg arg" to stdout; anything else fails. */
 const fakeExec =

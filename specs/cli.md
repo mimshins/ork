@@ -10,7 +10,7 @@ specified. Published as `@krapht/ork`
 
 ```
 ork init                         # scaffold .ork/, .gitignore entries, example workflow
-ork doctor                       # check node, git, claude (login or API key), gh auth, aws identity
+ork doctor                       # node, git, every Claude driver and integration (its own login check)
 ork validate <wf>                # schema + graph compile; prints errors with yaml line numbers
 ork run <wf> [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json] [--detach]
 ork run <wf> --node <id> [--input k=v] [--driver sdk|cli] [--in-place] [--json]
@@ -92,3 +92,11 @@ stderr, one prompt at a time, until the decision queue (M1d) replaces it:
 
 `ork worktrees` lists and cleans the worktrees and `ork/` branches runs leave;
 see [Worktrees: ork worktrees](./worktrees.md#ork-worktrees).
+
+## Doctor
+
+`ork doctor` checks Node and git, then runs each registered Claude driver's and
+integration's own check
+([ADR-022](../decisions/ADR-022-integration-registry.md)): installed, and signed
+in with the user's own login, never printing a token or an account. At least one
+driver must be ready; integrations are optional.

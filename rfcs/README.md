@@ -57,6 +57,6 @@ and carries an RFC through this lifecycle.
 
 ## Index
 
-| RFC | Title | Status |
-| --- | ----- | ------ |
-| —   | —     | —      |
+| RFC                                                   | Title                                      | Status      |
+| ----------------------------------------------------- | ------------------------------------------ | ----------- |
+| [001](./archived/RFC-001-integrations-as-adapters.md) | Integrations as adapters behind a registry | Implemented |

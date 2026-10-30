@@ -5,7 +5,7 @@ Ork includes text adapted from the projects below. Their licenses follow.
 ## Caveman
 
 Ork's `caveman` practice
-([packages/core/src/practices/caveman.ts](./packages/core/src/practices/caveman.ts))
+([packages/core/src/practices/caveman.ts](https://github.com/mimshins/ork/blob/main/packages/core/src/practices/caveman.ts))
 is adapted from Caveman v4.0.1, `skills/caveman/SKILL.md`
 (<https://github.com/JuliusBrussee/caveman>). Changes: Ork turns it on and off
 per node instead of with slash commands, and its scope names Ork's reports,
@@ -227,7 +227,7 @@ Licensed under the Apache License, Version 2.0:
 ## Ponytail
 
 Ork's `ponytail` practice
-([packages/core/src/practices/ponytail.ts](./packages/core/src/practices/ponytail.ts))
+([packages/core/src/practices/ponytail.ts](https://github.com/mimshins/ork/blob/main/packages/core/src/practices/ponytail.ts))
 is adapted from Ponytail v5.3.2, `skills/ponytail/SKILL.md`
 (<https://github.com/DietrichGebert/ponytail>). Changes: Ork sets the level per
 node instead of with slash commands, and the closing line goes in the node's

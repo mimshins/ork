@@ -17,6 +17,7 @@ data.
 
 | Package                   | npm name                     | Role                                                    |
 | ------------------------- | ---------------------------- | ------------------------------------------------------- |
+| `packages/integrations`   | `@krapht/ork-integrations`   | Registries: one adapter per CLI tool and Claude driver  |
 | `packages/schema`         | `@krapht/ork-schema`         | Workflow file format: Zod model, JSON Schema, YAML      |
 | `packages/core`           | `@krapht/ork-core`           | Compiler, expressions, runtime port, scheduler, context |
 | `packages/runtime-claude` | `@krapht/ork-runtime-claude` | The Agent SDK and headless `claude` CLI drivers         |
@@ -25,9 +26,9 @@ data.
 | `packages/cli`            | `@krapht/ork`                | The `ork` command, the only published package           |
 
 Dependency direction (enforced by `oxlint.config.ts`):
-`schema <- core <- runtime-claude, nodes <- server <- cli`. Import other
-packages through their public entry point (`@krapht/ork-<name>`), never by
-relative path.
+`integrations <- schema <- core <- runtime-claude, nodes <- server <- cli`.
+Import other packages through their public entry point (`@krapht/ork-<name>`),
+never by relative path.
 
 ## Spec-driven development
 

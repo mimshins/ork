@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@krapht/ork-core": "workspace:*",
+    "@krapht/ork-integrations": "workspace:*",
     "@krapht/ork-schema": "workspace:*"
   }
 }

@@ -74,8 +74,9 @@ From `@krapht/ork-nodes` ([index.ts](../packages/nodes/src/index.ts)):
   `{{nodes.<id>.output.*}}` renders. The output is the report: `status`,
   `summary`, `artifacts`, `branch`, `usage` and the `output.schema` fields. A
   session without a valid report outputs `status: fail`.
-- **`tool.gh`, `tool.aws`, `tool.shell`**
-  ([tools.ts](../packages/nodes/src/tools.ts)): `command` is split like a shell
+- **`tool.<id>`**, one per registered integration (`gh`, `aws`, `shell`;
+  [integrations](../packages/integrations/src/index.ts),
+  [tools.ts](../packages/nodes/src/tools.ts)): `command` is split like a shell
   would (quotes, `\`, `{{ … }}` kept whole), with no shell; each argument is
   then rendered, so a value never becomes extra arguments. With `allow`, the
   command must start with one of its prefixes (`tool.shell` checks the program

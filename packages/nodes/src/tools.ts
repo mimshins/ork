@@ -1,6 +1,7 @@
 /**
- * @file The tool node types (`tool.gh`, `tool.aws`, `tool.shell`): the user's
- *   own programs, run without a shell, checked against `allow`, with long
+ * @file The tool node executor, for every registered integration (`tool.gh`,
+ *   `tool.aws`, `tool.shell`, …): the user's own program, run without a shell,
+ *   checked against `allow`, its arguments from the integration's adapter, long
  *   output kept in run files.
  */
 
@@ -16,7 +17,8 @@ import {
   renderTemplate,
   runScope,
 } from "@krapht/ork-core";
-import type { Node } from "@krapht/ork-schema";
+import { integrationFor } from "@krapht/ork-integrations";
+import { isToolNode, type ToolNode } from "@krapht/ork-schema";
 
 export type ToolRun = { exitCode: number; stdout: string; stderr: string };
 
@@ -26,8 +28,6 @@ export type ToolRunner = (
   args: readonly string[],
   options: { cwd: string; signal: AbortSignal },
 ) => Promise<ToolRun>;
-
-type ToolNode = Extract<Node, { type: "tool.gh" | "tool.aws" | "tool.shell" }>;
 
 /** How much of stdout and stderr a node's output keeps. */
 export const OUTPUT_LIMIT = 64 * 1024;
@@ -128,15 +128,19 @@ export const commandOf = (
     if (!rendered.ok) return rendered;
     args.push(rendered.value);
   }
-  if (node.type === "tool.gh") return { ok: true, program: "gh", args };
-  if (node.type === "tool.aws") {
-    const extra = [
-      ...(node.profile === undefined ? [] : ["--profile", node.profile]),
-      ...(node.region === undefined ? [] : ["--region", node.region]),
-    ];
-    return { ok: true, program: "aws", args: [...args, ...extra] };
+  const integration = integrationFor(node.type);
+  if (integration === undefined) {
+    return { ok: false, error: `no integration for ${node.type}` };
   }
-  const [program, ...rest] = args;
+  const extra = integration.args(node);
+  if (integration.program !== null) {
+    return {
+      ok: true,
+      program: integration.program,
+      args: [...args, ...extra],
+    };
+  }
+  const [program, ...rest] = [...args, ...extra];
   if (program === undefined || program === "") {
     return { ok: false, error: "the command names no program" };
   }
@@ -155,22 +159,17 @@ const failed = (error: string): NodeResult => ({
   error,
 });
 
-/** Runs a user's CLI: `gh`, `aws` or any program, with its own login. */
+/** Runs a user's CLI through its integration's adapter, with its own login. */
 export const toolExecutor =
   (runner: ToolRunner): NodeExecutor =>
   async context => {
     const { node } = context;
-    if (
-      node.type !== "tool.gh" &&
-      node.type !== "tool.aws" &&
-      node.type !== "tool.shell"
-    ) {
-      return failed(`${context.id} is not a tool node`);
-    }
+    if (!isToolNode(node)) return failed(`${context.id} is not a tool node`);
     const command = commandOf(node, context);
     if (!command.ok) return failed(command.error);
+    // A program-less integration (any program) checks the program too.
     const checked =
-      node.type === "tool.shell"
+      integrationFor(node.type)?.program === null
         ? [command.program, ...command.args]
         : command.args;
     if (!isAllowed(checked, node.allow)) {

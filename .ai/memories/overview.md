@@ -16,10 +16,11 @@ accounts. Ork never handles credentials
 ## Packages
 
 Dependency direction, enforced by `oxlint.config.ts`:
-`schema <- core <- runtime-claude, nodes <- server <- cli`.
+`integrations <- schema <- core <- runtime-claude, nodes <- server <- cli`.
 
 | Package                      | Folder                    | Role                                                                    |
 | ---------------------------- | ------------------------- | ----------------------------------------------------------------------- |
+| `@krapht/ork-integrations`   | `packages/integrations`   | Registries of tool integrations and Claude drivers (adapters)           |
 | `@krapht/ork-schema`         | `packages/schema`         | Workflow file format: Zod model, JSON Schema, canonical YAML            |
 | `@krapht/ork-core`           | `packages/core`           | Expressions, graph compiler, runtime port, session planning, the engine |
 | `@krapht/ork-runtime-claude` | `packages/runtime-claude` | Claude drivers: Agent SDK and headless `claude` CLI                     |

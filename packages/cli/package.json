@@ -50,6 +50,7 @@
   },
   "devDependencies": {
     "@krapht/ork-core": "workspace:*",
+    "@krapht/ork-integrations": "workspace:*",
     "@krapht/ork-nodes": "workspace:*",
     "@krapht/ork-runtime-claude": "workspace:*",
     "@krapht/ork-schema": "workspace:*",

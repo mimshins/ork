@@ -3,6 +3,12 @@
  *   nodes) as Zod schemas.
  */
 
+import {
+  DRIVER_IDS,
+  INTEGRATIONS,
+  type Integration,
+  TOOL_PREFIX,
+} from "@krapht/ork-integrations";
 import { z } from "zod";
 
 export const NodeIdSchema = z
@@ -13,7 +19,8 @@ export const NodeIdSchema = z
   );
 export type NodeId = z.infer<typeof NodeIdSchema>;
 
-export const DriverSchema = z.enum(["sdk", "cli"]);
+/** The registered Claude drivers' ids (ADR-022). */
+export const DriverSchema = z.enum(DRIVER_IDS);
 export type Driver = z.infer<typeof DriverSchema>;
 
 /** `opus`, `sonnet`, `haiku`, or a full model id such as `claude-opus-5-5`. */
@@ -134,25 +141,39 @@ const toolFields = {
   cwd: z.string().optional(),
 };
 
-export const GhToolNodeSchema = z.strictObject({
-  type: z.literal("tool.gh"),
-  ...toolFields,
-});
+/** What every tool node has: `tool.<id>`, its command, allow list and cwd. */
+const toolBase = (type: `tool.${string}`) =>
+  z.strictObject({ type: z.literal(type), ...toolFields });
 
-export const AwsToolNodeSchema = z.strictObject({
-  type: z.literal("tool.aws"),
-  ...toolFields,
-  profile: z.string().optional(),
-  region: z.string().optional(),
-});
+type ToolNodeSchema = ReturnType<typeof toolBase>;
 
-export const ShellToolNodeSchema = z.strictObject({
-  type: z.literal("tool.shell"),
-  ...toolFields,
-  command: z
-    .string()
-    .describe("Program and arguments (no shell). Supports templates."),
-});
+/**
+ * One integration's node schema: the shared tool fields plus the integration's
+ * own options (AWS's `profile`, `region`). The static type is the shared part;
+ * the options are validated at run time and read by the integration's adapter.
+ */
+const toolNodeSchema = (integration: Integration): ToolNodeSchema => {
+  const command =
+    integration.program === null
+      ? {
+          command: z
+            .string()
+            .describe("Program and arguments (no shell). Supports templates."),
+        }
+      : {};
+  const schema: z.ZodObject = toolBase(
+    `${TOOL_PREFIX}${integration.id}`,
+  ).extend({ ...command, ...integration.options });
+  // Sound: the extension only adds the integration's fields to the shared
+  // shape, so every value it accepts has the shared shape's type.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see above
+  return schema as ToolNodeSchema;
+};
+
+/** A node schema per registered integration (ADR-022), in registry order. */
+export const TOOL_NODE_SCHEMAS: readonly ToolNodeSchema[] = INTEGRATIONS.map(
+  i => toolNodeSchema(i),
+);
 
 export const SplitNodeSchema = z.strictObject({
   type: z.literal("control.split"),
@@ -205,9 +226,7 @@ export const NodeSchema = z.discriminatedUnion("type", [
   ClaudeLeaderNodeSchema,
   ClaudeWorkerNodeSchema,
   ClaudeSubagentNodeSchema,
-  GhToolNodeSchema,
-  AwsToolNodeSchema,
-  ShellToolNodeSchema,
+  ...TOOL_NODE_SCHEMAS,
   SplitNodeSchema,
   JoinNodeSchema,
   RouterNodeSchema,
@@ -216,6 +235,10 @@ export const NodeSchema = z.discriminatedUnion("type", [
 export type Node = z.infer<typeof NodeSchema>;
 export type NodeType = Node["type"];
 export type ClaudeNode = Extract<Node, { type: `claude.${string}` }>;
+export type ToolNode = Extract<Node, { type: `tool.${string}` }>;
+
+export const isToolNode = (node: Node): node is ToolNode =>
+  node.type.startsWith(TOOL_PREFIX);
 
 export const CLAUDE_NODE_TYPES: readonly NodeType[] = [
   "claude.leader",

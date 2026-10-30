@@ -1,11 +1,12 @@
 /** @file The compiled run graph's types, and the fields each node type reports. */
 
-import type {
-  Diagnostic,
-  Edge,
-  Node,
-  NodeType,
-  Workflow,
+import {
+  type Diagnostic,
+  type Edge,
+  isToolNode,
+  type Node,
+  type NodeType,
+  type Workflow,
 } from "@krapht/ork-schema";
 
 import type { Expr } from "../expr/parse.ts";
@@ -42,18 +43,21 @@ export type CompileResult = {
  * and as bare names in the `when:` of its outgoing edges. `null` means the type
  * passes its input through, so any field may exist.
  */
-export const OUTPUT_FIELDS: Record<NodeType, readonly string[] | null> = {
+export const OUTPUT_FIELDS: Record<
+  Exclude<NodeType, `tool.${string}`>,
+  readonly string[] | null
+> = {
   "claude.leader": ["status", "summary", "artifacts", "branch", "usage"],
   "claude.worker": ["status", "summary", "artifacts", "branch", "usage"],
   "claude.subagent": ["status", "summary", "artifacts"],
-  "tool.gh": ["exitCode", "stdout", "stderr"],
-  "tool.aws": ["exitCode", "stdout", "stderr"],
-  "tool.shell": ["exitCode", "stdout", "stderr"],
   "control.split": null,
   "control.join": ["statuses", "results", "count"],
   "control.router": null,
   "human.gate": ["choice", "answeredBy"],
 };
+
+/** What every tool node reports, whichever integration it uses. */
+export const TOOL_OUTPUT_FIELDS = ["exitCode", "stdout", "stderr"] as const;
 
 /** Report statuses a Claude node may end with. */
 export const REPORT_STATUSES = [
@@ -64,6 +68,7 @@ export const REPORT_STATUSES = [
 ] as const;
 
 export const outputFieldsOf = (node: Node): readonly string[] | null => {
+  if (isToolNode(node)) return TOOL_OUTPUT_FIELDS;
   const base = OUTPUT_FIELDS[node.type];
   if (base === null) return null;
   if ("output" in node && node.output?.schema !== undefined) {

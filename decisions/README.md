@@ -53,3 +53,7 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [019](./ADR-019-leaders-resume-on-reentry.md)      | On a loop re-entry, leaders resume and workers start fresh                  | Accepted          | waived |
 | [020](./ADR-020-worktrees-beside-the-clone.md)     | Worktrees beside the clone, with the local layer and committed instructions | Accepted          | waived |
 | [021](./ADR-021-built-in-practices.md)             | Built-in practices: caveman and ponytail, on by default                     | Accepted          | waived |
+
+| [022](./ADR-022-integration-registry.md) | Integrations as adapters behind
+registries | Accepted |
+[001](../rfcs/archived/RFC-001-integrations-as-adapters.md) |

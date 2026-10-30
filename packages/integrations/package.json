@@ -1,0 +1,13 @@
+{
+  "name": "@krapht/ork-integrations",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Ork's integrations: one adapter per CLI tool and Claude driver, found through registries",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  }
+}

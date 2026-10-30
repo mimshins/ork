@@ -50,7 +50,10 @@ edges:
 
 - **Agents:** `claude.leader`, `claude.worker`, `claude.subagent`.
 - **Tools:** `tool.gh`, `tool.aws`, `tool.shell` (each runs the user's own CLI,
-  and a per-node allowlist sets which subcommands are permitted).
+  and a per-node allowlist sets which subcommands are permitted). There is one
+  `tool.<id>` type per registered integration
+  ([ADR-022](../decisions/ADR-022-integration-registry.md)), with its own extra
+  fields (AWS: `profile`, `region`).
 - **Control:** `control.split`, `control.join` (all, any or n),
   `control.router`. Loops are edges with `maxRounds`, not a node.
 - **Human:** `human.gate`.

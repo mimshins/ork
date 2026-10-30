@@ -7,9 +7,10 @@
 import { defineConfig, type OxlintOverride } from "oxlint";
 
 // Dependency direction between workspace packages:
-//   schema <- core <- runtime-claude, nodes <- server <- cli
+//   integrations <- schema <- core <- runtime-claude, nodes <- server <- cli
 // A package may import only the packages to its left.
 const PACKAGES = [
+  "integrations",
   "schema",
   "core",
   "runtime-claude",
@@ -19,12 +20,13 @@ const PACKAGES = [
 ] as const;
 
 const ALLOWED: Record<(typeof PACKAGES)[number], readonly string[]> = {
-  schema: [],
-  core: ["schema"],
-  "runtime-claude": ["schema", "core"],
-  nodes: ["schema", "core"],
-  server: ["schema", "core", "runtime-claude", "nodes"],
-  cli: ["schema", "core", "runtime-claude", "nodes", "server"],
+  integrations: [],
+  schema: ["integrations"],
+  core: ["integrations", "schema"],
+  "runtime-claude": ["integrations", "schema", "core"],
+  nodes: ["integrations", "schema", "core"],
+  server: ["integrations", "schema", "core", "runtime-claude", "nodes"],
+  cli: ["integrations", "schema", "core", "runtime-claude", "nodes", "server"],
 };
 
 /** The npm name of a workspace package: the CLI is `@krapht/ork` itself. */
@@ -50,7 +52,7 @@ const boundaries = (pkg: (typeof PACKAGES)[number]): OxlintOverride => {
                       `${npmName(p)}/**`,
                     ]),
                     message:
-                      "dependency direction: schema <- core <- runtime-claude, nodes <- server <- cli",
+                      "dependency direction: integrations <- schema <- core <- runtime-claude, nodes <- server <- cli",
                   },
                 ]
               : []),

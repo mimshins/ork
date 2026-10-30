@@ -106,6 +106,21 @@ export const NODE_TYPES = {
   tests: d("packages/nodes/test/nodes.test.ts", "Tests: the node types"),
 };
 
+export const INTEGRATIONS = {
+  registry: d(
+    "packages/integrations/src/index.ts",
+    "Code: the integration and driver registries",
+  ),
+  port: d(
+    "packages/integrations/src/integration.ts",
+    "Code: the integration port",
+  ),
+  adr: d(
+    "decisions/ADR-022-integration-registry.md",
+    "Decision: integrations as adapters",
+  ),
+};
+
 export const PRACTICES = {
   code: d(
     "packages/core/src/practices/index.ts",

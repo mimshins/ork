@@ -4,6 +4,7 @@
  */
 
 import type { NodeExecutors } from "@krapht/ork-core";
+import { INTEGRATIONS, TOOL_PREFIX } from "@krapht/ork-integrations";
 
 import { type ClaudeExecutorOptions, claudeExecutor } from "./claude.ts";
 import { gateExecutor } from "./gate.ts";
@@ -19,12 +20,13 @@ export const builtinExecutors = (
 ): NodeExecutors => {
   const claude = claudeExecutor(options);
   const tool = toolExecutor(options.tools ?? spawnTool);
-  return {
+  const executors: NodeExecutors = {
     "claude.leader": claude,
     "claude.worker": claude,
-    "tool.gh": tool,
-    "tool.aws": tool,
-    "tool.shell": tool,
     "human.gate": gateExecutor,
   };
+  for (const integration of INTEGRATIONS) {
+    executors[`${TOOL_PREFIX}${integration.id}`] = tool;
+  }
+  return executors;
 };
