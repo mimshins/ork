@@ -370,15 +370,21 @@ export const MILESTONES = [
       {
         id: "feedback-capture",
         title: "Feedback capture",
-        status: "next",
+        status: "done",
         detail:
-          "The `feedback` tool, system signals, fingerprints, and `ork feedback list | show | dismiss`.",
-        docs: ["specs/feedback.md"],
+          "The `feedback` tool, six system signals from a run's events, fingerprints grouping records into items, and `ork feedback list | show | dismiss`.",
+        commits: ["60dc067"],
+        date: "2026-10-31",
+        docs: [
+          "specs/feedback.md",
+          "decisions/ADR-028-feedback-capture.md",
+          "docs/guides/feedback.md",
+        ],
       },
       {
         id: "examples",
         title: "`software-factory` and `pr-review` examples",
-        status: "planned",
+        status: "next",
         detail: "Both run end to end on both drivers.",
         docs: ["examples/software-factory.ork.yaml"],
       },
