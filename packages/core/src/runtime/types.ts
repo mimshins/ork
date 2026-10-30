@@ -1,10 +1,10 @@
 /**
- * @file The port between the engine and a Claude driver. `@ork/core` defines
- *   it; `@ork/runtime-claude` implements it with the Agent SDK and the headless
- *   `claude` CLI; tests implement it with a fake.
+ * @file The port between the engine and a Claude driver. `@krapht/ork-core`
+ *   defines it; `@krapht/ork-runtime-claude` implements it with the Agent SDK
+ *   and the headless `claude` CLI; tests implement it with a fake.
  */
 
-import type { Driver } from "@ork/schema";
+import type { Driver } from "@krapht/ork-schema";
 
 import type { REPORT_STATUSES } from "../graph/types.ts";
 

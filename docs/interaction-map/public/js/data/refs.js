@@ -7,36 +7,18 @@
 import { d } from "./types.js";
 
 export const DESIGN = {
-  concepts: d("docs/design.md#core-concepts", "Design: core concepts"),
-  packages: d(
-    "docs/design.md#architecture-pnpm-monorepo",
-    "Design: the packages",
-  ),
+  concepts: d("specs/concepts.md", "Spec: core concepts"),
+  packages: d("specs/architecture.md", "Spec: the packages"),
   runtime: d(
-    "docs/design.md#runtime-adapter-packagesruntime-claude",
-    "Design: the runtime adapter and its two drivers",
+    "specs/runtime.md",
+    "Spec: the runtime adapter and its two drivers",
   ),
-  format: d(
-    "docs/design.md#workflow-file-format",
-    "Design: the workflow file format",
-  ),
-  context: d(
-    "docs/design.md#context-engineering-skills-and-precedence",
-    "Design: context, skills and precedence",
-  ),
-  messaging: d(
-    "docs/design.md#messaging-decisions-logs",
-    "Design: messaging, decisions and logs",
-  ),
-  feedback: d(
-    "docs/design.md#feedback-and-self-improvement",
-    "Design: feedback and self-improvement",
-  ),
-  cli: d("docs/design.md#cli-milestone-1", "Design: the CLI commands"),
-  ui: d(
-    "docs/design.md#ui-milestone-2-ork-ui-on-localhost",
-    "Design: the UI panels",
-  ),
+  format: d("specs/workflow-format.md", "Spec: the workflow file format"),
+  context: d("specs/context.md", "Spec: context, skills and precedence"),
+  messaging: d("specs/messaging.md", "Spec: messaging, decisions and logs"),
+  feedback: d("specs/feedback.md", "Spec: feedback and self-improvement"),
+  cli: d("specs/cli.md", "Spec: the CLI commands"),
+  ui: d("specs/ui.md", "Spec: the UI panels"),
   milestones: d("docs/design.md#milestones", "Design: milestones"),
 };
 

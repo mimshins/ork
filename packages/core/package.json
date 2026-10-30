@@ -1,5 +1,5 @@
 {
-  "name": "@ork/core",
+  "name": "@krapht/ork-core",
   "version": "0.0.0",
   "private": true,
   "description": "Ork engine: graph compiler, expressions, scheduler, context compiler, message bus, event store",
@@ -8,6 +8,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@ork/schema": "workspace:*"
+    "@krapht/ork-schema": "workspace:*"
   }
 }

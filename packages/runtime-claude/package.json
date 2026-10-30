@@ -1,5 +1,5 @@
 {
-  "name": "@ork/runtime-claude",
+  "name": "@krapht/ork-runtime-claude",
   "version": "0.0.0",
   "private": true,
   "description": "Claude drivers for Ork: the Agent SDK and the headless claude CLI",
@@ -11,8 +11,8 @@
     "@anthropic-ai/claude-agent-sdk": "0.3.309",
     "@anthropic-ai/sdk": "1.1.0",
     "@modelcontextprotocol/sdk": "1.32.1",
-    "@ork/core": "workspace:*",
-    "@ork/schema": "workspace:*",
+    "@krapht/ork-core": "workspace:*",
+    "@krapht/ork-schema": "workspace:*",
     "zod": "4.6.7"
   }
 }

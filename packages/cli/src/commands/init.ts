@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { serializeWorkflow, type Workflow } from "@ork/schema";
+import { serializeWorkflow, type Workflow } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
 import { style, write } from "../output.ts";

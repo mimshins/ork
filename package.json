@@ -5,7 +5,8 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks || true",
     "ork": "node packages/cli/src/bin.ts",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run map:check",
+    "build": "pnpm --filter @krapht/ork run build",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run docs:check && pnpm run map:check",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "lint": "oxlint",
@@ -13,18 +14,30 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "map": "node docs/interaction-map/tools/serve.mjs",
-    "map:check": "tsc -p docs/interaction-map && node docs/interaction-map/tools/check.mjs"
+    "map:check": "tsc -p docs/interaction-map && node docs/interaction-map/tools/check.mjs",
+    "docs:check": "node tools/docs/check.ts",
+    "changesets:create": "changeset add",
+    "changesets:empty": "changeset add --empty",
+    "changesets:status": "node tools/release/check-changeset.ts",
+    "changesets:version": "changeset version",
+    "release": "pnpm run build && changeset publish"
   },
   "engines": {
     "node": ">=24.20.0"
   },
   "packageManager": "pnpm@12.10.1+sha512.ba40a37eb1a370d60fea8c4cf1d364c13bcccef518e98ad2bcee954f539d38da37458e58261a3fa55e06523450ea0ffff9f497b135be41f2c15c1642bacace6c",
   "devDependencies": {
+    "@changesets/changelog-github": "1.0.1",
+    "@changesets/cli": "3.0.3",
     "@types/node": "24.19.2",
     "oxfmt": "0.74.0",
     "oxlint": "1.89.0",
     "oxlint-tsgolint": "7.0.2005",
     "typescript": "7.0.2",
     "vitest": "4.1.12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mimshins/ork.git"
   }
 }

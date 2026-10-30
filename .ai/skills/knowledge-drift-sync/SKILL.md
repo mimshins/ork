@@ -1,0 +1,80 @@
+---
+name: knowledge-drift-sync
+description: Use before finishing any non-trivial change to Ork. Reconciles code with specs/, decisions/, rfcs/, runbook/, the interaction map, memories, and changesets so no knowledge is left stale.
+---
+
+# knowledge-drift-sync
+
+## Prerequisites
+
+- The change under review: `git diff` (working tree) or `git diff main...HEAD`
+  (branch).
+
+## Workflow
+
+1. **List what changed** in behavior or structure.
+2. **Find each change's canonical home** in the table below and compare:
+   - code changed behavior → update the spec in the same change;
+   - a spec changed → the code implements it, or the spec says it is not built
+     yet (its status line);
+   - a lint-enforced rule changed → `oxlint.config.ts` and
+     [specs/architecture.md](../../../specs/architecture.md) agree.
+3. **Decisions:** an RFC that shipped gets an ADR, status `Implemented`, and
+   moves to `rfcs/archived/`; both indexes are updated. A hard-to-reverse choice
+   made without an RFC has an ADR.
+4. **Interaction map:** a change in how parts interact, or a part becoming built,
+   runs the [resync-map](../resync-map/SKILL.md) skill.
+5. **Releases:** a change to shipped code carries a changeset; internal-only
+   work carries an empty one
+   ([runbook/development/release.md](../../../runbook/development/release.md)).
+6. **Memories:** update `last-verified` on each memory you re-checked; fix or
+   delete stale statements. Resolve working memories tied to this change.
+7. **Checks:** `pnpm check` passes, which includes `pnpm docs:check` and
+   `pnpm map:check`.
+8. **Report** what was synchronized, or state "no drift" with the evidence.
+
+## Knowledge maintenance
+
+| If you change…                                             | Review…                                                                                                                                                      |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| the workflow schema, node types, edges, the serializer     | [specs/workflow-format.md](../../../specs/workflow-format.md), `pnpm --dir packages/schema gen:json-schema`, `examples/`, ADR-006 if the format's rules change |
+| the expression language                                    | [specs/expressions.md](../../../specs/expressions.md), ADR-007 if its safety rules change                                                                     |
+| the graph compiler's checks or diagnostic codes            | [specs/graph-compiler.md](../../../specs/graph-compiler.md), ADR-008 for ownership rules                                                                      |
+| the runtime port, a driver, Ork's MCP tools, reports       | [specs/runtime.md](../../../specs/runtime.md), [specs/messaging.md](../../../specs/messaging.md), ADR-005, ADR-010, ADR-011                                  |
+| context layers, precedence, isolation, prompt order        | [specs/context.md](../../../specs/context.md), ADR-009                                                                                                       |
+| messaging, decisions, the event store                      | [specs/messaging.md](../../../specs/messaging.md)                                                                                                            |
+| feedback                                                   | [specs/feedback.md](../../../specs/feedback.md), ADR-013                                                                                                     |
+| a CLI command, its flags or output                         | [specs/cli.md](../../../specs/cli.md), `README.md`                                                                                                           |
+| the UI                                                     | [specs/ui.md](../../../specs/ui.md)                                                                                                                          |
+| packages, the dependency direction, a new package          | [specs/architecture.md](../../../specs/architecture.md), `oxlint.config.ts` boundary table, `AGENTS.md`, `.ai/memories/overview.md`                          |
+| how Ork touches credentials or secrets                     | ADR-004, `SECURITY.md`, [specs/runtime.md](../../../specs/runtime.md)                                                                                        |
+| a document's size or layout                                | [docs-structure](../docs-structure/SKILL.md), `pnpm docs:check`                                                                                              |
+| how components interact, or a component becoming built     | the [interaction map](../../../docs/interaction-map/README.md) via [resync-map](../resync-map/SKILL.md)                                                     |
+| releases, versioning, the published package                | [runbook/development/release.md](../../../runbook/development/release.md), `.changeset/`, ADR-015                                                            |
+| scripts, CI, hooks                                         | `CONTRIBUTING.md`, `AGENTS.md`, `.ai/memories/development-workflow.md`                                                                                       |
+| a dependency                                               | an ADR for a new runtime dependency; the 7-day rule in `pnpm-workspace.yaml`                                                                                 |
+| the AI layer (skills, templates, memories, adapters)       | [`.ai/README.md`](../../README.md), `AGENTS.md`                                                                                                              |
+
+## Constraints
+
+- Follow the precedence order in [`.ai/README.md`](../../README.md); when code
+  and a spec disagree and the intent is unclear, ask — do not guess.
+- Fix the lower-precedence source or flag it; never silently pick one.
+
+## Useful commands
+
+```sh
+git diff --stat main...HEAD
+pnpm check
+pnpm docs:check
+pnpm map:check
+```
+
+## Expected output
+
+A drift report plus the doc and code changes, in the same change.
+
+## References
+
+- [ADR-001](../../../decisions/ADR-001-spec-driven-development.md),
+  [write-an-rfc](../write-an-rfc/SKILL.md)

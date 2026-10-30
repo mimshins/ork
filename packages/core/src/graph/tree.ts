@@ -1,4 +1,4 @@
-import type { Diagnostic, Workflow } from "@ork/schema";
+import type { Diagnostic, Workflow } from "@krapht/ork-schema";
 
 import { error } from "./diagnostics.ts";
 

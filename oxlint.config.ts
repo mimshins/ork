@@ -21,6 +21,10 @@ const ALLOWED: Record<(typeof PACKAGES)[number], readonly string[]> = {
   cli: ["schema", "core", "runtime-claude", "nodes", "server"],
 };
 
+/** The npm name of a workspace package: the CLI is `@krapht/ork` itself. */
+const npmName = (pkg: (typeof PACKAGES)[number]): string =>
+  pkg === "cli" ? "@krapht/ork" : `@krapht/ork-${pkg}`;
+
 const boundaries = (pkg: (typeof PACKAGES)[number]): OxlintOverride => {
   const forbidden = PACKAGES.filter(
     other => other !== pkg && !ALLOWED[pkg].includes(other),
@@ -36,8 +40,8 @@ const boundaries = (pkg: (typeof PACKAGES)[number]): OxlintOverride => {
               ? [
                   {
                     group: forbidden.flatMap(p => [
-                      `@ork/${p}`,
-                      `@ork/${p}/**`,
+                      npmName(p),
+                      `${npmName(p)}/**`,
                     ]),
                     message:
                       "dependency direction: schema <- core <- runtime-claude, nodes <- server <- cli",
@@ -45,7 +49,7 @@ const boundaries = (pkg: (typeof PACKAGES)[number]): OxlintOverride => {
                 ]
               : []),
             {
-              group: ["@ork/*/src", "@ork/*/src/**"],
+              group: ["@krapht/ork*/src", "@krapht/ork*/src/**"],
               message: "import a package through its public entry point",
             },
             {

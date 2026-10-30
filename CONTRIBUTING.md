@@ -12,8 +12,14 @@ participating, you are expected to uphold it.
 
 - **Open an issue first** for anything bigger than a small fix, so we can agree
   on scope before you write code.
-- Read [docs/design.md](./docs/design.md) for how Ork is meant to work, and the
-  [interaction map](./docs/interaction-map/) for how its parts fit together.
+- Read [docs/design.md](./docs/design.md) for the overview, the
+  [specs](./specs/README.md) for what each part must do, the
+  [ADRs](./decisions/README.md) for why, and the
+  [interaction map](./docs/interaction-map/README.md) for how the parts fit
+  together.
+- An architectural change starts with a spec and, when there are real
+  alternatives, an [RFC](./rfcs/README.md); see
+  [AGENTS.md](./AGENTS.md#spec-driven-development).
 - Report vulnerabilities privately: see [SECURITY.md](./SECURITY.md).
 
 ## Development setup
@@ -41,14 +47,14 @@ directly.
 
 ## Project structure
 
-| Package                   | Role                                                                  |
-| ------------------------- | --------------------------------------------------------------------- |
-| `packages/schema`         | Workflow file format: Zod model, JSON Schema, canonical YAML          |
-| `packages/core`           | Graph compiler, expressions, scheduler, context compiler, message bus |
-| `packages/runtime-claude` | Claude drivers: Agent SDK and headless `claude` CLI                   |
-| `packages/nodes`          | Built-in node types                                                   |
-| `packages/server`         | Local HTTP + SSE API for the UI                                       |
-| `packages/cli`            | The `ork` command                                                     |
+| Package                   | npm name                     | Role                                      |
+| ------------------------- | ---------------------------- | ----------------------------------------- |
+| `packages/schema`         | `@krapht/ork-schema`         | Workflow file format                      |
+| `packages/core`           | `@krapht/ork-core`           | Compiler, expressions, runtime port       |
+| `packages/runtime-claude` | `@krapht/ork-runtime-claude` | Claude drivers: Agent SDK and `claude`    |
+| `packages/nodes`          | `@krapht/ork-nodes`          | Built-in node types                       |
+| `packages/server`         | `@krapht/ork-server`         | Local HTTP + SSE API for the UI           |
+| `packages/cli`            | `@krapht/ork`                | The `ork` command; the only published one |
 
 A package may import only the packages to its left in
 `schema <- core <- runtime-claude, nodes <- server <- cli`, through their public
@@ -62,6 +68,9 @@ entry point. oxlint enforces this.
 - Add tests next to the package (`packages/<name>/test/*.test.ts`) for every
   behaviour change. Tests never call real services or real accounts: use the
   fakes the package provides.
+- A behavior change updates its spec in [specs/](./specs/README.md); a
+  hard-to-reverse choice gets an ADR. Documents over 200 lines are split into a
+  hub and chunks ([runbook/development/docs.md](./runbook/development/docs.md)).
 - After a schema change, run `pnpm --dir packages/schema gen:json-schema` and
   commit `workflow.schema.json`.
 - Keep `examples/*.ork.yaml` in canonical form; they are formatted by Ork's own
@@ -80,6 +89,10 @@ entry point. oxlint enforces this.
   Claude or any other model or agent, and no "Generated with …" line in commits,
   pull request descriptions, issues, or comments. You are welcome to use AI
   tools, but you are the author and you are responsible for the change.
+- Add a changeset when you change shipped code: `pnpm changesets:create` (patch
+  or minor on `0.x`), or `pnpm changesets:empty` for docs, tests and tooling. CI
+  checks it. Releases are automated
+  ([runbook/development/release.md](./runbook/development/release.md)).
 - Fill in the pull request template; `pnpm check` must pass.
 
 ## Using Ork's accounts model

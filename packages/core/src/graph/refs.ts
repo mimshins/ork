@@ -1,4 +1,9 @@
-import type { Diagnostic, DiagnosticPath, Node, Workflow } from "@ork/schema";
+import type {
+  Diagnostic,
+  DiagnosticPath,
+  Node,
+  Workflow,
+} from "@krapht/ork-schema";
 
 import { parseTemplate, SCOPE_ROOTS } from "../expr/evaluate.ts";
 import { collectPaths, type Expr } from "../expr/parse.ts";

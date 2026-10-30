@@ -1,4 +1,4 @@
-import type { Workflow } from "@ork/schema";
+import type { Workflow } from "@krapht/ork-schema";
 
 export type InputsResult =
   | { ok: true; inputs: Record<string, string | number | boolean> }

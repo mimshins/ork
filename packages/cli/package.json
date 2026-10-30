@@ -1,18 +1,52 @@
 {
-  "name": "@ork/cli",
+  "name": "@krapht/ork",
   "version": "0.0.0",
-  "private": true,
-  "description": "The ork command",
+  "description": "Orchestrate Claude agents on your machine: hierarchical, serializable workflows with a CLI and a localhost UI.",
+  "keywords": [
+    "claude",
+    "agents",
+    "orchestration",
+    "workflow",
+    "cli",
+    "ai-engineering"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mimshins/ork.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/mimshins/ork/issues"
+  },
+  "homepage": "https://github.com/mimshins/ork#readme",
   "type": "module",
   "bin": {
-    "ork": "./src/bin.ts"
+    "ork": "./dist/bin.mjs"
   },
-  "exports": {
-    ".": "./src/index.ts"
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=24.20.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsdown && cp ../../LICENSE LICENSE"
   },
   "dependencies": {
-    "@ork/core": "workspace:*",
-    "@ork/schema": "workspace:*",
-    "citty": "0.2.2"
+    "citty": "0.2.2",
+    "yaml": "2.9.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@krapht/ork-core": "workspace:*",
+    "@krapht/ork-schema": "workspace:*",
+    "tsdown": "0.23.1"
   }
 }

@@ -6,7 +6,7 @@ import type {
   RuntimeEvent,
   Session,
   SessionSpec,
-} from "@ork/core";
+} from "@krapht/ork-core";
 
 import { type OrkMcpEndpoint, startOrkMcpHttp } from "./mcp-http.ts";
 import { driverFailure, normalize } from "./normalize.ts";

@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 
-import type { HumanChannel, RuntimeEvent, SessionSpec } from "@ork/core";
+import type { HumanChannel, RuntimeEvent, SessionSpec } from "@krapht/ork-core";
 import { describe, expect, it } from "vitest";
 
 import {

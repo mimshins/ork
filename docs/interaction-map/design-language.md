@@ -41,14 +41,14 @@ rest. The values live in `public/css/styles.css`; this explains them.
 A zone (column) has a `tone`; its cards, label, search results and panel header
 take it. Pick tones so neighbouring zones differ.
 
-| `tone`   | Used for                                            |
-| -------- | --------------------------------------------------- |
-| `violet` | you                                                 |
-| `blue`   | the CLI and the UI                                  |
-| `orange` | the Ork engine (`@ork/core`, `@ork/nodes`)          |
-| `teal`   | the Claude runtime, the run graph, the session spec |
-| `amber`  | model providers, node sessions, what happens after  |
-| `slate`  | your machine: files, worktrees, CLIs; the layers    |
+| `tone`   | Used for                                                 |
+| -------- | -------------------------------------------------------- |
+| `violet` | you                                                      |
+| `blue`   | the CLI and the UI                                       |
+| `orange` | the Ork engine (`@krapht/ork-core`, `@krapht/ork-nodes`) |
+| `teal`   | the Claude runtime, the run graph, the session spec      |
+| `amber`  | model providers, node sessions, what happens after       |
+| `slate`  | your machine: files, worktrees, CLIs; the layers         |
 
 ### Edge kinds
 

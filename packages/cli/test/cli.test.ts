@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { parseWorkflow } from "@ork/schema";
+import { parseWorkflow } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
 import {

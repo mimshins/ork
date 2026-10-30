@@ -1,4 +1,4 @@
-import type { ClaudeNode } from "@ork/schema";
+import type { ClaudeNode } from "@krapht/ork-schema";
 
 import { REPORT_STATUSES } from "../graph/types.ts";
 import type { NodeReport, ReportStatus } from "./types.ts";

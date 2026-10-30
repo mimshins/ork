@@ -142,7 +142,9 @@ export const nodeHtml = (m, id) => {
   return `
     <header class="panel-head tone-${toneOf(m, n)}">
       <div class="eyebrow"><span class="zone-dot"></span>${esc(zoneLabel(m, n.zone))}${
-        n.pkg ? ` · <code>@ork/${esc(n.pkg)}</code>` : ""
+        n.pkg
+          ? ` · <code>${esc(n.pkg === "cli" ? "@krapht/ork" : `@krapht/ork-${n.pkg}`)}</code>`
+          : ""
       }</div>
       <h2>${esc(n.title)}</h2>
       <p class="sub">${rich(n.sub)}</p>

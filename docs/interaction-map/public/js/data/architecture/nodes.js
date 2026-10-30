@@ -36,7 +36,7 @@ export const ZONES = [
 export const GROUPS = [
   {
     id: "runtimePkg",
-    label: "@ork/runtime-claude",
+    label: "@krapht/ork-runtime-claude",
     x: 1425,
     y: 210,
     w: 530,

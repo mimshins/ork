@@ -3,7 +3,7 @@ import {
   type RuntimeEvent,
   type SessionOutcome,
   type SessionUsage,
-} from "@ork/core";
+} from "@krapht/ork-core";
 
 /**
  * @file Both drivers emit the same message JSON (the Agent SDK's messages are

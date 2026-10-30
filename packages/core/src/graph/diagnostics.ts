@@ -1,4 +1,4 @@
-import type { Diagnostic, DiagnosticPath } from "@ork/schema";
+import type { Diagnostic, DiagnosticPath } from "@krapht/ork-schema";
 
 export const error = (
   code: string,

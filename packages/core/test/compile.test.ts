@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { parseWorkflow } from "@ork/schema";
+import { parseWorkflow } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
 import { compileWorkflow } from "../src/index.ts";

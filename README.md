@@ -27,9 +27,10 @@ and engineering tasks:
 > how the pieces fit together and what is built so far.
 
 ```sh
-pnpm ork doctor                 # node, git, and your own claude / gh / aws logins
-pnpm ork init                   # scaffold .ork/ with a starter workflow
-pnpm ork validate examples      # schema, ownership tree, edges, loops, references
+npm install --global @krapht/ork   # from a clone: pnpm ork <command>
+ork doctor        # node, git, and your own claude / gh / aws logins
+ork init          # scaffold .ork/ with a starter workflow
+ork validate      # schema, ownership tree, edges, loops, references
 ```
 
 ## A workflow
@@ -105,7 +106,9 @@ pnpm check        # format check, lint, typecheck, tests
 pnpm ork --help   # run the CLI from source
 ```
 
-See [AGENTS.md](./AGENTS.md) for conventions.
+See [AGENTS.md](./AGENTS.md) for conventions. The contracts are the
+[specs](./specs/README.md); decisions and their reasons are the
+[ADRs](./decisions/README.md).
 
 ## Contributing
 

@@ -1,4 +1,4 @@
-import type { DecisionOption, Diagnostic, Workflow } from "@ork/schema";
+import type { DecisionOption, Diagnostic, Workflow } from "@krapht/ork-schema";
 
 import { error, warning } from "./diagnostics.ts";
 import type { CompiledEdge } from "./types.ts";

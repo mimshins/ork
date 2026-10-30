@@ -76,7 +76,8 @@
  */
 
 /**
- * An Ork workspace package (`packages/<name>`, published as `@ork/<name>`).
+ * An Ork workspace package (`packages/<name>`, named `@krapht/ork-<name>`; the
+ * CLI is `@krapht/ork`).
  *
  * @typedef {"schema"
  *   | "core"

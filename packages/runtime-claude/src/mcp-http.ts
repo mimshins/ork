@@ -5,7 +5,7 @@ import {
   type ServerResponse,
 } from "node:http";
 
-import type { HumanChannel } from "@ork/core";
+import type { HumanChannel } from "@krapht/ork-core";
 import { z } from "zod";
 
 import {

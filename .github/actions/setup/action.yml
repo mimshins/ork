@@ -2,6 +2,13 @@ name: Set up the toolchain
 description: >-
   Install the pinned pnpm and Node and install the dependencies from the
   lockfile with lifecycle scripts off. Run actions/checkout first.
+inputs:
+  registry-url:
+    description: >-
+      The npm registry to authenticate against with NODE_AUTH_TOKEN; set only by
+      the release job.
+    required: false
+    default: ""
 runs:
   using: composite
   steps:
@@ -13,6 +20,7 @@ runs:
       with:
         node-version-file: .node-version
         cache: pnpm
+        registry-url: ${{ inputs.registry-url }}
     - name: Install dependencies
       shell: bash
       run: pnpm install --frozen-lockfile --ignore-scripts

@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+# No job gets a token unless it asks for one below.
+permissions: {}
+
+# Releases run one at a time, in push order.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    # Only the main repository releases; forks never publish.
+    if: github.repository == 'mimshins/ork'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # the release commit, tags and GitHub releases
+      pull-requests: write # the "chore: release" pull request
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          # changesets/action pushes through the GitHub API with its own token.
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          registry-url: https://registry.npmjs.org
+      # The same gates as CI, so nothing unchecked is ever published.
+      - run: pnpm run check
+      # With changesets on main: open or update the release pull request.
+      # When that pull request is merged (no changesets left): publish.
+      - name: Release pull request or publish
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          pr-title: "chore: release"
+          commit-message: "chore: release"
+          version-script: pnpm run changesets:version
+          publish-script: pnpm run release
+          create-github-releases: true
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"

@@ -10,3 +10,9 @@ coverage/
 .ork/worktrees/
 # Personal Claude Code settings
 .claude/settings.local.json
+
+# Build output and files copied in by package builds
+packages/cli/LICENSE
+
+# Local-only task specs (never committed)
+.ai/specs/

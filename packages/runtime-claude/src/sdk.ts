@@ -11,7 +11,7 @@ import type {
   RuntimeEvent,
   Session,
   SessionSpec,
-} from "@ork/core";
+} from "@krapht/ork-core";
 
 import { driverFailure, normalize } from "./normalize.ts";
 import { createQueue } from "./queue.ts";

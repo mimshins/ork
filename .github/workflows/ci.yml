@@ -66,6 +66,57 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm test
 
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm run docs:check
+
+  # The published CLI: build the bundle, run it, and check the tarball.
+  package:
+    name: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm run build
+      - run: node packages/cli/dist/bin.mjs validate examples
+      - run: npm pack --dry-run
+        working-directory: packages/cli
+
+  # A pull request that changes shipped code adds a changeset. The release
+  # pull request itself (changeset-release/main) consumes them, so it is
+  # exempt.
+  changeset:
+    name: changeset
+    if:
+      github.event_name == 'pull_request' && github.head_ref !=
+      'changeset-release/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # Node 24 runs the TypeScript check directly.
+      - uses: ./.github/actions/setup
+      - run: node tools/release/check-changeset.ts origin/${{ github.base_ref }}
+
   map:
     name: interaction map
     runs-on: ubuntu-latest

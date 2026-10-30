@@ -1,4 +1,4 @@
-import { type Diagnostic, expandEdge, type Workflow } from "@ork/schema";
+import { type Diagnostic, expandEdge, type Workflow } from "@krapht/ork-schema";
 
 import { parseExpr } from "../expr/parse.ts";
 import { error, warning } from "./diagnostics.ts";

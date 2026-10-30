@@ -1,4 +1,8 @@
-import { type ClaudeNode, isClaudeNode, type Workflow } from "@ork/schema";
+import {
+  type ClaudeNode,
+  isClaudeNode,
+  type Workflow,
+} from "@krapht/ork-schema";
 
 import { parseTemplate, renderTemplate } from "../expr/evaluate.ts";
 import { reportSchemaFor } from "../runtime/report.ts";

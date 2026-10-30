@@ -1,4 +1,10 @@
-import type { Diagnostic, Edge, Node, NodeType, Workflow } from "@ork/schema";
+import type {
+  Diagnostic,
+  Edge,
+  Node,
+  NodeType,
+  Workflow,
+} from "@krapht/ork-schema";
 
 import type { Expr } from "../expr/parse.ts";
 
