@@ -1,156 +1,4 @@
-/* SuperEngine interaction map. Light and dark: prefers-color-scheme sets the
-   default; :root[data-theme] overrides it (T key, ?theme=). */
-
-:root {
-  color-scheme: light;
-  --bg: #f6f7f9;
-  --canvas: #f4f5f7;
-  --grid-dot: rgba(31, 35, 40, 0.13);
-  --panel: #ffffff;
-  --panel-2: #f7f8fa;
-  --glass: rgba(255, 255, 255, 0.82);
-  --ink: #1f2328;
-  --ink-2: #424a53;
-  --muted: #5f6872;
-  --line: #d0d7de;
-  --line-2: #e6e8eb;
-  --accent: #2a78d6;
-  --accent-soft: #e8f1fc;
-  --code-bg: #f0f2f4;
-
-  --z-people: #7a4cc2;
-  --z-browser: #2a78d6;
-  --z-edge: #128a7c;
-  --z-engine: #e0612b;
-  --z-outside: #b77900;
-  --z-slate: #4f6a8a;
-
-  --k-net: #57606a;
-  --k-local: #9aa3ad;
-  --k-message: #2a78d6;
-  --k-process: #c98500;
-  --k-mcp: #1a7f37;
-  --k-file: #7a4cc2;
-  --k-human: #9aa3ad;
-  --k-event: #0e8fb0;
-  --k-git: #5b5bd6;
-
-  --st-built: #1a7f37;
-  --st-partial: #128a7c;
-  --st-specified: #2a78d6;
-  --st-planned: #b26b00;
-  --st-external: #8c959f;
-
-  --journey: #d6336c;
-  --journey-soft: #fde8ef;
-
-  --shadow-sm:
-    0 1px 2px rgba(31, 35, 40, 0.06), 0 1px 1px rgba(31, 35, 40, 0.04);
-  --shadow:
-    0 10px 34px rgba(31, 35, 40, 0.14), 0 2px 6px rgba(31, 35, 40, 0.06);
-  --font:
-    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    sans-serif;
-  --mono:
-    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --panel-w: 0px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --bg: #0e0e0d;
-    --canvas: #111110;
-    --grid-dot: rgba(255, 255, 255, 0.075);
-    --panel: #1a1a19;
-    --panel-2: #161615;
-    --glass: rgba(26, 26, 25, 0.8);
-    --ink: #f2f2f0;
-    --ink-2: #d4d3cc;
-    --muted: #a8a79e;
-    --line: #3a3a37;
-    --line-2: #2c2c2a;
-    --accent: #5a9ff0;
-    --accent-soft: #1d2a3a;
-    --code-bg: #262624;
-
-    --z-people: #b394f0;
-    --z-browser: #5a9ff0;
-    --z-edge: #3cc0b0;
-    --z-engine: #f0814f;
-    --z-outside: #e3a33a;
-    --z-slate: #91a9c6;
-
-    --k-net: #b5b4aa;
-    --k-local: #6f6e68;
-    --k-message: #5a9ff0;
-    --k-process: #e3a33a;
-    --k-mcp: #4ac26b;
-    --k-file: #b394f0;
-    --k-human: #7d7c75;
-    --k-event: #43c1e0;
-    --k-git: #9a9af2;
-
-    --st-built: #4ac26b;
-    --st-partial: #3cc0b0;
-    --st-specified: #5a9ff0;
-    --st-planned: #e3a33a;
-    --st-external: #8a8982;
-
-    --journey: #f06595;
-    --journey-soft: #3a1b28;
-
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow: 0 14px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
-  }
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #0e0e0d;
-  --canvas: #111110;
-  --grid-dot: rgba(255, 255, 255, 0.075);
-  --panel: #1a1a19;
-  --panel-2: #161615;
-  --glass: rgba(26, 26, 25, 0.8);
-  --ink: #f2f2f0;
-  --ink-2: #d4d3cc;
-  --muted: #a8a79e;
-  --line: #3a3a37;
-  --line-2: #2c2c2a;
-  --accent: #5a9ff0;
-  --accent-soft: #1d2a3a;
-  --code-bg: #262624;
-
-  --z-people: #b394f0;
-  --z-browser: #5a9ff0;
-  --z-edge: #3cc0b0;
-  --z-engine: #f0814f;
-  --z-outside: #e3a33a;
-  --z-slate: #91a9c6;
-
-  --k-net: #b5b4aa;
-  --k-local: #6f6e68;
-  --k-message: #5a9ff0;
-  --k-process: #e3a33a;
-  --k-mcp: #4ac26b;
-  --k-file: #b394f0;
-  --k-human: #7d7c75;
-  --k-event: #43c1e0;
-  --k-git: #9a9af2;
-
-  --st-built: #4ac26b;
-  --st-partial: #3cc0b0;
-  --st-specified: #5a9ff0;
-  --st-planned: #e3a33a;
-  --st-external: #8a8982;
-
-  --journey: #f06595;
-  --journey-soft: #3a1b28;
-
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow: 0 14px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
-}
+/* The interaction map's styles; the tokens are in tokens.css. */
 
 /* ── Base ─────────────────────────────────────────────────────────────── */
 
@@ -302,6 +150,11 @@ kbd {
 .btn {
   padding: 0 14px;
   font-weight: 550;
+}
+
+a.btn {
+  color: inherit;
+  text-decoration: none;
 }
 
 .icon-btn {

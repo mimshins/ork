@@ -11,21 +11,28 @@ build as it goes. Pick one with the map switcher (`M`):
 | **Messaging and decisions** | How nodes message each other and you, and how every question reaches one inbox.                                          |
 | **Feedback loop**           | How a run's friction is captured, grouped, and turned into fixes, lessons, or a post to Ork's Discussions (planned).     |
 
+The **roadmap** page (`roadmap.html`, linked from the top bar) shows the
+milestones, what has shipped and when, and what is left
+([roadmap.md](roadmap.md)).
+
 Click any card or connection for what it is, what it holds and guarantees, what
 it talks to, and links into the repository. **Journeys** walk through a flow
 step by step on the same map. Every card has a status (built, partly built,
 specified, planned, external): the map says what exists today, not only what is
 designed.
 
-| Path                    | What it is                                                                                                                |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `public/index.html`     | The page: markup only.                                                                                                    |
-| `public/css/styles.css` | Its styles (light and dark).                                                                                              |
-| `public/js/data/`       | **All the content**: `types.js` (the data model), `maps.js` (the list), `refs.js` (shared doc links), one folder per map. |
-| `public/js/*.js`        | The renderer: `map` (SVG, pan and zoom), `panel`, `journey`, `model`, `main`.                                             |
-| `tools/check.mjs`       | Validates every map, doc link and status, and lists what changed since the sync.                                          |
-| `tools/serve.mjs`       | A dependency-free static server for local viewing.                                                                        |
-| `*.md` here             | Content style, design language, the maps, the sync procedure.                                                             |
+| Path                      | What it is                                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `public/index.html`       | The page: markup only.                                                                                                    |
+| `public/roadmap.html`     | The roadmap page, rendered by `public/js/roadmap.js` from `public/js/data/roadmap.js`.                                    |
+| `public/css/tokens.css`   | The colour, type and shadow tokens both pages share (light and dark).                                                     |
+| `public/css/styles.css`   | The map's styles; `roadmap.css` adds the roadmap's.                                                                       |
+| `public/js/data/`         | **All the content**: `types.js` (the data model), `maps.js` (the list), `refs.js` (shared doc links), one folder per map. |
+| `public/js/*.js`          | The renderer: `map` (SVG, pan and zoom), `panel`, `journey`, `model`, `main`.                                             |
+| `tools/check.mjs`         | Validates every map, doc link and status, and lists what changed since the sync.                                          |
+| `tools/check-roadmap.mjs` | Validates the roadmap's commits, dates and links, and lists commits no item names.                                        |
+| `tools/serve.mjs`         | A dependency-free static server for local viewing.                                                                        |
+| `*.md` here               | Content style, design language, the maps, the sync procedure.                                                             |
 
 Plain HTML, CSS and ES modules: no build step and no dependencies. The renderer
 comes from the SuperEngine interaction map.

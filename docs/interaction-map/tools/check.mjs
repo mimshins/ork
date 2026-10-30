@@ -14,17 +14,18 @@
  *      now is listed for review (not an error).
  *   4. The commits and uncommitted changes since `synced` in `sources.js`: the
  *      list to review when resyncing.
+ *   5. The roadmap (`check-roadmap.mjs`), and the commits it does not name yet.
  */
 
-import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import { MAPS } from "../public/js/data/maps.js";
 import { SOURCES } from "../public/js/data/sources.js";
 import { NODE_H, NODE_W } from "../public/js/data/types.js";
+import { checkRoadmap } from "./check-roadmap.mjs";
+import { git, linkProblem, ROOT } from "./repo.mjs";
 
-const ROOT = join(import.meta.dirname, "..", "..", "..");
 /** The space kept clear around each card, in map units. */
 const GAP = 12;
 
@@ -32,56 +33,6 @@ const GAP = 12;
 const errors = [];
 /** @type {string[]} */
 const review = [];
-
-/**
- * Runs git in the repository.
- *
- * @param {string[]} args The git arguments.
- * @returns {string} Its output, or `""` when it failed.
- */
-const git = args => {
-  try {
-    return execFileSync("git", ["-C", ROOT, ...args], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    }).trim();
-  } catch {
-    return "";
-  }
-};
-
-/**
- * GitHub's anchor for a Markdown heading.
- *
- * @param {string} heading The heading text, without the `#` marks.
- * @returns {string} The anchor.
- */
-const slug = heading =>
-  heading
-    .trim()
-    .toLowerCase()
-    .replaceAll(/[^\p{L}\p{N}\s_-]/gu, "")
-    .replaceAll(/\s/gu, "-");
-
-/** @type {Map<string, Set<string>>} */
-const anchorCache = new Map();
-
-/**
- * The anchors of a Markdown file's headings.
- *
- * @param {string} path The repo-relative path.
- * @returns {Set<string>} The anchors.
- */
-const anchorsOf = path => {
-  const cached = anchorCache.get(path);
-  if (cached) return cached;
-  const text = readFileSync(join(ROOT, path), "utf8");
-  const anchors = new Set(
-    [...text.matchAll(/^#{1,6}\s+(.+)$/gmu)].map(m => slug(m[1] ?? "")),
-  );
-  anchorCache.set(path, anchors);
-  return anchors;
-};
 
 /**
  * Checks one doc link.
@@ -94,12 +45,8 @@ const checkRef = (where, ref) => {
     errors.push(`${where}: unknown repo ${ref.repo}`);
     return;
   }
-  const [path = "", anchor] = ref.path.split("#");
-  if (!existsSync(join(ROOT, path))) {
-    errors.push(`${where}: ${path} does not exist`);
-  } else if (anchor !== undefined && !anchorsOf(path).has(anchor)) {
-    errors.push(`${where}: ${path} has no heading #${anchor}`);
-  }
+  const problem = linkProblem(ref.path);
+  if (problem !== null) errors.push(`${where}: ${problem}`);
 };
 
 /**
@@ -275,6 +222,15 @@ if (dirty)
 if (review.length > 0)
   console.log(
     `\nReview these statuses:\n${review.map(r => `   - ${r}`).join("\n")}`,
+  );
+
+// 5. The roadmap.
+const roadmap = checkRoadmap();
+errors.push(...roadmap.errors);
+console.log(`\n${roadmap.summary}.`);
+if (roadmap.review.length > 0)
+  console.log(
+    `Commits on no roadmap item (add them to one, or to OFF_ROADMAP):\n${roadmap.review.map(r => `   ${r}`).join("\n")}`,
   );
 
 if (errors.length > 0) {

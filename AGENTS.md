@@ -100,7 +100,11 @@ decisions), with an honest status on every card. `pnpm map` serves it on
 `http://localhost:8791`; `pnpm map:check` (part of `pnpm check`) validates its
 data, doc links and statuses. When a change builds, moves or reshapes something
 the map shows, update the map in the same change, or run the `/resync-map` skill
-([sync.md](./docs/interaction-map/sync.md)).
+([sync.md](./docs/interaction-map/sync.md)). The **roadmap** page beside it
+(`roadmap.html`) tracks milestones and what shipped; when an item ships or new
+work is planned, update
+[its data](./docs/interaction-map/public/js/data/roadmap.js) too
+([roadmap.md](./docs/interaction-map/roadmap.md)).
 
 ## Conventions
 
