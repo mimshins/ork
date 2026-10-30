@@ -274,7 +274,7 @@ const route = () => {
   if (view === "roadmap" && target !== "roadmap") {
     document.getElementById(target)?.scrollIntoView({ behavior: "smooth" });
   } else {
-    window.scrollTo({ top: 0 });
+    $("#rm-scroll").scrollTo({ top: 0 });
   }
 };
 

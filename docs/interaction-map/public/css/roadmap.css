@@ -1,13 +1,9 @@
-/* The roadmap page: a scrolling document on the map's tokens and buttons
-   (tokens.css, styles.css). Progress colours reuse the map's statuses: done is
-   built, in progress is partial, next is specified, waiting is external. */
-
-html,
-body.roadmap-page {
-  height: auto;
-  min-height: 100%;
-  overflow: auto;
-}
+/* The roadmap page on the map's tokens and buttons (tokens.css, styles.css).
+   Like the map, the page itself never scrolls: the top bar is fixed 12px from
+   every edge and the content scrolls in its own pane, so the header does not
+   move between the two pages, scrollbar or not. Progress colours reuse the
+   map's statuses: done is built, in progress is partial, next is specified,
+   waiting is external. */
 
 body.roadmap-page {
   background-color: var(--canvas);
@@ -34,15 +30,30 @@ body.roadmap-page {
 /* ── Top bar ──────────────────────────────────────────────────────────── */
 
 .rm-top {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 20;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px;
-  background: linear-gradient(var(--canvas) 70%, transparent);
+  pointer-events: none;
+}
+
+.rm-top > * {
+  pointer-events: auto;
+}
+
+/* The content pane: under the top bar, fading out beneath it. */
+.rm-scroll {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  padding-top: 70px;
+  mask-image: linear-gradient(transparent 52px, #000 76px);
+  -webkit-mask-image: linear-gradient(transparent 52px, #000 76px);
 }
 
 .rm-top .brand {
@@ -53,6 +64,7 @@ body.roadmap-page {
 .rm-tabs {
   display: flex;
   gap: 4px;
+  margin-top: 4px;
   padding: 4px;
   background: var(--glass);
   backdrop-filter: blur(14px);
@@ -78,6 +90,7 @@ body.roadmap-page {
 .rm-tools {
   display: flex;
   gap: 8px;
+  margin-top: 4px;
 }
 
 .rm-tools .btn {
@@ -271,7 +284,7 @@ body.roadmap-page {
 
 .rm-milestone {
   padding: 18px 22px 8px;
-  scroll-margin-top: 80px;
+  scroll-margin-top: 76px;
   border-left: 4px solid var(--pc);
 }
 
@@ -508,9 +521,6 @@ body.roadmap-page {
 /* ── Narrow screens ───────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
-  .rm-top {
-    flex-wrap: wrap;
-  }
   .rm-tools .btn {
     display: none;
   }
