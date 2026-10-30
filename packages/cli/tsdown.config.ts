@@ -1,3 +1,9 @@
+/**
+ * @file Tsdown build of the published CLI: one bundle with the private
+ *   `@krapht/ork-*` packages inlined and third-party dependencies left
+ *   external.
+ */
+
 import { defineConfig } from "tsdown";
 
 // The published CLI is one bundle: the private workspace packages

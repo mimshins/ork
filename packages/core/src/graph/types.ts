@@ -1,3 +1,5 @@
+/** @file The compiled run graph's types, and the fields each node type reports. */
+
 import type {
   Diagnostic,
   Edge,

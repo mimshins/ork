@@ -1,3 +1,8 @@
+/**
+ * @file Per-node-type checks that need the rest of the graph (joins, routers,
+ *   gates, inputs), and the declared message channels.
+ */
+
 import type { DecisionOption, Diagnostic, Workflow } from "@krapht/ork-schema";
 
 import { error, warning } from "./diagnostics.ts";

@@ -1,3 +1,8 @@
+/**
+ * @file Tests for the workflow format: parsing, diagnostics with positions, the
+ *   canonical round trip, and the committed JSON Schema.
+ */
+
 import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";

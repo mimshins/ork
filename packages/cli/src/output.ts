@@ -1,3 +1,8 @@
+/**
+ * @file Terminal output helpers: styled text that turns plain when stdout is
+ *   not a TTY or `NO_COLOR` is set.
+ */
+
 import { styleText } from "node:util";
 
 type Format = Parameters<typeof styleText>[0];

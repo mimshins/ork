@@ -1,3 +1,9 @@
+/**
+ * @file `ork run` for a whole workflow: checks the workflow, its inputs and the
+ *   project (git, uncommitted agent files), sets up the worktree workspace, and
+ *   streams the scheduler's run.
+ */
+
 import { randomUUID } from "node:crypto";
 
 import {

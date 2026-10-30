@@ -1,3 +1,8 @@
+/**
+ * @file The CLI package's public surface: the commands and helpers its tests
+ *   import. The executable is `bin.ts`.
+ */
+
 export * from "./commands/doctor.ts";
 export * from "./commands/init.ts";
 export * from "./commands/run.ts";

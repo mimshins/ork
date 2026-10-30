@@ -1,3 +1,8 @@
+/**
+ * @file `ork init`: scaffolds `.ork/` in a project with a starter workflow and
+ *   the `.gitignore` entry for run state, never overwriting a file.
+ */
+
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 

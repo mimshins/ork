@@ -106,6 +106,18 @@ export const NODE_TYPES = {
   tests: d("packages/nodes/test/nodes.test.ts", "Tests: the node types"),
 };
 
+export const PRACTICES = {
+  code: d(
+    "packages/core/src/practices/index.ts",
+    "Code: the built-in practices",
+  ),
+  tests: d(
+    "packages/core/test/practices.test.ts",
+    "Tests: practices and their cascade",
+  ),
+  spec: d("specs/context.md#built-in-practices", "Spec: built-in practices"),
+};
+
 export const WORKTREES = {
   manager: d(
     "packages/core/src/worktree/manager.ts",

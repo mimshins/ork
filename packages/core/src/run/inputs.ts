@@ -1,3 +1,8 @@
+/**
+ * @file A run's inputs: parsing `--input name=value` pairs and checking them
+ *   against the workflow's declared inputs, with defaults and types.
+ */
+
 import type { Workflow } from "@krapht/ork-schema";
 
 export type InputsResult =

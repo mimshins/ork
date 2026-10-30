@@ -1,3 +1,8 @@
+/**
+ * @file The graph compiler's entry point: runs every check and, when there is
+ *   no error, builds the run graph the scheduler executes.
+ */
+
 import type { Diagnostic, Workflow } from "@krapht/ork-schema";
 
 import { error, warning } from "./diagnostics.ts";

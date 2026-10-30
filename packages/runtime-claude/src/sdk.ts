@@ -1,3 +1,8 @@
+/**
+ * @file The SDK driver: runs a session in-process with the Claude Agent SDK,
+ *   only with an API key or a cloud provider, never a claude.ai login.
+ */
+
 import {
   createSdkMcpServer,
   type Options,

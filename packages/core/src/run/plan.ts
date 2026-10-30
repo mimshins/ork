@@ -1,3 +1,9 @@
+/**
+ * @file Planning one Claude node's session: the rendered brief, the practices
+ *   and Ork's harness instructions, tool rules from its isolation, limits, and
+ *   the report schema.
+ */
+
 import {
   type ClaudeNode,
   isClaudeNode,
@@ -5,6 +11,7 @@ import {
 } from "@krapht/ork-schema";
 
 import { parseTemplate, renderTemplate } from "../expr/evaluate.ts";
+import { practiceInstructions, resolvePractices } from "../practices/index.ts";
 import { reportSchemaFor } from "../runtime/report.ts";
 import type { SessionSpec, ToolRules } from "../runtime/types.ts";
 import { runScope } from "./scope.ts";
@@ -119,7 +126,12 @@ export const planNodeSession = (
     nodeId: id,
     cwd: options.cwd,
     prompt: prompt.trim() === "" ? "Do the task your role describes." : prompt,
-    systemAppend: harnessInstructions(workflow, id, node, options.checkout),
+    // Practices first: they are the same for many nodes, so the cached prefix
+    // is shared; the node's own instructions come after.
+    systemAppend: [
+      ...practiceInstructions(resolvePractices(workflow, id), options.cwd).text,
+      harnessInstructions(workflow, id, node, options.checkout),
+    ].join("\n\n"),
     settingSources: ["project", "local"],
     tools: toolRules(node, isolation === "readonly"),
     permissionMode: "default",

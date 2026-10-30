@@ -1,14 +1,14 @@
+/**
+ * @file Both drivers emit the same message JSON (the Agent SDK's messages are
+ *   the CLI's `stream-json` lines), so one normalizer serves both.
+ */
+
 import {
   parseReport,
   type RuntimeEvent,
   type SessionOutcome,
   type SessionUsage,
 } from "@krapht/ork-core";
-
-/**
- * @file Both drivers emit the same message JSON (the Agent SDK's messages are
- *   the CLI's `stream-json` lines), so one normalizer serves both.
- */
 
 type Json = Record<string, unknown>;
 

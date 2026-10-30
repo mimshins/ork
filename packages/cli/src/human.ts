@@ -1,3 +1,9 @@
+/**
+ * @file The terminal `HumanChannel`: answers `ask_user` questions, gates and
+ *   permission prompts on the terminal, one at a time, and denies or defers
+ *   when no one is there. The decision queue (M1d) replaces it.
+ */
+
 import { createInterface, type Interface } from "node:readline/promises";
 
 import type { DecisionChoice, HumanChannel } from "@krapht/ork-core";

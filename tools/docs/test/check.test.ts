@@ -1,3 +1,5 @@
+/** @file Tests for the docs check: links, anchors, and the hub and chunk layout. */
+
 import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";

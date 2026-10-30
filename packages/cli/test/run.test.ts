@@ -1,3 +1,9 @@
+/**
+ * @file Tests for `ork run`: one node and whole workflows against a stand-in
+ *   `claude`, worktree runs in real git repositories, argument handling, and
+ *   the terminal channel.
+ */
+
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";

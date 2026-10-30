@@ -1,3 +1,8 @@
+/**
+ * @file The `human.gate` node type: asks the human the rendered question, and
+ *   answers with the `default` when the `timeout` passes.
+ */
+
 import {
   type DecisionChoice,
   type NodeExecutor,

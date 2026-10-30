@@ -1,3 +1,5 @@
+/** @file Tests for the rule that decides whether a change needs a changeset. */
+
 import { describe, expect, it } from "vitest";
 
 import { needsChangeset } from "../check-changeset.ts";

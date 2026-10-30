@@ -1,3 +1,8 @@
+/**
+ * @file Small helpers for the scheduler's results: pass-through and failure
+ *   results, run-summary entries, and `node.finished` events.
+ */
+
 import type { NodeOutput, NodeResult, NodeSummary, RunEvent } from "./types.ts";
 
 /** Control nodes pass their input through; a join's input is its output. */

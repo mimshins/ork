@@ -1,3 +1,5 @@
+/** @file Tests for `ork doctor`'s checks, against a fake `exec`. */
+
 import { describe, expect, it } from "vitest";
 
 import { checkNode, type Exec, formatCheck, runChecks } from "../src/index.ts";

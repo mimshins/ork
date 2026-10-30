@@ -1,7 +1,15 @@
+/**
+ * @file `@krapht/ork-core`'s public surface: expressions, the graph compiler,
+ *   the runtime port, planning, the scheduler, worktrees and practices.
+ */
+
 export * from "./expr/evaluate.ts";
 export * from "./expr/parse.ts";
 export { compileWorkflow } from "./graph/compile.ts";
 export * from "./graph/types.ts";
+export * from "./practices/caveman.ts";
+export * from "./practices/index.ts";
+export * from "./practices/ponytail.ts";
 export * from "./run/inputs.ts";
 export * from "./run/plan.ts";
 export * from "./run/routing.ts";

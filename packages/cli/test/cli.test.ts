@@ -1,3 +1,5 @@
+/** @file Tests for `ork validate`, `ork init` and the `ork worktrees` output. */
+
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";

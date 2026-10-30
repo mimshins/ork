@@ -1,3 +1,8 @@
+/**
+ * @file Workflow YAML: parsing with source positions for diagnostics, and the
+ *   byte-stable canonical serializer.
+ */
+
 import {
   type Document,
   isNode,

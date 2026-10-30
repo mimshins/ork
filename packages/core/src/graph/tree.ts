@@ -1,3 +1,8 @@
+/**
+ * @file The ownership tree's rules: who may own whom, unknown parents, and
+ *   cycles.
+ */
+
 import type { Diagnostic, Workflow } from "@krapht/ork-schema";
 
 import { error } from "./diagnostics.ts";

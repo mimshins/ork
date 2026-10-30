@@ -1,3 +1,9 @@
+/**
+ * @file Oxfmt configuration: formatting rules for the whole repository.
+ *   Workflow files (`*.ork.yaml`) are excluded because Ork's own serializer
+ *   owns their canonical form.
+ */
+
 import { defineConfig } from "oxfmt";
 
 export default defineConfig({

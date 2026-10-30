@@ -1,3 +1,8 @@
+/**
+ * @file Reference checks: every input, node and field a template or condition
+ *   reads must exist and run first.
+ */
+
 import type {
   Diagnostic,
   DiagnosticPath,

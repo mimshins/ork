@@ -1,3 +1,8 @@
+/**
+ * @file Tests for the expression language: parsing, evaluation, functions and
+ *   templates.
+ */
+
 import { describe, expect, it } from "vitest";
 
 import {

@@ -1,3 +1,5 @@
+/** @file Tests for the graph compiler's checks and diagnostics. */
+
 import { readFileSync } from "node:fs";
 
 import { parseWorkflow } from "@krapht/ork-schema";

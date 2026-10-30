@@ -1,3 +1,9 @@
+/**
+ * @file The Claude node type: runs a `claude.leader` or `claude.worker` as one
+ *   session, planned with the run's outputs, and turns its report into the
+ *   node's output.
+ */
+
 import {
   type ClaudeRuntime,
   type NodeExecutor,

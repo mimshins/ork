@@ -1,3 +1,9 @@
+/**
+ * @file Evaluating the expression language: `when:` conditions and `{{ }}`
+ *   templates over a scope of inputs, node outputs and run metadata, reading
+ *   only own properties.
+ */
+
 import { type Expr, parseExpr } from "./parse.ts";
 
 /**

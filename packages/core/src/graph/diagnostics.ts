@@ -1,3 +1,5 @@
+/** @file Constructors for the compiler's error and warning diagnostics. */
+
 import type { Diagnostic, DiagnosticPath } from "@krapht/ork-schema";
 
 export const error = (

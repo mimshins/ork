@@ -1,3 +1,5 @@
+/** @file The scope templates and `when:` conditions read during a run. */
+
 import type { Scope } from "../expr/evaluate.ts";
 import type { Inputs, NodeOutput } from "./types.ts";
 

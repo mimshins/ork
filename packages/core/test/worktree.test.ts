@@ -1,3 +1,9 @@
+/**
+ * @file Tests for Ork's worktrees in real temporary git repositories: the
+ *   project check, worktree setup, merges and conflicts, refused commits, and
+ *   `ork worktrees`.
+ */
+
 import { execFileSync } from "node:child_process";
 import {
   chmodSync,

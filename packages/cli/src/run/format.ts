@@ -1,3 +1,8 @@
+/**
+ * @file How runs read on the terminal: session events, node results, usage, run
+ *   events with node prefixes, and the run summary.
+ */
+
 import type {
   RunEvent,
   RunResult,

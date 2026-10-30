@@ -1,3 +1,8 @@
+/**
+ * @file Tests for the runtime: the normalizer, Ork's MCP server, and both
+ *   drivers (the CLI driver against a stand-in `claude`).
+ */
+
 import { fileURLToPath } from "node:url";
 
 import type { HumanChannel, RuntimeEvent, SessionSpec } from "@krapht/ork-core";

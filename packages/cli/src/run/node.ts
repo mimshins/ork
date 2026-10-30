@@ -1,3 +1,8 @@
+/**
+ * @file `ork run --node`: checks a workflow and its inputs, plans one Claude
+ *   node's session, and streams it to the terminal.
+ */
+
 import {
   type ClaudeRuntime,
   type HumanChannel,

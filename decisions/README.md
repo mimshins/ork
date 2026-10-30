@@ -52,3 +52,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [018](./ADR-018-ork-merges-children.md)            | Ork merges a passing child's branch into its owner's                        | Accepted          | waived |
 | [019](./ADR-019-leaders-resume-on-reentry.md)      | On a loop re-entry, leaders resume and workers start fresh                  | Accepted          | waived |
 | [020](./ADR-020-worktrees-beside-the-clone.md)     | Worktrees beside the clone, with the local layer and committed instructions | Accepted          | waived |
+| [021](./ADR-021-built-in-practices.md)             | Built-in practices: caveman and ponytail, on by default                     | Accepted          | waived |

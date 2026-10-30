@@ -1,3 +1,8 @@
+/**
+ * @file Edge shorthand: expanding `a, b -> c` and the object form into single
+ *   directed edges, and writing them back in the shortest form.
+ */
+
 import type { EdgeInput } from "./workflow.ts";
 
 /** One directed flow edge after shorthand expansion. */

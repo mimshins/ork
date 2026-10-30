@@ -1,3 +1,5 @@
+/** @file A small async queue the SDK driver feeds its session's input through. */
+
 /** An async queue: producers `push`, one consumer iterates until `close`. */
 export type Queue<T> = AsyncIterable<T> & {
   push: (item: T) => void;

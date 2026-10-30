@@ -113,6 +113,11 @@ the map shows, update the map in the same change, or run the `/resync-map` skill
   oxfmt; `examples/` must stay in canonical form.
 - Tests live in `packages/<name>/test/*.test.ts`; no conditionals inside a test
   body (put them in a helper).
+- Every source file starts with a JSDoc `/** @file … */` block saying what the
+  module is for (`pnpm lint` checks it: `tools/lint/file-overview.ts`).
+- Extensible by design: a new integration (a CLI such as GitLab or GCP, a Claude
+  driver, a node type) is an adapter behind an interface, found through a
+  registry, not a new branch in shared code.
 
 ## Supply chain
 

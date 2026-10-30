@@ -1,3 +1,8 @@
+/**
+ * @file The node report as structured output: the JSON Schema a Claude node's
+ *   final result must match, built from its `output.schema`.
+ */
+
 import type { ClaudeNode } from "@krapht/ork-schema";
 
 import { REPORT_STATUSES } from "../graph/types.ts";

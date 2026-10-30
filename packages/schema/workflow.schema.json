@@ -136,6 +136,32 @@
           "type": "integer",
           "exclusiveMinimum": 0,
           "maximum": 9007199254740991
+        },
+        "practices": {
+          "type": "object",
+          "properties": {
+            "caveman": {
+              "description": "Terse voice in chat, reports and messages. Default: on.",
+              "type": "boolean"
+            },
+            "ponytail": {
+              "description": "Smallest complete change. true is full. Default: full.",
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "lite",
+                    "full",
+                    "ultra"
+                  ]
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -232,6 +258,32 @@
                 "type": "integer",
                 "exclusiveMinimum": 0,
                 "maximum": 9007199254740991
+              },
+              "practices": {
+                "type": "object",
+                "properties": {
+                  "caveman": {
+                    "description": "Terse voice in chat, reports and messages. Default: on.",
+                    "type": "boolean"
+                  },
+                  "ponytail": {
+                    "description": "Smallest complete change. true is full. Default: full.",
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "lite",
+                          "full",
+                          "ultra"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
               },
               "tools": {
                 "type": "object",
@@ -345,6 +397,32 @@
                 "exclusiveMinimum": 0,
                 "maximum": 9007199254740991
               },
+              "practices": {
+                "type": "object",
+                "properties": {
+                  "caveman": {
+                    "description": "Terse voice in chat, reports and messages. Default: on.",
+                    "type": "boolean"
+                  },
+                  "ponytail": {
+                    "description": "Smallest complete change. true is full. Default: full.",
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "lite",
+                          "full",
+                          "ultra"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
               "tools": {
                 "type": "object",
                 "properties": {
@@ -451,6 +529,32 @@
                 "type": "integer",
                 "exclusiveMinimum": 0,
                 "maximum": 9007199254740991
+              },
+              "practices": {
+                "type": "object",
+                "properties": {
+                  "caveman": {
+                    "description": "Terse voice in chat, reports and messages. Default: on.",
+                    "type": "boolean"
+                  },
+                  "ponytail": {
+                    "description": "Smallest complete change. true is full. Default: full.",
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "lite",
+                          "full",
+                          "ultra"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
               },
               "tools": {
                 "type": "object",

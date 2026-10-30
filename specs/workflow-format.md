@@ -56,5 +56,9 @@ edges:
 - **Human:** `human.gate`.
 - **Edges:** `input`/`output` artifacts.
 
+Claude nodes and `defaults` also take `practices` (caveman, ponytail), on unless
+turned off and inherited down the ownership tree; see
+[built-in practices](./context.md#built-in-practices).
+
 What each type does when it runs, and how edges, joins and loops behave, is in
 [Scheduler: running a workflow](./scheduler.md).

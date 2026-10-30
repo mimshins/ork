@@ -1,3 +1,9 @@
+/**
+ * @file The checks behind `ork doctor`: each tool's presence and login status,
+ *   through an injectable `exec` so tests need no real tools. Never prints a
+ *   token or an account.
+ */
+
 import { execFile } from "node:child_process";
 
 export type CheckStatus = "ok" | "warn" | "fail" | "skip";

@@ -1,3 +1,8 @@
+/**
+ * @file Flow edges: expanding shorthand, parsing `when:`, bounded cycles, entry
+ *   nodes, reachability and upstream nodes.
+ */
+
 import { type Diagnostic, expandEdge, type Workflow } from "@krapht/ork-schema";
 
 import { parseExpr } from "../expr/parse.ts";

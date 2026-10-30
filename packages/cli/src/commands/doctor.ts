@@ -1,3 +1,9 @@
+/**
+ * @file `ork doctor`: prints the environment checks (Node, git, and the user's
+ *   own claude, gh and aws logins) and fails when no Claude driver can run. Ork
+ *   stores no credentials.
+ */
+
 import { defineCommand } from "citty";
 
 import { type CheckResult, exec, runChecks } from "../doctor/checks.ts";

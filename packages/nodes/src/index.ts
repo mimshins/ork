@@ -1,3 +1,8 @@
+/**
+ * @file `@krapht/ork-nodes`: the built-in node types the scheduler runs;
+ *   control nodes are the scheduler's own.
+ */
+
 import type { NodeExecutors } from "@krapht/ork-core";
 
 import { type ClaudeExecutorOptions, claudeExecutor } from "./claude.ts";

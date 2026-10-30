@@ -1,3 +1,9 @@
+/**
+ * @file The tool node types (`tool.gh`, `tool.aws`, `tool.shell`): the user's
+ *   own programs, run without a shell, checked against `allow`, with long
+ *   output kept in run files.
+ */
+
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";

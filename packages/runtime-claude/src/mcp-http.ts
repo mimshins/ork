@@ -1,3 +1,10 @@
+/**
+ * @file A minimal MCP server over the streamable HTTP transport, for the
+ *   `claude` CLI driver. It answers with plain JSON (no SSE stream), which the
+ *   transport allows, and implements only what Ork needs: `initialize`, `ping`,
+ *   `tools/list` and `tools/call`.
+ */
+
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import {
   createServer,
@@ -17,13 +24,6 @@ import {
   permissionShape,
   type ToolText,
 } from "./tools.ts";
-
-/**
- * @file A minimal MCP server over the streamable HTTP transport, for the
- *   `claude` CLI driver. It answers with plain JSON (no SSE stream), which the
- *   transport allows, and implements only what Ork needs: `initialize`, `ping`,
- *   `tools/list` and `tools/call`.
- */
 
 export type OrkMcpEndpoint = {
   url: string;

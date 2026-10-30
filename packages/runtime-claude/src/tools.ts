@@ -1,10 +1,10 @@
-import type { HumanChannel } from "@krapht/ork-core";
-import { z } from "zod";
-
 /**
  * @file Ork's tools, defined once and adapted to each driver: an in-process MCP
  *   server for the Agent SDK, a local HTTP MCP server for the CLI.
  */
+
+import type { HumanChannel } from "@krapht/ork-core";
+import { z } from "zod";
 
 export const ORK_SERVER = "ork";
 

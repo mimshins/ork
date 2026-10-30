@@ -1,3 +1,8 @@
+/**
+ * @file Finding workflow files: `.ork/workflows/*.ork.yaml` by default,
+ *   directories expanded, and a workflow given by name.
+ */
+
 import { existsSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 

@@ -1,3 +1,8 @@
+/**
+ * @file Renders the published JSON Schema for workflow files from the Zod
+ *   model.
+ */
+
 import { z } from "zod";
 
 import { WorkflowSchema } from "./workflow.ts";

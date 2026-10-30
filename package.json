@@ -9,7 +9,7 @@
     "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run docs:check && pnpm run map:check",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
-    "lint": "oxlint",
+    "lint": "oxlint && node tools/lint/file-overview.ts",
     "lint:fix": "oxlint --fix",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",

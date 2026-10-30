@@ -1,3 +1,9 @@
+/**
+ * @file `ork validate`: loads, parses and compiles workflow files and reports
+ *   diagnostics compiler-style, with file, line and column. `loadWorkflow` is
+ *   shared with `ork run`.
+ */
+
 import { readFileSync } from "node:fs";
 import path from "node:path";
 

@@ -1,3 +1,9 @@
+/**
+ * @file Tests for the scheduler on scripted executors: the software-factory
+ *   example, loops, failures, joins and routers, the budget, concurrency and
+ *   interrupts.
+ */
+
 import { readFileSync } from "node:fs";
 import path from "node:path";
 

@@ -1,3 +1,8 @@
+/**
+ * @file What happens when a loop runs out of rounds: the question put to the
+ *   human until owners handle escalation.
+ */
+
 import type { CompiledEdge } from "../graph/types.ts";
 import type { HumanChannel } from "../runtime/types.ts";
 

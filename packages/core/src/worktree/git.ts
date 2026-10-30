@@ -1,3 +1,8 @@
+/**
+ * @file A minimal `git` runner for the worktree manager: arguments without a
+ *   shell, results that never throw.
+ */
+
 import { execFile } from "node:child_process";
 
 export type GitResult = { code: number; stdout: string; stderr: string };

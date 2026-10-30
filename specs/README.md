@@ -27,7 +27,7 @@ Long specs follow the hub and chunk layout
 | [Runtime: the Claude drivers](./runtime.md)     | Built     | M1b       |
 | [Scheduler: running a workflow](./scheduler.md) | Partial   | M1c       |
 | [Worktrees: where nodes work](./worktrees.md)   | Built     | M1c       |
-| [Context, skills and precedence](./context.md)  | Specified | M1c       |
+| [Context, skills and precedence](./context.md)  | Partial   | M1c       |
 | [Messaging, decisions and logs](./messaging.md) | Partial   | M1d       |
 | [Feedback and self-improvement](./feedback.md)  | Specified | M1d, M2   |
 | [The ork CLI](./cli.md)                         | Partial   | M1        |

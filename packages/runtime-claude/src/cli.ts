@@ -1,3 +1,8 @@
+/**
+ * @file The CLI driver: runs a session through the user's own `claude -p` in
+ *   stream-json mode, with Ork's tools served by a local MCP server.
+ */
+
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 

@@ -12,6 +12,7 @@ coverage/
 
 # Build output and files copied in by package builds
 packages/cli/LICENSE
+packages/cli/THIRD_PARTY_NOTICES.md
 
 # Local-only task specs (never committed)
 .ai/specs/

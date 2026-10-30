@@ -1,3 +1,9 @@
+/**
+ * @file `ork run`: the command and its flags. It runs a whole workflow, or one
+ *   Claude node with `--node`, with questions and permission prompts answered
+ *   on the terminal.
+ */
+
 import type { ClaudeRuntime } from "@krapht/ork-core";
 import type { Driver } from "@krapht/ork-schema";
 import { defineCommand } from "citty";

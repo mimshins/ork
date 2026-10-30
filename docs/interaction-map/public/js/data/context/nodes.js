@@ -5,7 +5,7 @@
  *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
  */
 
-import { DESIGN, SCHEMA } from "../refs.js";
+import { DESIGN, PRACTICES, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -49,11 +49,16 @@ export const NODES = [
     zone: "layers",
     x: 40,
     y: 120,
-    status: "specified",
-    pkg: null,
+    status: "partial",
+    pkg: "core",
     summary:
-      "Skills that ship with Ork, such as spec writing or security review, namespaced `ork:` so they never collide with anyone else's.",
-    facts: ["The lowest layer: anything with the same name above replaces it."],
+      "What ships with Ork: the built-in practices today, and skills such as spec writing or security review, namespaced `ork:` so they never collide with anyone else's.",
+    facts: [
+      "Built: the caveman (terse voice) and ponytail (smallest complete change) practices, on for every Claude node and appended to its system prompt.",
+      "`practices:` on `defaults` or a node turns them off or sets ponytail's level; the setting cascades down the ownership tree.",
+      "The lowest layer: a project skill with the same name replaces it.",
+      "Specified: `ork:*` skills, delivered through the per-run plugin.",
+    ],
     see: [
       {
         map: "architecture",
@@ -61,7 +66,7 @@ export const NODES = [
         label: "Where the layers live",
       },
     ],
-    docs: [DESIGN.context],
+    docs: [PRACTICES.code, PRACTICES.tests, PRACTICES.spec, DESIGN.context],
   },
   {
     id: "user",

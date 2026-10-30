@@ -1,3 +1,5 @@
+/** @file Vitest configuration: where the packages' and tools' tests live. */
+
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({

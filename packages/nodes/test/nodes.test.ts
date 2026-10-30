@@ -1,3 +1,8 @@
+/**
+ * @file Tests for the built-in node types: tool commands and allow lists, gates
+ *   and timeouts, and Claude sessions against a fake runtime.
+ */
+
 import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";

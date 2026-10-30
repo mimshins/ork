@@ -1,3 +1,9 @@
+/**
+ * @file `ork worktrees`: lists the worktrees and `ork/` branches runs left
+ *   behind, read from git, and cleans them up safely after showing the plan and
+ *   asking.
+ */
+
 import { createInterface } from "node:readline/promises";
 
 import {

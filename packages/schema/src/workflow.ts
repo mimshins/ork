@@ -1,3 +1,8 @@
+/**
+ * @file The workflow file format as a Zod model: inputs, layers, defaults,
+ *   limits, nodes, edges, message channels, and the canvas layout sidecar.
+ */
+
 import { z } from "zod";
 
 import {
@@ -7,6 +12,7 @@ import {
   ModelSchema,
   NodeIdSchema,
   NodeSchema,
+  PracticesSchema,
   TurnsSchema,
 } from "./nodes.ts";
 
@@ -79,6 +85,7 @@ export const WorkflowSchema = z.strictObject({
       isolation: IsolationSchema.optional(),
       budgetUsd: BudgetSchema.optional(),
       maxTurns: TurnsSchema.optional(),
+      practices: PracticesSchema.optional(),
     })
     .optional(),
   limits: z

@@ -1,3 +1,8 @@
+/**
+ * @file The node types of the workflow format (Claude, tool, control and gate
+ *   nodes) as Zod schemas.
+ */
+
 import { z } from "zod";
 
 export const NodeIdSchema = z
@@ -23,6 +28,22 @@ export const IsolationSchema = z.enum(["worktree", "shared", "readonly"]);
 export type Isolation = z.infer<typeof IsolationSchema>;
 
 export const BudgetSchema = z.number().positive();
+
+/**
+ * Ork's built-in practices (ADR-021), on unless turned off. A node without a
+ * setting takes its nearest owner's, then the workflow's `defaults`.
+ */
+export const PracticesSchema = z.strictObject({
+  caveman: z
+    .boolean()
+    .optional()
+    .describe("Terse voice in chat, reports and messages. Default: on."),
+  ponytail: z
+    .union([z.boolean(), z.enum(["lite", "full", "ultra"])])
+    .optional()
+    .describe("Smallest complete change. true is full. Default: full."),
+});
+export type Practices = z.infer<typeof PracticesSchema>;
 export const TurnsSchema = z.number().int().positive();
 
 const base = {
@@ -60,6 +81,7 @@ const claudeFields = {
   isolation: IsolationSchema.optional(),
   budgetUsd: BudgetSchema.optional(),
   maxTurns: TurnsSchema.optional(),
+  practices: PracticesSchema.optional(),
   tools: ToolRulesSchema.optional(),
   output: z
     .strictObject({

@@ -1,7 +1,11 @@
 #!/usr/bin/env node
-// A stand-in for `claude -p` in stream-json mode, for the CLI driver's tests.
-// It reads the brief from stdin, asks the user through Ork's MCP server (as the
-// real CLI would call the ask_user tool), and ends with a structured report.
+/**
+ * @file A stand-in for `claude -p` in stream-json mode, for the CLI driver's
+ *   tests. It reads the brief from stdin, asks the user through Ork's MCP
+ *   server (as the real CLI would call the ask_user tool), and ends with a
+ *   structured report.
+ */
+
 import { createInterface } from "node:readline";
 
 const args = process.argv.slice(2);

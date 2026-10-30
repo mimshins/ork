@@ -1,3 +1,5 @@
+/** @file The root `ork` command and its subcommands. */
+
 import { defineCommand } from "citty";
 
 import { doctor } from "./commands/doctor.ts";

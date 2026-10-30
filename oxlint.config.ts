@@ -1,3 +1,9 @@
+/**
+ * @file Oxlint configuration: the type-aware rule set, the repository's
+ *   conventions, and the package boundaries (`schema <- core <- runtime-claude,
+ *   nodes <- server <- cli`) enforced as restricted imports.
+ */
+
 import { defineConfig, type OxlintOverride } from "oxlint";
 
 // Dependency direction between workspace packages:
