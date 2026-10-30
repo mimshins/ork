@@ -83,7 +83,14 @@ export default defineConfig({
     es2024: true,
     node: true,
   },
-  ignorePatterns: ["**/dist/**", "**/node_modules/**", "**/test/fixtures/**"],
+  ignorePatterns: [
+    "**/dist/**",
+    "**/node_modules/**",
+    "**/test/fixtures/**",
+    // The interaction map's browser code and data: plain ES modules with JSDoc
+    // types, ported as is and validated by docs/interaction-map/tools/check.mjs.
+    "docs/interaction-map/public/**",
+  ],
   rules: {
     "typescript/no-explicit-any": "error",
     "typescript/ban-ts-comment": [

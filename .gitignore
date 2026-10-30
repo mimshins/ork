@@ -8,3 +8,5 @@ coverage/
 # Ork run state (workflows under .ork/workflows are meant to be committed)
 .ork/runs/
 .ork/worktrees/
+# Personal Claude Code settings
+.claude/settings.local.json

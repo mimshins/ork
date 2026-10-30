@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Ork Interaction Map</title>
+    <meta
+      name="description"
+      content="How Ork fits together: its packages and processes, how a run executes, how each agent's context is compiled, and how messages and decisions flow."
+    />
+    <link
+      rel="icon"
+      href="favicon.svg"
+      type="image/svg+xml"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="css/styles.css"
+    />
+    <script src="js/theme-init.js"></script>
+    <script
+      type="module"
+      src="js/main.js"
+    ></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="lead">
+        <div class="brand">
+          <svg
+            class="logo"
+            viewBox="0 0 32 32"
+            aria-hidden="true"
+          >
+            <rect
+              x="3"
+              y="3"
+              width="11"
+              height="11"
+              rx="3.5"
+              class="l1"
+            />
+            <rect
+              x="18"
+              y="3"
+              width="11"
+              height="11"
+              rx="3.5"
+              class="l2"
+            />
+            <rect
+              x="3"
+              y="18"
+              width="11"
+              height="11"
+              rx="3.5"
+              class="l3"
+            />
+            <rect
+              x="18"
+              y="18"
+              width="11"
+              height="11"
+              rx="3.5"
+              class="l4"
+            />
+            <path
+              d="M14 8.5h4M8.5 14v4M23.5 14v4M14 23.5h4"
+              class="lw"
+            />
+          </svg>
+          <div class="brand-text"><b>Ork</b><span>Interaction map</span></div>
+        </div>
+        <div class="menu-wrap">
+          <button
+            id="maps-btn"
+            class="btn map-switch"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls="map-menu"
+            title="Maps (M)"
+          >
+            <small>Map</small><b id="map-title">Architecture</b>
+            <svg
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+            >
+              <path d="M4 6l4 4 4-4" />
+            </svg>
+          </button>
+          <div
+            id="map-menu"
+            class="map-menu"
+            role="menu"
+            hidden
+          ></div>
+        </div>
+      </div>
+
+      <div class="tools">
+        <div class="menu-wrap">
+          <button
+            id="journeys-btn"
+            class="btn btn-primary"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls="journey-menu"
+            title="Journeys (J)"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+            >
+              <circle
+                cx="3.5"
+                cy="12.5"
+                r="1.8"
+              />
+              <circle
+                cx="12.5"
+                cy="3.5"
+                r="1.8"
+              />
+              <path d="M5.3 12.5H9a2.5 2.5 0 0 0 0-5H7a2.5 2.5 0 0 1 0-5h3.7" />
+            </svg>
+            <span>Journeys</span>
+          </button>
+          <div
+            id="journey-menu"
+            class="journey-menu"
+            role="menu"
+            hidden
+          ></div>
+        </div>
+        <div class="search-wrap">
+          <svg
+            viewBox="0 0 16 16"
+            aria-hidden="true"
+          >
+            <circle
+              cx="7"
+              cy="7"
+              r="4.5"
+            />
+            <path d="M10.5 10.5L14 14" />
+          </svg>
+          <input
+            id="search"
+            type="search"
+            placeholder="Find a component"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Find a component or journey"
+          />
+          <kbd>/</kbd>
+          <ul
+            id="search-results"
+            class="search-results"
+            hidden
+          ></ul>
+        </div>
+        <button
+          id="theme-btn"
+          class="icon-btn"
+          aria-label="Toggle light and dark"
+          title="Theme (T)"
+        >
+          <svg
+            viewBox="0 0 16 16"
+            aria-hidden="true"
+          >
+            <circle
+              cx="8"
+              cy="8"
+              r="5.5"
+            />
+            <path
+              class="fill"
+              d="M8 2.5a5.5 5.5 0 0 1 0 11z"
+            />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main
+      id="stage"
+      class="stage"
+      aria-label="Map"
+    ></main>
+
+    <aside
+      id="panel"
+      class="panel"
+      aria-label="Details"
+      hidden
+    >
+      <button
+        class="icon-btn panel-close"
+        data-act="close-panel"
+        aria-label="Close details"
+        title="Close (Esc)"
+      >
+        <svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+      </button>
+      <div
+        id="panel-body"
+        class="panel-body"
+      ></div>
+    </aside>
+
+    <section
+      id="stepper"
+      class="stepper"
+      aria-label="Journey"
+      aria-live="polite"
+      hidden
+    ></section>
+
+    <div
+      id="legend"
+      class="legend"
+    >
+      <button
+        class="legend-toggle"
+        data-act="legend"
+        aria-expanded="true"
+      >
+        <span>Legend</span>
+        <svg
+          viewBox="0 0 16 16"
+          aria-hidden="true"
+        >
+          <path d="M4 10l4-4 4 4" />
+        </svg>
+      </button>
+      <div class="legend-body">
+        <h4>Where it stands <small>click to highlight</small></h4>
+        <ul
+          id="legend-status"
+          class="legend-list"
+        ></ul>
+        <h4>How they talk</h4>
+        <ul
+          id="legend-kinds"
+          class="legend-list kinds"
+        ></ul>
+        <p class="legend-hint">
+          Drag to pan · <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + scroll or pinch to zoom ·
+          click anything
+        </p>
+        <p
+          id="legend-synced"
+          class="legend-synced"
+        ></p>
+      </div>
+    </div>
+
+    <div
+      class="zoom"
+      role="group"
+      aria-label="Zoom"
+    >
+      <button
+        id="zoom-in"
+        class="icon-btn"
+        aria-label="Zoom in"
+        title="Zoom in (+)"
+      >
+        <svg viewBox="0 0 16 16"><path d="M8 3.5v9M3.5 8h9" /></svg>
+      </button>
+      <button
+        id="zoom-out"
+        class="icon-btn"
+        aria-label="Zoom out"
+        title="Zoom out (−)"
+      >
+        <svg viewBox="0 0 16 16"><path d="M3.5 8h9" /></svg>
+      </button>
+      <button
+        id="zoom-fit"
+        class="icon-btn"
+        aria-label="Fit the map"
+        title="Fit (0)"
+      >
+        <svg viewBox="0 0 16 16">
+          <path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" />
+        </svg>
+      </button>
+    </div>
+  </body>
+</html>

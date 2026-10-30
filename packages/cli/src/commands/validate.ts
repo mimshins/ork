@@ -1,0 +1,130 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
+import { compileWorkflow } from "@ork/core";
+import { type Diagnostic, parseWorkflow } from "@ork/schema";
+import { defineCommand } from "citty";
+
+import { style, write } from "../output.ts";
+import { findWorkflowFiles } from "../workflows.ts";
+
+export type FileReport = {
+  file: string;
+  diagnostics: Diagnostic[];
+  summary?: { nodes: number; edges: number; entries: string[] };
+};
+
+/** Parses and compiles one workflow file. */
+export const validateFile = (file: string, cwd: string): FileReport => {
+  let text: string;
+  try {
+    text = readFileSync(path.resolve(cwd, file), "utf8");
+  } catch (error) {
+    const reason =
+      error instanceof Error && "code" in error && error.code === "ENOENT"
+        ? "file not found"
+        : "cannot read file";
+    return {
+      file,
+      diagnostics: [
+        { severity: "error", code: "file.read", message: reason, path: [] },
+      ],
+    };
+  }
+
+  const parsed = parseWorkflow(text);
+  if (!parsed.ok) return { file, diagnostics: parsed.diagnostics };
+
+  const { graph, diagnostics } = compileWorkflow(parsed.workflow);
+  const located: Diagnostic[] = [];
+  for (const diagnostic of diagnostics) {
+    const position = parsed.locate(diagnostic.path);
+    located.push(
+      position === null ? diagnostic : { ...diagnostic, ...position },
+    );
+  }
+  return graph === null
+    ? { file, diagnostics: located }
+    : {
+        file,
+        diagnostics: located,
+        summary: {
+          nodes: graph.nodes.size,
+          edges: graph.edges.length,
+          entries: graph.entries,
+        },
+      };
+};
+
+const plural = (count: number, word: string) =>
+  `${count} ${word}${count === 1 ? "" : "s"}`;
+
+/** Human-readable report, one line per diagnostic, compiler style. */
+export const formatReport = (report: FileReport): string[] => {
+  const lines = report.diagnostics.map(d => {
+    const where =
+      d.line === undefined
+        ? report.file
+        : `${report.file}:${d.line}:${d.column ?? 1}`;
+    const severity =
+      d.severity === "error"
+        ? style(["red", "bold"], "error")
+        : style(["yellow", "bold"], "warning");
+    return `${style("dim", where)} ${severity} ${d.message} ${style("dim", `(${d.code})`)}`;
+  });
+  const errors = report.diagnostics.filter(d => d.severity === "error").length;
+  const warnings = report.diagnostics.length - errors;
+  if (report.summary !== undefined && errors === 0) {
+    const { nodes, edges, entries } = report.summary;
+    const extra = warnings > 0 ? `, ${plural(warnings, "warning")}` : "";
+    lines.push(
+      `${style("green", "✓")} ${report.file} ${style(
+        "dim",
+        `(${plural(nodes, "node")}, ${plural(edges, "edge")}, starts at ${entries.join(", ")}${extra})`,
+      )}`,
+    );
+  } else {
+    lines.push(
+      `${style("red", "✗")} ${report.file} ${style(
+        "dim",
+        `(${plural(errors, "error")}, ${plural(warnings, "warning")})`,
+      )}`,
+    );
+  }
+  return lines;
+};
+
+export const validate = defineCommand({
+  meta: {
+    name: "validate",
+    description:
+      "Check workflow files: schema, ownership tree, edges, loops, and references",
+  },
+  args: {
+    json: {
+      type: "boolean",
+      description: "Print the reports as JSON",
+      default: false,
+    },
+  },
+  run: ({ args }) => {
+    const cwd = process.cwd();
+    const files = findWorkflowFiles(args._, cwd);
+    if (files.length === 0) {
+      write("No workflow files found. Run `ork init`, or pass a path.");
+      process.exitCode = 1;
+      return;
+    }
+    const reports = files.map(file => validateFile(file, cwd));
+    if (args.json) {
+      write(JSON.stringify(reports, undefined, 2));
+    } else {
+      for (const report of reports) {
+        for (const line of formatReport(report)) write(line);
+      }
+    }
+    if (reports.some(r => r.diagnostics.some(d => d.severity === "error"))) {
+      process.exitCode = 1;
+    }
+  },
+});

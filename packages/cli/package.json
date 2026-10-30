@@ -1,0 +1,18 @@
+{
+  "name": "@ork/cli",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The ork command",
+  "type": "module",
+  "bin": {
+    "ork": "./src/bin.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@ork/core": "workspace:*",
+    "@ork/schema": "workspace:*",
+    "citty": "0.2.2"
+  }
+}

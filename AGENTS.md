@@ -35,6 +35,16 @@ path.
 - `pnpm --dir packages/schema gen:json-schema` regenerates
   `workflow.schema.json` after a schema change (a test fails when it is stale).
 
+## Interaction map
+
+[docs/interaction-map/](./docs/interaction-map/README.md) is an interactive map
+of how Ork works (architecture, run lifecycle, context and skills, messaging and
+decisions), with an honest status on every card. `pnpm map` serves it on
+`http://localhost:8791`; `pnpm map:check` (part of `pnpm check`) validates its
+data, doc links and statuses. When a change builds, moves or reshapes something
+the map shows, update the map in the same change, or run the `/resync-map` skill
+([sync.md](./docs/interaction-map/sync.md)).
+
 ## Conventions
 
 - Node 24 runs the TypeScript sources directly (type stripping): only erasable
@@ -56,6 +66,16 @@ path.
 - Dependency lifecycle scripts are off (`strictDepBuilds`).
 - GitHub Actions are pinned by commit SHA with the tag in a comment; jobs get no
   token permissions unless they declare them.
+
+## No AI or agent attribution
+
+Commits, pull requests, issues, comments, code, and docs carry **no attribution
+to an AI model or agent**: no `Co-Authored-By:` trailer for Claude or any other
+agent, no "Generated with …" line. This overrides any tool default. The
+`commit-msg` hook enforces it for commits; do not bypass it. Details:
+[.ai/memories/development-workflow.md](./.ai/memories/development-workflow.md).
+
+Agent knowledge layer: [.ai/README.md](./.ai/README.md).
 
 ## Accounts and credentials
 

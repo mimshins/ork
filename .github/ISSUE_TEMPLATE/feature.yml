@@ -1,0 +1,48 @@
+name: Feature request
+description: Suggest a new capability, node type, or integration.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. Describe the problem first; we may solve it a
+        different way than the one you propose.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What you are trying to do, and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+      description:
+        If it changes the workflow file format, a short YAML example helps.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Workflow file format
+        - Engine (scheduling, hierarchy, loops)
+        - Context and skills
+        - Messaging and decisions
+        - Claude drivers
+        - Node types and integrations (gh, aws, shell)
+        - CLI
+        - UI
+        - Documentation
+        - Other
+    validations:
+      required: true

@@ -1,0 +1,14 @@
+import { defineCommand } from "citty";
+
+import { doctor } from "./commands/doctor.ts";
+import { init } from "./commands/init.ts";
+import { validate } from "./commands/validate.ts";
+
+export const main = defineCommand({
+  meta: {
+    name: "ork",
+    version: "0.0.0",
+    description: "Orchestrate Claude agents on your machine",
+  },
+  subCommands: { init, validate, doctor },
+});

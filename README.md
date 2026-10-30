@@ -20,8 +20,17 @@ and engineering tasks:
 - **Works with your repo.** Your project's `CLAUDE.md`, `AGENTS.md`, and skills
   are layered under the workflow's own skills with a defined precedence.
 
-> **Status: pre-alpha.** The workflow format and validator exist; the engine,
-> CLI, and UI are being built. See [docs/design.md](./docs/design.md).
+> **Status: pre-alpha.** The workflow format, the graph compiler, and `ork init`
+> / `ork validate` / `ork doctor` work today; the run engine, the Claude
+> drivers, and the UI are being built. See [docs/design.md](./docs/design.md),
+> and the [interaction map](./docs/interaction-map/README.md) (`pnpm map`) for
+> how the pieces fit together and what is built so far.
+
+```sh
+pnpm ork doctor                 # node, git, and your own claude / gh / aws logins
+pnpm ork init                   # scaffold .ork/ with a starter workflow
+pnpm ork validate examples      # schema, ownership tree, edges, loops, references
+```
 
 ## A workflow
 
@@ -97,6 +106,12 @@ pnpm ork --help   # run the CLI from source
 ```
 
 See [AGENTS.md](./AGENTS.md) for conventions.
+
+## Contributing
+
+Contributions are welcome: see [CONTRIBUTING.md](./CONTRIBUTING.md) and the
+[Code of Conduct](./CODE_OF_CONDUCT.md). Report vulnerabilities privately, as
+described in [SECURITY.md](./SECURITY.md).
 
 ## License
 

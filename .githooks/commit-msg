@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# commit-msg: reject AI or agent attribution in commit messages
+# (.ai/memories/development-workflow.md). Installed by `pnpm install`
+# (prepare: git config core.hooksPath .githooks).
+set -euo pipefail
+
+message_file="$1"
+
+# Ignore comment lines git strips anyway.
+if grep -v '^#' "$message_file" | grep -Eiq \
+  -e '^co-authored-by:.*(claude|anthropic|openai|chatgpt|gpt|copilot|gemini|cursor|codex|aider|devin|\bai\b|\[bot\])' \
+  -e 'generated (with|by) .*(claude|ai|copilot|chatgpt|gpt|gemini|cursor|codex|agent)' \
+  -e 'noreply@anthropic\.com'; then
+  echo "commit-msg: AI or agent attribution is not allowed in commit messages." >&2
+  echo "Remove the Co-Authored-By / 'Generated with' line and commit again." >&2
+  echo "See .ai/memories/development-workflow.md." >&2
+  exit 1
+fi

@@ -1,0 +1,53 @@
+name: Bug report
+description: Report something that does not work as documented.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. This repository is public. Do not include
+        secrets, API keys, tokens, account identifiers, or personal data.
+        **A suspected vulnerability is not a bug report**: follow
+        [SECURITY.md](https://github.com/mimshins/ork/security/policy) instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description:
+        The smallest set of steps. Attach a minimal workflow file if one is
+        involved (with any secrets removed).
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description:
+        The command you ran and its output, e.g. from `ork validate` or `ork
+        run`.
+      render: shell
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Ork version or commit
+    validations:
+      required: false
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description:
+        Paste the output of `ork doctor` (it never prints tokens), plus your
+        operating system.
+      render: shell
+    validations:
+      required: false

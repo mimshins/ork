@@ -1,0 +1,13 @@
+{
+  "name": "@ork/core",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Ork engine: graph compiler, expressions, scheduler, context compiler, message bus, event store",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@ork/schema": "workspace:*"
+  }
+}

@@ -1,0 +1,17 @@
+# One code owner. The last matching pattern wins. Paths that can reach the
+# supply chain or a credential are listed explicitly so none is left to the
+# default silently.
+
+*                         @mimshins
+
+/.github/                 @mimshins
+/.githooks/               @mimshins
+/.ai/                     @mimshins
+/.claude/                 @mimshins
+/AGENTS.md                @mimshins
+/CLAUDE.md                @mimshins
+/package.json             @mimshins
+/pnpm-lock.yaml           @mimshins
+/pnpm-workspace.yaml      @mimshins
+/.node-version            @mimshins
+/SECURITY.md              @mimshins

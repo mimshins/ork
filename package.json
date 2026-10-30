@@ -5,13 +5,15 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks || true",
     "ork": "node packages/cli/src/bin.ts",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run map:check",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "map": "node docs/interaction-map/tools/serve.mjs",
+    "map:check": "tsc -p docs/interaction-map && node docs/interaction-map/tools/check.mjs"
   },
   "engines": {
     "node": ">=24.20.0"
