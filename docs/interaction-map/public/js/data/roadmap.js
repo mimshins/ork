@@ -357,14 +357,20 @@ export const MILESTONES = [
       {
         id: "claims",
         title: "`claim` and `release`",
-        status: "next",
-        detail: "Parallel workers claim files so they do not collide.",
-        docs: ["specs/messaging.md"],
+        status: "done",
+        detail:
+          "Parallel writers claim files, folders or names before they edit; an overlapping claim is refused with who holds it, and released claims are announced.",
+        commits: ["06c557b"],
+        date: "2026-10-31",
+        docs: [
+          "specs/messaging.md#claims",
+          "decisions/ADR-027-advisory-claims.md",
+        ],
       },
       {
         id: "feedback-capture",
         title: "Feedback capture",
-        status: "planned",
+        status: "next",
         detail:
           "The `feedback` tool, system signals, fingerprints, and `ork feedback list | show | dismiss`.",
         docs: ["specs/feedback.md"],
