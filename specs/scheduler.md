@@ -159,6 +159,7 @@ From `@krapht/ork-nodes` ([index.ts](../packages/nodes/src/index.ts)):
 | `owner.asked`      | the run asked a live owner about a loop of a node it owns              |
 | `owner.answered`   | the owner answered with `answer`                                       |
 | `owner.unanswered` | the owner's session ended first; the human is asked instead            |
+| `user.message`     | `ork chat` wrote to a node: delivered now, queued, or by resuming      |
 | `run.finished`     | the run ends: `succeeded`, `failed`, `budget_exhausted`, `interrupted` |
 
 The decision queue adds `decision.opened`, `decision.answered`,

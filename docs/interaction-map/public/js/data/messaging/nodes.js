@@ -60,12 +60,17 @@ export const NODES = [
     zone: "surfaces",
     x: 320,
     y: 240,
-    status: "specified",
+    status: "built",
     pkg: "cli",
+    src: "packages/cli/src/commands/chat.ts",
     summary:
-      "Sends a message to a node's live session, or resumes a finished one with its session id to continue the conversation.",
-    facts: ["The UI's chat panel does the same, one conversation per node."],
-    docs: [DESIGN.messaging, DESIGN.cli],
+      "Sends a message to a node's live session, or resumes a finished one's session where it ran to continue the conversation.",
+    facts: [
+      "A live run: the message goes to the store, the run is woken on its socket, and the node's replies stream back.",
+      "A finished run: the last session is resumed with the run's skills and instructions; the exchange is added to the run's log.",
+      "`-m` sends one message. The UI's chat panel (milestone 2) does the same, one conversation per node.",
+    ],
+    docs: [DESIGN.messaging, DESIGN.cli, BUS.chat, BUS.chatTests],
   },
   {
     id: "decideCmd",
@@ -137,7 +142,7 @@ export const NODES = [
       "One per run, in the engine's process; no broker.",
       "`read_inbox` returns the messages a session has not read yet, oldest first.",
       "A loop out of rounds asks the leader that owns its nodes while that leader's session is live; the leader replies with `answer`, and if its session ends first, you are asked.",
-      "Your own messages (`ork chat`) come with M1d's next slice.",
+      "Your own messages (`ork chat`) are pushed in full, or kept for the node's next session.",
     ],
     see: [
       {
@@ -163,7 +168,7 @@ export const NODES = [
     facts: [
       "A node that is not running gets the notice when its session starts.",
       "A question to an owner is pushed in full, with its options.",
-      "Your messages and answers are pushed in full too (`ork chat`, specified).",
+      "Your messages (`ork chat`) and answers are pushed in full.",
     ],
     docs: [DESIGN.messaging, BUS.bus, BUS.tests],
   },
@@ -307,7 +312,7 @@ export const NODES = [
       "The owner of the reviewers. It can always message them and they it; it delegates, receives their reports and handles their escalations.",
     facts: [
       "While it works, Ork asks it, not you, about a loop of the nodes it owns; it replies with `answer`.",
-      "You can chat with it while it works (specified).",
+      "You can chat with it while it works, or after, by resuming its session.",
     ],
     docs: [SCHEMA.example],
   },

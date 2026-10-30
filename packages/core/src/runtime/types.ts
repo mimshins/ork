@@ -103,7 +103,15 @@ export type SessionOutcome = {
 
 /** Normalized events, the same for every driver. */
 export type RuntimeEvent =
-  | { type: "session.started"; sessionId: string; model: string }
+  | {
+      type: "session.started";
+      sessionId: string;
+      model: string;
+      /** Where the session runs; it can be resumed only from there. */
+      cwd?: string;
+      /** The driver that runs it. */
+      driver?: Driver;
+    }
   | { type: "assistant.text"; text: string }
   | {
       type: "tool.called";

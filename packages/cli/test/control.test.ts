@@ -120,7 +120,7 @@ describe("a run with no terminal", () => {
   it("stops when `ork stop` asks it to", async () => {
     const run = detachedRun();
     const decision = await opened(run);
-    run.store.command(decision.runId, "stop");
+    run.store.command(decision.runId, { kind: "stop" });
     expect(await wakeRun(socketPath(decision.runId, run.home))).toBe(true);
     const { result } = await run.done;
     expect(result?.status).toBe("interrupted");

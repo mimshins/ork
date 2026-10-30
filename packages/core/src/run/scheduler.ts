@@ -291,5 +291,6 @@ export const startRun = (options: RunOptions): RunHandle => {
       abort.abort();
       settle();
     },
+    tell: bus.tell,
   };
 };

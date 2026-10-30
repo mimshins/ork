@@ -3,7 +3,8 @@
  * @file A stand-in for `claude -p` in stream-json mode, for the CLI driver's
  *   tests. It reads the brief from stdin, asks the user through Ork's MCP
  *   server (as the real CLI would call the ask_user tool), and ends with a
- *   structured report.
+ *   structured report, like the real CLI's first result in print mode. With
+ *   `--resume` it says which session it resumed.
  */
 
 import { createInterface } from "node:readline";
@@ -25,13 +26,14 @@ const rpc = async (method, params) => {
 const lines = createInterface({ input: process.stdin });
 for await (const line of lines) {
   const brief = JSON.parse(line).message.content;
-  out({ type: "system", subtype: "init", session_id: "fake-1", model: flag("--model") ?? "fake" });
+  const resumed = args.includes("--resume") ? ` (resuming ${flag("--resume")})` : "";
+  out({ type: "system", subtype: "init", session_id: "fake-1", model: flag("--model") ?? "fake", cwd: process.cwd() });
   out({
     type: "assistant",
     message: {
       id: "m1",
       content: [
-        { type: "text", text: `Working on: ${brief}` },
+        { type: "text", text: `Working on: ${brief}${resumed}` },
         { type: "tool_use", id: "t1", name: "mcp__ork__ask_user", input: {} },
       ],
     },
@@ -62,4 +64,6 @@ for await (const line of lines) {
     duration_ms: 1500,
     usage: { input_tokens: 100, output_tokens: 20, cache_read_input_tokens: 80, cache_creation_input_tokens: 5 },
   });
+  // Ork ends the session at its first result.
+  break;
 }

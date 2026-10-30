@@ -107,7 +107,7 @@ export const NODES = [
       "Built: `ork run <wf>` runs a whole workflow through the scheduler, and `--node <id>` one Claude node; questions and permission prompts are answered on the terminal.",
       "Built: `ork worktrees` lists the worktrees and `ork/` branches runs left, and `clean` removes them, asking first.",
       "Built: `ps`, `logs --follow`, `tree` read runs from the store; `run --detach` runs in the background; `stop` stops a live run from any terminal.",
-      "Built: `ork decide` answers open decisions from any terminal; the recommended option is preselected. Specified: `chat`, `resume`.",
+      "Built: `ork decide` answers open decisions from any terminal; the recommended option is preselected. `ork chat` talks to a node, live or by resuming its session. Specified: `resume`.",
       "Built: `ork context explain <wf> <node>` shows the resolved layer stack for one node.",
     ],
     see: [{ map: "lifecycle", node: "cli", label: "The CLI in a run" }],
@@ -374,7 +374,7 @@ export const NODES = [
     pkg: "core",
     src: "packages/core/src/store/index.ts",
     summary:
-      "Every change in a run, appended in order: nodes starting and finishing, tool calls, usage, worktrees, and later messages and decisions. Logs, the monitor, chats and replay are all views over it.",
+      "Every change in a run, appended in order: nodes starting and finishing, tool calls, usage, worktrees, messages, chats and decisions. Logs, the monitor, chats and replay are all views over it.",
     facts: [
       "Built: each run event gets a sequence number and a time, with secrets masked, before the terminal prints it.",
       "Built: `ork ps`, `ork logs [--follow]` and `ork tree` read it from any terminal; a run whose process died reads as `crashed`.",

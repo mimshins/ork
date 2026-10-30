@@ -9,6 +9,7 @@ import {
   type SessionOutcome,
   type SessionUsage,
 } from "@krapht/ork-core";
+import type { Driver } from "@krapht/ork-schema";
 
 type Json = Record<string, unknown>;
 
@@ -61,15 +62,14 @@ export const normalize = (message: unknown): RuntimeEvent[] => {
   if (!isObject(message)) return [];
   switch (message["type"]) {
     case "system": {
-      return message["subtype"] === "init"
-        ? [
-            {
-              type: "session.started",
-              sessionId: str(message["session_id"]),
-              model: str(message["model"]),
-            },
-          ]
-        : [];
+      if (message["subtype"] !== "init") return [];
+      const started: RuntimeEvent = {
+        type: "session.started",
+        sessionId: str(message["session_id"]),
+        model: str(message["model"]),
+      };
+      if (str(message["cwd"]) !== "") started.cwd = str(message["cwd"]);
+      return [started];
     }
     case "assistant": {
       return blocks(message).flatMap((block): RuntimeEvent[] => {
@@ -107,6 +107,13 @@ export const normalize = (message: unknown): RuntimeEvent[] => {
     }
   }
 };
+
+/** Marks a session's start with the driver that runs it. */
+export const withDriver = (
+  event: RuntimeEvent,
+  driver: Driver,
+): RuntimeEvent =>
+  event.type === "session.started" ? { ...event, driver } : event;
 
 /** A finished event for a session the driver could not run. */
 export const driverFailure = (message: string): RuntimeEvent => ({

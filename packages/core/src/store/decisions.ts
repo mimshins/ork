@@ -87,10 +87,10 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
      ORDER BY d.opened_at, d.rowid`,
   );
   const addCommand = db.prepare(
-    "INSERT INTO commands (run_id, kind, at) VALUES (?, ?, ?)",
+    "INSERT INTO commands (run_id, kind, node, body, at) VALUES (?, ?, ?, ?, ?)",
   );
   const pending = db.prepare(
-    "SELECT id, kind FROM commands WHERE run_id = ? AND handled_at IS NULL ORDER BY id",
+    "SELECT id, kind, node, body FROM commands WHERE run_id = ? AND handled_at IS NULL ORDER BY id",
   );
   const handled = db.prepare("UPDATE commands SET handled_at = ? WHERE id = ?");
 
@@ -135,16 +135,30 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
           filter.status ?? null,
         )
         .map(row => decisionOf(row)),
-    command: (runId, kind) => {
-      addCommand.run(runId, kind, new Date().toISOString());
+    command: (runId, command) => {
+      const at = new Date().toISOString();
+      if (command.kind === "stop")
+        addCommand.run(runId, "stop", null, null, at);
+      else {
+        addCommand.run(
+          runId,
+          "message",
+          command.node,
+          maskSecrets(command.body),
+          at,
+        );
+      }
     },
     takeCommands: runId => {
       const at = new Date().toISOString();
-      return pending.all(runId).flatMap(row => {
+      return pending.all(runId).flatMap((row): RunCommand[] => {
         handled.run(at, Number(row["id"]));
-        const kind: RunCommand | undefined =
-          text(row, "kind") === "stop" ? "stop" : undefined;
-        return kind === undefined ? [] : [kind];
+        const kind = text(row, "kind");
+        if (kind === "stop") return [{ kind }];
+        if (kind === "message") {
+          return [{ kind, node: text(row, "node"), body: text(row, "body") }];
+        }
+        return [];
       });
     },
   };

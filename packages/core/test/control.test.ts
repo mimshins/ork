@@ -37,6 +37,7 @@ const setup = async (local?: HumanChannel) => {
   const home = mkdtempSync(path.join(tmpdir(), "ork-ctl-"));
   const events: RunEvent[] = [];
   let stops = 0;
+  const messages: string[] = [];
   const control: RunControl = await startControl({
     store,
     runId: "r1",
@@ -48,9 +49,12 @@ const setup = async (local?: HumanChannel) => {
     onStop: () => {
       stops += 1;
     },
+    onMessage: (node, body) => {
+      messages.push(`${node}: ${body}`);
+    },
     ...(local === undefined ? {} : { local }),
   });
-  return { store, home, events, control, stops: () => stops };
+  return { store, home, events, control, messages, stops: () => stops };
 };
 
 /** A terminal that answers `answer` once its turn comes, or waits forever. */
@@ -136,12 +140,20 @@ describe("the decision queue", () => {
 describe("commands and the socket", () => {
   it("stops the run once when `ork stop` writes a command", async () => {
     const { store, events, control, stops } = await setup();
-    store.command("r1", "stop");
-    store.command("r1", "stop");
+    store.command("r1", { kind: "stop" });
+    store.command("r1", { kind: "stop" });
     control.check();
     expect(stops()).toBe(1);
     expect(events).toEqual([{ type: "run.command", command: "stop" }]);
     expect(store.takeCommands("r1")).toEqual([]);
+    await control.close();
+  });
+
+  it("hands `ork chat` messages to the run", async () => {
+    const { store, control, messages } = await setup();
+    store.command("r1", { kind: "message", node: "fix", body: "use tabs" });
+    control.check();
+    expect(messages).toEqual(["fix: use tabs"]);
     await control.close();
   });
 

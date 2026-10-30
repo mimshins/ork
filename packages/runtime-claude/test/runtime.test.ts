@@ -308,6 +308,13 @@ describe("the CLI driver", () => {
       "tool.result",
       "session.finished",
     ]);
+    expect(events[0]).toEqual({
+      type: "session.started",
+      sessionId: "fake-1",
+      model: "haiku",
+      cwd: process.cwd(),
+      driver: "cli",
+    });
     expect(asked).toEqual([
       {
         nodeId: "approver",

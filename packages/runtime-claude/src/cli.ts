@@ -14,7 +14,7 @@ import type {
 } from "@krapht/ork-core";
 
 import { type OrkMcpEndpoint, startOrkMcpHttp } from "./mcp-http.ts";
-import { driverFailure, normalize } from "./normalize.ts";
+import { driverFailure, normalize, withDriver } from "./normalize.ts";
 import {
   ORK_SERVER,
   orkTools,
@@ -171,7 +171,7 @@ export const createCliRuntime = (
               // The first result ends the session; `--resume` continues it.
               child.stdin.end();
             }
-            yield event;
+            yield withDriver(event, "cli");
           }
         }
         const code = await Promise.race([

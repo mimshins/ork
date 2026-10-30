@@ -69,7 +69,10 @@ export type NewDecision = Pick<
   Partial<Pick<DecisionRecord, "recommended" | "context">>;
 
 /** What another process may ask a live run to do. */
-export type RunCommand = "stop";
+export type RunCommand =
+  | { kind: "stop" }
+  /** `ork chat`: a message from the user to a node's session. */
+  | { kind: "message"; node: string; body: string };
 
 export type DecisionStore = {
   /** Opens a decision; its text is masked like events. */
@@ -85,8 +88,8 @@ export type DecisionStore = {
     project?: string;
     status?: DecisionRecord["status"];
   }) => DecisionRecord[];
-  /** Queues a command for a live run. */
-  command: (runId: string, kind: RunCommand) => void;
+  /** Queues a command for a live run; a message's body is masked. */
+  command: (runId: string, command: RunCommand) => void;
   /** The run's unhandled commands, marked handled. */
   takeCommands: (runId: string) => RunCommand[];
 };

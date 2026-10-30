@@ -18,6 +18,7 @@ export * from "./run/format.ts";
 export * from "./run/node.ts";
 export * from "./run/workflow.ts";
 export * from "./run/detach.ts";
+export * from "./runs/chat.ts";
 export * from "./runs/decide.ts";
 export * from "./runs/find.ts";
 export * from "./runs/format.ts";

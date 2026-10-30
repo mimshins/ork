@@ -153,6 +153,45 @@ describe("delivery", () => {
   });
 });
 
+describe("the user's messages", () => {
+  it("go in full into a live session, or wait for the node's next one", () => {
+    const { bus, events, session } = setup();
+    const lead = session("lead");
+    expect(bus.tell("lead", "skip the docs")).toBe("now");
+    expect(lead.told).toEqual([
+      "[ork] The user writes to you (ork chat):\nskip the docs",
+    ]);
+    expect(bus.tell("code", "use tabs")).toBe("queued");
+    bus.mailbox("docs").send("code", "hi");
+    expect(session("code").told).toEqual([
+      "[ork] The user writes to you (ork chat):\nuse tabs",
+      "[ork] 1 unread message from docs. Call read_inbox to read them.",
+    ]);
+    expect(events.filter(e => e.type === "user.message")).toEqual([
+      {
+        type: "user.message",
+        node: "lead",
+        body: "skip the docs",
+        delivered: "now",
+      },
+      {
+        type: "user.message",
+        node: "code",
+        body: "use tabs",
+        delivered: "queued",
+      },
+    ]);
+  });
+
+  it("are refused for a node with no session", () => {
+    const graph = compile([
+      "nodes:",
+      "  build: { type: tool.shell, command: make }",
+    ]);
+    expect(setup(graph).bus.tell("build", "hi")).toBeNull();
+  });
+});
+
 describe("questions to a live owner", () => {
   it("asks the owner, refuses a wrong answer and takes a right one", async () => {
     const { bus, events, session } = setup();

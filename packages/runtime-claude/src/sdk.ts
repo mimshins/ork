@@ -18,7 +18,7 @@ import type {
   SessionSpec,
 } from "@krapht/ork-core";
 
-import { driverFailure, normalize } from "./normalize.ts";
+import { driverFailure, normalize, withDriver } from "./normalize.ts";
 import { createQueue } from "./queue.ts";
 import { ORK_SERVER, orkTools, preapprovedTools } from "./tools/index.ts";
 
@@ -129,7 +129,7 @@ export const createSdkRuntime = (env: Env = process.env): ClaudeRuntime => ({
           for (const event of normalize(message)) {
             // The first result ends the session; later messages resume it.
             if (event.type === "session.finished") input.close();
-            yield event;
+            yield withDriver(event, "sdk");
           }
         }
       } catch (error) {

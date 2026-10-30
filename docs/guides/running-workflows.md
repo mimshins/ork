@@ -134,4 +134,18 @@ ork tree               # the ownership tree: each node's state, tokens and cost
 A run whose process died without finishing shows as `crashed`. Details:
 [Event store](../../specs/event-store.md).
 
-Coming later in M1d: `ork chat` and `ork resume`.
+## Talk to a node
+
+```sh
+ork chat 3f2a builder                      # type messages; Ctrl-D leaves
+ork chat 3f2a builder -m "Skip the docs"   # one message
+```
+
+While the run is going, your message reaches the node at its next step, even
+mid-task, and its replies stream to your chat; a node that is not running gets
+it when it next starts. After the run, `ork chat` resumes the node's own
+session, so it remembers what it did, and `ork logs` shows the exchange. Only
+leaders and workers have sessions to talk to, and a session whose worktree was
+merged and removed cannot be resumed.
+
+Coming later in M1d: `ork resume`.

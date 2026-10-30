@@ -2,6 +2,7 @@
 
 import { defineCommand } from "citty";
 
+import { chat } from "./commands/chat.ts";
 import { context } from "./commands/context.ts";
 import { decide, stop } from "./commands/control.ts";
 import { doctor } from "./commands/doctor.ts";
@@ -26,6 +27,7 @@ export const main = defineCommand({
     tree,
     decide,
     stop,
+    chat,
     context,
     worktrees,
     wt: worktrees,

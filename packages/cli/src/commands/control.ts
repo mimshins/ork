@@ -154,7 +154,7 @@ export const stop = defineCommand({
         failed(`Run ${run.id} is not running (${status}).`);
         return;
       }
-      store.command(run.id, "stop");
+      store.command(run.id, { kind: "stop" });
       await wakeRun(socketPath(run.id));
       for (let i = 0; i < 150; i += 1) {
         const [now] = store.lookup(run.id);

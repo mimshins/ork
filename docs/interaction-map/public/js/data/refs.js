@@ -145,6 +145,8 @@ export const BUS = {
     "packages/runtime-claude/test/messages.test.ts",
     "Tests: the message tools",
   ),
+  chat: d("packages/cli/src/runs/chat.ts", "Code: `ork chat`, live or resumed"),
+  chatTests: d("packages/cli/test/chat.test.ts", "Tests: `ork chat`"),
 };
 
 export const ENGINE = {

@@ -31,11 +31,11 @@ export const flagValues = (
   return values;
 };
 
-const isDriver = (value: string): value is Driver =>
+export const isDriver = (value: string): value is Driver =>
   CLAUDE_DRIVERS.some(d => d.id === value);
 
 /** Loads the drivers only when a run starts, so other commands stay fast. */
-const loadRuntime = async (driver: Driver): Promise<ClaudeRuntime> =>
+export const loadRuntime = async (driver: Driver): Promise<ClaudeRuntime> =>
   (await import("@krapht/ork-runtime-claude")).createRuntime(
     driver,
     process.env,

@@ -7,8 +7,8 @@ Status: **Partial**: `ask_user`, the permission prompt, `delegate`,
 the run's socket ([control/](../packages/core/src/control/index.ts),
 [tests](../packages/core/test/control.test.ts)) and the message bus
 ([bus.ts](../packages/core/src/run/bus.ts),
-[tests](../packages/core/test/bus.test.ts)); `claim`, `feedback` and user
-messages (`ork chat`) are specified for M1d.
+[tests](../packages/core/test/bus.test.ts)) with the user's messages
+(`ork chat`); `claim` and `feedback` are specified for M1d.
 
 ## Ork MCP tools
 
@@ -61,7 +61,7 @@ ports.
   recommended one) and replies with `answer`. A wrong option or someone else's
   question is refused. When the owner's session ends first, the question goes to
   the human as a decision (`owner.unanswered`).
-- **Priority:** user messages (`ork chat`, M1d) and answers are pushed in full;
+- **Priority:** the user's messages (`ork chat`) and answers are pushed in full;
   agent messages only as notices, so a busy session pays for a body only when it
   reads it.
 
@@ -115,5 +115,16 @@ its socket.
 
 ## Chat
 
-`ork chat <run> <node>` (or the UI chat panel) sends a user message to a node's
-live session or resumes a finished one with `resume`.
+`ork chat <run> <node>` ([cli.md](./cli.md#decisions-and-stopping)) talks to a
+leader or worker:
+
+- **A live run:** the message is a command in the store (`message`, with the
+  node and the body, masked), and the run is woken on its socket. The bus pushes
+  it in full, `[ork] The user writes to you (ork chat): …`, into the node's live
+  session at its next step, or into its next session if it is not running
+  (`user.message` with `delivered: now` or `queued`). The node's replies are its
+  events, streamed to the chat over the socket.
+- **A finished run:** the node's last session is resumed in the folder it ran in
+  (`session.started` records it, and the driver) with the message as the next
+  turn; its events and `user.message` (`delivered: resumed`) are added to the
+  run's record after `run.finished`. The UI chat panel (M2) does the same.

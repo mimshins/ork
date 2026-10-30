@@ -13,6 +13,7 @@ import {
   type HumanChannel,
   type RunEvent,
   startControl,
+  userMessageText,
   parseInputPairs,
   planNodeSession,
   projectRootOf,
@@ -119,6 +120,13 @@ export const runNode = async (
     },
     onStop: () => {
       void started.promise.then(session => session.interrupt());
+    },
+    onMessage: (node, body) => {
+      if (node !== id) return;
+      void (async () => {
+        (await started.promise).send(userMessageText(body));
+        record({ type: "user.message", node, body, delivered: "now" });
+      })();
     },
     ...(options.human === undefined ? {} : { local: options.human }),
     ...(options.home === undefined ? {} : { home: options.home }),

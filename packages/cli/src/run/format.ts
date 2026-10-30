@@ -184,6 +184,12 @@ export const formatRunEvent = (
     return [style(["yellow", "bold"], `! ork ${event.command} received`)];
   }
   if (event.type === "run.finished") return formatRunResult(event.result);
+  if (event.type === "user.message") {
+    const note = event.delivered === "queued" ? " (for its next session)" : "";
+    return [
+      `${tag(event.node)} ${style(["magenta", "bold"], "you:")} ${firstLine(event.body)}${style("dim", note)}`,
+    ];
+  }
   return formatBusEvent(event).map(line => `${tag(event.node)} ${line}`);
 };
 

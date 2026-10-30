@@ -16,7 +16,7 @@ import type {
   RuntimeEvent,
   SessionUsage,
 } from "../runtime/types.ts";
-import type { AnsweredBy, DecisionKind, RunCommand } from "../store/types.ts";
+import type { AnsweredBy, DecisionKind } from "../store/types.ts";
 
 export type Inputs = Record<string, string | number | boolean>;
 
@@ -227,7 +227,17 @@ export type RunEvent =
   /** The owner's session ended first; the question goes to the human. */
   | { type: "owner.unanswered"; node: string; question: string }
   /** Another process asked the run to do something, e.g. `ork stop`. */
-  | { type: "run.command"; command: RunCommand }
+  | { type: "run.command"; command: "stop" }
+  /**
+   * The user wrote to a node (`ork chat`): pushed into its live session now,
+   * queued for its next session, or sent by resuming its finished one.
+   */
+  | {
+      type: "user.message";
+      node: string;
+      body: string;
+      delivered: "now" | "queued" | "resumed";
+    }
   | { type: "run.finished"; result: RunResult };
 
 export type RunOptions = {
@@ -253,6 +263,8 @@ export type RunHandle = {
   done: Promise<RunResult>;
   /** Stops starting nodes and aborts the running ones. */
   interrupt: () => void;
+  /** A message from the user to a node's session (`ork chat`). */
+  tell: (node: string, body: string) => "now" | "queued" | null;
 };
 
 /** One run of a node the scheduler has queued or started. */

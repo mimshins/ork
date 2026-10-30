@@ -19,7 +19,7 @@ export const EDGES = [
     label: "a message to a node",
     detail:
       "Type to any node of a running run, or of a finished one to resume it.",
-    status: "specified",
+    status: "built",
   },
   {
     id: "you-decide",
@@ -49,8 +49,9 @@ export const EDGES = [
     to: "bus",
     kind: "local",
     label: "user message",
-    detail: "Goes through the bus, pushed in full rather than as a notice.",
-    status: "specified",
+    detail:
+      "A `message` command in the store, picked up when the run is woken; the bus pushes it in full rather than as a notice.",
+    status: "built",
     docs: [DESIGN.messaging],
   },
   {

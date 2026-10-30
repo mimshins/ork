@@ -161,15 +161,14 @@ export const JOURNEYS = [
         to: "chatCmd",
         title: "You run `ork chat <run> builder`",
         detail: "And type, for example, a constraint the spec missed.",
-        status: "specified",
         docs: [DESIGN.cli],
       },
       {
         from: "chatCmd",
         to: "bus",
         title: "The bus takes it",
-        detail: "You may message any node; it is logged like any message.",
-        status: "specified",
+        detail:
+          "Through the store and the run's socket; logged as `user.message`. You may write to any leader or worker.",
       },
       {
         from: "bus",
@@ -177,7 +176,6 @@ export const JOURNEYS = [
         title: "It is pushed in full",
         detail:
           "Your messages are not notices: the builder gets the text itself.",
-        status: "specified",
         docs: [DESIGN.messaging],
       },
       {
@@ -185,14 +183,12 @@ export const JOURNEYS = [
         to: "sessionSend",
         title: "At the builder's next step",
         detail: "After the tool call it is in; nothing is interrupted.",
-        status: "specified",
       },
       {
         from: "sessionSend",
         to: "builderS",
         title: "The builder reads it",
-        detail: "And replies in its next turn; the reply shows in your chat.",
-        status: "specified",
+        detail: "Its replies are its events, streamed to your chat.",
       },
     ],
   },

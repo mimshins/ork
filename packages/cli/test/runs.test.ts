@@ -226,6 +226,12 @@ describe("run lookup and formatting", () => {
           answer: "stop",
         },
         { type: "owner.unanswered", node: "lead", question: "q2" },
+        {
+          type: "user.message",
+          node: "fix",
+          body: "tabs",
+          delivered: "queued",
+        },
       ] satisfies RunEvent[]
     ).flatMap(event => formatRunEvent(event, 4, new Map()));
     expect(lines).toEqual([
@@ -233,6 +239,7 @@ describe("run lookup and formatting", () => {
       "lead │ ? asked as the owner of fix: Again? (q1)",
       "lead │ → stop (owner)",
       "lead │ → its session ended first; asking you",
+      "fix  │ you: tabs (for its next session)",
     ]);
   });
 });

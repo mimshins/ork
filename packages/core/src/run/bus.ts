@@ -3,7 +3,8 @@
  *   to their owner, their children and their declared channels; each message
  *   lands in the recipient's inbox, a live session gets a one-line notice, and
  *   the bodies are pulled with `read_inbox`. The bus also asks a live owner
- *   about a node it owns (a loop out of rounds) before the human.
+ *   about a node it owns (a loop out of rounds) before the human, and carries
+ *   the user's own messages (`ork chat`), pushed in full.
  */
 
 import type { CompiledGraph } from "../graph/types.ts";
@@ -30,6 +31,11 @@ export type Bus = {
    * when it has no owner, the owner's session is not live, or it ends first.
    */
   askOwner: (node: string, question: OwnerQuestion) => Promise<string | null>;
+  /**
+   * A message from the user, pushed in full: into the node's live session now,
+   * or into its next one. `null` when the node has no session.
+   */
+  tell: (node: string, body: string) => "now" | "queued" | null;
 };
 
 type Open = {
@@ -46,6 +52,10 @@ const plural = (count: number, word: string): string =>
 /** What a live session sees when its inbox has unread messages. */
 export const inboxNotice = (unread: readonly InboxMessage[]): string =>
   `[ork] ${plural(unread.length, "unread message")} from ${[...new Set(unread.map(m => m.from))].join(", ")}. Call read_inbox to read them.`;
+
+/** What a session sees when the user writes to it. */
+export const userMessageText = (body: string): string =>
+  `[ork] The user writes to you (ork chat):\n${body}`;
 
 /** What an owner sees when Ork asks it about a node it owns. */
 export const ownerQuestionText = (
@@ -72,6 +82,8 @@ export const createBus = ({
   const inboxes = new Map<string, InboxMessage[]>();
   const live = new Map<string, (text: string) => void>();
   const open = new Map<string, Open>();
+  /** The user's messages for nodes not running now. */
+  const waiting = new Map<string, string[]>();
   let messages = 0;
   let questions = 0;
 
@@ -172,6 +184,10 @@ export const createBus = ({
       },
       connect: deliver => {
         live.set(id, deliver);
+        for (const body of waiting.get(id) ?? []) {
+          deliver(userMessageText(body));
+        }
+        waiting.delete(id);
         const unread = inbox(id);
         if (unread.length > 0) deliver(inboxNotice(unread));
         return () => {
@@ -213,5 +229,16 @@ export const createBus = ({
     return promise;
   };
 
-  return { mailbox, askOwner };
+  const tell: Bus["tell"] = (node, body) => {
+    if (!hasSession(declared(node)?.id ?? "")) return null;
+    const deliver = live.get(node);
+    if (deliver === undefined) {
+      waiting.set(node, [...(waiting.get(node) ?? []), body]);
+    } else deliver(userMessageText(body));
+    const delivered = deliver === undefined ? "queued" : "now";
+    onEvent({ type: "user.message", node, body, delivered });
+    return delivered;
+  };
+
+  return { mailbox, askOwner, tell };
 };

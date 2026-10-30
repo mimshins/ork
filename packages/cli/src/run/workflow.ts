@@ -188,6 +188,11 @@ export const runWorkflowFile = async (
         (await started.promise).interrupt();
       })();
     },
+    onMessage: (node, body) => {
+      void (async () => {
+        (await started.promise).tell(node, body);
+      })();
+    },
     ...(options.human === undefined ? {} : { local: options.human }),
     ...(options.home === undefined ? {} : { home: options.home }),
     ...(options.intervalMs === undefined

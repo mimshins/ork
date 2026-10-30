@@ -169,6 +169,21 @@ describe("the event store", () => {
     expect(second.events("r1")).toHaveLength(1);
     second.close();
   });
+
+  it("queues commands for a run, a chat message's body masked", () => {
+    const store = seeded();
+    store.command("abc11111", { kind: "stop" });
+    store.command("abc11111", {
+      kind: "message",
+      node: "lead",
+      body: "use ghp_abcdefghijklmnopqrstuvwxyz0123 for it",
+    });
+    expect(store.takeCommands("abc11111")).toEqual([
+      { kind: "stop" },
+      { kind: "message", node: "lead", body: "use [masked] for it" },
+    ]);
+    expect(store.takeCommands("abc11111")).toEqual([]);
+  });
 });
 
 describe("the recorder", () => {

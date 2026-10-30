@@ -48,6 +48,8 @@ export type FollowOptions = LogOptions & {
   intervalMs?: number;
   /** `~`, for the run's socket; tests pass a folder. */
   home?: string;
+  /** Only events after this sequence number. */
+  after?: number;
   signal?: AbortSignal;
 };
 
@@ -81,14 +83,16 @@ export const followRun = async (
     );
     return { via, seq: last, finished };
   };
-  let seq = 0;
+  let seq = options.after ?? 0;
   for (;;) {
+    // Chats with a finished run's nodes come after `run.finished`.
+    let finished = false;
     for (const stored of store.events(run.id, seq)) {
       seq = stored.seq;
       for (const line of print(stored)) out(line);
-      if (stored.event.type === "run.finished") return;
+      finished ||= stored.event.type === "run.finished";
     }
-    if (!options.follow) return;
+    if (finished || !options.follow) return;
     // oxlint-disable-next-line no-await-in-loop -- the socket, once; then the store catches up
     const pushed = await viaSocket(seq);
     seq = pushed.seq;

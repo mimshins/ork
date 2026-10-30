@@ -50,6 +50,9 @@ export const MIGRATIONS = [
      at TEXT NOT NULL,
      handled_at TEXT
    );`,
+  // 3: `ork chat` messages are commands with a node and a body.
+  `ALTER TABLE commands ADD COLUMN node TEXT;
+   ALTER TABLE commands ADD COLUMN body TEXT;`,
 ];
 
 export type Row = Record<string, unknown> | undefined;

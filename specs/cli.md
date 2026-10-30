@@ -2,8 +2,9 @@
 
 Status: **Partial**: `ork init`, `ork validate`, `ork doctor`, `ork run` (a
 whole workflow, or one node with `--node`), `ork ps`, `ork logs`, `ork tree`,
-`ork decide`, `ork stop`, `ork worktrees` and `ork context explain` are built
-([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
+`ork decide`, `ork stop`, `ork chat`, `ork worktrees` and `ork context explain`
+are built ([code](../packages/cli/src/main.ts),
+[tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts)); the other commands are
 specified. Published as `@krapht/ork`
 ([release](../runbook/development/release.md),
@@ -19,7 +20,7 @@ ork ps [--all] [--limit n] [--json]               # this project's runs, newest 
 ork logs [<run>] [--node n] [--follow] [--json]   # a run's transcript, replayed or live
 ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node
 ork decide [<run>] [--all] [--list] [--json] [--id <d> --choose <option>]  # answer open decisions
-ork chat <run> <node>
+ork chat <run> <node> [-m <text>] [--driver sdk|cli]  # talk to a node, live or by resuming its session
 ork stop [<run>]                 # stop a live run from any terminal
 ork resume <run>
 ork worktrees [list|clean]       # Ork's worktrees and branches; clean them up safely
@@ -123,6 +124,21 @@ one prompt at a time, unless `ork decide` in another terminal answers first
   that is not one of the decision's, or a decision already answered or
   withdrawn, is refused with the reason. Decisions of crashed runs are not
   listed.
+- **`ork chat <run> <node>`** ([chat.ts](../packages/cli/src/commands/chat.ts),
+  [tests](../packages/cli/test/chat.test.ts)) talks to a leader or worker; any
+  other node is refused. Each line typed is a message (`-m <text>` sends one and
+  exits; Ctrl-D leaves):
+  - **In a live run**, the message goes to the store and the run is woken; the
+    run's bus pushes it in full into the node's session at its next step, or
+    keeps it for the node's next session if it is not running
+    ([messaging](./messaging.md#chat)). The node's events stream back until the
+    run ends.
+  - **In a finished run** (or a crashed one), its last session is resumed where
+    it ran, with the run's skills and instructions, the driver it ran with
+    (`--driver` to change it), and the terminal for questions and permissions.
+    The exchange is added to the run's record after `run.finished`, so
+    `ork logs` shows it. A session whose folder is gone (a merged worktree is
+    removed) cannot be resumed, and says so.
 - **`ork stop [<run>]`** asks a live run to stop (this project's newest without
   `<run>`), wakes it, and waits up to 15 s for it to end; a run that is not
   running is refused with its status.
