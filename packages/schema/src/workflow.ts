@@ -9,6 +9,7 @@ import {
   BudgetSchema,
   DriverSchema,
   IsolationSchema,
+  EffortSchema,
   ModelSchema,
   NodeIdSchema,
   NodeSchema,
@@ -82,6 +83,7 @@ export const WorkflowSchema = z.strictObject({
     .strictObject({
       driver: DriverSchema.optional(),
       model: ModelSchema.optional(),
+      effort: EffortSchema.optional(),
       isolation: IsolationSchema.optional(),
       budgetUsd: BudgetSchema.optional(),
       maxTurns: TurnsSchema.optional(),

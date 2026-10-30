@@ -90,6 +90,7 @@ export const buildCliArgs = (
     args.push("--disallowedTools", spec.tools.deny.join(","));
   }
   if (spec.model !== undefined) args.push("--model", spec.model);
+  if (spec.effort !== undefined) args.push("--effort", spec.effort);
   if (spec.maxTurns !== undefined) {
     args.push("--max-turns", String(spec.maxTurns));
   }

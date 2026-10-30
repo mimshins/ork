@@ -94,6 +94,7 @@ export const buildSdkOptions = (
     },
   };
   if (spec.model !== undefined) options.model = spec.model;
+  if (spec.effort !== undefined) options.effort = spec.effort;
   if (spec.maxTurns !== undefined) options.maxTurns = spec.maxTurns;
   if (spec.budgetUsd !== undefined) options.maxBudgetUsd = spec.budgetUsd;
   if (spec.resume !== undefined) options.resume = spec.resume;

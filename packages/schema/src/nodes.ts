@@ -26,6 +26,12 @@ export type Driver = z.infer<typeof DriverSchema>;
 /** `opus`, `sonnet`, `haiku`, or a full model id such as `claude-opus-5-5`. */
 export const ModelSchema = z.string().min(1);
 
+/** How hard the model thinks; Claude Code's own default when unset. */
+export const EffortSchema = z
+  .enum(["low", "medium", "high", "xhigh", "max"])
+  .describe("Reasoning effort. Default: Claude Code's for the model.");
+export type Effort = z.infer<typeof EffortSchema>;
+
 /**
  * - `worktree`: own git worktree and branch, based on the owner's branch.
  * - `shared`: works in the owner's checkout (or the project root).
@@ -79,6 +85,7 @@ const claudeFields = {
     .optional()
     .describe("Node-layer instructions appended to the system prompt."),
   model: ModelSchema.optional(),
+  effort: EffortSchema.optional(),
   driver: DriverSchema.optional(),
   skills: z
     .array(z.string())

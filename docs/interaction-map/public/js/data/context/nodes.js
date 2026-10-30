@@ -308,9 +308,9 @@ export const NODES = [
     status: "built",
     pkg: "runtime-claude",
     summary:
-      "The node's model, turn and budget limits and its tool rules, from the node or the workflow's `defaults`.",
+      "The node's model and effort, turn and budget limits, and its tool rules, from the node or the workflow's `defaults`.",
     facts: [
-      "Built: `model`, `maxTurns`, `budgetUsd` (capped by what is left of the run's) and `tools` go into the session spec, from the node or `defaults`.",
+      "Built: `model`, `effort`, `maxTurns`, `budgetUsd` (capped by what is left of the run's) and `tools` go into the session spec, from the node or `defaults`.",
       "A session out of turns or budget ends without a report: a `fail` for its edges, or for the leader that delegated it.",
       "`readonly` adds the write tools to the deny list.",
     ],

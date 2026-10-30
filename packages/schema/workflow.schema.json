@@ -120,6 +120,17 @@
           "type": "string",
           "minLength": 1
         },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "description": "Reasoning effort. Default: Claude Code's for the model."
+        },
         "isolation": {
           "type": "string",
           "enum": [
@@ -220,6 +231,17 @@
               "model": {
                 "type": "string",
                 "minLength": 1
+              },
+              "effort": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ],
+                "description": "Reasoning effort. Default: Claude Code's for the model."
               },
               "driver": {
                 "type": "string",
@@ -359,6 +381,17 @@
                 "type": "string",
                 "minLength": 1
               },
+              "effort": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ],
+                "description": "Reasoning effort. Default: Claude Code's for the model."
+              },
               "driver": {
                 "type": "string",
                 "enum": [
@@ -491,6 +524,17 @@
               "model": {
                 "type": "string",
                 "minLength": 1
+              },
+              "effort": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ],
+                "description": "Reasoning effort. Default: Claude Code's for the model."
               },
               "driver": {
                 "type": "string",

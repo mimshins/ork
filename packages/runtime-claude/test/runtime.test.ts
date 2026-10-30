@@ -35,6 +35,7 @@ const spec: SessionSpec = {
   nodeId: "approver",
   cwd: process.cwd(),
   model: "haiku",
+  effort: "low",
   prompt: "Review the branch",
   systemAppend: "# Ork",
   settingSources: ["project", "local"],
@@ -266,6 +267,7 @@ describe("the CLI driver", () => {
     expect(value("--allowedTools")).toBe("mcp__ork__ask_user");
     expect(value("--disallowedTools")).toBe("Bash");
     expect(value("--model")).toBe("haiku");
+    expect(value("--effort")).toBe("low");
     expect(value("--max-turns")).toBe("5");
     expect(value("--mcp-config")).toContain('"Authorization":"Bearer t"');
     // delegate waits for whole child sessions: past the 60 s request default.
@@ -363,6 +365,7 @@ describe("the SDK driver", () => {
     expect(options).toMatchObject({
       cwd: spec.cwd,
       model: "haiku",
+      effort: "low",
       maxTurns: 5,
       settingSources: ["project", "local"],
       systemPrompt: { type: "preset", preset: "claude_code", append: "# Ork" },

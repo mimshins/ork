@@ -59,6 +59,11 @@ edges:
 - **Human:** `human.gate`.
 - **Edges:** `input`/`output` artifacts.
 
+Claude nodes and `defaults` take a `model` (`opus`, `sonnet`, `haiku` or a full
+model id) and an `effort` (`low`, `medium`, `high`, `xhigh`, `max`); a node's
+own value wins, then `defaults`, then Claude Code's default for the model. A
+spawned worker takes its template's.
+
 Claude nodes and `defaults` also take `practices` (caveman, ponytail), on unless
 turned off and inherited down the ownership tree; see
 [built-in practices](./context.md#built-in-practices).

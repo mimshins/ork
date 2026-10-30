@@ -337,6 +337,7 @@ describe("Claude nodes", () => {
       type: "claude.worker",
       prompt: "Fix {{nodes.builder.output.branch}}",
       budgetUsd: 3,
+      effort: "high",
     };
     const result = await execute(
       context("fix", node, {
@@ -348,6 +349,7 @@ describe("Claude nodes", () => {
     expect(result.ok).toBe(true);
     expect(drivers).toEqual(["cli"]);
     expect(specs[0]?.budgetUsd).toBe(1);
+    expect(specs[0]?.effort).toBe("high");
     expect(specs[0]?.prompt).toContain("Fix ork/r1/builder\n\n## Round 2");
     expect(specs[0]?.prompt).toContain('"changes_requested"');
   });
@@ -424,7 +426,12 @@ describe("Claude nodes", () => {
       context("fix-2", node, {
         template: "fix",
         brief: { from: "lead", text: "Fix the login bug" },
-        workflow: { schemaVersion: 1, name: "t", nodes: { fix: node } },
+        workflow: {
+          schemaVersion: 1,
+          name: "t",
+          defaults: { effort: "max" },
+          nodes: { fix: node },
+        },
       }),
     );
     expect(specs[0]?.prompt).toBe(
@@ -433,5 +440,7 @@ describe("Claude nodes", () => {
     expect(specs[0]?.systemAppend).toContain(
       "You are the `fix-2` node (claude.worker, an instance of `fix`)",
     );
+    // An instance takes its template's settings, then the defaults.
+    expect(specs[0]?.effort).toBe("max");
   });
 });

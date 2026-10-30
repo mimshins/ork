@@ -46,9 +46,10 @@ kind is ever loaded, so nothing is loaded twice.
 - **Cache-friendly prompt order:** stable prefix (system preset, skills, project
   docs, workflow context) first, the per-task brief last. Ork sets
   `ENABLE_PROMPT_CACHING_1H=1` for leaders.
-- **Model tiers and caps:** a model per node. Reviewers and sub-agents default
-  to sonnet or haiku. Each node has `maxTurns` and `budgetUsd`, and the run has
-  a total budget cap.
+- **Model tiers and caps:** a model and an effort per node, so a planner can
+  think hard on opus while a reviewer runs sonnet at `low`. Reviewers and
+  sub-agents default to sonnet or haiku. Each node has `maxTurns` and
+  `budgetUsd`, and the run has a total budget cap.
 - **Bounded loops:** every cycle needs `maxRounds`. When a node hits its limit,
   it escalates to its owner, and the root escalates to a Decision.
 - **Claims:** a node can claim files or resources via the `ork__claim` tool, so

@@ -4,7 +4,7 @@
  *   and the headless `claude` CLI; tests implement it with a fake.
  */
 
-import type { Driver } from "@krapht/ork-schema";
+import type { Driver, Effort } from "@krapht/ork-schema";
 
 import type { REPORT_STATUSES } from "../graph/types.ts";
 
@@ -28,6 +28,7 @@ export type SessionSpec = {
   nodeId: string;
   cwd: string;
   model?: string;
+  effort?: Effort;
   /** The rendered task brief: the session's first user message. */
   prompt: string;
   /** Appended to Claude Code's own system prompt. */

@@ -189,6 +189,8 @@ export const planNodeSession = (
   };
   const model = node.model ?? defaults.model;
   if (model !== undefined) spec.model = model;
+  const effort = node.effort ?? defaults.effort;
+  if (effort !== undefined) spec.effort = effort;
   const maxTurns = node.maxTurns ?? defaults.maxTurns;
   if (maxTurns !== undefined) spec.maxTurns = maxTurns;
   const budgets = [
