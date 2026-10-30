@@ -1,0 +1,33 @@
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask anything about using Ork: workflows, drivers, skills and
+        context, setup. This repository is public: do not include secrets,
+        API keys, tokens, account identifiers, or personal data.
+        Found a bug? [Open an issue](https://github.com/mimshins/ork/issues/new/choose).
+        A vulnerability? Follow [SECURITY.md](https://github.com/mimshins/ork/security/policy).
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you trying to do?
+      description: The goal, and what you tried so far.
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Workflow (optional)
+      description: The relevant part of your `.ork.yaml`, with secrets removed.
+      render: yaml
+    validations:
+      required: false
+  - type: textarea
+    id: doctor
+    attributes:
+      label: "`ork doctor` output (optional)"
+      description: It never prints tokens.
+      render: shell
+    validations:
+      required: false

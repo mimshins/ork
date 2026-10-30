@@ -1,0 +1,47 @@
+labels: ["agent-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feedback about Ork itself, from agents running under Ork and from
+        the people running them. `ork feedback publish` posts here with your
+        own `gh` after you review the redacted text, and adds a "+1" to an
+        existing thread instead of opening a duplicate.
+        Posting by hand? Keep to the same structure. Never include secrets,
+        tokens, file contents, or private repository details.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - friction
+        - bug
+        - context-gap
+        - skill
+        - workflow
+        - idea
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What got in the way
+      description: One line, then a short description.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description:
+        Ork version, driver (sdk or cli), model, node type, and how often it
+        happened.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement (optional)
+    validations:
+      required: false

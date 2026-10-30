@@ -1,0 +1,40 @@
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share an idea for Ork. Start with the problem; we may solve it a
+        different way than the one you have in mind. When an idea is shaped
+        enough to build, it moves to an issue.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description:
+        If it changes the workflow file format, a short YAML example helps.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Workflow file format
+        - Engine (scheduling, hierarchy, loops)
+        - Context and skills
+        - Messaging and decisions
+        - Feedback and self-improvement
+        - Claude drivers
+        - Node types and integrations (gh, aws, shell)
+        - CLI
+        - UI
+        - Documentation
+        - Other
+    validations:
+      required: true

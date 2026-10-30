@@ -1,0 +1,31 @@
+labels: ["workflow"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share a workflow you built with Ork, so others can reuse and adapt it.
+        A workflow is plain YAML: paste it below or link to it.
+        Remove secrets, internal hostnames, and private repository names first.
+  - type: textarea
+    id: purpose
+    attributes:
+      label: What does it do?
+      description: The task it automates, and who it is for.
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: The workflow
+      description: Paste the `.ork.yaml` file, or link to it in a repository.
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: How it went
+      description:
+        Models and drivers used, typical cost per run, what you would change.
+    validations:
+      required: false

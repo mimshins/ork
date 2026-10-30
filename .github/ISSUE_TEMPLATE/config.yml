@@ -3,3 +3,9 @@ contact_links:
   - name: Report a vulnerability (private)
     url: https://github.com/mimshins/ork/security/advisories/new
     about: Do not open a public issue for a vulnerability.
+  - name: Ask a question
+    url: https://github.com/mimshins/ork/discussions/categories/q-a
+    about: Help with workflows, drivers, skills, and setup.
+  - name: Share an idea
+    url: https://github.com/mimshins/ork/discussions/categories/ideas
+    about: Shape a feature idea before it becomes an issue.
