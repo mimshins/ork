@@ -19,7 +19,6 @@ export const JOURNEYS = [
         title: "`security` calls `send_message`",
         detail:
           '`send_message(to: "code", body: "…")` in the middle of its review.',
-        status: "specified",
         docs: [DESIGN.messaging],
       },
       {
@@ -28,7 +27,6 @@ export const JOURNEYS = [
         title: "The tool hands it to the bus",
         detail:
           "From the session's node id; a session cannot pretend to be another node.",
-        status: "specified",
       },
       {
         from: "bus",
@@ -36,31 +34,34 @@ export const JOURNEYS = [
         title: "The address is checked",
         detail:
           "Siblings need a channel: `messages: [{ between: [security, code] }]` is in the workflow, so it passes.",
-        status: "specified",
         docs: [SCHEMA.example],
       },
       {
         from: "bus",
         to: "queue",
-        title: "It waits in `code`'s queue",
-        detail:
-          "`code` is busy with a tool call; the message is logged and queued.",
-        status: "specified",
+        title: "It lands in `code`'s inbox",
+        detail: "Logged as `message.sent`; `code` is busy with a tool call.",
       },
       {
         from: "queue",
         to: "sessionSend",
-        title: "Released between turns",
-        detail: "As soon as `code` finishes its turn.",
-        status: "specified",
+        title: "A notice goes out",
+        detail:
+          "`[ork] 1 unread message from security. Call read_inbox to read them.`",
       },
       {
         from: "sessionSend",
         to: "codeS",
-        title: "`code` reads it as a new message",
+        title: "`code` sees it at its next step",
         detail:
-          "Its next turn starts with the message, after the cached prefix and what came before.",
-        status: "specified",
+          "After the tool call it was in, still in the same turn; nothing is interrupted.",
+      },
+      {
+        from: "codeS",
+        to: "mcpTools",
+        title: "`code` calls `read_inbox`",
+        detail:
+          "It gets the body, oldest first, when it chooses; logged as `message.read`.",
       },
     ],
   },
@@ -77,7 +78,6 @@ export const JOURNEYS = [
         title: "`code` calls `ask_user`",
         detail:
           "A question, two or more options with descriptions, the recommended one, and the context you need to decide.",
-        status: "specified",
         docs: [DESIGN.messaging],
       },
       {
@@ -121,7 +121,6 @@ export const JOURNEYS = [
         to: "permission",
         title: "Claude Code needs permission",
         detail: "For example a test command not in the node's `tools.allow`.",
-        status: "specified",
         docs: [DESIGN.runtime],
       },
       {
@@ -129,28 +128,24 @@ export const JOURNEYS = [
         to: "decisions",
         title: "It becomes a decision",
         detail: "Allow or deny, with the exact command as context.",
-        status: "specified",
       },
       {
         from: "you",
         to: "decideCmd",
         title: "You see it with the others",
         detail: "In the same list as questions and gates.",
-        status: "specified",
       },
       {
         from: "decideCmd",
         to: "decisions",
         title: "You allow it",
         detail: "Or deny it; either way the answer is logged.",
-        status: "specified",
       },
       {
         from: "decisions",
         to: "permission",
         title: "The tool call goes ahead",
         detail: "Or is refused, and the session is told why.",
-        status: "specified",
       },
     ],
   },
@@ -159,7 +154,7 @@ export const JOURNEYS = [
     title: "You chat with the builder",
     who: "You · builder",
     summary:
-      "You steer the builder mid-run; your message jumps the queue but still waits for a safe moment.",
+      "You steer the builder mid-run; your message reaches it at its next step, without interrupting a tool call.",
     steps: [
       {
         from: "you",
@@ -179,16 +174,17 @@ export const JOURNEYS = [
       {
         from: "bus",
         to: "queue",
-        title: "It goes to the front",
-        detail: "User messages and decision answers come before node messages.",
+        title: "It is pushed in full",
+        detail:
+          "Your messages are not notices: the builder gets the text itself.",
         status: "specified",
         docs: [DESIGN.messaging],
       },
       {
         from: "queue",
         to: "sessionSend",
-        title: "Released at the end of the turn",
-        detail: "The builder's current tool call is never interrupted.",
+        title: "At the builder's next step",
+        detail: "After the tool call it is in; nothing is interrupted.",
         status: "specified",
       },
       {

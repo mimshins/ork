@@ -183,7 +183,36 @@ export const formatRunEvent = (
   if (event.type === "run.command") {
     return [style(["yellow", "bold"], `! ork ${event.command} received`)];
   }
-  return formatRunResult(event.result);
+  if (event.type === "run.finished") return formatRunResult(event.result);
+  return formatBusEvent(event).map(line => `${tag(event.node)} ${line}`);
+};
+
+/** The first line of a message body, cut to fit one terminal line. */
+const firstLine = (body: string): string => {
+  const [line = ""] = body.trim().split("\n");
+  return line.length > 100 ? `${line.slice(0, 99)}…` : line;
+};
+
+/** Messages and owner questions, without the node prefix. */
+const formatBusEvent = (
+  event: Extract<
+    RunEvent,
+    { type: `message.${string}` } | { type: `owner.${string}` }
+  >,
+): string[] => {
+  if (event.type === "message.sent") {
+    return [style("dim", `✉ to ${event.to}: ${firstLine(event.body)}`)];
+  }
+  if (event.type === "message.read") return [];
+  if (event.type === "owner.asked") {
+    return [
+      `${style(["yellow", "bold"], "?")} asked as the owner of ${event.about}: ${event.text} ${style("dim", `(${event.question})`)}`,
+    ];
+  }
+  if (event.type === "owner.answered") {
+    return [style("dim", `→ ${event.answer} (owner)`)];
+  }
+  return [style("dim", "→ its session ended first; asking you")];
 };
 
 const RUN_MARK: Record<RunResult["status"], string> = {

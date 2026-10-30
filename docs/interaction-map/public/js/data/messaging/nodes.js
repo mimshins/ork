@@ -5,7 +5,7 @@
  *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
  */
 
-import { CLI, CONTROL, DESIGN, RUNTIME, SCHEMA } from "../refs.js";
+import { BUS, CLI, CONTROL, DESIGN, RUNTIME, SCHEMA, STORE } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -109,15 +109,17 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 120,
-    status: "specified",
+    status: "built",
     pkg: "core",
+    src: "packages/core/src/run/bus.ts",
     summary:
-      "Decides whether a message may be sent at all. Parent and child may always talk; any other pair needs a `messages:` channel in the workflow.",
+      "Decides whether a message may be sent at all. Owner and child may always talk; any other pair needs a `messages:` channel in the workflow.",
     facts: [
       "In software-factory, `security` and `code` share a channel; `ux` can reach only `builder`.",
-      "A refused message is an error returned to the sender's tool call.",
+      "A refused message returns the reason and whom the sender can reach.",
+      "A spawned worker has its template's owner and channels, both ways; a node with no one to reach gets no message tools.",
     ],
-    docs: [DESIGN.messaging, SCHEMA.example],
+    docs: [DESIGN.messaging, BUS.bus, BUS.tests, SCHEMA.example],
   },
   {
     id: "bus",
@@ -126,13 +128,16 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 240,
-    status: "specified",
+    status: "built",
     pkg: "core",
+    src: "packages/core/src/run/bus.ts",
     summary:
-      "Carries messages between sessions, and from you to a session. It checks the address, logs the message, and hands it to the receiver's queue.",
+      "Carries messages between sessions. It checks the address, logs the message as a run event, and puts it in the receiver's inbox.",
     facts: [
-      "Lives in the engine's process; no broker.",
-      "`read_inbox` returns messages a session has not seen yet.",
+      "One per run, in the engine's process; no broker.",
+      "`read_inbox` returns the messages a session has not read yet, oldest first.",
+      "A loop out of rounds asks the leader that owns its nodes while that leader's session is live; the leader replies with `answer`, and if its session ends first, you are asked.",
+      "Your own messages (`ork chat`) come with M1d's next slice.",
     ],
     see: [
       {
@@ -141,24 +146,26 @@ export const NODES = [
         label: "The bus in the architecture",
       },
     ],
-    docs: [DESIGN.messaging],
+    docs: [DESIGN.messaging, BUS.bus, BUS.escalation, BUS.tests],
   },
   {
     id: "queue",
-    title: "Priority gate",
-    sub: "one queue per session",
+    title: "Inbox and notice",
+    sub: "notice, then pull",
     zone: "core",
     x: 880,
     y: 240,
-    status: "specified",
+    status: "built",
     pkg: "core",
+    src: "packages/core/src/run/bus.ts",
     summary:
-      "Holds messages for a session that is busy, and releases them between turns, highest priority first.",
+      "Each node's unread messages. A live session gets a one-line notice; it pulls the bodies with `read_inbox` when it chooses, so a busy session pays only for what it reads.",
     facts: [
-      "Order: your messages and decision answers, then node messages.",
-      "Nothing interrupts a tool call in progress.",
+      "A node that is not running gets the notice when its session starts.",
+      "A question to an owner is pushed in full, with its options.",
+      "Your messages and answers are pushed in full too (`ork chat`, specified).",
     ],
-    docs: [DESIGN.messaging],
+    docs: [DESIGN.messaging, BUS.bus, BUS.tests],
   },
   {
     id: "decisions",
@@ -194,36 +201,41 @@ export const NODES = [
   {
     id: "events",
     title: "Run events",
-    sub: "`msg.sent` · `decision.*`",
+    sub: "`message.*` · `decision.*`",
     zone: "core",
     x: 880,
     y: 840,
-    status: "specified",
+    status: "built",
     pkg: "core",
+    src: "packages/core/src/run/types.ts",
     summary:
-      "Messages and decisions are events like everything else, so the chat and decision history of a run can be replayed.",
-    facts: ["Chats in the UI are views over these events."],
+      "Messages, owner questions and decisions are events like everything else, stored in the event store, so a run's messages and decisions can be read back with `ork logs`.",
+    facts: [
+      "`message.sent`, `message.read`, `owner.asked`, `owner.answered`, `owner.unanswered`, `decision.opened`, `decision.answered`, `decision.withdrawn`.",
+      "Chats in the UI are views over these events (milestone 2).",
+    ],
     see: [
       { map: "feedback", node: "events", label: "Feedback from run events" },
     ],
-    docs: [DESIGN.messaging],
+    docs: [DESIGN.messaging, STORE.recorder, BUS.tests, STORE.tests],
   },
 
   // ── Runtime ──────────────────────────────────────────────────────────────
   {
     id: "sessionSend",
     title: "Session.send",
-    sub: "inject at a safe boundary",
+    sub: "at the next step",
     zone: "runtime",
     x: 1160,
     y: 240,
     status: "built",
     pkg: "runtime-claude",
     summary:
-      "Delivers a message into a running session as a new user message, between turns.",
+      "Delivers a message into a running session as a user message with `priority: next`: Claude Code shows it at the session's next step, even mid-turn, without interrupting a tool call.",
     facts: [
       "SDK: the next item of the session's input stream.",
       "CLI: a JSON line on `claude`'s stdin.",
+      "Checked by hand with `claude` 2.1.314: a message sent during a tool call reached the same turn.",
     ],
     docs: [RUNTIME.sdk, RUNTIME.cli, DESIGN.runtime],
   },
@@ -239,8 +251,9 @@ export const NODES = [
     summary:
       "How a session reaches the rest of the run: ordinary tool calls that Ork answers.",
     facts: [
-      "Built: `ask_user(question, options, recommended, context)`; the CLI answers it on the terminal until the decision queue.",
-      "Specified: `send_message(to, body)`, `read_inbox()`, `claim`, `release`. The report is structured output, not a tool.",
+      "Built: `ask_user(question, options, recommended, context)`, a decision answered on the terminal or with `ork decide`.",
+      "Built: `send_message(to, body)` and `read_inbox()` for nodes with someone to reach, and `answer(question, choice)` for leaders.",
+      "Specified: `claim`, `release`. The report is structured output, not a tool.",
       "Built, for leaders: `delegate([{ child, brief }])` and `spawn_worker([{ template, brief }])`, blocking until every child has reported.",
       "`feedback(kind, target, …)` reports what got in the way, capped per session.",
     ],
@@ -252,7 +265,13 @@ export const NODES = [
       },
       { map: "feedback", node: "tool", label: "The feedback tool" },
     ],
-    docs: [RUNTIME.tools, RUNTIME.delegate, DESIGN.messaging],
+    docs: [
+      RUNTIME.tools,
+      RUNTIME.delegate,
+      BUS.tools,
+      BUS.toolTests,
+      DESIGN.messaging,
+    ],
   },
   {
     id: "permission",
@@ -261,7 +280,7 @@ export const NODES = [
     zone: "runtime",
     x: 1160,
     y: 720,
-    status: "partial",
+    status: "built",
     pkg: "runtime-claude",
     summary:
       "When a session wants a tool its rules neither allow nor deny, the question comes to Ork instead of a terminal prompt, and becomes a decision.",
@@ -269,7 +288,7 @@ export const NODES = [
       "SDK: the `canUseTool` callback.",
       "CLI: `--permission-prompt-tool mcp__ork__permission`.",
       "The node's `tools.allow` and `tools.deny` decide first.",
-      "Built: both drivers route the prompt to the human channel; `ork run` asks on the terminal and denies when no one is there. Decisions arrive with the queue.",
+      "Both drivers route the prompt to the decision queue: allow or deny, from the terminal or `ork decide`; with no one at a terminal and not detached, it is denied.",
     ],
     docs: [RUNTIME.sdk, RUNTIME.mcp, CLI.human, DESIGN.runtime],
   },
@@ -286,7 +305,10 @@ export const NODES = [
     pkg: null,
     summary:
       "The owner of the reviewers. It can always message them and they it; it delegates, receives their reports and handles their escalations.",
-    facts: ["You can chat with it while it works."],
+    facts: [
+      "While it works, Ork asks it, not you, about a loop of the nodes it owns; it replies with `answer`.",
+      "You can chat with it while it works (specified).",
+    ],
     docs: [SCHEMA.example],
   },
   {

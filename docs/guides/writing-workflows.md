@@ -150,7 +150,8 @@ edges:
 
 A `control.join` outputs `statuses` (each input's `status`), `results` (each
 input's output) and `count`, made for conditions like
-`any(statuses, 'changes_requested')`.
+`any(statuses, 'changes_requested')`. Nodes also talk outside edges, through
+[messages](./leaders-and-delegation.md#messages-between-nodes).
 
 ## Loops
 
@@ -163,10 +164,11 @@ A cycle needs a bound, `maxRounds`, or `ork validate` rejects it:
   maxRounds: 2
 ```
 
-When a loop runs out of rounds, Ork asks you: stop the run (recommended), allow
-one more round, or carry on along the other edges. A worker sent round again
-starts fresh with the reviews as its new input; a leader resumes its own
-session.
+When a loop runs out of rounds, Ork asks
+([its leader](./leaders-and-delegation.md#a-leader-decides-about-its-own-loops)
+if working, else you): stop the run (recommended), allow one more round, or
+carry on along the other edges. A worker sent round again starts fresh with the
+reviews as its new input; a leader resumes its own session.
 
 ## Templates and conditions
 

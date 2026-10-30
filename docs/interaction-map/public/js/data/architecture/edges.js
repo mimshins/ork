@@ -227,10 +227,10 @@ export const EDGES = [
     from: "messageBus",
     to: "runtimeAdapter",
     kind: "local",
-    label: "`Session.send` between turns",
+    label: "`Session.send` at the next step",
     detail:
-      "A queued message reaches the receiving session only between turns, never in the middle of a tool call.",
-    status: "specified",
+      "A notice reaches the receiving session at its next step, mid-turn, never in the middle of a tool call.",
+    status: "built",
     docs: [DESIGN.messaging],
   },
 
@@ -367,8 +367,8 @@ export const EDGES = [
     kind: "local",
     label: "send_message · read_inbox",
     detail:
-      "Hands the message to the bus, which checks the address and queues it.",
-    status: "specified",
+      "Hands the message to the bus, which checks the address and keeps it in the receiver's inbox.",
+    status: "built",
     docs: [DESIGN.messaging],
   },
   {

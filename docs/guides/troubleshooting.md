@@ -61,8 +61,13 @@ shows the open ones, and `ork logs <run>` shows `? asks: …` where it stopped. 
 detached run always waits for `ork decide`. To end it, `ork stop <run>`.
 
 **A loop used all its rounds.** Ork asks whether to stop (recommended), allow
-one more round, or carry on along the other edges. Raise `maxRounds` if it
-happens often, or tighten what the reviewers ask for.
+one more round, or carry on along the other edges; the leader that owns the
+loop's nodes answers when it is still working. Raise `maxRounds` if it happens
+often, or tighten what the reviewers ask for.
+
+**A message was not sent.** `send_message` reaches only a node's owner, the
+nodes it owns, and its channels; the refusal lists whom it can reach. Add a
+`messages` channel to the workflow to connect two others.
 
 **A node fails with `status: fail` and no report.** The session ended without a
 valid report, often because it hit `maxTurns` or `budgetUsd`. Raise the limit,

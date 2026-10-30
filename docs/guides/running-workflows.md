@@ -61,7 +61,8 @@ Four things can ask you something during a run:
 - A **gate** (`human.gate`) in the workflow.
 - An agent calling **`ask_user`** when it needs a decision.
 - A **permission** prompt when an agent wants a tool that is not pre-approved.
-- A **loop** that used all its rounds: stop, one more round, or go on.
+- A **loop** that used all its rounds: stop, one more round, or go on (asked of
+  the leader that owns the loop instead, while it is working).
 
 For a question, the options are listed with the recommended one marked: press
 Enter to take it, or type a number or an option's id. For a permission, the

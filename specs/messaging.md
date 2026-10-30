@@ -1,21 +1,26 @@
 # Messaging, decisions and logs
 
-Status: **Partial**: `ask_user`, the permission prompt, `delegate` and
-`spawn_worker` are built
+Status: **Partial**: `ask_user`, the permission prompt, `delegate`,
+`spawn_worker`, `send_message`, `read_inbox` and `answer` are built
 ([tools/](../packages/runtime-claude/src/tools/index.ts)), and so are the
-[event store](./event-store.md), the decision queue, `ork decide`, `ork stop`
-and the run's socket ([control/](../packages/core/src/control/index.ts),
-[tests](../packages/core/test/control.test.ts)); the message bus is specified
-for M1d.
+[event store](./event-store.md), the decision queue, `ork decide`, `ork stop`,
+the run's socket ([control/](../packages/core/src/control/index.ts),
+[tests](../packages/core/test/control.test.ts)) and the message bus
+([bus.ts](../packages/core/src/run/bus.ts),
+[tests](../packages/core/test/bus.test.ts)); `claim`, `feedback` and user
+messages (`ork chat`) are specified for M1d.
 
-**Ork MCP tools.** One registry
-([tools/index.ts](../packages/runtime-claude/src/tools/index.ts)), one file per
-tool, binds the tools each session gets; both drivers serve what it binds. A
-node's report is its structured output, not a tool
+## Ork MCP tools
+
+One registry ([tools/index.ts](../packages/runtime-claude/src/tools/index.ts)),
+one file per tool, binds the tools each session gets; both drivers serve what it
+binds. A node's report is its structured output, not a tool
 ([runtime](./runtime.md#the-node-report)). Built tools are marked ✓:
 
-- `send_message(to, body)`
-- `read_inbox()`
+- ✓ `send_message(to, body)` and ✓ `read_inbox()`: sessions in a run with
+  someone to write to (see below).
+- ✓ `answer(question, choice)`: leaders in a run, for the questions Ork asks
+  them as owners.
 - ✓ `delegate({ tasks: [{ child, brief }] })`: leaders with declared children
   only ([scheduler](./scheduler.md#delegation)).
 - ✓ `spawn_worker({ tasks: [{ template, brief }] })`: leaders with a child
@@ -29,15 +34,40 @@ node's report is its structured output, not a tool
 Ork's own tools need no permission prompt, except `permission`, which is the
 prompt itself.
 
-**Message bus:**
+## Message bus
 
-- Lives in-process in `core/`.
-- Addressing is checked against the ownership tree plus the `messages` edges.
-- A message reaching a busy session is queued, with a priority gate: user
-  messages and decision answers first. It is injected between turns through
-  `Session.send`.
+One per run, in-process in `core/` ([bus.ts](../packages/core/src/run/bus.ts));
+the scheduler gives each leader and worker its `Mailbox` through the session's
+ports.
 
-**Decisions** ([queue.ts](../packages/core/src/control/queue.ts)):
+- **Who may write to whom:** a node's owner, the nodes it owns (and their
+  spawned instances), and the nodes it shares a `messages` channel with
+  ([workflow format](./workflow-format.md)). A spawned instance has its
+  template's owner and channels, both ways. Anything else is refused with the
+  reason and the list of whom the node can reach. Only nodes with someone to
+  write to get `send_message` and `read_inbox`, and their system prompt names
+  them.
+- **Notice, then pull:** a message lands in the recipient's inbox
+  (`message.sent` in the run's events, masked like every event). A live session
+  gets a one-line notice,
+  `[ork] 1 unread message from docs. Call read_inbox to read them.`, sent with
+  `Session.send` at its next step, mid-turn or not; a node that is not running
+  gets the notice when its session starts. `read_inbox` returns the unread
+  bodies, oldest first (`message.read`).
+- **Owner questions:** a loop out of rounds asks the owner of its nodes while
+  the owner's session is live ([scheduler](./scheduler.md#loops)). The owner
+  gets the whole question pushed
+  (`[ork] Question q1 for you, as the owner of fix: …`, with the options and the
+  recommended one) and replies with `answer`. A wrong option or someone else's
+  question is refused. When the owner's session ends first, the question goes to
+  the human as a decision (`owner.unanswered`).
+- **Priority:** user messages (`ork chat`, M1d) and answers are pushed in full;
+  agent messages only as notices, so a busy session pays for a body only when it
+  reads it.
+
+## Decisions
+
+The decision queue ([queue.ts](../packages/core/src/control/queue.ts)):
 
 - `ask_user` calls, permission prompts, `human.gate` nodes and exhausted loops
   all become decision records in the store (`<run>-<n>`, the question masked
@@ -58,14 +88,19 @@ prompt itself.
   decisions of live runs and answers them; the UI inbox (M2) reads the same
   table.
 
-**Event store:** every run event, in SQLite at `~/.ork/state.db` with a JSONL
-copy per run; logs, the system monitor, chats and replay are all views over it.
-See [Event store](./event-store.md).
+## Event store
 
-**Reaching a live run** ([control.ts](../packages/core/src/control/control.ts),
-[ADR-024](../decisions/ADR-024-event-store.md)): `ork decide` and `ork stop` in
-another terminal write their answer or command to the store; the run looks at
-the store every second, and at once when woken on its socket.
+Every run event, in SQLite at `~/.ork/state.db` with a JSONL copy per run; logs,
+the system monitor, chats and replay are all views over it. See
+[Event store](./event-store.md).
+
+## Reaching a live run
+
+`ork decide` and `ork stop` in another terminal
+([control.ts](../packages/core/src/control/control.ts),
+[ADR-024](../decisions/ADR-024-event-store.md)) write their answer or command to
+the store; the run looks at the store every second, and at once when woken on
+its socket.
 
 - **The socket:** `~/.ork/sockets/<run>.sock`, one JSON message per line:
   `{"type":"wake"}` makes the run look at the store now;
@@ -78,5 +113,7 @@ the store every second, and at once when woken on its socket.
   events, then `run.finished` with `interrupted`). `ork chat` (M1d) adds
   messages.
 
-**Chat:** `ork chat <run> <node>` (or the UI chat panel) sends a user message to
-a node's live session or resumes a finished one with `resume`.
+## Chat
+
+`ork chat <run> <node>` (or the UI chat panel) sends a user message to a node's
+live session or resumes a finished one with `resume`.

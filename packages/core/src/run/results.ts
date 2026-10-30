@@ -1,16 +1,18 @@
 /**
  * @file Small helpers for the scheduler's results: pass-through and failure
- *   results, run-summary entries, `node.finished` events, and the declared
- *   nodes `run.started` lists.
+ *   results, run-summary entries, `node.finished` events, the declared nodes
+ *   `run.started` lists, and closing the workspace at the end.
  */
 
 import type { CompiledGraph } from "../graph/types.ts";
 import type {
+  KeptWorktree,
   NodeOutput,
   NodeResult,
   NodeSummary,
   RunEvent,
   RunNodeInfo,
+  Workspace,
 } from "./types.ts";
 
 /** Control nodes pass their input through; a join's input is its output. */
@@ -76,3 +78,13 @@ export const declaredNodes = (graph: CompiledGraph): RunNodeInfo[] =>
       ? { id, type: node.type }
       : { id, type: node.type, parent: node.parent },
   );
+
+/** Closes the run's worktrees; a failure is one more reason, not a crash. */
+export const closeWorkspace = (
+  workspace: Workspace | undefined,
+  reasons: string[],
+): Promise<KeptWorktree[]> =>
+  (workspace?.close() ?? Promise.resolve([])).catch((error: unknown) => {
+    reasons.push(`cleaning up worktrees: ${String(error)}`);
+    return [];
+  });

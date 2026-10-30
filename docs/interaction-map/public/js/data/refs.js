@@ -127,6 +127,26 @@ export const CONTROL = {
   cliTests: d("packages/cli/test/control.test.ts", "Tests: decide and stop"),
 };
 
+export const BUS = {
+  bus: d("packages/core/src/run/bus.ts", "Code: the message bus"),
+  escalation: d(
+    "packages/core/src/run/escalation.ts",
+    "Code: loops out of rounds, asking a live owner first",
+  ),
+  tests: d(
+    "packages/core/test/bus.test.ts",
+    "Tests: addressing, notices and owner questions",
+  ),
+  tools: d(
+    "packages/runtime-claude/src/tools/messages.ts",
+    "Code: send_message, read_inbox and answer",
+  ),
+  toolTests: d(
+    "packages/runtime-claude/test/messages.test.ts",
+    "Tests: the message tools",
+  ),
+};
+
 export const ENGINE = {
   scheduler: d("packages/core/src/run/scheduler.ts", "Code: the scheduler"),
   routing: d(

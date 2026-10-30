@@ -2,18 +2,18 @@
  * @file The scheduler: runs a compiled workflow to the end. It starts entries,
  *   runs each activation through its node type's executor, routes outputs along
  *   edges (`routing.ts`), bounds loops (`escalation.ts`), runs the children a
- *   leader delegates to (`delegation.ts`), and enforces the run's budget and
- *   concurrency (`slots.ts`). Specified in `specs/scheduler.md`.
+ *   leader delegates to (`delegation.ts`), carries messages between sessions
+ *   (`bus.ts`), and enforces the run's budget and concurrency (`slots.ts`).
+ *   Specified in `specs/scheduler.md`.
  */
-
-import { randomUUID } from "node:crypto";
-import path from "node:path";
 
 import { isClaudeNode } from "@krapht/ork-schema";
 
+import { createBus } from "./bus.ts";
 import { createOwnership, type DelegationHooks } from "./delegation.ts";
 import { createLoops } from "./escalation.ts";
 import {
+  closeWorkspace,
   declaredNodes,
   failure,
   finishedEvent,
@@ -22,7 +22,7 @@ import {
   summaryOf,
 } from "./results.ts";
 import { createRouter } from "./router.ts";
-import { runScope } from "./scope.ts";
+import { runPlace, runScope } from "./scope.ts";
 import { createSlots } from "./slots.ts";
 import type {
   Activation,
@@ -41,11 +41,9 @@ export const DEFAULT_CONCURRENCY = 4;
 
 export const startRun = (options: RunOptions): RunHandle => {
   const { graph, onEvent } = options;
-  const runId = options.runId ?? randomUUID().slice(0, 8);
+  const { runId, runDir } = runPlace(options);
   const limits = graph.workflow.limits ?? {};
   const abort = new AbortController();
-  const runDir =
-    options.runDir ?? path.join(options.cwd, ".ork", "runs", runId);
 
   const outputs: Record<string, NodeOutput> = {};
   const rounds = new Map<string, number>();
@@ -76,8 +74,10 @@ export const startRun = (options: RunOptions): RunHandle => {
     queue.length = 0;
   };
 
+  const bus = createBus({ graph, onEvent });
   const loops = createLoops({
     human: options.human,
+    bus,
     onEvent,
     activate: (id, input) => {
       queue.push({ id, input });
@@ -103,12 +103,7 @@ export const startRun = (options: RunOptions): RunHandle => {
   });
 
   const close = async (): Promise<void> => {
-    const worktrees = await (
-      options.workspace?.close() ?? Promise.resolve([])
-    ).catch((error: unknown) => {
-      reasons.push(`cleaning up worktrees: ${String(error)}`);
-      return [];
-    });
+    const worktrees = await closeWorkspace(options.workspace, reasons);
     const status = stopped ?? (reasons.length > 0 ? "failed" : "succeeded");
     const result: RunResult = {
       runId,
@@ -173,6 +168,7 @@ export const startRun = (options: RunOptions): RunHandle => {
       budgetLeftUsd:
         limits.budgetUsd === undefined ? undefined : limits.budgetUsd - spent,
       human: options.human,
+      mailbox: bus.mailbox(id, activation.template),
       emit: event => {
         onEvent({ type: "node.event", id, event });
       },

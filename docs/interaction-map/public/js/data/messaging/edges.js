@@ -28,7 +28,7 @@ export const EDGES = [
     kind: "human",
     label: "answers",
     detail: "Pick an option, or accept the recommended one.",
-    status: "specified",
+    status: "built",
   },
   {
     id: "you-inbox",
@@ -49,7 +49,7 @@ export const EDGES = [
     to: "bus",
     kind: "local",
     label: "user message",
-    detail: "Goes through the bus like any message, at the highest priority.",
+    detail: "Goes through the bus, pushed in full rather than as a notice.",
     status: "specified",
     docs: [DESIGN.messaging],
   },
@@ -83,7 +83,7 @@ export const EDGES = [
     label: "may A talk to B?",
     detail:
       "Checked against the ownership tree and the workflow's `messages:` channels before anything is queued.",
-    status: "specified",
+    status: "built",
     docs: [DESIGN.messaging],
   },
   {
@@ -91,19 +91,20 @@ export const EDGES = [
     from: "bus",
     to: "queue",
     kind: "local",
-    label: "enqueue for the receiver",
-    detail: "Logged as `msg.sent`, then queued with its priority.",
-    status: "specified",
+    label: "into the receiver's inbox",
+    detail:
+      "Logged as `message.sent`, then kept in the receiver's inbox until it reads it.",
+    status: "built",
   },
   {
     id: "queue-send",
     from: "queue",
     to: "sessionSend",
     kind: "local",
-    label: "between turns",
+    label: "a one-line notice",
     detail:
-      "When the receiving session finishes a turn, its queue is drained in priority order.",
-    status: "specified",
+      "Sent at once to a live session (`[ork] 1 unread message from security…`), or when the receiver's session starts.",
+    status: "built",
     docs: [DESIGN.messaging],
   },
   {
@@ -112,8 +113,9 @@ export const EDGES = [
     to: "events",
     kind: "event",
     label: "opened · answered",
-    detail: "With who asked, what was chosen, and whether a timeout chose it.",
-    status: "specified",
+    detail:
+      "`decision.opened`, `decision.answered` (with who answered) and `decision.withdrawn`.",
+    status: "built",
   },
 
   // ── Runtime and sessions ─────────────────────────────────────────────────
@@ -123,8 +125,9 @@ export const EDGES = [
     to: "builderS",
     kind: "process",
     label: "new user message",
-    detail: "Written to the session's input stream.",
-    status: "specified",
+    detail:
+      "Written to the session's input stream with `priority: next`, shown at its next step.",
+    status: "built",
     docs: [DESIGN.runtime],
   },
   {
@@ -134,7 +137,7 @@ export const EDGES = [
     kind: "process",
     label: "new user message",
     detail: "Written to the session's input stream.",
-    status: "specified",
+    status: "built",
     via: [
       [1405, 286],
       [1405, 736],
@@ -158,7 +161,7 @@ export const EDGES = [
     label: "`send_message`",
     detail:
       "An ordinary tool call; the result says whether the message was accepted.",
-    status: "specified",
+    status: "built",
     docs: [DESIGN.messaging],
   },
   {
@@ -168,7 +171,7 @@ export const EDGES = [
     kind: "mcp",
     label: "`ask_user`",
     detail: "The call stays open until you answer; its result is your answer.",
-    status: "specified",
+    status: "built",
   },
   {
     id: "code-permission",
@@ -177,7 +180,7 @@ export const EDGES = [
     kind: "process",
     label: "may I run this?",
     detail: "Claude Code asks before a tool call its rules do not settle.",
-    status: "specified",
+    status: "built",
     docs: [DESIGN.runtime],
   },
   {
@@ -188,7 +191,7 @@ export const EDGES = [
     label: "send_message · read_inbox",
     detail:
       "Hands the message to the bus, or reads the session's unread messages.",
-    status: "specified",
+    status: "built",
     via: [
       [1130, 516],
       [1130, 420],
@@ -202,7 +205,7 @@ export const EDGES = [
     kind: "local",
     label: "question ⇄ answer",
     detail: "`ask_user` opens a decision and waits for it.",
-    status: "specified",
+    status: "built",
     both: true,
   },
   {
@@ -213,7 +216,7 @@ export const EDGES = [
     label: "prompt ⇄ allow or deny",
     detail:
       "The permission request becomes a decision; your answer allows or denies the tool call.",
-    status: "specified",
+    status: "built",
     both: true,
     docs: [DESIGN.messaging],
   },

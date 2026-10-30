@@ -21,7 +21,12 @@ import {
 import { parseTemplate, renderTemplate } from "../expr/evaluate.ts";
 import { practiceInstructions, resolvePractices } from "../practices/index.ts";
 import { reportSchemaFor } from "../runtime/report.ts";
-import type { Ownership, SessionSpec, ToolRules } from "../runtime/types.ts";
+import type {
+  Mailbox,
+  Ownership,
+  SessionSpec,
+  ToolRules,
+} from "../runtime/types.ts";
 import { runScope } from "./scope.ts";
 import type { Brief, Checkout, NodeOutput } from "./types.ts";
 
@@ -48,6 +53,8 @@ export type PlanOptions = {
   template?: string;
   /** A leader's children, when the run lets it delegate. */
   ownership?: Ownership;
+  /** The node's place on the run's message bus. */
+  mailbox?: Mailbox;
   /** The workflow file's folder, which skill and context paths start from. */
   workflowDir?: string;
   /** The project's root; references may not leave it. Default: `cwd`. */
@@ -100,12 +107,35 @@ export const ownershipInstructions = (
   return lines;
 };
 
+/** Tells a session whom it can message, and an owner that it may be asked. */
+export const mailboxInstructions = (
+  mailbox: Mailbox,
+  owner: boolean,
+): string[] => {
+  const peers = mailbox.peers();
+  const lines =
+    peers.length === 0
+      ? []
+      : [
+          `- You can message ${peers.map(p => `\`${p}\``).join(", ")} with \`send_message\`. Ork tells you when a message arrives; read it with \`read_inbox\`.`,
+        ];
+  if (owner) {
+    lines.push(
+      "- Ork may ask you about a node you own, such as a loop out of rounds; reply with `answer`.",
+    );
+  }
+  return lines;
+};
+
 /** Ork's own instructions for a node, kept short: they cost tokens every turn. */
 export const harnessInstructions = (
   workflow: Workflow,
   id: string,
   node: ClaudeNode,
-  options: Pick<PlanOptions, "checkout" | "template" | "ownership"> = {},
+  options: Pick<
+    PlanOptions,
+    "checkout" | "template" | "ownership" | "mailbox"
+  > = {},
 ): string => {
   const { checkout, template } = options;
   const extra = Object.keys(node.output?.schema ?? {});
@@ -123,6 +153,11 @@ export const harnessInstructions = (
   if (checkout !== undefined) lines.push(checkoutInstructions(checkout));
   if (options.ownership !== undefined) {
     lines.push(...ownershipInstructions(options.ownership, checkout));
+  }
+  if (options.mailbox !== undefined) {
+    lines.push(
+      ...mailboxInstructions(options.mailbox, options.ownership !== undefined),
+    );
   }
   if (node.instructions !== undefined) lines.push("", node.instructions);
   return lines.join("\n");

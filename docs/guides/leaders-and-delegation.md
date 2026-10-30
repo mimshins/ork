@@ -78,6 +78,30 @@ round a loop again, or delegated to again by its own owner, it **resumes** its
 last session with only the new input as the next message. It keeps its plan and
 its prompt cache, which saves tokens on long jobs.
 
+## Messages between nodes
+
+Nodes in a run can write to each other while they work, with `send_message`: a
+node to its owner, an owner to the nodes it owns (and the workers it spawned),
+and any two nodes you connect with a channel:
+
+```yaml
+messages:
+  - between: [security, code]
+```
+
+Anyone else is refused, and the agent is told whom it can write to. The
+recipient gets a one-line notice at its next step, even in the middle of a task,
+and reads the message with `read_inbox`; a node that is not running sees it when
+it next starts. So a reviewer can warn the coder about something before its
+report, without the leader passing it on.
+
+## A leader decides about its own loops
+
+When a loop runs out of rounds and the leader that owns its nodes is still
+working, Ork asks the leader, not you: stop, one more round, or go on. The
+leader answers with its `answer` tool. If its session ends before it answers,
+the question comes to you as usual.
+
 ## Concurrency and budget
 
 - While a leader waits for its children, its session slot goes to them, so a run
@@ -91,7 +115,8 @@ The run transcript marks a delegated run with its owner
 (`tests │ claude.worker, for builder`), and the run summary lists spawned
 workers by their instance ids. `ork tree` draws the ownership tree, with spawned
 workers under the leader that spawned them, and `ork logs --node <id>` replays
-one node's part.
+one node's part. Messages show as `code │ ✉ to docs: …`, and a question to a
+leader as `lead │ ? asked as the owner of fix: …`.
 
 ## Tips
 

@@ -149,7 +149,7 @@ export const NODES = [
       "Runs at most `limits.concurrency` sessions at once (4 here).",
       "Stops the run when spend reaches `limits.budgetUsd` ($20 here).",
       "An edge without `when:` fires only on success; a skipped branch skips everything that only it feeds, so the join never waits on it.",
-      "When a loop edge has used its `maxRounds`, you are asked: stop, one more round, or go on.",
+      "When a loop edge has used its `maxRounds`, you are asked: stop, one more round, or go on. A live leader that owns the loop's nodes is asked first; here the builder's session has ended, so it is you.",
       "Runs the children a leader delegates to, on the slot the waiting leader lends them.",
     ],
     see: [

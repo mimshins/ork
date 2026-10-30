@@ -133,6 +133,7 @@ export const claudeExecutor =
     if (context.ownership !== undefined) {
       planOptions.ownership = context.ownership;
     }
+    if (context.mailbox !== undefined) planOptions.mailbox = context.mailbox;
     const plan = planNodeSession(context.workflow, context.id, planOptions);
     if (!plan.ok) {
       return {
@@ -145,6 +146,7 @@ export const claudeExecutor =
     const runtime = await options.runtimeFor(options.driver ?? plan.driver);
     const ports: SessionPorts = { human: context.human };
     if (context.ownership !== undefined) ports.ownership = context.ownership;
+    if (context.mailbox !== undefined) ports.mailbox = context.mailbox;
     const session = runtime.start(spec, ports);
     context.signal.addEventListener(
       "abort",
@@ -153,10 +155,18 @@ export const claudeExecutor =
       },
       { once: true },
     );
+    // Notices of new messages and owner questions go into the live session.
+    const disconnect = context.mailbox?.connect(notice => {
+      session.send(notice);
+    });
     let outcome: SessionOutcome | null = null;
-    for await (const event of session.events) {
-      if (event.type === "session.finished") outcome = event.outcome;
-      context.emit(event);
+    try {
+      for await (const event of session.events) {
+        if (event.type === "session.finished") outcome = event.outcome;
+        context.emit(event);
+      }
+    } finally {
+      disconnect?.();
     }
     return resultOf(outcome);
   };

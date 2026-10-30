@@ -38,11 +38,13 @@ const STDERR_LINES = 20;
  */
 export const ORK_TOOL_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 
-const userLine = (text: string): string =>
+/** A later message goes in at the next step, even mid-turn. */
+const userLine = (text: string, later = false): string =>
   `${JSON.stringify({
     type: "user",
     message: { role: "user", content: text },
     parent_tool_use_id: null,
+    ...(later ? { priority: "next" } : {}),
   })}\n`;
 
 /**
@@ -122,8 +124,9 @@ export const createCliRuntime = (
 ): ClaudeRuntime => ({
   driver: "cli",
   start: (spec, ports): Session => {
-    const pending: string[] = [spec.prompt];
-    let write: ((text: string) => void) | undefined;
+    // Stream-json lines, written once the process is up.
+    const pending: string[] = [userLine(spec.prompt)];
+    let write: ((line: string) => void) | undefined;
     let stop: (() => void) | undefined;
 
     const events = async function* (): AsyncGenerator<RuntimeEvent> {
@@ -150,13 +153,13 @@ export const createCliRuntime = (
         stderr.splice(0, Math.max(0, stderr.length - STDERR_LINES));
       });
 
-      write = text => {
-        if (child.stdin.writable) child.stdin.write(userLine(text));
+      write = line => {
+        if (child.stdin.writable) child.stdin.write(line);
       };
       stop = () => {
         child.kill("SIGINT");
       };
-      for (const text of pending.splice(0)) write(text);
+      for (const line of pending.splice(0)) write(line);
 
       let finished = false;
       try {
@@ -191,8 +194,9 @@ export const createCliRuntime = (
     return {
       events: events(),
       send: text => {
-        if (write === undefined) pending.push(text);
-        else write(text);
+        const line = userLine(text, true);
+        if (write === undefined) pending.push(line);
+        else write(line);
       },
       interrupt: () => {
         stop?.();

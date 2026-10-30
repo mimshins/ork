@@ -11,6 +11,7 @@ import type { CompiledGraph } from "../graph/types.ts";
 import type {
   DecisionChoice,
   HumanChannel,
+  Mailbox,
   Ownership,
   RuntimeEvent,
   SessionUsage,
@@ -56,6 +57,8 @@ export type ExecuteContext = {
   resume?: string;
   /** For a leader: its children, through `delegate` and `spawn_worker`. */
   ownership?: Ownership;
+  /** The node's place on the run's message bus. */
+  mailbox?: Mailbox;
   cwd: string;
   /** The git checkout the node works in, when the run uses worktrees. */
   checkout?: Checkout;
@@ -201,6 +204,28 @@ export type RunEvent =
       by: AnsweredBy;
     }
   | { type: "decision.withdrawn"; node: string; decision: string }
+  /** `node` wrote to `to` on the message bus; `message` is its number. */
+  | {
+      type: "message.sent";
+      node: string;
+      to: string;
+      message: number;
+      body: string;
+    }
+  | { type: "message.read"; node: string; ids: number[] }
+  /** Ork asked `node`, the owner of `about`, a question (a loop out of rounds). */
+  | {
+      type: "owner.asked";
+      node: string;
+      about: string;
+      question: string;
+      text: string;
+      options: DecisionChoice[];
+      recommended?: string;
+    }
+  | { type: "owner.answered"; node: string; question: string; answer: string }
+  /** The owner's session ended first; the question goes to the human. */
+  | { type: "owner.unanswered"; node: string; question: string }
   /** Another process asked the run to do something, e.g. `ork stop`. */
   | { type: "run.command"; command: RunCommand }
   | { type: "run.finished"; result: RunResult };

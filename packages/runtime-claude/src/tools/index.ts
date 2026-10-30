@@ -5,6 +5,7 @@
 
 import { askUserTool } from "./ask-user.ts";
 import { delegateTool, spawnWorkerTool } from "./delegate.ts";
+import { answerTool, readInboxTool, sendMessageTool } from "./messages.ts";
 import { permissionTool } from "./permission.ts";
 import {
   type BoundTool,
@@ -21,6 +22,9 @@ export const ORK_TOOLS: readonly OrkTool[] = [
   permissionTool,
   delegateTool,
   spawnWorkerTool,
+  sendMessageTool,
+  readInboxTool,
+  answerTool,
 ];
 
 /** The tools one session gets. */

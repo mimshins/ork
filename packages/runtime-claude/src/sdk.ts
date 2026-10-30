@@ -40,10 +40,12 @@ export const sdkCredentials = (env: Env): string | null => {
 export const NO_SDK_CREDENTIALS =
   "the sdk driver needs ANTHROPIC_API_KEY (or CLAUDE_CODE_USE_BEDROCK=1 / CLAUDE_CODE_USE_VERTEX=1); use --driver cli to run with your own claude login";
 
-const userMessage = (text: string): SDKUserMessage => ({
+/** A later message goes in at the next step, even mid-turn. */
+const userMessage = (text: string, later = false): SDKUserMessage => ({
   type: "user",
   message: { role: "user", content: text },
   parent_tool_use_id: null,
+  ...(later ? { priority: "next" } : {}),
 });
 
 const definedEnv = (env: Env): Record<string, string> =>
@@ -141,7 +143,7 @@ export const createSdkRuntime = (env: Env = process.env): ClaudeRuntime => ({
     return {
       events: events(),
       send: text => {
-        input.push(userMessage(text));
+        input.push(userMessage(text, true));
       },
       interrupt: async () => {
         await current?.interrupt();

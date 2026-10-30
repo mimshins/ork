@@ -1,14 +1,20 @@
 /**
  * @file Tests for recorded runs: `ork run` writes to the store, `ork logs`
- *   replays the same transcript, `ork tree` and `ork ps` read it back, and a
- *   workflow whose tool programs are missing does not start.
+ *   replays the same transcript, `ork tree` and `ork ps` read it back, a
+ *   workflow whose tool programs are missing does not start, and messages and
+ *   owner questions read well in the transcript.
  */
 
 import { mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { type HumanChannel, openStore, runTree } from "@krapht/ork-core";
+import {
+  type HumanChannel,
+  openStore,
+  type RunEvent,
+  runTree,
+} from "@krapht/ork-core";
 import { createCliRuntime } from "@krapht/ork-runtime-claude";
 import { describe, expect, it } from "vitest";
 
@@ -18,6 +24,7 @@ import {
   findRun,
   followRun,
   formatRuns,
+  formatRunEvent,
   formatTree,
   runWorkflowFile,
   type RunWorkflowOptions,
@@ -190,6 +197,42 @@ describe("run lookup and formatting", () => {
       "42s",
       "3m12s",
       "1h05m",
+    ]);
+  });
+
+  it("prints messages and owner questions with the node they are from", () => {
+    const lines = (
+      [
+        {
+          type: "message.sent",
+          node: "docs",
+          to: "code",
+          message: 1,
+          body: "API renamed\nsee docs/api.md",
+        },
+        { type: "message.read", node: "code", ids: [1] },
+        {
+          type: "owner.asked",
+          node: "lead",
+          about: "fix",
+          question: "q1",
+          text: "Again?",
+          options: [{ id: "stop" }],
+        },
+        {
+          type: "owner.answered",
+          node: "lead",
+          question: "q1",
+          answer: "stop",
+        },
+        { type: "owner.unanswered", node: "lead", question: "q2" },
+      ] satisfies RunEvent[]
+    ).flatMap(event => formatRunEvent(event, 4, new Map()));
+    expect(lines).toEqual([
+      "docs │ ✉ to code: API renamed",
+      "lead │ ? asked as the owner of fix: Again? (q1)",
+      "lead │ → stop (owner)",
+      "lead │ → its session ended first; asking you",
     ]);
   });
 });

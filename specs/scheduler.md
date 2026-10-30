@@ -61,10 +61,14 @@ A join outputs `statuses` (the `status` of each input that ran, in edge order),
 - Every cycle has a `maxRounds` edge (the compiler checks it); removing those
   edges leaves a DAG, and dead paths only travel along the DAG.
 - A loop edge whose condition holds is taken until it has been taken `maxRounds`
-  times in the run. Then the run emits `loop.exhausted` and asks the
-  `HumanChannel` (a decision): **stop** the run (recommended, and the answer
-  when no one is at the terminal), allow **one more round**, or go **onward**
-  along the other edges.
+  times in the run. Then the run emits `loop.exhausted` and asks: **stop** the
+  run (recommended, and the answer when no one is at the terminal), allow **one
+  more round**, or go **onward** along the other edges.
+- **Who is asked** ([escalation.ts](../packages/core/src/run/escalation.ts)):
+  the owner of the loop's nodes (of `from`, else of `to`) while its session is
+  live, through the [message bus](./messaging.md#message-bus); the node runs in
+  the flow, so its owner is not waiting on it. Otherwise, or when the owner's
+  session ends before it answers, the `HumanChannel` gets it as a decision.
 - A re-entered **worker** starts a fresh session whose brief ends with a
   `## Round n` section carrying its input (e.g. the join's `statuses` and
   `results`), so reviews stay unbiased.
@@ -140,17 +144,25 @@ From `@krapht/ork-nodes` ([index.ts](../packages/nodes/src/index.ts)):
 `onEvent` receives every change; `ork run` stores each one in the
 [event store](./event-store.md) before printing it:
 
-| Event            | When                                                                   |
-| ---------------- | ---------------------------------------------------------------------- |
-| `run.started`    | the run starts: id, workflow, entries, every declared node and owner   |
-| `node.started`   | an activation starts: id, type, round, and `owner` when delegated      |
-| `node.event`     | a runtime event from the node's session or tool                        |
-| `node.finished`  | an activation ends: ok, output, usage, error                           |
-| `node.skipped`   | a dead path skips the node                                             |
-| `edge.taken`     | an edge is taken                                                       |
-| `loop.exhausted` | a loop edge is out of rounds                                           |
-| `worktree`       | a worktree is created, committed to, merged, conflicts, or removed     |
-| `run.finished`   | the run ends: `succeeded`, `failed`, `budget_exhausted`, `interrupted` |
+| Event              | When                                                                   |
+| ------------------ | ---------------------------------------------------------------------- |
+| `run.started`      | the run starts: id, workflow, entries, every declared node and owner   |
+| `node.started`     | an activation starts: id, type, round, and `owner` when delegated      |
+| `node.event`       | a runtime event from the node's session or tool                        |
+| `node.finished`    | an activation ends: ok, output, usage, error                           |
+| `node.skipped`     | a dead path skips the node                                             |
+| `edge.taken`       | an edge is taken                                                       |
+| `loop.exhausted`   | a loop edge is out of rounds                                           |
+| `worktree`         | a worktree is created, committed to, merged, conflicts, or removed     |
+| `message.sent`     | a node wrote to another on the message bus: number, recipient, body    |
+| `message.read`     | a node read its inbox: the message numbers                             |
+| `owner.asked`      | the run asked a live owner about a loop of a node it owns              |
+| `owner.answered`   | the owner answered with `answer`                                       |
+| `owner.unanswered` | the owner's session ended first; the human is asked instead            |
+| `run.finished`     | the run ends: `succeeded`, `failed`, `budget_exhausted`, `interrupted` |
+
+The decision queue adds `decision.opened`, `decision.answered`,
+`decision.withdrawn` and `run.command` ([messaging](./messaging.md)).
 
 The run result lists each node (runs, ok, last output, cost), the total cost,
 the reasons the run did not succeed, and the worktrees it left for the user.

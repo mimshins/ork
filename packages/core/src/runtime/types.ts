@@ -116,7 +116,10 @@ export type RuntimeEvent =
 
 export type Session = {
   events: AsyncIterable<RuntimeEvent>;
-  /** Queues a user message; it is delivered between turns. */
+  /**
+   * Queues a user message; Claude Code shows it at the next point between steps
+   * (`priority: "next"`), mid-turn or not.
+   */
   send: (text: string) => void;
   interrupt: () => Promise<void>;
 };
@@ -157,11 +160,44 @@ export type Ownership = {
   spawn: (tasks: SpawnTask[]) => Promise<Delegation>;
 };
 
-/** What a session can reach besides its spec: the human, and its children. */
+/** A message in a node's inbox. */
+export type InboxMessage = { id: number; from: string; body: string };
+
+export type SendResult =
+  | { ok: true; delivered: "now" | "queued" }
+  | { ok: false; error: string };
+
+/**
+ * A node's place on the run's message bus: whom it may write to, its inbox, and
+ * the owner questions it answers. The bus pushes a one-line notice into a live
+ * session; the session pulls the bodies with `read`.
+ */
+export type Mailbox = {
+  /** Its owner, its children (and their spawned instances), its channels. */
+  peers: () => string[];
+  send: (to: string, body: string) => SendResult;
+  /** Unread messages, oldest first; they count as read after this. */
+  read: () => InboxMessage[];
+  /** Answers a question Ork asked this node as an owner. */
+  answer: (
+    question: string,
+    choice: string,
+  ) => { ok: true } | { ok: false; error: string };
+  /**
+   * Connects the node's live session: notices go to `deliver` until the
+   * returned function disconnects it. Questions still open then go back to
+   * whoever asked, unanswered.
+   */
+  connect: (deliver: (text: string) => void) => () => void;
+};
+
+/** What a session can reach besides its spec: the human, its children, peers. */
 export type SessionPorts = {
   human: HumanChannel;
   /** Only for a leader inside a run. */
   ownership?: Ownership;
+  /** Only for a leader or worker inside a run. */
+  mailbox?: Mailbox;
 };
 
 export type ClaudeRuntime = {

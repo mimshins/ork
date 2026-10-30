@@ -6,6 +6,7 @@
  */
 
 import {
+  BUS,
   CLI,
   CONTEXT,
   CORE,
@@ -265,21 +266,22 @@ export const NODES = [
   {
     id: "messageBus",
     title: "Message bus",
-    sub: "checked addressing · priority",
+    sub: "checked addressing · notices",
     zone: "core",
     x: 880,
     y: 480,
-    status: "specified",
+    status: "built",
     pkg: "core",
+    src: "packages/core/src/run/bus.ts",
     summary:
-      "Carries messages between node sessions. It checks every address against the ownership tree and the `messages:` channels, and queues a message until the receiving session is between turns.",
+      "Carries messages between node sessions. It checks every address against the ownership tree and the `messages:` channels, keeps each message in the receiver's inbox, and tells a live session with a one-line notice.",
     facts: [
-      "Parent and child may always talk; siblings only over a declared channel.",
-      "User messages and decision answers go first.",
+      "Owner and child may always talk; others only over a declared channel.",
+      "A loop out of rounds asks its live owning leader before you.",
       "Every message is an event.",
     ],
     see: [{ map: "messaging", node: "bus", label: "The bus in detail" }],
-    docs: [DESIGN.messaging],
+    docs: [DESIGN.messaging, BUS.bus, BUS.tests],
   },
   {
     id: "decisionQueue",
