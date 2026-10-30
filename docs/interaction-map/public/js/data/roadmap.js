@@ -71,7 +71,7 @@ export const MILESTONES = [
         status: "done",
         detail:
           "An interactive map of how Ork works, with an honest status on every card, checked against the code.",
-        commits: ["8f1ddd3", "81b9d83"],
+        commits: ["8f1ddd3", "81b9d83", "5f50dca", "5652c4d"],
         date: "2026-10-30",
         docs: ["docs/interaction-map/README.md"],
       },
@@ -219,18 +219,22 @@ export const MILESTONES = [
       {
         id: "context-compiler",
         title: "Context compiler",
-        status: "next",
+        status: "done",
         detail:
-          "The five layers and their precedence, a per-run plugin directory, the AGENTS.md rule, and `ref.skill` diagnostics.",
-        docs: ["specs/context.md"],
+          "The layers and their precedence, Ork's skills as an `ork` plugin per node, project skills switched off when shadowed, and `ref.skill` diagnostics.",
+        commits: ["8e990c2"],
+        date: "2026-10-30",
+        docs: ["specs/context.md", "decisions/ADR-023-context-compiler.md"],
       },
       {
         id: "context-explain",
         title: "`ork context explain`",
-        status: "planned",
+        status: "done",
         detail:
           "Prints a node's resolved layer stack: where each item came from, what was shadowed, and estimated tokens.",
-        docs: ["specs/context.md"],
+        commits: ["8e990c2"],
+        date: "2026-10-30",
+        docs: ["specs/cli.md#context"],
       },
     ],
   },
@@ -242,9 +246,10 @@ export const MILESTONES = [
       {
         id: "installer",
         title: "Standalone binaries and installer",
-        status: "planned",
+        status: "waiting",
         detail:
-          "macOS binaries on each release, `curl -fsSL …/install.sh | sh` to install them with no Node, and `ork upgrade`.",
+          "macOS binaries on each release, `curl -fsSL …/install.sh | sh` to install them with no Node, and `ork upgrade`. Waits on RFC-002's acceptance.",
+        commits: ["eb664c7"],
         docs: ["rfcs/active/RFC-002-standalone-binaries-and-installer.md"],
       },
       {
@@ -265,7 +270,7 @@ export const MILESTONES = [
       {
         id: "event-store",
         title: "Event store, `ork logs`, `ps`, `tree`",
-        status: "planned",
+        status: "next",
         detail:
           "Every run event in SQLite and a JSONL file per run, and the commands that replay them.",
         docs: ["specs/messaging.md"],
