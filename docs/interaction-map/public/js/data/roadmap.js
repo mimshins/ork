@@ -304,17 +304,21 @@ export const MILESTONES = [
       {
         id: "bus",
         title: "Message bus",
-        status: "next",
+        status: "done",
         detail:
-          "`send_message` and `read_inbox` along the ownership tree and declared channels, delivered between turns.",
-        docs: ["specs/messaging.md"],
+          "`send_message` and `read_inbox` along the ownership tree and declared channels: a one-line notice at the recipient's next step, mid-turn, and the body pulled when it reads.",
+        commits: ["7715239"],
+        date: "2026-10-30",
+        docs: ["specs/messaging.md", "decisions/ADR-025-message-bus.md"],
       },
       {
         id: "owner-escalation",
         title: "Escalation to a live owner",
-        status: "planned",
+        status: "done",
         detail:
-          "A loop out of rounds tells its owner when the owner's session is live, instead of asking you.",
+          "A loop out of rounds asks the leader that owns its nodes while that leader's session is live (it replies with `answer`), and you only when it cannot.",
+        commits: ["7715239"],
+        date: "2026-10-30",
         docs: ["specs/scheduler.md#loops"],
       },
       {
@@ -330,7 +334,7 @@ export const MILESTONES = [
       {
         id: "chat",
         title: "`ork chat` and `ork resume`",
-        status: "planned",
+        status: "next",
         detail:
           "Talk to a node's live session or resume a finished one, and continue a stopped or crashed run from its events.",
         docs: ["specs/cli.md"],
@@ -418,6 +422,7 @@ export const OFF_ROADMAP = [
   "0fccdc7",
   "5e045ab",
   "ce72ab7",
+  "a1bf031",
 ];
 
 /** The day the roadmap was last brought up to date. */
