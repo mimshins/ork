@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+.env
+.env.*
+# Ork run state (workflows under .ork/workflows are meant to be committed)
+.ork/runs/
+.ork/worktrees/

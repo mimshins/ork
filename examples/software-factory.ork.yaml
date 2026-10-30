@@ -1,0 +1,97 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: software-factory
+description: Spec, build, parallel review with a bounded fix loop, then approve or escalate to a human.
+inputs:
+  feature:
+    type: string
+    required: true
+    description: The feature to build, in one or two sentences.
+layers:
+  skills:
+    - ./skills/review-checklist
+  context:
+    - ./context/house-style.md
+  project:
+    instructions: inherit
+    skills: inherit
+defaults:
+  driver: sdk
+  model: sonnet
+  isolation: worktree
+  budgetUsd: 2
+limits:
+  budgetUsd: 20
+  concurrency: 4
+nodes:
+  spec:
+    type: claude.worker
+    prompt: "Write a spec for: {{inputs.feature}}"
+    model: opus
+    isolation: shared
+  builder:
+    type: claude.leader
+    prompt: Implement the spec at {{nodes.spec.output.artifacts.spec}}.
+    model: opus
+  security:
+    type: claude.worker
+    parent: builder
+    prompt: Review the builder's branch for security issues.
+    model: opus
+    isolation: readonly
+  ux:
+    type: claude.worker
+    parent: builder
+    prompt: Review the builder's branch for UX issues.
+    isolation: readonly
+  code:
+    type: claude.worker
+    parent: builder
+    prompt: Review the builder's branch for code quality.
+    isolation: readonly
+  reviews:
+    type: control.join
+    mode: all
+  approver:
+    type: claude.worker
+    prompt: Decide whether {{nodes.builder.output.branch}} is ready to merge.
+    model: opus
+    isolation: readonly
+    output:
+      schema:
+        verdict:
+          - approve
+          - escalate
+  merge:
+    type: tool.gh
+    command: pr merge {{nodes.builder.output.branch}} --squash
+    allow:
+      - pr merge
+  human:
+    type: human.gate
+    question: The approver escalated. Merge anyway?
+    options:
+      - merge
+      - reject
+    recommended: reject
+edges:
+  - spec -> builder
+  - builder -> security, ux, code
+  - security, ux, code -> reviews
+  - from: reviews
+    to: builder
+    when: any(statuses, 'changes_requested')
+    maxRounds: 2
+  - from: reviews
+    to: approver
+    when: all(statuses, 'pass')
+  - from: approver
+    to: merge
+    when: verdict == 'approve'
+  - from: approver
+    to: human
+    when: verdict == 'escalate'
+messages:
+  - between:
+      - security
+      - code

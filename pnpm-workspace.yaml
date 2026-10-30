@@ -1,0 +1,15 @@
+packages:
+  - packages/*
+
+# Supply chain: a version must have been published for at least 7 days (in
+# minutes) before it can be installed.
+minimumReleaseAge: 10080
+minimumReleaseAgeStrict: true
+# Dependency lifecycle scripts are off. A package may run one only if it is
+# listed here with `true`.
+allowBuilds: {}
+strictDepBuilds: true
+# Refuse a version whose trust evidence is weaker than an earlier one's.
+trustPolicy: no-downgrade
+# Dependencies are saved at an exact version.
+savePrefix: ""
