@@ -2,8 +2,9 @@
 
 Status: **Built**: the port, both drivers and Ork's MCP tools, tested against a
 stand-in `claude` ([code](../packages/runtime-claude/src/index.ts),
-[tests](../packages/runtime-claude/test/runtime.test.ts)); `ork run` wiring is
-next. Why: [ADR-004](../decisions/ADR-004-no-credentials.md),
+[tests](../packages/runtime-claude/test/runtime.test.ts)), and run one node at a
+time by [`ork run --node`](./cli.md#running-one-node). Why:
+[ADR-004](../decisions/ADR-004-no-credentials.md),
 [ADR-005](../decisions/ADR-005-one-runtime-port-two-drivers.md),
 [ADR-010](../decisions/ADR-010-reports-as-structured-output.md),
 [ADR-011](../decisions/ADR-011-in-house-mcp-server.md).
@@ -14,14 +15,14 @@ next. Why: [ADR-004](../decisions/ADR-004-no-credentials.md),
 ([runtime/types.ts](../packages/core/src/runtime/types.ts));
 `@krapht/ork-runtime-claude` implements it; tests implement it with a fake.
 
-| Type             | What it is                                                                                                                                                                                                     |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ClaudeRuntime`  | `{ driver: "sdk" \| "cli"; start(spec, human): Session }`                                                                                                                                                      |
-| `SessionSpec`    | node id, `cwd`, `model`, the rendered brief (`prompt`), `systemAppend`, `settingSources` (`project`, `local`; never `user`), tool rules, permission mode, `maxTurns`, `budgetUsd`, the report schema, `resume` |
-| `Session`        | `events` (an async iterable of `RuntimeEvent`), `send(text)` (delivered between turns), `interrupt()`                                                                                                          |
-| `RuntimeEvent`   | `session.started`, `assistant.text`, `tool.called`, `tool.result`, `session.finished` (with the outcome)                                                                                                       |
-| `SessionOutcome` | `subtype` (`success` or the driver's error subtype, e.g. `error_max_turns`, `error_driver`), session id, the report or `null`, the final text, usage, errors                                                   |
-| `HumanChannel`   | `permit(tool request)` and `ask(question, options, recommended, context)`; the CLI answers on the terminal until the decision queue (M1d) replaces it                                                          |
+| Type             | What it is                                                                                                                                                                                                           |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ClaudeRuntime`  | `{ driver: "sdk" \| "cli"; start(spec, human): Session }`                                                                                                                                                            |
+| `SessionSpec`    | node id, `cwd`, `model`, the rendered brief (`prompt`), `systemAppend`, `settingSources` (`project`, `local`; never `user`), tool rules, permission mode, `maxTurns`, `budgetUsd`, the report schema, `resume`       |
+| `Session`        | `events` (an async iterable of `RuntimeEvent`), `send(text)` (delivered between turns), `interrupt()`                                                                                                                |
+| `RuntimeEvent`   | `session.started`, `assistant.text`, `tool.called`, `tool.result`, `session.finished` (with the outcome)                                                                                                             |
+| `SessionOutcome` | `subtype` (`success` or the driver's error subtype, e.g. `error_max_turns`, `error_driver`), session id, the report or `null`, the final text, usage, errors                                                         |
+| `HumanChannel`   | `permit(tool request)` and `ask(question, options, recommended, context)`; the CLI answers on the terminal ([cli.md](./cli.md#questions-and-permissions-on-the-terminal)) until the decision queue (M1d) replaces it |
 
 Both drivers emit the same message JSON (the Agent SDK's messages are the CLI's
 `stream-json` lines), so one normalizer serves both

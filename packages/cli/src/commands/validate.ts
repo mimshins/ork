@@ -2,7 +2,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { compileWorkflow } from "@krapht/ork-core";
-import { type Diagnostic, parseWorkflow } from "@krapht/ork-schema";
+import {
+  type Diagnostic,
+  parseWorkflow,
+  type Workflow,
+} from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
 import { style, write } from "../output.ts";
@@ -14,8 +18,17 @@ export type FileReport = {
   summary?: { nodes: number; edges: number; entries: string[] };
 };
 
+export type LoadedWorkflow = {
+  report: FileReport;
+  /** The parsed workflow, or `null` when it has errors. */
+  workflow: Workflow | null;
+};
+
+const hasErrors = (diagnostics: readonly Diagnostic[]): boolean =>
+  diagnostics.some(d => d.severity === "error");
+
 /** Parses and compiles one workflow file. */
-export const validateFile = (file: string, cwd: string): FileReport => {
+export const loadWorkflow = (file: string, cwd: string): LoadedWorkflow => {
   let text: string;
   try {
     text = readFileSync(path.resolve(cwd, file), "utf8");
@@ -25,15 +38,23 @@ export const validateFile = (file: string, cwd: string): FileReport => {
         ? "file not found"
         : "cannot read file";
     return {
-      file,
-      diagnostics: [
-        { severity: "error", code: "file.read", message: reason, path: [] },
-      ],
+      report: {
+        file,
+        diagnostics: [
+          { severity: "error", code: "file.read", message: reason, path: [] },
+        ],
+      },
+      workflow: null,
     };
   }
 
   const parsed = parseWorkflow(text);
-  if (!parsed.ok) return { file, diagnostics: parsed.diagnostics };
+  if (!parsed.ok) {
+    return {
+      report: { file, diagnostics: parsed.diagnostics },
+      workflow: null,
+    };
+  }
 
   const { graph, diagnostics } = compileWorkflow(parsed.workflow);
   const located: Diagnostic[] = [];
@@ -43,18 +64,25 @@ export const validateFile = (file: string, cwd: string): FileReport => {
       position === null ? diagnostic : { ...diagnostic, ...position },
     );
   }
-  return graph === null
-    ? { file, diagnostics: located }
-    : {
-        file,
-        diagnostics: located,
-        summary: {
-          nodes: graph.nodes.size,
-          edges: graph.edges.length,
-          entries: graph.entries,
-        },
-      };
+  if (graph === null) {
+    return { report: { file, diagnostics: located }, workflow: null };
+  }
+  return {
+    report: {
+      file,
+      diagnostics: located,
+      summary: {
+        nodes: graph.nodes.size,
+        edges: graph.edges.length,
+        entries: graph.entries,
+      },
+    },
+    workflow: hasErrors(located) ? null : parsed.workflow,
+  };
 };
+
+export const validateFile = (file: string, cwd: string): FileReport =>
+  loadWorkflow(file, cwd).report;
 
 const plural = (count: number, word: string) =>
   `${count} ${word}${count === 1 ? "" : "s"}`;
@@ -123,7 +151,7 @@ export const validate = defineCommand({
         for (const line of formatReport(report)) write(line);
       }
     }
-    if (reports.some(r => r.diagnostics.some(d => d.severity === "error"))) {
+    if (reports.some(r => hasErrors(r.diagnostics))) {
       process.exitCode = 1;
     }
   },

@@ -5,7 +5,7 @@
  *   map is {@link SIZE} wide and tall.
  */
 
-import { CORE, DESIGN, SCHEMA } from "../refs.js";
+import { CLI, CORE, DESIGN, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -79,12 +79,13 @@ export const NODES = [
     zone: "engine",
     x: 320,
     y: 120,
-    status: "specified",
+    status: "partial",
     pkg: "cli",
     src: "packages/cli/src/commands/run.ts",
     summary:
       "Starts a run of a workflow file with its inputs, and follows it until it ends or you detach.",
     facts: [
+      "Built: `--node <id>` runs one Claude node on its own, with `--input`, `--driver` and `--in-place`, until the scheduler runs whole workflows.",
       "`--detach` returns at once; `ork logs --follow` and `ork tree` watch it later.",
       "`--driver sdk|cli` overrides every node's driver for this run.",
     ],
@@ -95,7 +96,7 @@ export const NODES = [
         label: "The CLI in the architecture",
       },
     ],
-    docs: [DESIGN.cli],
+    docs: [CLI.run, CLI.runTests, DESIGN.cli],
   },
   {
     id: "compiler",

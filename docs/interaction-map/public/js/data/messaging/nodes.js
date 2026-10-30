@@ -5,7 +5,7 @@
  *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
  */
 
-import { DESIGN, SCHEMA } from "../refs.js";
+import { CLI, DESIGN, RUNTIME, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -211,7 +211,7 @@ export const NODES = [
     zone: "runtime",
     x: 1160,
     y: 240,
-    status: "specified",
+    status: "built",
     pkg: "runtime-claude",
     summary:
       "Delivers a message into a running session as a new user message, between turns.",
@@ -219,21 +219,22 @@ export const NODES = [
       "SDK: the next item of the session's input stream.",
       "CLI: a JSON line on `claude`'s stdin.",
     ],
-    docs: [DESIGN.runtime],
+    docs: [RUNTIME.sdk, RUNTIME.cli, DESIGN.runtime],
   },
   {
     id: "mcpTools",
     title: "Ork MCP tools",
-    sub: "send · read · ask · report",
+    sub: "ask · send · read · claim",
     zone: "runtime",
     x: 1160,
     y: 480,
-    status: "specified",
+    status: "partial",
     pkg: "runtime-claude",
     summary:
       "How a session reaches the rest of the run: ordinary tool calls that Ork answers.",
     facts: [
-      "`send_message(to, body)`, `read_inbox()`, `ask_user(question, options, recommended, context)`, `report(...)`.",
+      "Built: `ask_user(question, options, recommended, context)`; the CLI answers it on the terminal until the decision queue.",
+      "Specified: `send_message(to, body)`, `read_inbox()`, `claim`, `release`. The report is structured output, not a tool.",
       "Leaders: `delegate(child, brief)`, `spawn_worker(template, brief)`.",
       "`feedback(kind, target, …)` reports what got in the way, capped per session.",
     ],
@@ -245,7 +246,7 @@ export const NODES = [
       },
       { map: "feedback", node: "tool", label: "The feedback tool" },
     ],
-    docs: [DESIGN.messaging],
+    docs: [RUNTIME.tools, DESIGN.messaging],
   },
   {
     id: "permission",
@@ -254,7 +255,7 @@ export const NODES = [
     zone: "runtime",
     x: 1160,
     y: 720,
-    status: "specified",
+    status: "partial",
     pkg: "runtime-claude",
     summary:
       "When a session wants a tool its rules neither allow nor deny, the question comes to Ork instead of a terminal prompt, and becomes a decision.",
@@ -262,8 +263,9 @@ export const NODES = [
       "SDK: the `canUseTool` callback.",
       "CLI: `--permission-prompt-tool mcp__ork__permission`.",
       "The node's `tools.allow` and `tools.deny` decide first.",
+      "Built: both drivers route the prompt to the human channel; `ork run` asks on the terminal and denies when no one is there. Decisions arrive with the queue.",
     ],
-    docs: [DESIGN.runtime],
+    docs: [RUNTIME.sdk, RUNTIME.mcp, CLI.human, DESIGN.runtime],
   },
 
   // ── Node sessions ────────────────────────────────────────────────────────

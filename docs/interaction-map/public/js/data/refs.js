@@ -76,4 +76,30 @@ export const CLI = {
   init: d("packages/cli/src/commands/init.ts", "Code: `ork init`"),
   doctor: d("packages/cli/src/doctor/checks.ts", "Code: `ork doctor`'s checks"),
   tests: d("packages/cli/test/cli.test.ts", "Tests: init and validate"),
+  run: d("packages/cli/src/commands/run.ts", "Code: `ork run --node`"),
+  human: d(
+    "packages/cli/src/human.ts",
+    "Code: questions and permissions on the terminal",
+  ),
+  runTests: d("packages/cli/test/run.test.ts", "Tests: `ork run --node`"),
+};
+
+export const RUNTIME = {
+  port: d("packages/core/src/runtime/types.ts", "Code: the runtime port"),
+  report: d(
+    "packages/core/src/runtime/report.ts",
+    "Code: the node report as structured output",
+  ),
+  plan: d("packages/core/src/run/plan.ts", "Code: a node's session spec"),
+  sdk: d("packages/runtime-claude/src/sdk.ts", "Code: the SDK driver"),
+  cli: d("packages/runtime-claude/src/cli.ts", "Code: the CLI driver"),
+  mcp: d(
+    "packages/runtime-claude/src/mcp-http.ts",
+    "Code: Ork's local MCP server",
+  ),
+  tools: d("packages/runtime-claude/src/tools.ts", "Code: Ork's tools"),
+  tests: d(
+    "packages/runtime-claude/test/runtime.test.ts",
+    "Tests: both drivers, against a stand-in claude",
+  ),
 };

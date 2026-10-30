@@ -2,6 +2,7 @@ import { defineCommand } from "citty";
 
 import { doctor } from "./commands/doctor.ts";
 import { init } from "./commands/init.ts";
+import { run } from "./commands/run.ts";
 import { validate } from "./commands/validate.ts";
 
 export const main = defineCommand({
@@ -10,5 +11,5 @@ export const main = defineCommand({
     version: "0.0.0",
     description: "Orchestrate Claude agents on your machine",
   },
-  subCommands: { init, validate, doctor },
+  subCommands: { init, validate, run, doctor },
 });

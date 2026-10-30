@@ -17,3 +17,7 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    ignore:
+      # @types/node tracks the Node major Ork runs on (engines: >=24).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]

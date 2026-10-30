@@ -1,6 +1,6 @@
 /** @file The architecture map's journeys. */
 
-import { CLI, CORE, DESIGN, SCHEMA } from "../refs.js";
+import { CLI, CORE, DESIGN, RUNTIME, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").Journey} Journey */
 
@@ -108,7 +108,6 @@ export const JOURNEYS = [
         title: "Claude Code runs the loop",
         detail:
           "The SDK starts the agent loop with the brief as the first user message.",
-        status: "specified",
       },
       {
         from: "session",
@@ -120,15 +119,14 @@ export const JOURNEYS = [
       },
       {
         from: "session",
-        to: "mcpTools",
-        title: "It calls `report`",
+        to: "runtimeAdapter",
+        title: "It ends with its report",
         detail:
-          "Status, a short summary, artifact paths and its branch. Large outputs are artifacts, passed by path.",
-        status: "specified",
-        docs: [DESIGN.messaging],
+          "Structured output against the node's report schema: status, a short summary, artifact paths, its branch and the `output.schema` fields. Large outputs are artifacts, passed by path.",
+        docs: [RUNTIME.report],
       },
       {
-        from: "mcpTools",
+        from: "runtimeAdapter",
         to: "scheduler",
         title: "The report is routed",
         detail:

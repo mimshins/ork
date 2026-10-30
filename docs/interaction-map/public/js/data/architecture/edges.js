@@ -309,7 +309,7 @@ export const EDGES = [
     kind: "local",
     label: "`driver: sdk`",
     detail: "The default driver, set in `defaults.driver` or per node.",
-    status: "specified",
+    status: "built",
     docs: [DESIGN.runtime],
   },
   {
@@ -320,7 +320,7 @@ export const EDGES = [
     label: "`driver: cli`",
     detail:
       "Chosen per node or in `defaults.driver`, or with `ork run --driver cli`.",
-    status: "specified",
+    status: "built",
     docs: [DESIGN.runtime],
   },
   {
@@ -331,7 +331,7 @@ export const EDGES = [
     label: "`query()` · streaming input",
     detail:
       "The SDK runs the Claude Code loop in a child process; Ork feeds it user messages as an async stream.",
-    status: "specified",
+    status: "built",
     via: [
       [1690, 276],
       [1690, 740],
@@ -346,7 +346,7 @@ export const EDGES = [
     label: "`claude -p` stream-json",
     detail:
       "Spawns your `claude` with JSON streams on stdin and stdout, and Ork's tools passed with `--mcp-config`.",
-    status: "specified",
+    status: "built",
     docs: [DESIGN.runtime],
   },
   {
@@ -357,7 +357,7 @@ export const EDGES = [
     label: "Ork tool calls",
     detail:
       "The session calls `send_message`, `report`, `ask_user` and the rest like any other tool.",
-    status: "specified",
+    status: "built",
     docs: [DESIGN.messaging],
   },
   {
@@ -387,9 +387,9 @@ export const EDGES = [
     from: "mcpTools",
     to: "scheduler",
     kind: "local",
-    label: "report · delegate · spawn_worker",
+    label: "delegate · spawn_worker",
     detail:
-      "A report finishes the node and routes its output; leaders delegate to declared children or spawn workers from a template.",
+      "Leaders delegate to declared children or spawn workers from a template. A node's report is its structured output, which the scheduler routes.",
     status: "specified",
     via: [
       [1410, 516],

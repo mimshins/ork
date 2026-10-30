@@ -20,17 +20,19 @@ and engineering tasks:
 - **Works with your repo.** Your project's `CLAUDE.md`, `AGENTS.md`, and skills
   are layered under the workflow's own skills with a defined precedence.
 
-> **Status: pre-alpha.** The workflow format, the graph compiler, and `ork init`
-> / `ork validate` / `ork doctor` work today; the run engine, the Claude
-> drivers, and the UI are being built. See [docs/design.md](./docs/design.md),
-> and the [interaction map](./docs/interaction-map/README.md) (`pnpm map`) for
-> how the pieces fit together and what is built so far.
+> **Status: pre-alpha.** The workflow format, the graph compiler, both Claude
+> drivers, `ork init` / `ork validate` / `ork doctor`, and running a single node
+> (`ork run --node`) work today; the scheduler for whole workflows and the UI
+> are being built. See [docs/design.md](./docs/design.md), and the
+> [interaction map](./docs/interaction-map/README.md) (`pnpm map`) for how the
+> pieces fit together and what is built so far.
 
 ```sh
 npm install --global @krapht/ork   # from a clone: pnpm ork <command>
 ork doctor        # node, git, and your own claude / gh / aws logins
 ork init          # scaffold .ork/ with a starter workflow
 ork validate      # schema, ownership tree, edges, loops, references
+ork run hello --node lead --input task="add a README" --in-place
 ```
 
 ## A workflow

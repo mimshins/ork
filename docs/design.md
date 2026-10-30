@@ -47,7 +47,7 @@ parts fit together is the [interaction map](./interaction-map/README.md).
   - `runtime-claude` with the SDK and CLI drivers behind `ClaudeRuntime`, plus
     the Ork MCP tools.
   - `ork doctor`.
-  - Run a single node end-to-end.
+  - Run a single node end-to-end (`ork run <wf> --node <id>`).
 - **M1c: engine.**
   - Scheduler: flow edges, join and router, loops with `maxRounds`.
   - Ownership: delegation, reports, `spawn_worker`.

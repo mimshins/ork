@@ -5,7 +5,7 @@
  *   {@link SIZE} wide and tall. Rows sit at y 120, 240, … 1080.
  */
 
-import { CLI, CORE, DESIGN, README, SCHEMA } from "../refs.js";
+import { CLI, CORE, DESIGN, README, RUNTIME, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -89,12 +89,22 @@ export const NODES = [
       "The `ork` command. It validates and runs workflows with the engine embedded in its own process, or talks to a running `ork ui` server over HTTP.",
     facts: [
       "Built: `ork init` scaffolds `.ork/` and never overwrites a file; `ork validate` prints schema and graph diagnostics with file, line and column; `ork doctor` reports your own logins and never prints a token or your email.",
-      "`ork run`, `ps`, `logs --follow`, `tree`, `stop`, `resume` drive and watch runs.",
+      "Built: `ork run <wf> --node <id>` runs one Claude node through either driver and prints its transcript and report; questions and permission prompts are answered on the terminal.",
+      "Whole-workflow `ork run`, `ps`, `logs --follow`, `tree`, `stop`, `resume` drive and watch runs.",
       "`ork decide` answers pending decisions; the recommended option is preselected.",
       "`ork context explain <wf> <node>` shows the resolved layer stack for one node.",
     ],
     see: [{ map: "lifecycle", node: "cli", label: "The CLI in a run" }],
-    docs: [CLI.validate, CLI.init, CLI.doctor, CLI.tests, DESIGN.cli],
+    docs: [
+      CLI.validate,
+      CLI.init,
+      CLI.doctor,
+      CLI.run,
+      CLI.human,
+      CLI.tests,
+      CLI.runTests,
+      DESIGN.cli,
+    ],
   },
   {
     id: "server",
@@ -450,32 +460,34 @@ export const NODES = [
     zone: "runtime",
     x: 1440,
     y: 360,
-    status: "specified",
+    status: "built",
     pkg: "runtime-claude",
     summary:
       "One interface over two drivers. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
     facts: [
-      "`start(spec)` takes the cwd, model, system prompt addition, skills, MCP servers, permissions and budget.",
-      "`Session.send` injects a message at a safe boundary, between turns.",
-      "Each node picks its driver with `driver: sdk | cli`.",
+      "`start(spec, human)` takes the cwd, model, brief, system prompt addition, setting sources, tool rules, limits and the report schema.",
+      "Both drivers emit the same normalized events: started, text, tool called, tool result, finished with the outcome and usage.",
+      "`Session.send` injects a message between turns; `interrupt()` stops the session.",
+      "Each node picks its driver with `driver: sdk | cli`; `ork run --driver` overrides it.",
     ],
-    docs: [DESIGN.runtime],
+    docs: [RUNTIME.port, RUNTIME.plan, RUNTIME.tests, DESIGN.runtime],
   },
   {
     id: "mcpTools",
     title: "Ork MCP tools",
-    sub: "message · report · ask · claim",
+    sub: "ask · permission · message",
     zone: "runtime",
     x: 1440,
     y: 480,
-    status: "specified",
+    status: "partial",
     pkg: "runtime-claude",
     summary:
       "The tools every Claude node gets for working inside the hierarchy: messaging, reporting, delegating, asking you, and claiming files.",
     facts: [
-      "`send_message`, `read_inbox`, `report`, `ask_user`, `claim`, `release`, `feedback`.",
+      "Built: `ask_user` (question, two to four options, recommended) and, for the CLI driver, `permission`; arguments are validated with Zod.",
+      "Specified: `send_message`, `read_inbox`, `claim`, `release`, `feedback`. The report is structured output, not a tool.",
       "Leaders also get `delegate` and `spawn_worker`.",
-      "In-process for the SDK driver; a local MCP server over HTTP for the CLI driver.",
+      "In-process for the SDK driver; for the CLI driver, a local MCP server on 127.0.0.1 behind a per-session bearer token.",
     ],
     see: [
       {
@@ -485,7 +497,7 @@ export const NODES = [
       },
       { map: "feedback", node: "tool", label: "The feedback tool" },
     ],
-    docs: [DESIGN.messaging, DESIGN.runtime],
+    docs: [RUNTIME.tools, RUNTIME.mcp, DESIGN.messaging, DESIGN.runtime],
   },
   {
     id: "sdkDriver",
@@ -494,16 +506,17 @@ export const NODES = [
     zone: "runtime",
     x: 1720,
     y: 240,
-    status: "specified",
+    status: "built",
     pkg: "runtime-claude",
     summary:
       "Runs a node with the Claude Agent SDK's `query()` in streaming input mode. The clearly supported path: an API key, Bedrock or Vertex.",
     facts: [
-      "Permission prompts arrive in `canUseTool` and become decisions.",
+      "Refuses to start without `ANTHROPIC_API_KEY` or Bedrock, Vertex or Foundry; it never falls back to a claude.ai login.",
+      "Permission prompts arrive in `canUseTool` and go to the human channel.",
       "Ork's tools are an in-process server from `createSdkMcpServer`.",
       "`maxTurns`, `maxBudgetUsd` and `resume` map to the node's limits.",
     ],
-    docs: [DESIGN.runtime, README.accounts],
+    docs: [RUNTIME.sdk, RUNTIME.tests, DESIGN.runtime, README.accounts],
   },
   {
     id: "cliDriver",
@@ -512,16 +525,23 @@ export const NODES = [
     zone: "runtime",
     x: 1720,
     y: 480,
-    status: "specified",
+    status: "built",
     pkg: "runtime-claude",
     summary:
       "Runs a node through your installed `claude` command in headless mode, with JSON streams in and out. Uses whatever login that `claude` has.",
     facts: [
       "`--input-format stream-json --output-format stream-json --verbose`.",
+      "The report comes back through `--json-schema`; Ork's tools through `--mcp-config`.",
       "Permission prompts go to `--permission-prompt-tool mcp__ork__permission`.",
       "Anthropic's terms on subscription logins in third-party tools apply; see the README.",
     ],
-    docs: [DESIGN.runtime, README.accounts],
+    docs: [
+      RUNTIME.cli,
+      RUNTIME.mcp,
+      RUNTIME.tests,
+      DESIGN.runtime,
+      README.accounts,
+    ],
   },
   {
     id: "session",
