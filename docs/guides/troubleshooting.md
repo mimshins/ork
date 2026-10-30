@@ -33,6 +33,11 @@ only get committed files, so Ork stops rather than run agents on instructions
 you are not seeing. Commit the listed files, or pass `--allow-dirty` to run with
 the committed versions.
 
+**`This workflow runs programs that are not installed`.** A `tool.gh`,
+`tool.aws` or `tool.shell` node runs a program that is not on your `PATH`.
+Integrations are optional, so Ork only asks for the ones a workflow uses:
+install the program (and sign in with its own login), or take the node out.
+
 **`missing required input "feature" (--input feature=…)`.** Pass every required
 input: `--input feature="…"`.
 

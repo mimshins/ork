@@ -2,8 +2,9 @@
 
 Status: **Partial**: `ask_user`, the permission prompt, `delegate` and
 `spawn_worker` are built
-([tools/](../packages/runtime-claude/src/tools/index.ts)); the message bus,
-decision queue and event store are specified for M1d.
+([tools/](../packages/runtime-claude/src/tools/index.ts)), and so is the
+[event store](./event-store.md); the message bus and decision queue are
+specified for M1d.
 
 **Ork MCP tools.** One registry
 ([tools/index.ts](../packages/runtime-claude/src/tools/index.ts)), one file per
@@ -42,13 +43,14 @@ prompt itself.
   recommended option is preselected) or in the UI inbox.
 - An optional `timeout` and `default` let unattended runs continue.
 
-**Event store:**
+**Event store:** every run event, in SQLite at `~/.ork/state.db` with a JSONL
+copy per run; logs, the system monitor, chats and replay are all views over it.
+See [Event store](./event-store.md).
 
-- Append-only events (`node.started`, `msg.sent`, `tool.called`, `usage`,
-  `decision.opened`, …) in SQLite at `~/.ork/state.db`.
-- A JSONL copy for each run, at `.ork/runs/<runId>/events.jsonl`. The `runs/`
-  directory is gitignored.
-- Logs, the system monitor, chats and replay are all views over this stream.
+**Reaching a live run:** `ork decide`, `ork stop` and `ork chat` in another
+terminal write their answer or command to the store, and the run watches for it;
+a per-run local socket wakes the run at once
+([ADR-024](../decisions/ADR-024-event-store.md)).
 
 **Chat:** `ork chat <run> <node>` (or the UI chat panel) sends a user message to
 a node's live session or resumes a finished one with `resume`.

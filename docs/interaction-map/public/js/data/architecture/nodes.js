@@ -17,6 +17,7 @@ import {
   RUNTIME,
   SCHEMA,
   WORKTREES,
+  STORE,
 } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
@@ -222,7 +223,7 @@ export const NODES = [
       "The heart of a run. It starts entry nodes, follows flow edges whose `when:` holds, waits on joins, counts loop rounds, and runs the children a leader delegates to.",
     facts: [
       "Built: activations, edges that fire on success unless `when:` says otherwise, dead-path skips, joins, routers, loop rounds, the run budget and concurrency, interrupt.",
-      "Built: every state change is a run event; `ork run` prints them, the event store (M1d) will keep them.",
+      "Built: every state change is a run event; `ork run` stores each in the event store, then prints it.",
       "Built: ownership. A leader's `delegate` and `spawn_worker` (up to `maxWorkers`) run children in parallel on the slot it lends, and return their reports; a re-entered leader resumes its session.",
       "Built: a loop out of rounds asks you; telling a live owner instead needs the message bus (M1d).",
     ],
@@ -364,19 +365,30 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 960,
-    status: "specified",
+    status: "partial",
     pkg: "core",
+    src: "packages/core/src/store/index.ts",
     summary:
-      "Every change in a run, appended in order: nodes starting and finishing, messages, tool calls, usage, decisions. Logs, the monitor, chats and replay are all views over it.",
+      "Every change in a run, appended in order: nodes starting and finishing, tool calls, usage, worktrees, and later messages and decisions. Logs, the monitor, chats and replay are all views over it.",
     facts: [
-      "Events such as `node.started`, `msg.sent`, `tool.called`, `usage`, `decision.opened`.",
+      "Built: each run event gets a sequence number and a time, with secrets masked, before the terminal prints it.",
+      "Built: `ork ps`, `ork logs [--follow]` and `ork tree` read it from any terminal; a run whose process died reads as `crashed`.",
+      "Specified: decisions, messages and commands from other processes (M1d); streamed to the UI over SSE (M2).",
       "Usage comes from each session's final result, so sub-agent tokens count.",
-      "Streamed to the UI over SSE.",
     ],
     see: [
       { map: "feedback", node: "events", label: "Feedback from run events" },
     ],
-    docs: [DESIGN.messaging],
+    docs: [
+      DESIGN.eventStore,
+      STORE.store,
+      STORE.recorder,
+      STORE.view,
+      STORE.tests,
+      STORE.commands,
+      STORE.cliTests,
+      STORE.adr,
+    ],
   },
 
   // ── Your machine ─────────────────────────────────────────────────────────
@@ -461,15 +473,16 @@ export const NODES = [
     zone: "machine",
     x: 1160,
     y: 960,
-    status: "specified",
+    status: "built",
     pkg: null,
     summary:
-      "Where runs persist: events in SQLite at `~/.ork/state.db`, plus a JSONL copy and the run's artifacts under `.ork/runs/<runId>/`.",
+      "Where runs persist: events in SQLite at `~/.ork/state.db` (Node's built-in `node:sqlite`, WAL), plus a JSONL copy and the run's files under `.ork/runs/<runId>/`.",
     facts: [
+      "One database for every project; only a run's own process writes its events.",
       "`.ork/runs/` is git-ignored.",
-      "Large node outputs are stored as artifacts and passed by path, not inlined.",
+      "Long tool output is kept in run files and passed by path, not inlined.",
     ],
-    docs: [DESIGN.messaging],
+    docs: [DESIGN.eventStore, STORE.store, STORE.adr],
   },
   {
     id: "toolClis",

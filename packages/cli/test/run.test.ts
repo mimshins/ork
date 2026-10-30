@@ -10,7 +10,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 
-import type { ClaudeRuntime, HumanChannel } from "@krapht/ork-core";
+import {
+  type ClaudeRuntime,
+  type HumanChannel,
+  openStore,
+} from "@krapht/ork-core";
 import type { ToolRunner } from "@krapht/ork-nodes";
 import { createCliRuntime } from "@krapht/ork-runtime-claude";
 import { describe, expect, it } from "vitest";
@@ -80,6 +84,7 @@ const options = (overrides: Partial<RunNodeOptions>) => {
     json: false,
     runtime,
     human: recommending,
+    store: openStore(":memory:"),
     out: line => {
       out.push(line);
     },
@@ -338,6 +343,7 @@ const pipeline = (overrides: Partial<RunWorkflowOptions>) => {
     json: false,
     runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
     human: recommending,
+    store: openStore(":memory:"),
     out: line => {
       out.push(line);
     },

@@ -1,3 +1,5 @@
+<p align="center"><img src="./assets/logo/ork-wordmark.svg" alt="Ork" width="360"></p>
+
 # Ork
 
 **An orchestration harness for Claude agents that runs on your machine.**

@@ -13,6 +13,7 @@ import {
   NODE_TYPES,
   SCHEMA,
   WORKTREES,
+  STORE,
 } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
@@ -94,7 +95,8 @@ export const NODES = [
       "Starts a run of a workflow file with its inputs, and follows it until it ends or you detach.",
     facts: [
       "Built: `ork run <wf>` runs the whole workflow, and `--node <id>` one Claude node on its own; `--input`, `--driver`, `--in-place` and `--json` work for both.",
-      "`--detach` returns at once; `ork logs --follow` and `ork tree` watch it later.",
+      "Specified: `--detach` returns at once; `ork logs --follow` and `ork tree` (built) watch it later.",
+      "Built: before anything starts, it checks that the programs the tool nodes run are installed; integrations a workflow does not use are never needed.",
       "`--driver sdk|cli` overrides every node's driver for this run.",
     ],
     see: [
@@ -165,17 +167,20 @@ export const NODES = [
     zone: "engine",
     x: 320,
     y: 570,
-    status: "specified",
+    status: "built",
     pkg: "core",
+    src: "packages/core/src/store/recorder.ts",
     summary:
-      "Every step of the run as an event, so you can follow it live or replay it afterwards.",
+      "Every step of the run as an event, stored before it is printed, so you can follow it live or replay it afterwards.",
     facts: [
-      "`ork tree` shows the ownership tree with status, tokens and cost per node.",
+      "`ork logs` replays the transcript `ork run` printed; `--node` keeps one node, `--follow` tails a live run.",
+      "`ork tree` shows the ownership tree with status, tokens and cost per node, spawned workers under their leader.",
+      "`ork ps` lists this project's runs (`--all`: every project's).",
     ],
     see: [
       { map: "architecture", node: "eventStore", label: "The event store" },
     ],
-    docs: [DESIGN.messaging],
+    docs: [DESIGN.eventStore, STORE.recorder, STORE.commands, STORE.cliTests],
   },
   {
     id: "inbox",

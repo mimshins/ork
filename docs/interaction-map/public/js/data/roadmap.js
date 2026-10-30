@@ -258,6 +258,16 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "logo",
+        title: "Logo",
+        status: "done",
+        detail:
+          "A phosphor fan mark: an amber owner node handing work down three fading green beams, with a wordmark for the README.",
+        commits: ["61bcdd9"],
+        date: "2026-10-30",
+        docs: ["assets/logo/README.md"],
+      },
+      {
         id: "installer",
         title: "Standalone binaries and installer",
         status: "waiting",
@@ -397,7 +407,7 @@ export const MILESTONES = [
  *
  * @type {string[]}
  */
-export const OFF_ROADMAP = ["9785a0b", "84bad82", "0fccdc7"];
+export const OFF_ROADMAP = ["9785a0b", "84bad82", "0fccdc7", "5e045ab"];
 
 /** The day the roadmap was last brought up to date. */
 export const ROADMAP_UPDATED = "2026-10-30";

@@ -6,6 +6,7 @@
 export * from "./commands/doctor.ts";
 export * from "./commands/init.ts";
 export * from "./commands/run.ts";
+export * from "./commands/runs.ts";
 export * from "./commands/validate.ts";
 export * from "./commands/worktrees.ts";
 export { main } from "./main.ts";
@@ -15,3 +16,6 @@ export * from "./human.ts";
 export * from "./run/format.ts";
 export * from "./run/node.ts";
 export * from "./run/workflow.ts";
+export * from "./runs/find.ts";
+export * from "./runs/format.ts";
+export * from "./runs/logs.ts";

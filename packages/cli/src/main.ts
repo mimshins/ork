@@ -6,6 +6,7 @@ import { context } from "./commands/context.ts";
 import { doctor } from "./commands/doctor.ts";
 import { init } from "./commands/init.ts";
 import { run } from "./commands/run.ts";
+import { logs, ps, tree } from "./commands/runs.ts";
 import { validate } from "./commands/validate.ts";
 import { worktrees } from "./commands/worktrees.ts";
 
@@ -19,6 +20,9 @@ export const main = defineCommand({
     init,
     validate,
     run,
+    ps,
+    logs,
+    tree,
     context,
     worktrees,
     wt: worktrees,

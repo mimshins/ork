@@ -17,21 +17,22 @@ Long specs follow the hub and chunk layout
 
 ## Index
 
-| Spec                                            | Status    | Milestone |
-| ----------------------------------------------- | --------- | --------- |
-| [Core concepts](./concepts.md)                  | Specified | M1        |
-| [Architecture](./architecture.md)               | Partial   | M1, M2    |
-| [Workflow file format](./workflow-format.md)    | Built     | M1a       |
-| [Expressions](./expressions.md)                 | Built     | M1a       |
-| [Graph compiler](./graph-compiler.md)           | Built     | M1a       |
-| [Runtime: the Claude drivers](./runtime.md)     | Built     | M1b       |
-| [Scheduler: running a workflow](./scheduler.md) | Partial   | M1c       |
-| [Worktrees: where nodes work](./worktrees.md)   | Built     | M1c       |
-| [Context, skills and precedence](./context.md)  | Partial   | M1c       |
-| [Messaging, decisions and logs](./messaging.md) | Partial   | M1d       |
-| [Feedback and self-improvement](./feedback.md)  | Specified | M1d, M2   |
-| [The ork CLI](./cli.md)                         | Partial   | M1        |
-| [The UI](./ui.md)                               | Planned   | M2        |
+| Spec                                              | Status    | Milestone |
+| ------------------------------------------------- | --------- | --------- |
+| [Core concepts](./concepts.md)                    | Specified | M1        |
+| [Architecture](./architecture.md)                 | Partial   | M1, M2    |
+| [Workflow file format](./workflow-format.md)      | Built     | M1a       |
+| [Expressions](./expressions.md)                   | Built     | M1a       |
+| [Graph compiler](./graph-compiler.md)             | Built     | M1a       |
+| [Runtime: the Claude drivers](./runtime.md)       | Built     | M1b       |
+| [Scheduler: running a workflow](./scheduler.md)   | Partial   | M1c       |
+| [Worktrees: where nodes work](./worktrees.md)     | Built     | M1c       |
+| [Context, skills and precedence](./context.md)    | Partial   | M1c       |
+| [Messaging, decisions and logs](./messaging.md)   | Partial   | M1d       |
+| [Event store: what a run keeps](./event-store.md) | Partial   | M1d       |
+| [Feedback and self-improvement](./feedback.md)    | Specified | M1d, M2   |
+| [The ork CLI](./cli.md)                           | Partial   | M1        |
+| [The UI](./ui.md)                                 | Planned   | M2        |
 
 **Status:** _Built_ means on `main` with tests; _Partial_ means some of it is
 built and the spec says which; _Specified_ means agreed, not built; _Planned_

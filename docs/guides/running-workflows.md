@@ -92,8 +92,22 @@ usage. It is handy for working on one node's prompt.
 
 - Branches `ork/<run>/<node>`, and worktrees beside your clone for the results
   ([Worktrees](./worktrees.md)).
-- Run state under `.ork/runs/<run>/`, gitignored: long tool output, and the
-  per-node plugins Ork builds for skills.
+- Run state under `.ork/runs/<run>/`, gitignored: long tool output, the per-node
+  plugins Ork builds for skills, and `events.jsonl`, a copy of the run's events.
+- The run's record in `~/.ork/state.db`, with secrets masked.
 
-Coming in M1d: a stored event log for every run, with `ork ps`, `ork logs`,
-`ork tree`, `ork chat`, `ork stop` and `ork resume`, and `ork run --detach`.
+## Look back at runs
+
+```sh
+ork ps                 # this project's runs, newest first (--all: every project)
+ork logs               # the newest run's transcript; or ork logs <run-id>
+ork logs 3f2a -f       # follow a run that is still going, by an id prefix
+ork logs --node review # one node's events
+ork tree               # the ownership tree: each node's state, tokens and cost
+```
+
+A run whose process died without finishing shows as `crashed`. Details:
+[Event store](../../specs/event-store.md).
+
+Coming later in M1d: `ork decide`, `ork chat`, `ork stop`, `ork resume`, and
+`ork run --detach`.

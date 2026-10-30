@@ -55,9 +55,10 @@ parts fit together is the [interaction map](./interaction-map/README.md).
   - Ownership: delegation, reports, `spawn_worker`.
   - Worktree manager.
   - Context compiler and layer precedence; `ork context explain`.
-- **M1d: human loop.** Message bus, decisions, event store; `logs`, `tree`,
-  `decide`, `chat`, `stop`, `resume`. Ship the `software-factory` and
-  `pr-review` examples.
+- **M1d: human loop** (in progress; built: the
+  [event store](../specs/event-store.md) with `ps`, `logs`, `tree`). Message
+  bus, decisions; `decide`, `chat`, `stop`, `resume`. Ship the
+  `software-factory` and `pr-review` examples.
   - Feedback capture: the `feedback` tool, system signals, the local table and
     fingerprints, `ork feedback list | show | dismiss`.
 - **M2: UI.**

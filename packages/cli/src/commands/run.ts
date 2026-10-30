@@ -4,7 +4,7 @@
  *   on the terminal.
  */
 
-import type { ClaudeRuntime } from "@krapht/ork-core";
+import { type ClaudeRuntime, openStore } from "@krapht/ork-core";
 import { CLAUDE_DRIVERS } from "@krapht/ork-integrations";
 import type { Driver } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
@@ -98,6 +98,7 @@ export const run = defineCommand({
       output: process.stderr,
       interactive: process.stdin.isTTY,
     });
+    const store = openStore();
     const common = {
       file: resolveWorkflowArg(args.workflow, cwd),
       cwd,
@@ -106,6 +107,7 @@ export const run = defineCommand({
       json: args.json,
       runtime: loadRuntime,
       human,
+      store,
       out: write,
       err: writeErr,
       ...(args.driver === undefined ? {} : { driver: args.driver }),
@@ -138,6 +140,7 @@ export const run = defineCommand({
       process.exitCode = exitCode;
     } finally {
       human.close();
+      store.close();
     }
   },
 });

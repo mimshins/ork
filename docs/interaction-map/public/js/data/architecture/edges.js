@@ -15,6 +15,7 @@ import {
   README,
   SCHEMA,
   WORKTREES,
+  STORE,
 } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
@@ -207,8 +208,8 @@ export const EDGES = [
     label: "node and usage events",
     detail:
       "Starts, finishes, routing decisions, rounds, escalations and token usage are appended as they happen.",
-    status: "specified",
-    docs: [DESIGN.messaging],
+    status: "built",
+    docs: [DESIGN.eventStore, STORE.recorder],
   },
   {
     id: "decisions-events",
@@ -286,8 +287,8 @@ export const EDGES = [
     label: "SQLite + JSONL",
     detail:
       "Each event goes to `~/.ork/state.db` and to the run's `events.jsonl`.",
-    status: "specified",
-    docs: [DESIGN.messaging],
+    status: "built",
+    docs: [DESIGN.eventStore, STORE.recorder],
   },
   {
     id: "nodes-tools",

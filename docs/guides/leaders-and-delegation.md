@@ -89,8 +89,9 @@ its prompt cache, which saves tokens on long jobs.
 
 The run transcript marks a delegated run with its owner
 (`tests │ claude.worker, for builder`), and the run summary lists spawned
-workers by their instance ids. Live views of the ownership tree (`ork tree`) and
-the run log (`ork logs`) are coming in M1d.
+workers by their instance ids. `ork tree` draws the ownership tree, with spawned
+workers under the leader that spawned them, and `ork logs --node <id>` replays
+one node's part.
 
 ## Tips
 

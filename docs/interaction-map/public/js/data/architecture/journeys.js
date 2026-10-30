@@ -134,7 +134,6 @@ export const JOURNEYS = [
         title: "Everything was logged",
         detail:
           "Start, tool calls, usage and the report are in the run's events, ready for `ork logs` and the UI.",
-        status: "specified",
       },
     ],
   },

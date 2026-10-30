@@ -16,6 +16,7 @@ export const DESIGN = {
   format: d("specs/workflow-format.md", "Spec: the workflow file format"),
   context: d("specs/context.md", "Spec: context, skills and precedence"),
   messaging: d("specs/messaging.md", "Spec: messaging, decisions and logs"),
+  eventStore: d("specs/event-store.md", "Spec: the event store"),
   feedback: d("specs/feedback.md", "Spec: feedback and self-improvement"),
   cli: d("specs/cli.md", "Spec: the CLI commands"),
   scheduler: d("specs/scheduler.md", "Spec: running a workflow"),
@@ -86,6 +87,25 @@ export const CLI = {
     "Code: `ork run` for a whole workflow",
   ),
   runTests: d("packages/cli/test/run.test.ts", "Tests: `ork run`"),
+};
+
+export const STORE = {
+  store: d(
+    "packages/core/src/store/sqlite.ts",
+    "Code: the store on node:sqlite",
+  ),
+  recorder: d(
+    "packages/core/src/store/recorder.ts",
+    "Code: recording a run, masked, with its JSONL copy",
+  ),
+  view: d("packages/core/src/store/view.ts", "Code: the ownership tree view"),
+  tests: d("packages/core/test/store.test.ts", "Tests: the event store"),
+  commands: d(
+    "packages/cli/src/commands/runs.ts",
+    "Code: `ork ps`, `ork logs`, `ork tree`",
+  ),
+  cliTests: d("packages/cli/test/runs.test.ts", "Tests: recorded runs"),
+  adr: d("decisions/ADR-024-event-store.md", "ADR-024: the event store"),
 };
 
 export const ENGINE = {

@@ -1,9 +1,9 @@
 # The ork CLI
 
 Status: **Partial**: `ork init`, `ork validate`, `ork doctor`, `ork run` (a
-whole workflow, or one node with `--node`), `ork worktrees` and
-`ork context explain` are built ([code](../packages/cli/src/main.ts),
-[tests](../packages/cli/test/cli.test.ts),
+whole workflow, or one node with `--node`), `ork ps`, `ork logs`, `ork tree`,
+`ork worktrees` and `ork context explain` are built
+([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts)); the other commands are
 specified. Published as `@krapht/ork`
 ([release](../runbook/development/release.md),
@@ -15,8 +15,9 @@ ork doctor                       # node, git, every Claude driver and integratio
 ork validate <wf>                # schema, graph and skill/context references; errors with yaml line numbers
 ork run <wf> [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json] [--detach]
 ork run <wf> --node <id> [--input k=v] [--driver sdk|cli] [--in-place] [--json]
-ork ps / ork logs <run> [--node n] [--follow]
-ork tree <run>                   # live ownership tree with status, tokens, $ per node
+ork ps [--all] [--limit n] [--json]               # this project's runs, newest first
+ork logs [<run>] [--node n] [--follow] [--json]   # a run's transcript, replayed or live
+ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node
 ork decide [<run>]               # answer pending decisions
 ork chat <run> <node>
 ork stop|resume <run>
@@ -46,10 +47,16 @@ with the built-in node types
   worktrees left for you (branch, path, why), and the reasons it did not
   succeed. `--json` prints the [run events](./scheduler.md#run-events) as JSON
   lines.
+- Integrations are optional: before anything starts, Ork checks only the
+  programs the workflow's tool nodes run (`gh` for `tool.gh`, `aws` for
+  `tool.aws`, a `tool.shell` command's first word unless it is a template) and
+  refuses to start, naming the nodes, when one is not installed.
+- Every event is recorded in the [event store](./event-store.md) before it is
+  printed; `ork ps`, `ork logs` and `ork tree` read it back.
 - Tool nodes run as declared (their `allow` list is checked first); gates and
   questions use the terminal channel below.
 - Exit code 0 when the run succeeded, 1 otherwise. Ctrl-C interrupts the run.
-- `--detach` waits for the event store (M1d).
+- `--detach` waits for the control channel (M1d, slice 2).
 
 ## Running one node
 
@@ -89,6 +96,12 @@ stderr, one prompt at a time, until the decision queue (M1d) replaces it:
   the recommended option, or tells the node to use its judgment and say so in
   its report.
 
+## Runs
+
+`ork ps`, `ork logs` and `ork tree` read the runs every project recorded; see
+[Event store: reading runs](./event-store.md#reading-runs). A run of one node
+(`--node`) is recorded too, as a run with that one node.
+
 ## Worktrees
 
 `ork worktrees` lists and cleans the worktrees and `ork/` branches runs leave;
@@ -96,9 +109,9 @@ see [Worktrees: ork worktrees](./worktrees.md#ork-worktrees).
 
 ## Context
 
-`ork context explain <wf> <node>` plans the node's session without running or
-writing anything and prints what it loads
-([context](./context.md#how-a-nodes-session-is-compiled)):
+`ork context explain <wf> <node>` (a path, or a workflow name as for `ork run`)
+plans the node's session without running or writing anything and prints what it
+loads ([context](./context.md#how-a-nodes-session-is-compiled)):
 
 - the project instructions Claude Code reads (`CLAUDE.md`, `AGENTS.md`, or none;
   or left out by `project.instructions: ignore`);

@@ -1,9 +1,17 @@
 /**
  * @file Small helpers for the scheduler's results: pass-through and failure
- *   results, run-summary entries, and `node.finished` events.
+ *   results, run-summary entries, `node.finished` events, and the declared
+ *   nodes `run.started` lists.
  */
 
-import type { NodeOutput, NodeResult, NodeSummary, RunEvent } from "./types.ts";
+import type { CompiledGraph } from "../graph/types.ts";
+import type {
+  NodeOutput,
+  NodeResult,
+  NodeSummary,
+  RunEvent,
+  RunNodeInfo,
+} from "./types.ts";
 
 /** Control nodes pass their input through; a join's input is its output. */
 export const passThrough = (input: NodeOutput | undefined): NodeResult => ({
@@ -60,3 +68,11 @@ export const summaryOf = (
   summaries.set(id, created);
   return created;
 };
+
+/** Every declared node with its owner, for `run.started`. */
+export const declaredNodes = (graph: CompiledGraph): RunNodeInfo[] =>
+  [...graph.nodes.values()].map(({ id, node }) =>
+    node.parent === undefined
+      ? { id, type: node.type }
+      : { id, type: node.type, parent: node.parent },
+  );

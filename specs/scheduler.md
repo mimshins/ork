@@ -137,12 +137,12 @@ From `@krapht/ork-nodes` ([index.ts](../packages/nodes/src/index.ts)):
 
 ## Run events
 
-`onEvent` receives every change; the event store (M1d) will persist the same
-events:
+`onEvent` receives every change; `ork run` stores each one in the
+[event store](./event-store.md) before printing it:
 
 | Event            | When                                                                   |
 | ---------------- | ---------------------------------------------------------------------- |
-| `run.started`    | the run starts: id, workflow, entries                                  |
+| `run.started`    | the run starts: id, workflow, entries, every declared node and owner   |
 | `node.started`   | an activation starts: id, type, round, and `owner` when delegated      |
 | `node.event`     | a runtime event from the node's session or tool                        |
 | `node.finished`  | an activation ends: ok, output, usage, error                           |

@@ -9,7 +9,9 @@ import path from "node:path";
 
 import {
   type ClaudeRuntime,
+  createRecorder,
   createWorkspace,
+  type EventStore,
   inspectProject,
   type RunEvent,
   type HumanChannel,
@@ -21,7 +23,12 @@ import {
   type Workspace,
   projectRootOf,
 } from "@krapht/ork-core";
-import { builtinExecutors, type ToolRunner } from "@krapht/ork-nodes";
+import {
+  builtinExecutors,
+  missingPrograms,
+  onPath,
+  type ToolRunner,
+} from "@krapht/ork-nodes";
 import { type Driver, isClaudeNode, type Workflow } from "@krapht/ork-schema";
 
 import { formatReport, loadWorkflow } from "../commands/validate.ts";
@@ -44,8 +51,15 @@ export type RunWorkflowOptions = {
   human: HumanChannel;
   out: (line: string) => void;
   err: (line: string) => void;
+  /** Where the run is recorded (`~/.ork/state.db`; tests pass their own). */
+  store: EventStore;
   /** Runs tool nodes; the default spawns the real programs. */
   tools?: ToolRunner;
+  /**
+   * Whether a tool program is installed; default: on `PATH` when `tools` is the
+   * real runner.
+   */
+  installed?: (program: string) => boolean;
   onRun?: (handle: RunHandle) => void;
 };
 
@@ -56,6 +70,23 @@ export const dirtyAgentMessage = (files: readonly string[]): string[] => [
   ...(files.length > 20 ? [`  … and ${String(files.length - 20)} more`] : []),
   "Commit or stash them, or pass --allow-dirty to run with the committed versions.",
 ];
+
+/** Why a run refuses to start when a program its tool nodes need is missing. */
+export const missingProgramMessage = (
+  missing: ReturnType<typeof missingPrograms>,
+): string[] => [
+  "This workflow runs programs that are not installed:",
+  ...missing.map(m => `  ${m.program}, for ${m.nodes.join(", ")} (${m.type})`),
+  "Install them, or take those nodes out. Integrations are optional: only the ones a workflow uses must be installed (`ork doctor` shows what you have).",
+];
+
+/** A run id no stored run has yet. */
+const newRunId = (store: EventStore): string => {
+  for (;;) {
+    const id = randomUUID().slice(0, 8);
+    if (store.lookup(id).length === 0) return id;
+  }
+};
 
 export type RunWorkflowResult = {
   exitCode: number;
@@ -94,44 +125,64 @@ export const runWorkflowFile = async (
   const inputs = resolveInputs(workflow, pairs.raw);
   if (!inputs.ok) return failed(inputs.errors);
 
-  const runId = randomUUID().slice(0, 8);
+  const installed =
+    options.installed ??
+    (options.tools === undefined ? (p: string) => onPath(p) : () => true);
+  const missing = missingPrograms(workflow, installed);
+  if (missing.length > 0) return failed(missingProgramMessage(missing));
+
+  let cwd = options.cwd;
+  let gitProject: Awaited<ReturnType<typeof inspectProject>> = null;
+  const isolated = worktreeNodes(workflow);
+  if (isolated.length > 0 && !options.inPlace) {
+    gitProject = await inspectProject(options.cwd);
+    if (gitProject === null) {
+      return failed([
+        `${isolated.join(", ")} need a git worktree, but ${options.cwd} is not in a git repository with a commit; pass --in-place to run them here`,
+      ]);
+    }
+    if (gitProject.dirtyAgentFiles.length > 0 && options.allowDirty !== true) {
+      return failed(dirtyAgentMessage(gitProject.dirtyAgentFiles));
+    }
+    if (gitProject.dirtyOther > 0) {
+      options.err(
+        `${style(["yellow", "bold"], "warning")} ${String(gitProject.dirtyOther)} uncommitted change(s) in this checkout are not in the worktrees`,
+      );
+    }
+    cwd = gitProject.root;
+  }
+
+  const runId = newRunId(options.store);
+  const record = createRecorder(
+    options.store,
+    {
+      id: runId,
+      workflow: workflow.name,
+      file: path.resolve(options.cwd, options.file),
+      project: gitProject === null ? projectRootOf(cwd) : cwd,
+    },
+    path.join(cwd, ".ork", "runs", runId),
+  );
   const width = Math.max(...Object.keys(workflow.nodes).map(id => id.length));
   const tools = new Map<string, string>();
   const onEvent = (event: RunEvent): void => {
+    record(event);
     if (options.json) {
       options.out(JSON.stringify(event));
       return;
     }
     for (const line of formatRunEvent(event, width, tools)) options.out(line);
   };
-
-  let cwd = options.cwd;
-  let workspace: Workspace | undefined;
-  const isolated = worktreeNodes(workflow);
-  if (isolated.length > 0 && !options.inPlace) {
-    const project = await inspectProject(options.cwd);
-    if (project === null) {
-      return failed([
-        `${isolated.join(", ")} need a git worktree, but ${options.cwd} is not in a git repository with a commit; pass --in-place to run them here`,
-      ]);
-    }
-    if (project.dirtyAgentFiles.length > 0 && options.allowDirty !== true) {
-      return failed(dirtyAgentMessage(project.dirtyAgentFiles));
-    }
-    if (project.dirtyOther > 0) {
-      options.err(
-        `${style(["yellow", "bold"], "warning")} ${String(project.dirtyOther)} uncommitted change(s) in this checkout are not in the worktrees`,
-      );
-    }
-    cwd = project.root;
-    workspace = createWorkspace({
-      graph,
-      runId,
-      root: project.root,
-      head: project.head,
-      onEvent,
-    });
-  }
+  const workspace: Workspace | undefined =
+    gitProject === null
+      ? undefined
+      : createWorkspace({
+          graph,
+          runId,
+          root: gitProject.root,
+          head: gitProject.head,
+          onEvent,
+        });
 
   const executorOptions: Parameters<typeof builtinExecutors>[0] = {
     runtimeFor: options.runtime,

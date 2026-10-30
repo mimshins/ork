@@ -142,8 +142,17 @@ export type RunResult = {
   worktrees: KeptWorktree[];
 };
 
+export type RunNodeInfo = { id: string; type: NodeType; parent?: string };
+
 export type RunEvent =
-  | { type: "run.started"; runId: string; workflow: string; entries: string[] }
+  | {
+      type: "run.started";
+      runId: string;
+      workflow: string;
+      entries: string[];
+      /** Every declared node, with its owner: the shape `ork tree` draws. */
+      nodes: RunNodeInfo[];
+    }
   | {
       type: "node.started";
       id: string;

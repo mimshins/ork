@@ -55,3 +55,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [021](./ADR-021-built-in-practices.md)             | Built-in practices: caveman and ponytail, on by default                     | Accepted          | waived                                                      |
 | [022](./ADR-022-integration-registry.md)           | Integrations as adapters behind registries                                  | Accepted          | [001](../rfcs/archived/RFC-001-integrations-as-adapters.md) |
 | [023](./ADR-023-context-compiler.md)               | How the context compiler hands layers to Claude Code                        | Accepted          | waived                                                      |
+| [024](./ADR-024-event-store.md)                    | Runs are recorded in one SQLite store, with a JSONL copy                    | Accepted          | waived                                                      |

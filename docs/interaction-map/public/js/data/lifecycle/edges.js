@@ -7,7 +7,7 @@
  *   card.
  */
 
-import { DESIGN, SCHEMA } from "../refs.js";
+import { DESIGN, SCHEMA, STORE } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
 
@@ -64,9 +64,9 @@ export const EDGES = [
     to: "events",
     kind: "event",
     label: "every step",
-    detail: "Starts, reports, routing, rounds, usage and decisions.",
-    status: "specified",
-    docs: [DESIGN.messaging],
+    detail: "Starts, reports, routing, rounds and usage; decisions in M1d.",
+    status: "built",
+    docs: [DESIGN.eventStore, STORE.recorder],
   },
   {
     id: "spec-builder",

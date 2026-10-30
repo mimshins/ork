@@ -21,6 +21,7 @@ import {
 import { defineCommand } from "citty";
 
 import { style, write } from "../output.ts";
+import { resolveWorkflowArg } from "../workflows.ts";
 import { formatReport, loadWorkflow } from "./validate.ts";
 
 /** A rough count, for comparing sizes: about four characters a token. */
@@ -201,14 +202,19 @@ const explain = defineCommand({
   args: {
     workflow: {
       type: "positional",
-      description: "Workflow file",
+      description: "A workflow file, or the name of one in .ork/workflows/",
       required: true,
     },
     node: { type: "positional", description: "Node id", required: true },
     json: { type: "boolean", description: "Print JSON", default: false },
   },
   run: ({ args }) => {
-    const result = explainNode(args.workflow, args.node, process.cwd());
+    const cwd = process.cwd();
+    const result = explainNode(
+      resolveWorkflowArg(args.workflow, cwd),
+      args.node,
+      cwd,
+    );
     if (!result.ok) {
       for (const line of result.lines) process.stderr.write(`${line}\n`);
       process.exitCode = 1;

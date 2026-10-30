@@ -14,6 +14,7 @@ import { isClaudeNode } from "@krapht/ork-schema";
 import { createOwnership, type DelegationHooks } from "./delegation.ts";
 import { createLoops } from "./escalation.ts";
 import {
+  declaredNodes,
   failure,
   finishedEvent,
   passThrough,
@@ -281,6 +282,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     runId,
     workflow: graph.workflow.name,
     entries: graph.entries,
+    nodes: declaredNodes(graph),
   });
   for (const id of graph.entries) queue.push({ id, input: undefined });
   queueMicrotask(pump);

@@ -1,6 +1,7 @@
 /**
  * @file `@krapht/ork-core`'s public surface: expressions, the graph compiler,
- *   the runtime port, planning, the scheduler, worktrees and practices.
+ *   the runtime port, planning, the scheduler, the event store, worktrees and
+ *   practices.
  */
 
 export * from "./context/index.ts";
@@ -18,6 +19,7 @@ export * from "./run/scheduler.ts";
 export * from "./run/scope.ts";
 export type * from "./run/types.ts";
 export * from "./runtime/report.ts";
+export * from "./store/index.ts";
 export type * from "./runtime/types.ts";
 export * from "./worktree/list.ts";
 export * from "./worktree/manager.ts";

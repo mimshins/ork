@@ -18,7 +18,7 @@ export const gh = defineIntegration({
       return {
         name: "gh",
         status: "skip",
-        detail: "not installed (needed only for tool.gh nodes)",
+        detail: "optional, not installed (needed only for tool.gh nodes)",
       };
     }
     const status = parseJson(

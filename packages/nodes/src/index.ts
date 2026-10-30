@@ -12,6 +12,7 @@ import { spawnTool, toolExecutor, type ToolRunner } from "./tools.ts";
 
 export * from "./claude.ts";
 export * from "./gate.ts";
+export * from "./programs.ts";
 export * from "./tools.ts";
 
 /** Every built-in node type that does work; control nodes are the scheduler's. */

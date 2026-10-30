@@ -26,7 +26,7 @@ export const aws = defineIntegration({
       return {
         name: "aws",
         status: "skip",
-        detail: "not installed (needed only for tool.aws nodes)",
+        detail: "optional, not installed (needed only for tool.aws nodes)",
       };
     }
     const profile = env["AWS_PROFILE"];
