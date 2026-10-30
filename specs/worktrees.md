@@ -70,6 +70,23 @@ checkout instead.
   gets `merge: { ok: false, conflicts, into }` and its worktree is kept. A child
   whose owner has no worktree is not merged.
 
+## Delegation
+
+When a leader delegates ([scheduler](./scheduler.md#delegation)):
+
+- Ork first commits the leader's uncommitted work, as
+  `ork: <leader> before delegating (run <id>)`, so its children branch from it.
+  If the hooks refuse, the children start from the leader's last commit and the
+  leader is told why.
+- Each child works in its own worktree on `ork/<run>/<child>`, branched from the
+  leader's branch; a spawned worker `<template>-<n>` gets
+  `ork/<run>/<template>-<n>`. A passing child is merged into the leader's
+  worktree before `delegate` returns, so the leader sees the result in its
+  checkout.
+- A child that runs again (another delegation, or a loop) starts from its
+  owner's branch: its worktree is fast-forwarded when it has nothing unmerged. A
+  run counts as merged only once its own work is merged.
+
 ## After the run
 
 - A merged child's worktree is removed (its branch stays).

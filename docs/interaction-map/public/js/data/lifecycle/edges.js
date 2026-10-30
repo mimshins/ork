@@ -161,7 +161,7 @@ export const EDGES = [
     kind: "local",
     label: "changes requested · max 2 rounds",
     detail:
-      "Taken when `any(statuses, 'changes_requested')`. The builder's session resumes with the reviews; after two rounds the edge is exhausted and the builder escalates.",
+      "Taken when `any(statuses, 'changes_requested')`. The builder's session resumes with the reviews; after two rounds the edge is exhausted and you are asked.",
     via: [
       [1355, 606],
       [1355, 306],

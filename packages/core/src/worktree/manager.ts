@@ -188,6 +188,16 @@ export const commitLeftovers = async (
   return true;
 };
 
+/**
+ * Moves a worktree's branch up to `branch` when it is behind and has nothing of
+ * its own, e.g. a child's branch after its owner merged it and moved on.
+ */
+export const fastForward = async (
+  worktree: string,
+  branch: string,
+): Promise<boolean> =>
+  (await git(worktree, ["merge", "--ff-only", "-q", branch])).code === 0;
+
 export type MergeResult =
   | { ok: true }
   | { ok: false; conflicts: string[]; error: string };

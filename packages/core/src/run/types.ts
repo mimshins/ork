@@ -7,8 +7,10 @@
 
 import type { Node, NodeType, Workflow } from "@krapht/ork-schema";
 
+import type { CompiledGraph } from "../graph/types.ts";
 import type {
   HumanChannel,
+  Ownership,
   RuntimeEvent,
   SessionUsage,
 } from "../runtime/types.ts";
@@ -25,11 +27,18 @@ export type NodeResult = {
   usage?: SessionUsage;
   /** Why the node failed, for the run summary. */
   error?: string;
+  /** The Claude session it ran, so a leader can resume it (ADR-019). */
+  sessionId?: string;
 };
+
+/** The task an owner handed a node through `delegate` or `spawn_worker`. */
+export type Brief = { from: string; text: string };
 
 export type ExecuteContext = {
   runId: string;
   id: string;
+  /** For a spawned worker, the declared node it is an instance of. */
+  template?: string;
   node: Node;
   workflow: Workflow;
   inputs: Inputs;
@@ -39,6 +48,12 @@ export type ExecuteContext = {
   input: NodeOutput | undefined;
   /** 1 on the node's first activation, then 2, 3, … on loop re-entries. */
   round: number;
+  /** Set when the node's owner delegated this run. */
+  brief?: Brief;
+  /** A leader's previous session, resumed on re-entry (ADR-019). */
+  resume?: string;
+  /** For a leader: its children, through `delegate` and `spawn_worker`. */
+  ownership?: Ownership;
   cwd: string;
   /** The git checkout the node works in, when the run uses worktrees. */
   checkout?: Checkout;
@@ -63,8 +78,20 @@ export type Checkout = {
 
 /** Where nodes work, and what happens to their branches (worktrees, ADR-020). */
 export type Workspace = {
-  /** The node's checkout; creates its worktree the first time it is needed. */
-  prepare: (id: string) => Promise<{ cwd: string; checkout?: Checkout }>;
+  /**
+   * The node's checkout; creates its worktree the first time it is needed and
+   * brings it up to date with its owner's branch on later runs. `template` is
+   * the declared node a spawned worker is an instance of.
+   */
+  prepare: (
+    id: string,
+    template?: string,
+  ) => Promise<{ cwd: string; checkout?: Checkout }>;
+  /**
+   * Before a leader delegates: commits its work so far, so children branch from
+   * it. Returns why it could not, or `null`.
+   */
+  checkpoint: (id: string) => Promise<string | null>;
   /** After a node: commits leftovers, sets `branch`, merges into the owner. */
   finish: (id: string, result: NodeResult) => Promise<NodeResult>;
   /** At the end: removes merged worktrees and lists the kept ones. */
@@ -113,7 +140,14 @@ export type RunResult = {
 
 export type RunEvent =
   | { type: "run.started"; runId: string; workflow: string; entries: string[] }
-  | { type: "node.started"; id: string; nodeType: NodeType; round: number }
+  | {
+      type: "node.started";
+      id: string;
+      nodeType: NodeType;
+      round: number;
+      /** The leader that delegated this run, if one did. */
+      owner?: string;
+    }
   | { type: "node.event"; id: string; event: RuntimeEvent }
   | {
       type: "node.finished";
@@ -136,3 +170,34 @@ export type RunEvent =
       detail?: string;
     }
   | { type: "run.finished"; result: RunResult };
+
+export type RunOptions = {
+  graph: CompiledGraph;
+  inputs: Inputs;
+  cwd: string;
+  executors: NodeExecutors;
+  human: HumanChannel;
+  onEvent: (event: RunEvent) => void;
+  runId?: string;
+  /** Where nodes work; without one, every node works in `cwd`. */
+  workspace?: Workspace;
+  /** Run files (tool output beyond the limit); default `<cwd>/.ork/runs/<run>`. */
+  runDir?: string;
+};
+
+export type RunHandle = {
+  runId: string;
+  done: Promise<RunResult>;
+  /** Stops starting nodes and aborts the running ones. */
+  interrupt: () => void;
+};
+
+/** One run of a node the scheduler has queued or started. */
+export type Activation = {
+  id: string;
+  input: NodeOutput | undefined;
+  /** Set for a run a leader delegated; it reports back and follows no edges. */
+  brief?: Brief;
+  /** For a spawned worker, the declared node it is an instance of. */
+  template?: string;
+};

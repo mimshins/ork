@@ -1,8 +1,9 @@
 /**
  * @file The scheduler: runs a compiled workflow to the end. It starts entries,
  *   runs each activation through its node type's executor, routes outputs along
- *   edges (`routing.ts`), bounds loops, and enforces the run's budget and
- *   concurrency. Specified in `specs/scheduler.md`.
+ *   edges (`routing.ts`), bounds loops (`escalation.ts`), runs the children a
+ *   leader delegates to (`delegation.ts`), and enforces the run's budget and
+ *   concurrency (`slots.ts`). Specified in `specs/scheduler.md`.
  */
 
 import { randomUUID } from "node:crypto";
@@ -10,9 +11,8 @@ import path from "node:path";
 
 import { isClaudeNode } from "@krapht/ork-schema";
 
-import type { CompiledEdge, CompiledGraph } from "../graph/types.ts";
-import type { HumanChannel } from "../runtime/types.ts";
-import { askAboutLoop, LOOP_CHOICES } from "./escalation.ts";
+import { createOwnership, type DelegationHooks } from "./delegation.ts";
+import { createLoops } from "./escalation.ts";
 import {
   failure,
   finishedEvent,
@@ -20,72 +20,53 @@ import {
   recordRun,
   summaryOf,
 } from "./results.ts";
-import { createInbox, decideEdges, edgeKey, isLoopEdge } from "./routing.ts";
+import { createRouter } from "./router.ts";
 import { runScope } from "./scope.ts";
+import { createSlots } from "./slots.ts";
 import type {
-  Inputs,
-  NodeExecutors,
+  Activation,
+  ExecuteContext,
   NodeOutput,
   NodeResult,
   NodeSummary,
   RunEvent,
+  RunHandle,
+  RunOptions,
   RunResult,
   RunStatus,
-  Workspace,
 } from "./types.ts";
 
 export const DEFAULT_CONCURRENCY = 4;
-
-export type RunOptions = {
-  graph: CompiledGraph;
-  inputs: Inputs;
-  cwd: string;
-  executors: NodeExecutors;
-  human: HumanChannel;
-  onEvent: (event: RunEvent) => void;
-  runId?: string;
-  /** Where nodes work; without one, every node works in `cwd`. */
-  workspace?: Workspace;
-  /** Run files (tool output beyond the limit); default `<cwd>/.ork/runs/<run>`. */
-  runDir?: string;
-};
-
-export type RunHandle = {
-  runId: string;
-  done: Promise<RunResult>;
-  /** Stops starting nodes and aborts the running ones. */
-  interrupt: () => void;
-};
-
-type Activation = { id: string; input: NodeOutput | undefined };
 
 export const startRun = (options: RunOptions): RunHandle => {
   const { graph, onEvent } = options;
   const runId = options.runId ?? randomUUID().slice(0, 8);
   const limits = graph.workflow.limits ?? {};
-  const concurrency = limits.concurrency ?? DEFAULT_CONCURRENCY;
   const abort = new AbortController();
-  const inbox = createInbox(graph);
   const runDir =
     options.runDir ?? path.join(options.cwd, ".ork", "runs", runId);
 
   const outputs: Record<string, NodeOutput> = {};
   const rounds = new Map<string, number>();
+  const sessionIds = new Map<string, string>();
+  const running = new Set<string>();
   const summaries = new Map<string, NodeSummary>();
-  const loopTaken = new Map<string, number>();
-  const loopExtra = new Map<string, number>();
   const queue: Activation[] = [];
   const reasons: string[] = [];
-  let sessions = 0;
   let busy = 0;
   let spent = 0;
   let stopped: RunStatus | null = null;
   let settled = false;
   const { promise: done, resolve: finish } = Promise.withResolvers<RunResult>();
 
+  // Hoisted through `const` closures: a freed slot pumps the queue.
+  const slots = createSlots(limits.concurrency ?? DEFAULT_CONCURRENCY, () => {
+    pump();
+  });
   const scope = () => runScope(options.inputs, outputs, runId);
-
   const summary = (id: string): NodeSummary => summaryOf(summaries, id);
+  const nodeOf = (activation: Activation) =>
+    graph.nodes.get(activation.template ?? activation.id)?.node;
 
   const stop = (status: RunStatus, reason: string): void => {
     if (stopped !== null) return;
@@ -93,6 +74,32 @@ export const startRun = (options: RunOptions): RunHandle => {
     reasons.push(reason);
     queue.length = 0;
   };
+
+  const loops = createLoops({
+    human: options.human,
+    onEvent,
+    activate: (id, input) => {
+      queue.push({ id, input });
+    },
+    fail: reason => {
+      stop("failed", reason);
+    },
+  });
+  const router = createRouter({
+    graph,
+    onEvent,
+    scope,
+    activate: (id, input) => {
+      queue.push({ id, input });
+    },
+    takeLoop: loops.take,
+    skipped: id => {
+      summary(id);
+    },
+    failed: reason => {
+      reasons.push(reason);
+    },
+  });
 
   const close = async (): Promise<void> => {
     const worktrees = await (
@@ -120,131 +127,127 @@ export const startRun = (options: RunOptions): RunHandle => {
     void close();
   };
 
-  const budgetLeft = (): number | undefined =>
-    limits.budgetUsd === undefined ? undefined : limits.budgetUsd - spent;
-
-  const skip = (id: string): void => {
-    summary(id);
-    onEvent({ type: "node.skipped", id });
-    for (const edge of graph.nodes.get(id)?.outgoing ?? []) {
-      if (!isLoopEdge(edge)) deliver(edge, false, {});
+  /** True, and the run stops, once `limits.budgetUsd` is spent. */
+  const budgetSpent = (): boolean => {
+    if (limits.budgetUsd === undefined || spent < limits.budgetUsd) {
+      return false;
     }
+    stop(
+      "budget_exhausted",
+      `the run's budget of $${String(limits.budgetUsd)} is spent`,
+    );
+    return true;
   };
 
-  // Hoisted through `const` closures: deliver -> enqueue -> pump -> run.
-  const deliver = (
-    edge: CompiledEdge,
-    taken: boolean,
-    output: NodeOutput,
-  ): void => {
-    if (taken) onEvent({ type: "edge.taken", from: edge.from, to: edge.to });
-    const arrival = inbox.arrive(edge, taken, output);
-    if (arrival.kind === "activate") {
-      queue.push({ id: edge.to, input: arrival.input });
-    } else if (arrival.kind === "skip") {
-      skip(edge.to);
-    }
-  };
-
-  /** A loop edge whose condition holds: taken, unless it is out of rounds. */
-  const takeLoop = async (
-    edge: CompiledEdge,
-    output: NodeOutput,
-  ): Promise<boolean> => {
-    const key = edgeKey(edge);
-    const taken = loopTaken.get(key) ?? 0;
-    const bound = (edge.maxRounds ?? 0) + (loopExtra.get(key) ?? 0);
-    if (taken < bound) {
-      loopTaken.set(key, taken + 1);
-      queue.push({ id: edge.to, input: output });
-      onEvent({ type: "edge.taken", from: edge.from, to: edge.to });
-      return true;
-    }
-    onEvent({
-      type: "loop.exhausted",
-      from: edge.from,
-      to: edge.to,
-      maxRounds: edge.maxRounds ?? 0,
-    });
-    const choice = await askAboutLoop(options.human, edge);
-    if (choice === LOOP_CHOICES.again) {
-      loopExtra.set(key, (loopExtra.get(key) ?? 0) + 1);
-      return takeLoop(edge, output);
-    }
-    if (choice !== LOOP_CHOICES.onward) {
-      stop("failed", `the loop ${edge.from} -> ${edge.to} ran out of rounds`);
-    }
-    return false;
-  };
-
-  const route = async (id: string, result: NodeResult): Promise<void> => {
-    let anyTaken = false;
-    for (const { edge, taken } of decideEdges(graph, id, result, scope())) {
-      if (isLoopEdge(edge)) {
-        // A loop edge that is not taken changes nothing downstream.
-        // oxlint-disable-next-line no-await-in-loop -- one escalation at a time
-        if (taken && (await takeLoop(edge, result.output))) anyTaken = true;
-      } else {
-        deliver(edge, taken, result.output);
-        if (taken) anyTaken = true;
+  /** A child a leader delegated to: waits for a slot, runs, reports back. */
+  const runChild: DelegationHooks["runChild"] = async (child, brief) => {
+    await slots.take();
+    try {
+      if (stopped !== null || budgetSpent()) {
+        return failure(`not started: ${reasons[0] ?? "the run stopped"}`);
       }
+      return await perform({ ...child, input: undefined, brief });
+    } finally {
+      slots.release();
     }
-    if (!result.ok && !anyTaken) {
-      reasons.push(`${id}: ${result.error ?? "failed"}`);
+  };
+
+  const contextFor = (
+    activation: Activation,
+    cwd: string,
+  ): Omit<ExecuteContext, "node" | "checkout"> => {
+    const { id } = activation;
+    const context: Omit<ExecuteContext, "node" | "checkout"> = {
+      runId,
+      id,
+      workflow: graph.workflow,
+      inputs: options.inputs,
+      outputs,
+      input: activation.input,
+      round: rounds.get(id) ?? 1,
+      cwd,
+      runDir,
+      budgetLeftUsd:
+        limits.budgetUsd === undefined ? undefined : limits.budgetUsd - spent,
+      human: options.human,
+      emit: event => {
+        onEvent({ type: "node.event", id, event });
+      },
+      signal: abort.signal,
+    };
+    if (activation.template !== undefined) {
+      context.template = activation.template;
     }
+    if (activation.brief !== undefined) context.brief = activation.brief;
+    if (nodeOf(activation)?.type === "claude.leader") {
+      const resume = sessionIds.get(id);
+      if (resume !== undefined) context.resume = resume;
+      context.ownership = createOwnership({
+        graph,
+        leader: id,
+        runChild,
+        isRunning: other => running.has(other),
+        checkpoint: () =>
+          options.workspace?.checkpoint(id) ?? Promise.resolve(null),
+        lend: slots.release,
+        reclaim: slots.take,
+      });
+    }
+    return context;
   };
 
   const execute = async (activation: Activation): Promise<NodeResult> => {
-    const { id } = activation;
-    const node = graph.nodes.get(id)?.node;
-    if (node === undefined) return failure(`unknown node ${id}`);
+    const node = nodeOf(activation);
+    if (node === undefined) return failure(`unknown node ${activation.id}`);
     if (node.type.startsWith("control.")) return passThrough(activation.input);
     const executor = options.executors[node.type];
     if (executor === undefined) return failure(`no executor for ${node.type}`);
     try {
-      const place = (await options.workspace?.prepare(id)) ?? {
-        cwd: options.cwd,
-      };
+      const { workspace } = options;
+      const place = (await workspace?.prepare(
+        activation.id,
+        activation.template,
+      )) ?? { cwd: options.cwd };
       const result = await executor({
-        runId,
-        id,
+        ...contextFor(activation, place.cwd),
         node,
-        workflow: graph.workflow,
-        inputs: options.inputs,
-        outputs,
-        input: activation.input,
-        round: rounds.get(id) ?? 1,
-        cwd: place.cwd,
         ...(place.checkout === undefined ? {} : { checkout: place.checkout }),
-        runDir,
-        budgetLeftUsd: budgetLeft(),
-        human: options.human,
-        emit: event => {
-          onEvent({ type: "node.event", id, event });
-        },
-        signal: abort.signal,
       });
-      return (await options.workspace?.finish(id, result)) ?? result;
+      return (await workspace?.finish(activation.id, result)) ?? result;
     } catch (error) {
       return failure(error instanceof Error ? error.message : String(error));
     }
   };
 
-  const run = async (activation: Activation, isSession: boolean) => {
+  /** Runs one activation and records it; routing is the caller's. */
+  const perform = async (activation: Activation): Promise<NodeResult> => {
     const { id } = activation;
     const round = (rounds.get(id) ?? 0) + 1;
     rounds.set(id, round);
-    const nodeType = graph.nodes.get(id)?.node.type ?? "control.split";
-    onEvent({ type: "node.started", id, nodeType, round });
+    running.add(id);
+    const started: RunEvent = {
+      type: "node.started",
+      id,
+      nodeType: nodeOf(activation)?.type ?? "control.split",
+      round,
+    };
+    if (activation.brief !== undefined) started.owner = activation.brief.from;
+    onEvent(started);
 
     const result = await execute(activation);
-    if (isSession) sessions -= 1;
+    running.delete(id);
     outputs[id] = result.output;
+    if (result.sessionId !== undefined) sessionIds.set(id, result.sessionId);
     spent += result.usage?.costUsd ?? 0;
     recordRun(summary(id), result);
     onEvent(finishedEvent(id, round, result));
+    return result;
+  };
 
-    if (stopped === null) await route(id, result);
+  const run = async (activation: Activation, isSession: boolean) => {
+    const result = await perform(activation);
+    if (isSession) slots.release();
+    if (stopped === null) await router.route(activation.id, result);
     busy -= 1;
     pump();
   };
@@ -253,26 +256,18 @@ export const startRun = (options: RunOptions): RunHandle => {
     for (let index = 0; index < queue.length;) {
       if (stopped !== null) break;
       const activation = queue[index];
-      const node = activation && graph.nodes.get(activation.id)?.node;
+      const node = activation && nodeOf(activation);
       if (activation === undefined || node === undefined) {
         queue.splice(index, 1);
         continue;
       }
       const isSession = isClaudeNode(node);
-      if (isSession && sessions >= concurrency) {
+      if (isSession && budgetSpent()) break;
+      if (isSession && !slots.tryTake()) {
         index += 1;
         continue;
       }
-      const left = budgetLeft();
-      if (isSession && left !== undefined && left <= 0) {
-        stop(
-          "budget_exhausted",
-          `the run's budget of $${String(limits.budgetUsd)} is spent`,
-        );
-        break;
-      }
       queue.splice(index, 1);
-      if (isSession) sessions += 1;
       busy += 1;
       void run(activation, isSession);
     }

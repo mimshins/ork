@@ -17,7 +17,8 @@ time by [`ork run --node`](./cli.md#running-one-node). Why:
 
 | Type             | What it is                                                                                                                                                                                                           |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ClaudeRuntime`  | `{ driver: "sdk" \| "cli"; start(spec, human): Session }`                                                                                                                                                            |
+| `ClaudeRuntime`  | `{ driver: "sdk" \| "cli"; start(spec, ports): Session }`                                                                                                                                                            |
+| `SessionPorts`   | what the session reaches besides its spec: the `HumanChannel`, and for a leader in a run its `Ownership` (children, worker templates, `delegate`, `spawn`; [scheduler](./scheduler.md#delegation))                   |
 | `SessionSpec`    | node id, `cwd`, `model`, the rendered brief (`prompt`), `systemAppend`, `settingSources` (`project`, `local`; never `user`), tool rules, permission mode, `maxTurns`, `budgetUsd`, the report schema, `resume`       |
 | `Session`        | `events` (an async iterable of `RuntimeEvent`), `send(text)` (delivered between turns), `interrupt()`                                                                                                                |
 | `RuntimeEvent`   | `session.started`, `assistant.text`, `tool.called`, `tool.result`, `session.finished` (with the outcome)                                                                                                             |
@@ -53,7 +54,7 @@ A Claude node ends with **structured output**, not a tool call
 | Report                | `outputFormat: { type: "json_schema", schema }`                                                      | `--json-schema`                                                                             |
 | Ork's tools           | an in-process SDK MCP server named `ork`                                                             | Ork's local MCP server, passed with `--mcp-config`                                          |
 | Permission prompts    | `canUseTool` → `HumanChannel.permit`                                                                 | `--permission-prompt-tool mcp__ork__permission` → `HumanChannel.permit`                     |
-| Tool rules            | `allowedTools` (+ `mcp__ork__ask_user`), `disallowedTools`                                           | `--allowedTools`, `--disallowedTools`                                                       |
+| Tool rules            | `allowedTools` (+ Ork's preapproved tools), `disallowedTools`                                        | `--allowedTools` (+ the same), `--disallowedTools`                                          |
 | Limits and resume     | `maxTurns`, `maxBudgetUsd`, `resume`                                                                 | `--max-turns`, `--max-budget-usd`, `--resume`                                               |
 | A failure to start    | a `session.finished` event with `subtype: "error_driver"`                                            | the same, with the last stderr line                                                         |
 
@@ -66,9 +67,14 @@ A Claude node ends with **structured output**, not a tool call
 - MCP's streamable HTTP transport with plain JSON replies (no SSE stream):
   `initialize`, `ping`, `tools/list`, `tools/call`; notifications get `202`;
   `GET` and other methods get `405`; bodies over 1 MiB get `413`;
-- tools: `ask_user` (question, two to four options, `recommended`, `context`)
-  and `permission` (the CLI's permission-prompt contract, answering
-  `{"behavior":"allow"|"deny", …}`); arguments are validated with Zod.
+- tools: what the registry binds for the session ([messaging](./messaging.md)):
+  `ask_user`, `permission` (the CLI's permission-prompt contract, answering
+  `{"behavior":"allow"|"deny", …}`), and for leaders `delegate` and
+  `spawn_worker`; arguments are validated with Zod;
+- a per-server `timeout` of 24 hours in `--mcp-config`: the CLI otherwise ends
+  an HTTP request after 60 seconds and drops a call silent for 5 minutes, and
+  `delegate` waits for whole child sessions. `MCP_TOOL_TIMEOUT` (about 28 hours
+  by default) still caps it. The SDK's in-process server has neither limit.
 
 ## Usage accounting
 

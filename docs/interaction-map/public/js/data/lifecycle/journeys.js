@@ -115,7 +115,6 @@ export const JOURNEYS = [
         title: "Round 1: changes requested",
         detail:
           "`any(statuses, 'changes_requested')` holds. The builder's long-lived session resumes with the three reports.",
-        status: "partial",
         docs: [DESIGN.format],
       },
       {
@@ -123,7 +122,6 @@ export const JOURNEYS = [
         title: "The builder fixes its branch",
         detail:
           "It keeps its own context from round 1; only the reviews are new.",
-        status: "partial",
       },
       {
         from: "builder",
@@ -143,7 +141,7 @@ export const JOURNEYS = [
         from: "reviews",
         title: "The round limit is reached",
         detail:
-          "A third round would exceed `maxRounds: 2`, so the edge is not taken. The node escalates to its owner; `builder` has none, so the scheduler raises a decision.",
+          "A third round would exceed `maxRounds: 2`, so the edge is not taken, and the scheduler asks you.",
       },
       {
         from: "scheduler",

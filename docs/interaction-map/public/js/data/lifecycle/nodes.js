@@ -146,7 +146,8 @@ export const NODES = [
       "Runs at most `limits.concurrency` sessions at once (4 here).",
       "Stops the run when spend reaches `limits.budgetUsd` ($20 here).",
       "An edge without `when:` fires only on success; a skipped branch skips everything that only it feeds, so the join never waits on it.",
-      "When a loop edge has used its `maxRounds`, you are asked: stop, one more round, or go on. Escalation to the owner comes with delegation.",
+      "When a loop edge has used its `maxRounds`, you are asked: stop, one more round, or go on.",
+      "Runs the children a leader delegates to, on the slot the waiting leader lends them.",
     ],
     see: [
       {
@@ -229,8 +230,8 @@ export const NODES = [
     facts: [
       "Prompt: `Implement the spec at {{nodes.spec.output.artifacts.spec}}.`",
       "Gets the default `isolation: worktree`: a branch of its own, `ork/<run>/builder`.",
-      "Built: it runs each round; a re-entry's brief carries the reviews. Resuming its session across rounds comes with delegation.",
-      "Owns `security`, `ux` and `code`: it briefs them, and their escalations come to it.",
+      "Built: on a re-entry it resumes its session, and only the reviews are new.",
+      "Owns `security`, `ux` and `code`: it can also `delegate` to them during its session and gets their reports back.",
     ],
     docs: [EXAMPLE, DESIGN.concepts],
   },

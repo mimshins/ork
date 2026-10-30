@@ -5,7 +5,12 @@
 
 import { fileURLToPath } from "node:url";
 
-import type { HumanChannel, RuntimeEvent, SessionSpec } from "@krapht/ork-core";
+import type {
+  HumanChannel,
+  Ownership,
+  RuntimeEvent,
+  SessionSpec,
+} from "@krapht/ork-core";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -17,6 +22,7 @@ import {
   normalize,
   NO_SDK_CREDENTIALS,
   orkTools,
+  preapprovedTools,
   sdkCredentials,
   startOrkMcpHttp,
 } from "../src/index.ts";
@@ -91,7 +97,7 @@ describe("normalize", () => {
 describe("Ork's MCP server", () => {
   it("lists and calls tools over JSON-RPC", async () => {
     const { human, asked } = recordingHuman();
-    const tools = orkTools(human, "n");
+    const tools = orkTools({ nodeId: "n", driver: "cli", ports: { human } });
     const list = await handleRpc(tools, {
       jsonrpc: "2.0",
       id: 1,
@@ -129,7 +135,9 @@ describe("Ork's MCP server", () => {
 
   it("serves only 127.0.0.1 with its bearer token", async () => {
     const { human } = recordingHuman();
-    const endpoint = await startOrkMcpHttp(human, "n");
+    const endpoint = await startOrkMcpHttp(
+      orkTools({ nodeId: "n", driver: "cli", ports: { human } }),
+    );
     expect(endpoint.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/mcp$/u);
     const post = (headers: Record<string, string>) =>
       fetch(endpoint.url, {
@@ -145,12 +153,105 @@ describe("Ork's MCP server", () => {
   });
 });
 
+/** A leader's ports with one child, `fix`, and room for one more worker. */
+const leaderPorts = () => {
+  const { human } = recordingHuman();
+  const delegated: unknown[] = [];
+  const ownership: Ownership = {
+    children: [{ id: "fix", type: "claude.worker" }],
+    templates: ["fix"],
+    workersLeft: () => 1,
+    delegate: tasks => {
+      delegated.push(tasks);
+      return Promise.resolve({
+        reports: [
+          {
+            child: "fix",
+            ok: true,
+            output: {
+              status: "pass",
+              summary: "fixed",
+              usage: { costUsd: 0.5, turns: 3 },
+            },
+          },
+        ],
+        notes: [],
+      });
+    },
+    spawn: () => Promise.resolve({ reports: [], notes: [] }),
+  };
+  return { ports: { human, ownership }, delegated };
+};
+
+const names = (tools: { name: string }[]) => tools.map(t => t.name);
+
+describe("Ork's tool registry", () => {
+  it("gives delegate and spawn_worker only to a leader with children", () => {
+    const { human } = recordingHuman();
+    expect(
+      names(orkTools({ nodeId: "w", driver: "sdk", ports: { human } })),
+    ).toEqual(["ask_user"]);
+    const leader = orkTools({
+      nodeId: "lead",
+      driver: "cli",
+      ports: leaderPorts().ports,
+    });
+    expect(names(leader)).toEqual([
+      "ask_user",
+      "permission",
+      "delegate",
+      "spawn_worker",
+    ]);
+    expect(preapprovedTools(leader)).toEqual([
+      "mcp__ork__ask_user",
+      "mcp__ork__delegate",
+      "mcp__ork__spawn_worker",
+    ]);
+  });
+
+  it("delegates and returns the reports without usage details", async () => {
+    const { ports, delegated } = leaderPorts();
+    const tools = orkTools({ nodeId: "lead", driver: "cli", ports });
+    const reply = await handleRpc(tools, {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: {
+        name: "delegate",
+        arguments: { tasks: [{ child: "fix", brief: "Fix the bug" }] },
+      },
+    });
+    expect(delegated).toEqual([[{ child: "fix", brief: "Fix the bug" }]]);
+    expect(reply).toEqual({
+      result: {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              reports: [
+                {
+                  child: "fix",
+                  ok: true,
+                  status: "pass",
+                  summary: "fixed",
+                  costUsd: 0.5,
+                },
+              ],
+            }),
+          },
+        ],
+      },
+    });
+  });
+});
+
 describe("the CLI driver", () => {
   it("builds print-mode arguments with Ork's MCP server and permission tool", () => {
-    const args = buildCliArgs(spec, {
-      url: "http://127.0.0.1:1/mcp",
-      token: "t",
-    });
+    const args = buildCliArgs(
+      spec,
+      { url: "http://127.0.0.1:1/mcp", token: "t" },
+      ["mcp__ork__ask_user"],
+    );
     expect(args.slice(0, 6)).toEqual([
       "-p",
       "--input-format",
@@ -167,12 +268,16 @@ describe("the CLI driver", () => {
     expect(value("--model")).toBe("haiku");
     expect(value("--max-turns")).toBe("5");
     expect(value("--mcp-config")).toContain('"Authorization":"Bearer t"');
+    // delegate waits for whole child sessions: past the 60 s request default.
+    expect(value("--mcp-config")).toContain('"timeout":86400000');
     expect(args).not.toContain("Review the branch");
   });
 
   it("runs a session end to end against a stand-in claude", async () => {
     const { human, asked } = recordingHuman();
-    const session = createCliRuntime({ bin: FAKE_CLAUDE }).start(spec, human);
+    const session = createCliRuntime({ bin: FAKE_CLAUDE }).start(spec, {
+      human,
+    });
     const events = await collect(session.events);
 
     expect(events.map(e => e.type)).toEqual([
@@ -220,7 +325,7 @@ describe("the CLI driver", () => {
     const { human } = recordingHuman();
     const session = createCliRuntime({ bin: "/nonexistent/claude" }).start(
       spec,
-      human,
+      { human },
     );
     const [finished] = await collect(session.events);
     expect(finished).toMatchObject({
@@ -241,7 +346,7 @@ describe("the SDK driver", () => {
     );
     const { human } = recordingHuman();
     const [finished] = await collect(
-      createSdkRuntime({}).start(spec, human).events,
+      createSdkRuntime({}).start(spec, { human }).events,
     );
     expect(finished).toMatchObject({
       outcome: { subtype: "error_driver", errors: [NO_SDK_CREDENTIALS] },
@@ -250,7 +355,11 @@ describe("the SDK driver", () => {
 
   it("maps the spec onto Agent SDK options", async () => {
     const { human, permits } = recordingHuman();
-    const options = buildSdkOptions(spec, human, { ANTHROPIC_API_KEY: "k" });
+    const options = buildSdkOptions(
+      spec,
+      { human },
+      { ANTHROPIC_API_KEY: "k" },
+    );
     expect(options).toMatchObject({
       cwd: spec.cwd,
       model: "haiku",

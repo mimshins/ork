@@ -235,7 +235,7 @@ export const NODES = [
     facts: [
       "Built: `ask_user(question, options, recommended, context)`; the CLI answers it on the terminal until the decision queue.",
       "Specified: `send_message(to, body)`, `read_inbox()`, `claim`, `release`. The report is structured output, not a tool.",
-      "Leaders: `delegate(child, brief)`, `spawn_worker(template, brief)`.",
+      "Built, for leaders: `delegate([{ child, brief }])` and `spawn_worker([{ template, brief }])`, blocking until every child has reported.",
       "`feedback(kind, target, …)` reports what got in the way, capped per session.",
     ],
     see: [
@@ -246,7 +246,7 @@ export const NODES = [
       },
       { map: "feedback", node: "tool", label: "The feedback tool" },
     ],
-    docs: [RUNTIME.tools, DESIGN.messaging],
+    docs: [RUNTIME.tools, RUNTIME.delegate, DESIGN.messaging],
   },
   {
     id: "permission",

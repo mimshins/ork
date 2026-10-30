@@ -15,7 +15,12 @@ import type {
 
 import { type OrkMcpEndpoint, startOrkMcpHttp } from "./mcp-http.ts";
 import { driverFailure, normalize } from "./normalize.ts";
-import { ORK_SERVER } from "./tools.ts";
+import {
+  ORK_SERVER,
+  orkTools,
+  preapprovedTools,
+  toolId,
+} from "./tools/index.ts";
 
 export type CliRuntimeOptions = {
   /** The program to run; defaults to `claude` on the PATH. */
@@ -25,6 +30,14 @@ export type CliRuntimeOptions = {
 
 const STDERR_LINES = 20;
 
+/**
+ * Per-request timeout for Ork's MCP server, in ms. The CLI otherwise gives an
+ * HTTP server's request 60 seconds and drops a call silent for 5 minutes, and
+ * `delegate` waits for whole child sessions (the per-server `timeout` raises
+ * both; `MCP_TOOL_TIMEOUT` still caps it).
+ */
+export const ORK_TOOL_TIMEOUT_MS = 24 * 60 * 60 * 1000;
+
 const userLine = (text: string): string =>
   `${JSON.stringify({
     type: "user",
@@ -32,10 +45,14 @@ const userLine = (text: string): string =>
     parent_tool_use_id: null,
   })}\n`;
 
-/** The `claude -p` arguments for a session spec. The brief goes on stdin. */
+/**
+ * The `claude -p` arguments for a session spec. The brief goes on stdin;
+ * `allowed` are the Ork tools that need no permission prompt.
+ */
 export const buildCliArgs = (
   spec: SessionSpec,
   mcp: Pick<OrkMcpEndpoint, "url" | "token">,
+  allowed: readonly string[],
 ): string[] => {
   const mcpConfig = {
     mcpServers: {
@@ -43,6 +60,7 @@ export const buildCliArgs = (
         type: "http",
         url: mcp.url,
         headers: { Authorization: `Bearer ${mcp.token}` },
+        timeout: ORK_TOOL_TIMEOUT_MS,
       },
     },
   };
@@ -64,9 +82,9 @@ export const buildCliArgs = (
     "--mcp-config",
     JSON.stringify(mcpConfig),
     "--permission-prompt-tool",
-    `mcp__${ORK_SERVER}__permission`,
+    toolId("permission"),
     "--allowedTools",
-    [...spec.tools.allow, `mcp__${ORK_SERVER}__ask_user`].join(","),
+    [...spec.tools.allow, ...allowed].join(","),
   ];
   if (spec.tools.deny.length > 0) {
     args.push("--disallowedTools", spec.tools.deny.join(","));
@@ -98,14 +116,16 @@ export const createCliRuntime = (
   options: CliRuntimeOptions = {},
 ): ClaudeRuntime => ({
   driver: "cli",
-  start: (spec, human): Session => {
+  start: (spec, ports): Session => {
     const pending: string[] = [spec.prompt];
     let write: ((text: string) => void) | undefined;
     let stop: (() => void) | undefined;
 
     const events = async function* (): AsyncGenerator<RuntimeEvent> {
-      const mcp = await startOrkMcpHttp(human, spec.nodeId);
-      const child = spawn(options.bin ?? "claude", buildCliArgs(spec, mcp), {
+      const tools = orkTools({ nodeId: spec.nodeId, driver: "cli", ports });
+      const mcp = await startOrkMcpHttp(tools);
+      const args = buildCliArgs(spec, mcp, preapprovedTools(tools));
+      const child = spawn(options.bin ?? "claude", args, {
         cwd: spec.cwd,
         env: { ...(options.env ?? process.env) },
         stdio: ["pipe", "pipe", "pipe"],

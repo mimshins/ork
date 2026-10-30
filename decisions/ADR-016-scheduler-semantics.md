@@ -24,8 +24,10 @@ it has everything, and what happens when a loop runs out.
    as not taken is skipped and its outgoing edges are not taken, so joins never
    wait forever. Loop (`maxRounds`) edges never carry a skip.
 4. **Bounded loops escalate.** A loop edge is taken at most `maxRounds` times
-   per run; then the run asks the human (stop, one more round, or onward) until
-   owners handle escalation (M1c slice 3).
+   per run; then the run asks the human (stop, one more round, or onward). A
+   child that fails or runs out inside `delegate` goes to its leader in the
+   report instead (ADR-017); telling a live owner about a loop needs the message
+   bus (M1d).
 
 Detail: [specs/scheduler.md](../specs/scheduler.md); code:
 [scheduler.ts](../packages/core/src/run/scheduler.ts),

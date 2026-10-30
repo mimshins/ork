@@ -1,22 +1,30 @@
 # Messaging, decisions and logs
 
-Status: **Partial**: `ask_user` and the permission prompt reach a human channel
-today ([tools.ts](../packages/runtime-claude/src/tools.ts)); the message bus,
+Status: **Partial**: `ask_user`, the permission prompt, `delegate` and
+`spawn_worker` are built
+([tools/](../packages/runtime-claude/src/tools/index.ts)); the message bus,
 decision queue and event store are specified for M1d.
 
-**Ork MCP tools injected into every Claude node** (`ask_user` and, for the CLI
-driver, `permission` are built; a node's report is its structured output, see
-[runtime](./runtime.md#the-node-report)):
+**Ork MCP tools.** One registry
+([tools/index.ts](../packages/runtime-claude/src/tools/index.ts)), one file per
+tool, binds the tools each session gets; both drivers serve what it binds. A
+node's report is its structured output, not a tool
+([runtime](./runtime.md#the-node-report)). Built tools are marked ✓:
 
 - `send_message(to, body)`
 - `read_inbox()`
-- `delegate(child, brief)`: leaders only.
-- `spawn_worker(template, brief)`: leaders only, capped.
-- `ask_user(question, options[], recommended, context)`
+- ✓ `delegate({ tasks: [{ child, brief }] })`: leaders with declared children
+  only ([scheduler](./scheduler.md#delegation)).
+- ✓ `spawn_worker({ tasks: [{ template, brief }] })`: leaders with a child
+  worker and `maxWorkers` left only.
+- ✓ `ask_user(question, options[], recommended, context)`
 - `claim(resource)` and `release(resource)`
 - `feedback(kind, target, title, body, severity, evidence[])`: capped per
   session; see [Feedback and self-improvement](./feedback.md).
-- `permission`: CLI driver only.
+- ✓ `permission`: CLI driver only.
+
+Ork's own tools need no permission prompt, except `permission`, which is the
+prompt itself.
 
 **Message bus:**
 

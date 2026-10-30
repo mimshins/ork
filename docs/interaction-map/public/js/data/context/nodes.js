@@ -5,7 +5,7 @@
  *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
  */
 
-import { DESIGN, PRACTICES, SCHEMA } from "../refs.js";
+import { DESIGN, PRACTICES, RUNTIME, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -149,15 +149,16 @@ export const NODES = [
     zone: "layers",
     x: 40,
     y: 720,
-    status: "specified",
+    status: "partial",
     pkg: null,
     summary:
       "What the node is asked to do now: its rendered `prompt`, or its owner's `delegate` brief, plus the artifacts it needs, by path. Never the owner's full transcript.",
     facts: [
       "Templates such as `{{nodes.spec.output.artifacts.spec}}` render to a path, not to the file's content.",
+      "Built: a delegated brief follows the node's own prompt as `## Task from <owner>`.",
       "Constraints from the owner (scope, files, deadline) travel with it.",
     ],
-    docs: [DESIGN.concepts, DESIGN.context],
+    docs: [RUNTIME.plan, DESIGN.concepts, DESIGN.context],
   },
 
   // ── Context compiler ─────────────────────────────────────────────────────
@@ -304,13 +305,13 @@ export const NODES = [
     zone: "spec",
     x: 600,
     y: 840,
-    status: "partial",
+    status: "built",
     pkg: "runtime-claude",
     summary:
       "The node's model, turn and budget limits and its tool rules, from the node or the workflow's `defaults`.",
     facts: [
-      "The schema accepts `model`, `maxTurns`, `budgetUsd`, `tools` and `defaults` today; nothing applies them yet.",
-      "A node at its limit escalates to its owner.",
+      "Built: `model`, `maxTurns`, `budgetUsd` (capped by what is left of the run's) and `tools` go into the session spec, from the node or `defaults`.",
+      "A session out of turns or budget ends without a report: a `fail` for its edges, or for the leader that delegated it.",
       "`readonly` adds the write tools to the deny list.",
     ],
     docs: [SCHEMA.nodes, DESIGN.context],

@@ -11,8 +11,10 @@ import type {
   ClaudeRuntime,
   ExecuteContext,
   HumanChannel,
+  Ownership,
   RuntimeEvent,
   SessionOutcome,
+  SessionPorts,
   SessionSpec,
 } from "@krapht/ork-core";
 import { type Node, NodeSchema, type Workflow } from "@krapht/ork-schema";
@@ -300,6 +302,7 @@ describe("Claude nodes", () => {
         usage,
       },
       usage,
+      sessionId: "s",
     });
     expect(resultOf(outcome(null))).toMatchObject({
       ok: false,
@@ -347,5 +350,88 @@ describe("Claude nodes", () => {
     expect(specs[0]?.budgetUsd).toBe(1);
     expect(specs[0]?.prompt).toContain("Fix ork/r1/builder\n\n## Round 2");
     expect(specs[0]?.prompt).toContain('"changes_requested"');
+  });
+
+  it("gives a leader its children, and resumes it with only the new task", async () => {
+    const started: { spec: SessionSpec; ports: SessionPorts }[] = [];
+    const runtime: ClaudeRuntime = {
+      driver: "sdk",
+      start: (spec, ports) => {
+        started.push({ spec, ports });
+        return {
+          events: finishedPassing(),
+          send: () => {},
+          interrupt: () => Promise.resolve(),
+        };
+      },
+    };
+    const execute = claudeExecutor({
+      runtimeFor: () => Promise.resolve(runtime),
+      inPlace: true,
+    });
+    const ownership: Ownership = {
+      children: [{ id: "fix", type: "claude.worker", description: "fixes" }],
+      templates: ["fix"],
+      workersLeft: () => 2,
+      delegate: () => Promise.resolve({ reports: [], notes: [] }),
+      spawn: () => Promise.resolve({ reports: [], notes: [] }),
+    };
+    const lead: Node = {
+      type: "claude.leader",
+      prompt: "Ship {{inputs.branch}}",
+    };
+    const first = await execute(context("lead", lead, { ownership }));
+    const again = await execute(
+      context("lead", lead, {
+        ownership,
+        round: 2,
+        resume: "s1",
+        brief: { from: "boss", text: "Now add tests" },
+      }),
+    );
+    expect(first.sessionId).toBe("s");
+    expect(again.ok).toBe(true);
+    const [one, two] = started;
+    expect(one?.ports.ownership).toBe(ownership);
+    expect(one?.spec.resume).toBeUndefined();
+    expect(one?.spec.systemAppend).toContain("You own `fix` (fixes)");
+    expect(one?.spec.systemAppend).toContain("(2 left)");
+    expect(two?.spec.resume).toBe("s1");
+    expect(two?.spec.prompt).toBe(
+      "## New task from `boss`\n\nNow add tests\n\nEnd with a new structured report.",
+    );
+  });
+
+  it("puts a delegated brief after the node's own prompt", async () => {
+    const specs: SessionSpec[] = [];
+    const execute = claudeExecutor({
+      runtimeFor: () =>
+        Promise.resolve({
+          driver: "sdk",
+          start: spec => {
+            specs.push(spec);
+            return {
+              events: finishedPassing(),
+              send: () => {},
+              interrupt: () => Promise.resolve(),
+            };
+          },
+        }),
+      inPlace: true,
+    });
+    const node: Node = { type: "claude.worker", prompt: "You fix bugs." };
+    await execute(
+      context("fix-2", node, {
+        template: "fix",
+        brief: { from: "lead", text: "Fix the login bug" },
+        workflow: { schemaVersion: 1, name: "t", nodes: { fix: node } },
+      }),
+    );
+    expect(specs[0]?.prompt).toBe(
+      "You fix bugs.\n\n## Task from `lead`\n\nFix the login bug",
+    );
+    expect(specs[0]?.systemAppend).toContain(
+      "You are the `fix-2` node (claude.worker, an instance of `fix`)",
+    );
   });
 });

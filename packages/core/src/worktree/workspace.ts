@@ -3,6 +3,7 @@
  *   own worktree beside the clone; `shared` and `readonly` nodes, and tool and
  *   gate nodes, work in their owner's worktree or the project root. After a
  *   node, Ork commits its leftovers and merges a passing child into its owner.
+ *   A spawned worker works like the declared child it is an instance of.
  */
 
 import { isClaudeNode } from "@krapht/ork-schema";
@@ -20,6 +21,7 @@ import {
   carryFiles,
   commitLeftovers,
   createWorktree,
+  fastForward,
   mergeBranch,
   removeWorktree,
   type Worktree,
@@ -50,14 +52,16 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
   const merged = new Set<string>();
   const unmerged = new Map<string, string>();
   const mergeLocks = new Map<string, Promise<unknown>>();
+  const templateOf = new Map<string, string>();
 
+  const nodeOf = (id: string) =>
+    graph.nodes.get(templateOf.get(id) ?? id)?.node;
   const isolationOf = (id: string): Isolation => {
-    const node = graph.nodes.get(id)?.node;
+    const node = nodeOf(id);
     if (node === undefined || !isClaudeNode(node)) return "shared";
     return node.isolation ?? graph.workflow.defaults?.isolation ?? "worktree";
   };
-  const ownerOf = (id: string): string | undefined =>
-    graph.nodes.get(id)?.node.parent;
+  const ownerOf = (id: string): string | undefined => nodeOf(id)?.parent;
 
   /** The nearest owner with a worktree, for nodes that work in someone else's. */
   const hostOf = (id: string): string | undefined => {
@@ -84,9 +88,15 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
   };
 
   const ensureWorktree = async (id: string): Promise<Worktree> => {
-    const existing = worktrees.get(id);
-    if (existing !== undefined) return existing;
     const host = hostOf(id);
+    const existing = worktrees.get(id);
+    if (existing !== undefined) {
+      // A later run (a loop, another delegation) starts from the owner's work,
+      // which includes this branch once it was merged; otherwise it stays.
+      const hosted = host === undefined ? undefined : worktrees.get(host);
+      if (hosted !== undefined) await fastForward(existing.path, hosted.branch);
+      return existing;
+    }
     const base =
       host === undefined ? head : (worktrees.get(host)?.branch ?? head);
     const created = await createWorktree({ root, runId, nodeId: id, base });
@@ -115,7 +125,8 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     return worktree;
   };
 
-  const prepare: Workspace["prepare"] = async id => {
+  const prepare: Workspace["prepare"] = async (id, template) => {
+    if (template !== undefined) templateOf.set(id, template);
     if (isolationOf(id) === "worktree") {
       const worktree = await ensureWorktree(id);
       placeOf.set(id, worktree.path);
@@ -133,6 +144,21 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     placeOf.set(id, hosted.path);
     const checkout: Checkout = { ...hosted, own: false, owner: host };
     return { cwd: hosted.path, checkout };
+  };
+
+  const checkpoint: Workspace["checkpoint"] = async id => {
+    const worktree =
+      isolationOf(id) === "worktree" ? worktrees.get(id) : undefined;
+    if (worktree === undefined) return null;
+    try {
+      const message = `ork: ${id} before delegating (run ${runId})`;
+      if (await commitLeftovers(worktree.path, message)) {
+        event(id, "committed", worktree, "before delegating");
+      }
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error);
+    }
   };
 
   /** One merge into an owner's worktree at a time. */
@@ -153,6 +179,8 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
       outputs.set(id, result.output);
       return result;
     }
+    // Whatever this run adds is unmerged until it is merged.
+    merged.delete(id);
     let next: NodeResult = {
       ...result,
       output: { ...result.output, branch: worktree.branch },
@@ -228,5 +256,5 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     return kept;
   };
 
-  return { prepare, finish, close };
+  return { prepare, checkpoint, finish, close };
 };

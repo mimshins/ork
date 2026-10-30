@@ -16,8 +16,8 @@ new one.
 A re-entered **`claude.leader` resumes its session** (`resume` on the runtime
 port) with the new input as its next message. A re-entered **`claude.worker`
 starts a fresh session** whose brief carries the input in a `## Round n`
-section. Until leader resume lands (M1c slice 3), both start fresh with that
-section ([specs/scheduler.md](../specs/scheduler.md)).
+section. A leader delegated to again resumes the same way. Built in M1c
+([specs/scheduler.md](../specs/scheduler.md#loops)).
 
 ## Options considered
 

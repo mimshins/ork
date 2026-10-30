@@ -12,18 +12,9 @@ import {
   type ServerResponse,
 } from "node:http";
 
-import type { HumanChannel } from "@krapht/ork-core";
 import { z } from "zod";
 
-import {
-  ASK_USER_DESCRIPTION,
-  askUser,
-  askUserShape,
-  ORK_SERVER,
-  permission,
-  permissionShape,
-  type ToolText,
-} from "./tools.ts";
+import { type BoundTool, ORK_SERVER } from "./tools/index.ts";
 
 export type OrkMcpEndpoint = {
   url: string;
@@ -31,46 +22,9 @@ export type OrkMcpEndpoint = {
   close: () => Promise<void>;
 };
 
-type ToolDef = {
-  name: string;
-  description: string;
-  schema: z.ZodType;
-  call: (args: unknown) => Promise<ToolText>;
-};
-
 const PATH = "/mcp";
 const MAX_BODY = 1024 * 1024;
 export const MCP_PROTOCOL_FALLBACK = "2025-06-18";
-
-const define = <S extends z.ZodRawShape>(
-  name: string,
-  description: string,
-  shape: S,
-  run: (args: z.infer<z.ZodObject<S>>) => Promise<ToolText>,
-): ToolDef => {
-  const schema = z.object(shape);
-  return {
-    name,
-    description,
-    schema,
-    call: args => run(schema.parse(args)),
-  };
-};
-
-export const orkTools = (human: HumanChannel, nodeId: string): ToolDef[] => [
-  define(
-    "ask_user",
-    ASK_USER_DESCRIPTION,
-    askUserShape,
-    askUser(human, nodeId),
-  ),
-  define(
-    "permission",
-    "Ork's permission prompt for the claude CLI.",
-    permissionShape,
-    permission(human, nodeId),
-  ),
-];
 
 const JsonRpcSchema = z.object({
   jsonrpc: z.literal("2.0"),
@@ -85,7 +39,7 @@ type RpcReply =
 
 /** Handles one JSON-RPC request; `null` for a notification (no reply). */
 export const handleRpc = async (
-  tools: readonly ToolDef[],
+  tools: readonly BoundTool[],
   message: unknown,
 ): Promise<RpcReply | null> => {
   const parsed = JsonRpcSchema.safeParse(message);
@@ -171,7 +125,7 @@ const respond = (res: ServerResponse, status: number, body?: unknown): void => {
 const serve = async (
   req: IncomingMessage,
   res: ServerResponse,
-  tools: readonly ToolDef[],
+  tools: readonly BoundTool[],
   token: string,
 ): Promise<void> => {
   if (!authorized(req, token)) {
@@ -218,11 +172,9 @@ const serve = async (
  * random port, behind a per-session bearer token.
  */
 export const startOrkMcpHttp = async (
-  human: HumanChannel,
-  nodeId: string,
+  tools: readonly BoundTool[],
 ): Promise<OrkMcpEndpoint> => {
   const token = randomBytes(24).toString("hex");
-  const tools = orkTools(human, nodeId);
   const http = createServer((req, res) => {
     serve(req, res, tools, token).catch(() => {
       if (!res.headersSent) respond(res, 500);

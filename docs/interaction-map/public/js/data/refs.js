@@ -97,6 +97,14 @@ export const ENGINE = {
     "Code: edges, joins, routers and dead paths",
   ),
   tests: d("packages/core/test/scheduler.test.ts", "Tests: the scheduler"),
+  delegation: d(
+    "packages/core/src/run/delegation.ts",
+    "Code: a leader's delegate and spawn_worker",
+  ),
+  delegationTests: d(
+    "packages/core/test/delegation.test.ts",
+    "Tests: delegation, spawned workers and leader resume",
+  ),
 };
 
 export const NODE_TYPES = {
@@ -169,7 +177,14 @@ export const RUNTIME = {
     "packages/runtime-claude/src/mcp-http.ts",
     "Code: Ork's local MCP server",
   ),
-  tools: d("packages/runtime-claude/src/tools.ts", "Code: Ork's tools"),
+  tools: d(
+    "packages/runtime-claude/src/tools/index.ts",
+    "Code: the registry of Ork's tools",
+  ),
+  delegate: d(
+    "packages/runtime-claude/src/tools/delegate.ts",
+    "Code: the delegate and spawn_worker tools",
+  ),
   tests: d(
     "packages/runtime-claude/test/runtime.test.ts",
     "Tests: both drivers, against a stand-in claude",

@@ -383,8 +383,8 @@ export const EDGES = [
     kind: "local",
     label: "delegate · spawn_worker",
     detail:
-      "Leaders delegate to declared children or spawn workers from a template. A node's report is its structured output, which the scheduler routes.",
-    status: "specified",
+      "Leaders delegate to declared children or spawn more instances of a child worker; the call blocks until every child has reported. A node's report is its structured output, which the scheduler routes.",
+    status: "built",
     via: [
       [1410, 516],
       [1410, 456],

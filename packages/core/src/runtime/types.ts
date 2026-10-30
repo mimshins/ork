@@ -113,7 +113,50 @@ export type Session = {
   interrupt: () => Promise<void>;
 };
 
+/** One piece of work a leader hands to a declared child (ADR-017). */
+export type DelegateTask = { child: string; brief: string };
+
+/** One piece of work a leader hands to a new instance of a child worker. */
+export type SpawnTask = { template: string; brief: string };
+
+/** What came back from one delegated or spawned child. */
+export type ChildReport = {
+  /** The child's id; a spawned worker's is `<template>-<n>`. */
+  child: string;
+  ok: boolean;
+  /** The child's output: its report, `branch`, and `merge` on a conflict. */
+  output: Record<string, unknown>;
+  error?: string;
+};
+
+/** The reports, and anything the leader should know about how they ran. */
+export type Delegation = { reports: ChildReport[]; notes: string[] };
+
+/** A child a leader may delegate to. */
+export type OwnedChild = { id: string; type: string; description?: string };
+
+/**
+ * What a leader's session can do with the nodes it owns, provided by the
+ * scheduler. Both calls block until every child has reported (ADR-017).
+ */
+export type Ownership = {
+  children: OwnedChild[];
+  /** Declared child workers `spawn` can start more instances of. */
+  templates: string[];
+  /** How many more workers `spawn` may start. */
+  workersLeft: () => number;
+  delegate: (tasks: DelegateTask[]) => Promise<Delegation>;
+  spawn: (tasks: SpawnTask[]) => Promise<Delegation>;
+};
+
+/** What a session can reach besides its spec: the human, and its children. */
+export type SessionPorts = {
+  human: HumanChannel;
+  /** Only for a leader inside a run. */
+  ownership?: Ownership;
+};
+
 export type ClaudeRuntime = {
   driver: Driver;
-  start: (spec: SessionSpec, human: HumanChannel) => Session;
+  start: (spec: SessionSpec, ports: SessionPorts) => Session;
 };

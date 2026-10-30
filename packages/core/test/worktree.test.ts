@@ -321,6 +321,65 @@ describe("worktrees", () => {
   });
 });
 
+/**
+ * A leader that writes a plan, delegates to `fix`, spawns one more, and checks
+ * both children's files are in its checkout; children record whether they saw
+ * the plan.
+ */
+const leading = () => {
+  const seen: Record<string, boolean> = {};
+  const executor: NodeExecutor = async context => {
+    if (context.ownership === undefined) {
+      seen[context.id] = existsSync(path.join(context.cwd, "plan.md"));
+      write(context.cwd, `src/${context.id}.ts`, `${context.id}\n`);
+      return { ok: true, output: { status: "pass", summary: "ok" } };
+    }
+    write(context.cwd, "plan.md", "# Plan\n");
+    await context.ownership.delegate([{ child: "fix", brief: "fix" }]);
+    await context.ownership.spawn([{ template: "fix", brief: "more" }]);
+    seen["merged"] = ["src/fix.ts", "src/fix-2.ts"].every(f =>
+      existsSync(path.join(context.cwd, f)),
+    );
+    return { ok: true, output: { status: "pass", summary: "led" } };
+  };
+  return { executor, seen };
+};
+
+describe("delegation in worktrees", () => {
+  it("commits the leader's work, then merges each child into its checkout", async () => {
+    const root = repo();
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: owned",
+        "nodes:",
+        "  lead: { type: claude.leader, maxWorkers: 1 }",
+        "  fix: { type: claude.worker, parent: lead }",
+      ].join("\n"),
+    );
+    const { executor, seen } = leading();
+    const { result, worktreeEvents } = await runIn(root, graph, executor);
+
+    expect(result.status).toBe("succeeded");
+    expect(seen).toEqual({ fix: true, "fix-2": true, merged: true });
+    expect(worktreeEvents).toEqual([
+      "lead created",
+      "lead committed",
+      "fix created",
+      "fix committed",
+      "fix merged",
+      "fix-2 created",
+      "fix-2 committed",
+      "fix-2 merged",
+      "fix removed",
+      "fix-2 removed",
+    ]);
+    expect(sh(worktreePath(root, "r1", "lead"), "log", "--format=%s")).toMatch(
+      /^ork: merge fix-2 into lead \(run r1\)\n/u,
+    );
+  });
+});
+
 describe("ork worktrees", () => {
   it("lists Ork's branches from git and cleans them safely", async () => {
     const root = repo();

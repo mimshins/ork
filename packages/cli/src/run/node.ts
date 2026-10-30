@@ -77,7 +77,7 @@ export const runNode = async (
   }
 
   const runtime = await options.runtime(options.driver ?? plan.driver);
-  const session = runtime.start(plan.spec, options.human);
+  const session = runtime.start(plan.spec, { human: options.human });
   options.onSession?.(session);
 
   const tools = new Map<string, string>();

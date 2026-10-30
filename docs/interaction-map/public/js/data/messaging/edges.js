@@ -145,8 +145,9 @@ export const EDGES = [
     to: "mcpTools",
     kind: "mcp",
     label: "delegate · report",
-    detail: "The leader briefs its children and reports to the run.",
-    status: "specified",
+    detail:
+      "The leader briefs its children through `delegate` and gets their reports back; its own report ends its session.",
+    status: "built",
   },
   {
     id: "security-mcp",

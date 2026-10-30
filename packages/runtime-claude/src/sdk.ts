@@ -12,20 +12,15 @@ import {
 } from "@anthropic-ai/claude-agent-sdk";
 import type {
   ClaudeRuntime,
-  HumanChannel,
   RuntimeEvent,
   Session,
+  SessionPorts,
   SessionSpec,
 } from "@krapht/ork-core";
 
 import { driverFailure, normalize } from "./normalize.ts";
 import { createQueue } from "./queue.ts";
-import {
-  ASK_USER_DESCRIPTION,
-  askUser,
-  askUserShape,
-  ORK_SERVER,
-} from "./tools.ts";
+import { ORK_SERVER, orkTools, preapprovedTools } from "./tools/index.ts";
 
 export type Env = Readonly<Record<string, string | undefined>>;
 
@@ -61,20 +56,17 @@ const definedEnv = (env: Env): Record<string, string> =>
 /** The Agent SDK options for a session spec. */
 export const buildSdkOptions = (
   spec: SessionSpec,
-  human: HumanChannel,
+  ports: SessionPorts,
   env: Env,
 ): Options => {
+  const { human } = ports;
+  const tools = orkTools({ nodeId: spec.nodeId, driver: "sdk", ports });
   const ork = createSdkMcpServer({
     name: ORK_SERVER,
     version: "0.0.0",
-    tools: [
-      tool(
-        "ask_user",
-        ASK_USER_DESCRIPTION,
-        askUserShape,
-        askUser(human, spec.nodeId),
-      ),
-    ],
+    tools: tools.map(t =>
+      tool(t.name, t.description, t.shape, args => t.call(args)),
+    ),
   });
   const options: Options = {
     cwd: spec.cwd,
@@ -86,7 +78,7 @@ export const buildSdkOptions = (
       append: spec.systemAppend,
     },
     permissionMode: spec.permissionMode,
-    allowedTools: [...spec.tools.allow, `mcp__${ORK_SERVER}__ask_user`],
+    allowedTools: [...spec.tools.allow, ...preapprovedTools(tools)],
     disallowedTools: spec.tools.deny,
     mcpServers: { [ORK_SERVER]: ork },
     outputFormat: { type: "json_schema", schema: spec.reportSchema },
@@ -111,7 +103,7 @@ export const buildSdkOptions = (
 /** Drives a session with the Claude Agent SDK, in this process. */
 export const createSdkRuntime = (env: Env = process.env): ClaudeRuntime => ({
   driver: "sdk",
-  start: (spec, human): Session => {
+  start: (spec, ports): Session => {
     const input = createQueue<SDKUserMessage>();
     input.push(userMessage(spec.prompt));
     let current: ReturnType<typeof query> | undefined;
@@ -124,7 +116,7 @@ export const createSdkRuntime = (env: Env = process.env): ClaudeRuntime => ({
       try {
         current = query({
           prompt: input,
-          options: buildSdkOptions(spec, human, env),
+          options: buildSdkOptions(spec, ports, env),
         });
         for await (const message of current) {
           for (const event of normalize(message)) {

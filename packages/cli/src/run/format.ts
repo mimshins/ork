@@ -122,7 +122,10 @@ export const formatRunEvent = (
   }
   if (event.type === "node.started") {
     const round = event.round > 1 ? ` (round ${String(event.round)})` : "";
-    return [`${tag(event.id)} ${style("dim", `${event.nodeType}${round}`)}`];
+    const owner = event.owner === undefined ? "" : `, for ${event.owner}`;
+    return [
+      `${tag(event.id)} ${style("dim", `${event.nodeType}${round}${owner}`)}`,
+    ];
   }
   if (event.type === "node.event") {
     const inner = event.event;

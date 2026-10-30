@@ -1,14 +1,18 @@
 # Scheduler: running a workflow
 
-Status: **Partial**: the scheduler, the built-in node types and `ork run <wf>`
-are built ([scheduler.ts](../packages/core/src/run/scheduler.ts),
+Status: **Partial**: the scheduler, delegation, the built-in node types and
+`ork run <wf>` are built ([scheduler.ts](../packages/core/src/run/scheduler.ts),
 [routing.ts](../packages/core/src/run/routing.ts),
+[delegation.ts](../packages/core/src/run/delegation.ts),
 [nodes](../packages/nodes/src/index.ts),
 [tests](../packages/core/test/scheduler.test.ts),
-[node tests](../packages/nodes/test/nodes.test.ts)). Delegation and the context
-compiler are the rest of M1c; where each node works is
-[Worktrees](./worktrees.md). Why:
-[ADR-016](../decisions/ADR-016-scheduler-semantics.md).
+[delegation tests](../packages/core/test/delegation.test.ts),
+[node tests](../packages/nodes/test/nodes.test.ts)). The context compiler is the
+rest of M1c, and telling a live owner about its children's loops needs the
+message bus (M1d); where each node works is [Worktrees](./worktrees.md). Why:
+[ADR-016](../decisions/ADR-016-scheduler-semantics.md),
+[ADR-017](../decisions/ADR-017-blocking-delegate.md),
+[ADR-019](../decisions/ADR-019-leaders-resume-on-reentry.md).
 
 `startRun({ graph, inputs, cwd, executors, human, onEvent, workspace })` runs a
 compiled workflow ([graph compiler](./graph-compiler.md)) and returns
@@ -58,12 +62,44 @@ A join outputs `statuses` (the `status` of each input that ran, in edge order),
   edges leaves a DAG, and dead paths only travel along the DAG.
 - A loop edge whose condition holds is taken until it has been taken `maxRounds`
   times in the run. Then the run emits `loop.exhausted` and asks the
-  `HumanChannel` (until owners handle it, M1c slice 3): **stop** the run
-  (recommended, and the answer when no one is at the terminal), allow **one more
-  round**, or go **onward** along the other edges.
-- A re-entered Claude node starts a fresh session whose brief ends with a
+  `HumanChannel`: **stop** the run (recommended, and the answer when no one is
+  at the terminal), allow **one more round**, or go **onward** along the other
+  edges.
+- A re-entered **worker** starts a fresh session whose brief ends with a
   `## Round n` section carrying its input (e.g. the join's `statuses` and
-  `results`). Leaders will resume their session instead (slice 3).
+  `results`), so reviews stay unbiased.
+- A re-entered **leader resumes** its last session (ADR-019) with only the new
+  round's input as the next message, keeping its context and cache. The same
+  holds when a leader is delegated to again.
+
+## Delegation
+
+A `claude.leader` inside a run gets two blocking tools (ADR-017); both take a
+list of tasks, run them in parallel, and return when every child has reported:
+
+- **`delegate([{ child, brief }])`** runs declared children (its own
+  `claude.leader`/`claude.worker` children). The child's session gets its own
+  `prompt` followed by `## Task from \`<leader>\`` and the brief.
+- **`spawn_worker([{ template, brief }])`** runs a new instance of a child
+  worker, `<template>-2`, `-3`, …, up to the leader's `maxWorkers` (default 0,
+  and then the tool is not offered). An instance works like its template: same
+  settings, its own worktree, owned by the leader.
+- A task is refused, with the reason in its report, when the child is not the
+  leader's, is already running (in the flow or for another call), or no workers
+  are left.
+- A delegated run reports only to its leader: it follows none of the child's
+  edges. A child with incoming edges still runs when they are taken (ADR-008).
+- **Reports.** Each is the child's output (`status`, `summary`, `artifacts`,
+  `branch`, and `merge` on a conflict) with its cost; a failed child is a report
+  with `ok: false`, for the leader to handle. Before the children start, Ork
+  commits the leader's work, so they branch from it, and merges each passing
+  child into the leader's branch ([worktrees](./worktrees.md#delegation)).
+- **Slots.** While a leader waits, its session slot goes to its children, so a
+  leader never deadlocks at `concurrency: 1`; children and returning leaders are
+  served before queued activations. Children count against the run's budget, and
+  none starts once it is spent.
+- `node.started` carries `owner` for a delegated run; the run summary lists
+  spawned workers by their instance id.
 
 ## Built-in node types
 
@@ -107,7 +143,7 @@ events:
 | Event            | When                                                                   |
 | ---------------- | ---------------------------------------------------------------------- |
 | `run.started`    | the run starts: id, workflow, entries                                  |
-| `node.started`   | an activation starts: id, type, round                                  |
+| `node.started`   | an activation starts: id, type, round, and `owner` when delegated      |
 | `node.event`     | a runtime event from the node's session or tool                        |
 | `node.finished`  | an activation ends: ok, output, usage, error                           |
 | `node.skipped`   | a dead path skips the node                                             |

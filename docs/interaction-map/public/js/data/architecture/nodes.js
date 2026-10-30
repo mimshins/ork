@@ -218,17 +218,24 @@ export const NODES = [
     status: "partial",
     pkg: "core",
     summary:
-      "The heart of a run. It starts entry nodes, follows flow edges whose `when:` holds, waits on joins, counts loop rounds, and escalates to the owner when a node hits a limit.",
+      "The heart of a run. It starts entry nodes, follows flow edges whose `when:` holds, waits on joins, counts loop rounds, and runs the children a leader delegates to.",
     facts: [
       "Built: activations, edges that fire on success unless `when:` says otherwise, dead-path skips, joins, routers, loop rounds, the run budget and concurrency, interrupt.",
       "Built: every state change is a run event; `ork run` prints them, the event store (M1d) will keep them.",
-      "Built: a loop out of rounds asks you; escalation to the owner comes with delegation.",
-      "Specified: ownership (`delegate`, `spawn_worker` up to `maxWorkers`), worktrees per node.",
+      "Built: ownership. A leader's `delegate` and `spawn_worker` (up to `maxWorkers`) run children in parallel on the slot it lends, and return their reports; a re-entered leader resumes its session.",
+      "Built: a loop out of rounds asks you; telling a live owner instead needs the message bus (M1d).",
     ],
     see: [
       { map: "lifecycle", node: "scheduler", label: "The scheduler in a run" },
     ],
-    docs: [ENGINE.scheduler, ENGINE.routing, ENGINE.tests, DESIGN.scheduler],
+    docs: [
+      ENGINE.scheduler,
+      ENGINE.routing,
+      ENGINE.delegation,
+      ENGINE.tests,
+      ENGINE.delegationTests,
+      DESIGN.scheduler,
+    ],
   },
   {
     id: "contextCompiler",
@@ -505,7 +512,7 @@ export const NODES = [
   {
     id: "mcpTools",
     title: "Ork MCP tools",
-    sub: "ask · permission · message",
+    sub: "ask · permission · delegate",
     zone: "runtime",
     x: 1440,
     y: 480,
@@ -514,9 +521,8 @@ export const NODES = [
     summary:
       "The tools every Claude node gets for working inside the hierarchy: messaging, reporting, delegating, asking you, and claiming files.",
     facts: [
-      "Built: `ask_user` (question, two to four options, recommended) and, for the CLI driver, `permission`; arguments are validated with Zod.",
+      "Built: one registry binds each session's tools, one file per tool: `ask_user`, `permission` (CLI driver), and for leaders `delegate` and `spawn_worker`; arguments are validated with Zod.",
       "Specified: `send_message`, `read_inbox`, `claim`, `release`, `feedback`. The report is structured output, not a tool.",
-      "Leaders also get `delegate` and `spawn_worker`.",
       "In-process for the SDK driver; for the CLI driver, a local MCP server on 127.0.0.1 behind a per-session bearer token.",
     ],
     see: [
@@ -527,7 +533,13 @@ export const NODES = [
       },
       { map: "feedback", node: "tool", label: "The feedback tool" },
     ],
-    docs: [RUNTIME.tools, RUNTIME.mcp, DESIGN.messaging, DESIGN.runtime],
+    docs: [
+      RUNTIME.tools,
+      RUNTIME.delegate,
+      RUNTIME.mcp,
+      DESIGN.messaging,
+      DESIGN.runtime,
+    ],
   },
   {
     id: "sdkDriver",
