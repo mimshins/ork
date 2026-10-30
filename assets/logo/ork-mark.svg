@@ -1,30 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256" role="img" aria-label="Ork">
   <title>Ork</title>
   <defs>
-    <radialGradient id="ork-fan-screen" cx="50%" cy="45%" r="70%">
+    <radialGradient id="ork-screen" cx="50%" cy="45%" r="70%">
       <stop offset="0" stop-color="#112016"/>
       <stop offset="1" stop-color="#0a0d0b"/>
     </radialGradient>
-    <filter id="ork-fan-glow" x="-50%" y="-50%" width="200%" height="200%">
+    <filter id="ork-glow" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur stdDeviation="1.6" result="blur"/>
       <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <pattern id="ork-fan-scan" width="4" height="2.5" patternUnits="userSpaceOnUse">
+    <pattern id="ork-scan" width="4" height="2.5" patternUnits="userSpaceOnUse">
       <rect width="4" height="0.8" fill="#000" opacity="0.16"/>
     </pattern>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#ork-fan-screen)"/>
-  <g filter="url(#ork-fan-glow)" fill="none" stroke-linecap="round" stroke-width="4">
-    <path d="M 32 19 L 13 47" stroke="#3dff8a"/>
-    <path d="M 32 19 V 51" stroke="#3dff8a" opacity="0.8"/>
-    <path d="M 32 19 L 51 47" stroke="#24a85a"/>
-  </g>
-  <g filter="url(#ork-fan-glow)">
-    <circle cx="13" cy="47" r="5" fill="#3dff8a"/>
-    <circle cx="32" cy="51" r="4.2" fill="#3dff8a" opacity="0.85"/>
-    <circle cx="51" cy="47" r="3.6" fill="#24a85a"/>
-    <circle cx="32" cy="17" r="8" fill="#ffb000"/>
-    <circle cx="32" cy="17" r="3" fill="#e6fff0"/>
-  </g>
-  <rect width="64" height="64" rx="14" fill="url(#ork-fan-scan)"/>
+  <rect width="64" height="64" rx="14" fill="url(#ork-screen)"/>
+  <g filter="url(#ork-glow)"><rect x="7.68" y="10.76" width="5.55" height="5.55" fill="#3dff8a"/><rect x="13.84" y="16.92" width="5.55" height="5.55" fill="#3dff8a"/><rect x="19.99" y="23.07" width="5.55" height="5.55" fill="#3dff8a"/><rect x="38.45" y="23.07" width="5.55" height="5.55" fill="#ffb000"/><rect x="44.61" y="23.07" width="5.55" height="5.55" fill="#ffb000"/><rect x="50.76" y="23.07" width="5.55" height="5.55" fill="#ffb000"/><rect x="26.15" y="29.22" width="5.55" height="5.55" fill="#3dff8a"/><rect x="38.45" y="29.22" width="5.55" height="5.55" fill="#ffb000"/><rect x="44.61" y="29.22" width="5.55" height="5.55" fill="#ffb000"/><rect x="50.76" y="29.22" width="5.55" height="5.55" fill="#ffb000"/><rect x="19.99" y="35.38" width="5.55" height="5.55" fill="#3dff8a"/><rect x="38.45" y="35.38" width="5.55" height="5.55" fill="#ffb000"/><rect x="44.61" y="35.38" width="5.55" height="5.55" fill="#ffb000"/><rect x="50.76" y="35.38" width="5.55" height="5.55" fill="#ffb000"/><rect x="13.84" y="41.53" width="5.55" height="5.55" fill="#3dff8a"/><rect x="38.45" y="41.53" width="5.55" height="5.55" fill="#ffb000"/><rect x="44.61" y="41.53" width="5.55" height="5.55" fill="#ffb000"/><rect x="50.76" y="41.53" width="5.55" height="5.55" fill="#ffb000"/><rect x="7.68" y="47.68" width="5.55" height="5.55" fill="#3dff8a"/><rect x="38.45" y="47.68" width="5.55" height="5.55" fill="#ffb000"/><rect x="44.61" y="47.68" width="5.55" height="5.55" fill="#ffb000"/><rect x="50.76" y="47.68" width="5.55" height="5.55" fill="#ffb000"/></g>
+  <rect width="64" height="64" rx="14" fill="url(#ork-scan)"/>
 </svg>

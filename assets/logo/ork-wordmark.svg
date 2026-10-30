@@ -15,18 +15,8 @@
   </defs>
   <rect width="162" height="64" rx="14" fill="url(#ork-word-screen)"/>
   <g transform="translate(6 6) scale(0.8125)">
-  <g filter="url(#ork-word-glow)" fill="none" stroke-linecap="round" stroke-width="4">
-    <path d="M 32 19 L 13 47" stroke="#3dff8a"/>
-    <path d="M 32 19 V 51" stroke="#3dff8a" opacity="0.8"/>
-    <path d="M 32 19 L 51 47" stroke="#24a85a"/>
+  <g filter="url(#ork-word-glow)"><rect x="7.68" y="10.76" width="5.55" height="5.55" fill="#3dff8a"/><rect x="13.84" y="16.92" width="5.55" height="5.55" fill="#3dff8a"/><rect x="19.99" y="23.07" width="5.55" height="5.55" fill="#3dff8a"/><rect x="38.45" y="23.07" width="5.55" height="5.55" fill="#ffb000"/><rect x="44.61" y="23.07" width="5.55" height="5.55" fill="#ffb000"/><rect x="50.76" y="23.07" width="5.55" height="5.55" fill="#ffb000"/><rect x="26.15" y="29.22" width="5.55" height="5.55" fill="#3dff8a"/><rect x="38.45" y="29.22" width="5.55" height="5.55" fill="#ffb000"/><rect x="44.61" y="29.22" width="5.55" height="5.55" fill="#ffb000"/><rect x="50.76" y="29.22" width="5.55" height="5.55" fill="#ffb000"/><rect x="19.99" y="35.38" width="5.55" height="5.55" fill="#3dff8a"/><rect x="38.45" y="35.38" width="5.55" height="5.55" fill="#ffb000"/><rect x="44.61" y="35.38" width="5.55" height="5.55" fill="#ffb000"/><rect x="50.76" y="35.38" width="5.55" height="5.55" fill="#ffb000"/><rect x="13.84" y="41.53" width="5.55" height="5.55" fill="#3dff8a"/><rect x="38.45" y="41.53" width="5.55" height="5.55" fill="#ffb000"/><rect x="44.61" y="41.53" width="5.55" height="5.55" fill="#ffb000"/><rect x="50.76" y="41.53" width="5.55" height="5.55" fill="#ffb000"/><rect x="7.68" y="47.68" width="5.55" height="5.55" fill="#3dff8a"/><rect x="38.45" y="47.68" width="5.55" height="5.55" fill="#ffb000"/><rect x="44.61" y="47.68" width="5.55" height="5.55" fill="#ffb000"/><rect x="50.76" y="47.68" width="5.55" height="5.55" fill="#ffb000"/></g>
   </g>
-  <g filter="url(#ork-word-glow)">
-    <circle cx="13" cy="47" r="5" fill="#3dff8a"/>
-    <circle cx="32" cy="51" r="4.2" fill="#3dff8a" opacity="0.85"/>
-    <circle cx="51" cy="47" r="3.6" fill="#24a85a"/>
-    <circle cx="32" cy="17" r="8" fill="#ffb000"/>
-    <circle cx="32" cy="17" r="3" fill="#e6fff0"/>
-  </g></g>
   <g filter="url(#ork-word-glow)" fill="#3dff8a">
     <path d="M69 25.6h4.4v4.4h-4.4zM74 25.6h4.4v4.4h-4.4zM79 25.6h4.4v4.4h-4.4zM64 30.6h4.4v4.4h-4.4zM84 30.6h4.4v4.4h-4.4zM64 35.6h4.4v4.4h-4.4zM84 35.6h4.4v4.4h-4.4zM64 40.6h4.4v4.4h-4.4zM84 40.6h4.4v4.4h-4.4zM69 45.6h4.4v4.4h-4.4zM74 45.6h4.4v4.4h-4.4zM79 45.6h4.4v4.4h-4.4z"/>
     <path d="M94 25.6h4.4v4.4h-4.4zM104 25.6h4.4v4.4h-4.4zM109 25.6h4.4v4.4h-4.4zM94 30.6h4.4v4.4h-4.4zM99 30.6h4.4v4.4h-4.4zM114 30.6h4.4v4.4h-4.4zM94 35.6h4.4v4.4h-4.4zM94 40.6h4.4v4.4h-4.4zM94 45.6h4.4v4.4h-4.4z"/>
