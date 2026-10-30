@@ -244,6 +244,20 @@ export const MILESTONES = [
     goal: "`@krapht/ork` on npm.",
     items: [
       {
+        id: "docs-center",
+        title: "User docs center",
+        status: "done",
+        detail:
+          "A short README that links everything; `docs/` with installation (macOS, Linux, Windows via WSL), a quickstart and guides; contributor docs in CONTRIBUTING.md.",
+        commits: ["573749c"],
+        date: "2026-10-30",
+        docs: [
+          "docs/README.md",
+          "docs/getting-started/installation.md",
+          "CONTRIBUTING.md",
+        ],
+      },
+      {
         id: "installer",
         title: "Standalone binaries and installer",
         status: "waiting",
@@ -383,7 +397,7 @@ export const MILESTONES = [
  *
  * @type {string[]}
  */
-export const OFF_ROADMAP = ["9785a0b", "84bad82"];
+export const OFF_ROADMAP = ["9785a0b", "84bad82", "0fccdc7"];
 
 /** The day the roadmap was last brought up to date. */
 export const ROADMAP_UPDATED = "2026-10-30";
