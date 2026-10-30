@@ -241,11 +241,11 @@ export const MILESTONES = [
     items: [
       {
         id: "installer",
-        title: "One-line installer",
+        title: "Standalone binaries and installer",
         status: "planned",
         detail:
-          "`curl -fsSL … | sh` to install `ork` with no npm knowledge, the way Kiro's CLI installs.",
-        docs: ["runbook/development/release.md"],
+          "macOS binaries on each release, `curl -fsSL …/install.sh | sh` to install them with no Node, and `ork upgrade`.",
+        docs: ["rfcs/active/RFC-002-standalone-binaries-and-installer.md"],
       },
       {
         id: "first-release",
