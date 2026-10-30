@@ -1,7 +1,7 @@
 /**
- * @file Doc links that several maps use: the sections of the design doc and the
- *   README, and the built schema package. `tools/check.mjs` checks that every
- *   path exists and that every `#anchor` matches a heading.
+ * @file Doc links that several maps use: the sections of the design doc, the
+ *   user guides, and the built schema package. `tools/check.mjs` checks that
+ *   every path exists and that every `#anchor` matches a heading.
  */
 
 import { d } from "./types.js";
@@ -24,11 +24,9 @@ export const DESIGN = {
   milestones: d("docs/design.md#milestones", "Design: milestones"),
 };
 
+/** User docs; the group keeps its old name, from when they were in the README. */
 export const README = {
-  accounts: d(
-    "README.md#your-accounts-your-machine",
-    "README: your accounts, your machine",
-  ),
+  accounts: d("docs/guides/accounts.md", "Guide: accounts and credentials"),
 };
 
 export const SCHEMA = {

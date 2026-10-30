@@ -12,15 +12,34 @@ participating, you are expected to uphold it.
 
 - **Open an issue first** for anything bigger than a small fix, so we can agree
   on scope before you write code.
+- New to Ork as a user? The [documentation center](./docs/README.md) has the
+  installation guide, a quickstart and guides. This page is for working on Ork
+  itself.
 - Read [docs/design.md](./docs/design.md) for the overview, the
   [specs](./specs/README.md) for what each part must do, the
   [ADRs](./decisions/README.md) for why, and the
   [interaction map](./docs/interaction-map/README.md) for how the parts fit
   together.
-- An architectural change starts with a spec and, when there are real
-  alternatives, an [RFC](./rfcs/README.md); see
-  [AGENTS.md](./AGENTS.md#spec-driven-development).
 - Report vulnerabilities privately: see [SECURITY.md](./SECURITY.md).
+
+## Architectural changes
+
+A change that alters a package boundary, the workflow file format, the runtime
+port, a cross-cutting pattern or a major dependency follows the spec-driven
+process ([AGENTS.md](./AGENTS.md#spec-driven-development)):
+
+1. **Task spec.** Draft it from [.ai/templates/spec.md](./.ai/templates/spec.md)
+   in `.ai/specs/` (local, gitignored), and clarify it until nothing is
+   ambiguous.
+2. **RFC** when there are real alternatives, in [rfcs/](./rfcs/README.md)
+   ([how](./.ai/skills/write-an-rfc/SKILL.md)).
+3. **Tasks.** Break it into ordered, checkable tasks, and agree on them before
+   writing code.
+4. **ADR.** A hard-to-reverse choice, including any new runtime dependency, gets
+   an ADR in [decisions/](./decisions/README.md); a shipped RFC gets one too and
+   moves to `rfcs/archived/`.
+
+Routine work, small changes and bug fixes need none of this.
 
 ## Development setup
 
@@ -49,16 +68,17 @@ directly.
 
 | Package                   | npm name                     | Role                                      |
 | ------------------------- | ---------------------------- | ----------------------------------------- |
+| `packages/integrations`   | `@krapht/ork-integrations`   | Registries: CLI tools and Claude drivers  |
 | `packages/schema`         | `@krapht/ork-schema`         | Workflow file format                      |
-| `packages/core`           | `@krapht/ork-core`           | Compiler, expressions, runtime port       |
+| `packages/core`           | `@krapht/ork-core`           | Compiler, scheduler, context, worktrees   |
 | `packages/runtime-claude` | `@krapht/ork-runtime-claude` | Claude drivers: Agent SDK and `claude`    |
 | `packages/nodes`          | `@krapht/ork-nodes`          | Built-in node types                       |
 | `packages/server`         | `@krapht/ork-server`         | Local HTTP + SSE API for the UI           |
 | `packages/cli`            | `@krapht/ork`                | The `ork` command; the only published one |
 
 A package may import only the packages to its left in
-`schema <- core <- runtime-claude, nodes <- server <- cli`, through their public
-entry point. oxlint enforces this.
+`integrations <- schema <- core <- runtime-claude, nodes <- server <- cli`,
+through their public entry point. oxlint enforces this.
 
 ## Working on code
 
@@ -68,15 +88,34 @@ entry point. oxlint enforces this.
 - Add tests next to the package (`packages/<name>/test/*.test.ts`) for every
   behaviour change. Tests never call real services or real accounts: use the
   fakes the package provides.
-- A behavior change updates its spec in [specs/](./specs/README.md); a
-  hard-to-reverse choice gets an ADR. Documents over 200 lines are split into a
-  hub and chunks ([runbook/development/docs.md](./runbook/development/docs.md)).
+- A behavior change updates its spec in [specs/](./specs/README.md) and the user
+  guide that covers it; a hard-to-reverse choice gets an ADR.
 - After a schema change, run `pnpm --dir packages/schema gen:json-schema` and
   commit `workflow.schema.json`.
 - Keep `examples/*.ork.yaml` in canonical form; they are formatted by Ork's own
   serializer, not by oxfmt.
-- When you change how parts interact, update the interaction map in the same
-  pull request.
+- Every source file starts with a `/** @file … */` block saying what it is for
+  (`pnpm lint` checks it).
+- A new integration (a CLI, a Claude driver, a node type) is an adapter behind
+  an interface, found through a registry, not a new branch in shared code.
+
+## Docs, the interaction map and the roadmap
+
+- **User docs** live in [docs/](./docs/README.md): installation, the quickstart
+  and guides, written for people using Ork. A change users can see updates the
+  guide that covers it, in the same pull request.
+- **Contracts** live in [specs/](./specs/README.md); a spec's Status line says
+  what is built.
+- Documents under `specs/`, `docs/` and `runbook/` over 200 lines are split into
+  a hub and chunks
+  ([runbook/development/docs.md](./runbook/development/docs.md));
+  `pnpm docs:check` checks links, anchors and the layout.
+- When you change how parts interact, update the
+  [interaction map](./docs/interaction-map/README.md) in the same pull request
+  (`pnpm map` to view it, `pnpm map:check` to check it).
+- When an item ships or new work is planned, update the
+  [roadmap data](./docs/interaction-map/public/js/data/roadmap.js)
+  ([how](./docs/interaction-map/roadmap.md)).
 - New dependencies must be justified in the pull request, saved at an exact
   version, and at least 7 days old (the workspace refuses newer ones).
 
@@ -94,6 +133,16 @@ entry point. oxlint enforces this.
   checks it. Releases are automated
   ([runbook/development/release.md](./runbook/development/release.md)).
 - Fill in the pull request template; `pnpm check` must pass.
+
+### Pull request flow
+
+1. Fork the repository, or branch from `main` if you have access.
+2. Make the change with its tests, specs, docs and changeset.
+3. Run `pnpm check` (the `pre-push` hook runs it too).
+4. Open the pull request against `main`. CI runs the same checks plus the
+   changeset check; a maintainer reviews it.
+5. Once merged, the release workflow collects the changesets into a release pull
+   request.
 
 ## Using Ork's accounts model
 

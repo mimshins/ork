@@ -53,6 +53,9 @@ bug fixes need no spec unless they are architectural.
 
 - **Keep specs true.** A behavior change updates its spec in `specs/` in the
   same change; a spec's Status line says what is built.
+- **Keep the user docs true.** A change users can see updates its guide in
+  [docs/](./docs/README.md) (installation, quickstart, guides) in the same
+  change; the README stays a short entry point that links to them.
 - **Record decisions.** A hard-to-reverse choice (including any new runtime
   dependency) gets an ADR in [decisions/](./decisions/README.md); an RFC that
   ships gets one too, and moves to `rfcs/archived/`.
@@ -70,16 +73,18 @@ bug fixes need no spec unless they are architectural.
 
 ## Where things live
 
-| Topic                                | Location                                                  |
-| ------------------------------------ | --------------------------------------------------------- |
-| Overview, milestones                 | [docs/design.md](./docs/design.md)                        |
-| Contracts: what each part does       | [specs/](./specs/README.md)                               |
-| Accepted decisions and why (ADRs)    | [decisions/](./decisions/README.md)                       |
-| Proposals (RFCs)                     | [rfcs/](./rfcs/README.md)                                 |
-| Procedures: docs, releases           | [runbook/](./runbook/development/release.md)              |
-| How the parts fit together           | [docs/interaction-map/](./docs/interaction-map/README.md) |
-| Agent orientation, skills, templates | [.ai/](./.ai/README.md)                                   |
-| Local-only task specs (gitignored)   | `.ai/specs/`                                              |
+| Topic                                  | Location                                                  |
+| -------------------------------------- | --------------------------------------------------------- |
+| User docs: install, quickstart, guides | [docs/](./docs/README.md)                                 |
+| Contributor guide                      | [CONTRIBUTING.md](./CONTRIBUTING.md)                      |
+| Overview, milestones                   | [docs/design.md](./docs/design.md)                        |
+| Contracts: what each part does         | [specs/](./specs/README.md)                               |
+| Accepted decisions and why (ADRs)      | [decisions/](./decisions/README.md)                       |
+| Proposals (RFCs)                       | [rfcs/](./rfcs/README.md)                                 |
+| Procedures: docs, releases             | [runbook/](./runbook/development/release.md)              |
+| How the parts fit together             | [docs/interaction-map/](./docs/interaction-map/README.md) |
+| Agent orientation, skills, templates   | [.ai/](./.ai/README.md)                                   |
+| Local-only task specs (gitignored)     | `.ai/specs/`                                              |
 
 ## Commands
 
