@@ -9,6 +9,7 @@ import {
   type Workflow,
 } from "@krapht/ork-schema";
 
+import type { AgentRef } from "../agents/apply.ts";
 import type { Expr } from "../expr/parse.ts";
 
 export type CompiledEdge = Edge & { condition?: Expr };
@@ -30,6 +31,8 @@ export type CompiledGraph = {
   entries: string[];
   /** Declared sibling channels; parent <-> child is always allowed. */
   channels: [string, string][];
+  /** Node id → the agent that filled it. */
+  agents: Map<string, AgentRef>;
 };
 
 export type CompileResult = {

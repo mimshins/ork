@@ -32,7 +32,7 @@ carried to the next milestone.
   ([ADR-025](../decisions/ADR-025-message-bus.md),
   [resume](./scheduler.md#resuming-a-run))
 - **G3 · `ork resume` has no `--detach`.** Only `ork run` can run in the
-  background. ([cli](./cli.md#resuming-a-run))
+  background. ([cli](./cli/running-and-runs.md#resuming-a-run))
 - **G4 · No built-in `ork:*` skills.** The layer is resolved, but
   `BUILTIN_SKILLS` is empty.
   ([ADR-023](../decisions/ADR-023-context-compiler.md),
@@ -43,6 +43,9 @@ carried to the next milestone.
 - **G6 · A dismissed feedback item cannot be brought back.** `ork feedback` has
   no way to set an item's status other than `dismiss`; triage (M2) sets the
   rest. ([feedback](./feedback.md))
+- **G7 · No built-in agents.** The catalog has a place for agents that ship with
+  Ork, like the built-in skills (G4); there are none yet.
+  ([catalog.ts](../packages/core/src/agents/catalog.ts))
 
 ## Limits
 
@@ -78,6 +81,10 @@ carried to the next milestone.
 - **L11 · Readonly nodes run no commands.** `readonly` denies Bash, so a
   reviewer reads the code but cannot run `git diff` or the tests.
   ([context](./context.md))
+- **L12 · Only `model` is read from another tool's agent frontmatter.** Claude
+  Code's `tools` list and OpenCode's settings in an agent's markdown are left to
+  those tools; Ork's own settings go in `<name>.agent.yaml`
+  ([ADR-030](../decisions/ADR-030-agents-fill-nodes.md)).
 
 ## Chores
 

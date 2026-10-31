@@ -13,7 +13,7 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
-import { style, write } from "../output.ts";
+import { style, write, writeErr } from "../output.ts";
 import {
   findFeedbackItem,
   formatFeedbackItem,
@@ -22,10 +22,6 @@ import {
 import { findRun } from "../runs/find.ts";
 import { cost, formatRuns, formatTree } from "../runs/format.ts";
 import { followRun } from "../runs/logs.ts";
-
-const writeErr = (text: string): void => {
-  process.stderr.write(`${text}\n`);
-};
 
 /** Runs `body` with the user's store open, and closes it after. */
 const withStore = async (

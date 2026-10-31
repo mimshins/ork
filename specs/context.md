@@ -3,7 +3,8 @@
 Status: **Built** (M1c): the context compiler
 ([context/](../packages/core/src/context/resolve.ts),
 [tests](../packages/core/test/context.test.ts)), `ork context explain`
-([cli](./cli.md#context)), and the [built-in practices](#built-in-practices)
+([cli](./cli/worktrees-agents-context-and-doctor.md#context)), and the
+[built-in practices](#built-in-practices)
 ([practices/](../packages/core/src/practices/practices.ts)). Why:
 [ADR-023](../decisions/ADR-023-context-compiler.md).
 
@@ -56,14 +57,42 @@ twice.
   `AGENTS.md` reading off.
 - **Context files** are appended to Claude Code's system prompt, shared before
   specific so nodes share a cached prefix: the practices, the user's context,
-  the workflow's context and lessons, Ork's harness instructions (the node's
-  role, its owner, its checkout, its children), then the node's own context and
+  the workflow's context and lessons, the [agent](#agents)'s role
+  (`# Your role: <name>`), Ork's harness instructions (the node's role, its
+  owner, its checkout, its children), then the node's own context and
   `instructions`. The brief is the first user message.
 - In a worktree the project layer is the branch's committed one plus the copied
   local files ([worktrees](./worktrees.md#what-a-worktree-gets)).
 - **`ork context explain <wf> <node>`** prints the resolved stack: each skill
   with its layer, source and state (live, or off and why), the context files,
   the practices, and estimated tokens.
+
+## Agents
+
+A node that names an `agent` ([workflow format](./workflow-format.md#agents))
+takes the agent's settings where it sets none, and the agent's role as a section
+of its system prompt. Agents come from, lowest to highest precedence for a name
+([catalog.ts](../packages/core/src/agents/catalog.ts),
+[tests](../packages/core/test/agents.test.ts)):
+
+1. **User:** `~/.ork/agents/<name>.md` (and its `<name>.agent.yaml`).
+2. **Project:** the agent folders of the coding-agent tools, from a registry of
+   layouts ([layouts.ts](../packages/integrations/src/layouts.ts)):
+   `.ai/agents`, `.opencode/agents`, `.claude/agents`, then Ork's own
+   `.ork/agents`, which wins. Links are followed: a file reached through several
+   folders (se-backend's `.claude/agents` and `.opencode/agents` both point at
+   `.ai/agents`) counts once, under its real path.
+3. **Workflow:** the workflow's inline `agents:`.
+
+Ork has no built-in agents yet. Agents are read when the workflow is loaded, not
+copied; the run records each one's source and a hash of its files on
+`node.started`. An agent file's `skills` and `context` paths are relative to its
+own folder. `ork agents` lists them
+([cli](./cli/worktrees-agents-context-and-doctor.md#agents));
+`ork context explain` names the agent that fills a node.
+
+Claude Code also loads `.claude/agents` as its own subagents in every session,
+as before: an agent can fill a node and still be a subagent a session calls.
 
 **Token-saving practices built into the engine:**
 

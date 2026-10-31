@@ -61,3 +61,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [027](./ADR-027-advisory-claims.md)                | Claims are advisory, by path, and released when a node ends                 | Accepted          | none                                                        |
 | [028](./ADR-028-feedback-capture.md)               | Feedback is captured beside the run's events, grouped by item               | Accepted          | none                                                        |
 | [029](./ADR-029-readonly-follows-its-input.md)     | A readonly node with no owner works where its input came from               | Accepted          | waived                                                      |
+| [030](./ADR-030-agents-fill-nodes.md)              | Agents are defined once and fill nodes                                      | Accepted          | waived                                                      |

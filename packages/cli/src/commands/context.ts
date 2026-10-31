@@ -42,6 +42,8 @@ export type Explanation = {
   node: string;
   type: string;
   workflow: string;
+  /** The agent that fills the node: its name, where it is, its role's size. */
+  agent?: { name: string; where: string; tokens: number };
   instructions: string;
   skills: SkillLine[];
   files: { layer: string; name: string; tokens: number }[];
@@ -103,7 +105,7 @@ export const explainNode = (
   cwd: string,
   home?: string,
 ): ExplainResult => {
-  const { report, workflow } = loadWorkflow(file, cwd);
+  const { report, workflow, graph } = loadWorkflow(file, cwd, home);
   if (workflow === null) return { ok: false, lines: formatReport(report) };
   const workflowDir = path.dirname(path.resolve(cwd, file));
   const root = projectRootOf(workflowDir);
@@ -124,12 +126,24 @@ export const explainNode = (
   const names = ["caveman", "ponytail"].filter(
     n => !practices.skipped.includes(n),
   );
+  const ref = graph?.agents.get(nodeId);
+  const role =
+    ref === undefined ? undefined : workflow.agents?.[ref.name]?.instructions;
   return {
     ok: true,
     explanation: {
       node: nodeId,
       type: workflow.nodes[nodeId]?.type ?? "",
       workflow: workflow.name,
+      ...(ref === undefined
+        ? {}
+        : {
+            agent: {
+              name: ref.name,
+              where: ref.where,
+              tokens: tokens(role ?? ""),
+            },
+          }),
       instructions: instructionsOf(context, root),
       skills: skillLines(context, root),
       files: context.files.map(f => ({
@@ -156,6 +170,11 @@ export const formatExplanation = (e: Explanation): string[] => {
   const lines = [
     `${style("bold", e.node)} ${style("dim", `(${e.type}) in ${e.workflow}`)}`,
     "",
+    ...(e.agent === undefined
+      ? []
+      : [
+          `${style("bold", "Agent")}  ${e.agent.name} ${style("dim", `(${e.agent.where})`)}  ${approx(e.agent.tokens)}`,
+        ]),
     `${style("bold", "Instructions")}  ${e.instructions}`,
     "",
     style("bold", "Skills"),

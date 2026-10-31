@@ -127,7 +127,7 @@ export const MILESTONES = [
           "Checks node, git, `claude`, `gh` and `aws` logins, and reports them; Ork never handles credentials.",
         commits: ["8f1ddd3"],
         date: "2026-10-30",
-        docs: ["specs/cli.md#doctor"],
+        docs: ["specs/cli/worktrees-agents-context-and-doctor.md#doctor"],
       },
       {
         id: "drivers",
@@ -147,7 +147,7 @@ export const MILESTONES = [
           "Runs one Claude node with a live transcript, questions and permission prompts on the terminal.",
         commits: ["a4fb707"],
         date: "2026-10-30",
-        docs: ["specs/cli.md#running-one-node"],
+        docs: ["specs/cli/running-and-runs.md#running-one-node"],
       },
     ],
   },
@@ -234,7 +234,7 @@ export const MILESTONES = [
           "Prints a node's resolved layer stack: where each item came from, what was shadowed, and estimated tokens.",
         commits: ["8e990c2"],
         date: "2026-10-30",
-        docs: ["specs/cli.md#context"],
+        docs: ["specs/cli/worktrees-agents-context-and-doctor.md#context"],
       },
     ],
   },
@@ -350,7 +350,7 @@ export const MILESTONES = [
         commits: ["bf1ab4f"],
         date: "2026-10-30",
         docs: [
-          "specs/cli.md#resuming-a-run",
+          "specs/cli/running-and-runs.md#resuming-a-run",
           "decisions/ADR-026-resume-by-replay.md",
         ],
       },
@@ -401,6 +401,69 @@ export const MILESTONES = [
         status: "waiting",
         detail:
           "Needs `ANTHROPIC_API_KEY` (or Bedrock or Vertex) on the machine that runs it.",
+        docs: ["specs/gaps.md"],
+      },
+    ],
+  },
+  {
+    id: "m1e",
+    title: "M1e · Projects",
+    goal: "Ork as mechanism, the project as policy: agents registered once and assigned to nodes, project rules for everything Ork does on its own, and a project's whole process movable into `.ork/`.",
+    items: [
+      {
+        id: "agents",
+        title: "Agents, registered and assigned to nodes",
+        status: "active",
+        detail:
+          "An agent is a portable `<name>.md` plus an optional `<name>.agent.yaml`; a Claude node takes `agent:` and its prompt is the task. Sources are layered: built-in, `~/.ork/agents`, the project's (and its tool folders'), the workflow's own.",
+        docs: ["specs/context.md", "specs/workflow-format.md"],
+      },
+      {
+        id: "link",
+        title: "`.ork/` as the origin, tool folders linked",
+        status: "planned",
+        detail:
+          "`ork link` points `.claude/`, `.opencode/`, `.agents/` and `.ai/` folders at `.ork/agents` and `.ork/skills`, one adapter per tool.",
+        docs: ["specs/context.md"],
+      },
+      {
+        id: "rules",
+        title: "Project rules",
+        status: "planned",
+        detail:
+          "`project.yaml`: `commit: never`, `merge: patch`, branch, worktree and base templates, permissions, defaults; a workflow and a node override them. `session: resume` on any Claude node.",
+        docs: ["specs/worktrees.md"],
+      },
+      {
+        id: "tool-git",
+        title: "`tool.git` node",
+        status: "planned",
+        detail:
+          "The user's own `git` as a node with an allow list, so a commit can be an explicit step after the gates.",
+        docs: ["specs/workflow-format.md"],
+      },
+      {
+        id: "register",
+        title: "Register a project from outside the repo",
+        status: "planned",
+        detail:
+          "`ork register` and `ork projects`: workflows, rules and runs in `~/.ork/projects/<id>/`, nothing written into the repository.",
+        docs: ["specs/cli.md"],
+      },
+      {
+        id: "migrate",
+        title: "`ork migrate`",
+        status: "planned",
+        detail:
+          "Moves a registered project into `.ork/`; `--agents` brings its agents and skills under `.ork/` and links the tool folders; `--from-agents` drafts a workflow.",
+        docs: ["specs/cli.md"],
+      },
+      {
+        id: "se-backend",
+        title: "A real project end to end",
+        status: "planned",
+        detail:
+          "se-backend registered with `commit: never` and its own branch names, its process drafted from its agents and run with the gates kept.",
         docs: ["specs/gaps.md"],
       },
     ],
@@ -480,6 +543,7 @@ export const OFF_ROADMAP = [
   "250b30e",
   "a19864a",
   "4df0480",
+  "95169dc",
 ];
 
 /** The day the roadmap was last brought up to date. */

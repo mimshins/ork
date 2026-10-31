@@ -67,23 +67,24 @@ const base = {
   description: z.string().optional(),
 };
 
-const ToolRulesSchema = z.strictObject({
+export const ToolRulesSchema = z.strictObject({
   allow: z.array(z.string()).optional(),
   deny: z.array(z.string()).optional(),
 });
 
-const claudeFields = {
-  ...base,
-  prompt: z
-    .string()
-    .optional()
-    .describe(
-      "Task brief. Supports {{inputs.*}} and {{nodes.<id>.output.*}} templates.",
-    ),
-  instructions: z
-    .string()
-    .optional()
-    .describe("Node-layer instructions appended to the system prompt."),
+/** Agent names: lowercase, like node ids. */
+export const AgentNameSchema = z
+  .string()
+  .regex(
+    /^[a-z][a-z0-9_-]*$/u,
+    "agent names are lowercase: letters, digits, '-' and '_'",
+  );
+
+/**
+ * What an agent brings to the node it fills, and what a plain Claude node sets
+ * itself. A node's own value wins over its agent's.
+ */
+export const agentSettings = {
   model: ModelSchema.optional(),
   effort: EffortSchema.optional(),
   driver: DriverSchema.optional(),
@@ -107,6 +108,39 @@ const claudeFields = {
         ),
     })
     .optional(),
+};
+
+/** The settings keys an agent can bring, in canonical order. */
+export const AGENT_SETTING_KEYS = [
+  "model",
+  "effort",
+  "driver",
+  "skills",
+  "context",
+  "isolation",
+  "budgetUsd",
+  "maxTurns",
+  "practices",
+  "tools",
+  "output",
+] as const satisfies readonly (keyof typeof agentSettings)[];
+
+const claudeFields = {
+  ...base,
+  agent: AgentNameSchema.optional().describe(
+    "The agent that fills this node; its settings apply where the node sets none, and the prompt is its task.",
+  ),
+  prompt: z
+    .string()
+    .optional()
+    .describe(
+      "Task brief. Supports {{inputs.*}} and {{nodes.<id>.output.*}} templates.",
+    ),
+  instructions: z
+    .string()
+    .optional()
+    .describe("Node-layer instructions appended to the system prompt."),
+  ...agentSettings,
 };
 
 export const ClaudeLeaderNodeSchema = z.strictObject({

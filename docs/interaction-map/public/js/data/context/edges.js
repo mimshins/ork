@@ -63,6 +63,26 @@ export const EDGES = [
     docs: [CONTEXT.version, DESIGN.context],
   },
   {
+    id: "project-agentCatalog",
+    from: "project",
+    to: "agentCatalog",
+    kind: "file",
+    label: "agent folders",
+    detail:
+      "The catalog reads the agent folders of the project's tools and Ork's own, and the user's `~/.ork/agents`.",
+    docs: [CONTEXT.agentCatalog, DESIGN.context],
+  },
+  {
+    id: "agentCatalog-sysprompt",
+    from: "agentCatalog",
+    to: "sysprompt",
+    kind: "local",
+    label: "the agent's role",
+    detail:
+      "The agent's role becomes `# Your role: <name>` in the system prompt, after the shared layers; its settings fill the node.",
+    docs: [CONTEXT.agentApply, DESIGN.context],
+  },
+  {
     id: "brief-assembler",
     from: "brief",
     to: "assembler",

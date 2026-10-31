@@ -180,6 +180,31 @@ export const NODES = [
 
   // ── Context compiler ─────────────────────────────────────────────────────
   {
+    id: "agentCatalog",
+    title: "Agent catalog",
+    sub: "who fills each node",
+    zone: "compiler",
+    x: 320,
+    y: 240,
+    status: "built",
+    pkg: "core",
+    summary:
+      "A node with `agent: <name>` takes that agent's settings where it sets none, and its role as a section of the system prompt. Agents are filled in when the workflow compiles.",
+    facts: [
+      "Sources, low to high: `~/.ork/agents`, the project's `.ai/agents`, `.opencode/agents`, `.claude/agents`, then `.ork/agents`, then the workflow's `agents:`.",
+      "An agent is a portable `<name>.md` plus an optional `<name>.agent.yaml` with Ork's settings.",
+      "Linked folders are followed; a file reached twice counts once. `node.started` records the agent and a hash.",
+      "`ork agents list | show | add | rm`; Ork writes only `.ork/agents` and `~/.ork/agents`.",
+    ],
+    docs: [
+      CONTEXT.agentCatalog,
+      CONTEXT.agentApply,
+      CONTEXT.agentTests,
+      CONTEXT.agentsCli,
+      DESIGN.context,
+    ],
+  },
+  {
     id: "agentsRule",
     title: "AGENTS.md rule",
     sub: "left to Claude Code",

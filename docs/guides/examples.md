@@ -1,7 +1,10 @@
 # The example workflows
 
 Two workflows in [`examples/`](../../examples/) show Ork's main patterns end to
-end. Both stop for your go-ahead before anything leaves your machine.
+end. Both stop for your go-ahead before anything leaves your machine. Both keep
+their roles as [agents](./agents.md) in the workflow's own `agents:` section,
+and their nodes take them: the `security` node is the `security-reviewer` agent
+with the task "review the builder's branch".
 
 ## software-factory
 
@@ -26,11 +29,12 @@ feature:
 ork run examples/software-factory.ork.yaml --input feature="Add a farewell(name) function beside greet, with a test"
 ```
 
-It uses opus for the spec, the builder, security and the approver, and sonnet
-elsewhere, within a run budget of $20. For a first try, copy it into
+Its agents use opus for the spec, the builder, security and the approver, and
+sonnet elsewhere, within a run budget of $20. For a first try, copy it into
 `.ork/workflows/` with `examples/skills` and `examples/context` beside it, set
-the models to `haiku` and `limits.budgetUsd` lower; a small feature then costs a
-few cents. Allow the builder what it needs to work without asking, for example:
+the agents' models to `haiku` and `limits.budgetUsd` lower; a small feature then
+costs a few cents. Allow the builder what it needs to work without asking, for
+example:
 
 ```yaml
 builder:

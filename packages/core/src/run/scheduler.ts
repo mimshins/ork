@@ -227,7 +227,10 @@ export const startRun = (options: RunOptions): RunHandle => {
     // A resumed run hands back what an activation did last time.
     const recorded = options.replay?.take(activation) ?? null;
     const type = nodeOf(activation)?.type ?? "control.split";
-    if (recorded === null) onEvent(startedEvent(activation, type, round));
+    if (recorded === null) {
+      const agent = graph.agents.get(activation.template ?? id);
+      onEvent(startedEvent(activation, type, round, agent));
+    }
     const result = recorded ?? (await execute(activation));
     ports.finished(id);
     running.delete(id);

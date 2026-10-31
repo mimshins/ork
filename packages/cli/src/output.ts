@@ -14,3 +14,7 @@ export const style = (format: Format, text: string): string =>
 export const write = (text: string): void => {
   process.stdout.write(`${text}\n`);
 };
+
+export const writeErr = (text: string): void => {
+  process.stderr.write(`${text}\n`);
+};

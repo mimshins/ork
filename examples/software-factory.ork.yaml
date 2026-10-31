@@ -20,41 +20,31 @@ defaults:
   model: sonnet
   isolation: worktree
   budgetUsd: 2
-limits:
-  budgetUsd: 20
-  concurrency: 4
-nodes:
-  spec:
-    type: claude.worker
-    prompt: "Write a spec for: {{inputs.feature}}"
+agents:
+  spec-writer:
+    description: Turns a feature request into a spec a builder can implement.
+    instructions: "You write specs. Say what the change must do, what it must not, and how to tell it works: behavior, edge cases and acceptance criteria. Save the spec as a markdown file and report its path as the `spec` artifact."
     model: opus
-    isolation: shared
   builder:
-    type: claude.leader
-    prompt: Implement the spec at {{nodes.spec.output.artifacts.spec}}.
+    description: Implements a spec and leads its reviewers through a bounded fix loop.
+    instructions: You implement specs. Make the smallest complete change that meets the spec, with tests. Delegate review to the reviewers you own, fix what they find, and report pass only when they do.
     model: opus
-  security:
-    type: claude.worker
-    parent: builder
-    prompt: Review the builder's branch for security issues.
+  security-reviewer:
+    description: Reviews a branch for security issues.
+    instructions: "You review for security: injection, secrets, unsafe input handling, permissions and data exposure. Name each problem with its file and line and why it matters. Report changes_requested with the concrete problems, or pass."
     model: opus
     isolation: readonly
-  ux:
-    type: claude.worker
-    parent: builder
-    prompt: Review the builder's branch for UX issues.
+  ux-reviewer:
+    description: Reviews a branch for the experience of the people who use it.
+    instructions: "You review for UX: clear messages, sensible defaults, consistent behavior and accessible output. Report changes_requested with the concrete problems, or pass."
     isolation: readonly
-  code:
-    type: claude.worker
-    parent: builder
-    prompt: Review the builder's branch for code quality.
+  code-reviewer:
+    description: Reviews a branch for code quality.
+    instructions: "You review for code quality: correctness, readability, tests and fit with the code around it. Report changes_requested with the concrete problems, or pass."
     isolation: readonly
-  reviews:
-    type: control.join
-    mode: all
   approver:
-    type: claude.worker
-    prompt: Decide whether {{nodes.builder.output.branch}} is ready to merge.
+    description: Decides whether a reviewed branch is ready to merge.
+    instructions: "You approve merges. Read the branch and its reviews, and decide: approve when it meets its spec and the reviews passed, escalate to a human when anything is doubtful. Say why in your summary."
     model: opus
     isolation: readonly
     output:
@@ -62,6 +52,41 @@ nodes:
         verdict:
           - approve
           - escalate
+limits:
+  budgetUsd: 20
+  concurrency: 4
+nodes:
+  spec:
+    type: claude.worker
+    agent: spec-writer
+    prompt: "Write a spec for: {{inputs.feature}}"
+    isolation: shared
+  builder:
+    type: claude.leader
+    agent: builder
+    prompt: Implement the spec at {{nodes.spec.output.artifacts.spec}}.
+  security:
+    type: claude.worker
+    parent: builder
+    agent: security-reviewer
+    prompt: Review the builder's branch for security issues.
+  ux:
+    type: claude.worker
+    parent: builder
+    agent: ux-reviewer
+    prompt: Review the builder's branch for UX issues.
+  code:
+    type: claude.worker
+    parent: builder
+    agent: code-reviewer
+    prompt: Review the builder's branch for code quality.
+  reviews:
+    type: control.join
+    mode: all
+  approver:
+    type: claude.worker
+    agent: approver
+    prompt: Decide whether {{nodes.builder.output.branch}} is ready to merge.
   ship:
     type: human.gate
     question: The approver approved {{nodes.builder.output.branch}}. Push it and open a pull request?

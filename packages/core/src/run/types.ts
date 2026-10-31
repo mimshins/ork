@@ -7,6 +7,7 @@
 
 import type { Driver, Node, NodeType, Workflow } from "@krapht/ork-schema";
 
+import type { AgentRef } from "../agents/apply.ts";
 import type { FeedbackPort, FeedbackReport } from "../feedback/types.ts";
 import type { CompiledGraph } from "../graph/types.ts";
 import type {
@@ -179,6 +180,8 @@ export type RunEvent =
       round: number;
       /** The leader that delegated this run, if one did. */
       owner?: string;
+      /** The agent that fills the node, if one does. */
+      agent?: AgentRef;
     }
   | { type: "node.event"; id: string; event: RuntimeEvent }
   | {

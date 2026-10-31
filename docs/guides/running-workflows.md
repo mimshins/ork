@@ -2,7 +2,7 @@
 
 `ork run` runs a workflow on your machine and streams what happens to your
 terminal. The command contract is the
-[CLI spec](../../specs/cli.md#running-a-workflow).
+[CLI spec](../../specs/cli/running-and-runs.md#running-a-workflow).
 
 ## A whole workflow
 

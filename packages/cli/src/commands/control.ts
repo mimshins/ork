@@ -18,16 +18,12 @@ import {
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
-import { style, write } from "../output.ts";
+import { style, write, writeErr } from "../output.ts";
 import { runWorkflowFile } from "../run/workflow.ts";
 import { answerDecision, pendingDecisions } from "../runs/decide.ts";
 import { findRun } from "../runs/find.ts";
 import { resumable } from "../runs/resume.ts";
 import { flagValues, isDriver, loadRuntime } from "./run.ts";
-
-const writeErr = (text: string): void => {
-  process.stderr.write(`${text}\n`);
-};
 
 const failed = (message: string): void => {
   writeErr(message);

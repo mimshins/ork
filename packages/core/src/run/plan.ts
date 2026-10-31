@@ -81,6 +81,17 @@ export type PlanResult =
     }
   | { ok: false; error: string };
 
+/** The role of the agent that fills the node, when an agent does. */
+const roleSection = (workflow: Workflow, node: ClaudeNode): string[] => {
+  const role =
+    node.agent === undefined
+      ? undefined
+      : workflow.agents?.[node.agent]?.instructions?.trim();
+  return role === undefined || role === ""
+    ? []
+    : [`# Your role: ${node.agent}\n\n${role}`];
+};
+
 const toolRules = (node: ClaudeNode, readonly: boolean): ToolRules => ({
   allow: [...(node.tools?.allow ?? [])],
   deny: [...(node.tools?.deny ?? []), ...(readonly ? WRITE_TOOLS : [])],
@@ -171,6 +182,7 @@ export const planNodeSession = (
         .text,
       ...contextSections(context.files, "user"),
       ...contextSections(context.files, "workflow"),
+      ...roleSection(workflow, node),
       harnessInstructions(workflow, id, node, options),
       ...contextSections(context.files, "node"),
     ].join("\n\n"),

@@ -3,6 +3,7 @@
  *   import. The executable is `bin.ts`.
  */
 
+export * from "./agents/manage.ts";
 export * from "./commands/control.ts";
 export * from "./commands/run.ts";
 export * from "./commands/runs.ts";

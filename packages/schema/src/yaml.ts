@@ -12,6 +12,7 @@ import {
 } from "yaml";
 import type { z } from "zod";
 
+import { AgentSchema } from "./agents.ts";
 import { formatEdge } from "./edges.ts";
 import { NodeSchema, type NodeType } from "./nodes.ts";
 import {
@@ -153,6 +154,8 @@ export const parseWorkflow = (text: string): LoadResult => {
 
 const TOP_LEVEL_ORDER = Object.keys(WorkflowSchema.shape);
 
+const AGENT_ORDER = Object.keys(AgentSchema.shape);
+
 const SHAPE_ORDER = new Map<NodeType, string[]>(
   NodeSchema.options.map(o => [o.shape.type.value, Object.keys(o.shape)]),
 );
@@ -187,9 +190,19 @@ export const serializeWorkflow = (workflow: Workflow): string => {
   for (const [id, node] of Object.entries(workflow.nodes)) {
     nodes[id] = ordered(node, SHAPE_ORDER.get(node.type) ?? []);
   }
+  const agents =
+    workflow.agents === undefined
+      ? undefined
+      : Object.fromEntries(
+          Object.entries(workflow.agents).map(([name, agent]) => [
+            name,
+            ordered(agent, AGENT_ORDER),
+          ]),
+        );
   const canonical = ordered(
     {
       ...workflow,
+      agents,
       nodes,
       edges: workflow.edges?.map(formatEdge),
     },

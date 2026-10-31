@@ -233,6 +233,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@krapht/ork-integrations':
+        specifier: workspace:*
+        version: link:../integrations
       '@krapht/ork-schema':
         specifier: workspace:*
         version: link:../schema

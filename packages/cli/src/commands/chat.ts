@@ -15,15 +15,11 @@ import {
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
-import { style, write } from "../output.ts";
+import { style, write, writeErr } from "../output.ts";
 import { nodeSession, resumeChat, tellLiveRun } from "../runs/chat.ts";
 import { findRun } from "../runs/find.ts";
 import { followRun } from "../runs/logs.ts";
 import { isDriver, loadRuntime } from "./run.ts";
-
-const writeErr = (text: string): void => {
-  process.stderr.write(`${text}\n`);
-};
 
 /** Asks for one line; `null` once the input ends (Ctrl-D). */
 const askLine = async (): Promise<string | null> => {

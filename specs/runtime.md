@@ -3,7 +3,7 @@
 Status: **Built**: the port, both drivers and Ork's MCP tools, tested against a
 stand-in `claude` ([code](../packages/runtime-claude/src/index.ts),
 [tests](../packages/runtime-claude/test/runtime.test.ts)), and run one node at a
-time by [`ork run --node`](./cli.md#running-one-node). Why:
+time by [`ork run --node`](./cli/running-and-runs.md#running-one-node). Why:
 [ADR-004](../decisions/ADR-004-no-credentials.md),
 [ADR-005](../decisions/ADR-005-one-runtime-port-two-drivers.md),
 [ADR-010](../decisions/ADR-010-reports-as-structured-output.md),
@@ -23,7 +23,7 @@ time by [`ork run --node`](./cli.md#running-one-node). Why:
 | `Session`        | `events` (an async iterable of `RuntimeEvent`), `send(text)` (a user message with `priority: "next"`: Claude Code shows it at the session's next step, mid-turn or not), `interrupt()`                                                                                                                                   |
 | `RuntimeEvent`   | `session.started` (with the session's `cwd` and `driver`, so `ork chat` can resume it), `assistant.text`, `tool.called`, `tool.result`, `session.finished` (with the outcome)                                                                                                                                            |
 | `SessionOutcome` | `subtype` (`success` or the driver's error subtype, e.g. `error_max_turns`, `error_driver`), session id, the report or `null`, the final text, usage, errors                                                                                                                                                             |
-| `HumanChannel`   | `permit(tool request)` and `ask(question, options, recommended, context)`; in a run it is the decision queue, where the terminal ([cli.md](./cli.md#questions-and-permissions-on-the-terminal)) races `ork decide` ([messaging](./messaging.md))                                                                         |
+| `HumanChannel`   | `permit(tool request)` and `ask(question, options, recommended, context)`; in a run it is the decision queue, where the terminal ([CLI](./cli/running-and-runs.md#questions-and-permissions-on-the-terminal)) races `ork decide` ([messaging](./messaging.md))                                                           |
 
 Both drivers emit the same message JSON (the Agent SDK's messages are the CLI's
 `stream-json` lines), so one normalizer serves both

@@ -10,7 +10,7 @@ import type { Driver } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
-import { style, write } from "../output.ts";
+import { style, write, writeErr } from "../output.ts";
 import { DETACHED_ENV, detachRun } from "../run/detach.ts";
 import { runNode } from "../run/node.ts";
 import { newRunId, runWorkflowFile } from "../run/workflow.ts";
@@ -41,8 +41,12 @@ export const loadRuntime = async (driver: Driver): Promise<ClaudeRuntime> =>
     process.env,
   );
 
-const writeErr = (text: string): void => {
-  process.stderr.write(`${text}\n`);
+/** Ctrl-C asks the run to stop. */
+const onInterrupt = (stop: () => void) => {
+  process.once("SIGINT", () => {
+    writeErr(style("dim", "\ninterrupting…"));
+    stop();
+  });
 };
 
 export const run = defineCommand({
@@ -154,12 +158,6 @@ export const run = defineCommand({
       out: write,
       err: writeErr,
       ...(args.driver === undefined ? {} : { driver: args.driver }),
-    };
-    const onInterrupt = (stop: () => void) => {
-      process.once("SIGINT", () => {
-        writeErr(style("dim", "\ninterrupting…"));
-        stop();
-      });
     };
     try {
       const { exitCode } =

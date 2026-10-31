@@ -6,6 +6,7 @@
 
 import type { NodeType } from "@krapht/ork-schema";
 
+import type { AgentRef } from "../agents/apply.ts";
 import type { CompiledGraph } from "../graph/types.ts";
 import type {
   Activation,
@@ -37,6 +38,7 @@ export const startedEvent = (
   activation: Activation,
   nodeType: NodeType,
   round: number,
+  agent?: AgentRef,
 ): RunEvent => {
   const event: RunEvent = {
     type: "node.started",
@@ -45,6 +47,7 @@ export const startedEvent = (
     round,
   };
   if (activation.brief !== undefined) event.owner = activation.brief.from;
+  if (agent !== undefined) event.agent = agent;
   return event;
 };
 

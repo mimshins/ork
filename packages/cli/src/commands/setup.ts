@@ -1,7 +1,8 @@
 /**
  * @file Setting up: `ork init` scaffolds `.ork/` in a project with a starter
  *   workflow and the `.gitignore` entry for run state, never overwriting a
- *   file; `ork doctor` prints the environment checks (Node, git, and the user's
+ *   file; `ork agents` lists, shows, adds and removes the agents nodes can
+ *   take; `ork doctor` prints the environment checks (Node, git, and the user's
  *   own claude, gh and aws logins) and fails when no Claude driver can run. Ork
  *   stores no credentials.
  */
@@ -9,12 +10,19 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import {
+  catalogAgent,
+  deleteAgent,
+  loadAgents,
+  projectRootOf,
+} from "@krapht/ork-core";
 import type { CheckResult } from "@krapht/ork-integrations";
 import { serializeWorkflow, type Workflow } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
+import { addAgent, formatAgent, formatAgents } from "../agents/manage.ts";
 import { exec, runChecks } from "../doctor/checks.ts";
-import { style, write } from "../output.ts";
+import { style, write, writeErr } from "../output.ts";
 import { WORKFLOW_DIR, WORKFLOW_SUFFIX } from "../workflows.ts";
 
 /** Run state that never belongs in git. */
@@ -133,5 +141,119 @@ export const doctor = defineCommand({
       );
       process.exitCode = 1;
     }
+  },
+});
+
+const json = {
+  type: "boolean",
+  description: "Print JSON",
+  default: false,
+} as const;
+
+const user = {
+  type: "boolean",
+  description: "Your own agents (~/.ork/agents) instead of the project's",
+  default: false,
+} as const;
+
+const catalogHere = () =>
+  loadAgents({ projectRoot: projectRootOf(process.cwd()) });
+
+const scopeOf = (args: { user: boolean }) => ({
+  scope: args.user ? ("user" as const) : ("project" as const),
+  projectRoot: projectRootOf(process.cwd()),
+});
+
+const report = (result: ReturnType<typeof deleteAgent>, verb: string) => {
+  if (!result.ok) {
+    writeErr(result.error);
+    process.exitCode = 1;
+    return;
+  }
+  for (const file of result.files) write(`${style("green", verb)} ${file}`);
+};
+
+export const agents = defineCommand({
+  meta: {
+    name: "agents",
+    description: "The agents nodes can take: list, show, add, rm",
+  },
+  subCommands: {
+    list: defineCommand({
+      meta: {
+        name: "list",
+        description: "Every agent, and where it comes from",
+      },
+      args: { json },
+      run: ({ args }) => {
+        const catalog = catalogHere();
+        if (args.json) write(JSON.stringify(catalog.agents, undefined, 2));
+        else for (const line of formatAgents(catalog)) write(line);
+        for (const d of catalog.diagnostics) writeErr(d.message);
+      },
+    }),
+    show: defineCommand({
+      meta: {
+        name: "show",
+        description: "An agent's source, settings and role",
+      },
+      args: { name: { type: "positional", required: true }, json },
+      run: ({ args }) => {
+        const agent = catalogAgent(catalogHere(), args.name);
+        if (agent === undefined) {
+          writeErr(`No agent ${args.name}; see ork agents list.`);
+          process.exitCode = 1;
+          return;
+        }
+        if (args.json) write(JSON.stringify(agent, undefined, 2));
+        else for (const line of formatAgent(agent)) write(line);
+      },
+    }),
+    add: defineCommand({
+      meta: {
+        name: "add",
+        description: "Add an agent to .ork/agents (or yours with --user)",
+      },
+      args: {
+        name: { type: "positional", required: true },
+        description: { type: "string", description: "When to use it" },
+        model: { type: "string", description: "e.g. sonnet, opus, haiku" },
+        from: { type: "string", description: "Copy an agent you already have" },
+        user,
+      },
+      run: ({ args }) => {
+        const from =
+          args.from === undefined
+            ? undefined
+            : catalogAgent(catalogHere(), args.from);
+        if (args.from !== undefined && from === undefined) {
+          writeErr(`No agent ${args.from}; see ork agents list.`);
+          process.exitCode = 1;
+          return;
+        }
+        report(
+          addAgent({
+            ...scopeOf(args),
+            name: args.name,
+            ...(args.description === undefined
+              ? {}
+              : { description: args.description }),
+            ...(args.model === undefined ? {} : { model: args.model }),
+            ...(from === undefined ? {} : { from }),
+          }),
+          "created",
+        );
+      },
+    }),
+    rm: defineCommand({
+      meta: {
+        name: "rm",
+        description: "Remove an agent from .ork/agents (or yours with --user)",
+      },
+      args: { name: { type: "positional", required: true }, user },
+      run: ({ args }) => {
+        report(deleteAgent(args.name, scopeOf(args)), "removed");
+      },
+    }),
   },
 });

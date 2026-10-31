@@ -142,7 +142,7 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 
 ## Resuming a run
 
-`ork resume` ([cli.md](./cli.md#resuming-a-run),
+`ork resume` ([CLI](./cli/running-and-runs.md#resuming-a-run),
 [ADR-026](../decisions/ADR-026-resume-by-replay.md)) runs the workflow again
 under the same run id, with a `Replay` built from the run's events:
 
@@ -165,28 +165,28 @@ under the same run id, with a `Replay` built from the run's events:
 `onEvent` receives every change; `ork run` stores each one in the
 [event store](./event-store.md) before printing it:
 
-| Event               | When                                                                   |
-| ------------------- | ---------------------------------------------------------------------- |
-| `run.started`       | the run starts: id, workflow, entries, every declared node and owner   |
-| `node.started`      | an activation starts: id, type, round, and `owner` when delegated      |
-| `node.event`        | a runtime event from the node's session or tool                        |
-| `node.finished`     | an activation ends: ok, output, usage, error                           |
-| `node.skipped`      | a dead path skips the node                                             |
-| `edge.taken`        | an edge is taken                                                       |
-| `loop.exhausted`    | a loop edge is out of rounds                                           |
-| `worktree`          | a worktree is created, committed to, merged, conflicts, or removed     |
-| `message.sent`      | a node wrote to another on the message bus: number, recipient, body    |
-| `message.read`      | a node read its inbox: the message numbers                             |
-| `owner.asked`       | the run asked a live owner about a loop of a node it owns              |
-| `owner.answered`    | the owner answered with `answer`                                       |
-| `owner.unanswered`  | the owner's session ended first; the human is asked instead            |
-| `user.message`      | `ork chat` wrote to a node: delivered now, queued, or by resuming      |
-| `claim.taken`       | a node claimed a resource                                              |
-| `claim.refused`     | a claim overlapped another node's: who holds what                      |
-| `claim.released`    | a node released a claim, itself or by finishing                        |
-| `feedback.recorded` | an agent's report, or a signal Ork derived ([feedback](./feedback.md)) |
-| `run.resumed`       | `ork resume` continues the run: the nodes that keep their results      |
-| `run.finished`      | the run ends: `succeeded`, `failed`, `budget_exhausted`, `interrupted` |
+| Event               | When                                                                                                                    |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `run.started`       | the run starts: id, workflow, entries, every declared node and owner                                                    |
+| `node.started`      | an activation starts: id, type, round, `owner` when delegated, and the `agent` that fills it (name, source, file, hash) |
+| `node.event`        | a runtime event from the node's session or tool                                                                         |
+| `node.finished`     | an activation ends: ok, output, usage, error                                                                            |
+| `node.skipped`      | a dead path skips the node                                                                                              |
+| `edge.taken`        | an edge is taken                                                                                                        |
+| `loop.exhausted`    | a loop edge is out of rounds                                                                                            |
+| `worktree`          | a worktree is created, committed to, merged, conflicts, or removed                                                      |
+| `message.sent`      | a node wrote to another on the message bus: number, recipient, body                                                     |
+| `message.read`      | a node read its inbox: the message numbers                                                                              |
+| `owner.asked`       | the run asked a live owner about a loop of a node it owns                                                               |
+| `owner.answered`    | the owner answered with `answer`                                                                                        |
+| `owner.unanswered`  | the owner's session ended first; the human is asked instead                                                             |
+| `user.message`      | `ork chat` wrote to a node: delivered now, queued, or by resuming                                                       |
+| `claim.taken`       | a node claimed a resource                                                                                               |
+| `claim.refused`     | a claim overlapped another node's: who holds what                                                                       |
+| `claim.released`    | a node released a claim, itself or by finishing                                                                         |
+| `feedback.recorded` | an agent's report, or a signal Ork derived ([feedback](./feedback.md))                                                  |
+| `run.resumed`       | `ork resume` continues the run: the nodes that keep their results                                                       |
+| `run.finished`      | the run ends: `succeeded`, `failed`, `budget_exhausted`, `interrupted`                                                  |
 
 The decision queue adds `decision.opened`, `decision.answered`,
 `decision.withdrawn` and `run.command` ([messaging](./messaging.md)).

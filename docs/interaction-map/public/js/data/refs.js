@@ -255,6 +255,16 @@ export const PRACTICES = {
 };
 
 export const CONTEXT = {
+  agentCatalog: d(
+    "packages/core/src/agents/catalog.ts",
+    "Code: the agent catalog",
+  ),
+  agentApply: d(
+    "packages/core/src/agents/apply.ts",
+    "Code: filling agent nodes",
+  ),
+  agentTests: d("packages/core/test/agents.test.ts", "Tests: agents"),
+  agentsCli: d("packages/cli/src/commands/setup.ts", "Code: `ork agents`"),
   resolver: d(
     "packages/core/src/context/resolve.ts",
     "Code: the layer resolver",

@@ -15,6 +15,20 @@ defaults:
   model: sonnet
   isolation: readonly
   budgetUsd: 1
+agents:
+  security-reviewer:
+    description: Reviews a change for security issues.
+    instructions: "You review changes for security: injection, secrets, unsafe input handling, permissions. Read the surrounding code as you need. Report changes_requested with the concrete problems, or pass."
+  correctness-reviewer:
+    description: Reviews a change for correctness.
+    instructions: "You review changes for correctness: bugs, missed cases, broken behavior, missing tests. Read the surrounding code as you need. Report changes_requested with the concrete problems, or pass."
+  summarizer:
+    description: Turns several reviews into one pull request comment.
+    instructions: You write review comments. Lead with what must change, then what could; be specific and kind; no preamble.
+    model: haiku
+    output:
+      schema:
+        comment: string
 limits:
   budgetUsd: 5
   concurrency: 3
@@ -26,14 +40,16 @@ nodes:
       - git diff
   security:
     type: claude.worker
+    agent: security-reviewer
     prompt: |-
-      Review this change to the checked-out branch for security issues: injection, secrets, unsafe input handling, permissions. Read the surrounding code as you need. Report changes_requested with the concrete problems, or pass.
+      Review this change to the checked-out branch.
 
       {{nodes.diff.output.stdout}}
   correctness:
     type: claude.worker
+    agent: correctness-reviewer
     prompt: |-
-      Review this change to the checked-out branch for correctness: bugs, missed cases, broken behavior, missing tests. Read the surrounding code as you need. Report changes_requested with the concrete problems, or pass.
+      Review this change to the checked-out branch.
 
       {{nodes.diff.output.stdout}}
   reviews:
@@ -41,16 +57,13 @@ nodes:
     mode: all
   summary:
     type: claude.worker
+    agent: summarizer
     prompt: |-
-      Write one review comment for pull request #{{inputs.pr}} from these reviews. Lead with what must change, then what could; be specific and kind; no preamble.
+      Write one review comment for pull request #{{inputs.pr}} from these reviews.
 
       Security ({{nodes.security.output.status}}): {{nodes.security.output.summary}}
 
       Correctness ({{nodes.correctness.output.status}}): {{nodes.correctness.output.summary}}
-    model: haiku
-    output:
-      schema:
-        comment: string
   post:
     type: human.gate
     question: |-

@@ -21,6 +21,8 @@ them.
   conditions, loops and templates.
 - [Running workflows](./guides/running-workflows.md): `ork run`, the transcript,
   answering questions and permissions, one node on its own.
+- [Agents](./guides/agents.md): define who does the work once, give it to any
+  node, and use your project's own agents.
 - [Leaders and delegation](./guides/leaders-and-delegation.md): owners,
   children, spawned workers, and how their branches are merged.
 - [Skills and context](./guides/skills-and-context.md): the layers, your

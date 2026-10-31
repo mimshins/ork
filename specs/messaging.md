@@ -111,9 +111,9 @@ The decision queue ([queue.ts](../packages/core/src/control/queue.ts)):
 - A run with no terminal (`ork run --detach`) waits for `ork decide`. A run
   whose stdin is not a terminal but that is not detached (a pipe, CI) keeps the
   terminal channel's rule: tools denied, the recommended option taken.
-- `ork decide` (in [cli.md](./cli.md#decisions-and-stopping)) lists the open
-  decisions of live runs and answers them; the UI inbox (M2) reads the same
-  table.
+- `ork decide` (in [CLI](./cli/running-and-runs.md#decisions-and-stopping))
+  lists the open decisions of live runs and answers them; the UI inbox (M2)
+  reads the same table.
 
 ## Event store
 
@@ -142,8 +142,9 @@ its socket.
 
 ## Chat
 
-`ork chat <run> <node>` ([cli.md](./cli.md#decisions-and-stopping)) talks to a
-leader or worker:
+`ork chat <run> <node>`
+([CLI](./cli/running-and-runs.md#decisions-and-stopping)) talks to a leader or
+worker:
 
 - **A live run:** the message is a command in the store (`message`, with the
   node and the body, masked), and the run is woken on its socket. The bus pushes

@@ -1,11 +1,14 @@
 /**
  * @file The workflow file format as a Zod model: inputs, layers, defaults,
- *   limits, nodes, edges, message channels, and the canvas layout sidecar.
+ *   inline agents, limits, nodes, edges, message channels, and the canvas
+ *   layout sidecar.
  */
 
 import { z } from "zod";
 
+import { AgentSchema } from "./agents.ts";
 import {
+  AgentNameSchema,
   BudgetSchema,
   DriverSchema,
   IsolationSchema,
@@ -90,6 +93,12 @@ export const WorkflowSchema = z.strictObject({
       practices: PracticesSchema.optional(),
     })
     .optional(),
+  agents: z
+    .record(AgentNameSchema, AgentSchema)
+    .optional()
+    .describe(
+      "Agents defined in this workflow; they win over the project's and the user's of the same name.",
+    ),
   limits: z
     .strictObject({
       budgetUsd: BudgetSchema.optional().describe(

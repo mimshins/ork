@@ -1,7 +1,8 @@
 /**
- * @file `ork validate`: loads, parses and compiles workflow files, checks their
- *   skill and context references, and reports diagnostics compiler-style, with
- *   file, line and column. `loadWorkflow` is shared with `ork run`.
+ * @file `ork validate`: loads, parses and compiles workflow files with the
+ *   agents they name, checks their skill and context references, and reports
+ *   diagnostics compiler-style, with file, line and column. `loadWorkflow` is
+ *   shared with `ork run`.
  */
 
 import { readFileSync } from "node:fs";
@@ -11,6 +12,7 @@ import {
   type CompiledGraph,
   compileWorkflow,
   contextDiagnostics,
+  loadAgents,
   projectRootOf,
 } from "@krapht/ork-core";
 import {
@@ -31,7 +33,10 @@ export type FileReport = {
 
 export type LoadedWorkflow = {
   report: FileReport;
-  /** The parsed workflow, or `null` when it has errors. */
+  /**
+   * The effective workflow (agent nodes filled from their agents), or `null`
+   * when it has errors.
+   */
   workflow: Workflow | null;
   /** The compiled graph, or `null` when the workflow has errors. */
   graph: CompiledGraph | null;
@@ -40,8 +45,15 @@ export type LoadedWorkflow = {
 const hasErrors = (diagnostics: readonly Diagnostic[]): boolean =>
   diagnostics.some(d => d.severity === "error");
 
-/** Parses and compiles one workflow file. */
-export const loadWorkflow = (file: string, cwd: string): LoadedWorkflow => {
+/**
+ * Parses and compiles one workflow file, with the agents the user and its
+ * project offer. `home` is the user's `~` (tests pass a folder).
+ */
+export const loadWorkflow = (
+  file: string,
+  cwd: string,
+  home?: string,
+): LoadedWorkflow => {
   let text: string;
   try {
     text = readFileSync(path.resolve(cwd, file), "utf8");
@@ -71,17 +83,19 @@ export const loadWorkflow = (file: string, cwd: string): LoadedWorkflow => {
     };
   }
 
-  const compiled = compileWorkflow(parsed.workflow);
-  const { graph } = compiled;
   const workflowDir = path.dirname(path.resolve(cwd, file));
+  const projectRoot = projectRootOf(workflowDir);
+  const catalog = loadAgents({
+    projectRoot,
+    ...(home === undefined ? {} : { home }),
+  });
+  const compiled = compileWorkflow(parsed.workflow, { catalog, workflowDir });
+  const { graph } = compiled;
   const diagnostics = [
     ...compiled.diagnostics,
     ...(graph === null
       ? []
-      : contextDiagnostics(parsed.workflow, {
-          workflowDir,
-          projectRoot: projectRootOf(workflowDir),
-        })),
+      : contextDiagnostics(graph.workflow, { workflowDir, projectRoot })),
   ];
   const located: Diagnostic[] = [];
   for (const diagnostic of diagnostics) {
@@ -107,7 +121,7 @@ export const loadWorkflow = (file: string, cwd: string): LoadedWorkflow => {
         entries: graph.entries,
       },
     },
-    workflow: hasErrors(located) ? null : parsed.workflow,
+    workflow: hasErrors(located) ? null : graph.workflow,
     graph: hasErrors(located) ? null : graph,
   };
 };

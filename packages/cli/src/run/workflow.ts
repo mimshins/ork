@@ -137,7 +137,11 @@ export const runWorkflowFile = async (
     return { exitCode: 1, result: null };
   };
 
-  const { report, workflow, graph } = loadWorkflow(options.file, options.cwd);
+  const { report, workflow, graph } = loadWorkflow(
+    options.file,
+    options.cwd,
+    options.home,
+  );
   if (workflow === null || graph === null) return failed(formatReport(report));
 
   const pairs = parseInputPairs(options.inputs);
