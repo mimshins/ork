@@ -119,8 +119,11 @@ carried to the next milestone.
   and register it again. ([projects](./projects.md))
 - **L21 · A drafted workflow's agents each work in their own worktree.**
   `ork migrate --from-agents` chains workers; an earlier agent's files reach the
-  last one only as reported artifacts, and only the last one's worktree is
-  staged and committed. Sharing one worktree between siblings is not built.
+  last one only as reported artifacts (copied only when missing there), and only
+  the last one's worktree is staged and committed. Seen on se-backend: the
+  documenter edited `README.md` in its worktree, and the implementer, in a clean
+  one, made the change again. A worktree node that continues in the worktree its
+  input came from (as a readonly node does) is not built.
   ([ADR-036](../decisions/ADR-036-ork-migrate.md))
 - **L22 · A migration is not atomic.** Its plan is checked before anything
   moves, but a move that fails halfway (a permission, a full disk) stops there;

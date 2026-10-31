@@ -105,7 +105,7 @@ export const draftWorkflow = (options: DraftOptions): Workflow => {
   };
   nodes["commit"] = {
     type: "tool.git",
-    command: "commit -m {{inputs.task}}",
+    command: "commit -m {{inputs.message}}",
     cwd: here,
   };
   edges.push(
@@ -124,6 +124,11 @@ export const draftWorkflow = (options: DraftOptions): Workflow => {
         type: "string",
         required: true,
         description: "The branch the change is committed on.",
+      },
+      message: {
+        type: "string",
+        required: true,
+        description: "The commit message.",
       },
     },
     rules: { git: { commit: "never" } },
@@ -215,6 +220,6 @@ export const draftHere = (
   write(`${style("green", "drafted")} ${drafted.file}`);
   for (const line of check(drafted.file)) write(line);
   write(
-    `Edit it to fit, then ${style("bold", `ork run ${args.name} --input task=… --input branch=…`)}.`,
+    `Edit it to fit, then ${style("bold", `ork run ${args.name} --input task=… --input branch=… --input message=…`)}.`,
   );
 };

@@ -109,8 +109,9 @@ in the working tree to review and commit
   | the reviewer       | `readonly`, `session: resume`; `changes_requested` sends it back, `maxRounds: 3` |
   | `stage`            | `tool.git add -A` in the last agent's worktree                                   |
   | `approve`          | a gate showing the staged summary                                                |
-  | `branch`, `commit` | `switch -c {{inputs.branch}}`, then `commit -m {{inputs.task}}`                  |
+  | `branch`, `commit` | `switch -c {{inputs.branch}}`, then `commit -m {{inputs.message}}`               |
 
-  It takes the inputs `task` and `branch` and sets `rules.git.commit: never`:
-  Ork commits nothing itself, and nothing is pushed. Agent names must be known
-  (`ork agents list`) and cannot be the draft's own node ids.
+  It takes the inputs `task`, `branch` and `message` and sets
+  `rules.git.commit: never`: Ork commits nothing itself, and nothing is pushed.
+  Agent names must be known (`ork agents list`) and cannot be the draft's own
+  node ids.

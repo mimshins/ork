@@ -414,4 +414,31 @@ describe("ork worktrees", () => {
       [false, "commits on no branch"],
     ]);
   });
+
+  it("reads the branch a workflow made in a detached worktree, and never deletes it", async () => {
+    const root = repo();
+    const place = path.join(path.dirname(root), `${path.basename(root)}-made`);
+    sh(root, "worktree", "add", "--detach", place);
+    sh(place, "switch", "--quiet", "-c", "docs/readme");
+    write(place, "done.ts", "done\n");
+    sh(place, "add", "-A");
+    sh(place, "commit", "--quiet", "-m", "a tool.git commit");
+
+    const items = await listOrkWorktrees(root, [
+      { runId: "r1", nodeId: "implementer", path: place },
+    ]);
+    expect(items.map(i => [i.branch, i.checkedOut, i.ahead, i.merged])).toEqual(
+      [[undefined, "docs/readme", 1, false]],
+    );
+    const steps = planClean(
+      items,
+      { merged: false },
+      { branches: true, force: false },
+    );
+    // The commit is safe on its branch, so the worktree can go; the branch
+    // is the workflow's, not Ork's.
+    expect(steps.map(s => [s.removeWorktree, s.deleteBranch])).toEqual([
+      [true, false],
+    ]);
+  });
 });

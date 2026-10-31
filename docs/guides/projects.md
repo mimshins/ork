@@ -112,8 +112,48 @@ last agent's change, and the reviewer sends it back while it requests changes
 staged summary, and it is committed on the branch you give the run:
 
 ```sh
-ork run process --input task="Add a health endpoint" --input branch=feat/health
+ork run process --input task="Add a health endpoint" \
+  --input branch=feat/health --input message="feat: add a health endpoint"
 ```
 
 The draft sets `git.commit: never`, so Ork commits nothing itself, and nothing
 is pushed. Edit it to fit: models, budgets, prompts, or more gates.
+
+## A worked example: a project with its own process
+
+se-backend keeps its agents in `.ai/agents` (a documenter, an implementer, a
+reviewer), names branches `<type>/<slug>` with a worktree each beside the clone,
+and lets a human commit. Moving that process into Ork, without writing into the
+repository:
+
+1. `ork register`, then rules in `~/.ork/projects/<id>/project.yaml`:
+
+   ```yaml
+   schemaVersion: 1
+   git:
+     commit: never
+     base: origin/main
+     worktrees: "../{clone}-worktrees/{inputs.type}-{inputs.slug}-{node}"
+   permissions:
+     allow:
+       [Read, Glob, Grep, Write, Edit, "Bash(git status*)", "Bash(git diff*)"]
+     deny: ["Bash(git push *)"]
+   defaults: { model: haiku, driver: cli, budgetUsd: 0.6, maxTurns: 30 }
+   ```
+
+2. `ork migrate --from-agents documenter,implementer --reviewer reviewer`, then
+   edit the draft: inputs `type` and `slug` instead of `branch`
+   (`switch -c {{inputs.type}}/{{inputs.slug}}`), and a run budget.
+3. `ork run process --input task=… --input type=docs --input slug=… --input message="docs: …" --detach`,
+   and answer its questions with `ork decide`: a permission the rules do not
+   cover, the gate before the reviewer, and the commit.
+
+The run cost a few cents on haiku. The reviewer read the implementer's worktree,
+the second gate showed the staged summary, and the commit landed on the new
+branch; the clone's own checkout stayed as it was. Two things to know:
+
+- Permission patterns are Claude Code's: `Bash(git diff*)` does not match
+  `git -C <path> diff`, so that call was asked about.
+- Each drafted agent has its own worktree, so an earlier agent's edits do not
+  reach the next one ([gaps](../../specs/gaps.md)); keep the writing to one
+  agent, or edit the draft to fit.

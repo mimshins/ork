@@ -14,7 +14,12 @@ export const worktreeState = (item: OrkWorktree): string => {
   if (item.path === null) parts.push("no worktree");
   else if (item.missing) parts.push("missing (prunable)");
   if (item.dirty) parts.push(style("yellow", "uncommitted changes"));
-  if (item.branch === undefined) {
+  const commits = item.merged
+    ? style("green", "merged")
+    : `${String(item.ahead)} commit(s) not merged`;
+  if (item.checkedOut !== undefined) {
+    parts.push(`on the workflow's branch ${item.checkedOut}`, commits);
+  } else if (item.branch === undefined) {
     parts.push(
       item.ahead > 0
         ? style(
@@ -24,17 +29,13 @@ export const worktreeState = (item: OrkWorktree): string => {
         : "detached, nothing committed",
     );
   } else {
-    parts.push(
-      item.merged
-        ? style("green", "merged")
-        : `${String(item.ahead)} commit(s) not merged`,
-    );
+    parts.push(commits);
   }
   if (item.inMainCheckout) parts.push("checked out here");
   return parts.join(" · ");
 };
 
-/** A worktree's name: its branch, or its run and node when detached. */
+/** A worktree's name: its branch, or its run and node when created detached. */
 const labelOf = (item: OrkWorktree): string =>
   item.branch ?? `${item.runId}/${item.nodeId} (detached)`;
 

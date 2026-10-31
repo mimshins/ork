@@ -13,6 +13,11 @@ import { BRANCH_PREFIX, removeWorktree } from "./manager.ts";
 export type OrkWorktree = {
   /** `undefined` for a detached worktree (`commit: never`). */
   branch?: string;
+  /**
+   * The branch a worktree created detached is on now, made by the workflow
+   * itself (a `tool.git` `switch -c`); Ork never deletes it.
+   */
+  checkedOut?: string;
   runId: string;
   nodeId: string;
   /** `null` for a branch without a worktree. */
@@ -22,8 +27,9 @@ export type OrkWorktree = {
   /** Uncommitted changes in the worktree. */
   dirty: boolean;
   /**
-   * Commits on the branch that the current branch does not have; for a detached
-   * worktree, commits on no branch at all (a `tool.git` commit).
+   * Commits on the branch (or `checkedOut`) that the current branch does not
+   * have; for a detached worktree, commits on no branch at all (a `tool.git`
+   * commit).
    */
   ahead: number;
   /** Fully merged into the current branch (never, for a detached worktree). */
@@ -119,20 +125,27 @@ const stateOf = async (
     entry === undefined || missing
       ? ""
       : (await git(entry.path, ["status", "--porcelain"])).stdout;
+  // A worktree created detached may be on a branch the workflow made since.
+  const checkedOut =
+    branch === undefined && entry !== undefined && entry.branch !== ""
+      ? entry.branch
+      : undefined;
+  const on = branch ?? checkedOut;
   const counted =
-    branch === undefined
+    on === undefined
       ? await onNoBranch(entry === undefined || missing ? undefined : entry)
-      : (await git(root, ["rev-list", "--count", `HEAD..${branch}`])).stdout;
+      : (await git(root, ["rev-list", "--count", `HEAD..${on}`])).stdout;
   const ahead = Number(counted);
   return {
     ...(branch === undefined ? {} : { branch }),
+    ...(checkedOut === undefined ? {} : { checkedOut }),
     runId: item.runId,
     nodeId: item.nodeId,
     path: entry?.path ?? null,
     missing,
     dirty: lines(status).length > 0,
     ahead: Number.isNaN(ahead) ? 0 : ahead,
-    merged: branch !== undefined && ahead === 0,
+    merged: on !== undefined && ahead === 0,
     inMainCheckout: entry?.path === root,
   };
 };
@@ -205,7 +218,12 @@ const cleanStep = (
       skip: "uncommitted changes",
     };
   }
-  if (item.branch === undefined && item.ahead > 0 && !options.force) {
+  if (
+    item.branch === undefined &&
+    item.checkedOut === undefined &&
+    item.ahead > 0 &&
+    !options.force
+  ) {
     return {
       item,
       removeWorktree: false,
