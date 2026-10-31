@@ -6,7 +6,7 @@ import { ORK_VERSION } from "./__build_info__.ts";
 import { chat } from "./commands/chat.ts";
 import { context } from "./commands/context.ts";
 import { decide, resume, stop } from "./commands/control.ts";
-import { projects, register, worktrees } from "./commands/projects.ts";
+import { migrate, projects, register, worktrees } from "./commands/projects.ts";
 import { run } from "./commands/run.ts";
 import { feedback, logs, ps, tree } from "./commands/runs.ts";
 import { agents, doctor, init, link } from "./commands/setup.ts";
@@ -22,6 +22,7 @@ export const main = defineCommand({
     init,
     register,
     projects,
+    migrate,
     link,
     validate,
     agents,

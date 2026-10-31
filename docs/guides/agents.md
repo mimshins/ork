@@ -125,6 +125,12 @@ is kept as it is, so a project that keeps its agents in `.ai/` loses nothing.
 together; an empty `.ork/` folder gets a `.gitkeep` so the links work in a fresh
 clone.
 
+To make `.ork/` the origin in a project that keeps its agents elsewhere, such as
+`.ai/`, run `ork migrate --agents`: it moves the files into `.ork/agents/` and
+`.ork/skills/` and points `.ai/agents`, `.claude/agents` and the rest at them,
+after showing the plan
+([Projects: moving into the repository](./projects.md#moving-into-the-repository)).
+
 ## Agents in a workflow file
 
 A workflow can define its own agents, which win over every other source and

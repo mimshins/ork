@@ -1,9 +1,11 @@
 /**
  * @file The store's registered projects (ADR-035): which repositories Ork
  *   knows, and where it keeps each one's files (in the repository, or in
- *   `~/.ork/projects/<id>/` when attached).
+ *   `~/.ork/projects/<id>/` when attached), and moving it from one to the other
+ *   (`ork migrate`) with its runs' workflow files.
  */
 
+import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 
 import { type ProjectRecord, PROJECT_MODES } from "../project/place.ts";
@@ -25,6 +27,12 @@ export const projectQueries = (db: DatabaseSync): ProjectStore => {
      VALUES (?, ?, ?, ?, ?)`,
   );
   const remove = db.prepare("DELETE FROM projects WHERE id = ?");
+  const move = db.prepare("UPDATE projects SET mode = ?, dir = ? WHERE id = ?");
+  // A run's workflow file moves with the folder it was in.
+  const refile = db.prepare(
+    `UPDATE runs SET file = ? || substr(file, ?)
+     WHERE project = ? AND substr(file, 1, ?) = ?`,
+  );
   return {
     projects: () => all.all().map(r => recordOf(r)),
     addProject: project => {
@@ -39,5 +47,29 @@ export const projectQueries = (db: DatabaseSync): ProjectStore => {
       return record;
     },
     forgetProject: id => Number(remove.run(id).changes) > 0,
+    moveProject: (id, place) => {
+      const before = all
+        .all()
+        .map(r => recordOf(r))
+        .find(p => p.id === id);
+      if (before === undefined) return false;
+      const from = `${before.dir}${path.sep}`;
+      db.exec("BEGIN");
+      try {
+        move.run(place.mode, place.dir, id);
+        refile.run(
+          `${place.dir}${path.sep}`,
+          from.length + 1,
+          before.root,
+          from.length,
+          from,
+        );
+        db.exec("COMMIT");
+      } catch (error) {
+        db.exec("ROLLBACK");
+        throw error;
+      }
+      return true;
+    },
   };
 };

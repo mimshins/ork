@@ -1,13 +1,18 @@
 # Projects: in the repository, or attached
 
-Status: **Built**: places, `ork register`, `ork projects`, and `ork init`
-recording an in-repo project ([place.ts](../packages/core/src/project/place.ts),
+Status: **Built**: places, `ork register`, `ork projects`, `ork init` recording
+an in-repo project, and `ork migrate`
+([place.ts](../packages/core/src/project/place.ts),
 [register.ts](../packages/cli/src/project/register.ts),
+[migrate.ts](../packages/cli/src/project/migrate.ts),
+[move.ts](../packages/core/src/project/move.ts),
+[draft.ts](../packages/cli/src/project/draft.ts),
 [projects.ts](../packages/core/src/store/projects.ts),
 [tests](../packages/cli/test/projects.test.ts),
-[core tests](../packages/core/test/projects.test.ts)). `ork migrate`, from
-attached to in-repo, is planned. Why:
-[ADR-035](../decisions/ADR-035-projects-in-repo-or-attached.md).
+[migrate tests](../packages/cli/test/migrate.test.ts),
+[core tests](../packages/core/test/projects.test.ts)). Why:
+[ADR-035](../decisions/ADR-035-projects-in-repo-or-attached.md),
+[ADR-036](../decisions/ADR-036-ork-migrate.md).
 
 A project is a git repository Ork runs workflows in. Ork keeps its own files for
 it in one folder, in one of two places:
@@ -71,3 +76,41 @@ current folder's project's `workflows/`.
   `.ork/agents`; the tools' folders in the repository are still read.
 - **Not available:** `ork link` (nothing is linked into the repository) and its
   doctor checks.
+
+## Migrating
+
+`ork migrate` changes a project's layout and commits nothing: the result is left
+in the working tree to review and commit
+([ADR-036](../decisions/ADR-036-ork-migrate.md)).
+
+- **`ork migrate`** moves an attached project's folder into `<root>/.ork/`, adds
+  `.ork/runs/` to `.gitignore`, and records the project as in-repo; the store's
+  runs of it point at their moved workflow files. An in-repo project has nothing
+  to move.
+- **`--agents`** also brings the agents and skills under `.ork/`
+  ([agents/migrate.ts](../packages/core/src/agents/migrate.ts)): a tool folder
+  that is a real folder, or a folder in the repository tool folders link to
+  (`.ai/agents`), has its entries moved into `.ork/agents` or `.ork/skills` and
+  becomes a link to it; every link to it then points at `.ork/`. Links leaving
+  the repository and broken links are kept and listed.
+- **The plan comes first.** It is shown, one line per move and link; a clash
+  (something already where a file would go) or a live run of the project refuses
+  it, and nothing moves. It asks before applying (`--yes` skips the question and
+  is needed without a terminal); `--dry-run` only shows it. A folder is removed
+  only once empty, and running it again plans what is left.
+- **`--from-agents a,b [--reviewer r] [--name process]`** only drafts
+  `workflows/<name>.ork.yaml` in the project's folder, never over a file, and
+  validates it:
+
+  | Node(s)            | What it does                                                                     |
+  | ------------------ | -------------------------------------------------------------------------------- |
+  | `a`, `b`, …        | a `claude.worker` per agent, in order, each in its worktree                      |
+  | `ready`            | with a reviewer: a gate that sends the last agent's change to it                 |
+  | the reviewer       | `readonly`, `session: resume`; `changes_requested` sends it back, `maxRounds: 3` |
+  | `stage`            | `tool.git add -A` in the last agent's worktree                                   |
+  | `approve`          | a gate showing the staged summary                                                |
+  | `branch`, `commit` | `switch -c {{inputs.branch}}`, then `commit -m {{inputs.task}}`                  |
+
+  It takes the inputs `task` and `branch` and sets `rules.git.commit: never`:
+  Ork commits nothing itself, and nothing is pushed. Agent names must be known
+  (`ork agents list`) and cannot be the draft's own node ids.

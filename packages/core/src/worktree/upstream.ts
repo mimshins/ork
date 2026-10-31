@@ -2,8 +2,9 @@
  * @file Where a `readonly` node with no owner works: in the checkout its input
  *   came from, so a reviewer after a leader sees the leader's branch. The
  *   node's incoming edges are followed back through control nodes (joins,
- *   splits, routers) to the nodes that ran; when they all worked in one
- *   worktree, that is the place, and otherwise the project root.
+ *   splits, routers) and human gates, which work nowhere, to the nodes that
+ *   ran; when they all worked in one worktree, that is the place, and otherwise
+ *   the project root.
  */
 
 import type { CompiledGraph } from "../graph/types.ts";
@@ -26,8 +27,9 @@ export const upstreamPlace = (
     if (seen.has(from)) continue;
     seen.add(from);
     const node = graph.nodes.get(from);
-    if (node?.node.type.startsWith("control.") === true) {
-      queue.push(...node.incoming.map(e => e.from));
+    const type = node?.node.type ?? "";
+    if (type.startsWith("control.") || type === "human.gate") {
+      queue.push(...(node?.incoming ?? []).map(e => e.from));
       continue;
     }
     const place = placeOf.get(from);

@@ -6,9 +6,12 @@ _Part of [The ork CLI](../cli.md)._
 
 `ork register` attaches a project from outside its repository, `ork init`
 records an in-repo one, and `ork projects` lists them or forgets one; see
-[Projects](../projects.md#registering). A workflow given by name is found in the
-current folder's project: `.ork/workflows/`, or the attached project's
-`workflows/`.
+[Projects](../projects.md#registering). `ork migrate` moves an attached project
+into `.ork/`, brings agents and skills under it (`--agents`), or drafts a
+workflow from the project's agents (`--from-agents`); see
+[Projects: migrating](../projects.md#migrating). A workflow given by name is
+found in the current folder's project: `.ork/workflows/`, or the attached
+project's `workflows/`.
 
 ## Worktrees
 

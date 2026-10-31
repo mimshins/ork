@@ -53,6 +53,28 @@ export const STARTER: Workflow = {
   edges: ["lead -> approve"],
 };
 
+/** The run-state entries `root`'s `.gitignore` lacks. */
+export const unignored = (root: string): string[] => {
+  const gitignore = path.join(root, ".gitignore");
+  const current = existsSync(gitignore) ? readFileSync(gitignore, "utf8") : "";
+  const lines = new Set(current.split("\n").map(line => line.trim()));
+  return GITIGNORE_ENTRIES.filter(entry => !lines.has(entry));
+};
+
+/** Adds the run-state entries `root`'s `.gitignore` lacks; returns them. */
+export const ignoreRunState = (root: string): string[] => {
+  const missing = unignored(root);
+  if (missing.length === 0) return [];
+  const gitignore = path.join(root, ".gitignore");
+  const current = existsSync(gitignore) ? readFileSync(gitignore, "utf8") : "";
+  const prefix = current === "" || current.endsWith("\n") ? "" : "\n";
+  writeFileSync(
+    gitignore,
+    `${current}${prefix}# Ork run state\n${missing.join("\n")}\n`,
+  );
+  return missing;
+};
+
 export type InitResult = {
   created: string[];
   skipped: string[];
@@ -81,18 +103,8 @@ export const initProject = (
     created.push(starter);
   }
 
-  const gitignore = path.join(cwd, ".gitignore");
-  const current = existsSync(gitignore) ? readFileSync(gitignore, "utf8") : "";
-  const lines = new Set(current.split("\n").map(line => line.trim()));
-  const missing = GITIGNORE_ENTRIES.filter(entry => !lines.has(entry));
-  if (missing.length > 0) {
-    const prefix = current === "" || current.endsWith("\n") ? "" : "\n";
-    writeFileSync(
-      gitignore,
-      `${current}${prefix}# Ork run state\n${missing.join("\n")}\n`,
-    );
-    created.push(`.gitignore (${missing.join(", ")})`);
-  }
+  const missing = ignoreRunState(cwd);
+  if (missing.length > 0) created.push(`.gitignore (${missing.join(", ")})`);
   const linked =
     options.link === true ? linkTools(cwd, toolsInUse(cwd)) : undefined;
   if (linked?.ok !== true) return { created, skipped, links: [] };

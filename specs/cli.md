@@ -1,8 +1,8 @@
 # The ork CLI
 
-Status: **Partial**: `ork init`, `ork register`, `ork projects`, `ork link`,
-`ork validate`, `ork doctor`, `ork run` (a whole workflow, or one node with
-`--node`), `ork ps`, `ork logs`, `ork tree`, `ork decide`, `ork stop`,
+Status: **Partial**: `ork init`, `ork register`, `ork projects`, `ork migrate`,
+`ork link`, `ork validate`, `ork doctor`, `ork run` (a whole workflow, or one
+node with `--node`), `ork ps`, `ork logs`, `ork tree`, `ork decide`, `ork stop`,
 `ork chat`, `ork resume`, `ork worktrees`, `ork context explain`,
 `ork agents list | show | add | rm` and `ork feedback list | show | dismiss`
 ([feedback](./feedback.md)) are built ([code](../packages/cli/src/main.ts),
@@ -10,7 +10,8 @@ Status: **Partial**: `ork init`, `ork register`, `ork projects`, `ork link`,
 [run tests](../packages/cli/test/run.test.ts),
 [agents tests](../packages/cli/test/agents.test.ts),
 [link tests](../packages/core/test/links.test.ts),
-[projects tests](../packages/cli/test/projects.test.ts)); the other commands are
+[projects tests](../packages/cli/test/projects.test.ts),
+[migrate tests](../packages/cli/test/migrate.test.ts)); the other commands are
 specified. Published as `@krapht/ork`
 ([release](../runbook/development/release.md),
 [ADR-015](../decisions/ADR-015-changesets-and-one-bundled-cli.md)).
@@ -19,6 +20,8 @@ specified. Published as `@krapht/ork`
 ork init [--no-link]             # scaffold .ork/, .gitignore entries, example workflow; link tool folders; record the project
 ork register [path] [--id <id>] [--json]  # attach a project from outside: its files in ~/.ork/projects/<id>/, nothing in the repo
 ork projects [--json] | forget <id>       # the registered projects, in-repo and attached
+ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agents and skills under .ork/, tool folders relinked; commits nothing
+ork migrate --from-agents a,b [--reviewer r] [--name n]  # draft a gated workflow from the project's agents
 ork link [tools…] [--check]      # point tools' agents and skills folders (.claude/agents, …) at .ork/
 ork doctor                       # node, git, every Claude driver and integration (its own login check), links
 ork validate <wf>                # schema, graph, project rules, agents and skill/context references; errors with yaml line numbers

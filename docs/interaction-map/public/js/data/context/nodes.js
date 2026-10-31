@@ -195,7 +195,7 @@ export const NODES = [
       "An agent is a portable `<name>.md` plus an optional `<name>.agent.yaml` with Ork's settings.",
       "Linked folders are followed; a file reached twice counts once. `node.started` records the agent and a hash.",
       "`ork agents list | show | add | rm`; Ork writes only `.ork/agents` and `~/.ork/agents`.",
-      "`ork link` makes `.ork/` the origin: tools' folders (`.claude/agents`, …) become links to it; real folders are kept.",
+      "`ork link` makes `.ork/` the origin: tools' folders (`.claude/agents`, …) become links to it; real folders are kept. `ork migrate --agents` moves a real folder's files (`.ai/agents`) into `.ork/` and relinks, after showing the plan.",
     ],
     docs: [
       CONTEXT.agentCatalog,

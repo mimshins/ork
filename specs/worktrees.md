@@ -30,9 +30,10 @@ checkout instead.
 - **A readonly node with no owner follows its input**
   ([upstream.ts](../packages/core/src/worktree/upstream.ts),
   [ADR-029](../decisions/ADR-029-readonly-follows-its-input.md)): its incoming
-  edges are followed back through control nodes to the nodes that ran, and when
-  they all worked in one worktree, it works there too. So a reviewer or approver
-  after a leader sees the leader's branch. Upstream nodes in different
+  edges are followed back through control nodes and human gates
+  ([ADR-036](../decisions/ADR-036-ork-migrate.md)) to the nodes that ran, and
+  when they all worked in one worktree, it works there too. So a reviewer or
+  approver after a leader sees the leader's branch. Upstream nodes in different
   worktrees, or none, leave it in the project root.
 
 - A worktree lives **beside the clone**:

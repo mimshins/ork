@@ -160,6 +160,14 @@ export type ProjectStore = {
   addProject: (project: Omit<ProjectRecord, "registeredAt">) => ProjectRecord;
   /** Forgets a project (its files stay); false when there is no such id. */
   forgetProject: (id: string) => boolean;
+  /**
+   * Records a project's files in a new place (`ork migrate`), and its runs'
+   * workflow files with them; false when there is no such id.
+   */
+  moveProject: (
+    id: string,
+    place: Pick<ProjectRecord, "mode" | "dir">,
+  ) => boolean;
 };
 
 export type EventStore = DecisionStore &

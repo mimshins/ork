@@ -487,8 +487,12 @@ export const MILESTONES = [
         title: "`ork migrate`",
         status: "next",
         detail:
-          "Moves a registered project into `.ork/`; `--agents` brings its agents and skills under `.ork/` and links the tool folders; `--from-agents` drafts a workflow.",
-        docs: ["specs/cli.md"],
+          "Moves an attached project into `.ork/` with its runs; `--agents` moves the agents and skills (se-backend's `.ai/`) into `.ork/` and relinks every tool folder; a checked plan, asked first, nothing committed. `--from-agents` drafts a gated workflow: the agents in order, a reviewer loop, a gated commit under `commit: never`.",
+        docs: [
+          "specs/projects.md#migrating",
+          "decisions/ADR-036-ork-migrate.md",
+          "docs/guides/projects.md#moving-into-the-repository",
+        ],
       },
       {
         id: "se-backend",
@@ -562,6 +566,7 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "6a12cf8",
   "14b64af",
   "94cc3d0",
   "9785a0b",

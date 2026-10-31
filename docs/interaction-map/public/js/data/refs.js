@@ -323,7 +323,7 @@ export const WORKTREES = {
   ),
   command: d(
     "packages/cli/src/commands/projects.ts",
-    "Code: `ork register`, `ork projects` and `ork worktrees`",
+    "Code: `ork register`, `ork projects`, `ork migrate` and `ork worktrees`",
   ),
   places: d(
     "packages/core/src/project/place.ts",
@@ -333,6 +333,19 @@ export const WORKTREES = {
     "packages/cli/src/project/register.ts",
     "Code: registering a project",
   ),
+  migrate: d(
+    "packages/cli/src/project/migrate.ts",
+    "Code: `ork migrate`, attached to in-repo",
+  ),
+  draft: d(
+    "packages/cli/src/project/draft.ts",
+    "Code: drafting a workflow from agents",
+  ),
+  migrateTests: d(
+    "packages/cli/test/migrate.test.ts",
+    "Tests: a project and its agents move into `.ork/`",
+  ),
+  migrateAdr: d("decisions/ADR-036-ork-migrate.md", "ADR-036: `ork migrate`"),
   projectsSpec: d("specs/projects.md", "Spec: projects, in-repo or attached"),
   projectsTests: d(
     "packages/cli/test/projects.test.ts",

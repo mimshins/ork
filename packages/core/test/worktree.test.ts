@@ -19,6 +19,7 @@ import {
   planClean,
   worktreePath,
   branchName,
+  upstreamPlace,
 } from "../src/index.ts";
 import { compile, repo, runIn, sh, working, write } from "./fixtures/git.ts";
 
@@ -170,6 +171,27 @@ describe("worktrees", () => {
     expect(cwds["approve"]).toBe(worktreePath(root, "r1", "lead"));
     expect(prompts["approve"]).toBe("ork/r1/lead");
     expect(cwds["judge"]).toBe(root);
+  });
+
+  it("follows a readonly node's input back through a human gate", () => {
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: gated",
+        "nodes:",
+        "  build: { type: claude.worker }",
+        "  ready: { type: human.gate, question: Review?, options: [go, stop] }",
+        "  review: { type: claude.worker, isolation: readonly }",
+        "edges:",
+        "  - build -> ready",
+        "  - ready -> review",
+      ].join("\n"),
+    );
+    const places = new Map([
+      ["build", "/wt/build"],
+      ["ready", "/repo"],
+    ]);
+    expect(upstreamPlace(graph, "review", places, "/repo")).toBe("/wt/build");
   });
 
   it("resumes in the worktrees a run left, and reuses a removed one's branch", async () => {

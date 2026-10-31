@@ -1,18 +1,17 @@
 /**
  * @file A project's bookkeeping. `ork register` attaches a project from outside
  *   its repository and `ork projects` lists or forgets registered ones
- *   (ADR-035); neither writes into a repository. `ork worktrees` lists the
- *   worktrees and branches runs left behind (those the runs recorded creating,
- *   whatever the project's git rules named them, and any `ork/` branch), with
- *   their state read from git, and cleans them up safely after showing the plan
- *   and asking.
+ *   (ADR-035); neither writes into a repository. `ork migrate` moves an
+ *   attached project into its repository, brings its agents and skills under
+ *   `.ork/`, or drafts a workflow from its agents (ADR-036), and commits
+ *   nothing. `ork worktrees` lists the worktrees and branches runs left behind
+ *   (those the runs recorded creating, whatever the project's git rules named
+ *   them, and any `ork/` branch), with their state read from git, and cleans
+ *   them up safely after showing the plan and asking.
  */
-
-import { createInterface } from "node:readline/promises";
 
 import {
   applyClean,
-  type CleanStep,
   createdWorktrees,
   inspectProject,
   listOrkWorktrees,
@@ -22,62 +21,16 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
-import { style, write, writeErr } from "../output.ts";
+import { confirm, style, write, writeErr } from "../output.ts";
+import { draftHere } from "../project/draft.ts";
+import { migrateHere } from "../project/migrate.ts";
 import {
   formatProject,
   formatRegistered,
   registerProject,
 } from "../project/register.ts";
-
-/** One line of state: where it is and what clean would care about. */
-export const worktreeState = (item: OrkWorktree): string => {
-  const parts: string[] = [];
-  if (item.path === null) parts.push("no worktree");
-  else if (item.missing) parts.push("missing (prunable)");
-  if (item.dirty) parts.push(style("yellow", "uncommitted changes"));
-  if (item.branch === undefined) {
-    parts.push(
-      item.ahead > 0
-        ? style(
-            "yellow",
-            `detached, ${String(item.ahead)} commit(s) on no branch`,
-          )
-        : "detached, nothing committed",
-    );
-  } else {
-    parts.push(
-      item.merged
-        ? style("green", "merged")
-        : `${String(item.ahead)} commit(s) not merged`,
-    );
-  }
-  if (item.inMainCheckout) parts.push("checked out here");
-  return parts.join(" · ");
-};
-
-/** A worktree's name: its branch, or its run and node when detached. */
-const labelOf = (item: OrkWorktree): string =>
-  item.branch ?? `${item.runId}/${item.nodeId} (detached)`;
-
-export const formatWorktrees = (items: readonly OrkWorktree[]): string[] => {
-  if (items.length === 0) return ["No Ork worktrees or branches."];
-  const width = Math.max(...items.map(i => labelOf(i).length));
-  return items.flatMap(item => [
-    `${style("bold", labelOf(item).padEnd(width))}  ${worktreeState(item)}`,
-    ...(item.path === null ? [] : [`  ${style("dim", item.path)}`]),
-  ]);
-};
-
-export const formatPlan = (steps: readonly CleanStep[]): string[] =>
-  steps.map(step => {
-    const actions = [
-      ...(step.removeWorktree ? ["remove worktree"] : []),
-      ...(step.deleteBranch ? ["delete branch"] : []),
-    ];
-    const what = actions.length > 0 ? actions.join(" + ") : "keep";
-    const why = step.skip === undefined ? "" : style("dim", ` (${step.skip})`);
-    return `  ${labelOf(step.item)}: ${what}${why}`;
-  });
+import { formatPlan, formatWorktrees } from "../project/worktrees.ts";
+import { formatReport, validateFile } from "./validate.ts";
 
 const projectRoot = async (): Promise<string | null> =>
   (await inspectProject(process.cwd()))?.root ?? null;
@@ -118,16 +71,6 @@ const list = defineCommand({
   },
   run: ({ args }) => show(args.json),
 });
-
-const confirm = async (question: string): Promise<boolean> => {
-  const rl = createInterface({ input: process.stdin, output: process.stderr });
-  try {
-    const answer = await rl.question(question);
-    return ["y", "yes"].includes(answer.trim().toLowerCase());
-  } finally {
-    rl.close();
-  }
-};
 
 const clean = defineCommand({
   meta: {
@@ -294,5 +237,54 @@ export const projects = defineCommand({
     } else
       for (const project of all)
         for (const line of formatProject(project)) write(line);
+  },
+});
+
+export const migrate = defineCommand({
+  meta: {
+    name: "migrate",
+    description:
+      "Move an attached project into its repository's .ork/ (--agents: also its agents and skills); --from-agents drafts a workflow. Commits nothing",
+  },
+  args: {
+    agents: {
+      type: "boolean",
+      description:
+        "Also move the agents and skills the tools' folders hold into .ork/, and link the folders to it",
+      default: false,
+    },
+    "from-agents": {
+      type: "string",
+      description:
+        "Only draft a workflow: these agents in order (a,b), each in its worktree",
+    },
+    reviewer: {
+      type: "string",
+      description: "With --from-agents: the agent that reviews the last one",
+    },
+    name: {
+      type: "string",
+      description: "With --from-agents: the workflow's name",
+      default: "process",
+    },
+    "dry-run": {
+      type: "boolean",
+      description: "Only show the plan",
+      default: false,
+    },
+    yes: { type: "boolean", description: "Do not ask", default: false },
+  },
+  run: async ({ args }) => {
+    if (args["from-agents"] === undefined) {
+      await migrateHere(process.cwd(), {
+        agents: args.agents,
+        dryRun: args["dry-run"],
+        yes: args.yes,
+      });
+    } else {
+      draftHere(process.cwd(), { ...args, from: args["from-agents"] }, file =>
+        formatReport(validateFile(file, process.cwd())),
+      );
+    }
   },
 });
