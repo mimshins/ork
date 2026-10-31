@@ -28,6 +28,7 @@ import {
 } from "@krapht/ork-schema";
 
 import { warning } from "../graph/diagnostics.ts";
+import { shownPath } from "../project/place.ts";
 
 /** Where a file agent was found: lowest to highest precedence. */
 export const AGENT_SOURCES = ["user", "project"] as const;
@@ -60,6 +61,11 @@ export type CatalogOptions = {
   projectRoot?: string;
   /** `~` for the user's `~/.ork/agents`; tests pass a folder. */
   home?: string;
+  /**
+   * Ork's folder for the project, whose `agents/` is the project's own: an
+   * attached project's `~/.ork/projects/<id>`; default `<projectRoot>/.ork`.
+   */
+  orkDir?: string;
 };
 
 export const hashOf = (...parts: readonly string[]): string =>
@@ -90,13 +96,22 @@ const foldersOf = (options: CatalogOptions): Folder[] => {
     const tools = AGENT_TOOL_LAYOUTS.flatMap(layout =>
       layout.agents === undefined ? [] : [layout.agents],
     ).toReversed();
-    for (const relative of [...tools, ORK_LAYOUT.agents]) {
+    for (const relative of tools) {
       folders.push({
         dir: path.join(root, relative),
         label: relative,
         source: "project",
       });
     }
+    const own =
+      options.orkDir === undefined
+        ? path.join(root, ORK_LAYOUT.agents)
+        : path.join(options.orkDir, "agents");
+    folders.push({
+      dir: own,
+      label: shownPath(own, root, home),
+      source: "project",
+    });
   }
   return folders;
 };

@@ -66,3 +66,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [032](./ADR-032-project-rules.md)                  | Project rules: what Ork does on its own is the project's choice             | Accepted          | waived                                                      |
 | [033](./ADR-033-session-resume-on-any-node.md)     | Any Claude node can resume its session on re-entry                          | Accepted          | waived                                                      |
 | [034](./ADR-034-tool-git.md)                       | `tool.git`: a commit is an explicit step                                    | Accepted          | waived                                                      |
+| [035](./ADR-035-projects-in-repo-or-attached.md)   | A project's files live in its repository or beside it, attached             | Accepted          | waived                                                      |

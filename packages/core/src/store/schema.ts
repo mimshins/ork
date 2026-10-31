@@ -83,6 +83,14 @@ export const MIGRATIONS = [
      status TEXT NOT NULL,
      updated_at TEXT NOT NULL
    );`,
+  // 5: registered projects, in-repo (`.ork/`) or attached (`~/.ork/projects`).
+  `CREATE TABLE projects (
+     id TEXT PRIMARY KEY,
+     root TEXT NOT NULL UNIQUE,
+     mode TEXT NOT NULL,
+     dir TEXT NOT NULL,
+     registered_at TEXT NOT NULL
+   );`,
 ];
 
 export type Row = Record<string, unknown> | undefined;

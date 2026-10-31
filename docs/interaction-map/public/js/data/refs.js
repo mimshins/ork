@@ -322,8 +322,25 @@ export const WORKTREES = {
     "Code: `ork worktrees` list and clean",
   ),
   command: d(
-    "packages/cli/src/commands/worktrees.ts",
-    "Code: the `ork worktrees` command",
+    "packages/cli/src/commands/projects.ts",
+    "Code: `ork register`, `ork projects` and `ork worktrees`",
+  ),
+  places: d(
+    "packages/core/src/project/place.ts",
+    "Code: where a project's files live, in-repo or attached",
+  ),
+  register: d(
+    "packages/cli/src/project/register.ts",
+    "Code: registering a project",
+  ),
+  projectsSpec: d("specs/projects.md", "Spec: projects, in-repo or attached"),
+  projectsTests: d(
+    "packages/cli/test/projects.test.ts",
+    "Tests: an attached project registers and runs untouched",
+  ),
+  projectsAdr: d(
+    "decisions/ADR-035-projects-in-repo-or-attached.md",
+    "ADR-035: in the repository, or attached",
   ),
   tests: d(
     "packages/core/test/worktree.test.ts",

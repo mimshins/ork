@@ -7,7 +7,12 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 
 import type { Scope } from "../expr/evaluate.ts";
-import type { Inputs, NodeOutput, RunOptions } from "./types.ts";
+import type {
+  ExecuteContext,
+  Inputs,
+  NodeOutput,
+  RunOptions,
+} from "./types.ts";
 
 /** The run's id (given, or a new one) and its `.ork/runs/<run>` folder. */
 export const runPlace = (
@@ -19,6 +24,18 @@ export const runPlace = (
     runDir: options.runDir ?? path.join(options.cwd, ".ork", "runs", runId),
   };
 };
+
+/**
+ * The folders every node of a run reads from: the workflow's, the project's,
+ * Ork's.
+ */
+export const foldersOf = (
+  options: Pick<RunOptions, "cwd" | "workflowDir" | "projectRoot" | "orkDir">,
+): Pick<ExecuteContext, "workflowDir" | "projectRoot" | "orkDir"> => ({
+  workflowDir: options.workflowDir ?? options.cwd,
+  projectRoot: options.projectRoot ?? options.cwd,
+  ...(options.orkDir === undefined ? {} : { orkDir: options.orkDir }),
+});
 
 /** What templates and `when:` read during a run. */
 export const runScope = (

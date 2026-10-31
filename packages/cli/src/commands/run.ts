@@ -14,7 +14,7 @@ import { style, write, writeErr } from "../output.ts";
 import { DETACHED_ENV, detachRun } from "../run/detach.ts";
 import { runNode } from "../run/node.ts";
 import { newRunId, runWorkflowFile } from "../run/workflow.ts";
-import { resolveWorkflowArg } from "../workflows.ts";
+import { workflowArg } from "../workflows.ts";
 
 export const flagValues = (
   rawArgs: readonly string[],
@@ -57,7 +57,8 @@ export const run = defineCommand({
   args: {
     workflow: {
       type: "positional",
-      description: "A workflow file, or the name of one in .ork/workflows/",
+      description:
+        "A workflow file, or the name of one in the project's workflows (.ork/workflows/)",
       required: true,
     },
     node: {
@@ -108,15 +109,18 @@ export const run = defineCommand({
       return;
     }
     const cwd = process.cwd();
+    const target = workflowArg(args.workflow, cwd);
     const store = openStore();
     if (args.detach) {
       try {
         const single = args.node !== undefined && args.node !== "";
+        const runId = newRunId(store, single ? "node-" : "");
         const detached = await detachRun({
           store,
-          runId: newRunId(store, single ? "node-" : ""),
+          runId,
           rawArgs,
           cwd,
+          runDir: target.runDir(runId),
         });
         if (detached.ok) {
           write(`▸ run ${detached.runId} started in the background`);
@@ -146,7 +150,7 @@ export const run = defineCommand({
             interactive: process.stdin.isTTY,
           });
     const common = {
-      file: resolveWorkflowArg(args.workflow, cwd),
+      file: target.file,
       cwd,
       inputs: flagValues(rawArgs, "--input"),
       inPlace: args["in-place"],

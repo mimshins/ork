@@ -76,6 +76,8 @@ export type ExecuteContext = {
   workflowDir: string;
   /** The project's root; skill and context paths may not leave it. */
   projectRoot: string;
+  /** Ork's folder for the project, which lessons are read from. */
+  orkDir?: string;
   /** What is left of `limits.budgetUsd`, when the run has one. */
   budgetLeftUsd: number | undefined;
   human: HumanChannel;
@@ -260,6 +262,8 @@ export type RunOptions = {
   workflowDir?: string;
   /** The project's root, which skill and context paths stay in; default `cwd`. */
   projectRoot?: string;
+  /** Ork's folder for the project (attached: `~/.ork/projects/<id>`). */
+  orkDir?: string;
   /** Recorded in `run.started`. */
   settings?: RunSettings;
   /** For `ork resume`: the results a run recorded, handed back in order. */

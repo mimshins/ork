@@ -21,6 +21,7 @@ import {
   socketPath,
   type StoredEvent,
   wakeRun,
+  runDirOf,
 } from "@krapht/ork-core";
 import type { Driver } from "@krapht/ork-schema";
 
@@ -147,19 +148,25 @@ export const resumeChat = async (
   if (cwd === undefined || !existsSync(cwd)) {
     return `${node}'s session ran in ${cwd ?? "a folder Ork did not record"}, which is gone (a merged worktree is removed), so it cannot be resumed.`;
   }
-  const { workflow } = loadWorkflow(run.file, path.dirname(run.file));
+  const { workflow, place, workflowDir } = loadWorkflow(
+    run.file,
+    path.dirname(run.file),
+    undefined,
+    store.projects(),
+  );
   if (workflow === null) {
     return `The workflow ${run.file} is gone or no longer valid.`;
   }
-  const runDir = path.join(run.project, ".ork", "runs", run.id);
+  const runDir = runDirOf(place, run.id);
   const template = templateOf(workflow.nodes, node);
   const plan = planNodeSession(workflow, node, {
     cwd,
     inputs: {},
     outputs,
     inPlace: session.checkout === undefined,
-    workflowDir: path.dirname(run.file),
+    workflowDir,
     projectRoot: run.project,
+    orkDir: place.dir,
     pluginDir: path.join(runDir, "plugins", node),
     ...(session.checkout === undefined ? {} : { checkout: session.checkout }),
     ...(template === undefined ? {} : { template }),

@@ -65,6 +65,8 @@ export type PlanOptions = {
   workflowDir?: string;
   /** The project's root; references may not leave it. Default: `cwd`. */
   projectRoot?: string;
+  /** Ork's folder for the project, which lessons are read from. */
+  orkDir?: string;
   /** Where to write the node's plugin; without it, no plugin is written. */
   pluginDir?: string;
   /** The user layer's home (`~`); tests pass a folder. */
@@ -181,6 +183,7 @@ export const planNodeSession = (
     projectRoot,
     checkout: options.cwd,
     ...(options.home === undefined ? {} : { home: options.home }),
+    ...(options.orkDir === undefined ? {} : { orkDir: options.orkDir }),
   });
   const problem = context.diagnostics.find(d => d.severity === "error");
   if (problem !== undefined) return { ok: false, error: problem.message };

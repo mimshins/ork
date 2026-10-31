@@ -6,8 +6,9 @@ in the workspace ([project.ts](../packages/schema/src/project.ts),
 [names.ts](../packages/core/src/worktree/names.ts),
 [patch.ts](../packages/core/src/worktree/patch.ts),
 [handoff.ts](../packages/core/src/worktree/handoff.ts),
-[tests](../packages/core/test/rules.test.ts)). Rules for a project registered
-from outside its repository come with `ork register` (planned). Why:
+[tests](../packages/core/test/rules.test.ts)). A project registered from outside
+its repository keeps them in `~/.ork/projects/<id>/project.yaml`
+([projects](./projects.md)). Why:
 [ADR-032](../decisions/ADR-032-project-rules.md).
 
 What Ork does on its own in a project (commit, merge, name branches and

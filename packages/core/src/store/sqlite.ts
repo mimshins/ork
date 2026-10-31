@@ -1,8 +1,9 @@
 /**
  * @file The event store on `node:sqlite` (ADR-024): one database for every
  *   project, `~/.ork/state.db`, in WAL mode so other `ork` processes read while
- *   a run writes. Events are stored with secrets masked, and feedback records
- *   beside them; the schema is versioned with `user_version`.
+ *   a run writes. Events are stored with secrets masked, feedback records
+ *   beside them, and the registered projects; the schema is versioned with
+ *   `user_version`.
  */
 
 import { mkdirSync } from "node:fs";
@@ -11,9 +12,8 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import type { RunEvent } from "../run/types.ts";
-import { decisionQueries } from "./decisions.ts";
-import { feedbackQueries } from "./feedback.ts";
 import { maskReplacer } from "./mask.ts";
+import { storeQueries } from "./queries.ts";
 import { migrate, type Row, text } from "./schema.ts";
 import type { EventStore, RunRecord, StoredRunStatus } from "./types.ts";
 
@@ -103,11 +103,10 @@ export const openStore = (file: string = storePath()): EventStore => {
     "SELECT seq, at, data FROM events WHERE run_id = ? AND seq > ? ORDER BY seq",
   );
 
-  const { insertFeedback, ...feedback } = feedbackQueries(db);
+  const { insertFeedback, ...queries } = storeQueries(db);
 
   return {
-    ...decisionQueries(db),
-    ...feedback,
+    ...queries,
     begin: run => {
       const startedAt = new Date().toISOString();
       insertRun.run(

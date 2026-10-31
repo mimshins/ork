@@ -29,8 +29,10 @@ created .gitignore (.ork/runs/)
 ```
 
 `ork init` never overwrites a file. It adds `.ork/runs/` to `.gitignore`,
-because run state never belongs in git. If your project has a `.claude/` or
-`.opencode/` folder, it also links their agents and skills folders to `.ork/`
+because run state never belongs in git. (To keep Ork out of your repository
+entirely, use `ork register` instead: see [projects](../guides/projects.md).) If
+your project has a `.claude/` or `.opencode/` folder, it also links their agents
+and skills folders to `.ork/`
 ([agents](../guides/agents.md#linking-your-tools-to-ork)). The starter workflow
 is a leader, the worker it owns, and a question for you at the end:
 

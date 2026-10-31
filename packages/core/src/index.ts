@@ -26,6 +26,7 @@ export * from "./graph/types.ts";
 export * from "./practices/caveman.ts";
 export * from "./practices/ponytail.ts";
 export * from "./practices/practices.ts";
+export * from "./project/place.ts";
 export * from "./project/rules.ts";
 export * from "./project/templates.ts";
 export type * from "./run/bus-events.ts";

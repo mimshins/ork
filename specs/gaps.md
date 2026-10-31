@@ -110,6 +110,14 @@ carried to the next milestone.
   follows the prefix is the workflow's.
   ([workflow format](./workflow-format.md))
 
+- **L19 · An attached project's own folder holds only agents and lessons.** A
+  skill or context file kept in `~/.ork/projects/<id>/` cannot be referenced: an
+  attached workflow's paths resolve inside the repository.
+  ([projects](./projects.md))
+- **L20 · A project is found by its root path.** Moving or renaming a registered
+  clone leaves its record behind (`ork projects` marks it missing); forget it
+  and register it again. ([projects](./projects.md))
+
 ## Chores
 
 - **C1 · CI runs on `ubuntu-latest`.** It is moving to Ubuntu 26; pinning

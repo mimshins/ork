@@ -122,6 +122,7 @@ export const claudeExecutor =
       inPlace: options.inPlace,
       workflowDir: context.workflowDir,
       projectRoot: context.projectRoot,
+      ...(context.orkDir === undefined ? {} : { orkDir: context.orkDir }),
       pluginDir: path.join(context.runDir, "plugins", context.id),
     };
     if (context.budgetLeftUsd !== undefined) {

@@ -3,11 +3,7 @@
  *   prefix of one, or, with none, the newest run of this project.
  */
 
-import {
-  type EventStore,
-  projectRootOf,
-  type RunRecord,
-} from "@krapht/ork-core";
+import { type EventStore, placeFor, type RunRecord } from "@krapht/ork-core";
 
 export type FoundRun =
   | { ok: true; run: RunRecord }
@@ -19,7 +15,10 @@ export const findRun = (
   cwd: string,
 ): FoundRun => {
   if (arg === undefined || arg === "") {
-    const [latest] = store.runs({ project: projectRootOf(cwd), limit: 1 });
+    const [latest] = store.runs({
+      project: placeFor(cwd, store.projects()).root,
+      limit: 1,
+    });
     return latest === undefined
       ? { ok: false, error: "No runs in this project yet; see `ork ps --all`." }
       : { ok: true, run: latest };

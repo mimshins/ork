@@ -83,13 +83,19 @@ export const userContext = (home: string): ContextFile[] => {
     }));
 };
 
-/** The workflow's accepted lessons, `.ork/lessons/<workflow>.md`, if any. */
+/**
+ * The workflow's accepted lessons, `<lessons>/<workflow>.md` (`.ork/lessons/`
+ * in the repository by default), if any.
+ */
 export const lessons = (
   workflowName: string,
   projectRoot: string,
+  folder: string = path.join(projectRoot, ".ork", "lessons"),
 ): ContextFile[] => {
-  const name = path.join(".ork", "lessons", `${workflowName}.md`);
-  const file = path.join(projectRoot, name);
+  const file = path.join(folder, `${workflowName}.md`);
+  const name = inside(projectRoot, file)
+    ? path.relative(projectRoot, file)
+    : file;
   return existsSync(file)
     ? [{ layer: "workflow", name, text: readFileSync(file, "utf8") }]
     : [];

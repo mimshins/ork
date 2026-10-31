@@ -27,6 +27,8 @@ export type AgentFolderOptions = {
   scope: AgentScope;
   /** Needed for the project scope. */
   projectRoot?: string;
+  /** Ork's folder for the project (attached: `~/.ork/projects/<id>`). */
+  orkDir?: string;
   /** `~`; tests pass a folder. */
   home?: string;
 };
@@ -40,6 +42,7 @@ export const agentFolder = (options: AgentFolderOptions): string | null => {
   if (options.scope === "user") {
     return path.join(options.home ?? homedir(), ".ork", "agents");
   }
+  if (options.orkDir !== undefined) return path.join(options.orkDir, "agents");
   return options.projectRoot === undefined
     ? null
     : path.join(options.projectRoot, ORK_LAYOUT.agents);

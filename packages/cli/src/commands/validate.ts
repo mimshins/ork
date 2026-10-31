@@ -14,7 +14,10 @@ import {
   contextDiagnostics,
   loadAgents,
   loadProject,
-  projectRootOf,
+  placeFiles,
+  placeFor,
+  type ProjectPlace,
+  workflowDirOf,
 } from "@krapht/ork-core";
 import {
   type Diagnostic,
@@ -24,6 +27,7 @@ import {
 import { defineCommand } from "citty";
 
 import { style, write } from "../output.ts";
+import { projectAt, registeredProjects } from "../project/place.ts";
 import { findWorkflowFiles } from "../workflows.ts";
 
 export type FileReport = {
@@ -41,6 +45,10 @@ export type LoadedWorkflow = {
   workflow: Workflow | null;
   /** The compiled graph, or `null` when the workflow has errors. */
   graph: CompiledGraph | null;
+  /** The project the workflow belongs to, in the repository or attached. */
+  place: ProjectPlace;
+  /** Where its relative paths resolve from (ADR-035). */
+  workflowDir: string;
 };
 
 const hasErrors = (diagnostics: readonly Diagnostic[]): boolean =>
@@ -48,13 +56,19 @@ const hasErrors = (diagnostics: readonly Diagnostic[]): boolean =>
 
 /**
  * Parses and compiles one workflow file, with the agents the user and its
- * project offer. `home` is the user's `~` (tests pass a folder).
+ * project offer. `home` is the user's `~` (tests pass a folder); `registered`
+ * the projects a caller's store has, else those of the store in `home`.
  */
 export const loadWorkflow = (
   file: string,
   cwd: string,
   home?: string,
+  registered: readonly ProjectPlace[] = registeredProjects(home),
 ): LoadedWorkflow => {
+  const absolute = path.resolve(cwd, file);
+  const place = placeFor(path.dirname(absolute), registered);
+  const workflowDir = workflowDirOf(place, absolute);
+  const where = { place, workflowDir };
   let text: string;
   try {
     text = readFileSync(path.resolve(cwd, file), "utf8");
@@ -72,6 +86,7 @@ export const loadWorkflow = (
       },
       workflow: null,
       graph: null,
+      ...where,
     };
   }
 
@@ -81,16 +96,17 @@ export const loadWorkflow = (
       report: { file, diagnostics: parsed.diagnostics },
       workflow: null,
       graph: null,
+      ...where,
     };
   }
 
-  const workflowDir = path.dirname(path.resolve(cwd, file));
-  const projectRoot = projectRootOf(workflowDir);
+  const projectRoot = place.root;
   const catalog = loadAgents({
     projectRoot,
+    orkDir: place.dir,
     ...(home === undefined ? {} : { home }),
   });
-  const loaded = loadProject(projectRoot);
+  const loaded = loadProject(projectRoot, placeFiles(place).rules);
   const compiled = compileWorkflow(parsed.workflow, {
     catalog,
     workflowDir,
@@ -117,6 +133,7 @@ export const loadWorkflow = (
       report: { file, diagnostics: located },
       workflow: null,
       graph: null,
+      ...where,
     };
   }
   return {
@@ -131,6 +148,7 @@ export const loadWorkflow = (
     },
     workflow: hasErrors(located) ? null : graph.workflow,
     graph: hasErrors(located) ? null : graph,
+    ...where,
   };
 };
 
@@ -190,7 +208,11 @@ export const validate = defineCommand({
   },
   run: ({ args }) => {
     const cwd = process.cwd();
-    const files = findWorkflowFiles(args._, cwd);
+    const files = findWorkflowFiles(
+      args._,
+      cwd,
+      placeFiles(projectAt(cwd)).workflows,
+    );
     if (files.length === 0) {
       write("No workflow files found. Run `ork init`, or pass a path.");
       process.exitCode = 1;

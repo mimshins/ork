@@ -2,6 +2,14 @@
 
 _Part of [The ork CLI](../cli.md)._
 
+## Projects
+
+`ork register` attaches a project from outside its repository, `ork init`
+records an in-repo one, and `ork projects` lists them or forgets one; see
+[Projects](../projects.md#registering). A workflow given by name is found in the
+current folder's project: `.ork/workflows/`, or the attached project's
+`workflows/`.
+
 ## Worktrees
 
 `ork worktrees` lists and cleans the worktrees and branches runs recorded
@@ -34,6 +42,8 @@ read ([ADR-031](../../decisions/ADR-031-ork-is-the-origin.md)): each named
 tool's agents and skills folders, from the layout registry (`claude`, `agents`,
 `opencode`, `ai`), become relative links to them.
 
+- In an attached project it links nothing and says so, and `ork doctor` skips
+  the link checks: Ork writes nothing into its repository.
 - With no tools named, it links the tools the project already uses: those whose
   top folder (`.claude`, `.opencode`, …) exists. With none, it says so and
   changes nothing.

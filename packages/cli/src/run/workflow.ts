@@ -27,7 +27,8 @@ import {
   type RunResult,
   startRun,
   type Workspace,
-  projectRootOf,
+  inside,
+  runDirOf,
 } from "@krapht/ork-core";
 import {
   builtinExecutors,
@@ -116,10 +117,11 @@ export const runWorkflowFile = async (
     return { exitCode: 1, result: null };
   };
 
-  const { report, workflow, graph } = loadWorkflow(
+  const { report, workflow, graph, place, workflowDir } = loadWorkflow(
     options.file,
     options.cwd,
     options.home,
+    options.store.projects(),
   );
   if (workflow === null || graph === null) return failed(formatReport(report));
 
@@ -141,13 +143,20 @@ export const runWorkflowFile = async (
   const missing = missingPrograms(workflow, installed);
   if (missing.length > 0) return failed(missingProgramMessage(missing));
 
-  const checkout = await prepareCheckout(workflow, options, inputs.inputs);
+  const checkout = await prepareCheckout(
+    workflow,
+    { ...options, cwd: place.root },
+    inputs.inputs,
+  );
   if (!checkout.ok) return failed(checkout.lines);
   const { root, base } = checkout;
-  const cwd = root ?? options.cwd;
+  // Without worktrees nodes work where `ork run` was started, if that is in
+  // the project (an attached project's workflow can be run from anywhere).
+  const cwd =
+    root ?? (inside(place.root, options.cwd) ? options.cwd : place.root);
 
   const runId = options.runId ?? newRunId(options.store);
-  const runDir = path.join(cwd, ".ork", "runs", runId);
+  const runDir = runDirOf(place, runId);
   if (options.resume !== undefined) options.store.reopen(runId);
   const record =
     options.resume === undefined
@@ -157,7 +166,7 @@ export const runWorkflowFile = async (
             id: runId,
             workflow: workflow.name,
             file: path.resolve(options.cwd, options.file),
-            project: root ?? projectRootOf(cwd),
+            project: place.root,
           },
           runDir,
         )
@@ -249,8 +258,9 @@ export const runWorkflowFile = async (
       ...(options.driver === undefined ? {} : { driver: options.driver }),
     },
     ...(replay === undefined ? {} : { replay }),
-    workflowDir: path.dirname(path.resolve(options.cwd, options.file)),
-    projectRoot: workspace === undefined ? projectRootOf(cwd) : cwd,
+    workflowDir,
+    projectRoot: root ?? place.root,
+    orkDir: place.dir,
     ...(workspace === undefined ? {} : { workspace }),
   });
   started.resolve(handle);

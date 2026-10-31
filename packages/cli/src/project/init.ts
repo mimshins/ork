@@ -7,10 +7,16 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { linkTools, type ToolLink, toolsInUse } from "@krapht/ork-core";
+import {
+  type EventStore,
+  linkTools,
+  type ToolLink,
+  toolsInUse,
+} from "@krapht/ork-core";
 import { serializeWorkflow, type Workflow } from "@krapht/ork-schema";
 
 import { WORKFLOW_DIR, WORKFLOW_SUFFIX } from "../workflows.ts";
+import { recordInRepo } from "./register.ts";
 
 /** Run state that never belongs in git. */
 export const GITIGNORE_ENTRIES = [".ork/runs/"] as const;
@@ -95,4 +101,17 @@ export const initProject = (
     skipped,
     links: linked.links,
   };
+};
+
+/**
+ * `ork init`: records the in-repo project at `cwd`, then scaffolds it. An
+ * attached project is refused: Ork writes nothing into its repository.
+ */
+export const initRecorded = (
+  store: Pick<EventStore, "projects" | "addProject">,
+  cwd: string,
+  options: { link?: boolean } = {},
+): InitResult | { error: string } => {
+  const recorded = recordInRepo(store, cwd);
+  return recorded.ok ? initProject(cwd, options) : { error: recorded.error };
 };

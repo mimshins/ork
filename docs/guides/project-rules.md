@@ -4,7 +4,9 @@ Ork does a few things on its own while a workflow runs: it commits each node's
 work, merges a passing child into its owner, and names branches and worktrees.
 Each of these is your project's choice. Write the rules once in
 `.ork/project.yaml`, commit it, and every workflow in the project follows them.
-The contract is in [project rules](../../specs/project-rules.md).
+A project [registered from outside](./projects.md) keeps them in
+`~/.ork/projects/<id>/project.yaml` instead. The contract is in
+[project rules](../../specs/project-rules.md).
 
 ## The rules file
 

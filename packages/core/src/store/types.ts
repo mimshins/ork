@@ -11,6 +11,7 @@ import type {
   FeedbackSource,
   FeedbackTarget,
 } from "../feedback/types.ts";
+import type { ProjectRecord } from "../project/place.ts";
 import type { RunEvent, RunStatus } from "../run/types.ts";
 import type { DecisionChoice } from "../runtime/types.ts";
 
@@ -152,8 +153,18 @@ export type FeedbackStore = {
   setFeedbackStatus: (fingerprint: string, status: FeedbackStatus) => boolean;
 };
 
+export type ProjectStore = {
+  /** Registered projects, by id. */
+  projects: () => ProjectRecord[];
+  /** Registers a project; its id and root must be new. */
+  addProject: (project: Omit<ProjectRecord, "registeredAt">) => ProjectRecord;
+  /** Forgets a project (its files stay); false when there is no such id. */
+  forgetProject: (id: string) => boolean;
+};
+
 export type EventStore = DecisionStore &
-  FeedbackStore & {
+  FeedbackStore &
+  ProjectStore & {
     /** Records a new run as `running` in this process. */
     begin: (run: NewRun) => RunRecord;
     /** Marks a stored run `running` again, in this process (`ork resume`). */

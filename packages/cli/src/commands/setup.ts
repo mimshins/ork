@@ -1,10 +1,11 @@
 /**
- * @file Setting up: `ork init` scaffolds `.ork/` in a project and links the
- *   tool folders it uses; `ork link` points tools' agents and skills folders at
- *   `.ork/`; `ork agents` lists, shows, adds and removes the agents nodes can
- *   take; `ork doctor` prints the environment checks (Node, git, the user's own
- *   claude, gh and aws logins, and the project's links) and fails when no
- *   Claude driver can run. Ork stores no credentials.
+ * @file Setting up: `ork init` scaffolds `.ork/` in a project, records it, and
+ *   links the tool folders it uses; `ork link` points tools' agents and skills
+ *   folders at `.ork/` (never in an attached project); `ork agents` lists,
+ *   shows, adds and removes the agents nodes can take; `ork doctor` prints the
+ *   environment checks (Node, git, the user's own claude, gh and aws logins,
+ *   and the project's links) and fails when no Claude driver can run. Ork
+ *   stores no credentials.
  */
 
 import {
@@ -12,7 +13,8 @@ import {
   deleteAgent,
   linkTools,
   loadAgents,
-  projectRootOf,
+  openStore,
+  shownPath,
   toolLinks,
   toolsInUse,
 } from "@krapht/ork-core";
@@ -22,8 +24,9 @@ import { defineCommand } from "citty";
 import { addAgent, formatAgent, formatAgents } from "../agents/manage.ts";
 import { exec, runChecks } from "../doctor/checks.ts";
 import { style, write, writeErr } from "../output.ts";
-import { initProject } from "../project/init.ts";
+import { initRecorded } from "../project/init.ts";
 import { formatLinks, linkChecks } from "../project/link.ts";
+import { projectAt } from "../project/place.ts";
 import { WORKFLOW_DIR } from "../workflows.ts";
 
 export const init = defineCommand({
@@ -41,9 +44,19 @@ export const init = defineCommand({
     },
   },
   run: ({ args }) => {
-    const { created, skipped, links } = initProject(process.cwd(), {
-      link: args.link,
-    });
+    const store = openStore();
+    let result: ReturnType<typeof initRecorded>;
+    try {
+      result = initRecorded(store, process.cwd(), { link: args.link });
+    } finally {
+      store.close();
+    }
+    if ("error" in result) {
+      writeErr(result.error);
+      process.exitCode = 1;
+      return;
+    }
+    const { created, skipped, links } = result;
     for (const item of created) write(`${style("green", "created")} ${item}`);
     for (const item of skipped) write(`${style("dim", "exists")}  ${item}`);
     for (const line of formatLinks(links.filter(l => l.state !== "linked"))) {
@@ -69,7 +82,14 @@ export const link = defineCommand({
     },
   },
   run: ({ args }) => {
-    const root = projectRootOf(process.cwd());
+    const place = projectAt(process.cwd());
+    const { root } = place;
+    if (place.mode === "attached") {
+      write(
+        `${root} is attached: Ork keeps its files in ${shownPath(place.dir, root)} and links nothing into the repository.`,
+      );
+      return;
+    }
     const named = args._.map(String);
     const tools = named.length > 0 ? named : toolsInUse(root);
     if (tools.length === 0) {
@@ -118,9 +138,10 @@ export const doctor = defineCommand({
       process.env,
       process.versions.node,
     );
+    const place = projectAt(process.cwd());
     for (const result of [
       ...results,
-      ...linkChecks(projectRootOf(process.cwd())),
+      ...(place.mode === "attached" ? [] : linkChecks(place.root)),
     ]) {
       for (const line of formatCheck(result)) write(line);
     }
@@ -145,13 +166,19 @@ const user = {
   default: false,
 } as const;
 
-const catalogHere = () =>
-  loadAgents({ projectRoot: projectRootOf(process.cwd()) });
+const catalogHere = () => {
+  const place = projectAt(process.cwd());
+  return loadAgents({ projectRoot: place.root, orkDir: place.dir });
+};
 
-const scopeOf = (args: { user: boolean }) => ({
-  scope: args.user ? ("user" as const) : ("project" as const),
-  projectRoot: projectRootOf(process.cwd()),
-});
+const scopeOf = (args: { user: boolean }) => {
+  const place = projectAt(process.cwd());
+  return {
+    scope: args.user ? ("user" as const) : ("project" as const),
+    projectRoot: place.root,
+    orkDir: place.dir,
+  };
+};
 
 const report = (result: ReturnType<typeof deleteAgent>, verb: string) => {
   if (!result.ok) {

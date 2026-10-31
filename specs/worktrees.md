@@ -3,7 +3,7 @@
 Status: **Built** ([manager.ts](../packages/core/src/worktree/manager.ts),
 [workspace.ts](../packages/core/src/worktree/workspace.ts),
 [list.ts](../packages/core/src/worktree/list.ts),
-[`ork worktrees`](../packages/cli/src/commands/worktrees.ts),
+[`ork worktrees`](../packages/cli/src/commands/projects.ts),
 [tests](../packages/core/test/worktree.test.ts)). Why:
 [ADR-020](../decisions/ADR-020-worktrees-beside-the-clone.md),
 [ADR-018](../decisions/ADR-018-ork-merges-children.md),

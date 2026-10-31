@@ -8,8 +8,8 @@ import {
   type EventStore,
   liveStatus,
   openStore,
-  projectRootOf,
   runTree,
+  placeFor,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
@@ -51,7 +51,9 @@ export const ps = defineCommand({
       const limit = Number(args.limit ?? 20);
       const runs = store.runs({
         limit: Number.isInteger(limit) && limit > 0 ? limit : 20,
-        ...(args.all ? {} : { project: projectRootOf(process.cwd()) }),
+        ...(args.all
+          ? {}
+          : { project: placeFor(process.cwd(), store.projects()).root }),
       });
       if (args.json) write(JSON.stringify(runs, undefined, 2));
       else for (const line of formatRuns(runs, args.all)) write(line);

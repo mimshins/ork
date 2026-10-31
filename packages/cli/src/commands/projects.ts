@@ -1,8 +1,11 @@
 /**
- * @file `ork worktrees`: lists the worktrees and branches runs left behind
- *   (those the runs recorded creating, whatever the project's git rules named
- *   them, and any `ork/` branch), with their state read from git, and cleans
- *   them up safely after showing the plan and asking.
+ * @file A project's bookkeeping. `ork register` attaches a project from outside
+ *   its repository and `ork projects` lists or forgets registered ones
+ *   (ADR-035); neither writes into a repository. `ork worktrees` lists the
+ *   worktrees and branches runs left behind (those the runs recorded creating,
+ *   whatever the project's git rules named them, and any `ork/` branch), with
+ *   their state read from git, and cleans them up safely after showing the plan
+ *   and asking.
  */
 
 import { createInterface } from "node:readline/promises";
@@ -19,7 +22,12 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
-import { style, write } from "../output.ts";
+import { style, write, writeErr } from "../output.ts";
+import {
+  formatProject,
+  formatRegistered,
+  registerProject,
+} from "../project/register.ts";
 
 /** One line of state: where it is and what clean would care about. */
 export const worktreeState = (item: OrkWorktree): string => {
@@ -191,5 +199,100 @@ export const worktrees = defineCommand({
     const [first] = rawArgs;
     if (first === "list" || first === "clean") return;
     await show(rawArgs.includes("--json"));
+  },
+});
+
+const json = {
+  type: "boolean",
+  description: "Print JSON",
+  default: false,
+} as const;
+
+/** Runs `use` with the store open, and closes it. */
+const withStore = <T>(use: (store: ReturnType<typeof openStore>) => T): T => {
+  const store = openStore();
+  try {
+    return use(store);
+  } finally {
+    store.close();
+  }
+};
+
+export const register = defineCommand({
+  meta: {
+    name: "register",
+    description:
+      "Attach a project from outside it: its workflows, rules and runs live in ~/.ork/projects/<id>/, nothing in the repository",
+  },
+  args: {
+    path: {
+      type: "positional",
+      description: "The repository (default: this folder)",
+      required: false,
+    },
+    id: {
+      type: "string",
+      description: "The project's id (default: its folder's name)",
+    },
+    json,
+  },
+  run: ({ args }) => {
+    const result = withStore(store =>
+      registerProject(
+        store,
+        args.path ?? process.cwd(),
+        args.id === undefined ? {} : { id: args.id },
+      ),
+    );
+    if (!result.ok) {
+      writeErr(result.error);
+      process.exitCode = 1;
+    } else if (args.json) {
+      write(JSON.stringify(result.project, undefined, 2));
+    } else {
+      for (const line of formatRegistered(result.project, result.created)) {
+        write(line);
+      }
+    }
+  },
+});
+
+const forget = defineCommand({
+  meta: {
+    name: "forget",
+    description: "Forget a registered project; its files and runs are kept",
+  },
+  args: {
+    id: { type: "positional", description: "The project's id", required: true },
+  },
+  run: ({ args }) => {
+    if (withStore(store => store.forgetProject(args.id))) {
+      write(`${style("green", "forgot")} ${args.id} (its files are kept)`);
+      return;
+    }
+    writeErr(`No project is registered as ${args.id}.`);
+    process.exitCode = 1;
+  },
+});
+
+export const projects = defineCommand({
+  meta: {
+    name: "projects",
+    description: "List the registered projects, in-repo and attached",
+  },
+  args: { json },
+  subCommands: { forget },
+  run: ({ args, rawArgs }) => {
+    // citty runs this after a subcommand too; only list on a bare call.
+    if (rawArgs[0] === "forget") return;
+    const all = withStore(store => store.projects());
+    if (args.json) write(JSON.stringify(all, undefined, 2));
+    else if (all.length === 0) {
+      write(
+        "No projects registered yet: ork init (in-repo) or ork register (attached).",
+      );
+    } else
+      for (const project of all)
+        for (const line of formatProject(project)) write(line);
   },
 });

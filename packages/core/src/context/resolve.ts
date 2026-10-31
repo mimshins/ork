@@ -48,6 +48,8 @@ export type ContextOptions = {
   checkout: string;
   /** `~` for the user layer, `~/.ork/`; tests pass a folder. */
   home?: string;
+  /** Ork's folder for the project (lessons); default `<projectRoot>/.ork`. */
+  orkDir?: string;
 };
 
 export type ResolvedSkill = Skill & {
@@ -231,7 +233,13 @@ export const resolveContext = (options: ContextOptions): ContextStack => {
         options,
         diagnostics,
       ),
-      ...lessons(workflow.name, options.projectRoot),
+      ...lessons(
+        workflow.name,
+        options.projectRoot,
+        options.orkDir === undefined
+          ? undefined
+          : path.join(options.orkDir, "lessons"),
+      ),
       ...contextFiles(
         node?.context ?? [],
         "node",

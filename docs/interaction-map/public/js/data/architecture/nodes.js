@@ -93,7 +93,7 @@ export const NODES = [
   {
     id: "cli",
     title: "ork CLI",
-    sub: "init · validate · run · decide · chat",
+    sub: "init · register · run · decide",
     zone: "surfaces",
     x: 320,
     y: 360,
@@ -103,6 +103,7 @@ export const NODES = [
     summary:
       "The `ork` command. It validates and runs workflows with the engine embedded in its own process, or talks to a running `ork ui` server over HTTP.",
     facts: [
+      "Built: `ork register` attaches a project from outside its repository (its files in `~/.ork/projects/<id>/`, nothing in the repo); `ork projects` lists them.",
       "Built: `ork init` scaffolds `.ork/` and never overwrites a file; `ork validate` prints schema, graph and skill or context reference diagnostics with file, line and column; `ork doctor` reports your own logins and never prints a token or your email.",
       "Built: `ork run <wf>` runs a whole workflow through the scheduler, and `--node <id>` one Claude node; questions and permission prompts are answered on the terminal.",
       "Built: `ork worktrees` lists the worktrees and branches runs recorded creating, whatever the project's rules named them, and `clean` removes them, asking first.",
@@ -118,6 +119,8 @@ export const NODES = [
       CLI.run,
       CLI.runWorkflow,
       WORKTREES.command,
+      WORKTREES.register,
+      WORKTREES.projectsTests,
       CLI.human,
       CLI.tests,
       CLI.runTests,
@@ -394,6 +397,7 @@ export const NODES = [
     facts: [
       "Built: each run event gets a sequence number and a time, with secrets masked, before the terminal prints it.",
       "Built: `ork ps`, `ork logs [--follow]` and `ork tree` read it from any terminal; a run whose process died reads as `crashed`.",
+      "Built: registered projects (in-repo or attached) are a table beside the runs.",
       "Specified: decisions, messages and commands from other processes (M1d); streamed to the UI over SSE (M2).",
       "Usage comes from each session's final result, so sub-agent tokens count.",
     ],
@@ -416,7 +420,7 @@ export const NODES = [
   {
     id: "workflowFiles",
     title: "Workflow files",
-    sub: "`.ork/workflows/*.ork.yaml`",
+    sub: "`.ork/workflows/` or attached",
     zone: "machine",
     x: 1160,
     y: 120,
@@ -425,11 +429,19 @@ export const NODES = [
     summary:
       "The workflow itself, committed with the project: nodes, ownership, edges, inputs, layers. Canvas positions live in a separate `<name>.layout.json` so logic diffs stay clean.",
     facts: [
+      "In `.ork/workflows/`, or for a project registered from outside, `~/.ork/projects/<id>/workflows/`: read as if it were in `.ork/workflows/`, so its paths reach the repository.",
       "Formatted only by Ork's serializer, never by a general formatter.",
       "Secrets appear only as `env:` references; no absolute paths.",
       "`schemaVersion` with migrations.",
     ],
-    docs: [SCHEMA.example, DESIGN.format, SCHEMA.jsonSchema],
+    docs: [
+      SCHEMA.example,
+      DESIGN.format,
+      SCHEMA.jsonSchema,
+      WORKTREES.places,
+      WORKTREES.projectsSpec,
+      WORKTREES.projectsAdr,
+    ],
   },
   {
     id: "orkLayers",
@@ -497,7 +509,7 @@ export const NODES = [
     status: "built",
     pkg: null,
     summary:
-      "Where runs persist: events in SQLite at `~/.ork/state.db` (Node's built-in `node:sqlite`, WAL), plus a JSONL copy and the run's files under `.ork/runs/<runId>/`.",
+      "Where runs persist: events in SQLite at `~/.ork/state.db` (Node's built-in `node:sqlite`, WAL), plus a JSONL copy and the run's files under `.ork/runs/<runId>/` (an attached project's `~/.ork/projects/<id>/runs/`).",
     facts: [
       "One database for every project; only a run's own process writes its events.",
       "`.ork/runs/` is git-ignored.",

@@ -23,7 +23,7 @@ import {
   summaryOf,
 } from "./results.ts";
 import { createRouter } from "./router.ts";
-import { runPlace, runScope } from "./scope.ts";
+import { foldersOf, runPlace, runScope } from "./scope.ts";
 import { createSlots } from "./slots.ts";
 import type {
   Activation,
@@ -163,8 +163,7 @@ export const startRun = (options: RunOptions): RunHandle => {
       round: rounds.get(id) ?? 1,
       cwd,
       runDir,
-      workflowDir: options.workflowDir ?? options.cwd,
-      projectRoot: options.projectRoot ?? options.cwd,
+      ...foldersOf(options),
       budgetLeftUsd:
         limits.budgetUsd === undefined ? undefined : limits.budgetUsd - spent,
       human: options.human,

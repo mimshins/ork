@@ -29,6 +29,8 @@ them.
   project's `CLAUDE.md` and skills, built-in practices, `ork context explain`.
 - [Worktrees and isolation](./guides/worktrees.md): where each node works, and
   `ork worktrees`.
+- [Projects](./guides/projects.md): Ork's files in your repository (`ork init`)
+  or beside it (`ork register`), with nothing written into your repository.
 - [Project rules](./guides/project-rules.md): `.ork/project.yaml`: never commit,
   merge or not, your own branch names, permissions and defaults for every
   workflow.

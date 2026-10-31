@@ -11,9 +11,9 @@ import {
   type DecisionRecord,
   liveStatus,
   openStore,
-  projectRootOf,
   socketPath,
   wakeRun,
+  placeFor,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
@@ -94,7 +94,7 @@ export const decide = defineCommand({
         }
         filter.runId = found.run.id;
       } else if (!args.all) {
-        filter.project = projectRootOf(process.cwd());
+        filter.project = placeFor(process.cwd(), store.projects()).root;
       }
       const open = pendingDecisions(store, filter);
       if (args.json) {

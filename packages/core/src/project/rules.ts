@@ -20,6 +20,7 @@ import {
 } from "@krapht/ork-schema";
 
 import { error, warning } from "../graph/diagnostics.ts";
+import { shownPath } from "./place.ts";
 import { placeholdersOf, templateProblems } from "./templates.ts";
 
 /** Where an in-repo project keeps its rules. */
@@ -32,7 +33,10 @@ export type LoadedProject = {
   diagnostics: Diagnostic[];
 };
 
-/** Reads `file` (by default the project's `.ork/project.yaml`), if it exists. */
+/**
+ * Reads `file` (by default the project's `.ork/project.yaml`; an attached
+ * project's is in its own folder), if it exists.
+ */
 export const loadProject = (
   projectRoot: string,
   file: string = path.join(projectRoot, PROJECT_FILE),
@@ -40,7 +44,7 @@ export const loadProject = (
   if (!existsSync(file)) return { diagnostics: [] };
   const parsed = parseProject(readFileSync(file, "utf8"));
   if (parsed.ok) return { project: parsed.project, diagnostics: [] };
-  const label = path.relative(projectRoot, file);
+  const label = shownPath(file, projectRoot);
   return {
     diagnostics: parsed.diagnostics.map(d => {
       const at = d.line === undefined ? "" : `:${d.line}:${d.column ?? 1}`;

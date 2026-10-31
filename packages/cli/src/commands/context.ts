@@ -14,14 +14,13 @@ import {
   PLUGIN_NAME,
   planNodeSession,
   practiceInstructions,
-  projectRootOf,
   resolvePractices,
   SKILL_FILE,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import { style, write } from "../output.ts";
-import { resolveWorkflowArg } from "../workflows.ts";
+import { workflowArg } from "../workflows.ts";
 import { formatReport, loadWorkflow } from "./validate.ts";
 
 /** A rough count, for comparing sizes: about four characters a token. */
@@ -105,16 +104,20 @@ export const explainNode = (
   cwd: string,
   home?: string,
 ): ExplainResult => {
-  const { report, workflow, graph } = loadWorkflow(file, cwd, home);
+  const { report, workflow, graph, place, workflowDir } = loadWorkflow(
+    file,
+    cwd,
+    home,
+  );
   if (workflow === null) return { ok: false, lines: formatReport(report) };
-  const workflowDir = path.dirname(path.resolve(cwd, file));
-  const root = projectRootOf(workflowDir);
+  const { root } = place;
   const plan = planNodeSession(workflow, nodeId, {
     cwd: root,
     inputs: {},
     inPlace: true,
     workflowDir,
     projectRoot: root,
+    orkDir: place.dir,
     ...(home === undefined ? {} : { home }),
   });
   if (!plan.ok) return { ok: false, lines: [plan.error] };
@@ -221,7 +224,8 @@ const explain = defineCommand({
   args: {
     workflow: {
       type: "positional",
-      description: "A workflow file, or the name of one in .ork/workflows/",
+      description:
+        "A workflow file, or the name of one in the project's workflows (.ork/workflows/)",
       required: true,
     },
     node: { type: "positional", description: "Node id", required: true },
@@ -230,7 +234,7 @@ const explain = defineCommand({
   run: ({ args }) => {
     const cwd = process.cwd();
     const result = explainNode(
-      resolveWorkflowArg(args.workflow, cwd),
+      workflowArg(args.workflow, cwd).file,
       args.node,
       cwd,
     );

@@ -18,7 +18,8 @@ import {
   userMessageText,
   parseInputPairs,
   planNodeSession,
-  projectRootOf,
+  inside,
+  runDirOf,
   resolveInputs,
   type Session,
   type SessionOutcome,
@@ -79,10 +80,11 @@ export const runNode = async (
     return { exitCode: 1, outcome: null };
   };
 
-  const { report, workflow, graph } = loadWorkflow(
+  const { report, workflow, graph, place, workflowDir } = loadWorkflow(
     options.file,
     options.cwd,
     options.home,
+    options.store.projects(),
   );
   if (workflow === null) return failed(formatReport(report));
 
@@ -91,15 +93,19 @@ export const runNode = async (
   const inputs = resolveInputs(workflow, pairs.raw);
   if (!inputs.ok) return failed(inputs.errors);
 
-  const projectRoot = projectRootOf(options.cwd);
+  const projectRoot = place.root;
   const runId = options.runId ?? newRunId(options.store, "node-");
-  const runDir = path.join(projectRoot, ".ork", "runs", runId);
+  const runDir = runDirOf(place, runId);
+  // An attached project's workflow can be run from anywhere; the node works in
+  // the project then.
+  const cwd = inside(projectRoot, options.cwd) ? options.cwd : projectRoot;
   const plan = planNodeSession(workflow, options.nodeId, {
-    cwd: options.cwd,
+    cwd,
     inputs: inputs.inputs,
     inPlace: options.inPlace,
-    workflowDir: path.dirname(path.resolve(options.cwd, options.file)),
+    workflowDir,
     projectRoot,
+    orkDir: place.dir,
     pluginDir: path.join(runDir, "plugins", options.nodeId),
   });
   if (!plan.ok) return failed([plan.error]);

@@ -16,9 +16,12 @@ all views over the same events.
 - **`~/.ork/state.db`**: one SQLite database (Node's built-in `node:sqlite`) for
   every project, in WAL mode, so other `ork` processes read while a run writes.
   Only the run's own process writes its events.
-- **`.ork/runs/<run>/events.jsonl`** in the project: a copy of the same events,
-  one JSON line each, to read, grep or share without Ork. `.ork/runs/` is
-  gitignored.
+- **`.ork/runs/<run>/events.jsonl`** in the project (an attached project's
+  `~/.ork/projects/<id>/runs/`): a copy of the same events, one JSON line each,
+  to read, grep or share without Ork. `.ork/runs/` is gitignored.
+- **Registered projects** have a table of their own: id, root, mode (`in-repo`
+  or `attached`), Ork's folder for it, and when it was registered
+  ([projects](./projects.md)).
 - The schema is versioned with SQLite's `user_version`; Ork migrates it when it
   opens the store.
 
