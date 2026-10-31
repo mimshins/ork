@@ -53,11 +53,17 @@ edges:
 **Built-in node types in v1:**
 
 - **Agents:** `claude.leader`, `claude.worker`, `claude.subagent`.
-- **Tools:** `tool.gh`, `tool.aws`, `tool.shell` (each runs the user's own CLI,
-  and a per-node allowlist sets which subcommands are permitted). There is one
-  `tool.<id>` type per registered integration
+- **Tools:** `tool.gh`, `tool.aws`, `tool.git`, `tool.shell` (each runs the
+  user's own CLI, and a per-node allowlist sets which subcommands are
+  permitted). There is one `tool.<id>` type per registered integration
   ([ADR-022](../decisions/ADR-022-integration-registry.md)), with its own extra
-  fields (AWS: `profile`, `region`).
+  fields (AWS: `profile`, `region`). An integration may set the allow list a
+  node has without one, and output fields it reads after the command:
+  - `tool.git` ([ADR-034](../decisions/ADR-034-tool-git.md)) allows `add` and
+    `commit` by default (`push` only when the node's `allow` lists it), and
+    outputs `staged` (`git diff --cached --stat`), `diff` (the staged patch) and
+    `head` (the commit `HEAD` names) besides `exitCode`, `stdout` and `stderr`,
+    so a gate after an `add` step shows what a commit will commit.
 - **Control:** `control.split`, `control.join` (all, any or n),
   `control.router`. Loops are edges with `maxRounds`, not a node.
 - **Human:** `human.gate`.

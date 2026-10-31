@@ -1,5 +1,6 @@
 /** @file The compiled run graph's types, and the fields each node type reports. */
 
+import { integrationFor } from "@krapht/ork-integrations";
 import {
   type Diagnostic,
   type Edge,
@@ -73,7 +74,10 @@ export const OUTPUT_FIELDS: Record<
   "human.gate": ["choice", "answeredBy"],
 };
 
-/** What every tool node reports, whichever integration it uses. */
+/**
+ * What every tool node reports, whichever integration it uses; an integration
+ * may observe more (git's `staged`, `diff`, `head`).
+ */
 export const TOOL_OUTPUT_FIELDS = ["exitCode", "stdout", "stderr"] as const;
 
 /** Report statuses a Claude node may end with. */
@@ -85,7 +89,12 @@ export const REPORT_STATUSES = [
 ] as const;
 
 export const outputFieldsOf = (node: Node): readonly string[] | null => {
-  if (isToolNode(node)) return TOOL_OUTPUT_FIELDS;
+  if (isToolNode(node)) {
+    return [
+      ...TOOL_OUTPUT_FIELDS,
+      ...(integrationFor(node.type)?.observe?.fields ?? []),
+    ];
+  }
   const base = OUTPUT_FIELDS[node.type];
   if (base === null) return null;
   if ("output" in node && node.output?.schema !== undefined) {

@@ -21,7 +21,10 @@ export type OrkWorktree = {
   missing: boolean;
   /** Uncommitted changes in the worktree. */
   dirty: boolean;
-  /** Commits on the branch that the current branch does not have. */
+  /**
+   * Commits on the branch that the current branch does not have; for a detached
+   * worktree, commits on no branch at all (a `tool.git` commit).
+   */
   ahead: number;
   /** Fully merged into the current branch (never, for a detached worktree). */
   merged: boolean;
@@ -83,6 +86,22 @@ const prefixed = (branch: string): CreatedWorktree => {
   return { runId, nodeId: rest.join("/"), path: "", branch };
 };
 
+/** How many commits a detached worktree holds that no branch, tag or remote has. */
+const onNoBranch = async (entry: Entry | undefined): Promise<string> =>
+  entry === undefined
+    ? "0"
+    : (
+        await git(entry.path, [
+          "rev-list",
+          "--count",
+          "HEAD",
+          "--not",
+          "--branches",
+          "--tags",
+          "--remotes",
+        ])
+      ).stdout;
+
 /** One created worktree or branch, with its state read from git. */
 const stateOf = async (
   root: string,
@@ -100,12 +119,11 @@ const stateOf = async (
     entry === undefined || missing
       ? ""
       : (await git(entry.path, ["status", "--porcelain"])).stdout;
-  const ahead =
+  const counted =
     branch === undefined
-      ? 0
-      : Number(
-          (await git(root, ["rev-list", "--count", `HEAD..${branch}`])).stdout,
-        );
+      ? await onNoBranch(entry === undefined || missing ? undefined : entry)
+      : (await git(root, ["rev-list", "--count", `HEAD..${branch}`])).stdout;
+  const ahead = Number(counted);
   return {
     ...(branch === undefined ? {} : { branch }),
     runId: item.runId,
@@ -187,6 +205,14 @@ const cleanStep = (
       skip: "uncommitted changes",
     };
   }
+  if (item.branch === undefined && item.ahead > 0 && !options.force) {
+    return {
+      item,
+      removeWorktree: false,
+      deleteBranch: false,
+      skip: "commits on no branch",
+    };
+  }
   const removable = item.path !== null && !item.missing;
   if (
     options.branches &&
@@ -209,8 +235,9 @@ const cleanStep = (
 };
 
 /**
- * What `ork worktrees clean` would do. A worktree with uncommitted changes, or
- * an unmerged branch, is kept unless `force`.
+ * What `ork worktrees clean` would do. A worktree with uncommitted changes, an
+ * unmerged branch, or a detached worktree holding commits no branch has, is
+ * kept unless `force`.
  */
 export const planClean = (
   items: readonly OrkWorktree[],

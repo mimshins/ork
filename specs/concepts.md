@@ -7,7 +7,7 @@ code are linked from their own specs. Ownership rules:
 | Concept            | Meaning                                                                                                                                                                             |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Workflow**       | A serializable graph: nodes, ownership tree, edges, inputs, layers of skills and context.                                                                                           |
-| **Node**           | A typed unit, e.g. `claude.leader`, `claude.worker`, `claude.subagent`, `tool.gh`, `tool.aws`, `tool.shell`, `control.*`, `human.gate`.                                             |
+| **Node**           | A typed unit, e.g. `claude.leader`, `claude.worker`, `claude.subagent`, `tool.gh`, `tool.aws`, `tool.git`, `tool.shell`, `control.*`, `human.gate`.                                 |
 | **Ownership tree** | Each node has an optional `parent`. An owner delegates to children, compiles their context, receives their reports, merges their worktrees, and handles their escalations.          |
 | **Edges**          | `flow` edges carry data and control in the n8n style, with optional `when` conditions and `maxRounds` for loops. `message` edges declare who may talk to whom outside the tree.     |
 | **Context packet** | What an owner hands a child: a brief, selected artifacts (by path), relevant skills, and constraints. Never the owner's full transcript.                                            |

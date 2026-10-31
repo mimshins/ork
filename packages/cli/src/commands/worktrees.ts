@@ -27,8 +27,16 @@ export const worktreeState = (item: OrkWorktree): string => {
   if (item.path === null) parts.push("no worktree");
   else if (item.missing) parts.push("missing (prunable)");
   if (item.dirty) parts.push(style("yellow", "uncommitted changes"));
-  if (item.branch === undefined) parts.push("detached, nothing committed");
-  else {
+  if (item.branch === undefined) {
+    parts.push(
+      item.ahead > 0
+        ? style(
+            "yellow",
+            `detached, ${String(item.ahead)} commit(s) on no branch`,
+          )
+        : "detached, nothing committed",
+    );
+  } else {
     parts.push(
       item.merged
         ? style("green", "merged")

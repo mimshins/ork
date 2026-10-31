@@ -362,10 +362,11 @@ export const NODES = [
     summary:
       "What each built-in node type does when it runs. Claude nodes run a session through the runtime; tool nodes run your own CLIs; gates ask you. Control nodes are the scheduler's own.",
     facts: [
-      "`tool.gh`, `tool.aws`, `tool.shell` run a program with arguments, no shell, limited to an `allow` list of subcommands.",
-      "Tool types come from the integration registry: each integration is one adapter (program, extra options, arguments, doctor check), so adding GitLab or GCP is one file.",
+      "`tool.gh`, `tool.aws`, `tool.git`, `tool.shell` run a program with arguments, no shell, limited to an `allow` list of subcommands.",
+      "`tool.git` is the commit as an explicit step: `add` and `commit` without an `allow`, `push` only when listed; its output has the staged changes (`staged`, `diff`) and `head`, for a gate to show before a commit.",
+      "Tool types come from the integration registry: each integration is one adapter (program, extra options, arguments, default allow list, observed output, doctor check), so adding GitLab or GCP is one file.",
       "`control.join` waits for all, any or `n` inputs; `control.router` follows the first or every matching edge.",
-      "`human.gate` asks you, with `timeout` and `default` answering by themselves; the decision inbox comes in M1d.",
+      "`human.gate` asks you, with `timeout` and `default` answering by themselves; `ork decide` answers from another terminal.",
       "Output over 64 KiB is cut, and the full text kept under `.ork/runs/`.",
     ],
     docs: [

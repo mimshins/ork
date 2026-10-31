@@ -130,6 +130,7 @@ or `aws` is fine unless a workflow has a node that needs it. Example output:
 ✓ claude (cli driver)  2.1.314 (Claude Code), logged in (claude.ai, firstParty)
 - gh                   optional, not installed (needed only for tool.gh nodes)
 - aws                  optional, not installed (needed only for tool.aws nodes)
+✓ git identity         user.name and user.email are set
 ```
 
 Here only the CLI driver is ready and neither optional tool is installed, which

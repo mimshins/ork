@@ -72,7 +72,9 @@ project, located in the file (`.ork/project.yaml:3:11: …`).
 Under `commit: never`, a child that ran and was handed over is brought up to its
 owner's state before it runs again (a `synced` worktree event); one whose patch
 did not apply keeps its work. Ork stages files in its own worktrees
-(`git add -A`) to see new ones; it commits nothing.
+(`git add -A`) to see new ones; it commits nothing. A commit is then a step the
+workflow declares: a [`tool.git`](./workflow-format.md) node after its gates
+([ADR-034](../decisions/ADR-034-tool-git.md)).
 
 **Checks** (`ork validate`): every placeholder is known and every
 `{inputs.<name>}` is a workflow input; `branch` and `worktrees` need `{node}`

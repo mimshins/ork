@@ -58,7 +58,41 @@ git:
 - Sessions are told not to commit.
 
 The run's result is the root node's worktree with its changes uncommitted, for
-you (or a later commit step) to review and commit.
+you, or a commit step, to review and commit.
+
+## Committing as a step
+
+A `tool.git` node runs your own `git`, so the commit is a step your workflow
+declares, after its gates:
+
+```yaml
+stage:
+  type: tool.git
+  command: add -A
+  cwd: "{{nodes.builder.output.worktree}}"
+approve:
+  type: human.gate
+  question: "Commit these changes?\n{{nodes.stage.output.staged}}"
+  options: [commit, stop]
+  recommended: commit
+commit:
+  type: tool.git
+  command: commit -m "{{inputs.title}}"
+  cwd: "{{nodes.builder.output.worktree}}"
+```
+
+- Without `allow`, a `tool.git` node may run `add` and `commit`. Anything else,
+  `push` included, needs the node's own `allow` (`allow: [switch -c, commit]`).
+- Its output has `staged` (the `git diff --cached --stat` summary), `diff` (the
+  staged patch) and `head` (the commit after it ran), so the gate above shows
+  exactly what will be committed.
+- The commit uses your git identity, hooks and signing. `ork doctor` tells you
+  whether `user.name` and `user.email` are set.
+- Under `commit: never` the worktree has no branch. To commit on one, make it
+  first: a `tool.git` node with
+  `command: switch -c {{inputs.type}}/{{inputs.slug}}` and `allow: [switch -c]`.
+  A commit on no branch is kept: `ork worktrees clean` leaves its worktree
+  unless `--force`.
 
 ## Merging, or not
 
@@ -98,7 +132,8 @@ Its `git` keys win; permissions add up.
 
 ## What never changes
 
-Whatever the rules say, Ork never pushes, never takes over a branch it did not
+Whatever the rules say, Ork never pushes on its own (a `tool.git` node pushes
+only when its `allow` lists `push`), never takes over a branch it did not
 create, and records every branch and worktree it makes.
 [`ork worktrees`](./worktrees.md) lists and cleans exactly those, whatever they
 are called.

@@ -100,6 +100,15 @@ carried to the next milestone.
 - **L16 · `git.base` is not fetched.** A base such as `origin/main` is whatever
   the clone last fetched; Ork never fetches.
   ([project rules](./project-rules.md))
+- **L17 · A `tool.git` commit under `commit: never` is on no branch.** The
+  worktree is detached, so the workflow makes its own branch (`switch -c`,
+  allowed on the node) or the commit stays on none; `ork worktrees clean` keeps
+  such a worktree unless `--force`. Ork could make the root's branch from
+  `git.branch` without committing. ([ADR-034](../decisions/ADR-034-tool-git.md))
+- **L18 · An allow list checks the subcommand, not its flags.**
+  `allow: [commit]` also allows `commit --amend` or `commit --no-verify`; what
+  follows the prefix is the workflow's.
+  ([workflow format](./workflow-format.md))
 
 ## Chores
 

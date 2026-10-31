@@ -10,6 +10,7 @@
 export { aws } from "./aws.ts";
 export * from "./drivers.ts";
 export { gh } from "./gh.ts";
+export * from "./git.ts";
 export * from "./integration.ts";
 export * from "./json.ts";
 export * from "./layouts.ts";

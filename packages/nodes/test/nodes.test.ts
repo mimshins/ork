@@ -3,7 +3,8 @@
  *   and timeouts, and Claude sessions against a fake runtime.
  */
 
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -26,6 +27,7 @@ import {
   isAllowed,
   OUTPUT_LIMIT,
   resultOf,
+  spawnTool,
   timeoutMs,
   tokenize,
   toolExecutor,
@@ -197,6 +199,62 @@ describe("tool commands", () => {
     expect(existsSync(path.join(run.cwd, ".ork/runs/r1/t.1.stderr.txt"))).toBe(
       false,
     );
+  });
+});
+
+const gitIn = (cwd: string, ...args: string[]) =>
+  execFileSync("git", args, { cwd, encoding: "utf8" });
+
+describe("git nodes", () => {
+  it("add and commit by default, and push only when allowed", async () => {
+    const { runner, calls } = recordingRunner();
+    const push = await toolExecutor(runner)(
+      context("ship", { type: "tool.git", command: "push origin main" }),
+    );
+    expect(calls).toEqual([]);
+    expect(push).toMatchObject({
+      ok: false,
+      error:
+        '"push origin main" is not in the node\'s allow list (add, commit)',
+    });
+    const allowed = await toolExecutor(runner)(
+      context("ship", {
+        type: "tool.git",
+        command: "push origin main",
+        allow: ["push"],
+      }),
+    );
+    expect(allowed.ok).toBe(true);
+    expect(calls[0]).toEqual({
+      program: "git",
+      args: ["push", "origin", "main"],
+    });
+  });
+
+  it("output the staged changes, for a gate, and the commit after", async () => {
+    const run = context("stage", { type: "tool.git", command: "add -A" });
+    gitIn(run.cwd, "init", "--quiet");
+    gitIn(run.cwd, "config", "user.name", "Test");
+    gitIn(run.cwd, "config", "user.email", "test@example.com");
+    gitIn(run.cwd, "config", "commit.gpgsign", "false");
+    writeFileSync(path.join(run.cwd, "hello.txt"), "hello\n");
+    const staged = await toolExecutor(spawnTool)(run);
+    expect(staged.output).toMatchObject({ exitCode: 0, head: "" });
+    expect(String(staged.output["staged"])).toContain("hello.txt");
+    expect(String(staged.output["diff"])).toContain("+hello");
+
+    const commit = await toolExecutor(spawnTool)(
+      context(
+        "commit",
+        { type: "tool.git", command: "commit -m {{inputs.branch}}" },
+        { cwd: run.cwd },
+      ),
+    );
+    expect(commit.output).toMatchObject({ exitCode: 0, staged: "", diff: "" });
+    expect(commit.output["head"]).toBe(
+      gitIn(run.cwd, "rev-parse", "HEAD").trim(),
+    );
+    expect(gitIn(run.cwd, "log", "--format=%s")).toBe("feat/x y\n");
   });
 });
 

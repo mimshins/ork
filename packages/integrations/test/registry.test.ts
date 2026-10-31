@@ -9,6 +9,7 @@ import {
   aws,
   CLAUDE_DRIVERS,
   DRIVER_IDS,
+  git,
   INTEGRATIONS,
   integrationFor,
   MIN_CLAUDE_VERSION,
@@ -24,6 +25,7 @@ describe("the registries", () => {
 
   it("find the integration behind a node type", () => {
     expect(integrationFor("tool.aws")).toBe(aws);
+    expect(integrationFor("tool.git")).toBe(git);
     expect(integrationFor("tool.nope")).toBeUndefined();
     expect(integrationFor("claude.worker")).toBeUndefined();
   });
@@ -36,6 +38,11 @@ describe("the registries", () => {
       "eu-west-1",
     ]);
     expect(aws.args({})).toEqual([]);
+  });
+
+  it("let an adapter set a default allow list: git adds and commits, never pushes", () => {
+    expect(git.allow).toEqual(["add", "commit"]);
+    expect(aws.allow).toBeUndefined();
   });
 });
 

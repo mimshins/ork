@@ -24,8 +24,9 @@ with the built-in node types
   lines.
 - Integrations are optional: before anything starts, Ork checks only the
   programs the workflow's tool nodes run (`gh` for `tool.gh`, `aws` for
-  `tool.aws`, a `tool.shell` command's first word unless it is a template) and
-  refuses to start, naming the nodes, when one is not installed.
+  `tool.aws`, `git` for `tool.git`, a `tool.shell` command's first word unless
+  it is a template) and refuses to start, naming the nodes, when one is not
+  installed.
 - Every event is recorded in the [event store](../event-store.md) before it is
   printed; `ork ps`, `ork logs` and `ork tree` read it back.
 - Tool nodes run as declared (their `allow` list is checked first); gates and

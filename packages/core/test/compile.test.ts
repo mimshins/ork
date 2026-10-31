@@ -147,6 +147,23 @@ edges:
     ]);
   });
 
+  it("knows the fields an integration observes, such as git's staged changes", () => {
+    const diagnostics = compile(
+      workflow(`nodes:
+  stage: { type: tool.git, command: add -A }
+  gate:
+    type: human.gate
+    question: "{{nodes.stage.output.staged}} {{nodes.stage.output.head}} {{nodes.stage.output.nope}}"
+    options: [commit, stop]
+edges:
+  - stage -> gate
+`),
+    ).diagnostics;
+    expect(diagnostics.map(d => `${d.code} ${d.message}`)).toEqual([
+      'ref.field "nodes.stage.output.nope": a tool.git reports exitCode, stdout, stderr, staged, diff, head',
+    ]);
+  });
+
   it("checks joins, gates and channels", () => {
     expect(
       codes(

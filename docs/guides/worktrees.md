@@ -100,7 +100,8 @@ changes, or a branch you have checked out, unless you add `--force`. Without a
 terminal, `--yes` is required. It lists what your runs recorded creating,
 whatever your rules named it, plus any `ork/` branch, and reads their state from
 git, so it works for any run, even one from a crashed process. A detached
-worktree (`commit: never`) is cleaned only with `--all`.
+worktree (`commit: never`) is cleaned only with `--all`, and one holding a
+commit no branch has (a `tool.git` commit) only with `--force` too.
 
 ## Running without worktrees
 

@@ -79,7 +79,7 @@ branches.
 
 - se-backend's git process is expressible: `commit: never`, its branch and
   worktree templates, `base: origin/main`; an explicit commit step after the
-  gates is the planned `tool.git` node.
+  gates is a `tool.git` node ([ADR-034](./ADR-034-tool-git.md)).
 - Under `commit: never`, Ork stages files in its own worktrees (`git add -A`) to
   see new ones in a patch; nothing is committed.
 - Attached projects (rules outside the repo) come with `ork register`.

@@ -46,16 +46,16 @@ missing required input stops the run before anything starts.
 
 ## Node types
 
-| Type                              | What it does                                                        |
-| --------------------------------- | ------------------------------------------------------------------- |
-| `claude.leader`                   | A Claude session that can plan and delegate to the nodes it owns    |
-| `claude.worker`                   | A Claude session that does one task and reports                     |
-| `claude.subagent`                 | A Claude Code subagent inside its parent's session (see below)      |
-| `tool.gh`, `tool.aws`             | Your own `gh` or `aws` CLI, with an allow list of subcommands       |
-| `tool.shell`                      | Any program, run without a shell                                    |
-| `control.join`                    | Waits for its inputs: `all` (default), `any`, or `n` of them        |
-| `control.router`, `control.split` | Pass their input on; a router takes its first matching edge, or all |
-| `human.gate`                      | Asks you a question with options, and a recommended one             |
+| Type                              | What it does                                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `claude.leader`                   | A Claude session that can plan and delegate to the nodes it owns                                             |
+| `claude.worker`                   | A Claude session that does one task and reports                                                              |
+| `claude.subagent`                 | A Claude Code subagent inside its parent's session (see below)                                               |
+| `tool.gh`, `tool.aws`, `tool.git` | Your own `gh`, `aws` or `git`, with an allow list ([`git` commits](./project-rules.md#committing-as-a-step)) |
+| `tool.shell`                      | Any program, run without a shell                                                                             |
+| `control.join`                    | Waits for its inputs: `all` (default), `any`, or `n` of them                                                 |
+| `control.router`, `control.split` | Pass their input on; a router takes its first matching edge, or all                                          |
+| `human.gate`                      | Asks you a question with options, and a recommended one                                                      |
 
 ### Claude nodes
 

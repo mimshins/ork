@@ -19,6 +19,8 @@ const fakeExec =
 const loggedIn = {
   "git --version": "git version 2.50.0\n",
   "git rev-parse --is-inside-work-tree": "true\n",
+  "git config user.name": "Some One\n",
+  "git config user.email": "someone@example.com\n",
   "claude --version": "2.1.314 (Claude Code)\n",
   "claude auth status --json": JSON.stringify({
     loggedIn: true,
@@ -46,6 +48,7 @@ describe("ork doctor", () => {
       "claude (cli driver): ok",
       "gh: ok",
       "aws: skip",
+      "git identity: ok",
     ]);
     expect(JSON.stringify(results)).not.toContain("someone@example.com");
   });

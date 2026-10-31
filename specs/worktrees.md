@@ -130,7 +130,8 @@ with their state read from git (`git worktree list --porcelain`):
   run and node), its worktree path (or none, or missing), uncommitted changes,
   and how many commits are not merged into the current branch. A detached
   worktree is never "merged", so `clean` takes it only with `--all`, and with
-  `--force` when it has changes.
+  `--force` when it has changes or holds commits no branch, tag or remote has (a
+  [`tool.git`](../decisions/ADR-034-tool-git.md) commit).
 - `ork worktrees clean`: by default only branches merged into the current
   branch; `--run <id>` limits it to one run; `--all` includes unmerged ones;
   `--branches` also deletes the branches. A worktree with uncommitted changes,

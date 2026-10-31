@@ -973,6 +973,45 @@
             "properties": {
               "type": {
                 "type": "string",
+                "const": "tool.git"
+              },
+              "parent": {
+                "description": "Owner of this node in the ownership tree.",
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              },
+              "label": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "command": {
+                "type": "string",
+                "description": "Arguments for the CLI (no shell). Supports templates."
+              },
+              "allow": {
+                "description": "Allowed subcommand prefixes, e.g. ['pr view', 'pr merge'].",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "cwd": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "command"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
                 "const": "tool.shell"
               },
               "parent": {

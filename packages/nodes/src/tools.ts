@@ -1,8 +1,9 @@
 /**
  * @file The tool node executor, for every registered integration (`tool.gh`,
- *   `tool.aws`, `tool.shell`, …): the user's own program, run without a shell,
- *   checked against `allow`, its arguments from the integration's adapter, long
- *   output kept in run files.
+ *   `tool.aws`, `tool.git`, `tool.shell`, …): the user's own program, run
+ *   without a shell, checked against `allow` (or the integration's default),
+ *   its arguments and observed output fields from the integration's adapter,
+ *   long output kept in run files.
  */
 
 import { spawn } from "node:child_process";
@@ -167,14 +168,16 @@ export const toolExecutor =
     if (!isToolNode(node)) return failed(`${context.id} is not a tool node`);
     const command = commandOf(node, context);
     if (!command.ok) return failed(command.error);
+    const integration = integrationFor(node.type);
     // A program-less integration (any program) checks the program too.
     const checked =
-      integrationFor(node.type)?.program === null
+      integration?.program === null
         ? [command.program, ...command.args]
         : command.args;
-    if (!isAllowed(checked, node.allow)) {
+    const allow = node.allow ?? integration?.allow;
+    if (!isAllowed(checked, allow)) {
       return failed(
-        `"${checked.join(" ")}" is not in the node's allow list (${(node.allow ?? []).join(", ")})`,
+        `"${checked.join(" ")}" is not in the node's allow list (${(allow ?? []).join(", ")})`,
       );
     }
     let cwd = context.cwd;
@@ -193,21 +196,32 @@ export const toolExecutor =
       cwd,
       signal: context.signal,
     });
-    const keep = (stream: "stdout" | "stderr") => () => {
+    const observed =
+      (await integration?.observe?.read(async args => {
+        const seen = await runner(command.program, args, {
+          cwd,
+          signal: context.signal,
+        });
+        return { ok: seen.exitCode === 0, stdout: seen.stdout };
+      })) ?? {};
+    const keep = (field: string, text: string) => () => {
       const dir = context.runDir;
       mkdirSync(dir, { recursive: true });
       const file = path.join(
         dir,
-        `${context.id}.${String(context.round)}.${stream}.txt`,
+        `${context.id}.${String(context.round)}.${field}.txt`,
       );
-      writeFileSync(file, run[stream]);
+      writeFileSync(file, text);
       return file;
     };
-    const output = {
+    const output: Record<string, unknown> = {
       exitCode: run.exitCode,
-      stdout: capped(run.stdout, keep("stdout")),
-      stderr: capped(run.stderr, keep("stderr")),
+      stdout: capped(run.stdout, keep("stdout", run.stdout)),
+      stderr: capped(run.stderr, keep("stderr", run.stderr)),
     };
+    for (const [field, text] of Object.entries(observed)) {
+      output[field] = capped(text, keep(field, text));
+    }
     context.emit({
       type: "tool.result",
       id: context.id,

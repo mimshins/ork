@@ -5,6 +5,7 @@
 
 import { aws } from "./aws.ts";
 import { gh } from "./gh.ts";
+import { git } from "./git.ts";
 import type { Integration } from "./integration.ts";
 import { shell } from "./shell.ts";
 
@@ -13,7 +14,7 @@ import { shell } from "./shell.ts";
  * Schema list them. Add an integration by writing its adapter and listing it
  * here.
  */
-export const INTEGRATIONS = [gh, aws, shell] as const;
+export const INTEGRATIONS = [gh, aws, git, shell] as const;
 
 export const TOOL_PREFIX = "tool.";
 

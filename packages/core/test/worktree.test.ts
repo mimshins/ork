@@ -368,4 +368,28 @@ describe("ork worktrees", () => {
     ]);
     expect(await listOrkWorktrees(root)).toEqual([]);
   });
+
+  it("keeps a detached worktree holding a commit no branch has", async () => {
+    const root = repo();
+    const place = path.join(path.dirname(root), `${path.basename(root)}-task`);
+    sh(root, "worktree", "add", "--detach", place);
+    write(place, "done.ts", "done\n");
+    sh(place, "add", "-A");
+    sh(place, "commit", "--quiet", "-m", "a tool.git commit");
+
+    const items = await listOrkWorktrees(root, [
+      { runId: "r1", nodeId: "lead", path: place },
+    ]);
+    expect(items.map(i => [i.branch, i.ahead, i.merged])).toEqual([
+      [undefined, 1, false],
+    ]);
+    const steps = planClean(
+      items,
+      { merged: false },
+      { branches: true, force: false },
+    );
+    expect(steps.map(s => [s.removeWorktree, s.skip])).toEqual([
+      [false, "commits on no branch"],
+    ]);
+  });
 });
