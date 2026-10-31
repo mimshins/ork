@@ -413,15 +413,22 @@ export const MILESTONES = [
       {
         id: "agents",
         title: "Agents, registered and assigned to nodes",
-        status: "active",
+        status: "done",
         detail:
           "An agent is a portable `<name>.md` plus an optional `<name>.agent.yaml`; a Claude node takes `agent:` and its prompt is the task. Sources are layered: built-in, `~/.ork/agents`, the project's (and its tool folders'), the workflow's own.",
-        docs: ["specs/context.md", "specs/workflow-format.md"],
+        commits: ["9a5e215"],
+        date: "2026-10-31",
+        docs: [
+          "specs/workflow-format.md#agents",
+          "specs/context.md#agents",
+          "decisions/ADR-030-agents-fill-nodes.md",
+          "docs/guides/agents.md",
+        ],
       },
       {
         id: "link",
         title: "`.ork/` as the origin, tool folders linked",
-        status: "planned",
+        status: "next",
         detail:
           "`ork link` points `.claude/`, `.opencode/`, `.agents/` and `.ai/` folders at `.ork/agents` and `.ork/skills`, one adapter per tool.",
         docs: ["specs/context.md"],
