@@ -14,6 +14,8 @@ export { main } from "./main.ts";
 export * from "./workflows.ts";
 export * from "./doctor/checks.ts";
 export * from "./human.ts";
+export * from "./project/init.ts";
+export * from "./project/link.ts";
 export * from "./run/format.ts";
 export * from "./run/node.ts";
 export * from "./run/origin.ts";

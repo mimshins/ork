@@ -1,20 +1,22 @@
 # The ork CLI
 
-Status: **Partial**: `ork init`, `ork validate`, `ork doctor`, `ork run` (a
-whole workflow, or one node with `--node`), `ork ps`, `ork logs`, `ork tree`,
-`ork decide`, `ork stop`, `ork chat`, `ork resume`, `ork worktrees`,
+Status: **Partial**: `ork init`, `ork link`, `ork validate`, `ork doctor`,
+`ork run` (a whole workflow, or one node with `--node`), `ork ps`, `ork logs`,
+`ork tree`, `ork decide`, `ork stop`, `ork chat`, `ork resume`, `ork worktrees`,
 `ork context explain`, `ork agents list | show | add | rm` and
 `ork feedback list | show | dismiss` ([feedback](./feedback.md)) are built
 ([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts),
-[agents tests](../packages/cli/test/agents.test.ts)); the other commands are
+[agents tests](../packages/cli/test/agents.test.ts),
+[link tests](../packages/core/test/links.test.ts)); the other commands are
 specified. Published as `@krapht/ork`
 ([release](../runbook/development/release.md),
 [ADR-015](../decisions/ADR-015-changesets-and-one-bundled-cli.md)).
 
 ```
-ork init                         # scaffold .ork/, .gitignore entries, example workflow
-ork doctor                       # node, git, every Claude driver and integration (its own login check)
+ork init [--no-link]             # scaffold .ork/, .gitignore entries, example workflow; link tool folders
+ork link [tools…] [--check]      # point tools' agents and skills folders (.claude/agents, …) at .ork/
+ork doctor                       # node, git, every Claude driver and integration (its own login check), links
 ork validate <wf>                # schema, graph, agents and skill/context references; errors with yaml line numbers
 ork agents list [--json] | show <name> [--json]   # the agents nodes can take, and where each comes from
 ork agents add <name> [--description d] [--model m] [--from <agent>] [--user] | rm <name> [--user]
@@ -45,5 +47,6 @@ ork ui [--port 4417]             # milestone 2
 - [Worktrees, agents, context and doctor](./cli/worktrees-agents-context-and-doctor.md)
   - [Worktrees](./cli/worktrees-agents-context-and-doctor.md#worktrees)
   - [Agents](./cli/worktrees-agents-context-and-doctor.md#agents)
+  - [Linking tool folders](./cli/worktrees-agents-context-and-doctor.md#linking-tool-folders)
   - [Context](./cli/worktrees-agents-context-and-doctor.md#context)
   - [Doctor](./cli/worktrees-agents-context-and-doctor.md#doctor)

@@ -98,7 +98,32 @@ $ ork agents rm approver
 `--user` uses your own `~/.ork/agents/` instead. A new agent's role starts as
 "You are <name>." and its description: edit the markdown to write the real one.
 Ork writes only its own folders (`.ork/agents/`, `~/.ork/agents/`), never a
-tool's folder such as `.claude/agents`.
+tool's folder such as `.claude/agents`; [link](#linking-your-tools-to-ork) those
+to `.ork/` so your other tools see the agents you add.
+
+## Linking your tools to `.ork/`
+
+Keep your agents and skills in one place, `.ork/agents/` and `.ork/skills/`, and
+let your other tools read them through links:
+
+```console
+$ ork link
+linked  .claude/agents → .ork/agents
+linked  .claude/skills → .ork/skills
+kept    .ai/agents is a real folder, left as it is
+```
+
+With no tools named, `ork link` links the ones your project already uses (it has
+a `.claude/`, `.opencode/`, `.agents/` or `.ai/` folder); name them to add
+others: `ork link claude opencode`. `ork init` does this too, unless you pass
+`--no-link`.
+
+It only ever creates links. A real folder, or a link you made to somewhere else,
+is kept as it is, so a project that keeps its agents in `.ai/` loses nothing.
+`ork link --check` shows each folder's state without changing anything, and
+`ork doctor` reports a missing or broken link. Commit the links and `.ork/`
+together; an empty `.ork/` folder gets a `.gitkeep` so the links work in a fresh
+clone.
 
 ## Agents in a workflow file
 

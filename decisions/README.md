@@ -62,3 +62,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [028](./ADR-028-feedback-capture.md)               | Feedback is captured beside the run's events, grouped by item               | Accepted          | none                                                        |
 | [029](./ADR-029-readonly-follows-its-input.md)     | A readonly node with no owner works where its input came from               | Accepted          | waived                                                      |
 | [030](./ADR-030-agents-fill-nodes.md)              | Agents are defined once and fill nodes                                      | Accepted          | waived                                                      |
+| [031](./ADR-031-ork-is-the-origin.md)              | `.ork/` is the origin; tool folders link to it                              | Accepted          | waived                                                      |

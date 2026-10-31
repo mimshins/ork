@@ -7,6 +7,7 @@
 export * from "./agents/apply.ts";
 export * from "./agents/catalog.ts";
 export * from "./agents/files.ts";
+export * from "./agents/links.ts";
 export * from "./context/files.ts";
 export * from "./context/resolve.ts";
 export * from "./context/session.ts";

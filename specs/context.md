@@ -89,7 +89,10 @@ copied; the run records each one's source and a hash of its files on
 `node.started`. An agent file's `skills` and `context` paths are relative to its
 own folder. `ork agents` lists them
 ([cli](./cli/worktrees-agents-context-and-doctor.md#agents));
-`ork context explain` names the agent that fills a node.
+`ork context explain` names the agent that fills a node. `ork link` makes
+`.ork/agents` the origin the tools' folders link to
+([ADR-031](../decisions/ADR-031-ork-is-the-origin.md),
+[cli](./cli/worktrees-agents-context-and-doctor.md#linking-tool-folders)).
 
 Claude Code also loads `.claude/agents` as its own subagents in every session,
 as before: an agent can fill a node and still be a subagent a session calls.

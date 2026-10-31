@@ -85,6 +85,10 @@ carried to the next milestone.
   Code's `tools` list and OpenCode's settings in an agent's markdown are left to
   those tools; Ork's own settings go in `<name>.agent.yaml`
   ([ADR-030](../decisions/ADR-030-agents-fill-nodes.md)).
+- **L13 · Tool folders are linked with symlinks.** On native Windows, git checks
+  links out as plain files unless `core.symlinks` is on (developer mode); there
+  is no junction or copy fallback.
+  ([ADR-031](../decisions/ADR-031-ork-is-the-origin.md))
 
 ## Chores
 

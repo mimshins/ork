@@ -25,6 +25,27 @@ see [Worktrees: ork worktrees](../worktrees.md#ork-worktrees).
 - `rm <name>` removes an agent from `.ork/agents/` (or `~/.ork/agents/` with
   `--user`). A project's tool folders (`.claude/agents`, …) are never written.
 
+## Linking tool folders
+
+`ork link [tools…]` makes `.ork/agents` and `.ork/skills` the origin other tools
+read ([ADR-031](../../decisions/ADR-031-ork-is-the-origin.md)): each named
+tool's agents and skills folders, from the layout registry (`claude`, `agents`,
+`opencode`, `ai`), become relative links to them.
+
+- With no tools named, it links the tools the project already uses: those whose
+  top folder (`.claude`, `.opencode`, …) exists. With none, it says so and
+  changes nothing.
+- It only creates. A folder that is missing becomes a link; a real folder, or a
+  link to somewhere else, is printed as `kept` and left as it is. A link to a
+  missing `.ork/` folder gets the folder back.
+- An origin folder it creates gets a `.gitkeep`, so committed links never dangle
+  in a fresh clone.
+- `--check` prints each folder's state (`ok`, `missing`, `broken`, `kept`) and
+  changes nothing. An unknown tool fails, naming the known ones.
+
+`ork init` links the tools a project already uses the same way; `--no-link`
+skips it.
+
 ## Context
 
 `ork context explain <wf> <node>` (a path, or a workflow name as for `ork run`)
@@ -53,3 +74,8 @@ signed in with the user's own login, never printing a token or an account. At
 least one driver must be ready; integrations are optional. The CLI driver's
 check warns when `claude` is older than 2.1.281, which Ork needs to read
 `AGENTS.md` ([context](../context.md#how-a-nodes-session-is-compiled)).
+
+Once a project has `.ork/`, doctor adds one check per tool the project uses:
+`ok` when its folders link to `.ork/`, a warning when one is missing or broken
+(with `ork link <tool>` as the fix), and `skip` when the project keeps its own
+folder or links elsewhere. These checks never fail the doctor.

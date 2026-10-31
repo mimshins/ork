@@ -1,6 +1,9 @@
-/** @file Tests for `ork validate`, `ork init` and the `ork worktrees` output. */
+/**
+ * @file Tests for `ork validate`, `ork init`, `ork link` and its doctor checks,
+ *   and the `ork worktrees` output.
+ */
 
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -11,8 +14,10 @@ import {
   findWorkflowFiles,
   formatPlan,
   formatReport,
+  formatLinks,
   formatWorktrees,
   initProject,
+  linkChecks,
   validateFile,
 } from "../src/index.ts";
 
@@ -78,6 +83,7 @@ describe("ork init", () => {
     expect(initProject(dir)).toEqual({
       created: [],
       skipped: [".ork/workflows/hello.ork.yaml"],
+      links: [],
     });
 
     expect(readFileSync(path.join(dir, ".gitignore"), "utf8")).toBe(
@@ -90,6 +96,44 @@ describe("ork init", () => {
     expect(
       parseWorkflow(readFileSync(path.join(dir, starter), "utf8")).ok,
     ).toBe(true);
+  });
+});
+
+describe("ork init and ork link", () => {
+  it("links the tool folders a project uses, and says what it kept", () => {
+    const dir = tempProject();
+    mkdirSync(path.join(dir, ".claude/agents"), { recursive: true });
+
+    const { created, links } = initProject(dir, { link: true });
+    expect(created).toEqual([
+      ".ork/workflows/hello.ork.yaml",
+      ".gitignore (.ork/runs/)",
+      ".ork/skills",
+      ".ork/skills/.gitkeep",
+      ".claude/skills",
+    ]);
+    expect(formatLinks(links, created)).toEqual([
+      "kept    .claude/agents is a real folder, left as it is",
+      "linked  .claude/skills → .ork/skills",
+    ]);
+    expect(linkChecks(dir)).toEqual([
+      {
+        name: "Claude Code links",
+        status: "skip",
+        detail:
+          ".claude/agents is a real folder, left as it is; .claude/skills → .ork/skills",
+      },
+    ]);
+  });
+
+  it("has the doctor check links only once a project has .ork/", () => {
+    const dir = tempProject();
+    mkdirSync(path.join(dir, ".claude"));
+    expect(linkChecks(dir)).toEqual([]);
+    mkdirSync(path.join(dir, ".ork"));
+    expect(linkChecks(dir)).toMatchObject([
+      { name: "Claude Code links", status: "warn" },
+    ]);
   });
 });
 

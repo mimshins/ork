@@ -1,108 +1,94 @@
 /**
- * @file Setting up: `ork init` scaffolds `.ork/` in a project with a starter
- *   workflow and the `.gitignore` entry for run state, never overwriting a
- *   file; `ork agents` lists, shows, adds and removes the agents nodes can
- *   take; `ork doctor` prints the environment checks (Node, git, and the user's
- *   own claude, gh and aws logins) and fails when no Claude driver can run. Ork
- *   stores no credentials.
+ * @file Setting up: `ork init` scaffolds `.ork/` in a project and links the
+ *   tool folders it uses; `ork link` points tools' agents and skills folders at
+ *   `.ork/`; `ork agents` lists, shows, adds and removes the agents nodes can
+ *   take; `ork doctor` prints the environment checks (Node, git, the user's own
+ *   claude, gh and aws logins, and the project's links) and fails when no
+ *   Claude driver can run. Ork stores no credentials.
  */
-
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import path from "node:path";
 
 import {
   catalogAgent,
   deleteAgent,
+  linkTools,
   loadAgents,
   projectRootOf,
+  toolLinks,
+  toolsInUse,
 } from "@krapht/ork-core";
 import type { CheckResult } from "@krapht/ork-integrations";
-import { serializeWorkflow, type Workflow } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
 import { addAgent, formatAgent, formatAgents } from "../agents/manage.ts";
 import { exec, runChecks } from "../doctor/checks.ts";
 import { style, write, writeErr } from "../output.ts";
-import { WORKFLOW_DIR, WORKFLOW_SUFFIX } from "../workflows.ts";
-
-/** Run state that never belongs in git. */
-export const GITIGNORE_ENTRIES = [".ork/runs/"] as const;
-
-export const STARTER: Workflow = {
-  schemaVersion: 1,
-  name: "hello",
-  description:
-    "A leader plans the task, a worker does it, and you approve the result.",
-  inputs: {
-    task: { type: "string", required: true, description: "What to do." },
-  },
-  defaults: { driver: "sdk", model: "sonnet", isolation: "worktree" },
-  limits: { budgetUsd: 5 },
-  nodes: {
-    lead: {
-      type: "claude.leader",
-      prompt: "Plan this task and delegate it to your worker: {{inputs.task}}",
-      model: "opus",
-      maxWorkers: 2,
-    },
-    worker: {
-      type: "claude.worker",
-      parent: "lead",
-      prompt: "Do the part of the task your owner gives you, then report.",
-    },
-    approve: {
-      type: "human.gate",
-      question: "Accept the result on {{nodes.lead.output.branch}}?",
-      options: ["accept", "reject"],
-      recommended: "accept",
-    },
-  },
-  edges: ["lead -> approve"],
-};
-
-export type InitResult = { created: string[]; skipped: string[] };
-
-/** Scaffolds `.ork/` in `cwd`. Never overwrites an existing file. */
-export const initProject = (cwd: string): InitResult => {
-  const created: string[] = [];
-  const skipped: string[] = [];
-
-  mkdirSync(path.join(cwd, WORKFLOW_DIR), { recursive: true });
-  const starter = path.join(WORKFLOW_DIR, `${STARTER.name}${WORKFLOW_SUFFIX}`);
-  if (existsSync(path.join(cwd, starter))) {
-    skipped.push(starter);
-  } else {
-    writeFileSync(path.join(cwd, starter), serializeWorkflow(STARTER));
-    created.push(starter);
-  }
-
-  const gitignore = path.join(cwd, ".gitignore");
-  const current = existsSync(gitignore) ? readFileSync(gitignore, "utf8") : "";
-  const lines = new Set(current.split("\n").map(line => line.trim()));
-  const missing = GITIGNORE_ENTRIES.filter(entry => !lines.has(entry));
-  if (missing.length > 0) {
-    const prefix = current === "" || current.endsWith("\n") ? "" : "\n";
-    writeFileSync(
-      gitignore,
-      `${current}${prefix}# Ork run state\n${missing.join("\n")}\n`,
-    );
-    created.push(`.gitignore (${missing.join(", ")})`);
-  }
-  return { created, skipped };
-};
+import { initProject } from "../project/init.ts";
+import { formatLinks, linkChecks } from "../project/link.ts";
+import { WORKFLOW_DIR } from "../workflows.ts";
 
 export const init = defineCommand({
   meta: {
     name: "init",
-    description: "Set up .ork/ in this project with a starter workflow",
+    description:
+      "Set up .ork/ in this project with a starter workflow, and link the tool folders it uses",
   },
-  run: () => {
-    const { created, skipped } = initProject(process.cwd());
+  args: {
+    link: {
+      type: "boolean",
+      description:
+        "Link .claude/agents and the like to .ork/ (--no-link: don't)",
+      default: true,
+    },
+  },
+  run: ({ args }) => {
+    const { created, skipped, links } = initProject(process.cwd(), {
+      link: args.link,
+    });
     for (const item of created) write(`${style("green", "created")} ${item}`);
     for (const item of skipped) write(`${style("dim", "exists")}  ${item}`);
+    for (const line of formatLinks(links.filter(l => l.state !== "linked"))) {
+      write(line);
+    }
     write(
       `\nNext: edit ${WORKFLOW_DIR}/, then run ${style("bold", "ork validate")}.`,
     );
+  },
+});
+
+export const link = defineCommand({
+  meta: {
+    name: "link",
+    description:
+      "Point tools' agents and skills folders (.claude/agents, …) at .ork/",
+  },
+  args: {
+    check: {
+      type: "boolean",
+      description: "Only show each folder's state; change nothing",
+      default: false,
+    },
+  },
+  run: ({ args }) => {
+    const root = projectRootOf(process.cwd());
+    const named = args._.map(String);
+    const tools = named.length > 0 ? named : toolsInUse(root);
+    if (tools.length === 0) {
+      write(
+        "No tool folders here yet; name the tools to link, e.g. ork link claude opencode.",
+      );
+      return;
+    }
+    if (args.check) {
+      for (const line of formatLinks(toolLinks(root, tools))) write(line);
+      return;
+    }
+    const result = linkTools(root, tools);
+    if (!result.ok) {
+      writeErr(result.error);
+      process.exitCode = 1;
+      return;
+    }
+    for (const line of formatLinks(result.links, result.created)) write(line);
   },
 });
 
@@ -132,7 +118,10 @@ export const doctor = defineCommand({
       process.env,
       process.versions.node,
     );
-    for (const result of results) {
+    for (const result of [
+      ...results,
+      ...linkChecks(projectRootOf(process.cwd())),
+    ]) {
       for (const line of formatCheck(result)) write(line);
     }
     if (!ok) {

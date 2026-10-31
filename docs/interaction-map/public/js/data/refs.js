@@ -264,6 +264,15 @@ export const CONTEXT = {
     "Code: filling agent nodes",
   ),
   agentTests: d("packages/core/test/agents.test.ts", "Tests: agents"),
+  agentLinks: d(
+    "packages/core/src/agents/links.ts",
+    "Code: linking tool folders to `.ork/`",
+  ),
+  linkTests: d("packages/core/test/links.test.ts", "Tests: `ork link`"),
+  originAdr: d(
+    "decisions/ADR-031-ork-is-the-origin.md",
+    "ADR-031: `.ork/` is the origin",
+  ),
   agentsCli: d("packages/cli/src/commands/setup.ts", "Code: `ork agents`"),
   resolver: d(
     "packages/core/src/context/resolve.ts",
