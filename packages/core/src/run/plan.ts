@@ -92,9 +92,25 @@ const roleSection = (workflow: Workflow, node: ClaudeNode): string[] => {
     : [`# Your role: ${node.agent}\n\n${role}`];
 };
 
-const toolRules = (node: ClaudeNode, readonly: boolean): ToolRules => ({
-  allow: [...(node.tools?.allow ?? [])],
-  deny: [...(node.tools?.deny ?? []), ...(readonly ? WRITE_TOOLS : [])],
+/** The node's own tool rules, the project's and workflow's, and isolation's. */
+const toolRules = (
+  node: ClaudeNode,
+  readonly: boolean,
+  rules: Workflow["rules"],
+): ToolRules => ({
+  allow: [
+    ...new Set([
+      ...(rules?.permissions?.allow ?? []),
+      ...(node.tools?.allow ?? []),
+    ]),
+  ],
+  deny: [
+    ...new Set([
+      ...(rules?.permissions?.deny ?? []),
+      ...(node.tools?.deny ?? []),
+      ...(readonly ? WRITE_TOOLS : []),
+    ]),
+  ],
 });
 
 /**
@@ -187,7 +203,7 @@ export const planNodeSession = (
       ...contextSections(context.files, "node"),
     ].join("\n\n"),
     settingSources: ["project", "local"],
-    tools: toolRules(node, isolation === "readonly"),
+    tools: toolRules(node, isolation === "readonly", workflow.rules),
     permissionMode: "default",
     reportSchema: reportSchemaFor(node),
   };

@@ -98,6 +98,12 @@ export const agentSettings = {
   maxTurns: TurnsSchema.optional(),
   practices: PracticesSchema.optional(),
   tools: ToolRulesSchema.optional(),
+  session: z
+    .enum(["fresh", "resume"])
+    .optional()
+    .describe(
+      "When the node runs again (a loop, another delegation): resume its session, or start a fresh one with the new input. Default: resume for a leader, fresh for a worker.",
+    ),
   output: z
     .strictObject({
       schema: z
@@ -122,6 +128,7 @@ export const AGENT_SETTING_KEYS = [
   "maxTurns",
   "practices",
   "tools",
+  "session",
   "output",
 ] as const satisfies readonly (keyof typeof agentSettings)[];
 

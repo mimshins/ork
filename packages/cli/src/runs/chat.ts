@@ -75,7 +75,7 @@ export const nodeSession = (
     if (event.type === "worktree" && event.action === "created") {
       session.checkout = {
         path: event.path,
-        branch: event.branch,
+        ...(event.branch === undefined ? {} : { branch: event.branch }),
         own: true,
         owner: node,
       };

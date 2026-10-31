@@ -1,8 +1,9 @@
 /**
- * @file Ork's git worktrees: one per `worktree` node, beside the clone in
- *   `../<clone>-worktrees/ork-<run>-<node>` on branch `ork/<run>/<node>`
- *   (ADR-020). Ork only creates, commits, merges and removes there; it never
- *   pushes or touches a branch outside `ork/`.
+ * @file Ork's git worktrees: one per `worktree` node, beside the clone, by
+ *   default in `../<clone>-worktrees/ork-<run>-<node>` on branch
+ *   `ork/<run>/<node>` (ADR-020; a project's git rules rename them, ADR-032).
+ *   Ork only creates, commits, merges and removes what its runs created; it
+ *   never pushes.
  */
 
 import {
@@ -18,7 +19,8 @@ import { git, gitOk, lines } from "./git.ts";
 
 export const BRANCH_PREFIX = "ork/";
 
-export type Worktree = { path: string; branch: string };
+/** A worktree Ork made; `branch` is absent when it is detached. */
+export type Worktree = { path: string; branch?: string };
 
 /** Gitignored files a session needs as much in a worktree as in the clone. */
 export const LOCAL_AGENT_FILES = [
@@ -34,6 +36,7 @@ const AGENT_PATHSPECS = [
   ".agents",
 ];
 
+/** The default branch name, `ork/<run>/<node>`. */
 export const branchName = (runId: string, nodeId: string): string =>
   `${BRANCH_PREFIX}${runId}/${nodeId}`;
 
@@ -41,6 +44,7 @@ export const branchName = (runId: string, nodeId: string): string =>
 export const worktreeHome = (root: string): string =>
   path.join(path.dirname(root), `${path.basename(root)}-worktrees`);
 
+/** The default worktree folder, `../<clone>-worktrees/ork-<run>-<node>`. */
 export const worktreePath = (
   root: string,
   runId: string,
@@ -145,33 +149,50 @@ const copyInto = (from: string, to: string, files: readonly string[]) => {
   return copied;
 };
 
-/** Creates `ork/<run>/<node>` from `base` beside the clone, with local files. */
+/**
+ * Creates a worktree at `path` from `base`, with the local files: on a new
+ * `branch`, or detached when there is none (`commit: never`). An existing
+ * branch is checked out again only when this run created it (`known`): a
+ * resumed run's branch outlives its removed worktree. Any other existing branch
+ * stops it: Ork never takes over a branch it did not create.
+ */
 export const createWorktree = async (options: {
   root: string;
-  runId: string;
-  nodeId: string;
+  path: string;
+  branch?: string;
   base: string;
+  known?: boolean;
 }): Promise<Worktree & { copied: string[]; reused: boolean }> => {
-  const { root, runId, nodeId, base } = options;
-  const target = worktreePath(root, runId, nodeId);
-  const branch = branchName(runId, nodeId);
-  mkdirSync(worktreeHome(root), { recursive: true });
-  // A resumed run's branch outlives its removed worktree: check it out again,
-  // brought up to `base` by the caller's fast-forward.
-  const reused = await git(root, [
-    "rev-parse",
-    "--verify",
-    "--quiet",
-    `refs/heads/${branch}`,
-  ]);
+  const { root, branch, base } = options;
+  const target = options.path;
+  mkdirSync(path.dirname(target), { recursive: true });
+  if (branch === undefined) {
+    await gitOk(root, ["worktree", "add", "--detach", target, base]);
+    const copied = copyInto(root, target, await localFiles(root));
+    return { path: target, copied, reused: false };
+  }
+  const exists =
+    (
+      await git(root, [
+        "rev-parse",
+        "--verify",
+        "--quiet",
+        `refs/heads/${branch}`,
+      ])
+    ).code === 0;
+  if (exists && options.known !== true) {
+    throw new Error(
+      `branch ${branch} already exists, and this run did not create it; Ork never takes over a branch it did not create`,
+    );
+  }
   await gitOk(
     root,
-    reused.code === 0
+    exists
       ? ["worktree", "add", target, branch]
       : ["worktree", "add", "-b", branch, target, base],
   );
   const copied = copyInto(root, target, await localFiles(root));
-  return { path: target, branch, copied, reused: reused.code === 0 };
+  return { path: target, branch, copied, reused: exists };
 };
 
 /** Copies files that exist in `from` and are missing in the worktree. */

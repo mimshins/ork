@@ -1,7 +1,8 @@
 /**
- * @file `ork worktrees`: lists the worktrees and `ork/` branches runs left
- *   behind, read from git, and cleans them up safely after showing the plan and
- *   asking.
+ * @file `ork worktrees`: lists the worktrees and branches runs left behind
+ *   (those the runs recorded creating, whatever the project's git rules named
+ *   them, and any `ork/` branch), with their state read from git, and cleans
+ *   them up safely after showing the plan and asking.
  */
 
 import { createInterface } from "node:readline/promises";
@@ -9,8 +10,10 @@ import { createInterface } from "node:readline/promises";
 import {
   applyClean,
   type CleanStep,
+  createdWorktrees,
   inspectProject,
   listOrkWorktrees,
+  openStore,
   type OrkWorktree,
   planClean,
 } from "@krapht/ork-core";
@@ -24,20 +27,27 @@ export const worktreeState = (item: OrkWorktree): string => {
   if (item.path === null) parts.push("no worktree");
   else if (item.missing) parts.push("missing (prunable)");
   if (item.dirty) parts.push(style("yellow", "uncommitted changes"));
-  parts.push(
-    item.merged
-      ? style("green", "merged")
-      : `${String(item.ahead)} commit(s) not merged`,
-  );
+  if (item.branch === undefined) parts.push("detached, nothing committed");
+  else {
+    parts.push(
+      item.merged
+        ? style("green", "merged")
+        : `${String(item.ahead)} commit(s) not merged`,
+    );
+  }
   if (item.inMainCheckout) parts.push("checked out here");
   return parts.join(" · ");
 };
 
+/** A worktree's name: its branch, or its run and node when detached. */
+const labelOf = (item: OrkWorktree): string =>
+  item.branch ?? `${item.runId}/${item.nodeId} (detached)`;
+
 export const formatWorktrees = (items: readonly OrkWorktree[]): string[] => {
   if (items.length === 0) return ["No Ork worktrees or branches."];
-  const width = Math.max(...items.map(i => i.branch.length));
+  const width = Math.max(...items.map(i => labelOf(i).length));
   return items.flatMap(item => [
-    `${style("bold", item.branch.padEnd(width))}  ${worktreeState(item)}`,
+    `${style("bold", labelOf(item).padEnd(width))}  ${worktreeState(item)}`,
     ...(item.path === null ? [] : [`  ${style("dim", item.path)}`]),
   ]);
 };
@@ -50,11 +60,21 @@ export const formatPlan = (steps: readonly CleanStep[]): string[] =>
     ];
     const what = actions.length > 0 ? actions.join(" + ") : "keep";
     const why = step.skip === undefined ? "" : style("dim", ` (${step.skip})`);
-    return `  ${step.item.branch}: ${what}${why}`;
+    return `  ${labelOf(step.item)}: ${what}${why}`;
   });
 
 const projectRoot = async (): Promise<string | null> =>
   (await inspectProject(process.cwd()))?.root ?? null;
+
+/** What Ork created in the repo at `root`, from its runs' records and git. */
+const itemsIn = async (root: string): Promise<OrkWorktree[]> => {
+  const store = openStore();
+  try {
+    return await listOrkWorktrees(root, createdWorktrees(store, root));
+  } finally {
+    store.close();
+  }
+};
 
 const notGit = () => {
   process.stderr.write("Not in a git repository with a commit.\n");
@@ -67,7 +87,7 @@ const show = async (json: boolean): Promise<void> => {
     notGit();
     return;
   }
-  const items = await listOrkWorktrees(root);
+  const items = await itemsIn(root);
   if (json) write(JSON.stringify(items, undefined, 2));
   else for (const line of formatWorktrees(items)) write(line);
 };
@@ -126,7 +146,7 @@ const clean = defineCommand({
     }
     const filter: Parameters<typeof planClean>[1] = { merged: !args.all };
     if (args.run !== undefined) filter.runId = args.run;
-    const steps = planClean(await listOrkWorktrees(root), filter, {
+    const steps = planClean(await itemsIn(root), filter, {
       branches: args.branches,
       force: args.force,
     });

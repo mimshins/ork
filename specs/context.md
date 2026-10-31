@@ -57,12 +57,19 @@ twice.
   `AGENTS.md` reading off.
 - **Context files** are appended to Claude Code's system prompt, shared before
   specific so nodes share a cached prefix: the practices, the user's context,
-  the workflow's context and lessons, the [agent](#agents)'s role
-  (`# Your role: <name>`), Ork's harness instructions (the node's role, its
+  the workflow's context (after the project's `context` files from
+  [`.ork/project.yaml`](./project-rules.md)) and lessons, the [agent](#agents)'s
+  role (`# Your role: <name>`), Ork's harness instructions (the node's role, its
   owner, its checkout, its children), then the node's own context and
   `instructions`. The brief is the first user message.
 - In a worktree the project layer is the branch's committed one plus the copied
   local files ([worktrees](./worktrees.md#what-a-worktree-gets)).
+- **Tool rules** are the node's own `tools`, plus the project's and the
+  workflow's `permissions` ([project rules](./project-rules.md#precedence)),
+  plus the write tools denied to a `readonly` node.
+- **The checkout line** of the harness says where the node works and what the
+  project's git rules let it do: commit there, or not (`commit: never`), and how
+  its work reaches its owner (merged, applied as a patch, or kept).
 - **`ork context explain <wf> <node>`** prints the resolved stack: each skill
   with its layer, source and state (live, or off and why), the context files,
   the practices, and estimated tokens.

@@ -1,6 +1,7 @@
 # ADR-019 — On a loop re-entry, leaders resume and workers start fresh
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by
+  [ADR-033](./ADR-033-session-resume-on-any-node.md)
 - **Date:** 2026-10-30
 - **Topic:** engine / sessions
 - **RFC:** waived — the author chose among the options below directly

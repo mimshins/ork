@@ -6,6 +6,10 @@ your own checkout is never touched, and every result is a branch you can review,
 merge or throw away. The contract is the
 [worktrees spec](../../specs/worktrees.md).
 
+This page describes Ork's defaults. Your project can rename the branches and
+worktrees, start from another base, or never commit at all (detached worktrees,
+changes handed over uncommitted): see [project rules](./project-rules.md).
+
 ## Choosing a node's isolation
 
 | `isolation`          | Where the node works                                                  |
@@ -77,12 +81,13 @@ The project must be a git repository with at least one commit.
 - Worktrees of merged children are removed; their branches stay.
 - The root nodes' worktrees (the run's result) and anything unmerged stay. The
   run summary lists each one with its branch, path and reason.
-- Ork never pushes, and never creates, moves or deletes a branch outside `ork/`.
+- Ork never pushes, and never takes over, moves or deletes a branch it did not
+  create.
 
 ## Cleaning up
 
 ```sh
-ork worktrees                     # or `ork wt`: every ork/ branch and its state
+ork worktrees                     # or `ork wt`: what runs created, and its state
 ork worktrees clean               # merged branches' worktrees; asks first
 ork worktrees clean --run <id>    # one run only
 ork worktrees clean --all         # unmerged ones too
@@ -92,8 +97,10 @@ ork worktrees clean --branches    # delete the branches as well
 The list shows each branch's worktree path, uncommitted changes, and commits not
 yet merged into your current branch. Cleaning keeps anything with uncommitted
 changes, or a branch you have checked out, unless you add `--force`. Without a
-terminal, `--yes` is required. It reads everything from git, so it works for any
-run, even one from a crashed process.
+terminal, `--yes` is required. It lists what your runs recorded creating,
+whatever your rules named it, plus any `ork/` branch, and reads their state from
+git, so it works for any run, even one from a crashed process. A detached
+worktree (`commit: never`) is cleaned only with `--all`.
 
 ## Running without worktrees
 

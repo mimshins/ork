@@ -1,6 +1,6 @@
 /**
- * @file Workflow YAML: parsing with source positions for diagnostics, and the
- *   byte-stable canonical serializer.
+ * @file Workflow and project YAML: parsing with source positions for
+ *   diagnostics, and the workflow's byte-stable canonical serializer.
  */
 
 import {
@@ -15,6 +15,7 @@ import type { z } from "zod";
 import { AgentSchema } from "./agents.ts";
 import { formatEdge } from "./edges.ts";
 import { NodeSchema, type NodeType } from "./nodes.ts";
+import { type Project, ProjectSchema } from "./project.ts";
 import {
   type Layout,
   LayoutSchema,
@@ -102,8 +103,12 @@ const withPosition = (diagnostic: Diagnostic, locate: Locate): Diagnostic => {
   return pos === null ? diagnostic : { ...diagnostic, ...pos };
 };
 
-/** Parses and structurally validates a workflow file. */
-export const parseWorkflow = (text: string): LoadResult => {
+type Parsed<T> =
+  | { ok: true; data: T; locate: Locate }
+  | { ok: false; diagnostics: Diagnostic[]; locate: Locate };
+
+/** Parses YAML text and validates it against `schema`, with positions. */
+const parseWith = <T>(text: string, schema: z.ZodType<T>): Parsed<T> => {
   const counter = new LineCounter();
   const doc = parseDocument(text, {
     lineCounter: counter,
@@ -130,7 +135,7 @@ export const parseWorkflow = (text: string): LoadResult => {
   }
 
   const raw: unknown = doc.toJS();
-  const result = WorkflowSchema.safeParse(raw);
+  const result = schema.safeParse(raw);
   if (!result.success) {
     return {
       ok: false,
@@ -149,7 +154,27 @@ export const parseWorkflow = (text: string): LoadResult => {
       }),
     };
   }
-  return { ok: true, workflow: result.data, locate };
+  return { ok: true, data: result.data, locate };
+};
+
+/** Parses and structurally validates a workflow file. */
+export const parseWorkflow = (text: string): LoadResult => {
+  const parsed = parseWith(text, WorkflowSchema);
+  return parsed.ok
+    ? { ok: true, workflow: parsed.data, locate: parsed.locate }
+    : parsed;
+};
+
+export type ProjectLoadResult =
+  | { ok: true; project: Project; locate: Locate }
+  | { ok: false; diagnostics: Diagnostic[]; locate: Locate };
+
+/** Parses and structurally validates a project's `.ork/project.yaml`. */
+export const parseProject = (text: string): ProjectLoadResult => {
+  const parsed = parseWith(text, ProjectSchema);
+  return parsed.ok
+    ? { ok: true, project: parsed.data, locate: parsed.locate }
+    : parsed;
 };
 
 const TOP_LEVEL_ORDER = Object.keys(WorkflowSchema.shape);

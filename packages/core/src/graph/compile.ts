@@ -1,12 +1,17 @@
 /**
- * @file The graph compiler's entry point: fills agent nodes from their agents,
- *   runs every check and, when there is no error, builds the run graph the
- *   scheduler executes.
+ * @file The graph compiler's entry point: puts the project's rules under the
+ *   workflow, fills agent nodes from their agents, runs every check and, when
+ *   there is no error, builds the run graph the scheduler executes.
  */
 
 import type { Diagnostic, Workflow } from "@krapht/ork-schema";
 
 import { type ApplyOptions, applyAgents } from "../agents/apply.ts";
+import {
+  applyProject,
+  checkRules,
+  type ProjectOptions,
+} from "../project/rules.ts";
 import { error, warning } from "./diagnostics.ts";
 import {
   checkCycles,
@@ -25,14 +30,15 @@ const SEVERITY_ORDER = { error: 0, warning: 1 } as const;
  * Compiles a structurally valid workflow into an executable graph and checks
  * everything the schema cannot: the agents its nodes name, the ownership tree,
  * edges, bounded cycles, references in templates and conditions, and per-type
- * rules. Agent nodes are filled from their agents first, so every check sees
- * the effective node; the graph holds that effective workflow.
+ * rules. The project's rules go under the workflow and agent nodes are filled
+ * from their agents first, so every check sees the effective node; the graph
+ * holds that effective workflow.
  */
 export const compileWorkflow = (
   authored: Workflow,
-  options: ApplyOptions = {},
+  options: ApplyOptions & ProjectOptions = {},
 ): CompileResult => {
-  const applied = applyAgents(authored, options);
+  const applied = applyAgents(applyProject(authored, options), options);
   const { workflow } = applied;
   const flow = compileEdges(workflow);
   const { edges } = flow;
@@ -47,6 +53,7 @@ export const compileWorkflow = (
     ...checkNodes(workflow, edges),
     ...checkReferences(workflow, edges),
     ...channels.diagnostics,
+    ...checkRules(workflow),
   ];
 
   if (entries.length === 0) {

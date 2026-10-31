@@ -6,7 +6,13 @@ Status: **Built** ([manager.ts](../packages/core/src/worktree/manager.ts),
 [`ork worktrees`](../packages/cli/src/commands/worktrees.ts),
 [tests](../packages/core/test/worktree.test.ts)). Why:
 [ADR-020](../decisions/ADR-020-worktrees-beside-the-clone.md),
-[ADR-018](../decisions/ADR-018-ork-merges-children.md).
+[ADR-018](../decisions/ADR-018-ork-merges-children.md),
+[ADR-032](../decisions/ADR-032-project-rules.md).
+
+This page describes Ork's default git rules. A project's
+[rules](./project-rules.md) can rename branches and worktrees, start from
+another base, never commit (detached worktrees, work handed over as patches), or
+never merge.
 
 A run of a workflow with `worktree` Claude nodes gives each of them its own git
 worktree and branch; `ork run --in-place` runs everything in the project
@@ -30,18 +36,19 @@ checkout instead.
   worktrees, or none, leave it in the project root.
 
 - A worktree lives **beside the clone**:
-  `../<clone>-worktrees/ork-<run>-<node>`, on branch `ork/<run>/<node>`. Claude
-  Code loads `CLAUDE.md` and `CLAUDE.local.md` from the working directory and
-  every parent, so a worktree inside the clone would load the main checkout's
-  instructions on top of the branch's; beside the clone, each session loads one
-  set, from its own branch.
+  `../<clone>-worktrees/ork-<run>-<node>`, on branch `ork/<run>/<node>`
+  (`git.worktrees` and `git.branch`). Claude Code loads `CLAUDE.md` and
+  `CLAUDE.local.md` from the working directory and every parent, so a worktree
+  inside the clone would load the main checkout's instructions on top of the
+  branch's; beside the clone, each session loads one set, from its own branch.
 - It branches from its nearest owner's branch, or, for a node without one, from
-  the project's `HEAD` when the run starts.
+  the project's `HEAD` when the run starts (`git.base`).
 - The session is told it is already in its own worktree on that branch, and must
   not create another worktree, switch branches, or push. Repositories whose own
   instructions tell agents to make a worktree first (such as a "one task, one
   worktree" rule) are satisfied by Ork's.
-- `{{nodes.<id>.output.branch}}` is the node's Ork branch.
+- `{{nodes.<id>.output.branch}}` is the node's Ork branch, and
+  `{{nodes.<id>.output.worktree}}` its worktree's path.
 
 ## What a worktree gets
 
@@ -101,7 +108,8 @@ When a leader delegates ([scheduler](./scheduler.md#delegation)):
 - A merged child's worktree is removed (its branch stays).
 - Root nodes' worktrees (the run's result) and unmerged ones stay; the run
   summary lists each with its branch, path and reason.
-- Ork never pushes, and never creates, moves or deletes a branch outside `ork/`.
+- Ork never pushes, and never takes over, moves or deletes a branch its runs did
+  not create.
 
 ## Resuming a run
 
@@ -113,13 +121,16 @@ worktrees of root nodes branch from the project's current `HEAD`.
 
 ## ork worktrees
 
-`ork worktrees` (or `ork wt`) tracks and cleans what runs leave behind, read
-from git itself (`git worktree list --porcelain` and the `ork/` branches), so it
-needs no state of its own:
+`ork worktrees` (or `ork wt`) tracks and cleans what runs leave behind: the
+branches and worktrees the project's runs recorded creating (`worktree`
+`created` events, whatever the rules named them), and any `ork/` branch besides,
+with their state read from git (`git worktree list --porcelain`):
 
-- `ork worktrees [list] [--json]`: each `ork/<run>/<node>` branch, its worktree
-  path (or none, or missing), uncommitted changes, and how many commits are not
-  merged into the current branch.
+- `ork worktrees [list] [--json]`: each branch (or, for a detached worktree, its
+  run and node), its worktree path (or none, or missing), uncommitted changes,
+  and how many commits are not merged into the current branch. A detached
+  worktree is never "merged", so `clean` takes it only with `--all`, and with
+  `--force` when it has changes.
 - `ork worktrees clean`: by default only branches merged into the current
   branch; `--run <id>` limits it to one run; `--all` includes unmerged ones;
   `--branches` also deletes the branches. A worktree with uncommitted changes,

@@ -19,7 +19,6 @@ import {
   createWorkspace,
   startControl,
   type EventStore,
-  inspectProject,
   type RunEvent,
   type HumanChannel,
   parseInputPairs,
@@ -36,10 +35,10 @@ import {
   onPath,
   type ToolRunner,
 } from "@krapht/ork-nodes";
-import { type Driver, isClaudeNode, type Workflow } from "@krapht/ork-schema";
+import type { Driver } from "@krapht/ork-schema";
 
 import { formatReport, loadWorkflow } from "../commands/validate.ts";
-import { style } from "../output.ts";
+import { prepareCheckout } from "./checkout.ts";
 import { formatRunEvent } from "./format.ts";
 import { feedbackOrigin } from "./origin.ts";
 
@@ -83,14 +82,6 @@ export type RunWorkflowOptions = {
   onRun?: (handle: RunHandle) => void;
 };
 
-/** Why a run refuses to start with uncommitted agent files. */
-export const dirtyAgentMessage = (files: readonly string[]): string[] => [
-  "These instructions, skills or agents have uncommitted changes, and the worktrees only get committed files:",
-  ...files.slice(0, 20).map(f => `  ${f}`),
-  ...(files.length > 20 ? [`  … and ${String(files.length - 20)} more`] : []),
-  "Commit or stash them, or pass --allow-dirty to run with the committed versions.",
-];
-
 /** Why a run refuses to start when a program its tool nodes need is missing. */
 export const missingProgramMessage = (
   missing: ReturnType<typeof missingPrograms>,
@@ -112,18 +103,6 @@ export type RunWorkflowResult = {
   exitCode: number;
   result: RunResult | null;
 };
-
-/** Claude nodes that get their own worktree. */
-export const worktreeNodes = (workflow: Workflow): string[] =>
-  Object.entries(workflow.nodes)
-    .filter(
-      ([, node]) =>
-        isClaudeNode(node) &&
-        node.type !== "claude.subagent" &&
-        (node.isolation ?? workflow.defaults?.isolation ?? "worktree") ===
-          "worktree",
-    )
-    .map(([id]) => id);
 
 /**
  * Runs a whole workflow: checks it and its inputs, then hands the compiled
@@ -162,26 +141,10 @@ export const runWorkflowFile = async (
   const missing = missingPrograms(workflow, installed);
   if (missing.length > 0) return failed(missingProgramMessage(missing));
 
-  let cwd = options.cwd;
-  let gitProject: Awaited<ReturnType<typeof inspectProject>> = null;
-  const isolated = worktreeNodes(workflow);
-  if (isolated.length > 0 && !options.inPlace) {
-    gitProject = await inspectProject(options.cwd);
-    if (gitProject === null) {
-      return failed([
-        `${isolated.join(", ")} need a git worktree, but ${options.cwd} is not in a git repository with a commit; pass --in-place to run them here`,
-      ]);
-    }
-    if (gitProject.dirtyAgentFiles.length > 0 && options.allowDirty !== true) {
-      return failed(dirtyAgentMessage(gitProject.dirtyAgentFiles));
-    }
-    if (gitProject.dirtyOther > 0) {
-      options.err(
-        `${style(["yellow", "bold"], "warning")} ${String(gitProject.dirtyOther)} uncommitted change(s) in this checkout are not in the worktrees`,
-      );
-    }
-    cwd = gitProject.root;
-  }
+  const checkout = await prepareCheckout(workflow, options, inputs.inputs);
+  if (!checkout.ok) return failed(checkout.lines);
+  const { root, base } = checkout;
+  const cwd = root ?? options.cwd;
 
   const runId = options.runId ?? newRunId(options.store);
   const runDir = path.join(cwd, ".ork", "runs", runId);
@@ -194,7 +157,7 @@ export const runWorkflowFile = async (
             id: runId,
             workflow: workflow.name,
             file: path.resolve(options.cwd, options.file),
-            project: gitProject === null ? projectRootOf(cwd) : cwd,
+            project: root ?? projectRootOf(cwd),
           },
           runDir,
         )
@@ -240,17 +203,21 @@ export const runWorkflowFile = async (
     }
   };
   const workspace: Workspace | undefined =
-    gitProject === null
+    root === undefined
       ? undefined
       : createWorkspace({
           graph,
           runId,
-          root: gitProject.root,
-          head: gitProject.head,
+          root,
+          head: base,
+          inputs: inputs.inputs,
           onEvent,
           ...(options.resume === undefined
             ? {}
-            : { adopt: options.resume.worktrees }),
+            : {
+                adopt: options.resume.worktrees,
+                known: options.resume.branches,
+              }),
         });
 
   const executorOptions: Parameters<typeof builtinExecutors>[0] = {

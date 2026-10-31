@@ -1,7 +1,8 @@
 # Workflow file format
 
 Status: **Built**: the Zod model, edge shorthand, canonical YAML, diagnostics,
-[agents](#agents) and the JSON Schemas ([code](../packages/schema/src/index.ts),
+[agents](#agents), `rules:` and the JSON Schemas
+([code](../packages/schema/src/index.ts),
 [tests](../packages/schema/test/yaml.test.ts)); node types execute in the
 [scheduler](./scheduler.md). Why:
 [ADR-006](../decisions/ADR-006-workflow-file-format.md),
@@ -70,6 +71,14 @@ spawned worker takes its template's.
 Claude nodes and `defaults` also take `practices` (caveman, ponytail), on unless
 turned off and inherited down the ownership tree; see
 [built-in practices](./context.md#built-in-practices).
+
+Leaders and workers (and agents) take `session: fresh | resume`: whether a node
+that runs again continues its last session; by default a leader resumes and a
+worker starts fresh ([scheduler](./scheduler.md#loops),
+[ADR-033](../decisions/ADR-033-session-resume-on-any-node.md)).
+
+A workflow's `rules:` (`git`, `permissions`) override the project's
+`.ork/project.yaml`; see [project rules](./project-rules.md).
 
 ## Agents
 

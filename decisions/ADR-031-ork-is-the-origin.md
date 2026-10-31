@@ -49,6 +49,13 @@ user's other tools too, without a second copy.
 - **Link every known tool by default:** creates `.opencode/`, `.agents/` and
   `.ai/` in projects that use none of them. Rejected for the tools in use.
 
+## Rationale
+
+One copy, read by every tool, is what se-backend's layout already proves out.
+Making Ork's own folders that copy means what Ork writes reaches the user's
+other tools with no second step, and only ever creating links keeps a project
+that chose another origin exactly as it is.
+
 ## Consequences
 
 - An agent written to `.ork/agents` is read by Claude Code and OpenCode at once,

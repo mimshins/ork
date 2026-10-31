@@ -1,7 +1,7 @@
 /**
  * @file The workflow file format as a Zod model: inputs, layers, defaults,
- *   inline agents, limits, nodes, edges, message channels, and the canvas
- *   layout sidecar.
+ *   rules, inline agents, limits, nodes, edges, message channels, and the
+ *   canvas layout sidecar.
  */
 
 import { z } from "zod";
@@ -10,15 +10,10 @@ import { AgentSchema } from "./agents.ts";
 import {
   AgentNameSchema,
   BudgetSchema,
-  DriverSchema,
-  IsolationSchema,
-  EffortSchema,
-  ModelSchema,
   NodeIdSchema,
   NodeSchema,
-  PracticesSchema,
-  TurnsSchema,
 } from "./nodes.ts";
+import { DefaultsSchema, RulesSchema } from "./project.ts";
 
 export const SCHEMA_VERSION = 1;
 
@@ -82,17 +77,10 @@ export const WorkflowSchema = z.strictObject({
       project: ProjectLayerSchema.optional(),
     })
     .optional(),
-  defaults: z
-    .strictObject({
-      driver: DriverSchema.optional(),
-      model: ModelSchema.optional(),
-      effort: EffortSchema.optional(),
-      isolation: IsolationSchema.optional(),
-      budgetUsd: BudgetSchema.optional(),
-      maxTurns: TurnsSchema.optional(),
-      practices: PracticesSchema.optional(),
-    })
-    .optional(),
+  defaults: DefaultsSchema.optional(),
+  rules: RulesSchema.optional().describe(
+    "Rules for what Ork does on its own (git, permissions); they win over the project's .ork/project.yaml.",
+  ),
   agents: z
     .record(AgentNameSchema, AgentSchema)
     .optional()

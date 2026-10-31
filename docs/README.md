@@ -29,6 +29,9 @@ them.
   project's `CLAUDE.md` and skills, built-in practices, `ork context explain`.
 - [Worktrees and isolation](./guides/worktrees.md): where each node works, and
   `ork worktrees`.
+- [Project rules](./guides/project-rules.md): `.ork/project.yaml`: never commit,
+  merge or not, your own branch names, permissions and defaults for every
+  workflow.
 - [Models, effort and budgets](./guides/models-and-budgets.md): picking models
   per node, limits, and saving tokens.
 - [The example workflows](./guides/examples.md): `software-factory` and

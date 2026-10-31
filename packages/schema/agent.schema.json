@@ -99,6 +99,14 @@
       },
       "additionalProperties": false
     },
+    "session": {
+      "description": "When the node runs again (a loop, another delegation): resume its session, or start a fresh one with the new input. Default: resume for a leader, fresh for a worker.",
+      "type": "string",
+      "enum": [
+        "fresh",
+        "resume"
+      ]
+    },
     "output": {
       "type": "object",
       "properties": {

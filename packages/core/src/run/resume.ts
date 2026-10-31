@@ -21,7 +21,9 @@ import type {
 export type RecordedWorktree = {
   id: string;
   path: string;
-  branch: string;
+  branch?: string;
+  /** The tree its own work is measured from (`merge: patch`). */
+  snapshot?: string;
   /** Merged into its owner, with nothing after. */
   merged: boolean;
 };
@@ -32,6 +34,8 @@ export type ResumeState = {
   inputs: Inputs;
   settings: RunSettings;
   worktrees: RecordedWorktree[];
+  /** Every branch the run created, which it may check out again. */
+  branches: string[];
   /** Answers to questions about loops out of rounds, in the order given. */
   loopAnswers: { question: string; answer: string }[];
   /** Whether the run ended as `succeeded`: nothing to resume. */
@@ -46,6 +50,7 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
   const closed = new Set<string>();
   const open = new Map<string, Open>();
   const worktrees = new Map<string, RecordedWorktree & { removed: boolean }>();
+  const branches = new Set<string>();
   const loopAnswers: ResumeState["loopAnswers"] = [];
   /** Decision or owner-question id -> its question, when it is about a loop. */
   const loopQuestions = new Map<string, string>();
@@ -99,13 +104,15 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
         worktrees.set(event.id, {
           id: event.id,
           path: event.path,
-          branch: event.branch,
+          ...(event.branch === undefined ? {} : { branch: event.branch }),
           merged: false,
           removed: false,
         });
       }
       const entry = worktrees.get(event.id);
       if (entry === undefined) continue;
+      if (event.branch !== undefined) branches.add(event.branch);
+      if (event.snapshot !== undefined) entry.snapshot = event.snapshot;
       if (event.action === "merged") entry.merged = true;
       if (event.action === "committed" || event.action === "conflict") {
         entry.merged = false;
@@ -156,6 +163,7 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
     worktrees: [...worktrees.values()]
       .filter(w => !w.removed)
       .map(({ removed: _removed, ...w }) => w),
+    branches: [...branches],
     loopAnswers,
     succeeded,
   };

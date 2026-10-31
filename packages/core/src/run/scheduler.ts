@@ -3,8 +3,7 @@
  *   runs each activation through its node type's executor, routes outputs along
  *   edges (`routing.ts`), bounds loops (`escalation.ts`), runs the children a
  *   leader delegates to (`delegation.ts`), shares the bus, claims and feedback
- *   between sessions (`ports.ts`), and enforces the budget and concurrency
- *   (`slots.ts`). Specified in `specs/scheduler.md`.
+ *   (`ports.ts`), and enforces the budget and concurrency (`slots.ts`).
  */
 
 import { isClaudeNode } from "@krapht/ork-schema";
@@ -19,6 +18,7 @@ import {
   finishedEvent,
   passThrough,
   recordRun,
+  resumeOf,
   startedEvent,
   summaryOf,
 } from "./results.ts";
@@ -178,9 +178,9 @@ export const startRun = (options: RunOptions): RunHandle => {
       context.template = activation.template;
     }
     if (activation.brief !== undefined) context.brief = activation.brief;
+    const resume = resumeOf(nodeOf(activation), sessionIds.get(id));
+    if (resume !== undefined) context.resume = resume;
     if (nodeOf(activation)?.type === "claude.leader") {
-      const resume = sessionIds.get(id);
-      if (resume !== undefined) context.resume = resume;
       context.ownership = createOwnership({
         graph,
         leader: id,

@@ -1,15 +1,18 @@
 /**
- * @file What `ork worktrees` shows and cleans: every `ork/*` branch of the repo
- *   and its worktree, read from git itself, so nothing can drift.
+ * @file What `ork worktrees` shows and cleans: every worktree and branch Ork's
+ *   runs recorded creating, whatever the project's git rules named them, and
+ *   any `ork/*` branch besides, with their state read from git itself.
  */
 
 import { existsSync } from "node:fs";
 
+import type { EventStore } from "../store/types.ts";
 import { git, gitOk, lines } from "./git.ts";
 import { BRANCH_PREFIX, removeWorktree } from "./manager.ts";
 
 export type OrkWorktree = {
-  branch: string;
+  /** `undefined` for a detached worktree (`commit: never`). */
+  branch?: string;
   runId: string;
   nodeId: string;
   /** `null` for a branch without a worktree. */
@@ -20,10 +23,41 @@ export type OrkWorktree = {
   dirty: boolean;
   /** Commits on the branch that the current branch does not have. */
   ahead: number;
-  /** Fully merged into the current branch. */
+  /** Fully merged into the current branch (never, for a detached worktree). */
   merged: boolean;
   /** Checked out in the main checkout itself, which clean never removes. */
   inMainCheckout: boolean;
+};
+
+/** A worktree a run recorded creating (its `worktree` `created` event). */
+export type CreatedWorktree = {
+  runId: string;
+  nodeId: string;
+  path: string;
+  branch?: string;
+};
+
+/**
+ * The worktrees the project's runs recorded creating, oldest run first; one
+ * entry per branch or folder, from the latest run that created it.
+ */
+export const createdWorktrees = (
+  store: Pick<EventStore, "runs" | "events">,
+  project: string,
+): CreatedWorktree[] => {
+  const byName = new Map<string, CreatedWorktree>();
+  for (const run of store.runs({ project }).toReversed()) {
+    for (const { event } of store.events(run.id)) {
+      if (event.type !== "worktree" || event.action !== "created") continue;
+      byName.set(event.branch ?? event.path, {
+        runId: run.id,
+        nodeId: event.id,
+        path: event.path,
+        ...(event.branch === undefined ? {} : { branch: event.branch }),
+      });
+    }
+  }
+  return [...byName.values()];
 };
 
 type Entry = { path: string; branch: string; prunable: boolean };
@@ -43,9 +77,57 @@ const parsePorcelain = (text: string): Entry[] =>
     })
     .filter(entry => entry.path !== "");
 
-/** Every Ork branch of the repository at `root`, with its worktree's state. */
+/** The `ork/<run>/<node>` branches of runs that recorded nothing. */
+const prefixed = (branch: string): CreatedWorktree => {
+  const [, runId = "", ...rest] = branch.split("/");
+  return { runId, nodeId: rest.join("/"), path: "", branch };
+};
+
+/** One created worktree or branch, with its state read from git. */
+const stateOf = async (
+  root: string,
+  entries: readonly Entry[],
+  item: CreatedWorktree,
+): Promise<OrkWorktree> => {
+  const { branch } = item;
+  const entry =
+    branch === undefined
+      ? entries.find(e => e.path === item.path)
+      : entries.find(e => e.branch === branch);
+  const missing =
+    entry !== undefined && (entry.prunable || !existsSync(entry.path));
+  const status =
+    entry === undefined || missing
+      ? ""
+      : (await git(entry.path, ["status", "--porcelain"])).stdout;
+  const ahead =
+    branch === undefined
+      ? 0
+      : Number(
+          (await git(root, ["rev-list", "--count", `HEAD..${branch}`])).stdout,
+        );
+  return {
+    ...(branch === undefined ? {} : { branch }),
+    runId: item.runId,
+    nodeId: item.nodeId,
+    path: entry?.path ?? null,
+    missing,
+    dirty: lines(status).length > 0,
+    ahead: Number.isNaN(ahead) ? 0 : ahead,
+    merged: branch !== undefined && ahead === 0,
+    inMainCheckout: entry?.path === root,
+  };
+};
+
+/**
+ * Every worktree and branch Ork's runs created in the repository at `root`,
+ * with its state: those the runs recorded (`created`, whatever the project's
+ * git rules named them), and any `ork/` branch besides. A recorded one that git
+ * no longer has is left out.
+ */
 export const listOrkWorktrees = async (
   root: string,
+  created: readonly CreatedWorktree[] = [],
 ): Promise<OrkWorktree[]> => {
   const entries = parsePorcelain(
     await gitOk(root, ["worktree", "list", "--porcelain"]),
@@ -54,35 +136,21 @@ export const listOrkWorktrees = async (
     await gitOk(root, [
       "for-each-ref",
       "--format=%(refname:short)",
-      `refs/heads/${BRANCH_PREFIX}`,
+      "refs/heads/",
     ]),
   );
-  return Promise.all(
-    branches.map(async branch => {
-      const [, runId = "", ...rest] = branch.split("/");
-      const entry = entries.find(e => e.branch === branch);
-      const missing =
-        entry !== undefined && (entry.prunable || !existsSync(entry.path));
-      const status =
-        entry === undefined || missing
-          ? ""
-          : (await git(entry.path, ["status", "--porcelain"])).stdout;
-      const ahead = Number(
-        (await git(root, ["rev-list", "--count", `HEAD..${branch}`])).stdout,
-      );
-      return {
-        branch,
-        runId,
-        nodeId: rest.join("/"),
-        path: entry?.path ?? null,
-        missing,
-        dirty: lines(status).length > 0,
-        ahead: Number.isNaN(ahead) ? 0 : ahead,
-        merged: ahead === 0,
-        inMainCheckout: entry?.path === root,
-      };
-    }),
-  );
+  const recordedBranches = new Set(created.flatMap(c => c.branch ?? []));
+  const items = [
+    ...created.filter(c =>
+      c.branch === undefined
+        ? entries.some(e => e.path === c.path)
+        : branches.includes(c.branch),
+    ),
+    ...branches
+      .filter(b => b.startsWith(BRANCH_PREFIX) && !recordedBranches.has(b))
+      .map(b => prefixed(b)),
+  ];
+  return Promise.all(items.map(item => stateOf(root, entries, item)));
 };
 
 export type CleanFilter = {
@@ -120,7 +188,12 @@ const cleanStep = (
     };
   }
   const removable = item.path !== null && !item.missing;
-  if (options.branches && !item.merged && !options.force) {
+  if (
+    options.branches &&
+    item.branch !== undefined &&
+    !item.merged &&
+    !options.force
+  ) {
     return {
       item,
       removeWorktree: removable,
@@ -128,7 +201,11 @@ const cleanStep = (
       skip: "branch not merged",
     };
   }
-  return { item, removeWorktree: removable, deleteBranch: options.branches };
+  return {
+    item,
+    removeWorktree: removable,
+    deleteBranch: options.branches && item.branch !== undefined,
+  };
 };
 
 /**
@@ -161,7 +238,7 @@ export const applyClean = async (
       await removeWorktree(root, item.path, force);
       done.push(`removed ${item.path}`);
     }
-    if (step.deleteBranch) {
+    if (step.deleteBranch && item.branch !== undefined) {
       // oxlint-disable-next-line no-await-in-loop -- git takes one lock at a time
       await gitOk(root, ["branch", force ? "-D" : "-d", item.branch]);
       done.push(`deleted ${item.branch}`);

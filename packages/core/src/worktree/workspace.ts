@@ -1,10 +1,12 @@
 /**
- * @file Where each node of a run works (ADR-020). A `worktree` node gets its
- *   own worktree beside the clone; `shared` and `readonly` nodes, and tool and
- *   gate nodes, work in their owner's worktree or the project root, and a
- *   `readonly` node with no owner in the worktree its input came from. After a
- *   node, Ork commits its leftovers and merges a passing child into its owner.
- *   A spawned worker works like the declared child it is an instance of.
+ * @file Where each node of a run works (ADR-020), under the project's git rules
+ *   (ADR-032). A `worktree` node gets its own worktree beside the clone, named
+ *   by the rules; `shared` and `readonly` nodes, and tool and gate nodes, work
+ *   in their owner's worktree or the project root, and a `readonly` node with
+ *   no owner in the worktree its input came from. After a node, Ork commits its
+ *   leftovers (unless `commit: never`) and brings a passing child's work to its
+ *   owner: a merge, a patch, or not at all. A spawned worker works like the
+ *   declared child it is an instance of.
  */
 
 import { existsSync } from "node:fs";
@@ -12,8 +14,8 @@ import { existsSync } from "node:fs";
 import { isClaudeNode } from "@krapht/ork-schema";
 
 import type { CompiledGraph } from "../graph/types.ts";
+import { gitRulesOf } from "../project/rules.ts";
 import type {
-  Checkout,
   KeptWorktree,
   NodeOutput,
   NodeResult,
@@ -21,14 +23,20 @@ import type {
   Workspace,
 } from "../run/types.ts";
 import {
-  carryFiles,
-  commitLeftovers,
-  createWorktree,
-  fastForward,
-  mergeBranch,
-  removeWorktree,
-  type Worktree,
-} from "./manager.ts";
+  carryArtifacts,
+  checkoutFor,
+  handOver,
+  keptOf,
+  nameOf,
+  openWorktree,
+  oneAtATime,
+  refreshWorktree,
+  type Tracked,
+  worktreeEvent,
+  type WorktreeEvent,
+} from "./handoff.ts";
+import { commitLeftovers, removeWorktree } from "./manager.ts";
+import type { NameInputs } from "./names.ts";
 import { upstreamPlace } from "./upstream.ts";
 
 export type WorkspaceOptions = {
@@ -37,37 +45,40 @@ export type WorkspaceOptions = {
   /** The project's git root and the commit root nodes branch from. */
   root: string;
   head: string;
+  /** The run's inputs, for `{inputs.<name>}` in the git rules' templates. */
+  inputs?: NameInputs;
   onEvent: (event: RunEvent) => void;
   /** Worktrees a resumed run left whose folders are still there. */
   adopt?: readonly {
     id: string;
     path: string;
-    branch: string;
+    branch?: string;
+    snapshot?: string;
     merged: boolean;
   }[];
+  /** Branches this run created before (a resumed run), which it may reuse. */
+  known?: readonly string[];
 };
 
 type Isolation = "worktree" | "shared" | "readonly";
 
-const artifactPaths = (output: NodeOutput | undefined): string[] => {
-  const artifacts = output?.["artifacts"];
-  if (artifacts === null || typeof artifacts !== "object") return [];
-  return Object.values(artifacts).filter(v => typeof v === "string");
-};
-
 export const createWorkspace = (options: WorkspaceOptions): Workspace => {
   const { graph, runId, root, head, onEvent } = options;
-  const worktrees = new Map<string, Worktree>();
+  const rules = gitRulesOf(graph.workflow);
+  const never = rules.commit === "never";
+  const known = new Set(options.known ?? []);
+  const worktrees = new Map<string, Tracked>();
   const placeOf = new Map<string, string>();
   const outputs = new Map<string, NodeOutput>();
   const merged = new Set<string>();
   const unmerged = new Map<string, string>();
-  const mergeLocks = new Map<string, Promise<unknown>>();
+  const intoOwner = oneAtATime();
   const templateOf = new Map<string, string>();
   for (const left of options.adopt ?? []) {
     if (!existsSync(left.path)) continue;
-    worktrees.set(left.id, { path: left.path, branch: left.branch });
-    if (left.merged) merged.add(left.id);
+    const { id, merged: wasMerged, ...worktree } = left;
+    worktrees.set(id, worktree);
+    if (wasMerged) merged.add(id);
   }
 
   const nodeOf = (id: string) =>
@@ -88,57 +99,47 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
 
   const event = (
     id: string,
-    action: Extract<RunEvent, { type: "worktree" }>["action"],
-    worktree: Worktree,
+    action: WorktreeEvent["action"],
+    worktree: Tracked,
     detail?: string,
   ) => {
-    const value: RunEvent = {
-      type: "worktree",
-      id,
-      action,
-      path: worktree.path,
-      branch: worktree.branch,
-    };
-    if (detail !== undefined) value.detail = detail;
-    onEvent(value);
+    onEvent(worktreeEvent(id, action, worktree, detail));
   };
 
-  const ensureWorktree = async (id: string): Promise<Worktree> => {
+  const ensureWorktree = async (id: string): Promise<Tracked> => {
     const host = hostOf(id);
+    const hosted = host === undefined ? undefined : worktrees.get(host);
     const existing = worktrees.get(id);
     if (existing !== undefined) {
-      // A later run (a loop, another delegation) starts from the owner's work,
-      // which includes this branch once it was merged; otherwise it stays.
-      const hosted = host === undefined ? undefined : worktrees.get(host);
-      if (hosted !== undefined) await fastForward(existing.path, hosted.branch);
+      if (
+        hosted !== undefined &&
+        (await refreshWorktree(rules, existing, hosted, merged.has(id)))
+      ) {
+        event(id, "synced", existing, `from ${nameOf(hosted)}`);
+      }
       return existing;
     }
-    const base =
-      host === undefined ? head : (worktrees.get(host)?.branch ?? head);
-    const created = await createWorktree({ root, runId, nodeId: id, base });
-    if (created.reused && host !== undefined) {
-      await fastForward(created.path, base);
-    }
-    const worktree = { path: created.path, branch: created.branch };
+    const { worktree, copied } = await openWorktree({
+      rules,
+      root,
+      runId,
+      id,
+      inputs: options.inputs ?? {},
+      head,
+      ...(hosted === undefined ? {} : { host: hosted }),
+      known,
+    });
     worktrees.set(id, worktree);
-    // Artifacts of nodes that worked elsewhere (e.g. a shared `spec` in the
-    // project root) would otherwise be missing on this branch.
-    const carried: string[] = [];
-    for (const [other, output] of outputs) {
-      const from = placeOf.get(other);
-      if (from === undefined || from === created.path) continue;
-      carried.push(...carryFiles(from, created.path, artifactPaths(output)));
-    }
+    if (worktree.branch !== undefined) known.add(worktree.branch);
+    const carried = carryArtifacts(worktree.path, outputs, placeOf);
     const notes = [
-      ...(created.copied.length > 0
-        ? [`copied ${created.copied.join(", ")}`]
-        : []),
+      ...(copied.length > 0 ? [`copied ${copied.join(", ")}`] : []),
       ...(carried.length > 0 ? [`carried ${carried.join(", ")}`] : []),
     ];
     event(
       id,
       "created",
-      created,
+      worktree,
       notes.length > 0 ? notes.join("; ") : undefined,
     );
     return worktree;
@@ -159,7 +160,7 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
       placeOf.set(id, worktree.path);
       return {
         cwd: worktree.path,
-        checkout: { ...worktree, own: true, owner: id },
+        checkout: checkoutFor(rules, worktree, true, id),
       };
     }
     const host = hostOf(id) ?? readFrom(id);
@@ -169,14 +170,15 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
       return { cwd: root };
     }
     placeOf.set(id, hosted.path);
-    const checkout: Checkout = { ...hosted, own: false, owner: host };
+    const checkout = checkoutFor(rules, hosted, false, host);
     return { cwd: hosted.path, checkout };
   };
 
   const checkpoint: Workspace["checkpoint"] = async id => {
     const worktree =
       isolationOf(id) === "worktree" ? worktrees.get(id) : undefined;
-    if (worktree === undefined) return null;
+    // Under commit: never, children take the leader's uncommitted work.
+    if (worktree === undefined || never) return null;
     try {
       const message = `ork: ${id} before delegating (run ${runId})`;
       if (await commitLeftovers(worktree.path, message)) {
@@ -186,17 +188,6 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     } catch (error) {
       return error instanceof Error ? error.message : String(error);
     }
-  };
-
-  /** One merge into an owner's worktree at a time. */
-  const intoOwner = <T>(owner: string, work: () => Promise<T>): Promise<T> => {
-    const previous = mergeLocks.get(owner) ?? Promise.resolve();
-    const next = previous.then(work);
-    mergeLocks.set(
-      owner,
-      next.catch(() => null),
-    );
-    return next;
   };
 
   const finish: Workspace["finish"] = async (id, result) => {
@@ -210,10 +201,17 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     merged.delete(id);
     let next: NodeResult = {
       ...result,
-      output: { ...result.output, branch: worktree.branch },
+      output: {
+        ...result.output,
+        ...(worktree.branch === undefined ? {} : { branch: worktree.branch }),
+        worktree: worktree.path,
+      },
     };
     try {
-      if (await commitLeftovers(worktree.path, `ork: ${id} (run ${runId})`)) {
+      if (
+        !never &&
+        (await commitLeftovers(worktree.path, `ork: ${id} (run ${runId})`))
+      ) {
         event(id, "committed", worktree);
       }
     } catch (error) {
@@ -229,36 +227,39 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
 
     const owner = ownerOf(id);
     const ownerTree = owner === undefined ? undefined : worktrees.get(owner);
-    if (next.ok && owner !== undefined && ownerTree !== undefined) {
-      const outcome = await intoOwner(owner, () =>
-        mergeBranch(
-          ownerTree.path,
-          worktree.branch,
-          `ork: merge ${id} into ${owner} (run ${runId})`,
-        ),
-      );
-      if (outcome.ok) {
-        merged.add(id);
-        unmerged.delete(id);
-        event(id, "merged", worktree, `into ${ownerTree.branch}`);
-      } else {
-        const files = outcome.conflicts.join(", ");
-        unmerged.set(id, `merge conflict${files === "" ? "" : ` in ${files}`}`);
-        event(id, "conflict", worktree, files === "" ? outcome.error : files);
-        next = {
-          ...next,
-          output: {
-            ...next.output,
-            merge: {
-              ok: false,
-              conflicts: outcome.conflicts,
-              into: ownerTree.branch,
-            },
-          },
-        };
-      }
+    if (!next.ok || owner === undefined || ownerTree === undefined) return next;
+    if (rules.merge === "never") {
+      unmerged.set(id, "kept for its owner (merge: never)");
+      return next;
     }
-    return next;
+    const outcome = await intoOwner(owner, () =>
+      handOver(
+        rules,
+        worktree,
+        ownerTree,
+        `ork: merge ${id} into ${owner} (run ${runId})`,
+      ),
+    );
+    if (outcome.ok) {
+      merged.add(id);
+      unmerged.delete(id);
+      event(id, "merged", worktree, `into ${nameOf(ownerTree)}`);
+      return next;
+    }
+    const files = outcome.conflicts.join(", ");
+    unmerged.set(id, `merge conflict${files === "" ? "" : ` in ${files}`}`);
+    event(id, "conflict", worktree, files === "" ? outcome.error : files);
+    return {
+      ...next,
+      output: {
+        ...next.output,
+        merge: {
+          ok: false,
+          conflicts: outcome.conflicts,
+          into: nameOf(ownerTree),
+        },
+      },
+    };
   };
 
   const close: Workspace["close"] = async () => {
@@ -267,18 +268,25 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
       if (merged.has(id) && !unmerged.has(id)) {
         try {
           // oxlint-disable-next-line no-await-in-loop -- git takes one lock at a time
-          await removeWorktree(root, worktree.path);
+          await removeWorktree(root, worktree.path, never);
           event(id, "removed", worktree);
           continue;
         } catch {
-          kept.push({ id, ...worktree, reason: "could not be removed" });
+          kept.push({
+            ...keptOf(id, worktree),
+            reason: "could not be removed",
+          });
           continue;
         }
       }
       const reason =
         unmerged.get(id) ??
-        (ownerOf(id) === undefined ? "the run's result" : "not merged");
-      kept.push({ id, ...worktree, reason });
+        (ownerOf(id) === undefined
+          ? never
+            ? "the run's result, uncommitted"
+            : "the run's result"
+          : "not merged");
+      kept.push({ ...keptOf(id, worktree), reason });
     }
     return kept;
   };

@@ -76,6 +76,10 @@ A join outputs `statuses` (the `status` of each input that ran, in edge order),
 - A re-entered **leader resumes** its last session (ADR-019) with only the new
   round's input as the next message, keeping its context and cache. The same
   holds when a leader is delegated to again.
+- `session: resume` or `fresh` on a leader or worker (or its agent) chooses
+  either way ([ADR-033](../decisions/ADR-033-session-resume-on-any-node.md)): a
+  reviewer with `session: resume` checks its own earlier findings in each round
+  ([results.ts](../packages/core/src/run/results.ts), `resumeOf`).
 
 ## Delegation
 

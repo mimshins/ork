@@ -27,6 +27,7 @@ Long specs follow the hub and chunk layout
 | [Runtime: the Claude drivers](./runtime.md)       | Built     | M1b       |
 | [Scheduler: running a workflow](./scheduler.md)   | Partial   | M1c       |
 | [Worktrees: where nodes work](./worktrees.md)     | Built     | M1c       |
+| [Project rules](./project-rules.md)               | Built     | M1e       |
 | [Context, skills and precedence](./context.md)    | Partial   | M1c       |
 | [Messaging, decisions and logs](./messaging.md)   | Built     | M1d       |
 | [Event store: what a run keeps](./event-store.md) | Built     | M1d       |

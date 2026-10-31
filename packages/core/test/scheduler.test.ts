@@ -300,6 +300,41 @@ describe("joins and routers", () => {
 });
 
 describe("limits", () => {
+  it("resumes a node's session on re-entry by its session setting", async () => {
+    const graph = workflow(
+      [
+        "plan: { type: claude.worker }",
+        "lead: { type: claude.leader }",
+        "kept: { type: claude.worker, session: resume }",
+        "check: { type: claude.worker }",
+      ],
+      [
+        "plan -> lead",
+        "lead -> kept",
+        "kept -> check",
+        "{ from: check, to: lead, when: \"status == 'changes_requested'\", maxRounds: 1 }",
+      ],
+    );
+    const resumed: string[] = [];
+    const { executor } = scripted({ check: [changes, pass] });
+    const sessions: NodeExecutor = async context => {
+      resumed.push(`${context.id} ${String(context.resume)}`);
+      return { ...(await executor(context)), sessionId: `${context.id}-s` };
+    };
+    const { result } = await run(graph, allTypes(sessions));
+    expect(result.status).toBe("succeeded");
+    // The leader resumes by default, `kept` by its setting; `check` is fresh.
+    expect(resumed).toEqual([
+      "plan undefined",
+      "lead undefined",
+      "kept undefined",
+      "check undefined",
+      "lead lead-s",
+      "kept kept-s",
+      "check undefined",
+    ]);
+  });
+
   it("stops starting sessions when the run's budget is spent", async () => {
     const graph = workflow(
       ["a: { type: claude.worker }", "b: { type: claude.worker }"],

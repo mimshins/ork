@@ -86,7 +86,14 @@ export type ExecuteContext = {
 
 export type Checkout = {
   path: string;
-  branch: string;
+  /** Absent when the worktree is detached (`commit: never`). */
+  branch?: string;
+  /**
+   * The project's git rules for it: may the session commit, and how its work
+   * reaches its owner.
+   */
+  commit?: "auto" | "never";
+  merge?: "auto" | "patch" | "never";
   /** The node's own worktree, or its owner's that it shares or reads. */
   own: boolean;
   /** The node that owns the worktree. */
@@ -118,7 +125,7 @@ export type Workspace = {
 export type KeptWorktree = {
   id: string;
   path: string;
-  branch: string;
+  branch?: string;
   reason: string;
 };
 
@@ -199,9 +206,18 @@ export type RunEvent =
   | {
       type: "worktree";
       id: string;
-      action: "created" | "committed" | "merged" | "conflict" | "removed";
+      action:
+        | "created"
+        | "synced"
+        | "committed"
+        | "merged"
+        | "conflict"
+        | "removed";
       path: string;
-      branch: string;
+      /** Absent for a detached worktree (`commit: never`). */
+      branch?: string;
+      /** The tree its own work is measured from, for patches (created, synced). */
+      snapshot?: string;
       detail?: string;
     }
   | {

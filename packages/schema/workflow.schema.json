@@ -177,6 +177,70 @@
       },
       "additionalProperties": false
     },
+    "rules": {
+      "description": "Rules for what Ork does on its own (git, permissions); they win over the project's .ork/project.yaml.",
+      "type": "object",
+      "properties": {
+        "git": {
+          "type": "object",
+          "properties": {
+            "commit": {
+              "description": "Default: auto, Ork commits a node's work on its branch. never: Ork runs no git commit; worktrees are detached and work stays uncommitted.",
+              "type": "string",
+              "enum": [
+                "auto",
+                "never"
+              ]
+            },
+            "merge": {
+              "description": "How a passing child's work reaches its owner. auto: a --no-ff merge (needs commits). patch: its changes are applied, uncommitted. never: left in its own worktree. Default: auto, or patch under commit: never.",
+              "type": "string",
+              "enum": [
+                "auto",
+                "patch",
+                "never"
+              ]
+            },
+            "base": {
+              "description": "The commit worktrees without an owner start from, e.g. origin/main. Default: HEAD. Ork never fetches.",
+              "type": "string",
+              "minLength": 1
+            },
+            "branch": {
+              "description": "Branch name template over {run}, {node}, {clone} and {inputs.<name>}. Default: ork/{run}/{node}.",
+              "type": "string",
+              "minLength": 1
+            },
+            "worktrees": {
+              "description": "Worktree folder template, relative to the clone, beside it. Default: ../{clone}-worktrees/ork-{run}-{node}.",
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "permissions": {
+          "description": "Tool rules every Claude node gets on top of its own, e.g. deny: ['Bash(git push *)'].",
+          "type": "object",
+          "properties": {
+            "allow": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "deny": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "agents": {
       "description": "Agents defined in this workflow; they win over the project's and the user's of the same name.",
       "type": "object",
@@ -291,6 +355,14 @@
               }
             },
             "additionalProperties": false
+          },
+          "session": {
+            "description": "When the node runs again (a loop, another delegation): resume its session, or start a fresh one with the new input. Default: resume for a leader, fresh for a worker.",
+            "type": "string",
+            "enum": [
+              "fresh",
+              "resume"
+            ]
           },
           "output": {
             "type": "object",
@@ -463,6 +535,14 @@
                 },
                 "additionalProperties": false
               },
+              "session": {
+                "description": "When the node runs again (a loop, another delegation): resume its session, or start a fresh one with the new input. Default: resume for a leader, fresh for a worker.",
+                "type": "string",
+                "enum": [
+                  "fresh",
+                  "resume"
+                ]
+              },
               "output": {
                 "type": "object",
                 "properties": {
@@ -617,6 +697,14 @@
                 },
                 "additionalProperties": false
               },
+              "session": {
+                "description": "When the node runs again (a loop, another delegation): resume its session, or start a fresh one with the new input. Default: resume for a leader, fresh for a worker.",
+                "type": "string",
+                "enum": [
+                  "fresh",
+                  "resume"
+                ]
+              },
               "output": {
                 "type": "object",
                 "properties": {
@@ -765,6 +853,14 @@
                   }
                 },
                 "additionalProperties": false
+              },
+              "session": {
+                "description": "When the node runs again (a loop, another delegation): resume its session, or start a fresh one with the new input. Default: resume for a leader, fresh for a worker.",
+                "type": "string",
+                "enum": [
+                  "fresh",
+                  "resume"
+                ]
               },
               "output": {
                 "type": "object",

@@ -1,10 +1,11 @@
 /**
  * @file Small helpers for the scheduler's results: pass-through and failure
  *   results, run-summary entries, `node.finished` events, the declared nodes
- *   `run.started` lists, and closing the workspace at the end.
+ *   `run.started` lists, which session a re-run node resumes, and closing the
+ *   workspace at the end.
  */
 
-import type { NodeType } from "@krapht/ork-schema";
+import { isClaudeNode, type Node, type NodeType } from "@krapht/ork-schema";
 
 import type { AgentRef } from "../agents/apply.ts";
 import type { CompiledGraph } from "../graph/types.ts";
@@ -109,3 +110,19 @@ export const closeWorkspace = (
     reasons.push(`cleaning up worktrees: ${String(error)}`);
     return [];
   });
+
+/**
+ * The session a node that runs again continues, when it resumes (ADR-033): by
+ * `session: resume`, the default for a leader; a worker starts fresh unless it
+ * says `resume`.
+ */
+export const resumeOf = (
+  node: Node | undefined,
+  sessionId: string | undefined,
+): string | undefined => {
+  if (node === undefined || !isClaudeNode(node)) return undefined;
+  if (node.type === "claude.subagent") return undefined;
+  const session =
+    node.session ?? (node.type === "claude.leader" ? "resume" : "fresh");
+  return session === "resume" ? sessionId : undefined;
+};

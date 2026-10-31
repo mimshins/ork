@@ -50,8 +50,8 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [016](./ADR-016-scheduler-semantics.md)            | How a workflow runs: activations, edges, dead paths and loops               | Accepted          | waived                                                      |
 | [017](./ADR-017-blocking-delegate.md)              | Leaders delegate with a blocking tool call                                  | Accepted          | waived                                                      |
 | [018](./ADR-018-ork-merges-children.md)            | Ork merges a passing child's branch into its owner's                        | Accepted          | waived                                                      |
-| [019](./ADR-019-leaders-resume-on-reentry.md)      | On a loop re-entry, leaders resume and workers start fresh                  | Accepted          | waived                                                      |
-| [020](./ADR-020-worktrees-beside-the-clone.md)     | Worktrees beside the clone, with the local layer and committed instructions | Accepted          | waived                                                      |
+| [019](./ADR-019-leaders-resume-on-reentry.md)      | On a loop re-entry, leaders resume and workers start fresh                  | Amended by 033    | waived                                                      |
+| [020](./ADR-020-worktrees-beside-the-clone.md)     | Worktrees beside the clone, with the local layer and committed instructions | Amended by 032    | waived                                                      |
 | [021](./ADR-021-built-in-practices.md)             | Built-in practices: caveman and ponytail, on by default                     | Accepted          | waived                                                      |
 | [022](./ADR-022-integration-registry.md)           | Integrations as adapters behind registries                                  | Accepted          | [001](../rfcs/archived/RFC-001-integrations-as-adapters.md) |
 | [023](./ADR-023-context-compiler.md)               | How the context compiler hands layers to Claude Code                        | Accepted          | waived                                                      |
@@ -63,3 +63,5 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [029](./ADR-029-readonly-follows-its-input.md)     | A readonly node with no owner works where its input came from               | Accepted          | waived                                                      |
 | [030](./ADR-030-agents-fill-nodes.md)              | Agents are defined once and fill nodes                                      | Accepted          | waived                                                      |
 | [031](./ADR-031-ork-is-the-origin.md)              | `.ork/` is the origin; tool folders link to it                              | Accepted          | waived                                                      |
+| [032](./ADR-032-project-rules.md)                  | Project rules: what Ork does on its own is the project's choice             | Accepted          | waived                                                      |
+| [033](./ADR-033-session-resume-on-any-node.md)     | Any Claude node can resume its session on re-entry                          | Accepted          | waived                                                      |

@@ -4,8 +4,10 @@ _Part of [The ork CLI](../cli.md)._
 
 ## Worktrees
 
-`ork worktrees` lists and cleans the worktrees and `ork/` branches runs leave;
-see [Worktrees: ork worktrees](../worktrees.md#ork-worktrees).
+`ork worktrees` lists and cleans the worktrees and branches runs recorded
+creating, whatever the project's [rules](../project-rules.md) named them, and
+any `ork/` branch; see
+[Worktrees: ork worktrees](../worktrees.md#ork-worktrees).
 
 ## Agents
 

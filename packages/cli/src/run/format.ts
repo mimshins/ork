@@ -158,7 +158,7 @@ export const formatRunEvent = (
   if (event.type === "edge.taken") return [];
   if (event.type === "worktree") {
     const detail = event.detail === undefined ? "" : ` (${event.detail})`;
-    const line = `${event.action} ${event.branch}${detail}`;
+    const line = `${event.action} ${event.branch ?? event.path}${detail}`;
     return [
       `${tag(event.id)} ${event.action === "conflict" ? style("yellow", `! ${line}`) : style("dim", `⎇ ${line}`)}`,
     ];
@@ -269,7 +269,7 @@ export const formatRunResult = (result: RunResult): string[] => {
   ];
   for (const kept of result.worktrees) {
     lines.push(
-      `  ${kept.id}: ${kept.branch} ${style("dim", `at ${kept.path} (${kept.reason})`)}`,
+      `  ${kept.id}: ${kept.branch ?? "detached"} ${style("dim", `at ${kept.path} (${kept.reason})`)}`,
     );
   }
   for (const reason of result.reasons) lines.push(`  ${style("red", reason)}`);

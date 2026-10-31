@@ -1,6 +1,6 @@
 # ADR-020 — Worktrees beside the clone, with the local layer and committed instructions
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-032](./ADR-032-project-rules.md)
 - **Date:** 2026-10-30
 - **Topic:** engine / worktrees
 - **RFC:** waived — the author chose among the options below directly

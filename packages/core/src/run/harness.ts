@@ -22,11 +22,30 @@ export type HarnessOptions = {
 const CLAIMS_LINE =
   "- Other nodes may change this project at the same time. Before you edit a file or folder, `claim` it (a path from the project root); if someone holds it, work on something else or ask them. `release` what you are done with; Ork releases the rest when you finish.";
 
-/** Tells a session where it works, so a repo's own worktree rules don't apply. */
-export const checkoutInstructions = (checkout: Checkout): string =>
-  checkout.own
-    ? `- You are already in your own git worktree for this task, on branch \`${checkout.branch}\`, created by Ork. Work and commit here. Do not create another worktree, switch branches, or push; Ork merges your branch when you pass.`
-    : `- You work in \`${checkout.owner}\`'s git worktree, on branch \`${checkout.branch}\`, created by Ork. Do not create another worktree, switch branches, or push.`;
+const HANDOFF: Record<NonNullable<Checkout["merge"]>, string> = {
+  auto: "Ork merges your branch when you pass",
+  patch: "Ork applies your changes to your owner's worktree when you pass",
+  never: "your work stays here for your owner or the user",
+};
+
+/**
+ * Tells a session where it works, so a repo's own worktree rules don't apply,
+ * and whether it may commit (the project's `commit` rule).
+ */
+export const checkoutInstructions = (checkout: Checkout): string => {
+  const on =
+    checkout.branch === undefined
+      ? "detached, with no branch"
+      : `on branch \`${checkout.branch}\``;
+  const commit =
+    checkout.commit === "never"
+      ? "Do not commit: this project's rules leave committing to a later step."
+      : "Work and commit here.";
+  const handoff = HANDOFF[checkout.merge ?? "auto"];
+  return checkout.own
+    ? `- You are already in your own git worktree for this task, ${on}, created by Ork. ${commit} Do not create another worktree, switch branches, or push; ${handoff}.`
+    : `- You work in \`${checkout.owner}\`'s git worktree, ${on}, created by Ork. ${checkout.commit === "never" ? "Do not commit. " : ""}Do not create another worktree, switch branches, or push.`;
+};
 
 const name = (id: string, description?: string): string =>
   description === undefined ? `\`${id}\`` : `\`${id}\` (${description})`;

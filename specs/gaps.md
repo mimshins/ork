@@ -89,6 +89,17 @@ carried to the next milestone.
   links out as plain files unless `core.symlinks` is on (developer mode); there
   is no junction or copy fallback.
   ([ADR-031](../decisions/ADR-031-ork-is-the-origin.md))
+- **L14 · Project permissions are `allow` and `deny` only.** Claude Code's `ask`
+  list (prompt before a tool) is left to the project's own
+  `.claude/settings.json`, which a node loads.
+  ([project rules](./project-rules.md))
+- **L15 · A patch applies whole or not at all.** Under `merge: patch`, a child
+  whose changes do not apply cleanly is kept with the conflicting files named;
+  there is no three-way apply with conflict markers.
+  ([ADR-032](../decisions/ADR-032-project-rules.md))
+- **L16 · `git.base` is not fetched.** A base such as `origin/main` is whatever
+  the clone last fetched; Ork never fetches.
+  ([project rules](./project-rules.md))
 
 ## Chores
 

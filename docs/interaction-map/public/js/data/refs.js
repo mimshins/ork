@@ -329,6 +329,18 @@ export const WORKTREES = {
     "packages/core/test/worktree.test.ts",
     "Tests: worktrees in a real repository",
   ),
+  handoff: d(
+    "packages/core/src/worktree/handoff.ts",
+    "Code: opening worktrees and handing work over by the rules",
+  ),
+  patch: d(
+    "packages/core/src/worktree/patch.ts",
+    "Code: work moved as patches, without commits",
+  ),
+  rules: d("packages/core/src/project/rules.ts", "Code: project rules"),
+  rulesTests: d("packages/core/test/rules.test.ts", "Tests: project rules"),
+  rulesSpec: d("specs/project-rules.md", "Spec: project rules"),
+  rulesAdr: d("decisions/ADR-032-project-rules.md", "ADR-032: project rules"),
 };
 
 export const RUNTIME = {

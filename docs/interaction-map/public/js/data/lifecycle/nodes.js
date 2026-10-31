@@ -388,6 +388,7 @@ export const NODES = [
       "Its branch is the builder's `output.branch`, which the push and the pull request use; the approver, readonly with no owner, reads it here too.",
       "The spec the `spec` node wrote in the project root is carried in and committed.",
       "Kept after the run as its result; `ork worktrees clean` removes it when you are done.",
+      "With `commit: never` in the project's rules it is detached and nothing is committed; its path is `output.worktree`.",
     ],
     see: [
       {

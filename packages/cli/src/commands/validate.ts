@@ -1,8 +1,8 @@
 /**
  * @file `ork validate`: loads, parses and compiles workflow files with the
- *   agents they name, checks their skill and context references, and reports
- *   diagnostics compiler-style, with file, line and column. `loadWorkflow` is
- *   shared with `ork run`.
+ *   project's rules (`.ork/project.yaml`) and the agents they name, checks
+ *   their skill and context references, and reports diagnostics compiler-style,
+ *   with file, line and column. `loadWorkflow` is shared with `ork run`.
  */
 
 import { readFileSync } from "node:fs";
@@ -13,6 +13,7 @@ import {
   compileWorkflow,
   contextDiagnostics,
   loadAgents,
+  loadProject,
   projectRootOf,
 } from "@krapht/ork-core";
 import {
@@ -89,9 +90,16 @@ export const loadWorkflow = (
     projectRoot,
     ...(home === undefined ? {} : { home }),
   });
-  const compiled = compileWorkflow(parsed.workflow, { catalog, workflowDir });
+  const loaded = loadProject(projectRoot);
+  const compiled = compileWorkflow(parsed.workflow, {
+    catalog,
+    workflowDir,
+    projectRoot,
+    ...(loaded.project === undefined ? {} : { project: loaded.project }),
+  });
   const { graph } = compiled;
   const diagnostics = [
+    ...loaded.diagnostics,
     ...compiled.diagnostics,
     ...(graph === null
       ? []

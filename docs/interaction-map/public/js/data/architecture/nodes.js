@@ -105,7 +105,7 @@ export const NODES = [
     facts: [
       "Built: `ork init` scaffolds `.ork/` and never overwrites a file; `ork validate` prints schema, graph and skill or context reference diagnostics with file, line and column; `ork doctor` reports your own logins and never prints a token or your email.",
       "Built: `ork run <wf>` runs a whole workflow through the scheduler, and `--node <id>` one Claude node; questions and permission prompts are answered on the terminal.",
-      "Built: `ork worktrees` lists the worktrees and `ork/` branches runs left, and `clean` removes them, asking first.",
+      "Built: `ork worktrees` lists the worktrees and branches runs recorded creating, whatever the project's rules named them, and `clean` removes them, asking first.",
       "Built: `ps`, `logs --follow`, `tree` read runs from the store; `run --detach` runs in the background; `stop` stops a live run from any terminal.",
       "Built: `ork decide` answers open decisions from any terminal; the recommended option is preselected. `ork chat` talks to a node, live or by resuming its session; `ork resume` continues a stopped or crashed run, handing back what finished.",
       "Built: `ork context explain <wf> <node>` shows the resolved layer stack for one node.",
@@ -186,11 +186,19 @@ export const NODES = [
       "Templates and predicates use a small expression language: paths, comparisons, `&&`, `||`, `!`, and `any`, `all`, `count`, `len`, `contains`; no arbitrary JavaScript.",
       "Template references must resolve: declared inputs, existing nodes, known report fields; reading a node that does not run first is a warning.",
       "Entry nodes: no incoming flow edge and no parent.",
+      "The project's rules (`.ork/project.yaml`) go under the workflow first; git templates are checked: known placeholders, `{node}` when a run can make several worktrees.",
     ],
     see: [
       { map: "lifecycle", node: "compiler", label: "The compiler in a run" },
     ],
-    docs: [CORE.compile, CORE.flow, CORE.expr, CORE.tests, DESIGN.format],
+    docs: [
+      CORE.compile,
+      CORE.flow,
+      CORE.expr,
+      CORE.tests,
+      WORKTREES.rules,
+      DESIGN.format,
+    ],
   },
   {
     id: "schema",
@@ -226,7 +234,7 @@ export const NODES = [
     facts: [
       "Built: activations, edges that fire on success unless `when:` says otherwise, dead-path skips, joins, routers, loop rounds, the run budget and concurrency, interrupt.",
       "Built: every state change is a run event; `ork run` stores each in the event store, then prints it.",
-      "Built: ownership. A leader's `delegate` and `spawn_worker` (up to `maxWorkers`) run children in parallel on the slot it lends, and return their reports; a re-entered leader resumes its session.",
+      "Built: ownership. A leader's `delegate` and `spawn_worker` (up to `maxWorkers`) run children in parallel on the slot it lends, and return their reports; a re-entered leader resumes its session, as does any node with `session: resume`.",
       "Built: a loop out of rounds asks you; telling a live owner instead needs the message bus (M1d).",
     ],
     see: [
@@ -321,8 +329,10 @@ export const NODES = [
     status: "built",
     pkg: "core",
     summary:
-      "Gives each node with `isolation: worktree` its own git worktree and branch, beside the clone, based on its owner's branch; commits its leftovers and merges a passing child into its owner.",
+      "Gives each node with `isolation: worktree` its own git worktree and branch, beside the clone, based on its owner's branch; commits its leftovers and merges a passing child into its owner, as the project's git rules say.",
     facts: [
+      "Project rules (`.ork/project.yaml`, a workflow's `rules:`) name branches and worktrees, set the base, and can say `commit: never` (detached worktrees, work handed over as patches) or `merge: never`.",
+      "Never pushes, never takes over a branch its run did not create, and records every branch and worktree it makes.",
       "`shared` works in the owner's worktree (or the project root); `readonly` shares it with write tools denied, and with no owner follows its input's worktree.",
       "Copies `CLAUDE.local.md`, `.claude/settings.local.json` and what `.worktreeinclude` lists; carries upstream artifacts in.",
       "Refuses to start while instructions or skills are uncommitted (`--allow-dirty`).",
@@ -331,7 +341,12 @@ export const NODES = [
     docs: [
       WORKTREES.manager,
       WORKTREES.workspace,
+      WORKTREES.handoff,
+      WORKTREES.patch,
       WORKTREES.tests,
+      WORKTREES.rulesTests,
+      WORKTREES.rulesSpec,
+      WORKTREES.rulesAdr,
       DESIGN.worktrees,
     ],
   },
@@ -466,7 +481,7 @@ export const NODES = [
     summary:
       "The checkouts writing nodes work in. Each is a `git worktree` on its own branch, so parallel workers never edit the same files.",
     facts: [
-      "In `../<clone>-worktrees/ork-<run>-<node>`, on `ork/<run>/<node>`: beside the clone, so a session loads only its own branch's `CLAUDE.md`.",
+      "By default in `../<clone>-worktrees/ork-<run>-<node>`, on `ork/<run>/<node>`: beside the clone, so a session loads only its own branch's `CLAUDE.md`. A project's rules can rename both, or leave them detached.",
       "Merged children are removed when the run finishes; the result stays for you, listed by `ork worktrees`.",
     ],
     docs: [WORKTREES.list, WORKTREES.command, DESIGN.worktrees],
