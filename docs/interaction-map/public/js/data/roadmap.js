@@ -428,15 +428,21 @@ export const MILESTONES = [
       {
         id: "link",
         title: "`.ork/` as the origin, tool folders linked",
-        status: "next",
+        status: "done",
         detail:
-          "`ork link` points `.claude/`, `.opencode/`, `.agents/` and `.ai/` folders at `.ork/agents` and `.ork/skills`, one adapter per tool.",
-        docs: ["specs/context.md"],
+          "`ork link` points `.claude/`, `.opencode/`, `.agents/` and `.ai/` folders at `.ork/agents` and `.ork/skills`, one adapter per tool; it only creates, `ork init` links the tools in use, and `ork doctor` reports the links.",
+        commits: ["5c67061"],
+        date: "2026-10-31",
+        docs: [
+          "specs/cli/worktrees-agents-context-and-doctor.md#linking-tool-folders",
+          "decisions/ADR-031-ork-is-the-origin.md",
+          "docs/guides/agents.md#linking-your-tools-to-ork",
+        ],
       },
       {
         id: "rules",
         title: "Project rules",
-        status: "planned",
+        status: "next",
         detail:
           "`project.yaml`: `commit: never`, `merge: patch`, branch, worktree and base templates, permissions, defaults; a workflow and a node override them. `session: resume` on any Claude node.",
         docs: ["specs/worktrees.md"],
