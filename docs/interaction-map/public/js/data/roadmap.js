@@ -471,15 +471,21 @@ export const MILESTONES = [
       {
         id: "register",
         title: "Register a project from outside the repo",
-        status: "next",
+        status: "done",
         detail:
-          "`ork register` and `ork projects`: workflows, rules and runs in `~/.ork/projects/<id>/`, nothing written into the repository.",
-        docs: ["specs/cli.md"],
+          "`ork register` and `ork projects`: workflows, rules, runs, lessons and agents in `~/.ork/projects/<id>/`, nothing written into the repository; an attached workflow reads the repository as if it were in `.ork/workflows/`. `ork init` records the in-repo project.",
+        commits: ["41e2167"],
+        date: "2026-10-31",
+        docs: [
+          "specs/projects.md",
+          "decisions/ADR-035-projects-in-repo-or-attached.md",
+          "docs/guides/projects.md",
+        ],
       },
       {
         id: "migrate",
         title: "`ork migrate`",
-        status: "planned",
+        status: "next",
         detail:
           "Moves a registered project into `.ork/`; `--agents` brings its agents and skills under `.ork/` and links the tool folders; `--from-agents` drafts a workflow.",
         docs: ["specs/cli.md"],
@@ -556,6 +562,7 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "14b64af",
   "94cc3d0",
   "9785a0b",
   "84bad82",
