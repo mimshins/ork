@@ -442,15 +442,22 @@ export const MILESTONES = [
       {
         id: "rules",
         title: "Project rules",
-        status: "next",
+        status: "done",
         detail:
-          "`project.yaml`: `commit: never`, `merge: patch`, branch, worktree and base templates, permissions, defaults; a workflow and a node override them. `session: resume` on any Claude node.",
-        docs: ["specs/worktrees.md"],
+          "`.ork/project.yaml` and a workflow's `rules:`: `commit: never` (detached worktrees, work handed over as patches), `merge: patch | never`, branch, worktree and base templates, permissions, defaults and context; `ork worktrees` reads what runs recorded. `session: resume` on any Claude node.",
+        commits: ["00a2597"],
+        date: "2026-10-31",
+        docs: [
+          "specs/project-rules.md",
+          "decisions/ADR-032-project-rules.md",
+          "decisions/ADR-033-session-resume-on-any-node.md",
+          "docs/guides/project-rules.md",
+        ],
       },
       {
         id: "tool-git",
         title: "`tool.git` node",
-        status: "planned",
+        status: "next",
         detail:
           "The user's own `git` as a node with an allow list, so a commit can be an explicit step after the gates.",
         docs: ["specs/workflow-format.md"],
@@ -558,6 +565,7 @@ export const OFF_ROADMAP = [
   "4df0480",
   "95169dc",
   "94a1c6e",
+  "6b08b98",
 ];
 
 /** The day the roadmap was last brought up to date. */
