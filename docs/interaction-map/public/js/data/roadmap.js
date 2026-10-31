@@ -457,15 +457,21 @@ export const MILESTONES = [
       {
         id: "tool-git",
         title: "`tool.git` node",
-        status: "next",
+        status: "done",
         detail:
-          "The user's own `git` as a node with an allow list, so a commit can be an explicit step after the gates.",
-        docs: ["specs/workflow-format.md"],
+          "The user's own `git` as a node, so a commit is an explicit step after the gates: `add` and `commit` without an `allow`, `push` only when listed; its output has the staged changes and `head` for a gate to show. Clean keeps a commit on no branch.",
+        commits: ["aff72f8"],
+        date: "2026-10-31",
+        docs: [
+          "specs/workflow-format.md",
+          "decisions/ADR-034-tool-git.md",
+          "docs/guides/project-rules.md#committing-as-a-step",
+        ],
       },
       {
         id: "register",
         title: "Register a project from outside the repo",
-        status: "planned",
+        status: "next",
         detail:
           "`ork register` and `ork projects`: workflows, rules and runs in `~/.ork/projects/<id>/`, nothing written into the repository.",
         docs: ["specs/cli.md"],
@@ -550,6 +556,7 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "94cc3d0",
   "9785a0b",
   "84bad82",
   "0fccdc7",
