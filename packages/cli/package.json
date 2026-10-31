@@ -54,6 +54,6 @@
     "@krapht/ork-nodes": "workspace:*",
     "@krapht/ork-runtime-claude": "workspace:*",
     "@krapht/ork-schema": "workspace:*",
-    "tsdown": "0.23.1"
+    "tsdown": "0.23.2"
   }
 }
