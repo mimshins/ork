@@ -399,3 +399,41 @@ export const RUNTIME = {
     "Tests: both drivers, against a stand-in claude",
   ),
 };
+
+/** Where a node sits in a workflow, and what that means for its run. */
+export const ROLES = {
+  rules: d("specs/graph-compiler.md#rules", "Spec: entries, ownership, loops"),
+  diagnostics: d(
+    "specs/graph-compiler.md#diagnostics",
+    "Spec: what `ork validate` reports",
+  ),
+  activations: d(
+    "specs/scheduler.md#activations",
+    "Spec: activations and dead paths",
+  ),
+  edges: d("specs/scheduler.md#edges", "Spec: when an edge is taken"),
+  control: d("specs/scheduler.md#control-nodes", "Spec: split, router, join"),
+  loops: d("specs/scheduler.md#loops", "Spec: loops and their bound"),
+  delegation: d("specs/scheduler.md#delegation", "Spec: delegation"),
+  where: d(
+    "specs/worktrees.md#where-each-node-works",
+    "Spec: where each node works",
+  ),
+  afterRun: d("specs/worktrees.md#after-the-run", "Spec: what a run leaves"),
+  upstream: d(
+    "packages/core/src/worktree/upstream.ts",
+    "Code: where a readonly node works",
+  ),
+  compileTests: d(
+    "packages/core/test/compile.test.ts",
+    "Tests: entries, trees, unreachable nodes",
+  ),
+  worktreeTests: d(
+    "packages/core/test/worktree.test.ts",
+    "Tests: worktrees, merges, readonly nodes",
+  ),
+  subagent: d(
+    "docs/guides/writing-workflows.md#claude-nodes",
+    "Guide: Claude nodes, sub-agents",
+  ),
+};

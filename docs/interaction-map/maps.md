@@ -8,6 +8,7 @@ two cards with `see`.
 | -------------- | ----------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `architecture` | Architecture            | What are Ork's parts, and who talks to whom when a workflow runs? | People · CLI and UI · Ork engine · Your machine · Claude runtime · Model providers |
 | `lifecycle`    | Run lifecycle           | What happens, step by step, when you run a workflow?              | You · Ork engine · the run graph · Repo and GitHub                                 |
+| `roles`        | Node roles              | Where can a node sit in a workflow, and when does it run?         | Ork engine · In the flow · In the tree · What a run leaves                         |
 | `context`      | Context and skills      | What does one node's session see, where from, and in what order?  | Layers · Context compiler · Session spec · The session and after                   |
 | `messaging`    | Messaging and decisions | How do nodes talk to each other and to you?                       | You · CLI and UI · Ork engine · Runtime · Node sessions                            |
 | `feedback`     | Feedback loop           | How does a run's friction become a fix, a lesson or a report?     | You · CLI and UI · Ork engine · Your machine · Claude runtime · GitHub             |
@@ -30,6 +31,17 @@ The `software-factory` example laid out as its run graph, with the engine pieces
 a run passes through on the left and the builder's worktree and GitHub on the
 right. Edges inside the graph are the example's flow edges. Journeys: the happy
 path, the bounded review loop and its escalation, and the human gate.
+
+### `roles`
+
+Each card is a role a node can take, not one node: in the flow (entry, middle
+node, leaf, lone node, router, join, loop target, gate, skipped node,
+unreachable node, readonly reader) and in the ownership tree (leader, ownership
+root, owned child, child with edges, spawned worker, sub-agent, idle child),
+with the compiler, scheduler and delegation that decide when each runs, and the
+summary, kept worktrees and merged children a run leaves. Its facts say how to
+write a node into the role. Journeys: from the entries to the leaves; a dead
+path, a loop and a gate; a leader and its children; orphans and what is not one.
 
 ### `context`
 

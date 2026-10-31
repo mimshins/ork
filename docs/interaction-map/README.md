@@ -7,6 +7,7 @@ build as it goes. Pick one with the map switcher (`M`):
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | **Architecture**            | You, the CLI, server and UI, the engine, the files and CLIs on your machine, the Claude runtime and the model providers. |
 | **Run lifecycle**           | One run of the `software-factory` example, from `ork run` to a merge, a review loop, or a decision.                      |
+| **Node roles**              | Where a node can sit (entry, leaf, lone, skipped, unreachable, owned child, root, …), and when each runs.                |
 | **Context and skills**      | The five layers and their precedence, and how one node's session is compiled.                                            |
 | **Messaging and decisions** | How nodes message each other and you, and how every question reaches one inbox.                                          |
 | **Feedback loop**           | How a run's friction is captured, grouped, and turned into fixes, lessons, or a post to Ork's Discussions (planned).     |

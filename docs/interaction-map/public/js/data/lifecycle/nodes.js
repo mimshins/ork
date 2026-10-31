@@ -155,6 +155,7 @@ export const NODES = [
       "`ork resume` runs the workflow again under the same id: what finished is handed back from the run's events, and only the rest runs.",
     ],
     see: [
+      { map: "roles", node: "scheduler", label: "When each node runs" },
       {
         map: "architecture",
         node: "scheduler",
@@ -251,6 +252,7 @@ export const NODES = [
       "Built: on a re-entry it resumes its session, and only the reviews are new.",
       "Owns `security`, `ux` and `code`: it can also `delegate` to them during its session and gets their reports back.",
     ],
+    see: [{ map: "roles", node: "leader", label: "A leader's role" }],
     docs: [EXAMPLE, DESIGN.concepts],
   },
   {
@@ -268,6 +270,7 @@ export const NODES = [
       "`parent: builder`.",
       "May message `code` over the declared channel (with the message bus).",
     ],
+    see: [{ map: "roles", node: "child", label: "An owned child's role" }],
     docs: [EXAMPLE],
   },
   {
@@ -316,6 +319,7 @@ export const NODES = [
       "`any(statuses, 'changes_requested')` loops back, at most 2 rounds.",
       "`all(statuses, 'pass')` goes on to the approver.",
     ],
+    see: [{ map: "roles", node: "join", label: "A join's role" }],
     docs: [EXAMPLE, ENGINE.routing, SCHEMA.nodes],
   },
   {

@@ -24,15 +24,16 @@ To read a change: `git log -p <synced>..HEAD -- <path>`, or `git show <commit>`.
 
 ## 2. Decide which maps each change touches
 
-| A change to…                                                       | Touches                                   |
-| ------------------------------------------------------------------ | ----------------------------------------- |
-| a package's public behaviour, a new package, the runtime drivers   | `architecture`                            |
-| the scheduler, edges, joins, loops, escalation, tool or gate nodes | `lifecycle` (and `architecture`)          |
-| the workflow file format or `examples/software-factory.ork.yaml`   | `lifecycle` (its nodes quote the example) |
-| layers, precedence, `AGENTS.md`, the prompt order, limits          | `context`                                 |
-| the bus, addressing, decisions, permissions, chat, Ork's MCP tools | `messaging`                               |
-| feedback capture, triage, fixes, lessons, publishing               | `feedback` (and `messaging`, `context`)   |
-| `docs/design.md` headings                                          | every map (anchors; the check finds them) |
+| A change to…                                                        | Touches                                   |
+| ------------------------------------------------------------------- | ----------------------------------------- |
+| a package's public behaviour, a new package, the runtime drivers    | `architecture`                            |
+| the scheduler, edges, joins, loops, escalation, tool or gate nodes  | `lifecycle`, `roles` (and `architecture`) |
+| entries, ownership, delegation, unreachable nodes, what a run keeps | `roles`                                   |
+| the workflow file format or `examples/software-factory.ork.yaml`    | `lifecycle` (its nodes quote the example) |
+| layers, precedence, `AGENTS.md`, the prompt order, limits           | `context`                                 |
+| the bus, addressing, decisions, permissions, chat, Ork's MCP tools  | `messaging`                               |
+| feedback capture, triage, fixes, lessons, publishing                | `feedback` (and `messaging`, `context`)   |
+| `docs/design.md` headings                                           | every map (anchors; the check finds them) |
 
 ## 3. Update the data
 

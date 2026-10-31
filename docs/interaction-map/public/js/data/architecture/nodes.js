@@ -196,6 +196,7 @@ export const NODES = [
       "The project's rules (`.ork/project.yaml`) go under the workflow first; git templates are checked: known placeholders, `{node}` when a run can make several worktrees.",
     ],
     see: [
+      { map: "roles", node: "compiler", label: "Entries, roots and orphans" },
       { map: "lifecycle", node: "compiler", label: "The compiler in a run" },
     ],
     docs: [
