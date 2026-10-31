@@ -485,9 +485,11 @@ export const MILESTONES = [
       {
         id: "migrate",
         title: "`ork migrate`",
-        status: "next",
+        status: "done",
         detail:
           "Moves an attached project into `.ork/` with its runs; `--agents` moves the agents and skills (se-backend's `.ai/`) into `.ork/` and relinks every tool folder; a checked plan, asked first, nothing committed. `--from-agents` drafts a gated workflow: the agents in order, a reviewer loop, a gated commit under `commit: never`.",
+        commits: ["be69fb8"],
+        date: "2026-10-31",
         docs: [
           "specs/projects.md#migrating",
           "decisions/ADR-036-ork-migrate.md",
@@ -497,7 +499,7 @@ export const MILESTONES = [
       {
         id: "se-backend",
         title: "A real project end to end",
-        status: "planned",
+        status: "next",
         detail:
           "se-backend registered with `commit: never` and its own branch names, its process drafted from its agents and run with the gates kept.",
         docs: ["specs/gaps.md"],
