@@ -4,10 +4,9 @@
  */
 
 export * from "./commands/control.ts";
-export * from "./commands/doctor.ts";
-export * from "./commands/init.ts";
 export * from "./commands/run.ts";
 export * from "./commands/runs.ts";
+export * from "./commands/setup.ts";
 export * from "./commands/validate.ts";
 export * from "./commands/worktrees.ts";
 export { main } from "./main.ts";

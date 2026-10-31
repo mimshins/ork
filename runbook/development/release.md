@@ -32,9 +32,13 @@ without one
 1. A pull request with a changeset is merged into `main`.
 2. The [Release workflow](../../.github/workflows/release.yml) runs
    `pnpm check`, then `changesets/action`, which opens or updates the **"chore:
-   release"** pull request. That pull request runs `changeset version`: it bumps
-   `packages/cli/package.json`, writes `packages/cli/CHANGELOG.md`, and deletes
-   the consumed changesets.
+   release"** pull request. That pull request runs `pnpm changesets:version`:
+   `changeset version` bumps `packages/cli/package.json`, writes
+   `packages/cli/CHANGELOG.md` and deletes the consumed changesets, then
+   [build-info.ts](../../tools/release/build-info.ts) binds the new version into
+   `packages/cli/src/__build_info__.ts`, which `ork --version` and feedback
+   read. `pnpm build` binds it again, and a test fails when the file and
+   `package.json` disagree.
 3. A maintainer reviews and merges the release pull request.
 4. The workflow runs again with no changesets left and publishes:
    `pnpm run release` builds the bundle and runs `changeset publish`, which

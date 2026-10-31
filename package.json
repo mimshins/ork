@@ -19,7 +19,7 @@
     "changesets:create": "changeset add",
     "changesets:empty": "changeset add --empty",
     "changesets:status": "node tools/release/check-changeset.ts",
-    "changesets:version": "changeset version",
+    "changesets:version": "changeset version && node tools/release/build-info.ts",
     "release": "pnpm run build && changeset publish"
   },
   "engines": {

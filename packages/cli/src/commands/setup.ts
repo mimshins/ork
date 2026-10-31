@@ -1,14 +1,19 @@
 /**
- * @file `ork init`: scaffolds `.ork/` in a project with a starter workflow and
- *   the `.gitignore` entry for run state, never overwriting a file.
+ * @file Setting up: `ork init` scaffolds `.ork/` in a project with a starter
+ *   workflow and the `.gitignore` entry for run state, never overwriting a
+ *   file; `ork doctor` prints the environment checks (Node, git, and the user's
+ *   own claude, gh and aws logins) and fails when no Claude driver can run. Ork
+ *   stores no credentials.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import type { CheckResult } from "@krapht/ork-integrations";
 import { serializeWorkflow, type Workflow } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
+import { exec, runChecks } from "../doctor/checks.ts";
 import { style, write } from "../output.ts";
 import { WORKFLOW_DIR, WORKFLOW_SUFFIX } from "../workflows.ts";
 
@@ -90,5 +95,43 @@ export const init = defineCommand({
     write(
       `\nNext: edit ${WORKFLOW_DIR}/, then run ${style("bold", "ork validate")}.`,
     );
+  },
+});
+
+const MARK: Record<CheckResult["status"], string> = {
+  ok: style("green", "✓"),
+  warn: style("yellow", "!"),
+  fail: style("red", "✗"),
+  skip: style("dim", "-"),
+};
+
+export const formatCheck = (result: CheckResult): string[] => {
+  const line = `${MARK[result.status]} ${result.name.padEnd(20)} ${result.detail}`;
+  return result.hint === undefined
+    ? [line]
+    : [line, `  ${style("dim", result.hint)}`];
+};
+
+export const doctor = defineCommand({
+  meta: {
+    name: "doctor",
+    description:
+      "Check Node, git, and your own claude, gh, and aws logins (Ork stores no credentials)",
+  },
+  run: async () => {
+    const { results, ok } = await runChecks(
+      exec,
+      process.env,
+      process.versions.node,
+    );
+    for (const result of results) {
+      for (const line of formatCheck(result)) write(line);
+    }
+    if (!ok) {
+      write(
+        `\n${style("red", "Not ready:")} Ork needs Node, git, and at least one Claude driver.`,
+      );
+      process.exitCode = 1;
+    }
   },
 });

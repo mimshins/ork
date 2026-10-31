@@ -74,7 +74,7 @@ export const CORE = {
 
 export const CLI = {
   validate: d("packages/cli/src/commands/validate.ts", "Code: `ork validate`"),
-  init: d("packages/cli/src/commands/init.ts", "Code: `ork init`"),
+  init: d("packages/cli/src/commands/setup.ts", "Code: `ork init`"),
   doctor: d("packages/cli/src/doctor/checks.ts", "Code: `ork doctor`'s checks"),
   tests: d("packages/cli/test/cli.test.ts", "Tests: init and validate"),
   run: d("packages/cli/src/commands/run.ts", "Code: the `ork run` command"),
