@@ -499,10 +499,15 @@ export const MILESTONES = [
       {
         id: "se-backend",
         title: "A real project end to end",
-        status: "next",
+        status: "done",
         detail:
-          "se-backend registered with `commit: never` and its own branch names, its process drafted from its agents and run with the gates kept.",
-        docs: ["specs/gaps.md"],
+          "se-backend (a local clone) registered from outside with `commit: never`, its `<type>/<slug>` worktrees and `origin/main`; its process drafted from its agents and run on haiku with every gate answered through `ork decide`, committing on the new branch for $0.03. It showed a workflow's branch missing from `ork worktrees` (fixed) and agents diverging in separate worktrees (L21).",
+        commits: ["79147f2"],
+        date: "2026-10-31",
+        docs: [
+          "docs/guides/projects.md#a-worked-example-a-project-with-its-own-process",
+          "specs/gaps.md",
+        ],
       },
     ],
   },
