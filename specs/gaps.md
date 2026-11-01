@@ -130,9 +130,6 @@ carried to the next milestone.
 - **C2 · Release pull requests run no CI.** Pull requests opened with the
   built-in `GITHUB_TOKEN` trigger no workflows; the release workflow's full
   check still gates publishing. ([release](../runbook/development/release.md))
-- **C3 · The interaction map is due a full resync.** Slices since its last sync
-  were reviewed only where they touched the map, and its header badge still
-  shows the old mark. ([sync](../docs/interaction-map/sync.md))
 - **C5 · The examples have not run on the SDK driver.** Both ran end to end on
   the CLI driver (2026-10-31); the SDK pass needs `ANTHROPIC_API_KEY` on the
   machine that runs it. ([examples](../docs/guides/examples.md))

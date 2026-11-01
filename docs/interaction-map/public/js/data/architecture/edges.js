@@ -30,7 +30,6 @@ export const EDGES = [
     kind: "human",
     label: "runs `ork …`",
     detail: "You validate, run, watch and answer from the terminal.",
-    status: "specified",
     docs: [DESIGN.cli],
   },
   {
@@ -219,7 +218,6 @@ export const EDGES = [
     label: "opened · answered",
     detail:
       "Every decision is logged when it opens and when it is answered or times out.",
-    status: "specified",
     docs: [DESIGN.messaging],
   },
   {
@@ -379,7 +377,6 @@ export const EDGES = [
     label: "ask_user · permission",
     detail:
       "Opens a decision and holds the tool call open until it is answered, so the session waits.",
-    status: "specified",
     docs: [DESIGN.messaging],
   },
   {
@@ -427,7 +424,6 @@ export const EDGES = [
     label: "model calls",
     detail:
       "With your API key, cloud provider or `claude` login. Ork never sees the credential.",
-    status: "specified",
     docs: [README.accounts],
   },
 ];

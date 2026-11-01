@@ -64,7 +64,7 @@ export const EDGES = [
     to: "events",
     kind: "event",
     label: "every step",
-    detail: "Starts, reports, routing, rounds and usage; decisions in M1d.",
+    detail: "Starts, reports, routing, rounds, usage, messages and decisions.",
     status: "built",
     docs: [DESIGN.eventStore, STORE.recorder],
   },
@@ -121,7 +121,6 @@ export const EDGES = [
     label: "`messages: between`",
     detail:
       "The only sibling channel the example declares; without it the bus would refuse their messages.",
-    status: "specified",
     both: true,
     via: [
       [660, 530],

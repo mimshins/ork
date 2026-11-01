@@ -243,7 +243,8 @@ export const NODES = [
       "Built: activations, edges that fire on success unless `when:` says otherwise, dead-path skips, joins, routers, loop rounds, the run budget and concurrency, interrupt.",
       "Built: every state change is a run event; `ork run` stores each in the event store, then prints it.",
       "Built: ownership. A leader's `delegate` and `spawn_worker` (up to `maxWorkers`) run children in parallel on the slot it lends, and return their reports; a re-entered leader resumes its session, as does any node with `session: resume`.",
-      "Built: a loop out of rounds asks you; telling a live owner instead needs the message bus (M1d).",
+      "Built: a loop out of rounds asks its live owner over the message bus, else you.",
+      "Not built: a `claude.subagent` in its owner's session (gap G1).",
     ],
     see: [
       { map: "lifecycle", node: "scheduler", label: "The scheduler in a run" },
@@ -394,7 +395,7 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 960,
-    status: "partial",
+    status: "built",
     pkg: "core",
     src: "packages/core/src/store/sqlite.ts",
     summary:
@@ -403,7 +404,8 @@ export const NODES = [
       "Built: each run event gets a sequence number and a time, with secrets masked, before the terminal prints it.",
       "Built: `ork ps`, `ork logs [--follow]` and `ork tree` read it from any terminal; a run whose process died reads as `crashed`.",
       "Built: registered projects (in-repo or attached) are a table beside the runs.",
-      "Specified: decisions, messages and commands from other processes (M1d); streamed to the UI over SSE (M2).",
+      "Built: decisions, messages and commands from other processes (`ork decide`, `ork stop`, `ork chat`).",
+      "Planned: streamed to the UI over SSE by the local server (M2).",
       "Usage comes from each session's final result, so sub-agent tokens count.",
     ],
     see: [

@@ -90,7 +90,7 @@ export const NODES = [
     zone: "engine",
     x: 320,
     y: 120,
-    status: "partial",
+    status: "built",
     pkg: "cli",
     src: "packages/cli/src/commands/run.ts",
     summary:
@@ -142,7 +142,7 @@ export const NODES = [
     zone: "engine",
     x: 320,
     y: 420,
-    status: "partial",
+    status: "built",
     pkg: "core",
     summary:
       "Starts nodes when their inputs are ready, evaluates each outgoing edge's `when:` on the finished node's output, and counts how often a loop edge has been taken.",
@@ -242,7 +242,7 @@ export const NODES = [
     zone: "graph",
     x: 860,
     y: 250,
-    status: "partial",
+    status: "built",
     pkg: null,
     summary:
       "Implements the spec on its own branch and owns the three reviewers. As a leader its session lives across review rounds, so it keeps what it learned.",
@@ -262,13 +262,13 @@ export const NODES = [
     zone: "graph",
     x: 600,
     y: 420,
-    status: "partial",
+    status: "built",
     pkg: null,
     summary:
       "Reviews the builder's branch for security issues, in a fresh session each round.",
     facts: [
       "`parent: builder`.",
-      "May message `code` over the declared channel (with the message bus).",
+      "May message `code` over the declared channel.",
     ],
     see: [{ map: "roles", node: "child", label: "An owned child's role" }],
     docs: [EXAMPLE],
@@ -294,12 +294,12 @@ export const NODES = [
     zone: "graph",
     x: 1120,
     y: 420,
-    status: "partial",
+    status: "built",
     pkg: null,
     summary: "Reviews the builder's branch for code quality.",
     facts: [
       "`parent: builder`.",
-      "May message `security` over the declared channel (with the message bus).",
+      "May message `security` over the declared channel.",
     ],
     docs: [EXAMPLE],
   },

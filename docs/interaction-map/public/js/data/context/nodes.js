@@ -5,7 +5,14 @@
  *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
  */
 
-import { CONTEXT, DESIGN, PRACTICES, RUNTIME, SCHEMA } from "../refs.js";
+import {
+  CONTEXT,
+  DESIGN,
+  NODE_TYPES,
+  PRACTICES,
+  RUNTIME,
+  SCHEMA,
+} from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -349,7 +356,7 @@ export const NODES = [
       "The brief, sent as the session's first user message, after the cached prefix.",
     facts: [
       "A resumed leader gets only what is new: the round's input, or its new task.",
-      "Later messages from the bus (milestone 1d) will arrive between turns.",
+      "Later messages from the bus arrive between turns, as a notice to read the inbox.",
     ],
     docs: [RUNTIME.plan, DESIGN.context],
   },
@@ -435,11 +442,15 @@ export const NODES = [
     zone: "session",
     x: 1160,
     y: 840,
-    status: "specified",
+    status: "partial",
     pkg: null,
     summary:
       "Where outputs over a size threshold go. Other nodes get a path and read the file only if they need it.",
-    facts: ["Keeps big outputs out of every downstream prompt."],
-    docs: [DESIGN.context],
+    facts: [
+      "Keeps big outputs out of every downstream prompt.",
+      "Built for tool nodes: long output is cut, and the full text is kept in the run's folder.",
+      "Not built: a Claude report's big outputs are not moved out yet.",
+    ],
+    docs: [NODE_TYPES.tools, DESIGN.context],
   },
 ];

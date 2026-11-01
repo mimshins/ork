@@ -71,7 +71,6 @@ export const JOURNEYS = [
         title: "Two reviewers compare notes",
         detail:
           "Over their declared channel; the bus delivers each message between the receiver's turns.",
-        status: "specified",
         docs: [DESIGN.messaging],
       },
       {
@@ -149,7 +148,6 @@ export const JOURNEYS = [
         title: "You are asked what to do",
         detail:
           "A decision with the reviews' summaries as context and options such as another round, stop, or go on to the approver.",
-        status: "partial",
         docs: [DESIGN.messaging],
       },
       {
@@ -158,7 +156,6 @@ export const JOURNEYS = [
         title: "You answer",
         detail:
           "The run continues the way you chose, and the answer is logged.",
-        status: "partial",
       },
     ],
   },

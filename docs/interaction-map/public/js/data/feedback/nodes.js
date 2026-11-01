@@ -7,7 +7,7 @@
  *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
  */
 
-import { CONTEXT, DESIGN, FEEDBACK, STORE } from "../refs.js";
+import { CONTEXT, CONTROL, DESIGN, FEEDBACK, STORE } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -260,12 +260,12 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 720,
-    status: "specified",
+    status: "built",
     pkg: "core",
     summary:
       "The same queue every question goes through. A proposed fix and the exact text of a post wait here for you.",
     facts: [
-      "The queue is milestone 1d; its feedback decisions are milestone 2.",
+      "Built: the queue itself (milestone 1d); its feedback decisions are milestone 2.",
     ],
     see: [
       { map: "messaging", node: "decisions", label: "Decisions in detail" },
@@ -275,7 +275,7 @@ export const NODES = [
         label: "The decision queue",
       },
     ],
-    docs: [DESIGN.messaging, DESIGN.feedback],
+    docs: [CONTROL.queue, DESIGN.messaging, DESIGN.feedback],
   },
   {
     id: "publish",
@@ -322,13 +322,17 @@ export const NODES = [
     zone: "machine",
     x: 1160,
     y: 600,
-    status: "planned",
+    status: "partial",
     pkg: null,
     summary:
       "The accepted lessons of one workflow, in a committed file you can review, edit and version with git.",
-    facts: ["Only lessons you accepted are in it.", "Milestone 2."],
+    facts: [
+      "Only lessons you accepted are in it.",
+      "Built: read into the workflow layer when the file exists.",
+      "Planned: writing it from accepted items (milestone 2).",
+    ],
     see: [{ map: "context", node: "workflow", label: "The workflow layer" }],
-    docs: [DESIGN.feedback, DESIGN.context],
+    docs: [CONTEXT.files, DESIGN.feedback, DESIGN.context],
   },
   {
     id: "repoFiles",

@@ -111,7 +111,6 @@ export const JOURNEYS = [
         title: "The model works through the task",
         detail:
           "Turn by turn, with tool calls in the worktree; the cached prefix keeps repeated context cheap.",
-        status: "specified",
       },
       {
         from: "session",
