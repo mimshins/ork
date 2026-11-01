@@ -1,6 +1,6 @@
 {
   "name": "@krapht/ork",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Orchestrate Claude agents on your machine: hierarchical, serializable workflows with a CLI and a localhost UI.",
   "keywords": [
     "claude",
