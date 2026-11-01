@@ -19,7 +19,8 @@ with a JSONL copy per run, without choosing a driver.
 
 1. **`node:sqlite`**, built into Node 24.20 (SQLite 3.53, no warning): no new
    dependency, no native build, and it is inside a Node single-executable binary
-   ([RFC-002](../rfcs/active/RFC-002-standalone-binaries-and-installer.md)).
+   ([RFC-002](../rfcs/archived/RFC-002-standalone-binaries-and-installer.md),
+   since rejected).
 2. **One database for every project**, `~/.ork/state.db`, in WAL mode; the run's
    process is its only writer. Each run also writes
    `.ork/runs/<run>/events.jsonl` in its project.

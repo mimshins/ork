@@ -268,20 +268,11 @@ export const MILESTONES = [
         docs: ["assets/logo/README.md"],
       },
       {
-        id: "installer",
-        title: "Standalone binaries and installer",
-        status: "planned",
-        detail:
-          "macOS binaries on each release, `curl -fsSL …/install.sh | sh` to install them with no Node, and `ork upgrade`. RFC-002 accepted as written (Node SEA, ad-hoc signing); a spike settles its open questions first.",
-        commits: ["eb664c7"],
-        docs: ["rfcs/active/RFC-002-standalone-binaries-and-installer.md"],
-      },
-      {
         id: "first-release",
         title: "First npm release",
         status: "waiting",
         detail:
-          "The release pull request collects the changesets; the author holds it to ship npm and the binaries together as 0.1.0.",
+          "The release pull request collects the changesets; it waits until most of the gaps register is fixed or closed.",
         docs: ["runbook/development/release.md"],
       },
     ],
@@ -573,6 +564,8 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "eb664c7",
+  "63f28d8",
   "8f3d063",
   "da4cc49",
   "60420b0",

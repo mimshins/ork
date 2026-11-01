@@ -1,7 +1,7 @@
 # RFC-002 — Standalone binaries and a one-line installer
 
-- **Status:** Accepted (2026-11-01, as written; its open questions are settled
-  in a spike before building)
+- **Status:** Rejected (2026-11-01: dropped for now by the author; npm is the
+  only way to install)
 - **Date:** 2026-10-30
 - **Supersedes:** —
 - **Superseded by:** —

@@ -72,11 +72,6 @@ supports:
 npm install --global @krapht/ork
 ```
 
-A one-line installer for macOS with standalone binaries that need no Node
-(`curl -fsSL …/install.sh | sh`, then `ork upgrade` to update) is proposed in
-[RFC-002](../../rfcs/active/RFC-002-standalone-binaries-and-installer.md). It is
-not built yet.
-
 ## Your platform
 
 ### macOS
