@@ -199,7 +199,7 @@ export const NODES = [
     summary:
       "A node with `agent: <name>` takes that agent's settings where it sets none, and its role as a section of the system prompt. Agents are filled in when the workflow compiles.",
     facts: [
-      "Sources, low to high: `~/.ork/agents`, the project's `.ai/agents`, `.opencode/agents`, `.claude/agents`, then `.ork/agents`, then the workflow's `agents:`.",
+      "Sources, low to high: the built-in `ork-implementer` and `ork-reviewer`, `~/.ork/agents`, the project's `.ai/agents`, `.opencode/agents`, `.claude/agents`, then `.ork/agents`, then the workflow's `agents:`.",
       "An agent is a portable `<name>.md` plus an optional `<name>.agent.yaml` with Ork's settings.",
       "Linked folders are followed; a file reached twice counts once. `node.started` records the agent and a hash.",
       "`ork agents list | show | add | rm`; Ork writes only `.ork/agents` and `~/.ork/agents`.",
@@ -375,9 +375,10 @@ export const NODES = [
     facts: [
       "Built: `model`, `effort`, `maxTurns`, `budgetUsd` (capped by what is left of the run's) and `tools` go into the session spec, from the node or `defaults`.",
       "A session out of turns or budget ends without a report: a `fail` for its edges, or for the leader that delegated it.",
-      "`readonly` adds the write tools to the deny list.",
+      "`readonly` adds the write tools to the deny list; read-only git (`diff`, `log`, `show`, `status`) runs without asking, other commands ask.",
+      "Built: `tools.only` leaves the session only those built-in tools (the SDK's `tools`, the CLI's `--tools`); Ork's own tools stay. An agent's Claude Code `tools:` and `disallowedTools:` become `tools.only` and `tools.deny`.",
     ],
-    docs: [SCHEMA.nodes, DESIGN.context],
+    docs: [SCHEMA.nodes, RUNTIME.plan, DESIGN.context],
   },
 
   // ── The session and after ────────────────────────────────────────────────

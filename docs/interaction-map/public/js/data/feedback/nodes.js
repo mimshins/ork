@@ -63,7 +63,7 @@ export const NODES = [
   {
     id: "feedbackCmd",
     title: "ork feedback",
-    sub: "`list` · `show` · `dismiss`",
+    sub: "`list` · `show` · `note` · `dismiss`",
     zone: "surfaces",
     x: 320,
     y: 240,
@@ -72,8 +72,9 @@ export const NODES = [
     summary:
       "Reads the local feedback items: what was reported, how often, in which runs, workflows and models. It is also one of the places you rate or annotate a node's result.",
     facts: [
-      "Built: `list` (newest first; `--all` adds dismissed items), `show <item>` with every record, and `dismiss <item>`; an item is a prefix of its fingerprint.",
-      "Human notes also come from `ork decide` and the UI; the design gives them no milestone.",
+      "Built: `list` (newest first; `--all` adds dismissed items), `show <item>` with every record, `dismiss <item>` and `restore <item>`; an item is a prefix of its fingerprint.",
+      "Built: `note <run> [<node>] -m <text>` records your note on a run or a node, with `--rating good|bad`.",
+      "Planned: notes from the UI (M2).",
     ],
     docs: [DESIGN.cli, DESIGN.feedback, FEEDBACK.cli, FEEDBACK.cliTests],
   },
@@ -105,7 +106,7 @@ export const NODES = [
       "The subcommands that close the loop: triage new items, apply one as a fix or a lesson, publish an `ork` item, and move feedback as JSONL.",
     facts: [
       "`ork feedback triage`, `apply <item>`, `publish <item>`, `export`, `import`.",
-      "Milestone 2; milestone 1d ships only `list`, `show` and `dismiss`.",
+      "Milestone 2; the CLI ships `list`, `show`, `note`, `dismiss` and `restore`.",
     ],
     docs: [DESIGN.cli, DESIGN.milestones],
   },

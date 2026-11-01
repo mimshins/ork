@@ -5,7 +5,16 @@
  *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
  */
 
-import { BUS, CLI, CONTROL, DESIGN, RUNTIME, SCHEMA, STORE } from "../refs.js";
+import {
+  BUS,
+  CLI,
+  CONTROL,
+  DESIGN,
+  NODE_TYPES,
+  RUNTIME,
+  SCHEMA,
+  STORE,
+} from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
 /** @typedef {import("../types.js").Zone} Zone */
@@ -169,8 +178,10 @@ export const NODES = [
       "A node that is not running gets the notice when its session starts.",
       "A question to an owner is pushed in full, with its options.",
       "Your messages (`ork chat`) and answers are pushed in full.",
+      "A message that arrives while a session writes its final report gets one more turn of that session, so it is not lost.",
+      "`ork resume` hands back unread messages and queued chat messages.",
     ],
-    docs: [DESIGN.messaging, BUS.bus, BUS.tests],
+    docs: [DESIGN.messaging, BUS.bus, BUS.tests, NODE_TYPES.claude],
   },
   {
     id: "decisions",

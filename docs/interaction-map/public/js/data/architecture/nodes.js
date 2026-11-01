@@ -103,7 +103,7 @@ export const NODES = [
     summary:
       "The `ork` command. It validates and runs workflows with the engine embedded in its own process, or talks to a running `ork ui` server over HTTP.",
     facts: [
-      "Built: `ork register` attaches a project from outside its repository (its files in `~/.ork/projects/<id>/`, nothing in the repo); `ork projects` lists them.",
+      "Built: `ork register` attaches a project from outside its repository (its files in `~/.ork/projects/<id>/`, nothing in the repo); `ork projects` lists them, `forget` drops one, and `move` follows a moved or renamed clone with its runs.",
       "Built: `ork migrate` moves an attached project into `.ork/`, and `--agents` its agents and skills, relinking the tools' folders; it shows the plan and commits nothing. `--from-agents` drafts a gated workflow from the project's agents.",
       "Built: `ork init` scaffolds `.ork/` and never overwrites a file; `ork validate` prints schema, graph and skill or context reference diagnostics with file, line and column; `ork doctor` reports your own logins and never prints a token or your email.",
       "Built: `ork run <wf>` runs a whole workflow through the scheduler, and `--node <id>` one Claude node; questions and permission prompts are answered on the terminal.",

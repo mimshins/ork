@@ -153,6 +153,7 @@ export const NODES = [
       "When a loop edge has used its `maxRounds`, you are asked: stop, one more round, or go on. A live leader that owns the loop's nodes is asked first; here the builder's session has ended, so it is you.",
       "Runs the children a leader delegates to, on the slot the waiting leader lends them.",
       "`ork resume` runs the workflow again under the same id: what finished is handed back from the run's events, and only the rest runs.",
+      "A node cut off mid-session (stopped, crashed, out of budget) continues that session on resume; unread messages and queued `ork chat` messages are handed back too. `--detach` resumes in the background.",
     ],
     see: [
       { map: "roles", node: "scheduler", label: "When each node runs" },
