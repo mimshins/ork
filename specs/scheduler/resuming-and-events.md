@@ -26,6 +26,8 @@ under the same run id, with a `Replay` built from the run's events:
   nodes that keep results first.
 - Questions about loops out of rounds that were answered last time get the same
   answers again, in order.
+- The bus starts with the run's unread and queued messages
+  ([messaging](../messaging.md#message-bus)).
 - The run's budget counts what it spent before.
 
 ## Run events

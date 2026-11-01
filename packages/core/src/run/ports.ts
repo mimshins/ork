@@ -6,18 +6,21 @@
 
 import { createFeedback } from "../feedback/agent.ts";
 import type { CompiledGraph } from "../graph/types.ts";
-import { createBus } from "./bus.ts";
+import { createBus, type Mail } from "./bus.ts";
 import { createClaims } from "./claims.ts";
 import type { ExecuteContext, RunEvent } from "./types.ts";
 
 export const createRunPorts = ({
   graph,
   onEvent,
+  mail,
 }: {
   graph: CompiledGraph;
   onEvent: (event: RunEvent) => void;
+  /** A resumed run's messages, from its events. */
+  mail?: Mail | undefined;
 }) => {
-  const bus = createBus({ graph, onEvent });
+  const bus = createBus({ graph, onEvent, mail });
   const claims = createClaims({ graph, onEvent, notify: bus.notify });
   const feedback = createFeedback({ graph, onEvent });
   return {

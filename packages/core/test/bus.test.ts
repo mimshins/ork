@@ -17,6 +17,7 @@ import {
   type NodeExecutor,
   type RunEvent,
   startRun,
+  userMessageText,
 } from "../src/index.ts";
 
 const compile = (lines: string[]): CompiledGraph => {
@@ -285,5 +286,32 @@ describe("a loop out of rounds in a run", () => {
       { type: "owner.asked", node: "lead", about: "fix", question: "q1" },
       { type: "owner.answered", node: "lead", answer: "onward" },
     ]);
+  });
+});
+
+describe("a resumed run's bus", () => {
+  it("starts with the unread and queued messages, and numbers on", () => {
+    const events: RunEvent[] = [];
+    const bus = createBus({
+      graph: TEAM,
+      onEvent: event => {
+        events.push(event);
+      },
+      mail: {
+        inboxes: new Map([["code", [{ id: 4, from: "lead", body: "fix it" }]]]),
+        waiting: new Map([["docs", ["note this"]]]),
+        last: 4,
+      },
+    });
+    const told: string[] = [];
+    bus.mailbox("docs").connect(text => {
+      told.push(text);
+    });
+    expect(told).toEqual([userMessageText("note this")]);
+    const code = bus.mailbox("code");
+    expect(code.pending()).toBe(1);
+    expect(code.read()).toEqual([{ id: 4, from: "lead", body: "fix it" }]);
+    code.send("docs", "done");
+    expect(events.at(-1)).toMatchObject({ type: "message.sent", message: 5 });
   });
 });

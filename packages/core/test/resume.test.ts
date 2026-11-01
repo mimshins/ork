@@ -171,7 +171,7 @@ describe("reading a run's events back", () => {
       {
         type: "node.event",
         id: "cut",
-        event: { type: "session.started", sessionId: "cut-s1" },
+        event: { type: "session.started", sessionId: "cut-s1", model: "haiku" },
       },
     ];
     const crashed = resumeState(cutRun);
@@ -197,6 +197,25 @@ describe("reading a run's events back", () => {
       },
     ]);
     expect(failed.cutOff.size).toBe(0);
+  });
+
+  it("rebuilds unread messages and the user's queued ones for the resumed bus", () => {
+    const state = resumeState([
+      { type: "message.sent", node: "a", to: "b", message: 1, body: "one" },
+      { type: "message.sent", node: "a", to: "b", message: 2, body: "two" },
+      { type: "message.read", node: "b", ids: [1] },
+      { type: "user.message", node: "c", body: "hi", delivered: "queued" },
+      { type: "user.message", node: "b", body: "seen", delivered: "queued" },
+      { type: "node.started", id: "b", nodeType: "claude.worker", round: 2 },
+    ]);
+    expect(state.mail.last).toBe(2);
+    expect(state.mail.inboxes.get("b")).toEqual([
+      { id: 2, from: "a", body: "two" },
+    ]);
+    expect([...state.mail.waiting]).toEqual([["c", ["hi"]]]);
+    expect(createReplay(state.history, state.cutOff, state.mail).mail).toBe(
+      state.mail,
+    );
   });
 
   it("keeps worktrees that were not removed, and loop answers", async () => {

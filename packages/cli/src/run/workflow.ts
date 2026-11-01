@@ -239,7 +239,11 @@ export const runWorkflowFile = async (
   const replay =
     options.resume === undefined
       ? undefined
-      : createReplay(options.resume.history, options.resume.cutOff);
+      : createReplay(
+          options.resume.history,
+          options.resume.cutOff,
+          options.resume.mail,
+        );
   if (replay !== undefined)
     onEvent({ type: "run.resumed", kept: replay.kept() });
   const handle = startRun({

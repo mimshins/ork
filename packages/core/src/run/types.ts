@@ -21,6 +21,7 @@ import type {
 } from "../runtime/types.ts";
 import type { AnsweredBy, DecisionKind } from "../store/types.ts";
 import type { BusEvent } from "./bus-events.ts";
+import type { Mail } from "./bus.ts";
 
 export type Inputs = Record<string, string | number | boolean>;
 
@@ -268,15 +269,15 @@ export type RunOptions = {
 };
 
 /**
- * A resumed run's recorded results. `take` gives an activation its result from
- * last time, or `null` when it must run (it failed, never finished, or its
- * input is new); `ran` marks a new result, so what it feeds runs anew; `cutOff`
- * gives, once, the session a node was cut off in (ADR-026).
+ * A resumed run's record (ADR-026). `take` gives an activation its result from
+ * last time, or `null` when it must run anew; `ran` marks a new result;
+ * `cutOff` gives, once, the session a node was cut off in; `mail`, the bus's.
  */
 export type Replay = {
   take: (activation: Activation) => NodeResult | null;
   ran: (result: NodeResult) => void;
   cutOff?: (activation: Activation) => string | undefined;
+  mail?: Mail;
 };
 
 export type RunHandle = {

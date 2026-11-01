@@ -73,7 +73,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     queue.length = 0;
   };
 
-  const ports = createRunPorts({ graph, onEvent });
+  const ports = createRunPorts({ graph, onEvent, mail: options.replay?.mail });
   const loops = createLoops({
     human: options.human,
     bus: ports.bus,

@@ -25,12 +25,6 @@ carried to the next milestone.
   its parent's session as a Claude Code subagent (the SDK's `agents`, the CLI's
   `--agents`). ([concepts](./concepts.md),
   [plan.ts](../packages/core/src/run/plan.ts))
-- **G2 · Messages do not outlive the run's memory.** The bus's inboxes are in
-  memory; the events are the record. A message still unread when the run ends,
-  or an `ork chat` message queued for a node that never starts again, is never
-  delivered, and a resumed run starts with empty inboxes.
-  ([ADR-025](../decisions/ADR-025-message-bus.md),
-  [resume](./scheduler/resuming-and-events.md#resuming-a-run))
 - **G4 · No built-in `ork:*` skills.** The layer is resolved, but
   `BUILTIN_SKILLS` is empty.
   ([ADR-023](../decisions/ADR-023-context-compiler.md),
@@ -50,9 +44,6 @@ carried to the next milestone.
   ([ADR-026](../decisions/ADR-026-resume-by-replay.md))
 - **L4 · A run of one node is not resumed.** `ork run --node` runs again
   instead. ([ADR-026](../decisions/ADR-026-resume-by-replay.md))
-- **L5 · A late notice is missed.** A message notice that lands while a session
-  writes its final report is not seen; the message stays unread until the node
-  runs again. ([ADR-025](../decisions/ADR-025-message-bus.md))
 - **L6 · `delegate` blocks the leader.** There is no asynchronous form, and on
   the CLI driver one call can stay open for at most 24 hours.
   ([ADR-017](../decisions/ADR-017-blocking-delegate.md))

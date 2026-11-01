@@ -12,6 +12,7 @@ import type {
   ClaudeRuntime,
   ExecuteContext,
   HumanChannel,
+  Mailbox,
   Ownership,
   RuntimeEvent,
   SessionOutcome,
@@ -340,13 +341,57 @@ const finishedPassing = async function* (): AsyncGenerator<RuntimeEvent> {
   };
 };
 
+/** A mailbox that only says how many messages are unread. */
+const mailboxWith = (pending: () => number): Mailbox => ({
+  peers: () => [],
+  send: () => ({ ok: false, error: "no" }),
+  read: () => [],
+  pending,
+  answer: () => ({ ok: true }),
+  connect: () => () => {},
+});
+
+/** One unread message after the first session, none after the second. */
+const unreadAfter = (sessions: number): number => Number(sessions === 1);
+
 describe("Claude nodes", () => {
   it("tells a session cut off by the run to carry on, and a re-entered one its round", () => {
-    expect(resumeMessage(1, undefined)).toContain("Ork was stopped");
+    expect(resumeMessage(1, null)).toContain("Ork was stopped");
     expect(resumeMessage(2, { statuses: [] })).toContain("## Round 2");
     expect(
       resumeMessage(1, undefined, { from: "lead", text: "Fix it." }),
     ).toContain("## New task from `lead`");
+  });
+
+  it("reads a message that came in as it finished, in one more turn", async () => {
+    const specs: SessionSpec[] = [];
+    const runtime: ClaudeRuntime = {
+      driver: "sdk",
+      start: spec => {
+        specs.push(spec);
+        return {
+          events: finishedPassing(),
+          send: () => {},
+          interrupt: () => Promise.resolve(),
+        };
+      },
+    };
+    const execute = claudeExecutor({
+      runtimeFor: () => Promise.resolve(runtime),
+      inPlace: true,
+    });
+    const node: Node = { type: "claude.worker", prompt: "Fix" };
+
+    // One message is unread when the first session ends, none after.
+    const late = mailboxWith(() => unreadAfter(specs.length));
+    const result = await execute(context("fix", node, { mailbox: late }));
+    expect(specs.map(s => s.resume)).toEqual([undefined, "s"]);
+    expect(specs[1]?.prompt).toContain("1 message came in while you finished");
+    expect(result.usage?.costUsd).toBe(2 * usage.costUsd);
+
+    specs.length = 0;
+    await execute(context("fix", node, { mailbox: mailboxWith(() => 0) }));
+    expect(specs).toHaveLength(1);
   });
 
   it("turns a report into the node's output", () => {

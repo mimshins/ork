@@ -58,6 +58,16 @@ ports.
   `Session.send` at its next step, mid-turn or not; a node that is not running
   gets the notice when its session starts. `read_inbox` returns the unread
   bodies, oldest first (`message.read`).
+- **Late messages:** when a session ends with unread messages (one came in as it
+  wrote its report), Ork resumes that session once, tells it how many came in,
+  and takes its new report; the node's usage counts both
+  ([claude.ts](../packages/nodes/src/claude.ts)).
+- **Inboxes outlive the process:** the events are the record, so `ork resume`
+  starts the bus with each node's unread messages (`message.sent` minus
+  `message.read`), the user's `ork chat` messages still queued for a node that
+  had not started since, and the next message number
+  ([resume.ts](../packages/core/src/run/resume.ts), `mail`). A message to a node
+  that never runs again stays unread; `ork logs` shows it.
 - **Owner questions:** a loop out of rounds asks the owner of its nodes while
   the owner's session is live ([scheduler](./scheduler.md#loops)). The owner
   gets the whole question pushed

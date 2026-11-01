@@ -188,6 +188,8 @@ export type Mailbox = {
   send: (to: string, body: string) => SendResult;
   /** Unread messages, oldest first; they count as read after this. */
   read: () => InboxMessage[];
+  /** How many messages are unread, without reading them. */
+  pending: () => number;
   /** Answers a question Ork asked this node as an owner. */
   answer: (
     question: string,

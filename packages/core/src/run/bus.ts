@@ -40,6 +40,16 @@ export type Bus = {
   notify: (node: string, text: string) => void;
 };
 
+/**
+ * What a resumed run's bus starts with (`resumeState`): each node's unread
+ * messages, the user's messages still queued, and the last message number.
+ */
+export type Mail = {
+  inboxes: ReadonlyMap<string, readonly InboxMessage[]>;
+  waiting: ReadonlyMap<string, readonly string[]>;
+  last: number;
+};
+
 type Open = {
   owner: string;
   options: DecisionChoice[];
@@ -75,18 +85,24 @@ export const ownerQuestionText = (
 export const createBus = ({
   graph,
   onEvent,
+  mail,
 }: {
   graph: CompiledGraph;
   onEvent: (event: RunEvent) => void;
+  mail?: Mail | undefined;
 }): Bus => {
   /** Spawned instance -> the declared node it is an instance of. */
   const templates = new Map<string, string>();
-  const inboxes = new Map<string, InboxMessage[]>();
+  const inboxes = new Map<string, InboxMessage[]>(
+    [...(mail?.inboxes ?? [])].map(([id, unread]) => [id, [...unread]]),
+  );
   const live = new Map<string, (text: string) => void>();
   const open = new Map<string, Open>();
   /** The user's messages for nodes not running now. */
-  const waiting = new Map<string, string[]>();
-  let messages = 0;
+  const waiting = new Map<string, string[]>(
+    [...(mail?.waiting ?? [])].map(([id, bodies]) => [id, [...bodies]]),
+  );
+  let messages = mail?.last ?? 0;
   let questions = 0;
 
   const declared = (id: string) => graph.nodes.get(templates.get(id) ?? id);
@@ -157,6 +173,7 @@ export const createBus = ({
           delivered: deliver === undefined ? "queued" : "now",
         };
       },
+      pending: () => inbox(id).length,
       read: () => {
         const unread = inbox(id).splice(0);
         if (unread.length > 0) {
