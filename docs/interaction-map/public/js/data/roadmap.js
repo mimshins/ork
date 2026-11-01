@@ -268,6 +268,23 @@ export const MILESTONES = [
         docs: ["assets/logo/README.md"],
       },
       {
+        id: "gaps-closed",
+        title: "Close the gaps register",
+        status: "done",
+        detail:
+          "Every gap built: sub-agents run in their owner's session, messages survive a resume, a late message gets one more turn, built-in `ork:*` skills and `ork-*` agents, `ork resume --detach`, feedback notes and restore. Limits fixed: readonly nodes read git, agents' Claude Code `tools`, cut-off sessions resume, `ork projects move`; CI pinned. The other limits wait for the M2 review.",
+        commits: [
+          "c8cafe9",
+          "8db91a2",
+          "73cc4d2",
+          "06a6370",
+          "0dc3c5c",
+          "bf31afe",
+        ],
+        date: "2026-11-02",
+        docs: ["specs/gaps.md"],
+      },
+      {
         id: "first-release",
         title: "First npm release",
         status: "waiting",
@@ -564,6 +581,9 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "54f5e81",
+  "5854081",
+  "ac63fc2",
   "eb664c7",
   "63f28d8",
   "8f3d063",
