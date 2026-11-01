@@ -1,5 +1,17 @@
 # @krapht/ork
 
+## 0.2.0
+
+### Minor Changes
+
+- [`25c965a`](https://github.com/mimshins/ork/commit/25c965a1d210a22e8d21c940cd7d3a01fea9c8c7) Thanks [@mimshins](https://github.com/mimshins)! - New: `ork upgrade`, and a notice when a newer Ork is out. Once a day, in the
+  background, Ork asks the npm registry for the latest version and, when it is
+  newer, ends a later command with one line saying so. `ork upgrade` upgrades Ork
+  the way you installed it (npm, pnpm, yarn, bun or Volta), after asking;
+  `--check` only reports, and `--yes` skips the question. `ork doctor` shows your
+  version against the last check. The check is off in CI, without a terminal and
+  with `--json`; `ORK_NO_UPDATE_CHECK=1` turns it off everywhere.
+
 ## 0.1.0
 
 ### Minor Changes
