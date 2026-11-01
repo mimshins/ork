@@ -20,8 +20,8 @@ with the built-in node types
   loops, and worktree changes (`⎇ created …`, `merged`, `removed`); then the run
   summary: status, total cost, how many nodes ran and were skipped, the
   worktrees left for you (branch, path, why), and the reasons it did not
-  succeed. `--json` prints the [run events](../scheduler.md#run-events) as JSON
-  lines.
+  succeed. `--json` prints the
+  [run events](../scheduler/resuming-and-events.md#run-events) as JSON lines.
 - Integrations are optional: before anything starts, Ork checks only the
   programs the workflow's tool nodes run (`gh` for `tool.gh`, `aws` for
   `tool.aws`, `git` for `tool.git`, a `tool.shell` command's first word unless
@@ -126,8 +126,8 @@ running and did not succeed (stopped, failed, out of budget, or crashed), under
 the same id and in its own project, from wherever it is called:
 
 - Nodes that finished keep their results; the rest run again, with what they
-  feed ([scheduler](../scheduler.md#resuming-a-run)). The transcript starts with
-  `▸ resumed: … keep their results`.
+  feed ([scheduler](../scheduler/resuming-and-events.md#resuming-a-run)). The
+  transcript starts with `▸ resumed: … keep their results`.
 - It starts with the run's inputs and flags; `--input`, `--driver` and
   `--in-place` change them. The project checks of `ork run` apply
   (`--allow-dirty`).

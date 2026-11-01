@@ -121,11 +121,12 @@ When a leader delegates ([scheduler](./scheduler.md#delegation)):
 
 ## Resuming a run
 
-`ork resume` ([scheduler](./scheduler.md#resuming-a-run)) adopts the worktrees
-the run left whose folders are still there, merged or not, instead of creating
-them again. A node that runs again after its worktree was removed checks its
-`ork/<run>/<node>` branch out again and brings it up to its owner's branch; new
-worktrees of root nodes branch from the project's current `HEAD`.
+`ork resume` ([scheduler](./scheduler/resuming-and-events.md#resuming-a-run))
+adopts the worktrees the run left whose folders are still there, merged or not,
+instead of creating them again. A node that runs again after its worktree was
+removed checks its `ork/<run>/<node>` branch out again and brings it up to its
+owner's branch; new worktrees of root nodes branch from the project's current
+`HEAD`.
 
 ## ork worktrees
 

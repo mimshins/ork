@@ -34,8 +34,8 @@ all views over the same events.
   status (`succeeded`, `failed`, `budget_exhausted`, `interrupted`). A `running`
   run whose process is gone reads as **`crashed`**.
 - **An event:** the run, a sequence number (1, 2, 3, … in the run), the time,
-  and the [run event](./scheduler.md#run-events) itself. Events are only
-  appended, never changed.
+  and the [run event](./scheduler/resuming-and-events.md#run-events) itself.
+  Events are only appended, never changed.
 - **Before the terminal:** each event is stored, then printed (and sent to the
   run's socket followers), so a crash loses at most the event in flight.
 - **Decisions and commands** have tables of their own: a decision's question,

@@ -30,7 +30,7 @@ carried to the next milestone.
   or an `ork chat` message queued for a node that never starts again, is never
   delivered, and a resumed run starts with empty inboxes.
   ([ADR-025](../decisions/ADR-025-message-bus.md),
-  [resume](./scheduler.md#resuming-a-run))
+  [resume](./scheduler/resuming-and-events.md#resuming-a-run))
 - **G4 · No built-in `ork:*` skills.** The layer is resolved, but
   `BUILTIN_SKILLS` is empty.
   ([ADR-023](../decisions/ADR-023-context-compiler.md),
