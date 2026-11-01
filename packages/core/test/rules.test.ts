@@ -116,6 +116,35 @@ describe("project rules under a workflow", () => {
     expect(spec.tools.allow).not.toContain("Bash");
   });
 
+  it("give a node's session its sub-agents, with the tool to reach them", () => {
+    const workflow = workflowOf([
+      "inputs: { lang: { type: string } }",
+      "nodes:",
+      "  w: { type: claude.worker, prompt: go, tools: { only: [Read] } }",
+      "  t:",
+      "    type: claude.subagent",
+      "    parent: w",
+      "    description: Writes the tests.",
+      "    prompt: Write tests in {{inputs.lang}}.",
+      "    model: haiku",
+    ]);
+    const spec = specOf(
+      planNodeSession(workflow, "w", {
+        cwd: "/p",
+        inputs: { lang: "Go" },
+        inPlace: true,
+      }),
+    );
+    expect(spec.agents).toEqual({
+      t: {
+        description: "Writes the tests.",
+        prompt: "Write tests in Go.",
+        model: "haiku",
+      },
+    });
+    expect(spec.tools.only).toEqual(["Read", "Agent"]);
+  });
+
   it("are checked: placeholders, unique names, and merge against commit", () => {
     const two = [
       "inputs: { slug: { type: string } }",

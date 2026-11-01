@@ -439,15 +439,16 @@ export const NODES = [
     zone: "tree",
     x: 1120,
     y: 370,
-    status: "partial",
+    status: "built",
     pkg: "core",
     summary:
       "A `claude.subagent` lives inside its owner's session, a leader's or a worker's, as a Claude Code subagent: no process, no worktree, no edges of its own.",
     facts: [
-      "Accepted and validated: it needs a Claude `parent`, and an edge to it is an error (`edge.subagent`).",
-      "Not built: Ork does not pass it to its owner's session yet.",
+      "Passed to its owner's session as a Claude Code subagent (the SDK's `agents`, the CLI's `--agents`); the session hands it work with the Agent tool.",
+      "Its role, `instructions` and `prompt` are its system prompt; its `model`, `maxTurns` and `tools.only` carry over.",
+      "It needs a Claude `parent`, and an edge to it is an error (`edge.subagent`).",
     ],
-    docs: [CORE.tree, ROLES.compileTests, ROLES.subagent],
+    docs: [ROLES.brief, ROLES.compileTests, ROLES.subagent],
   },
   {
     id: "spawned",

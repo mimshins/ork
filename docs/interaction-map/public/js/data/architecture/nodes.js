@@ -244,7 +244,7 @@ export const NODES = [
       "Built: every state change is a run event; `ork run` stores each in the event store, then prints it.",
       "Built: ownership. A leader's `delegate` and `spawn_worker` (up to `maxWorkers`) run children in parallel on the slot it lends, and return their reports; a re-entered leader resumes its session, as does any node with `session: resume`.",
       "Built: a loop out of rounds asks its live owner over the message bus, else you.",
-      "Not built: a `claude.subagent` in its owner's session (gap G1).",
+      "Built: a `claude.subagent` runs in its owner's session as a Claude Code subagent.",
     ],
     see: [
       { map: "lifecycle", node: "scheduler", label: "The scheduler in a run" },

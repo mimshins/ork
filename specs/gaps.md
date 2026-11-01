@@ -20,11 +20,6 @@ carried to the next milestone.
 
 ## Gaps
 
-- **G1 · `claude.subagent` never runs.** The schema and the graph compiler
-  accept it (owned by a leader or worker, no edges), but it is never passed to
-  its parent's session as a Claude Code subagent (the SDK's `agents`, the CLI's
-  `--agents`). ([concepts](./concepts.md),
-  [plan.ts](../packages/core/src/run/plan.ts))
 - **G4 · No built-in `ork:*` skills.** The layer is resolved, but
   `BUILTIN_SKILLS` is empty.
   ([ADR-023](../decisions/ADR-023-context-compiler.md),

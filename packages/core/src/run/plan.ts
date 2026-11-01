@@ -17,7 +17,6 @@ import {
   sessionSettings,
   writePlugin,
 } from "../context/session.ts";
-import { parseTemplate, renderTemplate } from "../expr/evaluate.ts";
 import {
   practiceInstructions,
   resolvePractices,
@@ -30,8 +29,8 @@ import type {
   SessionSpec,
   ToolRules,
 } from "../runtime/types.ts";
+import { AGENT_TOOL, renderBrief, subagentsOf } from "./brief.ts";
 import { harnessInstructions } from "./harness.ts";
-import { runScope } from "./scope.ts";
 import type { Brief, Checkout, NodeOutput } from "./types.ts";
 
 /** Claude Code tools that change files or run commands. */
@@ -164,22 +163,10 @@ export const planNodeSession = (
   }
 
   const warnings: string[] = [];
-  const template = parseTemplate(node.prompt ?? "");
-  if (!template.ok) return { ok: false, error: `prompt: ${template.message}` };
-  for (const part of template.parts) {
-    if (typeof part !== "string" && part.expr.kind === "path") {
-      const [root] = part.expr.segments;
-      if (root === "nodes" && options.outputs === undefined) {
-        warnings.push(
-          `the brief reads ${part.expr.segments.join(".")}, which is empty when the node runs alone`,
-        );
-      }
-    }
-  }
-  const rendered = renderTemplate(
-    template.parts,
-    runScope(options.inputs, options.outputs ?? {}),
-  ).trim();
+  const brief = renderBrief(node.prompt, options.inputs, options.outputs);
+  if (!brief.ok) return { ok: false, error: `prompt: ${brief.error}` };
+  warnings.push(...brief.warnings);
+  const rendered = brief.text;
   const prompt = [
     rendered,
     options.brief === undefined
@@ -224,6 +211,17 @@ export const planNodeSession = (
     permissionMode: "default",
     reportSchema: reportSchemaFor(node),
   };
+  const agents = subagentsOf(
+    workflow,
+    declared,
+    options.inputs,
+    options.outputs,
+  );
+  if (agents !== undefined) {
+    spec.agents = agents;
+    // A session restricted to some tools still needs the one subagents use.
+    spec.tools.only?.push(AGENT_TOOL);
+  }
   const model = node.model ?? defaults.model;
   if (model !== undefined) spec.model = model;
   const effort = node.effort ?? defaults.effort;

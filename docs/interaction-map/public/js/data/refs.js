@@ -444,4 +444,8 @@ export const ROLES = {
     "docs/guides/writing-workflows.md#claude-nodes",
     "Guide: Claude nodes, sub-agents",
   ),
+  brief: d(
+    "packages/core/src/run/brief.ts",
+    "Code: a node's brief, and its sub-agents",
+  ),
 };

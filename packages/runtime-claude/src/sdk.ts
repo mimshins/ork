@@ -97,6 +97,7 @@ export const buildSdkOptions = (
     },
   };
   if (spec.tools.only !== undefined) options.tools = spec.tools.only;
+  if (spec.agents !== undefined) options.agents = spec.agents;
   if (spec.model !== undefined) options.model = spec.model;
   if (spec.effort !== undefined) options.effort = spec.effort;
   if (spec.maxTurns !== undefined) options.maxTurns = spec.maxTurns;

@@ -25,6 +25,18 @@ export type NodeReport = {
 /** `only`: the built-in tools the session has at all; Ork's own tools stay. */
 export type ToolRules = { allow: string[]; deny: string[]; only?: string[] };
 
+/** A Claude Code subagent the session can hand work to (`claude.subagent`). */
+export type SubagentSpec = {
+  description: string;
+  /** Its system prompt. */
+  prompt: string;
+  model?: string;
+  /** The only tools it has; all of the session's when unset. */
+  tools?: string[];
+  disallowedTools?: string[];
+  maxTurns?: number;
+};
+
 /** Everything a driver needs to start one session. */
 export type SessionSpec = {
   nodeId: string;
@@ -43,6 +55,8 @@ export type SessionSpec = {
   budgetUsd?: number;
   /** JSON Schema of the final report (structured output). */
   reportSchema: Record<string, unknown>;
+  /** Its `claude.subagent` children, by node id. */
+  agents?: Record<string, SubagentSpec>;
   /** Local plugin folders to load: Ork's skills for this node. */
   plugins?: string[];
   /** Extra Claude Code settings (`--settings`), e.g. `skillOverrides`. */

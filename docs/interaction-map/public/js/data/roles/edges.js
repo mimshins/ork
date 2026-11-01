@@ -215,8 +215,7 @@ export const EDGES = [
     kind: "local",
     label: "inside its session",
     detail:
-      "A sub-agent would run in its owner's Claude session; Ork does not pass it there yet.",
-    status: "partial",
+      "A sub-agent runs in its owner's Claude session, which hands it work with the Agent tool.",
     docs: [ROLES.subagent],
   },
   {

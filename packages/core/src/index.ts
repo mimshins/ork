@@ -33,6 +33,7 @@ export * from "./project/place.ts";
 export * from "./project/rules.ts";
 export * from "./project/templates.ts";
 export type * from "./run/bus-events.ts";
+export * from "./run/brief.ts";
 export * from "./run/bus.ts";
 export * from "./run/claims.ts";
 export * from "./run/harness.ts";

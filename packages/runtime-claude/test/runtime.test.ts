@@ -277,6 +277,17 @@ describe("the CLI driver", () => {
       [],
     );
     expect(only[only.indexOf("--tools") + 1]).toBe("Read,Grep");
+    const withAgents = buildCliArgs(
+      {
+        ...spec,
+        agents: { t: { description: "Tests.", prompt: "Write tests." } },
+      },
+      { url: "http://127.0.0.1:1/mcp", token: "t" },
+      [],
+    );
+    expect(withAgents[withAgents.indexOf("--agents") + 1]).toBe(
+      '{"t":{"description":"Tests.","prompt":"Write tests."}}',
+    );
     // delegate waits for whole child sessions: past the 60 s request default.
     expect(value("--mcp-config")).toContain('"timeout":86400000');
     expect(args).not.toContain("Review the branch");

@@ -87,6 +87,9 @@ export const buildCliArgs = (
   if (spec.tools.only !== undefined) {
     args.push("--tools", spec.tools.only.join(","));
   }
+  if (spec.agents !== undefined) {
+    args.push("--agents", JSON.stringify(spec.agents));
+  }
   if (spec.tools.deny.length > 0) {
     args.push("--disallowedTools", spec.tools.deny.join(","));
   }

@@ -87,8 +87,8 @@ read the report through templates and conditions.
   [Models, effort and budgets](./models-and-budgets.md).
 - `skills` and `context` are in [Skills and context](./skills-and-context.md).
 
-`claude.subagent` is accepted and validated (it needs a Claude `parent` and
-takes no edges), but Ork does not pass it to the parent's session yet.
+`claude.subagent` runs inside its parent's session as a Claude Code subagent (no
+edges): its `prompt` is its role, and `description` says when to use it.
 
 ### Tool nodes
 

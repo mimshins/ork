@@ -52,7 +52,13 @@ edges:
 
 **Built-in node types in v1:**
 
-- **Agents:** `claude.leader`, `claude.worker`, `claude.subagent`.
+- **Agents:** `claude.leader`, `claude.worker`, `claude.subagent`. A
+  `claude.subagent` runs inside its `parent`'s session as a Claude Code subagent
+  ([brief.ts](../packages/core/src/run/brief.ts)): its role (its agent's
+  instructions), `instructions` and `prompt`, rendered like a brief, are its
+  system prompt, `description` says when the session uses it (the Agent tool,
+  added to a `tools.only` list), and `model`, `maxTurns` and `tools.only` and
+  `deny` carry over.
 - **Tools:** `tool.gh`, `tool.aws`, `tool.git`, `tool.shell` (each runs the
   user's own CLI, and a per-node allowlist sets which subcommands are
   permitted). There is one `tool.<id>` type per registered integration

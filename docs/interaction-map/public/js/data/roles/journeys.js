@@ -190,9 +190,9 @@ export const JOURNEYS = [
       {
         from: "withEdges",
         to: "subagent",
-        title: "A sub-agent would stay in the session",
-        detail: "Validated, but not yet passed to its owner's Claude session.",
-        status: "partial",
+        title: "A sub-agent works in the session",
+        detail:
+          "Its owner's session hands it work with the Agent tool; it has no process or worktree of its own.",
         docs: [ROLES.subagent],
       },
       {
