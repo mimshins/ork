@@ -552,6 +552,14 @@ export const MILESTONES = [
         docs: ["specs/worktrees.md"],
       },
       {
+        id: "ui-upgrade",
+        title: "New-version banner and upgrade",
+        status: "planned",
+        detail:
+          "The CLI's new-version notice as a banner, from the same record, with an upgrade button that runs `ork upgrade`'s plan after the user confirms.",
+        docs: ["specs/cli/updates.md", "specs/ui.md"],
+      },
+      {
         id: "designer",
         title: "Designer and context inspector",
         status: "planned",

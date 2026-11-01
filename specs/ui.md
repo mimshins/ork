@@ -18,5 +18,8 @@ Status: **Planned** (M2).
 - **Context inspector:** the resolved layer stack for each node.
 - **Feedback:** items grouped by fingerprint and target, with triage, apply,
   accept as a lesson, and the publish preview.
+- **New version:** the CLI's notice as a banner, read from the same record, with
+  an upgrade button that runs `ork upgrade`'s plan after the user confirms
+  ([updates](./cli/updates.md)).
 
 **Style:** dark and dense, inspired by reference image 1.

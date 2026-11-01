@@ -80,6 +80,12 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
   moves, but a move that fails halfway (a permission, a full disk) stops there;
   nothing is lost, and `ork migrate` again plans what is left.
   ([projects](./projects.md#migrating))
+- **L23 · The update check reads no `.npmrc`.** It asks npm's registry, or
+  `ORK_UPDATE_REGISTRY`; a mirror set only in npm's own config is not used.
+  ([updates](./cli/updates.md))
+- **L24 · `ork upgrade` knows an install by its path.** An install in a place it
+  does not recognise gets the npm command as advice, and nothing is run.
+  ([updates](./cli/updates.md#ork-upgrade))
 
 ## Chores
 

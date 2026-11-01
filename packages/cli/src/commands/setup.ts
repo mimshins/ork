@@ -2,10 +2,8 @@
  * @file Setting up: `ork init` scaffolds `.ork/` in a project, records it, and
  *   links the tool folders it uses; `ork link` points tools' agents and skills
  *   folders at `.ork/` (never in an attached project); `ork agents` lists,
- *   shows, adds and removes the agents nodes can take; `ork doctor` prints the
- *   environment checks (Node, git, the user's own claude, gh and aws logins,
- *   and the project's links) and fails when no Claude driver can run. Ork
- *   stores no credentials.
+ *   shows, adds and removes the agents nodes can take. `ork doctor` and `ork
+ *   upgrade` live in `install.ts`.
  */
 
 import {
@@ -18,14 +16,12 @@ import {
   toolLinks,
   toolsInUse,
 } from "@krapht/ork-core";
-import type { CheckResult } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
 import { addAgent, formatAgent, formatAgents } from "../agents/manage.ts";
-import { exec, runChecks } from "../doctor/checks.ts";
 import { style, write, writeErr } from "../output.ts";
 import { initRecorded } from "../project/init.ts";
-import { formatLinks, linkChecks } from "../project/link.ts";
+import { formatLinks } from "../project/link.ts";
 import { projectAt } from "../project/place.ts";
 import { WORKFLOW_DIR } from "../workflows.ts";
 
@@ -109,48 +105,6 @@ export const link = defineCommand({
       return;
     }
     for (const line of formatLinks(result.links, result.created)) write(line);
-  },
-});
-
-const MARK: Record<CheckResult["status"], string> = {
-  ok: style("green", "✓"),
-  warn: style("yellow", "!"),
-  fail: style("red", "✗"),
-  skip: style("dim", "-"),
-};
-
-export const formatCheck = (result: CheckResult): string[] => {
-  const line = `${MARK[result.status]} ${result.name.padEnd(20)} ${result.detail}`;
-  return result.hint === undefined
-    ? [line]
-    : [line, `  ${style("dim", result.hint)}`];
-};
-
-export const doctor = defineCommand({
-  meta: {
-    name: "doctor",
-    description:
-      "Check Node, git, and your own claude, gh, and aws logins (Ork stores no credentials)",
-  },
-  run: async () => {
-    const { results, ok } = await runChecks(
-      exec,
-      process.env,
-      process.versions.node,
-    );
-    const place = projectAt(process.cwd());
-    for (const result of [
-      ...results,
-      ...(place.mode === "attached" ? [] : linkChecks(place.root)),
-    ]) {
-      for (const line of formatCheck(result)) write(line);
-    }
-    if (!ok) {
-      write(
-        `\n${style("red", "Not ready:")} Ork needs Node, git, and at least one Claude driver.`,
-      );
-      process.exitCode = 1;
-    }
   },
 });
 

@@ -22,6 +22,10 @@ instead? Check the alias from
 [Installation](../getting-started/installation.md#install-from-source), and run
 `pnpm build` in the clone after pulling.
 
+**A line says a newer Ork is out.** Run `ork upgrade`, or `ork upgrade --check`
+to only look. To stop the daily check, set `ORK_NO_UPDATE_CHECK=1`
+([Updating](../getting-started/installation.md#updating)).
+
 **Node version errors.** Ork needs Node 24.20 or later (`node --version`).
 
 ## Before a run starts

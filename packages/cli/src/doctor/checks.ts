@@ -1,11 +1,13 @@
 /**
- * @file The checks behind `ork doctor`: each tool's presence and login status,
- *   through an injectable `exec` so tests need no real tools. Never prints a
- *   token or an account.
+ * @file The checks behind `ork doctor`: Ork's own version against the last
+ *   update check, and each tool's presence and login status, through an
+ *   injectable `exec` so tests need no real tools. Never prints a token or an
+ *   account.
  */
 
 import { execFile } from "node:child_process";
 
+import { readUpdateCache, updateCachePath } from "@krapht/ork-core";
 import {
   CLAUDE_DRIVERS,
   type CheckResult,
@@ -14,6 +16,10 @@ import {
   firstLine,
   INTEGRATIONS,
 } from "@krapht/ork-integrations";
+
+import { ORK_VERSION } from "../__build_info__.ts";
+import { updateCheckOff } from "../update/notify.ts";
+import { versionCheck } from "../update/upgrade.ts";
 
 const TIMEOUT_MS = 15_000;
 
@@ -28,6 +34,14 @@ export const exec: Exec = (program, args) =>
       },
     );
   });
+
+/** Ork's own version, against the last update check (no network). */
+export const orkCheck = (): CheckResult =>
+  versionCheck(
+    ORK_VERSION,
+    readUpdateCache(updateCachePath()),
+    updateCheckOff(process.env, [], true) !== null,
+  );
 
 export const MIN_NODE = [24, 20] as const;
 

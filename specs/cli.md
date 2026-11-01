@@ -4,9 +4,10 @@ Status: **Partial**: `ork init`, `ork register`, `ork projects`, `ork migrate`,
 `ork link`, `ork validate`, `ork doctor`, `ork run` (a whole workflow, or one
 node with `--node`), `ork ps`, `ork logs`, `ork tree`, `ork decide`, `ork stop`,
 `ork chat`, `ork resume`, `ork worktrees`, `ork context explain`,
-`ork agents list | show | add | rm` and
+`ork agents list | show | add | rm`,
 `ork feedback list | show | note | dismiss | restore`
-([feedback](./feedback.md)) are built ([code](../packages/cli/src/main.ts),
+([feedback](./feedback.md)), `ork upgrade` and the new-version notice
+([updates](./cli/updates.md)) are built ([code](../packages/cli/src/main.ts),
 [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts),
 [agents tests](../packages/cli/test/agents.test.ts),
@@ -40,6 +41,7 @@ ork resume [<run>] [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty]
 ork worktrees [list|clean]       # Ork's worktrees and branches; clean them up safely
 ork context explain <wf> <node> [--json]  # what one node's session loads, layer by layer
 ork feedback list [--all] [--json] | show <item> [--json] | note <run> [<node>] -m <text> | dismiss <item> | restore <item>  # local feedback (triage, apply, lessons, publish: M2)
+ork upgrade [--check] [--yes]    # a newer version? upgrade the way Ork was installed, after asking
 ork ui [--port 4417]             # milestone 2
 ```
 
@@ -59,3 +61,6 @@ ork ui [--port 4417]             # milestone 2
   - [Linking tool folders](./cli/worktrees-agents-context-and-doctor.md#linking-tool-folders)
   - [Context](./cli/worktrees-agents-context-and-doctor.md#context)
   - [Doctor](./cli/worktrees-agents-context-and-doctor.md#doctor)
+- [Updates](./cli/updates.md)
+  - [The new-version notice](./cli/updates.md#the-new-version-notice)
+  - [ork upgrade](./cli/updates.md#ork-upgrade)

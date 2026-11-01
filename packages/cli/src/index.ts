@@ -5,6 +5,7 @@
 
 export * from "./agents/manage.ts";
 export * from "./commands/control.ts";
+export * from "./commands/install.ts";
 export * from "./commands/projects.ts";
 export * from "./commands/run.ts";
 export * from "./commands/runs.ts";
@@ -34,3 +35,5 @@ export * from "./runs/find.ts";
 export * from "./runs/format.ts";
 export * from "./runs/logs.ts";
 export * from "./runs/resume.ts";
+export * from "./update/notify.ts";
+export * from "./update/upgrade.ts";

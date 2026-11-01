@@ -46,7 +46,25 @@ ork --version
 ```
 
 This works on any platform Node supports (see [Your platform](#your-platform)).
-To update later, run the same command again.
+
+## Updating
+
+```sh
+ork upgrade           # upgrades Ork the way you installed it, after asking
+ork upgrade --check   # only says whether a newer version is out
+```
+
+`ork upgrade` sees whether npm, pnpm, yarn, bun or Volta installed Ork, shows
+the command it will run, and runs it when you say yes. A copy run from a clone
+or through `npx` gets instructions instead.
+
+Once a day, Ork also asks the npm registry, in the background, whether a newer
+version is out, and tells you in one line after a command. This is the only
+request Ork makes on its own, and it sends nothing about you or your projects.
+It is off in CI, without a terminal and with `--json`; turn it off everywhere
+with `ORK_NO_UPDATE_CHECK=1` (or `NO_UPDATE_NOTIFIER=1`), or point it at a
+mirror with `ORK_UPDATE_REGISTRY`. `ork doctor` shows your version against the
+last check.
 
 ## Install from source
 
@@ -112,12 +130,14 @@ there. Reports are welcome as [issues](https://github.com/mimshins/ork/issues).
 ork doctor
 ```
 
-`ork doctor` checks Node, git, whether you are in a git repository, each Claude
-driver, and each optional integration. It uses each tool's own login check and
-never prints a token. At least one Claude driver has to be ready; a missing `gh`
-or `aws` is fine unless a workflow has a node that needs it. Example output:
+`ork doctor` shows your Ork version against the last update check, then checks
+Node, git, whether you are in a git repository, each Claude driver, and each
+optional integration. It uses each tool's own login check and never prints a
+token. At least one Claude driver has to be ready; a missing `gh` or `aws` is
+fine unless a workflow has a node that needs it. Example output:
 
 ```
+✓ ork                  0.1.0 (the latest as of 2026-11-02)
 ✓ node                 v24.20.0
 ✓ git                  git version 2.39.5
 ✓ git repo             inside a work tree

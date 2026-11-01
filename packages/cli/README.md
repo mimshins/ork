@@ -21,12 +21,14 @@ ork run hello --input task="add a README"
 ork worktrees           # the worktrees and branches runs left; `clean` tidies up
 ork run hello --node lead --input task="add a README" --in-place
                         # run one Claude node on its own
+ork upgrade             # a newer version? upgrade the way you installed Ork
 ```
 
 `--driver sdk` (the default) needs `ANTHROPIC_API_KEY` or a cloud provider;
 `--driver cli` uses your own logged-in `claude`.
 
 Ork never stores or asks for credentials: it uses the tools you already have,
-signed in with your own accounts.
+signed in with your own accounts. Once a day it asks the npm registry whether a
+newer version is out (`ORK_NO_UPDATE_CHECK=1` turns that off).
 
 Requires Node.js 24.20 or later. MIT licensed.
