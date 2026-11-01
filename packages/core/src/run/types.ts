@@ -90,10 +90,7 @@ export type Checkout = {
   path: string;
   /** Absent when the worktree is detached (`commit: never`). */
   branch?: string;
-  /**
-   * The project's git rules for it: may the session commit, and how its work
-   * reaches its owner.
-   */
+  /** The project's git rules: may it commit, how its work reaches its owner. */
   commit?: "auto" | "never";
   merge?: "auto" | "patch" | "never";
   /** The node's own worktree, or its owner's that it shares or reads. */
@@ -271,13 +268,15 @@ export type RunOptions = {
 };
 
 /**
- * A resumed run's recorded results. `take` gives an activation the result it
- * had last time, or `null` when it must run (it failed, never finished, or its
- * input is new); `ran` marks a new result, so what it feeds runs anew.
+ * A resumed run's recorded results. `take` gives an activation its result from
+ * last time, or `null` when it must run (it failed, never finished, or its
+ * input is new); `ran` marks a new result, so what it feeds runs anew; `cutOff`
+ * gives, once, the session a node was cut off in (ADR-026).
  */
 export type Replay = {
   take: (activation: Activation) => NodeResult | null;
   ran: (result: NodeResult) => void;
+  cutOff?: (activation: Activation) => string | undefined;
 };
 
 export type RunHandle = {

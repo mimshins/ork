@@ -165,6 +165,40 @@ describe("reading a run's events back", () => {
     expect(state.history.has("cut")).toBe(false);
   });
 
+  it("continues a node's session once when the run was cut off, not when it failed", () => {
+    const cutRun: RunEvent[] = [
+      { type: "node.started", id: "cut", nodeType: "claude.worker", round: 1 },
+      {
+        type: "node.event",
+        id: "cut",
+        event: { type: "session.started", sessionId: "cut-s1" },
+      },
+    ];
+    const crashed = resumeState(cutRun);
+    expect([...crashed.cutOff]).toEqual([["cut", "cut-s1"]]);
+    const replay = createReplay(crashed.history, crashed.cutOff);
+    const activation = { id: "cut", input: undefined };
+    expect(replay.cutOff?.(activation)).toBe("cut-s1");
+    expect(replay.cutOff?.(activation)).toBeUndefined();
+
+    const failed = resumeState([
+      ...cutRun,
+      { type: "node.finished", id: "cut", round: 1, ok: false, output: {} },
+      {
+        type: "run.finished",
+        result: {
+          runId: "r1",
+          status: "failed",
+          costUsd: 0,
+          nodes: [],
+          reasons: [],
+          worktrees: [],
+        },
+      },
+    ]);
+    expect(failed.cutOff.size).toBe(0);
+  });
+
   it("keeps worktrees that were not removed, and loop answers", async () => {
     const state = resumeState([
       tree("lead", "created"),

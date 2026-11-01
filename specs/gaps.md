@@ -41,9 +41,6 @@ carried to the next milestone.
 
 ## Limits
 
-- **L1 · A cut-off session starts over on resume.** A node cut off mid-session
-  gets a new session; only a leader's re-entry resumes its previous round's
-  session. ([ADR-026](../decisions/ADR-026-resume-by-replay.md))
 - **L2 · A resumed run's budget counts what it spent.** Raise `limits.budgetUsd`
   to resume a run that ran out.
   ([ADR-026](../decisions/ADR-026-resume-by-replay.md))

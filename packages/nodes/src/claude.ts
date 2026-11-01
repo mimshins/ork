@@ -49,10 +49,16 @@ export const resumeMessage = (
 ): string =>
   [
     brief === undefined
-      ? `The workflow sent your task back to you.${reentryNote(round, input)}`
+      ? sentBack(round, input)
       : `## New task from \`${brief.from}\`\n\n${brief.text}`,
     "End with a new structured report.",
   ].join("\n\n");
+
+/** A first-round resume is a session the run was cut off in (`ork resume`). */
+const sentBack = (round: number, input: unknown): string =>
+  round === 1
+    ? "Ork was stopped while you worked on this task, and the run is resumed. Your earlier turns are above: check what you finished, and carry on from there."
+    : `The workflow sent your task back to you.${reentryNote(round, input)}`;
 
 /** A finished session as a node result: its report is the node's output. */
 export const resultOf = (outcome: SessionOutcome | null): NodeResult => {

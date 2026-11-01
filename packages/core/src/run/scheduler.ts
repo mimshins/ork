@@ -1,9 +1,8 @@
 /**
- * @file The scheduler: runs a compiled workflow to the end. It starts entries,
- *   runs each activation through its node type's executor, routes outputs along
- *   edges (`routing.ts`), bounds loops (`escalation.ts`), runs the children a
- *   leader delegates to (`delegation.ts`), shares the bus, claims and feedback
- *   (`ports.ts`), and enforces the budget and concurrency (`slots.ts`).
+ * @file The scheduler: runs a compiled workflow to the end: entries, executors,
+ *   routing (`routing.ts`), loops (`escalation.ts`), delegated children
+ *   (`delegation.ts`), the bus, claims and feedback (`ports.ts`), and the
+ *   budget and concurrency (`slots.ts`).
  */
 
 import { isClaudeNode } from "@krapht/ork-schema";
@@ -177,7 +176,9 @@ export const startRun = (options: RunOptions): RunHandle => {
       context.template = activation.template;
     }
     if (activation.brief !== undefined) context.brief = activation.brief;
-    const resume = resumeOf(nodeOf(activation), sessionIds.get(id));
+    const resume =
+      options.replay?.cutOff?.(activation) ??
+      resumeOf(nodeOf(activation), sessionIds.get(id));
     if (resume !== undefined) context.resume = resume;
     if (nodeOf(activation)?.type === "claude.leader") {
       context.ownership = createOwnership({

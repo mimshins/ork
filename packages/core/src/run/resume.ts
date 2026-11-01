@@ -40,7 +40,15 @@ export type ResumeState = {
   loopAnswers: { question: string; answer: string }[];
   /** Whether the run ended as `succeeded`: nothing to resume. */
   succeeded: boolean;
+  /**
+   * The sessions nodes were cut off in when the run stopped, crashed or ran out
+   * of budget; each continues there when it runs again.
+   */
+  cutOff: Map<string, string>;
 };
+
+/** How a run ended that cut its working nodes off, rather than failing them. */
+const CUTTING = new Set(["interrupted", "budget_exhausted"]);
 
 type Open = { sessionId?: string };
 
@@ -58,6 +66,9 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
   let inputs: Inputs = {};
   let settings: RunSettings = {};
   let succeeded = false;
+  let ended: string | undefined;
+  /** Nodes whose last activation did not finish well, and its session. */
+  const unfinished = new Map<string, string>();
 
   for (const event of events) {
     if (event.type === "run.started") {
@@ -88,6 +99,9 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
       if (current === undefined || closed.has(event.id)) continue;
       if (!event.ok) {
         closed.add(event.id);
+        if (current.sessionId !== undefined) {
+          unfinished.set(event.id, current.sessionId);
+        }
         continue;
       }
       const result: NodeResult = { ok: true, output: event.output };
@@ -150,11 +164,16 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
     }
     if (event.type === "run.finished") {
       succeeded = event.result.status === "succeeded";
+      ended = event.result.status;
       continue;
     }
   }
   // A node still open never finished: it runs again, and nothing after it.
-  for (const id of open.keys()) closed.add(id);
+  for (const [id, current] of open) {
+    closed.add(id);
+    if (current.sessionId !== undefined) unfinished.set(id, current.sessionId);
+  }
+  const cut = ended === undefined || CUTTING.has(ended);
 
   return {
     history,
@@ -166,6 +185,7 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
     branches: [...branches],
     loopAnswers,
     succeeded,
+    cutOff: cut ? unfinished : new Map<string, string>(),
   };
 };
 
@@ -185,11 +205,13 @@ const carries = (fresh: WeakSet<object>, input: NodeOutput | undefined) => {
 /**
  * Hands each node's recorded results back in order, until the node runs anew
  * once (it failed or never finished last time, or its input is new); from then
- * on it always runs.
+ * on it always runs. A node cut off mid-session continues that session, once.
  */
 export const createReplay = (
   history: ReadonlyMap<string, readonly NodeResult[]>,
+  cutOff: ReadonlyMap<string, string> = new Map(),
 ): Replay & { kept: () => string[] } => {
+  const sessions = new Map(cutOff);
   const used = new Map<string, number>();
   const anew = new Set<string>();
   const fresh = new WeakSet<object>();
@@ -208,6 +230,15 @@ export const createReplay = (
     },
     ran: result => {
       fresh.add(result.output);
+    },
+    cutOff: activation => {
+      // A delegated run is its leader's: it never continues a cut session.
+      const session =
+        activation.brief === undefined
+          ? sessions.get(activation.id)
+          : undefined;
+      sessions.delete(activation.id);
+      return session;
     },
     kept: () => [...history.keys()],
   };

@@ -157,6 +157,12 @@ under the same run id, with a `Replay` built from the run's events:
   finished; from there it runs. A new result marks its output, and an activation
   whose input carries one (directly, or in a join's `results`) runs too.
   Delegated runs are never handed back: their leader's session runs them.
+- **A node cut off mid-session continues it.** When the run was stopped, crashed
+  or ran out of budget (not when it failed), a node whose last activation never
+  finished well resumes the Claude session it had, once, told that the run was
+  stopped and to carry on from what it finished
+  ([resume.ts](../packages/core/src/run/resume.ts), `cutOff`). A node that
+  failed in a failed run starts fresh.
 - `run.started` carries the run's `inputs` and `settings` (`inPlace`, `driver`),
   which the resumed run starts with; the CLI records `run.resumed` with the
   nodes that keep results first.

@@ -158,7 +158,9 @@ ork resume 3f2a --detach           # in the background; answer with ork decide
 
 Nodes that finished keep their results and do not run again, so you do not pay
 for them twice; the node that failed or was cut off runs again, and so does
-everything after it. The run keeps its id, its inputs and its flags, and picks
-up the worktrees it left. It reads the workflow file again, so you can fix a
-step before resuming. A run that ran out of budget counts what it already spent:
-raise `limits.budgetUsd` first.
+everything after it. A node cut off mid-session (you stopped the run, it
+crashed, or the budget ran out) continues the session it had, so its earlier
+turns are not paid for again. The run keeps its id, its inputs and its flags,
+and picks up the worktrees it left. It reads the workflow file again, so you can
+fix a step before resuming. A run that ran out of budget counts what it already
+spent: raise `limits.budgetUsd` first.

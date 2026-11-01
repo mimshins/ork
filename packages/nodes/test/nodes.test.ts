@@ -27,6 +27,7 @@ import {
   isAllowed,
   OUTPUT_LIMIT,
   resultOf,
+  resumeMessage,
   spawnTool,
   timeoutMs,
   tokenize,
@@ -340,6 +341,14 @@ const finishedPassing = async function* (): AsyncGenerator<RuntimeEvent> {
 };
 
 describe("Claude nodes", () => {
+  it("tells a session cut off by the run to carry on, and a re-entered one its round", () => {
+    expect(resumeMessage(1, undefined)).toContain("Ork was stopped");
+    expect(resumeMessage(2, { statuses: [] })).toContain("## Round 2");
+    expect(
+      resumeMessage(1, undefined, { from: "lead", text: "Fix it." }),
+    ).toContain("## New task from `lead`");
+  });
+
   it("turns a report into the node's output", () => {
     expect(
       resultOf(
