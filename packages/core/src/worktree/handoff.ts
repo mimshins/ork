@@ -13,11 +13,13 @@ import type {
   Checkout,
   KeptWorktree,
   NodeOutput,
+  NodeResult,
   RunEvent,
 } from "../run/types.ts";
 import { gitOk } from "./git.ts";
 import {
   carryFiles,
+  commitLeftovers,
   createWorktree,
   fastForward,
   mergeBranch,
@@ -213,4 +215,32 @@ export const oneAtATime = () => {
     );
     return next;
   };
+};
+
+/** A node's result, with where it worked: the worktree, and its branch. */
+export const placed = (result: NodeResult, worktree: Tracked): NodeResult => ({
+  ...result,
+  output: {
+    ...result.output,
+    ...(worktree.branch === undefined ? {} : { branch: worktree.branch }),
+    worktree: worktree.path,
+  },
+});
+
+/**
+ * Commits what a node left in a worktree, unless `commit: never`: whether it
+ * committed anything, or why it could not.
+ */
+export const commitWork = async (
+  worktree: Tracked,
+  never: boolean,
+  message: string,
+): Promise<{ committed: boolean; error?: string }> => {
+  if (never) return { committed: false };
+  try {
+    return { committed: await commitLeftovers(worktree.path, message) };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return { committed: false, error: reason };
+  }
 };

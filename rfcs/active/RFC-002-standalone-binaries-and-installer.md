@@ -1,6 +1,7 @@
 # RFC-002 — Standalone binaries and a one-line installer
 
-- **Status:** Proposed
+- **Status:** Accepted (2026-11-01, as written; its open questions are settled
+  in a spike before building)
 - **Date:** 2026-10-30
 - **Supersedes:** —
 - **Superseded by:** —

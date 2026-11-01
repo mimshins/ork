@@ -1,11 +1,11 @@
 /**
  * @file `ork migrate --from-agents` (ADR-036): drafts a workflow from a
  *   project's agents, for the user to edit. The named agents work one after
- *   another, each in its own worktree; an optional reviewer reads the last
- *   one's change after a human gate and sends it back while it asks for
- *   changes; then the change is staged, shown at a second gate, and committed
- *   on a branch the run is given. The draft sets `git.commit: never`, so Ork
- *   itself commits nothing, and nothing is pushed.
+ *   another in one worktree (the first opens it, the rest `continue` in it); an
+ *   optional reviewer reads the change after a human gate and sends it back
+ *   while it asks for changes; then the change is staged, shown at a second
+ *   gate, and committed on a branch the run is given. The draft sets
+ *   `git.commit: never`, so Ork itself commits nothing, and nothing is pushed.
  */
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -52,7 +52,8 @@ export const draftWorkflow = (options: DraftOptions): Workflow => {
     nodes[agent] = {
       type: "claude.worker",
       agent,
-      isolation: "worktree",
+      // The first agent opens the worktree; the others continue in it.
+      isolation: before === undefined ? "worktree" : "continue",
       prompt:
         before === undefined
           ? "{{inputs.task}}"

@@ -60,4 +60,4 @@ and carries an RFC through this lifecycle.
 | RFC                                                          | Title                                        | Status      |
 | ------------------------------------------------------------ | -------------------------------------------- | ----------- |
 | [001](./archived/RFC-001-integrations-as-adapters.md)        | Integrations as adapters behind a registry   | Implemented |
-| [002](./active/RFC-002-standalone-binaries-and-installer.md) | Standalone binaries and a one-line installer | Proposed    |
+| [002](./active/RFC-002-standalone-binaries-and-installer.md) | Standalone binaries and a one-line installer | Accepted    |

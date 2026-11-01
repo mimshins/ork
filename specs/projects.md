@@ -102,14 +102,14 @@ in the working tree to review and commit
   `workflows/<name>.ork.yaml` in the project's folder, never over a file, and
   validates it:
 
-  | Node(s)            | What it does                                                                     |
-  | ------------------ | -------------------------------------------------------------------------------- |
-  | `a`, `b`, …        | a `claude.worker` per agent, in order, each in its worktree                      |
-  | `ready`            | with a reviewer: a gate that sends the last agent's change to it                 |
-  | the reviewer       | `readonly`, `session: resume`; `changes_requested` sends it back, `maxRounds: 3` |
-  | `stage`            | `tool.git add -A` in the last agent's worktree                                   |
-  | `approve`          | a gate showing the staged summary                                                |
-  | `branch`, `commit` | `switch -c {{inputs.branch}}`, then `commit -m {{inputs.message}}`               |
+  | Node(s)            | What it does                                                                                    |
+  | ------------------ | ----------------------------------------------------------------------------------------------- |
+  | `a`, `b`, …        | a `claude.worker` per agent, in order, in one worktree: the first opens it, the rest `continue` |
+  | `ready`            | with a reviewer: a gate that sends the last agent's change to it                                |
+  | the reviewer       | `readonly`, `session: resume`; `changes_requested` sends it back, `maxRounds: 3`                |
+  | `stage`            | `tool.git add -A` in the last agent's worktree                                                  |
+  | `approve`          | a gate showing the staged summary                                                               |
+  | `branch`, `commit` | `switch -c {{inputs.branch}}`, then `commit -m {{inputs.message}}`                              |
 
   It takes the inputs `task`, `branch` and `message` and sets
   `rules.git.commit: never`: Ork commits nothing itself, and nothing is pushed.

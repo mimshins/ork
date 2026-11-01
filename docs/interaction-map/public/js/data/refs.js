@@ -424,6 +424,14 @@ export const ROLES = {
     "packages/core/src/worktree/upstream.ts",
     "Code: where a readonly node works",
   ),
+  workspace: d(
+    "packages/core/src/worktree/workspace.ts",
+    "Code: where each node works, `continue` too",
+  ),
+  continueAdr: d(
+    "decisions/ADR-037-isolation-continue.md",
+    "ADR-037: `isolation: continue`",
+  ),
   compileTests: d(
     "packages/core/test/compile.test.ts",
     "Tests: entries, trees, unreachable nodes",

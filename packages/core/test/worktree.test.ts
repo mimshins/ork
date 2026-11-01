@@ -19,6 +19,7 @@ import {
   planClean,
   worktreePath,
   branchName,
+  type RunEvent,
   upstreamPlace,
 } from "../src/index.ts";
 import { compile, repo, runIn, sh, working, write } from "./fixtures/git.ts";
@@ -64,6 +65,12 @@ describe("the project check", () => {
     expect(await inspectProject(tmpdir())).toBeNull();
   });
 });
+
+/** The outputs a node finished with, in order. */
+const outputsOf = (events: readonly RunEvent[], id: string) =>
+  events.flatMap(e =>
+    e.type === "node.finished" && e.id === id ? [e.output] : [],
+  );
 
 describe("worktrees", () => {
   it("live beside the clone, with the local agent files and .worktreeinclude", async () => {
@@ -171,6 +178,54 @@ describe("worktrees", () => {
     expect(cwds["approve"]).toBe(worktreePath(root, "r1", "lead"));
     expect(prompts["approve"]).toBe("ork/r1/lead");
     expect(cwds["judge"]).toBe(root);
+  });
+
+  it("lets a continue node write in the worktree its input came from", async () => {
+    const root = repo();
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: chain",
+        "nodes:",
+        "  docs: { type: claude.worker }",
+        "  code: { type: claude.worker, isolation: continue }",
+        "  alone: { type: claude.worker, isolation: continue }",
+        "edges:",
+        "  - docs -> code",
+      ].join("\n"),
+    );
+    const { executor, cwds } = working({
+      docs: { files: { "spec.md": "spec\n" } },
+      code: { files: { "src/code.ts": "code\n" } },
+    });
+    const { result, worktreeEvents, events } = await runIn(
+      root,
+      graph,
+      executor,
+    );
+    expect(result.status).toBe("succeeded");
+    const docs = worktreePath(root, "r1", "docs");
+    // `code` works where `docs` did and sees its file; `alone` has no input,
+    // so it gets a worktree of its own.
+    expect(cwds["code"]).toBe(docs);
+    expect(cwds["alone"]).toBe(worktreePath(root, "r1", "alone"));
+    expect(worktreeEvents).toContain("code committed");
+    expect(sh(docs, "log", "--format=%s", "-2")).toBe(
+      "ork: code (run r1)\nork: docs (run r1)\n",
+    );
+    expect(
+      sh(docs, "ls-files", "spec.md", "src/code.ts")
+        .split("\n")
+        .filter(Boolean),
+    ).toEqual(["spec.md", "src/code.ts"]);
+    const finished = outputsOf(events, "code");
+    expect(finished).toMatchObject([
+      { worktree: docs, branch: branchName("r1", "docs") },
+    ]);
+    expect(result.worktrees.map(w => w.id).toSorted()).toEqual([
+      "alone",
+      "docs",
+    ]);
   });
 
   it("follows a readonly node's input back through a human gate", () => {

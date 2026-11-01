@@ -66,7 +66,7 @@ builder:
   instructions: Keep the public API unchanged. # added to its system prompt
   model: opus
   effort: high
-  isolation: worktree # worktree, shared, or readonly
+  isolation: worktree # worktree, continue, shared or readonly
   budgetUsd: 2
   maxTurns: 40
   tools:

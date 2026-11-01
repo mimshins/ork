@@ -1,6 +1,6 @@
 /**
- * @file The ownership tree's rules: who may own whom, unknown parents, and
- *   cycles.
+ * @file The ownership tree's rules: who may own whom, unknown parents, cycles,
+ *   and `isolation: continue` staying outside the tree.
  */
 
 import type { Diagnostic, Workflow } from "@krapht/ork-schema";
@@ -13,7 +13,9 @@ import { error } from "./diagnostics.ts";
  * - A `claude.subagent` is owned by a `claude.leader` or `claude.worker` (it runs
  *   inside that node's session);
  * - Every other owned node is owned by a `claude.leader`;
- * - The tree has no cycles.
+ * - The tree has no cycles;
+ * - A node that sets `isolation: continue` neither owns nor is owned: it works in
+ *   the worktree its input came from, outside the tree's merges.
  */
 export const checkOwnership = (workflow: Workflow): Diagnostic[] => {
   const diagnostics: Diagnostic[] = [];
@@ -45,6 +47,20 @@ export const checkOwnership = (workflow: Workflow): Diagnostic[] => {
           "tree.owner-kind",
           `only a claude.leader can own a ${node.type} ("${node.parent}" is a ${owner.type})`,
           path,
+        ),
+      );
+    }
+  }
+
+  for (const [id, node] of Object.entries(nodes)) {
+    if (!("isolation" in node) || node.isolation !== "continue") continue;
+    const owns = Object.values(nodes).some(other => other.parent === id);
+    if (node.parent !== undefined || owns) {
+      diagnostics.push(
+        error(
+          "tree.continue",
+          `"${id}" continues in its input's worktree, so it can neither own nodes nor have a parent`,
+          ["nodes", id, "isolation"],
         ),
       );
     }

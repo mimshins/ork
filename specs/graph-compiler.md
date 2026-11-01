@@ -17,7 +17,8 @@ with parsed conditions), the entry nodes, and the declared message channels.
   it. There must be at least one entry.
 - **Ownership:** a `claude.subagent` is owned by a `claude.leader` or
   `claude.worker` (it runs in that node's session); every other owned node is
-  owned by a `claude.leader`; the tree has no cycles.
+  owned by a `claude.leader`; the tree has no cycles; a node that sets
+  `isolation: continue` neither owns nor is owned.
 - **Loops:** every cycle needs at least one edge with `maxRounds`.
 - **Sub-agents** take no edges.
 - **References** in templates and conditions must resolve (see
@@ -42,6 +43,7 @@ warnings do not. Schema problems come first, from
 | `tree.unknown-parent`    | error    | `parent` names no node                                         |
 | `tree.owner-kind`        | error    | the owner's type cannot own this node                          |
 | `tree.cycle`             | error    | the ownership tree has a cycle                                 |
+| `tree.continue`          | error    | an `isolation: continue` node has a parent or children         |
 | `edge.syntax`            | error    | shorthand without exactly one `->`, or an empty side           |
 | `edge.unknown-node`      | error    | an edge names no node                                          |
 | `edge.subagent`          | error    | an edge touches a sub-agent                                    |

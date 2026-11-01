@@ -34,10 +34,12 @@ export type Effort = z.infer<typeof EffortSchema>;
 
 /**
  * - `worktree`: own git worktree and branch, based on the owner's branch.
+ * - `continue`: with no owner, the worktree its input came from (ADR-037).
  * - `shared`: works in the owner's checkout (or the project root).
  * - `readonly`: shared checkout; write tools are denied.
  */
-export const IsolationSchema = z.enum(["worktree", "shared", "readonly"]);
+const ISOLATIONS = ["worktree", "continue", "shared", "readonly"] as const;
+export const IsolationSchema = z.enum(ISOLATIONS);
 export type Isolation = z.infer<typeof IsolationSchema>;
 
 export const BudgetSchema = z.number().positive();

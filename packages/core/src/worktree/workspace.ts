@@ -3,9 +3,10 @@
  *   (ADR-032). A `worktree` node gets its own worktree beside the clone, named
  *   by the rules; `shared` and `readonly` nodes, and tool and gate nodes, work
  *   in their owner's worktree or the project root, and a `readonly` node with
- *   no owner in the worktree its input came from. After a node, Ork commits its
- *   leftovers (unless `commit: never`) and brings a passing child's work to its
- *   owner: a merge, a patch, or not at all. A spawned worker works like the
+ *   no owner in the worktree its input came from. A `continue` node works in
+ *   that worktree too, and writes there (ADR-037). After a node, Ork commits
+ *   its leftovers (unless `commit: never`) and brings a passing child's work to
+ *   its owner: a merge, a patch, or not at all. A spawned worker works like the
  *   declared child it is an instance of.
  */
 
@@ -16,26 +17,26 @@ import { isClaudeNode } from "@krapht/ork-schema";
 import type { CompiledGraph } from "../graph/types.ts";
 import { gitRulesOf } from "../project/rules.ts";
 import type {
-  KeptWorktree,
   NodeOutput,
   NodeResult,
   RunEvent,
   Workspace,
 } from "../run/types.ts";
+import { closeWorktrees } from "./close.ts";
 import {
   carryArtifacts,
   checkoutFor,
+  commitWork,
   handOver,
-  keptOf,
   nameOf,
   openWorktree,
   oneAtATime,
+  placed,
   refreshWorktree,
   type Tracked,
   worktreeEvent,
   type WorktreeEvent,
 } from "./handoff.ts";
-import { commitLeftovers, removeWorktree } from "./manager.ts";
 import type { NameInputs } from "./names.ts";
 import { upstreamPlace } from "./upstream.ts";
 
@@ -60,7 +61,7 @@ export type WorkspaceOptions = {
   known?: readonly string[];
 };
 
-type Isolation = "worktree" | "shared" | "readonly";
+type Isolation = "worktree" | "continue" | "shared" | "readonly";
 
 export const createWorkspace = (options: WorkspaceOptions): Workspace => {
   const { graph, runId, root, head, onEvent } = options;
@@ -74,6 +75,8 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
   const unmerged = new Map<string, string>();
   const intoOwner = oneAtATime();
   const templateOf = new Map<string, string>();
+  /** A `continue` node → the node whose worktree it works in this time. */
+  const continued = new Map<string, string>();
   for (const left of options.adopt ?? []) {
     if (!existsSync(left.path)) continue;
     const { id, merged: wasMerged, ...worktree } = left;
@@ -83,12 +86,26 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
 
   const nodeOf = (id: string) =>
     graph.nodes.get(templateOf.get(id) ?? id)?.node;
+  const ownerOf = (id: string): string | undefined => nodeOf(id)?.parent;
   const isolationOf = (id: string): Isolation => {
     const node = nodeOf(id);
     if (node === undefined || !isClaudeNode(node)) return "shared";
-    return node.isolation ?? graph.workflow.defaults?.isolation ?? "worktree";
+    const isolation =
+      node.isolation ?? graph.workflow.defaults?.isolation ?? "worktree";
+    // `continue` from the defaults, on a node in the tree, is a worktree.
+    const inTree =
+      ownerOf(id) !== undefined ||
+      (graph.nodes.get(templateOf.get(id) ?? id)?.children.length ?? 0) > 0;
+    return isolation === "continue" && inTree ? "worktree" : isolation;
   };
-  const ownerOf = (id: string): string | undefined => nodeOf(id)?.parent;
+  /** The node's own worktree, if it works in one. */
+  const ownTree = (id: string): Tracked | undefined => {
+    const isolation = isolationOf(id);
+    const own =
+      isolation === "worktree" ||
+      (isolation === "continue" && !continued.has(id));
+    return own ? worktrees.get(id) : undefined;
+  };
 
   /** The nearest owner with a worktree, for nodes that work in someone else's. */
   const hostOf = (id: string): string | undefined => {
@@ -145,9 +162,8 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     return worktree;
   };
 
-  /** A readonly node with no owner reads the worktree its input came from. */
-  const readFrom = (id: string): string | undefined => {
-    if (isolationOf(id) !== "readonly") return undefined;
+  /** The node whose worktree `id`'s input came from, if there is one. */
+  const upstreamOf = (id: string): string | undefined => {
     const declared = templateOf.get(id) ?? id;
     const place = upstreamPlace(graph, declared, placeOf, root);
     return [...worktrees].find(([, w]) => w.path === place)?.[0];
@@ -155,7 +171,18 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
 
   const prepare: Workspace["prepare"] = async (id, template) => {
     if (template !== undefined) templateOf.set(id, template);
-    if (isolationOf(id) === "worktree") {
+    const isolation = isolationOf(id);
+    const from = isolation === "continue" ? upstreamOf(id) : undefined;
+    const input = from === undefined ? undefined : worktrees.get(from);
+    continued.delete(id);
+    if (from !== undefined && from !== id && input !== undefined) {
+      continued.set(id, from);
+      placeOf.set(id, input.path);
+      const checkout = checkoutFor(rules, input, false, from);
+      return { cwd: input.path, checkout };
+    }
+    // With no one worktree upstream, a `continue` node gets its own.
+    if (isolation === "worktree" || isolation === "continue") {
       const worktree = await ensureWorktree(id);
       placeOf.set(id, worktree.path);
       return {
@@ -163,7 +190,8 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
         checkout: checkoutFor(rules, worktree, true, id),
       };
     }
-    const host = hostOf(id) ?? readFrom(id);
+    const host =
+      hostOf(id) ?? (isolation === "readonly" ? upstreamOf(id) : undefined);
     const hosted = host === undefined ? undefined : worktrees.get(host);
     if (host === undefined || hosted === undefined) {
       placeOf.set(id, root);
@@ -175,54 +203,47 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
   };
 
   const checkpoint: Workspace["checkpoint"] = async id => {
-    const worktree =
-      isolationOf(id) === "worktree" ? worktrees.get(id) : undefined;
+    const worktree = ownTree(id);
     // Under commit: never, children take the leader's uncommitted work.
     if (worktree === undefined || never) return null;
-    try {
-      const message = `ork: ${id} before delegating (run ${runId})`;
-      if (await commitLeftovers(worktree.path, message)) {
-        event(id, "committed", worktree, "before delegating");
-      }
-      return null;
-    } catch (error) {
-      return error instanceof Error ? error.message : String(error);
-    }
+    const message = `ork: ${id} before delegating (run ${runId})`;
+    const work = await commitWork(worktree, never, message);
+    if (work.committed) event(id, "committed", worktree, "before delegating");
+    return work.error ?? null;
+  };
+
+  /** Reports where the node worked, and commits what it left there. */
+  const settle = async (
+    id: string,
+    holder: string,
+    worktree: Tracked,
+    result: NodeResult,
+  ): Promise<NodeResult> => {
+    // Whatever this run adds is unmerged until it is merged.
+    merged.delete(holder);
+    const next = placed(result, worktree);
+    const work = await commitWork(worktree, never, `ork: ${id} (run ${runId})`);
+    if (work.committed) event(id, "committed", worktree);
+    if (work.error === undefined) return next;
+    unmerged.set(holder, `uncommitted: ${work.error}`);
+    const error = `could not commit its work: ${work.error}`;
+    return { ...next, ok: false, error };
   };
 
   const finish: Workspace["finish"] = async (id, result) => {
-    const worktree =
-      isolationOf(id) === "worktree" ? worktrees.get(id) : undefined;
+    const from = continued.get(id);
+    const input = from === undefined ? undefined : worktrees.get(from);
+    if (from !== undefined && input !== undefined) {
+      const done = await settle(id, from, input, result);
+      outputs.set(id, done.output);
+      return done;
+    }
+    const worktree = ownTree(id);
     if (worktree === undefined) {
       outputs.set(id, result.output);
       return result;
     }
-    // Whatever this run adds is unmerged until it is merged.
-    merged.delete(id);
-    let next: NodeResult = {
-      ...result,
-      output: {
-        ...result.output,
-        ...(worktree.branch === undefined ? {} : { branch: worktree.branch }),
-        worktree: worktree.path,
-      },
-    };
-    try {
-      if (
-        !never &&
-        (await commitLeftovers(worktree.path, `ork: ${id} (run ${runId})`))
-      ) {
-        event(id, "committed", worktree);
-      }
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error);
-      unmerged.set(id, `uncommitted: ${reason}`);
-      next = {
-        ...next,
-        ok: false,
-        error: `could not commit its work: ${reason}`,
-      };
-    }
+    const next = await settle(id, id, worktree, result);
     outputs.set(id, next.output);
 
     const owner = ownerOf(id);
@@ -262,34 +283,18 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     };
   };
 
-  const close: Workspace["close"] = async () => {
-    const kept: KeptWorktree[] = [];
-    for (const [id, worktree] of worktrees) {
-      if (merged.has(id) && !unmerged.has(id)) {
-        try {
-          // oxlint-disable-next-line no-await-in-loop -- git takes one lock at a time
-          await removeWorktree(root, worktree.path, never);
-          event(id, "removed", worktree);
-          continue;
-        } catch {
-          kept.push({
-            ...keptOf(id, worktree),
-            reason: "could not be removed",
-          });
-          continue;
-        }
-      }
-      const reason =
-        unmerged.get(id) ??
-        (ownerOf(id) === undefined
-          ? never
-            ? "the run's result, uncommitted"
-            : "the run's result"
-          : "not merged");
-      kept.push({ ...keptOf(id, worktree), reason });
-    }
-    return kept;
-  };
+  const close: Workspace["close"] = () =>
+    closeWorktrees({
+      root,
+      never,
+      worktrees,
+      merged,
+      unmerged,
+      ownerOf,
+      onRemoved: (id, worktree) => {
+        event(id, "removed", worktree);
+      },
+    });
 
   return { prepare, checkpoint, finish, close };
 };

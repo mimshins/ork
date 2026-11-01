@@ -142,7 +142,11 @@ export const planNodeSession = (
   const defaults = workflow.defaults ?? {};
   const isolation = node.isolation ?? defaults.isolation ?? "worktree";
   const ownWorktree = options.checkout?.own === true;
-  if (isolation === "worktree" && !ownWorktree && options.inPlace !== true) {
+  // A `continue` node needs a worktree too: its input's, or its own.
+  const needs =
+    (isolation === "worktree" && !ownWorktree) ||
+    (isolation === "continue" && options.checkout === undefined);
+  if (needs && options.inPlace !== true) {
     return {
       ok: false,
       error: `"${id}" uses worktree isolation, which a run on its own does not set up; run the whole workflow, or pass --in-place to run it in this checkout`,

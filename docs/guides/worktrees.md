@@ -15,6 +15,7 @@ changes handed over uncommitted): see [project rules](./project-rules.md).
 | `isolation`          | Where the node works                                                  |
 | -------------------- | --------------------------------------------------------------------- |
 | `worktree` (default) | its own worktree, on branch `ork/<run>/<node>`                        |
+| `continue`           | the worktree its input came from, with no owner; else its own         |
 | `shared`             | its owner's worktree, or your project's checkout when it has no owner |
 | `readonly`           | like `shared`, but the tools that write files are denied              |
 
@@ -24,6 +25,10 @@ Tool and gate nodes work like `shared`. Set a default for the workflow with
 Good fits:
 
 - `worktree` for anything that writes code.
+- `continue` for the next writer in a chain, such as an implementer after a
+  documenter: it works in the same worktree, sees the earlier edits, and its
+  work is committed on that worktree's branch. It cannot own nodes or have a
+  `parent`.
 - `readonly` for reviewers: they see the work in their owner's checkout and
   cannot change it. A readonly node with no owner works in the worktree its
   input came from (through joins, routers and gates), so an approver after a

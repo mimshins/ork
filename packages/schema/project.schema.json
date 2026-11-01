@@ -93,6 +93,7 @@
           "type": "string",
           "enum": [
             "worktree",
+            "continue",
             "shared",
             "readonly"
           ]

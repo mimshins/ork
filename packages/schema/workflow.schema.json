@@ -135,6 +135,7 @@
           "type": "string",
           "enum": [
             "worktree",
+            "continue",
             "shared",
             "readonly"
           ]
@@ -299,6 +300,7 @@
             "type": "string",
             "enum": [
               "worktree",
+              "continue",
               "shared",
               "readonly"
             ]
@@ -478,6 +480,7 @@
                 "type": "string",
                 "enum": [
                   "worktree",
+                  "continue",
                   "shared",
                   "readonly"
                 ]
@@ -640,6 +643,7 @@
                 "type": "string",
                 "enum": [
                   "worktree",
+                  "continue",
                   "shared",
                   "readonly"
                 ]
@@ -797,6 +801,7 @@
                 "type": "string",
                 "enum": [
                   "worktree",
+                  "continue",
                   "shared",
                   "readonly"
                 ]

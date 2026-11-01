@@ -331,9 +331,30 @@ export const NODES = [
     facts: [
       "When those nodes all worked in one worktree, it works there; otherwise in the project root.",
       "With an owner, it works in its nearest owner's worktree instead.",
+      "A continuing writer finds its worktree the same way, and writes there.",
       "Its write tools are denied.",
     ],
     docs: [ROLES.upstream, ROLES.worktreeTests, ROLES.where],
+  },
+
+  {
+    id: "continuer",
+    title: "Continuing writer",
+    sub: "writes in its input's worktree",
+    zone: "flow",
+    x: 840,
+    y: 500,
+    status: "built",
+    pkg: "core",
+    summary:
+      "A Claude node with `isolation: continue`: the next writer in a chain, such as an implementer after a documenter. It works in the worktree its input came from, sees the earlier edits, and its work is committed on that worktree's branch.",
+    facts: [
+      "Found by the same look-back as a readonly reader, through control nodes and gates.",
+      "With no one worktree upstream (an entry, or inputs from different places), it gets its own.",
+      "It can neither own nodes nor have a `parent` (`tree.continue`).",
+      "`ork migrate --from-agents` drafts every agent after the first this way.",
+    ],
+    docs: [ROLES.workspace, ROLES.worktreeTests, ROLES.continueAdr],
   },
 
   // ── In the tree ─────────────────────────────────────────────

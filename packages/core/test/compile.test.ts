@@ -96,6 +96,20 @@ edges:
     ]);
   });
 
+  it("keeps a continue node out of the ownership tree", () => {
+    expect(
+      codes(
+        workflow(`nodes:
+  lead: { type: claude.leader, isolation: continue }
+  w: { type: claude.worker, parent: lead, isolation: continue }
+  next: { type: claude.worker, isolation: continue }
+edges:
+  - lead -> next
+`),
+      ),
+    ).toEqual(["error:tree.continue", "error:tree.continue"]);
+  });
+
   it("checks edges", () => {
     expect(
       codes(

@@ -68,3 +68,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [034](./ADR-034-tool-git.md)                       | `tool.git`: a commit is an explicit step                                    | Accepted          | waived                                                      |
 | [035](./ADR-035-projects-in-repo-or-attached.md)   | A project's files live in its repository or beside it, attached             | Accepted          | waived                                                      |
 | [036](./ADR-036-ork-migrate.md)                    | `ork migrate`: move into the repository, never commit                       | Accepted          | waived                                                      |
+| [037](./ADR-037-isolation-continue.md)             | `isolation: continue`: write in the worktree your input came from           | Accepted          | waived                                                      |

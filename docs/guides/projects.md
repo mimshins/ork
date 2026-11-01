@@ -106,10 +106,12 @@ ork migrate --from-agents documenter,implementer --reviewer reviewer
 
 This writes `workflows/process.ork.yaml` in the project's folder (`--name` picks
 another name) and validates it; nothing else changes. The agents work one after
-another, each in its own worktree. A gate asks you before the reviewer reads the
-last agent's change, and the reviewer sends it back while it requests changes
-(three rounds at most). Then the change is staged, a second gate shows you the
-staged summary, and it is committed on the branch you give the run:
+another in one worktree: the first opens it, and each one after it continues
+there (`isolation: continue`), so it sees the earlier edits. A gate asks you
+before the reviewer reads the last agent's change, and the reviewer sends it
+back while it requests changes (three rounds at most). Then the change is
+staged, a second gate shows you the staged summary, and it is committed on the
+branch you give the run:
 
 ```sh
 ork run process --input task="Add a health endpoint" \
@@ -150,10 +152,11 @@ repository:
 
 The run cost a few cents on haiku. The reviewer read the implementer's worktree,
 the second gate showed the staged summary, and the commit landed on the new
-branch; the clone's own checkout stayed as it was. Two things to know:
+branch; the clone's own checkout stayed as it was. Two things it taught:
 
 - Permission patterns are Claude Code's: `Bash(git diff*)` does not match
   `git -C <path> diff`, so that call was asked about.
-- Each drafted agent has its own worktree, so an earlier agent's edits do not
-  reach the next one ([gaps](../../specs/gaps.md)); keep the writing to one
-  agent, or edit the draft to fit.
+- The first draft gave each agent its own worktree, and the implementer made the
+  documenter's edit again in a clean one. Drafts now chain the agents in one
+  worktree with `isolation: continue`
+  ([ADR-037](../../decisions/ADR-037-isolation-continue.md)).
