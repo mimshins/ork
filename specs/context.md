@@ -20,9 +20,13 @@ Status: **Built** (M1c): the context compiler
 4. **Node:** the node's own `skills`, `context` and `instructions`.
 
 Ork's **built-in skills** (`ork:<name>`) load only where a workflow or node
-names one, at that layer; Ork ships none yet. The rule is that more explicit and
-more local wins, and only the winner of each name loads, so nothing is loaded
-twice.
+names one, at that layer: `ork:review` (reviewing a change with git and
+reporting findings), `ork:brief` (writing a self-contained brief to delegate)
+and `ork:report` (ending with an honest report)
+([builtin-skills.ts](../packages/core/src/context/builtin-skills.ts)). They ship
+as text inside the CLI and are written into the run's plugin folder. The rule is
+that more explicit and more local wins, and only the winner of each name loads,
+so nothing is loaded twice.
 
 ## References
 
@@ -85,6 +89,10 @@ of its system prompt. Agents come from, lowest to highest precedence for a name
 ([catalog.ts](../packages/core/src/agents/catalog.ts),
 [tests](../packages/core/test/agents.test.ts)):
 
+0. **Built-in:** the agents Ork ships
+   ([builtins.ts](../packages/core/src/agents/builtins.ts)): `ork-implementer`
+   and `ork-reviewer` (`readonly`, `session: resume`, `ork:review`); any other
+   source's agent of the same name wins.
 1. **User:** `~/.ork/agents/<name>.md` (and its `<name>.agent.yaml`).
 2. **Project:** the agent folders of the coding-agent tools, from a registry of
    layouts ([layouts.ts](../packages/integrations/src/layouts.ts)):
@@ -94,10 +102,9 @@ of its system prompt. Agents come from, lowest to highest precedence for a name
    `.ai/agents`) counts once, under its real path.
 3. **Workflow:** the workflow's inline `agents:`.
 
-Ork has no built-in agents yet. Agents are read when the workflow is loaded, not
-copied; the run records each one's source and a hash of its files on
-`node.started`. An agent file's `skills` and `context` paths are relative to its
-own folder. `ork agents` lists them
+Agents are read when the workflow is loaded, not copied; the run records each
+one's source and a hash of its files on `node.started`. An agent file's `skills`
+and `context` paths are relative to its own folder. `ork agents` lists them
 ([cli](./cli/worktrees-agents-context-and-doctor.md#agents));
 `ork context explain` names the agent that fills a node. `ork link` makes
 `.ork/agents` the origin the tools' folders link to

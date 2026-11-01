@@ -18,6 +18,7 @@ import {
 } from "@krapht/ork-schema";
 
 import { error, warning } from "../graph/diagnostics.ts";
+import { BUILTIN_SKILLS } from "./builtin-skills.ts";
 import {
   type ContextFile,
   contextFiles,
@@ -26,7 +27,6 @@ import {
   userContext,
 } from "./files.ts";
 import {
-  BUILTIN_SKILLS,
   parseSkillRef,
   SKILL_FILE,
   SKILL_LAYERS,
@@ -89,8 +89,8 @@ const referenced = (
       return;
     }
     if (parsed.kind === "builtin") {
-      const dir = BUILTIN_SKILLS[parsed.name];
-      if (dir === undefined) {
+      const text = BUILTIN_SKILLS[parsed.name];
+      if (text === undefined) {
         diagnostics.push(
           error(
             "ref.skill",
@@ -99,7 +99,13 @@ const referenced = (
           ),
         );
       } else {
-        skills.push({ name: parsed.name, layer, dir, ref });
+        skills.push({
+          name: parsed.name,
+          layer,
+          dir: `ork:${parsed.name}`,
+          text,
+          ref,
+        });
       }
       return;
     }

@@ -115,7 +115,9 @@ describe("the agent catalog", () => {
     const { root, home } = linkedProject();
     const catalog = loadAgents({ projectRoot: root, home });
     expect(
-      catalog.agents.map(a => [a.name, a.source, a.where, a.via, a.shadowedBy]),
+      catalog.agents
+        .filter(a => a.source !== "builtin")
+        .map(a => [a.name, a.source, a.where, a.via, a.shadowedBy]),
     ).toEqual([
       ["helper", "user", "~/.ork/agents/helper.md", [], undefined],
       [
@@ -200,6 +202,28 @@ describe("agent nodes", () => {
     expect(graph.workflow.nodes["a"]).not.toHaveProperty("isolation");
   });
 
+  it("fill a node from Ork's built-in agents, which a project agent can shadow", () => {
+    const empty = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-home-")));
+    const builtin = compile(
+      ["nodes:", "  r: { type: claude.worker, agent: ork-reviewer }"],
+      loadAgents({ home: empty }),
+    );
+    expect(builtin.graph?.workflow.nodes["r"]).toMatchObject({
+      isolation: "readonly",
+      skills: ["ork:review", "ork:report"],
+    });
+    const linked = linkedProject();
+    writeFileSync(
+      path.join(linked.root, ".ai/agents/ork-reviewer.md"),
+      "---\ndescription: Ours.\n---\nOur review.\n",
+    );
+    const ours = catalogAgent(
+      loadAgents({ projectRoot: linked.root, home: linked.home }),
+      "ork-reviewer",
+    );
+    expect(ours?.source).toBe("project");
+  });
+
   it("fail on an agent no one defines, naming the known ones", () => {
     const result = compile(
       ["nodes:", "  a: { type: claude.worker, agent: nobody }"],
@@ -210,7 +234,7 @@ describe("agent nodes", () => {
       expect.objectContaining({
         code: "agent.unknown",
         message:
-          '"a" names agent "nobody", which is not defined; known: helper, reviewer',
+          '"a" names agent "nobody", which is not defined; known: helper, ork-implementer, ork-reviewer, reviewer',
         path: ["nodes", "a", "agent"],
       }),
     );

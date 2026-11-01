@@ -1,10 +1,11 @@
 /**
  * @file The agent catalog: every agent a project can use, read live from disk.
- *   The user's `~/.ork/agents/`, then the project's tool folders
- *   (`.claude/agents`, `.opencode/agents`, `.ai/agents`, …) and `.ork/agents/`,
- *   the more local winning each name; a workflow's inline `agents:` win over
- *   all of them (apply.ts). Links are followed and a file reached through
- *   several folders counts once, under its real path. Reads, never writes.
+ *   Ork's built-in agents, the user's `~/.ork/agents/`, then the project's tool
+ *   folders (`.claude/agents`, `.opencode/agents`, `.ai/agents`, …) and
+ *   `.ork/agents/`, the more local winning each name; a workflow's inline
+ *   `agents:` win over all of them (apply.ts). Links are followed and a file
+ *   reached through several folders counts once, under its real path. Reads,
+ *   never writes.
  */
 
 import { createHash } from "node:crypto";
@@ -29,9 +30,10 @@ import {
 
 import { warning } from "../graph/diagnostics.ts";
 import { shownPath } from "../project/place.ts";
+import { BUILTIN_AGENTS } from "./builtins.ts";
 
-/** Where a file agent was found: lowest to highest precedence. */
-export const AGENT_SOURCES = ["user", "project"] as const;
+/** Where an agent was found: lowest to highest precedence. */
+export const AGENT_SOURCES = ["builtin", "user", "project"] as const;
 export type AgentSource = (typeof AGENT_SOURCES)[number] | "workflow";
 
 export type CatalogAgent = {
@@ -188,7 +190,17 @@ export const loadAgents = (options: CatalogOptions = {}): AgentCatalog => {
       );
     }
   }
-  const agents = [...byReal.values()];
+  const builtins = Object.entries(BUILTIN_AGENTS).map(
+    ([name, agent]): CatalogAgent => ({
+      name,
+      agent,
+      source: "builtin",
+      where: "ships with Ork",
+      via: [],
+      hash: hashOf(JSON.stringify(agent)),
+    }),
+  );
+  const agents = [...builtins, ...byReal.values()];
   // A later (more local) agent of the same name shadows an earlier one.
   for (const [index, agent] of agents.entries()) {
     const winner = agents.slice(index + 1).findLast(a => a.name === agent.name);

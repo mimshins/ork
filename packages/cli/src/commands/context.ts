@@ -71,7 +71,10 @@ const instructionsOf = (stack: ContextStack, checkout: string): string => {
 
 const skillLines = (stack: ContextStack, root: string): SkillLine[] =>
   stack.skills.map(skill => {
-    const source = path.relative(root, skill.dir) || ".";
+    const source =
+      skill.text === undefined
+        ? path.relative(root, skill.dir) || "."
+        : "built-in";
     const ours = skill.layer !== "project";
     const line: SkillLine = {
       name: ours ? `${PLUGIN_NAME}:${skill.name}` : skill.name,
@@ -81,7 +84,9 @@ const skillLines = (stack: ContextStack, root: string): SkillLine[] =>
         skill.shadowedBy === undefined && skill.ignored === undefined
           ? "live"
           : "off",
-      tokens: tokens(readFileSync(path.join(skill.dir, SKILL_FILE), "utf8")),
+      tokens: tokens(
+        skill.text ?? readFileSync(path.join(skill.dir, SKILL_FILE), "utf8"),
+      ),
     };
     if (skill.shadowedBy !== undefined) {
       line.why = `shadowed by the ${skill.shadowedBy} layer`;

@@ -20,13 +20,7 @@ carried to the next milestone.
 
 ## Gaps
 
-- **G4 · No built-in `ork:*` skills.** The layer is resolved, but
-  `BUILTIN_SKILLS` is empty.
-  ([ADR-023](../decisions/ADR-023-context-compiler.md),
-  [skills.ts](../packages/core/src/context/skills.ts))
-- **G7 · No built-in agents.** The catalog has a place for agents that ship with
-  Ork, like the built-in skills (G4); there are none yet.
-  ([catalog.ts](../packages/core/src/agents/catalog.ts))
+None open: the last ones (G1–G7) were built on 2026-11-02.
 
 ## Limits
 

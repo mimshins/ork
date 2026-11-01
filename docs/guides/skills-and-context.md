@@ -66,7 +66,8 @@ nodes:
   workflow and its skills move together. They must stay inside the project.
 - A skill is a folder with a `SKILL.md`. Its name is the `name` in that file's
   front matter, or else the folder's name.
-- Ork's own built-in skills will be named `ork:<name>`; none ship yet.
+- Ork's own skills are named `ork:<name>`: `ork:review` for reviewers,
+  `ork:brief` for leaders that delegate, `ork:report` for any node.
 - Project skills load on their own; you never list them here.
 
 The session sees the skills Ork adds as `ork:<name>`, so they never clash with

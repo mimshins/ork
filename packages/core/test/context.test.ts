@@ -24,6 +24,7 @@ import {
   projectRootOf,
   resolveContext,
   sessionSettings,
+  writePlugin,
 } from "../src/index.ts";
 
 const write = (root: string, file: string, text: string) => {
@@ -101,6 +102,23 @@ const summary = (stack: ReturnType<typeof resolveContext>) =>
   );
 
 describe("the layer resolver", () => {
+  it("loads Ork's built-in skills by name, written into the run's plugin", () => {
+    const { stack, root } = resolve([
+      "nodes:",
+      "  fix: { type: claude.worker, skills: [ork:review, ork:report] }",
+    ]);
+    const builtins = stack.skills.filter(s => s.dir.startsWith("ork:"));
+    expect(builtins.map(s => [s.layer, s.name])).toEqual([
+      ["node", "review"],
+      ["node", "report"],
+    ]);
+    const plugin = path.join(root, "plugin");
+    expect(writePlugin(stack, plugin, "t")).toBe(plugin);
+    expect(
+      readFileSync(path.join(plugin, "skills/review/SKILL.md"), "utf8"),
+    ).toContain("# Reviewing a change");
+  });
+
   it("lets the more local layer win each name, and loads it once", () => {
     const { stack } = resolve(LAYERED);
     expect(summary(stack)).toEqual([

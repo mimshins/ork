@@ -192,9 +192,11 @@ describe("ork migrate", () => {
     expect(linkAt(path.join(root, ".claude/skills"))).toBe("../.ork/skills");
     expect(linkAt(path.join(root, ".agents/skills"))).toBe("../.ork/skills");
     const catalog = loadAgents({ projectRoot: root, home: tmp("ork-home-") });
-    expect(catalog.agents.map(a => [a.name, a.where])).toEqual([
-      ["reviewer", ".ork/agents/reviewer.md"],
-    ]);
+    expect(
+      catalog.agents
+        .filter(a => a.source !== "builtin")
+        .map(a => [a.name, a.where]),
+    ).toEqual([["reviewer", ".ork/agents/reviewer.md"]]);
     // Run again, there is nothing left to move.
     expect(planMigration(inRepoPlace(root), { agents: true }).steps).toEqual(
       [],
@@ -236,7 +238,7 @@ describe("ork migrate", () => {
     ).toEqual({
       ok: false,
       error:
-        "No agent builder; known: documenter, implementer, reviewer (ork agents list).",
+        "No agent builder; known: ork-implementer, ork-reviewer, documenter, implementer, reviewer (ork agents list).",
     });
   });
 });

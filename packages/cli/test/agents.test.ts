@@ -34,6 +34,12 @@ const found = (catalog: AgentCatalog, name: string): CatalogAgent => {
   return agent;
 };
 
+/** The catalog without Ork's built-in agents. */
+const own = (catalog: AgentCatalog): AgentCatalog => ({
+  ...catalog,
+  agents: catalog.agents.filter(a => a.source !== "builtin"),
+});
+
 describe("ork agents", () => {
   it("lists, shows, and copies a project's agent into .ork/agents", () => {
     const root = temp("ork-cli-agents-");
@@ -47,10 +53,12 @@ describe("ork agents", () => {
     symlinkSync("../.ai/agents", path.join(root, ".claude/agents"));
     const catalog = () => loadAgents({ projectRoot: root, home });
 
-    expect(formatAgents(catalog())).toEqual([
-      "reviewer  project  .ai/agents/reviewer.md (via .claude/agents)  Reviews changes.",
+    const listed = formatAgents(catalog());
+    expect(listed.filter(line => !line.startsWith("ork-"))).toEqual([
+      "reviewer         project  .ai/agents/reviewer.md (via .claude/agents)  Reviews changes.",
     ]);
-    expect(formatAgents(loadAgents({ home }))).toEqual([
+    expect(listed.filter(line => line.startsWith("ork-"))).toHaveLength(2);
+    expect(formatAgents(own(loadAgents({ home })))).toEqual([
       "No agents yet. Add one with ork agents add <name>, or put agents in .claude/agents.",
     ]);
 
@@ -67,7 +75,7 @@ describe("ork agents", () => {
       readFileSync(path.join(root, ".ork/agents/reviewer.agent.yaml"), "utf8"),
     ).toContain("model: opus");
 
-    expect(formatAgents(catalog())).toEqual([
+    expect(formatAgents(own(catalog()))).toEqual([
       "reviewer  project  .ai/agents/reviewer.md (via .claude/agents)  shadowed by .ork/agents/reviewer.md",
       "reviewer  project  .ork/agents/reviewer.md  Reviews changes.",
     ]);

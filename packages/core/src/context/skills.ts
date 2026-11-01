@@ -1,7 +1,7 @@
 /**
  * @file Skills on disk: the skills in a folder, a skill's name (its SKILL.md
- *   `name`, else its folder), what a workflow's skill reference names, and the
- *   built-in skills Ork ships (none yet).
+ *   `name`, else its folder), and what a workflow's skill reference names. The
+ *   built-in skills Ork ships are in `builtin-skills.ts`.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -16,18 +16,13 @@ export type SkillLayer = (typeof SKILL_LAYERS)[number];
 export type Skill = {
   name: string;
   layer: SkillLayer;
-  /** The folder holding its SKILL.md. */
+  /** The folder holding its SKILL.md; `ork:<name>` for a built-in. */
   dir: string;
+  /** A built-in's SKILL.md, which has no folder on disk. */
+  text?: string;
   /** The reference that named it, for workflow and node skills. */
   ref?: string;
 };
-
-/**
- * Skills that ship with Ork, named `ork:<name>` in a workflow. A built-in loads
- * only where a workflow or node names it, at that layer. A new one is a folder
- * with a SKILL.md and an entry here.
- */
-export const BUILTIN_SKILLS: Readonly<Record<string, string>> = {};
 
 /** The `name:` in a SKILL.md's frontmatter, else the folder's name. */
 export const skillName = (dir: string): string => {

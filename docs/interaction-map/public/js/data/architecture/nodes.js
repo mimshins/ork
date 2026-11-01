@@ -463,7 +463,7 @@ export const NODES = [
     summary:
       "The skills and context Ork adds on top of the project's own: the `ork:*` built-ins, your user layer in `~/.ork/skills` and `~/.ork/context`, and the workflow's `layers:`.",
     facts: [
-      "Built-in skills are named `ork:<name>`; none ships yet.",
+      "Built-in skills are named `ork:<name>`: `ork:review`, `ork:brief`, `ork:report`.",
       "Workflow layers are paths relative to the workflow file, kept inside the project.",
     ],
     see: [{ map: "context", node: "builtins", label: "The layers in order" }],

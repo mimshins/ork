@@ -32,6 +32,7 @@ From lowest to highest precedence, when two have the same name:
 
 | Where                         | Files                                                                                    |
 | ----------------------------- | ---------------------------------------------------------------------------------------- |
+| **Ork**                       | `ork-implementer` and `ork-reviewer`, which ship with Ork                                |
 | **You**                       | `~/.ork/agents/<name>.md`                                                                |
 | **Your project's tools**      | `.ai/agents/`, `.opencode/agents/`, `.claude/agents/`: what Claude Code and OpenCode use |
 | **Your project's Ork agents** | `.ork/agents/<name>.md`                                                                  |

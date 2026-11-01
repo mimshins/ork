@@ -5,10 +5,12 @@
  */
 
 export * from "./agents/apply.ts";
+export * from "./agents/builtins.ts";
 export * from "./agents/catalog.ts";
 export * from "./agents/files.ts";
 export * from "./agents/links.ts";
 export * from "./agents/migrate.ts";
+export * from "./context/builtin-skills.ts";
 export * from "./context/files.ts";
 export * from "./context/resolve.ts";
 export * from "./context/session.ts";

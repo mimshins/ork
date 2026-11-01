@@ -10,6 +10,7 @@ import path from "node:path";
 
 import type { ContextFile, ContextLayer } from "./files.ts";
 import type { ContextStack } from "./resolve.ts";
+import { SKILL_FILE } from "./skills.ts";
 
 /** The plugin's name, and so the namespace of its skills. */
 export const PLUGIN_NAME = "ork";
@@ -84,10 +85,13 @@ export const writePlugin = (
     `${JSON.stringify({ name: PLUGIN_NAME, version: "0.0.0", description }, undefined, 2)}\n`,
   );
   for (const skill of stack.plugin) {
-    cpSync(skill.dir, path.join(dir, "skills", skill.name), {
-      recursive: true,
-      dereference: true,
-    });
+    const into = path.join(dir, "skills", skill.name);
+    if (skill.text === undefined) {
+      cpSync(skill.dir, into, { recursive: true, dereference: true });
+    } else {
+      mkdirSync(into, { recursive: true });
+      writeFileSync(path.join(into, SKILL_FILE), skill.text);
+    }
   }
   return dir;
 };

@@ -75,9 +75,11 @@ describe("project places", () => {
       orkDir: place.dir,
       home: path.resolve(place.dir, "../../.."),
     });
-    expect(catalog.agents.map(a => [a.name, a.source])).toEqual([
-      ["reviewer", "project"],
-    ]);
+    expect(
+      catalog.agents
+        .filter(a => a.source !== "builtin")
+        .map(a => [a.name, a.source]),
+    ).toEqual([["reviewer", "project"]]);
   });
 
   it("name new projects after their folder, uniquely, and show paths short", () => {
