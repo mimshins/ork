@@ -28,10 +28,11 @@ for agents and engineering tasks:
 
 You need Node 24.20+, git, and one Claude driver: your own `claude` login, or an
 API key, Bedrock or Vertex. `gh` and `aws` are optional, needed only by
-workflows that use them. Ork is not on npm yet, so install it
-[from source](./docs/getting-started/installation.md#install-from-source-today).
+workflows that use them
+([Installation](./docs/getting-started/installation.md)).
 
 ```sh
+npm install --global @krapht/ork
 ork doctor                                   # checks Node, git, your Claude login
 ork init                                     # a starter workflow in .ork/workflows/
 ork validate                                 # schema, ownership, edges, loops, references

@@ -1,12 +1,11 @@
 # Installation
 
 Ork is a command-line tool, `ork`, that runs on your own machine. This page
-covers what you need, how to install Ork today, and how to check that everything
+covers what you need, how to install Ork, and how to check that everything
 works.
 
-> **Ork is pre-alpha and not on npm yet.** The first release (`@krapht/ork`
-> 0.1.0) is being prepared. Until it ships, install Ork from source, as
-> described below. It takes about two minutes.
+> **Ork is pre-alpha.** It is published on npm as `@krapht/ork`; expect the
+> workflow format and commands to change between 0.x releases.
 
 ## What you need
 
@@ -39,10 +38,21 @@ For Claude, pick one way in (Ork uses your own login and never stores it; see
   Version **2.1.281 or later**, so it reads `AGENTS.md`; `ork doctor` warns on
   an older one.
 
-## Install from source (today)
+## Install
 
-You need [pnpm](https://pnpm.io). Corepack, which comes with Node, installs the
-exact version the repository pins:
+```sh
+npm install --global @krapht/ork
+ork --version
+```
+
+This works on any platform Node supports (see [Your platform](#your-platform)).
+To update later, run the same command again.
+
+## Install from source
+
+For working on Ork itself, or trying changes that are not released yet. You need
+[pnpm](https://pnpm.io); Corepack, which comes with Node, installs the exact
+version the repository pins:
 
 ```sh
 corepack enable
@@ -52,8 +62,8 @@ pnpm install
 pnpm build          # bundles the CLI into packages/cli/dist/bin.mjs
 ```
 
-Then make `ork` available in your other projects. The simplest way is an alias
-in your shell's startup file (`~/.zshrc` or `~/.bashrc`):
+Then make that build your `ork` in other projects, for example with an alias in
+your shell's startup file (`~/.zshrc` or `~/.bashrc`):
 
 ```sh
 alias ork="node $HOME/path/to/ork/packages/cli/dist/bin.mjs"
@@ -62,15 +72,6 @@ alias ork="node $HOME/path/to/ork/packages/cli/dist/bin.mjs"
 Run `pnpm build` again after you pull new changes. Inside the Ork clone itself,
 `pnpm ork <command>` runs the CLI straight from its TypeScript sources, with no
 build.
-
-## After the first release
-
-Once `@krapht/ork` is published, installing is one command on any platform Node
-supports:
-
-```sh
-npm install --global @krapht/ork
-```
 
 ## Your platform
 

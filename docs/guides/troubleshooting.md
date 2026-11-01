@@ -15,10 +15,12 @@ needs `ANTHROPIC_API_KEY`, or Bedrock or Vertex
 read `AGENTS.md`, so a project with only `AGENTS.md` would run without its
 instructions.
 
-**`ork: command not found`.** Until the first release, Ork runs from a clone;
-check the alias from
-[Installation](../getting-started/installation.md#install-from-source-today),
-and run `pnpm build` in the clone after pulling.
+**`ork: command not found`.** Install it with
+`npm install --global @krapht/ork`, and check that npm's global `bin` folder
+(`npm prefix --global`, then `bin`) is on your `PATH`. Running from a clone
+instead? Check the alias from
+[Installation](../getting-started/installation.md#install-from-source), and run
+`pnpm build` in the clone after pulling.
 
 **Node version errors.** Ork needs Node 24.20 or later (`node --version`).
 

@@ -287,10 +287,15 @@ export const MILESTONES = [
       {
         id: "first-release",
         title: "First npm release",
-        status: "waiting",
+        status: "done",
         detail:
-          "The release pull request collects the changesets; it waits until most of the gaps register is fixed or closed.",
-        docs: ["runbook/development/release.md"],
+          "`@krapht/ork` 0.1.0 is on npm, published by the release workflow with provenance once the gaps register was closed; `npm install --global @krapht/ork` installs it.",
+        commits: ["378fa98"],
+        date: "2026-11-01",
+        docs: [
+          "runbook/development/release.md",
+          "docs/getting-started/installation.md",
+        ],
       },
     ],
   },
@@ -581,6 +586,8 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "f45ced7",
+  "e79e608",
   "54f5e81",
   "5854081",
   "ac63fc2",

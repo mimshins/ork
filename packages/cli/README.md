@@ -3,10 +3,12 @@
 The `ork` command: orchestrate Claude agents on your machine with hierarchical,
 serializable workflows.
 
-> **Pre-alpha.** `ork init`, `ork validate`, `ork doctor` and `ork run` (each
-> writing node in its own git worktree) work today; delegation and the context
-> compiler are being built. See the
-> [project README](https://github.com/mimshins/ork#readme).
+> **Pre-alpha.** The workflow format, `ork run` with delegation and worktrees,
+> the context compiler, agents, run logs, decisions from any terminal, messages
+> between nodes, chat, resume, claims and local feedback work today; a web UI
+> comes next. Expect changes between 0.x releases. See the
+> [project README](https://github.com/mimshins/ork#readme) and the
+> [guides](https://github.com/mimshins/ork/tree/main/docs#readme).
 
 ```sh
 npm install --global @krapht/ork
