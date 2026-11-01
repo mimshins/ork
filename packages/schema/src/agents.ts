@@ -10,12 +10,8 @@
 import { parseDocument, stringify } from "yaml";
 import { z } from "zod";
 
-import {
-  AGENT_SETTING_KEYS,
-  AgentNameSchema,
-  agentSettings,
-  ModelSchema,
-} from "./nodes.ts";
+import { AGENT_SETTING_KEYS, agentSettings } from "./nodes.ts";
+import { AgentNameSchema, ModelSchema } from "./settings.ts";
 
 /** The sidecar: Ork's settings for an agent, beside its markdown. */
 export const AgentSettingsSchema = z.strictObject(agentSettings);
@@ -80,11 +76,27 @@ const stringField = (
     : undefined;
 };
 
+/** A list as Claude Code writes it: `Read, Grep` or a YAML list. */
+const listField = (
+  data: Record<string, unknown>,
+  key: string,
+): string[] | undefined => {
+  const value = data[key];
+  const items = Array.isArray(value)
+    ? value.filter(v => typeof v === "string")
+    : typeof value === "string"
+      ? value.split(",")
+      : [];
+  const list = items.map(item => item.trim()).filter(item => item !== "");
+  return list.length === 0 ? undefined : list;
+};
+
 /**
  * Reads an agent from its markdown and optional sidecar. `fallbackName` (the
- * file's base name) is used when the frontmatter has no `name`. A Claude Code
- * `model` in the frontmatter is honoured (not `inherit`); the sidecar's wins.
- * Other tools' frontmatter keys are left to those tools.
+ * file's base name) is used when the frontmatter has no `name`. Claude Code's
+ * `model` (not `inherit`), `tools` (the only built-in tools it has) and
+ * `disallowedTools` in the frontmatter are honoured; the sidecar's win. Other
+ * tools' frontmatter keys are left to those tools.
  */
 export const parseAgentFile = (
   markdown: string,
@@ -119,6 +131,14 @@ export const parseAgentFile = (
   const model = stringField(data, "model");
   if (model !== undefined && model !== "inherit") {
     agent.model = ModelSchema.parse(model);
+  }
+  const only = listField(data, "tools");
+  const deny = listField(data, "disallowedTools");
+  if (only !== undefined || deny !== undefined) {
+    agent.tools = {
+      ...(only === undefined ? {} : { only }),
+      ...(deny === undefined ? {} : { deny }),
+    };
   }
   if (sidecar !== undefined) {
     const settings = parseAgentSettings(sidecar);

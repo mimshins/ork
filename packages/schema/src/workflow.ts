@@ -7,13 +7,9 @@
 import { z } from "zod";
 
 import { AgentSchema } from "./agents.ts";
-import {
-  AgentNameSchema,
-  BudgetSchema,
-  NodeIdSchema,
-  NodeSchema,
-} from "./nodes.ts";
+import { NodeSchema } from "./nodes.ts";
 import { DefaultsSchema, RulesSchema } from "./project.ts";
+import { AgentNameSchema, BudgetSchema, NodeIdSchema } from "./settings.ts";
 
 export const SCHEMA_VERSION = 1;
 

@@ -120,7 +120,12 @@ nodes:
   settings above (JSON Schema:
   [agent.schema.json](../packages/schema/agent.schema.json)). Ork writes both in
   canonical form ([agents.ts](../packages/schema/src/agents.ts),
-  [tests](../packages/schema/test/agents.test.ts)).
+  [tests](../packages/schema/test/agents.test.ts)). Claude Code's frontmatter
+  keys are read too: `model` (not `inherit`), `tools` (as `tools.only`) and
+  `disallowedTools` (as `tools.deny`); the sidecar's settings win.
+- **`tools`** (nodes, agents): `allow` and `deny` are permission rules added to
+  the project's and workflow's; `only` names the only built-in tools the session
+  has (the SDK's `tools`, the CLI's `--tools`), while Ork's own tools stay.
 
 What each type does when it runs, and how edges, joins and loops behave, is in
 [Scheduler: running a workflow](./scheduler.md).

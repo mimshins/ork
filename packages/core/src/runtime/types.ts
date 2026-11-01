@@ -22,7 +22,8 @@ export type NodeReport = {
   fields: Record<string, unknown>;
 };
 
-export type ToolRules = { allow: string[]; deny: string[] };
+/** `only`: the built-in tools the session has at all; Ork's own tools stay. */
+export type ToolRules = { allow: string[]; deny: string[]; only?: string[] };
 
 /** Everything a driver needs to start one session. */
 export type SessionSpec = {

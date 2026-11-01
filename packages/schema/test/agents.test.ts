@@ -68,7 +68,7 @@ describe("agent files", () => {
     expect(serializeAgent("plain", { instructions: "Hi." }).sidecar).toBeNull();
   });
 
-  it("read another tool's agent: its model, the file name for a name", () => {
+  it("read another tool's agent: its model and tools, the file name for a name", () => {
     const claude =
       "---\ndescription: Reviews.\nmodel: haiku\ntools: Read, Grep\n---\nReview.\n";
     expect(agentOf(parseAgentFile(claude, undefined, "reviewer"))).toEqual({
@@ -78,6 +78,7 @@ describe("agent files", () => {
         description: "Reviews.",
         instructions: "Review.",
         model: "haiku",
+        tools: { only: ["Read", "Grep"] },
       },
     });
     const inherit = "---\nname: a\nmodel: inherit\n---\n";
@@ -86,6 +87,20 @@ describe("agent files", () => {
     ).toEqual({
       model: "opus",
     });
+  });
+
+  it("read Claude Code's tools and disallowedTools from the frontmatter", () => {
+    const md =
+      "---\nname: r\ntools: Read, Grep, Glob\ndisallowedTools: [WebFetch]\n---\nReview.\n";
+    expect(agentOf(parseAgentFile(md, undefined, "r")).agent.tools).toEqual({
+      only: ["Read", "Grep", "Glob"],
+      deny: ["WebFetch"],
+    });
+    // The sidecar's tools win.
+    expect(
+      agentOf(parseAgentFile(md, "tools: { allow: [Read] }\n", "r")).agent
+        .tools,
+    ).toEqual({ allow: ["Read"] });
   });
 
   it("report a bad name or a bad sidecar", () => {

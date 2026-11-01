@@ -270,6 +270,13 @@ describe("the CLI driver", () => {
     expect(value("--effort")).toBe("low");
     expect(value("--max-turns")).toBe("5");
     expect(value("--mcp-config")).toContain('"Authorization":"Bearer t"');
+    expect(args).not.toContain("--tools");
+    const only = buildCliArgs(
+      { ...spec, tools: { allow: [], deny: [], only: ["Read", "Grep"] } },
+      { url: "http://127.0.0.1:1/mcp", token: "t" },
+      [],
+    );
+    expect(only[only.indexOf("--tools") + 1]).toBe("Read,Grep");
     // delegate waits for whole child sessions: past the 60 s request default.
     expect(value("--mcp-config")).toContain('"timeout":86400000');
     expect(args).not.toContain("Review the branch");

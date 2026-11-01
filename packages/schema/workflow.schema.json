@@ -235,6 +235,13 @@
               "items": {
                 "type": "string"
               }
+            },
+            "only": {
+              "description": "The only built-in tools the session has; Ork's tools stay.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           },
           "additionalProperties": false
@@ -350,6 +357,13 @@
                 }
               },
               "deny": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "only": {
+                "description": "The only built-in tools the session has; Ork's tools stay.",
                 "type": "array",
                 "items": {
                   "type": "string"
@@ -534,6 +548,13 @@
                     "items": {
                       "type": "string"
                     }
+                  },
+                  "only": {
+                    "description": "The only built-in tools the session has; Ork's tools stay.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
                   }
                 },
                 "additionalProperties": false
@@ -697,6 +718,13 @@
                     "items": {
                       "type": "string"
                     }
+                  },
+                  "only": {
+                    "description": "The only built-in tools the session has; Ork's tools stay.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
                   }
                 },
                 "additionalProperties": false
@@ -851,6 +879,13 @@
                     }
                   },
                   "deny": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "only": {
+                    "description": "The only built-in tools the session has; Ork's tools stay.",
                     "type": "array",
                     "items": {
                       "type": "string"

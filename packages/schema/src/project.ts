@@ -17,7 +17,7 @@ import {
   PracticesSchema,
   ToolRulesSchema,
   TurnsSchema,
-} from "./nodes.ts";
+} from "./settings.ts";
 
 export const PROJECT_SCHEMA_VERSION = 1;
 

@@ -70,10 +70,6 @@ carried to the next milestone.
 - **L10 · Claims are advisory.** They steer agents but lock nothing: a node that
   edits without claiming is not stopped.
   ([ADR-027](../decisions/ADR-027-advisory-claims.md))
-- **L12 · Only `model` is read from another tool's agent frontmatter.** Claude
-  Code's `tools` list and OpenCode's settings in an agent's markdown are left to
-  those tools; Ork's own settings go in `<name>.agent.yaml`
-  ([ADR-030](../decisions/ADR-030-agents-fill-nodes.md)).
 - **L13 · Tool folders are linked with symlinks.** On native Windows, git checks
   links out as plain files unless `core.symlinks` is on (developer mode); there
   is no junction or copy fallback.

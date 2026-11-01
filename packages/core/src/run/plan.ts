@@ -122,6 +122,7 @@ const toolRules = (
       ...(readonly ? WRITE_TOOLS : []),
     ]),
   ],
+  ...(node.tools?.only === undefined ? {} : { only: node.tools.only }),
 });
 
 /**

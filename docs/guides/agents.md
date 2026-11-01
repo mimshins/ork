@@ -79,8 +79,9 @@ output:
 The settings file takes what a Claude node takes: `model`, `effort`, `driver`,
 `skills`, `context`, `isolation`, `budgetUsd`, `maxTurns`, `practices`, `tools`
 and `output`. Paths in `skills` and `context` are relative to the agent's own
-folder. A Claude Code `model:` in the markdown is used too; the settings file's
-wins.
+folder. Claude Code's `model:`, `tools:` and `disallowedTools:` in the markdown
+are used too: `tools: Read, Grep` leaves the agent only those built-in tools
+(`tools.only`), and Ork's own tools stay. The settings file's win.
 
 Ork's settings live in their own file, not in the markdown's frontmatter,
 because OpenCode sends unknown frontmatter keys to the model provider.
