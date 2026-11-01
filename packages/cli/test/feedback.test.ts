@@ -18,6 +18,7 @@ import {
   findFeedbackItem,
   formatFeedbackItem,
   formatFeedbackItems,
+  noteRun,
   runWorkflowFile,
 } from "../src/index.ts";
 
@@ -119,5 +120,52 @@ describe("feedback in a run", () => {
     expect(formatFeedbackItems(store.feedbackItems(), NOW)).toEqual([
       "No feedback yet.",
     ]);
+  });
+});
+
+describe("a person's feedback", () => {
+  it("notes a run's node as a human record, and restores a dismissed item", () => {
+    const store = openStore(":memory:");
+    const project = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-fb-")));
+    store.begin({ id: "r1", workflow: "review", file: "w.ork.yaml", project });
+    store.append("r1", {
+      type: "node.started",
+      id: "check",
+      nodeType: "claude.worker",
+      round: 1,
+    });
+    expect(
+      noteRun(store, project, {
+        run: "r1",
+        node: "ghost",
+        text: "x",
+      }),
+    ).toEqual({ ok: false, error: "No node ghost ran in run r1." });
+    expect(
+      noteRun(store, project, {
+        run: "r1",
+        node: "check",
+        text: "Missed the failing test\nIt read only the diff.",
+        rating: "bad",
+      }),
+    ).toMatchObject({ ok: true });
+
+    const item = only(store.feedbackItems());
+    const record = only(store.feedbackRecords(item.id));
+    expect(record).toMatchObject({
+      node: "check",
+      feedback: {
+        source: "human",
+        kind: "friction",
+        severity: "high",
+        title: "Missed the failing test",
+        evidence: ["rating: bad"],
+        origin: { workflow: "review" },
+      },
+    });
+    store.setFeedbackStatus(item.id, "dismissed");
+    expect(store.feedbackItems()).toEqual([]);
+    store.setFeedbackStatus(item.id, "new");
+    expect(store.feedbackItems().map(i => i.id)).toEqual([item.id]);
   });
 });

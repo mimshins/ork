@@ -27,7 +27,10 @@ export const projectQueries = (db: DatabaseSync): ProjectStore => {
      VALUES (?, ?, ?, ?, ?)`,
   );
   const remove = db.prepare("DELETE FROM projects WHERE id = ?");
-  const move = db.prepare("UPDATE projects SET mode = ?, dir = ? WHERE id = ?");
+  const move = db.prepare(
+    "UPDATE projects SET root = ?, mode = ?, dir = ? WHERE id = ?",
+  );
+  const rehome = db.prepare("UPDATE runs SET project = ? WHERE project = ?");
   // A run's workflow file moves with the folder it was in.
   const refile = db.prepare(
     `UPDATE runs SET file = ? || substr(file, ?)
@@ -54,13 +57,15 @@ export const projectQueries = (db: DatabaseSync): ProjectStore => {
         .find(p => p.id === id);
       if (before === undefined) return false;
       const from = `${before.dir}${path.sep}`;
+      const root = place.root ?? before.root;
       db.exec("BEGIN");
       try {
-        move.run(place.mode, place.dir, id);
+        move.run(root, place.mode, place.dir, id);
+        rehome.run(root, before.root);
         refile.run(
           `${place.dir}${path.sep}`,
           from.length + 1,
-          before.root,
+          root,
           from.length,
           from,
         );

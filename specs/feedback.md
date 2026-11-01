@@ -1,15 +1,16 @@
 # Feedback and self-improvement
 
 Status: **Partial**: capture is built: the `feedback` tool, system signals,
-fingerprints, records grouped into items, and
-`ork feedback list | show | dismiss`
+fingerprints, records grouped into items, and human notes, and
+`ork feedback list | show | note | dismiss | restore`
 ([agent.ts](../packages/core/src/feedback/agent.ts),
+[human.ts](../packages/core/src/feedback/human.ts),
 [signals.ts](../packages/core/src/feedback/signals.ts),
 [store](../packages/core/src/store/feedback.ts),
 [tests](../packages/core/test/feedback.test.ts),
-[ADR-028](../decisions/ADR-028-feedback-capture.md)). Human notes have no
-milestone yet ([gaps](./gaps.md)); triage, apply, lessons and publishing are M2.
-Why: [ADR-013](../decisions/ADR-013-feedback-loop.md).
+[ADR-028](../decisions/ADR-028-feedback-capture.md)). Triage, apply, lessons and
+publishing are M2, and so is noting from `ork decide` and the UI. Why:
+[ADR-013](../decisions/ADR-013-feedback-loop.md).
 
 Every run teaches something: a tool that got in the way, a brief that missed
 context, an `AGENTS.md` that is out of date. Ork captures that feedback locally,
@@ -81,8 +82,15 @@ signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
 - **Reading them:** `ork feedback list` prints the items, most recently seen
   first (id, count, target and kind, title, when last seen); `--all` adds
   dismissed ones, `--json` prints them. `ork feedback show <item>` prints an
-  item and each of its records; `ork feedback dismiss <item>` dismisses it.
-  `<item>` is its fingerprint or a unique prefix of it.
+  item and each of its records; `ork feedback dismiss <item>` dismisses it, and
+  `ork feedback restore <item>` brings it back as `new`.
+- **Human notes:** `ork feedback note <run> [<node>] -m <text>` records a
+  person's note on a run, or one node of it, as a `feedback.recorded` event of
+  that run with source `human` (a run that ended takes it too). Its first line
+  is the title; `--kind` (default `friction`), `--severity`, and
+  `--rating good|bad` (kept as evidence; `bad` defaults the severity to `high`)
+  describe it. It groups into items like any record. `<item>` is its fingerprint
+  or a unique prefix of it.
 - `ork feedback triage` runs the built-in `ork:feedback-triage` workflow over
   new items. It merges near-duplicates, writes a summary for each item, and
   proposes a fix. Ork improves itself with its own engine.

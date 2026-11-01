@@ -1,16 +1,22 @@
 /**
- * @file `ork feedback`'s reading side: finding an item by a prefix of its
- *   fingerprint, and the lines `list` and `show` print (specs/feedback.md).
+ * @file `ork feedback`'s helpers (specs/feedback.md): finding an item by a
+ *   prefix of its fingerprint, the lines `list` and `show` print, and the
+ *   writes a person makes: `restore` an item, `note` a run or node.
  */
 
-import type {
-  EventStore,
-  FeedbackItem,
-  FeedbackRecord,
-  FeedbackSeverity,
+import {
+  type EventStore,
+  FEEDBACK_KINDS,
+  FEEDBACK_SEVERITIES,
+  type FeedbackItem,
+  type FeedbackRecord,
+  type FeedbackSeverity,
+  humanNoteEvent,
+  RATINGS,
 } from "@krapht/ork-core";
 
 import { style } from "../output.ts";
+import { findRun } from "./find.ts";
 import { ago } from "./format.ts";
 
 export type FoundItem =
@@ -103,4 +109,69 @@ export const formatFeedbackItem = (
     }
   }
   return lines;
+};
+
+export type NoteArgs = {
+  run: string;
+  node?: string | undefined;
+  text: string;
+  kind?: string | undefined;
+  severity?: string | undefined;
+  rating?: string | undefined;
+};
+
+const oneOf = <T extends string>(
+  name: string,
+  value: string | undefined,
+  allowed: readonly T[],
+): { ok: true; value?: T } | { ok: false; error: string } => {
+  if (value === undefined) return { ok: true };
+  const found = allowed.find(a => a === value);
+  return found === undefined
+    ? { ok: false, error: `--${name} is one of ${allowed.join(", ")}` }
+    : { ok: true, value: found };
+};
+
+/**
+ * `ork feedback note`: records a person's note on a run, or one of its nodes,
+ * as that run's feedback; returns the item it joins, or why it could not.
+ */
+export const noteRun = (
+  store: EventStore,
+  cwd: string,
+  args: NoteArgs,
+): { ok: true; item: string } | { ok: false; error: string } => {
+  if (args.text.trim() === "")
+    return { ok: false, error: "The note is empty." };
+  const found = findRun(store, args.run, cwd);
+  if (!found.ok) return found;
+  const { run } = found;
+  const ran = store
+    .events(run.id)
+    .some(({ event }) => "id" in event && event.id === args.node);
+  if (args.node !== undefined && !ran) {
+    return { ok: false, error: `No node ${args.node} ran in run ${run.id}.` };
+  }
+  const kind = oneOf("kind", args.kind, FEEDBACK_KINDS);
+  const severity = oneOf("severity", args.severity, FEEDBACK_SEVERITIES);
+  const rating = oneOf("rating", args.rating, RATINGS);
+  for (const checked of [kind, severity, rating]) {
+    if (!checked.ok) return checked;
+  }
+  const event = humanNoteEvent({
+    text: args.text,
+    workflow: run.workflow,
+    ...(args.node === undefined ? {} : { node: args.node }),
+    ...(kind.ok && kind.value !== undefined ? { kind: kind.value } : {}),
+    ...(severity.ok && severity.value !== undefined
+      ? { severity: severity.value }
+      : {}),
+    ...(rating.ok && rating.value !== undefined
+      ? { rating: rating.value }
+      : {}),
+  });
+  store.append(run.id, event);
+  const item =
+    event.type === "feedback.recorded" ? event.feedback.fingerprint : "";
+  return { ok: true, item };
 };

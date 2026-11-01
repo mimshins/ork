@@ -332,7 +332,7 @@ export const NODES = [
       "When those nodes all worked in one worktree, it works there; otherwise in the project root.",
       "With an owner, it works in its nearest owner's worktree instead.",
       "A continuing writer finds its worktree the same way, and writes there.",
-      "Its write tools are denied.",
+      "Its file-writing tools are denied; read-only git runs without asking, other commands ask.",
     ],
     docs: [ROLES.upstream, ROLES.worktreeTests, ROLES.where],
   },

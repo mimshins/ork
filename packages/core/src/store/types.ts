@@ -161,12 +161,13 @@ export type ProjectStore = {
   /** Forgets a project (its files stay); false when there is no such id. */
   forgetProject: (id: string) => boolean;
   /**
-   * Records a project's files in a new place (`ork migrate`), and its runs'
-   * workflow files with them; false when there is no such id.
+   * Records a project's files in a new place (`ork migrate`), or the project at
+   * a new root (`ork projects move`), and its runs with it; false when there is
+   * no such id.
    */
   moveProject: (
     id: string,
-    place: Pick<ProjectRecord, "mode" | "dir">,
+    place: Pick<ProjectRecord, "mode" | "dir"> & { root?: string },
   ) => boolean;
 };
 

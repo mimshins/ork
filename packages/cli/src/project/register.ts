@@ -29,7 +29,7 @@ export type Registered =
 const ID = /^[a-z0-9][a-z0-9._-]*$/u;
 
 /** The git root of `target`'s main clone, or why there is none. */
-const cloneOf = (
+export const cloneOf = (
   target: string,
 ): { ok: true; root: string } | { ok: false; error: string } => {
   if (!existsSync(target))
@@ -121,6 +121,32 @@ export const recordInRepo = (
     ),
   };
   return { ok: true, project: store.addProject(project), created: true };
+};
+
+/**
+ * Points a registered project at its clone's new place, after the clone was
+ * moved or renamed; its runs follow, and an in-repo project's `.ork/` with it.
+ */
+export const relocateProject = (
+  store: Pick<EventStore, "projects" | "moveProject">,
+  id: string,
+  target: string,
+): Registered => {
+  const projects = store.projects();
+  const project = projects.find(p => p.id === id);
+  if (project === undefined) {
+    return { ok: false, error: `No project is registered as ${id}.` };
+  }
+  const clone = cloneOf(target);
+  if (!clone.ok) return clone;
+  const { root } = clone;
+  const other = projects.find(p => p.root === root && p.id !== id);
+  if (other !== undefined) {
+    return { ok: false, error: `${root} is already registered as ${other.id}` };
+  }
+  const dir = project.mode === "in-repo" ? inRepoPlace(root).dir : project.dir;
+  store.moveProject(id, { root, mode: project.mode, dir });
+  return { ok: true, project: { ...project, root, dir }, created: false };
 };
 
 /** One project's lines for `ork projects`. */

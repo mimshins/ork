@@ -59,11 +59,12 @@ So a workflow can later move into the repository unchanged. Skills and context
 files must be in the repository (or in your own `~/.ork/`); agents can also be
 in `~/.ork/projects/<id>/agents/`.
 
-## Listing and forgetting
+## Listing, moving and forgetting
 
 ```sh
 ork projects                # every registered project, in-repo and attached
 ork projects forget app     # forget it; its files and runs are kept
+ork projects move app ~/src/app  # you moved or renamed the clone
 ```
 
 `ork init` records an in-repo project, and refuses one that is registered from

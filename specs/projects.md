@@ -45,7 +45,10 @@ Both folders hold the same things:
   writes into it.
 - **`ork projects [--json]`** lists registered projects: id, mode, root (marked
   missing when it is gone), and Ork's folder. **`ork projects forget <id>`**
-  drops the record; the files and runs stay.
+  drops the record; the files and runs stay. **`ork projects move <id> <path>`**
+  follows a clone that was moved or renamed: the record and its runs take the
+  new root (an in-repo project's `.ork/` with it); the path must be a main clone
+  no other project is registered at.
 - The store keeps them in its `projects` table
   ([event store](./event-store.md)).
 

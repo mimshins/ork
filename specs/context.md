@@ -66,7 +66,10 @@ twice.
   local files ([worktrees](./worktrees.md#what-a-worktree-gets)).
 - **Tool rules** are the node's own `tools`, plus the project's and the
   workflow's `permissions` ([project rules](./project-rules.md#precedence)),
-  plus the write tools denied to a `readonly` node.
+  plus, for a `readonly` node, the write tools (`Write`, `Edit`, `NotebookEdit`)
+  denied and read-only git (`git diff`, `log`, `show`, `status`, also with
+  `-C <path>`) allowed; any other command asks
+  ([plan.ts](../packages/core/src/run/plan.ts), `READ_ONLY_COMMANDS`).
 - **The checkout line** of the harness says where the node works and what the
   project's git rules let it do: commit there, or not (`commit: never`), and how
   its work reaches its owner (merged, applied as a patch, or kept).

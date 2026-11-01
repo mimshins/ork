@@ -49,6 +49,16 @@ const onInterrupt = (stop: () => void) => {
   });
 };
 
+/** The terminal that answers a run's questions; none in a detached run. */
+export const terminalHuman = () =>
+  process.env[DETACHED_ENV] === "1"
+    ? undefined
+    : createTerminalHuman({
+        input: process.stdin,
+        output: process.stderr,
+        interactive: process.stdin.isTTY,
+      });
+
 export const run = defineCommand({
   meta: {
     name: "run",
@@ -118,7 +128,12 @@ export const run = defineCommand({
         const detached = await detachRun({
           store,
           runId,
-          rawArgs,
+          args: [
+            "run",
+            ...rawArgs.filter(arg => arg !== "--detach"),
+            "--run-id",
+            runId,
+          ],
           cwd,
           runDir: target.runDir(runId),
         });
@@ -140,15 +155,7 @@ export const run = defineCommand({
       }
       return;
     }
-    // A detached run has no terminal: its questions wait for `ork decide`.
-    const human =
-      process.env[DETACHED_ENV] === "1"
-        ? undefined
-        : createTerminalHuman({
-            input: process.stdin,
-            output: process.stderr,
-            interactive: process.stdin.isTTY,
-          });
+    const human = terminalHuman();
     const common = {
       file: target.file,
       cwd,

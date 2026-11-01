@@ -66,8 +66,8 @@ run budget of $5.
 
 With `--detach`, the run carries on without a terminal and its questions wait in
 `ork decide`, gates included, so nothing is pushed or posted until you answer.
-Read-only nodes cannot run commands (`readonly` denies Bash), so reviewers read
-the code instead of running `git` or the tests.
+Read-only nodes run read-only git (`git diff`, `log`, `show`, `status`) without
+asking; any other command, such as the tests, asks you first.
 
 Both examples run on either driver: `--driver cli` uses your logged-in `claude`;
 `--driver sdk` needs `ANTHROPIC_API_KEY` (or Bedrock or Vertex)

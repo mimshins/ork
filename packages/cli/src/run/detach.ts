@@ -1,8 +1,8 @@
 /**
- * @file `ork run --detach`: starts the same `ork run` as a background process
- *   with no terminal, its output in the run's folder (`.ork/runs/<run>/`, or
- *   the attached project's) as `output.log`, and returns once the run is
- *   recorded. Its questions wait for `ork decide`.
+ * @file `ork run --detach` and `ork resume --detach`: starts the same command
+ *   as a background process with no terminal, its output in the run's folder
+ *   (`.ork/runs/<run>/`, or the attached project's) as `output.log`, and
+ *   returns once the run is running. Its questions wait for `ork decide`.
  */
 
 import { spawn } from "node:child_process";
@@ -18,8 +18,13 @@ export const DETACHED_ENV = "ORK_DETACHED";
 export type DetachOptions = {
   store: EventStore;
   runId: string;
-  /** `ork run`'s arguments after `run`, `--detach` included. */
-  rawArgs: readonly string[];
+  /** The command's arguments, `run …` or `resume …`, without `--detach`. */
+  args: readonly string[];
+  /**
+   * Whether the background process (`pid`) has taken the run (default: the run
+   * is recorded).
+   */
+  started?: (pid: number | undefined) => boolean;
   cwd: string;
   /** The run's folder, which gets its `output.log`. */
   runDir: string;
@@ -41,14 +46,7 @@ export const detachRun = async (options: DetachOptions): Promise<Detached> => {
   const script = process.argv[1] ?? "";
   const child = spawn(
     process.execPath,
-    [
-      ...process.execArgv,
-      script,
-      "run",
-      ...options.rawArgs.filter(arg => arg !== "--detach"),
-      "--run-id",
-      runId,
-    ],
+    [...process.execArgv, script, ...options.args],
     {
       cwd: options.cwd,
       detached: true,
@@ -63,7 +61,9 @@ export const detachRun = async (options: DetachOptions): Promise<Detached> => {
 
   const deadline = Date.now() + (options.timeoutMs ?? 15_000);
   while (Date.now() < deadline) {
-    if (options.store.lookup(runId).length > 0) return { ok: true, runId, log };
+    const started =
+      options.started?.(child.pid) ?? options.store.lookup(runId).length > 0;
+    if (started) return { ok: true, runId, log };
     if (exited !== null) {
       return { ok: false, error: readFileSync(log, "utf8").trim(), log };
     }

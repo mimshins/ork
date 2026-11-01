@@ -31,18 +31,10 @@ carried to the next milestone.
   delivered, and a resumed run starts with empty inboxes.
   ([ADR-025](../decisions/ADR-025-message-bus.md),
   [resume](./scheduler.md#resuming-a-run))
-- **G3 · `ork resume` has no `--detach`.** Only `ork run` can run in the
-  background. ([cli](./cli/running-and-runs.md#resuming-a-run))
 - **G4 · No built-in `ork:*` skills.** The layer is resolved, but
   `BUILTIN_SKILLS` is empty.
   ([ADR-023](../decisions/ADR-023-context-compiler.md),
   [skills.ts](../packages/core/src/context/skills.ts))
-- **G5 · Human notes have no milestone.** Rating or annotating a result is part
-  of feedback capture's design but not of any roadmap item.
-  ([feedback](./feedback.md))
-- **G6 · A dismissed feedback item cannot be brought back.** `ork feedback` has
-  no way to set an item's status other than `dismiss`; triage (M2) sets the
-  rest. ([feedback](./feedback.md))
 - **G7 · No built-in agents.** The catalog has a place for agents that ship with
   Ork, like the built-in skills (G4); there are none yet.
   ([catalog.ts](../packages/core/src/agents/catalog.ts))
@@ -78,9 +70,6 @@ carried to the next milestone.
 - **L10 · Claims are advisory.** They steer agents but lock nothing: a node that
   edits without claiming is not stopped.
   ([ADR-027](../decisions/ADR-027-advisory-claims.md))
-- **L11 · Readonly nodes run no commands.** `readonly` denies Bash, so a
-  reviewer reads the code but cannot run `git diff` or the tests.
-  ([context](./context.md))
 - **L12 · Only `model` is read from another tool's agent frontmatter.** Claude
   Code's `tools` list and OpenCode's settings in an agent's markdown are left to
   those tools; Ork's own settings go in `<name>.agent.yaml`
@@ -114,9 +103,6 @@ carried to the next milestone.
   skill or context file kept in `~/.ork/projects/<id>/` cannot be referenced: an
   attached workflow's paths resolve inside the repository.
   ([projects](./projects.md))
-- **L20 · A project is found by its root path.** Moving or renaming a registered
-  clone leaves its record behind (`ork projects` marks it missing); forget it
-  and register it again. ([projects](./projects.md))
 - **L22 · A migration is not atomic.** Its plan is checked before anything
   moves, but a move that fails halfway (a permission, a full disk) stops there;
   nothing is lost, and `ork migrate` again plans what is left.
@@ -124,9 +110,6 @@ carried to the next milestone.
 
 ## Chores
 
-- **C1 · CI runs on `ubuntu-latest`.** It is moving to Ubuntu 26; pinning
-  `ubuntu-24.04` keeps CI from changing under us.
-  ([ci.yml](../.github/workflows/ci.yml))
 - **C2 · Release pull requests run no CI.** Pull requests opened with the
   built-in `GITHUB_TOKEN` trigger no workflows; the release workflow's full
   check still gates publishing. ([release](../runbook/development/release.md))

@@ -22,8 +22,8 @@ import { style, write, writeErr } from "../output.ts";
 import { runWorkflowFile } from "../run/workflow.ts";
 import { answerDecision, pendingDecisions } from "../runs/decide.ts";
 import { findRun } from "../runs/find.ts";
-import { resumable } from "../runs/resume.ts";
-import { flagValues, isDriver, loadRuntime } from "./run.ts";
+import { detachResume, resumable } from "../runs/resume.ts";
+import { flagValues, isDriver, loadRuntime, terminalHuman } from "./run.ts";
 
 const failed = (message: string): void => {
   writeErr(message);
@@ -125,7 +125,7 @@ export const decide = defineCommand({
         );
       }
     } finally {
-      human.close();
+      human?.close();
       store.close();
     }
   },
@@ -212,6 +212,11 @@ export const resume = defineCommand({
       description: "Print the events as JSON lines",
       default: false,
     },
+    detach: {
+      type: "boolean",
+      description: "Resume in the background; answer with ork decide",
+      default: false,
+    },
   },
   run: async ({ args, rawArgs }) => {
     if (args.driver !== undefined && !isDriver(args.driver)) {
@@ -219,11 +224,7 @@ export const resume = defineCommand({
       return;
     }
     const store = openStore();
-    const human = createTerminalHuman({
-      input: process.stdin,
-      output: process.stderr,
-      interactive: process.stdin.isTTY,
-    });
+    const human = terminalHuman();
     try {
       const found = findRun(store, args.run, process.cwd());
       const ready = found.ok
@@ -238,6 +239,14 @@ export const resume = defineCommand({
         failed(ready.ok ? "" : ready.error);
         return;
       }
+      if (args.detach) {
+        const flags = rawArgs.filter(a => a !== "--detach" && a !== args.run);
+        const detached = await detachResume(store, found.run, flags);
+        if (detached.ok)
+          write(`▸ run ${found.run.id} resumed in the background`);
+        else failed(`${detached.error}\n(output: ${detached.log})`);
+        return;
+      }
       const { exitCode } = await runWorkflowFile({
         file: found.run.file,
         cwd: found.run.project,
@@ -247,7 +256,7 @@ export const resume = defineCommand({
         json: args.json,
         runtime: loadRuntime,
         store,
-        human,
+        ...(human === undefined ? {} : { human }),
         runId: found.run.id,
         resume: ready.state,
         out: write,
@@ -262,7 +271,7 @@ export const resume = defineCommand({
       });
       process.exitCode = exitCode;
     } finally {
-      human.close();
+      human?.close();
       store.close();
     }
   },

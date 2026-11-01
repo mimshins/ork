@@ -16,6 +16,7 @@ import { defineCommand } from "citty";
 import { style, write, writeErr } from "../output.ts";
 import {
   findFeedbackItem,
+  noteRun,
   formatFeedbackItem,
   formatFeedbackItems,
 } from "../runs/feedback.ts";
@@ -150,7 +151,7 @@ export const feedback = defineCommand({
   meta: {
     name: "feedback",
     description:
-      "What got in the way in your runs, grouped: list, show, dismiss",
+      "What got in the way in your runs, grouped: list, show, note, dismiss, restore",
   },
   subCommands: {
     list: defineCommand({
@@ -191,6 +192,47 @@ export const feedback = defineCommand({
           }
         }),
     }),
+    note: defineCommand({
+      meta: {
+        name: "note",
+        description:
+          "Note how a run or one of its nodes went; it joins the feedback",
+      },
+      args: {
+        run: {
+          type: "positional",
+          description: "A run id or a prefix of one",
+          required: true,
+        },
+        node: {
+          type: "positional",
+          description: "One of its nodes",
+          required: false,
+        },
+        message: {
+          type: "string",
+          alias: "m",
+          description: "The note; its first line is the title",
+          required: true,
+        },
+        kind: { type: "string", description: "friction (default), bug, …" },
+        severity: { type: "string", description: "low, medium or high" },
+        rating: { type: "string", description: "good or bad" },
+      },
+      run: ({ args }) =>
+        withStore(store => {
+          const noted = noteRun(store, process.cwd(), {
+            ...args,
+            text: args.message,
+          });
+          if (noted.ok) {
+            write(`${style("green", "✓")} noted in item ${noted.item}`);
+            return;
+          }
+          writeErr(noted.error);
+          process.exitCode = 1;
+        }),
+    }),
     dismiss: defineCommand({
       meta: {
         name: "dismiss",
@@ -208,6 +250,26 @@ export const feedback = defineCommand({
           store.setFeedbackStatus(found.item.id, "dismissed");
           write(
             `${style("green", "✓")} dismissed ${found.item.id}: ${found.item.title}`,
+          );
+        }),
+    }),
+    restore: defineCommand({
+      meta: {
+        name: "restore",
+        description: "Bring a dismissed item back to the list, as new",
+      },
+      args: { item: itemArg },
+      run: ({ args }) =>
+        withStore(store => {
+          const found = findFeedbackItem(store, args.item);
+          if (!found.ok) {
+            writeErr(found.error);
+            process.exitCode = 1;
+            return;
+          }
+          store.setFeedbackStatus(found.item.id, "new");
+          write(
+            `${style("green", "✓")} restored ${found.item.id}: ${found.item.title}`,
           );
         }),
     }),

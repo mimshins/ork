@@ -153,6 +153,7 @@ merged and removed cannot be resumed.
 ```sh
 ork resume 3f2a                    # continue a stopped, failed or crashed run
 ork resume 3f2a --input pr=128     # with one input changed
+ork resume 3f2a --detach           # in the background; answer with ork decide
 ```
 
 Nodes that finished keep their results and do not run again, so you do not pay

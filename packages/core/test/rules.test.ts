@@ -102,6 +102,20 @@ describe("project rules under a workflow", () => {
     });
   });
 
+  it("let a readonly node read git, and write nothing", () => {
+    const workflow = workflowOf([
+      "nodes:",
+      "  r: { type: claude.worker, prompt: go, isolation: readonly }",
+    ]);
+    const spec = specOf(
+      planNodeSession(workflow, "r", { cwd: "/p", inputs: {}, inPlace: true }),
+    );
+    expect(spec.tools.deny).toEqual(["Write", "Edit", "NotebookEdit"]);
+    expect(spec.tools.allow).toContain("Bash(git diff *)");
+    expect(spec.tools.allow).toContain("Bash(git -C * log *)");
+    expect(spec.tools.allow).not.toContain("Bash");
+  });
+
   it("are checked: placeholders, unique names, and merge against commit", () => {
     const two = [
       "inputs: { slug: { type: string } }",

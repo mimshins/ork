@@ -33,6 +33,8 @@ or `project` (`AGENTS.md`, `CLAUDE.md`, skills, docs).
 ork feedback list            # items, most recently seen first
 ork feedback show 9fae0      # one item and every record of it
 ork feedback dismiss 9fae0   # done with it: it leaves the list
+ork feedback restore 9fae0   # bring it back
+ork feedback note 3f2a check -m "Missed the failing test" --rating bad
 ```
 
 Records about the same thing, from any run of any project, form one **item**, so

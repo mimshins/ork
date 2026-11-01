@@ -17,7 +17,7 @@ changes handed over uncommitted): see [project rules](./project-rules.md).
 | `worktree` (default) | its own worktree, on branch `ork/<run>/<node>`                        |
 | `continue`           | the worktree its input came from, with no owner; else its own         |
 | `shared`             | its owner's worktree, or your project's checkout when it has no owner |
-| `readonly`           | like `shared`, but the tools that write files are denied              |
+| `readonly`           | like `shared`; file writes denied, read-only git allowed, else asks   |
 
 Tool and gate nodes work like `shared`. Set a default for the workflow with
 `defaults.isolation`, and override it per node.

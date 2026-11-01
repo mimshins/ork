@@ -20,6 +20,7 @@ export * from "./expr/evaluate.ts";
 export * from "./expr/parse.ts";
 export * from "./feedback/agent.ts";
 export * from "./feedback/fingerprint.ts";
+export * from "./feedback/human.ts";
 export * from "./feedback/signals.ts";
 export * from "./feedback/types.ts";
 export { compileWorkflow } from "./graph/compile.ts";

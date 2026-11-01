@@ -17,7 +17,7 @@ jobs:
     name: release
     # Only the main repository releases; forks never publish.
     if: github.repository == 'mimshins/ork'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: write # the release commit, tags and GitHub releases

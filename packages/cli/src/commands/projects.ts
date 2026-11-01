@@ -1,13 +1,13 @@
 /**
  * @file A project's bookkeeping. `ork register` attaches a project from outside
- *   its repository and `ork projects` lists or forgets registered ones
- *   (ADR-035); neither writes into a repository. `ork migrate` moves an
- *   attached project into its repository, brings its agents and skills under
- *   `.ork/`, or drafts a workflow from its agents (ADR-036), and commits
- *   nothing. `ork worktrees` lists the worktrees and branches runs left behind
- *   (those the runs recorded creating, whatever the project's git rules named
- *   them, and any `ork/` branch), with their state read from git, and cleans
- *   them up safely after showing the plan and asking.
+ *   its repository, and `ork projects` lists registered ones, forgets one, or
+ *   follows its moved clone (ADR-035); none writes into a repository. `ork
+ *   migrate` moves an attached project into its repository, brings its agents
+ *   and skills under `.ork/`, or drafts a workflow from its agents (ADR-036),
+ *   and commits nothing. `ork worktrees` lists the worktrees and branches runs
+ *   left behind (those the runs recorded creating, whatever the project's git
+ *   rules named them, and any `ork/` branch), with their state read from git,
+ *   and cleans them up safely after showing the plan and asking.
  */
 
 import {
@@ -30,6 +30,7 @@ import {
   registerProject,
 } from "../project/register.ts";
 import { formatPlan, formatWorktrees } from "../project/worktrees.ts";
+import { forget, move, withStore } from "./project-records.ts";
 import { formatReport, validateFile } from "./validate.ts";
 
 const projectRoot = async (): Promise<string | null> =>
@@ -151,16 +152,6 @@ const json = {
   default: false,
 } as const;
 
-/** Runs `use` with the store open, and closes it. */
-const withStore = <T>(use: (store: ReturnType<typeof openStore>) => T): T => {
-  const store = openStore();
-  try {
-    return use(store);
-  } finally {
-    store.close();
-  }
-};
-
 export const register = defineCommand({
   meta: {
     name: "register",
@@ -200,34 +191,16 @@ export const register = defineCommand({
   },
 });
 
-const forget = defineCommand({
-  meta: {
-    name: "forget",
-    description: "Forget a registered project; its files and runs are kept",
-  },
-  args: {
-    id: { type: "positional", description: "The project's id", required: true },
-  },
-  run: ({ args }) => {
-    if (withStore(store => store.forgetProject(args.id))) {
-      write(`${style("green", "forgot")} ${args.id} (its files are kept)`);
-      return;
-    }
-    writeErr(`No project is registered as ${args.id}.`);
-    process.exitCode = 1;
-  },
-});
-
 export const projects = defineCommand({
   meta: {
     name: "projects",
     description: "List the registered projects, in-repo and attached",
   },
   args: { json },
-  subCommands: { forget },
+  subCommands: { forget, move },
   run: ({ args, rawArgs }) => {
     // citty runs this after a subcommand too; only list on a bare call.
-    if (rawArgs[0] === "forget") return;
+    if (rawArgs[0] === "forget" || rawArgs[0] === "move") return;
     const all = withStore(store => store.projects());
     if (args.json) write(JSON.stringify(all, undefined, 2));
     else if (all.length === 0) {

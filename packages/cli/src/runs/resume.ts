@@ -1,6 +1,7 @@
 /**
  * @file Whether a stored run can be resumed, and with what: its recorded state,
- *   and the flags it was started with unless the user changes them.
+ *   and the flags it was started with unless the user changes them; and `ork
+ *   resume --detach`, which resumes it in the background.
  */
 
 import {
@@ -11,6 +12,9 @@ import {
   type RunRecord,
 } from "@krapht/ork-core";
 import type { Driver } from "@krapht/ork-schema";
+
+import { type Detached, detachRun } from "../run/detach.ts";
+import { workflowArg } from "../workflows.ts";
 
 export type Resumable =
   | { ok: true; state: ResumeState; inPlace: boolean; driver?: Driver }
@@ -48,3 +52,22 @@ export const resumable = (
     ...(driver === undefined ? {} : { driver }),
   };
 };
+
+/**
+ * `ork resume --detach`: resumes `run` in a background process with the same
+ * flags, and returns once it is running again.
+ */
+export const detachResume = (
+  store: EventStore,
+  run: RunRecord,
+  flags: readonly string[],
+): Promise<Detached> =>
+  detachRun({
+    store,
+    runId: run.id,
+    args: ["resume", run.id, ...flags],
+    cwd: run.project,
+    runDir: workflowArg(run.file, run.project).runDir(run.id),
+    // Resuming records the run as the new process's, even if it ends at once.
+    started: pid => store.lookup(run.id)[0]?.pid === pid,
+  });

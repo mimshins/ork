@@ -4,7 +4,8 @@ Status: **Partial**: `ork init`, `ork register`, `ork projects`, `ork migrate`,
 `ork link`, `ork validate`, `ork doctor`, `ork run` (a whole workflow, or one
 node with `--node`), `ork ps`, `ork logs`, `ork tree`, `ork decide`, `ork stop`,
 `ork chat`, `ork resume`, `ork worktrees`, `ork context explain`,
-`ork agents list | show | add | rm` and `ork feedback list | show | dismiss`
+`ork agents list | show | add | rm` and
+`ork feedback list | show | note | dismiss | restore`
 ([feedback](./feedback.md)) are built ([code](../packages/cli/src/main.ts),
 [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts),
@@ -19,7 +20,7 @@ specified. Published as `@krapht/ork`
 ```
 ork init [--no-link]             # scaffold .ork/, .gitignore entries, example workflow; link tool folders; record the project
 ork register [path] [--id <id>] [--json]  # attach a project from outside: its files in ~/.ork/projects/<id>/, nothing in the repo
-ork projects [--json] | forget <id>       # the registered projects, in-repo and attached
+ork projects [--json] | forget <id> | move <id> <path>  # the registered projects; follow a moved clone
 ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agents and skills under .ork/, tool folders relinked; commits nothing
 ork migrate --from-agents a,b [--reviewer r] [--name n]  # draft a gated workflow from the project's agents
 ork link [tools…] [--check]      # point tools' agents and skills folders (.claude/agents, …) at .ork/
@@ -35,10 +36,10 @@ ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per nod
 ork decide [<run>] [--all] [--list] [--json] [--id <d> --choose <option>]  # answer open decisions
 ork chat <run> <node> [-m <text>] [--driver sdk|cli]  # talk to a node, live or by resuming its session
 ork stop [<run>]                 # stop a live run from any terminal
-ork resume [<run>] [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json]  # continue a stopped or crashed run
+ork resume [<run>] [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json] [--detach]  # continue a stopped or crashed run
 ork worktrees [list|clean]       # Ork's worktrees and branches; clean them up safely
 ork context explain <wf> <node> [--json]  # what one node's session loads, layer by layer
-ork feedback list [--all] [--json] | show <item> [--json] | dismiss <item>  # local feedback items (triage, apply, lesson, publish: M2)
+ork feedback list [--all] [--json] | show <item> [--json] | note <run> [<node>] -m <text> | dismiss <item> | restore <item>  # local feedback (triage, apply, lessons, publish: M2)
 ork ui [--port 4417]             # milestone 2
 ```
 

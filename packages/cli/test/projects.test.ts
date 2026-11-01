@@ -10,6 +10,7 @@ import {
   mkdirSync,
   mkdtempSync,
   realpathSync,
+  renameSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -23,6 +24,7 @@ import {
   loadWorkflow,
   recordInRepo,
   registerProject,
+  relocateProject,
   resolveWorkflowArg,
   runWorkflowFile,
 } from "../src/index.ts";
@@ -118,6 +120,24 @@ describe("ork register", () => {
       ok: false,
       error: "a project is already registered as api",
     });
+  });
+
+  it("follows a moved clone, with its runs", () => {
+    const store = openStore(":memory:");
+    const home = tmp("ork-home-");
+    const root = clone();
+    const { project } = registered(registerProject(store, root, { home }));
+    store.begin({ id: "r1", workflow: "w", file: "w.ork.yaml", project: root });
+    const moved = path.join(path.dirname(root), "renamed");
+    renameSync(root, moved);
+
+    expect(relocateProject(store, "app", moved)).toMatchObject({
+      ok: true,
+      project: { root: moved, dir: project.dir },
+    });
+    expect(store.projects()).toMatchObject([{ id: "app", root: moved }]);
+    expect(store.runs({ project: moved }).map(r => r.id)).toEqual(["r1"]);
+    expect(relocateProject(store, "nope", moved)).toMatchObject({ ok: false });
   });
 
   it("lets ork init record an in-repo project once", () => {

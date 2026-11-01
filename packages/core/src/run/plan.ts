@@ -35,7 +35,15 @@ import { runScope } from "./scope.ts";
 import type { Brief, Checkout, NodeOutput } from "./types.ts";
 
 /** Claude Code tools that change files or run commands. */
-export const WRITE_TOOLS = ["Write", "Edit", "NotebookEdit", "Bash"] as const;
+export const WRITE_TOOLS = ["Write", "Edit", "NotebookEdit"] as const;
+
+/**
+ * Commands a readonly node runs without asking: git that only reads. Any other
+ * command asks, as for any node, so a reviewer can run the tests with leave.
+ */
+export const READ_ONLY_COMMANDS = ["diff", "log", "show", "status"].flatMap(
+  git => [`Bash(git ${git})`, `Bash(git ${git} *)`, `Bash(git -C * ${git} *)`],
+);
 
 export type PlanOptions = {
   cwd: string;
@@ -104,6 +112,7 @@ const toolRules = (
     ...new Set([
       ...(rules?.permissions?.allow ?? []),
       ...(node.tools?.allow ?? []),
+      ...(readonly ? READ_ONLY_COMMANDS : []),
     ]),
   ],
   deny: [
