@@ -297,6 +297,19 @@ export const MILESTONES = [
           "docs/getting-started/installation.md",
         ],
       },
+      {
+        id: "update-notice",
+        title: "New-version notice and `ork upgrade`",
+        status: "done",
+        detail:
+          "A daily background check of the npm registry ends a later command with a one-line notice; `ork upgrade` upgrades through the package manager that installed Ork, after asking. Off in CI, without a terminal, or with `ORK_NO_UPDATE_CHECK=1`.",
+        commits: ["25c965a"],
+        date: "2026-11-02",
+        docs: [
+          "decisions/ADR-038-update-notice-and-upgrade.md",
+          "specs/cli/updates.md",
+        ],
+      },
     ],
   },
   {
@@ -594,6 +607,7 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "94e472a",
   "f45ced7",
   "e79e608",
   "54f5e81",
