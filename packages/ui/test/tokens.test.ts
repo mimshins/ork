@@ -112,8 +112,20 @@ const looseFontSizes = (): string[] =>
   STYLES.flatMap(file =>
     [...read(file).matchAll(/font-size\s*:\s*([^;]+);/gu)]
       .map(([, value = ""]) => value.trim())
-      .filter(value => !/^var\(--text-[\w-]+\)$/u.test(value))
+      .filter(value => !/^var\(--(?:text|icon-size)[\w-]*\)$/u.test(value))
       .map(value => `${file}: ${value}`),
+  );
+
+const COMPONENT_STYLES = STYLES.filter(
+  file => file.startsWith("components/") && file.endsWith(".css"),
+);
+const RAW_MEASURE =
+  /(?<![\w-])\d*\.?\d+(?:px|rem|em|ms|s)\b|z-index\s*:\s*\d/gu;
+
+/** Sizes, durations and layers a component style writes out, not as tokens. */
+const rawMeasures = (): string[] =>
+  COMPONENT_STYLES.flatMap(file =>
+    [...read(file).matchAll(RAW_MEASURE)].map(([hit]) => `${file}: ${hit}`),
   );
 
 /** The type scale's sizes in px, at the browser's default 16 px rem. */
@@ -178,6 +190,16 @@ describe("the token layers", () => {
 
   it("name a primitive only in the semantic layer", () => {
     expect(primitiveUses()).toEqual([]);
+  });
+});
+
+describe("component styles", () => {
+  it("exist, for the check below to mean something", () => {
+    expect(COMPONENT_STYLES.length).toBeGreaterThan(0);
+  });
+
+  it("write no size, duration or layer out, only tokens", () => {
+    expect(rawMeasures()).toEqual([]);
   });
 });
 

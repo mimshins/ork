@@ -37,6 +37,36 @@
   --popup-text: var(--color-text);
   --popup-border: var(--color-border-strong);
 
+  --menu-item-hover: var(--surface-hover);
+  --menu-item-selected: var(--surface-selected);
+  --menu-item-danger: var(--color-danger-text);
+
+  --box-bg: var(--surface-sunken);
+  --box-border: var(--color-border-strong);
+  --box-on-bg: var(--color-action);
+  --box-on-border: var(--color-action-edge);
+  --box-on-mark: var(--color-text-on-action);
+  --switch-thumb-off: var(--color-text-muted);
+
+  --tab-text: var(--color-text-muted);
+  --tab-text-active: var(--color-text);
+  --tab-indicator: var(--color-action-edge);
+
+  --dialog-bg: var(--surface-raised);
+  --dialog-text: var(--color-text);
+  --dialog-muted: var(--color-text-muted);
+  --dialog-border: var(--color-border-strong);
+  --dialog-scrim: var(--surface-scrim);
+
+  --toast-bg: var(--surface-raised);
+  --toast-text: var(--color-text);
+  --toast-muted: var(--color-text-muted);
+  --toast-border: var(--color-border-strong);
+
+  --meter-track: var(--surface-sunken);
+  --meter-fill: var(--color-live-edge);
+  --meter-fill-high: var(--color-action-edge);
+
   --badge-text: var(--color-text);
   --kbd-bg: var(--surface-sunken);
   --kbd-text: var(--color-text-muted);

@@ -1,0 +1,75 @@
+/**
+ * @file The button's and the icon button's look, on the component tokens. Every
+ *   variant is at least the minimum target size, and the focus ring is the
+ *   page's own.
+ */
+
+.button,
+.icon {
+  align-items: center;
+  background: var(--button-bg);
+  border: var(--hairline) solid var(--button-border);
+  border-radius: var(--radius-control);
+  color: var(--button-text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: var(--weight-medium);
+  gap: var(--gap-tight);
+  justify-content: center;
+  min-height: var(--control-height);
+  min-width: var(--target-min);
+  transition: background var(--duration-quick) var(--ease-out);
+  white-space: nowrap;
+}
+
+.button {
+  padding: 0 var(--inset-control);
+}
+
+.icon {
+  font-size: var(--icon-size);
+  padding: 0;
+  width: var(--control-height);
+}
+
+.button:not([data-disabled]):hover,
+.icon:not([data-disabled]):hover {
+  background: var(--button-bg-hover);
+}
+
+:is(.button, .icon)[data-variant="primary"] {
+  background: var(--button-primary-bg);
+  border-color: var(--button-primary-border);
+  color: var(--button-primary-text);
+}
+
+:is(.button, .icon)[data-variant="primary"]:not([data-disabled]):hover {
+  background: var(--button-primary-bg-hover);
+}
+
+:is(.button, .icon)[data-variant="danger"] {
+  background: var(--button-danger-bg);
+  border-color: var(--button-danger-border);
+  color: var(--button-danger-text);
+}
+
+:is(.button, .icon)[data-variant="danger"]:not([data-disabled]):hover {
+  background: var(--button-danger-bg-hover);
+}
+
+:is(.button, .icon)[data-variant="ghost"] {
+  background: transparent;
+  border-color: transparent;
+}
+
+:is(.button, .icon)[data-variant="ghost"]:not([data-disabled]):hover {
+  background: var(--button-bg-hover);
+}
+
+:is(.button, .icon)[data-disabled][data-disabled] {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}

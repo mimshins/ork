@@ -6,8 +6,10 @@ Status: **Partial.** Built: the tokens, the themes, the fonts and the page's
 defaults ([design](../../packages/ui/src/design/)), with the contrast and
 layering tests ([tokens test](../../packages/ui/test/tokens.test.ts),
 [pairings](../../packages/ui/test/pairings.ts),
-[theme test](../../packages/ui/test/theme.test.ts)). The components, the
-workspace and the graph's look are planned (M2).
+[theme test](../../packages/ui/test/theme.test.ts)); and the base components
+([components](../../packages/ui/src/components/),
+[tests](../../packages/ui/test/components/)). The workspace, the panels' own
+pieces and the graph's look are planned (M2).
 
 ## The language
 
@@ -86,6 +88,51 @@ The page's root carries `data-theme` and `data-contrast`
 - **Focus** is a 2 px amber outline outside the element, on every focusable
   element (`:focus-visible`), never only a glow.
 - **Motion** is brief, and none when `prefers-reduced-motion: reduce` is set.
+
+## Components
+
+Each lives in [`src/components/`](../../packages/ui/src/components/) with a CSS
+module on the tokens, and has a keyboard test and an axe test
+([tests](../../packages/ui/test/components/)).
+
+| Component                 | On      | Notes                                                                    |
+| ------------------------- | ------- | ------------------------------------------------------------------------ |
+| `Button`, `IconButton`    | Base UI | primary, danger, ghost and default; an icon button needs a `label`       |
+| `Tip`                     | Base UI | opens on hover and focus, Escape closes it, and it can be hovered        |
+| `Menu`                    | Base UI | actions and separators; arrows reach a disabled item, which does nothing |
+| `Popover`                 | Base UI | a small titled panel, anchored to its trigger                            |
+| `Dialog`, `ConfirmDialog` | Base UI | modal; a confirm dialog is an alert dialog, and focus starts on Cancel   |
+| `Tabs`                    | Base UI | the active tab has a line as well as brighter text                       |
+| `Select`, `Combobox`      | Base UI | a short list, or one long enough to filter                               |
+| `Checkbox`, `Switch`      | Base UI | inside their label, so the whole row is the target                       |
+| `Toasts`                  | Base UI | `toasts` adds one from outside React; F6 jumps into them                 |
+| `Meter`                   | Base UI | the value is always in words too                                         |
+| `StatusBadge`             | Ork     | an icon and a word; each status color has its own shape                  |
+| `Kbd`, `EmptyState`       | Ork     | a key hint, and what is missing with the next step                       |
+| `CopyCommand`             | Ork     | a CLI command, a copy button, and a live result                          |
+| icons                     | MDI     | one path each, in the text color; named for what they mean here          |
+
+- **Icons come from**
+  [Material Design Icons](https://pictogrammers.com/library/mdi/) through
+  `@mdi/js`, and only through
+  [icons.tsx](../../packages/ui/src/components/icons.tsx); the bundle takes only
+  the ones imported ([ADR-042](../../decisions/ADR-042-icons-mdi.md)).
+- **Every control can name its CLI twin** (`cli`). A button shows it in a
+  tooltip and gives it to screen readers as its description. A confirm dialog
+  shows it as text, because a tooltip there would cover the description, and
+  Escape would close the tooltip and not the dialog.
+- **Base UI's `<style>` elements are off** under the page's policy. Its one
+  rule, for lists that scroll, is carried in `base.css`.
+- **Component styles write out no size, duration or layer,** only tokens (tested
+  with the tokens).
+- **The panels' own pieces** (the node card, the tree row, the log line, the
+  decision card and the chat bubble) are built with their panels.
+
+**The gallery** shows every component in its states, with a theme switch:
+`pnpm ui:dev`, then `/gallery.html`. It never ships: `vite build --mode gallery`
+builds it alone, for a check under the page's policy. jsdom has no layout, so a
+dialog's Tab trap, real contrast and 200% zoom are checked there in a browser
+([gaps](../gaps.md#chores), C6).
 
 ## Copy
 

@@ -30,6 +30,17 @@ body {
 
 #root {
   height: 100%;
+  isolation: isolate;
+}
+
+/* Base UI's rule for lists that scroll, which the page's policy keeps out of a
+   <style> element it would insert itself. */
+.base-ui-disable-scrollbar {
+  scrollbar-width: none;
+}
+
+.base-ui-disable-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 code,

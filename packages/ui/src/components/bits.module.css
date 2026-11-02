@@ -1,0 +1,36 @@
+/**
+ * @file The look of the key hint and the empty state.
+ */
+
+.keys {
+  display: inline-flex;
+  gap: var(--gap-hair);
+}
+
+.key {
+  background: var(--kbd-bg);
+  border: var(--hairline) solid var(--kbd-border);
+  border-radius: var(--radius-badge);
+  color: var(--kbd-text);
+  font-size: var(--text-small);
+  min-width: var(--box-size);
+  padding: 0 var(--gap-tight);
+  text-align: center;
+}
+
+.empty {
+  margin: auto;
+  max-width: var(--empty-width);
+  padding: var(--inset-empty);
+  text-align: center;
+}
+
+.emptyTitle {
+  font-size: var(--text-title);
+  font-weight: var(--weight-medium);
+  margin: 0 0 var(--gap-tight);
+}
+
+.emptyBody {
+  color: var(--color-text-muted);
+}

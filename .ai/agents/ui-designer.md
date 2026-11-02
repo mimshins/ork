@@ -45,7 +45,8 @@ contrast test covers them.
 
 ## When reviewing
 
-Run `ork ui` (or the UI's dev server), open it in the browser tools, and
+Run `ork ui` (or the UI's dev server; `/gallery.html` there shows every
+component in its states), open it in the browser tools, and
 check each changed surface in dark, light and high contrast, at 200% zoom,
 and keyboard only. Report findings with screenshots' descriptions, the rule
 each breaks, and the fix. You never commit or push.

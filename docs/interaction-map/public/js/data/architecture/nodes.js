@@ -185,6 +185,7 @@ export const NODES = [
       "Browser code imports only `@krapht/ork-server/client`: the contract and the typed client.",
       "Strict CSP: no inline script or `<style>`, no remote fonts or CDNs.",
       "Built: the design tokens in three layers (primitive, semantic, component), dark and light themes with more contrast, and bundled Geist; a test checks every color pairing against WCAG 2.2 AA.",
+      "Built: the base components on Base UI (buttons, menus, dialogs, selects, toasts) and Ork's own (status badge, meter, copy-command), each with a keyboard test and an axe test.",
       "Panels, in build order: monitor, logs, decisions, chats, notifications, then the designer and context inspector.",
     ],
     see: [

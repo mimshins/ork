@@ -103,6 +103,29 @@ export const PAIRINGS: Pairing[] = [
   { fg: ["--panel-tab-indicator"], bg: ["--panel-header-bg"], min: UI },
   { fg: ["--popup-text"], bg: ["--popup-bg"], min: TEXT },
   { fg: ["--kbd-text"], bg: ["--kbd-bg"], min: TEXT },
+  {
+    fg: ["--popup-text", "--menu-item-danger"],
+    bg: ["--menu-item-hover", "--menu-item-selected"],
+    min: TEXT,
+  },
+  { fg: ["--menu-item-danger"], bg: ["--popup-bg"], min: TEXT },
+  { fg: ["--box-on-mark"], bg: ["--box-on-bg"], min: UI },
+  {
+    fg: ["--box-border", "--box-on-border", "--switch-thumb-off"],
+    bg: ["--box-bg", "--surface-panel", "--surface-raised"],
+    min: UI,
+  },
+  { fg: ["--tab-text", "--tab-text-active"], bg: ["--panel-bg"], min: TEXT },
+  { fg: ["--tab-indicator"], bg: ["--panel-bg"], min: UI },
+  { fg: ["--dialog-text", "--dialog-muted"], bg: ["--dialog-bg"], min: TEXT },
+  { fg: ["--dialog-border"], bg: ["--dialog-bg"], min: UI },
+  { fg: ["--toast-text", "--toast-muted"], bg: ["--toast-bg"], min: TEXT },
+  { fg: ["--toast-border"], bg: ["--surface-canvas", "--toast-bg"], min: UI },
+  {
+    fg: ["--meter-fill", "--meter-fill-high"],
+    bg: ["--meter-track"],
+    min: UI,
+  },
 ];
 
 /** Color tokens with no contrast to keep, and why. */

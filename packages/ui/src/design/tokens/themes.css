@@ -20,6 +20,7 @@
   --surface-selected: var(--amber-950);
   --surface-live: var(--phosphor-950);
   --surface-danger: var(--red-950);
+  --surface-scrim: var(--scrim-dark);
 
   /* Text and lines. */
   --color-text: var(--ink-100);
@@ -72,6 +73,7 @@
   --surface-selected: var(--amber-50);
   --surface-live: var(--phosphor-50);
   --surface-danger: var(--red-50);
+  --surface-scrim: var(--scrim-light);
 
   --color-text: var(--ink-1000);
   --color-text-muted: var(--ink-700);

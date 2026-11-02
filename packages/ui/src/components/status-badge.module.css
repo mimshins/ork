@@ -1,0 +1,66 @@
+/**
+ * @file The status badge's look: each tone names its status color, a paused
+ *   badge is outlined, and a running badge's icon pulses. Base styles turn the
+ *   pulse off under reduced motion.
+ */
+
+.badge {
+  align-items: center;
+  border: var(--hairline) solid transparent;
+  border-radius: var(--radius-badge);
+  display: inline-flex;
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  gap: var(--gap-tight);
+  padding: 0 var(--gap-tight);
+  white-space: nowrap;
+}
+
+.icon {
+  align-items: center;
+  display: flex;
+  font-size: var(--icon-size-small);
+}
+
+.badge[data-tone="running"] {
+  color: var(--color-status-running);
+}
+
+.badge[data-tone="running"] .icon {
+  animation: pulse var(--duration-pulse) ease-in-out infinite;
+}
+
+.badge[data-tone="succeeded"] {
+  color: var(--color-status-succeeded);
+}
+
+.badge[data-tone="waiting"] {
+  color: var(--color-status-waiting);
+}
+
+.badge[data-tone="paused"] {
+  border-color: var(--color-status-paused);
+  color: var(--color-status-paused);
+}
+
+.badge[data-tone="failed"] {
+  color: var(--color-status-failed);
+}
+
+.badge[data-tone="queued"] {
+  color: var(--color-status-queued);
+}
+
+.badge[data-tone="skipped"] {
+  color: var(--color-status-skipped);
+}
+
+.badge[data-tone="interrupted"] {
+  color: var(--color-status-interrupted);
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.4;
+  }
+}

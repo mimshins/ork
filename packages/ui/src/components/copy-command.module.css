@@ -1,0 +1,26 @@
+/**
+ * @file The copy-command field's look: the command on a sunken surface, which
+ *   wraps rather than overflows, with the result beside it.
+ */
+
+.field {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-tight);
+}
+
+.command {
+  background: var(--field-bg);
+  border: var(--hairline) solid var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--field-text);
+  overflow-wrap: anywhere;
+  padding: var(--gap-hair) var(--inset-control);
+  user-select: all;
+}
+
+.result {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+}

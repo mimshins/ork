@@ -1,0 +1,65 @@
+/**
+ * @file The toasts' look: a stack in the bottom corner, each a bordered panel
+ *   that fits a narrow window.
+ */
+
+.viewport {
+  bottom: var(--gap-loose);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  max-width: calc(100vw - var(--window-margin));
+  position: fixed;
+  right: var(--gap-loose);
+  width: var(--toast-width);
+  z-index: var(--layer-toast);
+}
+
+.toast {
+  align-items: flex-start;
+  background: var(--toast-bg);
+  border: var(--hairline) solid var(--toast-border);
+  border-radius: var(--radius-control);
+  color: var(--toast-text);
+  display: flex;
+  gap: var(--gap);
+  justify-content: space-between;
+  padding: var(--inset-control);
+  transition: opacity var(--duration-move) var(--ease-out);
+}
+
+.toast[data-starting-style],
+.toast[data-ending-style],
+.toast[data-limited] {
+  opacity: 0;
+}
+
+.content {
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--text-ui);
+  font-weight: var(--weight-medium);
+  margin: 0;
+}
+
+.description {
+  color: var(--toast-muted);
+  margin: 0;
+}
+
+.close {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--toast-muted);
+  cursor: pointer;
+  display: flex;
+  flex: none;
+  font-size: var(--icon-size-small);
+  height: var(--target-min);
+  justify-content: center;
+  width: var(--target-min);
+}

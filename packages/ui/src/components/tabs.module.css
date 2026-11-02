@@ -1,0 +1,40 @@
+/**
+ * @file The tabs' look: a hairline under the list, and a line under the active
+ *   tab as well as its brighter text, so the choice reads without color alone.
+ */
+
+.list {
+  border-bottom: var(--hairline) solid var(--color-border);
+  display: flex;
+  gap: var(--gap-tight);
+}
+
+.tab {
+  background: transparent;
+  border: 0;
+  border-bottom: var(--focus-width) solid transparent;
+  color: var(--tab-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: var(--weight-medium);
+  min-height: var(--control-height);
+  padding: 0 var(--inset-control);
+}
+
+.tab:hover {
+  color: var(--tab-text-active);
+}
+
+.tab[data-active] {
+  border-bottom-color: var(--tab-indicator);
+  color: var(--tab-text-active);
+}
+
+.tab[data-disabled] {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.panel {
+  padding: var(--inset-panel) 0;
+}

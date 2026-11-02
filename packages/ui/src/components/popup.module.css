@@ -1,0 +1,108 @@
+/**
+ * @file The look every floating surface shares: tooltips, menus, popovers, and
+ *   the lists of a select or combobox, with their items.
+ */
+
+.positioner {
+  z-index: var(--layer-popup);
+}
+
+.popup {
+  background: var(--popup-bg);
+  border: var(--hairline) solid var(--popup-border);
+  border-radius: var(--radius-control);
+  color: var(--popup-text);
+  max-height: min(var(--popup-max-height), var(--available-height, 100vh));
+  max-width: var(--popup-max-width);
+  min-width: max(var(--popup-min-width), var(--anchor-width, 0));
+  outline: none;
+  overflow-y: auto;
+  padding: var(--gap-tight);
+  transition: opacity var(--duration-quick) var(--ease-out);
+}
+
+.popup[data-starting-style],
+.popup[data-ending-style] {
+  opacity: 0;
+}
+
+.panel {
+  composes: popup;
+  padding: var(--inset-panel);
+}
+
+.title {
+  font-size: var(--text-ui);
+  font-weight: var(--weight-strong);
+  margin: 0 0 var(--gap-tight);
+}
+
+.description {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.item {
+  align-items: center;
+  border-radius: var(--radius-badge);
+  cursor: default;
+  display: flex;
+  gap: var(--gap);
+  justify-content: space-between;
+  min-height: var(--control-height);
+  outline: none;
+  padding: 0 var(--inset-control);
+  user-select: none;
+}
+
+.item[data-highlighted] {
+  background: var(--menu-item-hover);
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: calc(var(--focus-width) * -1);
+}
+
+.item[data-disabled] {
+  color: var(--color-text-disabled);
+}
+
+.item[data-selected] {
+  background: var(--menu-item-selected);
+}
+
+.item[data-variant="danger"] {
+  color: var(--menu-item-danger);
+}
+
+.separator {
+  background: var(--color-border);
+  height: var(--hairline);
+  margin: var(--gap-tight) 0;
+}
+
+.tipPositioner {
+  z-index: var(--layer-tooltip);
+}
+
+.tip {
+  background: var(--popup-bg);
+  border: var(--hairline) solid var(--popup-border);
+  border-radius: var(--radius-control);
+  color: var(--popup-text);
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-small);
+  gap: var(--gap-hair);
+  max-width: var(--popup-max-width);
+  padding: var(--gap-tight) var(--gap);
+  transition: opacity var(--duration-quick) var(--ease-out);
+}
+
+.tip[data-starting-style],
+.tip[data-ending-style] {
+  opacity: 0;
+}
+
+.tipCommand {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+}

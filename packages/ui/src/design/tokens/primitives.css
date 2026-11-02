@@ -49,6 +49,10 @@
   --red-800: #9c1a1f;
   --red-950: #2a1312;
 
+  /* The scrim behind a dialog, over each theme's canvas. */
+  --scrim-dark: #0a0d0bb8;
+  --scrim-light: #0a0d0b66;
+
   /* Type. */
   --font-sans-family:
     "Geist Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",

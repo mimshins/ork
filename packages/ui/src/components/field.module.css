@@ -1,0 +1,163 @@
+/**
+ * @file The look of what takes input: a labeled select or combobox, a checkbox
+ *   and a switch. A chosen box shows a check and a switch moves its thumb, so
+ *   neither depends on color.
+ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+}
+
+.label {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+}
+
+.control,
+.group {
+  align-items: center;
+  background: var(--field-bg);
+  border: var(--hairline) solid var(--field-border);
+  border-radius: var(--radius-control);
+  color: var(--field-text);
+  display: flex;
+  font: inherit;
+  justify-content: space-between;
+  min-height: var(--control-height);
+}
+
+.control {
+  cursor: pointer;
+  gap: var(--gap);
+  padding: 0 var(--inset-control);
+  text-align: start;
+}
+
+.group:focus-within {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--focus-offset);
+}
+
+.input {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  flex: 1;
+  font: inherit;
+  min-width: 0;
+  outline: none;
+  padding: 0 var(--inset-control);
+}
+
+.input::placeholder {
+  color: var(--field-placeholder);
+  opacity: 1;
+}
+
+.inputButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  font-size: var(--icon-size-small);
+  height: var(--control-height);
+  justify-content: center;
+  width: var(--control-height);
+}
+
+.icon {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  font-size: var(--icon-size-small);
+}
+
+.empty:not(:empty) {
+  color: var(--color-text-muted);
+  padding: var(--gap-tight) var(--inset-control);
+}
+
+.toggle {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  gap: var(--gap);
+  min-height: var(--control-height);
+}
+
+.box {
+  align-items: center;
+  background: var(--box-bg);
+  border: var(--hairline) solid var(--box-border);
+  border-radius: var(--radius-badge);
+  cursor: pointer;
+  display: flex;
+  flex: none;
+  height: var(--box-size);
+  justify-content: center;
+  padding: 0;
+  width: var(--box-size);
+}
+
+.box[data-checked] {
+  background: var(--box-on-bg);
+  border-color: var(--box-on-border);
+}
+
+.mark {
+  align-items: center;
+  color: var(--box-on-mark);
+  display: flex;
+  font-size: var(--icon-size-small);
+}
+
+.switch {
+  align-items: center;
+  background: var(--box-bg);
+  border: var(--hairline) solid var(--box-border);
+  border-radius: var(--switch-height);
+  cursor: pointer;
+  display: flex;
+  flex: none;
+  height: var(--switch-height);
+  padding: 0 var(--gap-hair);
+  width: var(--switch-width);
+}
+
+.switch[data-checked] {
+  background: var(--box-on-bg);
+  border-color: var(--box-on-border);
+  justify-content: flex-end;
+}
+
+.thumb {
+  background: var(--switch-thumb-off);
+  border-radius: 50%;
+  height: var(--switch-thumb);
+  width: var(--switch-thumb);
+}
+
+.thumb[data-checked] {
+  background: var(--box-on-mark);
+}
+
+:is(.box, .switch, .control)[data-disabled] {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+.box[data-disabled] .mark,
+.thumb[data-disabled] {
+  color: var(--color-text-disabled);
+}
+
+.thumb[data-disabled] {
+  background: var(--color-text-disabled);
+}

@@ -1,0 +1,67 @@
+/**
+ * @file The dialogs' look: a scrim over the page, and a bordered panel in the
+ *   middle of it that fits a zoomed or narrow window and scrolls when it must.
+ */
+
+.backdrop {
+  background: var(--dialog-scrim);
+  inset: 0;
+  position: fixed;
+  transition: opacity var(--duration-quick) var(--ease-out);
+  z-index: var(--layer-dialog);
+}
+
+.backdrop[data-starting-style],
+.backdrop[data-ending-style] {
+  opacity: 0;
+}
+
+.dialog {
+  background: var(--dialog-bg);
+  border: var(--hairline) solid var(--dialog-border);
+  border-radius: var(--radius-panel);
+  color: var(--dialog-text);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  left: 50%;
+  max-height: calc(100vh - var(--window-margin));
+  max-width: calc(100vw - var(--window-margin));
+  overflow-y: auto;
+  padding: var(--gap-loose);
+  position: fixed;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: opacity var(--duration-quick) var(--ease-out);
+  width: var(--dialog-width);
+  z-index: var(--layer-dialog);
+}
+
+.dialog[data-starting-style],
+.dialog[data-ending-style] {
+  opacity: 0;
+}
+
+.title {
+  font-size: var(--text-title);
+  font-weight: var(--weight-strong);
+  line-height: var(--leading-tight);
+  margin: 0;
+}
+
+.description {
+  color: var(--dialog-muted);
+  margin: 0;
+}
+
+.command {
+  color: var(--dialog-muted);
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  gap: var(--gap);
+  justify-content: flex-end;
+  margin-top: var(--gap);
+}
