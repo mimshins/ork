@@ -45,6 +45,14 @@ export const applyLook = (root: HTMLElement, look: Look): void => {
   root.dataset["contrast"] = look.contrast;
 };
 
+/** Sets the look for a choice on the page, as the system stands now. */
+export const applyChoice = (view: View, choice: ThemeChoice): void => {
+  applyLook(
+    view.document.documentElement,
+    lookOf(choice, query => view.matchMedia(query).matches),
+  );
+};
+
 /**
  * Applies the look for `choice()` now and again whenever the system's color
  * scheme or contrast changes; returns the function that stops following.
@@ -55,10 +63,7 @@ export const followSystem = (
 ): (() => void) => {
   const queries = [PREFERS_LIGHT, PREFERS_MORE].map(q => view.matchMedia(q));
   const update = () => {
-    applyLook(
-      view.document.documentElement,
-      lookOf(choice(), query => view.matchMedia(query).matches),
-    );
+    applyChoice(view, choice());
   };
   update();
   for (const query of queries) query.addEventListener("change", update);

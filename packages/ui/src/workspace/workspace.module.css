@@ -41,6 +41,10 @@
   font-size: var(--text-mono);
 }
 
+.status + .status {
+  margin-inline-start: var(--gap-loose);
+}
+
 .middle {
   display: flex;
   min-height: 0;

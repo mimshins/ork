@@ -187,6 +187,7 @@ export const NODES = [
       "Built: the design tokens in three layers (primitive, semantic, component), dark and light themes with more contrast, and bundled Geist; a test checks every color pairing against WCAG 2.2 AA.",
       "Built: the base components on Base UI (buttons, menus, dialogs, selects, toasts) and Ork's own (status badge, meter, copy-command), each with a keyboard test and an axe test.",
       "Built: the workspace on dockview: resize, dock, tab, float, maximize, minimize to a rail, a saved layout, a command palette, Ork's own keys for what dockview's free build leaves out, and a stack below 1024 px. Its panels are placeholders that name the CLI command.",
+      "Built: the state layer on containerized-state: runs and decisions from the overview stream, a run's events in a capped window with paging, reconnecting streams, and saved preferences. A write comes back on a stream; nothing updates in advance.",
       "Panels, in build order: monitor, logs, decisions, chats, notifications, then the designer and context inspector.",
     ],
     see: [
@@ -198,11 +199,13 @@ export const NODES = [
       UI.adr,
       UI.design,
       UI.workspace,
+      UI.state,
       UI.app,
       UI.assets,
       UI.tests,
       UI.tokens,
       UI.workspaceTests,
+      UI.stateTests,
     ],
   },
 

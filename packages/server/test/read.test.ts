@@ -111,6 +111,11 @@ describe("the read routes", () => {
         query: { node: "lead" },
       }),
     ).toMatchObject({ data: { length: 1 } });
+    const newest = await client.call("events", {
+      params: { id: "aaa11111" },
+      query: { last: 2 },
+    });
+    expect(newest).toMatchObject({ data: [{ seq: 2 }, { seq: 3 }] });
   });
 
   it("list only the open decisions of live runs", async () => {

@@ -69,7 +69,8 @@ The page's root carries `data-theme` and `data-contrast`
 - **Light** keeps the bright brand fills, outlined by deeper amber and green
   edges, and uses those deeper tones for text: phosphor is too faint on white.
 - **The theme follows the system** (`prefers-color-scheme`) until the user picks
-  one; the choice is kept with the preferences (the state layer, planned).
+  one, in the palette; the choice is kept with the
+  [preferences](./state.md#preferences).
 - **More contrast** follows `prefers-contrast: more`, in either theme: brighter
   text, stronger borders and deeper accents.
 - **Both update live** when the system's setting changes.

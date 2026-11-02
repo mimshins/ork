@@ -6,6 +6,10 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
+import {
+  createPreferences,
+  DEFAULT_PREFERENCES,
+} from "../../src/state/preferences.ts";
 import { type Command, commandsFor } from "../../src/workspace/commands.ts";
 import { PANELS } from "../../src/workspace/panels.tsx";
 import { keysOf } from "../../src/workspace/shortcuts.ts";
@@ -23,7 +27,12 @@ const VIEW: WorkspaceView = {
 };
 
 const commands = (view: Partial<WorkspaceView> = {}) =>
-  commandsFor(openWorkspace(), { ...VIEW, ...view });
+  commandsFor(
+    openWorkspace(),
+    { ...VIEW, ...view },
+    createPreferences(localStorage),
+    DEFAULT_PREFERENCES,
+  );
 
 const combos = (): string[] =>
   commands().flatMap(({ shortcut }) =>
@@ -104,5 +113,33 @@ describe("the commands", () => {
     expect(disabledOf("resize-left", { maximized: true })).toBe(
       "Restore the panel first.",
     );
+  });
+
+  it("offers each theme and density, and says which is in use", () => {
+    const view = commands().filter(command => command.group === "View");
+    expect(view.map(({ title }) => title)).toEqual([
+      "Theme: Follow the system",
+      "Theme: Dark",
+      "Theme: Light",
+      "Density: Compact",
+      "Density: Comfortable",
+    ]);
+    expect(view.filter(({ disabled }) => disabled !== undefined)).toMatchObject(
+      [{ id: "theme-system" }, { id: "density-compact" }],
+    );
+  });
+
+  it("changes a preference and says so", () => {
+    const workspace = openWorkspace();
+    const preferences = createPreferences(localStorage);
+    const light = commandsFor(
+      workspace,
+      VIEW,
+      preferences,
+      DEFAULT_PREFERENCES,
+    ).find(({ id }) => id === "theme-light");
+    light?.run();
+    expect(preferences.value.getValue().theme).toBe("light");
+    expect(workspace.announcement.getValue()).toBe("Theme: Light.");
   });
 });

@@ -18,6 +18,9 @@ import type {
 import type { InputDef } from "@krapht/ork-schema";
 import { z } from "zod";
 
+/** The records the answers are made of, for a client that imports only this. */
+export type { DecisionRecord, StoredEvent, TreeNode };
+
 const Count = z.coerce.number().int().positive();
 const Seq = z.coerce.number().int().nonnegative();
 const Driver = z.enum(["sdk", "cli"]);
@@ -30,7 +33,10 @@ export const RunsQuerySchema = z.strictObject({
 export const EventsQuerySchema = z.strictObject({
   after: Seq.optional(),
   node: z.string().min(1).optional(),
+  /** Only the first this many. */
   limit: Count.optional(),
+  /** Only the newest this many, still oldest first. */
+  last: Count.optional(),
 });
 
 export const DecisionsQuerySchema = z.strictObject({

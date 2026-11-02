@@ -1,10 +1,7 @@
 /**
- * @file The workspace's two bars: the top one with the mark, the Window menu
- *   and the palette's button; and the status one with the server's state and
- *   the live region that speaks the workspace's changes.
+ * @file The workspace's top bar: the mark, the Window menu and the palette's
+ *   button.
  */
-
-import { useValue } from "react-containerized-state";
 
 import { Kbd } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
@@ -38,25 +35,3 @@ export const TopBar = ({ workspace }: { workspace: Workspace }) => (
     </Button>
   </header>
 );
-
-export const StatusBar = ({
-  workspace,
-  status,
-}: {
-  workspace: Workspace;
-  status: string;
-}) => {
-  const message = useValue(workspace.announcement);
-  return (
-    <footer className={styles["bar"]}>
-      <output className={styles["status"]}>{status}</output>
-      <output
-        aria-atomic="true"
-        aria-live="polite"
-        className={styles["visuallyHidden"]}
-      >
-        {message}
-      </output>
-    </footer>
-  );
-};

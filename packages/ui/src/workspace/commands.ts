@@ -4,12 +4,13 @@
  *   command that does not apply now stays listed and says why.
  */
 
+import type { Preferences, PreferenceStore } from "../state/preferences.ts";
 import { PANELS, panelOf } from "./panels.tsx";
 import { type Direction, type Shortcut, SHORTCUTS } from "./shortcuts.ts";
 import type { WorkspaceView } from "./workspace-view.ts";
 import type { Workspace } from "./workspace.ts";
 
-export type CommandGroup = "Panels" | "Window" | "Layout";
+export type CommandGroup = "Panels" | "Window" | "Layout" | "View";
 
 export type Command = {
   id: string;
@@ -162,11 +163,56 @@ const layoutCommands = (
   ];
 };
 
+const THEMES: readonly { theme: Preferences["theme"]; title: string }[] = [
+  { theme: "system", title: "Follow the system" },
+  { theme: "dark", title: "Dark" },
+  { theme: "light", title: "Light" },
+];
+
+const DENSITIES: readonly {
+  density: Preferences["density"];
+  title: string;
+}[] = [
+  { density: "compact", title: "Compact" },
+  { density: "comfortable", title: "Comfortable" },
+];
+
+const viewCommands = (
+  workspace: Workspace,
+  preferences: PreferenceStore,
+  chosen: Preferences,
+): Command[] => [
+  ...THEMES.map(({ theme, title }): Command => ({
+    id: `theme-${theme}`,
+    title: `Theme: ${title}`,
+    group: "View",
+    run: () => {
+      preferences.update({ theme });
+      workspace.announce(`Theme: ${title}.`);
+    },
+    disabled: chosen.theme === theme ? "This is the theme now." : undefined,
+  })),
+  ...DENSITIES.map(({ density, title }): Command => ({
+    id: `density-${density}`,
+    title: `Density: ${title}`,
+    group: "View",
+    run: () => {
+      preferences.update({ density });
+      workspace.announce(`Density: ${title}.`);
+    },
+    disabled:
+      chosen.density === density ? "This is the density now." : undefined,
+  })),
+];
+
 export const commandsFor = (
   workspace: Workspace,
   view: WorkspaceView,
+  preferences: PreferenceStore,
+  chosen: Preferences,
 ): Command[] => [
   ...panelCommands(workspace),
   ...windowCommands(workspace, view),
   ...layoutCommands(workspace, view),
+  ...viewCommands(workspace, preferences, chosen),
 ];

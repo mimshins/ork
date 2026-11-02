@@ -1,7 +1,8 @@
 /**
- * @file What the UI's tests add to jsdom for the workspace: a window width for
- *   `matchMedia` (a test can change it and the query reports the change), and a
- *   `ResizeObserver`, which dockview needs and jsdom lacks.
+ * @file What the UI's tests add to jsdom: a window width for `matchMedia` (a
+ *   test can change it and the query reports the change), a `ResizeObserver`,
+ *   which dockview needs and jsdom lacks. The `EventSource` a test drives is in
+ *   fake-source.ts.
  */
 
 import { vi } from "vitest";

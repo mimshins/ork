@@ -1,17 +1,22 @@
 /**
- * @file Tests for the app's root: it shows the serving Ork's version, or why it
- *   cannot reach it, and has no accessibility violations.
+ * @file Tests for the app's root: it follows the overview stream, shows the
+ *   serving Ork's version or why it cannot reach it, and has no accessibility
+ *   violations.
  */
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../src/app/app.tsx";
 import { violations } from "./axe.ts";
 import { stubWindow } from "./dom.ts";
+import { type FakeSources, stubEventSource } from "./fake-source.ts";
+
+let sources: FakeSources;
 
 beforeEach(() => {
   stubWindow();
+  sources = stubEventSource();
 });
 
 afterEach(() => {
@@ -37,6 +42,9 @@ describe("the app", () => {
   it("shows the version of the Ork that serves it", async () => {
     answering(200, { version: "0.3.0", pid: 1, startedAt: "now" });
     const { container } = render(<App />);
+    act(() => {
+      sources.last().connected();
+    });
     expect(await screen.findByText("Ork 0.3.0")).toBeDefined();
     expect(await violations(container)).toEqual([]);
   });
@@ -49,5 +57,21 @@ describe("the app", () => {
         "Cannot reach ork ui: Sign in with the link ork ui printed.",
       ),
     ).toBeDefined();
+  });
+
+  it("shows what is live, and closes the stream when it unmounts", async () => {
+    answering(200, { version: "0.3.0", pid: 1, startedAt: "now" });
+    const { unmount } = render(<App />);
+    const source = sources.last();
+    act(() => {
+      source.connected();
+      source.send("runs", [{ id: "a", live: "running" }]);
+      source.send("decisions", []);
+    });
+    expect(
+      await screen.findByText("1 run live, 0 decisions open"),
+    ).toBeDefined();
+    unmount();
+    expect(source.closed).toBe(true);
   });
 });

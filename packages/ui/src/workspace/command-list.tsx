@@ -17,7 +17,7 @@ import styles from "./palette.module.css";
 type Item = { label: string; command: Command };
 type Section = { value: CommandGroup; items: Item[] };
 
-const GROUPS: readonly CommandGroup[] = ["Panels", "Window", "Layout"];
+const GROUPS: readonly CommandGroup[] = ["Panels", "Window", "Layout", "View"];
 
 const sectionsOf = (commands: readonly Command[]): Section[] =>
   GROUPS.map(value => ({

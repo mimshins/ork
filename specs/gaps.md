@@ -127,6 +127,12 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
 - **L35 · dockview's other skins ship unused.** Its one style sheet holds all
   its themes, inert without their class; the file is 160 kB, or 13 kB gzipped. A
   build step could strip them. ([workspace](./ui/workspace.md#limits))
+- **L36 · A browser limits the streams of all a server's tabs together.** The
+  server speaks HTTP/1.1, where a browser gives an origin six connections. Each
+  tab holds the overview stream and one per run on show, so about three tabs
+  with a run open use them all, and the next tab's requests wait. HTTP/2 needs
+  TLS in a browser; a `SharedWorker` or `BroadcastChannel` could share one
+  stream between tabs. ([state](./ui/state.md#a-runs-feed))
 
 ## Chores
 
@@ -145,9 +151,12 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
   Each bundles its own copy of the class's declaration, and its protected
   members make the copies incompatible. So
   `withPersistence(Container.create(…))` and `useValue(persistentContainer)`
-  fail to typecheck, though both work at runtime. The workspace uses
+  fail to typecheck, though both work at runtime. The layout uses
   `new PersistentContainer(…)` and reads it without the hook; the preferences
-  container (task 8) will need the fix upstream or a thin adapter. Also,
-  `packages/ui` sets `skipLibCheck`, because dockview's declarations do not pass
-  under `exactOptionalPropertyTypes`.
+  cast it once for the hooks
+  ([preferences.ts](../packages/ui/src/state/preferences.ts)). The fix is
+  upstream: one shared declaration. Also upstream: a subscriber that throws
+  stops `PersistentContainer.setValue` before it saves, so the value changes but
+  is not remembered. And `packages/ui` sets `skipLibCheck`, because dockview's
+  declarations do not pass under `exactOptionalPropertyTypes`.
   ([workspace](./ui/workspace.md#the-saved-layout))

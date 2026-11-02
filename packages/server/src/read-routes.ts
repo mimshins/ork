@@ -73,8 +73,10 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
     const events = context.store
       .events(found.run.id, query.after ?? 0)
       .filter(s => query.node === undefined || nodeOf(s.event) === query.node);
+    const newest =
+      query.last === undefined ? events : events.slice(-query.last);
     return ok(
-      query.limit === undefined ? events : events.slice(0, query.limit),
+      query.limit === undefined ? newest : newest.slice(0, query.limit),
     );
   },
 

@@ -100,6 +100,14 @@ export const UI = {
     "packages/ui/test/workspace/dock.test.tsx",
     "Tests: the dock on real dockview",
   ),
+  state: d(
+    "specs/ui/state.md",
+    "Spec: the containers, stream links and event window",
+  ),
+  stateTests: d(
+    "packages/ui/test/state/render-count.test.tsx",
+    "Tests: a component re-renders only for its own slice",
+  ),
 };
 
 export const SERVER = {

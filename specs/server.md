@@ -72,7 +72,7 @@ are named by id or a unique prefix: no match is 404, several are 400.
 | GET    | `/api/runs`                   | runs newest first, each with `live`; `?project`, `?limit` (20)                                     | `ork ps --json`       |
 | GET    | `/api/runs/:id`               | one run, with `live` (`crashed` when its process is gone, `paused` when it is paused) and `paused` | —                     |
 | GET    | `/api/runs/:id/tree`          | the ownership tree                                                                                 | `ork tree --json`     |
-| GET    | `/api/runs/:id/events`        | stored events; `?after`, `?node`, `?limit`                                                         | `ork logs --json`     |
+| GET    | `/api/runs/:id/events`        | stored events; `?after`, `?node`, `?limit`, `?last` (the newest N)                                 | `ork logs --json`     |
 | GET    | `/api/decisions`              | open decisions of live runs; `?run`, `?project`                                                    | `ork decide --list`   |
 | POST   | `/api/decisions/:id`          | `{ choose }`: answers it as `ui`, wakes the run                                                    | `ork decide --id`     |
 | POST   | `/api/runs`                   | `{ project, workflow, inputs?, driver?, inPlace?, allowDirty? }`                                   | `ork run --detach`    |
