@@ -84,6 +84,14 @@ export const UI = {
     "Code: serving the built UI from the CLI's bundle",
   ),
   tests: d("packages/ui/test/app.test.tsx", "Tests: the app, with axe"),
+  design: d(
+    "specs/ui/design-system.md",
+    "Spec: the design system, its tokens and themes",
+  ),
+  tokens: d(
+    "packages/ui/test/tokens.test.ts",
+    "Tests: every token pairing's contrast, and the layers",
+  ),
 };
 
 export const SERVER = {

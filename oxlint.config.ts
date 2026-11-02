@@ -184,6 +184,8 @@ export default defineConfig({
       rules: {
         "react/react-in-jsx-scope": "off",
         "react/jsx-filename-extension": ["error", { extensions: [".tsx"] }],
+        // Style sheets are imported for their effect; Vite bundles them.
+        "import/no-unassigned-import": ["error", { allow: ["**/*.css"] }],
       },
     },
     {

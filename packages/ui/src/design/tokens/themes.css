@@ -1,0 +1,143 @@
+/**
+ * @file The design system's semantic layer: what each color is for, per theme.
+ *   The page's root carries `data-theme` (dark or light) and `data-contrast`
+ *   (standard or more), set by theme.ts from the system or the user's choice;
+ *   dark is also the page's look before that runs. A high-contrast block only
+ *   overrides tokens its theme defines. Values here only name primitives, and a
+ *   test checks every pairing in test/pairings.ts against WCAG 2.2 AA.
+ */
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces, from the canvas up. */
+  --surface-canvas: var(--ink-1000);
+  --surface-sunken: var(--ink-960);
+  --surface-panel: var(--ink-940);
+  --surface-raised: var(--ink-920);
+  --surface-hover: var(--ink-900);
+  --surface-selected: var(--amber-950);
+  --surface-live: var(--phosphor-950);
+  --surface-danger: var(--red-950);
+
+  /* Text and lines. */
+  --color-text: var(--ink-100);
+  --color-text-muted: var(--ink-400);
+  --color-text-disabled: var(--ink-700);
+  --color-border: var(--ink-850);
+  --color-border-strong: var(--ink-600);
+  --color-grid-dot: var(--ink-900);
+  --color-focus: var(--amber-500);
+
+  /* Amber: action and attention. */
+  --color-action: var(--amber-500);
+  --color-action-hover: var(--amber-300);
+  --color-action-edge: var(--amber-500);
+  --color-action-text: var(--amber-500);
+  --color-text-on-action: var(--ink-1000);
+
+  /* Phosphor: live and done. */
+  --color-live: var(--phosphor-500);
+  --color-live-edge: var(--phosphor-500);
+  --color-live-text: var(--phosphor-500);
+  --color-text-on-live: var(--ink-1000);
+  --color-link: var(--phosphor-500);
+
+  /* Danger: the stop that fails a node, and errors. */
+  --color-danger: var(--red-400);
+  --color-danger-hover: var(--red-300);
+  --color-danger-text: var(--red-400);
+  --color-text-on-danger: var(--ink-1000);
+
+  /* Status: each also has its own icon and word. */
+  --color-status-running: var(--phosphor-500);
+  --color-status-succeeded: var(--phosphor-500);
+  --color-status-waiting: var(--amber-500);
+  --color-status-paused: var(--amber-500);
+  --color-status-failed: var(--red-400);
+  --color-status-queued: var(--ink-400);
+  --color-status-skipped: var(--ink-400);
+  --color-status-interrupted: var(--ink-400);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-canvas: var(--ink-25);
+  --surface-sunken: var(--ink-50);
+  --surface-panel: var(--ink-0);
+  --surface-raised: var(--ink-0);
+  --surface-hover: var(--ink-100);
+  --surface-selected: var(--amber-50);
+  --surface-live: var(--phosphor-50);
+  --surface-danger: var(--red-50);
+
+  --color-text: var(--ink-1000);
+  --color-text-muted: var(--ink-700);
+  --color-text-disabled: var(--ink-400);
+  --color-border: var(--ink-100);
+  --color-border-strong: var(--ink-500);
+  --color-grid-dot: var(--ink-200);
+  --color-focus: var(--amber-700);
+
+  /* The bright fills keep the brand; a deeper edge outlines them on white. */
+  --color-action: var(--amber-500);
+  --color-action-hover: var(--amber-300);
+  --color-action-edge: var(--amber-700);
+  --color-action-text: var(--amber-700);
+  --color-text-on-action: var(--ink-1000);
+
+  --color-live: var(--phosphor-500);
+  --color-live-edge: var(--phosphor-700);
+  --color-live-text: var(--phosphor-700);
+  --color-text-on-live: var(--ink-1000);
+  --color-link: var(--phosphor-700);
+
+  --color-danger: var(--red-700);
+  --color-danger-hover: var(--red-800);
+  --color-danger-text: var(--red-700);
+  --color-text-on-danger: var(--ink-0);
+
+  --color-status-running: var(--phosphor-700);
+  --color-status-succeeded: var(--phosphor-700);
+  --color-status-waiting: var(--amber-700);
+  --color-status-paused: var(--amber-700);
+  --color-status-failed: var(--red-700);
+  --color-status-queued: var(--ink-700);
+  --color-status-skipped: var(--ink-700);
+  --color-status-interrupted: var(--ink-700);
+}
+
+[data-theme="dark"][data-contrast="more"] {
+  --color-text: var(--ink-0);
+  --color-text-muted: var(--ink-200);
+  --color-border: var(--ink-700);
+  --color-border-strong: var(--ink-400);
+  --color-danger-text: var(--red-300);
+  --color-status-failed: var(--red-300);
+  --color-status-queued: var(--ink-200);
+  --color-status-skipped: var(--ink-200);
+  --color-status-interrupted: var(--ink-200);
+}
+
+[data-theme="light"][data-contrast="more"] {
+  --color-text-muted: var(--ink-850);
+  --color-border: var(--ink-500);
+  --color-border-strong: var(--ink-800);
+  --color-focus: var(--amber-800);
+  --color-action-edge: var(--amber-800);
+  --color-action-text: var(--amber-800);
+  --color-live-edge: var(--phosphor-800);
+  --color-live-text: var(--phosphor-800);
+  --color-link: var(--phosphor-800);
+  --color-danger-text: var(--red-800);
+  --color-status-running: var(--phosphor-800);
+  --color-status-succeeded: var(--phosphor-800);
+  --color-status-waiting: var(--amber-800);
+  --color-status-paused: var(--amber-800);
+  --color-status-failed: var(--red-800);
+  --color-status-queued: var(--ink-850);
+  --color-status-skipped: var(--ink-850);
+  --color-status-interrupted: var(--ink-850);
+}

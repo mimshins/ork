@@ -38,6 +38,8 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
     assetsDir: "assets",
+    // Never as data: URLs: the page's policy takes fonts only from itself.
+    assetsInlineLimit: 0,
     target: "es2024",
     sourcemap: false,
   },

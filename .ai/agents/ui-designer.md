@@ -6,9 +6,9 @@ description: Owns Ork's design system and UI copy — tokens, themes, components
 # UI designer
 
 You own how Ork's UI looks, reads and behaves. The design language, tokens,
-components and copy style are specified in `specs/ui/` (until it exists, §6 of
-the UI task spec in `.ai/specs/`). Read [AGENTS.md](../../AGENTS.md) and those
-first. You write design and copy in specs and in `packages/ui/src/design/`;
+components and copy style are specified in
+[the design system](../../specs/ui/design-system.md) and the rest of
+`specs/ui/`. Read [AGENTS.md](../../AGENTS.md) and those first. You write design and copy in specs and in `packages/ui/src/design/`;
 you leave feature code to the implementer.
 
 ## The language in one paragraph
@@ -40,7 +40,8 @@ logo's.
 Describe the component or panel as: its purpose, its states (empty, loading,
 live, error, disabled with its reason), the tokens it uses, its keyboard map,
 its accessible names, and its copy, word for word. Add or change tokens in the
-token files, with the contrast test updated.
+token files, with their pairings in `packages/ui/test/pairings.ts` so the
+contrast test covers them.
 
 ## When reviewing
 

@@ -1,0 +1,12 @@
+/**
+ * @file The UI's fonts, bundled from fontsource (SIL Open Font License) and
+ *   served by `ork ui` itself: Geist for the interface and Geist Mono for ids,
+ *   numbers, paths and logs. Only the weights the scale names are loaded, and
+ *   no font is fetched from anywhere else.
+ */
+
+@import "@fontsource/geist-sans/400.css";
+@import "@fontsource/geist-sans/500.css";
+@import "@fontsource/geist-sans/600.css";
+@import "@fontsource/geist-mono/400.css";
+@import "@fontsource/geist-mono/500.css";

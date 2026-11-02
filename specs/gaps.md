@@ -111,6 +111,11 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
 - **L31 · Stopping a leader leaves its running children running.** Its delegated
   children follow the owner-failure path and finish their work; only the leader
   is interrupted. ([run control](./run-control.md#stopping-one-node))
+- **L32 · The UI shows dark for a moment before light.** The page's policy
+  allows no inline script, so the look is set when the app's module runs; until
+  then a light system sees the dark theme. A theme cookie the server reads could
+  set `data-theme` in the page itself.
+  ([design system](./ui/design-system.md#themes))
 
 ## Chores
 

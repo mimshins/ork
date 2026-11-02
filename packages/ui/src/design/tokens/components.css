@@ -1,0 +1,44 @@
+/**
+ * @file The design system's component layer: the tokens a component's own
+ *   style sheet reads, each naming a semantic token, never a primitive. A
+ *   component that needs a new look adds its tokens here, and its pairings to
+ *   test/pairings.ts, so the contrast test covers it.
+ */
+
+:root {
+  --button-bg: var(--surface-raised);
+  --button-bg-hover: var(--surface-hover);
+  --button-text: var(--color-text);
+  --button-border: var(--color-border-strong);
+
+  --button-primary-bg: var(--color-action);
+  --button-primary-bg-hover: var(--color-action-hover);
+  --button-primary-text: var(--color-text-on-action);
+  --button-primary-border: var(--color-action-edge);
+
+  --button-danger-bg: var(--color-danger);
+  --button-danger-bg-hover: var(--color-danger-hover);
+  --button-danger-text: var(--color-text-on-danger);
+  --button-danger-border: var(--color-danger);
+
+  --field-bg: var(--surface-sunken);
+  --field-text: var(--color-text);
+  --field-placeholder: var(--color-text-muted);
+  --field-border: var(--color-border-strong);
+
+  --panel-bg: var(--surface-panel);
+  --panel-border: var(--color-border);
+  --panel-header-bg: var(--surface-panel);
+  --panel-header-text: var(--color-text-muted);
+  --panel-header-text-active: var(--color-text);
+  --panel-tab-indicator: var(--color-action-edge);
+
+  --popup-bg: var(--surface-raised);
+  --popup-text: var(--color-text);
+  --popup-border: var(--color-border-strong);
+
+  --badge-text: var(--color-text);
+  --kbd-bg: var(--surface-sunken);
+  --kbd-text: var(--color-text-muted);
+  --kbd-border: var(--color-border-strong);
+}

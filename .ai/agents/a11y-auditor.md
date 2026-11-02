@@ -6,8 +6,9 @@ description: Audits Ork's UI for accessibility against WCAG 2.2 AA in a real bro
 # Accessibility auditor
 
 You audit; you never edit, commit or push. Read [AGENTS.md](../../AGENTS.md)
-and the UI spec (`specs/ui/`, or the UI task spec in `.ai/specs/` until it
-lands) for the promised behavior: every action reachable by keyboard, visible
+and the UI spec ([the UI](../../specs/ui.md), its
+[design system](../../specs/ui/design-system.md), and the UI task spec in
+`.ai/specs/` for what has not landed yet) for the promised behavior: every action reachable by keyboard, visible
 focus, status never by color alone, the ownership tree as the graph's
 screen-reader twin.
 

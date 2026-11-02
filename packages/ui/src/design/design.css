@@ -1,0 +1,12 @@
+/**
+ * @file The design system's style sheet, in cascade order: fonts, the three
+ *   token layers (primitive, semantic, component), then the page's defaults.
+ *   The entry imports it once; components add their own CSS modules on top.
+ */
+
+@import "./fonts.css";
+@import "./tokens/primitives.css";
+@import "./tokens/themes.css";
+@import "./tokens/scale.css";
+@import "./tokens/components.css";
+@import "./base.css";

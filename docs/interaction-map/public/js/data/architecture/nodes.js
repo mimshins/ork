@@ -184,13 +184,22 @@ export const NODES = [
       "Vite, React, Base UI, dockview and containerized-state; the run graph is drawn in-house, so no zustand ships.",
       "Browser code imports only `@krapht/ork-server/client`: the contract and the typed client.",
       "Strict CSP: no inline script or `<style>`, no remote fonts or CDNs.",
+      "Built: the design tokens in three layers (primitive, semantic, component), dark and light themes with more contrast, and bundled Geist; a test checks every color pairing against WCAG 2.2 AA.",
       "Panels, in build order: monitor, logs, decisions, chats, notifications, then the designer and context inspector.",
     ],
     see: [
       { map: "messaging", node: "inbox", label: "The decisions inbox" },
       { map: "feedback", node: "panel", label: "The feedback panel" },
     ],
-    docs: [DESIGN.ui, UI.adr, UI.app, UI.assets, UI.tests],
+    docs: [
+      DESIGN.ui,
+      UI.adr,
+      UI.design,
+      UI.app,
+      UI.assets,
+      UI.tests,
+      UI.tokens,
+    ],
   },
 
   // ── Engine ───────────────────────────────────────────────────────────────

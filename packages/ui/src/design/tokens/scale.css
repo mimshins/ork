@@ -1,0 +1,55 @@
+/**
+ * @file The design system's semantic layer for everything but color: type,
+ *   space, sizes and motion. Compact is the default density; the page's root
+ *   carries `data-density="comfortable"` for the roomier one. Sizes are in rem,
+ *   so text follows the browser's own font size; no text is below 11 px, and no
+ *   click target below 24×24 (WCAG 2.5.8).
+ */
+
+:root {
+  /* Type: Geist for the interface, Geist Mono for ids, numbers, paths, logs. */
+  --font-ui: var(--font-sans-family);
+  --font-mono: var(--font-mono-family);
+  --text-small: var(--size-11);
+  --text-mono: var(--size-12);
+  --text-ui: var(--size-13);
+  --text-title: var(--size-15);
+  --text-heading: var(--size-18);
+  --leading-tight: 1.25;
+  --leading-ui: 1.45;
+  --weight-regular: var(--weight-400);
+  --weight-medium: var(--weight-500);
+  --weight-strong: var(--weight-600);
+
+  /* Space and shape. */
+  --gap-tight: var(--space-4);
+  --gap: var(--space-8);
+  --gap-loose: var(--space-16);
+  --inset-control: var(--space-8);
+  --inset-panel: var(--space-12);
+  --radius-control: var(--radius-4);
+  --radius-panel: var(--radius-6);
+  --radius-badge: var(--radius-2);
+  --hairline: 1px;
+
+  /* Sizes: compact by default. */
+  --control-height: max(1.5rem, var(--target-min));
+  --target-min: 24px;
+  --panel-header-height: 1.75rem;
+
+  /* Focus: an amber ring outside the element, never only a glow. */
+  --focus-width: 2px;
+  --focus-offset: 2px;
+
+  /* Motion: brief, and none when the user asks for less. */
+  --duration-quick: var(--time-120);
+  --duration-move: var(--time-200);
+  --duration-pulse: var(--time-1600);
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+[data-density="comfortable"] {
+  --control-height: max(1.75rem, var(--target-min));
+  --panel-header-height: 2rem;
+  --inset-panel: var(--space-16);
+}
