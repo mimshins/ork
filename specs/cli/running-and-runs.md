@@ -134,6 +134,6 @@ the same id and in its own project, from wherever it is called:
 - A running run, a succeeded one, and a run of one node (`ork run --node`) are
   refused with the reason.
 - `--detach` resumes it in the background, as `ork run --detach` does
-  ([detach.ts](../../packages/cli/src/run/detach.ts)): it returns once the
+  ([detach.ts](../../packages/core/src/remote/detach.ts)): it returns once the
   background process has the run, its output goes to the run's `output.log`, and
   its questions wait for `ork decide`.

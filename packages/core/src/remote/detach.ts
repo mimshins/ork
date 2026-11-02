@@ -1,8 +1,9 @@
 /**
- * @file `ork run --detach` and `ork resume --detach`: starts the same command
- *   as a background process with no terminal, its output in the run's folder
- *   (`.ork/runs/<run>/`, or the attached project's) as `output.log`, and
- *   returns once the run is running. Its questions wait for `ork decide`.
+ * @file Starting `ork run` or `ork resume` as a background process with no
+ *   terminal (`--detach`, and the local server's start and resume). Its output
+ *   goes to the run's folder (`.ork/runs/<run>/`, or the attached project's) as
+ *   `output.log`, and this returns once the run is running. Its questions wait
+ *   for `ork decide` or the UI.
  */
 
 import { spawn } from "node:child_process";
@@ -10,7 +11,7 @@ import { mkdirSync, openSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
-import type { EventStore } from "@krapht/ork-core";
+import type { EventStore } from "../store/types.ts";
 
 /** Set in a detached run's environment: no terminal answers its questions. */
 export const DETACHED_ENV = "ORK_DETACHED";
@@ -28,6 +29,8 @@ export type DetachOptions = {
   cwd: string;
   /** The run's folder, which gets its `output.log`. */
   runDir: string;
+  /** The `ork` script to start (default: the running one). */
+  script?: string;
   /** How long to wait for the run to be recorded (default 15 s). */
   timeoutMs?: number;
 };
@@ -43,7 +46,7 @@ export const detachRun = async (options: DetachOptions): Promise<Detached> => {
   const log = path.join(dir, "output.log");
   const fd = openSync(log, "a");
   let exited: number | null = null;
-  const script = process.argv[1] ?? "";
+  const script = options.script ?? process.argv[1] ?? "";
   const child = spawn(
     process.execPath,
     [...process.execArgv, script, ...options.args],

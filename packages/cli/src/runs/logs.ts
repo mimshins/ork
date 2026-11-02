@@ -4,14 +4,10 @@
  *   ends.
  */
 
-import { setTimeout as sleep } from "node:timers/promises";
-
 import {
   type EventStore,
-  followSocket,
-  liveStatus,
+  followEvents,
   nodeOf,
-  socketPath,
   type RunRecord,
   type StoredEvent,
 } from "@krapht/ork-core";
@@ -66,58 +62,28 @@ export const followRun = async (
   options: FollowOptions,
 ): Promise<void> => {
   const print = createLogPrinter(options);
-  /** Prints what the run's socket pushes after `after`, until it closes. */
-  const viaSocket = async (after: number) => {
-    let last = after;
-    let finished = false;
-    const via = await followSocket(
-      socketPath(run.id, options.home),
-      after,
-      stored => {
-        if (stored.seq <= last) return;
-        last = stored.seq;
-        for (const line of print(stored)) out(line);
-        if (stored.event.type === "run.finished") finished = true;
-      },
-      options.signal,
-    );
-    return { via, seq: last, finished };
-  };
-  let seq = options.after ?? 0;
-  for (;;) {
-    // Chats with a finished run's nodes come after `run.finished`.
-    let finished = false;
-    for (const stored of store.events(run.id, seq)) {
-      seq = stored.seq;
+  const end = await followEvents(
+    store,
+    run.id,
+    stored => {
       for (const line of print(stored)) out(line);
-      finished ||= stored.event.type === "run.finished";
-    }
-    if (finished || !options.follow) return;
-    // oxlint-disable-next-line no-await-in-loop -- the socket, once; then the store catches up
-    const pushed = await viaSocket(seq);
-    seq = pushed.seq;
-    if (pushed.finished || options.signal?.aborted === true) return;
-    const { via } = pushed;
-    if (via === "ended") continue;
-    const [now] = store.lookup(run.id);
-    if (now === undefined || liveStatus(now) !== "running") {
-      if (now !== undefined && liveStatus(now) === "crashed") {
-        out(
-          style(
-            "red",
-            `run ${run.id} stopped without finishing (its process is gone)`,
-          ),
-        );
-      }
-      return;
-    }
-    try {
-      // oxlint-disable-next-line no-await-in-loop -- polls when the run has no socket
-      await sleep(options.intervalMs ?? 250, undefined, {
-        signal: options.signal,
-      });
-    } catch {
-      return;
-    }
+    },
+    {
+      follow: options.follow,
+      ...(options.after === undefined ? {} : { after: options.after }),
+      ...(options.intervalMs === undefined
+        ? {}
+        : { intervalMs: options.intervalMs }),
+      ...(options.home === undefined ? {} : { home: options.home }),
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+    },
+  );
+  if (end === "crashed") {
+    out(
+      style(
+        "red",
+        `run ${run.id} stopped without finishing (its process is gone)`,
+      ),
+    );
   }
 };

@@ -12,13 +12,14 @@ import {
   type EventStore,
   type HumanChannel,
   openStore,
+  resumable,
   type RunRecord,
 } from "@krapht/ork-core";
 import type { ToolRunner } from "@krapht/ork-nodes";
 import { createCliRuntime } from "@krapht/ork-runtime-claude";
 import { describe, expect, it } from "vitest";
 
-import { resumable, runWorkflowFile } from "../src/index.ts";
+import { runWorkflowFile } from "../src/index.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,

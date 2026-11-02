@@ -98,6 +98,9 @@ with a `timeout` still takes its `default`). Its own output goes to
 `.ork/runs/<run>/output.log`. `ork stop` works on any running run, detached or
 not, as Ctrl-C does in its terminal.
 
+`ork ui` shows the same runs and open decisions in your browser
+([the browser view](../getting-started/installation.md#the-browser-view)).
+
 ## One node on its own
 
 ```sh

@@ -14,6 +14,7 @@ import {
   DESIGN,
   README,
   SCHEMA,
+  SERVER,
   WORKTREES,
   STORE,
 } from "../refs.js";
@@ -48,22 +49,22 @@ export const EDGES = [
     from: "ui",
     to: "server",
     kind: "net",
-    label: "REST + SSE",
+    label: "JSON + SSE",
     detail:
-      "Commands go over REST with the server's per-start token; the run's events come back over one SSE stream.",
+      "The UI's panels will call the API through the typed client, signed in with the session cookie, and follow runs over the event streams; today the placeholder page reads the overview stream.",
     status: "planned",
-    docs: [DESIGN.packages],
+    docs: [DESIGN.server, SERVER.contract],
   },
   {
     id: "cli-server",
     from: "cli",
     to: "server",
     kind: "net",
-    label: "HTTP, when `ork ui` runs",
+    label: "`ork ui` starts it",
     detail:
-      "When a server is running, the CLI sends its commands there so both surfaces see the same runs; otherwise it embeds the engine.",
-    status: "planned",
-    docs: [DESIGN.packages],
+      "`ork ui` starts the server and opens it, signed in, or opens the one `~/.ork/ui.json` names. Every other command works without it: both read and write the same store.",
+    status: "built",
+    docs: [SERVER.command, DESIGN.server],
   },
 
   // ── Surfaces into the engine ─────────────────────────────────────────────
@@ -84,7 +85,7 @@ export const EDGES = [
     kind: "local",
     label: "`ork run` · stop · resume",
     detail:
-      "With no server running, `ork run` hosts the engine in its own process for the length of the run.",
+      "`ork run` hosts the engine in its own process for the length of the run, in the foreground or detached.",
     docs: [CLI.runWorkflow, DESIGN.cli],
   },
   {
@@ -107,22 +108,22 @@ export const EDGES = [
     from: "server",
     to: "scheduler",
     kind: "local",
-    label: "run · stop · chat",
+    label: "start · resume · stop · message",
     detail:
-      "The server hosts the same engine as the CLI and forwards the UI's commands to it.",
-    status: "planned",
-    docs: [DESIGN.packages],
+      "The server hosts no engine: it starts and resumes runs as detached `ork` processes, and a stop or a message is a row in the store plus a wake on the run's socket, as `ork stop` and `ork chat -m` do.",
+    status: "built",
+    docs: [SERVER.writes, SERVER.remote, DESIGN.server],
   },
   {
     id: "server-decisions",
     from: "server",
     to: "decisionQueue",
     kind: "local",
-    label: "inbox answers",
+    label: "answers",
     detail:
-      "An answer clicked in the UI's decisions inbox resolves the decision and wakes the waiting node.",
-    status: "planned",
-    docs: [DESIGN.messaging],
+      "An answer through the API goes to the store as the UI's (the first answer wins) and wakes the run on its socket, as `ork decide` does; the inbox panel is next.",
+    status: "built",
+    docs: [SERVER.writes, DESIGN.messaging],
   },
   {
     id: "events-server",
@@ -131,13 +132,13 @@ export const EDGES = [
     kind: "event",
     label: "SSE event stream",
     detail:
-      "The server replays a run's events and then follows new ones, so a browser that connects late sees the whole run.",
-    status: "planned",
+      "The server replays a run's events after `Last-Event-ID`, then follows new ones over the run's socket (or polls the store without one), so a browser that connects late sees the whole run.",
+    status: "built",
     via: [
       [580, 996],
       [580, 776],
     ],
-    docs: [DESIGN.messaging],
+    docs: [SERVER.streams, DESIGN.messaging],
   },
 
   // ── Inside the engine ────────────────────────────────────────────────────

@@ -2,9 +2,11 @@
 
 Status: **Partial**: `@krapht/ork-integrations`, `@krapht/ork-schema`,
 `@krapht/ork-core`, `@krapht/ork-runtime-claude`, `@krapht/ork-nodes` and the
-CLI `@krapht/ork` exist; `@krapht/ork-server` and the UI are specified. Why:
+CLI `@krapht/ork` exist, and `@krapht/ork-server` with `ork ui` and a
+placeholder page ([server](./server.md)); the UI's panels are planned. Why:
 [ADR-002](../decisions/ADR-002-typescript-from-source.md),
-[ADR-003](../decisions/ADR-003-oxlint-oxfmt-and-boundaries.md).
+[ADR-003](../decisions/ADR-003-oxlint-oxfmt-and-boundaries.md),
+[ADR-039](../decisions/ADR-039-local-server.md).
 
 ```
 ork/
@@ -15,7 +17,7 @@ ork/
                      decision queue, event store (SQLite + JSONL), worktree manager
     runtime-claude/  ClaudeRuntime interface + drivers: sdk (@anthropic-ai/claude-agent-sdk), cli (claude -p stream-json)
     nodes/           built-in node-type registry (each: schema, defaults, execute(), UI metadata)
-    server/          Hono: REST + SSE event stream; serves built UI; local-only bind 127.0.0.1 + token
+    server/          node:http JSON API + SSE streams, typed contract and client; loopback + token (ADR-039)
     cli/             `ork` bin (citty): init, validate, run, ps, logs, chat, decide, ui, doctor, context
     ui/              (M2) Vite + React + @xyflow/react + TanStack Query + zustand
   examples/          software-factory.ork.yaml, pr-review.ork.yaml, …
@@ -30,9 +32,15 @@ ork/
   bundle of the private `@krapht/ork-schema`, `-core`, `-runtime-claude`,
   `-nodes` and `-server` packages
   ([release](../runbook/development/release.md)).
-- **Single process:** `ork run` hosts the engine in-process. `ork ui` starts the
-  same engine together with the server. The CLI talks to a running server over
-  HTTP if one is running, and otherwise runs the engine embedded.
+- **A process per run:** `ork run` hosts the engine in-process, in the
+  foreground or detached. The store (`~/.ork/state.db`) is the one place every
+  view reads, and each run's socket is the fast path to it
+  ([ADR-024](../decisions/ADR-024-event-store.md)): other processes reach a run
+  by writing rows and waking it.
+- **The server is one more client:** `ork ui` starts the local server, which
+  reads the store, writes answers and commands as rows, and starts runs as
+  detached processes; it runs nothing itself, and the CLI never goes through it
+  ([server](./server.md), [ADR-039](../decisions/ADR-039-local-server.md)).
 - **Integrations are adapters:** each CLI tool and Claude driver is one adapter
   in `@krapht/ork-integrations`, listed in a registry that the schema, the tool
   executor, `ork doctor` and `ork run` read

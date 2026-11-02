@@ -8,21 +8,22 @@
 import { setTimeout as sleep } from "node:timers/promises";
 
 import {
+  answerDecision,
   type DecisionRecord,
+  detachResume,
+  findRun,
   liveStatus,
   openStore,
-  socketPath,
-  wakeRun,
+  pendingDecisions,
   placeFor,
+  requestStop,
+  resumable,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
 import { runWorkflowFile } from "../run/workflow.ts";
-import { answerDecision, pendingDecisions } from "../runs/decide.ts";
-import { findRun } from "../runs/find.ts";
-import { detachResume, resumable } from "../runs/resume.ts";
 import { flagValues, isDriver, loadRuntime, terminalHuman } from "./run.ts";
 
 const failed = (message: string): void => {
@@ -149,13 +150,11 @@ export const stop = defineCommand({
         return;
       }
       const { run } = found;
-      const status = liveStatus(run);
-      if (status !== "running") {
-        failed(`Run ${run.id} is not running (${status}).`);
+      const asked = await requestStop(store, run);
+      if (!asked.ok) {
+        failed(asked.error);
         return;
       }
-      store.command(run.id, { kind: "stop" });
-      await wakeRun(socketPath(run.id));
       for (let i = 0; i < 150; i += 1) {
         const [now] = store.lookup(run.id);
         if (now !== undefined && liveStatus(now) !== "running") {

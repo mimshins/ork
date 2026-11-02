@@ -13,16 +13,17 @@ import {
   createSignals,
   type EventStore,
   type HumanChannel,
-  type RunEvent,
-  startControl,
-  userMessageText,
+  inside,
+  newRunId,
   parseInputPairs,
   planNodeSession,
-  inside,
-  runDirOf,
   resolveInputs,
+  runDirOf,
+  type RunEvent,
   type Session,
   type SessionOutcome,
+  startControl,
+  userMessageText,
 } from "@krapht/ork-core";
 import { resultOf } from "@krapht/ork-nodes";
 import type { Driver } from "@krapht/ork-schema";
@@ -31,7 +32,6 @@ import { formatReport, loadWorkflow } from "../commands/validate.ts";
 import { style } from "../output.ts";
 import { formatEvent, formatRunEvent } from "./format.ts";
 import { feedbackOrigin } from "./origin.ts";
-import { newRunId } from "./workflow.ts";
 
 export type RunNodeOptions = {
   file: string;

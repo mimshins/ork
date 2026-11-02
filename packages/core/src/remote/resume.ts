@@ -1,20 +1,18 @@
 /**
  * @file Whether a stored run can be resumed, and with what: its recorded state,
- *   and the flags it was started with unless the user changes them; and `ork
- *   resume --detach`, which resumes it in the background.
+ *   and the flags it was started with unless the user changes them; and
+ *   resuming it in the background (`ork resume --detach`, the local server).
  */
 
-import {
-  type EventStore,
-  liveStatus,
-  type ResumeState,
-  resumeState,
-  type RunRecord,
-} from "@krapht/ork-core";
+import path from "node:path";
+
 import type { Driver } from "@krapht/ork-schema";
 
-import { type Detached, detachRun } from "../run/detach.ts";
-import { workflowArg } from "../workflows.ts";
+import { placeFor, runDirOf } from "../project/place.ts";
+import { type ResumeState, resumeState } from "../run/resume.ts";
+import type { EventStore, RunRecord } from "../store/types.ts";
+import { liveStatus } from "../store/view.ts";
+import { type Detached, detachRun } from "./detach.ts";
 
 export type Resumable =
   | { ok: true; state: ResumeState; inPlace: boolean; driver?: Driver }
@@ -53,21 +51,33 @@ export const resumable = (
   };
 };
 
+/** The folder of a stored run, in the project its workflow file is in. */
+export const storedRunDir = (store: EventStore, run: RunRecord): string =>
+  runDirOf(
+    placeFor(
+      path.dirname(path.resolve(run.project, run.file)),
+      store.projects(),
+    ),
+    run.id,
+  );
+
 /**
- * `ork resume --detach`: resumes `run` in a background process with the same
- * flags, and returns once it is running again.
+ * Resumes `run` in a background process with the given `ork resume` flags, and
+ * returns once it is running again.
  */
 export const detachResume = (
   store: EventStore,
   run: RunRecord,
   flags: readonly string[],
+  script?: string,
 ): Promise<Detached> =>
   detachRun({
     store,
     runId: run.id,
     args: ["resume", run.id, ...flags],
     cwd: run.project,
-    runDir: workflowArg(run.file, run.project).runDir(run.id),
+    runDir: storedRunDir(store, run),
+    ...(script === undefined ? {} : { script }),
     // Resuming records the run as the new process's, even if it ends at once.
     started: pid => store.lookup(run.id)[0]?.pid === pid,
   });

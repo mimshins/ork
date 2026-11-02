@@ -1,6 +1,9 @@
 # The UI
 
-Status: **Planned** (M2).
+Status: **Planned** (M2). Its way in is built: the local server and `ork ui`,
+with a placeholder page that lists the runs and open decisions live
+([server](./server.md)). The panels read the server's API through its typed
+client.
 
 **Panels:**
 

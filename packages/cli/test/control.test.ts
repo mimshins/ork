@@ -9,20 +9,17 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import {
+  answerDecision,
   type EventStore,
   openStore,
+  pendingDecisions,
   socketPath,
   wakeRun,
 } from "@krapht/ork-core";
 import { createCliRuntime } from "@krapht/ork-runtime-claude";
 import { describe, expect, it } from "vitest";
 
-import {
-  answerDecision,
-  formatDecisions,
-  pendingDecisions,
-  runWorkflowFile,
-} from "../src/index.ts";
+import { formatDecisions, runWorkflowFile } from "../src/index.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,

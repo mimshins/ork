@@ -4,6 +4,7 @@
  */
 
 import type {
+  AnsweredBy,
   RunEvent,
   RunResult,
   RuntimeEvent,
@@ -12,6 +13,13 @@ import type {
 
 import { previewInput } from "../human.ts";
 import { style } from "../output.ts";
+
+/** Who answered a decision, as the log says it. */
+const ANSWERED_BY: Record<AnsweredBy, string> = {
+  terminal: "terminal",
+  decide: "ork decide",
+  ui: "ork ui",
+};
 
 export const STATUS_MARK: Record<string, string> = {
   pass: style("green", "✓"),
@@ -174,7 +182,7 @@ export const formatRunEvent = (
     ];
   }
   if (event.type === "decision.answered") {
-    const by = event.by === "decide" ? "ork decide" : "terminal";
+    const by = ANSWERED_BY[event.by];
     return [`${tag(event.node)} ${style("dim", `→ ${event.answer} (${by})`)}`];
   }
   if (event.type === "decision.withdrawn") {

@@ -5,8 +5,8 @@ accounts. Start with the getting-started pages, then read the guides as you need
 them.
 
 > **Pre-alpha.** Everything in Getting started and Guides works today, unless a
-> page marks it as coming later. Live run views, the decisions inbox and chat
-> come in milestone M1d; the web UI in M2.
+> page marks it as coming later. The browser UI is being built (milestone 2):
+> `ork ui` already starts it, and its panels come in the next releases.
 
 ## Getting started
 

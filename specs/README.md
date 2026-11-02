@@ -34,6 +34,7 @@ Long specs follow the hub and chunk layout
 | [Event store: what a run keeps](./event-store.md) | Built     | M1d       |
 | [Feedback and self-improvement](./feedback.md)    | Partial   | M1d, M2   |
 | [The ork CLI](./cli.md)                           | Partial   | M1        |
+| [The local server](./server.md)                   | Built     | M2        |
 | [The UI](./ui.md)                                 | Planned   | M2        |
 | [Known gaps and limits](./gaps.md)                | Open      | All       |
 

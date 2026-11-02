@@ -86,6 +86,20 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
 - **L24 · `ork upgrade` knows an install by its path.** An install in a place it
   does not recognise gets the npm command as advice, and nothing is run.
   ([updates](./cli/updates.md#ork-upgrade))
+- **L25 · The server starts runs only in registered projects.** A run of an
+  unregistered in-repo project shows in the API, but `POST /api/runs` needs the
+  project registered (`ork init`, `ork register`). ([server](./server.md#api))
+- **L26 · The UI cannot talk to a finished run's node yet.** The API messages a
+  live run only, and answers 409 naming `ork chat` for a finished one, which
+  resumes the node's session in a process of its own.
+  ([server](./server.md#api))
+- **L27 · The overview stream polls.** It compares the newest 50 runs and the
+  open decisions every second; only a run's own stream is pushed, over its
+  socket. ([server](./server.md#streams))
+- **L28 · One local user.** The server binds loopback only, with one token per
+  start; there is no remote access, TLS, or second user, and anything that can
+  read `~/.ork/ui.json` as the user can drive it, as it can drive `ork`.
+  ([ADR-039](../decisions/ADR-039-local-server.md))
 
 ## Chores
 

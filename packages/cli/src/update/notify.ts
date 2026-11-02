@@ -12,6 +12,7 @@ import { styleText } from "node:util";
 
 import {
   checkDue,
+  DETACHED_ENV,
   pendingNotice,
   readUpdateCache,
   refreshUpdateCache,
@@ -20,7 +21,6 @@ import {
 } from "@krapht/ork-core";
 
 import { ORK_NAME, ORK_VERSION } from "../__build_info__.ts";
-import { DETACHED_ENV } from "../run/detach.ts";
 
 /** Set in the background copy of `ork` that only runs the check. */
 export const UPDATE_CHILD_ENV = "ORK_UPDATE_CHECK_CHILD";

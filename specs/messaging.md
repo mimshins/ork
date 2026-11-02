@@ -113,7 +113,7 @@ The decision queue ([queue.ts](../packages/core/src/control/queue.ts)):
 - The **first answer wins**: the run's own terminal (when it has one, with the
   prompts below) races `ork decide` in any other terminal. The loser's prompt is
   withdrawn, and `decision.answered` records the answer and who gave it
-  (`terminal` or `decide`).
+  (`terminal`, `decide`, or `ui` for the local server).
 - A permission prompt is a decision with the options `allow` and `deny`; its
   context is the tool's input (at most 400 characters).
 - A gate's `timeout` + `default` withdraws the question (`decision.withdrawn`)
@@ -133,17 +133,19 @@ the system monitor, chats and replay are all views over it. See
 
 ## Reaching a live run
 
-`ork decide` and `ork stop` in another terminal
+`ork decide` and `ork stop` in another terminal, and the local server
+([server](./server.md)), write their answer or command to the store
 ([control.ts](../packages/core/src/control/control.ts),
-[ADR-024](../decisions/ADR-024-event-store.md)) write their answer or command to
-the store; the run looks at the store every second, and at once when woken on
-its socket.
+[remote/](../packages/core/src/remote/),
+[ADR-024](../decisions/ADR-024-event-store.md)); the run looks at the store
+every second, and at once when woken on its socket.
 
 - **The socket:** `~/.ork/sockets/<run>.sock`, one JSON message per line:
   `{"type":"wake"}` makes the run look at the store now;
   `{"type":"follow", "after": <seq>}` sends every stored event after `seq`, then
-  each new one, until the run ends (`ork logs --follow` uses it). It is removed
-  when the run ends; a stale one is replaced when a run with that id starts.
+  each new one, until the run ends (`ork logs --follow` and the server's run
+  stream use it; a follower stops at `run.finished`). It is removed when the run
+  ends; a stale one is replaced when a run with that id starts.
 - **Without the socket** (it could not listen, or the run is gone) nothing is
   lost: the store has every answer, command and event.
 - **Commands:** `stop` interrupts the run as Ctrl-C does (`run.command` in its

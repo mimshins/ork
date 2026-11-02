@@ -50,8 +50,8 @@ export type StoredEvent = {
  */
 export type DecisionKind = "question" | "permission";
 
-/** Who answered: the run's own terminal, `ork decide`, or nobody (withdrawn). */
-export type AnsweredBy = "terminal" | "decide";
+/** Who answered: the run's own terminal, `ork decide`, or the UI (`ork ui`). */
+export type AnsweredBy = "terminal" | "decide" | "ui";
 
 export type DecisionRecord = {
   /** `<run>-<n>`. */

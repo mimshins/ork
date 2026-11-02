@@ -64,7 +64,8 @@ parts fit together is the [interaction map](./interaction-map/README.md).
   - Feedback capture: the `feedback` tool, system signals, the local table and
     fingerprints, `ork feedback list | show | dismiss`.
 - **M2: UI.**
-  - Hono server with REST and SSE.
+  - The local server: a JSON API and SSE streams on `node:http`, a client of the
+    store (ADR-039).
   - UI panels in this order: monitor, logs, decisions, chats, then the designer
     and context inspector.
   - The feedback loop: `ork:feedback-triage`, `ork feedback apply`, lessons,

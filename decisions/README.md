@@ -70,3 +70,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [036](./ADR-036-ork-migrate.md)                    | `ork migrate`: move into the repository, never commit                       | Accepted          | waived                                                      |
 | [037](./ADR-037-isolation-continue.md)             | `isolation: continue`: write in the worktree your input came from           | Accepted          | waived                                                      |
 | [038](./ADR-038-update-notice-and-upgrade.md)      | A daily new-version notice, and `ork upgrade` that asks first               | Accepted          | waived                                                      |
+| [039](./ADR-039-local-server.md)                   | A local server that is one more client of the store, on `node:http`         | Accepted          | waived                                                      |

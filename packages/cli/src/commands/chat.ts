@@ -8,16 +8,18 @@ import { createInterface } from "node:readline/promises";
 
 import {
   type EventStore,
+  findRun,
   liveStatus,
+  nodeSession,
   openStore,
   type RunRecord,
+  tellLiveRun,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
-import { nodeSession, resumeChat, tellLiveRun } from "../runs/chat.ts";
-import { findRun } from "../runs/find.ts";
+import { resumeChat } from "../runs/chat.ts";
 import { followRun } from "../runs/logs.ts";
 import { isDriver, loadRuntime } from "./run.ts";
 

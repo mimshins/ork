@@ -22,6 +22,7 @@ export const DESIGN = {
   scheduler: d("specs/scheduler.md", "Spec: running a workflow"),
   worktrees: d("specs/worktrees.md", "Spec: worktrees, where nodes work"),
   ui: d("specs/ui.md", "Spec: the UI panels"),
+  server: d("specs/server.md", "Spec: the local server and `ork ui`"),
   milestones: d("docs/design.md#milestones", "Design: milestones"),
 };
 
@@ -70,6 +71,34 @@ export const CORE = {
     "packages/core/test/compile.test.ts",
     "Tests: the compiler's checks",
   ),
+};
+
+export const SERVER = {
+  adr: d(
+    "decisions/ADR-039-local-server.md",
+    "ADR-039: a local server that is one more client of the store",
+  ),
+  server: d("packages/server/src/server.ts", "Code: starting the server"),
+  contract: d(
+    "packages/server/src/contract.ts",
+    "Code: the API contract, shared with the typed client",
+  ),
+  guards: d(
+    "packages/server/src/guards.ts",
+    "Code: the token, Host, Origin and JSON checks",
+  ),
+  streams: d("packages/server/src/streams.ts", "Code: the event streams"),
+  writes: d(
+    "packages/server/src/write-routes.ts",
+    "Code: answer, stop, message, start and resume",
+  ),
+  command: d("packages/cli/src/commands/ui.ts", "Code: `ork ui`"),
+  remote: d(
+    "packages/core/src/remote/detach.ts",
+    "Code: starting a run detached, shared by the CLI and the server",
+  ),
+  tests: d("packages/server/test/write.test.ts", "Tests: the write routes"),
+  e2e: d("packages/cli/test/ui.test.ts", "Tests: `ork ui` end to end"),
 };
 
 export const CLI = {
@@ -161,7 +190,7 @@ export const CONTROL = {
     "packages/cli/src/commands/control.ts",
     "Code: `ork decide` and `ork stop`",
   ),
-  detach: d("packages/cli/src/run/detach.ts", "Code: `ork run --detach`"),
+  detach: d("packages/core/src/remote/detach.ts", "Code: `ork run --detach`"),
   cliTests: d("packages/cli/test/control.test.ts", "Tests: decide and stop"),
 };
 

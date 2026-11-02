@@ -4,16 +4,21 @@
  *   on the terminal.
  */
 
-import { type ClaudeRuntime, openStore } from "@krapht/ork-core";
+import {
+  type ClaudeRuntime,
+  DETACHED_ENV,
+  detachRun,
+  newRunId,
+  openStore,
+} from "@krapht/ork-core";
 import { CLAUDE_DRIVERS } from "@krapht/ork-integrations";
 import type { Driver } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
-import { DETACHED_ENV, detachRun } from "../run/detach.ts";
 import { runNode } from "../run/node.ts";
-import { newRunId, runWorkflowFile } from "../run/workflow.ts";
+import { runWorkflowFile } from "../run/workflow.ts";
 import { workflowArg } from "../workflows.ts";
 
 export const flagValues = (

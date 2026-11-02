@@ -153,6 +153,27 @@ Here only the CLI driver is ready and neither optional tool is installed, which
 is a working setup. Run workflows with `--driver cli` or set
 `defaults.driver: cli` in the workflow.
 
+## The browser view
+
+```sh
+ork ui              # starts it on http://127.0.0.1:4417 and opens your browser
+ork ui --port 4500  # another port, if 4417 is taken
+ork ui --no-open    # only print the address and the sign-in link
+```
+
+`ork ui` starts Ork's local server and opens it in your browser, already signed
+in. For now its page lists your runs and the open decisions, live; the full UI
+(monitor, logs, decisions, chats, the designer) comes in the next releases.
+Running `ork ui` again opens the one that is running. Ctrl-C stops it; your runs
+keep running, and every `ork` command works without it.
+
+It listens only on `127.0.0.1`, and only your browser gets in: `ork ui` opens it
+with a one-time link that becomes a cookie, and the server refuses any other
+site, any other host name, and any request without it. The link's token is kept
+in `~/.ork/ui.json`, readable only by you, and changes each time the server
+starts. If `ork ui` cannot open a browser (on a server, or without `open` or
+`xdg-open`), it prints the link for you to open.
+
 ## Next
 
 [Quickstart](./quickstart.md): your first workflow, from `ork init` to a

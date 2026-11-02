@@ -95,7 +95,8 @@ export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
   return roots;
 };
 
-const alive = (pid: number): boolean => {
+/** Whether a process is running: ours, or another user's (alive, not ours). */
+export const processAlive = (pid: number): boolean => {
   try {
     process.kill(pid, 0);
     return true;
@@ -107,4 +108,4 @@ const alive = (pid: number): boolean => {
 
 /** A run's status, with `crashed` for a `running` run whose process is gone. */
 export const liveStatus = (run: RunRecord): StoredRunStatus | "crashed" =>
-  run.status === "running" && !alive(run.pid) ? "crashed" : run.status;
+  run.status === "running" && !processAlive(run.pid) ? "crashed" : run.status;

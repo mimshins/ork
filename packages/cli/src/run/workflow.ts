@@ -5,30 +5,30 @@
  *   run's recorded state.
  */
 
-import { randomUUID } from "node:crypto";
 import path from "node:path";
 
 import {
-  type ClaudeRuntime,
   appendRecorder,
+  type ClaudeRuntime,
   createRecorder,
   createReplay,
   createSignals,
-  replayLoopAnswers,
-  type ResumeState,
   createWorkspace,
-  startControl,
   type EventStore,
-  type RunEvent,
   type HumanChannel,
+  inside,
+  newRunId,
   parseInputPairs,
+  replayLoopAnswers,
   resolveInputs,
+  type ResumeState,
+  runDirOf,
+  type RunEvent,
   type RunHandle,
   type RunResult,
+  startControl,
   startRun,
   type Workspace,
-  inside,
-  runDirOf,
 } from "@krapht/ork-core";
 import {
   builtinExecutors,
@@ -91,14 +91,6 @@ export const missingProgramMessage = (
   ...missing.map(m => `  ${m.program}, for ${m.nodes.join(", ")} (${m.type})`),
   "Install them, or take those nodes out. Integrations are optional: only the ones a workflow uses must be installed (`ork doctor` shows what you have).",
 ];
-
-/** A run id no stored run has yet; `node-…` for a run of one node. */
-export const newRunId = (store: EventStore, prefix = ""): string => {
-  for (;;) {
-    const id = `${prefix}${randomUUID().slice(0, 8)}`;
-    if (store.lookup(id).length === 0) return id;
-  }
-};
 
 export type RunWorkflowResult = {
   exitCode: number;

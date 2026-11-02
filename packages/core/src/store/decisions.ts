@@ -62,7 +62,9 @@ const decisionOf = (row: Row): DecisionRecord => {
     if (value !== "") Object.assign(record, { [key]: value });
   }
   const by = text(row, "answered_by");
-  if (by === "terminal" || by === "decide") record.answeredBy = by;
+  if (by === "terminal" || by === "decide" || by === "ui") {
+    record.answeredBy = by;
+  }
   return record;
 };
 

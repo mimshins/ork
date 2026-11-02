@@ -227,6 +227,9 @@ importers:
       '@krapht/ork-schema':
         specifier: workspace:*
         version: link:../schema
+      '@krapht/ork-server':
+        specifier: workspace:*
+        version: link:../server
       tsdown:
         specifier: 0.23.1
         version: 0.23.1(typescript@7.0.2)
@@ -290,6 +293,15 @@ importers:
       yaml:
         specifier: 2.9.1
         version: 2.9.1
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+
+  packages/server:
+    dependencies:
+      '@krapht/ork-core':
+        specifier: workspace:*
+        version: link:../core
       zod:
         specifier: 4.6.7
         version: 4.6.7

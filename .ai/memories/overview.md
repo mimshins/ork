@@ -25,7 +25,7 @@ Dependency direction, enforced by `oxlint.config.ts`:
 | `@krapht/ork-core`           | `packages/core`           | Expressions, graph compiler, runtime port, session planning, the engine |
 | `@krapht/ork-runtime-claude` | `packages/runtime-claude` | Claude drivers: Agent SDK and headless `claude` CLI                     |
 | `@krapht/ork-nodes`          | `packages/nodes`          | Built-in node types: Claude, tool and gate executors                    |
-| `@krapht/ork-server`         | `packages/server`         | Local HTTP + SSE API for the UI (milestone 2)                           |
+| `@krapht/ork-server`         | `packages/server`         | `ork ui`'s local HTTP + SSE API, a client of the store (ADR-039)        |
 | `@krapht/ork`                | `packages/cli`            | The `ork` command; the only published package, bundling the others      |
 
 Status per area: [specs/README.md](../../specs/README.md). Release route:

@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import {
+  findRun,
   type HumanChannel,
   openStore,
   type RunEvent,
@@ -21,7 +22,6 @@ import { describe, expect, it } from "vitest";
 import {
   ago,
   duration,
-  findRun,
   followRun,
   formatRuns,
   formatRunEvent,

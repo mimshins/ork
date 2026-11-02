@@ -1,14 +1,20 @@
 /**
- * @file Finding a stored run from a command's argument: a run id or a unique
- *   prefix of one, or, with none, the newest run of this project.
+ * @file Finding a stored run from another process: by a run id or a unique
+ *   prefix of one, or, with none, the newest run of the project a folder is in;
+ *   and picking a new run's id. Shared by the CLI's commands and the local
+ *   server (ADR-039).
  */
 
-import { type EventStore, placeFor, type RunRecord } from "@krapht/ork-core";
+import { randomUUID } from "node:crypto";
+
+import { placeFor } from "../project/place.ts";
+import type { EventStore, RunRecord } from "../store/types.ts";
 
 export type FoundRun =
   | { ok: true; run: RunRecord }
   | { ok: false; error: string };
 
+/** The run `arg` names, or the newest run of the project `cwd` is in. */
 export const findRun = (
   store: EventStore,
   arg: string | undefined,
@@ -33,4 +39,12 @@ export const findRun = (
     };
   }
   return { ok: true, run: only };
+};
+
+/** A run id no stored run has yet; `node-…` for a run of one node. */
+export const newRunId = (store: EventStore, prefix = ""): string => {
+  for (;;) {
+    const id = `${prefix}${randomUUID().slice(0, 8)}`;
+    if (store.lookup(id).length === 0) return id;
+  }
 };

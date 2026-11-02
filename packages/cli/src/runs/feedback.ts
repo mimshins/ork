@@ -11,12 +11,12 @@ import {
   type FeedbackItem,
   type FeedbackRecord,
   type FeedbackSeverity,
+  findRun,
   humanNoteEvent,
   RATINGS,
 } from "@krapht/ork-core";
 
 import { style } from "../output.ts";
-import { findRun } from "./find.ts";
 import { ago } from "./format.ts";
 
 export type FoundItem =

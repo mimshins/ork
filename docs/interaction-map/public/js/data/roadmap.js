@@ -545,14 +545,19 @@ export const MILESTONES = [
       {
         id: "server",
         title: "Local server",
-        status: "planned",
-        detail: "Hono with REST and SSE on 127.0.0.1, behind a token.",
-        docs: ["specs/ui.md"],
+        status: "active",
+        detail:
+          "`ork ui` and `@krapht/ork-server`: a JSON API with live event streams on 127.0.0.1, on `node:http` with a typed contract and client. One more client of the store and the sockets: it runs nothing, starts runs detached, and sits behind a per-start token that becomes a cookie. A placeholder page lists runs and decisions live.",
+        docs: [
+          "specs/server.md",
+          "decisions/ADR-039-local-server.md",
+          "docs/getting-started/installation.md#the-browser-view",
+        ],
       },
       {
         id: "monitor",
         title: "Monitor, logs, decisions, chats",
-        status: "planned",
+        status: "next",
         detail:
           "The live graph and ownership tree with status and cost, the event log, the decisions inbox, and a chat per node.",
         docs: ["specs/ui.md"],
@@ -607,6 +612,8 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "61f7edb",
+  "e93dd79",
   "47546e0",
   "94e472a",
   "f45ced7",
@@ -642,4 +649,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-10-31";
+export const ROADMAP_UPDATED = "2026-11-02";

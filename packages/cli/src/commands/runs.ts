@@ -6,10 +6,11 @@
 
 import {
   type EventStore,
+  findRun,
   liveStatus,
   openStore,
-  runTree,
   placeFor,
+  runTree,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
@@ -20,7 +21,6 @@ import {
   formatFeedbackItem,
   formatFeedbackItems,
 } from "../runs/feedback.ts";
-import { findRun } from "../runs/find.ts";
 import { cost, formatRuns, formatTree } from "../runs/format.ts";
 import { followRun } from "../runs/logs.ts";
 
