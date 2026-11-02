@@ -18,6 +18,7 @@ import {
   RUNTIME,
   SCHEMA,
   SERVER,
+  UI,
   WORKTREES,
   CONTROL,
   STORE,
@@ -174,21 +175,22 @@ export const NODES = [
     zone: "surfaces",
     x: 320,
     y: 960,
-    status: "planned",
+    status: "partial",
     pkg: "ui",
     summary:
-      "The localhost UI: a canvas designer that saves the same YAML and layout files, plus live panels for the run, the decisions inbox, chats with nodes, logs and the context inspector.",
+      "The localhost UI: live panels for the run, the decisions inbox, chats with nodes, logs and notifications, then a canvas designer that saves the same YAML and layout files, and the context inspector.",
     facts: [
-      "Vite, React, `@xyflow/react`, TanStack Query, zustand.",
-      "Saves `<name>.ork.yaml` and `<name>.layout.json`, nothing else.",
-      "Panels, in build order: monitor, logs, decisions, chats, designer, context inspector.",
-      "Milestone 2.",
+      "Built: the app, bundled into the CLI's `dist/ui` and served by `ork ui`; it shows only which Ork serves it so far.",
+      "Vite, React, Base UI, dockview and containerized-state; the run graph is drawn in-house, so no zustand ships.",
+      "Browser code imports only `@krapht/ork-server/client`: the contract and the typed client.",
+      "Strict CSP: no inline script or `<style>`, no remote fonts or CDNs.",
+      "Panels, in build order: monitor, logs, decisions, chats, notifications, then the designer and context inspector.",
     ],
     see: [
       { map: "messaging", node: "inbox", label: "The decisions inbox" },
       { map: "feedback", node: "panel", label: "The feedback panel" },
     ],
-    docs: [DESIGN.ui],
+    docs: [DESIGN.ui, UI.adr, UI.app, UI.assets, UI.tests],
   },
 
   // ── Engine ───────────────────────────────────────────────────────────────

@@ -20,7 +20,7 @@ import {
 } from "@krapht/ork-server";
 import { afterAll, describe, expect, it } from "vitest";
 
-import { portArg, signInLink } from "../src/index.ts";
+import { portArg, signInLink, uiFolders } from "../src/index.ts";
 
 const BIN = path.resolve(import.meta.dirname, "../src/bin.ts");
 
@@ -129,6 +129,12 @@ describe("ork ui", () => {
     expect(portArg("70000")).toBeNull();
     expect(portArg("http")).toBeNull();
     expect(signInLink(4417, "t")).toBe("http://127.0.0.1:4417/?token=t");
+  });
+
+  it("looks for the built UI beside the bundle, then in the workspace", () => {
+    expect(uiFolders().at(-1)).toBe(
+      path.resolve(import.meta.dirname, "../../ui/dist"),
+    );
   });
 
   it("serves the API, runs a workflow detached through it, and stops on Ctrl-C", async () => {

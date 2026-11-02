@@ -51,8 +51,8 @@ export const EDGES = [
     kind: "net",
     label: "JSON + SSE",
     detail:
-      "The UI's panels will call the API through the typed client, signed in with the session cookie, and follow runs over the event streams; today the placeholder page reads the overview stream.",
-    status: "planned",
+      "The UI calls the API through the typed client, signed in with the session cookie; today it reads `/api/health`, and its panels will follow runs over the event streams.",
+    status: "partial",
     docs: [DESIGN.server, SERVER.contract],
   },
   {

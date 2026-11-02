@@ -1,14 +1,17 @@
 /**
  * @file Oxlint configuration: the type-aware rule set, the repository's
- *   conventions, and the package boundaries (`schema <- core <- runtime-claude,
- *   nodes <- server <- cli`) enforced as restricted imports.
+ *   conventions, the package boundaries (`schema <- core <- runtime-claude,
+ *   nodes <- server <- ui, cli`) enforced as restricted imports, and the UI's
+ *   React, hooks and accessibility rules.
  */
 
 import { defineConfig, type OxlintOverride } from "oxlint";
 
 // Dependency direction between workspace packages:
-//   integrations <- schema <- core <- runtime-claude, nodes <- server <- cli
-// A package may import only the packages to its left.
+//   integrations <- schema <- core <- runtime-claude, nodes <- server <- ui, cli
+// A package may import only the packages to its left. The UI is browser code:
+// it imports only the server's browser entry (`@krapht/ork-server/client`),
+// and the CLI takes its built files, never its source.
 const PACKAGES = [
   "integrations",
   "schema",
@@ -16,6 +19,7 @@ const PACKAGES = [
   "runtime-claude",
   "nodes",
   "server",
+  "ui",
   "cli",
 ] as const;
 
@@ -26,8 +30,12 @@ const ALLOWED: Record<(typeof PACKAGES)[number], readonly string[]> = {
   "runtime-claude": ["integrations", "schema", "core"],
   nodes: ["integrations", "schema", "core"],
   server: ["integrations", "schema", "core", "runtime-claude", "nodes"],
+  ui: ["server"],
   cli: ["integrations", "schema", "core", "runtime-claude", "nodes", "server"],
 };
+
+const DIRECTION =
+  "dependency direction: integrations <- schema <- core <- runtime-claude, nodes <- server <- ui, cli";
 
 /** The npm name of a workspace package: the CLI is `@krapht/ork` itself. */
 const npmName = (pkg: (typeof PACKAGES)[number]): string =>
@@ -51,8 +59,7 @@ const boundaries = (pkg: (typeof PACKAGES)[number]): OxlintOverride => {
                       npmName(p),
                       `${npmName(p)}/**`,
                     ]),
-                    message:
-                      "dependency direction: integrations <- schema <- core <- runtime-claude, nodes <- server <- cli",
+                    message: DIRECTION,
                   },
                 ]
               : []),
@@ -160,7 +167,57 @@ export default defineConfig({
   overrides: [
     ...PACKAGES.map(pkg => boundaries(pkg)),
     {
-      files: ["**/test/**", "**/*.test.ts"],
+      // The UI's code and tests: React, hooks and accessibility rules, and the
+      // DOM. Its Vite config and build plugins run in Node.
+      files: ["packages/ui/src/**", "packages/ui/test/**"],
+      plugins: [
+        "typescript",
+        "import",
+        "oxc",
+        "unicorn",
+        "promise",
+        "vitest",
+        "react",
+        "jsx-a11y",
+      ],
+      env: { browser: true },
+      rules: {
+        "react/react-in-jsx-scope": "off",
+        "react/jsx-filename-extension": ["error", { extensions: [".tsx"] }],
+      },
+    },
+    {
+      // What runs in the browser imports no Node module and no Node entry.
+      files: ["packages/ui/src/**"],
+      env: { browser: true, node: false },
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            paths: [
+              {
+                name: "@krapht/ork-server",
+                message:
+                  "browser code imports the server's browser entry, @krapht/ork-server/client",
+              },
+            ],
+            patterns: [
+              {
+                group: [
+                  "@krapht/ork-*",
+                  "!@krapht/ork-server",
+                  "!@krapht/ork-server/client",
+                  "node:*",
+                ],
+                message: DIRECTION,
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      files: ["**/test/**", "**/*.test.ts", "**/*.test.tsx"],
       rules: {
         "typescript/no-floating-promises": "off",
         "max-lines": "off",

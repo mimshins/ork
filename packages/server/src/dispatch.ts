@@ -1,7 +1,7 @@
 /**
  * @file One request through the server (ADR-039): the guards first (a refusal,
  *   or the token's swap for the session cookie), then the event streams, the
- *   JSON routes, and the page.
+ *   JSON routes, and the page (the built UI, or the placeholder).
  */
 
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -63,6 +63,6 @@ export const createDispatch = (
     }
     if (await route(handlers, req, res, url)) return;
     if (api) sendError(res, 404, `No API route ${url.pathname}.`);
-    else sendPage(res, method, url.pathname);
+    else sendPage(res, method, url.pathname, context.uiDir);
   };
 };

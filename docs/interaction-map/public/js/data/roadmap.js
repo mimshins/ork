@@ -559,10 +559,10 @@ export const MILESTONES = [
       {
         id: "monitor",
         title: "Monitor, logs, decisions, chats",
-        status: "next",
+        status: "active",
         detail:
-          "The live graph and ownership tree with status and cost, the event log, the decisions inbox, and a chat per node.",
-        docs: ["specs/ui.md"],
+          "The UI app and its design system, a dockable workspace, the live graph and ownership tree with status and cost, the event log, the decisions inbox, a chat per node, notifications, and pause, continue and stop for a run or a node.",
+        docs: ["specs/ui.md", "decisions/ADR-040-ui-stack.md"],
       },
       {
         id: "worktrees-panel",
@@ -614,6 +614,7 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "dc89e77",
   "61f7edb",
   "e93dd79",
   "47546e0",

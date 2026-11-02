@@ -23,10 +23,11 @@ data.
 | `packages/runtime-claude` | `@krapht/ork-runtime-claude` | The Agent SDK and headless `claude` CLI drivers         |
 | `packages/nodes`          | `@krapht/ork-nodes`          | Built-in node types                                     |
 | `packages/server`         | `@krapht/ork-server`         | `ork ui`'s local HTTP + SSE API, a client of the store  |
+| `packages/ui`             | `@krapht/ork-ui`             | The browser UI `ork ui` serves, built into the CLI      |
 | `packages/cli`            | `@krapht/ork`                | The `ork` command, the only published package           |
 
 Dependency direction (enforced by `oxlint.config.ts`):
-`integrations <- schema <- core <- runtime-claude, nodes <- server <- cli`.
+`integrations <- schema <- core <- runtime-claude, nodes <- server <- ui, cli`.
 Import other packages through their public entry point (`@krapht/ork-<name>`),
 never by relative path.
 
@@ -97,6 +98,9 @@ bug fixes need no spec unless they are architectural.
 - `pnpm build` bundles the CLI into `packages/cli/dist/bin.mjs`.
 - `pnpm format` fixes formatting (oxfmt); `pnpm lint:fix` fixes lint (oxlint).
 - `pnpm ork <args>` runs the CLI from source.
+- `pnpm ui:build` builds the browser UI that `ork ui` serves; `pnpm ui:dev` runs
+  it with live reload against a running `ork ui`
+  ([ADR-040](./decisions/ADR-040-ui-stack.md)).
 - `pnpm --dir packages/schema gen:json-schema` regenerates
   `workflow.schema.json` after a schema change (a test fails when it is stale).
 

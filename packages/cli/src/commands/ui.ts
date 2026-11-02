@@ -14,8 +14,9 @@ import {
 import { defineCommand } from "citty";
 
 import { ORK_VERSION } from "../__build_info__.ts";
+import { uiFolders } from "../browser/folder.ts";
+import { openInBrowser } from "../browser/open.ts";
 import { style, write, writeErr } from "../output.ts";
-import { openInBrowser } from "../ui/open.ts";
 
 /** The link that signs the browser in; the server swaps it for a cookie. */
 export const signInLink = (port: number, token: string): string =>
@@ -79,7 +80,11 @@ export const ui = defineCommand({
     }
     let server: Awaited<ReturnType<typeof startServer>>;
     try {
-      server = await startServer({ version: ORK_VERSION, port });
+      server = await startServer({
+        version: ORK_VERSION,
+        port,
+        ui: uiFolders(),
+      });
     } catch (error) {
       writeErr(error instanceof Error ? error.message : String(error));
       process.exitCode = 1;

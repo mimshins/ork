@@ -10,6 +10,7 @@ import type { AddressInfo } from "node:net";
 
 import { openStore, storePath } from "@krapht/ork-core";
 
+import { hasUi } from "./assets.ts";
 import type { ServerContext } from "./context.ts";
 import { createDispatch } from "./dispatch.ts";
 import { newToken } from "./guards.ts";
@@ -32,6 +33,11 @@ export type ServerOptions = {
   record?: boolean;
   /** Where the server reports a request that failed (default: stderr). */
   log?: (line: string) => void;
+  /**
+   * Folders that may hold the built UI (`index.html` and `assets/`); the first
+   * that does is served, and the placeholder page when none does.
+   */
+  ui?: readonly string[];
 };
 
 export type RunningServer = {
@@ -68,6 +74,7 @@ export const startServer = async (
 ): Promise<RunningServer> => {
   const store = openStore(storePath(options.home));
   const startedAt = new Date().toISOString();
+  const uiDir = options.ui?.find(dir => hasUi(dir));
   const context: ServerContext = {
     store,
     version: options.version,
@@ -75,6 +82,7 @@ export const startServer = async (
     startedAt,
     ...(options.home === undefined ? {} : { home: options.home }),
     ...(options.script === undefined ? {} : { script: options.script }),
+    ...(uiDir === undefined ? {} : { uiDir }),
   };
   const token = newToken();
   const shutdown = new AbortController();

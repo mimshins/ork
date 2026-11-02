@@ -72,7 +72,9 @@ const errorOf = (body: unknown, status: number): string =>
     : `The server answered ${String(status)}.`;
 
 export const createClient = (options: ClientOptions = {}): Client => {
-  const send = options.fetch ?? fetch;
+  // The global `fetch` is looked up per call, so a page or a test can wrap it.
+  const send: typeof fetch = (url, init) =>
+    (options.fetch ?? globalThis.fetch)(url, init);
   return {
     call: async (name, ...[input]) => {
       const route = API[name];

@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 /** Source files the check reads; generated and vendored files are skipped. */
-export const SOURCE = /\.(?:[cm]?[jt]s|d\.ts)$/u;
+export const SOURCE = /\.(?:[cm]?[jt]sx?|d\.ts)$/u;
 export const SKIPPED = [/(?:^|\/)node_modules\//u, /(?:^|\/)dist\//u];
 
 /**

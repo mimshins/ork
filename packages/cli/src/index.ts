@@ -32,6 +32,7 @@ export * from "./runs/chat.ts";
 export * from "./runs/feedback.ts";
 export * from "./runs/format.ts";
 export * from "./runs/logs.ts";
-export * from "./ui/open.ts";
+export * from "./browser/folder.ts";
+export * from "./browser/open.ts";
 export * from "./update/notify.ts";
 export * from "./update/upgrade.ts";

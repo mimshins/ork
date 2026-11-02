@@ -80,7 +80,9 @@ const project = (store: EventStore) => {
   return store.addProject({ id: "demo", root, mode: "in-repo", dir });
 };
 
-export const startTestServer = async () => {
+export const startTestServer = async (
+  options: { ui?: readonly string[] } = {},
+) => {
   const home = temp("ork-srv-home-");
   const fake = fakeOrk(storePath(home));
   const server = await startServer({
@@ -88,6 +90,7 @@ export const startTestServer = async () => {
     port: 0,
     home,
     script: fake.script,
+    ...options,
     log: () => {
       // The tests read the answers.
     },

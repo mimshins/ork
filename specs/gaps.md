@@ -109,3 +109,6 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
 - **C5 · The examples have not run on the SDK driver.** Both ran end to end on
   the CLI driver (2026-10-31); the SDK pass needs `ANTHROPIC_API_KEY` on the
   machine that runs it. ([examples](../docs/guides/examples.md))
+- **C6 · The UI has no browser tests in CI.** Its components are tested in jsdom
+  with axe; a slice is checked by hand in a real browser until Playwright runs
+  in CI. ([ADR-040](../decisions/ADR-040-ui-stack.md))

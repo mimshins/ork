@@ -1,9 +1,13 @@
 # The UI
 
-Status: **Planned** (M2). Its way in is built: the local server and `ork ui`,
-with a placeholder page that lists the runs and open decisions live
-([server](./server.md)). The panels read the server's API through its typed
-client.
+Status: **In progress** (M2). Built: its way in, the local server and `ork ui`
+([server](./server.md)); and `packages/ui`, the app the server serves, with its
+build, its license list and its tests ([ui](../packages/ui/src/app/app.tsx),
+[tests](../packages/ui/test/)). It shows only which Ork serves it so far; the
+panels below are planned. The stack is React, Base UI, dockview,
+containerized-state and an in-house graph
+([ADR-040](../decisions/ADR-040-ui-stack.md)). The panels read the server's API
+through its typed client.
 
 **Panels:**
 
@@ -25,4 +29,7 @@ client.
   an upgrade button that runs `ork upgrade`'s plan after the user confirms
   ([updates](./cli/updates.md)).
 
-**Style:** dark and dense, inspired by reference image 1.
+**Style:** an instrument panel for agents: a Figma-like dark canvas, dense and
+quiet, lit only where something needs the user; the logo's amber `#ffb000` as
+primary (action, attention) and phosphor `#3dff8a` as secondary (live, done);
+Geist and Geist Mono; WCAG 2.2 AA in every theme; copy in the CLI's words.

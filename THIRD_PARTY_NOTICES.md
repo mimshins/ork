@@ -2,6 +2,13 @@
 
 Ork includes text adapted from the projects below. Their licenses follow.
 
+The browser UI that `ork ui` serves bundles third-party packages (React, Base
+UI, dockview, containerized-state, zod and the Geist fonts among them). Their
+names, versions and license texts are generated from the bundle at build time,
+in `dist/ui/THIRD_PARTY_LICENSES.txt` of the published package, and served at
+`/THIRD_PARTY_LICENSES.txt` by `ork ui`
+([ADR-040](https://github.com/mimshins/ork/blob/main/decisions/ADR-040-ui-stack.md)).
+
 ## Caveman
 
 Ork's `caveman` practice

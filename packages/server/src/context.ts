@@ -24,6 +24,8 @@ export type ServerContext = {
   startedAt: string;
   /** The `ork` script detached runs start (default: the running one). */
   script?: string;
+  /** The built UI's folder; without one the placeholder page is served. */
+  uiDir?: string;
 };
 
 type Refusal = { status: 400 | 404 | 409; error: string };

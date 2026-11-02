@@ -73,6 +73,19 @@ export const CORE = {
   ),
 };
 
+export const UI = {
+  adr: d(
+    "decisions/ADR-040-ui-stack.md",
+    "ADR-040: React, Base UI, dockview, containerized-state, our own graph",
+  ),
+  app: d("packages/ui/src/app/app.tsx", "Code: the app's root"),
+  assets: d(
+    "packages/server/src/assets.ts",
+    "Code: serving the built UI from the CLI's bundle",
+  ),
+  tests: d("packages/ui/test/app.test.tsx", "Tests: the app, with axe"),
+};
+
 export const SERVER = {
   adr: d(
     "decisions/ADR-039-local-server.md",

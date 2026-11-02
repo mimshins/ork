@@ -5,7 +5,8 @@
   "description": "Ork's local server: the HTTP API and live streams behind ork ui",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./client": "./src/browser.ts"
   },
   "dependencies": {
     "@krapht/ork-core": "workspace:*",

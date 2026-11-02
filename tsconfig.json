@@ -9,5 +9,6 @@
     "oxfmt.config.ts",
     "types",
     "tools"
-  ]
+  ],
+  "exclude": ["packages/ui"]
 }

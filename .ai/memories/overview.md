@@ -16,7 +16,7 @@ accounts. Ork never handles credentials
 ## Packages
 
 Dependency direction, enforced by `oxlint.config.ts`:
-`integrations <- schema <- core <- runtime-claude, nodes <- server <- cli`.
+`integrations <- schema <- core <- runtime-claude, nodes <- server <- ui, cli`.
 
 | Package                      | Folder                    | Role                                                                    |
 | ---------------------------- | ------------------------- | ----------------------------------------------------------------------- |

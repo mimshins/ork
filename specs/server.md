@@ -6,9 +6,11 @@ Status: **Built** ([server](../packages/server/src/server.ts),
 [guards](../packages/server/src/guards.ts),
 [`ork ui`](../packages/cli/src/commands/ui.ts),
 [tests](../packages/server/test/),
-[end-to-end](../packages/cli/test/ui.test.ts)), with a placeholder page; the
-UI's panels are M2 ([ui](./ui.md)). Decided in
-[ADR-039](../decisions/ADR-039-local-server.md).
+[end-to-end](../packages/cli/test/ui.test.ts)). It serves the built UI
+([assets](../packages/server/src/assets.ts)), or a placeholder page when there
+is none; the UI's panels are M2 ([ui](./ui.md)). Decided in
+[ADR-039](../decisions/ADR-039-local-server.md) and
+[ADR-040](../decisions/ADR-040-ui-stack.md).
 
 `@krapht/ork-server` is the way into Ork from a browser: a JSON API with live
 event streams, on loopback only. `ork ui` starts it and opens it.
@@ -49,7 +51,7 @@ ork ui [--port <n>] [--no-open]
 - Prints the address, then opens the sign-in link (`/?token=…`) in the browser
   through the first opener that starts: `open` on macOS, `wslview` then
   `xdg-open` under WSL, `xdg-open` on Linux
-  ([open.ts](../packages/cli/src/ui/open.ts)). With `--no-open`, without a
+  ([open.ts](../packages/cli/src/browser/open.ts)). With `--no-open`, without a
   terminal, or when none starts, it prints the link instead.
 - Records `{ port, pid, token, startedAt }` in `~/.ork/ui.json`, mode 0600. A
   second `ork ui` finds the running server there (a record whose pid is gone
@@ -78,7 +80,7 @@ are named by id or a unique prefix: no match is 404, several are 400.
 | POST   | `/api/runs/:id/messages` | `{ node, body }` to a live run's leader or worker                | `ork chat -m` (live)  |
 | GET    | `/api/runs/:id/stream`   | Server-Sent Events, below                                        | `ork logs -f`         |
 | GET    | `/api/stream`            | Server-Sent Events, below                                        | —                     |
-| GET    | `/`                      | the page (a placeholder until the UI is built)                   | —                     |
+| GET    | `/`, `/assets/…`         | the built UI (below), or the placeholder page without one        | —                     |
 
 - **Status codes.** A write that was taken is 202 (start, resume, stop, message)
   or 200 (an answer), with `{ runId }` or `{ decision, answer }`. A query or
@@ -95,6 +97,13 @@ are named by id or a unique prefix: no match is 404, several are 400.
   is recorded; a run that fails to start answers 400 with its output.
 - **Events** are the stored events, already masked; the server sends nothing the
   store does not hold.
+- **The built UI** is the first folder that holds an `index.html`: `dist/ui`
+  beside the published bundle, or `packages/ui/dist` from source once
+  `pnpm ui:build` has run ([folder.ts](../packages/cli/src/browser/folder.ts)).
+  `/` is its page; `/assets/…` are its hashed files, cached as immutable; and
+  only a file inside the folder of a type the build writes (HTML, JavaScript,
+  CSS, fonts, images, text) is served, anything else is 404. Without a built UI
+  the placeholder page lists the runs and open decisions live.
 - **Messaging a finished run** (resuming its node's session) is not in the API
   yet; it answers 409 and names `ork chat` ([gaps](./gaps.md)).
 
@@ -124,7 +133,11 @@ must have the route's type. [client.ts](../packages/server/src/client.ts) builds
 `createClient({ base?, token?, fetch? }).call(route, { params, query, body })`
 from it, which returns `{ ok: true, data }` with the route's type, or
 `{ ok: false, status, error }`. The contract imports only `zod` and types, so
-the UI's browser bundle can use it; there is no code generation.
+the UI's browser bundle can use it; there is no code generation. The browser
+imports them through `@krapht/ork-server/client`
+([browser.ts](../packages/server/src/browser.ts)), an entry that re-exports only
+these two, so nothing from Node reaches the bundle. The client looks up the
+global `fetch` on each call unless one is passed.
 
 ## Security
 
@@ -140,9 +153,13 @@ the UI's browser bundle can use it; there is no code generation.
   bearer request without an `Origin` is a script and needs none, but a foreign
   `Origin` is 403 either way (CSRF). A write needs a JSON `Content-Type` (415
   otherwise). No CORS headers are sent.
-- **Headers:** `nosniff`, `X-Frame-Options: DENY`, `no-referrer`, `no-store`;
-  the page has a content security policy that allows only the server's own
-  scripts and connections, and no inline script.
+- **Headers:** `nosniff`, `X-Frame-Options: DENY`, `no-referrer`, `no-store`
+  (the UI's hashed files are cached as immutable instead). The page has a
+  content security policy that allows only the server's own scripts, style
+  sheets, fonts, images and connections: no inline script, no inline `<style>`,
+  no `eval`, and inline `style` attributes only (`style-src-attr`), which the
+  UI's panels, popups and graph position themselves with
+  ([page.ts](../packages/server/src/page.ts), ADR-040).
 - **What it can do** is what the user's own `ork` can do on the machine: start,
   resume, stop and message runs, and answer decisions. It reads no file outside
   the store and the projects' workflows. Ork still stores, proxies and asks for

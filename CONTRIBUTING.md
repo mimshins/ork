@@ -74,10 +74,11 @@ directly.
 | `packages/runtime-claude` | `@krapht/ork-runtime-claude` | Claude drivers: Agent SDK and `claude`    |
 | `packages/nodes`          | `@krapht/ork-nodes`          | Built-in node types                       |
 | `packages/server`         | `@krapht/ork-server`         | Local HTTP + SSE API for the UI           |
+| `packages/ui`             | `@krapht/ork-ui`             | The browser UI, built into the CLI        |
 | `packages/cli`            | `@krapht/ork`                | The `ork` command; the only published one |
 
 A package may import only the packages to its left in
-`integrations <- schema <- core <- runtime-claude, nodes <- server <- cli`,
+`integrations <- schema <- core <- runtime-claude, nodes <- server <- ui, cli`,
 through their public entry point. oxlint enforces this.
 
 ## Working on code
