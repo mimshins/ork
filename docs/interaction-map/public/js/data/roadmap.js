@@ -567,7 +567,7 @@ export const MILESTONES = [
           "decisions/ADR-040-ui-stack.md",
           "specs/run-control.md",
         ],
-        commits: ["08d40b8", "e3998b2", "f077fd2"],
+        commits: ["08d40b8", "e3998b2", "f077fd2", "e509782"],
       },
       {
         id: "worktrees-panel",

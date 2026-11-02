@@ -41,16 +41,20 @@ export type IconButtonProps = Omit<BaseProps, "children"> & {
   children: ReactNode;
   variant?: ButtonVariant;
   cli?: string | undefined;
+  /** The keys that do the same, shown in its tooltip. */
+  keys?: readonly string[] | undefined;
 };
 
 export const IconButton = ({
   label,
   variant = "ghost",
   cli,
+  keys,
   ...rest
 }: IconButtonProps) => (
   <Tip
     cli={cli}
+    keys={keys}
     label={label}
   >
     <BaseButton

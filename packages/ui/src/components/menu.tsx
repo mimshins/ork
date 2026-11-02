@@ -15,8 +15,10 @@ export type MenuAction = {
   disabled?: boolean;
   /** It destroys something or stops something: drawn in the danger color. */
   danger?: boolean;
+  /** A word about its state, shown after its label: "minimized". */
+  detail?: string | undefined;
   /** A key hint shown at its end. */
-  hint?: string;
+  hint?: string | undefined;
 };
 
 export type MenuEntry = MenuAction | "separator";
@@ -42,6 +44,9 @@ const Entry = ({ entry }: { entry: MenuEntry }) => {
       onClick={entry.onSelect}
     >
       <span>{entry.label}</span>
+      {entry.detail === undefined ? null : (
+        <span className={styles["itemDetail"]}>{entry.detail}</span>
+      )}
       {entry.hint === undefined ? null : <kbd>{entry.hint}</kbd>}
     </BaseMenu.Item>
   );

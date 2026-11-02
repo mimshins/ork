@@ -73,6 +73,16 @@
   color: var(--menu-item-danger);
 }
 
+.itemDetail {
+  color: var(--color-text-muted);
+  flex: 1;
+  font-size: var(--text-small);
+}
+
+.item[data-disabled] .itemDetail {
+  color: var(--color-text-disabled);
+}
+
 .separator {
   background: var(--color-border);
   height: var(--hairline);

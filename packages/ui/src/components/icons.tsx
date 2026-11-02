@@ -8,18 +8,32 @@
  */
 
 import {
+  mdiBellOutline,
   mdiCheck,
   mdiChevronDown,
+  mdiChevronRight,
   mdiCircleOutline,
   mdiCircleSlice8,
   mdiClose,
+  mdiConsoleLine,
   mdiContentCopy,
+  mdiDockBottom,
+  mdiDockWindow,
+  mdiFormatListBulleted,
+  mdiForumOutline,
+  mdiGraphOutline,
+  mdiHelpBoxMultipleOutline,
   mdiHelpRhombusOutline,
+  mdiMagnify,
   mdiMinus,
   mdiPause,
   mdiPlay,
   mdiStop,
   mdiStopCircleOutline,
+  mdiTextBoxOutline,
+  mdiWindowMaximize,
+  mdiWindowMinimize,
+  mdiWindowRestore,
 } from "@mdi/js";
 
 const icon = (path: string) => {
@@ -53,4 +67,20 @@ export const IconStop = icon(mdiStop);
 export const IconClose = icon(mdiClose);
 export const IconCheck = icon(mdiCheck);
 export const IconChevronDown = icon(mdiChevronDown);
+export const IconChevronRight = icon(mdiChevronRight);
 export const IconCopy = icon(mdiContentCopy);
+export const IconSearch = icon(mdiMagnify);
+export const IconConsole = icon(mdiConsoleLine);
+
+export const IconMinimize = icon(mdiWindowMinimize);
+export const IconMaximize = icon(mdiWindowMaximize);
+export const IconRestore = icon(mdiWindowRestore);
+export const IconFloat = icon(mdiDockWindow);
+export const IconDock = icon(mdiDockBottom);
+
+export const IconRuns = icon(mdiFormatListBulleted);
+export const IconMonitor = icon(mdiGraphOutline);
+export const IconLogs = icon(mdiTextBoxOutline);
+export const IconDecisions = icon(mdiHelpBoxMultipleOutline);
+export const IconChats = icon(mdiForumOutline);
+export const IconNotifications = icon(mdiBellOutline);

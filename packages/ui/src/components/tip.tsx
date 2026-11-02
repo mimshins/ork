@@ -9,6 +9,8 @@
 import { Tooltip } from "@base-ui/react/tooltip";
 import type { ReactElement, ReactNode } from "react";
 
+import { Kbd } from "./bits.tsx";
+
 import styles from "./popup.module.css";
 
 const DELAY_MS = 300;
@@ -31,9 +33,11 @@ export type TipProps = {
   label?: string | undefined;
   /** The CLI command that does the same, such as `ork pause 4f2a1c`. */
   cli?: string | undefined;
+  /** The keys that do the same, one entry per key. */
+  keys?: readonly string[] | undefined;
 };
 
-export const Tip = ({ children, label, cli }: TipProps) => (
+export const Tip = ({ children, label, cli, keys }: TipProps) => (
   <Tooltip.Root>
     <Tooltip.Trigger render={children} />
     <Tooltip.Portal>
@@ -46,6 +50,7 @@ export const Tip = ({ children, label, cli }: TipProps) => (
           {cli === undefined ? null : (
             <code className={styles["tipCommand"]}>{cli}</code>
           )}
+          {keys === undefined ? null : <Kbd keys={keys} />}
         </Tooltip.Popup>
       </Tooltip.Positioner>
     </Tooltip.Portal>

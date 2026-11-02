@@ -116,6 +116,17 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
   then a light system sees the dark theme. A theme cookie the server reads could
   set `data-theme` in the page itself.
   ([design system](./ui/design-system.md#themes))
+- **L33 · Group sizes can shift after several minimizes.** Each panel returns to
+  the right place, and one minimize and restore is exact; restoring several out
+  of order can change other groups' sizes. Saving the whole dock's description
+  at each minimize could restore them exactly.
+  ([workspace](./ui/workspace.md#limits))
+- **L34 · Keyboard moves are coarser than the mouse.** A key moves a panel into
+  its neighbor or to the workspace's edge; dropping it beside one particular
+  group takes the mouse. ([workspace](./ui/workspace.md#limits))
+- **L35 · dockview's other skins ship unused.** Its one style sheet holds all
+  its themes, inert without their class; the file is 160 kB, or 13 kB gzipped. A
+  build step could strip them. ([workspace](./ui/workspace.md#limits))
 
 ## Chores
 
@@ -130,3 +141,13 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
 - **C6 · The UI has no browser tests in CI.** Its components are tested in jsdom
   with axe; a slice is checked by hand in a real browser until Playwright runs
   in CI. ([ADR-040](../decisions/ADR-040-ui-stack.md))
+- **C7 · containerized-state's packages do not share one `Container` type.**
+  Each bundles its own copy of the class's declaration, and its protected
+  members make the copies incompatible. So
+  `withPersistence(Container.create(…))` and `useValue(persistentContainer)`
+  fail to typecheck, though both work at runtime. The workspace uses
+  `new PersistentContainer(…)` and reads it without the hook; the preferences
+  container (task 8) will need the fix upstream or a thin adapter. Also,
+  `packages/ui` sets `skipLibCheck`, because dockview's declarations do not pass
+  under `exactOptionalPropertyTypes`.
+  ([workspace](./ui/workspace.md#the-saved-layout))

@@ -40,7 +40,10 @@ export const Toasts = ({ children }: { children?: ReactNode }) => (
   <Toast.Provider toastManager={toasts}>
     {children}
     <Toast.Portal>
-      <Toast.Viewport className={styles["viewport"]}>
+      <Toast.Viewport
+        aria-label="Messages"
+        className={styles["viewport"]}
+      >
         <List />
       </Toast.Viewport>
     </Toast.Portal>

@@ -1,0 +1,119 @@
+/**
+ * @file The workspace's frame: the two bars around the middle, the rail beside
+ *   the dock, and the single column the panels stack in on a narrow window.
+ */
+
+.shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+}
+
+.bar {
+  align-items: center;
+  background: var(--panel-header-bg);
+  border-block: var(--hairline) solid var(--panel-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  min-height: var(--bar-height);
+  padding: 0 var(--gap);
+}
+
+.mark {
+  height: var(--mark-size);
+  width: var(--mark-size);
+}
+
+.name {
+  font-size: var(--text-ui);
+  font-weight: var(--weight-strong);
+  margin: 0;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.status {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+}
+
+.middle {
+  display: flex;
+  min-height: 0;
+  padding: var(--gap-tight);
+  gap: var(--gap-tight);
+}
+
+.dockArea {
+  flex: 1;
+  min-width: 0;
+}
+
+.rail {
+  background: var(--panel-header-bg);
+  border: var(--hairline) solid var(--panel-border);
+  border-radius: var(--radius-panel);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-hair);
+  padding: var(--gap-hair);
+}
+
+.stack {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--gap-tight);
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.stacked {
+  background: var(--panel-bg);
+  border: var(--hairline) solid var(--panel-border);
+  border-radius: var(--radius-panel);
+  flex: none;
+}
+
+.stackedHeading {
+  font-size: var(--text-ui);
+  font-weight: var(--weight-medium);
+  margin: 0;
+}
+
+.stackedButton {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-panel);
+  color: var(--panel-header-text-active);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: var(--gap-tight);
+  min-height: var(--panel-header-height);
+  padding: 0 var(--inset-control);
+  width: 100%;
+}
+
+.stackedButton:focus-visible {
+  outline-offset: calc(var(--focus-width) * -1);
+}
+
+.stackedBody {
+  border-top: var(--hairline) solid var(--panel-border);
+  min-height: var(--stack-panel-height);
+}
+
+.visuallyHidden {
+  block-size: var(--hairline);
+  clip-path: inset(50%);
+  inline-size: var(--hairline);
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}

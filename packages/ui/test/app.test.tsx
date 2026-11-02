@@ -4,10 +4,15 @@
  */
 
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "../src/app/app.tsx";
 import { violations } from "./axe.ts";
+import { stubWindow } from "./dom.ts";
+
+beforeEach(() => {
+  stubWindow();
+});
 
 afterEach(() => {
   cleanup();

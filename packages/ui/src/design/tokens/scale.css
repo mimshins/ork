@@ -53,8 +53,14 @@
   --toast-width: 22rem;
   --meter-height: var(--space-4);
   --empty-width: 28rem;
+  --bar-height: 2rem;
+  --mark-size: var(--space-16);
+  --palette-width: 36rem;
+  --palette-offset: 5rem;
+  --stack-panel-height: 18rem;
 
   /* Layers, from the workspace up. */
+  --layer-dock-overlay: 50;
   --layer-popup: 100;
   --layer-dialog: 200;
   --layer-toast: 300;

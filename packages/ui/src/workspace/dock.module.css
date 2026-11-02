@@ -1,0 +1,118 @@
+/**
+ * @file The dock's theme: dockview's variables set from the design tokens, on
+ *   Ork's own theme class, so none of dockview's skins apply. Groups sit apart
+ *   on the canvas with hairline borders; the selected tab of the active group
+ *   carries the amber line, and any focused tab the page's focus ring.
+ */
+
+.dock {
+  --dv-group-view-background-color: var(--panel-bg);
+  --dv-tabs-and-actions-container-background-color: var(--panel-header-bg);
+  --dv-tabs-and-actions-container-height: var(--panel-header-height);
+  --dv-tabs-and-actions-container-font-size: var(--text-ui);
+  --dv-tabs-container-scrollbar-color: var(--color-border-strong);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--panel-header-bg);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--panel-header-bg);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--panel-header-bg);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--panel-header-bg);
+  --dv-activegroup-visiblepanel-tab-color: var(--panel-header-text-active);
+  --dv-activegroup-hiddenpanel-tab-color: var(--panel-header-text);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--panel-header-text-active);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--panel-header-text);
+  --dv-tab-divider-color: transparent;
+  --dv-tab-font-size: var(--text-ui);
+  --dv-tab-margin: 0;
+  --dv-border-radius: var(--radius-panel);
+  --dv-separator-border: var(--panel-border);
+  --dv-sash-color: transparent;
+  --dv-active-sash-color: var(--color-action-edge);
+  --dv-active-sash-transition-duration: var(--duration-quick);
+  --dv-active-sash-transition-delay: var(--duration-quick);
+  --dv-drag-over-background-color: var(--surface-selected);
+  --dv-drag-over-border-color: var(--color-action-edge);
+  --dv-drag-over-border: var(--focus-width) solid var(--color-action-edge);
+  --dv-icon-hover-background-color: var(--surface-hover);
+  --dv-overlay-z-index: var(--layer-dock-overlay);
+  --dv-floating-box-shadow: none;
+  --dv-floating-border: var(--hairline) solid var(--color-border-strong);
+  --dv-floating-group-border: var(--hairline) solid var(--color-border-strong);
+  --dv-floating-titlebar-height: var(--target-min);
+  --dv-floating-titlebar-background-color: var(--surface-raised);
+  --dv-floating-titlebar-border-bottom: var(--hairline) solid
+    var(--color-border-strong);
+  --dv-context-menu-background-color: var(--popup-bg);
+  --dv-context-menu-color: var(--popup-text);
+
+  background: var(--surface-canvas);
+  color: var(--color-text);
+  height: 100%;
+}
+
+.dock :global(.dv-groupview) {
+  border: var(--hairline) solid var(--panel-border);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+}
+
+.dock :global(.dv-tabs-and-actions-container) {
+  border-bottom: var(--hairline) solid var(--panel-border);
+  box-sizing: content-box;
+}
+
+.dock :global(.dv-tab) {
+  align-items: center;
+  display: flex;
+  padding: 0 var(--inset-control);
+}
+
+/* The page's ring, drawn inside so a neighbor or the strip's edge cannot clip it. */
+.dock :global(.dv-tab):focus-visible {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: calc(var(--focus-width) * -1);
+}
+
+.dock :global(.dv-active-group .dv-tab.dv-active-tab) {
+  box-shadow: inset 0 calc(var(--focus-width) * -1) 0 var(--panel-tab-indicator);
+}
+
+.dock :global(.dv-inactive-group .dv-tab.dv-active-tab) {
+  box-shadow: inset 0 calc(var(--hairline) * -1) 0 var(--color-border-strong);
+}
+
+.dock :global(.dv-tab > .dv-react-part) {
+  align-items: center;
+  display: flex;
+  height: 100%;
+}
+
+.tab {
+  align-items: center;
+  display: flex;
+  font-size: var(--text-ui);
+  gap: var(--gap-tight);
+  white-space: nowrap;
+}
+
+.tab > svg {
+  font-size: var(--icon-size);
+}
+
+.buttons {
+  align-items: center;
+  display: flex;
+  gap: var(--gap-hair);
+  height: 100%;
+  padding: 0 var(--gap-tight);
+}
+
+.body {
+  height: 100%;
+  overflow: auto;
+}
+
+.none {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+}

@@ -92,6 +92,14 @@ export const UI = {
     "packages/ui/test/tokens.test.ts",
     "Tests: every token pairing's contrast, and the layers",
   ),
+  workspace: d(
+    "specs/ui/workspace.md",
+    "Spec: the workspace, its keys and the saved layout",
+  ),
+  workspaceTests: d(
+    "packages/ui/test/workspace/dock.test.tsx",
+    "Tests: the dock on real dockview",
+  ),
 };
 
 export const SERVER = {

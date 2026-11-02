@@ -1,0 +1,68 @@
+/**
+ * @file The command palette's look: a panel near the top of the window, its
+ *   search box over a list that scrolls, fitting a zoomed or narrow window.
+ */
+
+.palette {
+  background: var(--dialog-bg);
+  border: var(--hairline) solid var(--dialog-border);
+  border-radius: var(--radius-panel);
+  color: var(--dialog-text);
+  display: flex;
+  flex-direction: column;
+  left: 50%;
+  max-height: calc(100vh - var(--palette-offset) - var(--window-margin));
+  max-width: calc(100vw - var(--window-margin));
+  overflow: hidden;
+  position: fixed;
+  top: var(--palette-offset);
+  transform: translateX(-50%);
+  transition: opacity var(--duration-quick) var(--ease-out);
+  width: var(--palette-width);
+  z-index: var(--layer-dialog);
+}
+
+.palette[data-starting-style],
+.palette[data-ending-style] {
+  opacity: 0;
+}
+
+.input {
+  background: var(--field-bg);
+  border: none;
+  border-bottom: var(--hairline) solid var(--field-border);
+  color: var(--field-text);
+  font: inherit;
+  min-height: var(--bar-height);
+  padding: var(--gap) var(--inset-panel);
+  width: 100%;
+}
+
+.input::placeholder {
+  color: var(--field-placeholder);
+  opacity: 1;
+}
+
+.input:focus-visible {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: calc(var(--focus-width) * -1);
+}
+
+.list {
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--gap-tight);
+}
+
+.group {
+  color: var(--dialog-muted);
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  padding: var(--gap) var(--inset-control) var(--gap-tight);
+}
+
+.empty {
+  color: var(--dialog-muted);
+  margin: 0;
+  padding: var(--inset-panel);
+}

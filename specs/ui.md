@@ -3,10 +3,11 @@
 Status: **In progress** (M2). Built: its way in, the local server and `ork ui`
 ([server](./server.md)); and `packages/ui`, the app the server serves, with its
 build, its license list and its tests ([ui](../packages/ui/src/app/app.tsx),
-[tests](../packages/ui/test/)); and the design system's tokens and themes and
-base components ([design system](./ui/design-system.md)). It shows only which
-Ork serves it so far; the panels below are planned. The stack is React, Base UI,
-dockview, containerized-state and an in-house graph
+[tests](../packages/ui/test/)); the design system's tokens and themes and base
+components ([design system](./ui/design-system.md)); and the workspace that
+holds the panels ([workspace](./ui/workspace.md)). The panels themselves are
+planned, and each shows the CLI command to use until then. The stack is React,
+Base UI, dockview, containerized-state and an in-house graph
 ([ADR-040](../decisions/ADR-040-ui-stack.md)), with Material Design Icons
 ([ADR-042](../decisions/ADR-042-icons-mdi.md)). The panels read the server's API
 through its typed client.
@@ -16,6 +17,9 @@ through its typed client.
 - [Design system](./ui/design-system.md): the language, the three token layers
   and their tests, the themes, type, size and motion, the components and the
   gallery, and the copy style.
+- [Workspace](./ui/workspace.md): the frame, the dock and its theme, minimizing
+  to the rail, the keys and why they are Ork's own, the command palette, focus,
+  the saved layout, and the stack on a narrow window.
 
 ## Panels
 

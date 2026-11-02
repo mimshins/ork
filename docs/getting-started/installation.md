@@ -162,10 +162,12 @@ ork ui --no-open    # only print the address and the sign-in link
 ```
 
 `ork ui` starts Ork's local server and opens it in your browser, already signed
-in. For now its page lists your runs and the open decisions, live; the full UI
-(monitor, logs, decisions, chats, the designer) comes in the next releases.
-Running `ork ui` again opens the one that is running. Ctrl-C stops it; your runs
-keep running, and every `ork` command works without it.
+in. For now it is a workspace of panels you can resize, dock, float and
+minimize, with a command palette (`⌘K` or `Ctrl K`). The panels themselves
+(monitor, logs, decisions, chats, the designer) come in the next releases; until
+then each shows the `ork` command to use instead. Running `ork ui` again opens
+the one that is running. Ctrl-C stops it; your runs keep running, and every
+`ork` command works without it.
 
 It listens only on `127.0.0.1`, and only your browser gets in: `ork ui` opens it
 with a one-time link that becomes a cookie, and the server refuses any other

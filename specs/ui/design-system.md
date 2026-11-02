@@ -8,8 +8,9 @@ layering tests ([tokens test](../../packages/ui/test/tokens.test.ts),
 [pairings](../../packages/ui/test/pairings.ts),
 [theme test](../../packages/ui/test/theme.test.ts)); and the base components
 ([components](../../packages/ui/src/components/),
-[tests](../../packages/ui/test/components/)). The workspace, the panels' own
-pieces and the graph's look are planned (M2).
+[tests](../../packages/ui/test/components/)). The dock's theme is in
+[the workspace](./workspace.md). The panels' own pieces and the graph's look are
+planned (M2).
 
 ## The language
 
