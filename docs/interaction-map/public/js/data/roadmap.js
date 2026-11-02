@@ -545,9 +545,11 @@ export const MILESTONES = [
       {
         id: "server",
         title: "Local server",
-        status: "active",
+        status: "done",
         detail:
           "`ork ui` and `@krapht/ork-server`: a JSON API with live event streams on 127.0.0.1, on `node:http` with a typed contract and client. One more client of the store and the sockets: it runs nothing, starts runs detached, and sits behind a per-start token that becomes a cookie. A placeholder page lists runs and decisions live.",
+        commits: ["53e1826"],
+        date: "2026-11-02",
         docs: [
           "specs/server.md",
           "decisions/ADR-039-local-server.md",
