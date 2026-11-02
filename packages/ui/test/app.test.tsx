@@ -11,6 +11,7 @@ import { App } from "../src/app/app.tsx";
 import { violations } from "./axe.ts";
 import { stubWindow } from "./dom.ts";
 import { type FakeSources, stubEventSource } from "./fake-source.ts";
+import { runView } from "./state/fixtures.ts";
 
 let sources: FakeSources;
 
@@ -24,12 +25,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const answering = (status: number, body: unknown) => {
+/** What the server's health route says; other reads find nothing. */
+const answering = (status: number, health: unknown) => {
   vi.stubGlobal(
     "fetch",
-    vi.fn(() =>
+    vi.fn((url: string) =>
       Promise.resolve(
-        new Response(JSON.stringify(body), {
+        new Response(JSON.stringify(url === "/api/health" ? health : []), {
           status,
           headers: { "content-type": "application/json" },
         }),
@@ -65,7 +67,7 @@ describe("the app", () => {
     const source = sources.last();
     act(() => {
       source.connected();
-      source.send("runs", [{ id: "a", live: "running" }]);
+      source.send("runs", [runView("a")]);
       source.send("decisions", []);
     });
     expect(

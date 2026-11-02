@@ -270,4 +270,28 @@ describe("a narrow window", () => {
     expect(tabNames()).not.toContain("Runs");
     expect(tabNames()).toContain("Monitor");
   });
+
+  it("opens the Run workflow dialog from the palette", async () => {
+    openShell();
+    const user = keys();
+    await openPalette(user);
+    await user.keyboard("run workflow{Enter}");
+    expect(
+      await screen.findByRole("dialog", { name: "Run workflow" }),
+    ).toBeDefined();
+  });
+
+  it("leaves the keys alone while a dialog is open", async () => {
+    openShell();
+    const user = keys();
+    await openPalette(user);
+    await user.keyboard("run workflow{Enter}");
+    await screen.findByRole("dialog", { name: "Run workflow" });
+    await user.keyboard("{Control>}k{/Control}");
+    await user.keyboard("{Alt>}{Shift>}[KeyM]{/Shift}{/Alt}");
+    expect(
+      screen.queryByRole("dialog", { name: "Command palette" }),
+    ).toBeNull();
+    expect(railNames()).toEqual([]);
+  });
 });

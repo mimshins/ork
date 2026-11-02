@@ -19,7 +19,7 @@ import type { InputDef } from "@krapht/ork-schema";
 import { z } from "zod";
 
 /** The records the answers are made of, for a client that imports only this. */
-export type { DecisionRecord, StoredEvent, TreeNode };
+export type { DecisionRecord, InputDef, ProjectRecord, StoredEvent, TreeNode };
 
 const Count = z.coerce.number().int().positive();
 const Seq = z.coerce.number().int().nonnegative();

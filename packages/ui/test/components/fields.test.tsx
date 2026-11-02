@@ -1,6 +1,7 @@
 /**
- * @file Tests for the select, the combobox, the checkbox and the switch: each
- *   is labeled, works from the keyboard, and has no accessibility violations.
+ * @file Tests for the select, the combobox, the checkbox, the switch and the
+ *   text field: each is labeled, works from the keyboard, and has no
+ *   accessibility violations.
  */
 
 import { cleanup, render, screen } from "@testing-library/react";
@@ -10,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { Checkbox, Switch } from "../../src/components/checkbox.tsx";
 import { Combobox } from "../../src/components/combobox.tsx";
 import { Select } from "../../src/components/select.tsx";
+import { TextField } from "../../src/components/text-field.tsx";
 import { violations } from "../axe.ts";
 
 afterEach(() => {
@@ -132,5 +134,36 @@ describe("the checkbox and the switch", () => {
     await userEvent.tab();
     await userEvent.keyboard(" ");
     expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+const Filled = ({ onChange }: { onChange: (value: string) => void }) => (
+  <main>
+    <TextField
+      description="What to build."
+      label="feature"
+      onChange={onChange}
+      required
+      value=""
+    />
+  </main>
+);
+
+describe("the text field", () => {
+  it("is named by its label, says it is required, and reads its description", () => {
+    render(<Filled onChange={() => {}} />);
+    const input = screen.getByRole("textbox", { name: "feature (required)" });
+    expect(input.getAttribute("required")).not.toBeNull();
+    expect(input.getAttribute("aria-describedby")).toBe(
+      screen.getByText("What to build.").id,
+    );
+  });
+
+  it("reports what is typed, and has no accessibility violations", async () => {
+    const onChange = vi.fn<(value: string) => void>();
+    const { container } = render(<Filled onChange={onChange} />);
+    await userEvent.type(screen.getByRole("textbox"), "c");
+    expect(onChange).toHaveBeenCalledWith("c");
+    expect(await violations(container)).toEqual([]);
   });
 });

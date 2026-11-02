@@ -12,12 +12,13 @@ import { useWorkspaceKeys } from "./keys.ts";
 import type { Workspace } from "./workspace.ts";
 
 export const useCommands = (workspace: Workspace): Command[] => {
-  const { preferences } = useAppState();
+  const state = useAppState();
+  const { preferences } = state;
   const view = useValue(workspace.view);
   const chosen = useValue(preferences.value);
   const commands = useMemo(
-    () => commandsFor(workspace, view, preferences, chosen),
-    [workspace, view, preferences, chosen],
+    () => commandsFor(workspace, view, state, chosen),
+    [workspace, view, state, chosen],
   );
   useWorkspaceKeys(workspace, commands);
   return commands;

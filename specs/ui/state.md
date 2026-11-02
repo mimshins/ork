@@ -2,13 +2,13 @@
 
 _Part of [The UI](../ui.md)._
 
-Status: **Built**, and read by the status bar and the palette; the panels that
-read the rest land next. The containers, the stream links, a run's feed and
-event window, and the preferences ([state](../../packages/ui/src/state/),
-[tests](../../packages/ui/test/state/)). A run's feed is checked against a fake
-server and a fake `EventSource`; the real streams it reads were checked by hand
-in a browser, and the feed itself first runs against them when the Logs panel
-lands.
+Status: **Built**, and read by the status bar, the palette and the
+[Runs panel](./panels.md); the panels that read the rest land next. The
+containers, the stream links, a run's feed and event window, and the preferences
+([state](../../packages/ui/src/state/), [tests](../../packages/ui/test/state/)).
+A run's feed is checked against a fake server and a fake `EventSource`; the real
+streams it reads were checked by hand in a browser, and the feed itself first
+runs against them when the Logs panel lands.
 
 ## Contents
 
@@ -36,6 +36,13 @@ through `useAppState()`:
 
 The workspace's own state (the view, the saved layout, the palette) stays in the
 [workspace](./workspace.md). Notifications arrive with their panel.
+
+What no stream sends is a one-off read in a container
+([read.ts](../../packages/ui/src/state/read.ts)): `projects`, and a project's
+`workflows`. When reads overlap the newest wins, so a slow answer about the last
+project chosen cannot replace the answer about this one. `runFilter` and
+`runDialog` belong to the [Runs panel](./panels.md), and live here so they
+outlast it when it is minimized or closed.
 
 **The store is the truth** ([ADR-024](../../decisions/ADR-024-event-store.md)).
 A write goes through the typed client and comes back on a stream; nothing here

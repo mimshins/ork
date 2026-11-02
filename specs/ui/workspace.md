@@ -2,9 +2,9 @@
 
 _Part of [The UI](../ui.md)._
 
-Status: **Built**, with placeholder bodies in its panels until each panel lands.
-The frame, the dock and its theme, the rail, the narrow stack, the Window menu,
-the command palette and the saved layout
+Status: **Built**, with placeholder bodies in the panels not yet built. The
+frame, the dock and its theme, the rail, the narrow stack, the Window menu, the
+command palette and the saved layout
 ([workspace](../../packages/ui/src/workspace/),
 [tests](../../packages/ui/test/workspace/)). A browser pass checks what jsdom
 cannot: sizes, drawn positions, focus rings and contrast (gap [C6](../gaps.md)).
@@ -92,6 +92,11 @@ The keyboard audit of dockview 8.6 found:
 
 A command that cannot run says why, in the palette and through the live region
 when its keys are pressed.
+
+No workspace key works while a dialog is open, the palette's own included:
+nothing behind a modal changes, and nothing opens over it. Ork's dialogs carry
+`data-modal` for this, since a floating panel is a `dialog` to dockview but is
+not modal.
 
 ## The command palette
 

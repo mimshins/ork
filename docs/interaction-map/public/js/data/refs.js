@@ -100,6 +100,14 @@ export const UI = {
     "packages/ui/test/workspace/dock.test.tsx",
     "Tests: the dock on real dockview",
   ),
+  panels: d(
+    "specs/ui/panels.md",
+    "Spec: the Runs panel and the Run workflow dialog",
+  ),
+  panelTests: d(
+    "packages/ui/test/panels/runs-panel.test.tsx",
+    "Tests: the Runs panel's states, keys and rendering",
+  ),
   state: d(
     "specs/ui/state.md",
     "Spec: the containers, stream links and event window",

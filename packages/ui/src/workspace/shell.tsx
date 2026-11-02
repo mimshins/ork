@@ -4,6 +4,7 @@
  *   and what the palette shows stay the same.
  */
 
+import { RunDialog } from "../panels/run-dialog.tsx";
 import { TopBar } from "./bars.tsx";
 import { Middle } from "./middle.tsx";
 import { Palette } from "./palette.tsx";
@@ -24,6 +25,7 @@ export const Shell = ({ workspace }: { workspace: Workspace }) => {
         commands={commands}
         workspace={workspace}
       />
+      <RunDialog />
     </div>
   );
 };

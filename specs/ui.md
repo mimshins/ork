@@ -20,6 +20,7 @@ through its typed client.
 - [Workspace](./ui/workspace.md): the frame, the dock and its theme, minimizing
   to the rail, the keys and why they are Ork's own, the command palette, focus,
   the saved layout, and the stack on a narrow window.
+- [Panels](./ui/panels.md): the Runs panel and the Run workflow dialog.
 - [State](./ui/state.md): the containers, streams that stay connected, a run's
   feed and event window, what re-renders, and the preferences.
 

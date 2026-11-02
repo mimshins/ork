@@ -133,6 +133,11 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
   with a run open use them all, and the next tab's requests wait. HTTP/2 needs
   TLS in a browser; a `SharedWorker` or `BroadcastChannel` could share one
   stream between tabs. ([state](./ui/state.md#a-runs-feed))
+- **L37 · The Runs panel sees the newest 50 runs.** The overview stream sends
+  that many, and the filter narrows them in the page, so an older run, or a
+  quiet project behind busy ones, needs `ork ps`. The panel says so when a
+  filter finds none. The stream's `?project=` and paging on `/api/runs` could
+  reach them. ([panels](./ui/panels.md#runs))
 
 ## Chores
 
@@ -154,9 +159,13 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
   fail to typecheck, though both work at runtime. The layout uses
   `new PersistentContainer(…)` and reads it without the hook; the preferences
   cast it once for the hooks
-  ([preferences.ts](../packages/ui/src/state/preferences.ts)). The fix is
-  upstream: one shared declaration. Also upstream: a subscriber that throws
-  stops `PersistentContainer.setValue` before it saves, so the value changes but
-  is not remembered. And `packages/ui` sets `skipLibCheck`, because dockview's
-  declarations do not pass under `exactOptionalPropertyTypes`.
+  ([preferences.ts](../packages/ui/src/state/preferences.ts)). The fixes are
+  upstream and open: one shared declaration
+  ([containerized-state#26](https://github.com/mimshins/containerized-state/pull/26)),
+  and saving before notifying, since a subscriber that throws stopped
+  `PersistentContainer.setValue` from saving
+  ([#27](https://github.com/mimshins/containerized-state/pull/27)). Once they
+  are released, Ork bumps the versions and drops the cast. And `packages/ui`
+  sets `skipLibCheck`, because dockview's declarations do not pass under
+  `exactOptionalPropertyTypes`.
   ([workspace](./ui/workspace.md#the-saved-layout))

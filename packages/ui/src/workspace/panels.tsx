@@ -17,6 +17,7 @@ import {
   IconNotifications,
   IconRuns,
 } from "../components/icons.tsx";
+import { RunsPanel } from "../panels/runs-panel.tsx";
 
 export type PanelId =
   | "runs"
@@ -43,7 +44,7 @@ const notBuilt = (cli: string): ComponentType => {
 };
 
 const SPECS: Record<PanelId, PanelSpec> = {
-  runs: { id: "runs", title: "Runs", Icon: IconRuns, Body: notBuilt("ork ps") },
+  runs: { id: "runs", title: "Runs", Icon: IconRuns, Body: RunsPanel },
   monitor: {
     id: "monitor",
     title: "Monitor",

@@ -8,6 +8,7 @@
  */
 
 import {
+  type BodyOf,
   type Client,
   type DecisionRecord,
   type Health,
@@ -18,6 +19,7 @@ import {
 import { Container } from "react-containerized-state";
 
 import { createPreferences } from "./preferences.ts";
+import { createRead } from "./read.ts";
 import { reconcile } from "./reconcile.ts";
 import { createRunFeed, type RunFeed } from "./run-feed.ts";
 import { type LinkStatus, type OpenSource, openLink } from "./stream-link.ts";
@@ -69,6 +71,13 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
   });
   const selection = Container.create<Selection>({ run: null, node: null });
   const preferences = createPreferences(storage);
+  /** The project the Runs panel shows: a root, or "all". */
+  const runFilter = Container.create("all");
+  const runDialog = Container.create(false);
+  const projects = createRead(() => client.call("projects"));
+  const workflows = createRead((id: string) =>
+    client.call("workflows", { params: { id } }),
+  );
   const feeds = new Map<string, HeldFeed>();
 
   const askServer = async (): Promise<void> => {
@@ -115,6 +124,12 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     connection,
     selection,
     preferences,
+    runFilter,
+    runDialog,
+    projects,
+    workflows,
+    /** Asks for a run; it then arrives on the stream like any other. */
+    startRun: (body: BodyOf<"start">) => client.call("start", { body }),
     /** Follows the server until the returned function is called. */
     start: (): (() => void) => {
       const stopWatching = runs.subscribe(reopenResumed);

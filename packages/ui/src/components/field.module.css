@@ -52,6 +52,12 @@
   padding: 0 var(--inset-control);
 }
 
+.hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+  margin: 0;
+}
+
 .input::placeholder {
   color: var(--field-placeholder);
   opacity: 1;

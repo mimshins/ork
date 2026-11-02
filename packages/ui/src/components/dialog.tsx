@@ -4,7 +4,8 @@
  *   thought, such as stopping a run. Each traps focus, closes on Escape and
  *   gives focus back. A confirm dialog is an alert dialog: a click outside does
  *   not dismiss it, its description says what the action will do, and focus
- *   starts on Cancel.
+ *   starts on Cancel. Each carries `data-modal`, by which the workspace's keys
+ *   know to wait (a floating panel is a `dialog` to dockview, but not modal).
  */
 
 import { AlertDialog } from "@base-ui/react/alert-dialog";
@@ -41,7 +42,10 @@ export const Dialog = ({
   >
     <BaseDialog.Portal>
       <BaseDialog.Backdrop className={styles["backdrop"]} />
-      <BaseDialog.Popup className={styles["dialog"]}>
+      <BaseDialog.Popup
+        className={styles["dialog"]}
+        data-modal=""
+      >
         <BaseDialog.Title className={styles["title"]}>{title}</BaseDialog.Title>
         {description === undefined ? null : (
           <BaseDialog.Description className={styles["description"]}>
@@ -52,6 +56,11 @@ export const Dialog = ({
       </BaseDialog.Popup>
     </BaseDialog.Portal>
   </BaseDialog.Root>
+);
+
+/** A dialog's buttons, in their place at its end. */
+export const DialogActions = ({ children }: { children: ReactNode }) => (
+  <div className={styles["actions"]}>{children}</div>
 );
 
 export type ConfirmDialogProps = Controlled & {
@@ -85,7 +94,10 @@ export const ConfirmDialog = ({
   >
     <AlertDialog.Portal>
       <AlertDialog.Backdrop className={styles["backdrop"]} />
-      <AlertDialog.Popup className={styles["dialog"]}>
+      <AlertDialog.Popup
+        className={styles["dialog"]}
+        data-modal=""
+      >
         <AlertDialog.Title className={styles["title"]}>
           {title}
         </AlertDialog.Title>

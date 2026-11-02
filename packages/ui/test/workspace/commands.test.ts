@@ -4,17 +4,26 @@
  *   a command that cannot run says why.
  */
 
+import { createClient } from "@krapht/ork-server/client";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import {
-  createPreferences,
-  DEFAULT_PREFERENCES,
-} from "../../src/state/preferences.ts";
+import { createAppState } from "../../src/state/app-state.ts";
+import { DEFAULT_PREFERENCES } from "../../src/state/preferences.ts";
 import { type Command, commandsFor } from "../../src/workspace/commands.ts";
 import { PANELS } from "../../src/workspace/panels.tsx";
 import { keysOf } from "../../src/workspace/shortcuts.ts";
 import type { WorkspaceView } from "../../src/workspace/workspace-view.ts";
+import { openFakeSources } from "../fake-source.ts";
 import { openWorkspace } from "./harness.tsx";
+
+const openState = () =>
+  createAppState({
+    client: createClient({
+      fetch: () => Promise.reject(new Error("no server")),
+    }),
+    open: openFakeSources().open,
+    storage: localStorage,
+  });
 
 const VIEW: WorkspaceView = {
   wide: true,
@@ -30,7 +39,7 @@ const commands = (view: Partial<WorkspaceView> = {}) =>
   commandsFor(
     openWorkspace(),
     { ...VIEW, ...view },
-    createPreferences(localStorage),
+    openState(),
     DEFAULT_PREFERENCES,
   );
 
@@ -131,15 +140,12 @@ describe("the commands", () => {
 
   it("changes a preference and says so", () => {
     const workspace = openWorkspace();
-    const preferences = createPreferences(localStorage);
-    const light = commandsFor(
-      workspace,
-      VIEW,
-      preferences,
-      DEFAULT_PREFERENCES,
-    ).find(({ id }) => id === "theme-light");
+    const state = openState();
+    const light = commandsFor(workspace, VIEW, state, DEFAULT_PREFERENCES).find(
+      ({ id }) => id === "theme-light",
+    );
     light?.run();
-    expect(preferences.value.getValue().theme).toBe("light");
+    expect(state.preferences.value.getValue().theme).toBe("light");
     expect(workspace.announcement.getValue()).toBe("Theme: Light.");
   });
 });

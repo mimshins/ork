@@ -4,13 +4,23 @@
  *   command that does not apply now stays listed and says why.
  */
 
+import type { AppState } from "../state/app-state.ts";
 import type { Preferences, PreferenceStore } from "../state/preferences.ts";
 import { PANELS, panelOf } from "./panels.tsx";
 import { type Direction, type Shortcut, SHORTCUTS } from "./shortcuts.ts";
 import type { WorkspaceView } from "./workspace-view.ts";
 import type { Workspace } from "./workspace.ts";
 
-export type CommandGroup = "Panels" | "Window" | "Layout" | "View";
+/** The palette's groups, in order; a command's group must be one of them. */
+export const COMMAND_GROUPS = [
+  "Panels",
+  "Runs",
+  "Window",
+  "Layout",
+  "View",
+] as const;
+
+export type CommandGroup = (typeof COMMAND_GROUPS)[number];
 
 export type Command = {
   id: string;
@@ -50,6 +60,17 @@ const panelCommands = (workspace: Workspace): Command[] =>
       workspace.goTo(panel.id);
     },
   }));
+
+const runCommands = (state: AppState): Command[] => [
+  {
+    id: "run-workflow",
+    title: "Run workflow…",
+    group: "Runs",
+    run: () => {
+      void state.runDialog.setValue(true);
+    },
+  },
+];
 
 const windowCommands = (
   workspace: Workspace,
@@ -208,11 +229,12 @@ const viewCommands = (
 export const commandsFor = (
   workspace: Workspace,
   view: WorkspaceView,
-  preferences: PreferenceStore,
+  state: AppState,
   chosen: Preferences,
 ): Command[] => [
   ...panelCommands(workspace),
+  ...runCommands(state),
   ...windowCommands(workspace, view),
   ...layoutCommands(workspace, view),
-  ...viewCommands(workspace, preferences, chosen),
+  ...viewCommands(workspace, state.preferences, chosen),
 ];
