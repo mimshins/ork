@@ -72,3 +72,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [038](./ADR-038-update-notice-and-upgrade.md)      | A daily new-version notice, and `ork upgrade` that asks first               | Accepted          | waived                                                      |
 | [039](./ADR-039-local-server.md)                   | A local server that is one more client of the store, on `node:http`         | Accepted          | waived                                                      |
 | [040](./ADR-040-ui-stack.md)                       | The UI's stack: React, Base UI, dockview, containerized-state, our graph    | Accepted          | waived                                                      |
+| [041](./ADR-041-pause-continue-stop.md)            | Pause holds a session before its next tool call; stopping a node fails it   | Accepted          | waived                                                      |

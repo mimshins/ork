@@ -8,12 +8,14 @@
 
 import type {
   DecisionRecord,
+  Paused,
   ProjectRecord,
   RunRecord,
   StoredEvent,
   StoredRunStatus,
   TreeNode,
 } from "@krapht/ork-core";
+import type { InputDef } from "@krapht/ork-schema";
 import { z } from "zod";
 
 const Count = z.coerce.number().int().positive();
@@ -60,12 +62,36 @@ export const MessageSchema = z.strictObject({
   body: z.string().min(1),
 });
 
-/** A stored run with its live status (`crashed` when its process is gone). */
-export type RunView = RunRecord & { live: StoredRunStatus | "crashed" };
+/** Pause, continue or stop: the whole run, or `node` alone (ADR-041). */
+export const ControlSchema = z.strictObject({
+  node: z.string().min(1).optional(),
+});
+
+/**
+ * A stored run with its live status: `crashed` when its process is gone,
+ * `paused` when it is paused as a whole; and what is paused in it.
+ */
+export type RunView = RunRecord & {
+  live: StoredRunStatus | "crashed" | "paused";
+  paused: Paused;
+};
+
+/** A workflow in a project's workflows folder, for starting a run. */
+export type WorkflowView = {
+  /** What `POST /api/runs` takes: the file's name without `.ork.yaml`. */
+  name: string;
+  file: string;
+  /** The workflow's own `name` and `description`, when it parses. */
+  title?: string;
+  description?: string;
+  inputs: Record<string, InputDef>;
+  /** Why it does not parse; it can still be started, and fail there. */
+  error?: string;
+};
 
 export type Health = { version: string; pid: number; startedAt: string };
 
-/** What a start, resume, stop or message did. */
+/** What a start, resume, stop, pause, continue or message did. */
 export type Accepted = { runId: string };
 
 export type Route = {
@@ -79,6 +105,7 @@ export type Route = {
 export const API = {
   health: { method: "GET", path: "/api/health" },
   projects: { method: "GET", path: "/api/projects" },
+  workflows: { method: "GET", path: "/api/projects/:id/workflows" },
   runs: { method: "GET", path: "/api/runs", query: RunsQuerySchema },
   run: { method: "GET", path: "/api/runs/:id" },
   tree: { method: "GET", path: "/api/runs/:id/tree" },
@@ -99,7 +126,13 @@ export const API = {
     path: "/api/runs/:id/resume",
     body: ResumeRunSchema,
   },
-  stop: { method: "POST", path: "/api/runs/:id/stop" },
+  stop: { method: "POST", path: "/api/runs/:id/stop", body: ControlSchema },
+  pause: { method: "POST", path: "/api/runs/:id/pause", body: ControlSchema },
+  continue: {
+    method: "POST",
+    path: "/api/runs/:id/continue",
+    body: ControlSchema,
+  },
   message: {
     method: "POST",
     path: "/api/runs/:id/messages",
@@ -111,6 +144,7 @@ export const API = {
 export type Responses = {
   health: Health;
   projects: ProjectRecord[];
+  workflows: WorkflowView[];
   runs: RunView[];
   run: RunView;
   tree: TreeNode[];
@@ -120,6 +154,8 @@ export type Responses = {
   start: Accepted;
   resume: Accepted;
   stop: Accepted;
+  pause: Accepted;
+  continue: Accepted;
   message: Accepted;
 };
 

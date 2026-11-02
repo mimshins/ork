@@ -98,6 +98,23 @@ with a `timeout` still takes its `default`). Its own output goes to
 `.ork/runs/<run>/output.log`. `ork stop` works on any running run, detached or
 not, as Ctrl-C does in its terminal.
 
+## Pause, continue, stop one node
+
+```sh
+ork pause 3f2a                  # nothing new starts; sessions wait before their next tool call
+ork continue 3f2a               # it goes on from where it waited
+ork pause 3f2a --node review    # just one node; the rest keeps going
+ork stop 3f2a --node review     # that node fails, "stopped by the user"; the run goes on
+```
+
+A pause never cuts work short: a session finishes the step it is on and waits
+before its next tool call, a shell, `gh` or `aws` command runs to its end, and a
+gate keeps its question open (you can still answer it) while its timeout waits
+with it. A pause longer than nine minutes ends the session's turn with the call
+pending, and Ork picks the session up again when you continue. `ork ps` shows
+the run as `paused`; `ork tree` marks the nodes that are waiting
+([run control](../../specs/run-control.md)).
+
 `ork ui` shows the same runs and open decisions in your browser
 ([the browser view](../getting-started/installation.md#the-browser-view)).
 

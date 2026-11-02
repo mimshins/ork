@@ -562,7 +562,12 @@ export const MILESTONES = [
         status: "active",
         detail:
           "The UI app and its design system, a dockable workspace, the live graph and ownership tree with status and cost, the event log, the decisions inbox, a chat per node, notifications, and pause, continue and stop for a run or a node.",
-        docs: ["specs/ui.md", "decisions/ADR-040-ui-stack.md"],
+        docs: [
+          "specs/ui.md",
+          "decisions/ADR-040-ui-stack.md",
+          "specs/run-control.md",
+        ],
+        commits: ["08d40b8"],
       },
       {
         id: "worktrees-panel",
@@ -614,6 +619,7 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "57bdb6f",
   "dc89e77",
   "61f7edb",
   "e93dd79",

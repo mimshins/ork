@@ -1,10 +1,11 @@
 /**
- * @file The API's write routes (specs/server.md#api): answer a decision, stop a
- *   run, message a live run's node, and start or resume a run in the
- *   background. Each does what its CLI command does (`ork decide --id`, `stop`,
- *   `chat -m`, `run --detach`, `resume --detach`), through the same functions
- *   in core: rows in the store, a wake on the run's socket, or a detached
- *   process. The server itself runs nothing.
+ * @file The API's write routes (specs/server.md#api): answer a decision; stop,
+ *   pause or continue a run or one of its nodes (ADR-041); message a live run's
+ *   node; and start or resume a run in the background. Each does what its CLI
+ *   command does (`ork decide --id`, `stop`, `pause`, `continue`, `chat -m`,
+ *   `run --detach`, `resume --detach`), through the same functions in core:
+ *   rows in the store, a wake on the run's socket, or a detached process. The
+ *   server itself runs nothing.
  */
 
 import { existsSync, statSync } from "node:fs";
@@ -12,6 +13,7 @@ import path from "node:path";
 
 import {
   answerDecision,
+  type Commanded,
   detachResume,
   detachRun,
   inside,
@@ -20,6 +22,8 @@ import {
   nodeSession,
   placeFiles,
   type ProjectRecord,
+  requestContinue,
+  requestPause,
   requestStop,
   resumable,
   runDirOf,
@@ -31,8 +35,17 @@ import { accepted, fail, type Handlers, ok } from "./router.ts";
 
 type WriteRoutes = Pick<
   Handlers,
-  "answer" | "stop" | "message" | "start" | "resume"
+  "answer" | "stop" | "pause" | "continue" | "message" | "start" | "resume"
 >;
+
+/** A refused pause, continue or stop: an unknown node is 404, the rest 409. */
+const commandAnswer = (runId: string, asked: Commanded) => {
+  if (asked.ok) return accepted({ runId });
+  return fail(
+    asked.error.includes("is not a node of") ? 404 : 409,
+    asked.error,
+  );
+};
 
 type RunFlags = {
   inputs?: Record<string, string> | undefined;
@@ -100,13 +113,37 @@ export const writeRoutes = (context: ServerContext): WriteRoutes => {
         : fail(answerStatus(answered.error), answered.error);
     },
 
-    stop: async ({ params }) => {
+    stop: async ({ params, body }) => {
       const found = runOf(context, params.id);
       if (!found.ok) return found.refusal;
-      const asked = await requestStop(context.store, found.run, context.home);
-      return asked.ok
-        ? accepted({ runId: found.run.id })
-        : fail(409, asked.error);
+      const { run } = found;
+      const { store, home } = context;
+      return commandAnswer(
+        run.id,
+        await requestStop(store, run, home, body.node),
+      );
+    },
+
+    pause: async ({ params, body }) => {
+      const found = runOf(context, params.id);
+      if (!found.ok) return found.refusal;
+      const { run } = found;
+      const { store, home } = context;
+      return commandAnswer(
+        run.id,
+        await requestPause(store, run, home, body.node),
+      );
+    },
+
+    continue: async ({ params, body }) => {
+      const found = runOf(context, params.id);
+      if (!found.ok) return found.refusal;
+      const { run } = found;
+      const { store, home } = context;
+      return commandAnswer(
+        run.id,
+        await requestContinue(store, run, home, body.node),
+      );
     },
 
     message: async ({ params, body }) => {

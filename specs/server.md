@@ -64,37 +64,46 @@ ork ui [--port <n>] [--no-open]
 JSON under `/api`. A refusal is `{ "error": "…" }` with the CLI's words. Runs
 are named by id or a unique prefix: no match is 404, several are 400.
 
-| Method | Path                     | Does                                                             | As                    |
-| ------ | ------------------------ | ---------------------------------------------------------------- | --------------------- |
-| GET    | `/api/health`            | `{ version, pid, startedAt }`                                    | —                     |
-| GET    | `/api/projects`          | the registered projects                                          | `ork projects --json` |
-| GET    | `/api/runs`              | runs newest first, each with `live`; `?project`, `?limit` (20)   | `ork ps --json`       |
-| GET    | `/api/runs/:id`          | one run, with `live` (`crashed` when its process is gone)        | —                     |
-| GET    | `/api/runs/:id/tree`     | the ownership tree                                               | `ork tree --json`     |
-| GET    | `/api/runs/:id/events`   | stored events; `?after`, `?node`, `?limit`                       | `ork logs --json`     |
-| GET    | `/api/decisions`         | open decisions of live runs; `?run`, `?project`                  | `ork decide --list`   |
-| POST   | `/api/decisions/:id`     | `{ choose }`: answers it as `ui`, wakes the run                  | `ork decide --id`     |
-| POST   | `/api/runs`              | `{ project, workflow, inputs?, driver?, inPlace?, allowDirty? }` | `ork run --detach`    |
-| POST   | `/api/runs/:id/resume`   | `{ inputs?, driver?, inPlace?, allowDirty? }`                    | `ork resume --detach` |
-| POST   | `/api/runs/:id/stop`     | asks a live run to stop                                          | `ork stop`            |
-| POST   | `/api/runs/:id/messages` | `{ node, body }` to a live run's leader or worker                | `ork chat -m` (live)  |
-| GET    | `/api/runs/:id/stream`   | Server-Sent Events, below                                        | `ork logs -f`         |
-| GET    | `/api/stream`            | Server-Sent Events, below                                        | —                     |
-| GET    | `/`, `/assets/…`         | the built UI (below), or the placeholder page without one        | —                     |
+| Method | Path                          | Does                                                                                               | As                    |
+| ------ | ----------------------------- | -------------------------------------------------------------------------------------------------- | --------------------- |
+| GET    | `/api/health`                 | `{ version, pid, startedAt }`                                                                      | —                     |
+| GET    | `/api/projects`               | the registered projects                                                                            | `ork projects --json` |
+| GET    | `/api/projects/:id/workflows` | its workflows folder: each `name`, `file`, `title`, `description`, `inputs`, or `error`            | —                     |
+| GET    | `/api/runs`                   | runs newest first, each with `live`; `?project`, `?limit` (20)                                     | `ork ps --json`       |
+| GET    | `/api/runs/:id`               | one run, with `live` (`crashed` when its process is gone, `paused` when it is paused) and `paused` | —                     |
+| GET    | `/api/runs/:id/tree`          | the ownership tree                                                                                 | `ork tree --json`     |
+| GET    | `/api/runs/:id/events`        | stored events; `?after`, `?node`, `?limit`                                                         | `ork logs --json`     |
+| GET    | `/api/decisions`              | open decisions of live runs; `?run`, `?project`                                                    | `ork decide --list`   |
+| POST   | `/api/decisions/:id`          | `{ choose }`: answers it as `ui`, wakes the run                                                    | `ork decide --id`     |
+| POST   | `/api/runs`                   | `{ project, workflow, inputs?, driver?, inPlace?, allowDirty? }`                                   | `ork run --detach`    |
+| POST   | `/api/runs/:id/resume`        | `{ inputs?, driver?, inPlace?, allowDirty? }`                                                      | `ork resume --detach` |
+| POST   | `/api/runs/:id/stop`          | `{ node? }`: asks a live run, or one running node, to stop                                         | `ork stop`            |
+| POST   | `/api/runs/:id/pause`         | `{ node? }`: pauses a live run, or one node                                                        | `ork pause`           |
+| POST   | `/api/runs/:id/continue`      | `{ node? }`: lets it go on                                                                         | `ork continue`        |
+| POST   | `/api/runs/:id/messages`      | `{ node, body }` to a live run's leader or worker                                                  | `ork chat -m` (live)  |
+| GET    | `/api/runs/:id/stream`        | Server-Sent Events, below                                                                          | `ork logs -f`         |
+| GET    | `/api/stream`                 | Server-Sent Events, below                                                                          | —                     |
+| GET    | `/`, `/assets/…`              | the built UI (below), or the placeholder page without one                                          | —                     |
 
-- **Status codes.** A write that was taken is 202 (start, resume, stop, message)
-  or 200 (an answer), with `{ runId }` or `{ decision, answer }`. A query or
-  body the contract does not allow, an option a decision does not have, or a
-  node without a session is 400; a missing run, decision, project, workflow or
-  node is 404; a run in the wrong state (stopping one that ended, resuming one
-  that runs or succeeded, messaging one that ended, a decision already answered
-  or withdrawn) is 409; a method a path does not take is 405; a body over 1 MiB
-  is 413.
+- **Status codes.** A write that was taken is 202 (start, resume, stop, pause,
+  continue, message) or 200 (an answer), with `{ runId }` or
+  `{ decision, answer }`. A query or body the contract does not allow, an option
+  a decision does not have, or a node without a session is 400; a missing run,
+  decision, project, workflow or node is 404; a run in the wrong state (stopping
+  one that ended, resuming one that runs or succeeded, messaging one that ended,
+  pausing one already paused, continuing one that is not, stopping a node that
+  is not running, a decision already answered or withdrawn) is 409
+  ([run control](./run-control.md#commands)); a method a path does not take is
+  405; a body over 1 MiB is 413.
 - **Starting a run.** `project` is a registered project's id or root. `workflow`
   is a name in its workflows folder, or a path inside its root or its Ork
   folder; anything else is 404. The run starts in the project's root, with its
   output in the run's folder (`output.log`), and the answer comes once the run
   is recorded; a run that fails to start answers 400 with its output.
+- **A project's workflows** are the `*.ork.yaml` files of its workflows folder
+  ([workflows.ts](../packages/server/src/workflows.ts)), each with its declared
+  inputs, for starting one; a file that does not parse is listed with its first
+  error.
 - **Events** are the stored events, already masked; the server sends nothing the
   store does not hold.
 - **The built UI** is the first folder that holds an `index.html`: `dist/ui`
@@ -131,13 +140,14 @@ unknown field is 400), and the type of its answer; and the events of each
 stream. The router checks each request against it, and each handler's answer
 must have the route's type. [client.ts](../packages/server/src/client.ts) builds
 `createClient({ base?, token?, fetch? }).call(route, { params, query, body })`
-from it, which returns `{ ok: true, data }` with the route's type, or
-`{ ok: false, status, error }`. The contract imports only `zod` and types, so
-the UI's browser bundle can use it; there is no code generation. The browser
-imports them through `@krapht/ork-server/client`
-([browser.ts](../packages/server/src/browser.ts)), an entry that re-exports only
-these two, so nothing from Node reaches the bundle. The client looks up the
-global `fetch` on each call unless one is passed.
+from it (a body whose fields are all optional may be left out), which returns
+`{ ok: true, data }` with the route's type, or `{ ok: false, status, error }`.
+The contract imports only `zod` and types, so the UI's browser bundle can use
+it; there is no code generation. The browser imports them through
+`@krapht/ork-server/client` ([browser.ts](../packages/server/src/browser.ts)),
+an entry that re-exports only these two, so nothing from Node reaches the
+bundle. The client looks up the global `fetch` on each call unless one is
+passed.
 
 ## Security
 

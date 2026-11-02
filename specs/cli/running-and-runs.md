@@ -116,7 +116,15 @@ first (then the prompt is withdrawn and the transcript shows
     removed) cannot be resumed, and says so.
 - **`ork stop [<run>]`** asks a live run to stop (this project's newest without
   `<run>`), wakes it, and waits up to 15 s for it to end; a run that is not
-  running is refused with its status.
+  running is refused with its status. **`--node <n>`** stops one running node
+  instead: it fails, `stopped by the user`, and the run goes on.
+- **`ork pause [<run>] [--node <n>]`** and
+  **`ork continue [<run>] [--node <n>]`**
+  ([pause.ts](../../packages/cli/src/commands/pause.ts)) pause a live run, or
+  one node, and let it go on: nothing new starts, and a running session waits
+  before its next tool call; nothing is cut short
+  ([run control](../run-control.md)). `ork ps` shows `paused`, and `ork tree`
+  marks each held node.
 
 ## Resuming a run
 

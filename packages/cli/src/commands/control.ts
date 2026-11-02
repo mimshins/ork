@@ -1,8 +1,9 @@
 /**
  * @file `ork decide`, `ork stop` and `ork resume`: answer a live run's open
- *   decisions and stop a live run from any terminal (both write to the store,
- *   then wake the run on its socket; specs/messaging.md), and continue a
- *   stopped or crashed run with its recorded state (ADR-026).
+ *   decisions and stop a live run, or one of its nodes (ADR-041), from any
+ *   terminal (both write to the store, then wake the run on its socket;
+ *   specs/messaging.md), and continue a stopped or crashed run with its
+ *   recorded state (ADR-026).
  */
 
 import { setTimeout as sleep } from "node:timers/promises";
@@ -133,12 +134,16 @@ export const decide = defineCommand({
 });
 
 export const stop = defineCommand({
-  meta: { name: "stop", description: "Stop a live run" },
+  meta: { name: "stop", description: "Stop a live run, or one of its nodes" },
   args: {
     run: {
       type: "positional",
       description: "A run id or a prefix (default: this project's newest)",
       required: false,
+    },
+    node: {
+      type: "string",
+      description: "Stop only this running node: it fails, and the run goes on",
     },
   },
   run: async ({ args }) => {
@@ -150,9 +155,15 @@ export const stop = defineCommand({
         return;
       }
       const { run } = found;
-      const asked = await requestStop(store, run);
+      const asked = await requestStop(store, run, undefined, args.node);
       if (!asked.ok) {
         failed(asked.error);
+        return;
+      }
+      if (args.node !== undefined) {
+        write(
+          `${style("green", "✓")} ${args.node} in run ${run.id} stops: its session is interrupted and it fails, "stopped by the user"; the run goes on.`,
+        );
         return;
       }
       for (let i = 0; i < 150; i += 1) {

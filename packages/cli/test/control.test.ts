@@ -1,18 +1,23 @@
 /**
  * @file Tests for reaching a live run from another terminal: a run with no
  *   terminal (as `--detach` starts it) waits for `ork decide`, an answer for a
- *   closed decision is refused, and `ork stop` stops the run.
+ *   closed decision is refused, `ork stop` stops the run, and `ork pause` holds
+ *   it, its gate's timeout included, until `ork continue`.
  */
 
 import { mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 
 import {
   answerDecision,
   type EventStore,
   openStore,
   pendingDecisions,
+  requestContinue,
+  requestPause,
+  runStatus,
   socketPath,
   wakeRun,
 } from "@krapht/ork-core";
@@ -45,10 +50,16 @@ const GATED = [
   "",
 ].join("\n");
 
+/** The gated workflow, answered `ship` by itself after a second. */
+const TIMED = GATED.replace(
+  "    recommended: hold\n",
+  "    recommended: hold\n    timeout: 1s\n    default: ship\n",
+);
+
 /** A run of the gated workflow with no terminal, and its store. */
-const detachedRun = () => {
+const detachedRun = (workflow = GATED) => {
   const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-ctl-")));
-  writeFileSync(path.join(dir, "gated.ork.yaml"), GATED);
+  writeFileSync(path.join(dir, "gated.ork.yaml"), workflow);
   const home = mkdtempSync(path.join(tmpdir(), "ork-home-"));
   const store: EventStore = openStore(":memory:");
   const out: string[] = [];
@@ -82,6 +93,13 @@ const opened = async (run: ReturnType<typeof detachedRun>) => {
   const [decision] = pendingDecisions(run.store, { project: run.dir });
   if (decision === undefined) throw new Error("no decision");
   return decision;
+};
+
+/** The run's record. */
+const recordOf = (store: EventStore, id: string) => {
+  const [record] = store.lookup(id);
+  if (record === undefined) throw new Error(`no run ${id}`);
+  return record;
 };
 
 describe("a run with no terminal", () => {
@@ -124,4 +142,29 @@ describe("a run with no terminal", () => {
     expect(run.out.join("\n")).toContain("ork stop received");
     expect(run.store.decision(decision.id)?.status).toBe("withdrawn");
   });
+
+  it("holds while `ork pause` asks it to, its gate's timeout too, until `ork continue`", async () => {
+    const run = detachedRun(TIMED);
+    const decision = await opened(run);
+    const record = recordOf(run.store, decision.runId);
+    const status = () =>
+      runStatus(
+        record,
+        run.store.events(record.id).map(stored => stored.event),
+      );
+    expect(await requestPause(run.store, record, run.home)).toEqual({
+      ok: true,
+      woke: true,
+    });
+    await expect.poll(status).toBe("paused");
+    await sleep(1500);
+    expect(run.store.decision(decision.id)?.status).toBe("open");
+    expect(await requestContinue(run.store, record, run.home)).toMatchObject({
+      ok: true,
+    });
+    const { result } = await run.done;
+    expect(result?.status).toBe("succeeded");
+    expect(run.out.join("\n")).toContain("ork pause received");
+    expect(run.out.join("\n")).toContain("ork continue received");
+  }, 15_000);
 });

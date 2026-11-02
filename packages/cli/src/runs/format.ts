@@ -1,6 +1,7 @@
 /**
  * @file How stored runs read on the terminal: the `ork ps` table and the `ork
- *   tree` ownership tree with each node's state, tokens and cost.
+ *   tree` ownership tree with each node's state, tokens and cost, and what is
+ *   paused (ADR-041).
  */
 
 import {
@@ -15,6 +16,7 @@ import { nodeVerdict } from "../run/format.ts";
 
 const STATUS_STYLE: Record<string, Parameters<typeof style>[0]> = {
   running: "cyan",
+  paused: "yellow",
   succeeded: "green",
   failed: "red",
   crashed: "red",
@@ -50,10 +52,11 @@ export const formatRuns = (
   runs: readonly RunRecord[],
   withProject: boolean,
   now: number = Date.now(),
+  statusOf: (run: RunRecord) => string = liveStatus,
 ): string[] => {
   if (runs.length === 0) return ["No runs."];
   const rows = runs.map(run => {
-    const status = liveStatus(run);
+    const status = statusOf(run);
     const end = run.finishedAt === undefined ? now : Date.parse(run.finishedAt);
     return {
       id: run.id,
@@ -144,6 +147,10 @@ export const formatTree = (roots: readonly TreeNode[]): string[] => {
             "dim",
             `  ${count(node.inputTokens)} in / ${count(node.outputTokens)} out · ${cost(node.costUsd)}`,
           );
-    return `${text.padEnd(label)}  ${style("dim", node.type.padEnd(type))}  ${STATE_MARK[node.state]} ${stateText(node)}${usage}`;
+    const state =
+      node.held === true
+        ? `${style("yellow", "‖")} paused`
+        : `${STATE_MARK[node.state]} ${stateText(node)}`;
+    return `${text.padEnd(label)}  ${style("dim", node.type.padEnd(type))}  ${state}${usage}`;
   });
 };

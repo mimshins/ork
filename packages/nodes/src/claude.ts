@@ -176,6 +176,7 @@ export const claudeExecutor =
     const spec = specFor(plan.spec, context);
     const runtime = await options.runtimeFor(options.driver ?? plan.driver);
     const ports: SessionPorts = { human: context.human };
+    if (context.hold !== undefined) ports.hold = context.hold;
     if (context.ownership !== undefined) ports.ownership = context.ownership;
     if (context.mailbox !== undefined) ports.mailbox = context.mailbox;
     if (context.claims !== undefined) ports.claims = context.claims;

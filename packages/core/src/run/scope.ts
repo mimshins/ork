@@ -7,12 +7,8 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 
 import type { Scope } from "../expr/evaluate.ts";
-import type {
-  ExecuteContext,
-  Inputs,
-  NodeOutput,
-  RunOptions,
-} from "./types.ts";
+import type { RunOptions } from "./handle.ts";
+import type { ExecuteContext, Inputs, NodeOutput } from "./types.ts";
 
 /** The run's id (given, or a new one) and its `.ork/runs/<run>` folder. */
 export const runPlace = (

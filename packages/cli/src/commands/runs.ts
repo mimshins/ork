@@ -7,9 +7,9 @@
 import {
   type EventStore,
   findRun,
-  liveStatus,
   openStore,
   placeFor,
+  runStatus,
   runTree,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
@@ -56,8 +56,19 @@ export const ps = defineCommand({
           ? {}
           : { project: placeFor(process.cwd(), store.projects()).root }),
       });
+      const statusOf = (run: (typeof runs)[number]) =>
+        runStatus(
+          run,
+          run.status === "running"
+            ? store.events(run.id).map(s => s.event)
+            : [],
+        );
       if (args.json) write(JSON.stringify(runs, undefined, 2));
-      else for (const line of formatRuns(runs, args.all)) write(line);
+      else {
+        for (const line of formatRuns(runs, args.all, Date.now(), statusOf)) {
+          write(line);
+        }
+      }
     }),
 });
 
@@ -123,13 +134,14 @@ export const tree = defineCommand({
         return;
       }
       const { run } = found;
-      const roots = runTree(store.events(run.id).map(s => s.event));
+      const events = store.events(run.id).map(s => s.event);
+      const roots = runTree(events);
       if (args.json) {
         write(JSON.stringify(roots, undefined, 2));
         return;
       }
       write(
-        `${style("bold", `run ${run.id}`)} ${style("dim", `of ${run.workflow} · ${liveStatus(run)} · ${cost(run.costUsd)}`)}`,
+        `${style("bold", `run ${run.id}`)} ${style("dim", `of ${run.workflow} · ${runStatus(run, events)} · ${cost(run.costUsd)}`)}`,
       );
       for (const line of formatTree(roots)) write(line);
     }),

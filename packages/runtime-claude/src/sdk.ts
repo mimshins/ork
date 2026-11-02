@@ -1,10 +1,14 @@
 /**
  * @file The SDK driver: runs a session in-process with the Claude Agent SDK,
- *   only with an API key or a cloud provider, never a claude.ai login.
+ *   only with an API key or a cloud provider, never a claude.ai login. A node
+ *   that can be paused gets a `PreToolUse` callback hook: a short pause holds
+ *   the call, a long one defers it and resumes the session when the node
+ *   continues (ADR-041).
  */
 
 import {
   createSdkMcpServer,
+  type HookCallbackMatcher,
   type Options,
   query,
   type SDKUserMessage,
@@ -12,13 +16,22 @@ import {
 } from "@anthropic-ai/claude-agent-sdk";
 import type {
   ClaudeRuntime,
+  HoldPort,
   RuntimeEvent,
   Session,
   SessionPorts,
   SessionSpec,
+  SessionUsage,
 } from "@krapht/ork-core";
 
-import { driverFailure, normalize, withDriver } from "./normalize.ts";
+import {
+  addUsage,
+  HOOK_TIMEOUT_S,
+  holdAtTool,
+  type Leg,
+  legStep,
+} from "./hold.ts";
+import { driverFailure } from "./normalize.ts";
 import { createQueue } from "./queue.ts";
 import { orkTools, preapprovedTools } from "./tools/registry.ts";
 import { ORK_SERVER } from "./tools/tool.ts";
@@ -56,11 +69,38 @@ const definedEnv = (env: Env): Record<string, string> =>
     ),
   );
 
+/**
+ * The hold hook: waits before each tool call while the node is paused, and
+ * defers the call (`onDefer`) when the pause outlasts the window.
+ */
+const holdHook = (
+  hold: HoldPort,
+  onDefer: () => void,
+  windowMs?: number,
+): HookCallbackMatcher => ({
+  timeout: HOOK_TIMEOUT_S,
+  hooks: [
+    async (_input, _toolUseId, { signal }) => {
+      if ((await holdAtTool(hold, signal, windowMs)) === "go") return {};
+      onDefer();
+      return {
+        hookSpecificOutput: {
+          hookEventName: "PreToolUse",
+          permissionDecision: "defer",
+          permissionDecisionReason:
+            "Ork paused this node; it goes on from this call when it continues.",
+        },
+      };
+    },
+  ],
+});
+
 /** The Agent SDK options for a session spec. */
 export const buildSdkOptions = (
   spec: SessionSpec,
   ports: SessionPorts,
   env: Env,
+  held?: { onDefer: () => void; windowMs?: number },
 ): Options => {
   const { human } = ports;
   const tools = orkTools({ nodeId: spec.nodeId, driver: "sdk", ports });
@@ -107,33 +147,89 @@ export const buildSdkOptions = (
     options.plugins = spec.plugins.map(dir => ({ type: "local", path: dir }));
   }
   if (spec.settings !== undefined) options.settings = spec.settings;
+  if (ports.hold !== undefined && held !== undefined) {
+    options.hooks = {
+      PreToolUse: [holdHook(ports.hold, held.onDefer, held.windowMs)],
+    };
+  }
   return options;
 };
 
 /** Drives a session with the Claude Agent SDK, in this process. */
-export const createSdkRuntime = (env: Env = process.env): ClaudeRuntime => ({
+export const createSdkRuntime = (
+  env: Env = process.env,
+  holdWindowMs?: number,
+): ClaudeRuntime => ({
   driver: "sdk",
   start: (spec, ports): Session => {
-    const input = createQueue<SDKUserMessage>();
+    let input = createQueue<SDKUserMessage>();
     input.push(userMessage(spec.prompt));
     let current: ReturnType<typeof query> | undefined;
+    const ended = new AbortController();
+    /** The hold hook deferred a call in the current query. */
+    let deferring = false;
+    const held = {
+      onDefer: () => {
+        deferring = true;
+      },
+      ...(holdWindowMs === undefined ? {} : { windowMs: holdWindowMs }),
+    };
+
+    /** One query: a leg of the session, until its result. */
+    const leg = async function* (
+      resume: string | undefined,
+      carried: SessionUsage | undefined,
+    ): AsyncGenerator<RuntimeEvent, Leg> {
+      deferring = false;
+      const legSpec = resume === undefined ? spec : { ...spec, resume };
+      current = query({
+        prompt: input,
+        options: buildSdkOptions(legSpec, ports, env, held),
+      });
+      let outcome: Leg = { kind: "failed", reason: "the session ended early" };
+      for await (const message of current) {
+        const { events, ended: end } = legStep(message, {
+          carried,
+          deferred: deferring,
+          driver: "sdk",
+        });
+        yield* events;
+        // The first result ends the query; a later one resumes the session.
+        if (end !== undefined) {
+          input.close();
+          outcome = end;
+        }
+      }
+      return outcome;
+    };
 
     const events = async function* (): AsyncGenerator<RuntimeEvent> {
       if (sdkCredentials(env) === null) {
         yield driverFailure(NO_SDK_CREDENTIALS);
         return;
       }
+      let resume = spec.resume;
+      let spent: SessionUsage | undefined;
       try {
-        current = query({
-          prompt: input,
-          options: buildSdkOptions(spec, ports, env),
-        });
-        for await (const message of current) {
-          for (const event of normalize(message)) {
-            // The first result ends the session; later messages resume it.
-            if (event.type === "session.finished") input.close();
-            yield withDriver(event, "sdk");
+        for (;;) {
+          const result = yield* leg(resume, spent);
+          if (result.kind === "failed") {
+            yield driverFailure(result.reason);
+            return;
           }
+          if (result.kind === "finished") return;
+          // Deferred: messages sent meanwhile go to the next query, which
+          // resumes the session once the node continues.
+          input = createQueue<SDKUserMessage>();
+          spent =
+            spent === undefined ? result.usage : addUsage(spent, result.usage);
+          // oxlint-disable-next-line eslint/no-await-in-loop -- one leg at a time
+          await ports.hold?.wait("tool", ended.signal);
+          if (ended.signal.aborted) {
+            yield result.last;
+            return;
+          }
+          resume = result.sessionId;
         }
       } catch (error) {
         input.close();
@@ -149,6 +245,7 @@ export const createSdkRuntime = (env: Env = process.env): ClaudeRuntime => ({
         input.push(userMessage(text, true));
       },
       interrupt: async () => {
+        ended.abort();
         await current?.interrupt();
       },
     };

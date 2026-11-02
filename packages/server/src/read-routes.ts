@@ -1,18 +1,26 @@
 /**
- * @file The API's read routes (specs/server.md#api): health, projects, runs, a
- *   run, its tree and its events, and the open decisions. Each reads the store
- *   as the matching CLI command does (`ork projects`, `ps`, `tree`, `logs`,
- *   `decide --list`).
+ * @file The API's read routes (specs/server.md#api): health, projects and a
+ *   project's workflows, runs, a run, its tree and its events, and the open
+ *   decisions. Each reads the store as the matching CLI command does (`ork
+ *   projects`, `ps`, `tree`, `logs`, `decide --list`).
  */
 
 import { nodeOf, pendingDecisions, runTree } from "@krapht/ork-core";
 
 import { projectOf, runOf, type ServerContext, viewOf } from "./context.ts";
-import { type Handlers, ok } from "./router.ts";
+import { fail, type Handlers, ok } from "./router.ts";
+import { projectWorkflows } from "./workflows.ts";
 
 type ReadRoutes = Pick<
   Handlers,
-  "health" | "projects" | "runs" | "run" | "tree" | "events" | "decisions"
+  | "health"
+  | "projects"
+  | "workflows"
+  | "runs"
+  | "run"
+  | "tree"
+  | "events"
+  | "decisions"
 >;
 
 /** A project filter's root: a registered project's, or the value as a root. */
@@ -29,6 +37,13 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
 
   projects: () => ok(context.store.projects()),
 
+  workflows: ({ params }) => {
+    const project = projectOf(context, params.id);
+    return project === undefined
+      ? fail(404, `No registered project "${params.id}".`)
+      : ok(projectWorkflows(project));
+  },
+
   runs: ({ query }) =>
     ok(
       context.store
@@ -38,12 +53,12 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
             ? {}
             : { project: projectRoot(context, query.project) }),
         })
-        .map(run => viewOf(run)),
+        .map(run => viewOf(context, run)),
     ),
 
   run: ({ params }) => {
     const found = runOf(context, params.id);
-    return found.ok ? ok(viewOf(found.run)) : found.refusal;
+    return found.ok ? ok(viewOf(context, found.run)) : found.refusal;
   },
 
   tree: ({ params }) => {

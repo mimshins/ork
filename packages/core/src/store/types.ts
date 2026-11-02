@@ -78,7 +78,8 @@ export type NewDecision = Pick<
 
 /** What another process may ask a live run to do. */
 export type RunCommand =
-  | { kind: "stop" }
+  /** `ork stop`, `ork pause`, `ork continue`: of the run, or of one node. */
+  | { kind: "stop" | "pause" | "continue"; node?: string }
   /** `ork chat`: a message from the user to a node's session. */
   | { kind: "message"; node: string; body: string };
 

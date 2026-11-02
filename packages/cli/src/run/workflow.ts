@@ -166,6 +166,8 @@ export const runWorkflowFile = async (
   const width = Math.max(...Object.keys(workflow.nodes).map(id => id.length));
   const tools = new Map<string, string>();
   const started = Promise.withResolvers<RunHandle>();
+  // The handle, once the run has started: pause and stop act on it at once.
+  const live: { handle?: RunHandle } = {};
   const control = await startControl({
     store: options.store,
     runId,
@@ -181,6 +183,13 @@ export const runWorkflowFile = async (
       void (async () => {
         (await started.promise).tell(node, body);
       })();
+    },
+    onControl: (command, node) => {
+      const { handle } = live;
+      if (handle === undefined) return false;
+      if (command === "pause") return handle.pause(node);
+      if (command === "continue") return handle.proceed(node);
+      return node !== undefined && handle.stopNode(node);
     },
     ...(options.human === undefined ? {} : { local: options.human }),
     ...(options.home === undefined ? {} : { home: options.home }),
@@ -259,6 +268,7 @@ export const runWorkflowFile = async (
     orkDir: place.dir,
     ...(workspace === undefined ? {} : { workspace }),
   });
+  live.handle = handle;
   started.resolve(handle);
   options.onRun?.(handle);
   const result = await handle.done;

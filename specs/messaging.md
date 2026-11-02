@@ -2,8 +2,9 @@
 
 Status: **Built**: Ork's MCP tools
 ([tools/](../packages/runtime-claude/src/tools/registry.ts)), the
-[event store](./event-store.md), the decision queue, `ork decide`, `ork stop`,
-the run's socket ([control/](../packages/core/src/control/control.ts),
+[event store](./event-store.md), the decision queue, `ork decide`, `ork stop`
+(and `ork pause`, `ork continue`: [run control](./run-control.md)), the run's
+socket ([control/](../packages/core/src/control/control.ts),
 [tests](../packages/core/test/control.test.ts)), the message bus
 ([bus.ts](../packages/core/src/run/bus.ts),
 [tests](../packages/core/test/bus.test.ts)) with the user's messages
@@ -149,8 +150,9 @@ every second, and at once when woken on its socket.
 - **Without the socket** (it could not listen, or the run is gone) nothing is
   lost: the store has every answer, command and event.
 - **Commands:** `stop` interrupts the run as Ctrl-C does (`run.command` in its
-  events, then `run.finished` with `interrupted`). `ork chat` (M1d) adds
-  messages.
+  events, then `run.finished` with `interrupted`). `pause`, `continue` and
+  `stop --node` hold, release or stop the run or one node
+  ([run control](./run-control.md)). `ork chat` (M1d) adds messages.
 
 ## Chat
 

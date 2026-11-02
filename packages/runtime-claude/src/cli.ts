@@ -1,20 +1,23 @@
 /**
  * @file The CLI driver: runs a session through the user's own `claude -p` in
- *   stream-json mode, with Ork's tools served by a local MCP server.
+ *   stream-json mode, with Ork's tools served by a local MCP server. A node
+ *   that can be paused gets a `PreToolUse` HTTP hook on the same server: a
+ *   short pause holds the call, a long one defers it and resumes the session
+ *   when the node continues (ADR-041).
  */
-
-import { spawn } from "node:child_process";
-import { createInterface } from "node:readline";
 
 import type {
   ClaudeRuntime,
   RuntimeEvent,
   Session,
   SessionSpec,
+  SessionUsage,
 } from "@krapht/ork-core";
 
+import { runLeg } from "./cli-leg.ts";
+import { addUsage, holdAtTool, hookOutput, withHoldHook } from "./hold.ts";
 import { type OrkMcpEndpoint, startOrkMcpHttp } from "./mcp-http.ts";
-import { driverFailure, normalize, withDriver } from "./normalize.ts";
+import { driverFailure } from "./normalize.ts";
 import { orkTools, preapprovedTools } from "./tools/registry.ts";
 import { ORK_SERVER, toolId } from "./tools/tool.ts";
 
@@ -22,9 +25,9 @@ export type CliRuntimeOptions = {
   /** The program to run; defaults to `claude` on the PATH. */
   bin?: string;
   env?: Readonly<Record<string, string | undefined>>;
+  /** How long a held call waits before it defers (tests shorten it). */
+  holdWindowMs?: number;
 };
-
-const STDERR_LINES = 20;
 
 /**
  * Per-request timeout for Ork's MCP server, in ms. The CLI otherwise gives an
@@ -49,7 +52,7 @@ const userLine = (text: string, later = false): string =>
  */
 export const buildCliArgs = (
   spec: SessionSpec,
-  mcp: Pick<OrkMcpEndpoint, "url" | "token">,
+  mcp: Pick<OrkMcpEndpoint, "url" | "token"> & { holdUrl?: string },
   allowed: readonly string[],
 ): string[] => {
   const mcpConfig = {
@@ -103,18 +106,14 @@ export const buildCliArgs = (
   }
   if (spec.resume !== undefined) args.push("--resume", spec.resume);
   for (const dir of spec.plugins ?? []) args.push("--plugin-dir", dir);
-  if (spec.settings !== undefined) {
-    args.push("--settings", JSON.stringify(spec.settings));
+  const settings =
+    mcp.holdUrl === undefined
+      ? spec.settings
+      : withHoldHook(spec.settings, mcp.holdUrl, mcp.token);
+  if (settings !== undefined) {
+    args.push("--settings", JSON.stringify(settings));
   }
   return args;
-};
-
-const parseLine = (line: string): unknown => {
-  try {
-    return JSON.parse(line) as unknown;
-  } catch {
-    return undefined;
-  }
 };
 
 /**
@@ -126,69 +125,73 @@ export const createCliRuntime = (
 ): ClaudeRuntime => ({
   driver: "cli",
   start: (spec, ports): Session => {
-    // Stream-json lines, written once the process is up.
+    // Stream-json lines, written once a process is up.
     const pending: string[] = [userLine(spec.prompt)];
-    let write: ((line: string) => void) | undefined;
-    let stop: (() => void) | undefined;
+    let io: { write: (line: string) => void; stop: () => void } | undefined;
+    const ended = new AbortController();
+    /** The hold hook deferred a call in the running process. */
+    let deferring = false;
+    const { hold } = ports;
 
     const events = async function* (): AsyncGenerator<RuntimeEvent> {
       const tools = orkTools({ nodeId: spec.nodeId, driver: "cli", ports });
-      const mcp = await startOrkMcpHttp(tools);
-      const args = buildCliArgs(spec, mcp, preapprovedTools(tools));
-      const child = spawn(options.bin ?? "claude", args, {
-        cwd: spec.cwd,
-        env: { ...(options.env ?? process.env) },
-        stdio: ["pipe", "pipe", "pipe"],
-      });
-      const exited = new Promise<number | null>(resolve => {
-        child.on("close", code => {
-          resolve(code);
+      const mcp = await startOrkMcpHttp(
+        tools,
+        hold === undefined
+          ? undefined
+          : async gone => {
+              const answer = await holdAtTool(
+                hold,
+                AbortSignal.any([gone, ended.signal]),
+                options.holdWindowMs,
+              );
+              if (answer === "defer") deferring = true;
+              return hookOutput(answer);
+            },
+      );
+      const allowed = preapprovedTools(tools);
+      const endpoint =
+        hold === undefined ? { url: mcp.url, token: mcp.token } : mcp;
+      const legOf = (args: string[], carried: SessionUsage | undefined) =>
+        runLeg({
+          bin: options.bin ?? "claude",
+          env: options.env ?? process.env,
+          cwd: spec.cwd,
+          args,
+          carried,
+          pending,
+          deferred: () => deferring,
+          attach: attached => {
+            io = attached;
+          },
         });
-      });
-      const spawnError = new Promise<Error>(resolve => {
-        child.on("error", resolve);
-      });
-      const stderr: string[] = [];
-      child.stderr.setEncoding("utf8");
-      child.stderr.on("data", (chunk: string) => {
-        stderr.push(...chunk.split("\n").filter(l => l.trim() !== ""));
-        stderr.splice(0, Math.max(0, stderr.length - STDERR_LINES));
-      });
-
-      write = line => {
-        if (child.stdin.writable) child.stdin.write(line);
-      };
-      stop = () => {
-        child.kill("SIGINT");
-      };
-      for (const line of pending.splice(0)) write(line);
-
-      let finished = false;
+      let args = buildCliArgs(spec, endpoint, allowed);
+      let spent: SessionUsage | undefined;
       try {
-        const lines = createInterface({ input: child.stdout });
-        for await (const line of lines) {
-          for (const event of normalize(parseLine(line))) {
-            if (event.type === "session.finished") {
-              finished = true;
-              // The first result ends the session; `--resume` continues it.
-              child.stdin.end();
-            }
-            yield withDriver(event, "cli");
+        for (;;) {
+          const leg = yield* legOf(args, spent);
+          if (leg.kind === "failed") {
+            yield driverFailure(leg.reason);
+            return;
           }
-        }
-        const code = await Promise.race([
-          exited,
-          spawnError.then(error => error),
-        ]);
-        if (!finished) {
-          const reason =
-            code instanceof Error
-              ? `could not start ${options.bin ?? "claude"}: ${code.message}`
-              : (stderr.at(-1) ?? `claude exited with code ${String(code)}`);
-          yield driverFailure(reason);
+          if (leg.kind === "finished") return;
+          // Deferred: wait for the node to continue, then resume the session
+          // with no new message; the pending call's hook then lets it run.
+          deferring = false;
+          spent = spent === undefined ? leg.usage : addUsage(spent, leg.usage);
+          // oxlint-disable-next-line eslint/no-await-in-loop -- one leg at a time
+          await hold?.wait("tool", ended.signal);
+          if (ended.signal.aborted) {
+            yield leg.last;
+            return;
+          }
+          args = buildCliArgs(
+            { ...spec, resume: leg.sessionId },
+            endpoint,
+            allowed,
+          );
         }
       } finally {
-        if (child.exitCode === null) child.kill();
         await mcp.close();
       }
     };
@@ -197,11 +200,12 @@ export const createCliRuntime = (
       events: events(),
       send: text => {
         const line = userLine(text, true);
-        if (write === undefined) pending.push(line);
-        else write(line);
+        if (io === undefined) pending.push(line);
+        else io.write(line);
       },
       interrupt: () => {
-        stop?.();
+        ended.abort();
+        io?.stop();
         return Promise.resolve();
       },
     };

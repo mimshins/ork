@@ -97,7 +97,7 @@ export const NODES = [
       "Starts a run of a workflow file with its inputs, and follows it until it ends or you detach.",
     facts: [
       "Built: `ork run <wf>` runs the whole workflow, and `--node <id>` one Claude node on its own; `--input`, `--driver`, `--in-place` and `--json` work for both.",
-      "Built: `--detach` returns at once; `ork logs --follow`, `ork tree`, `ork decide` and `ork stop` reach it later.",
+      "Built: `--detach` returns at once; `ork logs --follow`, `ork tree`, `ork decide`, `ork pause`, `ork continue` and `ork stop` reach it later.",
       "Built: before anything starts, it checks that the programs the tool nodes run are installed; integrations a workflow does not use are never needed.",
       "`--driver sdk|cli` overrides every node's driver for this run.",
     ],

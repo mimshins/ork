@@ -139,9 +139,7 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
         .map(row => decisionOf(row)),
     command: (runId, command) => {
       const at = new Date().toISOString();
-      if (command.kind === "stop")
-        addCommand.run(runId, "stop", null, null, at);
-      else {
+      if (command.kind === "message") {
         addCommand.run(
           runId,
           "message",
@@ -149,6 +147,8 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
           maskSecrets(command.body),
           at,
         );
+      } else {
+        addCommand.run(runId, command.kind, command.node ?? null, null, at);
       }
     },
     takeCommands: runId => {
@@ -156,7 +156,10 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
       return pending.all(runId).flatMap((row): RunCommand[] => {
         handled.run(at, Number(row["id"]));
         const kind = text(row, "kind");
-        if (kind === "stop") return [{ kind }];
+        if (kind === "stop" || kind === "pause" || kind === "continue") {
+          const node = row["node"];
+          return [typeof node === "string" ? { kind, node } : { kind }];
+        }
         if (kind === "message") {
           return [{ kind, node: text(row, "node"), body: text(row, "body") }];
         }

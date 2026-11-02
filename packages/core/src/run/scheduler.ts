@@ -1,32 +1,17 @@
 /**
  * @file The scheduler: runs a compiled workflow to the end: entries, executors,
  *   routing (`routing.ts`), loops (`escalation.ts`), delegated children
- *   (`delegation.ts`), the bus, claims and feedback (`ports.ts`), and the
- *   budget and concurrency (`slots.ts`).
+ *   (`delegation.ts`), the bus, claims and feedback (`ports.ts`), the budget
+ *   and concurrency (`slots.ts`), and pause, continue and a node's stop
+ *   (`holds.ts`, ADR-041).
  */
 
 import { isClaudeNode } from "@krapht/ork-schema";
 
-import { createOwnership, type DelegationHooks } from "./delegation.ts";
+import { type ContextDeps, nodeContext } from "./context.ts";
 import { createLoops } from "./escalation.ts";
-import { createRunPorts } from "./ports.ts";
-import {
-  closeWorkspace,
-  declaredNodes,
-  failure,
-  finishedEvent,
-  passThrough,
-  recordRun,
-  resumeOf,
-  startedEvent,
-  summaryOf,
-} from "./results.ts";
-import { createRouter } from "./router.ts";
-import { foldersOf, runPlace, runScope } from "./scope.ts";
-import { createSlots } from "./slots.ts";
 import type {
   Activation,
-  ExecuteContext,
   NodeOutput,
   NodeResult,
   NodeSummary,
@@ -34,7 +19,23 @@ import type {
   RunOptions,
   RunResult,
   RunStatus,
-} from "./types.ts";
+} from "./handle.ts";
+import { createHolds, createStops } from "./holds.ts";
+import { createRunPorts } from "./ports.ts";
+import {
+  closeWorkspace,
+  failure,
+  finishedEvent,
+  passThrough,
+  recordRun,
+  runResult,
+  runStartedEvent,
+  startedEvent,
+  summaryOf,
+} from "./results.ts";
+import { createRouter } from "./router.ts";
+import { runPlace, runScope } from "./scope.ts";
+import { createSlots } from "./slots.ts";
 
 export const DEFAULT_CONCURRENCY = 4;
 
@@ -51,6 +52,7 @@ export const startRun = (options: RunOptions): RunHandle => {
   const summaries = new Map<string, NodeSummary>();
   const queue: Activation[] = [];
   const reasons: string[] = [];
+  const stops = createStops(abort.signal);
   let busy = 0;
   let spent = 0;
   let stopped: RunStatus | null = null;
@@ -74,6 +76,12 @@ export const startRun = (options: RunOptions): RunHandle => {
   };
 
   const ports = createRunPorts({ graph, onEvent, mail: options.replay?.mail });
+  const holds = createHolds({
+    onEvent,
+    onChange: () => {
+      pump();
+    },
+  });
   const loops = createLoops({
     human: options.human,
     bus: ports.bus,
@@ -103,15 +111,15 @@ export const startRun = (options: RunOptions): RunHandle => {
 
   const close = async (): Promise<void> => {
     const worktrees = await closeWorkspace(options.workspace, reasons);
-    const status = stopped ?? (reasons.length > 0 ? "failed" : "succeeded");
-    const result: RunResult = {
+    const nodes = [...summaries.values()];
+    const result = runResult({
       runId,
-      status,
+      stopped,
       costUsd: spent,
-      nodes: [...summaries.values()],
+      nodes,
       reasons,
       worktrees,
-    };
+    });
     onEvent({ type: "run.finished", result });
     finish(result);
   };
@@ -135,9 +143,11 @@ export const startRun = (options: RunOptions): RunHandle => {
   };
 
   /** A child a leader delegated to: waits for a slot, runs, reports back. */
-  const runChild: DelegationHooks["runChild"] = async (child, brief) => {
+  const runChild: ContextDeps["runChild"] = async (child, brief) => {
     await slots.take();
     try {
+      // A paused run or child starts its delegated work once it continues.
+      await holds.forNode(child.id, child.template).wait("start", abort.signal);
       if (stopped !== null || budgetSpent()) {
         return failure(`not started: ${reasons[0] ?? "the run stopped"}`);
       }
@@ -147,52 +157,22 @@ export const startRun = (options: RunOptions): RunHandle => {
     }
   };
 
-  const contextFor = (
-    activation: Activation,
-    cwd: string,
-  ): Omit<ExecuteContext, "node" | "checkout"> => {
-    const { id } = activation;
-    const context: Omit<ExecuteContext, "node" | "checkout"> = {
-      runId,
-      id,
-      workflow: graph.workflow,
-      inputs: options.inputs,
-      outputs,
-      input: activation.input,
-      round: rounds.get(id) ?? 1,
-      cwd,
-      runDir,
-      ...foldersOf(options),
-      budgetLeftUsd:
-        limits.budgetUsd === undefined ? undefined : limits.budgetUsd - spent,
-      human: options.human,
-      ...ports.forNode(id, activation.template, cwd),
-      emit: event => {
-        onEvent({ type: "node.event", id, event });
-      },
-      signal: abort.signal,
-    };
-    if (activation.template !== undefined) {
-      context.template = activation.template;
-    }
-    if (activation.brief !== undefined) context.brief = activation.brief;
-    const resume =
-      options.replay?.cutOff?.(activation) ??
-      resumeOf(nodeOf(activation), sessionIds.get(id));
-    if (resume !== undefined) context.resume = resume;
-    if (nodeOf(activation)?.type === "claude.leader") {
-      context.ownership = createOwnership({
-        graph,
-        leader: id,
-        runChild,
-        isRunning: other => running.has(other),
-        checkpoint: () =>
-          options.workspace?.checkpoint(id) ?? Promise.resolve(null),
-        lend: slots.release,
-        reclaim: slots.take,
-      });
-    }
-    return context;
+  const contextDeps: ContextDeps = {
+    options,
+    runId,
+    runDir,
+    outputs,
+    rounds,
+    sessionIds,
+    running,
+    holds,
+    stops,
+    ports,
+    slots,
+    nodeOf,
+    runChild,
+    budgetLeft: () =>
+      limits.budgetUsd === undefined ? undefined : limits.budgetUsd - spent,
   };
 
   const execute = async (activation: Activation): Promise<NodeResult> => {
@@ -208,7 +188,7 @@ export const startRun = (options: RunOptions): RunHandle => {
         activation.template,
       )) ?? { cwd: options.cwd };
       const result = await executor({
-        ...contextFor(activation, place.cwd),
+        ...nodeContext(contextDeps, activation, place.cwd),
         node,
         ...(place.checkout === undefined ? {} : { checkout: place.checkout }),
       });
@@ -231,7 +211,8 @@ export const startRun = (options: RunOptions): RunHandle => {
       const agent = graph.agents.get(activation.template ?? id);
       onEvent(startedEvent(activation, type, round, agent));
     }
-    const result = recorded ?? (await execute(activation));
+    const result = stops.ended(id, recorded ?? (await execute(activation)));
+    holds.finished(id);
     ports.finished(id);
     running.delete(id);
     outputs[id] = result.output;
@@ -255,11 +236,15 @@ export const startRun = (options: RunOptions): RunHandle => {
 
   const pump = (): void => {
     for (let index = 0; index < queue.length;) {
-      if (stopped !== null) break;
+      if (stopped !== null || holds.runPaused()) break;
       const activation = queue[index];
       const node = activation && nodeOf(activation);
       if (activation === undefined || node === undefined) {
         queue.splice(index, 1);
+        continue;
+      }
+      if (holds.isHeld(activation.id, activation.template)) {
+        index += 1;
         continue;
       }
       const isSession = isClaudeNode(node);
@@ -275,15 +260,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     settle();
   };
 
-  onEvent({
-    type: "run.started",
-    runId,
-    workflow: graph.workflow.name,
-    entries: graph.entries,
-    nodes: declaredNodes(graph),
-    inputs: options.inputs,
-    ...(options.settings === undefined ? {} : { settings: options.settings }),
-  });
+  onEvent(runStartedEvent(graph, runId, options));
   for (const id of graph.entries) queue.push({ id, input: undefined });
   queueMicrotask(pump);
 
@@ -295,6 +272,9 @@ export const startRun = (options: RunOptions): RunHandle => {
       abort.abort();
       settle();
     },
+    pause: node => holds.pause(node),
+    proceed: node => holds.proceed(node),
+    stopNode: node => stops.stop(node),
     tell: ports.bus.tell,
   };
 };

@@ -236,9 +236,30 @@ export type Claims = {
   held: () => string[];
 };
 
+/** Where a node stops to wait while it is held (paused). */
+export type HoldPoint = "tool" | "start";
+
+/**
+ * Whether a node may go on, for a paused run or node (ADR-041). A session waits
+ * at its next tool call; nothing it is doing is cut short.
+ */
+export type HoldPort = {
+  /** Whether the node is held now: its run is paused, or the node is. */
+  held: () => boolean;
+  /**
+   * Resolves once the node is not held, at once when it is not. While a node
+   * waits, the run records it as held; `signal` gives up the wait.
+   */
+  wait: (at: HoldPoint, signal?: AbortSignal) => Promise<void>;
+  /** Calls `listener` whenever `held()` may have changed; returns its undo. */
+  watch: (listener: () => void) => () => void;
+};
+
 /** What a session can reach besides its spec: the human, its children, peers. */
 export type SessionPorts = {
   human: HumanChannel;
+  /** Only inside a run: held while the run or the node is paused. */
+  hold?: HoldPort;
   /** Only for a leader inside a run. */
   ownership?: Ownership;
   /** Only for a leader or worker inside a run. */

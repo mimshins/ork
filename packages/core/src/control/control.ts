@@ -1,9 +1,9 @@
 /**
  * @file A live run's control: the decision queue, the watcher that picks up
- *   answers, commands and chat messages other processes wrote to the store, and
- *   the run's socket, which wakes the watcher at once and streams events to
- *   followers. Without the socket (it failed to listen) the watcher still
- *   polls.
+ *   answers, commands (stop, pause, continue, of the run or a node) and chat
+ *   messages other processes wrote to the store, and the run's socket, which
+ *   wakes the watcher at once and streams events to followers. Without the
+ *   socket (it failed to listen) the watcher still polls.
  */
 
 import type { RunEvent } from "../run/types.ts";
@@ -23,8 +23,16 @@ export type ControlOptions = {
   local?: HumanChannel;
   /** Records an event (the run's recorder). */
   emit: (event: RunEvent) => void;
-  /** `ork stop` arrived. */
+  /** `ork stop` arrived for the whole run. */
   onStop: () => void;
+  /**
+   * `ork pause`, `ork continue`, or `ork stop --node`; false when it changed
+   * nothing (the run was already paused, the node is not running).
+   */
+  onControl?: (
+    command: "pause" | "continue" | "stop",
+    node: string | undefined,
+  ) => boolean;
   /** `ork chat` sent `node` a message. */
   onMessage: (node: string, body: string) => void;
   /** `~`, for the socket's folder; tests pass one. */
@@ -61,10 +69,21 @@ export const startControl = async (
     for (const command of store.takeCommands(runId)) {
       if (command.kind === "message") {
         options.onMessage(command.node, command.body);
-      } else if (!stopped) {
+      } else if (command.kind === "stop" && command.node === undefined) {
+        if (stopped) continue;
         stopped = true;
         options.emit({ type: "run.command", command: "stop" });
         options.onStop();
+      } else if (!stopped) {
+        const changed =
+          options.onControl?.(command.kind, command.node) ?? false;
+        if (changed) {
+          options.emit({
+            type: "run.command",
+            command: command.kind,
+            ...(command.node === undefined ? {} : { node: command.node }),
+          });
+        }
       }
     }
   };

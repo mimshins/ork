@@ -9,8 +9,8 @@ import { isClaudeNode, type Node, type NodeType } from "@krapht/ork-schema";
 
 import type { AgentRef } from "../agents/apply.ts";
 import type { CompiledGraph } from "../graph/types.ts";
+import type { Activation, RunOptions } from "./handle.ts";
 import type {
-  Activation,
   KeptWorktree,
   NodeOutput,
   NodeResult,
@@ -18,6 +18,8 @@ import type {
   RunEvent,
   RunNodeInfo,
   Workspace,
+  RunResult,
+  RunStatus,
 } from "./types.ts";
 
 /** Control nodes pass their input through; a join's input is its output. */
@@ -100,6 +102,38 @@ export const declaredNodes = (graph: CompiledGraph): RunNodeInfo[] =>
       ? { id, type: node.type }
       : { id, type: node.type, parent: node.parent },
   );
+
+/** The `run.started` event: the workflow, its entries, nodes and inputs. */
+export const runStartedEvent = (
+  graph: CompiledGraph,
+  runId: string,
+  options: Pick<RunOptions, "inputs" | "settings">,
+): RunEvent => ({
+  type: "run.started",
+  runId,
+  workflow: graph.workflow.name,
+  entries: graph.entries,
+  nodes: declaredNodes(graph),
+  inputs: options.inputs,
+  ...(options.settings === undefined ? {} : { settings: options.settings }),
+});
+
+/** The run's result: failed when any reason was given, unless it stopped. */
+export const runResult = (run: {
+  runId: string;
+  stopped: RunStatus | null;
+  costUsd: number;
+  nodes: NodeSummary[];
+  reasons: string[];
+  worktrees: KeptWorktree[];
+}): RunResult => ({
+  runId: run.runId,
+  status: run.stopped ?? (run.reasons.length > 0 ? "failed" : "succeeded"),
+  costUsd: run.costUsd,
+  nodes: run.nodes,
+  reasons: run.reasons,
+  worktrees: run.worktrees,
+});
 
 /** Closes the run's worktrees; a failure is one more reason, not a crash. */
 export const closeWorkspace = (

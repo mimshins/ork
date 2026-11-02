@@ -203,6 +203,27 @@ export const CONTROL = {
     "packages/cli/src/commands/control.ts",
     "Code: `ork decide` and `ork stop`",
   ),
+  pause: d(
+    "packages/cli/src/commands/pause.ts",
+    "Code: `ork pause` and `ork continue`",
+  ),
+  holds: d(
+    "packages/core/src/run/holds.ts",
+    "Code: a run's holds and a node's stop",
+  ),
+  hold: d(
+    "packages/runtime-claude/src/hold.ts",
+    "Code: holding a session before its next tool call",
+  ),
+  holdTests: d(
+    "packages/core/test/holds.test.ts",
+    "Tests: pause, continue and a node's stop",
+  ),
+  adr: d(
+    "decisions/ADR-041-pause-continue-stop.md",
+    "ADR-041: pause holds a session before its next tool call",
+  ),
+  spec: d("specs/run-control.md", "Spec: pause, continue and stop"),
   detach: d("packages/core/src/remote/detach.ts", "Code: `ork run --detach`"),
   cliTests: d("packages/cli/test/control.test.ts", "Tests: decide and stop"),
 };

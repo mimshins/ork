@@ -84,7 +84,7 @@ export const overviewStream = (
     const filter = root === undefined ? {} : { project: root };
     const runs = context.store
       .runs({ ...filter, limit: OVERVIEW_RUNS })
-      .map(run => viewOf(run));
+      .map(run => viewOf(context, run));
     const decisions = pendingDecisions(context.store, filter);
     for (const [name, value] of [
       ["runs", runs],

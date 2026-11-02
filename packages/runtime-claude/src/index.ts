@@ -4,6 +4,7 @@
  */
 
 export * from "./cli.ts";
+export * from "./hold.ts";
 export * from "./mcp-http.ts";
 export * from "./normalize.ts";
 export * from "./registry.ts";

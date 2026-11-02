@@ -7,17 +7,19 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 
-import type {
-  ClaudeRuntime,
-  ExecuteContext,
-  HumanChannel,
-  Mailbox,
-  Ownership,
-  RuntimeEvent,
-  SessionOutcome,
-  SessionPorts,
-  SessionSpec,
+import {
+  type ClaudeRuntime,
+  createHolds,
+  type ExecuteContext,
+  type HumanChannel,
+  type Mailbox,
+  type Ownership,
+  type RuntimeEvent,
+  type SessionOutcome,
+  type SessionPorts,
+  type SessionSpec,
 } from "@krapht/ork-core";
 import { type Node, NodeSchema, type Workflow } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
@@ -307,6 +309,42 @@ describe("human gates", () => {
     });
     expect(withdrawn).toBe(true);
     expect(timeoutMs("15m")).toBe(900_000);
+  });
+
+  it("keeps its time while the run is paused, and answers once it continues", async () => {
+    const silent: HumanChannel = {
+      ask: ({ signal }) =>
+        new Promise((_, reject) => {
+          signal?.addEventListener("abort", () => {
+            reject(new Error("withdrawn"));
+          });
+        }),
+      permit: () => Promise.resolve({ allow: true }),
+    };
+    const holds = createHolds({
+      onEvent: () => {
+        // Not under test.
+      },
+      onChange: () => {
+        // Not under test.
+      },
+    });
+    holds.pause();
+    const timed: Node = { ...gate, timeout: "0s", default: "reject" };
+    let answered = false;
+    const result = gateExecutor(
+      context("g", timed, { human: silent, hold: holds.forNode("g") }),
+    ).then(value => {
+      answered = true;
+      return value;
+    });
+    await sleep(100);
+    expect(answered).toBe(false);
+    holds.proceed();
+    expect(await result).toEqual({
+      ok: true,
+      output: { choice: "reject", answeredBy: "timeout" },
+    });
   });
 });
 

@@ -2,7 +2,8 @@
  * @file A minimal MCP server over the streamable HTTP transport, for the
  *   `claude` CLI driver. It answers with plain JSON (no SSE stream), which the
  *   transport allows, and implements only what Ork needs: `initialize`, `ping`,
- *   `tools/list` and `tools/call`.
+ *   `tools/list` and `tools/call`. Beside it, `/hold` answers the session's
+ *   `PreToolUse` HTTP hook, which waits while the node is paused (ADR-041).
  */
 
 import { randomBytes, timingSafeEqual } from "node:crypto";
@@ -18,11 +19,19 @@ import { type BoundTool, ORK_SERVER } from "./tools/tool.ts";
 
 export type OrkMcpEndpoint = {
   url: string;
+  /** The `PreToolUse` HTTP hook's URL (same server, same token). */
+  holdUrl: string;
   token: string;
   close: () => Promise<void>;
 };
 
+/** Answers a held tool call: the hook's JSON output, once it may go on. */
+export type HoldHandler = (
+  signal: AbortSignal,
+) => Promise<Record<string, unknown>>;
+
 const PATH = "/mcp";
+const HOLD_PATH = "/hold";
 const MAX_BODY = 1024 * 1024;
 export const MCP_PROTOCOL_FALLBACK = "2025-06-18";
 
@@ -122,14 +131,41 @@ const respond = (res: ServerResponse, status: number, body?: unknown): void => {
     .end(JSON.stringify(body));
 };
 
+/** The hook's POST: waits for `hold`; a closed connection gives up. */
+const serveHold = async (
+  req: IncomingMessage,
+  res: ServerResponse,
+  hold: HoldHandler,
+): Promise<void> => {
+  if (req.method !== "POST") {
+    respond(res, 405);
+    return;
+  }
+  if ((await readBody(req)) === null) {
+    respond(res, 413);
+    return;
+  }
+  const gone = new AbortController();
+  res.once("close", () => {
+    gone.abort();
+  });
+  const output = await hold(gone.signal);
+  if (!gone.signal.aborted) respond(res, 200, output);
+};
+
 const serve = async (
   req: IncomingMessage,
   res: ServerResponse,
   tools: readonly BoundTool[],
   token: string,
+  hold: HoldHandler | undefined,
 ): Promise<void> => {
   if (!authorized(req, token)) {
     respond(res, 401);
+    return;
+  }
+  if (req.url === HOLD_PATH && hold !== undefined) {
+    await serveHold(req, res, hold);
     return;
   }
   if (req.url !== PATH) {
@@ -173,10 +209,11 @@ const serve = async (
  */
 export const startOrkMcpHttp = async (
   tools: readonly BoundTool[],
+  hold?: HoldHandler,
 ): Promise<OrkMcpEndpoint> => {
   const token = randomBytes(24).toString("hex");
   const http = createServer((req, res) => {
-    serve(req, res, tools, token).catch(() => {
+    serve(req, res, tools, token, hold).catch(() => {
       if (!res.headersSent) respond(res, 500);
     });
   });
@@ -188,6 +225,7 @@ export const startOrkMcpHttp = async (
     typeof address === "object" && address !== null ? address.port : 0;
   return {
     url: `http://127.0.0.1:${port}${PATH}`,
+    holdUrl: `http://127.0.0.1:${port}${HOLD_PATH}`,
     token,
     close: () =>
       new Promise(resolve => {

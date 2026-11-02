@@ -9,11 +9,11 @@
 
 import type { HumanChannel, InboxMessage } from "../runtime/types.ts";
 import type { Mail } from "./bus.ts";
+import type { Replay } from "./handle.ts";
 import type {
   Inputs,
   NodeOutput,
   NodeResult,
-  Replay,
   RunEvent,
   RunSettings,
 } from "./types.ts";

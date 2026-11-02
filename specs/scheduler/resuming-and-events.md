@@ -59,7 +59,9 @@ under the same run id, with a `Replay` built from the run's events:
 | `run.finished`      | the run ends: `succeeded`, `failed`, `budget_exhausted`, `interrupted`                                                  |
 
 The decision queue adds `decision.opened`, `decision.answered`,
-`decision.withdrawn` and `run.command` ([messaging](../messaging.md)).
+`decision.withdrawn` and `run.command` ([messaging](../messaging.md)); a pause
+adds `node.held` and `node.released`
+([run control](../run-control.md#what-a-run-records)).
 
 The run result lists each node (runs, ok, last output, cost), the total cost,
 the reasons the run did not succeed, and the worktrees it left for the user.

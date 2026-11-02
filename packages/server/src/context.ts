@@ -7,9 +7,10 @@
 import {
   type EventStore,
   findRun,
-  liveStatus,
+  pausedOf,
   type ProjectRecord,
   type RunRecord,
+  runStatus,
 } from "@krapht/ork-core";
 
 import type { RunView } from "./contract.ts";
@@ -48,8 +49,12 @@ export const projectOf = (
 ): ProjectRecord | undefined =>
   context.store.projects().find(p => p.id === key || p.root === key);
 
-/** A run as the API shows it: with its live status. */
-export const viewOf = (run: RunRecord): RunView => ({
-  ...run,
-  live: liveStatus(run),
-});
+/** A run as the API shows it: with its live status and what is paused. */
+export const viewOf = (context: ServerContext, run: RunRecord): RunView => {
+  // Only a running run can be paused; the others' events are not read.
+  const events =
+    run.status === "running"
+      ? context.store.events(run.id).map(stored => stored.event)
+      : [];
+  return { ...run, live: runStatus(run, events), paused: pausedOf(events) };
+};

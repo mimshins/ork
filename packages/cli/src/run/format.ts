@@ -189,7 +189,20 @@ export const formatRunEvent = (
     return [`${tag(event.node)} ${style("dim", "→ question withdrawn")}`];
   }
   if (event.type === "run.command") {
-    return [style(["yellow", "bold"], `! ork ${event.command} received`)];
+    const node = event.node === undefined ? "" : ` --node ${event.node}`;
+    return [
+      style(["yellow", "bold"], `! ork ${event.command}${node} received`),
+    ];
+  }
+  if (event.type === "node.held") {
+    const at =
+      event.at === "tool"
+        ? "its tool call waits for ork continue"
+        : "it starts after ork continue";
+    return [`${tag(event.id)} ${style("yellow", `‖ paused: ${at}`)}`];
+  }
+  if (event.type === "node.released") {
+    return [`${tag(event.id)} ${style("dim", "▸ continues")}`];
   }
   if (event.type === "run.finished") return formatRunResult(event.result);
   if (event.type === "run.resumed") {

@@ -1,7 +1,7 @@
 /**
  * @file Views over a run's stored events: the ownership tree with each node's
- *   state, runs, tokens and cost (`ork tree`), and whether a `running` run's
- *   process is still alive (`ork ps`).
+ *   state, runs, tokens and cost (`ork tree`), what is paused (ADR-041), and
+ *   whether a `running` run's process is still alive (`ork ps`).
  */
 
 import type { NodeType } from "@krapht/ork-schema";
@@ -24,6 +24,8 @@ export type TreeNode = {
   outputTokens: number;
   /** The last result's one-line verdict fields. */
   output?: Record<string, unknown>;
+  /** Paused, and waiting at a hold point (ADR-041). */
+  held?: true;
   children: TreeNode[];
 };
 
@@ -72,9 +74,16 @@ export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
       }
       node.state = "running";
       node.runs += 1;
+    } else if (event.type === "node.held") {
+      const node = nodes.get(event.id);
+      if (node !== undefined) node.held = true;
+    } else if (event.type === "node.released") {
+      const node = nodes.get(event.id);
+      if (node !== undefined) delete node.held;
     } else if (event.type === "node.finished") {
       const node = nodes.get(event.id);
       if (node === undefined) continue;
+      delete node.held;
       node.state = event.ok ? "ok" : "failed";
       node.output = event.output;
       node.costUsd += event.usage?.costUsd ?? 0;
@@ -95,6 +104,33 @@ export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
   return roots;
 };
 
+/** What is paused in a run: the whole run, and the nodes paused by name. */
+export type Paused = { run: boolean; nodes: string[] };
+
+/** Folds a run's `ork pause` and `ork continue` commands (ADR-041). */
+export const pausedOf = (events: readonly RunEvent[]): Paused => {
+  let run = false;
+  const nodes = new Set<string>();
+  for (const event of events) {
+    if (event.type === "run.command" && event.command === "pause") {
+      if (event.node === undefined) run = true;
+      else nodes.add(event.node);
+    } else if (event.type === "run.command" && event.command === "continue") {
+      if (event.node === undefined) {
+        run = false;
+        nodes.clear();
+      } else {
+        nodes.delete(event.node);
+      }
+    } else if (event.type === "run.started" || event.type === "run.finished") {
+      // A resumed run starts unpaused; a finished one has nothing paused.
+      run = false;
+      nodes.clear();
+    }
+  }
+  return { run, nodes: [...nodes] };
+};
+
 /** Whether a process is running: ours, or another user's (alive, not ours). */
 export const processAlive = (pid: number): boolean => {
   try {
@@ -109,3 +145,12 @@ export const processAlive = (pid: number): boolean => {
 /** A run's status, with `crashed` for a `running` run whose process is gone. */
 export const liveStatus = (run: RunRecord): StoredRunStatus | "crashed" =>
   run.status === "running" && !processAlive(run.pid) ? "crashed" : run.status;
+
+/** `liveStatus`, with `paused` for a running run paused as a whole. */
+export const runStatus = (
+  run: RunRecord,
+  events: readonly RunEvent[],
+): StoredRunStatus | "crashed" | "paused" => {
+  const status = liveStatus(run);
+  return status === "running" && pausedOf(events).run ? "paused" : status;
+};

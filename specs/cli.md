@@ -3,7 +3,8 @@
 Status: **Partial**: `ork init`, `ork register`, `ork projects`, `ork migrate`,
 `ork link`, `ork validate`, `ork doctor`, `ork run` (a whole workflow, or one
 node with `--node`), `ork ps`, `ork logs`, `ork tree`, `ork decide`, `ork stop`,
-`ork chat`, `ork resume`, `ork worktrees`, `ork context explain`,
+`ork pause`, `ork continue` ([run control](./run-control.md)), `ork chat`,
+`ork resume`, `ork worktrees`, `ork context explain`,
 `ork agents list | show | add | rm`,
 `ork feedback list | show | note | dismiss | restore`
 ([feedback](./feedback.md)), `ork upgrade` and the new-version notice
@@ -36,7 +37,9 @@ ork logs [<run>] [--node n] [--follow] [--json]   # a run's transcript, replayed
 ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node
 ork decide [<run>] [--all] [--list] [--json] [--id <d> --choose <option>]  # answer open decisions
 ork chat <run> <node> [-m <text>] [--driver sdk|cli]  # talk to a node, live or by resuming its session
-ork stop [<run>]                 # stop a live run from any terminal
+ork stop [<run>] [--node n]      # stop a live run from any terminal, or one node (it fails; the run goes on)
+ork pause [<run>] [--node n]     # nothing new starts; sessions wait before their next tool call
+ork continue [<run>] [--node n]  # let a paused run, or one paused node, go on
 ork resume [<run>] [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json] [--detach]  # continue a stopped or crashed run
 ork worktrees [list|clean]       # Ork's worktrees and branches; clean them up safely
 ork context explain <wf> <node> [--json]  # what one node's session loads, layer by layer

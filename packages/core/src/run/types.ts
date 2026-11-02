@@ -9,10 +9,11 @@ import type { Driver, Node, NodeType, Workflow } from "@krapht/ork-schema";
 
 import type { AgentRef } from "../agents/apply.ts";
 import type { FeedbackPort, FeedbackReport } from "../feedback/types.ts";
-import type { CompiledGraph } from "../graph/types.ts";
 import type {
   Claims,
   DecisionChoice,
+  HoldPoint,
+  HoldPort,
   HumanChannel,
   Mailbox,
   Ownership,
@@ -21,7 +22,6 @@ import type {
 } from "../runtime/types.ts";
 import type { AnsweredBy, DecisionKind } from "../store/types.ts";
 import type { BusEvent } from "./bus-events.ts";
-import type { Mail } from "./bus.ts";
 
 export type Inputs = Record<string, string | number | boolean>;
 
@@ -82,8 +82,11 @@ export type ExecuteContext = {
   /** What is left of `limits.budgetUsd`, when the run has one. */
   budgetLeftUsd: number | undefined;
   human: HumanChannel;
+  /** Held while the run or this node is paused; a run always passes one. */
+  hold?: HoldPort;
   /** Forwards a session's runtime events into the run's event stream. */
   emit: (event: RuntimeEvent) => void;
+  /** Aborted when the run is interrupted, or this node is stopped. */
   signal: AbortSignal;
 };
 
@@ -237,64 +240,20 @@ export type RunEvent =
       by: AnsweredBy;
     }
   | { type: "decision.withdrawn"; node: string; decision: string }
-  /** Another process asked the run to do something, e.g. `ork stop`. */
-  | { type: "run.command"; command: "stop" }
+  /**
+   * Another process asked the run to do something: `ork stop`, `ork pause`,
+   * `ork continue`; `node` when it names one node, not the whole run.
+   */
+  | {
+      type: "run.command";
+      command: "stop" | "pause" | "continue";
+      node?: string;
+    }
+  /** A paused node reached a hold point and waits (ADR-041). */
+  | { type: "node.held"; id: string; at: HoldPoint }
+  /** A held node goes on. */
+  | { type: "node.released"; id: string }
   | BusEvent
   /** A feedback record: an agent's report, or a signal Ork derived. */
   | { type: "feedback.recorded"; node?: string; feedback: FeedbackReport }
   | { type: "run.finished"; result: RunResult };
-
-export type RunOptions = {
-  graph: CompiledGraph;
-  inputs: Inputs;
-  cwd: string;
-  executors: NodeExecutors;
-  human: HumanChannel;
-  onEvent: (event: RunEvent) => void;
-  runId?: string;
-  /** Where nodes work; without one, every node works in `cwd`. */
-  workspace?: Workspace;
-  /** Run files (tool output beyond the limit); default `<cwd>/.ork/runs/<run>`. */
-  runDir?: string;
-  /** The workflow file's folder; default `cwd`. */
-  workflowDir?: string;
-  /** The project's root, which skill and context paths stay in; default `cwd`. */
-  projectRoot?: string;
-  /** Ork's folder for the project (attached: `~/.ork/projects/<id>`). */
-  orkDir?: string;
-  /** Recorded in `run.started`. */
-  settings?: RunSettings;
-  /** For `ork resume`: the results a run recorded, handed back in order. */
-  replay?: Replay;
-};
-
-/**
- * A resumed run's record (ADR-026). `take` gives an activation its result from
- * last time, or `null` when it must run anew; `ran` marks a new result;
- * `cutOff` gives, once, the session a node was cut off in; `mail`, the bus's.
- */
-export type Replay = {
-  take: (activation: Activation) => NodeResult | null;
-  ran: (result: NodeResult) => void;
-  cutOff?: (activation: Activation) => string | undefined;
-  mail?: Mail;
-};
-
-export type RunHandle = {
-  runId: string;
-  done: Promise<RunResult>;
-  /** Stops starting nodes and aborts the running ones. */
-  interrupt: () => void;
-  /** A message from the user to a node's session (`ork chat`). */
-  tell: (node: string, body: string) => "now" | "queued" | null;
-};
-
-/** One run of a node the scheduler has queued or started. */
-export type Activation = {
-  id: string;
-  input: NodeOutput | undefined;
-  /** Set for a run a leader delegated; it reports back and follows no edges. */
-  brief?: Brief;
-  /** For a spawned worker, the declared node it is an instance of. */
-  template?: string;
-};

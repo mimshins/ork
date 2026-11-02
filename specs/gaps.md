@@ -100,6 +100,17 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
   start; there is no remote access, TLS, or second user, and anything that can
   read `~/.ork/ui.json` as the user can drive it, as it can drive `ork`.
   ([ADR-039](../decisions/ADR-039-local-server.md))
+- **L29 · Managed settings can turn off the CLI driver's pause.** A pause holds
+  a `claude -p` session in a `PreToolUse` HTTP hook; where managed settings
+  allow only managed hooks or other hook URLs, the hook never fires, and a
+  CLI-driven node pauses only at its next activation.
+  ([run control](./run-control.md#limits))
+- **L30 · A single-node run takes only `stop`.** `ork run <wf> --node <id>` is
+  not paused or continued, and has no node of its own to stop.
+  ([run control](./run-control.md#limits))
+- **L31 · Stopping a leader leaves its running children running.** Its delegated
+  children follow the owner-failure path and finish their work; only the leader
+  is interrupted. ([run control](./run-control.md#stopping-one-node))
 
 ## Chores
 
@@ -108,7 +119,9 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
   check still gates publishing. ([release](../runbook/development/release.md))
 - **C5 · The examples have not run on the SDK driver.** Both ran end to end on
   the CLI driver (2026-10-31); the SDK pass needs `ANTHROPIC_API_KEY` on the
-  machine that runs it. ([examples](../docs/guides/examples.md))
+  machine that runs it. The SDK driver's pause (its hold hook and deferred
+  resume) is checked only against the SDK's types and fakes until then.
+  ([examples](../docs/guides/examples.md), [run control](./run-control.md))
 - **C6 · The UI has no browser tests in CI.** Its components are tested in jsdom
   with axe; a slice is checked by hand in a real browser until Playwright runs
   in CI. ([ADR-040](../decisions/ADR-040-ui-stack.md))

@@ -40,10 +40,11 @@ all views over the same events.
   run's socket followers), so a crash loses at most the event in flight.
 - **Decisions and commands** have tables of their own: a decision's question,
   options, recommended option, status (`open`, `answered`, `withdrawn`), answer
-  and who answered; a command's kind (`stop`, or `message` from `ork chat` with
-  its node and masked body) and when the run handled it. The run events
-  `decision.opened`, `decision.answered`, `decision.withdrawn` and `run.command`
-  record the same in the run's stream ([messaging](./messaging.md)).
+  and who answered; a command's kind (`stop`, `pause` and `continue`, each with
+  an optional node; or `message` from `ork chat` with its node and masked body)
+  and when the run handled it. The run events `decision.opened`,
+  `decision.answered`, `decision.withdrawn` and `run.command` record the same in
+  the run's stream ([messaging](./messaging.md)).
 - **A resumed run** (`ork resume`) is the same run: its record is `running`
   again in the new process, and its events go on from the last sequence number,
   starting with `run.resumed`.

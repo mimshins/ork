@@ -1,16 +1,23 @@
 /**
  * @file The `human.gate` node type: asks the human the rendered question, and
- *   answers with the `default` when the `timeout` passes.
+ *   answers with the `default` when the `timeout` passes. The timeout counts
+ *   only while the run and the gate are not paused (ADR-041).
  */
 
 import {
   type DecisionChoice,
+  heldTimeout,
   type NodeExecutor,
   parseTemplate,
   renderTemplate,
   runScope,
 } from "@krapht/ork-core";
 import type { DecisionOption } from "@krapht/ork-schema";
+
+/** A promise that never settles: the losing side of a race. */
+const NEVER = new Promise<never>(() => {
+  // Never settles.
+});
 
 const UNITS: Record<string, number> = { s: 1000, m: 60_000, h: 3_600_000 };
 
@@ -66,16 +73,17 @@ export const gateExecutor: NodeExecutor = async context => {
     .then(choice => ({ choice, answeredBy: "user" }));
 
   const ms = timeoutMs(node.timeout);
-  let timer: NodeJS.Timeout | undefined;
+  // Ends the timer once the gate is answered, so it holds nothing open.
+  const answered = new AbortController();
   const expired =
     ms === undefined || node.default === undefined
       ? []
       : [
-          new Promise<{ choice: string; answeredBy: string }>(resolve => {
-            timer = setTimeout(() => {
-              withdraw.abort();
-              resolve({ choice: node.default ?? "", answeredBy: "timeout" });
-            }, ms);
+          heldTimeout(context.hold, ms, answered.signal).then(elapsed => {
+            // Answered first: this side of the race is already lost.
+            if (!elapsed) return NEVER;
+            withdraw.abort();
+            return { choice: node.default ?? "", answeredBy: "timeout" };
           }),
         ];
   try {
@@ -91,6 +99,6 @@ export const gateExecutor: NodeExecutor = async context => {
   } catch {
     return { ok: false, output: {}, error: "the gate was withdrawn" };
   } finally {
-    clearTimeout(timer);
+    answered.abort();
   }
 };

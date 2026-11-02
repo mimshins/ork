@@ -27,6 +27,10 @@ export const main = defineCommand({
     logs,
     tree,
     decide,
+    // Loaded on use, like `ork ui`.
+    pause: () => import("./commands/pause.ts").then(module => module.pause),
+    continue: () =>
+      import("./commands/pause.ts").then(module => module.continueRun),
     stop,
     chat,
     resume,

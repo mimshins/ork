@@ -6,6 +6,7 @@
 export * from "./agents/manage.ts";
 export * from "./commands/control.ts";
 export * from "./commands/install.ts";
+export * from "./commands/pause.ts";
 export * from "./commands/projects.ts";
 export * from "./commands/run.ts";
 export * from "./commands/runs.ts";

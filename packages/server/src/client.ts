@@ -16,14 +16,21 @@ import {
   type RouteName,
 } from "./contract.ts";
 
-/** What a call takes: only the parts its route has. */
+/**
+ * What a call takes: only the parts its route has. A body whose fields are all
+ * optional may be left out (`{}` is sent).
+ */
 export type CallInput<K extends RouteName> = (keyof Params<K> extends never
   ? { params?: undefined }
   : { params: Params<K> }) &
   (QueryOf<K> extends undefined
     ? { query?: undefined }
     : { query?: QueryOf<K> }) &
-  (BodyOf<K> extends undefined ? { body?: undefined } : { body: BodyOf<K> });
+  (BodyOf<K> extends undefined
+    ? { body?: undefined }
+    : object extends BodyOf<K>
+      ? { body?: BodyOf<K> }
+      : { body: BodyOf<K> });
 
 export type CallResult<T> =
   | { ok: true; status: number; data: T }

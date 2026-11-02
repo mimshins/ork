@@ -31,11 +31,12 @@ Long specs follow the hub and chunk layout
 | [Projects: in-repo or attached](./projects.md)    | Partial   | M1e       |
 | [Context, skills and precedence](./context.md)    | Partial   | M1c       |
 | [Messaging, decisions and logs](./messaging.md)   | Built     | M1d       |
+| [Pause, continue and stop](./run-control.md)      | Built     | M2        |
 | [Event store: what a run keeps](./event-store.md) | Built     | M1d       |
 | [Feedback and self-improvement](./feedback.md)    | Partial   | M1d, M2   |
 | [The ork CLI](./cli.md)                           | Partial   | M1        |
 | [The local server](./server.md)                   | Built     | M2        |
-| [The UI](./ui.md)                                 | Planned   | M2        |
+| [The UI](./ui.md)                                 | Partial   | M2        |
 | [Known gaps and limits](./gaps.md)                | Open      | All       |
 
 **Status:** _Built_ means on `main` with tests; _Partial_ means some of it is
