@@ -9,7 +9,7 @@ would still stand on their own
 
 Entry point for agents: [`AGENTS.md`](../AGENTS.md), the only instruction
 source. Tool adapters are pointers only: `CLAUDE.md` (`@AGENTS.md`) and the
-symlink `.claude/skills` → `.ai/skills`.
+symlinks `.claude/skills` → `.ai/skills` and `.claude/agents` → `.ai/agents`.
 
 **Public repository:** everything here is world-readable. No secrets, tokens,
 internal hostnames, dashboard links, or personal data, in memories included.
@@ -27,6 +27,7 @@ internal hostnames, dashboard links, or personal data, in memories included.
 | `.ai/memories/working/` | committed in-flight context                               | Is it still unresolved?                                              |
 | `.ai/specs/`            | local task specs (**gitignored**, never committed)        | Is it one piece of work's working spec?                              |
 | `.ai/skills/`           | how to perform a reusable class of task                   | Is it a repeatable workflow?                                         |
+| `.ai/agents/`           | subagent roles for building Ork (not shipped with it)     | Is it a role an agent takes on to work on this repository?           |
 | `.ai/templates/`        | templates for task specs, RFCs, ADRs, and memories        | —                                                                    |
 
 Rules: one source of truth — link, don't copy. Memories describe the present,
@@ -62,6 +63,24 @@ Load only what the task needs.
   layout for long documents, and `pnpm docs:check`.
 - [`resync-map`](./skills/resync-map/SKILL.md) — bring the interaction map up to
   date with the code.
+
+### Agents (`agents/`)
+
+Subagents for working on Ork itself; each links to `AGENTS.md` and never copies
+it. None commits or pushes.
+
+- [`implementer`](./agents/implementer.md) — builds one confirmed task of a task
+  spec, with its tests and knowledge updates, until `pnpm check` passes.
+- [`engine`](./agents/engine.md) — the scheduler, runtime drivers, store, run
+  control and replay; designs and builds run semantics.
+- [`ui-designer`](./agents/ui-designer.md) — the design system, copy and
+  workspace; designs before code and reviews UI changes.
+- [`reviewer`](./agents/reviewer.md) — read-only review for correctness and the
+  repo's rules.
+- [`a11y-auditor`](./agents/a11y-auditor.md) — read-only WCAG 2.2 AA audit in a
+  real browser.
+- [`docs-keeper`](./agents/docs-keeper.md) — runs the drift sync and map resync
+  on documentation only.
 
 ### Templates (`templates/`)
 

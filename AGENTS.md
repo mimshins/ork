@@ -76,18 +76,18 @@ bug fixes need no spec unless they are architectural.
 
 ## Where things live
 
-| Topic                                  | Location                                                  |
-| -------------------------------------- | --------------------------------------------------------- |
-| User docs: install, quickstart, guides | [docs/](./docs/README.md)                                 |
-| Contributor guide                      | [CONTRIBUTING.md](./CONTRIBUTING.md)                      |
-| Overview, milestones                   | [docs/design.md](./docs/design.md)                        |
-| Contracts: what each part does         | [specs/](./specs/README.md)                               |
-| Accepted decisions and why (ADRs)      | [decisions/](./decisions/README.md)                       |
-| Proposals (RFCs)                       | [rfcs/](./rfcs/README.md)                                 |
-| Procedures: docs, releases             | [runbook/](./runbook/development/release.md)              |
-| How the parts fit together             | [docs/interaction-map/](./docs/interaction-map/README.md) |
-| Agent orientation, skills, templates   | [.ai/](./.ai/README.md)                                   |
-| Local-only task specs (gitignored)     | `.ai/specs/`                                              |
+| Topic                                        | Location                                                  |
+| -------------------------------------------- | --------------------------------------------------------- |
+| User docs: install, quickstart, guides       | [docs/](./docs/README.md)                                 |
+| Contributor guide                            | [CONTRIBUTING.md](./CONTRIBUTING.md)                      |
+| Overview, milestones                         | [docs/design.md](./docs/design.md)                        |
+| Contracts: what each part does               | [specs/](./specs/README.md)                               |
+| Accepted decisions and why (ADRs)            | [decisions/](./decisions/README.md)                       |
+| Proposals (RFCs)                             | [rfcs/](./rfcs/README.md)                                 |
+| Procedures: docs, releases                   | [runbook/](./runbook/development/release.md)              |
+| How the parts fit together                   | [docs/interaction-map/](./docs/interaction-map/README.md) |
+| Agent orientation, skills, agents, templates | [.ai/](./.ai/README.md)                                   |
+| Local-only task specs (gitignored)           | `.ai/specs/`                                              |
 
 ## Commands
 
