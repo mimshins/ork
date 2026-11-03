@@ -578,6 +578,22 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "relay",
+        title: "A relay between runs",
+        status: "planned",
+        detail:
+          "`ork link` introduces nodes of runs in different repositories, so they work in parallel and message each other through the store and the runs' sockets. Comes before the Monitor, which shows links.",
+        docs: ["rfcs/active/RFC-003-relay-between-runs.md"],
+      },
+      {
+        id: "workflow-call",
+        title: "Workflows that call workflows",
+        status: "planned",
+        detail:
+          "A `workflow.call` node starts a workflow in this project or another, waits on it if asked, and uses its output in later conditions. A `messages` channel to it lets agents talk during the work. Comes before the Monitor, which shows calls.",
+        docs: ["rfcs/active/RFC-004-workflows-calling-workflows.md"],
+      },
+      {
         id: "worktrees-panel",
         title: "Worktrees panel",
         status: "planned",

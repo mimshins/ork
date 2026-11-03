@@ -138,6 +138,17 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
   quiet project behind busy ones, needs `ork ps`. The panel says so when a
   filter finds none. The stream's `?project=` and paging on `/api/runs` could
   reach them. ([panels](./ui/panels.md#runs))
+- **L38 · A long home path has no sockets.** A Unix socket's path is limited
+  (104 characters on macOS). Past that a run cannot listen, and Ork says
+  nothing: it looks at the store every second instead, so answers and commands
+  take up to a second, and followers poll the store too.
+  ([messaging](./messaging.md#reaching-a-live-run))
+- **L39 · Limits are per run.** `limits.concurrency` and `limits.budgetUsd` do
+  not add up across runs, so three runs at the default can hold 12 Claude
+  sessions. ([scheduler](./scheduler.md#budget-and-concurrency))
+- **L40 · Claims are per run.** Two runs in one repository work in separate
+  worktrees but do not see each other's claims.
+  ([messaging](./messaging.md#claims))
 
 ## Chores
 

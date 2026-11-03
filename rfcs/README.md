@@ -61,3 +61,5 @@ and carries an RFC through this lifecycle.
 | -------------------------------------------------------------- | -------------------------------------------- | ----------- |
 | [001](./archived/RFC-001-integrations-as-adapters.md)          | Integrations as adapters behind a registry   | Implemented |
 | [002](./archived/RFC-002-standalone-binaries-and-installer.md) | Standalone binaries and a one-line installer | Rejected    |
+| [003](./active/RFC-003-relay-between-runs.md)                  | A relay between runs                         | Accepted    |
+| [004](./active/RFC-004-workflows-calling-workflows.md)         | Workflows that call workflows                | Accepted    |
