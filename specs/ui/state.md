@@ -128,6 +128,3 @@ The palette's **View** group sets the theme (follow the system, dark, light) and
 the density (compact, comfortable); the one in use stays listed and says so.
 Desktop notifications are only stored for now; the notification center asks the
 browser and reads the value.
-
-The persistence plugin's container is cast once for the React hooks, since the
-library's packages each declare `Container` separately ([C7](../gaps.md)).

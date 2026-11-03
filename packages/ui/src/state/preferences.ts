@@ -28,15 +28,6 @@ export const DEFAULT_PREFERENCES: Preferences = {
   desktopNotifications: false,
 };
 
-/**
- * The persistence plugin's container, for the hooks. Each of the library's
- * packages bundles its own declaration of `Container`, and they do not match,
- * though at runtime it is one class (gap C7).
- */
-const forHooks = <T>(container: PersistentContainer<T>): Container<T> =>
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- gap C7: the same class, declared twice
-  container as unknown as Container<T>;
-
 export type PreferenceStore = {
   value: Container<Preferences>;
   update: (change: Partial<Preferences>) => void;
@@ -51,7 +42,7 @@ export const createPreferences = (storage: Storage): PreferenceStore => {
   if (checked.success) void saved.setValue(checked.data);
   else void saved.reset();
   return {
-    value: forHooks(saved),
+    value: saved,
     update: change => {
       void saved.setValue({ ...saved.getValue(), ...change });
     },

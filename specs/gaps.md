@@ -152,20 +152,11 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
 - **C6 · The UI has no browser tests in CI.** Its components are tested in jsdom
   with axe; a slice is checked by hand in a real browser until Playwright runs
   in CI. ([ADR-040](../decisions/ADR-040-ui-stack.md))
-- **C7 · containerized-state's packages do not share one `Container` type.**
-  Each bundles its own copy of the class's declaration, and its protected
-  members make the copies incompatible. So
-  `withPersistence(Container.create(…))` and `useValue(persistentContainer)`
-  fail to typecheck, though both work at runtime. The layout uses
-  `new PersistentContainer(…)` and reads it without the hook; the preferences
-  cast it once for the hooks
-  ([preferences.ts](../packages/ui/src/state/preferences.ts)). The fixes are
-  upstream and open: one shared declaration
-  ([containerized-state#26](https://github.com/mimshins/containerized-state/pull/26)),
-  and saving before notifying, since a subscriber that throws stopped
-  `PersistentContainer.setValue` from saving
-  ([#27](https://github.com/mimshins/containerized-state/pull/27)). Once they
-  are released, Ork bumps the versions and drops the cast. And `packages/ui`
-  sets `skipLibCheck`, because dockview's declarations do not pass under
-  `exactOptionalPropertyTypes`.
-  ([workspace](./ui/workspace.md#the-saved-layout))
+- **C8 · `packages/ui` sets `skipLibCheck`.** dockview's declarations do not
+  pass under `exactOptionalPropertyTypes`, so the UI package does not check any
+  library's declarations. ([workspace](./ui/workspace.md#the-saved-layout))
+- **C9 · An age exclusion waits to be removed.** `pnpm-workspace.yaml` exempts
+  containerized-state 3.3.1, its React package 3.3.1 and its persistence plugin
+  1.3.0 from the 7-day rule, by exact version, at their author's choice. Remove
+  the list from 2026-11-10; the versions then satisfy the rule.
+  ([ADR-002](../decisions/ADR-002-typescript-from-source.md))
