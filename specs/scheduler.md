@@ -162,6 +162,9 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   If its executor has not ended 10 seconds later it is left behind.
 - **An expired run** aborts what is running and ends `timed_out`, after the same
   10 seconds at most.
+- On a real session (CLI driver, 2026-11-03) a 25-second timeout ended the
+  session within a second, its background command was gone, and a
+  `when: timedOut` edge ran.
 - A tool runs in its own process group: an abort, from a timeout or a stop,
   sends it SIGTERM, then SIGKILL after 2 seconds
   ([spawn.ts](../packages/nodes/src/spawn.ts)).

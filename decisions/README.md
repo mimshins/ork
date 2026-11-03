@@ -75,3 +75,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [041](./ADR-041-pause-continue-stop.md)            | Pause holds a session before its next tool call; stopping a node fails it   | Accepted          | waived                                                      |
 | [042](./ADR-042-icons-mdi.md)                      | The UI's icons come from Material Design Icons                              | Accepted          | waived                                                      |
 | [043](./ADR-043-timeouts.md)                       | Timeouts measure work, and an expired node is an ordinary failure           |
+| [044](./ADR-044-relay-between-runs.md)             | Nodes of different runs message each other over a relay in the store        |

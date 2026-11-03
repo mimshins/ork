@@ -87,7 +87,7 @@ export const waitForMessagesTool = defineTool({
     const unread = ports.mailbox?.read() ?? [];
     return text(
       unread.length === 0
-        ? `No message arrived in ${String(seconds)} seconds.`
+        ? `No message yet, after waiting up to ${String(seconds)} seconds. Ork may have told you something; if not, wait again or go on.`
         : inboxText(unread),
     );
   },

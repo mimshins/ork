@@ -594,11 +594,13 @@ export const MILESTONES = [
       {
         id: "relay",
         title: "A relay between runs",
-        status: "active",
+        status: "done",
+        date: "2026-11-03",
+        commits: ["74fd6bb"],
         detail:
-          "`ork relay` introduces nodes of runs in different repositories, so they work in parallel and message each other through the store and the runs' sockets. Built and tested on stand-in sessions; the proof on real sessions in two repositories is still to come.",
+          "`ork relay` introduces nodes of runs in different repositories, so they work in parallel and message each other through the store and the runs' sockets. Proven on real sessions in two repositories on the CLI driver; the SDK driver is tracked in C5.",
         docs: [
-          "rfcs/active/RFC-003-relay-between-runs.md",
+          "decisions/ADR-044-relay-between-runs.md",
           "specs/messaging/links.md",
           "docs/guides/working-across-projects.md",
         ],

@@ -54,8 +54,8 @@ separately. Set `limits.budgetUsd` on each. Links work on one machine.
 ## Turning links off
 
 Every leader and worker gets the message tools, so it can be linked later. That
-adds a little to each session's prompt. To leave them out, and refuse links, set
-this in `.ork/project.yaml` or a workflow's `rules`:
+can add a little to each session's prompt. To leave them out, and refuse links,
+set this in `.ork/project.yaml` or a workflow's `rules`:
 
 ```yaml
 links: off

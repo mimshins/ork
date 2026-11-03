@@ -208,7 +208,8 @@ export type Mailbox = {
   linkable: () => boolean;
   /**
    * Waits for a message, for at most `ms`, giving up the session's slot
-   * meanwhile. Ends early when there is one, or when the session ends.
+   * meanwhile. Ends early when there is one, when Ork has something to tell the
+   * session (a link was made), or when the session ends.
    */
   wait: (ms: number) => Promise<void>;
   /** Answers a question Ork asked this node as an owner. */

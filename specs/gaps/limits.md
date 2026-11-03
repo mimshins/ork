@@ -166,3 +166,7 @@ How something built works for now, by choice.
   ([messaging](../messaging/links.md))
 - **L51 · A link's limit of 100 is a guess.** Nothing has measured how many
   messages real work takes. ([messaging](../messaging/links.md))
+- **L52 · A link ending can cost a session a turn.** Each peer is told, and a
+  session that is writing its report then takes one more turn to acknowledge it.
+  Seen on a real run. Telling only a session that is waiting would avoid it.
+  ([messaging](../messaging/links.md))

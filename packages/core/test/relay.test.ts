@@ -535,6 +535,19 @@ describe("the bus with a relay", () => {
     expect(slots.release).not.toHaveBeenCalled();
   });
 
+  it("stops waiting when Ork has something to tell the session", async () => {
+    const bus = busWith();
+    const mailbox = bus.mailbox("builder");
+    const told: string[] = [];
+    mailbox.connect(text => {
+      told.push(text);
+    });
+    const waiting = mailbox.wait(60_000);
+    bus.notify("builder", "[ork] linked");
+    await waiting;
+    expect(told).toEqual(["[ork] linked"]);
+  });
+
   it("stops waiting when the session ends", async () => {
     const bus = busWith();
     const mailbox = bus.mailbox("builder");

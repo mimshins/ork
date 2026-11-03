@@ -271,6 +271,8 @@ export const createBus = ({
     tell,
     notify: (node, text) => {
       live.get(node)?.(text);
+      // A session waiting for a message should hear this at once too.
+      waiters.get(node)?.();
     },
     receive: (node, from, body) => {
       messages += 1;
