@@ -75,10 +75,10 @@ export type GraphLayout = {
 export const shortLabel = (label: string): string =>
   label.length <= LABEL_LIMIT ? label : `${label.slice(0, LABEL_LIMIT - 1)}…`;
 
-export const NODE_WIDTH = 216;
+export const NODE_WIDTH = 200;
 export const NODE_HEIGHT = 72;
 /** The space between ranks, where edges turn. */
-export const RANK_GAP = 96;
+export const RANK_GAP = 72;
 /** The space between nodes of a rank. */
 export const ROW_GAP = 28;
 /** How long a condition shows beside its edge, in characters. */

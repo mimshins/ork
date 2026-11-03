@@ -4,7 +4,8 @@
  *   contrast); no color token escapes the pairings; the layers stay apart
  *   (colors written out only in the primitives, primitives named only by the
  *   semantic layer); both themes define the same tokens; and text sizes come
- *   from the type scale, none below 11 px.
+ *   from the type scale, none below 11 px; and a popup opens above the dialog
+ *   it came from.
  */
 
 import { readFileSync } from "node:fs";
@@ -211,5 +212,16 @@ describe("type", () => {
   it("has no size below 11 px", () => {
     expect(textSizes().filter(px => px < 11)).toEqual([]);
     expect(textSizes()).toHaveLength(5);
+  });
+});
+
+describe("the stacking layers", () => {
+  // A dialog's combobox lists open in a portal: jsdom cannot see them hidden.
+  it("puts a popup above the dialog it came from", () => {
+    const scale = readFileSync(join(SRC, "design/tokens/scale.css"), "utf8");
+    const layerOf = (name: string): number =>
+      Number(new RegExp(`--layer-${name}: (\\d+)`, "u").exec(scale)?.[1]);
+    expect(layerOf("popup")).toBeGreaterThan(layerOf("dialog"));
+    expect(layerOf("toast")).toBeGreaterThan(layerOf("popup"));
   });
 });

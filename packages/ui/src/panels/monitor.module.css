@@ -1,0 +1,216 @@
+/**
+ * @file The Monitor's layout: the run's header, then the graph beside its tree,
+ *   stacked when the panel is narrow. The graph keeps a height it can be used
+ *   at, and the panel scrolls when it has less than that, as at 200% zoom.
+ */
+
+.monitor {
+  --graph-min-height: 16rem;
+
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.header {
+  align-items: center;
+  border-block-end: var(--hairline) solid var(--panel-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  padding: var(--gap-tight) var(--gap);
+}
+
+.title {
+  font-size: var(--text-ui);
+  font-weight: var(--weight-medium);
+  margin: 0;
+}
+
+.runId,
+.cost {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+}
+
+.controls {
+  display: flex;
+  gap: var(--gap-hair);
+  margin-inline-start: auto;
+}
+
+.error {
+  color: var(--color-status-failed);
+  margin: 0;
+  padding: var(--gap-tight) var(--gap);
+}
+
+.body {
+  display: flex;
+  flex: 1 1 0;
+  min-height: var(--graph-min-height);
+}
+
+.canvas {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.side {
+  border-inline-start: var(--hairline) solid var(--panel-border);
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--gap);
+  min-height: 0;
+  overflow: auto;
+  padding: var(--gap-tight);
+  width: 16rem;
+}
+
+@container (max-width: 52rem) {
+  .body {
+    flex: 1 0 auto;
+    flex-direction: column;
+  }
+
+  .canvas {
+    flex: 1 0 var(--graph-min-height);
+  }
+
+  .side {
+    border-block-start: var(--hairline) solid var(--panel-border);
+    border-inline-start: 0;
+    flex: none;
+    overflow: visible;
+    width: auto;
+  }
+}
+
+.sideTitle {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-weight: var(--weight-medium);
+  margin: 0;
+}
+
+.node {
+  align-items: center;
+  border-block-end: var(--hairline) solid var(--panel-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-tight);
+  padding-block-end: var(--gap-tight);
+}
+
+.tree {
+  display: flex;
+  flex-direction: column;
+}
+
+.treeRow {
+  align-items: center;
+  border-inline-start: var(--focus-width) solid transparent;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  display: flex;
+  gap: var(--gap-tight);
+  min-height: var(--target-min);
+  padding-inline-end: var(--gap-tight);
+}
+
+.treeRow:hover {
+  background: var(--surface-hover);
+}
+
+.treeRow:focus-visible {
+  outline-offset: calc(var(--focus-width) * -1);
+}
+
+.treeRow[data-selected] {
+  background: var(--surface-selected);
+  border-inline-start-color: var(--panel-tab-indicator);
+}
+
+.treeToggle {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  flex: none;
+  font-size: var(--icon-size);
+  height: var(--target-min);
+  justify-content: center;
+  width: var(--target-min);
+}
+
+.treeToggle:hover {
+  color: var(--color-text);
+}
+
+.treeIcon {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  flex: none;
+  font-size: var(--icon-size);
+}
+
+.treeId {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.treeCost {
+  color: var(--color-text-muted);
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+}
+
+.linkList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-hair);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.link {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-tight);
+}
+
+.linkEnds {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.linkCount {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+}

@@ -139,6 +139,7 @@ export const API = {
   runs: { method: "GET", path: "/api/runs", query: RunsQuerySchema },
   run: { method: "GET", path: "/api/runs/:id" },
   tree: { method: "GET", path: "/api/runs/:id/tree" },
+  graph: { method: "GET", path: "/api/runs/:id/graph" },
   events: {
     method: "GET",
     path: "/api/runs/:id/events",
@@ -173,6 +174,19 @@ export const API = {
   unlink: { method: "POST", path: "/api/links/end", body: UnlinkSchema },
 } as const satisfies Record<string, Route>;
 
+/** What the UI draws a workflow or a run from. */
+export type WorkflowGraph = {
+  nodes: { id: string; type: string; parent?: string | undefined }[];
+  edges: {
+    from: string;
+    to: string;
+    when?: string | undefined;
+    maxRounds?: number | undefined;
+  }[];
+  channels: (readonly [string, string])[];
+  positions: Record<string, { x: number; y: number }>;
+};
+
 /** What each route answers with, on success. */
 export type Responses = {
   health: Health;
@@ -181,6 +195,7 @@ export type Responses = {
   runs: RunView[];
   run: RunView;
   tree: TreeNode[];
+  graph: WorkflowGraph;
   events: StoredEvent[];
   decisions: DecisionRecord[];
   answer: { decision: string; answer: string };

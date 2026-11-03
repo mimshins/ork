@@ -72,6 +72,28 @@ describe("the view", () => {
     expect(reveal(view, right, CANVAS)).toEqual({ x: -174, y: 0, k: 1 });
   });
 
+  it("moves a node out from under what covers the canvas", () => {
+    const view = { x: 0, y: 0, k: 1 };
+    const controls = { x: 600, y: 540, width: 190, height: 50 };
+    const under = { x: 650, y: 500, width: 50, height: 60 };
+    expect(reveal(view, under, CANVAS, controls)).toEqual({
+      x: 0,
+      y: -44,
+      k: 1,
+    });
+    // Only a node actually under them moves.
+    const beside = { x: 100, y: 500, width: 50, height: 60 };
+    expect(reveal(view, beside, CANVAS, controls)).toBe(view);
+  });
+
+  it("moves it aside when there is no room above", () => {
+    const view = { x: 0, y: 0, k: 1 };
+    const short = { width: 800, height: 120 };
+    const controls = { x: 600, y: 70, width: 190, height: 40 };
+    const under = { x: 650, y: 30, width: 50, height: 60 };
+    expect(reveal(view, under, short, controls).x).toBe(600 - 24 - 700);
+  });
+
   it("knows what is on screen once panned and zoomed", () => {
     const view = panBy({ x: 0, y: 0, k: 2 }, -100, -40);
     const box = onScreen(view, CANVAS, 0);

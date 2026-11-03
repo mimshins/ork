@@ -23,8 +23,14 @@ export const TipProvider = ({ children }: { children: ReactNode }) => (
 /** The accessible description of a control with a CLI twin. */
 export const cliDescription = (
   cli: string | undefined,
-): { "aria-description"?: string } =>
-  cli === undefined ? {} : { "aria-description": `CLI: ${cli}` };
+  /** What else to say of the control, before the command. */
+  before?: string,
+): { "aria-description"?: string } => {
+  const parts = [before, cli === undefined ? undefined : `CLI: ${cli}`].filter(
+    part => part !== undefined,
+  );
+  return parts.length === 0 ? {} : { "aria-description": parts.join(". ") };
+};
 
 export type TipProps = {
   /** The control the hint is for: one element that takes a ref and props. */

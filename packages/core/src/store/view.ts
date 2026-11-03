@@ -26,6 +26,10 @@ export type TreeNode = {
   output?: Record<string, unknown>;
   /** Paused, and waiting at a hold point (ADR-041). */
   held?: true;
+  /** The model its last session ran on. */
+  model?: string;
+  /** For a `workflow.call`, the run it last started (RFC-004). */
+  calledRun?: string;
   children: TreeNode[];
 };
 
@@ -92,6 +96,15 @@ export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
     } else if (event.type === "node.skipped") {
       const node = nodes.get(event.id);
       if (node !== undefined) node.state = "skipped";
+    } else if (event.type === "call.started") {
+      const node = nodes.get(event.node);
+      if (node !== undefined) node.calledRun = event.run;
+    } else if (
+      event.type === "node.event" &&
+      event.event.type === "session.started"
+    ) {
+      const node = nodes.get(event.id);
+      if (node !== undefined) node.model = event.event.model;
     }
   }
   const roots: TreeNode[] = [];

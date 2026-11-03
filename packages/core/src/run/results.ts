@@ -115,6 +115,13 @@ export const runStartedEvent = (
   workflow: graph.workflow.name,
   entries: graph.entries,
   nodes: declaredNodes(graph),
+  edges: graph.edges.map(({ from, to, when, maxRounds }) => ({
+    from,
+    to,
+    ...(when === undefined ? {} : { when }),
+    ...(maxRounds === undefined ? {} : { maxRounds }),
+  })),
+  channels: graph.channels,
   inputs: options.inputs,
   ...(options.settings === undefined ? {} : { settings: options.settings }),
 });

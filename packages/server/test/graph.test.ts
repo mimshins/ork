@@ -6,7 +6,7 @@ import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { readWorkflowGraph } from "../src/index.ts";
+import { readWorkflowGraph, runGraph } from "../src/index.ts";
 
 const WORKFLOW = `schemaVersion: 1
 name: t
@@ -72,5 +72,60 @@ describe("reading a workflow's graph", () => {
     expect(readWorkflowGraph(path.join(dir, "gone.ork.yaml"))).toBeNull();
     writeFileSync(file, "nodes: 3");
     expect(readWorkflowGraph(file)).toBeNull();
+  });
+
+  it("draws a run from what it recorded, whatever the file says now", () => {
+    const graph = runGraph(
+      [
+        {
+          type: "run.started",
+          runId: "r",
+          workflow: "t",
+          entries: [],
+          nodes: [{ id: "old", type: "tool.shell" }],
+          edges: [{ from: "old", to: "old", maxRounds: 2 }],
+          channels: [],
+        },
+      ],
+      file,
+    );
+    expect(graph.nodes.map(node => node.id)).toEqual(["old"]);
+    expect(graph.edges).toEqual([{ from: "old", to: "old", maxRounds: 2 }]);
+    expect(graph.channels).toEqual([]);
+  });
+
+  it("goes by the file for a run from before edges were kept", () => {
+    const graph = runGraph(
+      [
+        {
+          type: "run.started",
+          runId: "r",
+          workflow: "t",
+          entries: [],
+          nodes: [{ id: "lead", type: "claude.leader" }],
+        },
+      ],
+      file,
+    );
+    expect(graph.nodes.map(node => node.id)).toEqual(["lead"]);
+    expect(graph.edges).toHaveLength(3);
+    expect(graph.channels).toEqual([["a", "lead"]]);
+  });
+
+  it("still shows a run whose file has gone", () => {
+    expect(
+      runGraph(
+        [
+          {
+            type: "run.started",
+            runId: "r",
+            workflow: "t",
+            entries: [],
+            nodes: [{ id: "lead", type: "claude.leader" }],
+          },
+        ],
+        path.join(dir, "gone.ork.yaml"),
+      ),
+    ).toMatchObject({ edges: [], channels: [], positions: {} });
   });
 });

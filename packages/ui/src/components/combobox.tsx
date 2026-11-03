@@ -1,8 +1,8 @@
 /**
  * @file A combobox, on Base UI's: one choice from a list long enough to filter,
- *   such as projects and workflows. Typing filters the list; the arrow keys
- *   move through it while focus stays in the input, and an empty result says
- *   so.
+ *   such as projects and workflows. Typing filters the list and highlights its
+ *   first match, for Enter to take; the arrow keys move through it while focus
+ *   stays in the input, and an empty result says so.
  */
 
 import { Combobox as BaseCombobox } from "@base-ui/react/combobox";
@@ -23,6 +23,8 @@ export type ComboboxProps = {
   placeholder?: string;
   /** What an empty result says: "No workflow matches." */
   empty: string;
+  /** Nothing to choose from yet; the placeholder should say why. */
+  disabled?: boolean;
 };
 
 const labelOf = (option: Option): string => option.label;
@@ -35,10 +37,13 @@ export const Combobox = ({
   onChange,
   placeholder = "",
   empty,
+  disabled = false,
 }: ComboboxProps) => {
   const inputId = useId();
   return (
     <BaseCombobox.Root
+      autoHighlight
+      disabled={disabled}
       isItemEqualToValue={sameOption}
       itemToStringLabel={labelOf}
       items={options}

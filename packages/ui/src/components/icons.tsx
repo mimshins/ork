@@ -10,6 +10,10 @@
 import {
   mdiAccountCheckOutline,
   mdiAccountStarOutline,
+  mdiArrowDown,
+  mdiArrowLeft,
+  mdiArrowRight,
+  mdiArrowUp,
   mdiAws,
   mdiBellOutline,
   mdiCallMerge,
@@ -81,6 +85,10 @@ export const IconClose = icon(mdiClose);
 export const IconCheck = icon(mdiCheck);
 export const IconChevronDown = icon(mdiChevronDown);
 export const IconChevronRight = icon(mdiChevronRight);
+export const IconArrowLeft = icon(mdiArrowLeft);
+export const IconArrowRight = icon(mdiArrowRight);
+export const IconArrowUp = icon(mdiArrowUp);
+export const IconArrowDown = icon(mdiArrowDown);
 export const IconCopy = icon(mdiContentCopy);
 export const IconSearch = icon(mdiMagnify);
 export const IconConsole = icon(mdiConsoleLine);

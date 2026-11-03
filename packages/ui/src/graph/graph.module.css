@@ -7,6 +7,7 @@
 .graph {
   height: 100%;
   min-height: 0;
+  overflow: hidden;
   position: relative;
   width: 100%;
 }
@@ -129,6 +130,11 @@
   background: var(--surface-hover);
 }
 
+/* The layer scales its cards, and their ring would go with them. */
+.card:focus-visible {
+  outline-width: calc(var(--focus-width) / var(--graph-zoom, 1));
+}
+
 .card[data-selected] {
   background: var(--surface-selected);
   border-color: var(--color-action-edge);
@@ -207,7 +213,10 @@
   border-radius: var(--radius-control);
   bottom: var(--gap);
   display: flex;
+  flex-wrap: wrap;
   gap: var(--gap-hair);
+  justify-content: flex-end;
+  max-width: calc(100% - var(--gap) * 2);
   padding: var(--gap-hair);
   position: absolute;
   right: var(--gap);

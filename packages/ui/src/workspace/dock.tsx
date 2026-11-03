@@ -16,7 +16,7 @@ import "dockview-react/dist/styles/dockview.css";
 import { useCallback, useEffect } from "react";
 
 import { EmptyState } from "../components/bits.tsx";
-import { DockButtons, WorkspaceContext } from "./dock-buttons.tsx";
+import { DockButtons } from "./dock-buttons.tsx";
 import { isPanelId, PANELS, panelOf } from "./panels.tsx";
 import type { Workspace } from "./workspace.ts";
 
@@ -76,19 +76,17 @@ export const Dock = ({ workspace }: { workspace: Workspace }) => {
     [workspace],
   );
   return (
-    <WorkspaceContext value={workspace}>
-      <DockviewReact
-        announcer={({ message }) => {
-          workspace.announceFromDock(message);
-        }}
-        components={COMPONENTS}
-        defaultTabComponent={Tab}
-        disableTabsOverflowList
-        onReady={onReady}
-        rightHeaderActionsComponent={DockButtons}
-        theme={THEME}
-        watermarkComponent={NoPanels}
-      />
-    </WorkspaceContext>
+    <DockviewReact
+      announcer={({ message }) => {
+        workspace.announceFromDock(message);
+      }}
+      components={COMPONENTS}
+      defaultTabComponent={Tab}
+      disableTabsOverflowList
+      onReady={onReady}
+      rightHeaderActionsComponent={DockButtons}
+      theme={THEME}
+      watermarkComponent={NoPanels}
+    />
   );
 };

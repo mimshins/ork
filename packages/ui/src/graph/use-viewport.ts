@@ -15,6 +15,7 @@ import {
   useState,
 } from "react";
 
+import { coveredBy, onResize, onWheel } from "./canvas-dom.ts";
 import type { GraphLayout, Point } from "./types.ts";
 import {
   type Box,
@@ -40,6 +41,8 @@ export type Shown = {
 export type Viewport = {
   canvasRef: RefObject<HTMLDivElement | null>;
   layerRef: RefObject<HTMLDivElement | null>;
+  /** The buttons over the canvas, which a shown node must not sit under. */
+  controlsRef: RefObject<HTMLDivElement | null>;
   shown: Shown;
   fit: () => void;
   /** Zooms around the canvas's middle. */
@@ -64,35 +67,13 @@ const nothing = (): void => {
   // An effect with nothing to clean up.
 };
 
-const onResize = (element: Element, call: () => void): (() => void) => {
-  const observer = new ResizeObserver(call);
-  observer.observe(element);
-  return () => {
-    observer.disconnect();
-  };
-};
-
-/** React's wheel listener is passive, and this must stop the page moving. */
-const onWheel = (
-  element: Element,
-  call: (event: WheelEvent) => void,
-): (() => void) => {
-  const listener = (event: Event): void => {
-    event.preventDefault();
-    if (event instanceof WheelEvent) call(event);
-  };
-  element.addEventListener("wheel", listener, { passive: false });
-  return () => {
-    element.removeEventListener("wheel", listener);
-  };
-};
-
 const distance = (a: Point, b: Point): number =>
   Math.hypot(a.x - b.x, a.y - b.y);
 
 export const useViewport = (layout: GraphLayout): Viewport => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const layerRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
   const view = useRef<View>({ x: 0, y: 0, k: 1 });
   const moved = useRef(false);
   const frame = useRef(0);
@@ -129,6 +110,8 @@ export const useViewport = (layout: GraphLayout): Viewport => {
       const spacing = `${String(dotSpacing(k))}px`;
       canvas.style.backgroundSize = `${spacing} ${spacing}`;
       canvas.style.backgroundPosition = `${String(x)}px ${String(y)}px`;
+      // The focus ring scales with its card, and must stay as thick as any.
+      canvas.style.setProperty("--graph-zoom", String(k));
     }
     const size = sizeOf();
     // With no size yet, as in a hidden panel, nothing can be ruled out.
@@ -186,17 +169,24 @@ export const useViewport = (layout: GraphLayout): Viewport => {
     (box: Box) => {
       const size = sizeOf();
       if (size.width === 0 || size.height === 0) return;
-      const next = reveal(view.current, box, size);
+      const next = reveal(
+        view.current,
+        box,
+        size,
+        coveredBy(controlsRef, canvasRef),
+      );
       if (next !== view.current) moveTo(next);
     },
     [moveTo, sizeOf],
   );
 
-  // A new drawing starts fitted, and a resized panel stays fitted.
+  // A new drawing starts fitted, and a resized panel stays fitted, until moved.
   useEffect(() => {
     shownKey.current = "";
-    fit();
-  }, [fit]);
+    // A worker spawned while the user looks around must not move their view.
+    if (moved.current) schedule();
+    else fit();
+  }, [fit, schedule]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -278,5 +268,15 @@ export const useViewport = (layout: GraphLayout): Viewport => {
     };
   }, [moveTo]);
 
-  return { canvasRef, layerRef, shown, fit, zoom, pan, show, pointer };
+  return {
+    canvasRef,
+    layerRef,
+    controlsRef,
+    shown,
+    fit,
+    zoom,
+    pan,
+    show,
+    pointer,
+  };
 };

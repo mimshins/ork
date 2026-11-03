@@ -17,6 +17,7 @@ import {
   IconNotifications,
   IconRuns,
 } from "../components/icons.tsx";
+import { MonitorPanel } from "../panels/monitor-panel.tsx";
 import { RunsPanel } from "../panels/runs-panel.tsx";
 
 export type PanelId =
@@ -49,7 +50,7 @@ const SPECS: Record<PanelId, PanelSpec> = {
     id: "monitor",
     title: "Monitor",
     Icon: IconMonitor,
-    Body: notBuilt("ork tree <run>"),
+    Body: MonitorPanel,
   },
   logs: {
     id: "logs",

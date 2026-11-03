@@ -161,8 +161,8 @@ How something built works for now, by choice.
 - **L49 · A link names one node.** It joins the exact node given, so a spawned
   worker needs its own (`tests-2`), and a run of one node (`ork run --node`)
   cannot be linked. ([messaging](../messaging/links.md))
-- **L50 · The UI does not show links yet.** The API has them, but the overview
-  stream does not carry them; the Monitor brings them in.
+- **L50 · The UI can only look at links.** The Monitor lists a run's links and
+  opens the run at the other end. Making and ending one is still `ork relay`.
   ([messaging](../messaging/links.md))
 - **L51 · A link's limit of 100 is a guess.** Nothing has measured how many
   messages real work takes. ([messaging](../messaging/links.md))
@@ -210,3 +210,13 @@ How something built works for now, by choice.
   `.layout.json`, an edge curves straight between its two nodes and does not
   look for a way around what the user put between them.
   ([graph](../ui/graph.md))
+- **L63 · A run's tree is read again, not folded in the browser.** The Monitor
+  asks the server for it at most four times a second while the run is busy. That
+  is the whole history each time, so a very long run costs more to watch.
+  ([panels](../ui/panels.md#monitor))
+- **L64 · A graph card's keys are heard, not shown.** Zoom, fit and pan show
+  their keys in their tooltips, but `Enter`, `Shift+F10` and `Escape` on a card
+  are only in the canvas's description, which sighted keyboard users never see.
+  Cards at low zoom are also smaller than 24 px, which WCAG 2.5.8 allows because
+  the ownership tree's rows do the same at full size.
+  ([graph](../ui/graph.md#keys-and-names))

@@ -1,10 +1,12 @@
 /**
- * @file A workflow as the graph the UI draws: its nodes, its edges with their
- *   shorthand expanded, its channels, and the positions in its `.layout.json`.
+ * @file A workflow or a run as the graph the UI draws: its nodes, its edges
+ *   with their shorthand expanded, its channels, and the positions in its
+ *   `.layout.json`.
  */
 
 import { existsSync, readFileSync } from "node:fs";
 
+import type { RunEvent } from "@krapht/ork-core";
 import {
   expandEdge,
   layoutFileOf,
@@ -13,17 +15,7 @@ import {
   type Workflow,
 } from "@krapht/ork-schema";
 
-export type WorkflowGraph = {
-  nodes: { id: string; type: string; parent?: string | undefined }[];
-  edges: {
-    from: string;
-    to: string;
-    when?: string | undefined;
-    maxRounds?: number | undefined;
-  }[];
-  channels: (readonly [string, string])[];
-  positions: Record<string, { x: number; y: number }>;
-};
+import type { WorkflowGraph } from "./contract.ts";
 
 export const workflowGraph = (
   workflow: Workflow,
@@ -61,4 +53,30 @@ export const readWorkflowGraph = (file: string): WorkflowGraph | null => {
     parsed.workflow,
     existsSync(sidecar) ? parseLayoutFile(readFileSync(sidecar, "utf8")) : {},
   );
+};
+
+/**
+ * The graph of a run: what it recorded it ran, so editing the file later does
+ * not redraw it. A run from before edges were kept has only its file to go by.
+ * Cards sit where the file's `.layout.json` puts them now.
+ */
+export const runGraph = (
+  events: readonly RunEvent[],
+  file: string,
+): WorkflowGraph => {
+  const started = events.findLast(event => event.type === "run.started");
+  const onFile = readWorkflowGraph(file);
+  const nodes = started?.type === "run.started" ? started.nodes : [];
+  const edges = started?.type === "run.started" ? started.edges : undefined;
+  const channels =
+    started?.type === "run.started" ? started.channels : undefined;
+  return {
+    nodes:
+      nodes.length === 0
+        ? (onFile?.nodes ?? [])
+        : nodes.map(({ id, type, parent }) => ({ id, type, parent })),
+    edges: edges ?? onFile?.edges ?? [],
+    channels: channels ?? onFile?.channels ?? [],
+    positions: onFile?.positions ?? {},
+  };
 };

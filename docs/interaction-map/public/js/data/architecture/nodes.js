@@ -187,7 +187,7 @@ export const NODES = [
     summary:
       "The localhost UI: live panels for the run, the decisions inbox, chats with nodes, logs and notifications, then a canvas designer that saves the same YAML and layout files, and the context inspector.",
     facts: [
-      "Built: the app, bundled into the CLI's `dist/ui` and served by `ork ui`.",
+      "Built: the app, bundled into the CLI's `dist/ui` and served by `ork ui`, with its Runs panel and the Monitor: a run's live graph and ownership tree, with its controls.",
       "Vite, React, Base UI, dockview and containerized-state; the run graph is drawn in-house, so no zustand ships.",
       "Browser code imports only `@krapht/ork-server/client`: the contract and the typed client.",
       "Strict CSP: no inline script or `<style>`, no remote fonts or CDNs.",

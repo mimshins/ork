@@ -75,6 +75,51 @@ describe("the Run workflow dialog", () => {
     expect(await screen.findByText("Pick a project.")).toBeDefined();
   });
 
+  it("says what to type, and holds the workflow back until there is a project", async () => {
+    await open({ projects: [project("shop"), project("blog")] });
+    const projectField = await screen.findByLabelText("Project");
+    expect(projectField.getAttribute("placeholder")).toBe(
+      "Type to find a project",
+    );
+    const workflowField = screen.getByLabelText("Workflow");
+    expect(workflowField.getAttribute("placeholder")).toBe(
+      "Choose a project first",
+    );
+    expect(isDisabled(workflowField)).toBe(true);
+  });
+
+  it("finds a project by typing, and takes the first match with Enter", async () => {
+    const user = userEvent.setup();
+    await open({
+      projects: [project("shop"), project("blog")],
+      workflows: {
+        blog: [workflowNamed("post", {}), workflowNamed("edit", {})],
+      },
+    });
+    await user.click(await screen.findByLabelText("Project"));
+    await user.keyboard("bl");
+    expect(await screen.findByRole("option", { name: "blog" })).toBeDefined();
+    expect(screen.queryByRole("option", { name: "shop" })).toBeNull();
+    await user.keyboard("{Enter}");
+    expect(screen.getByLabelText<HTMLInputElement>("Project").value).toBe(
+      "blog",
+    );
+    await screen.findByText("Pick a workflow.");
+    expect(isDisabled(screen.getByLabelText("Workflow"))).toBe(false);
+  });
+
+  it("says when a project has no workflows", async () => {
+    await open({ projects: [project("shop")], workflows: { shop: [] } });
+    expect(
+      await screen.findByText(
+        "shop has no workflows. Add one to its .ork/workflows folder.",
+      ),
+    ).toBeDefined();
+    expect(screen.getByLabelText("Workflow").getAttribute("placeholder")).toBe(
+      "No workflows here",
+    );
+  });
+
   it("teaches the next step when there are no projects", async () => {
     await open({ projects: [] });
     expect(await screen.findByText("No projects yet.")).toBeDefined();

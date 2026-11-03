@@ -5,7 +5,7 @@
  */
 
 import type { IDockviewHeaderActionsProps } from "dockview-react";
-import { createContext, type ReactNode, use } from "react";
+import { type ReactNode, use } from "react";
 import { useValue } from "react-containerized-state";
 
 import { IconButton } from "../components/button.tsx";
@@ -17,15 +17,12 @@ import {
   IconMinimize,
   IconRestore,
 } from "../components/icons.tsx";
+import { type Workspace, WorkspaceContext } from "./context.ts";
 import { platformIsMac } from "./keys.ts";
 import { isPanelId, type PanelId } from "./panels.tsx";
 import { ariaKeysOf, keysOf, type Shortcut, SHORTCUTS } from "./shortcuts.ts";
-import type { Workspace } from "./workspace.ts";
 
 import styles from "./dock.module.css";
-
-/** The workspace for the buttons, which dockview renders with its own props. */
-export const WorkspaceContext = createContext<Workspace | null>(null);
 
 const Action = ({
   label,

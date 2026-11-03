@@ -48,11 +48,31 @@ export const panBy = (view: View, dx: number, dy: number): View => ({
   y: view.y + dy,
 });
 
-/** The least pan that shows `box` with `margin` around it, or the same view. */
+/** Moves a box out from under what sits on the canvas: up if that fits, or left. */
+const clearOf = (view: View, box: Box, covered: Box, margin: number): View => {
+  const shown = {
+    x: box.x * view.k + view.x,
+    y: box.y * view.k + view.y,
+    width: box.width * view.k,
+    height: box.height * view.k,
+  };
+  if (!overlaps(shown, covered)) return view;
+  const up = covered.y - margin - (shown.y + shown.height);
+  return shown.y + up >= margin
+    ? panBy(view, 0, up)
+    : panBy(view, covered.x - margin - (shown.x + shown.width), 0);
+};
+
+/**
+ * The least pan that shows `box` with `margin` around it, or the same view.
+ * `covered` is a part of the canvas, in its pixels, that hides what is under
+ * it.
+ */
 export const reveal = (
   view: View,
   box: Box,
   canvas: Size,
+  covered?: Box,
   margin = 24,
 ): View => {
   const shift = (start: number, length: number, room: number): number => {
@@ -63,7 +83,8 @@ export const reveal = (
   };
   const dx = shift(box.x * view.k + view.x, box.width * view.k, canvas.width);
   const dy = shift(box.y * view.k + view.y, box.height * view.k, canvas.height);
-  return dx === 0 && dy === 0 ? view : panBy(view, dx, dy);
+  const moved = dx === 0 && dy === 0 ? view : panBy(view, dx, dy);
+  return covered === undefined ? moved : clearOf(moved, box, covered, margin);
 };
 
 /** What the canvas shows, in graph coordinates, with `margin` px extra. */

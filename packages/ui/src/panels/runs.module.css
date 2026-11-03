@@ -104,10 +104,12 @@
   padding: 0;
 }
 
+/* A legend stays out of its group's gap, and heads labels so stands out from them. */
 .legend {
-  color: var(--color-text-muted);
+  color: var(--color-text);
   font-size: var(--text-small);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-strong);
+  margin-block-end: var(--gap);
   padding: 0;
 }
 
@@ -117,8 +119,11 @@
   overflow-wrap: anywhere;
 }
 
+/* Always there, so the reason is heard as it changes and the form does not jump. */
 .reason {
   color: var(--color-text-muted);
+  display: block;
+  min-height: 1lh;
 }
 
 .error {

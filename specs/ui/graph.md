@@ -2,11 +2,11 @@
 
 _Part of [The UI](../ui.md)._
 
-Status: **Built, not yet in a panel:** the layout, the view, its keys and its
-accessible names ([graph](../../packages/ui/src/graph/),
-[tests](../../packages/ui/test/graph/)), shown in the design system's gallery.
-The Monitor puts it on a live run. It is Ork's own, not React Flow, so the state
-stays in containerized-state ([ADR-040](../../decisions/ADR-040-ui-stack.md)).
+Status: **Built:** the layout, the view, its keys and its accessible names
+([graph](../../packages/ui/src/graph/), [tests](../../packages/ui/test/graph/)),
+shown live in the [Monitor](./panels.md#monitor) and in the design system's
+gallery. It is Ork's own, not React Flow, so the state stays in
+containerized-state ([ADR-040](../../decisions/ADR-040-ui-stack.md)).
 
 ## Layout
 
@@ -63,9 +63,15 @@ The canvas is one tab stop and the cards are another, with a roving tabindex.
   card above or below on its rank. Moving there brings it into view.
 - `Enter` or `Space` selects. The context-menu key, `Shift+F10` or a right click
   asks for the node's controls. `Escape` goes back to the canvas.
-- Each card's accessible name says its id, type, status, model, tokens and cost.
-  A status has an icon and a word as well as its color.
+- Each card's accessible name says its id, status, model, tokens, cost and type,
+  in the order the card shows them, so the name holds what is on screen (WCAG
+  2.5.3). A status has an icon and a word as well as its color.
 - The canvas is an `application`, since it takes its own keys, with a
-  description of them. Edges are hidden from assistive technology. The ownership
-  tree will be the screen-reader-first twin of the graph, with the same data and
-  actions.
+  description of them. Edges are hidden from assistive technology, and each
+  card's description says them instead: "after a; leads to b if exitCode == 0".
+  The ownership tree says the same, and is the screen-reader-first twin of the
+  graph, with the same data and actions.
+- Zoom, fit and pan are buttons too, so none of it needs a drag (WCAG 2.5.7),
+  and a node selected elsewhere comes into view. A node brought into view is
+  never left under those buttons, and the focus ring keeps its thickness at any
+  zoom (WCAG 2.4.11).

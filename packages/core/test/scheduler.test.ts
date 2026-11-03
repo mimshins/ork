@@ -496,4 +496,47 @@ describe("a workflow's outputs", () => {
     await expect(done).resolves.toMatchObject({ status: "budget_exhausted" });
     expect(ran).toEqual(["a"]);
   });
+
+  it("records its edges and channels when it starts", async () => {
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: t",
+        "nodes:",
+        "  a: { type: claude.worker, prompt: a }",
+        "  b: { type: claude.worker, prompt: b }",
+        "  c: { type: tool.shell, command: x }",
+        "edges:",
+        "  - a -> c",
+        "  - { from: c, to: a, when: exitCode == 1, maxRounds: 2 }",
+        "messages:",
+        "  - between: [a, b]",
+      ].join("\n"),
+    );
+    const { executor } = scripted({});
+    const events: RunEvent[] = [];
+    const { done } = startRun({
+      graph,
+      runId: "r",
+      inputs: {},
+      cwd: "/tmp",
+      executors: { "tool.shell": executor, "claude.worker": executor },
+      human: {
+        ask: () => Promise.resolve(""),
+        permit: () => Promise.resolve({ allow: true }),
+      },
+      onEvent: event => {
+        events.push(event);
+      },
+    });
+    await done;
+    expect(events[0]).toMatchObject({
+      type: "run.started",
+      edges: [
+        { from: "a", to: "c" },
+        { from: "c", to: "a", when: "exitCode == 1", maxRounds: 2 },
+      ],
+      channels: [["a", "b"]],
+    });
+  });
 });

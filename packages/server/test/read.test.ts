@@ -87,6 +87,29 @@ describe("the read routes", () => {
     });
   });
 
+  it("give the graph a run recorded", async () => {
+    const { client, store } = await withRuns();
+    store.append("aaa11111", {
+      type: "run.started",
+      runId: "aaa11111",
+      workflow: "w",
+      entries: ["lead"],
+      nodes: [{ id: "lead", type: "claude.leader" }],
+      edges: [{ from: "lead", to: "lead", maxRounds: 2 }],
+      channels: [],
+    });
+    expect(
+      await client.call("graph", { params: { id: "aaa11111" } }),
+    ).toMatchObject({
+      ok: true,
+      data: {
+        nodes: [{ id: "lead", type: "claude.leader" }],
+        edges: [{ from: "lead", to: "lead", maxRounds: 2 }],
+        channels: [],
+      },
+    });
+  });
+
   it("give a run's tree and its events, by node and after a seq", async () => {
     const { client } = await withRuns();
     expect(

@@ -173,6 +173,14 @@ export type RunResult = {
 
 export type RunNodeInfo = { id: string; type: NodeType; parent?: string };
 
+/** A declared edge, as the run recorded it: what its graph is drawn from. */
+export type RunEdgeInfo = {
+  from: string;
+  to: string;
+  when?: string;
+  maxRounds?: number;
+};
+
 /** How the run was started, kept so `ork resume` starts it the same way. */
 export type RunSettings = {
   inPlace?: boolean;
@@ -195,6 +203,9 @@ export type RunEvent =
       entries: string[];
       /** Every declared node, with its owner: the shape `ork tree` draws. */
       nodes: RunNodeInfo[];
+      /** Its edges and channels, absent on runs from before they were kept. */
+      edges?: RunEdgeInfo[];
+      channels?: [string, string][];
       inputs?: Inputs;
       settings?: RunSettings;
     }

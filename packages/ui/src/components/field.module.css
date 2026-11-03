@@ -71,9 +71,11 @@
   cursor: pointer;
   display: flex;
   font-size: var(--icon-size-small);
-  height: var(--control-height);
+  /* As tall as its group, with the chevron where a select has its own. */
+  align-self: stretch;
   justify-content: center;
-  width: var(--control-height);
+  min-width: var(--target-min);
+  width: calc(var(--inset-control) * 2 + var(--icon-size-small));
 }
 
 .icon {
@@ -152,7 +154,7 @@
   background: var(--box-on-mark);
 }
 
-:is(.box, .switch, .control)[data-disabled] {
+:is(.box, .switch, .control, .group)[data-disabled] {
   background: transparent;
   border-color: var(--color-border);
   color: var(--color-text-disabled);
@@ -166,4 +168,12 @@
 
 .thumb[data-disabled] {
   background: var(--color-text-disabled);
+}
+
+.group[data-disabled] :is(.input, .inputButton) {
+  cursor: not-allowed;
+}
+
+.group[data-disabled] .inputButton {
+  color: var(--color-text-disabled);
 }

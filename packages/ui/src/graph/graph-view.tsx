@@ -3,7 +3,8 @@
  *   buttons in one layer that pans and zooms, drawing only what is on screen.
  *   The canvas takes the keys for moving the view. The cards are one tab stop:
  *   the arrow keys move along the edges, Enter selects, and the context-menu
- *   key asks for the node's controls.
+ *   key asks for the node's controls. A card says its edges in its description,
+ *   and a node selected elsewhere comes into view.
  */
 
 import {
@@ -16,19 +17,17 @@ import {
   useState,
 } from "react";
 
-import { IconButton } from "../components/button.tsx";
-import { IconFit, IconPlus, IconSkipped } from "../components/icons.tsx";
+import { connectionsOf } from "./connections.ts";
 import { EdgePaths } from "./edge-paths.tsx";
 import type { NodeFacts } from "./facts.ts";
 import { type Direction, moveFrom } from "./moves.ts";
 import { NodeCard } from "./node-card.tsx";
 import type { GraphLayout } from "./types.ts";
 import { useViewport } from "./use-viewport.ts";
+import { PAN_STEP, ViewControls, ZOOM_STEP } from "./view-controls.tsx";
 
 import styles from "./graph.module.css";
 
-const PAN_STEP = 48;
-const ZOOM_STEP = 1.25;
 const NO_FACTS: NodeFacts = { status: "queued" };
 
 const DIRECTIONS: Readonly<Record<string, Direction>> = {
@@ -64,8 +63,17 @@ export const GraphView = memo(
     onNodeMenu,
   }: GraphViewProps) => {
     const hintId = useId();
-    const { canvasRef, layerRef, shown, fit, zoom, pan, show, pointer } =
-      useViewport(layout);
+    const {
+      canvasRef,
+      layerRef,
+      controlsRef,
+      shown,
+      fit,
+      zoom,
+      pan,
+      show,
+      pointer,
+    } = useViewport(layout);
     const [current, setCurrent] = useState(selected);
     // A newly selected node becomes the one Tab reaches.
     const [lastSelected, setLastSelected] = useState(selected);
@@ -81,7 +89,17 @@ export const GraphView = memo(
       () => new Map(layout.nodes.map(node => [node.id, node])),
       [layout],
     );
+    const connections = useMemo(() => connectionsOf(layout.edges), [layout]);
     const roving = byId.has(current ?? "") ? current : layout.nodes[0]?.id;
+
+    // Only a new selection moves the view: not the drawing changing under it.
+    const revealed = useRef(selected);
+    useEffect(() => {
+      if (selected === revealed.current) return;
+      revealed.current = selected;
+      const node = byId.get(selected ?? "");
+      if (node !== undefined) show(node);
+    }, [byId, selected, show]);
 
     useEffect(() => {
       const id = toFocus.current;
@@ -205,8 +223,9 @@ export const GraphView = memo(
             className={styles["hint"]}
             id={hintId}
           >
-            Arrow keys move the view; on a node, they move along its edges. Plus
-            and minus zoom, and 0 fits the graph.
+            Arrow keys move the view; on a node, they move along its edges,
+            Enter selects it, Shift+F10 asks for its controls, and Escape goes
+            back to the view. Plus and minus zoom, and 0 fits the graph.
           </p>
           <div
             className={styles["layer"]}
@@ -220,6 +239,7 @@ export const GraphView = memo(
             {nodes.map(node => (
               <NodeCard
                 bind={bind}
+                connections={connections.get(node.id)}
                 facts={facts?.get(node.id) ?? NO_FACTS}
                 key={node.id}
                 node={node}
@@ -233,33 +253,12 @@ export const GraphView = memo(
             ))}
           </div>
         </div>
-        <div className={styles["controls"]}>
-          <IconButton
-            keys={["+"]}
-            label="Zoom in"
-            onClick={() => {
-              zoom(ZOOM_STEP);
-            }}
-          >
-            <IconPlus />
-          </IconButton>
-          <IconButton
-            keys={["-"]}
-            label="Zoom out"
-            onClick={() => {
-              zoom(1 / ZOOM_STEP);
-            }}
-          >
-            <IconSkipped />
-          </IconButton>
-          <IconButton
-            keys={["0"]}
-            label="Fit the graph"
-            onClick={fit}
-          >
-            <IconFit />
-          </IconButton>
-        </div>
+        <ViewControls
+          controlsRef={controlsRef}
+          fit={fit}
+          pan={pan}
+          zoom={zoom}
+        />
       </div>
     );
   },

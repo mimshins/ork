@@ -37,7 +37,7 @@ under the same run id, with a `Replay` built from the run's events:
 
 | Event               | When                                                                                                                    |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `run.started`       | the run starts: id, workflow, entries, every declared node and owner                                                    |
+| `run.started`       | the run starts: id, workflow, entries, every declared node and owner, its edges and channels                            |
 | `node.started`      | an activation starts: id, type, round, `owner` when delegated, and the `agent` that fills it (name, source, file, hash) |
 | `node.event`        | a runtime event from the node's session or tool                                                                         |
 | `node.finished`     | an activation ends: ok, output, usage, error                                                                            |

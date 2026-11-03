@@ -1,6 +1,7 @@
 /**
  * @file What a node's card says beyond where it sits: its status, model, tokens
- *   and cost, and its accessible name, which says all of that in words.
+ *   and cost, and its accessible name, which says all of that in words, in the
+ *   order the card shows it so the name holds what is on screen (WCAG 2.5.3).
  */
 
 import { type Status, statusWord } from "../components/status-badge.tsx";
@@ -37,9 +38,11 @@ export const formatTokens = (tokens: number): string =>
 export const nodeName = (id: string, type: string, facts: NodeFacts): string =>
   [
     id,
-    typeWord(type),
     statusWord(facts.status),
     ...(facts.model === undefined ? [] : [facts.model]),
-    ...(facts.tokens === undefined ? [] : [`${String(facts.tokens)} tokens`]),
+    ...(facts.tokens === undefined
+      ? []
+      : [`${formatTokens(facts.tokens)} tokens`]),
     ...(facts.costUsd === undefined ? [] : [formatCost(facts.costUsd)]),
+    typeWord(type),
   ].join(", ");

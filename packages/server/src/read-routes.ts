@@ -8,6 +8,7 @@
 import { nodeOf, pendingDecisions, runTree } from "@krapht/ork-core";
 
 import { projectOf, runOf, type ServerContext, viewOf } from "./context.ts";
+import { runGraph } from "./graph.ts";
 import { fail, type Handlers, ok } from "./router.ts";
 import { projectWorkflows } from "./workflows.ts";
 
@@ -19,6 +20,7 @@ type ReadRoutes = Pick<
   | "runs"
   | "run"
   | "tree"
+  | "graph"
   | "events"
   | "decisions"
   | "links"
@@ -69,6 +71,17 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
     const found = runOf(context, params.id);
     if (!found.ok) return found.refusal;
     return ok(runTree(context.store.events(found.run.id).map(s => s.event)));
+  },
+
+  graph: ({ params }) => {
+    const found = runOf(context, params.id);
+    if (!found.ok) return found.refusal;
+    return ok(
+      runGraph(
+        context.store.events(found.run.id).map(s => s.event),
+        found.run.file,
+      ),
+    );
   },
 
   events: ({ params, query }) => {

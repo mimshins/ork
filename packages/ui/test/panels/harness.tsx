@@ -7,7 +7,10 @@
 
 import {
   createClient,
+  type LinkRecord,
   type ProjectRecord,
+  type TreeNode,
+  type WorkflowGraph,
   type WorkflowView,
 } from "@krapht/ork-server/client";
 import { render } from "@testing-library/react";
@@ -17,12 +20,26 @@ import { TipProvider } from "../../src/components/tip.tsx";
 import { Toasts } from "../../src/components/toast.tsx";
 import { createAppState } from "../../src/state/app-state.ts";
 import { AppStateProvider } from "../../src/state/context.tsx";
+import {
+  type Workspace,
+  WorkspaceContext,
+} from "../../src/workspace/context.ts";
 import { openFakeSources } from "../fake-source.ts";
 
 export type FakeRoutes = {
   projects?: ProjectRecord[];
   workflows?: Record<string, WorkflowView[]>;
   /** The server's refusal of a start, if it refuses. */
+  refuse?: string;
+  /** What it says of a run; a test can change it between reads. */
+  monitor?: MonitorRoutes;
+};
+
+export type MonitorRoutes = {
+  tree: TreeNode[];
+  graph: WorkflowGraph;
+  links?: LinkRecord[];
+  /** The server's refusal of a pause, continue or stop, if it refuses. */
   refuse?: string;
 };
 
@@ -44,7 +61,22 @@ const json = (body: unknown, status = 200): Response =>
 
 export const openPanelState = (routes: FakeRoutes = {}) => {
   const started: unknown[] = [];
+  const controlled: { kind: string; run: string; body: unknown }[] = [];
   const answer = (path: string, body: unknown): Response => {
+    const { monitor } = routes;
+    if (path === "/api/links") return json(monitor?.links ?? []);
+    const [, run = "", kind = ""] =
+      /^\/api\/runs\/([^/]+)\/(tree|graph|pause|continue|stop)$/u.exec(path) ??
+      [];
+    if (kind === "tree") return json(monitor?.tree ?? []);
+    if (kind === "graph") return json(monitor?.graph ?? {});
+    if (kind !== "") {
+      if (monitor?.refuse !== undefined) {
+        return json({ error: monitor.refuse }, 409);
+      }
+      controlled.push({ kind, run, body });
+      return json({ runId: run }, 202);
+    }
     if (path === "/api/runs") {
       if (routes.refuse !== undefined) {
         return json({ error: routes.refuse }, 409);
@@ -74,16 +106,22 @@ export const openPanelState = (routes: FakeRoutes = {}) => {
     storage: localStorage,
   });
   state.start();
-  return { state, overview: sources.last(), started };
+  return { state, overview: sources.last(), started, controlled, sources };
 };
 
 export type PanelState = ReturnType<typeof openPanelState>["state"];
 
-export const renderPanel = (state: PanelState, panel: ReactNode) =>
+export const renderPanel = (
+  state: PanelState,
+  panel: ReactNode,
+  workspace: Workspace | null = null,
+) =>
   render(
     <AppStateProvider value={state}>
       <TipProvider>
-        <Toasts>{panel}</Toasts>
+        <WorkspaceContext value={workspace}>
+          <Toasts>{panel}</Toasts>
+        </WorkspaceContext>
       </TipProvider>
     </AppStateProvider>,
   );

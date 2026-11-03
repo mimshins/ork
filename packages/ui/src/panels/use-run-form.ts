@@ -18,15 +18,29 @@ import {
   type InputValues,
   NO_FLAGS,
   type RunFlags,
+  workflowsProblem,
 } from "./run-form.ts";
 
-const useWorkflows = (project: string | null): readonly WorkflowView[] => {
+const NO_WORKFLOWS: readonly WorkflowView[] = [];
+
+const useWorkflows = (project: string | null) => {
   const state = useAppState();
   const read = useValue(state.workflows.state);
   useEffect(() => {
     if (project !== null) void state.workflows.load(project);
   }, [state, project]);
-  return read.status === "ready" && read.arg === project ? read.data : [];
+  // What is read may still be for the project chosen before this one.
+  const current = read.status !== "idle" && read.arg === project;
+  const list = current && read.status === "ready" ? read.data : NO_WORKFLOWS;
+  return {
+    list,
+    reading: !current || read.status === "loading",
+    problem: workflowsProblem(
+      project,
+      current ? read : { status: "idle" },
+      list.length,
+    ),
+  };
 };
 
 export const useRunForm = (onDone: () => void) => {
@@ -45,7 +59,11 @@ export const useRunForm = (onDone: () => void) => {
 
   const project =
     chosenProject ?? (projects.length === 1 ? (projects[0]?.id ?? null) : null);
-  const workflows = useWorkflows(project);
+  const {
+    list: workflows,
+    reading: readingWorkflows,
+    problem: workflowsTrouble,
+  } = useWorkflows(project);
   const named =
     chosenWorkflow ?? (workflows.length === 1 ? workflows[0]?.name : null);
   const workflow = workflows.find(({ name }) => name === named) ?? null;
@@ -53,7 +71,7 @@ export const useRunForm = (onDone: () => void) => {
     () => ({ ...initialValues(workflow?.inputs ?? {}), ...typed }),
     [workflow, typed],
   );
-  const blocked = blockedBy(project, workflow, values);
+  const blocked = workflowsTrouble ?? blockedBy(project, workflow, values);
 
   useEffect(() => {
     void state.projects.load();
@@ -88,6 +106,7 @@ export const useRunForm = (onDone: () => void) => {
     projects,
     project,
     workflows,
+    readingWorkflows,
     workflow,
     values,
     flags,

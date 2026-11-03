@@ -4,46 +4,21 @@
  *   without color, and its accessible name says all of it.
  */
 
-import { type ComponentType, memo } from "react";
+import { memo } from "react";
 
-import {
-  IconAws,
-  IconCall,
-  IconConsole,
-  IconGate,
-  IconGit,
-  IconGitHub,
-  IconJoin,
-  IconLeader,
-  IconRouter,
-  IconSplit,
-  IconSubagent,
-  IconWorker,
-} from "../components/icons.tsx";
 import { StatusBadge, statusTone } from "../components/status-badge.tsx";
 import { cliDescription, Tip } from "../components/tip.tsx";
 import { formatCost, formatTokens, type NodeFacts, nodeName } from "./facts.ts";
+import { TypeIcon } from "./type-icon.tsx";
 import type { PlacedNode } from "./types.ts";
 
 import styles from "./graph.module.css";
 
-const ICONS: Readonly<Record<string, ComponentType>> = {
-  "claude.leader": IconLeader,
-  "claude.worker": IconWorker,
-  "claude.subagent": IconSubagent,
-  "control.split": IconSplit,
-  "control.join": IconJoin,
-  "control.router": IconRouter,
-  "human.gate": IconGate,
-  "workflow.call": IconCall,
-  "tool.gh": IconGitHub,
-  "tool.aws": IconAws,
-  "tool.git": IconGit,
-};
-
 export type NodeCardProps = {
   node: PlacedNode;
   facts: NodeFacts;
+  /** Its edges in words, which the drawing only shows. */
+  connections?: string | undefined;
   selected: boolean;
   /** The one card of the graph that Tab reaches. */
   tabbable: boolean;
@@ -58,6 +33,7 @@ export const NodeCard = memo(
   ({
     node,
     facts,
+    connections,
     selected,
     tabbable,
     bind,
@@ -67,7 +43,6 @@ export const NodeCard = memo(
     onMenu,
   }: NodeCardProps) => {
     const { id, type, x, y, width, height } = node;
-    const Icon = ICONS[type] ?? IconConsole;
     const meta = [
       facts.model,
       facts.tokens === undefined
@@ -77,7 +52,7 @@ export const NodeCard = memo(
     ].filter(part => part !== undefined);
     const card = (
       <button
-        {...cliDescription(facts.cli)}
+        {...cliDescription(facts.cli, connections)}
         aria-current={selected ? "true" : undefined}
         aria-label={nodeName(id, type, facts)}
         className={styles["card"]}
@@ -110,7 +85,7 @@ export const NodeCard = memo(
       >
         <span className={styles["cardHead"]}>
           <span className={styles["cardIcon"]}>
-            <Icon />
+            <TypeIcon type={type} />
           </span>
           <span className={styles["cardId"]}>{id}</span>
         </span>

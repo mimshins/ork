@@ -5,9 +5,10 @@ Status: **In progress** (M2). Built: its way in, the local server and `ork ui`
 build, its license list and its tests ([ui](../packages/ui/src/app/app.tsx),
 [tests](../packages/ui/test/)); the design system's tokens and themes and base
 components ([design system](./ui/design-system.md)); and the workspace that
-holds the panels ([workspace](./ui/workspace.md)). The panels themselves are
-planned, and each shows the CLI command to use until then. The stack is React,
-Base UI, dockview, containerized-state and an in-house graph
+holds the panels ([workspace](./ui/workspace.md)). The Runs panel and the
+Monitor are built ([panels](./ui/panels.md)); the others are planned, and each
+shows the CLI command to use until then. The stack is React, Base UI, dockview,
+containerized-state and an in-house graph
 ([ADR-040](../decisions/ADR-040-ui-stack.md)), with Material Design Icons
 ([ADR-042](../decisions/ADR-042-icons-mdi.md)). The panels read the server's API
 through its typed client.
@@ -20,7 +21,8 @@ through its typed client.
 - [Workspace](./ui/workspace.md): the frame, the dock and its theme, minimizing
   to the rail, the keys and why they are Ork's own, the command palette, focus,
   the saved layout, and the stack on a narrow window.
-- [Panels](./ui/panels.md): the Runs panel and the Run workflow dialog.
+- [Panels](./ui/panels.md): the Runs panel, the Run workflow dialog and the
+  Monitor.
 - [Graph](./ui/graph.md): the layout, its edges in the interaction map's style,
   pan and zoom, and the keys and names that make it accessible.
 - [State](./ui/state.md): the containers, streams that stay connected, a run's

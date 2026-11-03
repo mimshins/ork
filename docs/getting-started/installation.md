@@ -165,10 +165,13 @@ ork ui --no-open    # only print the address and the sign-in link
 in. For now it is a workspace of panels you can resize, dock, float and
 minimize, with a command palette (`⌘K` or `Ctrl K`) that also sets the theme and
 the density, and a status bar that shows what is live. The Runs panel lists your
-runs and starts new ones. The other panels (monitor, logs, decisions, chats, the
-designer) come in the next releases; until then each shows the `ork` command to
-use instead. Running `ork ui` again opens the one that is running. Ctrl-C stops
-it; your runs keep running, and every `ork` command works without it.
+runs and starts new ones. The Monitor shows the run you choose as it goes: its
+graph and ownership tree, with each node's status, model, tokens and cost, and
+pause, continue and stop for the run or a node. The other panels (logs,
+decisions, chats, the designer) come in the next releases; until then each shows
+the `ork` command to use instead. Running `ork ui` again opens the one that is
+running. Ctrl-C stops it; your runs keep running, and every `ork` command works
+without it.
 
 It listens only on `127.0.0.1`, and only your browser gets in: `ork ui` opens it
 with a one-time link that becomes a cookie, and the server refuses any other

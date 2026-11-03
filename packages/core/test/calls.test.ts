@@ -19,6 +19,7 @@ import {
   openStore,
   type RunEvent,
   type RunResult,
+  runTree,
   type SessionOutcome,
 } from "../src/index.ts";
 
@@ -875,6 +876,31 @@ describe("calling a workflow", () => {
     const result = await port.invoke(request({ project: "kit" }), signal());
     expect(result.ok).toBe(true);
     expect(seen[0]?.cwd).toBe(kit.root);
+  });
+
+  it("shows in the tree which run a call started, and a session's model", () => {
+    store.append("caller00", {
+      type: "run.started",
+      runId: "caller00",
+      workflow: "w",
+      entries: [],
+      nodes: [
+        { id: "kit", type: "workflow.call" },
+        { id: "builder", type: "claude.worker" },
+      ],
+    });
+    earlierCall(store);
+    store.append("caller00", {
+      type: "node.event",
+      id: "builder",
+      event: { type: "session.started", sessionId: "s", model: "opus" },
+    });
+    expect(
+      runTree(store.events("caller00").map(({ event }) => event)),
+    ).toMatchObject([
+      { id: "kit", calledRun: "earlier1" },
+      { id: "builder", model: "opus" },
+    ]);
   });
 
   it("records a called run's parent and depth", () => {

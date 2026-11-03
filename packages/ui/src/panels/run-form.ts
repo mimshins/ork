@@ -31,6 +31,32 @@ export const initialValues = (inputs: Record<string, InputDef>): InputValues =>
     Object.entries(inputs).map(([name, def]) => [name, defaultOf(def)]),
   );
 
+/** Where a project's workflows stand, with what to do when there are none. */
+export const workflowsProblem = (
+  project: string | null,
+  read: { status: "idle" | "loading" | "ready" | "failed"; error?: string },
+  count: number,
+): string | null => {
+  if (project === null) return null;
+  if (read.status === "failed") {
+    return `Cannot read the workflows of ${project}: ${read.error ?? "unknown error"}`;
+  }
+  return read.status === "ready" && count === 0
+    ? `${project} has no workflows. Add one to its .ork/workflows folder.`
+    : null;
+};
+
+/** What the workflow field says while nothing is chosen, and why. */
+export const workflowPlaceholder = (
+  project: string | null,
+  reading: boolean,
+  count: number,
+): string => {
+  if (project === null) return "Choose a project first";
+  if (reading) return "Reading workflows…";
+  return count === 0 ? "No workflows here" : "Type to find a workflow";
+};
+
 /** Why the form cannot start, or null when it can. */
 export const blockedBy = (
   project: string | null,

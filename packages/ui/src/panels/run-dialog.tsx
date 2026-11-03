@@ -1,6 +1,7 @@
 /**
  * @file The Run workflow dialog: a project, a workflow, its inputs and the run
- *   flags, the command that does the same, and why it cannot start yet.
+ *   flags, the command that does the same, and why it cannot start yet, which
+ *   is said aloud as it changes.
  */
 
 import { useValue } from "react-containerized-state";
@@ -11,7 +12,7 @@ import { CopyCommand } from "../components/copy-command.tsx";
 import { Dialog, DialogActions } from "../components/dialog.tsx";
 import { useAppState } from "../state/context.tsx";
 import { FlagFields, InputFields, NoProjects } from "./run-fields.tsx";
-import { commandOf } from "./run-form.ts";
+import { commandOf, workflowPlaceholder } from "./run-form.ts";
 import { useRunForm } from "./use-run-form.ts";
 
 import styles from "./runs.module.css";
@@ -19,6 +20,7 @@ import styles from "./runs.module.css";
 const RunForm = ({ onDone }: { onDone: () => void }) => {
   const form = useRunForm(onDone);
   const { projectsRead, projects, project, workflows, workflow } = form;
+  const { readingWorkflows } = form;
   const { values, flags, blocked, refusal, starting } = form;
   const close = (
     <DialogActions>
@@ -64,13 +66,20 @@ const RunForm = ({ onDone }: { onDone: () => void }) => {
         label="Project"
         onChange={form.chooseProject}
         options={projects.map(({ id }) => ({ value: id, label: id }))}
+        placeholder="Type to find a project"
         value={project}
       />
       <Combobox
+        disabled={project === null || workflows.length === 0}
         empty="No workflow matches."
         label="Workflow"
         onChange={form.chooseWorkflow}
         options={workflows.map(({ name }) => ({ value: name, label: name }))}
+        placeholder={workflowPlaceholder(
+          project,
+          readingWorkflows,
+          workflows.length,
+        )}
         value={workflow?.name ?? null}
       />
       {workflow === null ? null : (
@@ -89,7 +98,7 @@ const RunForm = ({ onDone }: { onDone: () => void }) => {
       {workflow === null ? null : (
         <CopyCommand command={commandOf(workflow, values, flags)} />
       )}
-      {blocked === null ? null : <p className={styles["reason"]}>{blocked}</p>}
+      <output className={styles["reason"]}>{blocked}</output>
       {refusal === null ? null : (
         <p
           className={styles["error"]}

@@ -82,16 +82,16 @@ describe("the graph", () => {
     vi.unstubAllGlobals();
   });
 
-  it("names each node with its id, type, status, model, tokens and cost", () => {
+  it("names each node with its id, status, model, tokens, cost and type", () => {
     show();
     expect(card("start").getAttribute("aria-label")).toBe(
-      "start, leader, running, opus, 1200 tokens, $0.2500",
+      "start, running, opus, 1.2k tokens, $0.2500, leader",
     );
     expect(card("top").getAttribute("aria-label")).toBe(
-      "top, shell tool, failed",
+      "top, failed, shell tool",
     );
     expect(card("bottom").getAttribute("aria-label")).toBe(
-      "bottom, workflow call, queued",
+      "bottom, queued, workflow call",
     );
   });
 
@@ -166,6 +166,48 @@ describe("the graph", () => {
     fireEvent.keyDown(card("end"), { key: "F10", shiftKey: true });
     fireEvent.contextMenu(card("start"));
     expect(onNodeMenu.mock.calls.flat()).toEqual(["top", "end", "start"]);
+  });
+
+  it("moves the view with single presses", async () => {
+    const { container } = show();
+    const layer = layerOf(container);
+    const before = await transformOf(layer);
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "Pan left" }));
+    await vi.waitFor(async () => {
+      await expect(transformOf(layer)).resolves.not.toBe(before);
+    });
+  });
+
+  it("brings a node selected elsewhere into view", async () => {
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue(
+      DOMRect.fromRect({ width: 100, height: 100 }),
+    );
+    const { container, rerender } = show();
+    const layer = layerOf(container);
+    const before = await transformOf(layer);
+    rerender(
+      <TipProvider>
+        <GraphView
+          facts={FACTS}
+          label="Run 4f2a1c"
+          layout={LAYOUT}
+          selected="end"
+        />
+      </TipProvider>,
+    );
+    await vi.waitFor(async () => {
+      await expect(transformOf(layer)).resolves.not.toBe(before);
+    });
+    vi.restoreAllMocks();
+  });
+
+  it("says each node's edges in words", () => {
+    show();
+    expect(card("top").getAttribute("aria-description")).toBe(
+      "after start; leads to end if exitCode == 0",
+    );
   });
 
   it("goes back to the canvas with Escape", async () => {

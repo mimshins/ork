@@ -61,8 +61,8 @@
 
   /* Layers, from the workspace up. */
   --layer-dock-overlay: 50;
-  --layer-popup: 100;
-  --layer-dialog: 200;
+  --layer-dialog: 100;
+  --layer-popup: 200;
   --layer-toast: 300;
   --layer-tooltip: 400;
 

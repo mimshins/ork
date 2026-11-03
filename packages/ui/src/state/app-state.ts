@@ -22,6 +22,7 @@ import { createPreferences } from "./preferences.ts";
 import { createRead } from "./read.ts";
 import { reconcile } from "./reconcile.ts";
 import { createRunFeed, type RunFeed } from "./run-feed.ts";
+import { createRunWatch, type RunWatch } from "./run-watch.ts";
 import { type LinkStatus, type OpenSource, openLink } from "./stream-link.ts";
 
 export type Connection = {
@@ -172,6 +173,19 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
         }
       };
     },
+    /** Pause, continue or stop: the answer comes back on the run's stream. */
+    control: (
+      kind: "pause" | "continue" | "stop",
+      runId: string,
+      node?: string,
+    ) =>
+      client.call(kind, {
+        params: { id: runId },
+        body: node === undefined ? {} : { node },
+      }),
+    /** What the Monitor shows of a run, read while it is started. */
+    watchRun: (runId: string): RunWatch =>
+      createRunWatch({ runId, client, feed: heldFeed(runId).feed }),
     selectRun: (run: string | null): void => {
       void selection.setValue({ run, node: null });
     },
