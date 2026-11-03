@@ -649,6 +649,7 @@ export const MILESTONES = [
         status: "active",
         detail:
           "Tool nodes know their run and node, take an `env:`, and return JSON a `when:` can read (built). Next, they can send a message, and a workflow can declare a message when a node finishes, so deterministic work takes no model turn. The messaging part needs an RFC.",
+        commits: ["c4cdefe"],
         docs: [
           "decisions/ADR-047-script-identity-env-json.md",
           "specs/messaging.md",
