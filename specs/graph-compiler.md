@@ -12,9 +12,10 @@ with parsed conditions), the entry nodes, and the declared message channels.
 
 ## Rules
 
-- **Entries:** a node starts with the run when it has no incoming edge and no
-  owner. An owned node with no incoming edge runs when its owner delegates to
-  it. There must be at least one entry.
+- **Entries:** a node starts with the run when it has no owner and no incoming
+  edge except `maxRounds` ones, so a first node can loop back to itself. An
+  owned node with no incoming edge runs when its owner delegates to it. There
+  must be at least one entry.
 - **Ownership:** a `claude.subagent` is owned by a `claude.leader` or
   `claude.worker` (it runs in that node's session); every other owned node is
   owned by a `claude.leader`; the tree has no cycles; a node that sets

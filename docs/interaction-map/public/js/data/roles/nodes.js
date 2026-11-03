@@ -75,7 +75,7 @@ export const NODES = [
     summary:
       "Reads the workflow's `edges:` and every node's `parent:` and works out each node's place: which nodes start the run, who owns whom, which cycles are bounded, and which nodes nothing reaches. `ork validate` prints what it finds.",
     facts: [
-      "An entry has no incoming edge and no owner; a workflow needs at least one (`graph.no-entry`).",
+      "An entry has no incoming edge except `maxRounds` ones and no owner; a workflow needs at least one (`graph.no-entry`).",
       "Ownership: a sub-agent is owned by a leader or a worker, every other owned node by a leader; the tree has no cycles.",
       "Every cycle needs an edge with `maxRounds` (`graph.unbounded-cycle`).",
       "A node no entry reaches through edges or ownership is a `graph.unreachable` warning.",

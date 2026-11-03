@@ -217,10 +217,37 @@ messages:
   a: { type: control.split }
   b: { type: control.split }
 edges:
-  - { from: a, to: b, maxRounds: 1 }
-  - { from: b, to: a, maxRounds: 1 }
+  - a -> b
+  - b -> a
 `),
       ),
     ).toContain("error:graph.no-entry");
+  });
+
+  it("lets a first node loop back to itself", () => {
+    const { graph, diagnostics } = compile(
+      workflow(`nodes:
+  flaky: { type: tool.shell, command: "true" }
+  done: { type: tool.shell, command: "true" }
+edges:
+  - { from: flaky, to: flaky, when: "exitCode != 0", maxRounds: 2 }
+  - { from: flaky, to: done, when: "exitCode == 0" }
+`),
+    );
+    expect(diagnostics).toEqual([]);
+    expect(graph?.entries).toEqual(["flaky"]);
+  });
+
+  it("does not start a node that has a forward edge and a loop edge", () => {
+    const { graph } = compile(
+      workflow(`nodes:
+  a: { type: control.split }
+  b: { type: control.split }
+edges:
+  - a -> b
+  - { from: b, to: a, maxRounds: 1 }
+`),
+    );
+    expect(graph?.entries).toEqual(["a"]);
   });
 });

@@ -197,8 +197,9 @@ export const checkCycles = (
 };
 
 /**
- * Entries start with the run: no incoming edge and no owner. An owned node with
- * no incoming edge runs only when its owner delegates to it.
+ * Entries start with the run: no owner and no incoming edge but `maxRounds`
+ * ones, which only ever bring a node back. An owned node with no incoming edge
+ * runs only when its owner delegates to it.
  */
 export const findEntries = (
   workflow: Workflow,
@@ -207,7 +208,8 @@ export const findEntries = (
   Object.entries(workflow.nodes)
     .filter(
       ([id, node]) =>
-        node.parent === undefined && !edges.some(e => e.to === id),
+        node.parent === undefined &&
+        !edges.some(e => e.to === id && e.maxRounds === undefined),
     )
     .map(([id]) => id);
 

@@ -150,6 +150,20 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
   worktrees but do not see each other's claims.
   ([messaging](./messaging.md#claims))
 
+- **L41 · A retry has no delay.** A failed node can loop back with `maxRounds`,
+  but it runs again at once, with no delay or backoff.
+  ([scheduler](./scheduler.md#loops))
+- **L42 · A handled failure reads as success.** A failed node with an edge
+  taken, such as a cleanup on `when: "true"`, leaves the run `succeeded`; only
+  the node's own status shows it. ([scheduler](./scheduler.md#edges))
+- **L43 · Nothing limits runs of one workflow.** Starting a workflow twice runs
+  it twice, with no queueing and no cancelling of the older run, as other
+  engines' concurrency groups do.
+  ([scheduler](./scheduler.md#budget-and-concurrency))
+- **L44 · Results are reused only within a resumed run.** No step cache spans
+  runs. An agent's output varies, so one may never be worth having.
+  ([resuming](./scheduler/resuming-and-events.md#resuming-a-run))
+
 ## Chores
 
 - **C2 · Release pull requests run no CI.** Pull requests opened with the
@@ -171,3 +185,7 @@ None open: the last ones (G1–G7) were built on 2026-11-02.
   1.3.0 from the 7-day rule, by exact version, at their author's choice. Remove
   the list from 2026-11-10; the versions then satisfy the rule.
   ([ADR-002](../decisions/ADR-002-typescript-from-source.md))
+- **C10 · The format spec names `env:` references that do not exist.**
+  [Workflow format](./workflow-format.md) says secrets are only `env:`
+  references, but no node has an `env` field. Build the field or correct the
+  sentence.

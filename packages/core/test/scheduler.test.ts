@@ -167,6 +167,25 @@ describe("the scheduler", () => {
     expect(result.nodes.find(n => n.id === "reviews")?.runs).toBe(2);
   });
 
+  it("retries a first node through its own loop edge", async () => {
+    const graph = workflow(
+      [
+        "flaky: { type: tool.shell, command: 'true' }",
+        "done: { type: tool.shell, command: 'true' }",
+      ],
+      [
+        "{ from: flaky, to: flaky, when: \"status == 'fail'\", maxRounds: 2 }",
+        "{ from: flaky, to: done, when: \"status != 'fail'\" }",
+      ],
+    );
+    const { executor, ran } = scripted({
+      flaky: [{ output: { status: "fail" } }, { output: { status: "pass" } }],
+    });
+    const { result } = await run(graph, allTypes(executor));
+    expect(result.status).toBe("succeeded");
+    expect(ran).toEqual(["flaky", "flaky", "done"]);
+  });
+
   it("asks when a loop runs out of rounds, and stops on the recommended answer", async () => {
     const { executor, ran } = scripted({ security: [changes] });
     const { human, asked } = answering("stop");

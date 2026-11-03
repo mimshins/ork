@@ -17,7 +17,7 @@ export const JOURNEYS = [
         from: "compiler",
         title: "The compiler finds the entries",
         detail:
-          "Every node with no incoming edge and no `parent`. With none, `graph.no-entry` stops the workflow from compiling.",
+          "Every node with no incoming edge except `maxRounds` ones and no `parent`. With none, `graph.no-entry` stops the workflow from compiling.",
         docs: [ROLES.rules],
       },
       {

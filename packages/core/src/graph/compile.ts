@@ -60,7 +60,7 @@ export const compileWorkflow = (
     diagnostics.push(
       error(
         "graph.no-entry",
-        "no node can start: every unowned node has an incoming edge",
+        "no node can start: every unowned node has an incoming edge that is not a loop",
         ["edges"],
       ),
     );

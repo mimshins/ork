@@ -578,6 +578,14 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "timeouts",
+        title: "Timeouts on nodes and runs",
+        status: "planned",
+        detail:
+          "A `timeout` on tool nodes, Claude nodes, workflow calls and the whole run. An expired node fails with the reason, and a `when` edge can handle it. Comes before the relay and workflow calls, which wait on other runs.",
+        docs: ["specs/gaps.md"],
+      },
+      {
         id: "relay",
         title: "A relay between runs",
         status: "planned",
@@ -623,6 +631,22 @@ export const MILESTONES = [
         detail:
           "Triage, `ork feedback apply`, lessons, sharing to Discussions, and the Feedback panel.",
         docs: ["specs/feedback.md"],
+      },
+      {
+        id: "for-each",
+        title: "A node once per item",
+        status: "planned",
+        detail:
+          "Running a node for each item of a list from the workflow file, as `matrix` does elsewhere, rather than leaving it to a leader's `spawn_worker`. Needs its own RFC, after workflow calls.",
+        docs: ["specs/scheduler.md"],
+      },
+      {
+        id: "triggers",
+        title: "Schedules and webhooks",
+        status: "planned",
+        detail:
+          "Starting a run on a schedule or an event. Needs its own RFC after M2, because a local tool has no always-on process and its server binds loopback only.",
+        docs: ["specs/server.md"],
       },
       {
         id: "gaps-review",
