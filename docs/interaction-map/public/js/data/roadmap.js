@@ -608,7 +608,9 @@ export const MILESTONES = [
       {
         id: "workflow-call",
         title: "Workflows that call workflows",
-        status: "active",
+        status: "done",
+        date: "2026-11-03",
+        commits: ["5e3411d"],
         detail:
           "A `workflow.call` node starts a workflow in this project or another, waits on it if asked, and uses its output in later conditions. A `messages` channel to it lets agents talk during the work. Comes before the Monitor, which shows calls.",
         docs: [

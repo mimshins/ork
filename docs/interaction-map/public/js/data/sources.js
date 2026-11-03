@@ -21,7 +21,7 @@ export const SOURCES = {
     short: "ork",
     github: "https://github.com/mimshins/ork",
     branch: "main",
-    synced: "bf37ee7",
+    synced: "5e3411d",
     isPublic: true,
   },
 };
