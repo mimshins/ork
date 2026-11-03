@@ -5,8 +5,8 @@ accounts. Start with the getting-started pages, then read the guides as you need
 them.
 
 > **Pre-alpha.** Everything in Getting started and Guides works today, unless a
-> page marks it as coming later. The browser UI is being built (milestone 2):
-> `ork ui` already starts it, and its panels come in the next releases.
+> page marks it as coming later. `ork ui` shows and controls your runs in the
+> browser; designing workflows there comes in a later release.
 
 ## Getting started
 
@@ -21,6 +21,8 @@ them.
   conditions, loops and templates.
 - [Running workflows](./guides/running-workflows.md): `ork run`, the transcript,
   answering questions and permissions, one node on its own.
+- [The browser view](./guides/browser-view.md): `ork ui`, its panels and keys,
+  and the command that does the same as each action.
 - [Agents](./guides/agents.md): define who does the work once, give it to any
   node, and use your project's own agents.
 - [Leaders and delegation](./guides/leaders-and-delegation.md): owners,

@@ -2,7 +2,7 @@
 description:
   What Ork is, its packages and their dependency direction, and where each kind
   of knowledge lives. Read first.
-last-verified: 2026-11-03 (commit bf37ee7)
+last-verified: 2026-11-03 (commit b737814)
 ---
 
 # Ork overview

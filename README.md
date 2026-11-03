@@ -21,7 +21,8 @@ for agents and engineering tasks:
 > **Status: pre-alpha.** The workflow format, `ork run` with delegation and
 > worktrees, the context compiler, `ork doctor`, run logs, decisions from any
 > terminal, messages between nodes, chat, resume, claims and local feedback work
-> today, with two example workflows; a web UI comes next. See the
+> today, with two example workflows, and `ork ui` watches, controls and answers
+> runs in your browser; designing workflows there comes next. See the
 > [roadmap](./docs/interaction-map/roadmap.md).
 
 ## Quickstart

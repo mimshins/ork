@@ -37,8 +37,8 @@ export const EDGES = [
     to: "inbox",
     kind: "human",
     label: "answers in the browser",
-    detail: "One click per decision.",
-    status: "planned",
+    detail: "One click per decision, or a digit with the focus in its card.",
+    status: "built",
     via: [
       [296, 536],
       [296, 756],
@@ -95,7 +95,7 @@ export const EDGES = [
     kind: "net",
     label: "resolve over REST",
     detail: "Through the local server, which resolves the same decision.",
-    status: "planned",
+    status: "built",
     docs: [DESIGN.ui],
   },
 

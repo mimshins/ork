@@ -7,11 +7,13 @@ build, its license list and its tests ([ui](../packages/ui/src/app/app.tsx),
 components ([design system](./ui/design-system.md)); and the workspace that
 holds the panels ([workspace](./ui/workspace.md)). Its panels are built: Runs,
 the Monitor, Logs, Decisions, Chats and Notifications
-([panels](./ui/panels.md)). The designer and context inspector are the next
-milestone. The stack is React, Base UI, dockview, containerized-state and an
-in-house graph ([ADR-040](../decisions/ADR-040-ui-stack.md)), with Material
-Design Icons ([ADR-042](../decisions/ADR-042-icons-mdi.md)). The panels read the
-server's API through its typed client.
+([panels](./ui/panels.md)), with a user guide
+([the browser view](../docs/guides/browser-view.md)). The designer and context
+inspector are the next milestone. The stack is React, Base UI, dockview,
+containerized-state and an in-house graph
+([ADR-040](../decisions/ADR-040-ui-stack.md)), with Material Design Icons
+([ADR-042](../decisions/ADR-042-icons-mdi.md)). The panels read the server's API
+through its typed client.
 
 ## Contents
 

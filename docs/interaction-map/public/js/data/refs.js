@@ -100,9 +100,15 @@ export const UI = {
     "packages/ui/test/workspace/dock.test.tsx",
     "Tests: the dock on real dockview",
   ),
-  panels: d(
-    "specs/ui/panels.md",
-    "Spec: the Runs panel and the Run workflow dialog",
+  guide: d("docs/guides/browser-view.md", "Guide: the browser view"),
+  panels: d("specs/ui/panels.md", "Spec: the panels"),
+  decisions: d(
+    "packages/ui/src/panels/decisions-panel.tsx",
+    "Code: the Decisions panel",
+  ),
+  decisionTests: d(
+    "packages/ui/test/panels/decisions-panel.test.tsx",
+    "Tests: the Decisions panel's answers, keys and focus",
   ),
   panelTests: d(
     "packages/ui/test/panels/runs-panel.test.tsx",

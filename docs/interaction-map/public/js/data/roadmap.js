@@ -559,13 +559,15 @@ export const MILESTONES = [
       {
         id: "monitor",
         title: "Monitor, logs, decisions, chats",
-        status: "active",
+        status: "done",
+        date: "2026-11-03",
         detail:
           "The UI app and its design system, a dockable workspace, the live graph and ownership tree with status and cost, the event log, the decisions inbox, a chat per node, notifications, and pause, continue and stop for a run or a node.",
         docs: [
           "specs/ui.md",
           "decisions/ADR-040-ui-stack.md",
           "specs/run-control.md",
+          "docs/guides/browser-view.md",
         ],
         commits: [
           "08d40b8",
@@ -580,6 +582,7 @@ export const MILESTONES = [
           "e26fb35",
           "0f0b3f0",
           "dead65e",
+          "b737814",
         ],
       },
       {

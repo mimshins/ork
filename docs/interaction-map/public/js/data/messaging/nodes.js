@@ -17,6 +17,7 @@ import {
   RUNTIME,
   SCHEMA,
   STORE,
+  UI,
 } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
@@ -109,13 +110,17 @@ export const NODES = [
     zone: "surfaces",
     x: 320,
     y: 720,
-    status: "planned",
+    status: "built",
     pkg: "ui",
     summary:
       "The browser view of the same decisions, shaped like a question tool: the question, its options with descriptions, the recommended one marked.",
-    facts: ["Milestone 2."],
+    facts: [
+      "Every open decision across runs, answered with a click, a digit, or Enter on the card for the recommended one.",
+      "A card stays until the stream says it settled, and a refusal stays in it in the server's words.",
+      "Settled lists who answered: in the run's terminal, with `ork decide` or in `ork ui`.",
+    ],
     see: [{ map: "architecture", node: "ui", label: "The UI" }],
-    docs: [DESIGN.ui],
+    docs: [DESIGN.ui, UI.guide, UI.panels, UI.decisions, UI.decisionTests],
   },
   {
     id: "relayCmd",

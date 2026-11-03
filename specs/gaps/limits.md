@@ -248,3 +248,7 @@ How something built works for now, by choice.
   axe, and by watching the region's text; touch and pinch are tested as events;
   forced colors only under Chrome's emulation; a desktop notification firing and
   being clicked has not been seen. ([panels](../ui/panels.md))
+- **L71 · The UI has no Resume button.** The server's API can resume a run, but
+  no panel offers it: a stopped or crashed run is resumed with `ork resume`,
+  which the Stop dialog says.
+  ([guide](../../docs/guides/browser-view.md#what-it-does-not-do-yet))

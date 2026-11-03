@@ -162,19 +162,10 @@ ork ui --no-open    # only print the address and the sign-in link
 ```
 
 `ork ui` starts Ork's local server and opens it in your browser, already signed
-in. For now it is a workspace of panels you can resize, dock, float and
-minimize, with a command palette (`⌘K` or `Ctrl K`) that also sets the theme and
-the density, and a status bar that shows what is live. The Runs panel lists your
-runs and starts new ones. The Monitor shows the run you choose as it goes: its
-graph and ownership tree, with each node's status, model, tokens and cost, and
-pause, continue and stop for the run or a node. Logs shows its events, filtered
-by node, type or text, and Decisions lists every question your runs are waiting
-on, answered with a click or the keys `1` to `9`. Chats keeps one thread per
-leader or worker, and writes to it while the run is live. The bell in the top
-bar counts what is unread in Notifications, which can also send desktop
-notifications if you turn them on. The designer comes in a later release.
-Running `ork ui` again opens the one that is running. Ctrl-C stops it; your runs
-keep running, and every `ork` command works without it.
+in: a workspace of panels for your runs, their graphs and logs, the questions
+they are waiting on, a chat with each node, and notifications. Ctrl-C stops it;
+your runs keep running, and every `ork` command works without it. The designer
+comes in a later release. See [the browser view](../guides/browser-view.md).
 
 It listens only on `127.0.0.1`, and only your browser gets in: `ork ui` opens it
 with a one-time link that becomes a cookie, and the server refuses any other

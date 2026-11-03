@@ -199,6 +199,8 @@ export const NODES = [
       "Built: Logs, a run's events live with filters and paging, and Decisions, every open question across runs, answered with a click or a digit, with who answered one settled elsewhere.",
       "Built: Chats, one thread per leader or worker from its events, writing to it while the run is live, and the ork chat command for a run that has ended.",
       "Built: Notifications, items worked out from the overview stream with a read state per browser, a bell with the unread count, a polite live region, and opt-in desktop notifications.",
+      "Checked in a real browser and on a real session: axe, keyboard only, 200% zoom, both themes, reduced motion and forced colors. Not yet with a real screen reader or by touch.",
+      "No Resume button yet: `ork resume` does that.",
       "Panels still to come: the designer and context inspector.",
     ],
     see: [
@@ -207,6 +209,7 @@ export const NODES = [
     ],
     docs: [
       DESIGN.ui,
+      UI.guide,
       UI.adr,
       UI.design,
       UI.workspace,

@@ -18,8 +18,9 @@ import {
   README,
   SCHEMA,
   SERVER,
-  WORKTREES,
   STORE,
+  UI,
+  WORKTREES,
 } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
@@ -43,9 +44,9 @@ export const EDGES = [
     kind: "human",
     label: "designs · watches · answers",
     detail:
-      "You draw workflows on the canvas, watch a run live, chat with nodes and answer decisions in the browser.",
-    status: "planned",
-    docs: [DESIGN.ui],
+      "You watch and control a run live, chat with its nodes and answer decisions in the browser. Drawing workflows on a canvas comes with the designer.",
+    status: "partial",
+    docs: [DESIGN.ui, UI.guide],
   },
   {
     id: "ui-server",
@@ -54,8 +55,8 @@ export const EDGES = [
     kind: "net",
     label: "JSON + SSE",
     detail:
-      "The UI calls the API through the typed client, signed in with the session cookie; today it reads `/api/health`, and its panels will follow runs over the event streams.",
-    status: "partial",
+      "The UI calls the API through the typed client, signed in with the session cookie. Its panels follow the overview and each run over the event streams, and a write comes back on a stream; nothing updates in advance.",
+    status: "built",
     docs: [DESIGN.server, SERVER.contract],
   },
   {
@@ -111,9 +112,9 @@ export const EDGES = [
     from: "server",
     to: "scheduler",
     kind: "local",
-    label: "start · resume · stop · message",
+    label: "start · resume · run control · message",
     detail:
-      "The server hosts no engine: it starts and resumes runs as detached `ork` processes, and a stop or a message is a row in the store plus a wake on the run's socket, as `ork stop` and `ork chat -m` do.",
+      "The server hosts no engine: it starts and resumes runs as detached `ork` processes, and a stop, pause, continue or message is a row in the store plus a wake on the run's socket, as `ork stop`, `ork pause`, `ork continue` and `ork chat -m` do.",
     status: "built",
     docs: [SERVER.writes, SERVER.remote, DESIGN.server],
   },
