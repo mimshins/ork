@@ -149,6 +149,11 @@
           "exclusiveMinimum": 0,
           "maximum": 9007199254740991
         },
+        "timeout": {
+          "description": "For tool and Claude nodes that set none; a gate's own timeout is separate.",
+          "type": "string",
+          "pattern": "^\\d+[smh]$"
+        },
         "practices": {
           "type": "object",
           "properties": {
@@ -321,6 +326,11 @@
             "exclusiveMinimum": 0,
             "maximum": 9007199254740991
           },
+          "timeout": {
+            "description": "How long the node may work, e.g. 30m; time waiting on the user does not count.",
+            "type": "string",
+            "pattern": "^\\d+[smh]$"
+          },
           "practices": {
             "type": "object",
             "properties": {
@@ -411,6 +421,11 @@
           "type": "integer",
           "exclusiveMinimum": 0,
           "maximum": 9007199254740991
+        },
+        "timeout": {
+          "description": "How long the whole run may work, e.g. 2h; time waiting on the user does not count.",
+          "type": "string",
+          "pattern": "^\\d+[smh]$"
         }
       },
       "additionalProperties": false
@@ -507,6 +522,11 @@
                 "type": "integer",
                 "exclusiveMinimum": 0,
                 "maximum": 9007199254740991
+              },
+              "timeout": {
+                "description": "How long the node may work, e.g. 30m; time waiting on the user does not count.",
+                "type": "string",
+                "pattern": "^\\d+[smh]$"
               },
               "practices": {
                 "type": "object",
@@ -678,6 +698,11 @@
                 "exclusiveMinimum": 0,
                 "maximum": 9007199254740991
               },
+              "timeout": {
+                "description": "How long the node may work, e.g. 30m; time waiting on the user does not count.",
+                "type": "string",
+                "pattern": "^\\d+[smh]$"
+              },
               "practices": {
                 "type": "object",
                 "properties": {
@@ -843,6 +868,11 @@
                 "exclusiveMinimum": 0,
                 "maximum": 9007199254740991
               },
+              "timeout": {
+                "description": "How long the node may work, e.g. 30m; time waiting on the user does not count.",
+                "type": "string",
+                "pattern": "^\\d+[smh]$"
+              },
               "practices": {
                 "type": "object",
                 "properties": {
@@ -955,6 +985,11 @@
               },
               "cwd": {
                 "type": "string"
+              },
+              "timeout": {
+                "description": "How long the command may run, e.g. 5m; then it is killed and the node fails.",
+                "type": "string",
+                "pattern": "^\\d+[smh]$"
               }
             },
             "required": [
@@ -994,6 +1029,11 @@
               },
               "cwd": {
                 "type": "string"
+              },
+              "timeout": {
+                "description": "How long the command may run, e.g. 5m; then it is killed and the node fails.",
+                "type": "string",
+                "pattern": "^\\d+[smh]$"
               },
               "profile": {
                 "type": "string"
@@ -1039,6 +1079,11 @@
               },
               "cwd": {
                 "type": "string"
+              },
+              "timeout": {
+                "description": "How long the command may run, e.g. 5m; then it is killed and the node fails.",
+                "type": "string",
+                "pattern": "^\\d+[smh]$"
               }
             },
             "required": [
@@ -1078,6 +1123,11 @@
               },
               "cwd": {
                 "type": "string"
+              },
+              "timeout": {
+                "description": "How long the command may run, e.g. 5m; then it is killed and the node fails.",
+                "type": "string",
+                "pattern": "^\\d+[smh]$"
               }
             },
             "required": [

@@ -580,10 +580,14 @@ export const MILESTONES = [
       {
         id: "timeouts",
         title: "Timeouts on nodes and runs",
-        status: "planned",
+        status: "active",
         detail:
-          "A `timeout` on tool nodes, Claude nodes, workflow calls and the whole run. An expired node fails with the reason, and a `when` edge can handle it. Comes before the relay and workflow calls, which wait on other runs.",
-        docs: ["specs/gaps.md"],
+          "A `timeout` on tool nodes, Claude nodes and the whole run, whose clock stands still while waiting on the user. An expired node fails with `timedOut`, and a run ends `timed_out`. Tools run in their own process groups, so a stop or a timeout ends what they started.",
+        docs: [
+          "decisions/ADR-043-timeouts.md",
+          "specs/scheduler.md#timeouts",
+          "docs/guides/models-and-budgets.md#timeouts",
+        ],
       },
       {
         id: "relay",

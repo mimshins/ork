@@ -40,6 +40,27 @@ export type Isolation = z.infer<typeof IsolationSchema>;
 
 export const BudgetSchema = z.number().positive();
 
+/** A length of time: `30s`, `15m`, `2h`. */
+export const DurationSchema = z
+  .string()
+  .regex(/^\d+[smh]$/u, "use e.g. 30s, 15m, 2h");
+
+/** How long a node or a run may work; time waiting on the user does not count. */
+export const TimeoutSchema = DurationSchema.refine(
+  duration => !/^0+[smh]$/u.test(duration),
+  "a timeout must be longer than zero",
+);
+
+const UNITS: Record<string, number> = { s: 1000, m: 60_000, h: 3_600_000 };
+
+/** `30s`, `15m`, `2h` in milliseconds; `undefined` without a timeout. */
+export const timeoutMs = (timeout: string | undefined): number | undefined => {
+  const match = /^(\d+)([smh])$/u.exec(timeout ?? "");
+  if (match === null) return undefined;
+  const [, amount = "0", unit = "s"] = match;
+  return Number(amount) * (UNITS[unit] ?? 1000);
+};
+
 /**
  * Ork's built-in practices (ADR-021), on unless turned off. A node without a
  * setting takes its nearest owner's, then the workflow's `defaults`.

@@ -26,6 +26,8 @@ export type Holds = {
   forNode: (id: string, template?: string) => HoldPort;
   /** An activation ended: it is no longer held, whatever it waited on. */
   finished: (id: string) => void;
+  /** Calls `listener` whenever a hold may have changed; returns its undo. */
+  watch: HoldPort["watch"];
 };
 
 type Waiter = { id: string; release: () => void };
@@ -65,17 +67,19 @@ export const createHolds = (options: {
     });
   };
 
+  const watch: HoldPort["watch"] = listener => {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  };
+
   const forNode = (id: string, template?: string): HoldPort => {
     templates.set(id, template);
     const held = () => isHeld(id, template);
     return {
       held,
-      watch: listener => {
-        listeners.add(listener);
-        return () => {
-          listeners.delete(listener);
-        };
-      },
+      watch,
       wait: (at: HoldPoint, signal?: AbortSignal) => {
         if (!held() || signal?.aborted === true) return Promise.resolve();
         const { promise, resolve } = Promise.withResolvers<void>();
@@ -125,6 +129,7 @@ export const createHolds = (options: {
     runPaused: () => paused,
     isHeld,
     forNode,
+    watch,
     finished: id => {
       recorded.delete(id);
       templates.delete(id);
@@ -138,7 +143,7 @@ export const createHolds = (options: {
  * first.
  */
 export const heldTimeout = (
-  hold: HoldPort | undefined,
+  hold: Pick<HoldPort, "held" | "watch"> | undefined,
   ms: number,
   signal: AbortSignal,
 ): Promise<boolean> => {

@@ -61,6 +61,32 @@ Costs come from Claude Code's own estimate in each session's final result. The
 run summary shows the total, and `--json` gives each node's usage: cost, tokens
 (including cache reads and writes), turns and time.
 
+## Timeouts
+
+A run has no time limit unless you set one:
+
+```yaml
+defaults:
+  timeout: 30m # each tool and Claude node that sets none
+limits:
+  timeout: 2h # the whole run
+nodes:
+  build:
+    type: tool.shell
+    command: pnpm build
+    timeout: 5m # this node
+```
+
+- Write `30s`, `15m` or `2h`. Time spent waiting on you doesn't count: a pause,
+  a question, or a permission prompt, including one from a node a leader owns.
+- A node that runs out is stopped and fails, with `timedOut` in its output, so
+  an edge can handle it: `when: timedOut`. Its command, and anything that
+  started, is killed.
+- A run that runs out ends as `timed_out`, and `ork resume` continues it. The
+  clocks start again.
+- A `claude.subagent` runs inside its parent's session, so set the timeout on
+  the parent. A `human.gate`'s own `timeout` is separate: its `default` answers.
+
 ## The driver
 
 ```yaml

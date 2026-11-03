@@ -14,11 +14,13 @@ import {
   AgentNameSchema,
   BudgetSchema,
   DriverSchema,
+  DurationSchema,
   EffortSchema,
   IsolationSchema,
   ModelSchema,
   NodeIdSchema,
   PracticesSchema,
+  TimeoutSchema,
   ToolRulesSchema,
   TurnsSchema,
 } from "./settings.ts";
@@ -47,6 +49,9 @@ export const agentSettings = {
   isolation: IsolationSchema.optional(),
   budgetUsd: BudgetSchema.optional(),
   maxTurns: TurnsSchema.optional(),
+  timeout: TimeoutSchema.optional().describe(
+    "How long the node may work, e.g. 30m; time waiting on the user does not count.",
+  ),
   practices: PracticesSchema.optional(),
   tools: ToolRulesSchema.optional(),
   session: z
@@ -77,6 +82,7 @@ export const AGENT_SETTING_KEYS = [
   "isolation",
   "budgetUsd",
   "maxTurns",
+  "timeout",
   "practices",
   "tools",
   "session",
@@ -138,6 +144,9 @@ const toolFields = {
     .optional()
     .describe("Allowed subcommand prefixes, e.g. ['pr view', 'pr merge']."),
   cwd: z.string().optional(),
+  timeout: TimeoutSchema.optional().describe(
+    "How long the command may run, e.g. 5m; then it is killed and the node fails.",
+  ),
 };
 
 /** What every tool node has: `tool.<id>`, its command, allow list and cwd. */
@@ -211,10 +220,7 @@ export const HumanGateNodeSchema = z.strictObject({
   question: z.string(),
   options: z.array(DecisionOptionSchema).min(2),
   recommended: z.string().optional(),
-  timeout: z
-    .string()
-    .regex(/^\d+[smh]$/u, "use e.g. 30s, 15m, 2h")
-    .optional(),
+  timeout: DurationSchema.optional(),
   default: z
     .string()
     .optional()

@@ -38,36 +38,37 @@ which `ork validate` maps to `file:line:column`. Errors stop compilation;
 warnings do not. Schema problems come first, from
 [yaml.ts](../packages/schema/src/yaml.ts): `yaml.syntax` and `schema.<code>`.
 
-| Code                     | Severity | Meaning                                                        |
-| ------------------------ | -------- | -------------------------------------------------------------- |
-| `tree.self`              | error    | a node owns itself                                             |
-| `tree.unknown-parent`    | error    | `parent` names no node                                         |
-| `tree.owner-kind`        | error    | the owner's type cannot own this node                          |
-| `tree.cycle`             | error    | the ownership tree has a cycle                                 |
-| `tree.continue`          | error    | an `isolation: continue` node has a parent or children         |
-| `edge.syntax`            | error    | shorthand without exactly one `->`, or an empty side           |
-| `edge.unknown-node`      | error    | an edge names no node                                          |
-| `edge.subagent`          | error    | an edge touches a sub-agent                                    |
-| `edge.when-syntax`       | error    | a `when:` does not parse                                       |
-| `edge.duplicate`         | warning  | the same edge is declared twice                                |
-| `edge.max-rounds-unused` | warning  | `maxRounds` on an edge outside any cycle                       |
-| `graph.unbounded-cycle`  | error    | a cycle has no `maxRounds` edge                                |
-| `graph.no-entry`         | error    | no node can start                                              |
-| `graph.unreachable`      | warning  | a node no entry reaches through edges or ownership             |
-| `join.inputs`            | warning  | a join has fewer than two inputs                               |
-| `join.n`                 | error    | mode `n` without `n`, or `n` above the number of inputs        |
-| `router.conditions`      | warning  | a router whose edges have no `when:`                           |
-| `gate.option`            | error    | `recommended` or `default` is not an option, or ids repeat     |
-| `gate.timeout`           | error    | a `timeout` without a `default`                                |
-| `input.required-default` | warning  | a required input with a default that is never used             |
-| `message.self`           | error    | a channel from a node to itself                                |
-| `message.endpoint`       | error    | a channel endpoint is not a `claude.leader` or `claude.worker` |
-| `message.implicit`       | warning  | a channel between parent and child, which always exists        |
-| `ref.input`              | error    | a reference to an undeclared input                             |
-| `ref.node`               | error    | a reference to an unknown node, or not through `.output`       |
-| `ref.field`              | warning  | a field the node type does not report                          |
-| `ref.skill`              | error    | a skill reference that resolves to nothing (context compiler)  |
-| `ref.context`            | error    | a context file that does not exist (context compiler)          |
-| `template.syntax`        | error    | a template does not parse                                      |
-| `template.scope`         | error    | a template reads outside `inputs`, `nodes` and `run`           |
-| `template.not-upstream`  | warning  | a template reads a node that does not run first                |
+| Code                     | Severity | Meaning                                                            |
+| ------------------------ | -------- | ------------------------------------------------------------------ |
+| `tree.self`              | error    | a node owns itself                                                 |
+| `tree.unknown-parent`    | error    | `parent` names no node                                             |
+| `tree.owner-kind`        | error    | the owner's type cannot own this node                              |
+| `tree.cycle`             | error    | the ownership tree has a cycle                                     |
+| `tree.continue`          | error    | an `isolation: continue` node has a parent or children             |
+| `edge.syntax`            | error    | shorthand without exactly one `->`, or an empty side               |
+| `edge.unknown-node`      | error    | an edge names no node                                              |
+| `edge.subagent`          | error    | an edge touches a sub-agent                                        |
+| `edge.when-syntax`       | error    | a `when:` does not parse                                           |
+| `edge.duplicate`         | warning  | the same edge is declared twice                                    |
+| `edge.max-rounds-unused` | warning  | `maxRounds` on an edge outside any cycle                           |
+| `graph.unbounded-cycle`  | error    | a cycle has no `maxRounds` edge                                    |
+| `graph.no-entry`         | error    | no node can start                                                  |
+| `graph.unreachable`      | warning  | a node no entry reaches through edges or ownership                 |
+| `join.inputs`            | warning  | a join has fewer than two inputs                                   |
+| `join.n`                 | error    | mode `n` without `n`, or `n` above the number of inputs            |
+| `router.conditions`      | warning  | a router whose edges have no `when:`                               |
+| `gate.option`            | error    | `recommended` or `default` is not an option, or ids repeat         |
+| `gate.timeout`           | error    | a `timeout` without a `default`                                    |
+| `input.required-default` | warning  | a required input with a default that is never used                 |
+| `message.self`           | error    | a channel from a node to itself                                    |
+| `message.endpoint`       | error    | a channel endpoint is not a `claude.leader` or `claude.worker`     |
+| `message.implicit`       | warning  | a channel between parent and child, which always exists            |
+| `timeout.subagent`       | warning  | a `timeout` on a sub-agent, which runs inside its parent's session |
+| `ref.input`              | error    | a reference to an undeclared input                                 |
+| `ref.node`               | error    | a reference to an unknown node, or not through `.output`           |
+| `ref.field`              | warning  | a field the node type does not report                              |
+| `ref.skill`              | error    | a skill reference that resolves to nothing (context compiler)      |
+| `ref.context`            | error    | a context file that does not exist (context compiler)              |
+| `template.syntax`        | error    | a template does not parse                                          |
+| `template.scope`         | error    | a template reads outside `inputs`, `nodes` and `run`               |
+| `template.not-upstream`  | warning  | a template reads a node that does not run first                    |

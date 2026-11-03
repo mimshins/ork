@@ -9,7 +9,8 @@ import { INTEGRATIONS, TOOL_PREFIX } from "@krapht/ork-integrations";
 
 import { type ClaudeExecutorOptions, claudeExecutor } from "./claude.ts";
 import { gateExecutor } from "./gate.ts";
-import { spawnTool, toolExecutor, type ToolRunner } from "./tools.ts";
+import { spawnTool } from "./spawn.ts";
+import { toolExecutor, type ToolRunner } from "./tools.ts";
 
 /** Every built-in node type that does work; control nodes are the scheduler's. */
 export const builtinExecutors = (

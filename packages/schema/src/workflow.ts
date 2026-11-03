@@ -9,7 +9,12 @@ import { z } from "zod";
 import { AgentSchema } from "./agents.ts";
 import { NodeSchema } from "./nodes.ts";
 import { DefaultsSchema, RulesSchema } from "./project.ts";
-import { AgentNameSchema, BudgetSchema, NodeIdSchema } from "./settings.ts";
+import {
+  AgentNameSchema,
+  BudgetSchema,
+  NodeIdSchema,
+  TimeoutSchema,
+} from "./settings.ts";
 
 export const SCHEMA_VERSION = 1;
 
@@ -94,6 +99,9 @@ export const WorkflowSchema = z.strictObject({
         .positive()
         .optional()
         .describe("Max sessions running at once."),
+      timeout: TimeoutSchema.optional().describe(
+        "How long the whole run may work, e.g. 2h; time waiting on the user does not count.",
+      ),
     })
     .optional(),
   nodes: z

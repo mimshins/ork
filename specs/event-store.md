@@ -31,8 +31,8 @@ all views over the same events.
   workflow name, workflow file and project root (absolute), the process id,
   status, start and finish times, and the cost so far.
 - **Status:** `running` until `run.finished` is written, then that event's
-  status (`succeeded`, `failed`, `budget_exhausted`, `interrupted`). A `running`
-  run whose process is gone reads as **`crashed`**.
+  status (`succeeded`, `failed`, `budget_exhausted`, `timed_out`,
+  `interrupted`). A `running` run whose process is gone reads as **`crashed`**.
 - **An event:** the run, a sequence number (1, 2, 3, … in the run), the time,
   and the [run event](./scheduler/resuming-and-events.md#run-events) itself.
   Events are only appended, never changed.

@@ -274,6 +274,7 @@ const RUN_MARK: Record<RunResult["status"], string> = {
   succeeded: style("green", "✓"),
   failed: style("red", "✗"),
   budget_exhausted: style("yellow", "!"),
+  timed_out: style("yellow", "!"),
   interrupted: style("yellow", "!"),
 };
 

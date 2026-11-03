@@ -144,6 +144,28 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 - `interrupt()` stops starting nodes, aborts the running ones, and ends the run
   `interrupted`.
 
+## Timeouts
+
+[timeouts.ts](../packages/core/src/run/timeouts.ts),
+[tests](../packages/core/test/timeouts.test.ts),
+[ADR-043](../decisions/ADR-043-timeouts.md).
+
+- `timeout` on a tool node, `claude.leader` or `claude.worker` limits each
+  activation, from when its executor starts; `defaults.timeout` applies to those
+  that set none; `limits.timeout` limits the run. None is set unless a workflow
+  sets it.
+- **The clock measures work.** It stands still while the node is paused or has a
+  question or permission prompt open, and while a node it owns does. A run's
+  stands still while it is paused, or anything in it waits on the user.
+- **An expired node** is aborted and fails, its output keeping what it had plus
+  `status: fail`, `summary` and `timedOut: true`. Edges treat it as any failure.
+  If its executor has not ended 10 seconds later it is left behind.
+- **An expired run** aborts what is running and ends `timed_out`, after the same
+  10 seconds at most.
+- A tool runs in its own process group: an abort, from a timeout or a stop,
+  sends it SIGTERM, then SIGKILL after 2 seconds
+  ([spawn.ts](../packages/nodes/src/spawn.ts)).
+
 ## Contents
 
 - [Resuming a run, and run events](./scheduler/resuming-and-events.md)

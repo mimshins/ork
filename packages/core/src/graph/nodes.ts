@@ -22,6 +22,16 @@ export const checkNodes = (
     const incoming = edges.filter(e => e.to === id);
     const outgoing = edges.filter(e => e.from === id);
 
+    if (node.type === "claude.subagent" && node.timeout !== undefined) {
+      diagnostics.push(
+        warning(
+          "timeout.subagent",
+          `sub-agent "${id}" runs inside its parent's session, so its timeout has no effect; set one on the parent`,
+          [...path, "timeout"],
+        ),
+      );
+    }
+
     if (node.type === "control.join") {
       const sources = new Set(incoming.map(e => e.from)).size;
       if (sources < 2) {

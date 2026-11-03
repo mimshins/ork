@@ -6,6 +6,11 @@
  *   they need.
  */
 
+import { isClaudeNode, type Node } from "@krapht/ork-schema";
+
+/** Only a Claude session takes a slot; tools and gates are not limited. */
+export const needsSlot = (node: Node): boolean => isClaudeNode(node);
+
 export type Slots = {
   /** Takes a slot if one is free and nobody is waiting for it. */
   tryTake: () => boolean;

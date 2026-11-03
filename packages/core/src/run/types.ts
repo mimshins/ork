@@ -141,6 +141,7 @@ export type RunStatus =
   | "succeeded"
   | "failed"
   | "budget_exhausted"
+  | "timed_out"
   | "interrupted";
 
 export type NodeSummary = {

@@ -55,6 +55,8 @@ export type RunOptions = {
   settings?: RunSettings;
   /** For `ork resume`: the results a run recorded, handed back in order. */
   replay?: Replay;
+  /** How long a timed-out node or run may take to end (default 10 s). */
+  timeoutGraceMs?: number;
 };
 
 /**

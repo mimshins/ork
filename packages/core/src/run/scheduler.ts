@@ -2,13 +2,11 @@
  * @file The scheduler: runs a compiled workflow to the end: entries, executors,
  *   routing (`routing.ts`), loops (`escalation.ts`), delegated children
  *   (`delegation.ts`), the bus, claims and feedback (`ports.ts`), the budget
- *   and concurrency (`slots.ts`), and pause, continue and a node's stop
- *   (`holds.ts`, ADR-041).
+ *   and concurrency (`slots.ts`), pause, continue and a node's stop
+ *   (`holds.ts`, ADR-041), and timeouts (`timeouts.ts`, ADR-043).
  */
 
-import { isClaudeNode } from "@krapht/ork-schema";
-
-import { type ContextDeps, nodeContext } from "./context.ts";
+import { type ContextDeps, createExecute } from "./context.ts";
 import { createLoops } from "./escalation.ts";
 import type {
   Activation,
@@ -26,7 +24,6 @@ import {
   closeWorkspace,
   failure,
   finishedEvent,
-  passThrough,
   recordRun,
   runResult,
   runStartedEvent,
@@ -35,7 +32,8 @@ import {
 } from "./results.ts";
 import { createRouter } from "./router.ts";
 import { runPlace, runScope } from "./scope.ts";
-import { createSlots } from "./slots.ts";
+import { createSlots, needsSlot } from "./slots.ts";
+import { createClock, TIMEOUT_GRACE_MS, watchRunTimeout } from "./timeouts.ts";
 
 export const DEFAULT_CONCURRENCY = 4;
 
@@ -82,8 +80,11 @@ export const startRun = (options: RunOptions): RunHandle => {
       pump();
     },
   });
+  const clock = createClock({ graph, holds, running });
+  const human = clock.human(options.human);
+  const graceMs = options.timeoutGraceMs ?? TIMEOUT_GRACE_MS;
   const loops = createLoops({
-    human: options.human,
+    human,
     bus: ports.bus,
     onEvent,
     activate: (id, input) => {
@@ -109,7 +110,23 @@ export const startRun = (options: RunOptions): RunHandle => {
     },
   });
 
+  const cancelTimeout = watchRunTimeout({
+    timeout: limits.timeout,
+    clock: clock.forRun(),
+    graceMs,
+    expire: reason => {
+      stop("timed_out", reason);
+      abort.abort();
+      settle();
+    },
+    leave: () => {
+      busy = 0;
+      settle();
+    },
+  });
+
   const close = async (): Promise<void> => {
+    cancelTimeout();
     const worktrees = await closeWorkspace(options.workspace, reasons);
     const nodes = [...summaries.values()];
     const result = runResult({
@@ -161,6 +178,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     options,
     runId,
     runDir,
+    human,
     outputs,
     rounds,
     sessionIds,
@@ -175,28 +193,13 @@ export const startRun = (options: RunOptions): RunHandle => {
       limits.budgetUsd === undefined ? undefined : limits.budgetUsd - spent,
   };
 
-  const execute = async (activation: Activation): Promise<NodeResult> => {
-    const node = nodeOf(activation);
-    if (node === undefined) return failure(`unknown node ${activation.id}`);
-    if (node.type.startsWith("control.")) return passThrough(activation.input);
-    const executor = options.executors[node.type];
-    if (executor === undefined) return failure(`no executor for ${node.type}`);
-    try {
-      const { workspace } = options;
-      const place = (await workspace?.prepare(
-        activation.id,
-        activation.template,
-      )) ?? { cwd: options.cwd };
-      const result = await executor({
-        ...nodeContext(contextDeps, activation, place.cwd),
-        node,
-        ...(place.checkout === undefined ? {} : { checkout: place.checkout }),
-      });
-      return (await workspace?.finish(activation.id, result)) ?? result;
-    } catch (error) {
-      return failure(error instanceof Error ? error.message : String(error));
-    }
-  };
+  const execute = createExecute({
+    options,
+    contextDeps,
+    clock,
+    graceMs,
+    nodeOf,
+  });
 
   /** Runs one activation and records it; routing is the caller's. */
   const perform = async (activation: Activation): Promise<NodeResult> => {
@@ -247,7 +250,7 @@ export const startRun = (options: RunOptions): RunHandle => {
         index += 1;
         continue;
       }
-      const isSession = isClaudeNode(node);
+      const isSession = needsSlot(node);
       if (isSession && budgetSpent()) break;
       if (isSession && !slots.tryTake()) {
         index += 1;

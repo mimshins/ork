@@ -12,22 +12,12 @@ import {
   renderTemplate,
   runScope,
 } from "@krapht/ork-core";
-import type { DecisionOption } from "@krapht/ork-schema";
+import { type DecisionOption, timeoutMs } from "@krapht/ork-schema";
 
 /** A promise that never settles: the losing side of a race. */
 const NEVER = new Promise<never>(() => {
   // Never settles.
 });
-
-const UNITS: Record<string, number> = { s: 1000, m: 60_000, h: 3_600_000 };
-
-/** `30s`, `15m`, `2h` in milliseconds; `undefined` without a timeout. */
-export const timeoutMs = (timeout: string | undefined): number | undefined => {
-  const match = /^(\d+)([smh])$/u.exec(timeout ?? "");
-  if (match === null) return undefined;
-  const [, amount = "0", unit = "s"] = match;
-  return Number(amount) * (UNITS[unit] ?? 1000);
-};
 
 const choiceOf = (option: DecisionOption): DecisionChoice => {
   if (typeof option === "string") return { id: option };

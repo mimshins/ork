@@ -27,6 +27,7 @@ const STATUSES: Status[] = [
   "skipped",
   "interrupted",
   "budget_exhausted",
+  "timed_out",
 ];
 
 export const Controls = () => {

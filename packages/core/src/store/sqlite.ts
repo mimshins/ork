@@ -26,6 +26,7 @@ const STATUSES: readonly StoredRunStatus[] = [
   "succeeded",
   "failed",
   "budget_exhausted",
+  "timed_out",
   "interrupted",
 ];
 

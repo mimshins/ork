@@ -6,7 +6,6 @@
  *   long output kept in run files.
  */
 
-import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
@@ -235,35 +234,3 @@ export const toolExecutor =
       error: `${command.program} exited with ${String(run.exitCode)}${last === "" ? "" : `: ${last}`}`,
     };
   };
-
-/** The real runner: `spawn` without a shell, output collected as text. */
-export const spawnTool: ToolRunner = (program, args, { cwd, signal }) =>
-  new Promise(resolve => {
-    const stdout: string[] = [];
-    const stderr: string[] = [];
-    const child = spawn(program, args, {
-      cwd,
-      signal,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    child.stdout.setEncoding("utf8").on("data", (chunk: string) => {
-      stdout.push(chunk);
-    });
-    child.stderr.setEncoding("utf8").on("data", (chunk: string) => {
-      stderr.push(chunk);
-    });
-    child.on("error", error => {
-      resolve({
-        exitCode: -1,
-        stdout: stdout.join(""),
-        stderr: `could not run ${program}: ${error.message}`,
-      });
-    });
-    child.on("close", code => {
-      resolve({
-        exitCode: code ?? -1,
-        stdout: stdout.join(""),
-        stderr: stderr.join(""),
-      });
-    });
-  });

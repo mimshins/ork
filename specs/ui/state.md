@@ -82,8 +82,8 @@ decisions, outside the live region: they change too often to read out.
   read again if a panel still retains it.
 - **Retained, not always open.** `useRunFeed(id)` retains a run while a
   component shows it; the last release closes the stream, because a browser
-  gives an origin few connections ([L36](../gaps.md)). The four feeds used last
-  stay in memory to come back to.
+  gives an origin few connections ([L36](../gaps/limits.md)). The four feeds
+  used last stay in memory to come back to.
 
 ## The event window
 
@@ -122,7 +122,8 @@ render, and a slice of a feed ignores changes outside it.
 the density and whether desktop notifications may be sent, per browser
 (`ork.preferences.v1`). Values are checked on load: a missing field takes its
 default, and values that do not fit are dropped. The app applies them before its
-first paint, so a chosen theme flashes only as far as [L32](../gaps.md) says.
+first paint, so a chosen theme flashes only as far as [L32](../gaps/limits.md)
+says.
 
 The palette's **View** group sets the theme (follow the system, dark, light) and
 the density (compact, comfortable); the one in use stays listed and says so.

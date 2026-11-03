@@ -86,6 +86,7 @@ const WORDS: [Status, string][] = [
   ["queued", "queued"],
   ["skipped", "skipped"],
   ["interrupted", "interrupted"],
+  ["timed_out", "timed out"],
   ["budget_exhausted", "budget exhausted"],
 ];
 

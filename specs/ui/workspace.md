@@ -137,12 +137,12 @@ unfolds and focuses it.
 
 ## Limits
 
-- **Sizes after several minimizes** ([L33](../gaps.md)). One minimize and
+- **Sizes after several minimizes** ([L33](../gaps/limits.md)). One minimize and
   restore comes back exact, as does float and dock. Minimizing several panels
   and restoring them out of order puts each in the right place, but other
   groups' sizes can shift.
-- **Keyboard moves are coarser than the mouse** ([L34](../gaps.md)). A key moves
-  a panel into its neighbor or to an edge; splitting beside one particular group
-  takes the mouse, or those two steps.
-- **dockview's other skins still ship** ([L35](../gaps.md)). Its one style sheet
-  holds them, unused.
+- **Keyboard moves are coarser than the mouse** ([L34](../gaps/limits.md)). A
+  key moves a panel into its neighbor or to an edge; splitting beside one
+  particular group takes the mouse, or those two steps.
+- **dockview's other skins still ship** ([L35](../gaps/limits.md)). Its one
+  style sheet holds them, unused.

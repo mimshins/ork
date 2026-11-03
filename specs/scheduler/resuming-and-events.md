@@ -15,10 +15,10 @@ under the same run id, with a `Replay` built from the run's events:
   finished; from there it runs. A new result marks its output, and an activation
   whose input carries one (directly, or in a join's `results`) runs too.
   Delegated runs are never handed back: their leader's session runs them.
-- **A node cut off mid-session continues it.** When the run was stopped, crashed
-  or ran out of budget (not when it failed), a node whose last activation never
-  finished well resumes the Claude session it had, once, told that the run was
-  stopped and to carry on from what it finished
+- **A node cut off mid-session continues it.** When the run was stopped,
+  crashed, ran out of budget or timed out (not when it failed), a node whose
+  last activation never finished well resumes the Claude session it had, once,
+  told that the run was stopped and to carry on from what it finished
   ([resume.ts](../../packages/core/src/run/resume.ts), `cutOff`). A node that
   failed in a failed run starts fresh.
 - `run.started` carries the run's `inputs` and `settings` (`inPlace`, `driver`),
@@ -56,7 +56,7 @@ under the same run id, with a `Replay` built from the run's events:
 | `claim.released`    | a node released a claim, itself or by finishing                                                                         |
 | `feedback.recorded` | an agent's report, or a signal Ork derived ([feedback](../feedback.md))                                                 |
 | `run.resumed`       | `ork resume` continues the run: the nodes that keep their results                                                       |
-| `run.finished`      | the run ends: `succeeded`, `failed`, `budget_exhausted`, `interrupted`                                                  |
+| `run.finished`      | the run ends: `succeeded`, `failed`, `budget_exhausted`, `timed_out`, `interrupted`                                     |
 
 The decision queue adds `decision.opened`, `decision.answered`,
 `decision.withdrawn` and `run.command` ([messaging](../messaging.md)); a pause

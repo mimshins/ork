@@ -16,7 +16,7 @@ description: Fix a failing test, review it, then ask before opening a PR.
 inputs: {} # what `ork run --input` must provide
 layers: {} # skills and context for every node
 defaults: {} # model, effort, driver, isolation, budgets
-limits: {} # the whole run's budget and concurrency
+limits: {} # the whole run's budget, concurrency and timeout
 nodes: {} # the nodes, by id
 edges: [] # how work flows between them
 ```

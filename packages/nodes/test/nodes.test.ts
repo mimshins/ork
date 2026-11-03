@@ -21,7 +21,12 @@ import {
   type SessionPorts,
   type SessionSpec,
 } from "@krapht/ork-core";
-import { type Node, NodeSchema, type Workflow } from "@krapht/ork-schema";
+import {
+  type Node,
+  NodeSchema,
+  type Workflow,
+  timeoutMs,
+} from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -32,7 +37,6 @@ import {
   resultOf,
   resumeMessage,
   spawnTool,
-  timeoutMs,
   tokenize,
   toolExecutor,
   type ToolRunner,

@@ -16,6 +16,7 @@ import {
   ModelSchema,
   PracticesSchema,
   ToolRulesSchema,
+  TimeoutSchema,
   TurnsSchema,
 } from "./settings.ts";
 
@@ -29,6 +30,9 @@ export const DefaultsSchema = z.strictObject({
   isolation: IsolationSchema.optional(),
   budgetUsd: BudgetSchema.optional(),
   maxTurns: TurnsSchema.optional(),
+  timeout: TimeoutSchema.optional().describe(
+    "For tool and Claude nodes that set none; a gate's own timeout is separate.",
+  ),
   practices: PracticesSchema.optional(),
 });
 export type Defaults = z.infer<typeof DefaultsSchema>;

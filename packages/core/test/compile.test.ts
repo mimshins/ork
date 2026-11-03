@@ -224,6 +224,21 @@ edges:
     ).toContain("error:graph.no-entry");
   });
 
+  it("warns that a sub-agent's timeout has no effect", () => {
+    expect(
+      codes(
+        workflow(`nodes:
+  lead: { type: claude.leader, prompt: go }
+  helper:
+    type: claude.subagent
+    parent: lead
+    description: helps
+    timeout: 5m
+`),
+      ),
+    ).toContain("warning:timeout.subagent");
+  });
+
   it("lets a first node loop back to itself", () => {
     const { graph, diagnostics } = compile(
       workflow(`nodes:

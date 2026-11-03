@@ -56,6 +56,11 @@
       "exclusiveMinimum": 0,
       "maximum": 9007199254740991
     },
+    "timeout": {
+      "description": "How long the node may work, e.g. 30m; time waiting on the user does not count.",
+      "type": "string",
+      "pattern": "^\\d+[smh]$"
+    },
     "practices": {
       "type": "object",
       "properties": {

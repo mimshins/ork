@@ -89,7 +89,8 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 ## Stopping one node
 
 - **What happens.** `ork stop --node n` interrupts the running node's session,
-  or kills its tool's process.
+  or kills its tool's process group: SIGTERM, then SIGKILL after 2 seconds, so
+  what the tool started ends too ([spawn.ts](../packages/nodes/src/spawn.ts)).
 - **Its outcome.** The node finishes `failed`, with the reason
   `stopped by the user`, and the run's own rules take it from there:
   - its owner gets the failed report;
@@ -121,7 +122,8 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 
 - **Managed settings can forbid HTTP hooks** (`allowManagedHooksOnly`,
   `allowedHttpHookUrls`). Then the CLI driver's hold never fires, and a
-  CLI-driven node pauses only at its next activation ([gaps](./gaps.md#limits)).
+  CLI-driven node pauses only at its next activation
+  ([limits](./gaps/limits.md)).
 - **The SDK path hasn't run live** (it needs an API key), only against its types
   and the fake runtime ([gaps](./gaps.md#chores), C5).
 - **A single-node run** (`ork run <wf> --node n`) takes `stop`, but not pause or

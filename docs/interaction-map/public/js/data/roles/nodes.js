@@ -497,7 +497,7 @@ export const NODES = [
     status: "built",
     pkg: "core",
     summary:
-      "What the run says when it ends: its status (`succeeded`, `failed`, `budget_exhausted`, `interrupted`), each node that ran or was skipped, why it did not succeed, and the worktrees it left.",
+      "What the run says when it ends: its status (`succeeded`, `failed`, `budget_exhausted`, `timed_out`, `interrupted`), each node that ran or was skipped, why it did not succeed, and the worktrees it left.",
     facts: [
       "A run fails when a node failed and took no edge; its reason names the node.",
       "Recorded in the event store; `ork ps`, `ork logs` and `ork tree` read it.",

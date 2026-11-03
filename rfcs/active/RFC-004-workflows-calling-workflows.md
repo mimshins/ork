@@ -44,7 +44,7 @@ What Ork has now, checked on 2026-11-03:
   ([workflow.ts](../../packages/schema/src/workflow.ts)). A caller could see
   only that a run ended, and how.
 - **Budgets are per run**, and nothing caps runs together
-  ([L39](../../specs/gaps.md)).
+  ([L39](../../specs/gaps/limits.md)).
 
 ## Options
 
@@ -173,6 +173,9 @@ messages:
   alone. Pause does not spread at first.
 - **Who may call.** Any registered project, by default. A rule in the target's
   `project.yaml` can limit it, and the called run's events name the caller.
+- **Timeout.** A call takes `timeout` as a tool node does
+  ([ADR-043](../../decisions/ADR-043-timeouts.md)). An expired call stops the
+  run it started.
 - **Resume.** `workflow.called` in the caller's events records the called run's
   id. `ork resume` reattaches, or reads the result if the run has ended.
 
@@ -191,7 +194,7 @@ messages:
   `ork decide` or the UI's inbox, even when the caller runs in a terminal.
 - Runs are heavier than inlined nodes: each is a process with its own worktrees.
 - Concurrency stays per run, unlike the budget, so a tree of runs can hold more
-  sessions than any one limit says ([L39](../../specs/gaps.md)).
+  sessions than any one limit says ([L39](../../specs/gaps/limits.md)).
 - Calling across projects depends on what is registered on the machine, as a
   tool node depends on what is installed.
 

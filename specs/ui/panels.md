@@ -16,7 +16,7 @@ then.
 ## Runs
 
 The newest 50 runs from the [overview stream](./state.md#the-containers),
-filtered by project ([L37](../gaps.md)).
+filtered by project ([L37](../gaps/limits.md)).
 
 - **A row** has the workflow and its status, as an icon and a word; then the
   run's id, when it started, what it cost, and how many nodes are paused. A

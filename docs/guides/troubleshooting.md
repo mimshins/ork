@@ -87,6 +87,11 @@ or narrow the node's brief.
 starts. Raise it, or use cheaper models for checks
 ([Models, effort and budgets](./models-and-budgets.md)).
 
+**A node fails with `timed out after …`, or the run ends `timed_out`.** It used
+all of its `timeout`; time waiting on you doesn't count. Raise it, or handle it
+with `when: timedOut` ([timeouts](./models-and-budgets.md#timeouts)).
+`ork resume` continues a run that timed out.
+
 **A node fails because a git hook refused its commit.** Ork commits each node's
 work with your repository's hooks. The node's message shows the hook's output,
 and its worktree keeps the changes so you can fix them by hand.
