@@ -580,7 +580,9 @@ export const MILESTONES = [
       {
         id: "timeouts",
         title: "Timeouts on nodes and runs",
-        status: "active",
+        status: "done",
+        date: "2026-11-03",
+        commits: ["c7a7e8f"],
         detail:
           "A `timeout` on tool nodes, Claude nodes and the whole run, whose clock stands still while waiting on the user. An expired node fails with `timedOut`, and a run ends `timed_out`. Tools run in their own process groups, so a stop or a timeout ends what they started.",
         docs: [
