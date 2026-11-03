@@ -632,9 +632,11 @@ export const MILESTONES = [
       {
         id: "usage-reports",
         title: "Usage reports and pruning",
-        status: "active",
+        status: "done",
         detail:
           "`ork usage` and a Usage panel add up what sessions spent over time, from a ledger the events fill, with hints from thresholds; no model is involved. `ork prune` forgets old runs and keeps the ledger. Corrects a resumed session's cost, which was counted again.",
+        commits: ["aea062e"],
+        date: "2026-11-04",
         docs: [
           "decisions/ADR-046-usage-ledger-and-prune.md",
           "specs/usage.md",
@@ -772,4 +774,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-03";
+export const ROADMAP_UPDATED = "2026-11-04";
