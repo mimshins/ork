@@ -155,6 +155,16 @@ describe("the read routes", () => {
     ).toMatchObject({ data: { length: 1 } });
   });
 
+  it("read one decision, open or not, and refuse an unknown one", async () => {
+    const { client } = await withRuns();
+    expect(
+      await client.call("decision", { params: { id: "d-live" } }),
+    ).toMatchObject({ ok: true, data: { id: "d-live", status: "open" } });
+    expect(
+      await client.call("decision", { params: { id: "nope" } }),
+    ).toMatchObject({ ok: false, status: 404 });
+  });
+
   it("refuse a bad query, and a method a path does not take", async () => {
     const { get, server } = await withRuns();
     const bad = await get("/api/runs?limit=many");

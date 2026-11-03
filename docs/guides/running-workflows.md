@@ -115,7 +115,8 @@ pending, and Ork picks the session up again when you continue. `ork ps` shows
 the run as `paused`; `ork tree` marks the nodes that are waiting
 ([run control](../../specs/run-control.md)).
 
-`ork ui` shows the same runs and open decisions in your browser
+`ork ui` shows the same runs and their events in your browser, where you can
+answer the open decisions too
 ([the browser view](../getting-started/installation.md#the-browser-view)).
 
 ## One node on its own

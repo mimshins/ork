@@ -75,6 +75,7 @@ are named by id or a unique prefix: no match is 404, several are 400.
 | GET    | `/api/runs/:id/graph`         | what its graph is drawn from: nodes, edges, channels, positions                                    |
 | GET    | `/api/runs/:id/events`        | stored events; `?after`, `?node`, `?limit`, `?last` (the newest N)                                 | `ork logs --json`     |
 | GET    | `/api/decisions`              | open decisions of live runs; `?run`, `?project`                                                    | `ork decide --list`   |
+| GET    | `/api/decisions/:id`          | one decision, open or not, with its answer and who gave it                                         | `ork logs <run>`      |
 | POST   | `/api/decisions/:id`          | `{ choose }`: answers it as `ui`, wakes the run                                                    | `ork decide --id`     |
 | POST   | `/api/runs`                   | `{ project, workflow, inputs?, driver?, inPlace?, allowDirty? }`                                   | `ork run --detach`    |
 | POST   | `/api/runs/:id/resume`        | `{ inputs?, driver?, inPlace?, allowDirty? }`                                                      | `ork resume --detach` |

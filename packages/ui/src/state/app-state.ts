@@ -18,6 +18,7 @@ import {
 } from "@krapht/ork-server/client";
 import { Container } from "react-containerized-state";
 
+import { createDecisionHistory } from "./decision-history.ts";
 import { createPreferences } from "./preferences.ts";
 import { createRead } from "./read.ts";
 import { reconcile } from "./reconcile.ts";
@@ -80,6 +81,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     client.call("workflows", { params: { id } }),
   );
   const feeds = new Map<string, HeldFeed>();
+  const decisionHistory = createDecisionHistory(client);
 
   const askServer = async (): Promise<void> => {
     const answer = await client.call("health");
@@ -127,6 +129,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     preferences,
     runFilter,
     runDialog,
+    settledDecisions: decisionHistory.settled,
     projects,
     workflows,
     /** Asks for a run; it then arrives on the stream like any other. */
@@ -134,6 +137,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     /** Follows the server until the returned function is called. */
     start: (): (() => void) => {
       const stopWatching = runs.subscribe(reopenResumed);
+      const stopSettling = decisions.subscribe(decisionHistory.saw);
       const link = openLink<OverviewEvents>({
         url: () => STREAMS.overview,
         open,
@@ -153,6 +157,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
       });
       return () => {
         stopWatching();
+        stopSettling();
         link.close();
       };
     },
@@ -183,6 +188,9 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
         params: { id: runId },
         body: node === undefined ? {} : { node },
       }),
+    /** Answers a decision; it then leaves the open list on the stream. */
+    answerDecision: (id: string, choose: string) =>
+      client.call("answer", { params: { id }, body: { choose } }),
     /** What the Monitor shows of a run, read while it is started. */
     watchRun: (runId: string): RunWatch =>
       createRunWatch({ runId, client, feed: heldFeed(runId).feed }),

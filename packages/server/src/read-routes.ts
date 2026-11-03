@@ -23,6 +23,7 @@ type ReadRoutes = Pick<
   | "graph"
   | "events"
   | "decisions"
+  | "decision"
   | "links"
 >;
 
@@ -111,5 +112,12 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
     const found = runOf(context, query.run);
     if (!found.ok) return found.refusal;
     return ok(pendingDecisions(context.store, { runId: found.run.id }));
+  },
+
+  decision: ({ params }) => {
+    const found = context.store.decision(params.id);
+    return found === undefined
+      ? fail(404, `No decision "${params.id}".`)
+      : ok(found);
   },
 });

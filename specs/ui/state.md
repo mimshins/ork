@@ -7,8 +7,8 @@ Status: **Built**, and read by the status bar, the palette and the
 containers, the stream links, a run's feed and event window, and the preferences
 ([state](../../packages/ui/src/state/), [tests](../../packages/ui/test/state/)).
 A run's feed is checked against a fake server and a fake `EventSource`; the real
-streams it reads were checked by hand in a browser, and the feed itself first
-runs against them when the Logs panel lands.
+streams it reads, and the feed against them in the Logs panel, were checked by
+hand in a browser.
 
 ## Contents
 

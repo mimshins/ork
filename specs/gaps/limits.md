@@ -220,3 +220,11 @@ How something built works for now, by choice.
   Cards at low zoom are also smaller than 24 px, which WCAG 2.5.8 allows because
   the ownership tree's rows do the same at full size.
   ([graph](../ui/graph.md#keys-and-names))
+- **L65 · Logs filters only what is loaded.** The page holds the newest 2000
+  events of a run, and its filters look through those. An older match needs
+  **Load older** first, and the panel says so when nothing matches. The server
+  has no filtered read. ([panels](../ui/panels.md#logs))
+- **L66 · The Decisions panel's Settled list lasts as long as the page.** It
+  holds what left the open list while the page watched, the newest 20, so a
+  reload empties it and a decision answered while no page was open never
+  appears. The run's log still has them. ([panels](../ui/panels.md#decisions))

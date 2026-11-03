@@ -2,16 +2,18 @@
 
 _Part of [The UI](../ui.md)._
 
-Status: **In progress.** Built: the Runs panel, the Run workflow dialog and the
-Monitor ([panels](../../packages/ui/src/panels/),
-[tests](../../packages/ui/test/panels/)). Logs, Decisions, Chats and
-Notifications are planned, and each names the `ork` command to use until then.
+Status: **In progress.** Built: the Runs panel, the Run workflow dialog, the
+Monitor, Logs and Decisions ([panels](../../packages/ui/src/panels/),
+[tests](../../packages/ui/test/panels/)). Chats and Notifications are planned,
+and each names the `ork` command to use until then.
 
 ## Contents
 
 - [Runs](#runs)
 - [Run workflow](#run-workflow)
 - [Monitor](#monitor)
+- [Logs](#logs)
+- [Decisions](#decisions)
 
 ## Runs
 
@@ -105,5 +107,46 @@ Its CLI twin is `ork tree <run>`.
   focus then lands on the opened run's heading, since the button that had it is
   gone (WCAG 2.4.3).
 
-Selecting a node is shared with the other panels; Logs and Chats follow it when
-they are built.
+Selecting a node is shared with the other panels: Logs follows it, and Chats
+will when it is built.
+
+## Logs
+
+The selected run's events, live
+([panel](../../packages/ui/src/panels/logs-panel.tsx),
+[tests](../../packages/ui/test/panels/logs-panel.test.tsx)). Its CLI twin is
+`ork logs <run> --follow`, shown on the Follow button.
+
+- **A row** has the event's time, node, type and a line in words. Opening it
+  shows the whole event. The list is one tab stop: the arrow keys, `Home` and
+  `End` move through it, and `Enter` opens a row.
+- **Filters** are by node, by event type and by text anywhere in the event. The
+  node filter is the shared selection, so choosing a node in the Monitor opens
+  it here and the other way round. They look through what is loaded
+  ([L65](../gaps/limits.md)).
+- **Following:** it stays on the newest. Scrolling up holds it, so what is being
+  read stays still and the Follow button counts what is new; back at the end, or
+  pressing it, follows again.
+- **History:** the feed holds the newest 2000 events ([state](./state.md)), and
+  **Load older** reads the next page before them, keeping what is on screen
+  where it is.
+
+## Decisions
+
+Every open decision across runs, shaped like the question tool
+([panel](../../packages/ui/src/panels/decisions-panel.tsx),
+[tests](../../packages/ui/test/panels/decisions-panel.test.tsx)). Its CLI twin
+is `ork decide`, and each option's tooltip gives `ork decide <run> --id <id>
+--choose
+<option>`.
+
+- **A card** has where the question comes from, the question, its context and
+  its options. The recommended option says so in words, and stands out.
+- **An answer** takes one click. With the focus in the card, `1` to `9` choose
+  an option, and `Enter` on the card itself takes the recommended one.
+- **Nothing is optimistic:** the card stays until the server says it has settled
+  on the stream, and a refusal stays in the card in the server's words. If the
+  card had the focus, the focus moves to the next one.
+- **Settled** lists what has left the open list while the page watched, with who
+  answered: in the run's terminal, with `ork decide` or in `ork ui`
+  (`GET /api/decisions/:id`, [L66](../gaps/limits.md)). Each is also said aloud.

@@ -7,8 +7,10 @@
 
 import {
   createClient,
+  type DecisionRecord,
   type LinkRecord,
   type ProjectRecord,
+  type StoredEvent,
   type TreeNode,
   type WorkflowGraph,
   type WorkflowView,
@@ -33,6 +35,12 @@ export type FakeRoutes = {
   refuse?: string;
   /** What it says of a run; a test can change it between reads. */
   monitor?: MonitorRoutes;
+  /** Each decision's record, as read on its own. */
+  decisions?: Record<string, DecisionRecord>;
+  /** Why it refuses an answer, if it does. */
+  refuseAnswer?: string;
+  /** A run's stored events, as read a page at a time. */
+  events?: StoredEvent[];
 };
 
 export type MonitorRoutes = {
@@ -64,6 +72,23 @@ export const openPanelState = (routes: FakeRoutes = {}) => {
   const controlled: { kind: string; run: string; body: unknown }[] = [];
   const answer = (path: string, body: unknown): Response => {
     const { monitor } = routes;
+    const decision = /^\/api\/decisions\/(.+)$/u.exec(path)?.[1];
+    if (decision !== undefined) {
+      if (body === undefined) {
+        const record = routes.decisions?.[decision];
+        return record === undefined
+          ? json({ error: "No decision." }, 404)
+          : json(record);
+      }
+      if (routes.refuseAnswer !== undefined) {
+        return json({ error: routes.refuseAnswer }, 409);
+      }
+      controlled.push({ kind: "answer", run: decision, body });
+      return json({ decision, answer: "" });
+    }
+    if (/^\/api\/runs\/[^/]+\/events$/u.test(path)) {
+      return json(routes.events ?? []);
+    }
     if (path === "/api/links") return json(monitor?.links ?? []);
     const [, run = "", kind = ""] =
       /^\/api\/runs\/([^/]+)\/(tree|graph|pause|continue|stop)$/u.exec(path) ??

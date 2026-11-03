@@ -196,7 +196,8 @@ export const NODES = [
       "Built: the workspace on dockview: resize, dock, tab, float, maximize, minimize to a rail, a saved layout, a command palette, Ork's own keys for what dockview's free build leaves out, and a stack below 1024 px. Panels not yet built name the CLI command.",
       "Built: the state layer on containerized-state: runs and decisions from the overview stream, a run's events in a capped window with paging, reconnecting streams, and saved preferences. A write comes back on a stream; nothing updates in advance.",
       "Built: the Runs panel, filtered by project, and the Run workflow dialog with each input by its type, the run flags and the CLI twin.",
-      "Panels still to come, in build order: monitor, logs, decisions, chats, notifications, then the designer and context inspector.",
+      "Built: Logs, a run's events live with filters and paging, and Decisions, every open question across runs, answered with a click or a digit, with who answered one settled elsewhere.",
+      "Panels still to come, in build order: chats, notifications, then the designer and context inspector.",
     ],
     see: [
       { map: "messaging", node: "inbox", label: "The decisions inbox" },

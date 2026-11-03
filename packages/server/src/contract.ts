@@ -150,6 +150,7 @@ export const API = {
     path: "/api/decisions",
     query: DecisionsQuerySchema,
   },
+  decision: { method: "GET", path: "/api/decisions/:id" },
   answer: { method: "POST", path: "/api/decisions/:id", body: AnswerSchema },
   start: { method: "POST", path: "/api/runs", body: StartRunSchema },
   resume: {
@@ -198,6 +199,7 @@ export type Responses = {
   graph: WorkflowGraph;
   events: StoredEvent[];
   decisions: DecisionRecord[];
+  decision: DecisionRecord;
   answer: { decision: string; answer: string };
   start: Accepted;
   resume: Accepted;
