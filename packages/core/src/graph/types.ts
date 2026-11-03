@@ -72,6 +72,8 @@ export const OUTPUT_FIELDS: Record<
   "control.join": ["statuses", "results", "count"],
   "control.router": null,
   "human.gate": ["choice", "answeredBy"],
+  // A called run's outputs, or the report of the node it waits on.
+  "workflow.call": null,
 };
 
 /**

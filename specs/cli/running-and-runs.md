@@ -36,6 +36,9 @@ with the built-in node types
   its id once it is recorded; its output goes to `.ork/runs/<run>/output.log`
   and its questions wait for `ork decide`. Follow it with `ork logs <run> -f`.
   Works with `--node` too.
+- A [`workflow.call`](../scheduler/calls.md) starts its run this way, with three
+  internal flags: `--called-by`, `--budget-cap` and `--base-ref`. The caller's
+  transcript shows `↳ started <workflow> as run <id>`.
 
 ## Running one node
 
@@ -117,7 +120,8 @@ first (then the prompt is withdrawn and the transcript shows
 - **`ork stop [<run>]`** asks a live run to stop (this project's newest without
   `<run>`), wakes it, and waits up to 15 s for it to end; a run that is not
   running is refused with its status. **`--node <n>`** stops one running node
-  instead: it fails, `stopped by the user`, and the run goes on.
+  instead: it fails, `stopped by the user`, and the run goes on. A stop reaches
+  the runs a [`workflow.call`](../scheduler/calls.md) started.
 - **`ork pause [<run>] [--node <n>]`** and
   **`ork continue [<run>] [--node <n>]`**
   ([pause.ts](../../packages/cli/src/commands/pause.ts)) pause a live run, or
@@ -136,6 +140,8 @@ the same id and in its own project, from wherever it is called:
 - Nodes that finished keep their results; the rest run again, with what they
   feed ([scheduler](../scheduler/resuming-and-events.md#resuming-a-run)). The
   transcript starts with `▸ resumed: … keep their results`.
+- A `workflow.call` takes back the runs it started rather than starting them
+  again ([calling workflows](../scheduler/calls.md)).
 - It starts with the run's inputs and flags; `--input`, `--driver` and
   `--in-place` change them. The project checks of `ork run` apply
   (`--allow-dirty`).

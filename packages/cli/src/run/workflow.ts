@@ -11,7 +11,6 @@ import {
   appendRecorder,
   type ClaudeRuntime,
   createRecorder,
-  createRelay,
   createReplay,
   createSignals,
   createWorkspace,
@@ -41,6 +40,7 @@ import {
 import type { Driver } from "@krapht/ork-schema";
 
 import { formatReport, loadWorkflow } from "../commands/validate.ts";
+import { callPorts } from "./calls.ts";
 import { prepareCheckout } from "./checkout.ts";
 import { formatRunEvent } from "./format.ts";
 import { liveHandlers } from "./live-handlers.ts";
@@ -75,6 +75,12 @@ export type RunWorkflowOptions = {
    * real runner.
    */
   installed?: (program: string) => boolean;
+  /** The `workflow.call` that started this run, as `<run>/<node>` (RFC-004). */
+  calledBy?: string;
+  /** What the caller has left of its budget, which caps this run's. */
+  budgetCap?: number;
+  /** What this run's worktrees start from, instead of the project's `HEAD`. */
+  baseRef?: string;
   /** The run's id; `ork run --detach` picks it before the run starts. */
   runId?: string;
   /** `~`, for the run's socket; tests pass a folder. */
@@ -162,6 +168,9 @@ export const runWorkflowFile = async (
             workflow: workflow.name,
             file: path.resolve(options.cwd, options.file),
             project: place.root,
+            ...(options.calledBy === undefined
+              ? {}
+              : { parent: options.calledBy.split("/")[0] ?? "" }),
           },
           runDir,
         )
@@ -213,7 +222,7 @@ export const runWorkflowFile = async (
           graph,
           runId,
           root,
-          head: base,
+          head: options.baseRef ?? options.resume?.settings.baseRef ?? base,
           inputs: inputs.inputs,
           onEvent,
           ...(options.resume === undefined
@@ -241,9 +250,17 @@ export const runWorkflowFile = async (
         );
   if (replay !== undefined)
     onEvent({ type: "run.resumed", kept: replay.kept() });
-  const linksOff = graph.workflow.rules?.links === "off";
-  const handle = startRun({
+  const ports = callPorts({
+    ...options,
     graph,
+    runId,
+    place,
+    human: control.human,
+    emit: onEvent,
+  });
+  const handle = startRun({
+    graph: ports.graph,
+    calls: ports.calls,
     runId,
     inputs: inputs.inputs,
     cwd,
@@ -256,18 +273,9 @@ export const runWorkflowFile = async (
     settings: {
       inPlace: options.inPlace,
       ...(options.driver === undefined ? {} : { driver: options.driver }),
-      ...(linksOff ? { links: "off" as const } : {}),
+      ...ports.settings,
     },
-    ...(linksOff
-      ? {}
-      : {
-          relay: createRelay({
-            store: options.store,
-            runId,
-            home: options.home,
-            human: control.human,
-          }),
-        }),
+    ...(ports.relay === undefined ? {} : { relay: ports.relay }),
     ...(replay === undefined ? {} : { replay }),
     workflowDir,
     projectRoot: root ?? place.root,

@@ -56,6 +56,7 @@ under the same run id, with a `Replay` built from the run's events:
 | `claim.released`    | a node released a claim, itself or by finishing                                                                         |
 | `feedback.recorded` | an agent's report, or a signal Ork derived ([feedback](../feedback.md))                                                 |
 | `run.resumed`       | `ork resume` continues the run: the nodes that keep their results                                                       |
+| `call.started`      | a `workflow.call` started a run: its node, the run, the workflow and the project ([calls](./calls.md))                  |
 | `message.received`  | a linked node of another run wrote to this node ([messaging](../messaging/links.md))                                    |
 | `link.notice`       | Ork told a node that a link was made or ended                                                                           |
 | `run.finished`      | the run ends: `succeeded`, `failed`, `budget_exhausted`, `timed_out`, `interrupted`                                     |

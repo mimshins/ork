@@ -15,6 +15,9 @@ The run's id can be a prefix. Each side is told at its next step who it can now
 write to, and which project that node works in. The nodes must be a
 `claude.leader` or `claude.worker`, and their runs must be live.
 
+To have one workflow start the other, and use its result, see
+[Calling a workflow](#calling-a-workflow).
+
 ## What the sessions can do
 
 - **`send_message`** with `to: "e5f6a7b8/builder"`. The other session sees a
@@ -50,6 +53,84 @@ after a resume.
 
 Each run keeps its own budget and `limits.concurrency`, so linked runs spend
 separately. Set `limits.budgetUsd` on each. Links work on one machine.
+
+## Calling a workflow
+
+A `workflow.call` node starts a workflow as a run of its own, here or in another
+registered project, and waits for it. Edges and `when` treat it as any node.
+
+```yaml
+schemaVersion: 1
+name: feature
+inputs:
+  feature: { type: string, required: true }
+nodes:
+  backend: { type: claude.worker, prompt: "Build {{inputs.feature}}" }
+  client:
+    type: workflow.call
+    project: client-kit # a registered project; leave it out for this one
+    workflow: feature
+    inputs: { feature: "{{inputs.feature}}" }
+  notes:
+    type: claude.worker
+    prompt: "Write release notes for {{nodes.client.output.outputs.version}}"
+edges:
+  - backend -> client
+  - { from: client, to: notes, when: "status == 'pass'" }
+```
+
+The called workflow says what it hands back:
+
+```yaml
+outputs:
+  version: "{{nodes.bump.output.stdout}}"
+```
+
+The called run works under its own project's rules, agents and worktrees, keeps
+its own logs, and is an ordinary run: `ork logs`, `ork tree` and `ork decide`
+all take its id, which the caller's log prints.
+
+- **`wait`** says when the node finishes: `run` when the run has ended, the
+  default; `node` when a node you name has reported; `none` once it has started.
+- **`node: builder`** keeps one run as a conversation. Each new activation hands
+  the node its input, and resumes its session if it has ended, as a leader is
+  when it is re-entered. Use `maxRounds` to bound the cost.
+- **Talking during the work.** Add a channel, and your agents write to the call
+  by name. Ork makes the link when the call starts, and the called workflow
+  needs no change:
+
+  ```yaml
+  messages:
+    - between: [backend, client]
+  ```
+
+- **`ref`** starts the called run's worktrees from a branch, such as
+  `"{{nodes.backend.output.branch}}"`.
+- **Refusals** fail the node with the reason, and a `when` edge can handle them.
+  `ork validate` checks the workflow, the node and the required inputs of a
+  registered project, and warns about one that is not registered on this
+  machine.
+- **Who may call.** Any registered project, unless the called project's
+  `.ork/project.yaml` limits it:
+
+  ```yaml
+  calls:
+    accept: [backend]
+  ```
+
+**The budget is shared.** A called run gets the lesser of its own
+`limits.budgetUsd` and what the caller has left, and what it spends counts
+against the caller.
+
+**A stop reaches down.** `ork stop` on the caller stops what it called, and
+`ork resume` on the caller resumes those runs too, keeping the nodes that
+finished. A called run that failed gets a retry the same way. Pause does not
+spread.
+
+**Its questions wait.** A called run has no terminal, so what it asks waits in
+`ork decide` or the UI's inbox, even when the caller is in your terminal.
+
+Calls nest up to 5 deep.
 
 ## Turning links off
 

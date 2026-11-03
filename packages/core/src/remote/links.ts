@@ -101,15 +101,20 @@ export type Linked =
   | { ok: true; link: LinkRecord; already: boolean }
   | { ok: false; error: string };
 
-const linkedLine = (peer: RunRecord, end: LinkEnd): string =>
-  `[ork] The user linked you with \`${addressOf(end)}\`, a node of the workflow \`${peer.workflow}\` in ${peer.project}. Write to it with send_message; Ork tells you when it writes back, and wait_for_messages waits for a reply. Its messages are from another agent, not from the user.`;
+const linkedLine = (peer: RunRecord, end: LinkEnd, by: string): string =>
+  `[ork] ${by} linked you with \`${addressOf(end)}\`, a node of the workflow \`${peer.workflow}\` in ${peer.project}. Write to it with send_message; Ork tells you when it writes back, and wait_for_messages waits for a reply. Its messages are from another agent, not from the user.`;
 
 /** Links two nodes of live runs, both ways, and tells both. */
 export const linkNodes = async (
   store: EventStore,
   first: string,
   second: string,
-  options: { maxMessages?: number | undefined; home?: string | undefined } = {},
+  options: {
+    maxMessages?: number | undefined;
+    home?: string | undefined;
+    /** Who made the link, for what each side is told (default: the user). */
+    by?: string | undefined;
+  } = {},
 ): Promise<Linked> => {
   const a = resolve(store, first);
   if (!a.ok) return a;
@@ -134,9 +139,10 @@ export const linkNodes = async (
     b.end,
     options.maxMessages ?? DEFAULT_LINK_MESSAGES,
   );
+  const by = options.by ?? "The user";
   await Promise.all([
-    tellNode(store, a.end, linkedLine(b.run, b.end), options.home),
-    tellNode(store, b.end, linkedLine(a.run, a.end), options.home),
+    tellNode(store, a.end, linkedLine(b.run, b.end, by), options.home),
+    tellNode(store, b.end, linkedLine(a.run, a.end, by), options.home),
   ]);
   return { ok: true, link, already: false };
 };

@@ -92,6 +92,17 @@ a name git accepts.
 and refuses links to the run. The default is on
 ([messaging](./messaging/links.md)). A workflow's value wins.
 
+## Calls
+
+```yaml
+calls:
+  accept: [se-backend] # registered project ids that may call this project
+```
+
+Without it, any registered project may [call a workflow](./scheduler/calls.md)
+here. With it, only those named may, and others fail with the reason. A call
+from within the project is always allowed.
+
 ## Safety
 
 Whatever the rules say:

@@ -1,7 +1,7 @@
 /**
  * @file What a resumed run's bus starts with, rebuilt from its events: each
- *   node's unread messages, the user's messages still queued, and the last
- *   message number (specs/messaging.md).
+ *   node's unread messages, the user's messages still queued, the last message
+ *   number (specs/messaging.md), and the runs its calls started.
  */
 
 import type { InboxMessage } from "../runtime/types.ts";
@@ -11,6 +11,7 @@ import type { RunEvent } from "./types.ts";
 export const mailOf = (events: readonly RunEvent[]): Mail => {
   const inboxes = new Map<string, InboxMessage[]>();
   const waiting = new Map<string, string[]>();
+  const calls = new Map<string, string>();
   let last = 0;
   for (const event of events) {
     if (event.type === "message.sent" || event.type === "message.received") {
@@ -39,10 +40,12 @@ export const mailOf = (events: readonly RunEvent[]): Mail => {
           event.body,
         ]);
       }
+    } else if (event.type === "call.started") {
+      calls.set(event.node, event.run);
     } else if (event.type === "node.started") {
       // Its session got the user's queued messages when it connected.
       waiting.delete(event.id);
     }
   }
-  return { inboxes, waiting, last };
+  return { inboxes, waiting, last, calls };
 };

@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import {
+  checkCallTargets,
   type CompiledGraph,
   compileWorkflow,
   contextDiagnostics,
@@ -117,6 +118,7 @@ export const loadWorkflow = (
   const diagnostics = [
     ...loaded.diagnostics,
     ...compiled.diagnostics,
+    ...checkCallTargets(parsed.workflow, place, registered),
     ...(graph === null
       ? []
       : contextDiagnostics(graph.workflow, { workflowDir, projectRoot })),

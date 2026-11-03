@@ -6,6 +6,7 @@
  */
 
 import {
+  CALLS,
   CLI,
   CORE,
   DESIGN,
@@ -16,6 +17,7 @@ import {
   CONTROL,
   STORE,
   RESUME,
+  TIMEOUTS,
 } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
@@ -149,6 +151,7 @@ export const NODES = [
     facts: [
       "Runs at most `limits.concurrency` sessions at once (4 here).",
       "Stops the run when spend reaches `limits.budgetUsd` ($20 here).",
+      "A `timeout` on a node or `limits.timeout` on the run, where set, fails the node with `timedOut` or ends the run `timed_out`; the clock stands still while waiting on you. None is set here.",
       "An edge without `when:` fires only on success; a skipped branch skips everything that only it feeds, so the join never waits on it.",
       "When a loop edge has used its `maxRounds`, you are asked: stop, one more round, or go on. A live leader that owns the loop's nodes is asked first; here the builder's session has ended, so it is you.",
       "Runs the children a leader delegates to, on the slot the waiting leader lends them.",
@@ -169,6 +172,8 @@ export const NODES = [
       ENGINE.tests,
       RESUME.resume,
       RESUME.tests,
+      TIMEOUTS.code,
+      TIMEOUTS.tests,
       DESIGN.scheduler,
     ],
   },
@@ -215,6 +220,34 @@ export const NODES = [
       { map: "messaging", node: "decisions", label: "Decisions in detail" },
     ],
     docs: [DESIGN.messaging, CONTROL.queue, CONTROL.commands],
+  },
+
+  {
+    id: "called",
+    title: "Called runs",
+    sub: "`workflow.call` · own process",
+    zone: "engine",
+    x: 320,
+    y: 700,
+    status: "built",
+    pkg: "core",
+    src: "packages/core/src/remote/calls.ts",
+    summary:
+      "`software-factory` calls no workflow, but a run can: a `workflow.call` node starts a workflow as a separate run with a lifecycle of its own, here or in another registered project.",
+    facts: [
+      "Its record names its `parent` and `depth`; it spends from the caller's budget.",
+      "Stopping the caller stops it. Resuming the caller resumes it, or attaches to it if it is still running or has succeeded.",
+      "Edges and `when:` read its `status` and `outputs`, as they read any node's output.",
+    ],
+    see: [
+      { map: "architecture", node: "calls", label: "Workflow calls" },
+      {
+        map: "architecture",
+        journey: "call",
+        label: "A workflow calls a workflow",
+      },
+    ],
+    docs: [CALLS.port, CALLS.tests, CALLS.spec, CALLS.guide],
   },
 
   // ── The run graph ────────────────────────────────────────────────────────

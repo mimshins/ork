@@ -29,7 +29,8 @@ with parsed conditions), the entry nodes, and the declared message channels.
   `summary`, `artifacts`, `branch`, `usage` plus their `output.schema` fields;
   tool nodes `exitCode`, `stdout`, `stderr`; `control.join` `statuses`,
   `results`, `count`; `human.gate` `choice`, `answeredBy`; split and router pass
-  their input through.
+  their input through; a `workflow.call`'s fields are not checked, since they
+  depend on what it calls.
 
 ## Diagnostics
 
@@ -61,8 +62,16 @@ warnings do not. Schema problems come first, from
 | `gate.timeout`           | error    | a `timeout` without a `default`                                    |
 | `input.required-default` | warning  | a required input with a default that is never used                 |
 | `message.self`           | error    | a channel from a node to itself                                    |
-| `message.endpoint`       | error    | a channel endpoint is not a `claude.leader` or `claude.worker`     |
+| `message.endpoint`       | error    | a channel endpoint is no leader, worker, or call naming a node     |
 | `message.implicit`       | warning  | a channel between parent and child, which always exists            |
+| `call.parent`            | error    | a `workflow.call` with a `parent`; a leader delegates to children  |
+| `call.wait-node`         | error    | a call with `wait: node` that names no node                        |
+| `call.self`              | error    | a call to its own workflow, in this project                        |
+| `call.links-off`         | error    | a call in a `messages` channel, in a workflow with links off       |
+| `call.project`           | warning  | `ork validate` only: the project is not registered on this machine |
+| `call.workflow`          | error    | `ork validate` only: the called workflow is missing or not valid   |
+| `call.node`              | error    | `ork validate` only: `node` is no leader or worker of it           |
+| `call.input`             | error    | `ork validate` only: a required input of it is not given           |
 | `timeout.subagent`       | warning  | a `timeout` on a sub-agent, which runs inside its parent's session |
 | `ref.input`              | error    | a reference to an undeclared input                                 |
 | `ref.node`               | error    | a reference to an unknown node, or not through `.output`           |

@@ -204,6 +204,8 @@ export type Mailbox = {
   read: () => InboxMessage[];
   /** How many messages are unread, without reading them. */
   pending: () => number;
+  /** A `workflow.call` node now stands for this `<run>/<node>` (RFC-004). */
+  alias: (address: string) => void;
   /** Whether this session may be linked to a node of another run later. */
   linkable: () => boolean;
   /**

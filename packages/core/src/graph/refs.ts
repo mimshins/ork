@@ -23,6 +23,9 @@ const TEMPLATE_FIELDS = [
   "command",
   "cwd",
   "question",
+  "workflow",
+  "project",
+  "ref",
 ] as const;
 
 type Context = {
@@ -194,10 +197,33 @@ export const checkReferences = (
         : [];
     }),
   );
+  const fromCalls = Object.entries(workflow.nodes).flatMap(([id, node]) =>
+    node.type === "workflow.call"
+      ? Object.entries(node.inputs ?? {}).flatMap(([name, value]) =>
+          checkTemplate(id, `inputs.${name}`, value, context),
+        )
+      : [],
+  );
+  const fromOutputs = Object.entries(workflow.outputs ?? {}).flatMap(
+    ([name, value]) => {
+      const parsed = parseTemplate(value);
+      const path = ["outputs", name];
+      if (!parsed.ok) {
+        return [error("template.syntax", parsed.message, path)];
+      }
+      return parsed.parts.flatMap(part =>
+        typeof part === "string"
+          ? []
+          : collectPaths(part.expr).flatMap(segments =>
+              checkAbsolute(segments, context, path),
+            ),
+      );
+    },
+  );
   const fromConditions = edges.flatMap(edge =>
     edge.condition === undefined
       ? []
       : checkCondition(edge, edge.condition, context),
   );
-  return [...fromTemplates, ...fromConditions];
+  return [...fromTemplates, ...fromCalls, ...fromOutputs, ...fromConditions];
 };

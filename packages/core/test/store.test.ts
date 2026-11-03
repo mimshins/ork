@@ -92,6 +92,7 @@ const EVENTS: RunEvent[] = [
 
 /** A stand-in record, for lookups that come back empty. */
 const RUN: RunRecord = {
+  depth: 0,
   id: "none",
   workflow: "w",
   file: "/w",

@@ -2,14 +2,14 @@
  * @file The node roles map's connections: how the engine starts nodes, the flow
  *   edges between the roles (drawn as in-process routing by the scheduler), a
  *   leader's delegation, and where finished work goes. Lanes in use: `x` 278
- *   from the compiler down to the unreachable node; `x` 298, `y` 350 and `x`
- *   1090 from delegation to the leader; `x` 1360 between the tree's columns
- *   from the leader to the spawned worker; `y` 334 for the back edge from the
- *   join to the loop target; `y` 92 above every card from the leaf to the run
- *   summary.
+ *   from the compiler down to the unreachable node; `x` 288 from the scheduler
+ *   down to the call; `x` 298, `y` 350 and `x` 1090 from delegation to the
+ *   leader; `x` 1360 between the tree's columns from the leader to the spawned
+ *   worker; `y` 334 for the back edge from the join to the loop target; `y` 92
+ *   above every card from the leaf to the run summary.
  */
 
-import { ENGINE, ROLES, WORKTREES } from "../refs.js";
+import { CALLS, ENGINE, ROLES, WORKTREES } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
 
@@ -42,6 +42,20 @@ export const EDGES = [
     kind: "local",
     label: "activates at the start",
     detail: "A lone node is an entry, so it starts with the others.",
+  },
+  {
+    id: "scheduler-call",
+    from: "scheduler",
+    to: "call",
+    kind: "local",
+    label: "activates, budget left",
+    detail:
+      "Like any node, a call runs when an edge into it is taken, or at the start if it is an entry. None starts once the run's budget is spent.",
+    via: [
+      [288, 296],
+      [288, 666],
+    ],
+    docs: [CALLS.spec],
   },
   {
     id: "compiler-orphan",

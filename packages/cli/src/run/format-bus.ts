@@ -21,6 +21,7 @@ export const formatBusEvent = (
     | { type: `owner.${string}` }
     | { type: `claim.${string}` }
     | { type: `link.${string}` }
+    | { type: `call.${string}` }
   >,
 ): string[] => {
   if (event.type === "claim.taken") {
@@ -39,6 +40,9 @@ export const formatBusEvent = (
   }
   if (event.type === "message.received") {
     return [style("dim", `✉ from ${event.from}: ${firstLine(event.body)}`)];
+  }
+  if (event.type === "call.started") {
+    return [style("dim", `↳ started ${event.workflow} as run ${event.run}`)];
   }
   if (event.type === "link.notice") return [style("dim", `↔ ${event.text}`)];
   if (event.type === "message.read") return [];

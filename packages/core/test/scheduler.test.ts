@@ -430,3 +430,70 @@ describe("limits", () => {
     expect(result.nodes.map(n => n.id)).toEqual(["a"]);
   });
 });
+
+describe("a workflow's outputs", () => {
+  it("renders them over its nodes when the run ends", async () => {
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: t",
+        'outputs: { said: "{{nodes.a.output.summary}} ({{inputs.who}})" }',
+        "inputs: { who: { type: string } }",
+        "nodes:",
+        "  a: { type: tool.shell, command: x }",
+      ].join("\n"),
+    );
+    const { executor } = scripted({
+      a: [{ output: { status: "pass", summary: "built" } }],
+    });
+    const { done } = startRun({
+      graph,
+      runId: "r",
+      inputs: { who: "me" },
+      cwd: "/tmp",
+      executors: { "tool.shell": executor },
+      human: {
+        ask: () => Promise.resolve(""),
+        permit: () => Promise.resolve({ allow: true }),
+      },
+      onEvent: () => {
+        // Only the result matters here.
+      },
+    });
+    await expect(done).resolves.toMatchObject({
+      outputs: { said: "built (me)" },
+    });
+  });
+
+  it("does not start a call once the budget is spent", async () => {
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: t",
+        "limits: { budgetUsd: 1 }",
+        "nodes:",
+        "  a: { type: tool.shell, command: x }",
+        "  kit: { type: workflow.call, workflow: other }",
+        "edges:",
+        "  - a -> kit",
+      ].join("\n"),
+    );
+    const { executor, ran } = scripted({}, 2);
+    const { done } = startRun({
+      graph,
+      runId: "r",
+      inputs: {},
+      cwd: "/tmp",
+      executors: { "tool.shell": executor, "workflow.call": executor },
+      human: {
+        ask: () => Promise.resolve(""),
+        permit: () => Promise.resolve({ allow: true }),
+      },
+      onEvent: () => {
+        // Only the result matters here.
+      },
+    });
+    await expect(done).resolves.toMatchObject({ status: "budget_exhausted" });
+    expect(ran).toEqual(["a"]);
+  });
+});

@@ -1,10 +1,11 @@
 /**
- * @file The messaging map's connections. Lanes in use: `x` 296 from you to the
- *   UI inbox; `y` 420 and `x` 1130 from the tools to the bus; `x` 1405 from
+ * @file The messaging map's connections. Lanes in use: `x` 288 from you to `ork
+ *   relay`; `x` 296 from you to the UI inbox; `y` 420 and `x` 1130 from the
+ *   tools to the bus; `x` 850 from the bus down to the links; `x` 1405 from
  *   `Session.send` down to `code`.
  */
 
-import { DESIGN } from "../refs.js";
+import { CALLS, DESIGN, LINKS } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
 
@@ -42,6 +43,29 @@ export const EDGES = [
       [296, 536],
       [296, 756],
     ],
+  },
+  {
+    id: "you-relay",
+    from: "you",
+    to: "relayCmd",
+    kind: "human",
+    label: "link two nodes",
+    detail:
+      "Name two running nodes of different runs. Only you make links, and you can end one at any time.",
+    via: [
+      [288, 530],
+      [288, 996],
+    ],
+  },
+  {
+    id: "relay-links",
+    from: "relayCmd",
+    to: "links",
+    kind: "local",
+    label: "a row, both ways",
+    detail:
+      "Checks both ends, writes the row to the `links` table, and writes a `notice` command to each side.",
+    docs: [LINKS.links, LINKS.cliTests],
   },
   {
     id: "chat-bus",
@@ -119,6 +143,54 @@ export const EDGES = [
     status: "built",
   },
 
+  {
+    id: "bus-links",
+    from: "bus",
+    to: "links",
+    kind: "local",
+    label: "to `<run>/<node>`",
+    detail:
+      "The sender's process checks the link, counts the message and records `message.sent`. A message from the other side comes back into this bus the same way.",
+    both: true,
+    via: [
+      [850, 290],
+      [850, 940],
+      [760, 940],
+    ],
+    docs: [LINKS.relay],
+  },
+  {
+    id: "links-peer",
+    from: "links",
+    to: "peerRun",
+    kind: "local",
+    label: "a row · a wake",
+    detail:
+      "A `relay` command for the other run, then a wake on its socket. With no socket, its one-second poll finds the row. A link's notices travel the same way, as `notice` commands.",
+    both: true,
+    docs: [LINKS.relay, LINKS.control, LINKS.tests],
+  },
+  {
+    id: "peer-events",
+    from: "peerRun",
+    to: "events",
+    kind: "event",
+    label: "`message.received`",
+    detail:
+      "Each run's events hold its side of the conversation, and `ork resume` rebuilds the inbox from them.",
+    docs: [LINKS.spec],
+  },
+  {
+    id: "call-links",
+    from: "callCh",
+    to: "links",
+    kind: "local",
+    label: "linked when it starts",
+    detail:
+      "Starting the call links the channel's nodes to the called node, and what waited for it is sent. The links end when the caller stops.",
+    docs: [CALLS.talk, CALLS.tests],
+  },
+
   // ── Runtime and sessions ─────────────────────────────────────────────────
   {
     id: "send-builder",
@@ -143,6 +215,17 @@ export const EDGES = [
       [1405, 286],
       [1405, 736],
     ],
+  },
+  {
+    id: "peer-linked",
+    from: "peerRun",
+    to: "peerS",
+    kind: "process",
+    label: "notice · `read_inbox`",
+    detail:
+      "The usual notice through `Session.send`; the node reads the body with `read_inbox`, labelled with its sender, and replies with `send_message`.",
+    both: true,
+    docs: [LINKS.spec],
   },
   {
     id: "builder-mcp",

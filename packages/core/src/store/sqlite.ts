@@ -43,7 +43,10 @@ const recordOf = (row: Row): RunRecord => {
     pid: Number(row?.["pid"]),
     startedAt: text(row, "started_at"),
     costUsd: Number(row?.["cost_usd"]),
+    depth: Number(row?.["depth"] ?? 0),
   };
+  const parent = text(row, "parent");
+  if (parent !== "") record.parent = parent;
   const finished = text(row, "finished_at");
   if (finished !== "") record.finishedAt = finished;
   return record;
@@ -72,8 +75,8 @@ export const openStore = (file: string = storePath()): EventStore => {
   migrate(db);
 
   const insertRun = db.prepare(
-    `INSERT INTO runs (id, workflow, file, project, status, pid, started_at)
-     VALUES (?, ?, ?, ?, 'running', ?, ?)`,
+    `INSERT INTO runs (id, workflow, file, project, status, pid, started_at, parent, depth)
+     VALUES (?, ?, ?, ?, 'running', ?, ?, ?, ?)`,
   );
   const lastSeq = db.prepare(
     "SELECT COALESCE(MAX(seq), 0) AS seq FROM events WHERE run_id = ?",
@@ -110,6 +113,10 @@ export const openStore = (file: string = storePath()): EventStore => {
     ...queries,
     begin: run => {
       const startedAt = new Date().toISOString();
+      const depth =
+        run.parent === undefined
+          ? 0
+          : Number(byId.get(run.parent)?.["depth"] ?? 0) + 1;
       insertRun.run(
         run.id,
         run.workflow,
@@ -117,9 +124,12 @@ export const openStore = (file: string = storePath()): EventStore => {
         run.project,
         process.pid,
         startedAt,
+        run.parent ?? null,
+        depth,
       );
       return {
         ...run,
+        depth,
         status: "running",
         pid: process.pid,
         startedAt,

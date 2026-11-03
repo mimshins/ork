@@ -265,4 +265,90 @@ edges:
     );
     expect(graph?.entries).toEqual(["a"]);
   });
+
+  it("refuses a call with an owner, or waiting on no node, or calling itself", () => {
+    expect(
+      codes(
+        workflow(`nodes:
+  lead: { type: claude.leader, prompt: l }
+  kit: { type: workflow.call, workflow: other, parent: lead }
+`),
+      ),
+    ).toContain("error:call.parent");
+    expect(
+      codes(
+        workflow(`nodes:
+  kit: { type: workflow.call, workflow: other, wait: node }
+`),
+      ),
+    ).toEqual(["error:call.wait-node"]);
+    expect(
+      codes(
+        workflow(`nodes:
+  kit: { type: workflow.call, workflow: t }
+`),
+      ),
+    ).toEqual(["error:call.self"]);
+  });
+
+  it("lets a call to the same name in another project through", () => {
+    expect(
+      codes(
+        workflow(`nodes:
+  kit: { type: workflow.call, workflow: t, project: other }
+`),
+      ),
+    ).toEqual([]);
+  });
+
+  it("allows a channel to a call that names a node, unless links are off", () => {
+    const channel = `nodes:
+  builder: { type: claude.worker, prompt: b }
+  kit: { type: workflow.call, workflow: other, node: builder }
+messages:
+  - between: [builder, kit]
+`;
+    expect(codes(workflow(channel))).toEqual([]);
+    expect(codes(workflow(`rules:\n  links: off\n${channel}`))).toEqual([
+      "error:call.links-off",
+    ]);
+  });
+
+  it("refuses a channel between two calls, which has no session on it", () => {
+    expect(
+      codes(
+        workflow(`nodes:
+  a: { type: workflow.call, workflow: other, node: x }
+  b: { type: workflow.call, workflow: other, node: y }
+messages:
+  - between: [a, b]
+`),
+      ),
+    ).toEqual(["error:message.endpoint"]);
+  });
+
+  it("refuses a channel to a call that names no node", () => {
+    expect(
+      compile(
+        workflow(`nodes:
+  builder: { type: claude.worker, prompt: b }
+  kit: { type: workflow.call, workflow: other }
+messages:
+  - between: [builder, kit]
+`),
+      ).graph,
+    ).toBeNull();
+  });
+
+  it("checks a workflow's outputs like any other template", () => {
+    expect(
+      codes(
+        workflow(`outputs:
+  summary: "{{nodes.ghost.output.summary}}"
+nodes:
+  a: { type: tool.shell, command: "true" }
+`),
+      ),
+    ).toEqual(["error:ref.node"]);
+  });
 });

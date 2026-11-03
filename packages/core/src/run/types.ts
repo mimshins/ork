@@ -22,6 +22,7 @@ import type {
 } from "../runtime/types.ts";
 import type { AnsweredBy, DecisionKind } from "../store/types.ts";
 import type { BusEvent } from "./bus-events.ts";
+import type { CallPort } from "./calls.ts";
 
 export type Inputs = Record<string, string | number | boolean>;
 
@@ -68,6 +69,8 @@ export type ExecuteContext = {
   claims?: Claims;
   /** Where the node's session reports feedback (the `feedback` tool). */
   feedback?: FeedbackPort;
+  /** How a `workflow.call` node starts and waits on a workflow. */
+  calls?: CallPort;
   cwd: string;
   /** The git checkout the node works in, when the run uses worktrees. */
   checkout?: Checkout;
@@ -164,6 +167,8 @@ export type RunResult = {
   reasons: string[];
   /** Worktrees left for the user: root nodes' results, unmerged children. */
   worktrees: KeptWorktree[];
+  /** The workflow's `outputs`, rendered when the run ended. */
+  outputs?: Record<string, string>;
 };
 
 export type RunNodeInfo = { id: string; type: NodeType; parent?: string };
@@ -174,6 +179,12 @@ export type RunSettings = {
   driver?: Driver;
   /** The rules turned links off: this run's nodes cannot be linked. */
   links?: "off";
+  /** A caller capped this run's budget to what it had left (RFC-004). */
+  budgetCap?: number;
+  /** The call that started this run, as `<run>/<node>`. */
+  calledBy?: string;
+  /** What this run's worktrees start from, instead of the project's `HEAD`. */
+  baseRef?: string;
 };
 
 export type RunEvent =

@@ -1,6 +1,8 @@
 # RFC-004 — Workflows that call workflows
 
-- **Status:** Accepted
+- **Status:** Implemented
+- **Decision:**
+  [ADR-045](../../decisions/ADR-045-workflows-calling-workflows.md)
 - **Date:** 2026-11-03
 - **Supersedes:** —
 - **Superseded by:** —
@@ -98,7 +100,7 @@ No engine change: `tool.shell` with `ork run other`.
 type, `workflow.call`. The maintainer first chose this shape under the name
 `relay.peer`, then widened it: starting another workflow and waiting on its
 output is worth having on its own, with talking during the work as an addition
-from [RFC-003](../archived/RFC-003-relay-between-runs.md).
+from [RFC-003](./RFC-003-relay-between-runs.md).
 
 ```yaml
 outputs:
@@ -151,9 +153,9 @@ messages:
   it.
 - **Talking.** A `messages` channel may name a call with `node`, so agents write
   to `client-kit` by name with no run ids. Starting the call makes the link
-  ([RFC-003](../archived/RFC-003-relay-between-runs.md)), and the called
-  workflow needs no changes. A message sent before the call has started waits
-  for it. `maxMessages` on the node sets the link's limit.
+  ([RFC-003](./RFC-003-relay-between-runs.md)), and the called workflow needs no
+  changes. A message sent before the call has started waits for it.
+  `maxMessages` on the node sets the link's limit.
 - **Where a project comes from.** `project` is a registered id, so the file
   holds no path and a teammate who registers the same id can run it.
   `ork validate` warns when the project is not registered here, since that may
@@ -176,8 +178,10 @@ messages:
 - **Timeout.** A call takes `timeout` as a tool node does
   ([ADR-043](../../decisions/ADR-043-timeouts.md)). An expired call stops the
   run it started.
-- **Resume.** `workflow.called` in the caller's events records the called run's
-  id. `ork resume` reattaches, or reads the result if the run has ended.
+- **Resume.** `call.started` in the caller's events records the called run's id.
+  `ork resume` reattaches, reads the result if the run succeeded, and otherwise
+  resumes the called run too: a stop reaches it, so it must come back with its
+  caller.
 
 ## Consequences
 

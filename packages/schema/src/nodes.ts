@@ -227,6 +227,46 @@ export const HumanGateNodeSchema = z.strictObject({
     .describe("Option chosen when the timeout expires."),
 });
 
+export const WorkflowCallNodeSchema = z.strictObject({
+  type: z.literal("workflow.call"),
+  ...base,
+  workflow: z
+    .string()
+    .describe("The workflow's name, as in its project's workflows folder."),
+  project: z
+    .string()
+    .optional()
+    .describe("A registered project's id. Default: this project."),
+  node: NodeIdSchema.optional().describe(
+    "A leader or worker of the called workflow to talk to and wait on; the call then keeps one run as a conversation.",
+  ),
+  inputs: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe("The called workflow's inputs. Supports templates."),
+  wait: z
+    .enum(["run", "node", "none"])
+    .optional()
+    .describe(
+      "When this node finishes: the run has ended (default without `node`), the node has reported (default with `node`), or as soon as the run has started.",
+    ),
+  ref: z
+    .string()
+    .optional()
+    .describe(
+      "What the called run's worktrees start from, e.g. {{nodes.build.output.branch}}.",
+    ),
+  timeout: TimeoutSchema.optional().describe(
+    "How long the call may take, e.g. 30m; then the called run is stopped and the node fails.",
+  ),
+  maxMessages: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe("Ask the user whether to go on after this many messages."),
+});
+
 export const NodeSchema = z.discriminatedUnion("type", [
   ClaudeLeaderNodeSchema,
   ClaudeWorkerNodeSchema,
@@ -236,6 +276,7 @@ export const NodeSchema = z.discriminatedUnion("type", [
   JoinNodeSchema,
   RouterNodeSchema,
   HumanGateNodeSchema,
+  WorkflowCallNodeSchema,
 ]);
 export type Node = z.infer<typeof NodeSchema>;
 export type NodeType = Node["type"];

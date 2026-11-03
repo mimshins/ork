@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: across-projects
+inputs:
+  feature:
+    type: string
+    required: true
+defaults:
+  model: sonnet
+limits:
+  budgetUsd: 5
+nodes:
+  backend:
+    type: claude.worker
+    prompt: |
+      Build {{inputs.feature}} in this repository. The client for it is being built by `client`, an agent in another repository: tell it what you change, and answer what it asks, with send_message. Use wait_for_messages when you need its reply.
+  client:
+    type: workflow.call
+    workflow: feature
+    project: client-kit
+    node: builder
+    inputs:
+      feature: "{{inputs.feature}}"
+  both:
+    type: control.join
+    mode: all
+  notes:
+    type: claude.worker
+    prompt: |
+      Write release notes for {{inputs.feature}}.
+      This repository: {{nodes.backend.output.summary}}
+      The client: {{nodes.client.output.summary}}
+    isolation: readonly
+edges:
+  - backend -> both
+  - client -> both
+  - both -> notes
+messages:
+  - between:
+      - backend
+      - client

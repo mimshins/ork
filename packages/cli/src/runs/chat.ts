@@ -34,6 +34,8 @@ export type ResumeChatOptions = {
   driver?: Driver;
   human: HumanChannel;
   out: (line: string) => void;
+  /** Interrupts the session (a caller's stop, for a `workflow.call`). */
+  signal?: AbortSignal | undefined;
 };
 
 /** The declared node a spawned worker (`<template>-<n>`) is an instance of. */
@@ -103,6 +105,15 @@ export const resumeChat = async (
   const started = runtime.start(
     { ...plan.spec, resume: session.sessionId, prompt: options.body },
     { human: options.human },
+  );
+  // Stopped while the runtime was loading: no event will come for this.
+  if (options.signal?.aborted === true) void started.interrupt();
+  options.signal?.addEventListener(
+    "abort",
+    () => {
+      void started.interrupt();
+    },
+    { once: true },
   );
   const tools = new Map<string, string>();
   let failure: string | null = null;

@@ -15,6 +15,7 @@ import {
   type HumanChannel,
   inboxNotice,
   type NodeExecutor,
+  type RelayPort,
   type RunEvent,
   startRun,
   userMessageText,
@@ -301,6 +302,7 @@ describe("a resumed run's bus", () => {
         inboxes: new Map([["code", [{ id: 4, from: "lead", body: "fix it" }]]]),
         waiting: new Map([["docs", ["note this"]]]),
         last: 4,
+        calls: new Map(),
       },
     });
     const told: string[] = [];
@@ -313,5 +315,105 @@ describe("a resumed run's bus", () => {
     expect(code.read()).toEqual([{ id: 4, from: "lead", body: "fix it" }]);
     code.send("docs", "done");
     expect(events.at(-1)).toMatchObject({ type: "message.sent", message: 5 });
+  });
+});
+
+/** A relay that writes down what it sends, and refuses as it is told. */
+const relayed = (refuse = false) => {
+  const sent: string[] = [];
+  const relay: RelayPort = {
+    peers: () => [],
+    send: (node, to, body) => {
+      sent.push(`${node}->${to}:${body}`);
+      return refuse
+        ? { ok: false, error: "the link ended" }
+        : { ok: true, delivered: "now" };
+    },
+  };
+  return { relay, sent };
+};
+
+describe("a channel to a workflow.call", () => {
+  const graph = compile([
+    "nodes:",
+    "  builder: { type: claude.worker, prompt: b }",
+    "  kit: { type: workflow.call, workflow: feature, node: builder }",
+    "messages:",
+    "  - between: [builder, kit]",
+  ]);
+
+  const started = (relay: RelayPort) => {
+    const events: RunEvent[] = [];
+    const bus = createBus({
+      graph,
+      relay,
+      onEvent: event => {
+        events.push(event);
+      },
+    });
+    const told: string[] = [];
+    const builder = bus.mailbox("builder");
+    builder.connect(text => {
+      told.push(text);
+    });
+    return { builder, call: bus.mailbox("kit"), told, events };
+  };
+
+  it("holds a message until the call has started, then sends it", () => {
+    const { relay, sent } = relayed();
+    const { builder, call, events } = started(relay);
+    expect(builder.send("kit", "early")).toEqual({
+      ok: true,
+      delivered: "queued",
+    });
+    expect(sent).toEqual([]);
+    call.alias("r2/builder");
+    expect(sent).toEqual(["builder->r2/builder:early"]);
+    expect(events).toMatchObject([
+      { type: "message.sent", node: "builder", to: "kit", body: "early" },
+    ]);
+  });
+
+  it("sends through the relay by the call's name once it has started", () => {
+    const { relay, sent } = relayed();
+    const { builder, call, events } = started(relay);
+    call.alias("r2/builder");
+    expect(builder.send("kit", "hi")).toEqual({ ok: true, delivered: "now" });
+    expect(sent).toEqual(["builder->r2/builder:hi"]);
+    expect(events).toMatchObject([
+      { type: "message.sent", node: "builder", to: "kit", body: "hi" },
+    ]);
+  });
+
+  it("refuses, rather than holds, a message to a call a resumed run already started", () => {
+    const { relay, sent } = relayed(true);
+    const bus = createBus({
+      graph,
+      relay,
+      mail: {
+        inboxes: new Map(),
+        waiting: new Map(),
+        last: 0,
+        calls: new Map([["kit", "r2"]]),
+      },
+      onEvent: () => {
+        // Only the result matters here.
+      },
+    });
+    expect(bus.mailbox("builder").send("kit", "hi")).toEqual({
+      ok: false,
+      error: "the link ended",
+    });
+    expect(sent).toEqual(["builder->r2/builder:hi"]);
+  });
+
+  it("tells a sender when a message that waited could not be sent", () => {
+    const { relay } = relayed(true);
+    const { builder, call, told } = started(relay);
+    builder.send("kit", "early");
+    call.alias("r2/builder");
+    expect(told).toEqual([
+      "[ork] Your message to kit was not sent: the link ended.",
+    ]);
   });
 });

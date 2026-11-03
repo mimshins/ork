@@ -2,22 +2,25 @@
  * @file The architecture map's components: you, the two surfaces and the
  *   server, the engine, the files and CLIs on your machine, the Claude runtime,
  *   and the model providers. Coordinates are in map units; the map is
- *   {@link SIZE} wide and tall. Rows sit at y 120, 240, … 1080.
+ *   {@link SIZE} wide and tall. Rows sit at y 120, 240, … 1200.
  */
 
 import {
   BUS,
+  CALLS,
   CLI,
   CONTEXT,
   CORE,
   DESIGN,
   ENGINE,
   INTEGRATIONS,
+  LINKS,
   NODE_TYPES,
   README,
   RUNTIME,
   SCHEMA,
   SERVER,
+  TIMEOUTS,
   UI,
   WORKTREES,
   CONTROL,
@@ -29,7 +32,7 @@ import {
 /** @typedef {import("../types.js").Group} Group */
 
 /** The map's extent, in map units. */
-export const SIZE = { w: 2260, h: 1240 };
+export const SIZE = { w: 2260, h: 1360 };
 
 /**
  * The columns, left to right.
@@ -113,6 +116,7 @@ export const NODES = [
       "Built: `ps`, `logs --follow`, `tree` read runs from the store; `run --detach` runs in the background; `stop` stops a live run from any terminal.",
       "Built: `ork decide` answers open decisions from any terminal; the recommended option is preselected. `ork chat` talks to a node, live or by resuming its session; `ork resume` continues a stopped or crashed run, handing back what finished.",
       "Built: `ork context explain <wf> <node>` shows the resolved layer stack for one node.",
+      "Built: `ork relay <run>/<node> <run>/<node>` lets two running nodes of different runs message each other; `relay end` and `relay list`.",
       "Built: once a day a detached copy of `ork` asks the npm registry for the latest version (its only request of its own; off in CI, without a terminal, or with `ORK_NO_UPDATE_CHECK=1`), and a later command ends with a one-line notice; `ork upgrade` upgrades through the package manager that installed Ork, after asking (ADR-038).",
     ],
     see: [{ map: "lifecycle", node: "cli", label: "The CLI in a run" }],
@@ -133,6 +137,8 @@ export const NODES = [
       CLI.human,
       CLI.tests,
       CLI.runTests,
+      LINKS.command,
+      LINKS.cliTests,
       DESIGN.cli,
     ],
   },
@@ -153,6 +159,7 @@ export const NODES = [
       "Built: a run's stream follows its socket, or polls the store without one, after `Last-Event-ID`; the overview stream sends runs and decisions when they change.",
       "Built: `node:http`, no framework; one typed contract that the handlers and the UI's client share.",
       "Built: 127.0.0.1 only; a per-start token swapped for an `HttpOnly` cookie; other hosts, foreign origins and non-JSON writes are refused.",
+      "Built: `GET` and `POST /api/links` and `POST /api/links/end` do what `ork relay` does.",
       "Closing it stops no run, and the CLI never goes through it.",
     ],
     docs: [
@@ -231,6 +238,7 @@ export const NODES = [
       "Templates and predicates use a small expression language: paths, comparisons, `&&`, `||`, `!`, and `any`, `all`, `count`, `len`, `contains`; no arbitrary JavaScript.",
       "Template references must resolve: declared inputs, existing nodes, known report fields; reading a node that does not run first is a warning.",
       "Entry nodes: no incoming flow edge and no parent.",
+      "A `workflow.call` has no `parent`, and cannot call its own workflow in its own project; `ork validate` also checks the project, workflow, node and required inputs it names.",
       "The project's rules (`.ork/project.yaml`) go under the workflow first; git templates are checked: known placeholders, `{node}` when a run can make several worktrees.",
     ],
     see: [
@@ -243,6 +251,9 @@ export const NODES = [
       CORE.expr,
       CORE.tests,
       WORKTREES.rules,
+      CALLS.compile,
+      CALLS.targets,
+      CALLS.targetTests,
       DESIGN.format,
     ],
   },
@@ -284,6 +295,8 @@ export const NODES = [
       "Built: a loop out of rounds asks its live owner over the message bus, else you.",
       "Built: a `claude.subagent` runs in its owner's session as a Claude Code subagent.",
       "Built: pause and continue, of the run or one node: nothing new starts, and a session waits before its next tool call (deferred and resumed past nine minutes); stopping one node fails it, `stopped by the user`, and the run goes on.",
+      "Built: timeouts. `timeout` limits each activation of a tool, Claude or call node, `defaults.timeout` those that set none, and `limits.timeout` the run. The clock stands still while waiting on you. An expired node fails with `timedOut`; an expired run ends `timed_out`.",
+      "Built: no `workflow.call` starts once the budget is spent, and stopping the run or an expired run timeout stops every run it called.",
     ],
     see: [
       { map: "lifecycle", node: "scheduler", label: "The scheduler in a run" },
@@ -299,6 +312,10 @@ export const NODES = [
       ENGINE.delegation,
       ENGINE.tests,
       ENGINE.delegationTests,
+      TIMEOUTS.code,
+      TIMEOUTS.tests,
+      TIMEOUTS.spec,
+      TIMEOUTS.adr,
       DESIGN.scheduler,
     ],
   },
@@ -340,9 +357,10 @@ export const NODES = [
       "Owner and child may always talk; others only over a declared channel.",
       "A loop out of rounds asks its live owning leader before you.",
       "Every message is an event.",
+      "A name with a slash is a node of another run, over a link. A channel may name a `workflow.call`, which stands for the node it called.",
     ],
     see: [{ map: "messaging", node: "bus", label: "The bus in detail" }],
-    docs: [DESIGN.messaging, BUS.bus, BUS.tests],
+    docs: [DESIGN.messaging, BUS.bus, BUS.tests, CALLS.routes],
   },
   {
     id: "decisionQueue",
@@ -406,28 +424,34 @@ export const NODES = [
   {
     id: "nodeTypes",
     title: "Node types",
-    sub: "Claude · tool · gate nodes",
+    sub: "Claude · tool · gate · call",
     zone: "core",
     x: 880,
     y: 1080,
     status: "built",
     pkg: "nodes",
     summary:
-      "What each built-in node type does when it runs. Claude nodes run a session through the runtime; tool nodes run your own CLIs; gates ask you. Control nodes are the scheduler's own.",
+      "What each built-in node type does when it runs. Claude nodes run a session through the runtime; tool nodes run your own CLIs; gates ask you; a call starts a workflow as another run. Control nodes are the scheduler's own.",
     facts: [
       "`tool.gh`, `tool.aws`, `tool.git`, `tool.shell` run a program with arguments, no shell, limited to an `allow` list of subcommands.",
       "`tool.git` is the commit as an explicit step: `add` and `commit` without an `allow`, `push` only when listed; its output has the staged changes (`staged`, `diff`) and `head`, for a gate to show before a commit.",
       "Tool types come from the integration registry: each integration is one adapter (program, extra options, arguments, default allow list, observed output, doctor check), so adding GitLab or GCP is one file.",
       "`control.join` waits for all, any or `n` inputs; `control.router` follows the first or every matching edge.",
       "`human.gate` asks you, with `timeout` and `default` answering by themselves; `ork decide` answers from another terminal.",
+      "`workflow.call` holds no session and no worktree: it renders what it asks for and hands it to the run's call port.",
+      "A tool runs in its own process group: an abort, from a timeout or a stop, sends it SIGTERM, then SIGKILL after 2 seconds, so what it started ends too.",
       "Output over 64 KiB is cut, and the full text kept under `.ork/runs/`.",
     ],
+    see: [{ map: "roles", node: "call", label: "A call in the flow" }],
     docs: [
       INTEGRATIONS.registry,
       INTEGRATIONS.port,
       NODE_TYPES.claude,
       NODE_TYPES.tools,
       NODE_TYPES.gate,
+      CALLS.node,
+      TIMEOUTS.spawn,
+      TIMEOUTS.spawnTests,
       NODE_TYPES.tests,
       DESIGN.scheduler,
     ],
@@ -448,7 +472,8 @@ export const NODES = [
       "Built: each run event gets a sequence number and a time, with secrets masked, before the terminal prints it.",
       "Built: `ork ps`, `ork logs [--follow]` and `ork tree` read it from any terminal; a run whose process died reads as `crashed`.",
       "Built: registered projects (in-repo or attached) are a table beside the runs.",
-      "Built: decisions, messages and commands from other processes (`ork decide`, `ork stop`, `ork pause`, `ork continue`, `ork chat`).",
+      "Built: decisions, messages and commands from other processes (`ork decide`, `ork stop`, `ork pause`, `ork continue`, `ork chat`, `ork relay`).",
+      "Built: links between runs are a table of their own, and a called run's record names its `parent` and `depth`.",
       "Built: the local server streams it to the browser over SSE, and answers and commands from the UI arrive as rows like the CLI's.",
       "Usage comes from each session's final result, so sub-agent tokens count.",
     ],
@@ -463,7 +488,79 @@ export const NODES = [
       STORE.tests,
       STORE.commands,
       STORE.cliTests,
+      LINKS.store,
       STORE.adr,
+    ],
+  },
+
+  {
+    id: "calls",
+    title: "Workflow calls",
+    sub: "`workflow.call` · own process",
+    zone: "core",
+    x: 600,
+    y: 1080,
+    status: "built",
+    pkg: "core",
+    src: "packages/core/src/remote/calls.ts",
+    summary:
+      "A `workflow.call` node starts a workflow as a separate run, in this project or another registered one, under that project's rules, agents and worktrees. The called run is an `ork run` process of its own, and the call hands back its outputs or one node's report.",
+    facts: [
+      "The called run's record names its `parent` and `depth`, `run.started` names its caller, and `call.started` goes in the caller's events. Calls nest 5 deep.",
+      "One budget: a called run gets the lesser of its own `limits.budgetUsd` and what the caller had left (`--budget-cap`), and what it spent counts against the caller.",
+      "A stop or timeout on the caller, or on the node, stops what it called, and ends its links. A pause does not spread (L56).",
+      "`ork resume` takes back the runs a call started: a stopped, crashed or failed one is resumed, a running or succeeded one is attached to, so none starts twice.",
+      "`wait: run`, `node` or `none`. A `messages` channel may name a call that names a `node`: starting it makes the link. A project's `calls.accept` says who may call it.",
+      "Checked with real sessions on the CLI driver; the SDK driver only against stand-ins (C5).",
+    ],
+    see: [
+      { map: "lifecycle", node: "called", label: "A called run in a run" },
+      { map: "roles", node: "call", label: "A call in the flow" },
+      { map: "messaging", node: "callCh", label: "A channel to a call" },
+    ],
+    docs: [
+      CALLS.port,
+      CALLS.start,
+      CALLS.wait,
+      CALLS.talk,
+      CALLS.host,
+      CALLS.tests,
+      CALLS.spec,
+      CALLS.adr,
+      CALLS.guide,
+    ],
+  },
+  {
+    id: "links",
+    title: "Links between runs",
+    sub: "`ork relay` · a row per link",
+    zone: "core",
+    x: 880,
+    y: 1200,
+    status: "built",
+    pkg: "core",
+    src: "packages/core/src/remote/relay.ts",
+    summary:
+      "Lets nodes of two live runs, often in two repositories, message each other. A link is a row in the store's `links` table, made only by you, and it is the permission: no process has to stay up for it, and neither run holds the other.",
+    facts: [
+      "Between leaders or workers, both ways, until `ork relay end` or either run ends.",
+      "A message is a `relay` command for the other run and a wake on its socket; with no socket, its one-second poll finds the row. That run records `message.received`.",
+      "Making or ending a link writes a `notice` command to each side, which also wakes a session blocked in `wait_for_messages`.",
+      "A peer's message is an agent's: it grants nothing, and gives no access to the other's checkout.",
+      "`maxMessages` (default 100, both ways together); at the limit the sender's run asks you to `extend` or `end`. `links: off` refuses links.",
+      "Checked with real sessions on the CLI driver; the SDK driver only against stand-ins (C5).",
+    ],
+    see: [
+      { map: "messaging", node: "links", label: "Links in a conversation" },
+    ],
+    docs: [
+      LINKS.relay,
+      LINKS.links,
+      LINKS.store,
+      LINKS.tests,
+      LINKS.spec,
+      LINKS.adr,
+      LINKS.guide,
     ],
   },
 
@@ -620,7 +717,7 @@ export const NODES = [
     summary:
       "The tools every Claude node gets for working inside the hierarchy: messaging, reporting, delegating, asking you, and claiming files.",
     facts: [
-      "Built: one registry binds each session's tools, one file per tool: `ask_user`, `permission` (CLI driver), for leaders `delegate`, `spawn_worker` and `answer`, `send_message` and `read_inbox` for nodes with someone to reach, and `claim` and `release` for parallel writers; arguments are validated with Zod.",
+      "Built: one registry binds each session's tools, one file per tool: `ask_user`, `permission` (CLI driver), for leaders `delegate`, `spawn_worker` and `answer`, `send_message`, `read_inbox` and `wait_for_messages` for every leader and worker (with `links: off`, only those with someone to reach), and `claim` and `release` for parallel writers; arguments are validated with Zod.",
       "Built: `feedback` for every session in a run. The report is structured output, not a tool.",
       "In-process for the SDK driver; for the CLI driver, a local MCP server on 127.0.0.1 behind a per-session bearer token.",
     ],
@@ -636,6 +733,7 @@ export const NODES = [
       RUNTIME.tools,
       RUNTIME.delegate,
       RUNTIME.mcp,
+      LINKS.tools,
       DESIGN.messaging,
       DESIGN.runtime,
     ],

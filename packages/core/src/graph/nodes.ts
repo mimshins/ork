@@ -138,16 +138,17 @@ export const checkChannels = (
     }
     const bad = [a, b].filter(id => {
       const node = workflow.nodes[id];
-      return (
-        node === undefined ||
-        (node.type !== "claude.leader" && node.type !== "claude.worker")
-      );
+      const talks =
+        node?.type === "claude.leader" ||
+        node?.type === "claude.worker" ||
+        (node?.type === "workflow.call" && node.node !== undefined);
+      return !talks;
     });
     if (bad.length > 0) {
       diagnostics.push(
         error(
           "message.endpoint",
-          `${bad.map(id => `"${id}"`).join(", ")}: channels connect claude.leader and claude.worker nodes`,
+          `${bad.map(id => `"${id}"`).join(", ")}: channels connect claude.leader and claude.worker nodes, and a workflow.call that names a node`,
           path,
         ),
       );
@@ -155,6 +156,16 @@ export const checkChannels = (
     }
     const nodeA = workflow.nodes[a];
     const nodeB = workflow.nodes[b];
+    if (nodeA?.type === "workflow.call" && nodeB?.type === "workflow.call") {
+      diagnostics.push(
+        error(
+          "message.endpoint",
+          `"${a}", "${b}": a channel needs a session on this side, and a workflow.call has none`,
+          path,
+        ),
+      );
+      continue;
+    }
     if (nodeA?.parent === b || nodeB?.parent === a) {
       diagnostics.push(
         warning(

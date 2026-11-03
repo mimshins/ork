@@ -295,6 +295,112 @@ export const BUS = {
   chatTests: d("packages/cli/test/chat.test.ts", "Tests: `ork chat`"),
 };
 
+export const LINKS = {
+  spec: d("specs/messaging/links.md", "Spec: links between runs"),
+  adr: d(
+    "decisions/ADR-044-relay-between-runs.md",
+    "ADR-044: a relay between runs",
+  ),
+  links: d(
+    "packages/core/src/remote/links.ts",
+    "Code: making and ending links, telling each side",
+  ),
+  relay: d(
+    "packages/core/src/remote/relay.ts",
+    "Code: a run's side of the relay",
+  ),
+  store: d(
+    "packages/core/src/store/links.ts",
+    "Code: the store's `links` table",
+  ),
+  command: d("packages/cli/src/commands/relay.ts", "Code: `ork relay`"),
+  control: d(
+    "packages/core/src/control/control.ts",
+    "Code: a run taking its `relay` and `notice` commands",
+  ),
+  tools: d(
+    "packages/runtime-claude/src/tools/messages.ts",
+    "Code: the message tools, `wait_for_messages`",
+  ),
+  tests: d(
+    "packages/core/test/relay.test.ts",
+    "Tests: two runs over real sockets",
+  ),
+  cliTests: d("packages/cli/test/relay.test.ts", "Tests: `ork relay`"),
+  guide: d(
+    "docs/guides/working-across-projects.md",
+    "Guide: working across projects",
+  ),
+};
+
+export const CALLS = {
+  spec: d("specs/scheduler/calls.md", "Spec: calling workflows"),
+  adr: d(
+    "decisions/ADR-045-workflows-calling-workflows.md",
+    "ADR-045: workflows calling workflows",
+  ),
+  node: d("packages/nodes/src/call.ts", "Code: the `workflow.call` node"),
+  port: d(
+    "packages/core/src/remote/calls.ts",
+    "Code: starting, counting and stopping called runs",
+  ),
+  start: d(
+    "packages/core/src/remote/call-start.ts",
+    "Code: starting a called run, or reviving it on resume",
+  ),
+  wait: d(
+    "packages/core/src/remote/call-wait.ts",
+    "Code: waiting on a called run or node",
+  ),
+  talk: d(
+    "packages/core/src/remote/call-talk.ts",
+    "Code: a channel to a call, and its conversation",
+  ),
+  routes: d(
+    "packages/core/src/run/bus-calls.ts",
+    "Code: how the bus reaches a call by name",
+  ),
+  host: d(
+    "packages/cli/src/run/calls.ts",
+    "Code: the budget cap and caller a run is started with",
+  ),
+  compile: d(
+    "packages/core/src/graph/calls.ts",
+    "Code: the compiler's checks on calls",
+  ),
+  targets: d(
+    "packages/core/src/project/calls.ts",
+    "Code: `ork validate`'s check of what a call names",
+  ),
+  tests: d("packages/core/test/calls.test.ts", "Tests: calling workflows"),
+  targetTests: d(
+    "packages/core/test/call-targets.test.ts",
+    "Tests: what `ork validate` checks of a call",
+  ),
+  guide: d(
+    "docs/guides/working-across-projects.md#calling-a-workflow",
+    "Guide: calling a workflow",
+  ),
+};
+
+export const TIMEOUTS = {
+  code: d(
+    "packages/core/src/run/timeouts.ts",
+    "Code: timeouts on nodes and runs",
+  ),
+  spawn: d(
+    "packages/nodes/src/spawn.ts",
+    "Code: a tool in its own process group",
+  ),
+  tests: d("packages/core/test/timeouts.test.ts", "Tests: timeouts"),
+  spawnTests: d(
+    "packages/nodes/test/spawn.test.ts",
+    "Tests: an abort ends what a tool started",
+  ),
+  spec: d("specs/scheduler.md#timeouts", "Spec: timeouts"),
+  adr: d("decisions/ADR-043-timeouts.md", "ADR-043: timeouts"),
+};
+
 export const RESUME = {
   resume: d(
     "packages/core/src/run/resume.ts",

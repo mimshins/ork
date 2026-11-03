@@ -43,7 +43,7 @@ The command is `ork relay` because `ork link` already points tools' folders at
 See [RFC-003](../rfcs/archived/RFC-003-relay-between-runs.md): a relay between
 runs (chosen), agents calling `ork chat` themselves, and a separate relay
 process. One run across projects is weighed in
-[RFC-004](../rfcs/active/RFC-004-workflows-calling-workflows.md).
+[RFC-004](../rfcs/archived/RFC-004-workflows-calling-workflows.md).
 
 ## Rationale
 

@@ -156,6 +156,23 @@
       },
       "additionalProperties": false
     },
+    "calls": {
+      "description": "Default: any registered project may call this one's workflows.",
+      "type": "object",
+      "properties": {
+        "accept": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The registered projects whose workflows may call this one's."
+        }
+      },
+      "required": [
+        "accept"
+      ],
+      "additionalProperties": false
+    },
     "context": {
       "description": "Context files every node reads, relative to the project root; they come before the workflow's.",
       "type": "array",

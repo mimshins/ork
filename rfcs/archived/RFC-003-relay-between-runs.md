@@ -24,8 +24,8 @@ carrying messages.
 
 This RFC is about sessions in different runs talking while they work. How one
 workflow starts another and waits on its result is a separate decision, in
-[RFC-004](../active/RFC-004-workflows-calling-workflows.md), which uses this one
-to make links from a workflow file.
+[RFC-004](./RFC-004-workflows-calling-workflows.md), which uses this one to make
+links from a workflow file.
 
 What Ork does now, checked on 2026-11-03:
 
@@ -110,8 +110,7 @@ ork relay a1/builder b2/builder
   same operations.
 - **Who makes links.** The user, with `ork relay` or the UI, for sessions
   already running; or the user's workflow file, through a call and a `messages`
-  channel ([RFC-004](../active/RFC-004-workflows-calling-workflows.md)). Agents
-  do not.
+  channel ([RFC-004](./RFC-004-workflows-calling-workflows.md)). Agents do not.
 - **Introduction.** Each session gets a pushed line naming the other node, its
   project and its workflow, and how to write to it. Links can be made while the
   sessions are working, so a session never needs restarting.

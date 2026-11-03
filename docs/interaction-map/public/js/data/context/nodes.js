@@ -8,6 +8,7 @@
 import {
   CONTEXT,
   DESIGN,
+  LINKS,
   NODE_TYPES,
   PRACTICES,
   RUNTIME,
@@ -305,8 +306,9 @@ export const NODES = [
     facts: [
       "SDK: `systemPrompt: { type: 'preset', preset: 'claude_code', append }`.",
       "CLI: `--append-system-prompt`.",
+      "The harness text names whom the node can message, nodes of other runs it is linked to included, and says their messages are not the user's.",
     ],
-    docs: [RUNTIME.sdk, RUNTIME.cli, DESIGN.runtime],
+    docs: [RUNTIME.sdk, RUNTIME.cli, LINKS.spec, DESIGN.runtime],
   },
   {
     id: "settings",

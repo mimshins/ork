@@ -56,6 +56,7 @@ missing required input stops the run before anything starts.
 | `control.join`                    | Waits for its inputs: `all` (default), `any`, or `n` of them                                                 |
 | `control.router`, `control.split` | Pass their input on; a router takes its first matching edge, or all                                          |
 | `human.gate`                      | Asks you a question with options, and a recommended one                                                      |
+| `workflow.call`                   | Starts a workflow as a separate run ([calling a workflow](./working-across-projects.md#calling-a-workflow))  |
 
 ### Claude nodes
 
@@ -172,8 +173,7 @@ reviews as its new input; a leader resumes its own session.
 
 ## Templates and conditions
 
-`{{ }}` templates work in a node's `prompt`, `instructions`, `command`, `cwd`
-and `question`:
+`{{ }}` works in `prompt`, `instructions`, `command`, `cwd` and `question`:
 
 - `{{inputs.feature}}`: a run input.
 - `{{nodes.spec.output.artifacts.spec}}`: a field of another node's report.

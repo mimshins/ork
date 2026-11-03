@@ -114,6 +114,18 @@ export const run = defineCommand({
       type: "string",
       description: "Internal: the id `--detach` picked for the run",
     },
+    "called-by": {
+      type: "string",
+      description: "Internal: the workflow.call that started this run",
+    },
+    "budget-cap": {
+      type: "string",
+      description: "Internal: what the caller has left of its budget",
+    },
+    "base-ref": {
+      type: "string",
+      description: "Internal: what this run's worktrees start from",
+    },
   },
   run: async ({ args, rawArgs }) => {
     if (args.driver !== undefined && !isDriver(args.driver)) {
@@ -181,6 +193,15 @@ export const run = defineCommand({
           ? await runWorkflowFile({
               ...common,
               allowDirty: args["allow-dirty"],
+              ...(args["called-by"] === undefined
+                ? {}
+                : { calledBy: args["called-by"] }),
+              ...(args["budget-cap"] === undefined
+                ? {}
+                : { budgetCap: Number(args["budget-cap"]) }),
+              ...(args["base-ref"] === undefined
+                ? {}
+                : { baseRef: args["base-ref"] }),
               onRun: handle => {
                 onInterrupt(handle.interrupt);
               },

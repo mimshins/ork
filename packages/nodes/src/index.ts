@@ -4,6 +4,7 @@
  */
 
 export * from "./builtins.ts";
+export * from "./call.ts";
 export * from "./claude.ts";
 export * from "./gate.ts";
 export * from "./programs.ts";

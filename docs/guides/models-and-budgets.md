@@ -54,6 +54,8 @@ limits:
 - Each session gets the smaller of its own budget and what is left of the run's.
   Once the run's budget is spent, no new session starts and the run ends as
   `budget_exhausted`.
+- A `workflow.call` shares this budget with the run it starts
+  ([calling a workflow](./working-across-projects.md#calling-a-workflow)).
 - `concurrency` limits only Claude sessions; tools and gates are not limited. A
   leader waiting on its children lends them its slot.
 
@@ -67,7 +69,7 @@ A run has no time limit unless you set one:
 
 ```yaml
 defaults:
-  timeout: 30m # each tool and Claude node that sets none
+  timeout: 30m # each tool, Claude and call node that sets none
 limits:
   timeout: 2h # the whole run
 nodes:
@@ -81,7 +83,7 @@ nodes:
   a question, or a permission prompt, including one from a node a leader owns.
 - A node that runs out is stopped and fails, with `timedOut` in its output, so
   an edge can handle it: `when: timedOut`. Its command, and anything that
-  started, is killed.
+  started, is killed; a `workflow.call` stops the run it called.
 - A run that runs out ends as `timed_out`, and `ork resume` continues it. The
   clocks start again.
 - A `claude.subagent` runs inside its parent's session, so set the timeout on

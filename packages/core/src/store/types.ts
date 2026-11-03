@@ -31,9 +31,15 @@ export type RunRecord = {
   startedAt: string;
   finishedAt?: string;
   costUsd: number;
+  /** The run whose `workflow.call` started this one. */
+  parent?: string;
+  /** How many calls deep it is; 0 for a run the user started. */
+  depth: number;
 };
 
-export type NewRun = Pick<RunRecord, "id" | "workflow" | "file" | "project">;
+export type NewRun = Pick<RunRecord, "id" | "workflow" | "file" | "project"> & {
+  parent?: string;
+};
 
 export type StoredEvent = {
   runId: string;

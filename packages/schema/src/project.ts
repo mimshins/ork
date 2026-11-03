@@ -111,6 +111,16 @@ export const ProjectSchema = z.strictObject({
   defaults: DefaultsSchema.optional().describe(
     "Defaults for every workflow in the project; a workflow's own win.",
   ),
+  calls: z
+    .strictObject({
+      accept: z
+        .array(z.string())
+        .describe(
+          "The registered projects whose workflows may call this one's.",
+        ),
+    })
+    .optional()
+    .describe("Default: any registered project may call this one's workflows."),
   context: z
     .array(z.string())
     .optional()

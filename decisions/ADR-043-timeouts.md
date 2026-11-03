@@ -11,7 +11,7 @@
 ## Context
 
 Only `human.gate` had a timeout. A stuck command or session could hold a run
-forever, and [RFC-004](../rfcs/active/RFC-004-workflows-calling-workflows.md)
+forever, and [RFC-004](../rfcs/archived/RFC-004-workflows-calling-workflows.md)
 adds nodes that wait on whole runs, which would inherit the problem.
 
 Checking this showed something worse: aborting a tool sent SIGTERM to one

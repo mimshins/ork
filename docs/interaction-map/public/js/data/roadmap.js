@@ -596,7 +596,7 @@ export const MILESTONES = [
         title: "A relay between runs",
         status: "done",
         date: "2026-11-03",
-        commits: ["74fd6bb"],
+        commits: ["74fd6bb", "bf37ee7"],
         detail:
           "`ork relay` introduces nodes of runs in different repositories, so they work in parallel and message each other through the store and the runs' sockets. Proven on real sessions in two repositories on the CLI driver; the SDK driver is tracked in C5.",
         docs: [
@@ -608,10 +608,15 @@ export const MILESTONES = [
       {
         id: "workflow-call",
         title: "Workflows that call workflows",
-        status: "planned",
+        status: "active",
         detail:
           "A `workflow.call` node starts a workflow in this project or another, waits on it if asked, and uses its output in later conditions. A `messages` channel to it lets agents talk during the work. Comes before the Monitor, which shows calls.",
-        docs: ["rfcs/active/RFC-004-workflows-calling-workflows.md"],
+        docs: [
+          "decisions/ADR-045-workflows-calling-workflows.md",
+          "specs/scheduler/calls.md",
+          "docs/guides/working-across-projects.md#calling-a-workflow",
+          "rfcs/archived/RFC-004-workflows-calling-workflows.md",
+        ],
       },
       {
         id: "worktrees-panel",
@@ -715,7 +720,11 @@ export const OFF_ROADMAP = [
   "95169dc",
   "94a1c6e",
   "6b08b98",
+  "dd9cf4c",
+  "cc85808",
+  "60fff55",
+  "af99086",
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-02";
+export const ROADMAP_UPDATED = "2026-11-03";

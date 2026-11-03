@@ -244,6 +244,7 @@ const listed = async (root: string, events: readonly RunEvent[]) => {
         pid: 0,
         startedAt: "",
         costUsd: 0,
+        depth: 0,
       },
     ],
     events: () =>

@@ -10,6 +10,8 @@ import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
 import {
+  type CallPort,
+  type CallRequest,
   type ClaudeRuntime,
   createHolds,
   type ExecuteContext,
@@ -30,6 +32,7 @@ import {
 import { describe, expect, it } from "vitest";
 
 import {
+  callExecutor,
   claudeExecutor,
   gateExecutor,
   isAllowed,
@@ -389,6 +392,7 @@ const mailboxWith = (pending: () => number): Mailbox => ({
   send: () => ({ ok: false, error: "no" }),
   read: () => [],
   pending,
+  alias: () => {},
   linkable: () => false,
   wait: () => Promise.resolve(),
   answer: () => ({ ok: true }),
@@ -600,5 +604,67 @@ describe("Claude nodes", () => {
     );
     // An instance takes its template's settings, then the defaults.
     expect(specs[0]?.effort).toBe("max");
+  });
+});
+
+/** A call port that writes down what it was asked. */
+const recording = () => {
+  const asked: CallRequest[] = [];
+  const calls: CallPort = {
+    invoke: request => {
+      asked.push(request);
+      return Promise.resolve({ ok: true, output: { status: "pass" } });
+    },
+    stopAll: () => {},
+  };
+  return { asked, calls };
+};
+
+describe("workflow.call", () => {
+  const CALL: Node = {
+    type: "workflow.call",
+    workflow: "feature-{{inputs.branch}}",
+    inputs: { from: "{{nodes.builder.output.branch}}" },
+  };
+
+  it("renders what it asks for, and waits for the run by default", async () => {
+    const { asked, calls } = recording();
+    const result = await callExecutor(context("kit", CALL, { calls }));
+    expect(result.ok).toBe(true);
+    expect(asked[0]).toMatchObject({
+      callId: "kit",
+      workflow: "feature-feat/x y",
+      inputs: { from: "ork/r1/builder" },
+      wait: "run",
+      channels: [],
+    });
+  });
+
+  it("waits for a named node by default, and knows its channels", async () => {
+    const { asked, calls } = recording();
+    const node: Node = {
+      type: "workflow.call",
+      workflow: "feature",
+      node: "builder",
+    };
+    await callExecutor(
+      context("kit", node, {
+        calls,
+        workflow: {
+          schemaVersion: 1,
+          name: "t",
+          nodes: { kit: node },
+          messages: [{ between: ["writer", "kit"] }],
+        },
+      }),
+    );
+    expect(asked[0]).toMatchObject({ wait: "node", channels: ["writer"] });
+  });
+
+  it("fails when the run has no way to call", async () => {
+    await expect(callExecutor(context("kit", CALL))).resolves.toMatchObject({
+      ok: false,
+      error: "This run cannot call workflows.",
+    });
   });
 });

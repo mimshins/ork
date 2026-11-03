@@ -109,6 +109,12 @@ export const WorkflowSchema = z.strictObject({
     .refine(n => Object.keys(n).length > 0, "a workflow needs nodes"),
   edges: z.array(EdgeInputSchema).optional(),
   messages: z.array(MessageChannelSchema).optional(),
+  outputs: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      "What a workflow.call of this workflow can read, as templates over its nodes, rendered when the run ends.",
+    ),
 });
 export type Workflow = z.infer<typeof WorkflowSchema>;
 

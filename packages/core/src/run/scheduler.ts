@@ -24,6 +24,7 @@ import {
   closeWorkspace,
   failure,
   finishedEvent,
+  renderOutputs,
   recordRun,
   runResult,
   runStartedEvent,
@@ -122,6 +123,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     graceMs,
     expire: reason => {
       stop("timed_out", reason);
+      options.calls?.stopAll();
       abort.abort();
       settle();
     },
@@ -142,6 +144,7 @@ export const startRun = (options: RunOptions): RunHandle => {
       nodes,
       reasons,
       worktrees,
+      outputs: renderOutputs(graph.workflow.outputs, scope()),
     });
     onEvent({ type: "run.finished", result });
     finish(result);
@@ -257,7 +260,9 @@ export const startRun = (options: RunOptions): RunHandle => {
         continue;
       }
       const isSession = needsSlot(node);
-      if (isSession && budgetSpent()) break;
+      // A call spends through its run, so it needs budget as a session does.
+      const spends = isSession || node.type === "workflow.call";
+      if (spends && budgetSpent()) break;
       if (isSession && !slots.tryTake()) {
         index += 1;
         continue;
@@ -278,6 +283,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     done,
     interrupt: () => {
       stop("interrupted", "the run was interrupted");
+      options.calls?.stopAll();
       abort.abort();
       settle();
     },

@@ -54,3 +54,14 @@ blocked in `wait_for_messages`, asked and answered a question, and finished;
   fetched them with its `ToolSearch` when it needed them. `links: off` in a
   project's or workflow's rules leaves them out for a node with no one to write
   to, and refuses links to the run.
+
+## Calls
+
+A `messages` channel may name a [`workflow.call`](../scheduler/calls.md) that
+names a node, so an agent writes to `client-kit` with no run id
+([bus-calls.ts](../../packages/core/src/run/bus-calls.ts)). Starting the call
+makes the link, with `maxMessages` from the node. A message sent before then
+waits for it, and its sender is told if it then cannot be sent
+([L57](../gaps/limits.md)). The called workflow needs no change. Two calls
+cannot share a channel, since neither side has a session. A compile error stops
+a channel to a call when the workflow's rules turn links off.

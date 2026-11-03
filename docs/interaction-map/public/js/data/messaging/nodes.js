@@ -1,15 +1,18 @@
 /**
  * @file The messaging map's components: you, the commands and panels you answer
  *   and chat from, the engine's bus and decision queue, the runtime's side of
- *   messaging, and three node sessions from the `software-factory` example.
- *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
+ *   messaging, three node sessions from the `software-factory` example, and the
+ *   links that reach a node of another run. Coordinates are in map units; the
+ *   map is {@link SIZE} wide and tall.
  */
 
 import {
   BUS,
+  CALLS,
   CLI,
   CONTROL,
   DESIGN,
+  LINKS,
   NODE_TYPES,
   RUNTIME,
   SCHEMA,
@@ -21,7 +24,7 @@ import {
 /** @typedef {import("../types.js").Group} Group */
 
 /** The map's extent, in map units. */
-export const SIZE = { w: 1700, h: 960 };
+export const SIZE = { w: 1700, h: 1200 };
 
 /**
  * The columns, left to right.
@@ -114,6 +117,25 @@ export const NODES = [
     see: [{ map: "architecture", node: "ui", label: "The UI" }],
     docs: [DESIGN.ui],
   },
+  {
+    id: "relayCmd",
+    title: "ork relay",
+    sub: "`<run>/<node>` `<run>/<node>`",
+    zone: "surfaces",
+    x: 320,
+    y: 960,
+    status: "built",
+    pkg: "cli",
+    src: "packages/cli/src/commands/relay.ts",
+    summary:
+      "Introduces two running nodes of different runs, so they can message each other. Only you make links: an agent cannot.",
+    facts: [
+      "`ork relay end <a> <b>` ends a link; `ork relay list [run]` lists them. `--max-messages` sets the limit.",
+      "The server's `POST /api/links` does the same.",
+      "Refused for a node that is not a leader or worker, a run that is not running, or a run whose rules turn links off.",
+    ],
+    docs: [LINKS.command, LINKS.cliTests, LINKS.guide],
+  },
 
   // ── Engine ───────────────────────────────────────────────────────────────
   {
@@ -131,9 +153,10 @@ export const NODES = [
     facts: [
       "In software-factory, `security` and `code` share a channel; `ux` can reach only `builder`.",
       "A refused message returns the reason and whom the sender can reach.",
-      "A spawned worker has its template's owner and channels, both ways; a node with no one to reach gets no message tools.",
+      "A spawned worker has its template's owner and channels, both ways.",
+      "A name with a slash is a node of another run, which needs a link; without a slash it means this run.",
     ],
-    docs: [DESIGN.messaging, BUS.bus, BUS.tests, SCHEMA.example],
+    docs: [DESIGN.messaging, BUS.bus, BUS.tests, SCHEMA.example, LINKS.spec],
   },
   {
     id: "bus",
@@ -152,6 +175,7 @@ export const NODES = [
       "`read_inbox` returns the messages a session has not read yet, oldest first.",
       "A loop out of rounds asks the leader that owns its nodes while that leader's session is live; the leader replies with `answer`, and if its session ends first, you are asked.",
       "Your own messages (`ork chat`) are pushed in full, or kept for the node's next session.",
+      "It reaches other runs through links: each run has its own bus, and each run's events hold its side of the conversation.",
     ],
     see: [
       {
@@ -179,7 +203,8 @@ export const NODES = [
       "A question to an owner is pushed in full, with its options.",
       "Your messages (`ork chat`) and answers are pushed in full.",
       "A message that arrives while a session writes its final report gets one more turn of that session, so it is not lost.",
-      "`ork resume` hands back unread messages and queued chat messages.",
+      "`ork resume` hands back unread messages and queued chat messages, those from a linked run too.",
+      "`wait_for_messages` blocks until a message lands here, Ork has something to tell the session, or the time passes; the session gives up its slot meanwhile.",
     ],
     docs: [DESIGN.messaging, BUS.bus, BUS.tests, NODE_TYPES.claude],
   },
@@ -227,13 +252,90 @@ export const NODES = [
     summary:
       "Messages, owner questions and decisions are events like everything else, stored in the event store, so a run's messages and decisions can be read back with `ork logs`.",
     facts: [
-      "`message.sent`, `message.read`, `owner.asked`, `owner.answered`, `owner.unanswered`, `decision.opened`, `decision.answered`, `decision.withdrawn`.",
+      "`message.sent`, `message.received`, `message.read`, `link.notice`, `owner.asked`, `owner.answered`, `owner.unanswered`, `decision.opened`, `decision.answered`, `decision.withdrawn`.",
       "Chats in the UI are views over these events (milestone 2).",
     ],
     see: [
       { map: "feedback", node: "events", label: "Feedback from run events" },
     ],
     docs: [DESIGN.messaging, STORE.recorder, BUS.tests, STORE.tests],
+  },
+  {
+    id: "links",
+    title: "Links",
+    sub: "a row in the store · a limit",
+    zone: "core",
+    x: 600,
+    y: 960,
+    status: "built",
+    pkg: "core",
+    src: "packages/core/src/remote/relay.ts",
+    summary:
+      "The permission for two nodes of different live runs to write to each other: a row in the store's `links` table, so a sender's run checks it without asking the other, and no process has to stay up for it.",
+    facts: [
+      "Each side is told with a `notice` command and a wake on its socket; a session that starts later finds its linked nodes in its system prompt.",
+      "`maxMessages` (default 100, both ways together): at the limit a send is refused, and the sender's run asks you, once, to `extend` or `end`.",
+      "A link ends with `ork relay end` or either run, and each peer's live session is told. A send to a finished run is refused and ends the link: a finished session is not resumed on an agent's word.",
+      "A peer's message grants no permission, and a link gives no access to the other's checkout and no way to start, stop or decide for its run.",
+      "`links: off` in a project's or workflow's rules refuses links to the run.",
+    ],
+    see: [
+      {
+        map: "architecture",
+        node: "links",
+        label: "Links in the architecture",
+      },
+    ],
+    docs: [
+      LINKS.relay,
+      LINKS.links,
+      LINKS.store,
+      LINKS.tests,
+      LINKS.spec,
+      LINKS.adr,
+    ],
+  },
+  {
+    id: "peerRun",
+    title: "The other run",
+    sub: "its own process, bus and inbox",
+    zone: "core",
+    x: 880,
+    y: 960,
+    status: "built",
+    pkg: "core",
+    src: "packages/core/src/control/control.ts",
+    summary:
+      "The run on the other end of a link, often in another repository. It takes `relay` and `notice` rows from the store, woken on its socket, or by its one-second poll with no socket.",
+    facts: [
+      "A `relay` row puts the message in the node's inbox as `message.received`, and sends the usual notice.",
+      "A `notice` row is pushed into the live session as `link.notice`, and wakes it from `wait_for_messages`.",
+      "A message to a node that has ended, in a run still live, waits in its inbox, and the sender is told it may not be read.",
+    ],
+    docs: [LINKS.control, BUS.bus, LINKS.tests, LINKS.spec],
+  },
+  {
+    id: "callCh",
+    title: "Channel to a call",
+    sub: "by name · linked on start",
+    zone: "core",
+    x: 600,
+    y: 1080,
+    status: "built",
+    pkg: "core",
+    src: "packages/core/src/run/bus-calls.ts",
+    summary:
+      "A `messages` channel may name a `workflow.call` that names a node, so an agent writes to `client-kit` with no run id. Starting the call makes the link, and the name then stands for `<run>/<node>`.",
+    facts: [
+      "A message sent before the call starts waits for it, and its sender is told if it then cannot be sent (L57).",
+      "The link takes `maxMessages` from the node. The called workflow needs no change.",
+      "Two calls cannot share a channel, since neither side has a session. A compile error stops a channel to a call when the workflow's rules turn links off (`call.links-off`).",
+    ],
+    see: [
+      { map: "architecture", node: "calls", label: "Workflow calls" },
+      { map: "roles", node: "call", label: "A call in the flow" },
+    ],
+    docs: [CALLS.routes, CALLS.talk, BUS.tests, CALLS.tests, CALLS.spec],
   },
 
   // ── Runtime ──────────────────────────────────────────────────────────────
@@ -268,7 +370,7 @@ export const NODES = [
       "How a session reaches the rest of the run: ordinary tool calls that Ork answers.",
     facts: [
       "Built: `ask_user(question, options, recommended, context)`, a decision answered on the terminal or with `ork decide`.",
-      "Built: `send_message(to, body)` and `read_inbox()` for nodes with someone to reach, and `answer(question, choice)` for leaders.",
+      "Built: `send_message(to, body)`, `read_inbox()` and `wait_for_messages(timeoutSeconds?)` for every leader and worker, since a link can come later (with `links: off`, only those with someone to reach), and `answer(question, choice)` for leaders.",
       "Built: `claim(resource)` and `release(resource)` for nodes that may write while another does; an overlapping claim is refused with who holds it, and the claimant hears when it is released. The report is structured output, not a tool.",
       "Built, for leaders: `delegate([{ child, brief }])` and `spawn_worker([{ template, brief }])`, blocking until every child has reported.",
       "Built: `feedback(kind, target, …)` reports what got in the way, capped at 3 per session.",
@@ -290,6 +392,7 @@ export const NODES = [
       BUS.claims,
       BUS.claimTests,
       BUS.claimAdr,
+      LINKS.tools,
       DESIGN.messaging,
     ],
   },
@@ -360,5 +463,22 @@ export const NODES = [
       "`readonly`: its write tools are denied, so it never edits the builder's branch.",
     ],
     docs: [SCHEMA.example],
+  },
+  {
+    id: "peerS",
+    title: "Linked node",
+    sub: "`<run>/<node>` · another run",
+    zone: "sessions",
+    x: 1440,
+    y: 960,
+    status: "external",
+    pkg: null,
+    summary:
+      "A leader or worker of another run. To it, a peer's message is an agent's, not yours: a notice, then `read_inbox`, labelled with its sender.",
+    facts: [
+      "It replies with `send_message`, and can block in `wait_for_messages` for the answer rather than end its session.",
+      "It works in its own checkout, under its own project's rules.",
+    ],
+    docs: [LINKS.guide, LINKS.spec],
   },
 ];

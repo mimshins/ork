@@ -14,8 +14,14 @@ import type {
   Mailbox,
   RelayPort,
 } from "../runtime/types.ts";
+import { createCallRoutes } from "./bus-calls.ts";
 import type { Mail, OwnerQuestion } from "./bus-events.ts";
-import { inboxNotice, ownerQuestionText, userMessageText } from "./bus-text.ts";
+import {
+  inboxNotice,
+  notAContact,
+  ownerQuestionText,
+  userMessageText,
+} from "./bus-text.ts";
 import type { Slots } from "./slots.ts";
 import type { RunEvent } from "./types.ts";
 
@@ -74,6 +80,7 @@ export const createBus = ({
   );
   let messages = mail?.last ?? 0;
   let questions = 0;
+  const calls = createCallRoutes(graph, relay, mail?.calls);
   /** Sessions in `wait`: called when a message arrives or the session ends. */
   const waiters = new Map<string, () => void>();
 
@@ -123,48 +130,49 @@ export const createBus = ({
     return deliver === undefined ? "queued" : "now";
   };
 
+  /** Numbers a message and records it; returns its number. */
+  const recordSent = (node: string, to: string, body: string): number => {
+    messages += 1;
+    onEvent({ type: "message.sent", node, to, message: messages, body });
+    return messages;
+  };
+
   const mailbox = (id: string, template?: string): Mailbox => {
     if (template !== undefined) templates.set(id, template);
     return {
       peers: () => peersOf(id),
       send: (to, body) => {
         const peers = peersOf(id);
-        if (to.includes("/") && relay !== undefined && peers.includes(to)) {
-          const sent = relay.send(id, to, body);
-          if (sent.ok) {
-            messages += 1;
-            onEvent({
-              type: "message.sent",
-              node: id,
-              to,
-              message: messages,
-              body,
-            });
-          }
+        if (peers.includes(to) && calls.hold(to, id, body)) {
+          return { ok: true, delivered: "queued" };
+        }
+        const target = calls.targetOf(to);
+        if (
+          target.includes("/") &&
+          relay !== undefined &&
+          (peers.includes(to) || peers.includes(target))
+        ) {
+          const sent = relay.send(id, target, body);
+          if (sent.ok) recordSent(id, to, body);
           return sent;
         }
         if (!peers.includes(to)) {
           return {
             ok: false,
-            error:
-              peers.length === 0
-                ? "you have no one to message in this run"
-                : `"${to}" is not one of your contacts; you can message ${peers.join(", ")} (your owner, the nodes you own, and your declared channels)`,
+            error: notAContact(to, peers),
           };
         }
-        messages += 1;
-        inbox(to).push({ id: messages, from: id, body });
-        onEvent({
-          type: "message.sent",
-          node: id,
-          to,
-          message: messages,
-          body,
-        });
+        inbox(to).push({ id: recordSent(id, to, body), from: id, body });
         return { ok: true, delivered: land(to) };
       },
       pending: () => inbox(id).length,
       linkable: () => relay !== undefined,
+      alias: address => {
+        calls.alias(id, address, {
+          sent: (from, body) => recordSent(from, id, body),
+          tell: (from, text) => live.get(from)?.(text),
+        });
+      },
       wait: async ms => {
         if (inbox(id).length > 0 || !live.has(id)) return;
         const { promise, resolve } = Promise.withResolvers<void>();

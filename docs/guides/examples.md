@@ -62,6 +62,19 @@ ork run examples/pr-review.ork.yaml --input pr=42
 `--input base=develop` reviews against another branch. It uses sonnet within a
 run budget of $5.
 
+## across-projects
+
+[`across-projects.ork.yaml`](../../examples/across-projects.ork.yaml) builds a
+change in this project and calls a workflow in another, with the two sessions
+talking by name while they work. It needs a registered project with the id
+`client-kit` and a workflow `feature` there, whose `builder` is a leader or
+worker. `ork validate` warns until the project is registered. See
+[Working across projects](./working-across-projects.md#calling-a-workflow).
+
+```sh
+ork run examples/across-projects.ork.yaml --input feature="Add a farewell endpoint"
+```
+
 ## Running them unattended
 
 With `--detach`, the run carries on without a terminal and its questions wait in

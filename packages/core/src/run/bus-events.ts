@@ -22,6 +22,8 @@ export type Mail = {
   inboxes: ReadonlyMap<string, readonly InboxMessage[]>;
   waiting: ReadonlyMap<string, readonly string[]>;
   last: number;
+  /** Call node -> the run it last started. */
+  calls: ReadonlyMap<string, string>;
 };
 
 export type BusEvent =
@@ -42,6 +44,14 @@ export type BusEvent =
       body: string;
     }
   | { type: "message.read"; node: string; ids: number[] }
+  /** The `workflow.call` node `node` started `workflow` as `run` (RFC-004). */
+  | {
+      type: "call.started";
+      node: string;
+      run: string;
+      workflow: string;
+      project: string;
+    }
   /** Ork told `node` a link was made or ended. */
   | { type: "link.notice"; node: string; text: string }
   /** Ork asked `node`, the owner of `about`, a question (a loop out of rounds). */

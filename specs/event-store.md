@@ -29,7 +29,9 @@ all views over the same events.
 
 - **A run record:** id (8 hex characters; `node-…` for a run of one node),
   workflow name, workflow file and project root (absolute), the process id,
-  status, start and finish times, and the cost so far.
+  status, start and finish times, and the cost so far. A run a
+  [`workflow.call`](./scheduler/calls.md) started also has its `parent` run, and
+  its `depth` below the run that started it all.
 - **Status:** `running` until `run.finished` is written, then that event's
   status (`succeeded`, `failed`, `budget_exhausted`, `timed_out`,
   `interrupted`). A `running` run whose process is gone reads as **`crashed`**.

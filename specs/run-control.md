@@ -66,7 +66,8 @@ Nothing is cut short. What happens depends on what the paused part is doing:
     usage the sum of both legs.
 - **Nothing new starts.** Queued activations wait, and so does a leader's
   delegated child before it starts. A tool node (`tool.shell`, `tool.gh`,
-  `tool.aws`) runs to its end.
+  `tool.aws`) runs to its end, and a [`workflow.call`](./scheduler/calls.md)'s
+  run goes on ([L56](./gaps/limits.md)).
 - **A gate** stays open, and it can still be answered (`ork decide`). Its
   `timeout` counts only while the gate isn't held: it keeps the time it had
   left, and no default answer is chosen while the run is paused.
@@ -98,6 +99,8 @@ Nothing is cut short. What happens depends on what the paused part is doing:
   - other branches keep running;
   - a run with nothing left to do ends `failed`.
 - **No new outcome:** a workflow tests for it as for any failure.
+- **A `workflow.call`** has the runs it called stopped too, as does a stop of
+  its whole run ([calling workflows](./scheduler/calls.md)).
 - **A leader's delegated children** that are still running follow the existing
   owner-failure path; they are not stopped with it.
 - **Only a running node can be stopped:** `N is not running in run X.`

@@ -8,6 +8,7 @@
 import type { CompiledGraph } from "../graph/types.ts";
 import type { HumanChannel, RelayPort } from "../runtime/types.ts";
 import type { Mail } from "./bus-events.ts";
+import type { CallPort } from "./calls.ts";
 import type {
   Brief,
   ExecuteContext,
@@ -57,6 +58,8 @@ export type RunOptions = {
   replay?: Replay;
   /** How to reach linked nodes of other runs; none when links are off. */
   relay?: RelayPort;
+  /** How `workflow.call` nodes start other workflows (RFC-004). */
+  calls?: CallPort;
   /** How long a timed-out node or run may take to end (default 10 s). */
   timeoutGraceMs?: number;
 };

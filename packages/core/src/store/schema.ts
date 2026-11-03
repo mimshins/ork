@@ -106,6 +106,9 @@ export const MIGRATIONS = [
    CREATE INDEX links_by_a ON links (a_run);
    CREATE INDEX links_by_b ON links (b_run);
    ALTER TABLE commands ADD COLUMN sender TEXT;`,
+  // 7: a run called by another: who called it, and how deep calls go.
+  `ALTER TABLE runs ADD COLUMN parent TEXT;
+   ALTER TABLE runs ADD COLUMN depth INTEGER NOT NULL DEFAULT 0;`,
 ];
 
 export type Row = Record<string, unknown> | undefined;

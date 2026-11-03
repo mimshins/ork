@@ -19,29 +19,32 @@ two cards with `see`.
 
 Every package and process: the CLI, the planned server and UI; the engine's
 subsystems (graph compiler, schema, scheduler, context compiler, message bus,
-decision queue, worktree manager, node types, event store); the files and CLIs
-on your machine; the runtime adapter, its two drivers and Ork's MCP tools; the
-Claude session and the model providers. Rows 3–5 of "Your machine" stay empty as
-a corridor for the engine–runtime edges. Journeys: validating a file, and one
-Claude node from start to report.
+decision queue, worktree manager, node types, event store, workflow calls, links
+between runs); the files and CLIs on your machine; the runtime adapter, its two
+drivers and Ork's MCP tools; the Claude session and the model providers. Rows
+3–5 of "Your machine" stay empty as a corridor for the engine–runtime edges.
+Journeys: validating a file, one Claude node from start to report, and a
+workflow calling a workflow.
 
 ### `lifecycle`
 
 The `software-factory` example laid out as its run graph, with the engine pieces
-a run passes through on the left and the builder's worktree and GitHub on the
-right. Edges inside the graph are the example's flow edges. Journeys: the happy
-path, the bounded review loop and its escalation, and the human gate.
+a run passes through on the left (called runs among them, though the example has
+none) and the builder's worktree and GitHub on the right. Edges inside the graph
+are the example's flow edges. Journeys: the happy path, the bounded review loop
+and its escalation, and the human gate.
 
 ### `roles`
 
 Each card is a role a node can take, not one node: in the flow (entry, middle
 node, leaf, lone node, router, join, loop target, gate, skipped node,
-unreachable node, readonly reader) and in the ownership tree (leader, ownership
-root, owned child, child with edges, spawned worker, sub-agent, idle child),
-with the compiler, scheduler and delegation that decide when each runs, and the
-summary, kept worktrees and merged children a run leaves. Its facts say how to
-write a node into the role. Journeys: from the entries to the leaves; a dead
-path, a loop and a gate; a leader and its children; orphans and what is not one.
+unreachable node, readonly reader, call) and in the ownership tree (leader,
+ownership root, owned child, child with edges, spawned worker, sub-agent, idle
+child), with the compiler, scheduler and delegation that decide when each runs,
+and the summary, kept worktrees and merged children a run leaves. Its facts say
+how to write a node into the role. Journeys: from the entries to the leaves; a
+dead path, a loop and a gate; a leader and its children; orphans and what is not
+one.
 
 ### `context`
 
@@ -55,8 +58,10 @@ workflow skill shadowing a project skill.
 
 You and the commands you chat and answer from; the bus, address check, priority
 gate and decision queue; `Session.send`, Ork's tools and the permission gate;
-three node sessions from the example. Journeys: a sibling message, `ask_user`, a
-permission prompt, and chatting with the builder.
+three node sessions from the example; and along the bottom, what reaches another
+run: `ork relay`, links, the other run, a linked node and a channel to a call.
+Journeys: a sibling message, `ask_user`, a permission prompt, chatting with the
+builder, and two runs talking over a link.
 
 ### `feedback`
 

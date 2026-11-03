@@ -36,6 +36,7 @@ export const runView = (
   pid: 1,
   startedAt: "2026-11-02T00:00:00.000Z",
   costUsd: 0,
+  depth: 0,
   live,
   paused: { run: false, nodes: [] },
 });

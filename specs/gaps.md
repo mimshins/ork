@@ -34,8 +34,8 @@ Each is in [Limits](./gaps/limits.md), from L2 on.
 - **C5 · The examples have not run on the SDK driver.** Both ran end to end on
   the CLI driver (2026-10-31); the SDK pass needs `ANTHROPIC_API_KEY` on the
   machine that runs it. The SDK driver's pause (its hold hook and deferred
-  resume) is checked only against the SDK's types and fakes until then. Links
-  and timeouts have only met real sessions on the CLI driver too.
+  resume) is checked only against the SDK's types and fakes until then. Links,
+  timeouts and calls have only met real sessions on the CLI driver too.
   ([examples](../docs/guides/examples.md), [run control](./run-control.md))
 - **C6 · The UI has no browser tests in CI.** Its components are tested in jsdom
   with axe; a slice is checked by hand in a real browser until Playwright runs

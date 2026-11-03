@@ -1,6 +1,6 @@
 /** @file The messaging map's journeys. */
 
-import { DESIGN, SCHEMA } from "../refs.js";
+import { DESIGN, LINKS, SCHEMA } from "../refs.js";
 
 /** @typedef {import("../types.js").Journey} Journey */
 
@@ -189,6 +189,80 @@ export const JOURNEYS = [
         to: "builderS",
         title: "The builder reads it",
         detail: "Its replies are its events, streamed to your chat.",
+      },
+    ],
+  },
+  {
+    id: "link",
+    title: "Two runs talk over a link",
+    who: "You · builder · a node of another run",
+    summary:
+      "You link the builder to a node of a run in another repository; they ask and answer through the store and the runs' sockets, each in its own process.",
+    steps: [
+      {
+        from: "you",
+        to: "relayCmd",
+        title: "You run `ork relay`",
+        detail: "`ork relay <run>/builder <run>/api`, for two running nodes.",
+        docs: [LINKS.guide],
+      },
+      {
+        from: "relayCmd",
+        to: "links",
+        title: "A row in the store",
+        detail:
+          "The `links` table holds it, with its `maxMessages`. Neither run is asked.",
+        docs: [LINKS.spec],
+      },
+      {
+        from: "links",
+        to: "peerRun",
+        title: "Each side is told",
+        detail:
+          "A `notice` command and a wake on the socket. The session hears it as `link.notice`, at once if it is blocked in `wait_for_messages`.",
+      },
+      {
+        from: "builderS",
+        to: "mcpTools",
+        title: "The builder writes to it",
+        detail: '`send_message(to: "<run>/api", body: "…")`.',
+      },
+      {
+        from: "mcpTools",
+        to: "bus",
+        title: "The tool hands it to the bus",
+        detail:
+          "A name with a slash means another run; without one, this run, as before.",
+      },
+      {
+        from: "bus",
+        to: "links",
+        title: "The link is checked",
+        detail:
+          "No live link, a finished run or a used-up limit refuses it, with the reason. Otherwise the message is counted and logged as `message.sent`.",
+        docs: [LINKS.relay],
+      },
+      {
+        from: "links",
+        to: "peerRun",
+        title: "A `relay` row and a wake",
+        detail:
+          "The other run takes the row when its socket is woken, or at its one-second poll if there is no socket.",
+        docs: [LINKS.tests],
+      },
+      {
+        from: "peerRun",
+        to: "events",
+        title: "It lands in the other inbox",
+        detail:
+          "Logged there as `message.received`, so each run's events hold its side, and `ork resume` rebuilds the inbox.",
+      },
+      {
+        from: "peerRun",
+        to: "peerS",
+        title: "A notice, then `read_inbox`",
+        detail:
+          "It is labelled with its sender, and it is an agent's message: it grants nothing. The reply comes back the same way.",
       },
     ],
   },

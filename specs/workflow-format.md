@@ -40,6 +40,9 @@ edges:
 
 **Graph rules:**
 
+- A workflow may declare `outputs:`, a map of names to templates over its nodes,
+  rendered when the run ends and handed to a
+  [`workflow.call`](./scheduler/calls.md) that called it. It is optional.
 - Templates use a small, safe expression language: `{{inputs.*}}`,
   `{{nodes.<id>.output.*}}` and `when:` predicates. No arbitrary JS.
 - The graph compiler rejects:
@@ -70,6 +73,13 @@ edges:
     outputs `staged` (`git diff --cached --stat`), `diff` (the staged patch) and
     `head` (the commit `HEAD` names) besides `exitCode`, `stdout` and `stderr`,
     so a gate after an `add` step shows what a commit will commit.
+- **Calls:** `workflow.call` starts a workflow as a separate run, in this
+  project or a registered one, waits as it says, and hands back its outputs
+  ([calling workflows](./scheduler/calls.md)). It takes `workflow`, and
+  optionally `project` (a registered id), `node` (a leader or worker of it to
+  talk to and wait on), `inputs`, `wait` (`run`, `node` or `none`), `ref`,
+  `timeout` and `maxMessages`. `workflow`, `project`, `ref` and `inputs` are
+  templates.
 - **Control:** `control.split`, `control.join` (all, any or n),
   `control.router`. Loops are edges with `maxRounds`, not a node.
 - **Human:** `human.gate`.

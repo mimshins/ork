@@ -1,13 +1,13 @@
 /**
  * @file The run lifecycle map's connections. Edges inside the run graph are the
  *   example's flow edges, drawn as in-process routing by the scheduler. Lanes
- *   in use: `x` 290 from you up to `ork run`; `x` 570 from the scheduler up to
- *   `spec`; `x` 1355 for the review loop on the right of the graph; `y` 530
- *   under the reviewers for their message channel; `y` 950 and 975 under every
- *   card.
+ *   in use: `x` 290 from you up to `ork run`; `x` 550 from the scheduler down
+ *   to called runs; `x` 570 from the scheduler up to `spec`; `x` 1355 for the
+ *   review loop on the right of the graph; `y` 530 under the reviewers for
+ *   their message channel; `y` 950 and 975 under every card.
  */
 
-import { DESIGN, SCHEMA, STORE } from "../refs.js";
+import { CALLS, DESIGN, SCHEMA, STORE } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
 
@@ -67,6 +67,30 @@ export const EDGES = [
     detail: "Starts, reports, routing, rounds, usage, messages and decisions.",
     status: "built",
     docs: [DESIGN.eventStore, STORE.recorder],
+  },
+  {
+    id: "scheduler-called",
+    from: "scheduler",
+    to: "called",
+    kind: "process",
+    label: "a `workflow.call`",
+    detail:
+      "Each activation of a `workflow.call` starts a separate `ork run`, and waits as the node says. Not in this example.",
+    via: [
+      [550, 470],
+      [550, 736],
+    ],
+    docs: [CALLS.spec],
+  },
+  {
+    id: "called-events",
+    from: "called",
+    to: "events",
+    kind: "event",
+    label: "`call.started`",
+    detail:
+      "The caller records each run a call started, which `ork resume` reads. The called run's own events are its own.",
+    docs: [CALLS.tests],
   },
   {
     id: "spec-builder",
@@ -244,5 +268,6 @@ export const EDGES = [
     detail: "On the run's terminal or in `ork decide`; the UI inbox in M2.",
     status: "partial",
     docs: [DESIGN.messaging],
+    via: [[150, 876]],
   },
 ];

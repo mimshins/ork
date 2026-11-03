@@ -9,6 +9,7 @@
  */
 
 import {
+  CALLS,
   CORE,
   ENGINE,
   NODE_TYPES,
@@ -23,7 +24,7 @@ import {
 /** @typedef {import("../types.js").Group} Group */
 
 /** The map's extent, in map units. */
-export const SIZE = { w: 1920, h: 640 };
+export const SIZE = { w: 1920, h: 770 };
 
 /**
  * The columns, left to right.
@@ -355,6 +356,31 @@ export const NODES = [
       "`ork migrate --from-agents` drafts every agent after the first this way.",
     ],
     docs: [ROLES.workspace, ROLES.worktreeTests, ROLES.continueAdr],
+  },
+
+  {
+    id: "call",
+    title: "Call",
+    sub: "another workflow, its own run",
+    zone: "flow",
+    x: 320,
+    y: 630,
+    status: "built",
+    pkg: "nodes",
+    src: "packages/nodes/src/call.ts",
+    summary:
+      "A `workflow.call` anywhere in the flow: it starts a workflow as a separate run, and edges read what comes back. It holds no session and no worktree, so `limits.concurrency` does not count it, but it spends from the run's budget.",
+    facts: [
+      "It takes `workflow`, and optionally `project`, `node`, `inputs`, `wait`, `ref`, `timeout` and `maxMessages`.",
+      "It cannot have a `parent` (`call.parent`): a leader delegates to children, and calls are the flow's.",
+      "Without `node`, each activation is a new run, so they can run in parallel. With `node`, it keeps one run as a conversation, and its activations take turns.",
+      "It fails when the run did not succeed or refused to start, so a `when:` edge can handle that.",
+    ],
+    see: [
+      { map: "architecture", node: "calls", label: "Workflow calls" },
+      { map: "messaging", node: "callCh", label: "A channel to a call" },
+    ],
+    docs: [CALLS.node, CALLS.tests, CALLS.compile, CALLS.spec],
   },
 
   // ── In the tree ─────────────────────────────────────────────

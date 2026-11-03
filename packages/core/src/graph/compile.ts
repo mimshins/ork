@@ -12,6 +12,7 @@ import {
   checkRules,
   type ProjectOptions,
 } from "../project/rules.ts";
+import { checkCalls } from "./calls.ts";
 import { error, warning } from "./diagnostics.ts";
 import {
   checkCycles,
@@ -51,6 +52,7 @@ export const compileWorkflow = (
     ...flow.diagnostics,
     ...checkCycles(workflow, edges),
     ...checkNodes(workflow, edges),
+    ...checkCalls(workflow),
     ...checkReferences(workflow, edges),
     ...channels.diagnostics,
     ...checkRules(workflow),

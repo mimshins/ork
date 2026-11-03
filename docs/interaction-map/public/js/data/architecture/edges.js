@@ -1,17 +1,20 @@
 /**
- * @file The architecture map's connections. Lanes in use: `x` 570 and 580
- *   between the surfaces and the engine; `x` 834, 848 and 862 between the
- *   engine's two columns; `x` 1130 between the engine and your machine; `y` 456
+ * @file The architecture map's connections. Lanes in use: `x` 554, 562, 570 and
+ *   580 between the surfaces and the engine; `x` 826, 834, 840, 848 and 862
+ *   between the engine's two columns; `x` 1112 down the engine's right, from
+ *   the bus to the links; `x` 1130 between the engine and your machine; `y` 456
  *   above the message bus; `x` 1410 and 1690 in the runtime. The rows at y 360,
  *   480 and 600 of "Your machine" stay empty so the engine and the runtime can
  *   reach each other straight across.
  */
 
 import {
+  CALLS,
   CLI,
   CONTEXT,
   CORE,
   DESIGN,
+  LINKS,
   README,
   SCHEMA,
   SERVER,
@@ -141,6 +144,21 @@ export const EDGES = [
     docs: [SERVER.streams, DESIGN.messaging],
   },
 
+  {
+    id: "cli-links",
+    from: "cli",
+    to: "links",
+    kind: "local",
+    label: "`ork relay`",
+    detail:
+      "Only you make links, from `ork relay` or the server's `POST /api/links`. Both nodes must be leaders or workers of live runs whose rules allow links.",
+    via: [
+      [554, 424],
+      [554, 1250],
+    ],
+    docs: [LINKS.command, LINKS.spec],
+  },
+
   // ── Inside the engine ────────────────────────────────────────────────────
   {
     id: "compiler-schema",
@@ -181,9 +199,9 @@ export const EDGES = [
     from: "scheduler",
     to: "nodeTypes",
     kind: "local",
-    label: "Claude, tool, gate nodes",
+    label: "Claude, tool, gate, call nodes",
     detail:
-      "The scheduler runs each activation through its node type's executor: a Claude session, a tool node's command, a gate's question. Joins, routers and splits are the scheduler's own.",
+      "The scheduler runs each activation through its node type's executor: a Claude session, a tool node's command, a gate's question, a call's run. Joins, routers and splits are the scheduler's own.",
     via: [
       [834, 428],
       [834, 1116],
@@ -231,6 +249,97 @@ export const EDGES = [
       "A notice reaches the receiving session at its next step, mid-turn, never in the middle of a tool call.",
     status: "built",
     docs: [DESIGN.messaging],
+  },
+
+  {
+    id: "nodes-calls",
+    from: "nodeTypes",
+    to: "calls",
+    kind: "local",
+    label: "`calls.invoke`",
+    detail:
+      "The `workflow.call` executor renders the workflow, project, inputs and ref from the run, and hands them to the run's call port.",
+    via: [[860, 1136]],
+    docs: [CALLS.node],
+  },
+  {
+    id: "scheduler-calls",
+    from: "scheduler",
+    to: "calls",
+    kind: "local",
+    label: "budget · stop all",
+    detail:
+      "No call starts once the budget is spent, and a call passes on what is left. Stopping the run, or an expired run timeout, stops every run it called and is still running.",
+    via: [
+      [800, 446],
+      [826, 446],
+      [826, 1100],
+    ],
+    docs: [CALLS.spec],
+  },
+  {
+    id: "calls-cli",
+    from: "calls",
+    to: "cli",
+    kind: "process",
+    label: "starts `ork run`, detached",
+    detail:
+      "Each new run is its own process, with `--called-by`, `--budget-cap` and `--base-ref`. It refuses to start on what `ork run` refuses, such as a dirty tree, and the node fails with the reason.",
+    via: [
+      [562, 1100],
+      [562, 410],
+    ],
+    docs: [CALLS.start, CALLS.host],
+  },
+  {
+    id: "calls-events",
+    from: "calls",
+    to: "eventStore",
+    kind: "event",
+    label: "`parent` · `depth`",
+    detail:
+      "The called run's record says who called it and how deep. The caller records `call.started`, which is how `ork resume` finds that run again. A waiting call follows the run's events over its socket, falling back to the store.",
+    docs: [CALLS.wait, CALLS.tests],
+  },
+  {
+    id: "calls-links",
+    from: "calls",
+    to: "links",
+    kind: "local",
+    label: "links a channel",
+    detail:
+      "Starting a call that names a `node` links that node to this run's nodes on a channel to the call. Links are ended when the caller stops; a run joined only with `ork relay` is left alone.",
+    via: [[780, 1228]],
+    docs: [CALLS.talk],
+  },
+  {
+    id: "bus-links",
+    from: "messageBus",
+    to: "links",
+    kind: "local",
+    label: "to `<run>/<node>`",
+    detail:
+      "The sender's run checks the link, records `message.sent`, and writes a `relay` command for the other run. A message from the other side comes back the same way, into this run's bus.",
+    both: true,
+    via: [
+      [1112, 530],
+      [1112, 1236],
+    ],
+    docs: [LINKS.relay, LINKS.tests],
+  },
+  {
+    id: "links-events",
+    from: "links",
+    to: "eventStore",
+    kind: "local",
+    label: "a row · a command",
+    detail:
+      "The link is a row in the `links` table. A `relay` or `notice` command is a row for the other run, followed by a wake on its socket.",
+    via: [
+      [840, 1210],
+      [840, 1016],
+    ],
+    docs: [LINKS.store, LINKS.control],
   },
 
   // ── Engine to your machine ───────────────────────────────────────────────

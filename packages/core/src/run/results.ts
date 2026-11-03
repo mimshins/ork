@@ -8,6 +8,7 @@
 import { isClaudeNode, type Node, type NodeType } from "@krapht/ork-schema";
 
 import type { AgentRef } from "../agents/apply.ts";
+import { parseTemplate, renderTemplate, type Scope } from "../expr/evaluate.ts";
 import type { CompiledGraph } from "../graph/types.ts";
 import type { Activation, RunOptions } from "./handle.ts";
 import type {
@@ -126,6 +127,7 @@ export const runResult = (run: {
   nodes: NodeSummary[];
   reasons: string[];
   worktrees: KeptWorktree[];
+  outputs?: Record<string, string> | undefined;
 }): RunResult => ({
   runId: run.runId,
   status: run.stopped ?? (run.reasons.length > 0 ? "failed" : "succeeded"),
@@ -133,7 +135,25 @@ export const runResult = (run: {
   nodes: run.nodes,
   reasons: run.reasons,
   worktrees: run.worktrees,
+  ...(run.outputs === undefined ? {} : { outputs: run.outputs }),
 });
+
+/** A workflow's `outputs`, rendered as the run ends. */
+export const renderOutputs = (
+  outputs: Record<string, string> | undefined,
+  scope: Scope,
+): Record<string, string> | undefined =>
+  outputs === undefined
+    ? undefined
+    : Object.fromEntries(
+        Object.entries(outputs).map(([name, text]) => {
+          const template = parseTemplate(text);
+          return [
+            name,
+            template.ok ? renderTemplate(template.parts, scope) : text,
+          ];
+        }),
+      );
 
 /** Closes the run's worktrees; a failure is one more reason, not a crash. */
 export const closeWorkspace = (

@@ -62,6 +62,7 @@ export const nodeContext = (
     human: deps.human,
     hold: deps.holds.forNode(id, template),
     ...deps.ports.forNode(id, template, cwd),
+    ...(options.calls === undefined ? {} : { calls: options.calls }),
     emit: event => {
       options.onEvent({ type: "node.event", id, event });
     },

@@ -1306,6 +1306,78 @@
               "options"
             ],
             "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "workflow.call"
+              },
+              "parent": {
+                "description": "Owner of this node in the ownership tree.",
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              },
+              "label": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "workflow": {
+                "type": "string",
+                "description": "The workflow's name, as in its project's workflows folder."
+              },
+              "project": {
+                "description": "A registered project's id. Default: this project.",
+                "type": "string"
+              },
+              "node": {
+                "description": "A leader or worker of the called workflow to talk to and wait on; the call then keeps one run as a conversation.",
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              },
+              "inputs": {
+                "description": "The called workflow's inputs. Supports templates.",
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "wait": {
+                "description": "When this node finishes: the run has ended (default without `node`), the node has reported (default with `node`), or as soon as the run has started.",
+                "type": "string",
+                "enum": [
+                  "run",
+                  "node",
+                  "none"
+                ]
+              },
+              "ref": {
+                "description": "What the called run's worktrees start from, e.g. {{nodes.build.output.branch}}.",
+                "type": "string"
+              },
+              "timeout": {
+                "description": "How long the call may take, e.g. 30m; then the called run is stopped and the node fails.",
+                "type": "string",
+                "pattern": "^\\d+[smh]$"
+              },
+              "maxMessages": {
+                "description": "Ask the user whether to go on after this many messages.",
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "type",
+              "workflow"
+            ],
+            "additionalProperties": false
           }
         ]
       }
@@ -1396,6 +1468,16 @@
           "between"
         ],
         "additionalProperties": false
+      }
+    },
+    "outputs": {
+      "description": "What a workflow.call of this workflow can read, as templates over its nodes, rendered when the run ends.",
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string"
       }
     }
   },

@@ -129,6 +129,9 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   their own logins; `profile` and `region` become `--profile` and `--region`.
   The output is `exitCode`, `stdout`, `stderr`; over 64 KiB, a stream is cut and
   the full text is written to `.ork/runs/<run>/<node>.<round>.<stream>.txt`.
+- **`workflow.call`** ([call.ts](../packages/nodes/src/call.ts)): starts a
+  workflow as a separate run and waits as it says
+  ([calling workflows](./scheduler/calls.md)).
 - **`human.gate`** ([gate.ts](../packages/nodes/src/gate.ts)): asks the rendered
   `question`; with `timeout` and `default`, the default answers when the time is
   up and the question is withdrawn. The output is `choice` and `answeredBy`
@@ -137,12 +140,12 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 ## Budget and concurrency
 
 - `limits.budgetUsd` caps the run: each session gets
-  `min(node budget, what is left)`, and once it is spent no session starts and
-  the run ends `budget_exhausted`.
+  `min(node budget, what is left)`, and once it is spent no session or
+  [call](./scheduler/calls.md) starts and the run ends `budget_exhausted`.
 - `limits.concurrency` (default 4) caps the Claude sessions running at once;
   other nodes are not limited.
-- `interrupt()` stops starting nodes, aborts the running ones, and ends the run
-  `interrupted`.
+- `interrupt()` stops starting nodes, aborts the running ones, stops the runs
+  its calls started, and ends the run `interrupted`.
 
 ## Timeouts
 
@@ -150,10 +153,10 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 [tests](../packages/core/test/timeouts.test.ts),
 [ADR-043](../decisions/ADR-043-timeouts.md).
 
-- `timeout` on a tool node, `claude.leader` or `claude.worker` limits each
-  activation, from when its executor starts; `defaults.timeout` applies to those
-  that set none; `limits.timeout` limits the run. None is set unless a workflow
-  sets it.
+- `timeout` on a tool node, `claude.leader`, `claude.worker` or `workflow.call`
+  limits each activation, from when its executor starts; `defaults.timeout`
+  applies to those that set none; `limits.timeout` limits the run. None is set
+  unless a workflow sets it.
 - **The clock measures work.** It stands still while the node is paused or has a
   question or permission prompt open, and while a node it owns does. A run's
   stands still while it is paused, or anything in it waits on the user.
@@ -171,6 +174,7 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 
 ## Contents
 
+- [Calling workflows](./scheduler/calls.md)
 - [Resuming a run, and run events](./scheduler/resuming-and-events.md)
   - [Resuming a run](./scheduler/resuming-and-events.md#resuming-a-run)
   - [Run events](./scheduler/resuming-and-events.md#run-events)
