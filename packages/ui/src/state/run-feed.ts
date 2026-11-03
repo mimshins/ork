@@ -2,8 +2,9 @@
  * @file One run's events in a container: the newest page first, then its stream
  *   from there, and older or newer pages on request. Frames are gathered and
  *   written together, so a burst is one change and not one render per event.
- *   After a dropped stream the next one starts after the last event seen, and
- *   the store is the truth: nothing here is written but what the server sent.
+ *   Its tail keeps moving while the window holds still. After a dropped stream
+ *   the next one starts after the last event seen, and the store is the truth:
+ *   nothing here is written but what the server sent.
  */
 
 import {
@@ -34,6 +35,11 @@ export type FeedLink = "idle" | "loading" | "live" | "lost" | "ended";
 
 export type RunEvents = EventWindow & {
   link: FeedLink;
+  /**
+   * The newest events, moving even while the window holds still, for what must
+   * keep up when someone reads back in another panel.
+   */
+  tail: readonly StoredEvent[];
   /** Why its stream ended, once it has. */
   ended: RunStreamEvents["end"]["reason"] | null;
   /** A page is being read. */
@@ -57,6 +63,7 @@ const RELOAD_MS = 1000;
 export const createRunFeed = ({ runId, client, open }: RunFeedOptions) => {
   const state = Container.create<RunEvents>({
     ...EMPTY_WINDOW,
+    tail: [],
     link: "idle",
     ended: null,
     paging: false,
@@ -93,6 +100,7 @@ export const createRunFeed = ({ runId, client, open }: RunFeedOptions) => {
     }
     change({
       ...apply(state.getValue(), answer.data),
+      ...(query.last === undefined ? {} : { tail: answer.data }),
       paging: false,
       error: null,
     });
@@ -117,7 +125,15 @@ export const createRunFeed = ({ runId, client, open }: RunFeedOptions) => {
     if (pending.length === 0) return;
     const batch = pending;
     pending = [];
-    change(withLive(state.getValue(), batch));
+    const current = state.getValue();
+    const last = current.tail.at(-1)?.seq ?? 0;
+    change({
+      ...withLive(current, batch),
+      tail: [
+        ...current.tail,
+        ...batch.filter(stored => stored.seq > last),
+      ].slice(-PAGE_SIZE),
+    });
     void catchUp();
   };
 

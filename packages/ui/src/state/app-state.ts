@@ -188,6 +188,9 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
         params: { id: runId },
         body: node === undefined ? {} : { node },
       }),
+    /** Writes to a node of a live run; it comes back on the run's stream. */
+    sendMessage: (runId: string, node: string, body: string) =>
+      client.call("message", { params: { id: runId }, body: { node, body } }),
     /** Answers a decision; it then leaves the open list on the stream. */
     answerDecision: (id: string, choose: string) =>
       client.call("answer", { params: { id }, body: { choose } }),

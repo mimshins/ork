@@ -3,9 +3,9 @@
 _Part of [The UI](../ui.md)._
 
 Status: **In progress.** Built: the Runs panel, the Run workflow dialog, the
-Monitor, Logs and Decisions ([panels](../../packages/ui/src/panels/),
-[tests](../../packages/ui/test/panels/)). Chats and Notifications are planned,
-and each names the `ork` command to use until then.
+Monitor, Logs, Decisions and Chats ([panels](../../packages/ui/src/panels/),
+[tests](../../packages/ui/test/panels/)). Notifications is planned, and names
+the `ork` command to use until then.
 
 ## Contents
 
@@ -14,6 +14,7 @@ and each names the `ork` command to use until then.
 - [Monitor](#monitor)
 - [Logs](#logs)
 - [Decisions](#decisions)
+- [Chats](#chats)
 
 ## Runs
 
@@ -107,8 +108,7 @@ Its CLI twin is `ork tree <run>`.
   focus then lands on the opened run's heading, since the button that had it is
   gone (WCAG 2.4.3).
 
-Selecting a node is shared with the other panels: Logs follows it, and Chats
-will when it is built.
+Selecting a node is shared with the other panels: Logs and Chats follow it.
 
 ## Logs
 
@@ -150,3 +150,24 @@ is `ork decide`, and each option's tooltip gives `ork decide <run> --id <id>
 - **Settled** lists what has left the open list while the page watched, with who
   answered: in the run's terminal, with `ork decide` or in `ork ui`
   (`GET /api/decisions/:id`, [L66](../gaps/limits.md)). Each is also said aloud.
+
+## Chats
+
+One thread per leader or worker of the selected run, built from its events
+([panel](../../packages/ui/src/panels/chats-panel.tsx),
+[tests](../../packages/ui/test/panels/chats-panel.test.tsx)). Its CLI twin is
+`ork chat <run> <node>`.
+
+- **The node** is the shared selection. With none chosen, or one with no
+  session, it shows the first that has one.
+- **A thread** names who said each thing: the node, you, or a peer writing to
+  it, with what the node did between in a quieter line. It is a log, so a screen
+  reader hears what is added, and it stays on the newest unless scrolled up.
+- **Writing:** `Enter` sends and `Shift+Enter` starts a new line, on a running
+  run. The text stays until the server has taken it and a refusal stays beside
+  it. The message itself arrives on the stream, saying how it was delivered.
+- **Otherwise:** a paused run says to continue it. A run that has ended gives
+  the `ork chat` command, ready to copy, since the API does not resume a
+  session.
+- **While Logs holds still,** the thread reads the feed's tail, the newest 500
+  events, so replies keep arriving ([L67](../gaps/limits.md)).

@@ -17,6 +17,7 @@ import {
   IconNotifications,
   IconRuns,
 } from "../components/icons.tsx";
+import { ChatsPanel } from "../panels/chats-panel.tsx";
 import { DecisionsPanel } from "../panels/decisions-panel.tsx";
 import { LogsPanel } from "../panels/logs-panel.tsx";
 import { MonitorPanel } from "../panels/monitor-panel.tsx";
@@ -70,7 +71,7 @@ const SPECS: Record<PanelId, PanelSpec> = {
     id: "chats",
     title: "Chats",
     Icon: IconChats,
-    Body: notBuilt("ork chat <run> <node>"),
+    Body: ChatsPanel,
   },
   notifications: {
     id: "notifications",

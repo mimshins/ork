@@ -182,6 +182,15 @@ describe("a run's feed", () => {
     expect(seqs()).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
+  it("keeps its tail moving while the window holds still", async () => {
+    const { feed, seqs } = await started(span(1, 3));
+    feed.hold();
+    sendAll(4, 5);
+    await vi.advanceTimersByTimeAsync(FLUSH_MS);
+    expect(seqs()).toEqual([1, 2, 3]);
+    expect(seqsOf(feed.state.getValue().tail)).toEqual([1, 2, 3, 4, 5]);
+  });
+
   it("follows again and joins new events", async () => {
     const { feed, server, seqs } = await started();
     feed.hold();

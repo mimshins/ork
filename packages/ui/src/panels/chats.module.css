@@ -1,0 +1,150 @@
+/**
+ * @file The look of the Chats panel. Each message names who said it, and yours
+ *   and others' also differ by their edge, so nothing rests on color or position.
+ */
+
+.panel {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.tools {
+  border-block-end: var(--hairline) solid var(--panel-border);
+  padding: var(--gap-tight) var(--gap);
+}
+
+.thread {
+  flex: 1 1 5rem;
+  min-height: 5rem;
+  overflow-y: auto;
+  padding: var(--gap);
+}
+
+.thread:focus-visible {
+  outline-offset: calc(var(--focus-width) * -1);
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.message {
+  border-inline-start: var(--focus-width) solid var(--color-border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-hair);
+  padding-inline-start: var(--gap);
+}
+
+.message[data-kind="you"] {
+  border-inline-start-color: var(--panel-tab-indicator);
+}
+
+.message[data-kind="peer"] {
+  border-inline-start-style: dashed;
+}
+
+.meta {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-tight);
+  margin: 0;
+}
+
+.speaker {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-weight: var(--weight-medium);
+}
+
+.time,
+.note {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+}
+
+.text {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.activity {
+  align-items: baseline;
+  color: var(--color-text-muted);
+  display: flex;
+  font-size: var(--text-small);
+  gap: var(--gap-tight);
+  justify-content: space-between;
+}
+
+.activityText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.composer {
+  border-block-start: var(--hairline) solid var(--panel-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+  padding: var(--gap-tight) var(--gap);
+}
+
+/* It grows with what is written, where the browser can, up to a few lines. */
+.composer:focus {
+  outline: none;
+}
+
+.box {
+  background: var(--field-bg);
+  border: var(--hairline) solid var(--field-border);
+  border-radius: var(--radius-control);
+  color: var(--field-text);
+  field-sizing: content;
+  flex: 1;
+  font: inherit;
+  max-height: 8rem;
+  min-height: var(--control-height);
+  min-width: 0;
+  padding: var(--gap-hair) var(--inset-control);
+  resize: none;
+}
+
+.labelRow {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  justify-content: space-between;
+}
+
+.send {
+  align-items: flex-end;
+  display: flex;
+  gap: var(--gap-tight);
+}
+
+.hint,
+.why {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+  margin: 0;
+}
+
+.refusal {
+  color: var(--color-danger-text);
+  margin: 0;
+  overflow-wrap: anywhere;
+}

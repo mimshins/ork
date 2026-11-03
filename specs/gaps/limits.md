@@ -228,3 +228,8 @@ How something built works for now, by choice.
   holds what left the open list while the page watched, the newest 20, so a
   reload empties it and a decision answered while no page was open never
   appears. The run's log still has them. ([panels](../ui/panels.md#decisions))
+- **L67 · A thread shows what is loaded.** Chats reads the run's window of
+  events, the newest 2000, or the newest 500 while Logs holds it still. On a
+  long run the start of a conversation can be out of reach; `ork logs --node`
+  has it all. The server has no read of one node's events.
+  ([panels](../ui/panels.md#chats))

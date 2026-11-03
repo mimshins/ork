@@ -169,7 +169,8 @@ worker:
 - **A finished run:** the node's last session is resumed in the folder it ran in
   (`session.started` records it, and the driver) with the message as the next
   turn; its events and `user.message` (`delivered: resumed`) are added to the
-  run's record after `run.finished`. The UI chat panel (M2) does the same.
+  run's record after `run.finished`. The UI's Chats panel gives this command for
+  a finished run, since the API does not resume one ([server](./server.md)).
 
 ## Contents
 
