@@ -646,10 +646,14 @@ export const MILESTONES = [
       {
         id: "script-access",
         title: "Scripts that reach the run",
-        status: "next",
+        status: "active",
         detail:
-          "Tool nodes know their run and node, read their output as JSON, and can send a message, and a workflow can declare a message when a node finishes, so deterministic work takes no model turn. Needs an RFC for the messaging part.",
-        docs: ["specs/messaging.md", "specs/workflow-format.md"],
+          "Tool nodes know their run and node, take an `env:`, and return JSON a `when:` can read (built). Next, they can send a message, and a workflow can declare a message when a node finishes, so deterministic work takes no model turn. The messaging part needs an RFC.",
+        docs: [
+          "decisions/ADR-047-script-identity-env-json.md",
+          "specs/messaging.md",
+          "specs/workflow-format.md",
+        ],
       },
       {
         id: "quotas",
@@ -771,6 +775,7 @@ export const OFF_ROADMAP = [
   "bad987b",
   "713f18b",
   "9ac26f2",
+  "a70514f",
 ];
 
 /** The day the roadmap was last brought up to date. */

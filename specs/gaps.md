@@ -48,11 +48,8 @@ Each is in [Limits](./gaps/limits.md), from L2 on.
   1.3.0 from the 7-day rule, by exact version, at their author's choice. Remove
   the list from 2026-11-10; the versions then satisfy the rule.
   ([ADR-002](../decisions/ADR-002-typescript-from-source.md))
-- **C10 · The format spec names `env:` references that do not exist.**
-  [Workflow format](./workflow-format.md) says secrets are only `env:`
-  references, but no node has an `env` field. Build the field or correct the
-  sentence.
 
 ## Contents
 
 - [Limits](./gaps/limits.md)
+- [Limits: scripts](./gaps/limits-scripts.md)

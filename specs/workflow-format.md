@@ -21,7 +21,7 @@ Status: **Built**: the Zod model, edge shorthand, canonical YAML, diagnostics,
 - Stable node ids.
 - Deterministic key order.
 - No absolute paths.
-- Secrets only as `env:` references.
+- Secrets only as `{{env.NAME}}` references in a tool node's `env:`.
 - `schemaVersion` with migrations.
 - A published JSON Schema for editor autocomplete.
 
@@ -75,6 +75,12 @@ edges:
     outputs `staged` (`git diff --cached --stat`), `diff` (the staged patch) and
     `head` (the commit `HEAD` names) besides `exitCode`, `stdout` and `stderr`,
     so a gate after an `add` step shows what a commit will commit.
+  - `env:` sets the program's variables. Values are templates, and only they may
+    read the user's own variables, as `{{env.NAME}}`. Keys starting `ORK_` are
+    refused; those are [Ork's own](./scheduler.md#built-in-node-types).
+  - `output: { format: json }` says the program returns JSON, read as
+    `output.json`: the file at `$ORK_OUTPUT` if it wrote one, otherwise its
+    stdout.
 - **Calls:** `workflow.call` starts a workflow as a separate run, in this
   project or a registered one, waits as it says, and hands back its outputs
   ([calling workflows](./scheduler/calls.md)). It takes `workflow`, and

@@ -3,10 +3,11 @@
  *   `tool.aws`, `tool.git`, `tool.shell`, …): the user's own program, run
  *   without a shell, checked against `allow` (or the integration's default),
  *   its arguments and observed output fields from the integration's adapter,
- *   long output kept in run files.
+ *   long output kept in run files. It sees who it is and the node's `env:`
+ *   (`tool-env.ts`), and may return JSON (`tool-output.ts`).
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import {
@@ -20,13 +21,27 @@ import {
 import { integrationFor } from "@krapht/ork-integrations";
 import { isToolNode, type ToolNode } from "@krapht/ork-schema";
 
+import {
+  type Environ,
+  identityOf,
+  OUTPUT_ENV,
+  renderEnv,
+  scrubberOf,
+} from "./tool-env.ts";
+import { prepareOutputFile, readJsonOutput } from "./tool-output.ts";
+
 export type ToolRun = { exitCode: number; stdout: string; stderr: string };
 
 /** Starts a program with arguments, never through a shell. */
 export type ToolRunner = (
   program: string,
   args: readonly string[],
-  options: { cwd: string; signal: AbortSignal },
+  options: {
+    cwd: string;
+    signal: AbortSignal;
+    /** Set for this program, over what it inherits. */
+    env?: Readonly<Record<string, string>>;
+  },
 ) => Promise<ToolRun>;
 
 /** How much of stdout and stderr a node's output keeps. */
@@ -161,7 +176,10 @@ const failed = (error: string): NodeResult => ({
 
 /** Runs a user's CLI through its integration's adapter, with its own login. */
 export const toolExecutor =
-  (runner: ToolRunner): NodeExecutor =>
+  (
+    runner: ToolRunner,
+    options: { orkBin?: string; environ?: Environ } = {},
+  ): NodeExecutor =>
   async context => {
     const { node } = context;
     if (!isToolNode(node)) return failed(`${context.id} is not a tool node`);
@@ -185,21 +203,44 @@ export const toolExecutor =
       if (!rendered.ok) return failed(rendered.error);
       cwd = path.resolve(context.cwd, rendered.value);
     }
+    const nodeEnv = renderEnv(node, context, options.environ ?? process.env);
+    if (!nodeEnv.ok) return failed(nodeEnv.error);
+    const scrub = scrubberOf(nodeEnv.secrets);
+    const outputFile =
+      node.output?.format === "json"
+        ? prepareOutputFile(context.runDir, context.id, context.round)
+        : undefined;
+    const env = {
+      ...nodeEnv.values,
+      ...identityOf(context, options.orkBin),
+      ...(outputFile === undefined ? {} : { [OUTPUT_ENV]: outputFile }),
+    };
+    const names = Object.keys(nodeEnv.values);
     context.emit({
       type: "tool.called",
       id: context.id,
       name: command.program,
-      input: { command: [command.program, ...command.args].join(" ") },
+      input: {
+        command: [command.program, ...command.args].join(" "),
+        ...(names.length === 0 ? {} : { env: names }),
+      },
     });
-    const run = await runner(command.program, command.args, {
+    const raw = await runner(command.program, command.args, {
       cwd,
       signal: context.signal,
+      env,
     });
+    const run = {
+      exitCode: raw.exitCode,
+      stdout: scrub(raw.stdout),
+      stderr: scrub(raw.stderr),
+    };
     const observed =
       (await integration?.observe?.read(async args => {
         const seen = await runner(command.program, args, {
           cwd,
           signal: context.signal,
+          env,
         });
         return { ok: seen.exitCode === 0, stdout: seen.stdout };
       })) ?? {};
@@ -219,13 +260,30 @@ export const toolExecutor =
       stderr: capped(run.stderr, keep("stderr", run.stderr)),
     };
     for (const [field, text] of Object.entries(observed)) {
-      output[field] = capped(text, keep(field, text));
+      output[field] = capped(scrub(text), keep(field, scrub(text)));
     }
+    if (outputFile !== undefined && run.exitCode !== 0) {
+      rmSync(outputFile, { force: true });
+    }
+    const json =
+      outputFile === undefined || run.exitCode !== 0
+        ? null
+        : readJsonOutput({
+            file: outputFile,
+            stdout: raw.stdout,
+            scrub,
+            limit: OUTPUT_LIMIT,
+            keep: text => keep("json", text)(),
+          });
     context.emit({
       type: "tool.result",
       id: context.id,
-      isError: run.exitCode !== 0,
+      isError: run.exitCode !== 0 || json?.ok === false,
     });
+    if (json?.ok === false) {
+      return { ok: false, output, error: `${context.id}: ${json.error}` };
+    }
+    if (json !== null) output["json"] = json.json;
     if (run.exitCode === 0) return { ok: true, output };
     const last = run.stderr.trim().split("\n").at(-1) ?? "";
     return {

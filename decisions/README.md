@@ -78,3 +78,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [044](./ADR-044-relay-between-runs.md)             | Nodes of different runs message each other over a relay in the store        |
 | [046](./ADR-046-usage-ledger-and-prune.md)         | A usage ledger beside the events, and pruning by hand                       | Accepted          |
 | [045](./ADR-045-workflows-calling-workflows.md)    | A workflow calls another as its own run, through a node                     | Accepted          |
+| [047](./ADR-047-script-identity-env-json.md)       | Tool nodes know who they are, take an environment, and return JSON          | Accepted          | waived                                                      |

@@ -109,11 +109,11 @@ deploy:
   region: eu-west-1 # becomes --region
 ```
 
-There is no shell: the command is split into arguments like a shell would, and
-each `{{ }}` value stays one argument, so a value can never inject another
-command. With `allow`, the command must start with one of its prefixes or the
-node fails before it runs. A tool node outputs `exitCode`, `stdout` and
-`stderr`; long output is cut, and the full text is kept under `.ork/runs/`.
+There is no shell: the command is split like a shell would, and each `{{ }}`
+value stays one argument, so a value can never inject another command. With
+`allow`, the command must start with one of its prefixes or the node fails
+before it runs. A tool node outputs `exitCode`, `stdout` and `stderr`, and can
+return [JSON](./scripts.md); long output is cut, the rest kept in `.ork/runs/`.
 
 ### Gates
 

@@ -10,6 +10,7 @@ import path from "node:path";
 import { integrationFor } from "@krapht/ork-integrations";
 import { isToolNode, type Workflow } from "@krapht/ork-schema";
 
+import { envReadsOf, type Environ } from "./tool-env.ts";
 import { tokenize } from "./tools.ts";
 
 export type NeededProgram = { node: string; type: string; program: string };
@@ -32,6 +33,36 @@ export const neededPrograms = (workflow: Workflow): NeededProgram[] =>
       ? []
       : [{ node: id, type: node.type, program: first }];
   });
+
+/** The `{{env.NAME}}` a workflow reads that are not set, with their nodes. */
+export const missingEnv = (
+  workflow: Workflow,
+  environ: Environ = process.env,
+): { variable: string; nodes: string[] }[] => {
+  const missing = new Map<string, Set<string>>();
+  for (const [id, node] of Object.entries(workflow.nodes)) {
+    if (!isToolNode(node)) continue;
+    for (const value of Object.values(node.env ?? {})) {
+      for (const name of envReadsOf(value)) {
+        if (environ[name] !== undefined) continue;
+        missing.set(name, (missing.get(name) ?? new Set()).add(id));
+      }
+    }
+  }
+  return [...missing].map(([variable, nodes]) => ({
+    variable,
+    nodes: [...nodes],
+  }));
+};
+
+/** Why a run refuses to start when a variable its nodes read is not set. */
+export const missingEnvMessage = (
+  missing: ReturnType<typeof missingEnv>,
+): string[] => [
+  "This workflow reads environment variables that are not set:",
+  ...missing.map(m => `  ${m.variable}, for ${m.nodes.join(", ")}`),
+  "Set them, and run it again.",
+];
 
 const runnable = (file: string): boolean => {
   try {

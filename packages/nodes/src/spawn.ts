@@ -8,6 +8,7 @@
 
 import { spawn } from "node:child_process";
 
+import { withoutIdentity } from "./tool-env.ts";
 import type { ToolRun, ToolRunner } from "./tools.ts";
 
 /** How long a program may take to end after SIGTERM. */
@@ -16,7 +17,7 @@ export const KILL_AFTER_MS = 2000;
 /** How long to wait for the pipes to close after SIGKILL. */
 const CLOSE_AFTER_MS = 500;
 
-export const spawnTool: ToolRunner = (program, args, { cwd, signal }) => {
+export const spawnTool: ToolRunner = (program, args, { cwd, signal, env }) => {
   if (signal.aborted) {
     return Promise.resolve({
       exitCode: -1,
@@ -31,6 +32,8 @@ export const spawnTool: ToolRunner = (program, args, { cwd, signal }) => {
     const child = spawn(program, args, {
       cwd,
       detached: true,
+      // An `ork` running in another run's node has that run's identity.
+      env: { ...withoutIdentity(process.env), ...env },
       stdio: ["ignore", "pipe", "pipe"],
     });
     const killGroup = (kill: NodeJS.Signals): void => {

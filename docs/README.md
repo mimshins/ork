@@ -21,6 +21,8 @@ them.
   conditions, loops and templates.
 - [Running workflows](./guides/running-workflows.md): `ork run`, the transcript,
   answering questions and permissions, one node on its own.
+- [Scripts in a workflow](./guides/scripts.md): JSON results, `env:`, and what a
+  program knows about its run.
 - [The browser view](./guides/browser-view.md): `ork ui`, its panels and keys,
   and the command that does the same as each action.
 - [Agents](./guides/agents.md): define who does the work once, give it to any

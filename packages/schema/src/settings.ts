@@ -7,6 +7,24 @@
 import { DRIVER_IDS } from "@krapht/ork-integrations";
 import { z } from "zod";
 
+/** A tool node's own environment variables, by name. */
+export const ToolEnvSchema = z
+  .record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/u), z.string())
+  .describe(
+    "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+  );
+
+/** How a tool node returns structured output. */
+export const ToolOutputSchema = z
+  .strictObject({
+    format: z
+      .literal("json")
+      .describe(
+        "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout.",
+      ),
+  })
+  .describe("Structured output from the program.");
+
 export const NodeIdSchema = z
   .string()
   .regex(

@@ -21,6 +21,18 @@ const codes = (text: string) =>
 const workflow = (body: string) =>
   `schemaVersion: 1\nname: t\ninputs:\n  feature:\n    type: string\n${body}`;
 
+/** The codes of what compiling this workflow finds. */
+const codesOf = (text: string) =>
+  compile(workflow(text)).diagnostics.map(d => d.code);
+
+/** A tool node with this `env:`. */
+const envOf = (env: string) => `nodes:
+  a:
+    type: tool.shell
+    command: prog
+    env: ${env}
+`;
+
 describe("compileWorkflow", () => {
   it("compiles the software-factory example with no diagnostics", () => {
     const example = readFileSync(
@@ -176,6 +188,70 @@ edges:
     expect(diagnostics.map(d => `${d.code} ${d.message}`)).toEqual([
       'ref.field "nodes.stage.output.nope": a tool.git reports exitCode, stdout, stderr, staged, diff, head',
     ]);
+  });
+
+  it("reads a tool node's JSON only when it says it has some", () => {
+    expect(
+      codesOf(`nodes:
+  pr: { type: tool.gh, command: pr view, output: { format: json } }
+  next: { type: tool.shell, command: "echo {{nodes.pr.output.json.state}}" }
+edges:
+  - { from: pr, to: next, when: "json.state == 'OPEN'" }
+`),
+    ).toEqual([]);
+    expect(
+      codesOf(`nodes:
+  pr: { type: tool.gh, command: pr view }
+  next: { type: tool.shell, command: "echo {{nodes.pr.output.json.state}}" }
+edges:
+  - { from: pr, to: next, when: "json.state == 'OPEN'" }
+`),
+    ).toEqual(["ref.json", "ref.json"]);
+  });
+
+  it("keeps the user's variables to a tool node's env", () => {
+    expect(
+      codesOf(`nodes:
+  a:
+    type: tool.shell
+    command: prog
+    env: { GH_TOKEN: "{{env.MY_TOKEN}}" }
+`),
+    ).toEqual([]);
+    expect(
+      codesOf(`nodes:
+  a: { type: tool.shell, command: "prog {{env.MY_TOKEN}}" }
+`),
+    ).toEqual(["template.env"]);
+    expect(
+      codesOf(`nodes:
+  a: { type: tool.shell, command: prog }
+outputs:
+  leak: "{{env.MY_TOKEN}}"
+`),
+    ).toEqual(["template.env"]);
+  });
+
+  it("checks a tool node's env names and values", () => {
+    expect(codesOf(envOf(`{ ORK_RUN: x }`))).toEqual(["env.reserved"]);
+    expect(codesOf(envOf(`{ API_KEY: abc123 }`))).toEqual(["env.literal"]);
+    expect(codesOf(envOf(`{ PATH: "{{run.id}}" }`))).toEqual([]);
+    expect(codesOf(envOf(`{ HOST: example.com }`))).toEqual([]);
+  });
+
+  it("warns when a run's data sets a name that changes which code runs", () => {
+    const { diagnostics } = compile(
+      workflow(`nodes:
+  b: { type: tool.shell, command: prog }
+  a:
+    type: tool.shell
+    command: prog
+    env: { NODE_OPTIONS: "{{nodes.b.output.stdout}}" }
+edges:
+  - b -> a
+`),
+    );
+    expect(diagnostics.map(d => d.code)).toEqual(["env.code"]);
   });
 
   it("checks joins, gates and channels", () => {

@@ -94,6 +94,7 @@ export const outputFieldsOf = (node: Node): readonly string[] | null => {
   if (isToolNode(node)) {
     return [
       ...TOOL_OUTPUT_FIELDS,
+      ...(node.output?.format === "json" ? ["json"] : []),
       ...(integrationFor(node.type)?.observe?.fields ?? []),
     ];
   }

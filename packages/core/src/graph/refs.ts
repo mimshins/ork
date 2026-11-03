@@ -3,16 +3,18 @@
  *   reads must exist and run first.
  */
 
-import type {
-  Diagnostic,
-  DiagnosticPath,
-  Node,
-  Workflow,
+import {
+  type Diagnostic,
+  type DiagnosticPath,
+  isToolNode,
+  type Node,
+  type Workflow,
 } from "@krapht/ork-schema";
 
 import { parseTemplate, SCOPE_ROOTS } from "../expr/evaluate.ts";
 import { collectPaths, type Expr } from "../expr/parse.ts";
 import { error, warning } from "./diagnostics.ts";
+import { checkToolEnv } from "./env.ts";
 import { ancestorsOf } from "./flow.ts";
 import { ownersOf } from "./tree.ts";
 import { type CompiledEdge, outputFieldsOf } from "./types.ts";
@@ -91,6 +93,15 @@ const checkField = (
 ): Diagnostic[] => {
   const known = outputFieldsOf(target);
   if (field === undefined || known === null) return [];
+  if (field === "json" && isToolNode(target) && !known.includes("json")) {
+    return [
+      error(
+        "ref.json",
+        `"${describePath(segments)}": this tool node has no JSON result; give it output: { format: json }`,
+        path,
+      ),
+    ];
+  }
   return known.includes(String(field))
     ? []
     : [
@@ -102,11 +113,23 @@ const checkField = (
       ];
 };
 
+/** Only `env:` may read the user's variables: a rendered command is recorded. */
+const envOutsideEnv = (
+  segments: readonly (string | number)[],
+  path: DiagnosticPath,
+): Diagnostic =>
+  error(
+    "template.env",
+    `"${describePath(segments)}": only a tool node's env: may read the user's variables, so a secret never reaches a recorded command`,
+    path,
+  );
+
 const checkTemplate = (
   id: string,
   field: string,
   text: string,
   context: Context,
+  readsEnv = false,
 ): Diagnostic[] => {
   const path = ["nodes", id, field];
   const parsed = parseTemplate(text);
@@ -132,6 +155,12 @@ const checkTemplate = (
     return collectPaths(part.expr).flatMap(segments => {
       const [root, name] = segments;
       if (root === "run") return [];
+      if (root === "env") {
+        if (!readsEnv) return [envOutsideEnv(segments, path)];
+        return name === undefined
+          ? [error("template.env", "name a variable: env.NAME", path)]
+          : [];
+      }
       if (root !== "inputs" && root !== "nodes") {
         return [
           error(
@@ -204,6 +233,13 @@ export const checkReferences = (
         )
       : [],
   );
+  const fromEnv = Object.entries(workflow.nodes).flatMap(([id, node]) =>
+    isToolNode(node)
+      ? Object.entries(node.env ?? {}).flatMap(([name, value]) =>
+          checkTemplate(id, `env.${name}`, value, context, true),
+        )
+      : [],
+  );
   const fromOutputs = Object.entries(workflow.outputs ?? {}).flatMap(
     ([name, value]) => {
       const parsed = parseTemplate(value);
@@ -215,7 +251,9 @@ export const checkReferences = (
         typeof part === "string"
           ? []
           : collectPaths(part.expr).flatMap(segments =>
-              checkAbsolute(segments, context, path),
+              segments[0] === "env"
+                ? [envOutsideEnv(segments, path)]
+                : checkAbsolute(segments, context, path),
             ),
       );
     },
@@ -225,5 +263,12 @@ export const checkReferences = (
       ? []
       : checkCondition(edge, edge.condition, context),
   );
-  return [...fromTemplates, ...fromCalls, ...fromOutputs, ...fromConditions];
+  return [
+    ...fromTemplates,
+    ...fromCalls,
+    ...fromEnv,
+    ...checkToolEnv(workflow),
+    ...fromOutputs,
+    ...fromConditions,
+  ];
 };

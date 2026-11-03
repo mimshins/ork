@@ -21,6 +21,8 @@ import {
   NodeIdSchema,
   PracticesSchema,
   TimeoutSchema,
+  ToolEnvSchema,
+  ToolOutputSchema,
   ToolRulesSchema,
   TurnsSchema,
 } from "./settings.ts";
@@ -147,6 +149,8 @@ const toolFields = {
   timeout: TimeoutSchema.optional().describe(
     "How long the command may run, e.g. 5m; then it is killed and the node fails.",
   ),
+  env: ToolEnvSchema.optional(),
+  output: ToolOutputSchema.optional(),
 };
 
 /** What every tool node has: `tool.<id>`, its command, allow list and cwd. */

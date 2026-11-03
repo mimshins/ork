@@ -12,6 +12,7 @@ import {
   openStore,
 } from "@krapht/ork-core";
 import { CLAUDE_DRIVERS } from "@krapht/ork-integrations";
+import { sessionEnv } from "@krapht/ork-nodes";
 import type { Driver } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
@@ -43,7 +44,7 @@ export const isDriver = (value: string): value is Driver =>
 export const loadRuntime = async (driver: Driver): Promise<ClaudeRuntime> =>
   (await import("@krapht/ork-runtime-claude")).createRuntime(
     driver,
-    process.env,
+    sessionEnv(process.env),
   );
 
 /** Ctrl-C asks the run to stop. */

@@ -129,6 +129,18 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   their own logins; `profile` and `region` become `--profile` and `--region`.
   The output is `exitCode`, `stdout`, `stderr`; over 64 KiB, a stream is cut and
   the full text is written to `.ork/runs/<run>/<node>.<round>.<stream>.txt`.
+  - **Who it is:** the program inherits Ork's environment, with `ORK_RUN`,
+    `ORK_NODE`, `ORK_ROUND`, `ORK_RUN_DIR`, `ORK_PROJECT`, `ORK_WORKFLOW` and,
+    when `ork` can be run directly, `ORK_BIN`
+    ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)). Then the
+    node's `env:`, rendered. A variable that is not set stops `ork run` before
+    anything starts. Events record `env:` names only, and values read from
+    `{{env.*}}` are scrubbed from the output ([L81](./gaps/limits-scripts.md)).
+    A Claude session gets only `ORK_SESSION=1`.
+  - **JSON:** with `output: { format: json }` it also gets `ORK_OUTPUT`, a file,
+    which wins over stdout if written. On exit 0, invalid or empty JSON fails
+    the node, and a result over 64 KiB fails it and is kept in a run file, never
+    cut. A failed program's result is not read.
 - **`workflow.call`** ([call.ts](../packages/nodes/src/call.ts)): starts a
   workflow as a separate run and waits as it says
   ([calling workflows](./scheduler/calls.md)).

@@ -104,8 +104,10 @@ first (then the prompt is withdrawn and the transcript shows
 - **`ork chat <run> <node>`**
   ([chat.ts](../../packages/cli/src/commands/chat.ts),
   [tests](../../packages/cli/test/chat.test.ts)) talks to a leader or worker;
-  any other node is refused. Each line typed is a message (`-m <text>` sends one
-  and exits; Ctrl-D leaves):
+  any other node is refused, and so is a program or an agent in a run (`ORK_RUN`
+  or `ORK_SESSION` is set), since it speaks as the user
+  ([L80](../gaps/limits-scripts.md)). Each line typed is a message (`-m <text>`
+  sends one and exits; Ctrl-D leaves):
   - **In a live run**, the message goes to the store and the run is woken; the
     run's bus pushes it in full into the node's session at its next step, or
     keeps it for the node's next session if it is not running

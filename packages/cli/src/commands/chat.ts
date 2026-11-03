@@ -15,6 +15,7 @@ import {
   type RunRecord,
   tellLiveRun,
 } from "@krapht/ork-core";
+import { startedByARun } from "@krapht/ork-nodes";
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
@@ -87,6 +88,10 @@ const chatLive = async (
   );
 };
 
+/** A program or an agent in a run must not speak as the user (RFC-003). */
+export const CHAT_IN_A_RUN =
+  "`ork chat` speaks as you, so a program or an agent in a run cannot use it. Programs will write to a session with `ork send`, which is not built yet.";
+
 export const chat = defineCommand({
   meta: {
     name: "chat",
@@ -115,6 +120,11 @@ export const chat = defineCommand({
     },
   },
   run: async ({ args }) => {
+    if (startedByARun(process.env)) {
+      writeErr(CHAT_IN_A_RUN);
+      process.exitCode = 1;
+      return;
+    }
     const store = openStore();
     try {
       const found = findRun(store, args.run, process.cwd());

@@ -33,6 +33,8 @@ import {
 } from "@krapht/ork-core";
 import {
   builtinExecutors,
+  missingEnv,
+  missingEnvMessage,
   missingPrograms,
   onPath,
   type ToolRunner,
@@ -143,6 +145,8 @@ export const runWorkflowFile = async (
     (options.tools === undefined ? (p: string) => onPath(p) : () => true);
   const missing = missingPrograms(workflow, installed);
   if (missing.length > 0) return failed(missingProgramMessage(missing));
+  const unset = missingEnv(workflow);
+  if (unset.length > 0) return failed(missingEnvMessage(unset));
 
   const checkout = await prepareCheckout(
     workflow,
@@ -239,6 +243,8 @@ export const runWorkflowFile = async (
   };
   if (options.driver !== undefined) executorOptions.driver = options.driver;
   if (options.tools !== undefined) executorOptions.tools = options.tools;
+  const script = process.argv[1];
+  if (script !== undefined && onPath(script)) executorOptions.orkBin = script;
 
   const replay =
     options.resume === undefined
