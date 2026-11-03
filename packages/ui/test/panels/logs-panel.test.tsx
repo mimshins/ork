@@ -16,6 +16,7 @@ import { userEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LogsPanel } from "../../src/panels/logs-panel.tsx";
+import { createWorkspace } from "../../src/workspace/workspace.ts";
 import { violations } from "../axe.ts";
 import { stubWindow } from "../dom.ts";
 import { openPanelState, renderPanel } from "./harness.tsx";
@@ -82,6 +83,33 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+});
+
+describe("the Logs panel, for assistive tech", () => {
+  it("says what the filters leave once typing stops", async () => {
+    const workspace = createWorkspace({ storage: localStorage, wide: true });
+    const opened = openPanelState({ events: EVENTS });
+    renderPanel(opened.state, <LogsPanel />, workspace);
+    await act(async () => {
+      opened.state.selectRun("r");
+      await Promise.resolve();
+    });
+    await screen.findByRole("list", { name: "Events of run r" });
+    expect(workspace.announcement.getValue()).toBe("");
+    await userEvent.type(screen.getByLabelText("Text"), "needle");
+    await vi.waitFor(() => {
+      expect(workspace.announcement.getValue()).toBe("1 of 3 loaded");
+    });
+  });
+
+  it("lets the keys reach and scroll an opened event", async () => {
+    await open();
+    await userEvent.click(
+      screen.getByRole("button", { name: /node\.started/u }),
+    );
+    const detail = screen.getByRole("group", { name: "Event 1 in full" });
+    expect(detail.tabIndex).toBe(0);
+  });
 });
 
 describe("the Logs panel", () => {

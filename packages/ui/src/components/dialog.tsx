@@ -25,7 +25,11 @@ export type DialogProps = Controlled & {
   title: string;
   description?: string;
   children: ReactNode;
+  /** Where the focus goes on closing, if not back where it came from. */
+  finalFocus?: () => HTMLElement | true;
 };
+
+const backWhereItCameFrom = (): true => true;
 
 export const Dialog = ({
   open,
@@ -33,6 +37,7 @@ export const Dialog = ({
   title,
   description,
   children,
+  finalFocus = backWhereItCameFrom,
 }: DialogProps) => (
   <BaseDialog.Root
     onOpenChange={next => {
@@ -45,6 +50,7 @@ export const Dialog = ({
       <BaseDialog.Popup
         className={styles["dialog"]}
         data-modal=""
+        finalFocus={finalFocus}
       >
         <BaseDialog.Title className={styles["title"]}>{title}</BaseDialog.Title>
         {description === undefined ? null : (

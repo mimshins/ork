@@ -44,7 +44,7 @@ export const Select = ({ label, options, value, onChange }: SelectProps) => (
         sideOffset={4}
       >
         <BaseSelect.Popup className={styles["popup"]}>
-          <BaseSelect.List>
+          <BaseSelect.List aria-label={label}>
             {options.map(option => (
               <BaseSelect.Item
                 className={styles["item"]}

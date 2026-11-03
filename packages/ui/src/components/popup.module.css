@@ -116,3 +116,20 @@
   color: var(--color-text-muted);
   font-size: var(--text-small);
 }
+
+/* Forced colors take the fills away, and the fill says which item is chosen. */
+@media (forced-colors: active) {
+  .item[data-selected] {
+    outline: var(--hairline) solid CanvasText;
+    outline-offset: calc(var(--hairline) * -1);
+  }
+
+  .item[data-highlighted] {
+    background: Highlight;
+    color: HighlightText;
+  }
+
+  .item[data-disabled] {
+    color: GrayText;
+  }
+}

@@ -14,19 +14,12 @@ import { type RunView, useRunMonitor } from "./use-run-monitor.ts";
 
 import styles from "./monitor.module.css";
 
-export const RunMonitor = ({
-  run,
-  takeArrival,
-  onOpenRun,
-}: {
-  run: RunView;
-  takeArrival: () => boolean;
-  onOpenRun: (run: string) => void;
-}) => {
+export const RunMonitor = ({ run }: { run: RunView }) => {
   const {
     state,
     layout,
     facts,
+    waiting,
     connections,
     roots,
     links,
@@ -40,9 +33,8 @@ export const RunMonitor = ({
   return (
     <div className={styles["monitor"]}>
       <RunHeader
-        onOpenRun={onOpenRun}
         run={run}
-        takeArrival={takeArrival}
+        waiting={waiting}
       />
       {error === null ? null : (
         <p
@@ -77,7 +69,7 @@ export const RunMonitor = ({
             <NodeSection
               node={chosen}
               onLeave={closeControls}
-              onOpenRun={onOpenRun}
+              onOpenRun={state.arriveAt}
               run={run}
               sectionRef={nodeControls}
             />
@@ -92,7 +84,7 @@ export const RunMonitor = ({
           />
           <RunLinks
             links={links}
-            onOpen={onOpenRun}
+            onOpen={state.arriveAt}
             runId={run.id}
           />
         </aside>

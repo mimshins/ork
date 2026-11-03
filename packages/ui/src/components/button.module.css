@@ -73,3 +73,11 @@
   color: var(--color-text-disabled);
   cursor: not-allowed;
 }
+
+/* Forced colors would draw a disabled button like any other. */
+@media (forced-colors: active) {
+  :is(.button, .icon)[data-disabled][data-disabled] {
+    border-color: GrayText;
+    color: GrayText;
+  }
+}

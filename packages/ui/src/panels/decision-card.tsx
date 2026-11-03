@@ -41,6 +41,7 @@ export const DecisionCard = ({
 }: DecisionCardProps) => {
   const { id, runId, node, question, context, options, recommended } = decision;
   const questionId = useId();
+  const fromId = useId();
   const [sending, setSending] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
 
@@ -68,7 +69,7 @@ export const DecisionCard = ({
   return (
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the card takes the digit keys
     <section
-      aria-labelledby={questionId}
+      aria-labelledby={`${questionId} ${fromId}`}
       className={styles["card"]}
       data-decision={id}
       onKeyDown={onKey}
@@ -76,7 +77,7 @@ export const DecisionCard = ({
       tabIndex={0}
     >
       <p className={styles["from"]}>
-        <span>
+        <span id={fromId}>
           {workflow === undefined ? "" : `${workflow} · `}
           {runId} · {node}
         </span>

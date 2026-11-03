@@ -221,3 +221,11 @@
   position: absolute;
   right: var(--gap);
 }
+
+/* Forced colors take the fill away, so the chosen card's edge says it. */
+@media (forced-colors: active) {
+  .card[data-selected] {
+    border-color: Highlight;
+    outline: var(--hairline) solid Highlight;
+  }
+}

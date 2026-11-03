@@ -48,6 +48,11 @@ const DELIVERED = {
   resumed: "resumed its session",
 } as const;
 
+/** Ork's own tools, by the names the node knows them by. */
+const ORK_TOOL = /^mcp__ork__/u;
+/** How a report is sent: the report itself shows next. */
+const HIDDEN_TOOLS: ReadonlySet<string> = new Set(["StructuredOutput"]);
+
 /** What a node's own session did, as its thread says it. */
 const sessionItem = (
   inner: Extract<StoredEvent["event"], { type: "node.event" }>["event"],
@@ -57,7 +62,13 @@ const sessionItem = (
     return { ...base, kind: "node", text: inner.text };
   }
   if (inner.type === "tool.called") {
-    return { ...base, kind: "activity", text: `Used ${inner.name}` };
+    return HIDDEN_TOOLS.has(inner.name)
+      ? undefined
+      : {
+          ...base,
+          kind: "activity",
+          text: `Used ${inner.name.replace(ORK_TOOL, "")}`,
+        };
   }
   return inner.type === "session.started"
     ? { ...base, kind: "activity", text: `Session on ${inner.model}` }
@@ -80,6 +91,11 @@ const itemOf = (
   }
   if (event.type === "node.finished") {
     if (event.id !== node) return undefined;
+    const { summary } = event.output;
+    // A node's last word is usually its report, not a message.
+    if (event.ok && typeof summary === "string") {
+      return { ...base, kind: "node", text: summary, note: "its report" };
+    }
     const reason = event.error === undefined ? "" : `: ${event.error}`;
     return activity(event.ok ? "Finished." : `Failed${reason}`);
   }

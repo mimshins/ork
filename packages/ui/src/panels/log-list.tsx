@@ -1,7 +1,8 @@
 /**
  * @file The Logs list: one tab stop, with the arrow keys, `Home` and `End`
- *   moving through its rows and `Enter` opening one. Rows the page is not
- *   showing cost little, since the browser skips laying them out.
+ *   moving through its rows and `Enter` opening one. An opened row's event is
+ *   one more stop, so the keys can scroll it. Rows the page is not showing cost
+ *   little, since the browser skips laying them out.
  */
 
 import type { StoredEvent } from "@krapht/ork-server/client";

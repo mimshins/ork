@@ -8,7 +8,13 @@ import { memo } from "react";
 
 import { StatusBadge, statusTone } from "../components/status-badge.tsx";
 import { cliDescription, Tip } from "../components/tip.tsx";
-import { formatCost, formatTokens, type NodeFacts, nodeName } from "./facts.ts";
+import {
+  formatCost,
+  formatTokens,
+  type NodeFacts,
+  nodeName,
+  shortModel,
+} from "./facts.ts";
 import { TypeIcon } from "./type-icon.tsx";
 import type { PlacedNode } from "./types.ts";
 
@@ -43,12 +49,13 @@ export const NodeCard = memo(
     onMenu,
   }: NodeCardProps) => {
     const { id, type, x, y, width, height } = node;
+    // Most useful first: what does not fit is cut from the end.
     const meta = [
-      facts.model,
+      facts.costUsd === undefined ? undefined : formatCost(facts.costUsd),
       facts.tokens === undefined
         ? undefined
         : `${formatTokens(facts.tokens)} tok`,
-      facts.costUsd === undefined ? undefined : formatCost(facts.costUsd),
+      facts.model === undefined ? undefined : shortModel(facts.model),
     ].filter(part => part !== undefined);
     const card = (
       <button

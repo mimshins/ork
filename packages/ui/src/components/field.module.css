@@ -177,3 +177,27 @@
 .group[data-disabled] .inputButton {
   color: var(--color-text-disabled);
 }
+
+/* Forced colors take the fills away, and the fills say what is on and off. */
+@media (forced-colors: active) {
+  :is(.box, .switch)[data-checked] {
+    background: Highlight;
+  }
+
+  .thumb {
+    background: CanvasText;
+  }
+
+  .thumb[data-checked] {
+    background: HighlightText;
+  }
+
+  :is(.box, .switch, .control, .group)[data-disabled] {
+    border-color: GrayText;
+    color: GrayText;
+  }
+
+  .thumb[data-disabled] {
+    background: GrayText;
+  }
+}

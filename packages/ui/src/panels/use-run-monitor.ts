@@ -36,9 +36,14 @@ export const useRunMonitor = (run: RunView) => {
   const cameFrom = useRef<HTMLElement | null>(null);
 
   const roots = useMemo(() => tree ?? [], [tree]);
+  const runEnded = run.live !== "running" && run.live !== "paused";
+  const asking = useMemo(
+    () => askingNodes(decisions, runId),
+    [decisions, runId],
+  );
   const facts = useMemo(
-    () => factsOf(roots, askingNodes(decisions, runId), runId),
-    [roots, decisions, runId],
+    () => factsOf(roots, asking, runId, runEnded),
+    [roots, asking, runId, runEnded],
   );
   const nodeKey = rowsOf(roots)
     .map(({ node }) => node.id)
@@ -79,6 +84,7 @@ export const useRunMonitor = (run: RunView) => {
     state,
     layout,
     facts,
+    waiting: asking.size > 0,
     connections,
     roots,
     links,

@@ -78,3 +78,14 @@
   gap: var(--gap-hair);
   margin: 0;
 }
+
+/* Forced colors draw a see-through edge, so only what is unread keeps one. */
+@media (forced-colors: active) {
+  .item {
+    border-inline-start-color: Canvas;
+  }
+
+  .item[data-unread] {
+    border-inline-start-color: Highlight;
+  }
+}

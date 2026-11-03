@@ -29,6 +29,8 @@ export type WindowContext = {
   commit: () => void;
   refocus: () => void;
   announce: (message: string) => void;
+  /** Changes the dock without its own words, for saying something better. */
+  quietly: (change: () => void) => void;
 };
 
 export const createWindowActions = ({
@@ -37,6 +39,7 @@ export const createWindowActions = ({
   commit,
   refocus,
   announce,
+  quietly,
 }: WindowContext) => {
   const floatOrigins = new Map<string, NonNullable<Anchor["beside"]>>();
 
@@ -84,8 +87,10 @@ export const createWindowActions = ({
     const api = dock();
     const panel = api?.activePanel;
     if (api === null || panel === undefined) return;
-    unmaximize();
-    movePanel(api, panel, direction);
+    quietly(() => {
+      unmaximize();
+      movePanel(api, panel, direction);
+    });
     commit();
     refocus();
     announce(`${panel.title ?? panel.id} moved ${direction}.`);

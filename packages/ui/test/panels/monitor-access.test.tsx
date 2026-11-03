@@ -141,7 +141,7 @@ describe("the Monitor, for assistive tech", () => {
     expect(document.activeElement).toBe(treeRow("kit"));
   });
 
-  it("stays in the controls when Escape closes the Stop dialog", async () => {
+  it("does not spend Escape on the Stop dialog", async () => {
     const user = userEvent.setup();
     await open();
     treeRow("kit").focus();
@@ -150,13 +150,19 @@ describe("the Monitor, for assistive tech", () => {
     await vi.waitFor(() => {
       expect(section.contains(document.activeElement)).toBe(true);
     });
-    await user.click(screen.getByRole("button", { name: "Stop kit" }));
+    const stop = screen.getByRole("button", { name: "Stop kit" });
+    await user.click(stop);
     await screen.findByRole("alertdialog");
     await user.keyboard("{Escape}");
     await vi.waitFor(() => {
       expect(screen.queryByRole("alertdialog")).toBeNull();
     });
-    expect(document.activeElement).not.toBe(treeRow("kit"));
+    // Where the dialog puts the focus is its own affair: from the controls,
+    // Escape must still know the way back to the node.
+    stop.focus();
+    await user.keyboard("{Escape}");
+    await user.keyboard("{Escape}");
+    expect(document.activeElement).toBe(treeRow("kit"));
   });
 
   it("groups the controls without promising a toolbar's keys", async () => {

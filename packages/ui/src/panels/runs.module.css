@@ -129,3 +129,14 @@
 .error {
   color: var(--color-danger-text);
 }
+
+/* Forced colors draw a see-through edge, so only the chosen run keeps one. */
+@media (forced-colors: active) {
+  .row {
+    border-inline-start-color: Canvas;
+  }
+
+  .row[aria-current="true"] {
+    border-inline-start-color: Highlight;
+  }
+}

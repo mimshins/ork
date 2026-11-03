@@ -9,8 +9,12 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  outline: none;
   overflow-y: auto;
+}
+
+/* Where the focus lands when the last card goes. */
+.panel:focus-visible {
+  outline-offset: calc(var(--focus-width) * -1);
 }
 
 .list {

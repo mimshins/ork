@@ -8,9 +8,11 @@ import { act, cleanup, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { MonitorPanel } from "../../src/panels/monitor-panel.tsx";
 import { RunDialog } from "../../src/panels/run-dialog.tsx";
 import { violations } from "../axe.ts";
 import { stubWindow } from "../dom.ts";
+import { runView } from "../state/fixtures.ts";
 import {
   type FakeRoutes,
   openPanelState,
@@ -118,6 +120,71 @@ describe("the Run workflow dialog", () => {
     expect(screen.getByLabelText("Workflow").getAttribute("placeholder")).toBe(
       "No workflows here",
     );
+  });
+
+  it("names the list and its input while it is open", async () => {
+    await open();
+    const input = await screen.findByRole("combobox", { name: "Workflow" });
+    expect(input.getAttribute("aria-label")).toBe("Workflow");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Show Workflow list" }),
+    );
+    expect(
+      await screen.findByRole("listbox", { name: "Workflow" }),
+    ).toBeDefined();
+  });
+
+  it("goes to the new run's heading if the Monitor shows one", async () => {
+    const { state } = await open();
+    const heading = document.createElement("h2");
+    heading.dataset["runHeading"] = "new11111";
+    heading.tabIndex = -1;
+    document.body.append(heading);
+    await userEvent.type(await screen.findByLabelText(/^feature/u), "csv");
+    await userEvent.click(startButton());
+    await waitFor(() => {
+      expect(state.runDialog.getValue()).toBe(false);
+    });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(heading);
+    });
+    heading.remove();
+  });
+
+  it("goes to the new run's heading when it shows after the dialog closed", async () => {
+    const opened = openPanelState({
+      ...ONE,
+      monitor: {
+        graph: { nodes: [], edges: [], channels: [], positions: {} },
+        tree: [],
+      },
+    });
+    renderPanel(
+      opened.state,
+      <>
+        <RunDialog />
+        <MonitorPanel />
+      </>,
+    );
+    await act(async () => {
+      opened.overview.send("runs", []);
+      opened.overview.send("decisions", []);
+      await opened.state.runDialog.setValue(true);
+    });
+    await userEvent.type(await screen.findByLabelText(/^feature/u), "csv");
+    await userEvent.click(startButton());
+    await waitFor(() => {
+      expect(opened.state.runDialog.getValue()).toBe(false);
+    });
+    await act(async () => {
+      opened.overview.send("runs", [runView("new11111")]);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(
+        document.querySelector('[data-run-heading="new11111"]'),
+      );
+    });
   });
 
   it("teaches the next step when there are no projects", async () => {

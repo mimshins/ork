@@ -102,11 +102,12 @@
   padding: var(--gap-tight) var(--gap);
 }
 
-/* It grows with what is written, where the browser can, up to a few lines. */
-.composer:focus {
-  outline: none;
+/* Where the focus lands when the run ends and the box goes. */
+.composer:focus-visible {
+  outline-offset: calc(var(--focus-width) * -1);
 }
 
+/* It grows with what is written, where the browser can, up to a few lines. */
 .box {
   background: var(--field-bg);
   border: var(--hairline) solid var(--field-border);

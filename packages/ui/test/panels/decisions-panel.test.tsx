@@ -51,7 +51,7 @@ const open = async (
 };
 
 const card = (id: string): HTMLElement =>
-  screen.getByRole("region", { name: `Merge ${id}?` });
+  screen.getByRole("region", { name: new RegExp(`^Merge ${id}\\?`, "u") });
 
 beforeEach(() => {
   localStorage.clear();
@@ -125,6 +125,19 @@ describe("the Decisions panel", () => {
     );
   });
 
+  it("tells apart two cards asking the same thing", async () => {
+    await open([
+      decision("d1", { question: "Merge?" }),
+      decision("d2", { question: "Merge?", runId: "bbb22222" }),
+    ]);
+    expect(
+      screen.getByRole("region", { name: /^Merge\? .*aaa11111 · gate$/u }),
+    ).toBeDefined();
+    expect(
+      screen.getByRole("region", { name: /^Merge\? .*bbb22222 · gate$/u }),
+    ).toBeDefined();
+  });
+
   it("moves the focus to the next card when the focused one goes", async () => {
     const { overview } = await open([decision("d1"), decision("d2")]);
     card("d1").focus();
@@ -135,6 +148,20 @@ describe("the Decisions panel", () => {
     });
     await vi.waitFor(() => {
       expect(document.activeElement).toBe(card("d2"));
+    });
+  });
+
+  it("moves the focus to the panel, named, when the last card goes", async () => {
+    const { overview } = await open();
+    card("d1").focus();
+    await act(async () => {
+      overview.send("decisions", []);
+      await Promise.resolve();
+    });
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(
+        screen.getByRole("group", { name: "Decisions" }),
+      );
     });
   });
 

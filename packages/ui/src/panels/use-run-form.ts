@@ -6,7 +6,7 @@
  */
 
 import type { WorkflowView } from "@krapht/ork-server/client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useValue } from "react-containerized-state";
 
 import { toasts } from "../components/toast.tsx";
@@ -43,7 +43,32 @@ const useWorkflows = (project: string | null) => {
   };
 };
 
-export const useRunForm = (onDone: () => void) => {
+/**
+ * Where the dialog sends the focus: to a started run's heading if it is shown
+ * already, since it could not take the focus behind the dialog. One that comes
+ * later takes it then.
+ */
+export const useStartFocus = () => {
+  const started = useRef<string | null>(null);
+  return {
+    onStarted: (run: string): void => {
+      started.current = run;
+    },
+    finalFocus: (): HTMLElement | true => {
+      const run = started.current;
+      started.current = null;
+      const heading = document.querySelector<HTMLElement>("[data-run-heading]");
+      return run !== null && heading?.dataset["runHeading"] === run
+        ? heading
+        : true;
+    },
+  };
+};
+
+export const useRunForm = (
+  onDone: () => void,
+  onStarted: (run: string) => void,
+) => {
   const state = useAppState();
   const projectsRead = useValue(state.projects.state);
   const projects = useMemo(
@@ -93,8 +118,9 @@ export const useRunForm = (onDone: () => void) => {
     });
     setStarting(false);
     if (answer.ok) {
-      state.selectRun(answer.data.runId);
+      state.arriveAt(answer.data.runId);
       toasts.add({ title: `Run ${answer.data.runId} started` });
+      onStarted(answer.data.runId);
       onDone();
     } else {
       setRefusal(answer.error);

@@ -215,6 +215,24 @@ describe("type", () => {
   });
 });
 
+describe("forced colors", () => {
+  // Fills and shadows go in that mode; jsdom cannot show it.
+  it.each([
+    "components/button.module.css",
+    "components/field.module.css",
+    "components/popup.module.css",
+    "graph/graph.module.css",
+    "panels/monitor.module.css",
+    "panels/notifications.module.css",
+    "panels/runs.module.css",
+    "workspace/dock.module.css",
+  ])("keeps the state %s draws with a fill or a shadow", file => {
+    expect(readFileSync(join(SRC, file), "utf8")).toContain(
+      "@media (forced-colors: active)",
+    );
+  });
+});
+
 describe("the stacking layers", () => {
   // A dialog's combobox lists open in a portal: jsdom cannot see them hidden.
   it("puts a popup above the dialog it came from", () => {

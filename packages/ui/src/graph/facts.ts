@@ -35,14 +35,18 @@ export const formatCost = (costUsd: number): string => `$${costUsd.toFixed(4)}`;
 export const formatTokens = (tokens: number): string =>
   tokens < 1000 ? String(tokens) : `${(tokens / 1000).toFixed(1)}k`;
 
+/** A model's name on a card, which has little room: `claude-` says nothing. */
+export const shortModel = (model: string): string =>
+  model.replace(/^claude-/u, "");
+
 export const nodeName = (id: string, type: string, facts: NodeFacts): string =>
   [
     id,
     statusWord(facts.status),
-    ...(facts.model === undefined ? [] : [facts.model]),
+    ...(facts.costUsd === undefined ? [] : [formatCost(facts.costUsd)]),
     ...(facts.tokens === undefined
       ? []
       : [`${formatTokens(facts.tokens)} tokens`]),
-    ...(facts.costUsd === undefined ? [] : [formatCost(facts.costUsd)]),
+    ...(facts.model === undefined ? [] : [facts.model]),
     typeWord(type),
   ].join(", ");

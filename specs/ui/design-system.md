@@ -89,6 +89,10 @@ The page's root carries `data-theme` and `data-contrast`
   below `--target-min`.
 - **Focus** is a 2 px amber outline outside the element, on every focusable
   element (`:focus-visible`), never only a glow.
+- **Forced colors** take fills and shadows away, so what they say moves to what
+  stays: the selected run, node and tab and an unread item keep an edge in
+  `Highlight`, the highlighted list item takes `Highlight`, and disabled
+  controls use `GrayText`.
 - **Motion** is brief, and none when `prefers-reduced-motion: reduce` is set.
 
 ## Components

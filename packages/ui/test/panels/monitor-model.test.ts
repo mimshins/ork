@@ -14,6 +14,7 @@ import {
   graphInputOf,
   nodeActions,
   rowsOf,
+  runStatusOf,
   type Standing,
   runActions,
   statusOf,
@@ -45,6 +46,13 @@ describe("the Monitor's model", () => {
     expect(statusOf(treeNode("a"), false)).toBe("queued");
     expect(statusOf(treeNode("a", { state: "ok" }), false)).toBe("succeeded");
     expect(statusOf(treeNode("a", { state: "running" }), true)).toBe("waiting");
+    expect(statusOf(treeNode("a"), false, true)).toBe("skipped");
+    expect(statusOf(treeNode("a", { state: "running" }), false, true)).toBe(
+      "interrupted",
+    );
+    expect(statusOf(treeNode("a", { state: "ok" }), false, true)).toBe(
+      "succeeded",
+    );
     expect(
       statusOf(treeNode("a", { state: "running", held: true }), true),
     ).toBe("paused");
@@ -238,5 +246,13 @@ describe("what is said aloud", () => {
         standing("paused", { a: "paused" }),
       ),
     ).toEqual([]);
+  });
+});
+
+describe("a run's status in the header", () => {
+  it("reads a running run with a question open as waiting", () => {
+    expect(runStatusOf({ live: "running" }, true)).toBe("waiting");
+    expect(runStatusOf({ live: "running" }, false)).toBe("running");
+    expect(runStatusOf({ live: "failed" }, true)).toBe("failed");
   });
 });

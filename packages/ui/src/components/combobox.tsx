@@ -2,7 +2,9 @@
  * @file A combobox, on Base UI's: one choice from a list long enough to filter,
  *   such as projects and workflows. Typing filters the list and highlights its
  *   first match, for Enter to take; the arrow keys move through it while focus
- *   stays in the input, and an empty result says so.
+ *   stays in the input, and an empty result says so. The input and the list are
+ *   named as well as labelled, since an open list hides the label from a screen
+ *   reader.
  */
 
 import { Combobox as BaseCombobox } from "@base-ui/react/combobox";
@@ -61,6 +63,7 @@ export const Combobox = ({
         </label>
         <BaseCombobox.InputGroup className={fields["group"]}>
           <BaseCombobox.Input
+            aria-label={label}
             className={fields["input"]}
             id={inputId}
             placeholder={placeholder}
@@ -83,7 +86,7 @@ export const Combobox = ({
             <BaseCombobox.Empty className={fields["empty"]}>
               {empty}
             </BaseCombobox.Empty>
-            <BaseCombobox.List>
+            <BaseCombobox.List aria-label={label}>
               {(option: Option) => (
                 <BaseCombobox.Item
                   className={styles["item"]}

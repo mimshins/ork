@@ -14,7 +14,11 @@ cannot: sizes, drawn positions, focus rings and contrast (gap [C6](../gaps.md)).
 Three rows: a top bar (the mark, **Window**, and **Commands**), the middle, and
 a status bar with the [server's state](./state.md#streams-that-stay-connected).
 The status bar also holds the workspace's one polite live region, which
-dockview's own announcements are routed to.
+dockview's own announcements are routed to. A message stays for a second so the
+next does not cut it off, and what comes meanwhile is said together after it
+([announcer.ts](../../packages/ui/src/workspace/announcer.ts)). An action that
+says something itself, such as minimizing, keeps dockview quiet while it changes
+the dock, so a minimized panel is not also called closed.
 
 The panels are one list ([panels](../../packages/ui/src/workspace/panels.tsx)).
 The dock, the rail, the stack, the Window menu and the palette all read it, so a

@@ -34,11 +34,9 @@ export const NodeSection = ({
       aria-label={`Node ${node.id}`}
       className={styles["node"]}
       onKeyDown={event => {
-        // The Stop dialog is portalled, and its keys come through React.
-        const inside =
-          event.target instanceof Node &&
-          event.currentTarget.contains(event.target);
-        if (event.key === "Escape" && inside) onLeave();
+        // Escape is the Stop dialog's while one is open, its focus there or not.
+        const modalOpen = document.querySelector("[data-modal]") !== null;
+        if (event.key === "Escape" && !modalOpen) onLeave();
       }}
       ref={sectionRef}
     >

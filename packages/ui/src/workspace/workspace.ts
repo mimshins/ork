@@ -10,6 +10,7 @@
 import type { DockviewApi, IDockviewPanel } from "dockview-react";
 import { Container } from "react-containerized-state";
 
+import { createAnnouncer } from "./announcer.ts";
 import { focusPanel, focusTabOf } from "./dock-moves.ts";
 import {
   addDefaultLayout,
@@ -63,16 +64,22 @@ export const createWorkspace = ({
   const announcement = Container.create("");
 
   let api: DockviewApi | null = null;
-  let filling = false;
+  /** The dock's own words are not wanted just now. */
+  let quiet = false;
   let listeners: { dispose: () => void }[] = [];
 
-  const announce = (message: string): void => {
-    void announcement.setValue(message);
+  const announce = createAnnouncer(announcement);
+
+  /** What dockview says, unless the workspace is saying it better. */
+  const announceFromDock = (message: string): void => {
+    if (!quiet) announce(message);
   };
 
-  /** What dockview says, except about the panels it adds while filling. */
-  const announceFromDock = (message: string): void => {
-    if (!filling) announce(message);
+  /** Changes the dock without its words: "closed" for what was minimized. */
+  const quietly = (change: () => void): void => {
+    quiet = true;
+    change();
+    quiet = false;
   };
 
   const sync = (): void => {
@@ -102,7 +109,7 @@ export const createWorkspace = ({
 
   const attach = (next: DockviewApi): void => {
     detach();
-    filling = true;
+    quiet = true;
     api = next;
     const { dock, folded } = layout.getValue();
     if (dock === null || !restoreDock(next, dock)) {
@@ -115,7 +122,7 @@ export const createWorkspace = ({
     next.groups.forEach(constrainGroup);
     listeners = listenToDock(next, sync, save);
     sync();
-    filling = false;
+    quiet = false;
   };
 
   const targetPanel = (id?: PanelId): IDockviewPanel | undefined =>
@@ -146,10 +153,12 @@ export const createWorkspace = ({
     if (api === null || panel === undefined) return;
     const panelId = panel.id;
     if (!isPanelId(panelId)) return;
-    unmaximize();
+    quietly(unmaximize);
     const anchor = anchorOf(api, panel);
     setMinimized(list => [...list, { id: panelId, anchor }]);
-    panel.api.close();
+    quietly(() => {
+      panel.api.close();
+    });
     announce(`${panelOf(panelId).title} minimized.`);
     commit();
     refocus(panelId);
@@ -159,8 +168,11 @@ export const createWorkspace = ({
     if (api === null) return;
     const entry = layout.getValue().minimized.find(panel => panel.id === id);
     setMinimized(list => list.filter(panel => panel.id !== id));
-    unmaximize();
-    focusPanel(placeAt(api, id, entry?.anchor));
+    const dock = api;
+    quietly(() => {
+      unmaximize();
+      focusPanel(placeAt(dock, id, entry?.anchor));
+    });
     announce(`${panelOf(id).title} restored.`);
     commit();
   };
@@ -193,8 +205,11 @@ export const createWorkspace = ({
     } else if (view.getValue().minimized.includes(id)) {
       restore(id);
     } else {
-      unmaximize();
-      focusPanel(placeAt(api, id));
+      const dock = api;
+      quietly(() => {
+        unmaximize();
+        focusPanel(placeAt(dock, id));
+      });
       announce(`${panelOf(id).title} opened.`);
     }
   };
@@ -205,15 +220,17 @@ export const createWorkspace = ({
     commit,
     refocus,
     announce,
+    quietly,
   });
 
   const resetLayout = (): void => {
     void layout.setValue(EMPTY_LAYOUT);
     if (api !== null) {
-      filling = true;
-      api.clear();
-      addDefaultLayout(api);
-      filling = false;
+      const dock = api;
+      quietly(() => {
+        dock.clear();
+        addDefaultLayout(dock);
+      });
       api.groups.forEach(constrainGroup);
       save();
       refocus();

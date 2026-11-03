@@ -50,7 +50,19 @@ const STATES: Readonly<Record<TreeNode["state"], Status>> = {
   skipped: "skipped",
 };
 
-export const statusOf = (node: TreeNode, waitingOnYou: boolean): Status => {
+/** What a node that was not done when its run ended came to. */
+const LEFT: Partial<Record<TreeNode["state"], Status>> = {
+  waiting: "skipped",
+  running: "interrupted",
+};
+
+export const statusOf = (
+  node: TreeNode,
+  waitingOnYou: boolean,
+  runEnded = false,
+): Status => {
+  const left = runEnded ? LEFT[node.state] : undefined;
+  if (left !== undefined) return left;
   if (node.held === true) return "paused";
   return waitingOnYou ? "waiting" : STATES[node.state];
 };
@@ -70,6 +82,7 @@ export const factsOf = (
   roots: readonly TreeNode[],
   asking: ReadonlySet<string>,
   runId: string,
+  runEnded = false,
 ): Map<string, NodeFacts> =>
   new Map(
     rowsOf(roots).map(({ node }) => {
@@ -77,7 +90,7 @@ export const factsOf = (
       return [
         node.id,
         {
-          status: statusOf(node, asking.has(node.id)),
+          status: statusOf(node, asking.has(node.id), runEnded),
           model: node.model,
           tokens: tokens === 0 ? undefined : tokens,
           costUsd: node.costUsd === 0 ? undefined : node.costUsd,
@@ -127,6 +140,12 @@ export const changesOf = (
     )
     .map(([id, status]) => `${id} ${statusWord(status)}.`),
 ];
+
+/** A run's status, with a question open read as it is in the Runs panel. */
+export const runStatusOf = (
+  { live }: Pick<RunView, "live">,
+  waitingOnYou: boolean,
+): Status => (live === "running" && waitingOnYou ? "waiting" : live);
 
 /** The declared graph, and the workers the run has spawned so far. */
 export const graphInputOf = (

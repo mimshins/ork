@@ -82,16 +82,35 @@ describe("the graph", () => {
     vi.unstubAllGlobals();
   });
 
-  it("names each node with its id, status, model, tokens, cost and type", () => {
+  it("names each node with its id, status, cost, tokens, model and type", () => {
     show();
     expect(card("start").getAttribute("aria-label")).toBe(
-      "start, running, opus, 1.2k tokens, $0.2500, leader",
+      "start, running, $0.2500, 1.2k tokens, opus, leader",
     );
     expect(card("top").getAttribute("aria-label")).toBe(
       "top, failed, shell tool",
     );
     expect(card("bottom").getAttribute("aria-label")).toBe(
       "bottom, queued, workflow call",
+    );
+  });
+
+  it("shows the cost first, and a model without its claude- prefix", () => {
+    show({
+      facts: new Map<string, NodeFacts>([
+        [
+          "start",
+          {
+            status: "running",
+            model: "claude-haiku-5-5",
+            tokens: 802,
+            costUsd: 0.0083,
+          },
+        ],
+      ]),
+    });
+    expect(card("start").textContent).toContain(
+      "$0.0083 · 802 tok · haiku-5-5",
     );
   });
 

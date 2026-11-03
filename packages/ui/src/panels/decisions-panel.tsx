@@ -13,6 +13,7 @@ import { useAppState } from "../state/context.tsx";
 import { WorkspaceContext } from "../workspace/context.ts";
 import { DecisionCard } from "./decision-card.tsx";
 import { endingOf } from "./decisions-model.ts";
+import { useKeptFocus } from "./use-kept-focus.ts";
 
 import styles from "./decisions.module.css";
 
@@ -22,24 +23,12 @@ export const DecisionsPanel = () => {
   const decisions = useValue(state.decisions);
   const settled = useValue(state.settledDecisions);
   const runs = useValue(state.runs);
-  const panel = useRef<HTMLDivElement>(null);
-  /** Where in the list the focus last was. */
-  const focusedAt = useRef<number | null>(null);
   const told = useRef(settled[0]?.id);
   const open = decisions ?? [];
-  const openKey = open.map(({ id }) => id).join("\n");
-  const lastKey = useRef(openKey);
-
-  useEffect(() => {
-    if (openKey === lastKey.current) return;
-    lastKey.current = openKey;
-    const at = focusedAt.current;
-    if (at === null || document.activeElement !== document.body) return;
-    const cards =
-      panel.current?.querySelectorAll<HTMLElement>("[data-decision]");
-    const next = cards?.[Math.min(at, (cards.length || 1) - 1)];
-    (next ?? panel.current)?.focus();
-  }, [openKey]);
+  const { panel, onFocus } = useKeptFocus(
+    open.map(({ id }) => id).join("\n"),
+    "[data-decision]",
+  );
 
   useEffect(() => {
     const latest = settled[0];
@@ -49,20 +38,14 @@ export const DecisionsPanel = () => {
   }, [settled, workspace]);
 
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- notes where the focus is
     <div
+      aria-label="Decisions"
       className={styles["panel"]}
-      onFocus={event => {
-        const { target } = event;
-        const card =
-          target instanceof Element
-            ? target.closest<HTMLElement>("[data-decision]")
-            : null;
-        focusedAt.current =
-          card === null
-            ? null
-            : open.findIndex(({ id }) => card.dataset["decision"] === id);
-      }}
+      onFocus={onFocus}
       ref={panel}
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- where the focus can land, not a landmark: the dock names the panel
+      role="group"
       tabIndex={-1}
     >
       {open.length === 0 ? (

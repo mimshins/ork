@@ -8,6 +8,7 @@ import { Button } from "../components/button.tsx";
 import { IconCheck } from "../components/icons.tsx";
 import { hasOlder, lastOf } from "../state/event-window.ts";
 import type { RunEvents, RunFeed } from "../state/run-feed.ts";
+import { countsLine } from "./logs-model.ts";
 
 import styles from "./logs.module.css";
 
@@ -28,10 +29,7 @@ export const LogStatus = ({
   return (
     <div className={styles["status"]}>
       <span className={styles["counts"]}>
-        {shown === loaded
-          ? `${String(shown)} events`
-          : `${String(shown)} of ${String(loaded)} loaded`}
-        {events.latest > loaded ? `, ${String(events.latest)} in the run` : ""}
+        {countsLine(shown, loaded, events.latest)}
       </span>
       <Button
         disabled={!hasOlder(events) || events.paging}

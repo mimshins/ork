@@ -110,6 +110,49 @@ describe("the Chats panel", () => {
     expect(here.queryByText("Only for the kid.")).toBeNull();
   });
 
+  it("shows a node's report as its last word, and Ork's tools by short names", async () => {
+    await open({
+      events: [
+        EVENTS[0],
+        stored(2, {
+          type: "node.event",
+          id: "lead",
+          event: {
+            type: "tool.called",
+            id: "t1",
+            name: "mcp__ork__ask_user",
+            input: {},
+          },
+        }),
+        stored(3, {
+          type: "node.event",
+          id: "lead",
+          event: {
+            type: "tool.called",
+            id: "t2",
+            name: "StructuredOutput",
+            input: {},
+          },
+        }),
+        stored(4, {
+          type: "node.finished",
+          id: "lead",
+          round: 1,
+          ok: true,
+          output: { status: "pass", summary: "The note is blue." },
+        }),
+      ].filter(event => event !== undefined),
+    });
+    const log = await screen.findByRole("log", {
+      name: "Conversation with lead",
+    });
+    expect(within(log).getByText("The note is blue.")).toBeDefined();
+    expect(within(log).getByText("its report")).toBeDefined();
+    expect(within(log).getByText("Used ask_user")).toBeDefined();
+    expect(within(log).queryByText(/StructuredOutput/u)).toBeNull();
+    expect(within(log).queryByText("Finished.")).toBeNull();
+  });
+
   it("follows the shared selection, past a node with no session", async () => {
     const { state } = await open();
     await screen.findByRole("log", { name: "Conversation with lead" });
@@ -184,7 +227,41 @@ describe("the Chats panel", () => {
       await Promise.resolve();
     });
     await screen.findByText("ork chat aaa11111 lead");
+    expect(document.activeElement).toBe(
+      screen.getByRole("group", { name: "Message to lead" }),
+    );
     expect(document.activeElement?.textContent).toContain("has ended");
+  });
+
+  it("ties the composer's keys to its box", async () => {
+    await open();
+    expect(
+      await screen.findByRole("textbox", {
+        name: /^Message to/u,
+        description: /Enter sends/u,
+      }),
+    ).toBeDefined();
+  });
+
+  it("stays on the newest when the panel is shown again", async () => {
+    const observed: (() => void)[] = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: () => void) {
+          observed.push(callback);
+        }
+        observe = (): void => {};
+        unobserve = (): void => {};
+        disconnect = (): void => {};
+      },
+    );
+    await open();
+    const thread = await screen.findByRole("log");
+    Object.defineProperty(thread, "scrollHeight", { value: 900 });
+    thread.scrollTop = 0;
+    for (const callback of observed) callback();
+    expect(thread.scrollTop).toBe(900);
   });
 
   it("asks to continue a paused run, with no command", async () => {

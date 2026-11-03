@@ -1,10 +1,11 @@
 /**
  * @file One node's conversation. It is a log, so a screen reader hears what is
- *   added, and it stays on the newest unless the reader has scrolled up. Whose
+ *   added, and it stays on the newest unless the reader has scrolled up, also
+ *   when shown again, since a hidden panel forgets where it was scrolled. Whose
  *   words they are is said in words, not by position or color.
  */
 
-import { memo, useLayoutEffect, useRef } from "react";
+import { memo, useEffect, useLayoutEffect, useRef } from "react";
 
 import type { ThreadItem } from "./chats-model.ts";
 import { timeOf } from "./logs-model.ts";
@@ -58,6 +59,19 @@ export const ChatThread = ({
       element.scrollTop = element.scrollHeight;
     }
   });
+
+  useEffect(() => {
+    const element = list.current;
+    const observer = new ResizeObserver(() => {
+      if (element !== null && pinned.current) {
+        element.scrollTop = element.scrollHeight;
+      }
+    });
+    if (element !== null) observer.observe(element);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   return (
     <div

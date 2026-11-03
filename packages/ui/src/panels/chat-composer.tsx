@@ -20,6 +20,7 @@ import styles from "./chats.module.css";
 export const ChatComposer = ({ run, node }: { run: RunView; node: string }) => {
   const state = useAppState();
   const id = useId();
+  const hintId = useId();
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -62,11 +63,20 @@ export const ChatComposer = ({ run, node }: { run: RunView; node: string }) => {
   if (why !== null) {
     return (
       <div
+        aria-describedby={id}
+        aria-label={`Message to ${node}`}
         className={styles["composer"]}
         ref={ended}
+        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- where the focus lands, not a landmark
+        role="group"
         tabIndex={-1}
       >
-        <p className={styles["why"]}>{why}</p>
+        <p
+          className={styles["why"]}
+          id={id}
+        >
+          {why}
+        </p>
         {run.live === "paused" ? null : <CopyCommand command={command} />}
       </div>
     );
@@ -86,12 +96,16 @@ export const ChatComposer = ({ run, node }: { run: RunView; node: string }) => {
         >
           Message to {node}
         </label>
-        <span className={styles["hint"]}>
+        <span
+          className={styles["hint"]}
+          id={hintId}
+        >
           Enter sends, Shift+Enter starts a new line.
         </span>
       </div>
       <div className={styles["send"]}>
         <textarea
+          aria-describedby={hintId}
           className={styles["box"]}
           id={id}
           onBlur={() => {

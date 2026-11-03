@@ -59,8 +59,10 @@ closed.
   start; its error is the reason.
 - **After starting,** the dialog selects the new run, closes and shows a toast.
   The run arrives on the stream like any other, about a second later: nothing is
-  added to the list in advance. A refusal stays in the dialog, in the server's
-  words.
+  added to the list in advance. The focus goes to its heading once the Monitor
+  shows it, since what opened the dialog may have gone with the run chosen
+  before ([L69](../gaps/limits.md)). A refusal stays in the dialog, in the
+  server's words.
 
 Escape on a combobox with its list closed clears it, as the ARIA pattern allows,
 so a second Escape closes the dialog. Workspace keys wait while a dialog is open
@@ -89,6 +91,8 @@ Its CLI twin is `ork tree <run>`.
   the graph when the panel is narrow.
 - **Small panels:** the graph keeps a usable height, and the panel scrolls when
   it has less than that, as at 200% zoom (WCAG 1.4.10).
+- **A node not done when its run ended** reads skipped if it never started, and
+  interrupted if it was running, not queued or running forever.
 - **Staying live:** the server folds the run's history into its tree, and the
   panel reads it again when the run's stream has news, at most four times a
   second ([run-watch.ts](../../packages/ui/src/state/run-watch.ts),
@@ -121,11 +125,13 @@ The selected run's events, live
 
 - **A row** has the event's time, node, type and a line in words. Opening it
   shows the whole event. The list is one tab stop: the arrow keys, `Home` and
-  `End` move through it, and `Enter` opens a row.
+  `End` move through it, and `Enter` opens a row. An opened event is one more
+  stop, so the keys can scroll it.
 - **Filters** are by node, by event type and by text anywhere in the event. The
   node filter is the shared selection, so choosing a node in the Monitor opens
   it here and the other way round. They look through what is loaded
-  ([L65](../gaps/limits.md)).
+  ([L65](../gaps/limits.md)). What they leave is said aloud once they stay still
+  for half a second (WCAG 4.1.3).
 - **Following:** it stays on the newest. Scrolling up holds it, so what is being
   read stays still and the Follow button counts what is new; back at the end, or
   pressing it, follows again.
@@ -148,7 +154,8 @@ is `ork decide`, and each option's tooltip gives `ork decide <run> --id <id>
   an option, and `Enter` on the card itself takes the recommended one.
 - **Nothing is optimistic:** the card stays until the server says it has settled
   on the stream, and a refusal stays in the card in the server's words. If the
-  card had the focus, the focus moves to the next one.
+  card had the focus, the focus moves to the next one, or to the panel after the
+  last.
 - **Settled** lists what has left the open list while the page watched, with who
   answered: in the run's terminal, with `ork decide` or in `ork ui`
   (`GET /api/decisions/:id`, [L66](../gaps/limits.md)). Each is also said aloud.
@@ -164,7 +171,8 @@ One thread per leader or worker of the selected run, built from its events
   session, it shows the first that has one.
 - **A thread** names who said each thing: the node, you, or a peer writing to
   it, with what the node did between in a quieter line. It is a log, so a screen
-  reader hears what is added, and it stays on the newest unless scrolled up.
+  reader hears what is added, and it stays on the newest unless scrolled up,
+  also when the panel is shown again.
 - **Writing:** `Enter` sends and `Shift+Enter` starts a new line, on a running
   run. The text stays until the server has taken it and a refusal stays beside
   it. The message itself arrives on the stream, saying how it was delivered.
@@ -193,7 +201,8 @@ bar's bell shows how many are unread and goes to the panel.
 - **Opening one** marks it read, selects its run and node, and goes to Decisions
   for a question or the Monitor for a run.
 - **New items** are said through the workspace's polite live region. What was
-  there when the page opened is not news.
+  there when the page opened is not news. When the item holding the focus goes,
+  the focus moves to the one now in its place, or to the panel after the last.
 - **Desktop notifications** are off until turned on here, which makes the
   browser ask. One is sent only while the page is not being looked at, and a
   refusal is said beside the switch.

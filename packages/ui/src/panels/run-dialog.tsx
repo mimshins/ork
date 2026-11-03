@@ -1,7 +1,9 @@
 /**
  * @file The Run workflow dialog: a project, a workflow, its inputs and the run
  *   flags, the command that does the same, and why it cannot start yet, which
- *   is said aloud as it changes.
+ *   is said aloud as it changes. Starting a run goes to its heading if the
+ *   Monitor is showing, since where the dialog was opened from may have gone
+ *   with the run chosen before.
  */
 
 import { useValue } from "react-containerized-state";
@@ -13,12 +15,18 @@ import { Dialog, DialogActions } from "../components/dialog.tsx";
 import { useAppState } from "../state/context.tsx";
 import { FlagFields, InputFields, NoProjects } from "./run-fields.tsx";
 import { commandOf, workflowPlaceholder } from "./run-form.ts";
-import { useRunForm } from "./use-run-form.ts";
+import { useRunForm, useStartFocus } from "./use-run-form.ts";
 
 import styles from "./runs.module.css";
 
-const RunForm = ({ onDone }: { onDone: () => void }) => {
-  const form = useRunForm(onDone);
+const RunForm = ({
+  onDone,
+  onStarted,
+}: {
+  onDone: () => void;
+  onStarted: (run: string) => void;
+}) => {
+  const form = useRunForm(onDone, onStarted);
   const { projectsRead, projects, project, workflows, workflow } = form;
   const { readingWorkflows } = form;
   const { values, flags, blocked, refusal, starting } = form;
@@ -117,6 +125,7 @@ const RunForm = ({ onDone }: { onDone: () => void }) => {
         </Button>
         <Button
           disabled={blocked !== null || starting}
+          focusableWhenDisabled
           type="submit"
           variant="primary"
         >
@@ -130,9 +139,11 @@ const RunForm = ({ onDone }: { onDone: () => void }) => {
 export const RunDialog = () => {
   const { runDialog } = useAppState();
   const open = useValue(runDialog);
+  const { finalFocus, onStarted } = useStartFocus();
   return (
     <Dialog
       description="Starts in the background, from the project's root."
+      finalFocus={finalFocus}
       onOpenChange={next => {
         void runDialog.setValue(next);
       }}
@@ -143,6 +154,7 @@ export const RunDialog = () => {
         onDone={() => {
           void runDialog.setValue(false);
         }}
+        onStarted={onStarted}
       />
     </Dialog>
   );

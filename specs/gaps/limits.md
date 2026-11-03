@@ -238,3 +238,13 @@ How something built works for now, by choice.
   of its newest 20 leaves the list, and a run paused again after being read does
   not notify twice. There is no stored history of notifications.
   ([panels](../ui/panels.md#notifications))
+- **L69 · Starting a run with no Monitor showing leaves the focus to Base UI.**
+  With the Monitor closed or behind another tab and the dialog's origin gone
+  with the run chosen before, the focus goes where Base UI puts it, as low as
+  the page's body. The Runs panel's new row could take it instead, once it
+  arrives. ([panels](../ui/panels.md#run-workflow))
+- **L70 · The UI has not met a real screen reader or touch screen.** Names,
+  roles and live regions are checked in the browser's accessibility tree, with
+  axe, and by watching the region's text; touch and pinch are tested as events;
+  forced colors only under Chrome's emulation; a desktop notification firing and
+  being clicked has not been seen. ([panels](../ui/panels.md))

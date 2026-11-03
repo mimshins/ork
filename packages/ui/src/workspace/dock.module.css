@@ -116,3 +116,14 @@
   height: 100%;
   justify-content: center;
 }
+
+/* Forced colors take the shadows away, so the active tab's line is an edge. */
+@media (forced-colors: active) {
+  .dock :global(.dv-active-group .dv-tab.dv-active-tab) {
+    border-block-end: var(--focus-width) solid Highlight;
+  }
+
+  .dock :global(.dv-inactive-group .dv-tab.dv-active-tab) {
+    border-block-end: var(--hairline) solid CanvasText;
+  }
+}

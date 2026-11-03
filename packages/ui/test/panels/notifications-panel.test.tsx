@@ -68,6 +68,22 @@ describe("the Notifications panel", () => {
     ).toBe("true");
   });
 
+  it("moves the focus to the next item when the focused one goes", async () => {
+    const other = { ...decision, id: "d2", question: "Merge?" };
+    const { overview } = await open([decision, other]);
+    screen.getByRole("button", { name: `Mark read: ${NAME}` }).focus();
+    await act(async () => {
+      overview.send("decisions", [other]);
+      await Promise.resolve();
+    });
+    await vi.waitFor(() => {
+      expect(document.activeElement).not.toBe(document.body);
+    });
+    expect(
+      document.activeElement?.closest("[data-notification]"),
+    ).not.toBeNull();
+  });
+
   it("lists an item, and says it is unread in a word", async () => {
     await open();
     expect(screen.getByText(NAME)).toBeDefined();

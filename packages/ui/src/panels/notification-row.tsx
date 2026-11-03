@@ -20,6 +20,7 @@ export const NotificationRow = ({ item }: { item: ShownNotification }) => {
   return (
     <li
       className={styles["item"]}
+      data-notification={item.id}
       data-unread={item.unread ? "" : undefined}
     >
       <p className={styles["title"]}>{item.title}</p>

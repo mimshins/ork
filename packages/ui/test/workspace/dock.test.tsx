@@ -79,7 +79,12 @@ describe("the dock", () => {
     await user.click(screen.getByRole("button", { name: "Restore Logs" }));
     expect(tabsBeside("Logs")).toEqual(["Logs", "Chats"]);
     expect(railNames()).toEqual([]);
-    expect(workspace.announcement.getValue()).toBe("Logs restored.");
+    await vi.waitFor(
+      () => {
+        expect(workspace.announcement.getValue()).toBe("Logs restored.");
+      },
+      { timeout: 2000 },
+    );
   });
 
   it("restores a panel that had a group to itself beside its neighbor", () => {
@@ -286,7 +291,14 @@ describe("the saved layout", () => {
     });
     expect(tabNames()).toEqual(ALL);
     expect(railNames()).toEqual([]);
-    expect(first.workspace.announcement.getValue()).toBe("Layout reset.");
+    await vi.waitFor(
+      () => {
+        expect(first.workspace.announcement.getValue()).toContain(
+          "Layout reset.",
+        );
+      },
+      { timeout: 2000 },
+    );
     await reload(first);
     expect(tabNames()).toEqual(ALL);
   });

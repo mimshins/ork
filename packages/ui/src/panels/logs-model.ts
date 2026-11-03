@@ -40,9 +40,16 @@ const innerLine = ({ event }: Of<"node.event">): string => {
   }
 };
 
-const finishedLine = ({ ok, error, round }: Of<"node.finished">): string => {
+const finishedLine = ({
+  ok,
+  error,
+  round,
+  output,
+}: Of<"node.finished">): string => {
+  const { summary } = output;
+  const said = typeof summary === "string" ? `: ${oneLine(summary)}` : "";
   const word = ok
-    ? "ok"
+    ? `ok${said}`
     : `failed${error === undefined ? "" : `: ${oneLine(error)}`}`;
   return round > 1 ? `round ${String(round)}: ${word}` : word;
 };
@@ -190,6 +197,18 @@ export const typesIn = (events: readonly StoredEvent[]): string[] =>
   sortedUnique(events.map(({ event }) => event.type));
 
 /** The CLI twin of what is shown. */
+/** How much of the run is loaded and how much of that the filters leave. */
+export const countsLine = (
+  shown: number,
+  loaded: number,
+  latest: number,
+): string =>
+  `${
+    shown === loaded
+      ? `${String(shown)} events`
+      : `${String(shown)} of ${String(loaded)} loaded`
+  }${latest > loaded ? `, ${String(latest)} in the run` : ""}`;
+
 export const logsCommand = (runId: string, node: string | null): string =>
   `ork logs ${runId}${node === null ? "" : ` --node ${node}`} --follow`;
 

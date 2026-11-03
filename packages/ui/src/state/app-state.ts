@@ -73,6 +73,8 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     server: null,
   });
   const selection = Container.create<Selection>({ run: null, node: null });
+  /** The run the focus goes to once the Monitor shows it. */
+  let arriving: string | null = null;
   const preferences = createPreferences(storage);
   /** The project the Runs panel shows: a root, or "all". */
   const runFilter = Container.create("all");
@@ -203,7 +205,19 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     watchRun: (runId: string): RunWatch =>
       createRunWatch({ runId, client, feed: heldFeed(runId).feed }),
     selectRun: (run: string | null): void => {
+      arriving = null;
       void selection.setValue({ run, node: null });
+    },
+    /** Chooses a run for the focus to follow, since what opened it may go. */
+    arriveAt: (run: string): void => {
+      arriving = run;
+      void selection.setValue({ run, node: null });
+    },
+    /** Whether the focus should go to this run, now it shows: asking clears it. */
+    takeArrival: (run: string): boolean => {
+      const arrived = arriving === run;
+      if (arrived) arriving = null;
+      return arrived;
     },
     selectNode: (node: string | null): void => {
       void selection.setValue({ ...selection.getValue(), node });

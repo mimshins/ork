@@ -40,7 +40,14 @@ export const LogRow = memo(
           <span className={styles["line"]}>{lineOf(event)}</span>
         </button>
         {open ? (
-          <pre className={styles["detail"]}>
+          <pre
+            aria-label={`Event ${String(seq)} in full`}
+            className={styles["detail"]}
+            // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- text that keeps its layout, with a name
+            role="group"
+            // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the keys scroll it
+            tabIndex={0}
+          >
             {JSON.stringify(event, null, 2)}
           </pre>
         ) : null}
