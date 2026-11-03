@@ -16,7 +16,7 @@ import {
   type FeedbackSource,
 } from "../feedback/types.ts";
 import { maskSecrets } from "./mask.ts";
-import { type Row, text } from "./schema.ts";
+import { type Row, text } from "./rows.ts";
 import type {
   FeedbackItem,
   FeedbackRecord,

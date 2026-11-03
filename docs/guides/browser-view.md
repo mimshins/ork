@@ -38,6 +38,7 @@ Hover or focus a control to see its command, and copy it where one is shown.
 | Write to a running node               | `ork chat <run> <node> -m "…"`              |
 | Go on with a session whose run ended  | `ork chat <run> <node>` (the terminal only) |
 | Resume a stopped or crashed run       | `ork resume <run>` (the terminal only)      |
+| See what runs spent                   | `ork usage`                                 |
 
 Notifications, the theme and the layout belong to the browser and have no
 command.
@@ -76,6 +77,10 @@ said, and what it did in between. While the run is live, `Enter` sends and
 and the bell in the top bar counts what is unread. What you have read is kept
 per browser. Desktop notifications are off until you turn them on here, which
 makes your browser ask.
+
+**Usage** shows what runs spent over a period, for a project or all of them:
+totals, spend per day, and the costliest workflows, models and nodes, with what
+is worth a look. See [what you spent](./models-and-budgets.md#what-you-spent).
 
 ## The workspace
 

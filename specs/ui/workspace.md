@@ -29,8 +29,8 @@ new panel is one entry there.
 The dock is dockview, on Ork's own theme class: its variables are set from the
 design tokens ([dock theme](../../packages/ui/src/workspace/dock.module.css))
 and no dockview skin class is applied. The default layout has Runs on the left,
-Monitor over Logs and Chats in the middle, and Decisions and Notifications on
-the right.
+Monitor over Logs, Chats and Usage in the middle, and Decisions and
+Notifications on the right.
 
 - **A tab** holds an icon and a title and no button, since a control inside a
   tab is invalid. **A group's header** carries Minimize and Close, for its

@@ -8,6 +8,7 @@
  */
 
 import type { HumanChannel } from "../runtime/types.ts";
+import { type EarlierSpend, earlierSpend } from "../usage/spend.ts";
 import type { Mail } from "./bus-events.ts";
 import type { Replay } from "./handle.ts";
 import { mailOf } from "./mail.ts";
@@ -49,6 +50,8 @@ export type ResumeState = {
   cutOff: Map<string, string>;
   /** Unread messages and the user's queued ones, for the resumed bus. */
   mail: Mail;
+  /** What the run has spent, which its budget and totals go on from. */
+  earlier: EarlierSpend;
 };
 
 /** How a run ended that cut its working nodes off, rather than failing them. */
@@ -191,6 +194,7 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
     succeeded,
     cutOff: cut ? unfinished : new Map<string, string>(),
     mail: mailOf(events),
+    earlier: earlierSpend(events),
   };
 };
 
@@ -216,6 +220,7 @@ export const createReplay = (
   history: ReadonlyMap<string, readonly NodeResult[]>,
   cutOff: ReadonlyMap<string, string> = new Map(),
   mail?: Mail,
+  earlier?: EarlierSpend,
 ): Replay & { kept: () => string[] } => {
   const sessions = new Map(cutOff);
   const used = new Map<string, number>();
@@ -248,6 +253,7 @@ export const createReplay = (
     },
     kept: () => [...history.keys()],
     ...(mail === undefined ? {} : { mail }),
+    ...(earlier === undefined ? {} : { earlier }),
   };
 };
 

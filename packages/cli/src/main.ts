@@ -26,6 +26,9 @@ export const main = defineCommand({
     ps,
     logs,
     tree,
+    // Loaded on use, like `ork ui`.
+    usage: () => import("./commands/usage.ts").then(module => module.usage),
+    prune: () => import("./commands/usage.ts").then(module => module.prune),
     decide,
     // Loaded on use, like `ork ui`.
     relay: () => import("./commands/relay.ts").then(module => module.relay),

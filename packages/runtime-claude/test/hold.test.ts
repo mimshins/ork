@@ -151,7 +151,8 @@ describe("the CLI driver's hold", () => {
       report: { status: "pass" },
       usage: { turns: 3 },
     });
-    expect(finished(events)?.usage.costUsd).toBeCloseTo(0.0223);
+    // Cost is already the session's total across a resume.
+    expect(finished(events)?.usage.costUsd).toBeCloseTo(0.0123);
     expect(recorded.filter(e => e.type === "node.held")).toHaveLength(1);
   });
 });

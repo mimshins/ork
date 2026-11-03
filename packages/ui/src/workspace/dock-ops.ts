@@ -73,7 +73,7 @@ const add = (
     ...placement,
   });
 
-/** Runs on the left, Monitor over Logs and Chats, Decisions on the right. */
+/** Runs on the left, Monitor over Logs, Chats and Usage, Decisions on the right. */
 export const addDefaultLayout = (api: DockviewApi): void => {
   const monitor = add(api, "monitor", {});
   add(api, "runs", {
@@ -96,6 +96,10 @@ export const addDefaultLayout = (api: DockviewApi): void => {
     inactive: true,
   });
   add(api, "chats", {
+    position: { referencePanel: "logs", direction: "within" },
+    inactive: true,
+  });
+  add(api, "usage", {
     position: { referencePanel: "logs", direction: "within" },
     inactive: true,
   });

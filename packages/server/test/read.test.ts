@@ -34,6 +34,49 @@ const withRuns = async (): Promise<TestServer> => {
 };
 
 describe("the read routes", () => {
+  it("report usage from the ledger, by project and time", async () => {
+    fixture = await startTestServer();
+    const { client, project, store } = fixture;
+    liveRun(fixture, "aaa11111");
+    store.append("aaa11111", {
+      type: "node.event",
+      id: "n",
+      event: {
+        type: "session.finished",
+        outcome: {
+          subtype: "success",
+          sessionId: "s",
+          report: null,
+          text: "",
+          usage: {
+            costUsd: 0.5,
+            inputTokens: 1,
+            outputTokens: 1,
+            cacheReadTokens: 0,
+            cacheWriteTokens: 0,
+            turns: 1,
+            durationMs: 1,
+          },
+          errors: [],
+        },
+      },
+    });
+    expect(
+      await client.call("usage", { query: { project: "demo" } }),
+    ).toMatchObject({ ok: true, data: { totals: { costUsd: 0.5, runs: 1 } } });
+    expect(
+      await client.call("usage", { query: { project: project.root } }),
+    ).toMatchObject({ ok: true, data: { totals: { sessions: 1 } } });
+    expect(
+      await client.call("usage", {
+        query: { since: "2999-01-01T00:00:00.000Z" },
+      }),
+    ).toMatchObject({ ok: true, data: { totals: { sessions: 0 } } });
+    expect(
+      await client.call("usage", { query: { since: "yesterday" } }),
+    ).toMatchObject({ ok: false, status: 400 });
+  });
+
   it("list the registered projects", async () => {
     const { client, project } = await withRuns();
     expect(await client.call("projects")).toMatchObject({

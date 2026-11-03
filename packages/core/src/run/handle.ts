@@ -7,6 +7,7 @@
 
 import type { CompiledGraph } from "../graph/types.ts";
 import type { HumanChannel, RelayPort } from "../runtime/types.ts";
+import type { EarlierSpend } from "../usage/spend.ts";
 import type { Mail } from "./bus-events.ts";
 import type { CallPort } from "./calls.ts";
 import type {
@@ -67,13 +68,15 @@ export type RunOptions = {
 /**
  * A resumed run's record (ADR-026). `take` gives an activation its result from
  * last time, or `null` when it must run anew; `ran` marks a new result;
- * `cutOff` gives, once, the session a node was cut off in; `mail`, the bus's.
+ * `cutOff` gives, once, the session a node was cut off in; `mail`, the bus's;
+ * `earlier`, what the run spent before it was resumed.
  */
 export type Replay = {
   take: (activation: Activation) => NodeResult | null;
   ran: (result: NodeResult) => void;
   cutOff?: (activation: Activation) => string | undefined;
   mail?: Mail;
+  earlier?: EarlierSpend;
 };
 
 export type RunHandle = {

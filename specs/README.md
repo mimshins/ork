@@ -33,6 +33,7 @@ Long specs follow the hub and chunk layout
 | [Messaging, decisions and logs](./messaging.md)   | Built     | M1d       |
 | [Pause, continue and stop](./run-control.md)      | Built     | M2        |
 | [Event store: what a run keeps](./event-store.md) | Built     | M1d       |
+| [Usage: what runs spent over time](./usage.md)    | Built     | M2        |
 | [Feedback and self-improvement](./feedback.md)    | Partial   | M1d, M2   |
 | [The ork CLI](./cli.md)                           | Partial   | M1        |
 | [The local server](./server.md)                   | Built     | M2        |

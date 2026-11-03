@@ -25,6 +25,7 @@ import {
   failure,
   finishedEvent,
   renderOutputs,
+  createSpend,
   recordRun,
   runResult,
   runStartedEvent,
@@ -47,13 +48,13 @@ export const startRun = (options: RunOptions): RunHandle => {
   const outputs: Record<string, NodeOutput> = {};
   const rounds = new Map<string, number>();
   const sessionIds = new Map<string, string>();
+  const spend = createSpend(limits.budgetUsd, options.replay?.earlier);
   const running = new Set<string>();
   const summaries = new Map<string, NodeSummary>();
   const queue: Activation[] = [];
   const reasons: string[] = [];
   const stops = createStops(abort.signal);
   let busy = 0;
-  let spent = 0;
   let stopped: RunStatus | null = null;
   let settled = false;
   const { promise: done, resolve: finish } = Promise.withResolvers<RunResult>();
@@ -140,7 +141,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     const result = runResult({
       runId,
       stopped,
-      costUsd: spent,
+      costUsd: spend.total(),
       nodes,
       reasons,
       worktrees,
@@ -158,13 +159,9 @@ export const startRun = (options: RunOptions): RunHandle => {
 
   /** True, and the run stops, once `limits.budgetUsd` is spent. */
   const budgetSpent = (): boolean => {
-    if (limits.budgetUsd === undefined || spent < limits.budgetUsd) {
-      return false;
-    }
-    stop(
-      "budget_exhausted",
-      `the run's budget of $${String(limits.budgetUsd)} is spent`,
-    );
+    if (!spend.exhausted()) return false;
+    const budget = `$${String(limits.budgetUsd)}`;
+    stop("budget_exhausted", `the run's budget of ${budget} is spent`);
     return true;
   };
 
@@ -198,8 +195,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     slots,
     nodeOf,
     runChild,
-    budgetLeft: () =>
-      limits.budgetUsd === undefined ? undefined : limits.budgetUsd - spent,
+    budgetLeft: spend.left,
   };
 
   const execute = createExecute({
@@ -223,13 +219,16 @@ export const startRun = (options: RunOptions): RunHandle => {
       const agent = graph.agents.get(activation.template ?? id);
       onEvent(startedEvent(activation, type, round, agent));
     }
-    const result = stops.ended(id, recorded ?? (await execute(activation)));
+    const result = spend.count(
+      id,
+      stops.ended(id, recorded ?? (await execute(activation))),
+      recorded !== null,
+    );
     holds.finished(id);
     ports.finished(id);
     running.delete(id);
     outputs[id] = result.output;
     if (result.sessionId !== undefined) sessionIds.set(id, result.sessionId);
-    spent += result.usage?.costUsd ?? 0;
     recordRun(summary(id), result);
     if (recorded === null) {
       options.replay?.ran(result);

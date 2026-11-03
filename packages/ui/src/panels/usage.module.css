@@ -1,0 +1,177 @@
+/**
+ * @file The look of the Usage panel. Its numbers line up in the mono face, and
+ *   its chart's bars take the muted ink, turning amber under the pointer: amber
+ *   marks what is being acted on, and spending is not an alarm.
+ */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.tools {
+  align-items: flex-end;
+  border-block-end: var(--hairline) solid var(--panel-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  padding: var(--gap);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--gap-loose);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--gap);
+}
+
+.totals {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  margin: 0;
+}
+
+.total {
+  border-inline-start: var(--hairline) solid var(--panel-border);
+  padding-inline-start: var(--gap);
+}
+
+.total dt {
+  color: var(--color-text-muted);
+}
+
+.total dd {
+  font-family: var(--font-mono);
+  font-size: var(--text-title);
+  margin: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+  min-width: 0;
+}
+
+.heading {
+  font-size: var(--text-ui);
+  font-weight: 600;
+  margin: 0;
+}
+
+.hints {
+  margin: 0;
+  padding-inline-start: var(--gap-loose);
+}
+
+.chartHead {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  justify-content: space-between;
+}
+
+.readout {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  margin: 0;
+}
+
+.chart {
+  align-items: stretch;
+  border-block-end: var(--hairline) solid var(--color-border-strong);
+  display: flex;
+  gap: var(--gap-hair);
+  height: 7.5rem;
+}
+
+.column {
+  align-items: flex-end;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.bar {
+  background: var(--color-text-muted);
+  border-start-end-radius: var(--radius-control);
+  border-start-start-radius: var(--radius-control);
+  max-width: 1.5rem;
+  width: 100%;
+}
+
+.column[data-pointed] .bar {
+  background: var(--color-action);
+}
+
+.axis {
+  color: var(--color-text-muted);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  justify-content: space-between;
+}
+
+.details summary {
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.table th,
+.table td {
+  border-block-end: var(--hairline) solid var(--panel-border);
+  font-weight: 400;
+  padding: var(--gap-hair) var(--gap-tight);
+  text-align: start;
+}
+
+.table thead th {
+  color: var(--color-text-muted);
+}
+
+.table .number {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.table .name {
+  overflow-wrap: anywhere;
+  width: 100%;
+}
+
+.note {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.refused {
+  color: var(--color-danger-text);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (forced-colors: active) {
+  .bar {
+    background: CanvasText;
+  }
+
+  .column[data-pointed] .bar {
+    background: Highlight;
+  }
+}

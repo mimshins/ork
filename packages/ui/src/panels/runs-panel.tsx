@@ -4,37 +4,18 @@
  *   tab stop, and the arrow keys move through it.
  */
 
-import type { RunView } from "@krapht/ork-server/client";
 import { type KeyboardEvent, useEffect, useMemo } from "react";
 import { useComputedValue, useValue } from "react-containerized-state";
 
 import { Button } from "../components/button.tsx";
 import { IconPlay } from "../components/icons.tsx";
-import { type Option, Select } from "../components/select.tsx";
+import { Select } from "../components/select.tsx";
 import type { AppState } from "../state/app-state.ts";
 import { useAppState } from "../state/context.tsx";
+import { ALL_PROJECTS, projectOptions } from "./project-options.ts";
 import { NoRuns, RunRow } from "./run-row.tsx";
 
 import styles from "./runs.module.css";
-
-const ALL_PROJECTS = "all";
-
-const baseName = (root: string): string => root.split("/").at(-1) ?? root;
-
-/** A run's project may be unregistered by now, so runs add to the list. */
-const projectOptions = (
-  projects: readonly { id: string; root: string }[],
-  runs: readonly RunView[],
-): Option[] => {
-  const known = new Map(projects.map(({ root, id }) => [root, id]));
-  for (const { project } of runs) {
-    if (!known.has(project)) known.set(project, baseName(project));
-  }
-  return [
-    { value: ALL_PROJECTS, label: "All projects" },
-    ...[...known].map(([value, label]) => ({ value, label })),
-  ];
-};
 
 /** Moves focus through the list; choosing stays with Enter, Space or a click. */
 const moveFocus = (event: KeyboardEvent<HTMLUListElement>): void => {

@@ -13,6 +13,7 @@ import {
   type DecisionRecord,
   type Health,
   type OverviewEvents,
+  type QueryOf,
   type RunView,
   STREAMS,
 } from "@krapht/ork-server/client";
@@ -83,6 +84,11 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
   const workflows = createRead((id: string) =>
     client.call("workflows", { params: { id } }),
   );
+  /** `now` is when it was asked, which the report's chart runs up to. */
+  const usage = createRead(
+    ({ query }: { query: QueryOf<"usage">; now: number }) =>
+      client.call("usage", { query }),
+  );
   const feeds = new Map<string, HeldFeed>();
   const decisionHistory = createDecisionHistory(client);
   const notifications = createNotifications({ runs, decisions, storage });
@@ -137,6 +143,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     notifications,
     projects,
     workflows,
+    usage,
     /** Asks for a run; it then arrives on the stream like any other. */
     startRun: (body: BodyOf<"start">) => client.call("start", { body }),
     /** Follows the server until the returned function is called. */

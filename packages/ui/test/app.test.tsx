@@ -25,13 +25,24 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const NO_USAGE = {
+  totals: { sessions: 0 },
+  groups: {},
+  hints: [],
+};
+
+const replyTo = (url: string, health: unknown): unknown => {
+  if (url === "/api/health") return health;
+  return url.startsWith("/api/usage") ? NO_USAGE : [];
+};
+
 /** What the server's health route says; other reads find nothing. */
 const answering = (status: number, health: unknown) => {
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string) =>
       Promise.resolve(
-        new Response(JSON.stringify(url === "/api/health" ? health : []), {
+        new Response(JSON.stringify(replyTo(url, health)), {
           status,
           headers: { "content-type": "application/json" },
         }),

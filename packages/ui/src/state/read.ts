@@ -10,7 +10,8 @@ import { Container } from "react-containerized-state";
 
 export type ReadState<T, A> =
   | { status: "idle" }
-  | { status: "loading"; arg: A }
+  /** `previous` is what was there, which can stay on the page meanwhile. */
+  | { status: "loading"; arg: A; previous?: T }
   | { status: "ready"; arg: A; data: T }
   | { status: "failed"; arg: A; error: string };
 
@@ -29,7 +30,18 @@ export const createRead = <T, A = void>(
     load: async arg => {
       newest += 1;
       const mine = newest;
-      void state.setValue({ status: "loading", arg });
+      const before = state.getValue();
+      const previous =
+        before.status === "ready"
+          ? before.data
+          : before.status === "loading"
+            ? before.previous
+            : undefined;
+      void state.setValue(
+        previous === undefined
+          ? { status: "loading", arg }
+          : { status: "loading", arg, previous },
+      );
       const answer = await fetchIt(arg);
       if (mine !== newest) return;
       void state.setValue(

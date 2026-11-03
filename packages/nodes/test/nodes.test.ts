@@ -31,6 +31,7 @@ import {
 } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
+import { withUsageOf } from "../src/claude.ts";
 import {
   callExecutor,
   claudeExecutor,
@@ -403,6 +404,20 @@ const mailboxWith = (pending: () => number): Mailbox => ({
 const unreadAfter = (sessions: number): number => Number(sessions === 1);
 
 describe("Claude nodes", () => {
+  it("keeps the session when a late turn never started one", () => {
+    const first = outcome(null);
+    const merged = withUsageOf(
+      {
+        ...first,
+        sessionId: "s1",
+        usage: { ...first.usage, costUsd: 5 },
+      },
+      { ...first, sessionId: "", usage: { ...first.usage, costUsd: 0 } },
+    );
+    expect(merged.sessionId).toBe("s1");
+    expect(merged.usage.costUsd).toBe(5);
+  });
+
   it("tells a session cut off by the run to carry on, and a re-entered one its round", () => {
     expect(resumeMessage(1, null)).toContain("Ork was stopped");
     expect(resumeMessage(2, { statuses: [] })).toContain("## Round 2");
@@ -435,7 +450,9 @@ describe("Claude nodes", () => {
     const result = await execute(context("fix", node, { mailbox: late }));
     expect(specs.map(s => s.resume)).toEqual([undefined, "s"]);
     expect(specs[1]?.prompt).toContain("1 message came in while you finished");
-    expect(result.usage?.costUsd).toBe(2 * usage.costUsd);
+    // Cost is already the session's total; tokens are each process's own.
+    expect(result.usage?.costUsd).toBe(usage.costUsd);
+    expect(result.usage?.inputTokens).toBe(2 * usage.inputTokens);
 
     specs.length = 0;
     await execute(context("fix", node, { mailbox: mailboxWith(() => 0) }));

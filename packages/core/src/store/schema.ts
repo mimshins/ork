@@ -1,11 +1,14 @@
 /**
- * @file The store's SQLite schema, one migration per `user_version`, and the
- *   helpers that read its rows without type assertions.
+ * @file The store's SQLite schema, one migration per `user_version`. A
+ *   migration is SQL, or a function when it has to fold what is already there.
  */
 
 import type { DatabaseSync } from "node:sqlite";
 
-export const MIGRATIONS = [
+import { inTransaction } from "./rows.ts";
+import { backfillUsage } from "./usage.ts";
+
+export const MIGRATIONS: readonly (string | ((db: DatabaseSync) => void))[] = [
   `CREATE TABLE runs (
      id TEXT PRIMARY KEY,
      workflow TEXT NOT NULL,
@@ -109,26 +112,81 @@ export const MIGRATIONS = [
   // 7: a run called by another: who called it, and how deep calls go.
   `ALTER TABLE runs ADD COLUMN parent TEXT;
    ALTER TABLE runs ADD COLUMN depth INTEGER NOT NULL DEFAULT 0;`,
+  // 8: the usage ledger (ADR-046), filled from the runs so far. Feedback loses
+  // its reference to `runs`, so its records outlive a pruned run.
+  db => {
+    db.exec(`CREATE TABLE usage (
+       run_id TEXT NOT NULL,
+       seq INTEGER NOT NULL,
+       at TEXT NOT NULL,
+       project TEXT NOT NULL,
+       workflow TEXT NOT NULL,
+       node TEXT NOT NULL,
+       template TEXT,
+       model TEXT,
+       driver TEXT,
+       kind TEXT NOT NULL,
+       round INTEGER NOT NULL,
+       failed INTEGER NOT NULL,
+       cost_usd REAL NOT NULL,
+       input_tokens INTEGER NOT NULL,
+       output_tokens INTEGER NOT NULL,
+       cache_read_tokens INTEGER NOT NULL,
+       cache_write_tokens INTEGER NOT NULL,
+       turns INTEGER NOT NULL,
+       duration_ms INTEGER NOT NULL,
+       PRIMARY KEY (run_id, seq)
+     ) WITHOUT ROWID;
+     CREATE INDEX usage_by_time ON usage (at);
+     CREATE INDEX usage_by_project ON usage (project, at);
+     ALTER TABLE feedback RENAME TO feedback_old;
+     DROP INDEX feedback_by_fingerprint;
+     CREATE TABLE feedback (
+       id INTEGER PRIMARY KEY AUTOINCREMENT,
+       run_id TEXT NOT NULL,
+       seq INTEGER NOT NULL,
+       at TEXT NOT NULL,
+       node TEXT,
+       source TEXT NOT NULL,
+       kind TEXT NOT NULL,
+       target TEXT NOT NULL,
+       severity TEXT NOT NULL,
+       title TEXT NOT NULL,
+       body TEXT NOT NULL,
+       evidence TEXT NOT NULL,
+       code TEXT,
+       fingerprint TEXT NOT NULL,
+       workflow TEXT,
+       workflow_hash TEXT,
+       node_type TEXT,
+       model TEXT,
+       driver TEXT,
+       version TEXT,
+       feedback_version INTEGER NOT NULL
+     );
+     INSERT INTO feedback SELECT * FROM feedback_old;
+     DROP TABLE feedback_old;
+     CREATE INDEX feedback_by_fingerprint ON feedback (fingerprint, at);`);
+    backfillUsage(db);
+  },
 ];
 
-export type Row = Record<string, unknown> | undefined;
-
-/** A text column, or `""` when it is null. */
-export const text = (row: Row, key: string): string => {
-  const value = row?.[key];
-  return typeof value === "string" ? value : "";
-};
+const versionOf = (db: DatabaseSync): number =>
+  Number(db.prepare("PRAGMA user_version").get()?.["user_version"] ?? 0);
 
 /** Applies the migrations the database has not had yet. */
-export const migrate = (db: DatabaseSync): void => {
-  const version = Number(
-    db.prepare("PRAGMA user_version").get()?.["user_version"] ?? 0,
-  );
-  for (const [index, sql] of MIGRATIONS.entries()) {
-    if (index < version) continue;
-    db.exec("BEGIN");
-    db.exec(sql);
-    db.exec(`PRAGMA user_version = ${String(index + 1)}`);
-    db.exec("COMMIT");
+export const migrate = (
+  db: DatabaseSync,
+  migrations: typeof MIGRATIONS = MIGRATIONS,
+): void => {
+  for (const [index, step] of migrations.entries()) {
+    if (index < versionOf(db)) continue;
+    inTransaction(db, () => {
+      // Another process may have done it while this one waited for the lock.
+      if (index < versionOf(db)) return;
+      if (typeof step === "string") db.exec(step);
+      else step(db);
+      db.exec(`PRAGMA user_version = ${String(index + 1)}`);
+    });
   }
 };

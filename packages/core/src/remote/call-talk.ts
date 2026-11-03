@@ -10,6 +10,7 @@ import type { CallRequest } from "../run/calls.ts";
 import { failure } from "../run/results.ts";
 import type { NodeResult } from "../run/types.ts";
 import type { RunRecord } from "../store/types.ts";
+import { usageRowsOf } from "../store/usage.ts";
 import { liveStatus, runTree } from "../store/view.ts";
 import {
   type CallWatch,
@@ -124,13 +125,17 @@ const resumeNode = async (
     return failure(`${node} ended without a report when resumed.`);
   }
   const ok = finished.report.status !== "fail";
+  // The session reports its total so far; the caller pays for this turn only.
+  const own = usageRowsOf(run, store.events(run.id))
+    .filter(row => row.seq > from && row.node === node)
+    .reduce((sum, row) => sum + row.costUsd, 0);
   return {
     ok,
     output: { ...finished.report, run: run.id },
     ...(ok ? {} : { error: finished.report.summary }),
     usage: {
       ...finished.usage,
-      costUsd: finished.usage.costUsd + talk.newCost(run.id),
+      costUsd: own + talk.newCost(run.id),
     },
   };
 };

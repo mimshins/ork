@@ -65,14 +65,17 @@ const sentBack = (round: number, input: unknown): string =>
 export const lateMessage = (count: number): string =>
   `[ork] ${String(count)} message${count === 1 ? "" : "s"} came in while you finished. Call read_inbox, act on ${count === 1 ? "it" : "them"} if needed, and end with a new structured report.`;
 
-/** The later outcome, with the cost and tokens of both sessions. */
+/**
+ * The later outcome, with the tokens of both processes. Its cost is already the
+ * session's total: Claude Code carries it across a resume (ADR-046).
+ */
 export const withUsageOf = (
   first: SessionOutcome,
   later: SessionOutcome,
 ): SessionOutcome => {
   const sum = (key: keyof SessionUsage) => first.usage[key] + later.usage[key];
   const usage: SessionUsage = {
-    costUsd: sum("costUsd"),
+    costUsd: Math.max(first.usage.costUsd, later.usage.costUsd),
     inputTokens: sum("inputTokens"),
     outputTokens: sum("outputTokens"),
     cacheReadTokens: sum("cacheReadTokens"),
@@ -80,7 +83,9 @@ export const withUsageOf = (
     turns: sum("turns"),
     durationMs: sum("durationMs"),
   };
-  return { ...later, usage };
+  // A turn that never started has no session; the first one's goes on.
+  const sessionId = later.sessionId === "" ? first.sessionId : later.sessionId;
+  return { ...later, sessionId, usage };
 };
 
 /** A finished session as a node result: its report is the node's output. */

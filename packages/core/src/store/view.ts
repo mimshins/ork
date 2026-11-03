@@ -48,8 +48,11 @@ const blank = (id: string, type: NodeType, parent?: string): TreeNode => {
   return node;
 };
 
-/** A spawned worker's template: `<template>-<n>` of a declared node. */
-const templateOf = (id: string, declared: Map<string, TreeNode>) => {
+/** The declared node a spawned worker's id (`<template>-<n>`) is an instance of. */
+export const templateOf = (
+  id: string,
+  declared: { has: (id: string) => boolean },
+): string | undefined => {
   const match = /^(?<base>.+)-\d+$/u.exec(id);
   const base = match?.groups?.["base"];
   return base !== undefined && declared.has(base) ? base : undefined;

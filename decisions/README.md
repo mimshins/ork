@@ -76,4 +76,5 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [042](./ADR-042-icons-mdi.md)                      | The UI's icons come from Material Design Icons                              | Accepted          | waived                                                      |
 | [043](./ADR-043-timeouts.md)                       | Timeouts measure work, and an expired node is an ordinary failure           |
 | [044](./ADR-044-relay-between-runs.md)             | Nodes of different runs message each other over a relay in the store        |
+| [046](./ADR-046-usage-ledger-and-prune.md)         | A usage ledger beside the events, and pruning by hand                       | Accepted          |
 | [045](./ADR-045-workflows-calling-workflows.md)    | A workflow calls another as its own run, through a node                     | Accepted          |

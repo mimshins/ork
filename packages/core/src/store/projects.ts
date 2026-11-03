@@ -9,7 +9,7 @@ import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 
 import { type ProjectRecord, PROJECT_MODES } from "../project/place.ts";
-import { type Row, text } from "./schema.ts";
+import { type Row, text } from "./rows.ts";
 import type { ProjectStore } from "./types.ts";
 
 const recordOf = (row: Row): ProjectRecord => ({
@@ -31,6 +31,9 @@ export const projectQueries = (db: DatabaseSync): ProjectStore => {
     "UPDATE projects SET root = ?, mode = ?, dir = ? WHERE id = ?",
   );
   const rehome = db.prepare("UPDATE runs SET project = ? WHERE project = ?");
+  const rehomeUsage = db.prepare(
+    "UPDATE usage SET project = ? WHERE project = ?",
+  );
   // A run's workflow file moves with the folder it was in.
   const refile = db.prepare(
     `UPDATE runs SET file = ? || substr(file, ?)
@@ -62,6 +65,7 @@ export const projectQueries = (db: DatabaseSync): ProjectStore => {
       try {
         move.run(root, place.mode, place.dir, id);
         rehome.run(root, before.root);
+        rehomeUsage.run(root, before.root);
         refile.run(
           `${place.dir}${path.sep}`,
           from.length + 1,

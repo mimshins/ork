@@ -12,6 +12,7 @@ import {
   IconLogs,
   IconMonitor,
   IconNotifications,
+  IconUsage,
   IconRuns,
 } from "../components/icons.tsx";
 import { ChatsPanel } from "../panels/chats-panel.tsx";
@@ -20,6 +21,7 @@ import { LogsPanel } from "../panels/logs-panel.tsx";
 import { MonitorPanel } from "../panels/monitor-panel.tsx";
 import { NotificationsPanel } from "../panels/notifications-panel.tsx";
 import { RunsPanel } from "../panels/runs-panel.tsx";
+import { UsagePanel } from "../panels/usage-panel.tsx";
 
 export type PanelId =
   | "runs"
@@ -27,7 +29,8 @@ export type PanelId =
   | "logs"
   | "decisions"
   | "chats"
-  | "notifications";
+  | "notifications"
+  | "usage";
 
 export type PanelSpec = {
   id: PanelId;
@@ -67,6 +70,12 @@ const SPECS: Record<PanelId, PanelSpec> = {
     title: "Notifications",
     Icon: IconNotifications,
     Body: NotificationsPanel,
+  },
+  usage: {
+    id: "usage",
+    title: "Usage",
+    Icon: IconUsage,
+    Body: UsagePanel,
   },
 };
 

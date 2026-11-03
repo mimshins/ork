@@ -6,7 +6,7 @@
 
 import type { DatabaseSync } from "node:sqlite";
 
-import { type Row, text } from "./schema.ts";
+import { type Row, text } from "./rows.ts";
 import type { LinkRecord, LinkStore } from "./types.ts";
 
 const linkOf = (row: Row): LinkRecord => {

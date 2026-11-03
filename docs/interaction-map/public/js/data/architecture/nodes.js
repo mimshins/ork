@@ -200,6 +200,7 @@ export const NODES = [
       "Built: Chats, one thread per leader or worker from its events, writing to it while the run is live, and the ork chat command for a run that has ended.",
       "Built: Notifications, items worked out from the overview stream with a read state per browser, a bell with the unread count, a polite live region, and opt-in desktop notifications.",
       "Checked in a real browser and on a real session: axe, keyboard only, 200% zoom, both themes, reduced motion and forced colors. Not yet with a real screen reader or by touch.",
+      "Built: Usage, what runs spent over a period from the usage ledger, with a chart, the costliest workflows, models and nodes, and hints from thresholds.",
       "No Resume button yet: `ork resume` does that.",
       "Panels still to come: the designer and context inspector.",
     ],
@@ -477,6 +478,7 @@ export const NODES = [
     facts: [
       "Built: each run event gets a sequence number and a time, with secrets masked, before the terminal prints it.",
       "Built: `ork ps`, `ork logs [--follow]` and `ork tree` read it from any terminal; a run whose process died reads as `crashed`.",
+      "Built: a usage ledger beside the events, one row per finished Claude session, written with its event; `ork prune` forgets old runs and keeps it.",
       "Built: registered projects (in-repo or attached) are a table beside the runs.",
       "Built: decisions, messages and commands from other processes (`ork decide`, `ork stop`, `ork pause`, `ork continue`, `ork chat`, `ork relay`).",
       "Built: links between runs are a table of their own, and a called run's record names its `parent` and `depth`.",

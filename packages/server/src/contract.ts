@@ -15,6 +15,7 @@ import type {
   StoredEvent,
   StoredRunStatus,
   TreeNode,
+  UsageReport,
 } from "@krapht/ork-core";
 import type { InputDef } from "@krapht/ork-schema";
 import { z } from "zod";
@@ -27,6 +28,7 @@ export type {
   ProjectRecord,
   StoredEvent,
   TreeNode,
+  UsageReport,
 };
 
 const Count = z.coerce.number().int().positive();
@@ -36,6 +38,14 @@ const Driver = z.enum(["sdk", "cli"]);
 export const RunsQuerySchema = z.strictObject({
   project: z.string().min(1).optional(),
   limit: Count.optional(),
+});
+
+export const UsageQuerySchema = z.strictObject({
+  project: z.string().min(1).optional(),
+  workflow: z.string().min(1).optional(),
+  /** ISO times: `since` included, `until` not. */
+  since: z.iso.datetime().optional(),
+  until: z.iso.datetime().optional(),
 });
 
 export const EventsQuerySchema = z.strictObject({
@@ -170,6 +180,7 @@ export const API = {
     path: "/api/runs/:id/messages",
     body: MessageSchema,
   },
+  usage: { method: "GET", path: "/api/usage", query: UsageQuerySchema },
   links: { method: "GET", path: "/api/links", query: LinksQuerySchema },
   link: { method: "POST", path: "/api/links", body: LinkSchema },
   unlink: { method: "POST", path: "/api/links/end", body: UnlinkSchema },
@@ -207,6 +218,7 @@ export type Responses = {
   pause: Accepted;
   continue: Accepted;
   message: Accepted;
+  usage: UsageReport;
   links: LinkRecord[];
   link: LinkRecord;
   unlink: { ended: true };

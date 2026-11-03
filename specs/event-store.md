@@ -40,6 +40,9 @@ all views over the same events.
   Events are only appended, never changed.
 - **Before the terminal:** each event is stored, then printed (and sent to the
   run's socket followers), so a crash loses at most the event in flight.
+- **The usage ledger** has a table of its own: one row per finished Claude
+  session, written as its event is appended, which outlives the run
+  ([usage](./usage.md)).
 - **Links** between nodes of live runs have a table of their own
   ([messaging](./messaging/links.md)); `relay` and `notice` commands carry what
   crosses them.
@@ -82,6 +85,9 @@ records use the same patterns.
   how many times it ran, tokens and cost. `--json` prints the tree.
 - `<run>` is an id or a unique prefix of one; without it, this project's newest
   run. An ambiguous prefix lists the matches.
+- **`ork usage`** adds up what sessions spent over time, and **`ork prune`**
+  forgets old runs while keeping that ledger and their feedback
+  ([usage](./usage.md)).
 - **Feedback** is recorded with the run: each `feedback.recorded` event is also
   a row in the `feedback` table, grouped by fingerprint into `feedback_items`
   ([feedback](./feedback.md)); `ork feedback` reads them.

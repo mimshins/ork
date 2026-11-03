@@ -139,9 +139,13 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 
 ## Budget and concurrency
 
-- `limits.budgetUsd` caps the run: each session gets
-  `min(node budget, what is left)`, and once it is spent no session or
-  [call](./scheduler/calls.md) starts and the run ends `budget_exhausted`.
+- A result counts for what its activation spent: a resumed session's cost is cut
+  down to what it added ([usage](./usage.md#what-a-resumed-session-spent)).
+  `ork resume` goes on from all the run had spent, failed nodes included.
+- `limits.budgetUsd` caps the run: each session starts with
+  `min(node budget, what is left)` ([L73](./gaps/limits.md)), and once it is
+  spent no session or [call](./scheduler/calls.md) starts and the run ends
+  `budget_exhausted`.
 - `limits.concurrency` (default 4) caps the Claude sessions running at once;
   other nodes are not limited.
 - `interrupt()` stops starting nodes, aborts the running ones, stops the runs

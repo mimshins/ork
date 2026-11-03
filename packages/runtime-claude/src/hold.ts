@@ -64,9 +64,12 @@ export const isDeferredResult = (message: unknown): boolean =>
   "stop_reason" in message &&
   message.stop_reason === "tool_deferred";
 
-/** Two legs of one session, as one: what both spent. */
+/**
+ * Two legs of one session, as one: the tokens of both, and the later leg's
+ * cost, which is already the session's total (ADR-046).
+ */
 export const addUsage = (a: SessionUsage, b: SessionUsage): SessionUsage => ({
-  costUsd: a.costUsd + b.costUsd,
+  costUsd: Math.max(a.costUsd, b.costUsd),
   inputTokens: a.inputTokens + b.inputTokens,
   outputTokens: a.outputTokens + b.outputTokens,
   cacheReadTokens: a.cacheReadTokens + b.cacheReadTokens,

@@ -1,11 +1,16 @@
 /**
  * @file The API's read routes (specs/server.md#api): health, projects and a
- *   project's workflows, runs, a run, its tree and its events, and the open
- *   decisions. Each reads the store as the matching CLI command does (`ork
- *   projects`, `ps`, `tree`, `logs`, `decide --list`).
+ *   project's workflows, runs, a run, its tree and its events, the open
+ *   decisions, and usage. Each reads the store as the matching CLI command does
+ *   (`ork projects`, `ps`, `tree`, `logs`, `decide --list`, `usage`).
  */
 
-import { nodeOf, pendingDecisions, runTree } from "@krapht/ork-core";
+import {
+  nodeOf,
+  pendingDecisions,
+  runTree,
+  usageReport,
+} from "@krapht/ork-core";
 
 import { projectOf, runOf, type ServerContext, viewOf } from "./context.ts";
 import { runGraph } from "./graph.ts";
@@ -25,6 +30,7 @@ type ReadRoutes = Pick<
   | "decisions"
   | "decision"
   | "links"
+  | "usage"
 >;
 
 /** A project filter's root: a registered project's, or the value as a root. */
@@ -43,6 +49,20 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
 
   links: ({ query }) =>
     ok(context.store.links(query.run === undefined ? {} : { run: query.run })),
+
+  usage: ({ query }) =>
+    ok(
+      usageReport(
+        context.store.usage({
+          ...(query.project === undefined
+            ? {}
+            : { project: projectRoot(context, query.project) }),
+          ...(query.workflow === undefined ? {} : { workflow: query.workflow }),
+          ...(query.since === undefined ? {} : { since: query.since }),
+          ...(query.until === undefined ? {} : { until: query.until }),
+        }),
+      ),
+    ),
 
   workflows: ({ params }) => {
     const project = projectOf(context, params.id);

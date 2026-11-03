@@ -14,7 +14,8 @@ import { DatabaseSync } from "node:sqlite";
 import type { RunEvent } from "../run/types.ts";
 import { maskReplacer } from "./mask.ts";
 import { storeQueries } from "./queries.ts";
-import { migrate, type Row, text } from "./schema.ts";
+import { eventOf, inTransaction, type Row, text } from "./rows.ts";
+import { migrate } from "./schema.ts";
 import type { EventStore, RunRecord, StoredRunStatus } from "./types.ts";
 
 /** `~/.ork/state.db`; `home` is `~` (tests pass a folder). */
@@ -52,11 +53,6 @@ const recordOf = (row: Row): RunRecord => {
   return record;
 };
 
-/** An event as the store wrote it. */
-const eventOf = (data: string): RunEvent =>
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- only append() writes this column, from a RunEvent
-  JSON.parse(data) as RunEvent;
-
 /** The node an event is about, for filtering. */
 export const nodeOf = (event: RunEvent): string | null => {
   if ("id" in event && typeof event.id === "string") return event.id;
@@ -68,9 +64,9 @@ export const nodeOf = (event: RunEvent): string | null => {
 export const openStore = (file: string = storePath()): EventStore => {
   if (file !== ":memory:") mkdirSync(path.dirname(file), { recursive: true });
   const db = new DatabaseSync(file);
+  db.exec("PRAGMA busy_timeout = 5000");
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA synchronous = NORMAL");
-  db.exec("PRAGMA busy_timeout = 5000");
   db.exec("PRAGMA foreign_keys = ON");
   migrate(db);
 
@@ -107,7 +103,7 @@ export const openStore = (file: string = storePath()): EventStore => {
     "SELECT seq, at, data FROM events WHERE run_id = ? AND seq > ? ORDER BY seq",
   );
 
-  const { insertFeedback, ...queries } = storeQueries(db);
+  const { insertFeedback, recordUsage, ...queries } = storeQueries(db);
 
   return {
     ...queries,
@@ -139,28 +135,36 @@ export const openStore = (file: string = storePath()): EventStore => {
     reopen: runId => {
       reopenRun.run(process.pid, runId);
     },
-    append: (runId, event) => {
-      const at = new Date().toISOString();
-      const seq = Number(lastSeq.get(runId)?.["seq"] ?? 0) + 1;
-      insertEvent.run(
-        runId,
-        seq,
-        at,
-        event.type,
-        nodeOf(event),
-        JSON.stringify(event, maskReplacer),
-      );
-      if (event.type === "node.finished" && event.usage !== undefined) {
-        addCost.run(event.usage.costUsd, runId);
-      }
-      if (event.type === "feedback.recorded") {
-        insertFeedback(runId, seq, at, event.node, event.feedback);
-      }
-      if (event.type === "run.finished") {
-        finishRun.run(event.result.status, at, event.result.costUsd, runId);
-      }
-      return { runId, seq, at, event };
-    },
+    // An event and what is derived from it are written together, or not at all.
+    append: (runId, event) =>
+      inTransaction(db, () => {
+        const at = new Date().toISOString();
+        const seq = Number(lastSeq.get(runId)?.["seq"] ?? 0) + 1;
+        insertEvent.run(
+          runId,
+          seq,
+          at,
+          event.type,
+          nodeOf(event),
+          JSON.stringify(event, maskReplacer),
+        );
+        if (event.type === "node.finished" && event.usage !== undefined) {
+          addCost.run(event.usage.costUsd, runId);
+        }
+        if (
+          event.type === "node.event" &&
+          event.event.type === "session.finished"
+        ) {
+          recordUsage(runId);
+        }
+        if (event.type === "feedback.recorded") {
+          insertFeedback(runId, seq, at, event.node, event.feedback);
+        }
+        if (event.type === "run.finished") {
+          finishRun.run(event.result.status, at, event.result.costUsd, runId);
+        }
+        return { runId, seq, at, event };
+      }),
     runs: (filter = {}) => {
       const limit = filter.limit ?? -1;
       const found =

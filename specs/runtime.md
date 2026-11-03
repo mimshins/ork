@@ -91,4 +91,7 @@ A Claude node ends with **structured output**, not a tool call
 The outcome's usage comes from the final `result` message: cost (a client-side
 estimate), input, output, cache-read and cache-write tokens, turns and duration.
 In streaming mode a later result carries running totals; read the latest, never
-sum.
+sum. The same holds across a resume: a resumed session's cost is the session's
+total so far, when its transcript saved one, while its tokens, turns and
+duration are that process's own; a crash's result may carry zero
+([usage](./usage.md#what-a-resumed-session-spent)).

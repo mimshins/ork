@@ -210,10 +210,62 @@ export type ProjectStore = {
   ) => boolean;
 };
 
+/** One Claude session's spend (ADR-046); it outlives its run's transcript. */
+export type UsageRow = {
+  runId: string;
+  /** The `session.finished` event it came from. */
+  seq: number;
+  /** When the session finished. */
+  at: string;
+  project: string;
+  workflow: string;
+  node: string;
+  /** For a spawned worker, the declared node it is an instance of. */
+  template?: string;
+  model?: string;
+  driver?: string;
+  /** `chat`: `ork chat` resumed the session after the node finished. */
+  kind: "node" | "chat";
+  /** The node's round: above 1 when a loop sent the work back. */
+  round: number;
+  /** The session errored, or reported `fail`. */
+  failed: boolean;
+  costUsd: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+  turns: number;
+  durationMs: number;
+};
+
+export type UsageFilter = {
+  project?: string;
+  workflow?: string;
+  /** ISO times: `since` included, `until` not. */
+  since?: string;
+  until?: string;
+};
+
+export type UsageStore = {
+  /** The sessions in the filter, oldest first. */
+  usage: (filter?: UsageFilter) => UsageRow[];
+  /** When a run's last event was written; `undefined` with no events. */
+  lastEventAt: (runId: string) => string | undefined;
+  /**
+   * Forgets a run and its transcript; what it spent stays in the ledger. False,
+   * and nothing changes, when the run is live.
+   */
+  deleteRun: (runId: string) => boolean;
+  /** Gives freed space back to the disk; why it could not, or `null`. */
+  compact: () => string | null;
+};
+
 export type EventStore = DecisionStore &
   LinkStore &
   FeedbackStore &
-  ProjectStore & {
+  ProjectStore &
+  UsageStore & {
     /** Records a new run as `running` in this process. */
     begin: (run: NewRun) => RunRecord;
     /** Marks a stored run `running` again, in this process (`ork resume`). */

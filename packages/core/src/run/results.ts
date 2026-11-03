@@ -1,8 +1,8 @@
 /**
  * @file Small helpers for the scheduler's results: pass-through and failure
- *   results, run-summary entries, `node.finished` events, the declared nodes
- *   `run.started` lists, which session a re-run node resumes, and closing the
- *   workspace at the end.
+ *   results, run-summary entries, what a run has spent, `node.finished` events,
+ *   the declared nodes `run.started` lists, which session a re-run node
+ *   resumes, and closing the workspace at the end.
  */
 
 import { isClaudeNode, type Node, type NodeType } from "@krapht/ork-schema";
@@ -10,6 +10,7 @@ import { isClaudeNode, type Node, type NodeType } from "@krapht/ork-schema";
 import type { AgentRef } from "../agents/apply.ts";
 import { parseTemplate, renderTemplate, type Scope } from "../expr/evaluate.ts";
 import type { CompiledGraph } from "../graph/types.ts";
+import { type EarlierSpend, ownSpend } from "../usage/spend.ts";
 import type { Activation, RunOptions } from "./handle.ts";
 import type {
   KeptWorktree,
@@ -28,6 +29,56 @@ export const passThrough = (input: NodeOutput | undefined): NodeResult => ({
   output: input ?? {},
   ok: true,
 });
+
+/**
+ * A result with only what this activation spent (ADR-046): a session's report
+ * holds its total so far, while its tokens are this process's own. `reported`
+ * holds each session's total.
+ */
+export const withOwnSpend = (
+  id: string,
+  result: NodeResult,
+  reported: Map<string, number>,
+): NodeResult => {
+  const { sessionId, usage } = result;
+  if (sessionId === undefined || usage === undefined) return result;
+  const own = {
+    ...usage,
+    costUsd: ownSpend(reported, `${id}/${sessionId}`, usage.costUsd),
+  };
+  return {
+    ...result,
+    usage: own,
+    output:
+      "usage" in result.output
+        ? { ...result.output, usage: own }
+        : result.output,
+  };
+};
+
+/** A run's spending so far; a resumed run starts from what it had spent. */
+export const createSpend = (
+  budgetUsd: number | undefined,
+  earlier?: EarlierSpend,
+) => {
+  const reported = new Map(earlier?.reported);
+  let spent = earlier?.total ?? 0;
+  return {
+    total: () => spent,
+    left: () => (budgetUsd === undefined ? undefined : budgetUsd - spent),
+    exhausted: () => budgetUsd !== undefined && spent >= budgetUsd,
+    /**
+     * Counts a result, and gives it back with only its own spend. A replayed
+     * result is as stored, and already in what the run started from.
+     */
+    count: (id: string, result: NodeResult, replayed: boolean): NodeResult => {
+      if (replayed) return result;
+      const own = withOwnSpend(id, result, reported);
+      spent += own.usage?.costUsd ?? 0;
+      return own;
+    },
+  };
+};
 
 export const recordRun = (entry: NodeSummary, result: NodeResult): void => {
   entry.runs += 1;

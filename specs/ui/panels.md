@@ -3,7 +3,8 @@
 _Part of [The UI](../ui.md)._
 
 Status: **Built:** the Runs panel, the Run workflow dialog, the Monitor, Logs,
-Decisions, Chats and Notifications ([panels](../../packages/ui/src/panels/),
+Decisions, Chats, Notifications and Usage
+([panels](../../packages/ui/src/panels/),
 [tests](../../packages/ui/test/panels/)). The designer and context inspector are
 the next milestone.
 
@@ -16,6 +17,7 @@ the next milestone.
 - [Decisions](#decisions)
 - [Chats](#chats)
 - [Notifications](#notifications)
+- [Usage](#usage)
 
 ## Runs
 
@@ -206,3 +208,20 @@ bar's bell shows how many are unread and goes to the panel.
 - **Desktop notifications** are off until turned on here, which makes the
   browser ask. One is sent only while the page is not being looked at, and a
   refusal is said beside the switch.
+
+## Usage
+
+What runs spent over a period
+([panel](../../packages/ui/src/panels/usage-panel.tsx),
+[tests](../../packages/ui/test/panels/usage-panel.test.tsx)), from
+[`/api/usage`](../usage.md#reports), read again when a run ends. It filters by
+project, and by the last 7, 30 or 90 days or all time. Two projects of the same
+name show their parent folder too.
+
+- **Totals, hints, then spend over time:** one bar per day, or per week past 92
+  days, up to today so an idle stretch shows. The line above the chart says what
+  the pointer is on; the chart is one image to a screen reader, with a table of
+  the same numbers below it.
+- **Where it went:** by workflow, model and node, and by project when showing
+  all, the costliest 10 of each.
+- It says the costs are Claude Code's estimates.

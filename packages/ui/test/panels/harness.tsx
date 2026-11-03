@@ -12,6 +12,7 @@ import {
   type ProjectRecord,
   type StoredEvent,
   type TreeNode,
+  type UsageReport,
   type WorkflowGraph,
   type WorkflowView,
 } from "@krapht/ork-server/client";
@@ -41,6 +42,10 @@ export type FakeRoutes = {
   refuseAnswer?: string;
   /** A run's stored events, as read a page at a time. */
   events?: StoredEvent[];
+  /** What it reports of usage, given what was asked. */
+  usage?: (query: URLSearchParams) => UsageReport;
+  /** Why it refuses a usage report, if it does. */
+  refuseUsage?: string;
 };
 
 export type MonitorRoutes = {
@@ -70,8 +75,19 @@ const json = (body: unknown, status = 200): Response =>
 export const openPanelState = (routes: FakeRoutes = {}) => {
   const started: unknown[] = [];
   const controlled: { kind: string; run: string; body: unknown }[] = [];
-  const answer = (path: string, body: unknown): Response => {
+  const answer = (path: string, body: unknown, query = ""): Response => {
     const { monitor } = routes;
+    if (path === "/api/usage") {
+      return routes.refuseUsage === undefined
+        ? json(
+            routes.usage?.(new URLSearchParams(query)) ?? {
+              totals: { sessions: 0 },
+              groups: {},
+              hints: [],
+            },
+          )
+        : json({ error: routes.refuseUsage }, 500);
+    }
     const decision = /^\/api\/decisions\/(.+)$/u.exec(path)?.[1];
     if (decision !== undefined) {
       if (body === undefined) {
@@ -116,13 +132,13 @@ export const openPanelState = (routes: FakeRoutes = {}) => {
   };
   const client = createClient({
     fetch: (input, init) => {
-      const path = new URL(
+      const url = new URL(
         input instanceof Request ? input.url : input,
         "http://ork.test",
-      ).pathname;
+      );
       const body: unknown =
         typeof init?.body === "string" ? JSON.parse(init.body) : undefined;
-      return Promise.resolve(answer(path, body));
+      return Promise.resolve(answer(url.pathname, body, url.search));
     },
   });
   const sources = openFakeSources();

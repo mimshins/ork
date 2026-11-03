@@ -630,6 +630,34 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "usage-reports",
+        title: "Usage reports and pruning",
+        status: "active",
+        detail:
+          "`ork usage` and a Usage panel add up what sessions spent over time, from a ledger the events fill, with hints from thresholds; no model is involved. `ork prune` forgets old runs and keeps the ledger. Corrects a resumed session's cost, which was counted again.",
+        docs: [
+          "decisions/ADR-046-usage-ledger-and-prune.md",
+          "specs/usage.md",
+          "docs/guides/models-and-budgets.md#what-you-spent",
+        ],
+      },
+      {
+        id: "script-access",
+        title: "Scripts that reach the run",
+        status: "next",
+        detail:
+          "Tool nodes know their run and node, read their output as JSON, and can send a message, and a workflow can declare a message when a node finishes, so deterministic work takes no model turn. Needs an RFC for the messaging part.",
+        docs: ["specs/messaging.md", "specs/workflow-format.md"],
+      },
+      {
+        id: "quotas",
+        title: "Quotas across runs",
+        status: "planned",
+        detail:
+          "Caps per day, month or project on top of each run's budget, for API and subscription users alike. Needs its own RFC, after the usage reports.",
+        docs: ["specs/usage.md", "specs/scheduler.md#budget-and-concurrency"],
+      },
+      {
         id: "worktrees-panel",
         title: "Worktrees panel",
         status: "planned",
@@ -740,6 +768,7 @@ export const OFF_ROADMAP = [
   "a0cd60e",
   "bad987b",
   "713f18b",
+  "9ac26f2",
 ];
 
 /** The day the roadmap was last brought up to date. */

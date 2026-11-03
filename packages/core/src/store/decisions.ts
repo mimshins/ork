@@ -8,7 +8,7 @@ import type { DatabaseSync } from "node:sqlite";
 
 import type { DecisionChoice } from "../runtime/types.ts";
 import { maskSecrets } from "./mask.ts";
-import { type Row, text } from "./schema.ts";
+import { type Row, text } from "./rows.ts";
 import type {
   AnsweredBy,
   DecisionKind,

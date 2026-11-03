@@ -11,7 +11,15 @@ import { violations } from "../axe.ts";
 import { stubWindow } from "../dom.ts";
 import { keys, openShell, railNames, tabNames } from "./harness.tsx";
 
-const ALL = ["Chats", "Decisions", "Logs", "Monitor", "Notifications", "Runs"];
+const ALL = [
+  "Chats",
+  "Decisions",
+  "Logs",
+  "Monitor",
+  "Notifications",
+  "Runs",
+  "Usage",
+];
 
 beforeEach(() => {
   localStorage.clear();
@@ -47,7 +55,7 @@ describe("the dock", () => {
   it("opens every panel in the default layout", () => {
     const { workspace } = openShell();
     expect(tabNames()).toEqual(ALL);
-    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats"]);
+    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage"]);
     expect(tabsBeside("Decisions")).toEqual(["Decisions", "Notifications"]);
     expect(workspace.view.getValue().active).toBe("monitor");
     expect(workspace.announcement.getValue()).toBe("");
@@ -73,11 +81,11 @@ describe("the dock", () => {
     const user = keys();
     const { workspace } = openShell();
     await user.click(screen.getByRole("button", { name: "Minimize Logs" }));
-    expect(tabsBeside("Chats")).toEqual(["Chats"]);
+    expect(tabsBeside("Chats")).toEqual(["Chats", "Usage"]);
     expect(railNames()).toEqual(["Restore Logs"]);
     expect(workspace.announcement.getValue()).toBe("Logs minimized.");
     await user.click(screen.getByRole("button", { name: "Restore Logs" }));
-    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats"]);
+    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage"]);
     expect(railNames()).toEqual([]);
     await vi.waitFor(
       () => {
@@ -120,6 +128,7 @@ describe("the dock", () => {
         "runs",
         "decisions",
         "notifications",
+        "usage",
       ] as const) {
         workspace.minimize(id);
       }
@@ -127,7 +136,7 @@ describe("the dock", () => {
     expect(tabNames()).toEqual([]);
     await waitFor(() => {
       expect(document.activeElement?.getAttribute("aria-label")).toBe(
-        "Restore Notifications",
+        "Restore Usage",
       );
     });
     expect(screen.getByText("No panels open.")).toBeDefined();
@@ -153,7 +162,7 @@ describe("the dock", () => {
       workspace.minimize("logs");
       workspace.goTo("logs");
     });
-    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats"]);
+    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage"]);
     expect(railNames()).toEqual([]);
   });
 
@@ -182,7 +191,7 @@ describe("the dock", () => {
       workspace.toggleFloat();
     });
     expect(workspace.view.getValue().floating).toBe(false);
-    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats"]);
+    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage"]);
   });
 
   it("maximizes a group, offers to restore it, and restores", () => {
@@ -228,6 +237,7 @@ describe("the saved layout", () => {
       "Decisions",
       "Monitor",
       "Notifications",
+      "Usage",
     ]);
     expect(railNames()).toEqual(["Restore Logs"]);
   });
@@ -241,7 +251,7 @@ describe("the saved layout", () => {
     act(() => {
       workspace.restore("logs");
     });
-    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats"]);
+    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage"]);
   });
 
   it("falls back to the default when it is damaged, and says so", () => {

@@ -83,6 +83,16 @@ const resumedOutcome = (): SessionOutcome => ({
   errors: [],
 });
 
+/** The called node's session, reporting `cost` as its total so far. */
+const sessionTotal = (cost: number): RunEvent => ({
+  type: "node.event",
+  id: "builder",
+  event: {
+    type: "session.finished",
+    outcome: { ...resumedOutcome(), usage: usageWith(cost) },
+  },
+});
+
 /** The caller started a run, before it was stopped or crashed. */
 const earlierCall = (store: EventStore, id = "earlier1"): void => {
   store.begin({
@@ -383,6 +393,29 @@ describe("calling a workflow", () => {
       usage: { costUsd: 0.25 },
     });
     expect(seen).toHaveLength(1);
+  });
+
+  it("charges the caller only what a resumed session added", async () => {
+    const port = portFor(
+      id => {
+        store.append(id, sessionTotal(4));
+        store.append(id, reported(4));
+        store.append(id, finishedWith(id, { costUsd: 4 }));
+      },
+      placeAt("own"),
+      {
+        resumeSession: run => {
+          store.append(run.id, sessionTotal(4.1));
+          return Promise.resolve(null);
+        },
+      },
+    );
+    await port.invoke(request({ node: "builder", wait: "node" }), signal());
+    const second = await port.invoke(
+      request({ node: "builder", wait: "node", input: { fix: "it" } }),
+      signal(),
+    );
+    expect(second.usage?.costUsd).toBeCloseTo(0.1);
   });
 
   it("waits for the run to end before resuming a node that has reported", async () => {
