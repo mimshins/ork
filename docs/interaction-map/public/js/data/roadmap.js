@@ -583,6 +583,7 @@ export const MILESTONES = [
           "0f0b3f0",
           "dead65e",
           "b737814",
+          "2f9cbd5",
         ],
       },
       {
