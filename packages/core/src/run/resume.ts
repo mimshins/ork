@@ -7,9 +7,10 @@
  *   inputs and settings, its worktrees, and the answers to its loops.
  */
 
-import type { HumanChannel, InboxMessage } from "../runtime/types.ts";
-import type { Mail } from "./bus.ts";
+import type { HumanChannel } from "../runtime/types.ts";
+import type { Mail } from "./bus-events.ts";
 import type { Replay } from "./handle.ts";
+import { mailOf } from "./mail.ts";
 import type {
   Inputs,
   NodeOutput,
@@ -72,9 +73,6 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
   let ended: string | undefined;
   /** Nodes whose last activation did not finish well, and its session. */
   const unfinished = new Map<string, string>();
-  const inboxes = new Map<string, InboxMessage[]>();
-  const waiting = new Map<string, string[]>();
-  let last = 0;
 
   for (const event of events) {
     if (event.type === "run.started") {
@@ -82,28 +80,7 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
       settings = event.settings ?? settings;
       continue;
     }
-    if (event.type === "message.sent") {
-      last = Math.max(last, event.message);
-      const unread = inboxes.get(event.to) ?? [];
-      unread.push({ id: event.message, from: event.node, body: event.body });
-      inboxes.set(event.to, unread);
-      continue;
-    }
-    if (event.type === "message.read") {
-      const unread = inboxes.get(event.node) ?? [];
-      inboxes.set(
-        event.node,
-        unread.filter(m => !event.ids.includes(m.id)),
-      );
-      continue;
-    }
-    if (event.type === "user.message" && event.delivered === "queued") {
-      waiting.set(event.node, [...(waiting.get(event.node) ?? []), event.body]);
-      continue;
-    }
     if (event.type === "node.started") {
-      // Its session got the user's queued messages when it connected.
-      waiting.delete(event.id);
       // A delegated run belongs to its leader's session: never handed back.
       if (event.owner === undefined) open.set(event.id, {});
       continue;
@@ -213,7 +190,7 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
     loopAnswers,
     succeeded,
     cutOff: cut ? unfinished : new Map<string, string>(),
-    mail: { inboxes, waiting, last },
+    mail: mailOf(events),
   };
 };
 

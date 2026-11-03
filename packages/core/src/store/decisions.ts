@@ -89,10 +89,10 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
      ORDER BY d.opened_at, d.rowid`,
   );
   const addCommand = db.prepare(
-    "INSERT INTO commands (run_id, kind, node, body, at) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO commands (run_id, kind, node, body, sender, at) VALUES (?, ?, ?, ?, ?, ?)",
   );
   const pending = db.prepare(
-    "SELECT id, kind, node, body FROM commands WHERE run_id = ? AND handled_at IS NULL ORDER BY id",
+    "SELECT id, kind, node, body, sender FROM commands WHERE run_id = ? AND handled_at IS NULL ORDER BY id",
   );
   const handled = db.prepare("UPDATE commands SET handled_at = ? WHERE id = ?");
 
@@ -139,16 +139,24 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
         .map(row => decisionOf(row)),
     command: (runId, command) => {
       const at = new Date().toISOString();
-      if (command.kind === "message") {
+      if ("body" in command) {
         addCommand.run(
           runId,
-          "message",
+          command.kind,
           command.node,
           maskSecrets(command.body),
+          command.kind === "relay" ? command.from : null,
           at,
         );
       } else {
-        addCommand.run(runId, command.kind, command.node ?? null, null, at);
+        addCommand.run(
+          runId,
+          command.kind,
+          command.node ?? null,
+          null,
+          null,
+          at,
+        );
       }
     },
     takeCommands: runId => {
@@ -160,8 +168,18 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
           const node = row["node"];
           return [typeof node === "string" ? { kind, node } : { kind }];
         }
-        if (kind === "message") {
+        if (kind === "message" || kind === "notice") {
           return [{ kind, node: text(row, "node"), body: text(row, "body") }];
+        }
+        if (kind === "relay") {
+          return [
+            {
+              kind,
+              node: text(row, "node"),
+              from: text(row, "sender"),
+              body: text(row, "body"),
+            },
+          ];
         }
         return [];
       });

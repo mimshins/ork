@@ -20,8 +20,9 @@ file per tool, binds the tools each session gets; both drivers serve what it
 binds. A node's report is its structured output, not a tool
 ([runtime](./runtime.md#the-node-report)). Built tools are marked ✓:
 
-- ✓ `send_message(to, body)` and ✓ `read_inbox()`: sessions in a run with
-  someone to write to (see below).
+- ✓ `send_message(to, body)`, ✓ `read_inbox()` and ✓
+  `wait_for_messages(timeoutSeconds?)`: leaders and workers in a run, unless the
+  [`links` rule](./messaging/links.md) is off and they have no one to write to.
 - ✓ `answer(question, choice)`: leaders in a run, for the questions Ork asks
   them as owners.
 - ✓ `delegate({ tasks: [{ child, brief }] })`: leaders with declared children
@@ -43,15 +44,14 @@ prompt itself.
 
 One per run, in-process in `core/` ([bus.ts](../packages/core/src/run/bus.ts));
 the scheduler gives each leader and worker its `Mailbox` through the session's
-ports.
+ports. It reaches other runs through [links](./messaging/links.md).
 
 - **Who may write to whom:** a node's owner, the nodes it owns (and their
-  spawned instances), and the nodes it shares a `messages` channel with
-  ([workflow format](./workflow-format.md)). A spawned instance has its
-  template's owner and channels, both ways. Anything else is refused with the
-  reason and the list of whom the node can reach. Only nodes with someone to
-  write to get `send_message` and `read_inbox`, and their system prompt names
-  them.
+  spawned instances), the nodes it shares a `messages` channel with
+  ([workflow format](./workflow-format.md)), and those it is
+  [linked](./messaging/links.md) to. A spawned instance has its template's owner
+  and channels, both ways. Anything else is refused with the reason and the list
+  of whom the node can reach. A node's system prompt names whom it can write to.
 - **Notice, then pull:** a message lands in the recipient's inbox
   (`message.sent` in the run's events, masked like every event). A live session
   gets a one-line notice,
@@ -170,3 +170,7 @@ worker:
   (`session.started` records it, and the driver) with the message as the next
   turn; its events and `user.message` (`delivered: resumed`) are added to the
   run's record after `run.finished`. The UI chat panel (M2) does the same.
+
+## Contents
+
+- [Links between runs](./messaging/links.md)

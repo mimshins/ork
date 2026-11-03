@@ -155,3 +155,14 @@ How something built works for now, by choice.
   second Ctrl-C within 2 seconds, or Ork being killed, leaves one running. A
   program that starts its own session escapes a stop altogether.
   ([ADR-043](../../decisions/ADR-043-timeouts.md))
+- **L48 · A link does not survive a resume.** A link ends with its run, so a
+  resumed run has none until the user links it again. Its unread messages are
+  kept. ([messaging](../messaging/links.md))
+- **L49 · A link names one node.** It joins the exact node given, so a spawned
+  worker needs its own (`tests-2`), and a run of one node (`ork run --node`)
+  cannot be linked. ([messaging](../messaging/links.md))
+- **L50 · The UI does not show links yet.** The API has them, but the overview
+  stream does not carry them; the Monitor brings them in.
+  ([messaging](../messaging/links.md))
+- **L51 · A link's limit of 100 is a guess.** Nothing has measured how many
+  messages real work takes. ([messaging](../messaging/links.md))

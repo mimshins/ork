@@ -35,6 +35,10 @@ export type ControlOptions = {
   ) => boolean;
   /** `ork chat` sent `node` a message. */
   onMessage: (node: string, body: string) => void;
+  /** A linked node of another run wrote to `node`. */
+  onRelay?: (node: string, from: string, body: string) => void;
+  /** Ork's own line for `node`'s live session. */
+  onNotice?: (node: string, text: string) => void;
   /** `~`, for the socket's folder; tests pass one. */
   home?: string;
   /** How often to look at the store without a wake-up (default 1 s). */
@@ -69,6 +73,10 @@ export const startControl = async (
     for (const command of store.takeCommands(runId)) {
       if (command.kind === "message") {
         options.onMessage(command.node, command.body);
+      } else if (command.kind === "relay") {
+        options.onRelay?.(command.node, command.from, command.body);
+      } else if (command.kind === "notice") {
+        options.onNotice?.(command.node, command.body);
       } else if (command.kind === "stop" && command.node === undefined) {
         if (stopped) continue;
         stopped = true;

@@ -81,6 +81,9 @@ are named by id or a unique prefix: no match is 404, several are 400.
 | POST   | `/api/runs/:id/pause`         | `{ node? }`: pauses a live run, or one node                                                        | `ork pause`           |
 | POST   | `/api/runs/:id/continue`      | `{ node? }`: lets it go on                                                                         | `ork continue`        |
 | POST   | `/api/runs/:id/messages`      | `{ node, body }` to a live run's leader or worker                                                  | `ork chat -m` (live)  |
+| GET    | `/api/links`                  | links; `?run=` keeps one run's                                                                     |
+| POST   | `/api/links`                  | `{ a, b, maxMessages? }`, as `<run>/<node>`: [links](./messaging/links.md)                         |
+| POST   | `/api/links/end`              | `{ a, b }`: ends the link                                                                          |
 | GET    | `/api/runs/:id/stream`        | Server-Sent Events, below                                                                          | `ork logs -f`         |
 | GET    | `/api/stream`                 | Server-Sent Events, below                                                                          | —                     |
 | GET    | `/`, `/assets/…`              | the built UI (below), or the placeholder page without one                                          | —                     |

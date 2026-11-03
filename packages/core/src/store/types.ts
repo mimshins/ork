@@ -81,7 +81,39 @@ export type RunCommand =
   /** `ork stop`, `ork pause`, `ork continue`: of the run, or of one node. */
   | { kind: "stop" | "pause" | "continue"; node?: string }
   /** `ork chat`: a message from the user to a node's session. */
-  | { kind: "message"; node: string; body: string };
+  | { kind: "message"; node: string; body: string }
+  /** A message from a linked node of another run; `from` is `<run>/<node>`. */
+  | { kind: "relay"; node: string; from: string; body: string }
+  /** Ork's own line for a node's live session: a link was made or ended. */
+  | { kind: "notice"; node: string; body: string };
+
+/** One side of a link: a node of a run. */
+export type LinkEnd = { run: string; node: string };
+
+/** Two nodes of different runs that may write to each other (RFC-003). */
+export type LinkRecord = {
+  id: number;
+  a: LinkEnd;
+  b: LinkEnd;
+  /** Sent so far, both ways. */
+  messages: number;
+  /** Reaching it asks the user whether to go on. */
+  maxMessages: number;
+  createdAt: string;
+  /** Absent while the link is live. */
+  endedAt?: string;
+};
+
+export type LinkStore = {
+  addLink: (a: LinkEnd, b: LinkEnd, maxMessages: number) => LinkRecord;
+  link: (id: number) => LinkRecord | undefined;
+  /** Oldest first: one run's, and only live ones, when asked. */
+  links: (filter?: { run?: string; live?: boolean }) => LinkRecord[];
+  countMessage: (id: number) => void;
+  extendLink: (id: number, by: number) => void;
+  /** False when it had already ended. */
+  endLink: (id: number) => boolean;
+};
 
 export type DecisionStore = {
   /** Opens a decision; its text is masked like events. */
@@ -173,6 +205,7 @@ export type ProjectStore = {
 };
 
 export type EventStore = DecisionStore &
+  LinkStore &
   FeedbackStore &
   ProjectStore & {
     /** Records a new run as `running` in this process. */

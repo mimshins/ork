@@ -97,16 +97,19 @@ live runs, carried by the store and the runs' sockets.
 ```sh
 cd se-backend    && ork run feature --detach   # run a1
 cd se-client-kit && ork run feature --detach   # run b2
-ork link a1/builder b2/builder
+ork relay a1/builder b2/builder
 ```
 
+- **The command.** `ork relay`, because `ork link` already points tools' folders
+  at `.ork/` ([ADR-031](../../decisions/ADR-031-ork-is-the-origin.md)). The
+  connection it makes is called a link.
 - **A link is the permission.** It joins two nodes, both ways, until
-  `ork unlink` or either run ends. It sits in the store, so any process can
-  check it. `ork links` lists them; the local server and the UI use the same
-  operations.
-- **Who makes links.** The user, with `ork link` or the UI, for sessions already
-  running; or the user's workflow file, through a call and a `messages` channel
-  ([RFC-004](./RFC-004-workflows-calling-workflows.md)). Agents do not.
+  `ork relay end` or either run ends. It sits in the store, so any process can
+  check it. `ork relay list` lists them; the local server and the UI use the
+  same operations.
+- **Who makes links.** The user, with `ork relay` or the UI, for sessions
+  already running; or the user's workflow file, through a call and a `messages`
+  channel ([RFC-004](./RFC-004-workflows-calling-workflows.md)). Agents do not.
 - **Introduction.** Each session gets a pushed line naming the other node, its
   project and its workflow, and how to write to it. Links can be made while the
   sessions are working, so a session never needs restarting.
@@ -163,8 +166,8 @@ ork link a1/builder b2/builder
 
 - Engine: the store's links and a relay command kind; the bus's cross-run
   addressing, inbound messages and resume state; `wait_for_messages`.
-- CLI: `ork link`, `ork unlink`, `ork links`. Server: the same as routes, and
-  links in the overview stream.
+- CLI: `ork relay`, `ork relay end`, `ork relay list`. Server: the same as
+  routes, and links in the overview stream.
 - UI: Monitor and Chats show a node's links and a way to make one. This work
   lands before the Monitor (M2 task 11); the graph (task 10) does not depend on
   it.

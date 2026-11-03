@@ -204,6 +204,13 @@ export type Mailbox = {
   read: () => InboxMessage[];
   /** How many messages are unread, without reading them. */
   pending: () => number;
+  /** Whether this session may be linked to a node of another run later. */
+  linkable: () => boolean;
+  /**
+   * Waits for a message, for at most `ms`, giving up the session's slot
+   * meanwhile. Ends early when there is one, or when the session ends.
+   */
+  wait: (ms: number) => Promise<void>;
   /** Answers a question Ork asked this node as an owner. */
   answer: (
     question: string,
@@ -215,6 +222,13 @@ export type Mailbox = {
    * whoever asked, unanswered.
    */
   connect: (deliver: (text: string) => void) => () => void;
+};
+
+/** A run's way to nodes of other runs, for nodes the user linked (RFC-003). */
+export type RelayPort = {
+  /** Who `node` is linked to, as `<run>/<node>`. */
+  peers: (node: string) => string[];
+  send: (node: string, to: string, body: string) => SendResult;
 };
 
 export type ClaimResult =

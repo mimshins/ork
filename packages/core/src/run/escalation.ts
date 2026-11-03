@@ -7,7 +7,8 @@
 
 import type { CompiledEdge } from "../graph/types.ts";
 import type { HumanChannel } from "../runtime/types.ts";
-import type { Bus, OwnerQuestion } from "./bus.ts";
+import type { OwnerQuestion } from "./bus-events.ts";
+import type { Bus } from "./bus.ts";
 import { edgeKey } from "./routing.ts";
 import type { NodeOutput, RunEvent } from "./types.ts";
 

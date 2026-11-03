@@ -86,6 +86,12 @@ with `commit: never` is an error. When a node's worktree is made: the folder
 must be beside the clone (inside its parent, outside the clone), and the branch
 a name git accepts.
 
+## Links
+
+`links: off` leaves the message tools out for a node with no one to write to,
+and refuses links to the run. The default is on
+([messaging](./messaging/links.md)). A workflow's value wins.
+
 ## Safety
 
 Whatever the rules say:

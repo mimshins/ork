@@ -4,7 +4,25 @@
  *   claims taken, refused and released. Part of `RunEvent`.
  */
 
-import type { DecisionChoice } from "../runtime/types.ts";
+import type { DecisionChoice, InboxMessage } from "../runtime/types.ts";
+
+/** A question Ork asks a node's owner. */
+export type OwnerQuestion = {
+  question: string;
+  options: DecisionChoice[];
+  recommended?: string;
+  context?: string;
+};
+
+/**
+ * What a resumed run's bus starts with (`resumeState`): each node's unread
+ * messages, the user's messages still queued, and the last message number.
+ */
+export type Mail = {
+  inboxes: ReadonlyMap<string, readonly InboxMessage[]>;
+  waiting: ReadonlyMap<string, readonly string[]>;
+  last: number;
+};
 
 export type BusEvent =
   /** `node` wrote to `to` on the message bus; `message` is its number. */
@@ -15,7 +33,17 @@ export type BusEvent =
       message: number;
       body: string;
     }
+  /** A linked node of another run (`from`, `<run>/<node>`) wrote to `node`. */
+  | {
+      type: "message.received";
+      node: string;
+      from: string;
+      message: number;
+      body: string;
+    }
   | { type: "message.read"; node: string; ids: number[] }
+  /** Ork told `node` a link was made or ended. */
+  | { type: "link.notice"; node: string; text: string }
   /** Ork asked `node`, the owner of `about`, a question (a loop out of rounds). */
   | {
       type: "owner.asked";

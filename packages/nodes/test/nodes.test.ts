@@ -389,6 +389,8 @@ const mailboxWith = (pending: () => number): Mailbox => ({
   send: () => ({ ok: false, error: "no" }),
   read: () => [],
   pending,
+  linkable: () => false,
+  wait: () => Promise.resolve(),
   answer: () => ({ ok: true }),
   connect: () => () => {},
 });

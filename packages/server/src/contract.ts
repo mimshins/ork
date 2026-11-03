@@ -8,6 +8,7 @@
 
 import type {
   DecisionRecord,
+  LinkRecord,
   Paused,
   ProjectRecord,
   RunRecord,
@@ -19,7 +20,14 @@ import type { InputDef } from "@krapht/ork-schema";
 import { z } from "zod";
 
 /** The records the answers are made of, for a client that imports only this. */
-export type { DecisionRecord, InputDef, ProjectRecord, StoredEvent, TreeNode };
+export type {
+  DecisionRecord,
+  InputDef,
+  LinkRecord,
+  ProjectRecord,
+  StoredEvent,
+  TreeNode,
+};
 
 const Count = z.coerce.number().int().positive();
 const Seq = z.coerce.number().int().nonnegative();
@@ -66,6 +74,22 @@ export const ResumeRunSchema = z.strictObject(RunFlags);
 export const MessageSchema = z.strictObject({
   node: z.string().min(1),
   body: z.string().min(1),
+});
+
+/** Two nodes of live runs, each `<run>/<node>` (RFC-003). */
+export const LinkSchema = z.strictObject({
+  a: z.string().min(3),
+  b: z.string().min(3),
+  maxMessages: z.number().int().positive().optional(),
+});
+
+export const UnlinkSchema = z.strictObject({
+  a: z.string().min(3),
+  b: z.string().min(3),
+});
+
+export const LinksQuerySchema = z.strictObject({
+  run: z.string().min(1).optional(),
 });
 
 /** Pause, continue or stop: the whole run, or `node` alone (ADR-041). */
@@ -144,6 +168,9 @@ export const API = {
     path: "/api/runs/:id/messages",
     body: MessageSchema,
   },
+  links: { method: "GET", path: "/api/links", query: LinksQuerySchema },
+  link: { method: "POST", path: "/api/links", body: LinkSchema },
+  unlink: { method: "POST", path: "/api/links/end", body: UnlinkSchema },
 } as const satisfies Record<string, Route>;
 
 /** What each route answers with, on success. */
@@ -163,6 +190,9 @@ export type Responses = {
   pause: Accepted;
   continue: Accepted;
   message: Accepted;
+  links: LinkRecord[];
+  link: LinkRecord;
+  unlink: { ended: true };
 };
 
 export type RouteName = keyof typeof API;

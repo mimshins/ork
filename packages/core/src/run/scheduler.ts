@@ -73,7 +73,13 @@ export const startRun = (options: RunOptions): RunHandle => {
     queue.length = 0;
   };
 
-  const ports = createRunPorts({ graph, onEvent, mail: options.replay?.mail });
+  const ports = createRunPorts({
+    graph,
+    onEvent,
+    mail: options.replay?.mail,
+    relay: options.relay,
+    slots,
+  });
   const holds = createHolds({
     onEvent,
     onChange: () => {
@@ -279,5 +285,10 @@ export const startRun = (options: RunOptions): RunHandle => {
     proceed: node => holds.proceed(node),
     stopNode: node => stops.stop(node),
     tell: ports.bus.tell,
+    receive: ports.bus.receive,
+    notice: (node, text) => {
+      ports.bus.notify(node, text);
+      onEvent({ type: "link.notice", node, text });
+    },
   };
 };

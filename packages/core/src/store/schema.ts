@@ -91,6 +91,21 @@ export const MIGRATIONS = [
      dir TEXT NOT NULL,
      registered_at TEXT NOT NULL
    );`,
+  // 6: links between nodes of live runs, and who a relayed message is from.
+  `CREATE TABLE links (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     a_run TEXT NOT NULL REFERENCES runs (id),
+     a_node TEXT NOT NULL,
+     b_run TEXT NOT NULL REFERENCES runs (id),
+     b_node TEXT NOT NULL,
+     max_messages INTEGER NOT NULL,
+     messages INTEGER NOT NULL DEFAULT 0,
+     created_at TEXT NOT NULL,
+     ended_at TEXT
+   );
+   CREATE INDEX links_by_a ON links (a_run);
+   CREATE INDEX links_by_b ON links (b_run);
+   ALTER TABLE commands ADD COLUMN sender TEXT;`,
 ];
 
 export type Row = Record<string, unknown> | undefined;

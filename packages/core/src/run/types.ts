@@ -169,7 +169,12 @@ export type RunResult = {
 export type RunNodeInfo = { id: string; type: NodeType; parent?: string };
 
 /** How the run was started, kept so `ork resume` starts it the same way. */
-export type RunSettings = { inPlace?: boolean; driver?: Driver };
+export type RunSettings = {
+  inPlace?: boolean;
+  driver?: Driver;
+  /** The rules turned links off: this run's nodes cannot be linked. */
+  links?: "off";
+};
 
 export type RunEvent =
   | {

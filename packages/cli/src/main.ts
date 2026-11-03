@@ -28,6 +28,7 @@ export const main = defineCommand({
     tree,
     decide,
     // Loaded on use, like `ork ui`.
+    relay: () => import("./commands/relay.ts").then(module => module.relay),
     pause: () => import("./commands/pause.ts").then(module => module.pause),
     continue: () =>
       import("./commands/pause.ts").then(module => module.continueRun),

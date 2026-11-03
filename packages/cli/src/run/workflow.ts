@@ -11,9 +11,11 @@ import {
   appendRecorder,
   type ClaudeRuntime,
   createRecorder,
+  createRelay,
   createReplay,
   createSignals,
   createWorkspace,
+  endLinksOf,
   type EventStore,
   type HumanChannel,
   inside,
@@ -41,6 +43,7 @@ import type { Driver } from "@krapht/ork-schema";
 import { formatReport, loadWorkflow } from "../commands/validate.ts";
 import { prepareCheckout } from "./checkout.ts";
 import { formatRunEvent } from "./format.ts";
+import { liveHandlers } from "./live-handlers.ts";
 import { feedbackOrigin } from "./origin.ts";
 
 export type RunWorkflowOptions = {
@@ -174,16 +177,7 @@ export const runWorkflowFile = async (
     emit: event => {
       onEvent(event);
     },
-    onStop: () => {
-      void (async () => {
-        (await started.promise).interrupt();
-      })();
-    },
-    onMessage: (node, body) => {
-      void (async () => {
-        (await started.promise).tell(node, body);
-      })();
-    },
+    ...liveHandlers(started.promise),
     onControl: (command, node) => {
       const { handle } = live;
       if (handle === undefined) return false;
@@ -247,6 +241,7 @@ export const runWorkflowFile = async (
         );
   if (replay !== undefined)
     onEvent({ type: "run.resumed", kept: replay.kept() });
+  const linksOff = graph.workflow.rules?.links === "off";
   const handle = startRun({
     graph,
     runId,
@@ -261,7 +256,18 @@ export const runWorkflowFile = async (
     settings: {
       inPlace: options.inPlace,
       ...(options.driver === undefined ? {} : { driver: options.driver }),
+      ...(linksOff ? { links: "off" as const } : {}),
     },
+    ...(linksOff
+      ? {}
+      : {
+          relay: createRelay({
+            store: options.store,
+            runId,
+            home: options.home,
+            human: control.human,
+          }),
+        }),
     ...(replay === undefined ? {} : { replay }),
     workflowDir,
     projectRoot: root ?? place.root,
@@ -272,6 +278,7 @@ export const runWorkflowFile = async (
   started.resolve(handle);
   options.onRun?.(handle);
   const result = await handle.done;
+  await endLinksOf(options.store, runId, result.status, options.home);
   await control.close();
   return { exitCode: result.status === "succeeded" ? 0 : 1, result };
 };

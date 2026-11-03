@@ -7,7 +7,12 @@ import { askUserTool } from "./ask-user.ts";
 import { claimTool, releaseTool } from "./claims.ts";
 import { delegateTool, spawnWorkerTool } from "./delegate.ts";
 import { feedbackTool } from "./feedback.ts";
-import { answerTool, readInboxTool, sendMessageTool } from "./messages.ts";
+import {
+  answerTool,
+  readInboxTool,
+  sendMessageTool,
+  waitForMessagesTool,
+} from "./messages.ts";
 import { permissionTool } from "./permission.ts";
 import {
   type BoundTool,
@@ -23,6 +28,7 @@ export const ORK_TOOLS: readonly OrkTool[] = [
   spawnWorkerTool,
   sendMessageTool,
   readInboxTool,
+  waitForMessagesTool,
   answerTool,
   claimTool,
   releaseTool,

@@ -27,6 +27,8 @@ them.
   children, spawned workers, and how their branches are merged.
 - [Skills and context](./guides/skills-and-context.md): the layers, your
   project's `CLAUDE.md` and skills, built-in practices, `ork context explain`.
+- [Working across projects](./guides/working-across-projects.md): run workflows
+  in several repositories, and let their sessions message each other.
 - [Worktrees and isolation](./guides/worktrees.md): where each node works, and
   `ork worktrees`.
 - [Projects](./guides/projects.md): Ork's files in your repository (`ork init`)

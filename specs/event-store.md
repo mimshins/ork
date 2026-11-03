@@ -38,6 +38,9 @@ all views over the same events.
   Events are only appended, never changed.
 - **Before the terminal:** each event is stored, then printed (and sent to the
   run's socket followers), so a crash loses at most the event in flight.
+- **Links** between nodes of live runs have a table of their own
+  ([messaging](./messaging/links.md)); `relay` and `notice` commands carry what
+  crosses them.
 - **Decisions and commands** have tables of their own: a decision's question,
   options, recommended option, status (`open`, `answered`, `withdrawn`), answer
   and who answered; a command's kind (`stop`, `pause` and `continue`, each with

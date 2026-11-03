@@ -167,10 +167,10 @@ messages:
   is caught at run time by a depth limit, since the compiler sees one file.
 - **One budget.** A called run gets the lesser of its own `limits.budgetUsd` and
   what the caller has left, and its cost counts against the caller, so a tree of
-  runs has one cap. Runs joined with `ork link` keep their own.
+  runs has one cap. Runs joined with `ork relay` keep their own.
 - **Stopping.** `ork stop` on a caller stops the runs it called, since a user
-  who stops a run expects spending to stop. Runs joined with `ork link` are left
-  alone. Pause does not spread at first.
+  who stops a run expects spending to stop. Runs joined with `ork relay` are
+  left alone. Pause does not spread at first.
 - **Who may call.** Any registered project, by default. A rule in the target's
   `project.yaml` can limit it, and the called run's events name the caller.
 - **Timeout.** A call takes `timeout` as a tool node does

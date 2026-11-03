@@ -250,6 +250,14 @@
             }
           },
           "additionalProperties": false
+        },
+        "links": {
+          "description": "Default: on, the user can link a running node to a node of another run. off: its nodes get no message tools unless they have someone to write to, and cannot be linked.",
+          "type": "string",
+          "enum": [
+            "on",
+            "off"
+          ]
         }
       },
       "additionalProperties": false

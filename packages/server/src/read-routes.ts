@@ -21,6 +21,7 @@ type ReadRoutes = Pick<
   | "tree"
   | "events"
   | "decisions"
+  | "links"
 >;
 
 /** A project filter's root: a registered project's, or the value as a root. */
@@ -36,6 +37,9 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
     }),
 
   projects: () => ok(context.store.projects()),
+
+  links: ({ query }) =>
+    ok(context.store.links(query.run === undefined ? {} : { run: query.run })),
 
   workflows: ({ params }) => {
     const project = projectOf(context, params.id);

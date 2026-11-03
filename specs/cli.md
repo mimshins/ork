@@ -37,6 +37,8 @@ ork logs [<run>] [--node n] [--follow] [--json]   # a run's transcript, replayed
 ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node
 ork decide [<run>] [--all] [--list] [--json] [--id <d> --choose <option>]  # answer open decisions
 ork chat <run> <node> [-m <text>] [--driver sdk|cli]  # talk to a node, live or by resuming its session
+ork relay <run>/<node> <run>/<node> [--max-messages n]  # let two running nodes of different runs message each other
+ork relay end <a> <b> | ork relay list [run] [--all] [--json]
 ork stop [<run>] [--node n]      # stop a live run from any terminal, or one node (it fails; the run goes on)
 ork pause [<run>] [--node n]     # nothing new starts; sessions wait before their next tool call
 ork continue [<run>] [--node n]  # let a paused run, or one paused node, go on

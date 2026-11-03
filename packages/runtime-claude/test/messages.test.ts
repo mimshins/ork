@@ -83,13 +83,26 @@ describe("the message tools", () => {
       "ask_user",
       "send_message",
       "read_inbox",
+      "wait_for_messages",
     ]);
     expect(names(tools("lead", { ownership }))).toEqual([
       "ask_user",
       "delegate",
       "send_message",
       "read_inbox",
+      "wait_for_messages",
       "answer",
+    ]);
+  });
+
+  it("go to a node with no one yet, when it may be linked later", () => {
+    const { bus, tools } = setup();
+    const linkable = { ...bus.mailbox("alone"), linkable: () => true };
+    expect(names(tools("alone", { mailbox: linkable }))).toEqual([
+      "ask_user",
+      "send_message",
+      "read_inbox",
+      "wait_for_messages",
     ]);
   });
 

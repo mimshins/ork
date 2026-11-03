@@ -34,13 +34,13 @@ const notRunning = (run: RunRecord): string | null => {
 };
 
 /** Every node of a run's tree, spawned instances included. */
-const flatten = (nodes: readonly TreeNode[]): TreeNode[] =>
-  nodes.flatMap(node => [node, ...flatten(node.children)]);
+export const flattenTree = (nodes: readonly TreeNode[]): TreeNode[] =>
+  nodes.flatMap(node => [node, ...flattenTree(node.children)]);
 
 /** What a run's stored events say about it now. */
 const stateOf = (store: EventStore, run: RunRecord) => {
   const events = store.events(run.id).map(stored => stored.event);
-  return { paused: pausedOf(events), nodes: flatten(runTree(events)) };
+  return { paused: pausedOf(events), nodes: flattenTree(runTree(events)) };
 };
 
 /** Queues `command` and wakes the run, unless there is a `refusal`. */

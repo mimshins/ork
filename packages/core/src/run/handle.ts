@@ -6,8 +6,8 @@
  */
 
 import type { CompiledGraph } from "../graph/types.ts";
-import type { HumanChannel } from "../runtime/types.ts";
-import type { Mail } from "./bus.ts";
+import type { HumanChannel, RelayPort } from "../runtime/types.ts";
+import type { Mail } from "./bus-events.ts";
 import type {
   Brief,
   ExecuteContext,
@@ -55,6 +55,8 @@ export type RunOptions = {
   settings?: RunSettings;
   /** For `ork resume`: the results a run recorded, handed back in order. */
   replay?: Replay;
+  /** How to reach linked nodes of other runs; none when links are off. */
+  relay?: RelayPort;
   /** How long a timed-out node or run may take to end (default 10 s). */
   timeoutGraceMs?: number;
 };
@@ -90,6 +92,10 @@ export type RunHandle = {
   stopNode: (node: string) => boolean;
   /** A message from the user to a node's session (`ork chat`). */
   tell: (node: string, body: string) => "now" | "queued" | null;
+  /** A message from a linked node of another run (`<run>/<node>`). */
+  receive: (node: string, from: string, body: string) => void;
+  /** Ork's own line to a node's live session: a link was made or ended. */
+  notice: (node: string, text: string) => void;
 };
 
 /** One run of a node the scheduler has queued or started. */

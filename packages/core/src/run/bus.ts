@@ -12,16 +12,12 @@ import type {
   DecisionChoice,
   InboxMessage,
   Mailbox,
+  RelayPort,
 } from "../runtime/types.ts";
+import type { Mail, OwnerQuestion } from "./bus-events.ts";
+import { inboxNotice, ownerQuestionText, userMessageText } from "./bus-text.ts";
+import type { Slots } from "./slots.ts";
 import type { RunEvent } from "./types.ts";
-
-/** A question Ork asks a node's owner. */
-export type OwnerQuestion = {
-  question: string;
-  options: DecisionChoice[];
-  recommended?: string;
-  context?: string;
-};
 
 export type Bus = {
   /** `template` is the declared node a spawned worker is an instance of. */
@@ -38,16 +34,8 @@ export type Bus = {
   tell: (node: string, body: string) => "now" | "queued" | null;
   /** Pushes Ork's own line into the node's live session; dropped otherwise. */
   notify: (node: string, text: string) => void;
-};
-
-/**
- * What a resumed run's bus starts with (`resumeState`): each node's unread
- * messages, the user's messages still queued, and the last message number.
- */
-export type Mail = {
-  inboxes: ReadonlyMap<string, readonly InboxMessage[]>;
-  waiting: ReadonlyMap<string, readonly string[]>;
-  last: number;
+  /** A message from a linked node of another run: as any, a notice, then read. */
+  receive: (node: string, from: string, body: string) => void;
 };
 
 type Open = {
@@ -58,38 +46,20 @@ type Open = {
 
 const SESSION_TYPES = new Set(["claude.leader", "claude.worker"]);
 
-const plural = (count: number, word: string): string =>
-  `${String(count)} ${word}${count === 1 ? "" : "s"}`;
-
-/** What a live session sees when its inbox has unread messages. */
-export const inboxNotice = (unread: readonly InboxMessage[]): string =>
-  `[ork] ${plural(unread.length, "unread message")} from ${[...new Set(unread.map(m => m.from))].join(", ")}. Call read_inbox to read them.`;
-
-/** What a session sees when the user writes to it. */
-export const userMessageText = (body: string): string =>
-  `[ork] The user writes to you (ork chat):\n${body}`;
-
-/** What an owner sees when Ork asks it about a node it owns. */
-export const ownerQuestionText = (
-  id: string,
-  node: string,
-  question: OwnerQuestion,
-): string =>
-  [
-    `[ork] Question ${id} for you, as the owner of ${node}: ${question.question}`,
-    ...(question.context === undefined ? [] : [question.context]),
-    `Options: ${question.options.map(o => (o.description === undefined ? o.id : `${o.id} (${o.description})`)).join("; ")}.${question.recommended === undefined ? "" : ` Recommended: ${question.recommended}.`}`,
-    `Answer with the answer tool (question "${id}").`,
-  ].join("\n");
-
 export const createBus = ({
   graph,
   onEvent,
   mail,
+  relay,
+  slots,
 }: {
   graph: CompiledGraph;
   onEvent: (event: RunEvent) => void;
   mail?: Mail | undefined;
+  /** How to reach nodes of other runs; none when links are off. */
+  relay?: RelayPort | undefined;
+  /** What a session waiting for a message gives its slot back to. */
+  slots?: Pick<Slots, "release" | "take"> | undefined;
 }): Bus => {
   /** Spawned instance -> the declared node it is an instance of. */
   const templates = new Map<string, string>();
@@ -104,6 +74,8 @@ export const createBus = ({
   );
   let messages = mail?.last ?? 0;
   let questions = 0;
+  /** Sessions in `wait`: called when a message arrives or the session ends. */
+  const waiters = new Map<string, () => void>();
 
   const declared = (id: string) => graph.nodes.get(templates.get(id) ?? id);
   const hasSession = (id: string) =>
@@ -138,8 +110,17 @@ export const createBus = ({
         ...children,
         ...instances,
         ...channels,
+        ...(relay?.peers(id) ?? []),
       ]),
     ].filter(peer => peer !== id);
+  };
+
+  /** Puts a message in `to`'s inbox, and tells its session if it is live. */
+  const land = (to: string): "now" | "queued" => {
+    const deliver = live.get(to);
+    deliver?.(inboxNotice(inbox(to)));
+    waiters.get(to)?.();
+    return deliver === undefined ? "queued" : "now";
   };
 
   const mailbox = (id: string, template?: string): Mailbox => {
@@ -148,6 +129,20 @@ export const createBus = ({
       peers: () => peersOf(id),
       send: (to, body) => {
         const peers = peersOf(id);
+        if (to.includes("/") && relay !== undefined && peers.includes(to)) {
+          const sent = relay.send(id, to, body);
+          if (sent.ok) {
+            messages += 1;
+            onEvent({
+              type: "message.sent",
+              node: id,
+              to,
+              message: messages,
+              body,
+            });
+          }
+          return sent;
+        }
         if (!peers.includes(to)) {
           return {
             ok: false,
@@ -166,14 +161,24 @@ export const createBus = ({
           message: messages,
           body,
         });
-        const deliver = live.get(to);
-        deliver?.(inboxNotice(inbox(to)));
-        return {
-          ok: true,
-          delivered: deliver === undefined ? "queued" : "now",
-        };
+        return { ok: true, delivered: land(to) };
       },
       pending: () => inbox(id).length,
+      linkable: () => relay !== undefined,
+      wait: async ms => {
+        if (inbox(id).length > 0 || !live.has(id)) return;
+        const { promise, resolve } = Promise.withResolvers<void>();
+        const timer = setTimeout(resolve, ms);
+        waiters.set(id, resolve);
+        slots?.release();
+        try {
+          await promise;
+        } finally {
+          clearTimeout(timer);
+          waiters.delete(id);
+          await slots?.take();
+        }
+      },
       read: () => {
         const unread = inbox(id).splice(0);
         if (unread.length > 0) {
@@ -211,6 +216,7 @@ export const createBus = ({
         if (unread.length > 0) deliver(inboxNotice(unread));
         return () => {
           if (live.get(id) === deliver) live.delete(id);
+          waiters.get(id)?.();
           for (const [question, asked] of open) {
             if (asked.owner !== id) continue;
             open.delete(question);
@@ -265,6 +271,18 @@ export const createBus = ({
     tell,
     notify: (node, text) => {
       live.get(node)?.(text);
+    },
+    receive: (node, from, body) => {
+      messages += 1;
+      inbox(node).push({ id: messages, from, body });
+      onEvent({
+        type: "message.received",
+        node,
+        from,
+        message: messages,
+        body,
+      });
+      land(node);
     },
   };
 };

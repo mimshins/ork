@@ -17,6 +17,7 @@ import {
   detachResume,
   detachRun,
   inside,
+  linkNodes,
   liveStatus,
   newRunId,
   nodeSession,
@@ -28,6 +29,7 @@ import {
   resumable,
   runDirOf,
   tellLiveRun,
+  unlinkNodes,
 } from "@krapht/ork-core";
 
 import { projectOf, runOf, type ServerContext } from "./context.ts";
@@ -35,7 +37,15 @@ import { accepted, fail, type Handlers, ok } from "./router.ts";
 
 type WriteRoutes = Pick<
   Handlers,
-  "answer" | "stop" | "pause" | "continue" | "message" | "start" | "resume"
+  | "answer"
+  | "stop"
+  | "pause"
+  | "continue"
+  | "message"
+  | "start"
+  | "resume"
+  | "link"
+  | "unlink"
 >;
 
 /** A refused pause, continue or stop: an unknown node is 404, the rest 409. */
@@ -171,6 +181,24 @@ export const writeRoutes = (context: ServerContext): WriteRoutes => {
       }
       await tellLiveRun(context.store, run, body.node, body.body, context.home);
       return accepted({ runId: run.id });
+    },
+
+    link: async ({ body }) => {
+      const linked = await linkNodes(context.store, body.a, body.b, {
+        maxMessages: body.maxMessages,
+        home: context.home,
+      });
+      return linked.ok ? ok(linked.link) : fail(409, linked.error);
+    },
+
+    unlink: async ({ body }) => {
+      const ended = await unlinkNodes(
+        context.store,
+        body.a,
+        body.b,
+        context.home,
+      );
+      return ended.ok ? ok({ ended: true as const }) : fail(404, ended.error);
     },
 
     start: async ({ body }) => {

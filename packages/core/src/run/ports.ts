@@ -6,21 +6,28 @@
 
 import { createFeedback } from "../feedback/agent.ts";
 import type { CompiledGraph } from "../graph/types.ts";
-import { createBus, type Mail } from "./bus.ts";
+import type { RelayPort } from "../runtime/types.ts";
+import type { Mail } from "./bus-events.ts";
+import { createBus } from "./bus.ts";
 import { createClaims } from "./claims.ts";
+import type { Slots } from "./slots.ts";
 import type { ExecuteContext, RunEvent } from "./types.ts";
 
 export const createRunPorts = ({
   graph,
   onEvent,
   mail,
+  relay,
+  slots,
 }: {
   graph: CompiledGraph;
   onEvent: (event: RunEvent) => void;
   /** A resumed run's messages, from its events. */
   mail?: Mail | undefined;
+  relay?: RelayPort | undefined;
+  slots?: Slots | undefined;
 }) => {
-  const bus = createBus({ graph, onEvent, mail });
+  const bus = createBus({ graph, onEvent, mail, relay, slots });
   const claims = createClaims({ graph, onEvent, notify: bus.notify });
   const feedback = createFeedback({ graph, onEvent });
   return {

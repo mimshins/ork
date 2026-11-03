@@ -96,6 +96,12 @@ export const RulesSchema = z.strictObject({
   permissions: ToolRulesSchema.optional().describe(
     "Tool rules every Claude node gets on top of its own, e.g. deny: ['Bash(git push *)'].",
   ),
+  links: z
+    .enum(["on", "off"])
+    .optional()
+    .describe(
+      "Default: on, the user can link a running node to a node of another run. off: its nodes get no message tools unless they have someone to write to, and cannot be linked.",
+    ),
 });
 export type Rules = z.infer<typeof RulesSchema>;
 
