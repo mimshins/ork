@@ -233,3 +233,8 @@ How something built works for now, by choice.
   long run the start of a conversation can be out of reach; `ork logs --node`
   has it all. The server has no read of one node's events.
   ([panels](../ui/panels.md#chats))
+- **L68 · Notifications are as long as the overview's list.** Items come from
+  the runs and open decisions the overview stream sends, so a run that falls out
+  of its newest 20 leaves the list, and a run paused again after being read does
+  not notify twice. There is no stored history of notifications.
+  ([panels](../ui/panels.md#notifications))

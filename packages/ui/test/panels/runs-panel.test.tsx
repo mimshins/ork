@@ -99,7 +99,18 @@ describe("the Runs panel", () => {
   it("says a run is waiting when a decision of its is open", async () => {
     const { overview } = await open();
     act(() => {
-      overview.send("decisions", [{ id: "d", runId: "aaa11111" }]);
+      overview.send("decisions", [
+        {
+          id: "d",
+          runId: "aaa11111",
+          node: "gate",
+          kind: "question",
+          question: "Ship?",
+          options: [],
+          openedAt: "2026-11-02T00:00:00.000Z",
+          status: "open",
+        },
+      ]);
     });
     expect(rowNames()[0]).toContain("waiting on you");
     expect(rowNames()[1]).toContain("failed");

@@ -201,20 +201,23 @@ const standing = (
 ): Standing => ({ run, nodes: new Map(Object.entries(nodes)) });
 
 describe("what is said aloud", () => {
-  it("says the run's status when it changes", () => {
+  it("says the run going on again, and leaves its ending to notifications", () => {
+    expect(
+      changesOf("r1", standing("paused", {}), standing("running", {})),
+    ).toEqual(["Run r1 running."]);
     expect(
       changesOf("r1", standing("running", {}), standing("succeeded", {})),
-    ).toEqual(["Run r1 succeeded."]);
+    ).toEqual([]);
   });
 
-  it("says a node that failed, paused or waits on you", () => {
+  it("says a node that failed or paused, but not one a question holds", () => {
     expect(
       changesOf(
         "r1",
         standing("running", { a: "running", b: "running", c: "running" }),
         standing("running", { a: "failed", b: "waiting", c: "paused" }),
       ),
-    ).toEqual(["a failed.", "b waiting on you.", "c paused."]);
+    ).toEqual(["a failed.", "c paused."]);
   });
 
   it("leaves out routine changes, and what has not changed", () => {
@@ -227,13 +230,13 @@ describe("what is said aloud", () => {
     ).toEqual([]);
   });
 
-  it("says a whole run pausing once", () => {
+  it("says nothing of each node when the whole run pauses", () => {
     expect(
       changesOf(
         "r1",
         standing("running", { a: "running" }),
         standing("paused", { a: "paused" }),
       ),
-    ).toEqual(["Run r1 paused."]);
+    ).toEqual([]);
   });
 });

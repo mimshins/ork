@@ -35,7 +35,9 @@ through `useAppState()`:
 | a run's feed  | its events, in a window                        | that run's stream       |
 
 The workspace's own state (the view, the saved layout, the palette) stays in the
-[workspace](./workspace.md). Notifications arrive with their panel.
+[workspace](./workspace.md). Notifications are worked out from `runs` and
+`decisions`, with what this browser has read
+([panels](./panels.md#notifications)).
 
 What no stream sends is a one-off read in a container
 ([read.ts](../../packages/ui/src/state/read.ts)): `projects`, and a project's
@@ -126,6 +128,5 @@ first paint, so a chosen theme flashes only as far as [L32](../gaps/limits.md)
 says.
 
 The palette's **View** group sets the theme (follow the system, dark, light) and
-the density (compact, comfortable); the one in use stays listed and says so.
-Desktop notifications are only stored for now; the notification center asks the
-browser and reads the value.
+the density (compact, comfortable); the one in use stays listed and says so. The
+Notifications panel asks the browser before turning desktop notifications on.

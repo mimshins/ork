@@ -170,11 +170,11 @@ graph and ownership tree, with each node's status, model, tokens and cost, and
 pause, continue and stop for the run or a node. Logs shows its events, filtered
 by node, type or text, and Decisions lists every question your runs are waiting
 on, answered with a click or the keys `1` to `9`. Chats keeps one thread per
-leader or worker, and writes to it while the run is live. The other panels
-(notifications, the designer) come in the next releases; until then each shows
-the `ork` command to use instead. Running `ork ui` again opens the one that is
-running. Ctrl-C stops it; your runs keep running, and every `ork` command works
-without it.
+leader or worker, and writes to it while the run is live. The bell in the top
+bar counts what is unread in Notifications, which can also send desktop
+notifications if you turn them on. The designer comes in a later release.
+Running `ork ui` again opens the one that is running. Ctrl-C stops it; your runs
+keep running, and every `ork` command works without it.
 
 It listens only on `127.0.0.1`, and only your browser gets in: `ork ui` opens it
 with a one-time link that becomes a cookie, and the server refuses any other

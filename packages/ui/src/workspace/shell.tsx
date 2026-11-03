@@ -12,12 +12,14 @@ import { Middle } from "./middle.tsx";
 import { Palette } from "./palette.tsx";
 import { StatusBar } from "./status-bar.tsx";
 import { useCommands } from "./use-commands.ts";
+import { useNotificationVoice } from "./use-notification-voice.ts";
 import type { Workspace } from "./workspace.ts";
 
 import styles from "./workspace.module.css";
 
 export const Shell = ({ workspace }: { workspace: Workspace }) => {
   const commands = useCommands(workspace);
+  useNotificationVoice(workspace);
   return (
     <WorkspaceContext value={workspace}>
       <div className={styles["shell"]}>

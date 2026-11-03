@@ -1,8 +1,9 @@
 /**
- * @file Says aloud what changes in the run the Monitor shows: its status, and a
- *   node that failed, paused or waits on you (WCAG 4.1.3). Changes are gathered
- *   for a moment, so a busy run reads as sentences rather than a stream, and
- *   what the run already was when it opened is not news.
+ * @file Says aloud what changes in the run the Monitor shows, beyond what is a
+ *   notification: its going on again, and a node that failed or paused (WCAG
+ *   4.1.3). Changes are gathered for a moment, so a busy run reads as sentences
+ *   rather than a stream, and what the run already was when it opened is not
+ *   news.
  */
 
 import { use, useEffect, useRef } from "react";

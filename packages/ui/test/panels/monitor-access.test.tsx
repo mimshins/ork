@@ -46,14 +46,14 @@ const ROUTES: MonitorRoutes = {
 const RUN = runView("aaa11111");
 const CALLED = runView("called11");
 
-const open = async (monitor: MonitorRoutes = ROUTES) => {
+const open = async (monitor: MonitorRoutes = ROUTES, run: RunView = RUN) => {
   const workspace = createWorkspace({ storage: localStorage, wide: true });
   const opened = openPanelState({ monitor });
   renderPanel(opened.state, <MonitorPanel />, workspace);
   await act(async () => {
-    opened.overview.send("runs", [RUN, CALLED]);
+    opened.overview.send("runs", [run, CALLED]);
     opened.overview.send("decisions", []);
-    opened.state.selectRun(RUN.id);
+    opened.state.selectRun(run.id);
     await Promise.resolve();
   });
   await screen.findByRole("treeitem", { name: /^lead,/u });
@@ -88,16 +88,18 @@ afterEach(() => {
 
 describe("the Monitor, for assistive tech", () => {
   it("says when the run changes, and not what it found on opening", async () => {
-    const { overview, workspace } = await open();
+    const { overview, workspace } = await open(ROUTES, {
+      ...RUN,
+      live: "paused",
+    });
     expect(workspace.announcement.getValue()).toBe("");
-    const paused: RunView = { ...RUN, live: "paused" };
     await act(async () => {
-      overview.send("runs", [paused, CALLED]);
+      overview.send("runs", [RUN, CALLED]);
       await Promise.resolve();
     });
     await vi.waitFor(
       () => {
-        expect(workspace.announcement.getValue()).toBe("Run aaa11111 paused.");
+        expect(workspace.announcement.getValue()).toBe("Run aaa11111 running.");
       },
       { timeout: 3000 },
     );

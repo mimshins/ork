@@ -121,3 +121,11 @@
   position: absolute;
   white-space: nowrap;
 }
+
+/* The bell's count: a number, so it does not rest on the color. */
+.count {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  margin-inline-start: var(--gap-hair);
+}

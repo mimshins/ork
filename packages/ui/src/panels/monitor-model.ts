@@ -101,16 +101,22 @@ export const standingOf = (
   nodes: new Map([...facts].map(([id, { status }]) => [id, status])),
 });
 
-/** What of a node is news to someone not watching: the rest is routine. */
-const NEWS: ReadonlySet<Status> = new Set(["failed", "waiting", "paused"]);
+/** What of a node is news here: a question open is a notification already. */
+const NEWS: ReadonlySet<Status> = new Set(["failed", "paused"]);
 
-/** What changed that should be said aloud, a sentence each. */
+/**
+ * What changed that should be said aloud, a sentence each. A run ending or
+ * pausing is a notification, which says so across runs, so this adds only its
+ * going on again and what happens to its nodes.
+ */
 export const changesOf = (
   runId: string,
   before: Standing,
   now: Standing,
 ): string[] => [
-  ...(now.run === before.run ? [] : [`Run ${runId} ${statusWord(now.run)}.`]),
+  ...(now.run === before.run || now.run !== "running"
+    ? []
+    : [`Run ${runId} ${statusWord(now.run)}.`]),
   ...[...now.nodes]
     .filter(
       ([id, status]) =>

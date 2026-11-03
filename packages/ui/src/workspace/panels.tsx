@@ -1,14 +1,11 @@
 /**
  * @file The workspace's panels: each one's id, title, icon and body. Every
  *   panel in the UI is one entry here; the dock, the rail, the stack, the
- *   Window menu and the command palette all read this list. Until a panel is
- *   built, its body says so and names the CLI command that shows the same
- *   thing.
+ *   Window menu and the command palette all read this list.
  */
 
 import type { ComponentType } from "react";
 
-import { EmptyState } from "../components/bits.tsx";
 import {
   IconChats,
   IconDecisions,
@@ -21,6 +18,7 @@ import { ChatsPanel } from "../panels/chats-panel.tsx";
 import { DecisionsPanel } from "../panels/decisions-panel.tsx";
 import { LogsPanel } from "../panels/logs-panel.tsx";
 import { MonitorPanel } from "../panels/monitor-panel.tsx";
+import { NotificationsPanel } from "../panels/notifications-panel.tsx";
 import { RunsPanel } from "../panels/runs-panel.tsx";
 
 export type PanelId =
@@ -36,15 +34,6 @@ export type PanelSpec = {
   title: string;
   Icon: ComponentType;
   Body: ComponentType;
-};
-
-const notBuilt = (cli: string): ComponentType => {
-  const Body = () => (
-    <EmptyState title="Not built yet.">
-      For now: <code>{cli}</code>
-    </EmptyState>
-  );
-  return Body;
 };
 
 const SPECS: Record<PanelId, PanelSpec> = {
@@ -77,7 +66,7 @@ const SPECS: Record<PanelId, PanelSpec> = {
     id: "notifications",
     title: "Notifications",
     Icon: IconNotifications,
-    Body: notBuilt("ork ps"),
+    Body: NotificationsPanel,
   },
 };
 

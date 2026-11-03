@@ -2,10 +2,10 @@
 
 _Part of [The UI](../ui.md)._
 
-Status: **In progress.** Built: the Runs panel, the Run workflow dialog, the
-Monitor, Logs, Decisions and Chats ([panels](../../packages/ui/src/panels/),
-[tests](../../packages/ui/test/panels/)). Notifications is planned, and names
-the `ork` command to use until then.
+Status: **Built:** the Runs panel, the Run workflow dialog, the Monitor, Logs,
+Decisions, Chats and Notifications ([panels](../../packages/ui/src/panels/),
+[tests](../../packages/ui/test/panels/)). The designer and context inspector are
+the next milestone.
 
 ## Contents
 
@@ -15,6 +15,7 @@ the `ork` command to use until then.
 - [Logs](#logs)
 - [Decisions](#decisions)
 - [Chats](#chats)
+- [Notifications](#notifications)
 
 ## Runs
 
@@ -97,9 +98,10 @@ Its CLI twin is `ork tree <run>`.
   it is not. Stop asks first. A refused request is a toast.
 - **The menu keys** or a right click on a node select it and go to its controls.
   `Escape` goes back to the node, after first closing a tip that is open.
-- **Said aloud:** the run's status when it changes, and a node that fails,
-  pauses or waits on you, gathered for a second so a busy run reads as
-  sentences, through the workspace's live region
+- **Said aloud:** the run going on again, and a node that fails or pauses,
+  gathered for a second so a busy run reads as sentences, through the
+  workspace's live region. A run ending or pausing and a question opening are
+  [notifications](#notifications), so they are not said twice
   ([use-run-announcer.ts](../../packages/ui/src/panels/use-run-announcer.ts)).
   What the run already was when opened is not news (WCAG 4.1.3).
 - **Across runs:** a `workflow.call` node opens the run it started, a called run
@@ -171,3 +173,27 @@ One thread per leader or worker of the selected run, built from its events
   session.
 - **While Logs holds still,** the thread reads the feed's tail, the newest 500
   events, so replies keep arriving ([L67](../gaps/limits.md)).
+
+## Notifications
+
+What has happened across runs, newest first, from the overview stream
+([panel](../../packages/ui/src/panels/notifications-panel.tsx),
+[state](../../packages/ui/src/state/notifications.ts),
+[tests](../../packages/ui/test/panels/notifications-panel.test.tsx)). The top
+bar's bell shows how many are unread and goes to the panel.
+
+- **Items** are an open decision, and a run that has ended (succeeded, failed,
+  out of budget, timed out or interrupted), crashed or paused. A decision's item
+  goes when it settles, and a paused run's when it continues
+  ([L68](../gaps/limits.md)).
+- **Read state** is kept per browser. An item can be marked read singly, or all
+  together. In a new browser what had already ended counts as read, so it does
+  not start with a pile; what still wants the user stays unread however old it
+  is.
+- **Opening one** marks it read, selects its run and node, and goes to Decisions
+  for a question or the Monitor for a run.
+- **New items** are said through the workspace's polite live region. What was
+  there when the page opened is not news.
+- **Desktop notifications** are off until turned on here, which makes the
+  browser ask. One is sent only while the page is not being looked at, and a
+  refusal is said beside the switch.

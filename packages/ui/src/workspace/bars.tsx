@@ -7,6 +7,7 @@ import { Kbd } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
 import { IconSearch } from "../components/icons.tsx";
 import { platformIsMac } from "./keys.ts";
+import { NotificationBell } from "./notification-bell.tsx";
 import { keysOf, SHORTCUTS } from "./shortcuts.ts";
 import { WindowMenu } from "./window-menu.tsx";
 import type { Workspace } from "./workspace.ts";
@@ -23,6 +24,7 @@ export const TopBar = ({ workspace }: { workspace: Workspace }) => (
     <h1 className={styles["name"]}>Ork</h1>
     <WindowMenu workspace={workspace} />
     <div className={styles["spacer"]} />
+    <NotificationBell workspace={workspace} />
     <Button
       onClick={() => {
         void workspace.palette.setValue(true);

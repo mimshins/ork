@@ -17,7 +17,7 @@ import styles from "./runs.module.css";
 const statusOf = (run: RunView, waiting: boolean): Status =>
   run.live === "running" && waiting ? "waiting" : run.live;
 
-const timeOf = (iso: string): string => {
+export const timeOf = (iso: string): string => {
   const at = new Date(iso);
   const today = at.toDateString() === new Date().toDateString();
   return at.toLocaleString(

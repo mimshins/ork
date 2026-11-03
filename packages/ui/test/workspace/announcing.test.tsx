@@ -16,6 +16,7 @@ import { treeNode } from "../panels/monitor-fixtures.ts";
 import { runView } from "../state/fixtures.ts";
 
 const RUN = runView("aaa11111");
+const PAUSED: RunView = { ...RUN, live: "paused" };
 
 beforeEach(() => {
   localStorage.clear();
@@ -43,15 +44,14 @@ describe("announcing from a panel", () => {
     });
     const { container } = renderPanel(state, <Shell workspace={workspace} />);
     await act(async () => {
-      overview.send("runs", [RUN]);
+      overview.send("runs", [PAUSED]);
       overview.send("decisions", []);
       state.selectRun(RUN.id);
       await Promise.resolve();
     });
     await screen.findByRole("treeitem", { name: /^lead,/u });
-    const paused: RunView = { ...RUN, live: "paused" };
     await act(async () => {
-      overview.send("runs", [paused]);
+      overview.send("runs", [RUN]);
       await Promise.resolve();
     });
     await vi.waitFor(
@@ -59,9 +59,32 @@ describe("announcing from a panel", () => {
         expect(
           container.querySelector('footer output[aria-live="polite"]')
             ?.textContent,
-        ).toBe("Run aaa11111 paused.");
+        ).toBe("Run aaa11111 running.");
       },
       { timeout: 3000 },
     );
+  });
+
+  it("says a new notification, and not what was there on opening", async () => {
+    const workspace = createWorkspace({ storage: localStorage, wide: false });
+    const { state, overview } = openPanelState({});
+    const { container } = renderPanel(state, <Shell workspace={workspace} />);
+    const live = (): string | null | undefined =>
+      container.querySelector('footer output[aria-live="polite"]')?.textContent;
+    await act(async () => {
+      overview.send("runs", [runView("old11111", "failed")]);
+      overview.send("decisions", []);
+      await Promise.resolve();
+    });
+    expect(live()).toBe("");
+    await act(async () => {
+      overview.send("runs", [
+        runView("new11111", "failed"),
+        runView("old11111", "failed"),
+      ]);
+      await Promise.resolve();
+    });
+    expect(live()).toContain("Run new11111");
+    expect(live()).toContain("failed.");
   });
 });

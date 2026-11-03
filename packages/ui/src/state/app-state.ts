@@ -19,6 +19,7 @@ import {
 import { Container } from "react-containerized-state";
 
 import { createDecisionHistory } from "./decision-history.ts";
+import { createNotifications } from "./notifications.ts";
 import { createPreferences } from "./preferences.ts";
 import { createRead } from "./read.ts";
 import { reconcile } from "./reconcile.ts";
@@ -82,6 +83,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
   );
   const feeds = new Map<string, HeldFeed>();
   const decisionHistory = createDecisionHistory(client);
+  const notifications = createNotifications({ runs, decisions, storage });
 
   const askServer = async (): Promise<void> => {
     const answer = await client.call("health");
@@ -130,6 +132,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     runFilter,
     runDialog,
     settledDecisions: decisionHistory.settled,
+    notifications,
     projects,
     workflows,
     /** Asks for a run; it then arrives on the stream like any other. */
@@ -138,6 +141,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     start: (): (() => void) => {
       const stopWatching = runs.subscribe(reopenResumed);
       const stopSettling = decisions.subscribe(decisionHistory.saw);
+      const stopNotifying = notifications.start();
       const link = openLink<OverviewEvents>({
         url: () => STREAMS.overview,
         open,
@@ -158,6 +162,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
       return () => {
         stopWatching();
         stopSettling();
+        stopNotifying();
         link.close();
       };
     },
