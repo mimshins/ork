@@ -5,6 +5,7 @@
 
 export * from "./client.ts";
 export * from "./contract.ts";
+export * from "./graph.ts";
 export * from "./guards.ts";
 export * from "./server.ts";
 export * from "./ui-file.ts";

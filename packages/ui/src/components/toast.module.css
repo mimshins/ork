@@ -1,6 +1,6 @@
 /**
- * @file The toasts' look: a stack in the bottom corner, each a bordered panel
- *   that fits a narrow window.
+ * @file The toasts' look: a stack that stays in the bottom corner however many
+ *   are added, each a bordered panel that fits a narrow window.
  */
 
 .viewport {
@@ -29,9 +29,16 @@
 }
 
 .toast[data-starting-style],
-.toast[data-ending-style],
-.toast[data-limited] {
+.toast[data-ending-style] {
   opacity: 0;
+}
+
+/*
+ * Over the limit, a toast stays in the list until one goes. It must not take up
+ * room there, or the ones showing climb the screen with each one added.
+ */
+.toast[data-limited] {
+  display: none;
 }
 
 .content {

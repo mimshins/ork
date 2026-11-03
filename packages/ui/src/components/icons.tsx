@@ -8,7 +8,12 @@
  */
 
 import {
+  mdiAccountCheckOutline,
+  mdiAccountStarOutline,
+  mdiAws,
   mdiBellOutline,
+  mdiCallMerge,
+  mdiCallSplit,
   mdiCheck,
   mdiChevronDown,
   mdiChevronRight,
@@ -19,8 +24,12 @@ import {
   mdiContentCopy,
   mdiDockBottom,
   mdiDockWindow,
+  mdiFileTreeOutline,
+  mdiFitToScreenOutline,
   mdiFormatListBulleted,
   mdiForumOutline,
+  mdiGit,
+  mdiGithub,
   mdiGraphOutline,
   mdiHelpBoxMultipleOutline,
   mdiHelpRhombusOutline,
@@ -28,6 +37,10 @@ import {
   mdiMinus,
   mdiPause,
   mdiPlay,
+  mdiPlus,
+  mdiRobotHappyOutline,
+  mdiRobotOutline,
+  mdiSourceBranch,
   mdiStop,
   mdiStopCircleOutline,
   mdiTextBoxOutline,
@@ -84,3 +97,17 @@ export const IconLogs = icon(mdiTextBoxOutline);
 export const IconDecisions = icon(mdiHelpBoxMultipleOutline);
 export const IconChats = icon(mdiForumOutline);
 export const IconNotifications = icon(mdiBellOutline);
+
+export const IconLeader = icon(mdiAccountStarOutline);
+export const IconWorker = icon(mdiRobotOutline);
+export const IconSubagent = icon(mdiRobotHappyOutline);
+export const IconSplit = icon(mdiCallSplit);
+export const IconJoin = icon(mdiCallMerge);
+export const IconRouter = icon(mdiSourceBranch);
+export const IconGate = icon(mdiAccountCheckOutline);
+export const IconCall = icon(mdiFileTreeOutline);
+export const IconGitHub = icon(mdiGithub);
+export const IconAws = icon(mdiAws);
+export const IconGit = icon(mdiGit);
+export const IconPlus = icon(mdiPlus);
+export const IconFit = icon(mdiFitToScreenOutline);

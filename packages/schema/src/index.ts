@@ -5,6 +5,7 @@
 
 export * from "./agents.ts";
 export * from "./edges.ts";
+export * from "./layout.ts";
 export * from "./json-schema.ts";
 export * from "./nodes.ts";
 export * from "./project.ts";

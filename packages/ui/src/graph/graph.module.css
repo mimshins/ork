@@ -1,0 +1,214 @@
+/**
+ * @file The graph's look: a dotted canvas, cards with an edge in their status's
+ *   color beside an icon and a word, and a line for each kind of edge, so loops
+ *   and channels read without color.
+ */
+
+.graph {
+  height: 100%;
+  min-height: 0;
+  position: relative;
+  width: 100%;
+}
+
+.canvas {
+  background-color: var(--panel-bg);
+  background-image: radial-gradient(
+    var(--color-border) var(--hairline),
+    transparent var(--hairline)
+  );
+  background-size: var(--gap-loose) var(--gap-loose);
+  cursor: grab;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  touch-action: none;
+  width: 100%;
+}
+
+.canvas:active {
+  cursor: grabbing;
+}
+
+.canvas:focus-visible {
+  outline-offset: calc(0px - var(--focus-width));
+}
+
+.hint {
+  clip-path: inset(50%);
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.layer {
+  height: 0;
+  left: 0;
+  position: absolute;
+  top: 0;
+  transform-origin: 0 0;
+  width: 0;
+}
+
+.edges {
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+}
+
+.edgeLine {
+  fill: none;
+  stroke: var(--color-text-muted);
+  stroke-width: 1.5;
+}
+
+.edgeHead {
+  fill: var(--color-text-muted);
+}
+
+[data-kind="back"] .edgeLine {
+  stroke: var(--color-action-text);
+  stroke-dasharray: 6 4;
+}
+
+[data-kind="back"] .edgeHead {
+  fill: var(--color-action-text);
+}
+
+[data-kind="owner"] .edgeLine {
+  stroke-dasharray: 2 4;
+}
+
+[data-kind="message"] .edgeLine {
+  stroke: var(--color-status-succeeded);
+  stroke-dasharray: 1 5;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.edgeLabel {
+  dominant-baseline: middle;
+  fill: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  text-anchor: middle;
+}
+
+.edgeLabelBack {
+  fill: var(--panel-bg);
+}
+
+.card {
+  align-items: flex-start;
+  background: var(--surface-raised);
+  border: var(--hairline) solid var(--color-border-strong);
+  border-inline-start: var(--gap-tight) solid
+    var(--tone, var(--color-border-strong));
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  gap: var(--gap-hair);
+  justify-content: center;
+  left: 0;
+  overflow: hidden;
+  padding: var(--gap-tight) var(--gap);
+  position: absolute;
+  text-align: start;
+  top: 0;
+}
+
+.card:hover {
+  background: var(--surface-hover);
+}
+
+.card[data-selected] {
+  background: var(--surface-selected);
+  border-color: var(--color-action-edge);
+}
+
+.card[data-tone="running"] {
+  --tone: var(--color-status-running);
+}
+
+.card[data-tone="succeeded"] {
+  --tone: var(--color-status-succeeded);
+}
+
+.card[data-tone="waiting"] {
+  --tone: var(--color-status-waiting);
+}
+
+.card[data-tone="paused"] {
+  --tone: var(--color-status-paused);
+}
+
+.card[data-tone="failed"] {
+  --tone: var(--color-status-failed);
+}
+
+.card[data-tone="queued"] {
+  --tone: var(--color-status-queued);
+}
+
+.card[data-tone="skipped"] {
+  --tone: var(--color-status-skipped);
+}
+
+.card[data-tone="interrupted"] {
+  --tone: var(--color-status-interrupted);
+}
+
+.cardHead {
+  align-items: center;
+  display: flex;
+  gap: var(--gap-tight);
+  max-width: 100%;
+}
+
+.cardIcon {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  flex: none;
+  font-size: var(--icon-size);
+}
+
+.cardId {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-weight: var(--weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardMeta {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  max-width: 100%;
+  min-height: 1lh;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.controls {
+  background: var(--popup-bg);
+  border: var(--hairline) solid var(--popup-border);
+  border-radius: var(--radius-control);
+  bottom: var(--gap);
+  display: flex;
+  gap: var(--gap-hair);
+  padding: var(--gap-hair);
+  position: absolute;
+  right: var(--gap);
+}

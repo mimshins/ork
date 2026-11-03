@@ -206,3 +206,7 @@ How something built works for now, by choice.
   kept results and open runs back in order, as it always has for any node, so
   with parallel activations a result or a run can return to a different
   activation than made it, with other inputs. ([calls](../scheduler/calls.md))
+- **L62 · Edges between hand-placed nodes can cross a card.** With a
+  `.layout.json`, an edge curves straight between its two nodes and does not
+  look for a way around what the user put between them.
+  ([graph](../ui/graph.md))

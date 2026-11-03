@@ -12,7 +12,9 @@ Status: **Built**: the Zod model, edge shorthand, canonical YAML, diagnostics,
 
 - `.ork/workflows/<name>.ork.yaml`: the committed workflow.
 - `.ork/workflows/<name>.layout.json`: optional canvas positions, kept separate
-  so that logic diffs stay clean.
+  so that logic diffs stay clean: `{ "nodes": { "<id>": { "x": 0, "y": 0 } } }`.
+  A file that does not parse is treated as no file, since a run never reads it
+  ([layout.ts](../packages/schema/src/layout.ts)).
 
 **Serialization rules:**
 

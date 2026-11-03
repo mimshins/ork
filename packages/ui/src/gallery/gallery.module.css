@@ -39,3 +39,8 @@
 .meter {
   width: var(--toast-width);
 }
+
+.graph {
+  height: 34rem;
+  width: 100%;
+}

@@ -60,6 +60,12 @@ const LOOKS: Record<Status, Look> = {
   },
 };
 
+/** The status in words, for what names a thing in text. */
+export const statusWord = (status: Status): string => LOOKS[status].word;
+
+/** The color family the status belongs to, for what is drawn around a badge. */
+export const statusTone = (status: Status): string => LOOKS[status].tone;
+
 export const StatusBadge = ({ status }: { status: Status }) => {
   const { Icon, word, tone } = LOOKS[status];
   return (

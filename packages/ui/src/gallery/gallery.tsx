@@ -13,9 +13,8 @@ import { createRoot } from "react-dom/client";
 import { Button } from "../components/button.tsx";
 import { TipProvider } from "../components/tip.tsx";
 import { followSystem, type ThemeChoice } from "../design/theme.ts";
-import { Controls } from "./controls.tsx";
-import { Overlays } from "./overlays.tsx";
 import { Section } from "./section.tsx";
+import { Sections } from "./sections.tsx";
 
 import "../design/design.css";
 import styles from "./gallery.module.css";
@@ -41,8 +40,7 @@ const Gallery = () => {
           </Button>
         ))}
       </Section>
-      <Controls />
-      <Overlays />
+      <Sections />
     </main>
   );
 };

@@ -21,6 +21,8 @@ through its typed client.
   to the rail, the keys and why they are Ork's own, the command palette, focus,
   the saved layout, and the stack on a narrow window.
 - [Panels](./ui/panels.md): the Runs panel and the Run workflow dialog.
+- [Graph](./ui/graph.md): the layout, its edges in the interaction map's style,
+  pan and zoom, and the keys and names that make it accessible.
 - [State](./ui/state.md): the containers, streams that stay connected, a run's
   feed and event window, what re-renders, and the preferences.
 
