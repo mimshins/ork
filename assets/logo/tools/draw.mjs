@@ -1,8 +1,8 @@
 /**
  * @file Draws Ork's logo as SVG text: the prompt mark (a ">" and a block caret
- *   on the pixel grid of the "ork" logotype), the mark without its screen, the
- *   wordmark, and the favicon redrawn for 16 px. Pure functions; generate.mjs
- *   writes and rasterizes them.
+ *   on the pixel grid of the "ork" logotype), the mark and the wordmark with or
+ *   without their screen, the wordmark's small drawing, and the favicon redrawn
+ *   for 16 px. Pure functions; generate.mjs writes and rasterizes them.
  */
 
 export const C = {
@@ -11,6 +11,12 @@ export const C = {
   green: "#3dff8a",
   amber: "#ffb000",
 };
+
+/**
+ * On a light page phosphor is too faint, so the green takes the palette's own
+ * step for light themes. The caret stays the logo's amber.
+ */
+const ON_LIGHT = { green: "#00753b", amber: C.amber };
 
 /** The logotype's pixel pitch in the wordmark; 4.4 of each 5 units are lit. */
 const TYPE_CELL = 5;
@@ -184,8 +190,13 @@ const glyphPath = (rows, x0) =>
 
 const WORD_W = 162;
 
-/** The mark and the "ork" logotype on one screen. */
-export const wordmark = () => {
+/**
+ * The mark and the "ork" logotype, on one screen or, for a dark page, with no
+ * background at all.
+ *
+ * @param {{ onScreen?: boolean }} options
+ */
+export const wordmark = ({ onScreen = true } = {}) => {
   const id = "ork-word";
   const type = ["o", "r", "k"]
     .map(
@@ -195,15 +206,72 @@ export const wordmark = () => {
     .join("");
   return svg(
     WORD_W,
-    `${defs(id)}
-  ${screen(id, "screen", WORD_W, false)}
+    `${defs(id)}${
+      onScreen
+        ? `
+  ${screen(id, "screen", WORD_W, false)}`
+        : ""
+    }
   <g transform="translate(6 6) scale(${String(LOCKUP_SCALE)})">${glow(id, markPixels())}
   </g>
   <g filter="url(#${id}-glow)" fill="${C.green}">${type}
-  </g>
-  ${screen(id, "scan", WORD_W, false)}`,
+  </g>${
+    onScreen
+      ? `
+  ${screen(id, "scan", WORD_W, false)}`
+      : ""
+  }`,
     ` width="${String(WORD_W * 4)}" height="256"`,
   );
+};
+
+/** The small wordmark's grid: 8 + 2 + 17 columns, 7 rows, at 2 units a cell. */
+const SMALL_GAP = 2;
+const SMALL_PITCH = 2;
+/** A lit cell covers 3 units of its 2, so strokes are half as thick again. */
+const SMALL_INK = 3;
+const SMALL_W = 27 * SMALL_PITCH + SMALL_INK - SMALL_PITCH;
+const SMALL_H = 7 * SMALL_PITCH + SMALL_INK - SMALL_PITCH;
+
+/**
+ * One lit cell.
+ *
+ * @param {number} x
+ * @param {number} y
+ * @param {string} fill
+ */
+const pixel = (x, y, fill) =>
+  `<rect x="${String(x * SMALL_PITCH)}" y="${String(y * SMALL_PITCH)}" width="${String(SMALL_INK)}" height="${String(SMALL_INK)}" fill="${fill}"/>`;
+
+/**
+ * The wordmark for 32 px and under, as the favicon is for the mark: the 5x7
+ * grid with heavier strokes, as one cell is too thin at this size, no glow or
+ * scanlines (they only blur), and no background. Show it at a whole multiple of
+ * 15 px high, so its edges stay crisp.
+ *
+ * @param {{ onLight?: boolean }} options
+ */
+export const wordmarkSmall = ({ onLight = false } = {}) => {
+  const green = onLight ? ON_LIGHT.green : C.green;
+  const amber = onLight ? ON_LIGHT.amber : C.amber;
+  const mark = cells(MARK_ROWS).map(({ x, y, fill }) =>
+    pixel(x, y, fill === C.amber ? amber : green),
+  );
+  const typeAt = (MARK_ROWS[0]?.length ?? 0) + SMALL_GAP;
+  const type = ["o", "r", "k"].flatMap((ch, i) =>
+    (GLYPH_ROWS[ch] ?? []).flatMap((row, y) =>
+      row
+        .split("")
+        .flatMap((cell, x) =>
+          cell === "#" ? [pixel(typeAt + i * 6 + x, y, green)] : [],
+        ),
+    ),
+  );
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${String(SMALL_W)} ${String(SMALL_H)}" shape-rendering="crispEdges" role="img" aria-label="Ork">
+  <title>Ork</title>
+  ${[...mark, ...type].join("")}
+</svg>
+`;
 };
 
 /**

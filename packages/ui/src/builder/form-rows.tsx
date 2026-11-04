@@ -69,7 +69,6 @@ export const ListField = ({
                   return left.length === 0 ? undefined : left;
                 });
               }}
-              variant="ghost"
             >
               Remove {labelOf(name).toLowerCase()} {index + 1}
             </Button>
@@ -128,7 +127,6 @@ export const RecordField = ({
             onClick={() => {
               context.change([...path, key], takenOut);
             }}
-            variant="ghost"
           >
             Remove {key}
           </Button>

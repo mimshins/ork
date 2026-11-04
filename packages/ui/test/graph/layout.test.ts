@@ -156,6 +156,21 @@ describe.each(EXAMPLES)("the layout of %s", name => {
   });
 });
 
+/** Whether each flow curve is straight, or joins cards too far apart for that. */
+const everyEdgeLevelOrApart = (
+  layout: ReturnType<typeof layoutGraph>,
+): boolean =>
+  layout.edges.every(edge => {
+    const from = layout.nodes.find(({ id }) => id === edge.from);
+    const to = layout.nodes.find(({ id }) => id === edge.to);
+    const shared =
+      from === undefined || to === undefined
+        ? 0
+        : Math.min(from.y + from.height, to.y + to.height) -
+          Math.max(from.y, to.y);
+    return shared < 16 || new Set(edge.points.map(({ y }) => y)).size === 1;
+  });
+
 describe("the layout", () => {
   it("leaves loops out of the ranking, and draws them going back", () => {
     const layout = layoutGraph({
@@ -283,6 +298,41 @@ describe("the layout", () => {
     const gap = nodeOf(layout, "b").x - (a.x + a.width);
     expect(gap).toBeGreaterThan(27 * LABEL_CHAR);
     expect(layout.edges[0]?.labelAt?.x).toBeCloseTo(a.x + a.width + gap / 2);
+  });
+
+  it("lines a first node up with the next, past a loop's lane beside it", () => {
+    const layout = layoutGraph({
+      nodes: ["pr", "build", "review", "ask"].map(id => ({
+        id,
+        type: "tool.shell",
+      })),
+      edges: [
+        { from: "pr", to: "build", when: "json.state == 'OPEN'" },
+        { from: "build", to: "review" },
+        { from: "review", to: "pr", maxRounds: 3 },
+        { from: "review", to: "ask" },
+      ],
+      channels: [],
+    });
+    const yOf = (id: string): number | undefined =>
+      layout.nodes.find(node => node.id === id)?.y;
+    expect(yOf("pr")).toBe(yOf("build"));
+    const edge = layout.edges.find(({ from }) => from === "pr");
+    expect(new Set(edge?.points.map(({ y }) => y)).size).toBe(1);
+  });
+
+  it("runs an edge straight across cards that overlap, not as a shallow S", () => {
+    const layout = layoutGraph({
+      nodes: ["a", "b", "c", "d"].map(id => ({ id, type: "tool.shell" })),
+      edges: [
+        { from: "a", to: "b" },
+        { from: "a", to: "c" },
+        { from: "b", to: "d" },
+        { from: "c", to: "d" },
+      ],
+      channels: [],
+    });
+    expect(everyEdgeLevelOrApart(layout)).toBe(true);
   });
 
   it("joins neighboring ranks with one curve", () => {

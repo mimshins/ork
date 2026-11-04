@@ -23,7 +23,8 @@
   --dv-tab-font-size: var(--text-ui);
   --dv-tab-margin: 0;
   --dv-border-radius: var(--radius-panel);
-  --dv-separator-border: var(--panel-border);
+  /* Groups sit apart with their own borders: a split's line would stick out. */
+  --dv-separator-border: transparent;
   --dv-sash-color: transparent;
   --dv-active-sash-color: var(--color-action-edge);
   --dv-active-sash-transition-duration: var(--duration-quick);
@@ -66,6 +67,15 @@
 }
 
 /* The page's ring, drawn inside so a neighbor or the strip's edge cannot clip it. */
+/*
+ * Dockview's splits hide their overflow, and hold a few pixels more than they
+ * show, so focusing a field could scroll a whole split under the top bar. Clip
+ * can't be scrolled by anything.
+ */
+.dock :global(.dv-split-view-container) {
+  overflow: clip;
+}
+
 .dock :global(.dv-tab):focus-visible {
   outline: var(--focus-width) solid var(--color-focus);
   outline-offset: calc(var(--focus-width) * -1);

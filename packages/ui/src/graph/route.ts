@@ -30,6 +30,8 @@ export type RouteInput = {
 const LOOP_HEIGHT = 30;
 const BULGE = 48;
 const MIN_CURVE = 36;
+/** How much of their height two cards must share for a straight edge. */
+const MIN_SHARED = 16;
 
 /** Where each kind attaches, from the middle of a card's side. */
 const OFFSET: Readonly<Record<EdgeKind, number>> = {
@@ -72,6 +74,17 @@ const across = (edge: LaidEdge, from: Point, to: Point): PlacedEdge => {
     { x: to.x - pull * way, y: to.y },
     to,
   ]);
+};
+
+/**
+ * A height both cards' sides reach, in the middle of what they share, if they
+ * share enough for a line. Two cards that nearly line up then get a straight
+ * edge, not a shallow S that a label hides the middle of.
+ */
+const sharedHeight = (from: PlacedNode, to: PlacedNode): number | undefined => {
+  const top = Math.max(from.y, to.y);
+  const bottom = Math.min(from.y + from.height, to.y + to.height);
+  return bottom - top < MIN_SHARED ? undefined : (top + bottom) / 2;
 };
 
 const selfLoop = (edge: LaidEdge, node: PlacedNode): PlacedEdge => {
@@ -214,7 +227,14 @@ export const routeEdges = (input: RouteInput): PlacedEdge[] => {
       y: attachY(to, edge.kind),
     };
     const lane = lanes.get(edge.index);
-    if (lane === undefined) return [across(edge, start, end)];
+    if (lane === undefined) {
+      const level = sharedHeight(from, to);
+      return [
+        level === undefined
+          ? across(edge, start, end)
+          : across(edge, { ...start, y: level }, { ...end, y: level }),
+      ];
+    }
     const low = Math.min(startRank, endRank);
     const high = Math.max(startRank, endRank);
     const firstX = trackX(onward ? low : high - 1, edge.index);

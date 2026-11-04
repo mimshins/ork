@@ -19,12 +19,14 @@ workflow, and tested on the example workflows.
 - **Order within a rank** is by barycenter, to cut crossings. A long edge has a
   stop on each rank it crosses, for this only.
 - **Heights** keep each rank's order and spacing while pulling a node level with
-  what it joins, and a node moves level with the one before it when that is a
-  small step.
+  what it joins, and a node moves level with the one before it, or a first node
+  with the one after it, when that is a small step.
 - **Edges follow the interaction map's style**
   ([design language](../../docs/interaction-map/design-language.md)), and never
   climb in steps:
   - Nodes on neighboring ranks get one smooth curve between their facing sides.
+    Where their sides overlap enough, it's a straight line across what they
+    share, so a small offset never makes a shallow S.
   - A longer edge runs level along one lane through the ranks it crosses, clear
     of their cards, with at most four rounded corners.
   - A loop goes right to left, a channel between two nodes of a rank bulges out

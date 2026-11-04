@@ -20,7 +20,7 @@
   flex-wrap: wrap;
   gap: var(--gap);
   justify-content: space-between;
-  padding: var(--gap);
+  padding: var(--gap) var(--inset-panel);
 }
 
 .chooser,
@@ -33,19 +33,32 @@
   gap: var(--gap);
 }
 
+/*
+ * What the panel has to say, on a line of its own that's always there, so a
+ * message coming or going doesn't move the canvas.
+ */
+.notices {
+  align-items: baseline;
+  border-block-end: var(--hairline) solid var(--panel-border);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--text-small);
+  gap: var(--gap-tight) var(--gap-loose);
+  justify-content: space-between;
+  line-height: var(--leading-ui);
+  min-height: calc(1lh + var(--gap) * 2);
+  padding: var(--gap) var(--inset-panel);
+}
+
 .status {
   color: var(--color-text-muted);
-  display: block;
-  font-size: var(--text-small);
-  min-height: 1lh;
-  padding-inline: var(--gap);
 }
 
 .error {
   color: var(--color-danger-text);
+  font-weight: var(--weight-medium);
   margin: 0;
   overflow-wrap: anywhere;
-  padding-inline: var(--gap);
 }
 
 .body {
@@ -62,7 +75,7 @@
 .inspector {
   min-height: 0;
   overflow-y: auto;
-  padding: var(--gap);
+  padding: var(--inset-panel);
 }
 
 .palette {
@@ -71,6 +84,8 @@
 
 .inspector {
   border-inline-start: var(--hairline) solid var(--panel-border);
+  /* Holds words kept for screen readers, or they'd stretch the panel. */
+  position: relative;
 }
 
 .middle {
@@ -94,7 +109,7 @@
 .clean {
   border-block-start: var(--hairline) solid var(--panel-border);
   display: block;
-  padding: var(--gap);
+  padding: var(--gap) var(--inset-panel);
 }
 
 .clean {
@@ -118,6 +133,10 @@
   padding: 0;
 }
 
+.edges {
+  gap: var(--gap);
+}
+
 .problemLink {
   background: transparent;
   border: 0;
@@ -130,15 +149,23 @@
   text-decoration: underline;
 }
 
-.heading,
-.subheading {
-  font-size: var(--text-small);
-  font-weight: var(--weight-medium);
+/* Titles step down from the panel's to a section's, and both lead a label. */
+.heading {
+  font-size: var(--text-title);
+  font-weight: var(--weight-strong);
+  line-height: var(--leading-tight);
   margin: 0;
 }
 
-.heading {
-  margin-block-end: var(--gap-tight);
+.palette .heading {
+  margin-block-end: var(--gap);
+}
+
+.subheading {
+  font-size: var(--text-ui);
+  font-weight: var(--weight-strong);
+  line-height: var(--leading-tight);
+  margin: 0;
 }
 
 .type {
@@ -164,7 +191,14 @@
 .fields {
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
+  gap: var(--gap-loose);
+}
+
+/* An action is as wide as its words, not the whole column. */
+.fields > button,
+.edge > button,
+.testRow > button {
+  align-self: flex-start;
 }
 
 .field,
@@ -190,23 +224,32 @@
 .hint {
   color: var(--color-text-muted);
   font-size: var(--text-small);
+  line-height: var(--leading-ui);
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 .group {
   border-block-start: var(--hairline) solid var(--panel-border);
-  padding-block-start: var(--gap-tight);
+  padding-block-start: var(--gap);
 }
 
-.group > .fields {
+.group > .hint {
   margin-block-start: var(--gap-tight);
+}
+
+/* What's inside a group sits under a line, so depth reads at a glance. */
+.group > .fields {
+  border-inline-start: var(--hairline) solid var(--panel-border);
+  margin-block-start: var(--gap);
+  padding-inline-start: var(--gap);
 }
 
 .summary {
   cursor: pointer;
-  font-size: var(--text-small);
-  font-weight: var(--weight-medium);
+  font-size: var(--text-ui);
+  font-weight: var(--weight-strong);
+  line-height: var(--leading-tight);
 }
 
 .row {
@@ -226,21 +269,26 @@
 }
 
 .testRow {
+  border-inline-start: var(--hairline) solid var(--panel-border);
   display: flex;
   flex-direction: column;
-  gap: var(--gap-tight);
+  gap: var(--gap);
+  padding-inline-start: var(--gap);
 }
 
 .edge {
-  border-block-start: var(--hairline) solid var(--panel-border);
+  border: var(--hairline) solid var(--panel-border);
+  border-radius: var(--radius-control);
   display: flex;
   flex-direction: column;
-  gap: var(--gap-tight);
-  padding-block-start: var(--gap-tight);
+  gap: var(--gap-loose);
+  padding: var(--gap);
 }
 
 .edgeName {
-  font-weight: var(--weight-medium);
+  font-size: var(--text-ui);
+  font-weight: var(--weight-strong);
+  line-height: var(--leading-tight);
   margin: 0;
 }
 

@@ -83,22 +83,26 @@ export const BuilderPanel = () => {
           </div>
         )}
       </header>
-      <output className={styles["status"]}>
-        {connecting && selected !== null
-          ? `Choose the card ${selected} leads to.`
-          : view?.changedOnDisk === true
-            ? "The file changed since this draft began. Saving will ask before replacing it."
-            : view?.draft === true
-              ? "Unsaved changes are kept as a draft."
-              : ""}
-      </output>
-      {refusal === null ? null : (
-        <p
-          className={styles["error"]}
-          role="alert"
-        >
-          {refusal}
-        </p>
+      {view === null ? null : (
+        <div className={styles["notices"]}>
+          {refusal === null ? null : (
+            <p
+              className={styles["error"]}
+              role="alert"
+            >
+              {refusal}
+            </p>
+          )}
+          <output className={styles["status"]}>
+            {connecting && selected !== null
+              ? `Choose the card ${selected} leads to.`
+              : view.changedOnDisk
+                ? "The file changed since this draft began. Saving will ask before replacing it."
+                : view.draft
+                  ? "Unsaved changes are kept as a draft."
+                  : ""}
+          </output>
+        </div>
       )}
       <BuilderBody builder={builder} />
       <ConfirmDialog

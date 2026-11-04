@@ -16,12 +16,18 @@ import styles from "./workspace.module.css";
 
 export const TopBar = ({ workspace }: { workspace: Workspace }) => (
   <header className={styles["bar"]}>
-    <img
-      alt=""
-      className={styles["mark"]}
-      src="/favicon.svg"
-    />
-    <h1 className={styles["name"]}>Ork</h1>
+    <h1 className={styles["name"]}>
+      <img
+        alt="Ork"
+        className={styles["logoOnDark"]}
+        src="/ork-wordmark-small.svg"
+      />
+      <img
+        alt="Ork"
+        className={styles["logoOnLight"]}
+        src="/ork-wordmark-small-on-light.svg"
+      />
+    </h1>
     <WindowMenu workspace={workspace} />
     <div className={styles["spacer"]} />
     <NotificationBell workspace={workspace} />

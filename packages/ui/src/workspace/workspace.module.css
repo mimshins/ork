@@ -20,15 +20,26 @@
   padding: 0 var(--gap);
 }
 
-.mark {
-  height: var(--mark-size);
-  width: var(--mark-size);
+.name {
+  display: flex;
+  margin: 0;
 }
 
-.name {
-  font-size: var(--text-ui);
-  font-weight: var(--weight-strong);
-  margin: 0;
+/*
+ * The wordmark has no background, so each theme gets the drawing that reads on
+ * it. Hidden, the other isn't read out. Its edges are crisp at 1 px a unit, so
+ * this size is exact, not on the scale.
+ */
+.logoOnDark,
+.logoOnLight {
+  display: block;
+  height: var(--logo-height);
+  width: var(--logo-width);
+}
+
+:global([data-theme="dark"]) .logoOnLight,
+:global([data-theme="light"]) .logoOnDark {
+  display: none;
 }
 
 .spacer {

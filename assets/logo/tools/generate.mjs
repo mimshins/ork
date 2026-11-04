@@ -25,11 +25,13 @@ import {
   markOnScreen,
   markTransparent,
   wordmark,
+  wordmarkSmall,
 } from "./draw.mjs";
 
 const LOGO = path.resolve(import.meta.dirname, "..");
 const ICONS = path.join(LOGO, "icons");
 const MAP_PUBLIC = path.resolve(LOGO, "../../docs/interaction-map/public");
+const UI_PUBLIC = path.resolve(LOGO, "../../packages/ui/public");
 const CHROME =
   process.env["CHROME"] ??
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
@@ -140,6 +142,22 @@ const main = () => {
   );
   writeFileSync(path.join(LOGO, "ork-mark-transparent.svg"), markTransparent());
   writeFileSync(path.join(LOGO, "ork-wordmark.svg"), wordmark());
+  writeFileSync(
+    path.join(LOGO, "ork-wordmark-transparent.svg"),
+    wordmark({ onScreen: false }),
+  );
+  writeFileSync(path.join(LOGO, "ork-wordmark-small.svg"), wordmarkSmall());
+  writeFileSync(
+    path.join(LOGO, "ork-wordmark-small-on-light.svg"),
+    wordmarkSmall({ onLight: true }),
+  );
+  // The UI's top bar shows them, and the UI serves only its public/ folder.
+  for (const file of [
+    "ork-wordmark-small.svg",
+    "ork-wordmark-small-on-light.svg",
+  ]) {
+    copyFileSync(path.join(LOGO, file), path.join(UI_PUBLIC, file));
+  }
   writeFileSync(path.join(ICONS, "favicon.svg"), favicon());
   writeIco();
 

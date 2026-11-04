@@ -58,7 +58,6 @@ export const SkillRows = ({
                     return left.length === 0 ? undefined : left;
                   });
                 }}
-                variant="ghost"
               >
                 Remove {skill}
               </Button>

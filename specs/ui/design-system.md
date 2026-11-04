@@ -27,6 +27,16 @@ where something needs the user.
   - **Phosphor `#3dff8a` is secondary:** live and done. Running, success, links.
   - **Text on either fill is the screen color `#0a0d0b`:** 10.7:1 on amber,
     14.8:1 on phosphor.
+- **The name in the top bar is the identity, not text:** the small wordmark,
+  `>▮ork`, redrawn on whole pixels for 32 px and under, with no background; on
+  the light theme its green is `--phosphor-700`, and its caret stays amber
+  ([logo](../../assets/logo/README.md)), on its own tile so it holds in every
+  theme.
+- **Titles, labels and descriptions read as three things.** A title is strong
+  and in text color: the panel's in `--text-title`, a section's in `--text-ui`.
+  A label is `--text-small`, medium, in text color. A description is
+  `--text-small`, regular and muted. A label says what a field is even with the
+  description gone.
 - **Status is never color alone.** Each status has its own icon shape and a
   word; the colors are running and succeeded in phosphor, waiting and paused in
   amber, failed in red, and queued, skipped and interrupted in a neutral.

@@ -18,17 +18,20 @@ paths.
 
 ## Files
 
-| File                          | Use it for                                                    |
-| ----------------------------- | ------------------------------------------------------------- |
-| `ork-mark.svg`                | The default mark on its screen: avatars, social cards, docs   |
-| `ork-mark-transparent.svg`    | Dark backgrounds only; phosphor green is too faint on white   |
-| `ork-wordmark.svg`            | The README header and banners: the mark and the pixel "ork"   |
-| `icons/favicon.svg`           | Browser tabs: the mark redrawn on a 16 px grid, on its tile   |
-| `icons/favicon.ico`           | The fallback favicon: the 16 px drawing at 16, 32 and 48 px   |
-| `icons/apple-touch-icon.png`  | iOS home screen, 180 px, opaque (iOS rounds the corners)      |
-| `icons/icon-192.png`, `-512`  | Android and PWA icons, rounded tile with transparent corners  |
-| `icons/icon-maskable-512.png` | Android adaptive icon: full bleed, mark inside the 80% circle |
-| `icons/site.webmanifest`      | The web app manifest naming those icons                       |
+| File                              | Use it for                                                                                                        |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `ork-mark.svg`                    | The default mark on its screen: avatars, social cards, docs                                                       |
+| `ork-mark-transparent.svg`        | Dark backgrounds only; phosphor green is too faint on white                                                       |
+| `ork-wordmark.svg`                | The README header and banners: the mark and the pixel "ork"                                                       |
+| `ork-wordmark-transparent.svg`    | The wordmark with no background, for dark pages                                                                   |
+| `ork-wordmark-small.svg`          | 32 px and under on a dark page, as in the UI's top bar: heavier strokes, no background                            |
+| `ork-wordmark-small-on-light.svg` | The same on a light page: the palette's `#00753b` green, as phosphor is too faint there, and the same amber caret |
+| `icons/favicon.svg`               | Browser tabs: the mark redrawn on a 16 px grid, on its tile                                                       |
+| `icons/favicon.ico`               | The fallback favicon: the 16 px drawing at 16, 32 and 48 px                                                       |
+| `icons/apple-touch-icon.png`      | iOS home screen, 180 px, opaque (iOS rounds the corners)                                                          |
+| `icons/icon-192.png`, `-512`      | Android and PWA icons, rounded tile with transparent corners                                                      |
+| `icons/icon-maskable-512.png`     | Android adaptive icon: full bleed, mark inside the 80% circle                                                     |
+| `icons/site.webmanifest`          | The web app manifest naming those icons                                                                           |
 
 ## Regenerate
 
@@ -48,6 +51,10 @@ paths.
 
 ## Rules
 
-- Keep the mark on its screen, or on a background at least as dark as `#1a1a19`.
-- Do not recolour, stretch, or add effects; scale it as a whole.
-- Below 32 px use the favicon drawing, not a scaled-down mark.
+- Keep the logo on its screen, or on a background at least as dark as `#1a1a19`.
+  On a lighter page, use `ork-wordmark-small-on-light.svg`.
+- Do not recolour, stretch, or add effects; scale it as a whole. The on-light
+  drawing's green is the only recolouring.
+- Below 32 px use the favicon drawing, not a scaled-down mark, and a small
+  wordmark, not a scaled-down wordmark. Show a small one at a whole multiple of
+  15 px high, so its edges stay crisp.

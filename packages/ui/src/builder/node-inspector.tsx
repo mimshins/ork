@@ -76,7 +76,6 @@ const NodeInspector = ({ id, builder }: { id: string; builder: Builder }) => {
         onClick={() => {
           void remove();
         }}
-        variant="ghost"
       >
         Remove {id}
       </Button>
