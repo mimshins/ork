@@ -8,10 +8,10 @@ components ([design system](./ui/design-system.md)); and the workspace that
 holds the panels ([workspace](./ui/workspace.md)). Its panels are built: Runs,
 the Monitor, Logs, Decisions, Chats and Notifications
 ([panels](./ui/panels.md)), with a user guide
-([the browser view](../docs/guides/browser-view.md)). The designer and context
-inspector are the next milestone. The stack is React, Base UI, dockview,
-containerized-state and an in-house graph
-([ADR-040](../decisions/ADR-040-ui-stack.md)), with Material Design Icons
+([the browser view](../docs/guides/browser-view.md)). The
+[workflow builder](#workflow-builder) and the context inspector are still to
+come. The stack is React, Base UI, dockview, containerized-state and an in-house
+graph ([ADR-040](../decisions/ADR-040-ui-stack.md)), with Material Design Icons
 ([ADR-042](../decisions/ADR-042-icons-mdi.md)). The panels read the server's API
 through its typed client.
 
@@ -32,23 +32,45 @@ through its typed client.
 
 ## Panels
 
-- **Designer:** a canvas drawn in-house. A palette of node types (Claude leader,
-  worker and sub-agent; GitHub; AWS; shell; control; human gate), an inspector
-  for each node with a skill picker that shows which layer each skill comes
-  from, and a validation overlay. It saves exactly the same YAML and layout
-  files.
+- **Workflow builder:** creates a workflow from scratch, or edits one, with no
+  YAML to write ([below](#workflow-builder)).
 - **System monitor:** a live graph and ownership tree with status, tokens and
   cost.
 - **Chats:** one conversation per node.
 - **Decisions inbox:** shaped like the Question tool, with the question, the
   options, the recommended option and one-click answers.
 - **Logs:** a filterable event stream.
-- **Context inspector:** the resolved layer stack for each node.
+- **Context inspector:** a read-only panel with the resolved layer stack for
+  each node: what it is told, and where each piece comes from.
 - **Feedback:** items grouped by fingerprint and target, with triage, apply,
   accept as a lesson, and the publish preview.
 - **New version:** the CLI's notice as a banner, read from the same record, with
   an upgrade button that runs `ork upgrade`'s plan after the user confirms
   ([updates](./cli/updates.md)).
+
+## Workflow builder
+
+Status: **Not built.** It needs an RFC first.
+
+A user can create a workflow from scratch in the UI, and edit an existing one,
+on a canvas drawn in-house, without writing or reading YAML. It saves exactly
+the same YAML and layout files a person would write, so a workflow made either
+way works with every `ork` command.
+
+- **A palette of node types:** Claude leader, worker and sub-agent; GitHub; AWS;
+  shell; MCP call; workflow call; control; human gate.
+- **An inspector for each node,** with its steps and rules (`before:`,
+  `verify:`, `notify:`), and a skill picker that shows which layer each skill
+  comes from.
+- **A validation overlay,** from the same compiler as `ork validate`.
+
+The RFC decides:
+
+- how much of the workflow format the canvas can edit, and what happens to
+  fields it can't show;
+- how edits round-trip through the YAML without losing comments;
+- where node positions are saved;
+- how drafts are checked and test-run.
 
 ## Style
 

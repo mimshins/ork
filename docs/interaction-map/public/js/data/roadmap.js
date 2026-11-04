@@ -650,7 +650,14 @@ export const MILESTONES = [
         date: "2026-11-04",
         detail:
           "Tool nodes know their run and node, take an `env:`, and return JSON a `when:` can read. They can send a message with `ork send`, and a workflow can declare one with `notify:`, so deterministic work takes no model turn (built, RFC-005). A node can check a report with `verify:`, set itself up with `before:`, hold a short `script:`, and call an MCP tool with `mcp.call` (built, RFC-006).",
-        commits: ["c4cdefe", "ef82721", "eeceaf2", "b98d841", "515b9eb"],
+        commits: [
+          "c4cdefe",
+          "ef82721",
+          "eeceaf2",
+          "b98d841",
+          "515b9eb",
+          "b86ebfc",
+        ],
         docs: [
           "decisions/ADR-047-script-identity-env-json.md",
           "decisions/ADR-048-scripts-and-rules-on-the-bus.md",
@@ -663,14 +670,24 @@ export const MILESTONES = [
       {
         id: "quotas",
         title: "Quotas across runs",
-        status: "active",
+        status: "done",
+        date: "2026-11-04",
         detail:
           "Caps per day, week or month, for all projects or one, on top of each run's budget, from the ledger. A plan's rate limit stops runs too, on a subscription. At a limit a run stops, and `ork resume` goes on in the same session.",
+        commits: ["636fcd6"],
         docs: [
           "decisions/ADR-050-limits-across-runs.md",
           "specs/usage.md#limits-across-runs",
           "docs/guides/models-and-budgets.md#limits-across-runs",
         ],
+      },
+      {
+        id: "workflow-builder",
+        title: "Workflow builder",
+        status: "next",
+        detail:
+          "Create a workflow from scratch in the UI, or edit one, on a canvas that saves the same YAML, with no file to write by hand. Needs its own RFC first: how much of the format the canvas can edit, how edits keep the YAML's comments, where node positions are saved, and how a draft is checked and test-run.",
+        docs: ["specs/ui.md#workflow-builder"],
       },
       {
         id: "worktrees-panel",
@@ -688,12 +705,12 @@ export const MILESTONES = [
         docs: ["specs/cli/updates.md", "specs/ui.md"],
       },
       {
-        id: "designer",
-        title: "Designer and context inspector",
+        id: "context-inspector",
+        title: "Context inspector",
         status: "planned",
         detail:
-          "A canvas that saves the same YAML, and each node's resolved layer stack.",
-        docs: ["specs/ui.md"],
+          "A read-only panel with each node's resolved layer stack: what it is told, and where each piece comes from.",
+        docs: ["specs/ui.md#panels"],
       },
       {
         id: "feedback-loop",

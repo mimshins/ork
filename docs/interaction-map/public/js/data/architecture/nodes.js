@@ -178,14 +178,14 @@ export const NODES = [
   {
     id: "ui",
     title: "Web UI",
-    sub: "designer · monitor · inbox · chats",
+    sub: "monitor · inbox · chats · usage",
     zone: "surfaces",
     x: 320,
     y: 960,
     status: "partial",
     pkg: "ui",
     summary:
-      "The localhost UI: live panels for the run, the decisions inbox, chats with nodes, logs and notifications, then a canvas designer that saves the same YAML and layout files, and the context inspector.",
+      "The localhost UI: live panels for the run, the decisions inbox, chats with nodes, logs and notifications, then a workflow builder that creates a workflow from scratch on a canvas and saves the same YAML and layout files, and the context inspector.",
     facts: [
       "Built: the app, bundled into the CLI's `dist/ui` and served by `ork ui`, with its Runs panel and the Monitor: a run's live graph and ownership tree, with its controls.",
       "Vite, React, Base UI, dockview and containerized-state; the run graph is drawn in-house, so no zustand ships.",
@@ -203,7 +203,7 @@ export const NODES = [
       "Built: Usage, what runs spent over a period from the usage ledger, with a chart, the costliest workflows, models and nodes, and hints from thresholds.",
       "Built: limits across runs. `quotas` per day, week or month, for all projects or one, read from the ledger, with each cap's meter on the Usage panel. A plan's refusal stops every run here until it resets.",
       "No Resume button yet: `ork resume` does that.",
-      "Panels still to come: the designer and context inspector.",
+      "Panels still to come: the workflow builder, which creates a workflow from scratch, and the context inspector.",
     ],
     see: [
       { map: "messaging", node: "inbox", label: "The decisions inbox" },

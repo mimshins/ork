@@ -5,8 +5,9 @@ _Part of [The UI](../ui.md)._
 Status: **Built:** the Runs panel, the Run workflow dialog, the Monitor, Logs,
 Decisions, Chats, Notifications and Usage
 ([panels](../../packages/ui/src/panels/),
-[tests](../../packages/ui/test/panels/)). The designer and context inspector are
-the next milestone.
+[tests](../../packages/ui/test/panels/)). The
+[workflow builder](../ui.md#workflow-builder) and the context inspector are
+still to come.
 
 ## Contents
 

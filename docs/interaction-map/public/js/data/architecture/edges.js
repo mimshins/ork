@@ -44,7 +44,7 @@ export const EDGES = [
     kind: "human",
     label: "designs · watches · answers",
     detail:
-      "You watch and control a run live, chat with its nodes and answer decisions in the browser. Drawing workflows on a canvas comes with the designer.",
+      "You watch and control a run live, chat with its nodes and answer decisions in the browser. Building workflows on a canvas comes with the workflow builder.",
     status: "partial",
     docs: [DESIGN.ui, UI.guide],
   },
