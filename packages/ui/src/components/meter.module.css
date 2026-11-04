@@ -4,34 +4,49 @@
  */
 
 .meter {
+  --meter-gap: var(--gap-hair) var(--gap);
+  --meter-grid-template-columns: 1fr auto;
+
   display: grid;
-  gap: var(--gap-hair) var(--gap);
-  grid-template-columns: 1fr auto;
+  gap: var(--meter-gap);
+  grid-template-columns: var(--meter-grid-template-columns);
 }
 
 .label {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
+  --meter-label-text: var(--color-text-muted);
+  --meter-label-text-size: var(--text-small);
+
+  color: var(--meter-label-text);
+  font-size: var(--meter-label-text-size);
 }
 
 .value {
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
+  --meter-value-font: var(--font-mono);
+  --meter-value-text-size: var(--text-small);
+
+  font-family: var(--meter-value-font);
+  font-size: var(--meter-value-text-size);
 }
 
 .track {
-  background: var(--meter-track);
-  border-radius: var(--meter-height);
+  --meter-track-bg: var(--surface-sunken);
+  --meter-track-radius: var(--space-4);
+  --meter-track-height: var(--space-4);
+
+  background: var(--meter-track-bg);
+  border-radius: var(--meter-track-radius);
   grid-column: 1 / -1;
-  height: var(--meter-height);
+  height: var(--meter-track-height);
   overflow: hidden;
 }
 
 .fill {
-  background: var(--meter-fill);
+  --meter-fill-bg: var(--color-live-edge);
+
+  background: var(--meter-fill-bg);
   height: 100%;
 }
 
 .meter[data-level="high"] .fill {
-  background: var(--meter-fill-high);
+  --meter-fill-bg: var(--color-action-edge);
 }

@@ -13,13 +13,20 @@
 }
 
 .canvas {
-  background-color: var(--panel-bg);
-  background-image: radial-gradient(
+  /* The viewport sets this on the element as the user zooms. */
+  --graph-zoom: 1;
+  --graph-canvas-bg: var(--surface-panel);
+  --graph-canvas-background-image: radial-gradient(
     var(--color-border) var(--hairline),
     transparent var(--hairline)
   );
-  background-size: var(--gap-loose) var(--gap-loose);
-  cursor: grab;
+  --graph-canvas-background-size: var(--gap-loose) var(--gap-loose);
+  --graph-canvas-cursor: grab;
+
+  background-color: var(--graph-canvas-bg);
+  background-image: var(--graph-canvas-background-image);
+  background-size: var(--graph-canvas-background-size);
+  cursor: var(--graph-canvas-cursor);
   height: 100%;
   overflow: hidden;
   position: relative;
@@ -28,21 +35,24 @@
 }
 
 .canvas:active {
-  cursor: grabbing;
+  --graph-canvas-cursor: grabbing;
 }
 
 .canvas:focus-visible {
-  outline-offset: calc(0px - var(--focus-width));
+  --focus-ring-offset: calc(var(--focus-width) * -1);
 }
 
 .hint {
+  --graph-hint-height: var(--hairline);
+  --graph-hint-width: var(--hairline);
+
   clip-path: inset(50%);
-  height: 1px;
+  height: var(--graph-hint-height);
   margin: 0;
   overflow: hidden;
   position: absolute;
   white-space: nowrap;
-  width: 1px;
+  width: var(--graph-hint-width);
 }
 
 .layer {
@@ -63,169 +73,231 @@
 }
 
 .edgeLine {
+  --graph-edge-line-stroke-linecap: initial;
+  --graph-edge-line-stroke-dasharray: initial;
+  --graph-edge-line-stroke: var(--color-text-muted);
+  --graph-edge-line-stroke-width: 1.5;
+
   fill: none;
-  stroke: var(--color-text-muted);
-  stroke-width: 1.5;
+  stroke: var(--graph-edge-line-stroke);
+  stroke-width: var(--graph-edge-line-stroke-width);
+  stroke-dasharray: var(--graph-edge-line-stroke-dasharray, revert);
+  stroke-linecap: var(--graph-edge-line-stroke-linecap, revert);
 }
 
 .edgeHead {
-  fill: var(--color-text-muted);
+  --graph-edge-head-fill: var(--color-text-muted);
+
+  fill: var(--graph-edge-head-fill);
 }
 
 [data-kind="back"] .edgeLine {
-  stroke: var(--color-action-text);
-  stroke-dasharray: 6 4;
+  --graph-edge-line-stroke: var(--color-action-text);
+  --graph-edge-line-stroke-dasharray: 6 4;
 }
 
 [data-kind="back"] .edgeHead {
-  fill: var(--color-action-text);
+  --graph-edge-head-fill: var(--color-action-text);
 }
 
 [data-kind="owner"] .edgeLine {
-  stroke-dasharray: 2 4;
+  --graph-edge-line-stroke-dasharray: 2 4;
 }
 
 [data-kind="message"] .edgeLine {
-  stroke: var(--color-status-succeeded);
-  stroke-dasharray: 1 5;
-  stroke-linecap: round;
-  stroke-width: 2;
+  --graph-edge-line-stroke: var(--color-status-succeeded);
+  --graph-edge-line-stroke-dasharray: 1 5;
+  --graph-edge-line-stroke-linecap: round;
+  --graph-edge-line-stroke-width: 2;
 }
 
 .edgeLabel {
-  dominant-baseline: middle;
-  fill: var(--color-text);
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
-  text-anchor: middle;
+  --graph-edge-label-dominant-baseline: middle;
+  --graph-edge-label-fill: var(--color-text);
+  --graph-edge-label-font: var(--font-mono);
+  --graph-edge-label-text-size: var(--text-small);
+  --graph-edge-label-text-anchor: middle;
+
+  dominant-baseline: var(--graph-edge-label-dominant-baseline);
+  fill: var(--graph-edge-label-fill);
+  font-family: var(--graph-edge-label-font);
+  font-size: var(--graph-edge-label-text-size);
+  text-anchor: var(--graph-edge-label-text-anchor);
 }
 
 .edgeLabelBack {
-  fill: var(--panel-bg);
+  --graph-edge-label-back-fill: var(--surface-panel);
+
+  fill: var(--graph-edge-label-back-fill);
 }
 
 .card {
+  --graph-card-transition: initial;
+  --graph-card-outline: none;
+  --graph-card-bg: var(--surface-raised);
+  --graph-card-border-width: var(--hairline);
+  --graph-card-border-style: solid;
+  --graph-card-border-color: var(--color-border-strong);
+  --graph-card-start-width: var(--gap-tight);
+  --graph-card-tone: var(--color-border-strong);
+  --graph-card-start-color: var(--graph-card-tone);
+  --graph-card-radius: var(--radius-control);
+  --graph-card-text: var(--color-text);
+  --graph-card-gap: var(--gap-hair);
+  --graph-card-padding: var(--gap-tight) var(--gap);
+
   align-items: flex-start;
-  background: var(--surface-raised);
-  border: var(--hairline) solid var(--color-border-strong);
-  border-inline-start: var(--gap-tight) solid
-    var(--tone, var(--color-border-strong));
-  border-radius: var(--radius-control);
-  color: var(--color-text);
+  background: var(--graph-card-bg);
+  border-width: var(--graph-card-border-width);
+  border-style: var(--graph-card-border-style);
+  border-color: var(--graph-card-border-color);
+  border-inline-start-width: var(--graph-card-start-width);
+  border-inline-start-color: var(--graph-card-start-color);
+  border-radius: var(--graph-card-radius);
+  color: var(--graph-card-text);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   font: inherit;
-  gap: var(--gap-hair);
+  gap: var(--graph-card-gap);
   justify-content: center;
   left: 0;
   overflow: hidden;
-  padding: var(--gap-tight) var(--gap);
+  padding: var(--graph-card-padding);
   position: absolute;
   text-align: start;
   top: 0;
+  outline: var(--graph-card-outline);
+  transition: var(--graph-card-transition, revert);
 }
 
 .card:hover {
-  background: var(--surface-hover);
+  --graph-card-bg: var(--surface-hover);
 }
 
 /* The layer scales its cards, and their ring would go with them. */
 .card:focus-visible {
-  outline-width: calc(var(--focus-width) / var(--graph-zoom, 1));
+  --graph-card-outline: var(--focus-ring-width, var(--focus-width)) solid
+    var(--color-focus);
+  --focus-ring-width: calc(var(--focus-width) / var(--graph-zoom));
 }
 
 .card[data-selected] {
-  background: var(--surface-selected);
-  border-color: var(--color-action-edge);
+  --graph-card-bg: var(--surface-selected);
+  --graph-card-border-color: var(--color-action-edge);
+  --graph-card-start-color: var(--color-action-edge);
 }
 
 .card[data-tone="running"] {
-  --tone: var(--color-status-running);
+  --graph-card-tone: var(--color-status-running);
 }
 
 .card[data-tone="succeeded"] {
-  --tone: var(--color-status-succeeded);
+  --graph-card-tone: var(--color-status-succeeded);
 }
 
 .card[data-tone="waiting"] {
-  --tone: var(--color-status-waiting);
+  --graph-card-tone: var(--color-status-waiting);
 }
 
 .card[data-tone="paused"] {
-  --tone: var(--color-status-paused);
+  --graph-card-tone: var(--color-status-paused);
 }
 
 .card[data-tone="failed"] {
-  --tone: var(--color-status-failed);
+  --graph-card-tone: var(--color-status-failed);
 }
 
 .card[data-tone="queued"] {
-  --tone: var(--color-status-queued);
+  --graph-card-tone: var(--color-status-queued);
 }
 
 .card[data-tone="skipped"] {
-  --tone: var(--color-status-skipped);
+  --graph-card-tone: var(--color-status-skipped);
 }
 
 .card[data-tone="interrupted"] {
-  --tone: var(--color-status-interrupted);
+  --graph-card-tone: var(--color-status-interrupted);
 }
 
 .cardHead {
+  --graph-card-head-gap: var(--gap-tight);
+
   align-items: center;
   display: flex;
-  gap: var(--gap-tight);
+  gap: var(--graph-card-head-gap);
   max-width: 100%;
 }
 
 .cardIcon {
+  --graph-card-icon-text: var(--color-text-muted);
+  --graph-card-icon-text-size: var(--icon-size);
+
   align-items: center;
-  color: var(--color-text-muted);
+  color: var(--graph-card-icon-text);
   display: flex;
   flex: none;
-  font-size: var(--icon-size);
+  font-size: var(--graph-card-icon-text-size);
 }
 
 .cardId {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  font-weight: var(--weight-medium);
+  --graph-card-id-font: var(--font-mono);
+  --graph-card-id-text-size: var(--text-mono);
+  --graph-card-id-weight: var(--weight-medium);
+
+  font-family: var(--graph-card-id-font);
+  font-size: var(--graph-card-id-text-size);
+  font-weight: var(--graph-card-id-weight);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .cardMeta {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
+  --graph-card-meta-text: var(--color-text-muted);
+  --graph-card-meta-font: var(--font-mono);
+  --graph-card-meta-text-size: var(--text-small);
+  --graph-card-meta-min-height: 1lh;
+
+  color: var(--graph-card-meta-text);
+  font-family: var(--graph-card-meta-font);
+  font-size: var(--graph-card-meta-text-size);
   max-width: 100%;
-  min-height: 1lh;
+  min-height: var(--graph-card-meta-min-height);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .controls {
-  background: var(--popup-bg);
-  border: var(--hairline) solid var(--popup-border);
-  border-radius: var(--radius-control);
-  bottom: var(--gap);
+  --graph-controls-bg: var(--surface-raised);
+  --graph-controls-border: var(--hairline) solid var(--color-border-strong);
+  --graph-controls-radius: var(--radius-control);
+  --graph-controls-bottom: var(--gap);
+  --graph-controls-gap: var(--gap-hair);
+  --graph-controls-max-width: calc(100% - var(--gap) * 2);
+  --graph-controls-padding: var(--gap-hair);
+  --graph-controls-right: var(--gap);
+
+  background: var(--graph-controls-bg);
+  border: var(--graph-controls-border);
+  border-radius: var(--graph-controls-radius);
+  bottom: var(--graph-controls-bottom);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap-hair);
+  gap: var(--graph-controls-gap);
   justify-content: flex-end;
-  max-width: calc(100% - var(--gap) * 2);
-  padding: var(--gap-hair);
+  max-width: var(--graph-controls-max-width);
+  padding: var(--graph-controls-padding);
   position: absolute;
-  right: var(--gap);
+  right: var(--graph-controls-right);
 }
 
 /* Forced colors take the fill away, so the chosen card's edge says it. */
 @media (forced-colors: active) {
   .card[data-selected] {
-    border-color: Highlight;
-    outline: var(--hairline) solid Highlight;
+    --graph-card-border-color: Highlight;
+    --graph-card-start-color: Highlight;
+    --graph-card-outline: var(--hairline) solid Highlight;
   }
 }

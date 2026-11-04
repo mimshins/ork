@@ -720,7 +720,7 @@ export const MILESTONES = [
           "rfcs/archived/RFC-011-watching-a-source.md",
           "specs/scheduler/watching.md",
         ],
-        commits: ["dfed497", "1ea63a7"],
+        commits: ["dfed497", "1ea63a7", "aadf43a"],
         date: "2026-11-04",
       },
       {
@@ -737,6 +737,17 @@ export const MILESTONES = [
         status: "planned",
         detail: "What `ork worktrees` shows, with cleanup a click away.",
         docs: ["specs/worktrees.md"],
+      },
+      {
+        id: "console-language",
+        title: "A new look for the console",
+        status: "active",
+        detail:
+          "Nested surfaces, two type voices, block meters and a pixel touch, at console density, from a prototype the maintainer approved. Each component now owns its tokens, and a state only sets tokens, so the look changes by changing values. The values themselves are next.",
+        docs: [
+          "decisions/ADR-054-component-tokens.md",
+          "specs/ui/design-system.md",
+        ],
       },
       {
         id: "ui-upgrade",
@@ -871,4 +882,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-04";
+export const ROADMAP_UPDATED = "2026-11-05";

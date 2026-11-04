@@ -127,7 +127,7 @@ exactly as written, comments included. Cards have no saved positions, so a
 Drag a tab to dock it beside or into another group, or use the buttons on each
 group to minimize it to the rail, maximize it, float it or close it. The layout
 is saved in your browser, and **Reset layout** in the palette brings the default
-back. Below 1024 px wide the panels stack, and each one folds.
+back. Below about 1024 px wide the panels stack, and each one folds.
 
 The command palette, `⌘K` or `Ctrl K`, runs everything by name: going to a
 panel, the theme, the density, starting a run.

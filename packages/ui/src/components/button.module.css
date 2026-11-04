@@ -6,78 +6,98 @@
 
 .button,
 .icon {
+  --button-bg: var(--surface-raised);
+  --button-border-width: var(--hairline);
+  --button-border-style: solid;
+  --button-border-color: var(--color-border-strong);
+  --button-radius: var(--radius-control);
+  --button-text: var(--color-text);
+  --button-cursor: pointer;
+  --button-weight: var(--weight-medium);
+  --button-gap: var(--gap-tight);
+  --button-min-height: var(--control-height);
+  --button-min-width: var(--target-min);
+  --button-transition: background var(--duration-quick) var(--ease-out);
+
   align-items: center;
   background: var(--button-bg);
-  border: var(--hairline) solid var(--button-border);
-  border-radius: var(--radius-control);
+  border-width: var(--button-border-width);
+  border-style: var(--button-border-style);
+  border-color: var(--button-border-color);
+  border-radius: var(--button-radius);
   color: var(--button-text);
-  cursor: pointer;
+  cursor: var(--button-cursor);
   display: inline-flex;
   font: inherit;
-  font-weight: var(--weight-medium);
-  gap: var(--gap-tight);
+  font-weight: var(--button-weight);
+  gap: var(--button-gap);
   justify-content: center;
-  min-height: var(--control-height);
-  min-width: var(--target-min);
-  transition: background var(--duration-quick) var(--ease-out);
+  min-height: var(--button-min-height);
+  min-width: var(--button-min-width);
+  transition: var(--button-transition);
   white-space: nowrap;
 }
 
 .button {
-  padding: 0 var(--inset-control);
+  --button-padding: 0 var(--inset-control);
+
+  padding: var(--button-padding);
 }
 
 .icon {
-  font-size: var(--icon-size);
+  --button-text-size: var(--icon-size);
+  --button-width: var(--control-height);
+
+  font-size: var(--button-text-size);
   padding: 0;
-  width: var(--control-height);
+  width: var(--button-width);
 }
 
 .button:not([data-disabled]):hover,
 .icon:not([data-disabled]):hover {
-  background: var(--button-bg-hover);
+  --button-bg: var(--surface-hover);
 }
 
 :is(.button, .icon)[data-variant="primary"] {
-  background: var(--button-primary-bg);
-  border-color: var(--button-primary-border);
-  color: var(--button-primary-text);
+  --button-bg: var(--color-action);
+  --button-border-color: var(--color-action-edge);
+  --button-text: var(--color-text-on-action);
 }
 
 :is(.button, .icon)[data-variant="primary"]:not([data-disabled]):hover {
-  background: var(--button-primary-bg-hover);
+  --button-bg: var(--color-action-hover);
 }
 
 :is(.button, .icon)[data-variant="danger"] {
-  background: var(--button-danger-bg);
-  border-color: var(--button-danger-border);
-  color: var(--button-danger-text);
+  --button-bg: var(--color-danger);
+  --button-border-color: var(--color-danger);
+  --button-text: var(--color-text-on-danger);
 }
 
 :is(.button, .icon)[data-variant="danger"]:not([data-disabled]):hover {
-  background: var(--button-danger-bg-hover);
+  --button-bg: var(--color-danger-hover);
 }
 
 :is(.button, .icon)[data-variant="ghost"] {
-  background: transparent;
-  border-color: transparent;
+  --button-bg: transparent;
+  --button-border-color: transparent;
 }
 
 :is(.button, .icon)[data-variant="ghost"]:not([data-disabled]):hover {
-  background: var(--button-bg-hover);
+  --button-bg: var(--surface-hover);
 }
 
 :is(.button, .icon)[data-disabled][data-disabled] {
-  background: transparent;
-  border-color: var(--color-border);
-  color: var(--color-text-disabled);
-  cursor: not-allowed;
+  --button-bg: transparent;
+  --button-border-color: var(--color-border);
+  --button-text: var(--color-text-disabled);
+  --button-cursor: not-allowed;
 }
 
 /* Forced colors would draw a disabled button like any other. */
 @media (forced-colors: active) {
   :is(.button, .icon)[data-disabled][data-disabled] {
-    border-color: GrayText;
-    color: GrayText;
+    --button-border-color: GrayText;
+    --button-text: GrayText;
   }
 }

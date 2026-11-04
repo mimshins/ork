@@ -5,7 +5,7 @@
  */
 
 .monitor {
-  --graph-min-height: 16rem;
+  --monitor-graph-min-height: 16rem;
 
   container-type: inline-size;
   display: flex;
@@ -16,115 +16,164 @@
 }
 
 .header {
+  --monitor-header-border-block-end: var(--hairline) solid var(--color-border);
+  --monitor-header-gap: var(--gap);
+  --monitor-header-padding: var(--gap-tight) var(--gap);
+
   align-items: center;
-  border-block-end: var(--hairline) solid var(--panel-border);
+  border-block-end: var(--monitor-header-border-block-end);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap);
-  padding: var(--gap-tight) var(--gap);
+  gap: var(--monitor-header-gap);
+  padding: var(--monitor-header-padding);
 }
 
 .title {
-  font-size: var(--text-ui);
-  font-weight: var(--weight-medium);
+  --monitor-title-text-size: var(--text-ui);
+  --monitor-title-weight: var(--weight-medium);
+
+  font-size: var(--monitor-title-text-size);
+  font-weight: var(--monitor-title-weight);
   margin: 0;
 }
 
 .runId,
 .cost {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
+  --monitor-run-id-text: var(--color-text-muted);
+  --monitor-run-id-font: var(--font-mono);
+  --monitor-run-id-text-size: var(--text-mono);
+
+  color: var(--monitor-run-id-text);
+  font-family: var(--monitor-run-id-font);
+  font-size: var(--monitor-run-id-text-size);
 }
 
 .controls {
+  --monitor-controls-gap: var(--gap-hair);
+
   display: flex;
-  gap: var(--gap-hair);
+  gap: var(--monitor-controls-gap);
   margin-inline-start: auto;
 }
 
 .error {
-  color: var(--color-status-failed);
+  --monitor-error-text: var(--color-status-failed);
+  --monitor-error-padding: var(--gap-tight) var(--gap);
+
+  color: var(--monitor-error-text);
   margin: 0;
-  padding: var(--gap-tight) var(--gap);
+  padding: var(--monitor-error-padding);
 }
 
 .body {
+  --monitor-body-flex-direction: initial;
+  --monitor-body-flex: 1 1 0;
+  --monitor-body-min-height: var(--monitor-graph-min-height);
+
   display: flex;
-  flex: 1 1 0;
-  min-height: var(--graph-min-height);
+  flex: var(--monitor-body-flex);
+  min-height: var(--monitor-body-min-height);
+  flex-direction: var(--monitor-body-flex-direction, revert);
 }
 
 .canvas {
+  --monitor-canvas-flex: 1;
+
   display: grid;
-  flex: 1;
+  flex: var(--monitor-canvas-flex);
   min-height: 0;
   min-width: 0;
 }
 
 .side {
-  border-inline-start: var(--hairline) solid var(--panel-border);
+  --monitor-side-border-block-start: initial;
+  --monitor-side-border-inline-start: var(--hairline) solid var(--color-border);
+  --monitor-side-flex: none;
+  --monitor-side-gap: var(--gap);
+  --monitor-side-overflow: auto;
+  --monitor-side-padding: var(--gap-tight);
+  --monitor-side-width: 16rem;
+
+  border-inline-start: var(--monitor-side-border-inline-start);
   display: flex;
-  flex: none;
+  flex: var(--monitor-side-flex);
   flex-direction: column;
-  gap: var(--gap);
+  gap: var(--monitor-side-gap);
   min-height: 0;
-  overflow: auto;
-  padding: var(--gap-tight);
-  width: 16rem;
+  overflow: var(--monitor-side-overflow);
+  padding: var(--monitor-side-padding);
+  width: var(--monitor-side-width);
+  border-block-start: var(--monitor-side-border-block-start, revert);
 }
 
 @container (max-width: 52rem) {
   .body {
-    flex: 1 0 auto;
-    flex-direction: column;
+    --monitor-body-flex: 1 0 auto;
+    --monitor-body-flex-direction: column;
   }
 
   .canvas {
-    flex: 1 0 var(--graph-min-height);
+    --monitor-canvas-flex: 1 0 var(--monitor-graph-min-height);
   }
 
   .side {
-    border-block-start: var(--hairline) solid var(--panel-border);
-    border-inline-start: 0;
-    flex: none;
-    overflow: visible;
-    width: auto;
+    --monitor-side-border-block-start: var(--hairline) solid var(--color-border);
+    --monitor-side-border-inline-start: 0;
+    --monitor-side-flex: none;
+    --monitor-side-overflow: visible;
+    --monitor-side-width: auto;
   }
 }
 
 .sideTitle {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  font-weight: var(--weight-medium);
+  --monitor-side-title-text: var(--color-text-muted);
+  --monitor-side-title-font: var(--font-mono);
+  --monitor-side-title-text-size: var(--text-mono);
+  --monitor-side-title-weight: var(--weight-medium);
+
+  color: var(--monitor-side-title-text);
+  font-family: var(--monitor-side-title-font);
+  font-size: var(--monitor-side-title-text-size);
+  font-weight: var(--monitor-side-title-weight);
   margin: 0;
 }
 
 .node {
+  --monitor-node-border-block-end: var(--hairline) solid var(--color-border);
+  --monitor-node-gap: var(--gap-tight);
+  --monitor-node-padding-block-end: var(--gap-tight);
+
   align-items: center;
-  border-block-end: var(--hairline) solid var(--panel-border);
+  border-block-end: var(--monitor-node-border-block-end);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap-tight);
-  padding-block-end: var(--gap-tight);
+  gap: var(--monitor-node-gap);
+  padding-block-end: var(--monitor-node-padding-block-end);
 }
 
 .watching {
+  --monitor-watching-gap: var(--gap-tight) var(--gap);
+  --monitor-watching-grid-template-columns: max-content minmax(0, 1fr);
+
   display: grid;
   flex-basis: 100%;
-  gap: var(--gap-tight) var(--gap);
-  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--monitor-watching-gap);
+  grid-template-columns: var(--monitor-watching-grid-template-columns);
   margin: 0;
 }
 
 .watching dt {
-  color: var(--color-text-muted);
+  --monitor-dt-text: var(--color-text-muted);
+
+  color: var(--monitor-dt-text);
 }
 
 .watching dd {
-  margin: 0;
-  overflow-wrap: anywhere;
+  --monitor-dd-margin: 0;
+  --monitor-dd-overflow-wrap: anywhere;
+
+  margin: var(--monitor-dd-margin);
+  overflow-wrap: var(--monitor-dd-overflow-wrap);
 }
 
 .tree {
@@ -133,56 +182,79 @@
 }
 
 .treeRow {
+  --monitor-tree-row-bg: initial;
+  --monitor-tree-row-border-inline-start-width: var(--focus-width);
+  --monitor-tree-row-border-inline-start-style: solid;
+  --monitor-tree-row-border-inline-start-color: transparent;
+  --monitor-tree-row-radius: var(--radius-control);
+  --monitor-tree-row-gap: var(--gap-tight);
+  --monitor-tree-row-min-height: var(--target-min);
+  --monitor-tree-row-padding-inline-end: var(--gap-tight);
+
   align-items: center;
-  border-inline-start: var(--focus-width) solid transparent;
-  border-radius: var(--radius-control);
+  border-inline-start-width: var(--monitor-tree-row-border-inline-start-width);
+  border-inline-start-style: var(--monitor-tree-row-border-inline-start-style);
+  border-inline-start-color: var(--monitor-tree-row-border-inline-start-color);
+  border-radius: var(--monitor-tree-row-radius);
   cursor: pointer;
   display: flex;
-  gap: var(--gap-tight);
-  min-height: var(--target-min);
-  padding-inline-end: var(--gap-tight);
+  gap: var(--monitor-tree-row-gap);
+  min-height: var(--monitor-tree-row-min-height);
+  padding-inline-end: var(--monitor-tree-row-padding-inline-end);
+  background: var(--monitor-tree-row-bg, revert);
 }
 
 .treeRow:hover {
-  background: var(--surface-hover);
+  --monitor-tree-row-bg: var(--surface-hover);
 }
 
 .treeRow:focus-visible {
-  outline-offset: calc(var(--focus-width) * -1);
+  --focus-ring-offset: calc(var(--focus-width) * -1);
 }
 
 .treeRow[data-selected] {
-  background: var(--surface-selected);
-  border-inline-start-color: var(--panel-tab-indicator);
+  --monitor-tree-row-bg: var(--surface-selected);
+  --monitor-tree-row-border-inline-start-color: var(--color-action-edge);
 }
 
 .treeToggle {
+  --monitor-tree-toggle-text: var(--color-text-muted);
+  --monitor-tree-toggle-text-size: var(--icon-size);
+  --monitor-tree-toggle-height: var(--target-min);
+  --monitor-tree-toggle-width: var(--target-min);
+
   align-items: center;
-  color: var(--color-text-muted);
+  color: var(--monitor-tree-toggle-text);
   display: flex;
   flex: none;
-  font-size: var(--icon-size);
-  height: var(--target-min);
+  font-size: var(--monitor-tree-toggle-text-size);
+  height: var(--monitor-tree-toggle-height);
   justify-content: center;
-  width: var(--target-min);
+  width: var(--monitor-tree-toggle-width);
 }
 
 .treeToggle:hover {
-  color: var(--color-text);
+  --monitor-tree-toggle-text: var(--color-text);
 }
 
 .treeIcon {
+  --monitor-tree-icon-text: var(--color-text-muted);
+  --monitor-tree-icon-text-size: var(--icon-size);
+
   align-items: center;
-  color: var(--color-text-muted);
+  color: var(--monitor-tree-icon-text);
   display: flex;
   flex: none;
-  font-size: var(--icon-size);
+  font-size: var(--monitor-tree-icon-text-size);
 }
 
 .treeId {
+  --monitor-tree-id-font: var(--font-mono);
+  --monitor-tree-id-text-size: var(--text-mono);
+
   flex: 1;
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
+  font-family: var(--monitor-tree-id-font);
+  font-size: var(--monitor-tree-id-text-size);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -190,55 +262,72 @@
 }
 
 .treeCost {
-  color: var(--color-text-muted);
+  --monitor-tree-cost-text: var(--color-text-muted);
+  --monitor-tree-cost-font: var(--font-mono);
+  --monitor-tree-cost-text-size: var(--text-small);
+
+  color: var(--monitor-tree-cost-text);
   flex: none;
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
+  font-family: var(--monitor-tree-cost-font);
+  font-size: var(--monitor-tree-cost-text-size);
 }
 
 .links {
+  --monitor-links-gap: var(--gap-tight);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap-tight);
+  gap: var(--monitor-links-gap);
 }
 
 .linkList {
+  --monitor-link-list-gap: var(--gap-hair);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap-hair);
+  gap: var(--monitor-link-list-gap);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .link {
+  --monitor-link-gap: var(--gap-tight);
+
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap-tight);
+  gap: var(--monitor-link-gap);
 }
 
 .linkEnds {
+  --monitor-link-ends-font: var(--font-mono);
+  --monitor-link-ends-text-size: var(--text-small);
+
   flex: 1;
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
+  font-family: var(--monitor-link-ends-font);
+  font-size: var(--monitor-link-ends-text-size);
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
 .linkCount {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
+  --monitor-link-count-text: var(--color-text-muted);
+  --monitor-link-count-font: var(--font-mono);
+  --monitor-link-count-text-size: var(--text-small);
+
+  color: var(--monitor-link-count-text);
+  font-family: var(--monitor-link-count-font);
+  font-size: var(--monitor-link-count-text-size);
 }
 
 /* Forced colors draw a see-through edge, so only the chosen node keeps one. */
 @media (forced-colors: active) {
   .treeRow {
-    border-inline-start-color: Canvas;
+    --monitor-tree-row-border-inline-start-color: Canvas;
   }
 
   .treeRow[data-selected] {
-    border-inline-start-color: Highlight;
+    --monitor-tree-row-border-inline-start-color: Highlight;
   }
 }

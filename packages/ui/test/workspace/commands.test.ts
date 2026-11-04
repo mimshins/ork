@@ -105,7 +105,7 @@ describe("the commands", () => {
   });
 
   it("say why on a narrow window, and still reach the panels", () => {
-    const reason = "Needs a window at least 1024 px wide.";
+    const reason = "Needs a wider window.";
     expect(disabledOf("float", { wide: false })).toBe(reason);
     expect(disabledOf("next-group", { wide: false })).toBe(reason);
     expect(disabledOf("go-logs", { wide: false })).toBeUndefined();

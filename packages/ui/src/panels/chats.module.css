@@ -13,65 +13,91 @@
 }
 
 .tools {
-  border-block-end: var(--hairline) solid var(--panel-border);
-  padding: var(--gap-tight) var(--gap);
+  --chats-tools-border-block-end: var(--hairline) solid var(--color-border);
+  --chats-tools-padding: var(--gap-tight) var(--gap);
+
+  border-block-end: var(--chats-tools-border-block-end);
+  padding: var(--chats-tools-padding);
 }
 
 .thread {
+  --chats-thread-min-height: 5rem;
+  --chats-thread-padding: var(--gap);
+
   flex: 1 1 5rem;
-  min-height: 5rem;
+  min-height: var(--chats-thread-min-height);
   overflow-y: auto;
-  padding: var(--gap);
+  padding: var(--chats-thread-padding);
 }
 
 .thread:focus-visible {
-  outline-offset: calc(var(--focus-width) * -1);
+  --focus-ring-offset: calc(var(--focus-width) * -1);
 }
 
 .items {
+  --chats-items-gap: var(--gap);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
+  gap: var(--chats-items-gap);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .message {
-  border-inline-start: var(--focus-width) solid var(--color-border-strong);
+  --chats-message-border-inline-start-width: var(--focus-width);
+  --chats-message-border-inline-start-style: solid;
+  --chats-message-border-inline-start-color: var(--color-border-strong);
+  --chats-message-gap: var(--gap-hair);
+  --chats-message-padding-inline-start: var(--gap);
+
+  border-inline-start-width: var(--chats-message-border-inline-start-width);
+  border-inline-start-style: var(--chats-message-border-inline-start-style);
+  border-inline-start-color: var(--chats-message-border-inline-start-color);
   display: flex;
   flex-direction: column;
-  gap: var(--gap-hair);
-  padding-inline-start: var(--gap);
+  gap: var(--chats-message-gap);
+  padding-inline-start: var(--chats-message-padding-inline-start);
 }
 
 .message[data-kind="you"] {
-  border-inline-start-color: var(--panel-tab-indicator);
+  --chats-message-border-inline-start-color: var(--color-action-edge);
 }
 
 .message[data-kind="peer"] {
-  border-inline-start-style: dashed;
+  --chats-message-border-inline-start-style: dashed;
 }
 
 .meta {
+  --chats-meta-gap: var(--gap-tight);
+
   align-items: baseline;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap-tight);
+  gap: var(--chats-meta-gap);
   margin: 0;
 }
 
 .speaker {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  font-weight: var(--weight-medium);
+  --chats-speaker-font: var(--font-mono);
+  --chats-speaker-text-size: var(--text-mono);
+  --chats-speaker-weight: var(--weight-medium);
+
+  font-family: var(--chats-speaker-font);
+  font-size: var(--chats-speaker-text-size);
+  font-weight: var(--chats-speaker-weight);
 }
 
 .time,
 .note {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
+  --chats-time-text: var(--color-text-muted);
+  --chats-time-font: var(--font-mono);
+  --chats-time-text-size: var(--text-small);
+
+  color: var(--chats-time-text);
+  font-family: var(--chats-time-font);
+  font-size: var(--chats-time-text-size);
 }
 
 .text {
@@ -81,11 +107,15 @@
 }
 
 .activity {
+  --chats-activity-text: var(--color-text-muted);
+  --chats-activity-text-size: var(--text-small);
+  --chats-activity-gap: var(--gap-tight);
+
   align-items: baseline;
-  color: var(--color-text-muted);
+  color: var(--chats-activity-text);
   display: flex;
-  font-size: var(--text-small);
-  gap: var(--gap-tight);
+  font-size: var(--chats-activity-text-size);
+  gap: var(--chats-activity-gap);
   justify-content: space-between;
 }
 
@@ -95,57 +125,78 @@
 }
 
 .composer {
-  border-block-start: var(--hairline) solid var(--panel-border);
+  --chats-composer-border-block-start: var(--hairline) solid var(--color-border);
+  --chats-composer-gap: var(--gap-tight);
+  --chats-composer-padding: var(--gap-tight) var(--gap);
+
+  border-block-start: var(--chats-composer-border-block-start);
   display: flex;
   flex-direction: column;
-  gap: var(--gap-tight);
-  padding: var(--gap-tight) var(--gap);
+  gap: var(--chats-composer-gap);
+  padding: var(--chats-composer-padding);
 }
 
 /* Where the focus lands when the run ends and the box goes. */
 .composer:focus-visible {
-  outline-offset: calc(var(--focus-width) * -1);
+  --focus-ring-offset: calc(var(--focus-width) * -1);
 }
 
 /* It grows with what is written, where the browser can, up to a few lines. */
 .box {
-  background: var(--field-bg);
-  border: var(--hairline) solid var(--field-border);
-  border-radius: var(--radius-control);
-  color: var(--field-text);
+  --chats-box-bg: var(--surface-sunken);
+  --chats-box-border: var(--hairline) solid var(--color-border-strong);
+  --chats-box-radius: var(--radius-control);
+  --chats-box-text: var(--color-text);
+  --chats-box-max-height: 8rem;
+  --chats-box-min-height: var(--control-height);
+  --chats-box-padding: var(--gap-hair) var(--inset-control);
+
+  background: var(--chats-box-bg);
+  border: var(--chats-box-border);
+  border-radius: var(--chats-box-radius);
+  color: var(--chats-box-text);
   field-sizing: content;
   flex: 1;
   font: inherit;
-  max-height: 8rem;
-  min-height: var(--control-height);
+  max-height: var(--chats-box-max-height);
+  min-height: var(--chats-box-min-height);
   min-width: 0;
-  padding: var(--gap-hair) var(--inset-control);
+  padding: var(--chats-box-padding);
   resize: none;
 }
 
 .labelRow {
+  --chats-label-row-gap: var(--gap);
+
   align-items: baseline;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap);
+  gap: var(--chats-label-row-gap);
   justify-content: space-between;
 }
 
 .send {
+  --chats-send-gap: var(--gap-tight);
+
   align-items: flex-end;
   display: flex;
-  gap: var(--gap-tight);
+  gap: var(--chats-send-gap);
 }
 
 .hint,
 .why {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
+  --chats-hint-text: var(--color-text-muted);
+  --chats-hint-text-size: var(--text-small);
+
+  color: var(--chats-hint-text);
+  font-size: var(--chats-hint-text-size);
   margin: 0;
 }
 
 .refusal {
-  color: var(--color-danger-text);
+  --chats-refusal-text: var(--color-danger-text);
+
+  color: var(--chats-refusal-text);
   margin: 0;
   overflow-wrap: anywhere;
 }

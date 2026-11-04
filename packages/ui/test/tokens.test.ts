@@ -2,10 +2,11 @@
  * @file Tests for the design system's tokens: every pairing in test/pairings.ts
  *   meets WCAG 2.2 AA in each look (dark and light, standard and more
  *   contrast); no color token escapes the pairings; the layers stay apart
- *   (colors written out only in the primitives, primitives named only by the
- *   semantic layer); both themes define the same tokens; and text sizes come
- *   from the type scale, none below 11 px; and a popup opens above the dialog
- *   it came from.
+ *   (colors written out only in the primitives, color primitives named only by
+ *   the semantic layer); both themes define the same tokens; and text sizes
+ *   come from the type scale, none below 11 px; and a popup opens above the
+ *   dialog it came from. What a component's own sheet must do is in
+ *   component-tokens.test.ts.
  */
 
 import { readFileSync } from "node:fs";
@@ -99,34 +100,25 @@ const SEMANTIC = new Set([
   "design/tokens/scale.css",
 ]);
 
-/** Uses of a primitive outside the semantic layer (themes.css, scale.css). */
+/** The primitives that change with a theme, so only themes.css may name them. */
+const COLOR_PRIMITIVE = /^--(?:ink|amber|phosphor|red|scrim)-/u;
+
+/** Uses of a color primitive outside the semantic layer. */
 const primitiveUses = (): string[] =>
   STYLES.filter(file => !SEMANTIC.has(file)).flatMap(file =>
     [...read(file).matchAll(/var\((--[\w-]+)\)/gu)]
       .map(([, name = ""]) => name)
-      .filter(name => PRIMITIVES.has(name))
+      .filter(name => PRIMITIVES.has(name) && COLOR_PRIMITIVE.test(name))
       .map(name => `${file}: ${name}`),
   );
 
-/** `font-size` values that do not come from the type scale. */
+/** Text sizes, written as a component's token, that aren't on the type scale. */
 const looseFontSizes = (): string[] =>
   STYLES.flatMap(file =>
-    [...read(file).matchAll(/font-size\s*:\s*([^;]+);/gu)]
+    [...read(file).matchAll(/-text-size\s*:\s*([^;]+);/gu)]
       .map(([, value = ""]) => value.trim())
       .filter(value => !/^var\(--(?:text|icon-size)[\w-]*\)$/u.test(value))
       .map(value => `${file}: ${value}`),
-  );
-
-const COMPONENT_STYLES = STYLES.filter(
-  file => file.startsWith("components/") && file.endsWith(".css"),
-);
-const RAW_MEASURE =
-  /(?<![\w-])\d*\.?\d+(?:px|rem|em|ms|s)\b|z-index\s*:\s*\d/gu;
-
-/** Sizes, durations and layers a component style writes out, not as tokens. */
-const rawMeasures = (): string[] =>
-  COMPONENT_STYLES.flatMap(file =>
-    [...read(file).matchAll(RAW_MEASURE)].map(([hit]) => `${file}: ${hit}`),
   );
 
 /** The type scale's sizes in px, at the browser's default 16 px rem. */
@@ -189,18 +181,8 @@ describe("the token layers", () => {
     expect(rawColors()).toEqual([]);
   });
 
-  it("name a primitive only in the semantic layer", () => {
+  it("name a color primitive only in the semantic layer", () => {
     expect(primitiveUses()).toEqual([]);
-  });
-});
-
-describe("component styles", () => {
-  it("exist, for the check below to mean something", () => {
-    expect(COMPONENT_STYLES.length).toBeGreaterThan(0);
-  });
-
-  it("write no size, duration or layer out, only tokens", () => {
-    expect(rawMeasures()).toEqual([]);
   });
 });
 

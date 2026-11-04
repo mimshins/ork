@@ -3,44 +3,66 @@
  */
 
 .page {
+  --gallery-page-gap: var(--gap-loose);
+  --gallery-page-padding: var(--inset-empty);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap-loose);
-  padding: var(--inset-empty);
+  gap: var(--gallery-page-gap);
+  padding: var(--gallery-page-padding);
 }
 
 .title {
-  font-size: var(--text-heading);
-  font-weight: var(--weight-strong);
+  --gallery-title-text-size: var(--text-heading);
+  --gallery-title-weight: var(--weight-strong);
+
+  font-size: var(--gallery-title-text-size);
+  font-weight: var(--gallery-title-weight);
   margin: 0;
 }
 
 .section {
-  background: var(--panel-bg);
-  border: var(--hairline) solid var(--panel-border);
-  border-radius: var(--radius-panel);
-  padding: var(--inset-panel);
+  --gallery-section-bg: var(--surface-panel);
+  --gallery-section-border: var(--hairline) solid var(--color-border);
+  --gallery-section-radius: var(--radius-panel);
+  --gallery-section-padding: var(--inset-panel);
+
+  background: var(--gallery-section-bg);
+  border: var(--gallery-section-border);
+  border-radius: var(--gallery-section-radius);
+  padding: var(--gallery-section-padding);
 }
 
 .heading {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-  font-weight: var(--weight-medium);
-  margin: 0 0 var(--gap);
+  --gallery-heading-text: var(--color-text-muted);
+  --gallery-heading-text-size: var(--text-small);
+  --gallery-heading-weight: var(--weight-medium);
+  --gallery-heading-margin: 0 0 var(--gap);
+
+  color: var(--gallery-heading-text);
+  font-size: var(--gallery-heading-text-size);
+  font-weight: var(--gallery-heading-weight);
+  margin: var(--gallery-heading-margin);
 }
 
 .row {
+  --gallery-row-gap: var(--gap);
+
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap);
+  gap: var(--gallery-row-gap);
 }
 
 .meter {
-  width: var(--toast-width);
+  --gallery-meter-width: 22rem;
+
+  width: var(--gallery-meter-width);
 }
 
 .graph {
-  height: 34rem;
+  --gallery-graph-height: 34rem;
+
+  height: var(--gallery-graph-height);
   width: 100%;
 }

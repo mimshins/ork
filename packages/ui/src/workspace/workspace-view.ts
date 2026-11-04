@@ -11,7 +11,7 @@ import type { SavedLayout } from "./layout.ts";
 import { isPanelId, type PanelId, PANELS } from "./panels.tsx";
 
 /** The narrowest window that gets a dock. */
-export const WIDE_QUERY = "(min-width: 1024px)";
+export const WIDE_QUERY = "(min-width: 64rem)";
 
 export type WorkspaceView = {
   /** Wide enough for the dock; otherwise the panels stack. */

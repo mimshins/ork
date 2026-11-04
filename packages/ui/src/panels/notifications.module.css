@@ -12,20 +12,28 @@
 }
 
 .tools {
+  --notifications-tools-border-block-end: var(--hairline) solid
+    var(--color-border);
+  --notifications-tools-gap: var(--gap);
+  --notifications-tools-padding: var(--gap-tight) var(--gap);
+
   align-items: center;
-  border-block-end: var(--hairline) solid var(--panel-border);
+  border-block-end: var(--notifications-tools-border-block-end);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap);
+  gap: var(--notifications-tools-gap);
   justify-content: space-between;
-  padding: var(--gap-tight) var(--gap);
+  padding: var(--notifications-tools-padding);
 }
 
 .refused {
-  color: var(--color-danger-text);
+  --notifications-refused-text: var(--color-danger-text);
+  --notifications-refused-padding: var(--gap-tight) var(--gap);
+
+  color: var(--notifications-refused-text);
   margin: 0;
   overflow-wrap: anywhere;
-  padding: var(--gap-tight) var(--gap);
+  padding: var(--notifications-refused-padding);
 }
 
 .list {
@@ -35,57 +43,87 @@
 }
 
 .item {
-  border-block-end: var(--hairline) solid var(--panel-border);
-  border-inline-start: var(--focus-width) solid transparent;
+  --notifications-item-bg: initial;
+  --notifications-item-border-block-end: var(--hairline) solid
+    var(--color-border);
+  --notifications-item-border-inline-start-width: var(--focus-width);
+  --notifications-item-border-inline-start-style: solid;
+  --notifications-item-border-inline-start-color: transparent;
+  --notifications-item-gap: var(--gap-hair);
+  --notifications-item-padding: var(--gap-tight) var(--gap);
+
+  border-block-end: var(--notifications-item-border-block-end);
+  border-inline-start-width: var(
+    --notifications-item-border-inline-start-width
+  );
+  border-inline-start-style: var(
+    --notifications-item-border-inline-start-style
+  );
+  border-inline-start-color: var(
+    --notifications-item-border-inline-start-color
+  );
   display: flex;
   flex-direction: column;
-  gap: var(--gap-hair);
-  padding: var(--gap-tight) var(--gap);
+  gap: var(--notifications-item-gap);
+  padding: var(--notifications-item-padding);
+  background: var(--notifications-item-bg, revert);
 }
 
 .item[data-unread] {
-  background: var(--surface-selected);
-  border-inline-start-color: var(--panel-tab-indicator);
+  --notifications-item-bg: var(--surface-selected);
+  --notifications-item-border-inline-start-color: var(--color-action-edge);
 }
 
 .title {
+  --notifications-title-weight: initial;
+
   margin: 0;
   overflow-wrap: anywhere;
+  font-weight: var(--notifications-title-weight, revert);
 }
 
 .item[data-unread] .title {
-  font-weight: var(--weight-medium);
+  --notifications-title-weight: var(--weight-medium);
 }
 
 .meta {
+  --notifications-meta-text: var(--color-text-muted);
+  --notifications-meta-font: var(--font-mono);
+  --notifications-meta-text-size: var(--text-small);
+  --notifications-meta-gap: var(--gap);
+
   align-items: center;
-  color: var(--color-text-muted);
+  color: var(--notifications-meta-text);
   display: flex;
   flex-wrap: wrap;
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
-  gap: var(--gap);
+  font-family: var(--notifications-meta-font);
+  font-size: var(--notifications-meta-text-size);
+  gap: var(--notifications-meta-gap);
   margin: 0;
 }
 
 .unread {
-  color: var(--color-text);
+  --notifications-unread-text: var(--color-text);
+
+  color: var(--notifications-unread-text);
 }
 
 .actions {
+  --notifications-actions-gap: var(--gap-hair);
+
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap-hair);
+  gap: var(--notifications-actions-gap);
   margin: 0;
 }
 
 /* Forced colors draw a see-through edge, so only what is unread keeps one. */
 @media (forced-colors: active) {
   .item {
-    border-inline-start-color: Canvas;
+    --notifications-item-border-inline-start-color: Canvas;
   }
 
   .item[data-unread] {
-    border-inline-start-color: Highlight;
+    --notifications-item-border-inline-start-color: Highlight;
   }
 }

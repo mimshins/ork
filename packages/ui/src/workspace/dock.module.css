@@ -6,19 +6,21 @@
  */
 
 .dock {
-  --dv-group-view-background-color: var(--panel-bg);
-  --dv-tabs-and-actions-container-background-color: var(--panel-header-bg);
+  --dock-bg: var(--surface-canvas);
+  --dock-text: var(--color-text);
+  --dv-group-view-background-color: var(--surface-panel);
+  --dv-tabs-and-actions-container-background-color: var(--surface-panel);
   --dv-tabs-and-actions-container-height: var(--panel-header-height);
   --dv-tabs-and-actions-container-font-size: var(--text-ui);
   --dv-tabs-container-scrollbar-color: var(--color-border-strong);
-  --dv-activegroup-visiblepanel-tab-background-color: var(--panel-header-bg);
-  --dv-activegroup-hiddenpanel-tab-background-color: var(--panel-header-bg);
-  --dv-inactivegroup-visiblepanel-tab-background-color: var(--panel-header-bg);
-  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--panel-header-bg);
-  --dv-activegroup-visiblepanel-tab-color: var(--panel-header-text-active);
-  --dv-activegroup-hiddenpanel-tab-color: var(--panel-header-text);
-  --dv-inactivegroup-visiblepanel-tab-color: var(--panel-header-text-active);
-  --dv-inactivegroup-hiddenpanel-tab-color: var(--panel-header-text);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--surface-panel);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--surface-panel);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--surface-panel);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--surface-panel);
+  --dv-activegroup-visiblepanel-tab-color: var(--color-text);
+  --dv-activegroup-hiddenpanel-tab-color: var(--color-text-muted);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--color-text);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--color-text-muted);
   --dv-tab-divider-color: transparent;
   --dv-tab-font-size: var(--text-ui);
   --dv-tab-margin: 0;
@@ -41,29 +43,47 @@
   --dv-floating-titlebar-background-color: var(--surface-raised);
   --dv-floating-titlebar-border-bottom: var(--hairline) solid
     var(--color-border-strong);
-  --dv-context-menu-background-color: var(--popup-bg);
-  --dv-context-menu-color: var(--popup-text);
+  --dv-context-menu-background-color: var(--surface-raised);
+  --dv-context-menu-color: var(--color-text);
 
-  background: var(--surface-canvas);
-  color: var(--color-text);
+  background: var(--dock-bg);
+  color: var(--dock-text);
   height: 100%;
 }
 
 .dock :global(.dv-groupview) {
-  border: var(--hairline) solid var(--panel-border);
-  border-radius: var(--radius-panel);
-  overflow: hidden;
+  --dock-dv-groupview-border-width: var(--hairline);
+  --dock-dv-groupview-border-style: solid;
+  --dock-dv-groupview-border-color: var(--color-border);
+  --dock-dv-groupview-radius: var(--radius-panel);
+  --dock-dv-groupview-overflow: hidden;
+
+  border-width: var(--dock-dv-groupview-border-width);
+  border-style: var(--dock-dv-groupview-border-style);
+  border-color: var(--dock-dv-groupview-border-color);
+  border-radius: var(--dock-dv-groupview-radius);
+  overflow: var(--dock-dv-groupview-overflow);
 }
 
 .dock :global(.dv-tabs-and-actions-container) {
-  border-bottom: var(--hairline) solid var(--panel-border);
-  box-sizing: content-box;
+  --dock-dv-tabs-and-actions-container-border-bottom: var(--hairline) solid
+    var(--color-border);
+  --dock-dv-tabs-and-actions-container-box-sizing: content-box;
+
+  border-bottom: var(--dock-dv-tabs-and-actions-container-border-bottom);
+  box-sizing: var(--dock-dv-tabs-and-actions-container-box-sizing);
 }
 
 .dock :global(.dv-tab) {
-  align-items: center;
-  display: flex;
-  padding: 0 var(--inset-control);
+  --dock-dv-tab-outline: initial;
+  --dock-dv-tab-align-items: center;
+  --dock-dv-tab-display: flex;
+  --dock-dv-tab-padding: 0 var(--inset-control);
+
+  align-items: var(--dock-dv-tab-align-items);
+  display: var(--dock-dv-tab-display);
+  padding: var(--dock-dv-tab-padding);
+  outline: var(--dock-dv-tab-outline, revert);
 }
 
 /* The page's ring, drawn inside so a neighbor or the strip's edge cannot clip it. */
@@ -73,46 +93,70 @@
  * can't be scrolled by anything.
  */
 .dock :global(.dv-split-view-container) {
-  overflow: clip;
+  --dock-dv-split-view-container-overflow: clip;
+
+  overflow: var(--dock-dv-split-view-container-overflow);
 }
 
 .dock :global(.dv-tab):focus-visible {
-  outline: var(--focus-width) solid var(--color-focus);
-  outline-offset: calc(var(--focus-width) * -1);
+  --dock-dv-tab-outline: var(--focus-width) solid var(--color-focus);
+  --focus-ring-offset: calc(var(--focus-width) * -1);
 }
 
 .dock :global(.dv-active-group .dv-tab.dv-active-tab) {
-  box-shadow: inset 0 calc(var(--focus-width) * -1) 0 var(--panel-tab-indicator);
+  --dock-dv-active-group-border-block-end: initial;
+  --dock-dv-active-group-shadow: inset 0 calc(var(--focus-width) * -1) 0
+    var(--color-action-edge);
+
+  box-shadow: var(--dock-dv-active-group-shadow);
+  border-block-end: var(--dock-dv-active-group-border-block-end, revert);
 }
 
 .dock :global(.dv-inactive-group .dv-tab.dv-active-tab) {
-  box-shadow: inset 0 calc(var(--hairline) * -1) 0 var(--color-border-strong);
+  --dock-dv-inactive-group-border-block-end: initial;
+  --dock-dv-inactive-group-shadow: inset 0 calc(var(--hairline) * -1) 0
+    var(--color-border-strong);
+
+  box-shadow: var(--dock-dv-inactive-group-shadow);
+  border-block-end: var(--dock-dv-inactive-group-border-block-end, revert);
 }
 
 .dock :global(.dv-tab > .dv-react-part) {
-  align-items: center;
-  display: flex;
-  height: 100%;
+  --dock-dv-tab-align-items: center;
+  --dock-dv-tab-display: flex;
+  --dock-dv-tab-height: 100%;
+
+  align-items: var(--dock-dv-tab-align-items);
+  display: var(--dock-dv-tab-display);
+  height: var(--dock-dv-tab-height);
 }
 
 .tab {
+  --dock-tab-text-size: var(--text-ui);
+  --dock-tab-gap: var(--gap-tight);
+
   align-items: center;
   display: flex;
-  font-size: var(--text-ui);
-  gap: var(--gap-tight);
+  font-size: var(--dock-tab-text-size);
+  gap: var(--dock-tab-gap);
   white-space: nowrap;
 }
 
 .tab > svg {
-  font-size: var(--icon-size);
+  --dock-svg-text-size: var(--icon-size);
+
+  font-size: var(--dock-svg-text-size);
 }
 
 .buttons {
+  --dock-buttons-gap: var(--gap-hair);
+  --dock-buttons-padding: 0 var(--gap-tight);
+
   align-items: center;
   display: flex;
-  gap: var(--gap-hair);
+  gap: var(--dock-buttons-gap);
   height: 100%;
-  padding: 0 var(--gap-tight);
+  padding: var(--dock-buttons-padding);
 }
 
 .body {
@@ -130,10 +174,10 @@
 /* Forced colors take the shadows away, so the active tab's line is an edge. */
 @media (forced-colors: active) {
   .dock :global(.dv-active-group .dv-tab.dv-active-tab) {
-    border-block-end: var(--focus-width) solid Highlight;
+    --dock-dv-active-group-border-block-end: var(--focus-width) solid Highlight;
   }
 
   .dock :global(.dv-inactive-group .dv-tab.dv-active-tab) {
-    border-block-end: var(--hairline) solid CanvasText;
+    --dock-dv-inactive-group-border-block-end: var(--hairline) solid CanvasText;
   }
 }

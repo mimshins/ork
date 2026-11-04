@@ -57,8 +57,8 @@ a {
 }
 
 :focus-visible {
-  outline: var(--focus-width) solid var(--color-focus);
-  outline-offset: var(--focus-offset);
+  outline: var(--focus-ring-width, var(--focus-width)) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset, var(--focus-offset));
 }
 
 ::selection {

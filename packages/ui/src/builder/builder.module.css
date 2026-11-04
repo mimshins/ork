@@ -14,23 +14,29 @@
 }
 
 .tools {
+  --builder-tools-border-block-end: var(--hairline) solid var(--color-border);
+  --builder-tools-gap: var(--gap);
+  --builder-tools-padding: var(--gap) var(--inset-panel);
+
   align-items: flex-end;
-  border-block-end: var(--hairline) solid var(--panel-border);
+  border-block-end: var(--builder-tools-border-block-end);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap);
+  gap: var(--builder-tools-gap);
   justify-content: space-between;
-  padding: var(--gap) var(--inset-panel);
+  padding: var(--builder-tools-padding);
 }
 
 .chooser,
 .create,
 .actions,
 .connect {
+  --builder-chooser-gap: var(--gap);
+
   align-items: flex-end;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap);
+  gap: var(--builder-chooser-gap);
 }
 
 /*
@@ -38,61 +44,110 @@
  * message coming or going doesn't move the canvas.
  */
 .notices {
+  --builder-notices-border-block-end: var(--hairline) solid var(--color-border);
+  --builder-notices-text-size: var(--text-small);
+  --builder-notices-gap: var(--gap-tight) var(--gap-loose);
+  --builder-notices-leading: var(--leading-ui);
+  --builder-notices-min-height: calc(1lh + var(--gap) * 2);
+  --builder-notices-padding: var(--gap) var(--inset-panel);
+
   align-items: baseline;
-  border-block-end: var(--hairline) solid var(--panel-border);
+  border-block-end: var(--builder-notices-border-block-end);
   display: flex;
   flex-wrap: wrap;
-  font-size: var(--text-small);
-  gap: var(--gap-tight) var(--gap-loose);
+  font-size: var(--builder-notices-text-size);
+  gap: var(--builder-notices-gap);
   justify-content: space-between;
-  line-height: var(--leading-ui);
-  min-height: calc(1lh + var(--gap) * 2);
-  padding: var(--gap) var(--inset-panel);
+  line-height: var(--builder-notices-leading);
+  min-height: var(--builder-notices-min-height);
+  padding: var(--builder-notices-padding);
 }
 
 .status {
-  color: var(--color-text-muted);
+  --builder-status-text: var(--color-text-muted);
+
+  color: var(--builder-status-text);
 }
 
 .error {
-  color: var(--color-danger-text);
-  font-weight: var(--weight-medium);
+  --builder-error-text: var(--color-danger-text);
+  --builder-error-weight: var(--weight-medium);
+
+  color: var(--builder-error-text);
+  font-weight: var(--builder-error-weight);
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 .body {
-  display: grid;
+  --builder-body-overflow-y: initial;
+  --builder-body-flex-direction: initial;
+  --builder-body-display: grid;
+  --builder-body-grid-template-columns: minmax(10rem, 13rem) minmax(0, 1fr)
+    minmax(16rem, 24rem);
+
+  display: var(--builder-body-display);
   flex: 1;
-  grid-template-columns: minmax(10rem, 13rem) minmax(0, 1fr) minmax(
-      16rem,
-      24rem
-    );
+  grid-template-columns: var(--builder-body-grid-template-columns);
   min-height: 0;
+  flex-direction: var(--builder-body-flex-direction, revert);
+  overflow-y: var(--builder-body-overflow-y, revert);
 }
 
 .palette,
 .inspector {
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--inset-panel);
-}
+  --builder-palette-overflow-y: auto;
+  --builder-palette-padding: var(--inset-panel);
 
-.palette {
-  border-inline-end: var(--hairline) solid var(--panel-border);
+  min-height: 0;
+  overflow-y: var(--builder-palette-overflow-y);
+  padding: var(--builder-palette-padding);
 }
 
 .inspector {
-  border-inline-start: var(--hairline) solid var(--panel-border);
+  --builder-palette-flex: initial;
+  --builder-palette-border-block-end: initial;
+  --builder-palette-border: initial;
+
+  border: var(--builder-palette-border, revert);
+  border-block-end: var(--builder-palette-border-block-end, revert);
+  flex: var(--builder-palette-flex, revert);
+}
+
+.palette {
+  --builder-palette-flex: initial;
+  --builder-palette-border-block-end: initial;
+  --builder-palette-border: initial;
+
+  border: var(--builder-palette-border, revert);
+  border-block-end: var(--builder-palette-border-block-end, revert);
+  flex: var(--builder-palette-flex, revert);
+}
+
+.palette {
+  --builder-palette-border-inline-end: var(--hairline) solid var(--color-border);
+
+  border-inline-end: var(--builder-palette-border-inline-end);
+}
+
+.inspector {
+  --builder-palette-border-inline-start: var(--hairline) solid
+    var(--color-border);
+  border-inline-start: var(--builder-palette-border-inline-start);
   /* Holds words kept for screen readers, or they'd stretch the panel. */
   position: relative;
 }
 
 .middle {
+  --builder-middle-height: initial;
+  --builder-middle-flex: initial;
+
   display: flex;
   flex-direction: column;
   min-height: 0;
   min-width: 0;
+  flex: var(--builder-middle-flex, revert);
+  height: var(--builder-middle-height, revert);
 }
 
 .canvas {
@@ -102,45 +157,68 @@
 }
 
 .canvas [data-graph-node] {
-  transition: transform var(--duration-move) ease-out;
+  --graph-card-transition: transform var(--duration-move) ease-out;
 }
 
 .problems,
 .clean {
-  border-block-start: var(--hairline) solid var(--panel-border);
+  --builder-problems-border-block-start: var(--hairline) solid
+    var(--color-border);
+  --builder-problems-padding: var(--gap) var(--inset-panel);
+
+  border-block-start: var(--builder-problems-border-block-start);
   display: block;
-  padding: var(--gap) var(--inset-panel);
+  padding: var(--builder-problems-padding);
 }
 
 .clean {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
+  --builder-problems-text: var(--color-text-muted);
+  --builder-problems-text-size: var(--text-small);
+
+  color: var(--builder-problems-text);
+  font-size: var(--builder-problems-text-size);
 }
 
 .problems {
-  max-height: 30%;
+  --builder-problems-max-height: 30%;
+
+  max-height: var(--builder-problems-max-height);
   overflow-y: auto;
 }
 
 .problemList,
 .types,
 .edges {
+  --builder-problem-list-flex-direction: column;
+  --builder-problem-list-gap: var(--gap-tight);
+
   display: flex;
-  flex-direction: column;
-  gap: var(--gap-tight);
+  flex-direction: var(--builder-problem-list-flex-direction);
+  gap: var(--builder-problem-list-gap);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+.types {
+  --builder-problem-list-flex-wrap: initial;
+
+  flex-wrap: var(--builder-problem-list-flex-wrap, revert);
+}
+
 .edges {
-  gap: var(--gap);
+  --builder-problem-list-gap: var(--gap);
+
+  gap: var(--builder-problem-list-gap);
 }
 
 .problemLink {
-  background: transparent;
+  --builder-problem-link-bg: transparent;
+  --builder-problem-link-text: var(--color-text);
+
+  background: var(--builder-problem-link-bg);
   border: 0;
-  color: var(--color-text);
+  color: var(--builder-problem-link-text);
   cursor: pointer;
   font: inherit;
   overflow-wrap: anywhere;
@@ -151,117 +229,181 @@
 
 /* Titles step down from the panel's to a section's, and both lead a label. */
 .heading {
-  font-size: var(--text-title);
-  font-weight: var(--weight-strong);
-  line-height: var(--leading-tight);
+  --builder-heading-margin-block-end: 0;
+  --builder-heading-text-size: var(--text-title);
+  --builder-heading-weight: var(--weight-strong);
+  --builder-heading-leading: var(--leading-tight);
+
+  font-size: var(--builder-heading-text-size);
+  font-weight: var(--builder-heading-weight);
+  line-height: var(--builder-heading-leading);
   margin: 0;
+  margin-block-end: var(--builder-heading-margin-block-end);
 }
 
 .palette .heading {
-  margin-block-end: var(--gap);
+  --builder-heading-margin-block-end: var(--gap);
 }
 
 .subheading {
-  font-size: var(--text-ui);
-  font-weight: var(--weight-strong);
-  line-height: var(--leading-tight);
+  --builder-subheading-text-size: var(--text-ui);
+  --builder-subheading-weight: var(--weight-strong);
+  --builder-subheading-leading: var(--leading-tight);
+
+  font-size: var(--builder-subheading-text-size);
+  font-weight: var(--builder-subheading-weight);
+  line-height: var(--builder-subheading-leading);
   margin: 0;
 }
 
 .type {
+  --builder-type-bg: transparent;
+  --builder-type-radius: var(--radius-control);
+  --builder-type-text: var(--color-text);
+  --builder-type-gap: var(--gap-tight);
+  --builder-type-min-height: 1.75rem;
+  --builder-type-padding: var(--gap-tight);
+
   align-items: center;
-  background: transparent;
+  background: var(--builder-type-bg);
   border: 0;
-  border-radius: var(--radius-control);
-  color: var(--color-text);
+  border-radius: var(--builder-type-radius);
+  color: var(--builder-type-text);
   cursor: pointer;
   display: flex;
   font: inherit;
-  gap: var(--gap-tight);
-  min-height: 1.75rem;
-  padding: var(--gap-tight);
+  gap: var(--builder-type-gap);
+  min-height: var(--builder-type-min-height);
+  padding: var(--builder-type-padding);
   text-align: start;
   width: 100%;
 }
 
 .type:hover {
-  background: var(--surface-hover);
+  --builder-type-bg: var(--surface-hover);
 }
 
 .fields {
+  --builder-fields-padding-inline-start: initial;
+  --builder-fields-margin-block-start: initial;
+  --builder-fields-border-inline-start: initial;
+  --builder-fields-gap: var(--gap-loose);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap-loose);
+  gap: var(--builder-fields-gap);
+  border-inline-start: var(--builder-fields-border-inline-start, revert);
+  margin-block-start: var(--builder-fields-margin-block-start, revert);
+  padding-inline-start: var(--builder-fields-padding-inline-start, revert);
 }
 
 /* An action is as wide as its words, not the whole column. */
 .fields > button,
 .edge > button,
 .testRow > button {
-  align-self: flex-start;
+  --builder-button-align-self: flex-start;
+
+  align-self: var(--builder-button-align-self);
 }
 
 .field,
 .choice {
+  --builder-field-gap: var(--gap-tight);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap-tight);
+  gap: var(--builder-field-gap);
   min-width: 0;
 }
 
+.field {
+  --builder-field-border-inline-start-color: initial;
+  --builder-field-flex: initial;
+  --builder-field-padding-inline-start: initial;
+  --builder-field-border-inline-start: initial;
+
+  border-inline-start: var(--builder-field-border-inline-start, revert);
+  padding-inline-start: var(--builder-field-padding-inline-start, revert);
+  flex: var(--builder-field-flex, revert);
+  border-inline-start-color: var(
+    --builder-field-border-inline-start-color,
+    revert
+  );
+}
+
 .field[data-problem] {
-  border-inline-start: var(--focus-width) solid var(--color-danger-text);
-  padding-inline-start: var(--gap-tight);
+  --builder-field-border-inline-start: var(--focus-width) solid
+    var(--color-danger-text);
+  --builder-field-padding-inline-start: var(--gap-tight);
 }
 
 .problem {
-  color: var(--color-danger-text);
-  font-size: var(--text-small);
+  --builder-problem-text: var(--color-danger-text);
+  --builder-problem-text-size: var(--text-small);
+
+  color: var(--builder-problem-text);
+  font-size: var(--builder-problem-text-size);
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 .hint {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-  line-height: var(--leading-ui);
+  --builder-hint-margin-block-start: 0;
+  --builder-hint-text: var(--color-text-muted);
+  --builder-hint-text-size: var(--text-small);
+  --builder-hint-leading: var(--leading-ui);
+
+  color: var(--builder-hint-text);
+  font-size: var(--builder-hint-text-size);
+  line-height: var(--builder-hint-leading);
   margin: 0;
   overflow-wrap: anywhere;
+  margin-block-start: var(--builder-hint-margin-block-start);
 }
 
 .group {
-  border-block-start: var(--hairline) solid var(--panel-border);
-  padding-block-start: var(--gap);
+  --builder-group-border-block-start: var(--hairline) solid var(--color-border);
+  --builder-group-padding-block-start: var(--gap);
+
+  border-block-start: var(--builder-group-border-block-start);
+  padding-block-start: var(--builder-group-padding-block-start);
 }
 
 .group > .hint {
-  margin-block-start: var(--gap-tight);
+  --builder-hint-margin-block-start: var(--gap-tight);
 }
 
 /* What's inside a group sits under a line, so depth reads at a glance. */
 .group > .fields {
-  border-inline-start: var(--hairline) solid var(--panel-border);
-  margin-block-start: var(--gap);
-  padding-inline-start: var(--gap);
+  --builder-fields-border-inline-start: var(--hairline) solid
+    var(--color-border);
+  --builder-fields-margin-block-start: var(--gap);
+  --builder-fields-padding-inline-start: var(--gap);
 }
 
 .summary {
+  --builder-summary-text-size: var(--text-ui);
+  --builder-summary-weight: var(--weight-strong);
+  --builder-summary-leading: var(--leading-tight);
+
   cursor: pointer;
-  font-size: var(--text-ui);
-  font-weight: var(--weight-strong);
-  line-height: var(--leading-tight);
+  font-size: var(--builder-summary-text-size);
+  font-weight: var(--builder-summary-weight);
+  line-height: var(--builder-summary-leading);
 }
 
 .row {
+  --builder-row-gap: var(--gap-tight);
+
   align-items: flex-end;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap-tight);
+  gap: var(--builder-row-gap);
   justify-content: space-between;
 }
 
 .row > .field {
-  flex: 1 1 10rem;
+  --builder-field-flex: 1 1 10rem;
 }
 
 .rowName {
@@ -269,57 +411,72 @@
 }
 
 .testRow {
-  border-inline-start: var(--hairline) solid var(--panel-border);
+  --builder-test-row-border-inline-start: var(--hairline) solid
+    var(--color-border);
+  --builder-test-row-gap: var(--gap);
+  --builder-test-row-padding-inline-start: var(--gap);
+
+  border-inline-start: var(--builder-test-row-border-inline-start);
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
-  padding-inline-start: var(--gap);
+  gap: var(--builder-test-row-gap);
+  padding-inline-start: var(--builder-test-row-padding-inline-start);
 }
 
 .edge {
-  border: var(--hairline) solid var(--panel-border);
-  border-radius: var(--radius-control);
+  --builder-edge-border: var(--hairline) solid var(--color-border);
+  --builder-edge-radius: var(--radius-control);
+  --builder-edge-gap: var(--gap-loose);
+  --builder-edge-padding: var(--gap);
+
+  border: var(--builder-edge-border);
+  border-radius: var(--builder-edge-radius);
   display: flex;
   flex-direction: column;
-  gap: var(--gap-loose);
-  padding: var(--gap);
+  gap: var(--builder-edge-gap);
+  padding: var(--builder-edge-padding);
 }
 
 .edgeName {
-  font-size: var(--text-ui);
-  font-weight: var(--weight-strong);
-  line-height: var(--leading-tight);
+  --builder-edge-name-text-size: var(--text-ui);
+  --builder-edge-name-weight: var(--weight-strong);
+  --builder-edge-name-leading: var(--leading-tight);
+
+  font-size: var(--builder-edge-name-text-size);
+  font-weight: var(--builder-edge-name-weight);
+  line-height: var(--builder-edge-name-leading);
   margin: 0;
 }
 
 @container (width < 44rem) {
   .body {
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
+    --builder-body-display: flex;
+    --builder-body-flex-direction: column;
+    --builder-body-overflow-y: auto;
   }
 
   .palette,
   .inspector {
-    border: 0;
-    border-block-end: var(--hairline) solid var(--panel-border);
-    flex: none;
-    overflow-y: visible;
+    --builder-palette-border: 0;
+    --builder-palette-border-block-end: var(--hairline) solid
+      var(--color-border);
+    --builder-palette-flex: none;
+    --builder-palette-overflow-y: visible;
   }
 
   .types {
-    flex-direction: row;
-    flex-wrap: wrap;
+    --builder-problem-list-flex-direction: row;
+    --builder-problem-list-flex-wrap: wrap;
   }
 
   .middle {
-    flex: none;
-    height: 24rem;
+    --builder-middle-flex: none;
+    --builder-middle-height: 24rem;
   }
 }
 
 @media (forced-colors: active) {
   .field[data-problem] {
-    border-inline-start-color: CanvasText;
+    --builder-field-border-inline-start-color: CanvasText;
   }
 }

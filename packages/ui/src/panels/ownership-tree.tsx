@@ -148,7 +148,7 @@ export const OwnershipTree = ({
               onKey(event, index);
             }}
             role="treeitem"
-            style={{ paddingInlineStart: `${String((depth - 1) * 12)}px` }}
+            style={{ paddingInlineStart: `${String((depth - 1) * 0.75)}rem` }}
             tabIndex={node.id === shownCurrent ? 0 : -1}
           >
             {/* The row's keys open and close it; this is for the pointer. */}

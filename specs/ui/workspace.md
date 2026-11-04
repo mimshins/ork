@@ -133,11 +133,11 @@ as long as the page.
 
 ## A narrow window
 
-Below 1024 px wide, which includes a wide window at 200% zoom, the dock gives
-way to one column of every panel in the list's order, each under a heading whose
-button folds it. The saved dock is untouched and comes back when the window
-grows. Commands that need a dock stay listed and say so. Going to a panel
-unfolds and focuses it.
+Below 64rem wide (1024 px at the default text size), which includes a wide
+window at 200% zoom, the dock gives way to one column of every panel in the
+list's order, each under a heading whose button folds it. The saved dock is
+untouched and comes back when the window grows. Commands that need a dock stay
+listed and say so. Going to a panel unfolds and focuses it.
 
 ## Limits
 

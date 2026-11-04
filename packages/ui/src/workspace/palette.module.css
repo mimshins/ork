@@ -4,65 +4,102 @@
  */
 
 .palette {
-  background: var(--dialog-bg);
-  border: var(--hairline) solid var(--dialog-border);
-  border-radius: var(--radius-panel);
-  color: var(--dialog-text);
+  --palette-opacity: initial;
+  --palette-bg: var(--surface-raised);
+  --palette-border: var(--hairline) solid var(--color-border-strong);
+  --palette-radius: var(--radius-panel);
+  --palette-text: var(--color-text);
+  --palette-left: 50%;
+  --palette-max-height: calc(100vh - 5rem - var(--window-margin));
+  --palette-max-width: calc(100vw - var(--window-margin));
+  --palette-top: 5rem;
+  --palette-transform: translateX(-50%);
+  --palette-transition: opacity var(--duration-quick) var(--ease-out);
+  --palette-width: 36rem;
+  --palette-z-index: var(--layer-dialog);
+
+  background: var(--palette-bg);
+  border: var(--palette-border);
+  border-radius: var(--palette-radius);
+  color: var(--palette-text);
   display: flex;
   flex-direction: column;
-  left: 50%;
-  max-height: calc(100vh - var(--palette-offset) - var(--window-margin));
-  max-width: calc(100vw - var(--window-margin));
+  left: var(--palette-left);
+  max-height: var(--palette-max-height);
+  max-width: var(--palette-max-width);
   overflow: hidden;
   position: fixed;
-  top: var(--palette-offset);
-  transform: translateX(-50%);
-  transition: opacity var(--duration-quick) var(--ease-out);
+  top: var(--palette-top);
+  transform: var(--palette-transform);
+  transition: var(--palette-transition);
   width: var(--palette-width);
-  z-index: var(--layer-dialog);
+  z-index: var(--palette-z-index);
+  opacity: var(--palette-opacity, revert);
 }
 
 .palette[data-starting-style],
 .palette[data-ending-style] {
-  opacity: 0;
+  --palette-opacity: 0;
 }
 
 .input {
-  background: var(--field-bg);
+  --palette-input-outline: initial;
+  --palette-input-bg: var(--surface-sunken);
+  --palette-input-border-bottom: var(--hairline) solid
+    var(--color-border-strong);
+  --palette-input-text: var(--color-text);
+  --palette-input-min-height: 2rem;
+  --palette-input-padding: var(--gap) var(--inset-panel);
+
+  background: var(--palette-input-bg);
   border: none;
-  border-bottom: var(--hairline) solid var(--field-border);
-  color: var(--field-text);
+  border-bottom: var(--palette-input-border-bottom);
+  color: var(--palette-input-text);
   font: inherit;
-  min-height: var(--bar-height);
-  padding: var(--gap) var(--inset-panel);
+  min-height: var(--palette-input-min-height);
+  padding: var(--palette-input-padding);
   width: 100%;
+  outline: var(--palette-input-outline, revert);
 }
 
 .input::placeholder {
-  color: var(--field-placeholder);
-  opacity: 1;
+  --palette-input-placeholder-text: var(--color-text-muted);
+  --palette-input-placeholder-opacity: 1;
+
+  color: var(--palette-input-placeholder-text);
+  opacity: var(--palette-input-placeholder-opacity);
 }
 
 .input:focus-visible {
-  outline: var(--focus-width) solid var(--color-focus);
-  outline-offset: calc(var(--focus-width) * -1);
+  --palette-input-outline: var(--focus-width) solid var(--color-focus);
+  --focus-ring-offset: calc(var(--focus-width) * -1);
 }
 
 .list {
+  --palette-list-padding: var(--gap-tight);
+
   min-height: 0;
   overflow-y: auto;
-  padding: var(--gap-tight);
+  padding: var(--palette-list-padding);
 }
 
 .group {
-  color: var(--dialog-muted);
-  font-size: var(--text-small);
-  font-weight: var(--weight-medium);
-  padding: var(--gap) var(--inset-control) var(--gap-tight);
+  --palette-group-text: var(--color-text-muted);
+  --palette-group-text-size: var(--text-small);
+  --palette-group-weight: var(--weight-medium);
+  --palette-group-padding: var(--gap) var(--inset-control) var(--gap-tight);
+
+  color: var(--palette-group-text);
+  font-size: var(--palette-group-text-size);
+  font-weight: var(--palette-group-weight);
+  padding: var(--palette-group-padding);
 }
 
 .empty {
-  color: var(--dialog-muted);
+  --palette-empty-text: var(--color-text-muted);
+  --palette-empty-padding: var(--inset-panel);
+
+  color: var(--palette-empty-text);
   margin: 0;
-  padding: var(--inset-panel);
+  padding: var(--palette-empty-padding);
 }

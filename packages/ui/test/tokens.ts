@@ -12,12 +12,7 @@ export const SRC = join(import.meta.dirname, "../src");
 export const TOKENS = join(SRC, "design/tokens");
 
 /** The token files in cascade order, as design.css imports them. */
-export const TOKEN_FILES = [
-  "primitives.css",
-  "themes.css",
-  "scale.css",
-  "components.css",
-];
+export const TOKEN_FILES = ["primitives.css", "themes.css", "scale.css"];
 
 export type Look = { theme: "dark" | "light"; contrast: "standard" | "more" };
 

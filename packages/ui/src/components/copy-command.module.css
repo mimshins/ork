@@ -4,23 +4,34 @@
  */
 
 .field {
+  --copy-command-field-gap: var(--gap-tight);
+
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap-tight);
+  gap: var(--copy-command-field-gap);
 }
 
 .command {
-  background: var(--field-bg);
-  border: var(--hairline) solid var(--color-border);
-  border-radius: var(--radius-control);
-  color: var(--field-text);
+  --copy-command-command-bg: var(--surface-sunken);
+  --copy-command-command-border: var(--hairline) solid var(--color-border);
+  --copy-command-command-radius: var(--radius-control);
+  --copy-command-command-text: var(--color-text);
+  --copy-command-command-padding: var(--gap-hair) var(--inset-control);
+
+  background: var(--copy-command-command-bg);
+  border: var(--copy-command-command-border);
+  border-radius: var(--copy-command-command-radius);
+  color: var(--copy-command-command-text);
   overflow-wrap: anywhere;
-  padding: var(--gap-hair) var(--inset-control);
+  padding: var(--copy-command-command-padding);
   user-select: all;
 }
 
 .result {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
+  --copy-command-result-text: var(--color-text-muted);
+  --copy-command-result-text-size: var(--text-small);
+
+  color: var(--copy-command-result-text);
+  font-size: var(--copy-command-result-text-size);
 }

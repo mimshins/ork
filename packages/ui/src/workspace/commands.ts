@@ -32,7 +32,7 @@ export type Command = {
   disabled?: string | undefined;
 };
 
-const NEEDS_DOCK = "Needs a window at least 1024 px wide.";
+const NEEDS_DOCK = "Needs a wider window.";
 const NEEDS_PANEL = "No panel is active.";
 
 const DIRECTIONS: readonly Direction[] = ["left", "right", "up", "down"];

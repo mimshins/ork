@@ -4,33 +4,51 @@
  */
 
 .viewport {
-  bottom: var(--gap-loose);
+  --toast-viewport-bottom: var(--gap-loose);
+  --toast-viewport-gap: var(--gap);
+  --toast-viewport-max-width: calc(100vw - var(--window-margin));
+  --toast-viewport-right: var(--gap-loose);
+  --toast-viewport-width: 22rem;
+  --toast-viewport-z-index: var(--layer-toast);
+
+  bottom: var(--toast-viewport-bottom);
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
-  max-width: calc(100vw - var(--window-margin));
+  gap: var(--toast-viewport-gap);
+  max-width: var(--toast-viewport-max-width);
   position: fixed;
-  right: var(--gap-loose);
-  width: var(--toast-width);
-  z-index: var(--layer-toast);
+  right: var(--toast-viewport-right);
+  width: var(--toast-viewport-width);
+  z-index: var(--toast-viewport-z-index);
 }
 
 .toast {
+  --toast-opacity: initial;
+  --toast-bg: var(--surface-raised);
+  --toast-border: var(--hairline) solid var(--color-border-strong);
+  --toast-radius: var(--radius-control);
+  --toast-text: var(--color-text);
+  --toast-display: flex;
+  --toast-gap: var(--gap);
+  --toast-padding: var(--inset-control);
+  --toast-transition: opacity var(--duration-move) var(--ease-out);
+
   align-items: flex-start;
   background: var(--toast-bg);
-  border: var(--hairline) solid var(--toast-border);
-  border-radius: var(--radius-control);
+  border: var(--toast-border);
+  border-radius: var(--toast-radius);
   color: var(--toast-text);
-  display: flex;
-  gap: var(--gap);
+  display: var(--toast-display);
+  gap: var(--toast-gap);
   justify-content: space-between;
-  padding: var(--inset-control);
-  transition: opacity var(--duration-move) var(--ease-out);
+  padding: var(--toast-padding);
+  transition: var(--toast-transition);
+  opacity: var(--toast-opacity, revert);
 }
 
 .toast[data-starting-style],
 .toast[data-ending-style] {
-  opacity: 0;
+  --toast-opacity: 0;
 }
 
 /*
@@ -38,7 +56,7 @@
  * room there, or the ones showing climb the screen with each one added.
  */
 .toast[data-limited] {
-  display: none;
+  --toast-display: none;
 }
 
 .content {
@@ -46,27 +64,39 @@
 }
 
 .title {
-  font-size: var(--text-ui);
-  font-weight: var(--weight-medium);
+  --toast-title-text-size: var(--text-ui);
+  --toast-title-weight: var(--weight-medium);
+
+  font-size: var(--toast-title-text-size);
+  font-weight: var(--toast-title-weight);
   margin: 0;
 }
 
 .description {
-  color: var(--toast-muted);
+  --toast-description-text: var(--color-text-muted);
+
+  color: var(--toast-description-text);
   margin: 0;
 }
 
 .close {
+  --toast-close-bg: transparent;
+  --toast-close-radius: var(--radius-control);
+  --toast-close-text: var(--color-text-muted);
+  --toast-close-text-size: var(--icon-size-small);
+  --toast-close-height: var(--target-min);
+  --toast-close-width: var(--target-min);
+
   align-items: center;
-  background: transparent;
+  background: var(--toast-close-bg);
   border: 0;
-  border-radius: var(--radius-control);
-  color: var(--toast-muted);
+  border-radius: var(--toast-close-radius);
+  color: var(--toast-close-text);
   cursor: pointer;
   display: flex;
   flex: none;
-  font-size: var(--icon-size-small);
-  height: var(--target-min);
+  font-size: var(--toast-close-text-size);
+  height: var(--toast-close-height);
   justify-content: center;
-  width: var(--target-min);
+  width: var(--toast-close-width);
 }

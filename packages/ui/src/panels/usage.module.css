@@ -7,127 +7,184 @@
  */
 
 .panel {
-  container: usage / inline-size;
+  --usage-panel-container-type: initial;
+  --usage-panel-container: usage / inline-size;
+
+  container: var(--usage-panel-container);
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  container-type: var(--usage-panel-container-type, revert);
 }
 
 /*
  * Only a docked panel has a height of its own to ask about: the stacked layout
  * sizes a panel by its content, which size containment would collapse to nothing.
  */
-@media (min-width: 1024px) {
+@media (min-width: 64rem) {
   .panel {
-    container-type: size;
+    --usage-panel-container-type: size;
   }
 }
 
 .tools {
+  --usage-tools-border-block-end: var(--hairline) solid var(--color-border);
+  --usage-tools-gap: var(--gap);
+  --usage-tools-padding: var(--gap);
+
   align-items: flex-end;
-  border-block-end: var(--hairline) solid var(--panel-border);
+  border-block-end: var(--usage-tools-border-block-end);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap);
-  padding: var(--gap);
+  gap: var(--usage-tools-gap);
+  padding: var(--usage-tools-padding);
 }
 
 /* A project's name changes its width; the period beside it stays put. */
 .projectFilter {
-  inline-size: 14rem;
+  --usage-project-filter-inline-size: 14rem;
+
+  inline-size: var(--usage-project-filter-inline-size);
   max-inline-size: 100%;
 }
 
 .body {
+  --usage-body-gap: var(--gap-loose);
+  --usage-body-padding: var(--gap);
+
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--gap-loose);
+  gap: var(--usage-body-gap);
   min-height: 0;
   overflow-y: auto;
-  padding: var(--gap);
+  padding: var(--usage-body-padding);
 }
 
 .body:focus-visible {
-  outline-offset: calc(var(--focus-width) * -1);
+  --focus-ring-offset: calc(var(--focus-width) * -1);
 }
 
 .overview {
-  display: flex;
+  --usage-overview-grid-template-columns: initial;
+  --usage-overview-display: flex;
+  --usage-overview-gap: var(--gap-loose);
+
+  display: var(--usage-overview-display);
   flex-direction: column;
   flex-shrink: 0;
-  gap: var(--gap-loose);
+  gap: var(--usage-overview-gap);
   min-width: 0;
+  grid-template-columns: var(--usage-overview-grid-template-columns, revert);
 }
 
 .breakdowns {
+  --usage-breakdowns-gap: var(--gap-loose);
+  --usage-breakdowns-grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(28rem, 100%), 1fr)
+  );
+
   display: grid;
   flex-shrink: 0;
-  gap: var(--gap-loose);
-  grid-template-columns: repeat(auto-fit, minmax(min(28rem, 100%), 1fr));
+  gap: var(--usage-breakdowns-gap);
+  grid-template-columns: var(--usage-breakdowns-grid-template-columns);
 }
 
 /* A term that wraps must not push its number out of line with the others. */
 .totals {
+  --usage-totals-align-self: initial;
+  --usage-totals-gap: var(--gap);
+  --usage-totals-grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+
   align-items: end;
   display: grid;
-  gap: var(--gap);
-  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: var(--usage-totals-gap);
+  grid-template-columns: var(--usage-totals-grid-template-columns);
   margin: 0;
+  align-self: var(--usage-totals-align-self, revert);
 }
 
 .total dt {
-  color: var(--color-text-muted);
+  --usage-dt-text: var(--color-text-muted);
+
+  color: var(--usage-dt-text);
 }
 
 .total dd {
-  font-family: var(--font-mono);
-  font-size: var(--text-title);
-  margin: 0;
+  --usage-dd-font: var(--font-mono);
+  --usage-dd-text-size: var(--text-title);
+  --usage-dd-margin: 0;
+
+  font-family: var(--usage-dd-font);
+  font-size: var(--usage-dd-text-size);
+  margin: var(--usage-dd-margin);
 }
 
 .section {
+  --usage-section-gap: var(--gap-tight);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap-tight);
+  gap: var(--usage-section-gap);
   min-width: 0;
 }
 
 .heading {
-  font-size: var(--text-ui);
-  font-weight: var(--weight-strong);
+  --usage-heading-text-size: var(--text-ui);
+  --usage-heading-weight: var(--weight-strong);
+
+  font-size: var(--usage-heading-text-size);
+  font-weight: var(--usage-heading-weight);
   margin: 0;
 }
 
 .hintsSection {
+  --usage-hints-section-gap: var(--gap-tight);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap-tight);
+  gap: var(--usage-hints-section-gap);
   min-width: 0;
 }
 
 .chartArea {
+  --usage-chart-area-grid-row: initial;
+  --usage-chart-area-grid-column: initial;
+
   min-width: 0;
+  grid-column: var(--usage-chart-area-grid-column, revert);
+  grid-row: var(--usage-chart-area-grid-row, revert);
 }
 
 .hints {
+  --usage-hints-padding-inline-start: var(--gap-loose);
+
   margin: 0;
-  padding-inline-start: var(--gap-loose);
+  padding-inline-start: var(--usage-hints-padding-inline-start);
 }
 
 .chartHead {
+  --usage-chart-head-flex-direction: initial;
+  --usage-chart-head-gap: var(--gap);
+
   align-items: baseline;
   display: flex;
-  gap: var(--gap);
+  gap: var(--usage-chart-head-gap);
   justify-content: space-between;
+  flex-direction: var(--usage-chart-head-flex-direction, revert);
 }
 
 /* One line, always, so that what it says never moves the chart. */
 .readout {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
+  --usage-readout-text: var(--color-text-muted);
+  --usage-readout-font: var(--font-mono);
+  --usage-readout-text-size: var(--text-mono);
+
+  color: var(--usage-readout-text);
+  font-family: var(--usage-readout-font);
+  font-size: var(--usage-readout-text-size);
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -135,54 +192,73 @@
 }
 
 .chart {
+  --usage-chart-border-block-end: var(--hairline) solid
+    var(--color-border-strong);
+  --usage-chart-gap: var(--gap-hair);
+  --usage-chart-height: 7.5rem;
+
   align-items: stretch;
-  border-block-end: var(--hairline) solid var(--color-border-strong);
+  border-block-end: var(--usage-chart-border-block-end);
   display: flex;
-  gap: var(--gap-hair);
-  height: 7.5rem;
+  gap: var(--usage-chart-gap);
+  height: var(--usage-chart-height);
 }
 
 .column {
+  --usage-column-bg: initial;
+
   align-items: flex-end;
   display: flex;
   flex: 1;
   justify-content: center;
   min-width: 0;
+  background: var(--usage-column-bg, revert);
 }
 
 .column[data-pointed] {
-  background: var(--chart-column-pointed);
+  --usage-column-bg: var(--surface-hover);
 }
 
 .bar {
-  --bar-ink: var(--chart-bar);
+  --usage-bar-shadow: initial;
+  --usage-bar-bg: var(--usage-bar-ink);
+  --usage-bar-border-start-end-radius: var(--radius-control);
+  --usage-bar-border-start-start-radius: var(--radius-control);
+  --usage-bar-max-width: 1.5rem;
+  --usage-bar-ink: var(--color-text-muted);
 
-  background: var(--bar-ink);
-  border-start-end-radius: var(--radius-control);
-  border-start-start-radius: var(--radius-control);
-  max-width: 1.5rem;
+  background: var(--usage-bar-bg);
+  border-start-end-radius: var(--usage-bar-border-start-end-radius);
+  border-start-start-radius: var(--usage-bar-border-start-start-radius);
+  max-width: var(--usage-bar-max-width);
   width: 100%;
+  box-shadow: var(--usage-bar-shadow, revert);
 }
 
 .column[data-pointed] .bar {
-  --bar-ink: var(--chart-bar-pointed);
+  --usage-bar-ink: var(--color-action-edge);
 }
 
 .column[data-partial] .bar {
-  background: repeating-linear-gradient(
+  --usage-bar-bg: repeating-linear-gradient(
     135deg,
-    var(--bar-ink) 0 calc(var(--hairline) * 2),
+    var(--usage-bar-ink) 0 calc(var(--hairline) * 2),
     transparent 0 calc(var(--hairline) * 3)
   );
-  box-shadow: inset 0 0 0 var(--hairline) var(--bar-ink);
+  --usage-bar-shadow: inset 0 0 0 var(--hairline) var(--usage-bar-ink);
 }
 
 .axis,
 .axisEvery {
-  color: var(--color-text-muted);
-  display: flex;
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
+  --usage-chart-text: var(--color-text-muted);
+  --usage-chart-display: flex;
+  --usage-chart-font: var(--font-mono);
+  --usage-chart-text-size: var(--text-mono);
+
+  color: var(--usage-chart-text);
+  display: var(--usage-chart-display);
+  font-family: var(--usage-chart-font);
+  font-size: var(--usage-chart-text-size);
 }
 
 .axis {
@@ -192,24 +268,34 @@
 .axis[data-labelled="always"],
 .axisEvery[data-labelled="wide"],
 .axisEvery[data-labelled="never"] {
-  display: none;
+  --usage-chart-display: none;
 }
 
 /* Lined up under the columns: the same gap as the chart's. */
 .axisEvery {
-  gap: var(--gap-hair);
+  --usage-chart-gap: var(--gap-hair);
+
+  gap: var(--usage-chart-gap);
 }
 
 .axisEvery span {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-align: center;
+  --usage-span-flex: 1;
+  --usage-span-min-width: 0;
+  --usage-span-overflow: hidden;
+  --usage-span-text-align: center;
+
+  flex: var(--usage-span-flex);
+  min-width: var(--usage-span-min-width);
+  overflow: var(--usage-span-overflow);
+  text-align: var(--usage-span-text-align);
 }
 
 .details summary {
-  color: var(--color-text-muted);
-  cursor: pointer;
+  --usage-summary-text: var(--color-text-muted);
+  --usage-summary-cursor: pointer;
+
+  color: var(--usage-summary-text);
+  cursor: var(--usage-summary-cursor);
 }
 
 .table {
@@ -219,43 +305,66 @@
 
 .table th,
 .table td {
-  border-block-end: var(--hairline) solid var(--panel-border);
-  font-weight: 400;
-  padding: var(--gap-hair) var(--gap-tight);
-  text-align: start;
+  --usage-th-padding-inline-start: var(--gap-tight);
+  --usage-th-padding-inline-end: var(--gap-tight);
+  --usage-th-border-block-end: var(--hairline) solid var(--color-border);
+  --usage-th-weight: var(--weight-regular);
+  --usage-th-padding: var(--gap-hair) var(--gap-tight);
+  --usage-th-text-align: start;
+
+  border-block-end: var(--usage-th-border-block-end);
+  font-weight: var(--usage-th-weight);
+  padding: var(--usage-th-padding);
+  text-align: var(--usage-th-text-align);
+  padding-inline-start: var(--usage-th-padding-inline-start);
+  padding-inline-end: var(--usage-th-padding-inline-end);
 }
 
 .table th:first-child {
-  padding-inline-start: 0;
+  --usage-th-padding-inline-start: 0;
 }
 
 .table tr > :last-child {
-  padding-inline-end: 0;
+  --usage-th-padding-inline-end: 0;
 }
 
 .table thead th {
-  color: var(--color-text-muted);
+  --usage-th-text: var(--color-text-muted);
+
+  color: var(--usage-th-text);
 }
 
 .table .number {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  text-align: end;
-  white-space: nowrap;
+  --usage-number-font: var(--font-mono);
+  --usage-number-text-size: var(--text-mono);
+  --usage-number-text-align: end;
+  --usage-number-white-space: nowrap;
+
+  font-family: var(--usage-number-font);
+  font-size: var(--usage-number-text-size);
+  text-align: var(--usage-number-text-align);
+  white-space: var(--usage-number-white-space);
 }
 
 .table .name {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
+  --usage-name-font: var(--font-mono);
+  --usage-name-text-size: var(--text-mono);
+  --usage-name-max-inline-size: 0;
+  --usage-name-overflow-wrap: anywhere;
+  --usage-name-width: 100%;
+  font-family: var(--usage-name-font);
+  font-size: var(--usage-name-text-size);
   /* It takes what the numbers leave, rather than widening the table. */
-  max-inline-size: 0;
-  overflow-wrap: anywhere;
-  width: 100%;
+  max-inline-size: var(--usage-name-max-inline-size);
+  overflow-wrap: var(--usage-name-overflow-wrap);
+  width: var(--usage-name-width);
 }
 
 /* The start of a path tells projects apart; the name above is its end. */
 .path {
-  color: var(--color-text-muted);
+  --usage-path-text: var(--color-text-muted);
+
+  color: var(--usage-path-text);
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -267,77 +376,84 @@
 }
 
 .note {
-  color: var(--color-text-muted);
+  --usage-note-text: var(--color-text-muted);
+
+  color: var(--usage-note-text);
   margin: 0;
 }
 
 .refused {
-  color: var(--color-danger-text);
+  --usage-refused-text: var(--color-danger-text);
+
+  color: var(--usage-refused-text);
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 @container usage (max-height: 24rem) {
   .chart {
-    height: 3.5rem;
+    --usage-chart-height: 3.5rem;
   }
 }
 
 @container usage (max-height: 24rem) and (min-width: 40rem) {
   .overview {
-    display: grid;
-    grid-template-columns: minmax(14rem, 1fr) 2fr;
+    --usage-overview-display: grid;
+    --usage-overview-grid-template-columns: minmax(14rem, 1fr) 2fr;
   }
 
   .totals {
-    align-self: start;
-    grid-template-columns: repeat(3, 1fr);
+    --usage-totals-align-self: start;
+    --usage-totals-grid-template-columns: repeat(3, 1fr);
   }
 
   .total dd {
-    font-size: var(--text-ui);
+    --usage-dd-text-size: var(--text-ui);
   }
 
   .chartArea {
-    grid-column: 2;
-    grid-row: 1 / span 2;
+    --usage-chart-area-grid-column: 2;
+    --usage-chart-area-grid-row: 1 / span 2;
   }
 }
 
 @container usage (min-width: 40rem) {
   .axis[data-labelled="wide"] {
-    display: none;
+    --usage-chart-display: none;
   }
 
   .axisEvery[data-labelled="wide"] {
-    display: flex;
+    --usage-chart-display: flex;
   }
 }
 
 @container usage (max-width: 30rem) {
   .chart,
   .axisEvery {
-    gap: var(--hairline);
+    --usage-chart-gap: var(--hairline);
   }
 
   .chartHead {
-    flex-direction: column;
-    gap: var(--gap-hair);
+    --usage-chart-head-flex-direction: column;
+    --usage-chart-head-gap: var(--gap-hair);
   }
 }
 
 @media (forced-colors: active) {
   .bar {
-    --bar-ink: CanvasText;
+    --usage-bar-ink: CanvasText;
   }
 
   .column[data-pointed] .bar {
-    --bar-ink: Highlight;
+    --usage-bar-ink: Highlight;
   }
 }
 
 .limits {
+  --usage-limits-gap: var(--gap);
+  --usage-limits-margin-block-end: var(--gap-loose);
+
   display: grid;
-  gap: var(--gap);
-  margin-block-end: var(--gap-loose);
+  gap: var(--usage-limits-gap);
+  margin-block-end: var(--usage-limits-margin-block-end);
 }

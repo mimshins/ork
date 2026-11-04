@@ -3,34 +3,53 @@
  */
 
 .keys {
+  --keys-gap: var(--gap-hair);
+
   display: inline-flex;
-  gap: var(--gap-hair);
+  gap: var(--keys-gap);
 }
 
 .key {
-  background: var(--kbd-bg);
-  border: var(--hairline) solid var(--kbd-border);
-  border-radius: var(--radius-badge);
-  color: var(--kbd-text);
-  font-size: var(--text-small);
-  min-width: var(--box-size);
-  padding: 0 var(--gap-tight);
+  --key-bg: var(--surface-sunken);
+  --key-border: var(--hairline) solid var(--color-border-strong);
+  --key-radius: var(--radius-badge);
+  --key-text: var(--color-text-muted);
+  --key-text-size: var(--text-small);
+  --key-min-width: var(--space-16);
+  --key-padding: 0 var(--gap-tight);
+
+  background: var(--key-bg);
+  border: var(--key-border);
+  border-radius: var(--key-radius);
+  color: var(--key-text);
+  font-size: var(--key-text-size);
+  min-width: var(--key-min-width);
+  padding: var(--key-padding);
   text-align: center;
 }
 
 .empty {
+  --empty-max-width: 28rem;
+  --empty-padding: var(--inset-empty);
+
   margin: auto;
-  max-width: var(--empty-width);
-  padding: var(--inset-empty);
+  max-width: var(--empty-max-width);
+  padding: var(--empty-padding);
   text-align: center;
 }
 
 .emptyTitle {
-  font-size: var(--text-title);
-  font-weight: var(--weight-medium);
-  margin: 0 0 var(--gap-tight);
+  --empty-title-text-size: var(--text-title);
+  --empty-title-weight: var(--weight-medium);
+  --empty-title-margin: 0 0 var(--gap-tight);
+
+  font-size: var(--empty-title-text-size);
+  font-weight: var(--empty-title-weight);
+  margin: var(--empty-title-margin);
 }
 
 .emptyBody {
-  color: var(--color-text-muted);
+  --empty-body-text: var(--color-text-muted);
+
+  color: var(--empty-body-text);
 }

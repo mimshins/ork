@@ -203,9 +203,7 @@ describe("the keyboard", () => {
       setWide(false);
     });
     await user.keyboard("{Alt>}{Shift>}m{/Shift}{/Alt}");
-    expect(workspace.announcement.getValue()).toBe(
-      "Needs a window at least 1024 px wide.",
-    );
+    expect(workspace.announcement.getValue()).toBe("Needs a wider window.");
   });
 
   it("speaks changes through one polite live region", () => {

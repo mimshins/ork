@@ -4,64 +4,98 @@
  */
 
 .backdrop {
-  background: var(--dialog-scrim);
+  --dialog-backdrop-opacity: initial;
+  --dialog-backdrop-bg: var(--surface-scrim);
+  --dialog-backdrop-transition: opacity var(--duration-quick) var(--ease-out);
+  --dialog-backdrop-z-index: var(--layer-dialog);
+
+  background: var(--dialog-backdrop-bg);
   inset: 0;
   position: fixed;
-  transition: opacity var(--duration-quick) var(--ease-out);
-  z-index: var(--layer-dialog);
+  transition: var(--dialog-backdrop-transition);
+  z-index: var(--dialog-backdrop-z-index);
+  opacity: var(--dialog-backdrop-opacity, revert);
 }
 
 .backdrop[data-starting-style],
 .backdrop[data-ending-style] {
-  opacity: 0;
+  --dialog-backdrop-opacity: 0;
 }
 
 .dialog {
+  --dialog-opacity: initial;
+  --dialog-bg: var(--surface-raised);
+  --dialog-border: var(--hairline) solid var(--color-border-strong);
+  --dialog-radius: var(--radius-panel);
+  --dialog-text: var(--color-text);
+  --dialog-gap: var(--gap);
+  --dialog-left: 50%;
+  --dialog-max-height: calc(100vh - var(--window-margin));
+  --dialog-max-width: calc(100vw - var(--window-margin));
+  --dialog-padding: var(--gap-loose);
+  --dialog-top: 50%;
+  --dialog-transform: translate(-50%, -50%);
+  --dialog-transition: opacity var(--duration-quick) var(--ease-out);
+  --dialog-width: 28rem;
+  --dialog-z-index: var(--layer-dialog);
+
   background: var(--dialog-bg);
-  border: var(--hairline) solid var(--dialog-border);
-  border-radius: var(--radius-panel);
+  border: var(--dialog-border);
+  border-radius: var(--dialog-radius);
   color: var(--dialog-text);
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
-  left: 50%;
-  max-height: calc(100vh - var(--window-margin));
-  max-width: calc(100vw - var(--window-margin));
+  gap: var(--dialog-gap);
+  left: var(--dialog-left);
+  max-height: var(--dialog-max-height);
+  max-width: var(--dialog-max-width);
   overflow-y: auto;
-  padding: var(--gap-loose);
+  padding: var(--dialog-padding);
   position: fixed;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  transition: opacity var(--duration-quick) var(--ease-out);
+  top: var(--dialog-top);
+  transform: var(--dialog-transform);
+  transition: var(--dialog-transition);
   width: var(--dialog-width);
-  z-index: var(--layer-dialog);
+  z-index: var(--dialog-z-index);
+  opacity: var(--dialog-opacity, revert);
 }
 
 .dialog[data-starting-style],
 .dialog[data-ending-style] {
-  opacity: 0;
+  --dialog-opacity: 0;
 }
 
 .title {
-  font-size: var(--text-title);
-  font-weight: var(--weight-strong);
-  line-height: var(--leading-tight);
+  --dialog-title-text-size: var(--text-title);
+  --dialog-title-weight: var(--weight-strong);
+  --dialog-title-leading: var(--leading-tight);
+
+  font-size: var(--dialog-title-text-size);
+  font-weight: var(--dialog-title-weight);
+  line-height: var(--dialog-title-leading);
   margin: 0;
 }
 
 .description {
-  color: var(--dialog-muted);
+  --dialog-description-text: var(--color-text-muted);
+
+  color: var(--dialog-description-text);
   margin: 0;
 }
 
 .command {
-  color: var(--dialog-muted);
+  --dialog-command-text: var(--color-text-muted);
+
+  color: var(--dialog-command-text);
   overflow-wrap: anywhere;
 }
 
 .actions {
+  --dialog-actions-gap: var(--gap);
+  --dialog-actions-margin-top: var(--gap);
+
   display: flex;
-  gap: var(--gap);
+  gap: var(--dialog-actions-gap);
   justify-content: flex-end;
-  margin-top: var(--gap);
+  margin-top: var(--dialog-actions-margin-top);
 }

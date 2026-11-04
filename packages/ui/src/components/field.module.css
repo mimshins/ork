@@ -5,187 +5,293 @@
  */
 
 .field {
+  --field-gap: var(--gap-tight);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap-tight);
+  gap: var(--field-gap);
 }
 
 /* A label names a field, so it reads ahead of the description under it. */
 .label {
-  color: var(--color-text);
-  font-size: var(--text-small);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-tight);
+  --field-label-text: var(--color-text);
+  --field-label-text-size: var(--text-small);
+  --field-label-weight: var(--weight-medium);
+  --field-label-leading: var(--leading-tight);
+
+  color: var(--field-label-text);
+  font-size: var(--field-label-text-size);
+  font-weight: var(--field-label-weight);
+  line-height: var(--field-label-leading);
 }
 
 .control,
 .group {
+  --field-box-bg: var(--surface-sunken);
+  --field-box-border-width: var(--hairline);
+  --field-box-border-style: solid;
+  --field-box-border-color: var(--color-border-strong);
+  --field-box-radius: var(--radius-control);
+  --field-box-text: var(--color-text);
+  --field-box-min-height: var(--control-height);
+
   align-items: center;
-  background: var(--field-bg);
-  border: var(--hairline) solid var(--field-border);
-  border-radius: var(--radius-control);
-  color: var(--field-text);
+  background: var(--field-box-bg);
+  border-width: var(--field-box-border-width);
+  border-style: var(--field-box-border-style);
+  border-color: var(--field-box-border-color);
+  border-radius: var(--field-box-radius);
+  color: var(--field-box-text);
   display: flex;
   font: inherit;
   justify-content: space-between;
-  min-height: var(--control-height);
+  min-height: var(--field-box-min-height);
+}
+
+.group {
+  --field-box-cursor: initial;
+  --field-box-outline-offset: initial;
+  --field-box-outline: initial;
+
+  outline: var(--field-box-outline, revert);
+  outline-offset: var(--field-box-outline-offset, revert);
+  cursor: var(--field-box-cursor, revert);
 }
 
 .control {
-  cursor: pointer;
-  gap: var(--gap);
-  padding: 0 var(--inset-control);
+  --field-box-cursor: pointer;
+  --field-box-gap: var(--gap);
+  --field-box-padding: 0 var(--inset-control);
+
+  cursor: var(--field-box-cursor);
+  gap: var(--field-box-gap);
+  padding: var(--field-box-padding);
   text-align: start;
 }
 
 .group:focus-within {
-  outline: var(--focus-width) solid var(--color-focus);
-  outline-offset: var(--focus-offset);
+  --field-box-outline: var(--focus-width) solid var(--color-focus);
+  --field-box-outline-offset: var(--focus-offset);
 }
 
 .input {
-  background: transparent;
+  --field-input-cursor: initial;
+  --field-input-bg: transparent;
+  --field-input-padding: 0 var(--inset-control);
+
+  background: var(--field-input-bg);
   border: 0;
   color: inherit;
   flex: 1;
   font: inherit;
   min-width: 0;
   outline: none;
-  padding: 0 var(--inset-control);
+  padding: var(--field-input-padding);
+  cursor: var(--field-input-cursor, revert);
 }
 
 .hint {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
-  font-weight: var(--weight-regular);
-  line-height: var(--leading-ui);
+  --field-hint-text: var(--color-text-muted);
+  --field-hint-text-size: var(--text-small);
+  --field-hint-weight: var(--weight-regular);
+  --field-hint-leading: var(--leading-ui);
+
+  color: var(--field-hint-text);
+  font-size: var(--field-hint-text-size);
+  font-weight: var(--field-hint-weight);
+  line-height: var(--field-hint-leading);
   margin: 0;
 }
 
 .input::placeholder {
-  color: var(--field-placeholder);
-  opacity: 1;
+  --field-input-placeholder-text: var(--color-text-muted);
+  --field-input-placeholder-opacity: 1;
+
+  color: var(--field-input-placeholder-text);
+  opacity: var(--field-input-placeholder-opacity);
 }
 
 .inputButton {
+  --field-input-bg: transparent;
+  --field-input-text: var(--color-text-muted);
+  --field-input-cursor: pointer;
+  --field-input-text-size: var(--icon-size-small);
+  --field-input-min-width: var(--target-min);
+  --field-input-width: calc(var(--inset-control) * 2 + var(--icon-size-small));
   align-items: center;
-  background: transparent;
+  background: var(--field-input-bg);
   border: 0;
-  color: var(--color-text-muted);
-  cursor: pointer;
+  color: var(--field-input-text);
+  cursor: var(--field-input-cursor);
   display: flex;
-  font-size: var(--icon-size-small);
+  font-size: var(--field-input-text-size);
   /* As tall as its group, with the chevron where a select has its own. */
   align-self: stretch;
   justify-content: center;
-  min-width: var(--target-min);
-  width: calc(var(--inset-control) * 2 + var(--icon-size-small));
+  min-width: var(--field-input-min-width);
+  width: var(--field-input-width);
 }
 
 .icon {
+  --field-icon-text: var(--color-text-muted);
+  --field-icon-text-size: var(--icon-size-small);
+
   align-items: center;
-  color: var(--color-text-muted);
+  color: var(--field-icon-text);
   display: flex;
-  font-size: var(--icon-size-small);
+  font-size: var(--field-icon-text-size);
+}
+
+.empty {
+  --field-empty-padding: initial;
+  --field-empty-text: initial;
+
+  color: var(--field-empty-text, revert);
+  padding: var(--field-empty-padding, revert);
 }
 
 .empty:not(:empty) {
-  color: var(--color-text-muted);
-  padding: var(--gap-tight) var(--inset-control);
+  --field-empty-text: var(--color-text-muted);
+  --field-empty-padding: var(--gap-tight) var(--inset-control);
 }
 
 .toggle {
+  --field-toggle-gap: var(--gap);
+  --field-toggle-min-height: var(--control-height);
+
   align-items: center;
   cursor: pointer;
   display: inline-flex;
-  gap: var(--gap);
-  min-height: var(--control-height);
+  gap: var(--field-toggle-gap);
+  min-height: var(--field-toggle-min-height);
 }
 
 .box {
+  --field-box-text: initial;
+  --field-box-bg: var(--surface-sunken);
+  --field-box-border-width: var(--hairline);
+  --field-box-border-style: solid;
+  --field-box-border-color: var(--color-border-strong);
+  --field-box-radius: var(--radius-badge);
+  --field-box-cursor: pointer;
+  --field-box-height: var(--space-16);
+  --field-box-width: var(--space-16);
+
   align-items: center;
-  background: var(--box-bg);
-  border: var(--hairline) solid var(--box-border);
-  border-radius: var(--radius-badge);
-  cursor: pointer;
+  background: var(--field-box-bg);
+  border-width: var(--field-box-border-width);
+  border-style: var(--field-box-border-style);
+  border-color: var(--field-box-border-color);
+  border-radius: var(--field-box-radius);
+  cursor: var(--field-box-cursor);
   display: flex;
   flex: none;
-  height: var(--box-size);
+  height: var(--field-box-height);
   justify-content: center;
   padding: 0;
-  width: var(--box-size);
+  width: var(--field-box-width);
+  color: var(--field-box-text, revert);
 }
 
 .box[data-checked] {
-  background: var(--box-on-bg);
-  border-color: var(--box-on-border);
+  --field-box-bg: var(--color-action);
+  --field-box-border-color: var(--color-action-edge);
 }
 
 .mark {
+  --field-mark-text: var(--color-text-on-action);
+  --field-mark-text-size: var(--icon-size-small);
+
   align-items: center;
-  color: var(--box-on-mark);
+  color: var(--field-mark-text);
   display: flex;
-  font-size: var(--icon-size-small);
+  font-size: var(--field-mark-text-size);
 }
 
 .switch {
+  --field-box-text: initial;
+  --field-box-justify-content: initial;
+  --field-box-bg: var(--surface-sunken);
+  --field-box-border-width: var(--hairline);
+  --field-box-border-style: solid;
+  --field-box-border-color: var(--color-border-strong);
+  --field-box-radius: var(--space-16);
+  --field-box-cursor: pointer;
+  --field-box-height: var(--space-16);
+  --field-box-padding: 0 var(--gap-hair);
+  --field-box-width: 1.75rem;
+
   align-items: center;
-  background: var(--box-bg);
-  border: var(--hairline) solid var(--box-border);
-  border-radius: var(--switch-height);
-  cursor: pointer;
+  background: var(--field-box-bg);
+  border-width: var(--field-box-border-width);
+  border-style: var(--field-box-border-style);
+  border-color: var(--field-box-border-color);
+  border-radius: var(--field-box-radius);
+  cursor: var(--field-box-cursor);
   display: flex;
   flex: none;
-  height: var(--switch-height);
-  padding: 0 var(--gap-hair);
-  width: var(--switch-width);
+  height: var(--field-box-height);
+  padding: var(--field-box-padding);
+  width: var(--field-box-width);
+  justify-content: var(--field-box-justify-content, revert);
+  color: var(--field-box-text, revert);
 }
 
 .switch[data-checked] {
-  background: var(--box-on-bg);
-  border-color: var(--box-on-border);
-  justify-content: flex-end;
+  --field-box-bg: var(--color-action);
+  --field-box-border-color: var(--color-action-edge);
+  --field-box-justify-content: flex-end;
 }
 
 .thumb {
-  background: var(--switch-thumb-off);
-  border-radius: 50%;
-  height: var(--switch-thumb);
-  width: var(--switch-thumb);
+  --field-mark-text: initial;
+  --field-mark-bg: var(--color-text-muted);
+  --field-mark-radius: 50%;
+  --field-mark-height: var(--space-12);
+  --field-mark-width: var(--space-12);
+
+  background: var(--field-mark-bg);
+  border-radius: var(--field-mark-radius);
+  height: var(--field-mark-height);
+  width: var(--field-mark-width);
+  color: var(--field-mark-text, revert);
 }
 
 .thumb[data-checked] {
-  background: var(--box-on-mark);
+  --field-mark-bg: var(--color-text-on-action);
 }
 
 :is(.box, .switch, .control, .group)[data-disabled] {
-  background: transparent;
-  border-color: var(--color-border);
-  color: var(--color-text-disabled);
-  cursor: not-allowed;
+  --field-box-bg: transparent;
+  --field-box-border-color: var(--color-border);
+  --field-box-text: var(--color-text-disabled);
+  --field-box-cursor: not-allowed;
 }
 
 .box[data-disabled] .mark,
 .thumb[data-disabled] {
-  color: var(--color-text-disabled);
+  --field-mark-text: var(--color-text-disabled);
 }
 
 .thumb[data-disabled] {
-  background: var(--color-text-disabled);
+  --field-mark-bg: var(--color-text-disabled);
 }
 
 .group[data-disabled] :is(.input, .inputButton) {
-  cursor: not-allowed;
+  --field-input-cursor: not-allowed;
 }
 
 .group[data-disabled] .inputButton {
-  color: var(--color-text-disabled);
+  --field-input-text: var(--color-text-disabled);
 }
 
 .visuallyHidden {
-  block-size: var(--hairline);
+  --field-visually-hidden-block-size: var(--hairline);
+  --field-visually-hidden-inline-size: var(--hairline);
+
+  block-size: var(--field-visually-hidden-block-size);
   clip-path: inset(50%);
-  inline-size: var(--hairline);
+  inline-size: var(--field-visually-hidden-inline-size);
   overflow: hidden;
   position: absolute;
   white-space: nowrap;
@@ -194,23 +300,23 @@
 /* Forced colors take the fills away, and the fills say what is on and off. */
 @media (forced-colors: active) {
   :is(.box, .switch)[data-checked] {
-    background: Highlight;
+    --field-box-bg: Highlight;
   }
 
   .thumb {
-    background: CanvasText;
+    --field-mark-bg: CanvasText;
   }
 
   .thumb[data-checked] {
-    background: HighlightText;
+    --field-mark-bg: HighlightText;
   }
 
   :is(.box, .switch, .control, .group)[data-disabled] {
-    border-color: GrayText;
-    color: GrayText;
+    --field-box-border-color: GrayText;
+    --field-box-text: GrayText;
   }
 
   .thumb[data-disabled] {
-    background: GrayText;
+    --field-mark-bg: GrayText;
   }
 }

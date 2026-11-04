@@ -1,9 +1,10 @@
 /**
  * @file The design system's semantic layer for everything but color: type,
  *   space, sizes and motion. Compact is the default density; the page's root
- *   carries `data-density="comfortable"` for the roomier one. Sizes are in rem,
- *   so text follows the browser's own font size; no text is below 11 px, and no
- *   click target below 24×24 (WCAG 2.5.8).
+ *   carries `data-density="comfortable"` for the roomier one. Every size is in
+ *   rem, so all of it follows the browser's own text size, and line heights have
+ *   no unit, so they follow the text they're on. At the default text size no text
+ *   is below 11 px, and no click target below 24×24 (WCAG 2.5.8).
  */
 
 :root {
@@ -33,32 +34,15 @@
   --radius-control: var(--radius-4);
   --radius-panel: var(--radius-6);
   --radius-badge: var(--radius-2);
-  --hairline: 1px;
+  --hairline: 0.0625rem;
 
   /* Sizes: compact by default. */
   --control-height: max(1.5rem, var(--target-min));
-  --target-min: 24px;
+  --target-min: 1.5rem;
   --panel-header-height: 1.75rem;
 
   --icon-size: var(--space-16);
   --icon-size-small: var(--space-12);
-  --box-size: var(--space-16);
-  --switch-width: 1.75rem;
-  --switch-height: var(--space-16);
-  --switch-thumb: var(--space-12);
-  --popup-min-width: 10rem;
-  --popup-max-width: 24rem;
-  --popup-max-height: 20rem;
-  --dialog-width: 28rem;
-  --toast-width: 22rem;
-  --meter-height: var(--space-4);
-  --empty-width: 28rem;
-  --bar-height: 2rem;
-  --logo-height: 15px;
-  --logo-width: 55px;
-  --palette-width: 36rem;
-  --palette-offset: 5rem;
-  --stack-panel-height: 18rem;
 
   /* Layers, from the workspace up. */
   --layer-dock-overlay: 50;
@@ -68,8 +52,8 @@
   --layer-tooltip: 400;
 
   /* Focus: an amber ring outside the element, never only a glow. */
-  --focus-width: 2px;
-  --focus-offset: 2px;
+  --focus-width: 0.125rem;
+  --focus-offset: 0.125rem;
 
   /* Motion: brief, and none when the user asks for less. */
   --duration-quick: var(--time-120);

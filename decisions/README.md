@@ -85,3 +85,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [051](./ADR-051-workflow-builder.md)                 | A workflow builder that keeps the YAML                                      |
 | [052](./ADR-052-conditions-from-declared-outputs.md) | Conditions chosen from what a node declares it can say                      |
 | [053](./ADR-053-watching-a-source.md)                | Watching a source, inside a run and to start one                            |
+| [054](./ADR-054-component-tokens.md)                 | Each component owns its tokens, and a state only sets tokens                |

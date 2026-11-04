@@ -4,20 +4,28 @@
  */
 
 .shell {
+  --workspace-shell-grid-template-rows: auto minmax(0, 1fr) auto;
+
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: var(--workspace-shell-grid-template-rows);
   height: 100%;
 }
 
 .bar {
+  --workspace-bar-bg: var(--surface-panel);
+  --workspace-bar-border-block: var(--hairline) solid var(--color-border);
+  --workspace-bar-gap: var(--gap);
+  --workspace-bar-min-height: 2rem;
+  --workspace-bar-padding: 0 var(--gap);
+
   align-items: center;
-  background: var(--panel-header-bg);
-  border-block: var(--hairline) solid var(--panel-border);
+  background: var(--workspace-bar-bg);
+  border-block: var(--workspace-bar-border-block);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap);
-  min-height: var(--bar-height);
-  padding: 0 var(--gap);
+  gap: var(--workspace-bar-gap);
+  min-height: var(--workspace-bar-min-height);
+  padding: var(--workspace-bar-padding);
 }
 
 .name {
@@ -32,14 +40,18 @@
  */
 .logoOnDark,
 .logoOnLight {
-  display: block;
-  height: var(--logo-height);
-  width: var(--logo-width);
+  --workspace-logo-on-dark-display: block;
+  --workspace-logo-on-dark-height: 0.9375rem;
+  --workspace-logo-on-dark-width: 3.4375rem;
+
+  display: var(--workspace-logo-on-dark-display);
+  height: var(--workspace-logo-on-dark-height);
+  width: var(--workspace-logo-on-dark-width);
 }
 
 :global([data-theme="dark"]) .logoOnLight,
 :global([data-theme="light"]) .logoOnDark {
-  display: none;
+  --workspace-logo-on-dark-display: none;
 }
 
 .spacer {
@@ -47,20 +59,29 @@
 }
 
 .status {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
+  --workspace-status-margin-inline-start: initial;
+  --workspace-status-text: var(--color-text-muted);
+  --workspace-status-font: var(--font-mono);
+  --workspace-status-text-size: var(--text-mono);
+
+  color: var(--workspace-status-text);
+  font-family: var(--workspace-status-font);
+  font-size: var(--workspace-status-text-size);
+  margin-inline-start: var(--workspace-status-margin-inline-start, revert);
 }
 
 .status + .status {
-  margin-inline-start: var(--gap-loose);
+  --workspace-status-margin-inline-start: var(--gap-loose);
 }
 
 .middle {
+  --workspace-middle-padding: var(--gap-tight);
+  --workspace-middle-gap: var(--gap-tight);
+
   display: flex;
   min-height: 0;
-  padding: var(--gap-tight);
-  gap: var(--gap-tight);
+  padding: var(--workspace-middle-padding);
+  gap: var(--workspace-middle-gap);
 }
 
 .dockArea {
@@ -69,65 +90,93 @@
 }
 
 .rail {
-  background: var(--panel-header-bg);
-  border: var(--hairline) solid var(--panel-border);
-  border-radius: var(--radius-panel);
+  --workspace-rail-bg: var(--surface-panel);
+  --workspace-rail-border: var(--hairline) solid var(--color-border);
+  --workspace-rail-radius: var(--radius-panel);
+  --workspace-rail-gap: var(--gap-hair);
+  --workspace-rail-padding: var(--gap-hair);
+
+  background: var(--workspace-rail-bg);
+  border: var(--workspace-rail-border);
+  border-radius: var(--workspace-rail-radius);
   display: flex;
   flex-direction: column;
-  gap: var(--gap-hair);
-  padding: var(--gap-hair);
+  gap: var(--workspace-rail-gap);
+  padding: var(--workspace-rail-padding);
 }
 
 .stack {
+  --workspace-stack-gap: var(--gap-tight);
+
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--gap-tight);
+  gap: var(--workspace-stack-gap);
   min-width: 0;
   overflow-y: auto;
 }
 
 .stacked {
-  background: var(--panel-bg);
-  border: var(--hairline) solid var(--panel-border);
-  border-radius: var(--radius-panel);
+  --workspace-stacked-bg: var(--surface-panel);
+  --workspace-stacked-border: var(--hairline) solid var(--color-border);
+  --workspace-stacked-radius: var(--radius-panel);
+
+  background: var(--workspace-stacked-bg);
+  border: var(--workspace-stacked-border);
+  border-radius: var(--workspace-stacked-radius);
   flex: none;
 }
 
 .stackedHeading {
-  font-size: var(--text-ui);
-  font-weight: var(--weight-medium);
+  --workspace-stacked-heading-text-size: var(--text-ui);
+  --workspace-stacked-heading-weight: var(--weight-medium);
+
+  font-size: var(--workspace-stacked-heading-text-size);
+  font-weight: var(--workspace-stacked-heading-weight);
   margin: 0;
 }
 
 .stackedButton {
+  --workspace-stacked-button-bg: transparent;
+  --workspace-stacked-button-radius: var(--radius-panel);
+  --workspace-stacked-button-text: var(--color-text);
+  --workspace-stacked-button-gap: var(--gap-tight);
+  --workspace-stacked-button-min-height: var(--panel-header-height);
+  --workspace-stacked-button-padding: 0 var(--inset-control);
+
   align-items: center;
-  background: transparent;
+  background: var(--workspace-stacked-button-bg);
   border: none;
-  border-radius: var(--radius-panel);
-  color: var(--panel-header-text-active);
+  border-radius: var(--workspace-stacked-button-radius);
+  color: var(--workspace-stacked-button-text);
   cursor: pointer;
   display: flex;
   font: inherit;
-  gap: var(--gap-tight);
-  min-height: var(--panel-header-height);
-  padding: 0 var(--inset-control);
+  gap: var(--workspace-stacked-button-gap);
+  min-height: var(--workspace-stacked-button-min-height);
+  padding: var(--workspace-stacked-button-padding);
   width: 100%;
 }
 
 .stackedButton:focus-visible {
-  outline-offset: calc(var(--focus-width) * -1);
+  --focus-ring-offset: calc(var(--focus-width) * -1);
 }
 
 .stackedBody {
-  border-top: var(--hairline) solid var(--panel-border);
-  min-height: var(--stack-panel-height);
+  --workspace-stacked-body-border-top: var(--hairline) solid var(--color-border);
+  --workspace-stacked-body-min-height: 18rem;
+
+  border-top: var(--workspace-stacked-body-border-top);
+  min-height: var(--workspace-stacked-body-min-height);
 }
 
 .visuallyHidden {
-  block-size: var(--hairline);
+  --workspace-visually-hidden-block-size: var(--hairline);
+  --workspace-visually-hidden-inline-size: var(--hairline);
+
+  block-size: var(--workspace-visually-hidden-block-size);
   clip-path: inset(50%);
-  inline-size: var(--hairline);
+  inline-size: var(--workspace-visually-hidden-inline-size);
   overflow: hidden;
   position: absolute;
   white-space: nowrap;
@@ -135,8 +184,13 @@
 
 /* The bell's count: a number, so it does not rest on the color. */
 .count {
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
-  font-weight: var(--weight-medium);
-  margin-inline-start: var(--gap-hair);
+  --workspace-count-font: var(--font-mono);
+  --workspace-count-text-size: var(--text-small);
+  --workspace-count-weight: var(--weight-medium);
+  --workspace-count-margin-inline-start: var(--gap-hair);
+
+  font-family: var(--workspace-count-font);
+  font-size: var(--workspace-count-text-size);
+  font-weight: var(--workspace-count-weight);
+  margin-inline-start: var(--workspace-count-margin-inline-start);
 }

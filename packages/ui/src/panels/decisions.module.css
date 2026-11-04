@@ -14,7 +14,7 @@
 
 /* Where the focus lands when the last card goes. */
 .panel:focus-visible {
-  outline-offset: calc(var(--focus-width) * -1);
+  --focus-ring-offset: calc(var(--focus-width) * -1);
 }
 
 .list {
@@ -23,135 +23,191 @@
 }
 
 .card {
-  border-block-end: var(--hairline) solid var(--panel-border);
+  --decisions-card-border-block-end: var(--hairline) solid var(--color-border);
+  --decisions-card-gap: var(--gap);
+  --decisions-card-padding: var(--gap);
+
+  border-block-end: var(--decisions-card-border-block-end);
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
-  padding: var(--gap);
+  gap: var(--decisions-card-gap);
+  padding: var(--decisions-card-padding);
 }
 
 .card:focus-visible {
-  outline-offset: calc(var(--focus-width) * -1);
+  --focus-ring-offset: calc(var(--focus-width) * -1);
 }
 
 .from {
+  --decisions-from-text: var(--color-text-muted);
+  --decisions-from-font: var(--font-mono);
+  --decisions-from-text-size: var(--text-small);
+  --decisions-from-gap: var(--gap-tight);
+
   align-items: center;
-  color: var(--color-text-muted);
+  color: var(--decisions-from-text);
   display: flex;
   flex-wrap: wrap;
-  font-family: var(--font-mono);
-  font-size: var(--text-small);
-  gap: var(--gap-tight);
+  font-family: var(--decisions-from-font);
+  font-size: var(--decisions-from-text-size);
+  gap: var(--decisions-from-gap);
   justify-content: space-between;
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 .question {
-  font-size: var(--text-ui);
-  font-weight: var(--weight-strong);
+  --decisions-question-text-size: var(--text-ui);
+  --decisions-question-weight: var(--weight-strong);
+
+  font-size: var(--decisions-question-text-size);
+  font-weight: var(--decisions-question-weight);
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 .context {
-  color: var(--color-text-muted);
+  --decisions-context-text: var(--color-text-muted);
+
+  color: var(--decisions-context-text);
   margin: 0;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 
 .options {
+  --decisions-options-gap: var(--gap-tight);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap-tight);
+  gap: var(--decisions-options-gap);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .option {
+  --decisions-option-border-inline-start-width: var(
+    --decisions-option-border-width
+  );
+  --decisions-option-bg: transparent;
+  --decisions-option-border-width: var(--hairline);
+  --decisions-option-border-style: solid;
+  --decisions-option-border-color: var(--color-border-strong);
+  --decisions-option-radius: var(--radius-control);
+  --decisions-option-text: var(--color-text);
+  --decisions-option-cursor: pointer;
+  --decisions-option-gap: var(--gap);
+  --decisions-option-min-height: var(--target-min);
+  --decisions-option-padding: var(--gap-tight) var(--inset-control);
+
   align-items: flex-start;
-  background: transparent;
-  border: var(--hairline) solid var(--color-border-strong);
-  border-radius: var(--radius-control);
-  color: var(--color-text);
-  cursor: pointer;
+  background: var(--decisions-option-bg);
+  border-width: var(--decisions-option-border-width);
+  border-style: var(--decisions-option-border-style);
+  border-color: var(--decisions-option-border-color);
+  border-radius: var(--decisions-option-radius);
+  color: var(--decisions-option-text);
+  cursor: var(--decisions-option-cursor);
   display: flex;
   font: inherit;
-  gap: var(--gap);
-  min-height: var(--target-min);
-  padding: var(--gap-tight) var(--inset-control);
+  gap: var(--decisions-option-gap);
+  min-height: var(--decisions-option-min-height);
+  padding: var(--decisions-option-padding);
   text-align: start;
   width: 100%;
+  border-inline-start-width: var(--decisions-option-border-inline-start-width);
 }
 
 .option:hover {
-  background: var(--surface-hover);
+  --decisions-option-bg: var(--surface-hover);
 }
 
 .option[data-recommended] {
-  background: var(--surface-selected);
-  border-color: var(--color-action-edge);
-  border-inline-start-width: var(--focus-width);
+  --decisions-option-bg: var(--surface-selected);
+  --decisions-option-border-color: var(--color-action-edge);
+  --decisions-option-border-inline-start-width: var(--focus-width);
 }
 
 .option[aria-disabled="true"] {
-  cursor: progress;
+  --decisions-option-cursor: progress;
 }
 
 .optionText {
+  --decisions-option-text-gap: var(--gap-hair);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap-hair);
+  gap: var(--decisions-option-text-gap);
   min-width: 0;
 }
 
 .optionLabel {
-  font-weight: var(--weight-medium);
+  --decisions-option-label-weight: var(--weight-medium);
+
+  font-weight: var(--decisions-option-label-weight);
   overflow-wrap: anywhere;
 }
 
 .optionDescription {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
+  --decisions-option-description-text: var(--color-text-muted);
+  --decisions-option-description-text-size: var(--text-small);
+
+  color: var(--decisions-option-description-text);
+  font-size: var(--decisions-option-description-text-size);
   overflow-wrap: anywhere;
 }
 
 .refusal {
-  color: var(--color-danger-text);
+  --decisions-refusal-text: var(--color-danger-text);
+
+  color: var(--decisions-refusal-text);
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 .settled {
+  --decisions-settled-gap: var(--gap-tight);
+  --decisions-settled-padding: var(--gap);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap-tight);
-  padding: var(--gap);
+  gap: var(--decisions-settled-gap);
+  padding: var(--decisions-settled-padding);
 }
 
 .settledTitle {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
-  font-weight: var(--weight-medium);
+  --decisions-settled-title-text: var(--color-text-muted);
+  --decisions-settled-title-font: var(--font-mono);
+  --decisions-settled-title-text-size: var(--text-mono);
+  --decisions-settled-title-weight: var(--weight-medium);
+
+  color: var(--decisions-settled-title-text);
+  font-family: var(--decisions-settled-title-font);
+  font-size: var(--decisions-settled-title-text-size);
+  font-weight: var(--decisions-settled-title-weight);
   margin: 0;
 }
 
 .settledList {
+  --decisions-settled-list-gap: var(--gap);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
+  gap: var(--decisions-settled-list-gap);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .settledList li {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-hair);
+  --decisions-li-display: flex;
+  --decisions-li-flex-direction: column;
+  --decisions-li-gap: var(--gap-hair);
+
+  display: var(--decisions-li-display);
+  flex-direction: var(--decisions-li-flex-direction);
+  gap: var(--decisions-li-gap);
 }
 
 .settledQuestion {
@@ -159,7 +215,10 @@
 }
 
 .settledEnding {
-  color: var(--color-text-muted);
-  font-size: var(--text-small);
+  --decisions-settled-ending-text: var(--color-text-muted);
+  --decisions-settled-ending-text-size: var(--text-small);
+
+  color: var(--decisions-settled-ending-text);
+  font-size: var(--decisions-settled-ending-text-size);
   overflow-wrap: anywhere;
 }

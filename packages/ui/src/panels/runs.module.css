@@ -11,13 +11,17 @@
 }
 
 .tools {
+  --runs-tools-border-block-end: var(--hairline) solid var(--color-border);
+  --runs-tools-gap: var(--gap);
+  --runs-tools-padding: var(--gap);
+
   align-items: flex-end;
-  border-block-end: var(--hairline) solid var(--panel-border);
+  border-block-end: var(--runs-tools-border-block-end);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--gap);
+  gap: var(--runs-tools-gap);
   justify-content: space-between;
-  padding: var(--gap);
+  padding: var(--runs-tools-padding);
 }
 
 .list {
@@ -30,32 +34,48 @@
 }
 
 .row {
-  background: transparent;
-  border: 0;
-  border-block-end: var(--hairline) solid var(--panel-border);
-  border-inline-start: var(--focus-width) solid transparent;
-  color: var(--color-text);
+  --runs-row-bg: transparent;
+  --runs-row-border-width: 0;
+  --runs-row-border-style: none;
+  --runs-row-border-color: currentcolor;
+  --runs-row-border-block-end: var(--hairline) solid var(--color-border);
+  --runs-row-border-inline-start-width: var(--focus-width);
+  --runs-row-border-inline-start-style: solid;
+  --runs-row-border-inline-start-color: transparent;
+  --runs-row-text: var(--color-text);
+  --runs-row-gap: var(--gap-tight);
+  --runs-row-padding: var(--gap);
+
+  background: var(--runs-row-bg);
+  border-width: var(--runs-row-border-width);
+  border-style: var(--runs-row-border-style);
+  border-color: var(--runs-row-border-color);
+  border-block-end: var(--runs-row-border-block-end);
+  border-inline-start-width: var(--runs-row-border-inline-start-width);
+  border-inline-start-style: var(--runs-row-border-inline-start-style);
+  border-inline-start-color: var(--runs-row-border-inline-start-color);
+  color: var(--runs-row-text);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   font: inherit;
-  gap: var(--gap-tight);
-  padding: var(--gap);
+  gap: var(--runs-row-gap);
+  padding: var(--runs-row-padding);
   text-align: start;
   width: 100%;
 }
 
 .row:hover {
-  background: var(--surface-hover);
+  --runs-row-bg: var(--surface-hover);
 }
 
 .row:focus-visible {
-  outline-offset: calc(var(--focus-width) * -1);
+  --focus-ring-offset: calc(var(--focus-width) * -1);
 }
 
 .row[aria-current="true"] {
-  background: var(--surface-selected);
-  border-inline-start-color: var(--panel-tab-indicator);
+  --runs-row-bg: var(--surface-selected);
+  --runs-row-border-inline-start-color: var(--color-action-edge);
 }
 
 .rowTop,
@@ -67,49 +87,70 @@
 }
 
 .rowTop {
-  gap: var(--gap);
+  --runs-row-top-gap: var(--gap);
+
+  gap: var(--runs-row-top-gap);
 }
 
 .rowMeta {
-  color: var(--color-text-muted);
-  column-gap: var(--gap);
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
+  --runs-row-top-text: var(--color-text-muted);
+  --runs-row-top-column-gap: var(--gap);
+  --runs-row-top-font: var(--font-mono);
+  --runs-row-top-text-size: var(--text-mono);
+
+  color: var(--runs-row-top-text);
+  column-gap: var(--runs-row-top-column-gap);
+  font-family: var(--runs-row-top-font);
+  font-size: var(--runs-row-top-text-size);
   justify-content: flex-start;
 }
 
 .workflow {
-  font-weight: var(--weight-medium);
+  --runs-workflow-weight: var(--weight-medium);
+
+  font-weight: var(--runs-workflow-weight);
   overflow-wrap: anywhere;
 }
 
 .note {
-  color: var(--color-text-muted);
+  --runs-note-text: var(--color-text-muted);
+  --runs-note-padding: var(--gap);
+
+  color: var(--runs-note-text);
   margin: 0;
-  padding: var(--gap);
+  padding: var(--runs-note-padding);
 }
 
 .form {
+  --runs-form-gap: var(--gap);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
+  gap: var(--runs-form-gap);
 }
 
 .group {
+  --runs-group-gap: var(--gap);
+
   border: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
+  gap: var(--runs-group-gap);
   margin: 0;
   padding: 0;
 }
 
 /* A legend stays out of its group's gap, and heads labels so stands out from them. */
 .legend {
-  color: var(--color-text);
-  font-size: var(--text-small);
-  font-weight: var(--weight-strong);
-  margin-block-end: var(--gap);
+  --runs-legend-text: var(--color-text);
+  --runs-legend-text-size: var(--text-small);
+  --runs-legend-weight: var(--weight-strong);
+  --runs-legend-margin-block-end: var(--gap);
+
+  color: var(--runs-legend-text);
+  font-size: var(--runs-legend-text-size);
+  font-weight: var(--runs-legend-weight);
+  margin-block-end: var(--runs-legend-margin-block-end);
   padding: 0;
 }
 
@@ -121,68 +162,91 @@
 
 /* Always there, so the reason is heard as it changes and the form does not jump. */
 .reason {
-  color: var(--color-text-muted);
+  --runs-reason-text: var(--color-text-muted);
+  --runs-reason-min-height: 1lh;
+
+  color: var(--runs-reason-text);
   display: block;
-  min-height: 1lh;
+  min-height: var(--runs-reason-min-height);
 }
 
 .error {
-  color: var(--color-danger-text);
+  --runs-reason-text: var(--color-danger-text);
+
+  color: var(--runs-reason-text);
 }
 
 /* Forced colors draw a see-through edge, so only the chosen run keeps one. */
 @media (forced-colors: active) {
   .row {
-    border-inline-start-color: Canvas;
+    --runs-row-border-inline-start-color: Canvas;
   }
 
   .row[aria-current="true"] {
-    border-inline-start-color: Highlight;
+    --runs-row-border-inline-start-color: Highlight;
   }
 }
 
 .triggers {
-  border-block-start: var(--hairline) solid var(--panel-border);
+  --runs-triggers-border-block-start: var(--hairline) solid var(--color-border);
+  --runs-triggers-gap: var(--gap-tight);
+  --runs-triggers-padding: var(--gap);
+
+  border-block-start: var(--runs-triggers-border-block-start);
   display: flex;
   flex-direction: column;
-  gap: var(--gap-tight);
-  padding: var(--gap);
+  gap: var(--runs-triggers-gap);
+  padding: var(--runs-triggers-padding);
 }
 
 .triggers .note {
-  padding: 0;
+  --runs-note-padding: 0;
 }
 
 .triggersTitle {
-  color: var(--color-text-muted);
-  font-size: var(--text-mono);
-  font-weight: var(--weight-medium);
+  --runs-triggers-title-text: var(--color-text-muted);
+  --runs-triggers-title-text-size: var(--text-mono);
+  --runs-triggers-title-weight: var(--weight-medium);
+
+  color: var(--runs-triggers-title-text);
+  font-size: var(--runs-triggers-title-text-size);
+  font-weight: var(--runs-triggers-title-weight);
   margin: 0;
 }
 
 .triggerList {
+  --runs-trigger-list-gap: var(--gap-tight);
+
   display: flex;
   flex-direction: column;
-  gap: var(--gap-tight);
+  gap: var(--runs-trigger-list-gap);
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .triggerName {
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
+  --runs-trigger-name-font: var(--font-mono);
+  --runs-trigger-name-text-size: var(--text-mono);
+
+  font-family: var(--runs-trigger-name-font);
+  font-size: var(--runs-trigger-name-text-size);
 }
 
 .triggerLine {
-  color: var(--color-text-muted);
+  --runs-trigger-line-text: var(--color-text-muted);
+
+  color: var(--runs-trigger-line-text);
   display: block;
   overflow-wrap: anywhere;
 }
 
 .triggerCommand {
+  --runs-trigger-command-font: var(--font-mono);
+  --runs-trigger-command-text-size: var(--text-mono);
+
   display: block;
-  font-family: var(--font-mono);
-  font-size: var(--text-mono);
+  font-family: var(--runs-trigger-command-font);
+  font-size: var(--runs-trigger-command-text-size);
   white-space: nowrap;
 }

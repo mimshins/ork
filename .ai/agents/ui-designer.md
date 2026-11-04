@@ -23,8 +23,9 @@ logo's.
 
 ## Rules you hold
 
-- **Tokens only.** Components use semantic and component tokens, never a raw
-  color, size or duration.
+- **Tokens only.** A component declares its own tokens and reads them in its
+  base rule, and a state or variant only sets tokens, never a property
+  ([ADR-054](../../decisions/ADR-054-component-tokens.md)).
 - **Readable first.** WCAG 2.2 AA in every theme: 4.5:1 for text, 3:1 for UI
   parts and focus. No status by color alone: an icon shape and a word. No text
   below 11 px; targets at least 24×24; reduced motion honored; 200% zoom holds.
