@@ -749,7 +749,7 @@ export const MILESTONES = [
           "decisions/ADR-055-console-language.md",
           "specs/ui/design-system.md",
         ],
-        commits: ["b296577", "b5943d7", "1ad00e4"],
+        commits: ["b296577", "b5943d7", "1ad00e4", "ba45ab6", "b84951e"],
       },
       {
         id: "ui-upgrade",
