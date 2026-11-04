@@ -553,8 +553,8 @@ export const EDGES = [
     kind: "local",
     label: "a node with `watch:`",
     detail:
-      "An activation with a `watch:` runs its executor once per look, not once. It's one activation: `runs` is 1, and `round` doesn't change between looks. Not on `main` yet.",
-    status: "partial",
+      "An activation with a `watch:` runs its executor once per look, not once. It's one activation: `runs` is 1, and `round` doesn't change between looks.",
+    status: "built",
     docs: [WATCH.execute, WATCH.node],
   },
   {
@@ -564,8 +564,8 @@ export const EDGES = [
     kind: "local",
     label: "each look",
     detail:
-      "Each look is the node's own call, under the node's own `timeout`, so every integration, `allow` rule and declared output works unchanged. A look past that timeout counts as failed. Not on `main` yet.",
-    status: "partial",
+      "Each look is the node's own call, under the node's own `timeout`, so every integration, `allow` rule and declared output works unchanged. A look past that timeout counts as failed.",
+    status: "built",
     via: [
       [856, 276],
       [856, 1108],
@@ -579,8 +579,8 @@ export const EDGES = [
     kind: "human",
     label: "`ork watch` · `--accept`",
     detail:
-      "You start and stop it, and accept each trigger in a terminal on this machine. Without a terminal, or inside a run, `--accept` refuses. Not on `main` yet.",
-    status: "partial",
+      "You start and stop it, and accept each trigger in a terminal on this machine. Without a terminal, or inside a run, `--accept` refuses.",
+    status: "built",
     via: [[150, 1356]],
     docs: [WATCH.command, WATCH.guide],
   },
@@ -591,8 +591,8 @@ export const EDGES = [
     kind: "local",
     label: "`tick()` every 10 s",
     detail:
-      "The process takes the lock and asks the watcher what's due every 10 seconds, passing in how to look and how to start. Not on `main` yet.",
-    status: "partial",
+      "The process takes the lock and asks the watcher what's due every 10 seconds, passing in how to look and how to start.",
+    status: "built",
     docs: [WATCH.command, WATCH.watcher],
   },
   {
@@ -602,8 +602,8 @@ export const EDGES = [
     kind: "process",
     label: "`ork run --expect-workflow`",
     detail:
-      "A run it starts is an ordinary detached `ork run`, of the file that was accepted, by its whole path. A file whose text has changed since is refused, and nothing starts. Not on `main` yet.",
-    status: "partial",
+      "A run it starts is an ordinary detached `ork run`, of the file that was accepted, by its whole path. A file whose text has changed since is refused, and nothing starts.",
+    status: "built",
     via: [
       [290, 1340],
       [290, 420],
@@ -617,8 +617,8 @@ export const EDGES = [
     kind: "local",
     label: "live, new or changed",
     detail:
-      "A trigger that's new, or whose hash isn't the accepted one, isn't due: it doesn't look at all. Accepting it anew also takes it back to a first look. Not on `main` yet.",
-    status: "partial",
+      "A trigger that's new, or whose hash isn't the accepted one, isn't due: it doesn't look at all. Accepting it anew also takes it back to a first look.",
+    status: "built",
     docs: [WATCH.watcher, WATCH.trust],
   },
   {
@@ -628,8 +628,8 @@ export const EDGES = [
     kind: "file",
     label: "reads and hashes",
     detail:
-      "Each project's `triggers.yaml` and the text of each workflow it starts, read fresh every time. A file that can't be read turns off what's in it, and is said in `--status`. Not on `main` yet.",
-    status: "partial",
+      "Each project's `triggers.yaml` and the text of each workflow it starts, read fresh every time. A file that can't be read turns off what's in it, and is said in `--status`.",
+    status: "built",
     docs: [WATCH.project, WATCH.trust],
   },
   {
@@ -639,8 +639,8 @@ export const EDGES = [
     kind: "local",
     label: "seen keys · lock · hashes",
     detail:
-      "The store's `triggers`, `trigger_seen` and `watch_lock` tables: what was accepted, each key seen and the run it started, and which process is watching. The lock is a row, not a file. Not on `main` yet.",
-    status: "partial",
+      "The store's `triggers`, `trigger_seen` and `watch_lock` tables: what was accepted, each key seen and the run it started, and which process is watching. The lock is a row, not a file.",
+    status: "built",
     via: [
       [572, 1340],
       [572, 1016],
@@ -654,8 +654,8 @@ export const EDGES = [
     kind: "local",
     label: "a check, no session",
     detail:
-      "A look runs the trigger's check with a node's executor, and nobody to ask: it reads the list `{ events: [{ key, inputs }] }`, or fails and starts nothing. A trigger's MCP check hasn't been run end to end. Not on `main` yet.",
-    status: "partial",
+      "A look runs the trigger's check with a node's executor, and nobody to ask: it reads the list `{ events: [{ key, inputs }] }`, or fails and starts nothing. A trigger's MCP check hasn't been run end to end.",
+    status: "built",
     via: [
       [850, 1330],
       [850, 1144],
@@ -669,8 +669,8 @@ export const EDGES = [
     kind: "local",
     label: "`GET /api/triggers`",
     detail:
-      "How the triggers stand, from each project's file and this machine's store, for the Runs panel's Triggers section. It only reads: accepting takes a terminal. Not on `main` yet.",
-    status: "partial",
+      "How the triggers stand, from each project's file and this machine's store, for the Runs panel's Triggers section. It only reads: accepting takes a terminal.",
+    status: "built",
     via: [
       [548, 784],
       [548, 1376],

@@ -712,7 +712,7 @@ export const MILESTONES = [
       {
         id: "watching",
         title: "Watch a source",
-        status: "active",
+        status: "done",
         detail:
           "Wait on something outside a run, or start a run when it happens, with no model turn until it does: a `watch:` block on tool and MCP nodes, and `ork watch` with declared triggers. RFC-011, which also answers what Schedules and webhooks waited on.",
         docs: [
@@ -720,7 +720,8 @@ export const MILESTONES = [
           "rfcs/archived/RFC-011-watching-a-source.md",
           "specs/scheduler/watching.md",
         ],
-        commits: ["dfed497"],
+        commits: ["dfed497", "1ea63a7"],
+        date: "2026-11-04",
       },
       {
         id: "workflow-walk",
@@ -772,7 +773,7 @@ export const MILESTONES = [
       {
         id: "triggers",
         title: "Schedules and webhooks",
-        status: "active",
+        status: "done",
         detail:
           "Starting a run on a schedule or an event, with `ork watch` and `.ork/triggers.yaml` (RFC-011). Webhooks are left out, because a local tool has no always-on process and its server binds loopback only.",
         docs: [
@@ -782,7 +783,8 @@ export const MILESTONES = [
           "docs/guides/watching.md",
           "specs/server.md",
         ],
-        commits: ["dfed497"],
+        commits: ["dfed497", "1ea63a7"],
+        date: "2026-11-04",
       },
       {
         id: "benchmark",

@@ -211,7 +211,7 @@ export const JOURNEYS = [
     title: "A trigger starts a run",
     who: "You · ork watch",
     summary:
-      "From accepting a trigger in a terminal to a run started for each new thing its check reports, with no model turn until then. Not on `main` yet, and launchd, systemd and a trigger's MCP check aren't tried for real.",
+      "From accepting a trigger in a terminal to a run started for each new thing its check reports, with no model turn until then. Not tried for real: launchd, systemd and a trigger's MCP check.",
     steps: [
       {
         from: "user",
@@ -219,7 +219,6 @@ export const JOURNEYS = [
         title: "You accept it, with `ork watch --accept`",
         detail:
           "It shows what the trigger looks with and what the run does, and asks. It needs a terminal, and refuses inside a run. It takes this machine only: the hash isn't in the repository.",
-        status: "partial",
         docs: [WATCH.command, WATCH.report],
       },
       {
@@ -228,7 +227,6 @@ export const JOURNEYS = [
         title: "The hash covers what could change",
         detail:
           "The trigger, the text of its workflow, the project's folder, and what its check reads. A change to any turns it off until it's accepted again.",
-        status: "partial",
         docs: [WATCH.trust, WATCH.project],
       },
       {
@@ -237,7 +235,6 @@ export const JOURNEYS = [
         title: "`ork watch` takes the lock, and ticks",
         detail:
           "One per machine: the lock is a row in the store, and a second process refuses. Every 10 seconds the watcher sees what's due.",
-        status: "partial",
         docs: [WATCH.lock, WATCH.command],
       },
       {
@@ -246,7 +243,6 @@ export const JOURNEYS = [
         title: "A trigger that's due looks",
         detail:
           "Only one that's live, apart from the others, so a stuck check can't delay the rest. It takes no model turn. A failed look starts nothing, and the next goes on as usual.",
-        status: "partial",
         docs: [WATCH.look, WATCH.watcher],
       },
       {
@@ -255,7 +251,6 @@ export const JOURNEYS = [
         title: "The first look starts nothing",
         detail:
           "It records every key it found, so a backlog of 400 issues doesn't start 400 runs. A schedule's first look starts nothing either.",
-        status: "partial",
         docs: [WATCH.triggerTests],
       },
       {
@@ -263,7 +258,6 @@ export const JOURNEYS = [
         title: "A later look finds a new key",
         detail:
           "Each is checked against the caps first: a limit across runs, `maxRunsPerDay`, then `concurrency`. What's held waits for the next look, and `--status` says why.",
-        status: "partial",
         docs: [WATCH.watcher, WATCH.triggerTests],
       },
       {
@@ -272,7 +266,6 @@ export const JOURNEYS = [
         title: "The key is marked, then the run starts",
         detail:
           "In that order, so a crash can't start it twice, and a run that fails isn't started again. One that didn't start at all is unmarked and tried again, up to 3 times.",
-        status: "partial",
         docs: [WATCH.store, WATCH.watcher],
       },
       {
@@ -281,7 +274,6 @@ export const JOURNEYS = [
         title: "An ordinary run starts, detached",
         detail:
           "`ork run` is given the accepted file and `--expect-workflow`, so it refuses a file whose text has changed. Each input is joined to its flag, and must be one the workflow declares.",
-        status: "partial",
         docs: [WATCH.start, WATCH.expect],
       },
       {
@@ -290,7 +282,6 @@ export const JOURNEYS = [
         title: "It runs like any other",
         detail:
           "`ork logs`, `ork stop` and the Monitor all work on it. Its `run.started` names the trigger and which inputs came from the check, so `trigger.untrusted` and `ork logs` can say so.",
-        status: "partial",
         docs: [WATCH.checkTrigger, WATCH.guide],
       },
       {
@@ -299,7 +290,6 @@ export const JOURNEYS = [
         title: "The UI shows how it stands",
         detail:
           "`GET /api/triggers` feeds the Runs panel's Triggers section: what's live, when each last looked, and what's holding it. It can't accept one.",
-        status: "partial",
         docs: [WATCH.route, WATCH.section],
       },
     ],

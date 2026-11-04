@@ -280,7 +280,7 @@ export const EDGES = [
     label: "a node with `watch:`",
     detail:
       "One activation, however many looks it takes. When it ends, the scheduler routes its edges on the last look's output, as for any node. Not in this example, and not on `main` yet.",
-    status: "partial",
+    status: "built",
     via: [
       [556, 480],
       [556, 1036],
@@ -294,8 +294,8 @@ export const EDGES = [
     kind: "event",
     label: "`watch.*`",
     detail:
-      "`watch.started`, `watch.changed` when a look says something new, and `watch.ended` with the number of looks and how it ended. A look alone isn't recorded, so an hours-long wait doesn't fill the store. Not on `main` yet.",
-    status: "partial",
+      "`watch.started`, `watch.changed` when a look says something new, and `watch.ended` with the number of looks and how it ended. A look alone isn't recorded, so an hours-long wait doesn't fill the store.",
+    status: "built",
     via: [
       [310, 1036],
       [310, 606],
@@ -309,8 +309,8 @@ export const EDGES = [
     kind: "process",
     label: "a look · `gh pr view`",
     detail:
-      "In `examples/wait-for-ci.ork.yaml`, a look is the node's `gh` command with its `allow` rule, and your login. It's tested against stand-ins, not real GitHub. Not on `main` yet.",
-    status: "partial",
+      "In `examples/wait-for-ci.ork.yaml`, a look is the node's `gh` command with its `allow` rule, and your login. It's tested against stand-ins, not real GitHub.",
+    status: "built",
     via: [[1560, 1056]],
     docs: [WATCH.example, WATCH.tests],
   },

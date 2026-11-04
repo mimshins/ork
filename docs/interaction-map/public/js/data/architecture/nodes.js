@@ -119,7 +119,7 @@ export const NODES = [
       "Built: `ork context explain <wf> <node>` shows the resolved layer stack for one node.",
       "Built: `ork relay <run>/<node> <run>/<node>` lets two running nodes of different runs message each other; `relay end` and `relay list`.",
       "Built: once a day a detached copy of `ork` asks the npm registry for the latest version (its only request of its own; off in CI, without a terminal, or with `ORK_NO_UPDATE_CHECK=1`), and a later command ends with a one-line notice; `ork upgrade` upgrades through the package manager that installed Ork, after asking (ADR-038).",
-      "Not on `main` yet: `ork run --expect-workflow`, which refuses a file whose text has changed; `ork validate`, with no file named, checks the project's triggers too; `ork doctor` warns of a live trigger that isn't looking. `ork watch` has its own card.",
+      "`ork run --expect-workflow`, which refuses a file whose text has changed; `ork validate`, with no file named, checks the project's triggers too; `ork doctor` warns of a live trigger that isn't looking. `ork watch` has its own card.",
     ],
     see: [{ map: "lifecycle", node: "cli", label: "The CLI in a run" }],
     docs: [
@@ -164,7 +164,7 @@ export const NODES = [
       "Built: 127.0.0.1 only; a per-start token swapped for an `HttpOnly` cookie; other hosts, foreign origins and non-JSON writes are refused.",
       "Built: `GET` and `POST /api/links` and `POST /api/links/end` do what `ork relay` does.",
       "Closing it stops no run, and the CLI never goes through it.",
-      "Not on `main` yet: `GET /api/triggers`, what `ork watch --status` says. It only reads: no route accepts a trigger.",
+      "`GET /api/triggers`, what `ork watch --status` says. It only reads: no route accepts a trigger.",
     ],
     docs: [
       DESIGN.server,
@@ -210,9 +210,9 @@ export const NODES = [
       "No Resume button yet: `ork resume` does that.",
       "Built: the Builder's conditions are a field, a test and a value from what a node declares it can say, and they write the same `when:` a person would.",
       "Panel still to come: the context inspector.",
-      "Not on `main` yet: the Monitor shows what a `watch:` node is waiting for. Looks aren't recorded, so its count and next look are worked out from `every`, and say about.",
-      "Not on `main` yet: the Runs panel's Triggers section says what's live and when each last looked. It only shows: accepting takes a terminal.",
-      "Not on `main` yet: the Builder's until picker chooses what a `watch:` waits for from what the node declares, so it can't wait for a value that never comes.",
+      "The Monitor shows what a `watch:` node is waiting for. Looks aren't recorded, so its count and next look are worked out from `every`, and say about.",
+      "The Runs panel's Triggers section says what's live and when each last looked. It only shows: accepting takes a terminal.",
+      "The Builder's until picker chooses what a `watch:` waits for from what the node declares, so it can't wait for a value that never comes.",
     ],
     see: [
       { map: "messaging", node: "inbox", label: "The decisions inbox" },
@@ -247,13 +247,13 @@ export const NODES = [
     zone: "surfaces",
     x: 320,
     y: 1320,
-    status: "partial",
+    status: "built",
     pkg: "cli",
     src: "packages/cli/src/commands/watch.ts",
     summary:
       "The long-lived command that looks at a source from outside any run, for every registered project, and starts a run for each new thing it reports. It's yours to start and stop: Ork installs nothing to keep it alive.",
     facts: [
-      "Not on `main` yet: built and tested in the working tree, uncommitted. Keeping it alive with launchd or systemd, as the guide shows, isn't tried.",
+      "Keeping it alive with launchd or systemd, as the guide shows, isn't tried.",
       "In the foreground, or `--detach` with its output in `~/.ork/watch/output.log`. `--status` says what's live and when each last looked; `--stop` ends it.",
       "`--accept` asks about each new or changed trigger. It needs a terminal and refuses inside a run, so a browser tab can't approve code to run with nobody there, nor a program by accident.",
       "A check runs with the executors a node uses, and no session. It's bounded by its `timeout`, or 5 minutes.",
@@ -327,7 +327,7 @@ export const NODES = [
       "Edge shorthand `a, b -> c, d` expands to every pair.",
       "Canonical form: fixed key order, edges as shorthand where possible; comments are not kept.",
       "Publishes `workflow.schema.json` for editor autocomplete; a test fails when it is stale.",
-      "Not on `main` yet: the `watch:` block on tool and MCP nodes, and the format of `triggers.yaml`, which has no JSON Schema.",
+      "The `watch:` block on tool and MCP nodes, and the format of `triggers.yaml`, which has no JSON Schema.",
     ],
     docs: [
       SCHEMA.workflow,
@@ -345,13 +345,13 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 240,
-    status: "partial",
+    status: "built",
     pkg: "core",
     src: "packages/core/src/run/watch.ts",
     summary:
       "A `watch:` on a tool or MCP node repeats its call until a condition holds, with no model turn, so hours of waiting cost nothing. The last look is the node's output, and its edges read it as usual.",
     facts: [
-      "Not on `main` yet: built and tested in the working tree, uncommitted. Not tried against real GitHub.",
+      "Not tried against real GitHub.",
       "`every` (at least `5s`), `until` and `timeout` are all required. A wait that could never end is refused before the run: `watch.until`, `watch.value`, `watch.field`.",
       'A failed look is tried again, and `misses` in a row (default 3) fail the node. An answer the node didn\'t declare fails it at once. `watch.timeout` passing fails it with `timedOut`, which `when: "!ok"` can catch.',
       "The time between looks doesn't count against `limits.timeout` unless something else in the run is working. It holds no session slot.",
@@ -397,7 +397,7 @@ export const NODES = [
       "Built: pause and continue, of the run or one node: nothing new starts, and a session waits before its next tool call (deferred and resumed past nine minutes); stopping one node fails it, `stopped by the user`, and the run goes on.",
       "Built: timeouts. `timeout` limits each activation of a tool, Claude or call node, `defaults.timeout` those that set none, and `limits.timeout` the run. The clock stands still while waiting on you. An expired node fails with `timedOut`; an expired run ends `timed_out`.",
       "Built: no `workflow.call` starts once the budget is spent, and stopping the run or an expired run timeout stops every run it called.",
-      "Not on `main` yet: `limits.timeout` also stands still while every running node is between the looks of a `watch:`.",
+      "`limits.timeout` also stands still while every running node is between the looks of a `watch:`.",
     ],
     see: [
       { map: "lifecycle", node: "scheduler", label: "The scheduler in a run" },
@@ -548,7 +548,7 @@ export const NODES = [
       "A tool runs in its own process group: an abort, from a timeout or a stop, sends it SIGTERM, then SIGKILL after 2 seconds, so what it started ends too.",
       "Output over 64 KiB is cut, and the full text kept in the run's folder.",
       "Built: a tool or MCP node can declare `output.schema`, and a run holds it to that: a missing field, the wrong type or a value off the list fails the node, and says which.",
-      "Not on `main` yet: a tool or MCP node takes `watch:`, and a tool's program gets `$ORK_STATE`, a file kept between looks. `ork watch` runs a trigger's check with the same executors, and no session.",
+      "A tool or MCP node takes `watch:`, and a tool's program gets `$ORK_STATE`, a file kept between looks. `ork watch` runs a trigger's check with the same executors, and no session.",
     ],
     see: [{ map: "roles", node: "call", label: "A call in the flow" }],
     docs: [
@@ -589,7 +589,7 @@ export const NODES = [
       "Built: links between runs are a table of their own, and a called run's record names its `parent` and `depth`.",
       "Built: the local server streams it to the browser over SSE, and answers and commands from the UI arrive as rows like the CLI's.",
       "Usage comes from each session's final result, so sub-agent tokens count.",
-      "Not on `main` yet: `watch.started`, `watch.changed` and `watch.ended`, and three tables beside the runs: `triggers`, `trigger_seen` and `watch_lock`.",
+      "`watch.started`, `watch.changed` and `watch.ended`, and three tables beside the runs: `triggers`, `trigger_seen` and `watch_lock`.",
     ],
     see: [
       { map: "feedback", node: "events", label: "Feedback from run events" },
@@ -686,13 +686,13 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 1320,
-    status: "partial",
+    status: "built",
     pkg: "core",
     src: "packages/core/src/triggers/watcher.ts",
     summary:
       "What `ork watch` does every 10 seconds: each accepted trigger that's due looks, apart from the others, so a stuck check can't delay the rest. The guards live here, so no author has to write them.",
     facts: [
-      "Not on `main` yet: built and tested in the working tree, uncommitted. A trigger's MCP check hasn't been run end to end.",
+      "A trigger's MCP check hasn't been run end to end.",
       "The first look starts nothing, after each acceptance: it records what's there, so a backlog doesn't start a run each.",
       "Each key starts once. It's marked just before its run starts, so a crash can't start it twice, and a run that fails isn't started again. One that didn't start at all is tried at the next look, up to 3 times.",
       "Spending is capped before it starts: the workflow must have `limits.budgetUsd`, `maxRunsPerDay` (default 10) holds per calendar day, and limits across runs hold it until they reset.",
@@ -717,13 +717,12 @@ export const NODES = [
     zone: "core",
     x: 880,
     y: 1320,
-    status: "partial",
+    status: "built",
     pkg: "core",
     src: "packages/core/src/triggers/trust.ts",
     summary:
       "A trigger runs code with nobody there, and pulling a branch could change it. So `ork watch` runs only what a person accepted on this machine: a change to the trigger or the workflow it starts turns it off until someone accepts it again.",
     facts: [
-      "Not on `main` yet: built and tested in the working tree, uncommitted.",
       "Acceptance needs a terminal, on this machine, and isn't in the repository: the hashes are in the store's `triggers` table.",
       "A run starts only from the exact accepted workflow text: `ork run --expect-workflow=<hash>` refuses a file that changed after `ork watch` read it.",
       "The hash covers the trigger, its workflow's text, the project's folder, and what its check reads (`.mcp.json`, or the project's files its command names). Skills, agents, scripts, called workflows and `project.yaml` aren't in it.",
@@ -868,12 +867,11 @@ export const NODES = [
     zone: "machine",
     x: 1160,
     y: 1320,
-    status: "partial",
+    status: "built",
     pkg: null,
     summary:
       "What to look at and which workflow to start, beside the project's other files. It's read fresh each time, so a change a pull brings turns its trigger off rather than running as it was.",
     facts: [
-      "Not on `main` yet: built and tested in the working tree, uncommitted.",
       "In `.ork/triggers.yaml`, or `~/.ork/projects/<id>/triggers.yaml` when attached. Written by hand: no builder and no JSON Schema.",
       "A trigger takes `every` (at least `1m`), `check`, `run`, `inputs`, `maxRunsPerDay` and `concurrency`. With no `check`, it starts a run every time.",
       "A check is what a tool or MCP node takes, without `watch` or `notify`, and with no templates but `{{env.NAME}}` in its `env:`. It reports `{ events: [{ key, inputs }] }`.",
