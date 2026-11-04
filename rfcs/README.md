@@ -69,3 +69,4 @@ and carries an RFC through this lifecycle.
 | [008](./archived/RFC-008-workflow-builder.md)                  | A workflow builder that keeps the YAML                             | Implemented |
 | [009](./active/RFC-009-walking-a-workflow.md)                  | Walking every way through a workflow before it runs                | Accepted    |
 | [010](./archived/RFC-010-conditions-from-declared-outputs.md)  | Conditions chosen from what a node declares it can say             | Implemented |
+| [011](./active/RFC-011-watching-a-source.md)                   | Watching a source, and acting on what it says                      | Accepted    |

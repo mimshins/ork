@@ -710,6 +710,14 @@ export const MILESTONES = [
         commits: ["bd80e12", "3df572f"],
       },
       {
+        id: "watching",
+        title: "Watch a source",
+        status: "active",
+        detail:
+          "Wait on something outside a run, or start a run when it happens, with no model turn until it does: a `watch:` block on tool and MCP nodes, and `ork watch` with declared triggers. RFC-011, which also answers what Schedules and webhooks waited on.",
+        docs: ["rfcs/active/RFC-011-watching-a-source.md"],
+      },
+      {
         id: "workflow-walk",
         title: "Check every way through",
         status: "next",
@@ -761,8 +769,8 @@ export const MILESTONES = [
         title: "Schedules and webhooks",
         status: "planned",
         detail:
-          "Starting a run on a schedule or an event. Needs its own RFC after M2, because a local tool has no always-on process and its server binds loopback only.",
-        docs: ["specs/server.md"],
+          "Starting a run on a schedule or an event. RFC-011 answers it with `ork watch` and leaves webhooks out, because a local tool has no always-on process and its server binds loopback only.",
+        docs: ["rfcs/active/RFC-011-watching-a-source.md", "specs/server.md"],
       },
       {
         id: "benchmark",
@@ -791,6 +799,7 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "2a0a15f",
   "879c00a",
   "e61aade",
   "fcf9d40",
