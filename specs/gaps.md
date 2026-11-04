@@ -20,7 +20,14 @@ carried to the next milestone.
 
 ## Gaps
 
-None open: the last ones (G1–G7) were built on 2026-11-02.
+G1–G7 were built on 2026-11-02.
+
+- **G8 · A run that skipped most of its work says `succeeded`.** A run succeeds
+  unless a node failed with no edge to take, so a condition that's never true,
+  or a router that matched nothing, can end a run as `succeeded` with most of
+  its nodes skipped, and nothing in the result says so. Found while writing
+  [RFC-009](../rfcs/active/RFC-009-walking-a-workflow.md), which checks
+  workflows before they run and leaves this for its own decision.
 
 ## Limits
 

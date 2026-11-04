@@ -67,3 +67,5 @@ and carries an RFC through this lifecycle.
 | [006](./archived/RFC-006-steps-around-a-session.md)            | Deterministic steps around a session, MCP calls and inline scripts | Implemented |
 | [007](./archived/RFC-007-limits-across-runs.md)                | Limits across runs                                                 | Implemented |
 | [008](./archived/RFC-008-workflow-builder.md)                  | A workflow builder that keeps the YAML                             | Implemented |
+| [009](./active/RFC-009-walking-a-workflow.md)                  | Walking every way through a workflow before it runs                | Accepted    |
+| [010](./active/RFC-010-conditions-from-declared-outputs.md)    | Conditions chosen from what a node declares it can say             | Accepted    |

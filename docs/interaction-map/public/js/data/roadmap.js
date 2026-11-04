@@ -697,6 +697,22 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "declared-outputs",
+        title: "Conditions from choices",
+        status: "active",
+        detail:
+          "Prevent typos instead of reporting them. Tools and MCP calls can declare their output, a run holds every node to what it declared, and the builder's conditions become dropdowns over those values. RFC-010.",
+        docs: ["rfcs/active/RFC-010-conditions-from-declared-outputs.md"],
+      },
+      {
+        id: "workflow-walk",
+        title: "Check every way through",
+        status: "next",
+        detail:
+          "Before a run, find what can't work: a condition that's never true, a node no path reaches, a loop that can only run out of rounds. Stricter compiler checks, plus a walk of every outcome on the real scheduler, with no sessions and no scripts. RFC-009, after RFC-010.",
+        docs: ["rfcs/active/RFC-009-walking-a-workflow.md"],
+      },
+      {
         id: "worktrees-panel",
         title: "Worktrees panel",
         status: "planned",
@@ -770,6 +786,7 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "879c00a",
   "e61aade",
   "fcf9d40",
   "e97d75c",
