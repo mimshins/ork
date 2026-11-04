@@ -12,8 +12,6 @@ import styles from "./meter.module.css";
 const HIGH = 0.8;
 const BLOCKS = 20;
 
-const BLOCK_KEYS = Array.from({ length: BLOCKS }, (_, block) => block);
-
 export type MeterProps = {
   /** What it measures: "Budget". */
   label: string;
@@ -27,10 +25,14 @@ export type MeterProps = {
  * How many blocks to fill. Anything spent shows a block, and only the limit
  * itself fills them all, so a full row always means full.
  */
-export const blocksOn = (value: number, max: number): number => {
-  if (value >= max) return BLOCKS;
+export const blocksOn = (
+  value: number,
+  max: number,
+  blocks = BLOCKS,
+): number => {
+  if (value >= max) return blocks;
   if (value <= 0) return 0;
-  return Math.min(Math.max(Math.round((value / max) * BLOCKS), 1), BLOCKS - 1);
+  return Math.min(Math.max(Math.round((value / max) * blocks), 1), blocks - 1);
 };
 
 const levelOf = (value: number, max: number): string => {
@@ -38,30 +40,43 @@ const levelOf = (value: number, max: number): string => {
   return value >= max * HIGH ? "high" : "normal";
 };
 
-export const Meter = ({ label, value, max, text }: MeterProps) => {
-  const on = blocksOn(value, max);
+/** The row of blocks alone, where its value is in words beside it. */
+export const MeterBlocks = ({
+  value,
+  max,
+  blocks = BLOCKS,
+}: Pick<MeterProps, "value" | "max"> & { blocks?: number }) => {
+  const on = blocksOn(value, max, blocks);
   return (
-    <BaseMeter.Root
-      aria-valuetext={text}
-      className={styles["meter"]}
+    <span
+      aria-hidden="true"
+      className={styles["track"]}
       data-level={levelOf(value, max)}
-      max={max}
-      value={Math.min(value, max)}
     >
-      <BaseMeter.Label className={styles["label"]}>{label}</BaseMeter.Label>
-      <span className={styles["value"]}>{text}</span>
-      <BaseMeter.Track
-        aria-hidden="true"
-        className={styles["track"]}
-      >
-        {BLOCK_KEYS.map(block => (
-          <span
-            className={styles["block"]}
-            data-on={block < on ? "" : undefined}
-            key={block}
-          />
-        ))}
-      </BaseMeter.Track>
-    </BaseMeter.Root>
+      {Array.from({ length: blocks }, (_, block) => (
+        <span
+          className={styles["block"]}
+          data-on={block < on ? "" : undefined}
+          key={block}
+        />
+      ))}
+    </span>
   );
 };
+
+export const Meter = ({ label, value, max, text }: MeterProps) => (
+  <BaseMeter.Root
+    aria-valuetext={text}
+    className={styles["meter"]}
+    data-level={levelOf(value, max)}
+    max={max}
+    value={Math.min(value, max)}
+  >
+    <BaseMeter.Label className={styles["label"]}>{label}</BaseMeter.Label>
+    <span className={styles["value"]}>{text}</span>
+    <MeterBlocks
+      max={max}
+      value={value}
+    />
+  </BaseMeter.Root>
+);

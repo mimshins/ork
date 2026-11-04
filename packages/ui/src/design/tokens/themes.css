@@ -34,6 +34,7 @@
   --color-text-muted: var(--ink-400);
   --color-text-disabled: var(--ink-700);
   --color-border: var(--ink-850);
+  --color-border-soft: var(--ink-900);
   --color-border-strong: var(--ink-600);
   --color-grid-dot: var(--ink-850);
   --color-focus: var(--amber-500);
@@ -90,6 +91,7 @@
   --color-text-muted: var(--ink-700);
   --color-text-disabled: var(--ink-400);
   --color-border: var(--ink-200);
+  --color-border-soft: var(--ink-100);
   --color-border-strong: var(--ink-500);
   --color-grid-dot: var(--ink-200);
   --color-focus: var(--amber-700);

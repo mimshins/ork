@@ -184,6 +184,17 @@ export const summaryOf = (
   return created;
 };
 
+/** The tighter of the workflow's budget and what a caller left it, if any. */
+const runBudget = (
+  graph: CompiledGraph,
+  settings: RunOptions["settings"],
+): { budgetUsd?: number } => {
+  const limits = [graph.workflow.limits?.budgetUsd, settings?.budgetCap].filter(
+    limit => limit !== undefined,
+  );
+  return limits.length === 0 ? {} : { budgetUsd: Math.min(...limits) };
+};
+
 /** The `run.started` event: the workflow, its entries, nodes and inputs. */
 export const runStartedEvent = (
   graph: CompiledGraph,
@@ -204,6 +215,7 @@ export const runStartedEvent = (
   channels: graph.channels,
   inputs: options.inputs,
   ...(options.settings === undefined ? {} : { settings: options.settings }),
+  ...runBudget(graph, options.settings),
 });
 
 /** The run's result: failed when any reason was given, unless it stopped. */

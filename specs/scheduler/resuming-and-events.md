@@ -21,6 +21,8 @@ under the same run id, with a `Replay` built from the run's events:
   told that the run was stopped and to carry on from what it finished
   ([resume.ts](../../packages/core/src/run/resume.ts), `cutOff`). A node that
   failed in a failed run starts fresh.
+- `run.started` records `budgetUsd`, the tighter of the workflow's budget and
+  what a caller left it, for showing a run's spend against.
 - `run.started` carries the run's `inputs` and `settings` (`inPlace`, `driver`),
   which the resumed run starts with; the CLI records `run.resumed` with the
   nodes that keep results first.

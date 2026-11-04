@@ -1,12 +1,14 @@
 /**
- * @file The selected node's part of the Monitor: its controls, and for a call,
- *   the way to the run it started.
+ * @file The selected node's strip in the Monitor: what it is and what it has
+ *   used, what its `watch:` is waiting for, its controls, and for a call, the
+ *   way to the run it started.
  */
 
 import type { TreeNode } from "@krapht/ork-server/client";
 import { type Ref, useEffect, useState } from "react";
 
 import { Button } from "../components/button.tsx";
+import { formatTokens, typeWord } from "../graph/facts.ts";
 import { nodeActions } from "./monitor-model.ts";
 import { RunControls } from "./run-controls.tsx";
 import type { RunView } from "./use-run-monitor.ts";
@@ -34,23 +36,29 @@ const WatchingFacts = ({
   const facts = watchFacts(watching, now);
   return (
     <dl className={styles["watching"]}>
-      <dt>Waiting until</dt>
-      <dd>
-        <code>{facts.until}</code>
-      </dd>
-      <dt>Looks</dt>
-      <dd>
-        {facts.looks}, {facts.every}
-      </dd>
-      <dt>Next look</dt>
-      <dd>{facts.next}</dd>
+      <div>
+        <dt>Waiting until</dt>
+        <dd>
+          <code>{facts.until}</code>
+        </dd>
+      </div>
+      <div>
+        <dt>Looks</dt>
+        <dd>
+          {facts.looks}, {facts.every}
+        </dd>
+      </div>
+      <div>
+        <dt>Next look</dt>
+        <dd>{facts.next}</dd>
+      </div>
       {facts.said === undefined ? null : (
-        <>
+        <div>
           <dt>Last said</dt>
           <dd>
             <code>{facts.said}</code>
           </dd>
-        </>
+        </div>
       )}
     </dl>
   );
@@ -84,6 +92,27 @@ export const NodeSection = ({
       ref={sectionRef}
     >
       <h3 className={styles["sideTitle"]}>{node.id}</h3>
+      <dl className={styles["nodeFacts"]}>
+        <div>
+          <dt>Type</dt>
+          <dd>{typeWord(node.type)}</dd>
+        </div>
+        {node.model === undefined ? null : (
+          <div>
+            <dt>Model</dt>
+            <dd>{node.model}</dd>
+          </div>
+        )}
+        {node.inputTokens + node.outputTokens === 0 ? null : (
+          <div>
+            <dt>Tokens</dt>
+            <dd>
+              {formatTokens(node.inputTokens)} in ·{" "}
+              {formatTokens(node.outputTokens)} out
+            </dd>
+          </div>
+        )}
+      </dl>
       <RunControls
         actions={nodeActions(run, node)}
         node={node.id}

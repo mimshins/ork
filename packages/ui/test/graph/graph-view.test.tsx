@@ -95,7 +95,7 @@ describe("the graph", () => {
     );
   });
 
-  it("shows the cost first, and a model without its claude- prefix", () => {
+  it("shows the cost on the card, and says the rest in its name", () => {
     show({
       facts: new Map<string, NodeFacts>([
         [
@@ -109,15 +109,16 @@ describe("the graph", () => {
         ],
       ]),
     });
-    expect(card("start").textContent).toContain(
-      "$0.0083 · 802 tok · haiku-5-5",
+    expect(card("start").textContent).toContain("$0.0083");
+    expect(card("start").getAttribute("aria-label")).toContain(
+      "802 tokens, claude-haiku-5-5",
     );
   });
 
   it("shows each node's status in a word too", () => {
     show();
     expect(card("top").textContent).toContain("failed");
-    expect(card("start").textContent).toContain("1.2k tok");
+    expect(card("start").getAttribute("aria-label")).toContain("1.2k tokens");
   });
 
   it("has one tab stop among its cards, the selected one", () => {

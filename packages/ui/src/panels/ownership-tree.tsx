@@ -1,22 +1,23 @@
 /**
- * @file The ownership tree: the graph's screen-reader-first twin, with the same
- *   nodes and actions as an ARIA tree. It is one tab stop. Up and down go
- *   through the rows, right opens a node or goes to its first child, left
- *   closes it or goes to its owner, Enter selects, and the menu keys ask for
- *   its controls. A row's chevron opens and closes it with a click, and its
- *   description says the node's edges. A node selected elsewhere becomes the
- *   row Tab reaches.
+ * @file The node table: the graph's screen-reader-first twin, with the same
+ *   nodes and actions, as an ARIA tree whose rows line up in columns: what each
+ *   node is, how it stands, what it's doing, and its time and cost. It is one
+ *   tab stop. Up and down go through the rows, right opens a node or goes to
+ *   its first child, left closes it or goes to its owner, Enter selects, and
+ *   the menu keys ask for its controls. A row's chevron opens and closes it
+ *   with a click, and its description says the node's edges. A node selected
+ *   elsewhere becomes the row Tab reaches.
  */
 
-import type { TreeNode } from "@krapht/ork-server/client";
+import type { TreeNode, WorkflowGraph } from "@krapht/ork-server/client";
 import { type KeyboardEvent, useMemo, useState } from "react";
 
 import { IconChevronDown, IconChevronRight } from "../components/icons.tsx";
 import { StatusBadge } from "../components/status-badge.tsx";
 import { cliDescription } from "../components/tip.tsx";
 import { formatCost, type NodeFacts, nodeName } from "../graph/facts.ts";
-import { TypeIcon } from "../graph/type-icon.tsx";
 import { rowsOf } from "./monitor-model.ts";
+import { nowLine, timeLine } from "./node-table.ts";
 
 import styles from "./monitor.module.css";
 
@@ -27,6 +28,11 @@ export const OwnershipTree = ({
   facts,
   connections,
   selected,
+  edges,
+  hovered,
+  now,
+  runFinishedAt,
+  onHover,
   onSelect,
   onNodeMenu,
 }: {
@@ -35,6 +41,12 @@ export const OwnershipTree = ({
   /** Each node's edges in words, from the drawing. */
   connections: ReadonlyMap<string, string>;
   selected: string | null;
+  edges: WorkflowGraph["edges"];
+  /** The node being pointed at, here or in the graph. */
+  hovered: string | null;
+  now: number;
+  runFinishedAt: string | undefined;
+  onHover: (id: string | null) => void;
   onSelect: (id: string) => void;
   onNodeMenu: (id: string) => void;
 }) => {
@@ -115,71 +127,110 @@ export const OwnershipTree = ({
     }
   };
 
+  const statusOf = (id: string) => facts.get(id)?.status;
+  const nested = rows.some(({ node }) => node.children.length > 0);
+
   return (
-    <div
-      aria-label="Ownership tree"
-      className={styles["tree"]}
-      role="tree"
-    >
-      {rows.map(({ node, depth }, index) => {
-        const fact = facts.get(node.id) ?? QUEUED;
-        const canOpen = node.children.length > 0;
-        const isOpen = canOpen && !collapsed.has(node.id);
-        return (
-          <div
-            {...cliDescription(undefined, connections.get(node.id))}
-            aria-expanded={canOpen ? isOpen : undefined}
-            aria-label={nodeName(node.id, node.type, fact)}
-            aria-level={depth}
-            aria-selected={node.id === selected}
-            className={styles["treeRow"]}
-            data-selected={node.id === selected ? "" : undefined}
-            data-tree-row={node.id}
-            key={node.id}
-            onClick={() => {
-              setCurrent(node.id);
-              onSelect(node.id);
-            }}
-            onContextMenu={event => {
-              event.preventDefault();
-              onNodeMenu(node.id);
-            }}
-            onKeyDown={event => {
-              onKey(event, index);
-            }}
-            role="treeitem"
-            style={{ paddingInlineStart: `${String((depth - 1) * 0.75)}rem` }}
-            tabIndex={node.id === shownCurrent ? 0 : -1}
-          >
-            {/* The row's keys open and close it; this is for the pointer. */}
-            <span
-              aria-hidden="true"
-              className={styles["treeToggle"]}
-              onClick={
-                canOpen
-                  ? event => {
-                      event.stopPropagation();
-                      setOpen(node.id, !isOpen);
-                    }
-                  : undefined
+    <div className={styles["table"]}>
+      <div
+        aria-hidden="true"
+        className={styles["tableHead"]}
+      >
+        <span>Node</span>
+        <span className={styles["treeType"]}>Type</span>
+        <span>Status</span>
+        <span>Now</span>
+        <span className={styles["treeTime"]}>Time</span>
+        <span className={styles["treeCost"]}>Cost</span>
+      </div>
+      <div
+        aria-label="Ownership tree"
+        className={styles["tree"]}
+        role="tree"
+      >
+        {rows.map(({ node, depth }, index) => {
+          const fact = facts.get(node.id) ?? QUEUED;
+          const canOpen = node.children.length > 0;
+          const isOpen = canOpen && !collapsed.has(node.id);
+          const doing = nowLine(node, fact.status, edges, statusOf, now);
+          return (
+            <div
+              {...cliDescription(undefined, connections.get(node.id))}
+              aria-expanded={canOpen ? isOpen : undefined}
+              aria-label={[
+                nodeName(node.id, node.type, fact),
+                ...(doing === "" ? [] : [doing]),
+              ].join(", ")}
+              aria-level={depth}
+              aria-selected={node.id === selected}
+              className={styles["treeRow"]}
+              data-dim={
+                hovered !== null && hovered !== node.id ? "" : undefined
               }
+              data-selected={node.id === selected ? "" : undefined}
+              data-tree-row={node.id}
+              key={node.id}
+              onClick={() => {
+                setCurrent(node.id);
+                onSelect(node.id);
+              }}
+              onContextMenu={event => {
+                event.preventDefault();
+                onNodeMenu(node.id);
+              }}
+              onKeyDown={event => {
+                onKey(event, index);
+              }}
+              onMouseEnter={() => {
+                onHover(node.id);
+              }}
+              onMouseLeave={() => {
+                onHover(null);
+              }}
+              role="treeitem"
+              tabIndex={node.id === shownCurrent ? 0 : -1}
             >
-              {canOpen && isOpen ? <IconChevronDown /> : null}
-              {canOpen && !isOpen ? <IconChevronRight /> : null}
-            </span>
-            <span className={styles["treeIcon"]}>
-              <TypeIcon type={node.type} />
-            </span>
-            <span className={styles["treeId"]}>{node.id}</span>
-            <StatusBadge status={fact.status} />
-            {fact.costUsd === undefined ? null : (
-              <span className={styles["treeCost"]}>
-                {formatCost(fact.costUsd)}
+              <span
+                className={styles["treeNode"]}
+                style={{
+                  paddingInlineStart: `${String((depth - 1) * 0.75)}rem`,
+                }}
+              >
+                {/* The row's keys open and close it; this is for the pointer. */}
+                {nested ? (
+                  <span
+                    aria-hidden="true"
+                    className={styles["treeToggle"]}
+                    onClick={
+                      canOpen
+                        ? event => {
+                            event.stopPropagation();
+                            setOpen(node.id, !isOpen);
+                          }
+                        : undefined
+                    }
+                  >
+                    {canOpen && isOpen ? <IconChevronDown /> : null}
+                    {canOpen && !isOpen ? <IconChevronRight /> : null}
+                  </span>
+                ) : null}
+                <span className={styles["treeId"]}>{node.id}</span>
               </span>
-            )}
-          </div>
-        );
-      })}
+              <span className={styles["treeType"]}>{node.type}</span>
+              <span className={styles["treeStatus"]}>
+                <StatusBadge status={fact.status} />
+              </span>
+              <span className={styles["treeNow"]}>{doing}</span>
+              <span className={styles["treeTime"]}>
+                {timeLine(node, runFinishedAt, now)}
+              </span>
+              <span className={styles["treeCost"]}>
+                {fact.costUsd === undefined ? "–" : formatCost(fact.costUsd)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

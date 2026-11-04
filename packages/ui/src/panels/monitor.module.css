@@ -1,44 +1,102 @@
 /**
- * @file The Monitor's layout: the run's header, then the graph beside its tree,
- *   stacked when the panel is narrow. The graph keeps a height it can be used
- *   at, and the panel scrolls when it has less than that, as at 200% zoom.
+ * @file The Monitor's layout, a frame of cards: the stat strip, the graph in its
+ *   well, the node table, and the selected node's strip. The graph keeps a height
+ *   it can be used at, and the panel scrolls when it has less than that, as at
+ *   200% zoom. A narrow panel's table drops its Type and Time columns.
  */
 
 .monitor {
-  --monitor-graph-min-height: 16rem;
+  --monitor-bg: var(--surface-frame);
+  --monitor-gap: var(--space-3);
+  --monitor-graph-min-height: 12rem;
 
+  background: var(--monitor-bg);
   container-type: inline-size;
   display: flex;
   flex-direction: column;
+  gap: var(--monitor-gap);
   height: 100%;
   min-height: 0;
   overflow-y: auto;
 }
 
 .header {
-  --monitor-header-border-block-end: var(--hairline) solid var(--color-border);
-  --monitor-header-gap: var(--gap);
+  --monitor-header-bg: var(--surface-panel);
+  --monitor-header-radius: var(--radius-panel);
+  --monitor-header-column-gap: var(--gap-loose);
+  --monitor-header-row-gap: var(--gap-tight);
   --monitor-header-padding: var(--inset-tools);
 
   align-items: center;
-  border-block-end: var(--monitor-header-border-block-end);
+  background: var(--monitor-header-bg);
+  border-radius: var(--monitor-header-radius);
+  column-gap: var(--monitor-header-column-gap);
   display: flex;
+  flex: none;
   flex-wrap: wrap;
-  gap: var(--monitor-header-gap);
   padding: var(--monitor-header-padding);
+  row-gap: var(--monitor-header-row-gap);
+}
+
+.stats {
+  --monitor-stats-gap: var(--gap-loose);
+
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: var(--monitor-stats-gap);
+  margin: 0;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.statName {
+  --monitor-stat-name-text: var(--color-text-muted);
+  --monitor-stat-name-font: var(--font-caption);
+  --monitor-stat-name-text-size: var(--text-caption);
+  --monitor-stat-name-tracking: var(--tracking-caption);
+  --monitor-stat-name-case: var(--case-caption);
+  --monitor-stat-name-leading: var(--leading-tight);
+
+  color: var(--monitor-stat-name-text);
+  font-family: var(--monitor-stat-name-font);
+  font-size: var(--monitor-stat-name-text-size);
+  letter-spacing: var(--monitor-stat-name-tracking);
+  line-height: var(--monitor-stat-name-leading);
+  text-transform: var(--monitor-stat-name-case);
+}
+
+.statValue {
+  --monitor-stat-value-font: var(--font-mono);
+  --monitor-stat-value-text-size: var(--text-ui);
+  --monitor-stat-value-gap: var(--space-6);
+  --monitor-stat-value-margin: 0;
+  --monitor-stat-value-leading: var(--leading-tight);
+
+  align-items: center;
+  display: flex;
+  font-family: var(--monitor-stat-value-font);
+  font-size: var(--monitor-stat-value-text-size);
+  gap: var(--monitor-stat-value-gap);
+  line-height: var(--monitor-stat-value-leading);
+  margin: var(--monitor-stat-value-margin);
 }
 
 .title {
   --monitor-title-text-size: var(--text-ui);
   --monitor-title-weight: var(--weight-medium);
+  --monitor-title-font: var(--font-ui);
 
+  font-family: var(--monitor-title-font);
   font-size: var(--monitor-title-text-size);
   font-weight: var(--monitor-title-weight);
   margin: 0;
 }
 
-.runId,
-.cost {
+.runId {
   --monitor-run-id-text: var(--color-text-muted);
   --monitor-run-id-font: var(--font-mono);
   --monitor-run-id-text-size: var(--text-mono);
@@ -57,133 +115,67 @@
 }
 
 .error {
+  --monitor-error-bg: var(--surface-panel);
+  --monitor-error-radius: var(--radius-panel);
   --monitor-error-text: var(--color-status-failed);
   --monitor-error-padding: var(--gap-tight) var(--gap);
 
+  background: var(--monitor-error-bg);
+  border-radius: var(--monitor-error-radius);
   color: var(--monitor-error-text);
+  flex: none;
   margin: 0;
   padding: var(--monitor-error-padding);
 }
 
-.body {
-  --monitor-body-flex-direction: initial;
-  --monitor-body-flex: 1 1 0;
-  --monitor-body-min-height: var(--monitor-graph-min-height);
-
-  display: flex;
-  flex: var(--monitor-body-flex);
-  min-height: var(--monitor-body-min-height);
-  flex-direction: var(--monitor-body-flex-direction, revert);
-}
-
 .canvas {
-  --monitor-canvas-flex: 1;
+  --monitor-canvas-radius: var(--radius-panel);
 
+  border-radius: var(--monitor-canvas-radius);
   display: grid;
-  flex: var(--monitor-canvas-flex);
-  min-height: 0;
+  flex: 1 0 var(--monitor-graph-min-height);
+  min-height: var(--monitor-graph-min-height);
   min-width: 0;
+  overflow: hidden;
 }
 
-.side {
-  --monitor-side-border-block-start: initial;
-  --monitor-side-border-inline-start: var(--hairline) solid var(--color-border);
-  --monitor-side-flex: none;
-  --monitor-side-gap: var(--gap);
-  --monitor-side-overflow: auto;
-  --monitor-side-padding: var(--gap-tight);
-  --monitor-side-width: 16rem;
+.table {
+  --monitor-table-bg: var(--surface-panel);
+  --monitor-table-radius: var(--radius-panel);
+  --monitor-table-columns: minmax(6rem, 1.2fr) 7.5rem 8.5rem minmax(0, 3fr)
+    3.5rem 4.5rem;
+  --monitor-table-gap: var(--gap);
+  --monitor-table-inset: var(--gap);
+  --monitor-table-max-height: 14rem;
 
-  border-inline-start: var(--monitor-side-border-inline-start);
-  display: flex;
-  flex: var(--monitor-side-flex);
-  flex-direction: column;
-  gap: var(--monitor-side-gap);
-  min-height: 0;
-  overflow: var(--monitor-side-overflow);
-  padding: var(--monitor-side-padding);
-  width: var(--monitor-side-width);
-  border-block-start: var(--monitor-side-border-block-start, revert);
+  background: var(--monitor-table-bg);
+  border-radius: var(--monitor-table-radius);
+  flex: none;
+  max-height: var(--monitor-table-max-height);
+  overflow-y: auto;
 }
 
-@container (max-width: 52rem) {
-  .body {
-    --monitor-body-flex: 1 0 auto;
-    --monitor-body-flex-direction: column;
-  }
-
-  .canvas {
-    --monitor-canvas-flex: 1 0 var(--monitor-graph-min-height);
-  }
-
-  .side {
-    --monitor-side-border-block-start: var(--hairline) solid var(--color-border);
-    --monitor-side-border-inline-start: 0;
-    --monitor-side-flex: none;
-    --monitor-side-overflow: visible;
-    --monitor-side-width: auto;
-  }
-}
-
-.sideTitle {
-  --monitor-side-title-text: var(--color-text-muted);
-  --monitor-side-title-font: var(--font-mono);
-  --monitor-side-title-text-size: var(--text-mono);
-  --monitor-side-title-weight: var(--weight-medium);
-
-  color: var(--monitor-side-title-text);
-  font-family: var(--monitor-side-title-font);
-  font-size: var(--monitor-side-title-text-size);
-  font-weight: var(--monitor-side-title-weight);
-  margin: 0;
-}
-
-.node {
-  --monitor-node-border-block-end: var(--hairline) solid var(--color-border);
-  --monitor-node-gap: var(--gap-tight);
-  --monitor-node-padding-block-end: var(--gap-tight);
+.tableHead {
+  --monitor-table-head-text: var(--color-text-muted);
+  --monitor-table-head-font: var(--font-caption);
+  --monitor-table-head-text-size: var(--text-caption);
+  --monitor-table-head-tracking: var(--tracking-caption);
+  --monitor-table-head-case: var(--case-caption);
+  --monitor-table-head-border: var(--hairline) solid var(--color-border-soft);
+  --monitor-table-head-min-height: 1.375rem;
 
   align-items: center;
-  border-block-end: var(--monitor-node-border-block-end);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--monitor-node-gap);
-  padding-block-end: var(--monitor-node-padding-block-end);
-}
-
-.watching {
-  --monitor-watching-gap: var(--gap-tight) var(--gap);
-  --monitor-watching-grid-template-columns: max-content minmax(0, 1fr);
-
+  border-block-end: var(--monitor-table-head-border);
+  color: var(--monitor-table-head-text);
+  column-gap: var(--monitor-table-gap);
   display: grid;
-  flex-basis: 100%;
-  gap: var(--monitor-watching-gap);
-  grid-template-columns: var(--monitor-watching-grid-template-columns);
-  margin: 0;
-}
-
-.watching dt {
-  --monitor-dt-text: var(--color-text-muted);
-  --monitor-dt-font: var(--font-caption);
-  --monitor-dt-text-size: var(--text-caption);
-  --monitor-dt-weight: var(--weight-regular);
-  --monitor-dt-tracking: var(--tracking-caption);
-  --monitor-dt-case: var(--case-caption);
-
-  color: var(--monitor-dt-text);
-  font-family: var(--monitor-dt-font);
-  font-size: var(--monitor-dt-text-size);
-  font-weight: var(--monitor-dt-weight);
-  letter-spacing: var(--monitor-dt-tracking);
-  text-transform: var(--monitor-dt-case);
-}
-
-.watching dd {
-  --monitor-dd-margin: 0;
-  --monitor-dd-overflow-wrap: anywhere;
-
-  margin: var(--monitor-dd-margin);
-  overflow-wrap: var(--monitor-dd-overflow-wrap);
+  font-family: var(--monitor-table-head-font);
+  font-size: var(--monitor-table-head-text-size);
+  grid-template-columns: var(--monitor-table-columns);
+  letter-spacing: var(--monitor-table-head-tracking);
+  min-height: var(--monitor-table-head-min-height);
+  padding-inline: var(--monitor-table-inset);
+  text-transform: var(--monitor-table-head-case);
 }
 
 .tree {
@@ -193,25 +185,24 @@
 
 .treeRow {
   --monitor-tree-row-bg: initial;
-  --monitor-tree-row-border-inline-start-width: var(--focus-width);
-  --monitor-tree-row-border-inline-start-style: solid;
-  --monitor-tree-row-border-inline-start-color: transparent;
-  --monitor-tree-row-radius: var(--radius-control);
-  --monitor-tree-row-gap: var(--gap-tight);
+  --monitor-tree-row-border: var(--hairline) solid var(--color-border-soft);
+  --monitor-tree-row-opacity: 1;
   --monitor-tree-row-min-height: var(--target-min);
-  --monitor-tree-row-padding-inline-end: var(--gap-tight);
 
   align-items: center;
-  border-inline-start-width: var(--monitor-tree-row-border-inline-start-width);
-  border-inline-start-style: var(--monitor-tree-row-border-inline-start-style);
-  border-inline-start-color: var(--monitor-tree-row-border-inline-start-color);
-  border-radius: var(--monitor-tree-row-radius);
+  border-block-end: var(--monitor-tree-row-border);
+  column-gap: var(--monitor-table-gap);
   cursor: pointer;
-  display: flex;
-  gap: var(--monitor-tree-row-gap);
+  display: grid;
+  grid-template-columns: var(--monitor-table-columns);
   min-height: var(--monitor-tree-row-min-height);
-  padding-inline-end: var(--monitor-tree-row-padding-inline-end);
+  opacity: var(--monitor-tree-row-opacity);
+  padding-inline: var(--monitor-table-inset);
   background: var(--monitor-tree-row-bg, revert);
+}
+
+.treeRow:last-child {
+  --monitor-tree-row-border: none;
 }
 
 .treeRow:hover {
@@ -224,7 +215,21 @@
 
 .treeRow[data-selected] {
   --monitor-tree-row-bg: var(--surface-current);
-  --monitor-tree-row-border-inline-start-color: var(--color-border-strong);
+}
+
+.treeRow[data-dim] {
+  --monitor-tree-row-opacity: 0.35;
+}
+
+/* More contrast keeps everything at full strength. */
+:global([data-contrast="more"]) .treeRow[data-dim] {
+  --monitor-tree-row-opacity: 1;
+}
+
+.treeNode {
+  align-items: center;
+  display: flex;
+  min-width: 0;
 }
 
 .treeToggle {
@@ -247,47 +252,175 @@
   --monitor-tree-toggle-text: var(--color-text);
 }
 
-.treeIcon {
-  --monitor-tree-icon-text: var(--color-text-muted);
-  --monitor-tree-icon-text-size: var(--icon-size);
-
-  align-items: center;
-  color: var(--monitor-tree-icon-text);
-  display: flex;
-  flex: none;
-  font-size: var(--monitor-tree-icon-text-size);
-}
-
 .treeId {
-  --monitor-tree-id-font: var(--font-mono);
-  --monitor-tree-id-text-size: var(--text-mono);
+  --monitor-tree-id-weight: var(--weight-medium);
 
-  flex: 1;
-  font-family: var(--monitor-tree-id-font);
-  font-size: var(--monitor-tree-id-text-size);
+  font-weight: var(--monitor-tree-id-weight);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.treeCost {
-  --monitor-tree-cost-text: var(--color-text-muted);
-  --monitor-tree-cost-font: var(--font-mono);
-  --monitor-tree-cost-text-size: var(--text-small);
+.treeType {
+  --monitor-tree-type-display: block;
+  --monitor-tree-type-text: var(--color-text-muted);
+  --monitor-tree-type-font: var(--font-mono);
+  --monitor-tree-type-text-size: var(--text-mono);
 
-  color: var(--monitor-tree-cost-text);
-  flex: none;
+  color: var(--monitor-tree-type-text);
+  display: var(--monitor-tree-type-display);
+  font-family: var(--monitor-tree-type-font);
+  font-size: var(--monitor-tree-type-text-size);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.treeStatus {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.treeNow {
+  --monitor-tree-now-text: var(--color-text-muted);
+
+  color: var(--monitor-tree-now-text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.treeTime {
+  --monitor-tree-time-display: block;
+  --monitor-tree-time-text: var(--color-text-muted);
+  --monitor-tree-time-font: var(--font-mono);
+  --monitor-tree-time-text-size: var(--text-mono);
+
+  color: var(--monitor-tree-time-text);
+  display: var(--monitor-tree-time-display);
+  font-family: var(--monitor-tree-time-font);
+  font-size: var(--monitor-tree-time-text-size);
+  text-align: end;
+}
+
+.treeCost {
+  --monitor-tree-cost-font: var(--font-mono);
+  --monitor-tree-cost-text-size: var(--text-mono);
+
   font-family: var(--monitor-tree-cost-font);
   font-size: var(--monitor-tree-cost-text-size);
+  text-align: end;
+}
+
+@container (max-width: 44rem) {
+  .table {
+    --monitor-table-columns: minmax(5rem, 1fr) 8.5rem minmax(0, 2fr) 4.5rem;
+  }
+
+  .treeType {
+    --monitor-tree-type-display: none;
+  }
+
+  .treeTime {
+    --monitor-tree-time-display: none;
+  }
+}
+
+.sideTitle {
+  --monitor-side-title-weight: var(--weight-medium);
+  --monitor-side-title-text-size: var(--text-ui);
+
+  font-size: var(--monitor-side-title-text-size);
+  font-weight: var(--monitor-side-title-weight);
+  margin: 0;
+}
+
+.node {
+  --monitor-node-bg: var(--surface-panel);
+  --monitor-node-radius: var(--radius-panel);
+  --monitor-node-gap: var(--gap-tight) var(--gap-loose);
+  --monitor-node-padding: var(--gap-tight) var(--gap);
+
+  align-items: center;
+  background: var(--monitor-node-bg);
+  border-radius: var(--monitor-node-radius);
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: var(--monitor-node-gap);
+  padding: var(--monitor-node-padding);
+}
+
+.nodeFacts,
+.watching {
+  --monitor-node-facts-gap: var(--gap-tight) var(--gap-loose);
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--monitor-node-facts-gap);
+  margin: 0;
+}
+
+.watching {
+  flex-basis: 100%;
+}
+
+.nodeFacts div,
+.watching div {
+  --monitor-node-fact-gap: var(--space-6);
+
+  align-items: baseline;
+  display: flex;
+  gap: var(--monitor-node-fact-gap);
+}
+
+.watching dt,
+.nodeFacts dt {
+  --monitor-dt-text: var(--color-text-muted);
+  --monitor-dt-font: var(--font-caption);
+  --monitor-dt-text-size: var(--text-caption);
+  --monitor-dt-weight: var(--weight-regular);
+  --monitor-dt-tracking: var(--tracking-caption);
+  --monitor-dt-case: var(--case-caption);
+
+  color: var(--monitor-dt-text);
+  font-family: var(--monitor-dt-font);
+  font-size: var(--monitor-dt-text-size);
+  font-weight: var(--monitor-dt-weight);
+  letter-spacing: var(--monitor-dt-tracking);
+  text-transform: var(--monitor-dt-case);
+}
+
+.watching dd,
+.nodeFacts dd {
+  --monitor-dd-font: var(--font-mono);
+  --monitor-dd-text-size: var(--text-mono);
+  --monitor-dd-margin: 0;
+  --monitor-dd-overflow-wrap: anywhere;
+
+  font-family: var(--monitor-dd-font);
+  font-size: var(--monitor-dd-text-size);
+  margin: var(--monitor-dd-margin);
+  overflow-wrap: var(--monitor-dd-overflow-wrap);
 }
 
 .links {
+  --monitor-links-bg: var(--surface-panel);
+  --monitor-links-radius: var(--radius-panel);
   --monitor-links-gap: var(--gap-tight);
+  --monitor-links-padding: var(--gap-tight) var(--gap);
 
+  background: var(--monitor-links-bg);
+  border-radius: var(--monitor-links-radius);
   display: flex;
+  flex: none;
   flex-direction: column;
   gap: var(--monitor-links-gap);
+  padding: var(--monitor-links-padding);
 }
 
 .linkList {
@@ -331,13 +464,9 @@
   font-size: var(--monitor-link-count-text-size);
 }
 
-/* Forced colors draw a see-through edge, so only the chosen node keeps one. */
+/* Forced colors take the fill away, so the chosen node's line says it. */
 @media (forced-colors: active) {
-  .treeRow {
-    --monitor-tree-row-border-inline-start-color: Canvas;
-  }
-
   .treeRow[data-selected] {
-    --monitor-tree-row-border-inline-start-color: Highlight;
+    --monitor-tree-row-border: var(--focus-width) solid Highlight;
   }
 }

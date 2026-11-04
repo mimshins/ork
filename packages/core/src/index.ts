@@ -80,6 +80,7 @@ export * from "./store/sqlite.ts";
 export { usageRowsOf } from "./store/usage.ts";
 export type * from "./store/trigger-types.ts";
 export type * from "./store/types.ts";
+export * from "./store/activity.ts";
 export * from "./store/view.ts";
 export * from "./triggers/check.ts";
 export * from "./triggers/lock.ts";

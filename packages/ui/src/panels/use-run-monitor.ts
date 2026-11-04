@@ -82,6 +82,7 @@ export const useRunMonitor = (run: RunView) => {
 
   return {
     state,
+    graph,
     layout,
     facts,
     waiting: asking.size > 0,

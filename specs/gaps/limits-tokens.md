@@ -31,3 +31,14 @@ What the token rule does for now, by choice
   asks, as `--target-min` is now in rem too, and the small wordmark, drawn on
   whole pixels at 15 px high, stops landing on them. At the default size neither
   changes.
+- **L136 · Now and node times are only in the browser view.** `ork tree` and
+  `--json` still print the tree without them, and a run's elapsed time counts
+  waiting on the user. The server folds them
+  ([activity.ts](../../packages/core/src/store/activity.ts)), so `ork tree` can
+  take them when it's wanted.
+- **L137 · The node strip has less than the prototype.** Turns and the worktree
+  aren't in the tree, so the strip shows type, model, tokens and what a `watch:`
+  is waiting for.
+- **L138 · A run's budget shows only on runs from now on.** `run.started`
+  records `budgetUsd` from this version, so older runs show what they spent with
+  no cap.

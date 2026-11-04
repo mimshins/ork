@@ -32,6 +32,10 @@ export type TreeNode = {
   calledRun?: string;
   /** What its `watch:` is waiting for, while it's waiting (RFC-011). */
   watching?: Watching;
+  /** What it's doing, in a line, and when it ran; see activity.ts. */
+  now?: string;
+  startedAt?: string;
+  finishedAt?: string;
   children: TreeNode[];
 };
 

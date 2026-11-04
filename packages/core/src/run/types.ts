@@ -192,6 +192,8 @@ export type RunEvent =
       channels?: [string, string][];
       inputs?: Inputs;
       settings?: RunSettings;
+      /** What the run may spend, if there's a limit: for showing against. */
+      budgetUsd?: number;
     }
   /** `ork resume` continues the run; `kept` nodes keep their results. */
   | { type: "run.resumed"; kept: string[] }

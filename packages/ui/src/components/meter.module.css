@@ -59,11 +59,11 @@
   --meter-block-bg: var(--color-live-edge);
 }
 
-.meter[data-level="high"] .block[data-on] {
+.track[data-level="high"] .block[data-on] {
   --meter-block-bg: var(--color-action-edge);
 }
 
-.meter[data-level="full"] .block[data-on] {
+.track[data-level="full"] .block[data-on] {
   --meter-block-bg: var(--color-danger-text);
 }
 
@@ -74,8 +74,8 @@
   }
 
   .block[data-on],
-  .meter[data-level="high"] .block[data-on],
-  .meter[data-level="full"] .block[data-on] {
+  .track[data-level="high"] .block[data-on],
+  .track[data-level="full"] .block[data-on] {
     --meter-block-bg: Highlight;
   }
 }

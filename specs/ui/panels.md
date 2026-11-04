@@ -89,15 +89,32 @@ Its CLI twin is `ork tree <run>`.
   so editing the workflow file later does not redraw it, with the workers it has
   spawned added. A run from before edges were kept is drawn from its file
   (`GET /api/runs/:id/graph`).
-- **Each card** shows its status, model, tokens and cost. The drawing changes
-  only when the run's nodes do, so a busy run does not move it, and a view the
-  user has moved stays where it is.
-- **The ownership tree** is the graph's twin: an ARIA tree of the same nodes,
-  one tab stop. Up and down go through its rows, right opens a node or goes to
-  its first child, left closes it or goes to its owner, `Home` and `End` reach
-  its ends, and `Enter` selects. A chevron opens and closes a row with a click,
-  and a node selected in the graph becomes the row Tab reaches. It stacks under
-  the graph when the panel is narrow.
+- **The stat strip** says which run it is, what it has spent against the budget
+  it recorded (`run.started`'s `budgetUsd`), as blocks too, how many nodes have
+  come to an end, how long it has taken, and how it stands, as a pill. Its
+  controls are at the end.
+- **Each card** shows its type, id, cost and status, small enough for a long run
+  to fit. The rest is in its accessible name, the table and the node's strip.
+  The drawing changes only when the run's nodes do, so a busy run does not move
+  it, and a view the user has moved stays where it is.
+- **The node table** is the graph's twin: an ARIA tree of the same nodes, whose
+  rows line up in columns: node, type, status, now, time and cost. It is one tab
+  stop. Up and down go through its rows, right opens a node or goes to its first
+  child, left closes it or goes to its owner, `Home` and `End` reach its ends,
+  and `Enter` selects. A chevron opens and closes a row with a click, and a node
+  selected in the graph becomes the row Tab reaches. A narrow panel drops the
+  type and time columns.
+- **Now** says what a node is doing or last did, in a line: its last tool and
+  what that tool is working on, what it asked and was told, its summary when it
+  ends, or why it failed. The server folds this from recorded events
+  ([activity.ts](../../packages/core/src/store/activity.ts)), showing only the
+  fields of a tool's input that name a target, such as a path or a command. A
+  wait says its looks, and a queued node says what it's still waiting for, from
+  the graph.
+- **Pointing at a node** in the graph or the table steps the others back in
+  both, except under more contrast.
+- **The selected node's strip** sits under the table, with its type, model,
+  tokens and controls.
 - **Small panels:** the graph keeps a usable height, and the panel scrolls when
   it has less than that, as at 200% zoom (WCAG 1.4.10).
 - **A node not done when its run ended** reads skipped if it never started, and

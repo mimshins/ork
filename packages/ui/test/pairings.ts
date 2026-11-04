@@ -79,5 +79,7 @@ export const PAIRINGS: Pairing[] = [
 export const EXEMPT: Record<string, string> = {
   "--color-text-disabled": "inactive controls are exempt (WCAG 1.4.3)",
   "--color-border": "a hairline between panels, which their headers name",
+  "--color-border-soft":
+    "a hairline between rows, which their own text separates",
   "--color-grid-dot": "the canvas's dot grid, decoration only",
 };

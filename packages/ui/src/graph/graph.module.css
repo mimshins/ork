@@ -20,7 +20,7 @@
     var(--color-grid-dot) var(--hairline),
     transparent var(--hairline)
   );
-  --graph-canvas-background-size: var(--gap-loose) var(--gap-loose);
+  --graph-canvas-background-size: var(--gap) var(--gap);
   --graph-canvas-cursor: grab;
 
   background-color: var(--graph-canvas-bg);
@@ -65,18 +65,25 @@
 }
 
 .edges {
+  --graph-edges-opacity: 1;
+
   left: 0;
+  opacity: var(--graph-edges-opacity);
   overflow: visible;
   pointer-events: none;
   position: absolute;
   top: 0;
 }
 
+.edges[data-quiet] {
+  --graph-edges-opacity: 0.45;
+}
+
 .edgeLine {
   --graph-edge-line-stroke-linecap: initial;
   --graph-edge-line-stroke-dasharray: initial;
   --graph-edge-line-stroke: var(--color-text-muted);
-  --graph-edge-line-stroke-width: 1.5;
+  --graph-edge-line-stroke-width: 1;
 
   fill: none;
   stroke: var(--graph-edge-line-stroke);
@@ -93,7 +100,7 @@
 
 [data-kind="back"] .edgeLine {
   --graph-edge-line-stroke: var(--color-action-text);
-  --graph-edge-line-stroke-dasharray: 6 4;
+  --graph-edge-line-stroke-dasharray: 8 4;
 }
 
 [data-kind="back"] .edgeHead {
@@ -101,7 +108,7 @@
 }
 
 [data-kind="owner"] .edgeLine {
-  --graph-edge-line-stroke-dasharray: 2 4;
+  --graph-edge-line-stroke-dasharray: 5 3;
 }
 
 [data-kind="message"] .edgeLine {
@@ -109,6 +116,45 @@
   --graph-edge-line-stroke-dasharray: 1 5;
   --graph-edge-line-stroke-linecap: round;
   --graph-edge-line-stroke-width: 2;
+}
+
+/* In a run: live where it has reached, and dotted where it hasn't yet. */
+[data-state="taken"] .edgeLine,
+[data-state="flowing"] .edgeLine {
+  --graph-edge-line-stroke: var(--color-live-text);
+}
+
+[data-state="taken"] .edgeHead,
+[data-state="flowing"] .edgeHead {
+  --graph-edge-head-fill: var(--color-live-text);
+}
+
+[data-state="pending"] .edgeLine {
+  --graph-edge-line-stroke-dasharray: 2 2;
+}
+
+.packet {
+  --graph-packet-stroke: var(--color-live-text);
+  --graph-packet-size: var(--space-3);
+  --graph-packet-animation: packet var(--duration-packet) steps(21) infinite;
+
+  animation: var(--graph-packet-animation);
+  fill: none;
+  stroke: var(--graph-packet-stroke);
+  stroke-width: var(--graph-packet-size);
+}
+
+/* With less motion, packets rest on the line: they still say the node runs. */
+@media (prefers-reduced-motion: reduce) {
+  .packet {
+    --graph-packet-animation: none;
+  }
+}
+
+@keyframes packet {
+  to {
+    stroke-dashoffset: -1;
+  }
 }
 
 .edgeLabel {
@@ -134,26 +180,24 @@
 .card {
   --graph-card-transition: initial;
   --graph-card-outline: none;
+  --graph-card-shadow: none;
+  --graph-card-opacity: 1;
   --graph-card-bg: var(--surface-panel);
   --graph-card-border-width: var(--hairline);
   --graph-card-border-style: solid;
-  --graph-card-border-color: var(--color-border-strong);
-  --graph-card-start-width: var(--gap-tight);
-  --graph-card-tone: var(--color-border-strong);
-  --graph-card-start-color: var(--graph-card-tone);
+  --graph-card-border-color: var(--color-border);
   --graph-card-radius: var(--radius-control);
   --graph-card-text: var(--color-text);
-  --graph-card-gap: var(--gap-hair);
-  --graph-card-padding: var(--gap-tight) var(--gap);
+  --graph-card-gap: 0;
+  --graph-card-padding: 0 var(--space-6);
 
-  align-items: flex-start;
+  align-items: stretch;
   background: var(--graph-card-bg);
   border-width: var(--graph-card-border-width);
   border-style: var(--graph-card-border-style);
   border-color: var(--graph-card-border-color);
-  border-inline-start-width: var(--graph-card-start-width);
-  border-inline-start-color: var(--graph-card-start-color);
   border-radius: var(--graph-card-radius);
+  box-shadow: var(--graph-card-shadow);
   color: var(--graph-card-text);
   cursor: pointer;
   display: flex;
@@ -162,6 +206,7 @@
   gap: var(--graph-card-gap);
   justify-content: center;
   left: 0;
+  opacity: var(--graph-card-opacity);
   overflow: hidden;
   padding: var(--graph-card-padding);
   position: absolute;
@@ -172,7 +217,7 @@
 }
 
 .card:hover {
-  --graph-card-bg: var(--surface-hover);
+  --graph-card-border-color: var(--color-text-muted);
 }
 
 /* The layer scales its cards, and their ring would go with them. */
@@ -182,42 +227,32 @@
   --focus-ring-width: calc(var(--focus-width) / var(--graph-zoom));
 }
 
-.card[data-selected] {
-  --graph-card-bg: var(--surface-current);
-  --graph-card-border-color: var(--color-text);
-  --graph-card-start-color: var(--color-text);
+.card[data-dim] {
+  --graph-card-opacity: 0.35;
 }
 
-.card[data-tone="running"] {
-  --graph-card-tone: var(--color-status-running);
+/* More contrast keeps everything at full strength. */
+:global([data-contrast="more"]) .card[data-dim] {
+  --graph-card-opacity: 1;
 }
 
-.card[data-tone="succeeded"] {
-  --graph-card-tone: var(--color-status-succeeded);
-}
-
-.card[data-tone="waiting"] {
-  --graph-card-tone: var(--color-status-waiting);
-}
-
-.card[data-tone="paused"] {
-  --graph-card-tone: var(--color-status-paused);
+:global([data-contrast="more"]) .edges[data-quiet] {
+  --graph-edges-opacity: 1;
 }
 
 .card[data-tone="failed"] {
-  --graph-card-tone: var(--color-status-failed);
+  --graph-card-border-color: var(--color-status-failed);
 }
 
-.card[data-tone="queued"] {
-  --graph-card-tone: var(--color-status-queued);
+/* What needs the user is the one thing outlined in amber. */
+.card[data-tone="waiting"] {
+  --graph-card-border-color: var(--color-action-edge);
+  --graph-card-shadow: 0 0 0 var(--hairline) var(--color-action-edge);
 }
 
-.card[data-tone="skipped"] {
-  --graph-card-tone: var(--color-status-skipped);
-}
-
-.card[data-tone="interrupted"] {
-  --graph-card-tone: var(--color-status-interrupted);
+.card[data-selected] {
+  --graph-card-bg: var(--surface-current);
+  --graph-card-border-color: var(--color-text);
 }
 
 .cardHead {
@@ -226,12 +261,12 @@
   align-items: center;
   display: flex;
   gap: var(--graph-card-head-gap);
-  max-width: 100%;
+  min-width: 0;
 }
 
 .cardIcon {
   --graph-card-icon-text: var(--color-text-muted);
-  --graph-card-icon-text-size: var(--icon-size);
+  --graph-card-icon-text-size: var(--icon-size-small);
 
   align-items: center;
   color: var(--graph-card-icon-text);
@@ -241,32 +276,25 @@
 }
 
 .cardId {
-  --graph-card-id-font: var(--font-mono);
-  --graph-card-id-text-size: var(--text-mono);
   --graph-card-id-weight: var(--weight-medium);
 
-  font-family: var(--graph-card-id-font);
-  font-size: var(--graph-card-id-text-size);
+  flex: 1;
   font-weight: var(--graph-card-id-weight);
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.cardMeta {
-  --graph-card-meta-text: var(--color-text-muted);
-  --graph-card-meta-font: var(--font-mono);
-  --graph-card-meta-text-size: var(--text-small);
-  --graph-card-meta-min-height: 1lh;
+.cardCost {
+  --graph-card-cost-text: var(--color-text-muted);
+  --graph-card-cost-font: var(--font-mono);
+  --graph-card-cost-text-size: var(--text-small);
 
-  color: var(--graph-card-meta-text);
-  font-family: var(--graph-card-meta-font);
-  font-size: var(--graph-card-meta-text-size);
-  max-width: 100%;
-  min-height: var(--graph-card-meta-min-height);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--graph-card-cost-text);
+  flex: none;
+  font-family: var(--graph-card-cost-font);
+  font-size: var(--graph-card-cost-text-size);
 }
 
 .controls {
@@ -297,7 +325,6 @@
 @media (forced-colors: active) {
   .card[data-selected] {
     --graph-card-border-color: Highlight;
-    --graph-card-start-color: Highlight;
     --graph-card-outline: var(--hairline) solid Highlight;
   }
 }

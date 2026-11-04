@@ -62,5 +62,8 @@ export const runGraph = (
         : nodes.map(({ id, type, parent }) => ({ id, type, parent })),
     edges: edges ?? onFile?.edges ?? [],
     channels: channels ?? onFile?.channels ?? [],
+    ...(started?.type === "run.started" && started.budgetUsd !== undefined
+      ? { budgetUsd: started.budgetUsd }
+      : {}),
   };
 };

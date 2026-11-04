@@ -151,9 +151,9 @@ Ctrl, ⌥ is Alt, ⇧ is Shift and ⌃ is Ctrl.
 
 On the graph, the arrow keys move the view, and on a node they follow its edges.
 `Enter` selects a node, `Shift+F10` goes to its controls and `Escape` comes
-back; `+` and `-` zoom, and `0` fits the graph. The ownership tree beside it has
-the same nodes and actions as a list, which is often quicker with a screen
-reader.
+back; `+` and `-` zoom, and `0` fits the graph. The node table under it, with
+what each node is doing now, has the same nodes and actions as a list, which is
+often quicker with a screen reader.
 
 ## Accessibility
 

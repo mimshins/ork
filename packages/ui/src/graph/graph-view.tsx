@@ -47,6 +47,11 @@ export type GraphViewProps = {
   onSelect?: ((id: string) => void) | undefined;
   /** The context-menu key or a right click on a node. */
   onNodeMenu?: ((id: string) => void) | undefined;
+  /** A run's graph: its edges show how far it has got. */
+  live?: boolean | undefined;
+  /** The node being pointed at, here or in the table beside it. */
+  hovered?: string | null | undefined;
+  onHover?: ((id: string | null) => void) | undefined;
 };
 
 const noSelect = (): void => {
@@ -61,6 +66,9 @@ export const GraphView = memo(
     selected,
     onSelect = noSelect,
     onNodeMenu,
+    live = false,
+    hovered = null,
+    onHover,
   }: GraphViewProps) => {
     const hintId = useId();
     const {
@@ -233,17 +241,21 @@ export const GraphView = memo(
           >
             <EdgePaths
               edges={edges}
+              facts={live ? facts : undefined}
               height={layout.height}
+              quiet={hovered !== null}
               width={layout.width}
             />
             {nodes.map(node => (
               <NodeCard
                 bind={bind}
                 connections={connections.get(node.id)}
+                dimmed={hovered !== null && hovered !== node.id}
                 facts={facts?.get(node.id) ?? NO_FACTS}
                 key={node.id}
                 node={node}
                 onFocused={onFocused}
+                onHover={onHover}
                 onKey={onKey}
                 onMenu={onNodeMenu}
                 onSelect={onSelect}

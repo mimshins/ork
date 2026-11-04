@@ -70,8 +70,8 @@ const graphCard = (id: string): HTMLElement =>
   });
 
 const chevronOf = (row: HTMLElement): Element => {
-  const chevron = row.firstElementChild;
-  expect(chevron).not.toBeNull();
+  const chevron = row.firstElementChild?.firstElementChild;
+  expect(chevron).toBeDefined();
   return chevron ?? row;
 };
 

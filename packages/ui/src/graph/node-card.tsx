@@ -1,20 +1,15 @@
 /**
- * @file A node's card in the graph: a button that shows its type, id, status,
- *   model, tokens and cost. Its status has an icon and a word, so it reads
- *   without color, and its accessible name says all of it.
+ * @file A node's card in the graph: a button that shows its type, id, cost and
+ *   status, small enough for a long run to fit. Its status has a glyph and a
+ *   word, so it reads without color, and its accessible name also says the
+ *   model and tokens the node table and the node's strip show.
  */
 
 import { memo } from "react";
 
 import { StatusBadge, statusTone } from "../components/status-badge.tsx";
 import { cliDescription, Tip } from "../components/tip.tsx";
-import {
-  formatCost,
-  formatTokens,
-  type NodeFacts,
-  nodeName,
-  shortModel,
-} from "./facts.ts";
+import { formatCost, type NodeFacts, nodeName } from "./facts.ts";
 import { TypeIcon } from "./type-icon.tsx";
 import type { PlacedNode } from "./types.ts";
 
@@ -26,6 +21,8 @@ export type NodeCardProps = {
   /** Its edges in words, which the drawing only shows. */
   connections?: string | undefined;
   selected: boolean;
+  /** Another node is being pointed at, so this one steps back. */
+  dimmed: boolean;
   /** The one card of the graph that Tab reaches. */
   tabbable: boolean;
   bind: (id: string, element: HTMLButtonElement | null) => void;
@@ -33,6 +30,7 @@ export type NodeCardProps = {
   onFocused: (id: string) => void;
   onKey: (id: string, event: React.KeyboardEvent<HTMLButtonElement>) => void;
   onMenu?: ((id: string) => void) | undefined;
+  onHover?: ((id: string | null) => void) | undefined;
 };
 
 export const NodeCard = memo(
@@ -41,22 +39,16 @@ export const NodeCard = memo(
     facts,
     connections,
     selected,
+    dimmed,
     tabbable,
     bind,
     onSelect,
     onFocused,
     onKey,
     onMenu,
+    onHover,
   }: NodeCardProps) => {
     const { id, type, x, y, width, height } = node;
-    // Most useful first: what does not fit is cut from the end.
-    const meta = [
-      facts.costUsd === undefined ? undefined : formatCost(facts.costUsd),
-      facts.tokens === undefined
-        ? undefined
-        : `${formatTokens(facts.tokens)} tok`,
-      facts.model === undefined ? undefined : shortModel(facts.model),
-    ].filter(part => part !== undefined);
     const card = (
       <button
         {...cliDescription(facts.cli, connections)}
@@ -64,8 +56,11 @@ export const NodeCard = memo(
         aria-label={nodeName(id, type, facts)}
         className={styles["card"]}
         data-graph-node=""
+        data-dim={dimmed ? "" : undefined}
         data-selected={selected ? "" : undefined}
         data-tone={statusTone(facts.status)}
+        onMouseEnter={() => onHover?.(id)}
+        onMouseLeave={() => onHover?.(null)}
         onClick={() => {
           onSelect(id);
         }}
@@ -95,12 +90,16 @@ export const NodeCard = memo(
             <TypeIcon type={type} />
           </span>
           <span className={styles["cardId"]}>{id}</span>
+          {facts.costUsd === undefined ? null : (
+            <span className={styles["cardCost"]}>
+              {formatCost(facts.costUsd)}
+            </span>
+          )}
         </span>
         <StatusBadge
           status={facts.status}
           word={facts.word}
         />
-        <span className={styles["cardMeta"]}>{meta.join(" · ")}</span>
       </button>
     );
     return facts.cli === undefined ? card : <Tip cli={facts.cli}>{card}</Tip>;

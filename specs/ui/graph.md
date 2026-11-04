@@ -35,6 +35,10 @@ workflow, and tested on the example workflows.
     flow.
 - **Each kind has its own line,** so it reads without color: flow is solid, a
   loop dashed, an owner sparsely dashed, and a channel dotted with no arrowhead.
+- **In a run, flow and owner edges show how far it has got:** live where the
+  node they lead to has started, finely dotted where it hasn't, and with square
+  packets moving in steps while it's running. That's all the motion means. With
+  less motion the packets rest on the line.
 - **Conditions** show on their edge, cut to 28 characters, with the whole of one
   in a hover title. A gap widens to fit the condition of a curve crossing it.
 - **Nothing about it is stored.** A workflow is always drawn from its nodes and
@@ -66,13 +70,13 @@ The canvas is one tab stop and the cards are another, with a roving tabindex.
 - `Enter` or `Space` selects. The context-menu key, `Shift+F10` or a right click
   asks for the node's controls. `Escape` goes back to the canvas.
 - Each card's accessible name says its id, status, model, tokens, cost and type,
-  in the order the card shows them, so the name holds what is on screen (WCAG
+  with what the card shows first, so the name holds what is on screen (WCAG
   2.5.3). A status has an icon and a word as well as its color.
 - The canvas is an `application`, since it takes its own keys, with a
   description of them. Edges are hidden from assistive technology, and each
   card's description says them instead: "after a; leads to b if exitCode == 0".
-  The ownership tree says the same, and is the screen-reader-first twin of the
-  graph, with the same data and actions.
+  The Monitor's node table says the same, and is the screen-reader-first twin of
+  the graph, with the same data and actions.
 - Zoom, fit and pan are buttons too, so none of it needs a drag (WCAG 2.5.7),
   and a node selected elsewhere comes into view. A node brought into view is
   never left under those buttons, and the focus ring keeps its thickness at any

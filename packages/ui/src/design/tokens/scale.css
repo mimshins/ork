@@ -76,6 +76,7 @@
   --duration-quick: var(--time-120);
   --duration-move: var(--time-200);
   --duration-blink: var(--time-1200);
+  --duration-packet: var(--time-2100);
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 

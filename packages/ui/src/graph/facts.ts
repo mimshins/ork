@@ -60,9 +60,17 @@ export const formatCost = (
 export const formatTokens = (tokens: number): string =>
   tokens < 1000 ? String(tokens) : `${(tokens / 1000).toFixed(1)}k`;
 
-/** A model's name on a card, which has little room: `claude-` says nothing. */
-export const shortModel = (model: string): string =>
-  model.replace(/^claude-/u, "");
+const pad = (part: number): string => String(part).padStart(2, "0");
+
+/** `4:02`, or `1:04:02` past the hour. */
+export const formatElapsed = (ms: number): string => {
+  const seconds = Math.max(Math.floor(ms / 1000), 0);
+  const minutes = Math.floor(seconds / 60);
+  const end = `${pad(minutes % 60)}:${pad(seconds % 60)}`;
+  return minutes < 60
+    ? `${String(minutes)}:${pad(seconds % 60)}`
+    : `${String(Math.floor(minutes / 60))}:${end}`;
+};
 
 export const nodeName = (id: string, type: string, facts: NodeFacts): string =>
   [

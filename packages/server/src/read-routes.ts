@@ -8,7 +8,7 @@
 import {
   nodeOf,
   pendingDecisions,
-  runTree,
+  activeTree,
   capsHere,
   limitsReport,
   placeFor,
@@ -112,7 +112,7 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
   tree: ({ params }) => {
     const found = runOf(context, params.id);
     if (!found.ok) return found.refusal;
-    return ok(runTree(context.store.events(found.run.id).map(s => s.event)));
+    return ok(activeTree(context.store.events(found.run.id)));
   },
 
   graph: ({ params }) => {

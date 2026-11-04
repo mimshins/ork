@@ -1,8 +1,10 @@
 /**
- * @file One run in the Monitor: its header, its graph beside its ownership
- *   tree, live from its stream, with the controls for the run and the selected
- *   node.
+ * @file One run in the Monitor: a stat strip, its graph, its nodes as a table
+ *   with what each is doing, and the selected node's strip, live from its
+ *   stream. Pointing at a node in the graph or the table picks it out in both.
  */
+
+import { useState } from "react";
 
 import { EmptyState } from "../components/bits.tsx";
 import { GraphView } from "../graph/graph-view.tsx";
@@ -10,6 +12,7 @@ import { NodeSection } from "./node-section.tsx";
 import { OwnershipTree } from "./ownership-tree.tsx";
 import { RunHeader } from "./run-header.tsx";
 import { RunLinks } from "./run-links.tsx";
+import { useClock } from "./use-clock.ts";
 import { type RunView, useRunMonitor } from "./use-run-monitor.ts";
 
 import styles from "./monitor.module.css";
@@ -17,6 +20,7 @@ import styles from "./monitor.module.css";
 export const RunMonitor = ({ run }: { run: RunView }) => {
   const {
     state,
+    graph,
     layout,
     facts,
     waiting,
@@ -30,9 +34,14 @@ export const RunMonitor = ({ run }: { run: RunView }) => {
     openControls,
     closeControls,
   } = useRunMonitor(run);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const now = useClock(run.live === "running" || run.live === "paused");
   return (
     <div className={styles["monitor"]}>
       <RunHeader
+        budgetUsd={graph?.budgetUsd}
+        facts={facts}
+        now={now}
         run={run}
         waiting={waiting}
       />
@@ -44,51 +53,52 @@ export const RunMonitor = ({ run }: { run: RunView }) => {
           {error}
         </p>
       )}
-      <div className={styles["body"]}>
-        <div className={styles["canvas"]}>
-          {layout === null ? (
-            <EmptyState title="Reading the run…">
-              For now: <code>ork tree {run.id}</code>
-            </EmptyState>
-          ) : (
-            <GraphView
-              facts={facts}
-              label={`Graph of run ${run.id}, ${run.workflow}`}
-              layout={layout}
-              onNodeMenu={openControls}
-              onSelect={state.selectNode}
-              selected={selected ?? undefined}
-            />
-          )}
-        </div>
-        <aside
-          aria-label="Ownership and links"
-          className={styles["side"]}
-        >
-          {chosen === undefined ? null : (
-            <NodeSection
-              node={chosen}
-              onLeave={closeControls}
-              onOpenRun={state.arriveAt}
-              run={run}
-              sectionRef={nodeControls}
-            />
-          )}
-          <OwnershipTree
-            connections={connections}
+      <div className={styles["canvas"]}>
+        {layout === null ? (
+          <EmptyState title="Reading the run…">
+            For now: <code>ork tree {run.id}</code>
+          </EmptyState>
+        ) : (
+          <GraphView
             facts={facts}
+            hovered={hovered}
+            label={`Graph of run ${run.id}, ${run.workflow}`}
+            layout={layout}
+            live
+            onHover={setHovered}
             onNodeMenu={openControls}
             onSelect={state.selectNode}
-            roots={roots}
-            selected={selected}
+            selected={selected ?? undefined}
           />
-          <RunLinks
-            links={links}
-            onOpen={state.arriveAt}
-            runId={run.id}
-          />
-        </aside>
+        )}
       </div>
+      <OwnershipTree
+        connections={connections}
+        edges={graph?.edges ?? []}
+        facts={facts}
+        hovered={hovered}
+        now={now}
+        onHover={setHovered}
+        onNodeMenu={openControls}
+        onSelect={state.selectNode}
+        roots={roots}
+        runFinishedAt={run.finishedAt}
+        selected={selected}
+      />
+      {chosen === undefined ? null : (
+        <NodeSection
+          node={chosen}
+          onLeave={closeControls}
+          onOpenRun={state.arriveAt}
+          run={run}
+          sectionRef={nodeControls}
+        />
+      )}
+      <RunLinks
+        links={links}
+        onOpen={state.arriveAt}
+        runId={run.id}
+      />
     </div>
   );
 };
