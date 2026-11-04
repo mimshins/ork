@@ -5,11 +5,12 @@
 - **Supersedes:** —
 - **Superseded by:** —
 
-**Read with [RFC-010](./RFC-010-conditions-from-declared-outputs.md), which
-comes first.** The maintainer's rule is to prevent a mistake where possible and
-detect only what's left. RFC-010 stops value typos being made in the builder and
-gives tools a declared shape. This RFC covers what remains: hand-written files,
-and mistakes made of valid choices, such as an impossible join.
+**Read with [RFC-010](../archived/RFC-010-conditions-from-declared-outputs.md),
+which comes first.** The maintainer's rule is to prevent a mistake where
+possible and detect only what's left. RFC-010 stops value typos being made in
+the builder and gives tools a declared shape. This RFC covers what remains:
+hand-written files, and mistakes made of valid choices, such as an impossible
+join.
 
 ## Contents
 
@@ -199,10 +200,10 @@ Both go in `checkWorkflowText`
 ### 1. Compiler checks
 
 These are the fallback for a file written by hand, as the builder's picker
-([RFC-010](./RFC-010-conditions-from-declared-outputs.md)) can't produce most of
-them. An **error** means the workflow certainly doesn't say what its author
-meant, and no one would write it on purpose. For a file, it's the nearest thing
-to prevention: the run doesn't start.
+([RFC-010](../archived/RFC-010-conditions-from-declared-outputs.md)) can't
+produce most of them. An **error** means the workflow certainly doesn't say what
+its author meant, and no one would write it on purpose. For a file, it's the
+nearest thing to prevention: the run doesn't start.
 
 | Code                | Severity | Meaning                                                                                                                                                                                                                                                                                        |
 | ------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -348,6 +349,6 @@ The maintainer's answers, on 2026-11-04.
    possible, and for a hand-written file the nearest thing is a run that doesn't
    start.
 2. **Should Ork ever run scripts during validation?** No. The walk uses declared
-   values ([RFC-010](./RFC-010-conditions-from-declared-outputs.md)) and never
-   runs code. `ork run --node` still runs one node for real on demand, and
-   feeding a walk outcomes recorded from a past run would need its own RFC.
+   values ([RFC-010](../archived/RFC-010-conditions-from-declared-outputs.md))
+   and never runs code. `ork run --node` still runs one node for real on demand,
+   and feeding a walk outcomes recorded from a past run would need its own RFC.

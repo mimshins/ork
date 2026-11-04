@@ -10,6 +10,7 @@ import path from "node:path";
 
 import {
   checkWorkflowText,
+  nodeSays,
   placeFiles,
   type ProjectRecord,
   workflowDirOf,
@@ -54,7 +55,7 @@ const viewOf = (
   const file = fileOf(project, name);
   const draft = context.store.draft(project.id, name);
   const onDisk = hashOfFile(file);
-  const { diagnostics } = checkWorkflowText(text, {
+  const { diagnostics, workflow } = checkWorkflowText(text, {
     place: project,
     workflowDir: workflowDirOf(project, file),
     registered: context.store.projects(),
@@ -66,7 +67,14 @@ const viewOf = (
     file,
     text,
     document: graph.document,
-    graph: graph.graph,
+    // With an agent's settings in, where it's valid enough to have them.
+    graph:
+      workflow === null
+        ? graph.graph
+        : {
+            ...graph.graph,
+            says: nodeSays(workflow.nodes, graph.graph.edges),
+          },
     diagnostics,
     draft: draft !== undefined,
     baseHash: draft === undefined ? onDisk : draft.baseHash,

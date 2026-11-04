@@ -8,6 +8,7 @@
 
 import {
   evaluate,
+  declaredProblem,
   type ExecuteContext,
   type NodeExecutor,
   type NodeResult,
@@ -180,17 +181,17 @@ export const mcpCallExecutor =
         ...(json === undefined || tooLong ? {} : { json }),
       };
       const reported = result.isError === true;
+      const problem = declaredProblem(node.output?.schema, json);
       context.emit({
         type: "tool.result",
         id: context.id,
-        isError: reported || tooLong,
+        isError: reported || tooLong || problem !== null,
       });
       if (reported) {
         return failed(`${name} failed: ${clipError(said)}`, output);
       }
-      return tooLong
-        ? failed(`${name}'s result is over 64 KiB`, output)
-        : { ok: true, output };
+      if (tooLong) return failed(`${name}'s result is over 64 KiB`, output);
+      return problem === null ? { ok: true, output } : failed(problem, output);
     } catch (error) {
       context.emit({ type: "tool.result", id: context.id, isError: true });
       return failed(clipError(scrub(reasonOf(error, node.server))));

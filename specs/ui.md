@@ -63,6 +63,15 @@ every `ork` command.
 - **An inspector for each node and for the workflow,** with forms generated from
   the format's JSON Schema, all the way down, and controls of its own for
   owners, message targets, agents and skills.
+- **Conditions from choices:** an edge's `when:` is picked as a field, a test
+  and a value from what its source can say, so a value can't be mistyped
+  wherever there's a list. It writes the same `when:` a person would, and one it
+  can't show stays as written
+  ([ADR-052](../decisions/ADR-052-conditions-from-declared-outputs.md)).
+- **New edges start valid:** a closed loop gets a condition and rounds, a gate's
+  edge its next unhandled answer, and a way out of a loop the opposite of its
+  condition. Renaming a value follows into what reads it, and removing one
+  that's read is refused.
 - **The same checks as `ork validate`,** on the cards, the fields and in a list.
   Errors block a save, and unfinished work stays as a draft in the store.
 - **A test run** is saving, then a real run through the Run workflow dialog.

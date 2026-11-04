@@ -7,7 +7,7 @@
 import type { Diagnostic, WorkflowEdit } from "@krapht/ork-schema";
 import { z } from "zod";
 
-import type { WorkflowGraph } from "./contract.ts";
+import type { WorkflowGraph } from "./contract-graph.ts";
 
 export type { Diagnostic, WorkflowEdit };
 

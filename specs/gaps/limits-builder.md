@@ -3,7 +3,8 @@
 _Part of [Known gaps and limits](../gaps.md)._
 
 What the workflow builder does for now, by choice
-([ADR-051](../../decisions/ADR-051-workflow-builder.md)).
+([ADR-051](../../decisions/ADR-051-workflow-builder.md),
+[ADR-052](../../decisions/ADR-052-conditions-from-declared-outputs.md)).
 
 - **L103 · A workflow can't be arranged by hand.** Where a card sits follows
   from the nodes and edges, so a workflow drawn badly is a bug in the layout,
@@ -43,3 +44,20 @@ What the workflow builder does for now, by choice
 - **L111 · A value typed in a free-form field can read as a number.** `1.5` is a
   number and `"1.5"` is text, in fields that hold anything, such as a tool's
   `arguments`. An input's default follows the type the input declares instead.
+- **L112 · A declared output is one level deep.** `json.state` can be declared;
+  `json.pr.state` stays free text, with no choices and no check, and the same
+  goes for a result that isn't an object
+  ([ADR-052](../../decisions/ADR-052-conditions-from-declared-outputs.md)).
+- **L113 · A renamed value is followed by its text.** Renaming a value changes
+  that text in any condition on the node's edges that also reads its field, so
+  `choice == 'x' && other == 'x'` changes both. A condition reading the node
+  from elsewhere, as `nodes.a.output.choice`, isn't followed, and neither is a
+  template ([edit-values.ts](../../packages/schema/src/edit-values.ts)).
+- **L114 · A pass-through with several inputs offers no choices.** A router or
+  split fed by more than one node can't know what it's passing, so its
+  conditions are written by hand. A `workflow.call`'s `outputs` have no choices
+  either.
+- **L115 · The SDK driver's hold on a Claude schema wasn't measured.** The CLI
+  driver rejects a value outside the schema. Ork now checks it too, so a bad
+  value fails either way; what wasn't measured is whether the SDK driver lets a
+  session retry first, as the CLI driver does.

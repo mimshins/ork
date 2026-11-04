@@ -7,6 +7,7 @@
 import { z } from "zod";
 
 import {
+  DeclaredOutputSchema,
   nodeBaseFields,
   notifyFields,
   TimeoutSchema,
@@ -24,6 +25,14 @@ export const McpCallNodeSchema = z.strictObject({
     .describe(
       "The tool's arguments. Strings are templates; one that is only {{ … }} keeps its value's type.",
     ),
+  output: z
+    .strictObject({
+      schema: DeclaredOutputSchema.optional().describe(
+        "The fields of the tool's JSON result a later node relies on, e.g. { state: [open, closed] }. A value outside these fails the node.",
+      ),
+    })
+    .optional()
+    .describe("What the tool's result says."),
   env: toolProgramFields.env,
   plainEnv: toolProgramFields.plainEnv,
   timeout: TimeoutSchema.optional().describe(

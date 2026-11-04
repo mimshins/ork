@@ -10,9 +10,9 @@ import path from "node:path";
 
 import {
   type ClaudeRuntime,
+  declaredOutputOf,
   type ExecuteContext,
   type NodeExecutor,
-  type NodeResult,
   planNodeSession,
   type SessionOutcome,
   type SessionPorts,
@@ -20,6 +20,7 @@ import {
 } from "@krapht/ork-core";
 import { beforeOf, type Driver } from "@krapht/ork-schema";
 
+import { resultOf } from "./claude-result.ts";
 import {
   afterLateTurn,
   budgetNow,
@@ -37,6 +38,8 @@ import {
   beforeFailed,
   noSteps,
 } from "./verify.ts";
+
+export { resultOf };
 
 export type ClaudeExecutorOptions = {
   runtimeFor: (driver: Driver) => Promise<ClaudeRuntime>;
@@ -83,45 +86,6 @@ const sentBack = (round: number, input: unknown): string =>
 /** What a session is told when messages came in as it finished. */
 export const lateMessage = (count: number): string =>
   `[ork] ${String(count)} message${count === 1 ? "" : "s"} came in while you finished. Call read_inbox, act on ${count === 1 ? "it" : "them"} if needed, and end with a new structured report.`;
-
-/** A finished session as a node result: its report is the node's output. */
-export const resultOf = (outcome: SessionOutcome | null): NodeResult => {
-  if (outcome === null) {
-    return {
-      ok: false,
-      output: { status: "fail", summary: "the session ended without a result" },
-      error: "the session ended without a result",
-    };
-  }
-  const { report, usage } = outcome;
-  if (report === null) {
-    const reason = outcome.errors[0] ?? "no valid report";
-    return {
-      ok: false,
-      output: { status: "fail", summary: reason, usage },
-      usage,
-      error: `ended without a report (${outcome.subtype}): ${reason}`,
-      sessionId: outcome.sessionId,
-    };
-  }
-  const ran = { sessionId: outcome.sessionId };
-  const output: Record<string, unknown> = {
-    ...report.fields,
-    status: report.status,
-    summary: report.summary,
-    artifacts: report.artifacts,
-    usage,
-  };
-  if (report.branch !== undefined) output["branch"] = report.branch;
-  const result: NodeResult = {
-    ok: report.status !== "fail",
-    output,
-    usage,
-    ...ran,
-  };
-  if (!result.ok) result.error = report.summary;
-  return result;
-};
 
 /** A re-entered leader resumes; anyone else starts with the full brief. */
 const specFor = (spec: SessionSpec, context: ExecuteContext): SessionSpec => {
@@ -269,7 +233,7 @@ export const claudeExecutor =
     const { node } = context;
     const verify = "verify" in node ? node.verify : undefined;
     if (outcome === null || verify === undefined || !isAcceptance(outcome)) {
-      return watch.result(resultOf(outcome));
+      return watch.result(resultOf(outcome, declaredOutputOf(node)));
     }
     const checked = await checkReport({
       verify,
@@ -287,5 +251,7 @@ export const claudeExecutor =
           : resumeWith(current, checkFailedMessage(check, context), limits);
       },
     });
-    return watch.result(checkedResult(resultOf(checked.outcome), checked));
+    return watch.result(
+      checkedResult(resultOf(checked.outcome, declaredOutputOf(node)), checked),
+    );
   };

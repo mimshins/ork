@@ -87,6 +87,7 @@ warnings do not. Schema problems come first, from
 | `ref.input`              | error    | a reference to an undeclared input                                         |
 | `ref.node`               | error    | a reference to an unknown node, or not through `.output`                   |
 | `ref.field`              | warning  | a field the node type does not report                                      |
+| `ref.undeclared`         | warning  | a field of a tool's or MCP call's JSON that no `output.schema` declares    |
 | `ref.json`               | error    | `output.json` of a tool node without `output: { format: json }`            |
 | `env.reserved`           | error    | an `env:` key starting `ORK_`                                              |
 | `env.literal`            | warning  | a literal under a secret-looking name, or a URL with a password            |

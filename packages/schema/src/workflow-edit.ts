@@ -8,12 +8,12 @@
 import { parseDocument } from "yaml";
 import { z } from "zod";
 
-import { EditRefused, setAt } from "./edit-doc.ts";
+import { EditRefused, sameValue, setAt } from "./edit-doc.ts";
 import { connect, disconnect, setEdge } from "./edit-edges.ts";
 import { keepingUntouchedLines, styleOf } from "./edit-lines.ts";
 import { addNode, removeNode, renameNode } from "./edit-nodes.ts";
-import { sameValue } from "./edit-order.ts";
 import { deleteAt, refuseLostAnchors } from "./edit-remove.ts";
+import { followingValues } from "./edit-values.ts";
 import { SCHEMA_VERSION, WorkflowSchema } from "./workflow.ts";
 import { serializeWorkflow } from "./yaml.ts";
 
@@ -137,10 +137,14 @@ const perform = (
   switch (edit.op) {
     case "set":
       refuseMissingNode(doc, edit.path);
-      setAt(doc, edit.path, edit.value, WorkflowSchema);
+      followingValues(doc, edit.path, () => {
+        setAt(doc, edit.path, edit.value, WorkflowSchema);
+      });
       return;
     case "delete":
-      deleteAt(doc, edit.path);
+      followingValues(doc, edit.path, () => {
+        deleteAt(doc, edit.path);
+      });
       return;
     case "addNode":
       addNode(doc, edit.id, edit.node);

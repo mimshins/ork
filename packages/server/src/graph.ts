@@ -9,7 +9,7 @@ import { existsSync, readFileSync } from "node:fs";
 import type { RunEvent } from "@krapht/ork-core";
 import { expandEdge, parseWorkflow, type Workflow } from "@krapht/ork-schema";
 
-import type { WorkflowGraph } from "./contract.ts";
+import type { WorkflowGraph } from "./contract-graph.ts";
 
 export const workflowGraph = (workflow: Workflow): WorkflowGraph => ({
   nodes: Object.entries(workflow.nodes).map(([id, node]) => ({

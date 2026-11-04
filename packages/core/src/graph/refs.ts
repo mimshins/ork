@@ -164,6 +164,7 @@ export const checkReferences = (
           ["edges", edge.source, "when"],
           edge.condition,
           context,
+          ["ok"],
         ),
   );
   const fromDefaults = checkDefaultsBefore(workflow, context);

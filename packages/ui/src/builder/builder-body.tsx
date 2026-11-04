@@ -11,6 +11,7 @@ import { GraphView } from "../graph/graph-view.tsx";
 import { layoutGraph } from "../graph/layout.ts";
 import { factsOf } from "./builder-model.ts";
 import { Palette, Problems } from "./canvas-parts.tsx";
+import { connectEdit } from "./condition-model.ts";
 import { Inspector } from "./node-inspector.tsx";
 import type { Builder } from "./use-builder.ts";
 
@@ -47,7 +48,7 @@ const Canvas = ({ builder }: { builder: Builder }) => {
       onSelect={id => {
         if (connecting && selected !== null) {
           builder.setConnecting(false);
-          void builder.edit({ op: "connect", from: selected, to: id });
+          void builder.edit(connectEdit(graph, selected, id));
           return;
         }
         builder.select(id);

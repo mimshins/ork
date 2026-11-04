@@ -243,9 +243,11 @@ export const isToolNode = (node: Node): node is ToolNode =>
 export const programsOf = (
   node: Node,
 ): { at: readonly string[]; program: Step }[] => {
+  if (isToolNode(node)) return [{ at: [], program: node }];
   // An MCP call runs no program of its own, but its server reads its `env:`.
-  if (isToolNode(node) || node.type === "mcp.call") {
-    return [{ at: [], program: node }];
+  if (node.type === "mcp.call") {
+    const { output: _output, ...program } = node;
+    return [{ at: [], program }];
   }
   return [
     ...("before" in node && node.before !== undefined

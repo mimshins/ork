@@ -223,6 +223,37 @@
                   "type": "string",
                   "const": "json",
                   "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                },
+                "schema": {
+                  "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                          "type": [
+                            "string",
+                            "number",
+                            "boolean"
+                          ]
+                        }
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "string",
+                          "number",
+                          "integer",
+                          "boolean"
+                        ]
+                      }
+                    ]
+                  }
                 }
               },
               "required": [
@@ -736,6 +767,37 @@
                         "type": "string",
                         "const": "json",
                         "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                      },
+                      "schema": {
+                        "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              }
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "string",
+                                "number",
+                                "integer",
+                                "boolean"
+                              ]
+                            }
+                          ]
+                        }
                       }
                     },
                     "required": [
@@ -793,6 +855,37 @@
                         "type": "string",
                         "const": "json",
                         "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                      },
+                      "schema": {
+                        "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              }
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "string",
+                                "number",
+                                "integer",
+                                "boolean"
+                              ]
+                            }
+                          ]
+                        }
                       }
                     },
                     "required": [
@@ -1059,6 +1152,37 @@
                         "type": "string",
                         "const": "json",
                         "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                      },
+                      "schema": {
+                        "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              }
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "string",
+                                "number",
+                                "integer",
+                                "boolean"
+                              ]
+                            }
+                          ]
+                        }
                       }
                     },
                     "required": [
@@ -1116,6 +1240,37 @@
                         "type": "string",
                         "const": "json",
                         "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                      },
+                      "schema": {
+                        "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              }
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "string",
+                                "number",
+                                "integer",
+                                "boolean"
+                              ]
+                            }
+                          ]
+                        }
                       }
                     },
                     "required": [
@@ -1380,6 +1535,37 @@
                     "type": "string",
                     "const": "json",
                     "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                  },
+                  "schema": {
+                    "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": [
+                              "string",
+                              "number",
+                              "boolean"
+                            ]
+                          }
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "string",
+                            "number",
+                            "integer",
+                            "boolean"
+                          ]
+                        }
+                      ]
+                    }
                   }
                 },
                 "required": [
@@ -1484,6 +1670,37 @@
                     "type": "string",
                     "const": "json",
                     "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                  },
+                  "schema": {
+                    "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": [
+                              "string",
+                              "number",
+                              "boolean"
+                            ]
+                          }
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "string",
+                            "number",
+                            "integer",
+                            "boolean"
+                          ]
+                        }
+                      ]
+                    }
                   }
                 },
                 "required": [
@@ -1594,6 +1811,37 @@
                     "type": "string",
                     "const": "json",
                     "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                  },
+                  "schema": {
+                    "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": [
+                              "string",
+                              "number",
+                              "boolean"
+                            ]
+                          }
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "string",
+                            "number",
+                            "integer",
+                            "boolean"
+                          ]
+                        }
+                      ]
+                    }
                   }
                 },
                 "required": [
@@ -1706,6 +1954,37 @@
                     "type": "string",
                     "const": "json",
                     "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                  },
+                  "schema": {
+                    "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": [
+                              "string",
+                              "number",
+                              "boolean"
+                            ]
+                          }
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "string",
+                            "number",
+                            "integer",
+                            "boolean"
+                          ]
+                        }
+                      ]
+                    }
                   }
                 },
                 "required": [
@@ -2065,6 +2344,44 @@
                   "type": "string"
                 },
                 "additionalProperties": {}
+              },
+              "output": {
+                "description": "What the tool's result says.",
+                "type": "object",
+                "properties": {
+                  "schema": {
+                    "description": "The fields of the tool's JSON result a later node relies on, e.g. { state: [open, closed] }. A value outside these fails the node.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": [
+                              "string",
+                              "number",
+                              "boolean"
+                            ]
+                          }
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "string",
+                            "number",
+                            "integer",
+                            "boolean"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": false
               },
               "env": {
                 "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",

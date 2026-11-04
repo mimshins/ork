@@ -1,7 +1,9 @@
 # RFC-010 — Conditions chosen from what a node declares it can say
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-04
+- **ADR:**
+  [ADR-052](../../decisions/ADR-052-conditions-from-declared-outputs.md)
 - **Supersedes:** —
 - **Superseded by:** —
 
@@ -15,11 +17,11 @@
 
 ## Context
 
-[RFC-009](./RFC-009-walking-a-workflow.md) finds workflows that can't do what
-they say. The maintainer's response set the order: **prevent a mistake where
-possible, and detect only what's left.** A typo that can't be typed needs no
-error message. That takes structured outputs, as a list of choices can only come
-from a declared shape.
+[RFC-009](../active/RFC-009-walking-a-workflow.md) finds workflows that can't do
+what they say. The maintainer's response set the order: **prevent a mistake
+where possible, and detect only what's left.** A typo that can't be typed needs
+no error message. That takes structured outputs, as a list of choices can only
+come from a declared shape.
 
 ### Where a condition comes from today
 
@@ -249,6 +251,22 @@ read it.
 - **Read an MCP tool's own output schema,** where a server publishes one.
 - **Pick values into templates** the same way, so `{{nodes.x.output.y}}` in a
   prompt is chosen, not typed.
+
+## As built
+
+What changed from the decision above once it ran:
+
+- **An edge can read `ok`.** This RFC said `when: "!ok"` catches a failing node,
+  but only `notify:` rules had `ok`. On an edge it read as undefined, so `!ok`
+  was always true. A real run showed it, and edges now get `ok`, with a field
+  the node reports under that name still winning.
+- **Closing a loop fills in its condition and rounds** rather than asking first.
+  The edge is valid from the start and both are there to change, and connecting
+  by a list and by picking a card go the same way.
+- **Removing a value that's read is refused,** naming the edge, rather than
+  asked about. The person changes that condition first.
+- **The driver check:** the CLI driver rejects a value outside the schema, and
+  the session ends with no report. The SDK driver wasn't measured.
 
 ## Answered questions
 

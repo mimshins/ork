@@ -6,6 +6,7 @@
 import { Select as BaseSelect } from "@base-ui/react/select";
 
 import { IconCheck, IconChevronDown } from "./icons.tsx";
+import { Unseen } from "./unseen.tsx";
 
 import fields from "./field.module.css";
 import styles from "./popup.module.css";
@@ -14,12 +15,20 @@ export type Option = { value: string; label: string };
 
 export type SelectProps = {
   label: string;
+  /** More of the label's words, for a screen reader only. */
+  unseen?: string | undefined;
   options: readonly Option[];
   value: string;
   onChange: (value: string) => void;
 };
 
-export const Select = ({ label, options, value, onChange }: SelectProps) => (
+export const Select = ({
+  label,
+  unseen,
+  options,
+  value,
+  onChange,
+}: SelectProps) => (
   <BaseSelect.Root
     items={options}
     onValueChange={next => {
@@ -28,7 +37,10 @@ export const Select = ({ label, options, value, onChange }: SelectProps) => (
     value={value}
   >
     <div className={fields["field"]}>
-      <BaseSelect.Label className={fields["label"]}>{label}</BaseSelect.Label>
+      <BaseSelect.Label className={fields["label"]}>
+        {label}
+        {unseen === undefined ? null : <Unseen>{unseen}</Unseen>}
+      </BaseSelect.Label>
       <BaseSelect.Trigger className={fields["control"]}>
         <BaseSelect.Value />
         <BaseSelect.Icon className={fields["icon"]}>

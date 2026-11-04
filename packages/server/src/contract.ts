@@ -22,6 +22,7 @@ import type { InputDef } from "@krapht/ork-schema";
 import { z } from "zod";
 
 import { BUILDER_API, type BuilderResponses } from "./contract-builder.ts";
+import type { WorkflowGraph } from "./contract-graph.ts";
 
 /** `/api/usage`: the report, and the limits that apply. */
 export type UsageAnswer = UsageReport & { limits: LimitsReport };
@@ -193,18 +194,6 @@ export const API = {
   link: { method: "POST", path: "/api/links", body: LinkSchema },
   unlink: { method: "POST", path: "/api/links/end", body: UnlinkSchema },
 } as const satisfies Record<string, Route>;
-
-/** What the UI draws a workflow or a run from. */
-export type WorkflowGraph = {
-  nodes: { id: string; type: string; parent?: string | undefined }[];
-  edges: {
-    from: string;
-    to: string;
-    when?: string | undefined;
-    maxRounds?: number | undefined;
-  }[];
-  channels: (readonly [string, string])[];
-};
 
 /** What each route answers with, on success. */
 export type Responses = BuilderResponses & {

@@ -115,6 +115,19 @@ describe("mcp.call over stdio", () => {
     });
   });
 
+  it("fails a call whose result isn't what it declared", async () => {
+    const fits = await call("structured", {
+      output: { schema: { state: ["OPEN"] } },
+    });
+    expect(fits.result.ok).toBe(true);
+    const { result } = await call("structured", {
+      output: { schema: { state: ["CLOSED"] } },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('state is "OPEN", expected CLOSED');
+    expect(result.output["json"]).toEqual({ state: "OPEN" });
+  });
+
   it("takes a structured result as output.json", async () => {
     const { result } = await call("structured");
     expect(result.output).toEqual({

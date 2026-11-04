@@ -178,6 +178,15 @@
   color: var(--color-text-disabled);
 }
 
+.visuallyHidden {
+  block-size: var(--hairline);
+  clip-path: inset(50%);
+  inline-size: var(--hairline);
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
 /* Forced colors take the fills away, and the fills say what is on and off. */
 @media (forced-colors: active) {
   :is(.box, .switch)[data-checked] {

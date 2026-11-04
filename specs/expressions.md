@@ -34,6 +34,7 @@ path       := name ( "." name | "[" ( number | string ) "]" )*
 | `nodes`   | `nodes.<id>.output.<field>`: another node's report                   |
 | `before`  | `before.<field>`: what a node's `before:` gave; only in its `prompt` |
 | `output`  | the source node's report (in a `when:`)                              |
+| `ok`      | in an edge's `when:`, how its source ended, unless it reports `ok`   |
 | `run`     | run metadata                                                         |
 | bare name | in a `when:`, a field of `output`: `verdict` means `output.verdict`  |
 

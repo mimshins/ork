@@ -10,6 +10,7 @@
 import path from "node:path";
 
 import {
+  declaredProblem,
   type ExecuteContext,
   type NodeExecutor,
   type NodeResult,
@@ -268,15 +269,20 @@ export const toolExecutor =
             limit: OUTPUT_LIMIT,
             keep: text => keep("json", text)(),
           });
+    const declared =
+      json?.ok === true
+        ? declaredProblem(node.output?.schema, json.json)
+        : null;
     context.emit({
       type: "tool.result",
       id: context.id,
-      isError: run.exitCode !== 0 || json?.ok === false,
+      isError: run.exitCode !== 0 || json?.ok === false || declared !== null,
     });
     if (json?.ok === false) {
       return { ok: false, output, error: `${context.id}: ${json.error}` };
     }
     if (json !== null) output["json"] = json.json;
+    if (declared !== null) return { ok: false, output, error: declared };
     if (run.exitCode === 0) return { ok: true, output };
     const last = run.stderr.trim().split("\n").at(-1) ?? "";
     return {

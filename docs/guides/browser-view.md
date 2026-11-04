@@ -93,6 +93,17 @@ workflow, or type a new name and choose **Create**.
   place has the workflow's own settings.
 - To connect two nodes, select the first, then use **Connect to**, or **Pick a
   card** and choose the next one.
+- An edge's condition is a choice: when it succeeds, when it fails, or when a
+  test holds, picked as a field, a test and a value from what that node can say.
+  A tool's JSON has choices once it declares them, and **Add a field** does that
+  from the condition. A condition these can't show stays as you wrote it, under
+  **Written by hand**.
+- A new edge starts valid. Closing a loop fills in a condition and a limit on
+  rounds, and a gate's edge takes its next answer. Under a gate, it says which
+  answers end the run.
+- Renaming an option or a declared value follows into the conditions that read
+  it. Removing one that's read is refused, and it names the edge to change
+  first.
 - What the checks say shows on the cards, on the fields and under the canvas.
   They're the same checks as `ork validate`.
 - What you change is kept as a draft, so closing the tab loses nothing, and your

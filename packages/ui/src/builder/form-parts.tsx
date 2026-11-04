@@ -52,6 +52,7 @@ export const isRecord = (value: unknown): value is Record<string, unknown> =>
 /** A text box that holds what's typed until it's left. */
 export const CommitText = ({
   label,
+  unseen,
   shown,
   commit,
   description,
@@ -60,6 +61,7 @@ export const CommitText = ({
   number = false,
 }: {
   label: string;
+  unseen?: string | undefined;
   shown: string;
   commit: (typed: string) => void;
   description?: string | undefined;
@@ -81,6 +83,7 @@ export const CommitText = ({
     <TextField
       description={description}
       label={label}
+      unseen={unseen}
       multiline={multiline}
       onChange={setTyped}
       onCommit={() => {

@@ -9,11 +9,22 @@ result, decide where the run goes, and hand the next step what it needs.
 pr:
   type: tool.gh
   command: pr view {{inputs.pr}} --json state,mergeable
-  output: { format: json }
+  output:
+    format: json
+    schema:
+      state: [OPEN, CLOSED, MERGED]
+      mergeable: string
 ```
 
 An edge then reads `when: "json.state == 'OPEN'"`, and a later node reads
 `{{nodes.pr.output.json.mergeable}}`.
+
+`schema:` declares what you rely on, as a list of values or a type (`string`,
+`number`, `integer`, `boolean`). It's optional, but it pays three times: the
+builder offers those values as choices, so one can't be mistyped; `ork validate`
+stops warning that nothing declares the field; and a run checks it. A value that
+doesn't fit fails the node and says why, rather than a condition quietly
+matching nothing. To handle that, or any failure, give an edge `when: "!ok"`.
 
 A script that logs to stdout writes its result to the file at `$ORK_OUTPUT`
 instead. That file wins when it is written. Otherwise Ork parses all of stdout.

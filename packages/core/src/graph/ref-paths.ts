@@ -12,7 +12,11 @@ import {
 } from "@krapht/ork-schema";
 
 import { error, warning } from "./diagnostics.ts";
-import { type CompiledEdge, outputFieldsOf } from "./types.ts";
+import {
+  type CompiledEdge,
+  declaredOutputOf,
+  outputFieldsOf,
+} from "./types.ts";
 
 export type Context = {
   workflow: Workflow;
@@ -86,15 +90,35 @@ export const checkField = (
       ),
     ];
   }
-  return known.includes(String(field))
-    ? []
-    : [
-        warning(
-          "ref.field",
-          `"${describePath(segments)}": a ${target.type} reports ${known.join(", ")}`,
-          path,
-        ),
-      ];
+  if (!known.includes(String(field))) {
+    return [
+      warning(
+        "ref.field",
+        `"${describePath(segments)}": a ${target.type} reports ${known.join(", ")}`,
+        path,
+      ),
+    ];
+  }
+  return field === "json" ? checkDeclared(target, segments, path) : [];
+};
+
+/** A field of a tool's JSON that nothing says will be there (RFC-010). */
+const checkDeclared = (
+  target: Node,
+  segments: readonly (string | number)[],
+  path: DiagnosticPath,
+): Diagnostic[] => {
+  const name = segments[segments.indexOf("json") + 1];
+  if (name === undefined || declaredOutputOf(target)?.[name] !== undefined) {
+    return [];
+  }
+  return [
+    warning(
+      "ref.undeclared",
+      `"${describePath(segments)}": nothing declares ${String(name)}; add it to this node's output.schema, so a run checks it`,
+      path,
+    ),
+  ];
 };
 
 /** Only `env:` may read the user's variables: a rendered command is recorded. */

@@ -6,10 +6,14 @@
 import { Input } from "@base-ui/react/input";
 import { useId } from "react";
 
+import { Unseen } from "./unseen.tsx";
+
 import styles from "./field.module.css";
 
 export type TextFieldProps = {
   label: string;
+  /** More of the label's words, for a screen reader only. */
+  unseen?: string | undefined;
   value: string;
   onChange: (value: string) => void;
   /** When the user leaves the field, or presses Enter in a single line. */
@@ -24,6 +28,7 @@ export type TextFieldProps = {
 
 export const TextField = ({
   label,
+  unseen,
   value,
   onChange,
   onCommit,
@@ -41,6 +46,7 @@ export const TextField = ({
         htmlFor={id}
       >
         {label}
+        {unseen === undefined ? null : <Unseen>{unseen}</Unseen>}
         {required ? " (required)" : ""}
       </label>
       <div className={styles["group"]}>

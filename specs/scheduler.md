@@ -41,10 +41,19 @@ its branch afterwards ([worktrees](./worktrees.md)).
   report whose status is not `fail`, a tool exit code of 0, any control node, an
   answered gate.
 - **With `when:`** the [expression](./expressions.md) decides, read against the
-  source's output (bare names read `output`), so `when: status == 'fail'`
-  handles a failure.
+  source's output (bare names read `output`) and `ok`, how it ended, unless it
+  reports a field of that name. So `when: "!ok"` handles any failure, including
+  one that leaves no field to test, and `when: status == 'fail'` handles a
+  failure.
 - A node that failed and took no edge fails the run (its reason is in the run
   summary); other branches still finish.
+- **What a node declares holds.** A value that doesn't fit an `output.schema` (a
+  missing field, the wrong type, a value off the list) fails the node, with a
+  reason that names all three, as in
+  `state is "DRAFT", expected OPEN or CLOSED`. For a tool it's the JSON's
+  fields, for an `mcp.call` the result's, and for a Claude node its report's; a
+  Claude field written as JSON Schema stays the driver's to enforce
+  ([ADR-052](../decisions/ADR-052-conditions-from-declared-outputs.md)).
 
 ## Control nodes
 

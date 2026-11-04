@@ -5,16 +5,19 @@
  *   is left for the checks to report.
  */
 
+import { nodeSays, readCondition } from "@krapht/ork-core";
 import {
   applyEdits,
   EdgeInputSchema,
   expandEdge,
+  type Node,
+  NodeSchema,
   newWorkflowText,
   parseWorkflow,
   readDocument,
 } from "@krapht/ork-schema";
 
-import type { WorkflowGraph } from "./contract.ts";
+import type { WorkflowGraph } from "./contract-graph.ts";
 
 /** What a client's tests need to play the server's builder routes. */
 export { applyEdits, newWorkflowText, parseWorkflow };
@@ -30,6 +33,17 @@ const EMPTY: WorkflowGraph = {
   edges: [],
   channels: [],
 };
+
+/** The nodes finished enough to say what they'd report. */
+const validNodes = (document: Record<string, unknown>): Record<string, Node> =>
+  Object.fromEntries(
+    Object.entries(
+      isRecord(document["nodes"]) ? document["nodes"] : {},
+    ).flatMap(([id, node]) => {
+      const parsed = NodeSchema.safeParse(node);
+      return parsed.success ? [[id, parsed.data] as const] : [];
+    }),
+  );
 
 /** What the text says, and the graph to draw from it. */
 export const draftGraph = (
@@ -62,6 +76,7 @@ export const draftGraph = (
           to,
           when,
           maxRounds,
+          condition: readCondition(when),
         }))
       : [];
   });
@@ -72,5 +87,13 @@ export const draftGraph = (
       ? [[a, b] as const]
       : [];
   });
-  return { document, graph: { nodes, edges, channels } };
+  return {
+    document,
+    graph: {
+      nodes,
+      edges,
+      channels,
+      says: nodeSays(validNodes(document), edges),
+    },
+  };
 };

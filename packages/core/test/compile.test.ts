@@ -301,7 +301,7 @@ describe("mcp.call", () => {
   it("reports text and json", () => {
     expect(
       mcpDiagnostics(
-        "arguments: {}",
+        "output: { schema: { a: string } }",
         "  n: { type: tool.shell, command: 'x {{nodes.m.output.json.a}} {{nodes.m.output.text}}' }\nedges:\n  - m -> n\n",
       ),
     ).toEqual([]);
@@ -482,6 +482,14 @@ edges:
     expect(
       codesOf(`nodes:
   pr: { type: tool.gh, command: pr view, output: { format: json } }
+  next: { type: tool.shell, command: "echo {{nodes.pr.output.json.state}}" }
+edges:
+  - { from: pr, to: next, when: "json.state == 'OPEN'" }
+`),
+    ).toEqual(["ref.undeclared", "ref.undeclared"]);
+    expect(
+      codesOf(`nodes:
+  pr: { type: tool.gh, command: pr view, output: { format: json, schema: { state: [OPEN, CLOSED] } } }
   next: { type: tool.shell, command: "echo {{nodes.pr.output.json.state}}" }
 edges:
   - { from: pr, to: next, when: "json.state == 'OPEN'" }

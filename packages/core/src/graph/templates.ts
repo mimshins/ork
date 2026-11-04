@@ -138,7 +138,7 @@ export const checkTemplate = (
       }
       const found = checkAbsolute(segments, context, path);
       if (
-        found.length === 0 &&
+        found.every(({ code }) => code === "ref.undeclared") &&
         root === "nodes" &&
         name !== id &&
         !upstream.has(String(name))

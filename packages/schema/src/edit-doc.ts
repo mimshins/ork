@@ -22,6 +22,8 @@ import type { z } from "zod";
 
 import { childOf, inCanonicalOrder, keysOf, sameValue } from "./edit-order.ts";
 
+export { sameValue };
+
 export type EditPath = readonly (string | number)[];
 
 /** Why an edit can't be made; nothing is changed. */

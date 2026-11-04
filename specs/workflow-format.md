@@ -87,7 +87,9 @@ edges:
     as a region, so their values are not masked in what programs print.
   - `output: { format: json }` says the program returns JSON, read as
     `output.json`: the file at `$ORK_OUTPUT` if it wrote one, otherwise its
-    stdout.
+    stdout. `schema:` under it declares the fields a later node relies on, as a
+    list of values or a type (`string`, `number`, `integer`, `boolean`), and a
+    value that doesn't fit fails the node ([scheduler](./scheduler.md#edges)).
 - **Before a session:** leaders and workers take `before:`, a program run in
   their checkout first, with what `verify:` takes but `attempts`. Their `prompt`
   reads its result as `{{before.*}}`, and `defaults:` may set it
@@ -101,8 +103,8 @@ edges:
   finishes, starting no session; `when:` and `body:` also read `ok` and `error`
   ([scripts and rules](./messaging/scripts.md#notify)).
 - **MCP calls:** `mcp.call` calls one `tool` on a `server` in the project's
-  `.mcp.json`, with `arguments`, `env`, `plainEnv` and `timeout`, and no session
-  ([steps](./scheduler/steps.md#mcp-calls)).
+  `.mcp.json`, with `arguments`, `output: { schema }`, `env`, `plainEnv` and
+  `timeout`, and no session ([steps](./scheduler/steps.md#mcp-calls)).
 - **Calls:** `workflow.call` starts a workflow as a separate run, in this
   project or a registered one, waits as it says, and hands back its outputs
   ([calling workflows](./scheduler/calls.md)). It takes `workflow`, and

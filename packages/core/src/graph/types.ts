@@ -94,6 +94,12 @@ export const REPORT_STATUSES = [
   "done",
 ] as const;
 
+/** What a node declares of its output (RFC-010), if it does. */
+export const declaredOutputOf = (
+  node: Node,
+): Readonly<Record<string, unknown>> | undefined =>
+  "output" in node ? node.output?.schema : undefined;
+
 export const outputFieldsOf = (node: Node): readonly string[] | null => {
   if (isToolNode(node)) {
     return [

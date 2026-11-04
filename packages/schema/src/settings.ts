@@ -9,6 +9,19 @@ import { z } from "zod";
 
 const VariableNameSchema = z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/u);
 
+/**
+ * What a program's or a tool's JSON result says, field by field: the values a
+ * field can have, or its type. A run holds the node to it (RFC-010), and the
+ * builder offers the values as choices.
+ */
+export const DeclaredOutputSchema = z.record(
+  z.string(),
+  z.union([
+    z.array(z.union([z.string(), z.number(), z.boolean()])).min(1),
+    z.enum(["string", "number", "integer", "boolean"]),
+  ]),
+);
+
 /** What a tool node's program sees, and how it returns structured output. */
 export const toolProgramFields = {
   env: z
@@ -30,6 +43,9 @@ export const toolProgramFields = {
         .describe(
           "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout.",
         ),
+      schema: DeclaredOutputSchema.optional().describe(
+        "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+      ),
     })
     .optional()
     .describe("Structured output from the program."),

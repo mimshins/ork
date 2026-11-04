@@ -13,6 +13,9 @@ issue:
   tool: get_issue
   arguments:
     id: "{{inputs.issue}}"
+  output:
+    schema:
+      state: [open, closed]
   env:
     LINEAR_TOKEN: "{{env.LINEAR_TOKEN}}"
 ```
@@ -23,6 +26,8 @@ A later node reads `{{nodes.issue.output.json.title}}`, and an edge can say
 - **What comes back:** `output.json` for a structured result, or text that is
   JSON, and `output.text` for what it said. A result the server marks as an
   error fails the node.
+- **`output: { schema }`** declares the result's fields, as for a
+  [program's JSON](../scripts.md). A value that doesn't fit fails the node.
 - **`arguments:`** strings are templates. One that is only `{{ … }}` keeps its
   value's type, so a tool that asks for a number gets one.
 - **Secrets stay in your environment.** `.mcp.json` reads them as `${VAR}` or

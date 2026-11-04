@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 import { Combobox } from "../components/combobox.tsx";
 import { Select } from "../components/select.tsx";
 import { messageTargets } from "./builder-model.ts";
+import { saysOf } from "./condition-model.ts";
 import { type FieldProps, isRecord, setField } from "./form-parts.tsx";
 import { controlOf } from "./schema-form.tsx";
 import { kindOf } from "./schema-model.ts";
@@ -60,6 +61,53 @@ export const customControl = (
         value={text ?? NONE}
       />
     );
+  }
+  // A join can't wait on more inputs than it has.
+  if (last === "n" && id !== null && field.path.length === 3) {
+    const inputs = graph.edges.filter(({ to }) => to === id).length;
+    const current = typeof field.value === "number" ? field.value : 1;
+    const counts = Array.from(
+      { length: Math.max(inputs, current, 1) },
+      (_, index) => String(index + 1),
+    );
+    return (
+      <Select
+        label="How many inputs to wait for"
+        onChange={next => {
+          setField(field, Number(next));
+        }}
+        options={counts.map(value => ({ value, label: value }))}
+        value={String(current)}
+      />
+    );
+  }
+  // What a gate recommends, or takes on a timeout, is one of its options.
+  if (
+    (last === "recommended" || last === "default") &&
+    id !== null &&
+    field.path.length === 3
+  ) {
+    const says = saysOf(graph, id);
+    const answers =
+      says.fields.find(({ field: name }) => name === "choice")?.values ?? [];
+    if (answers.length > 0) {
+      return (
+        <Select
+          label={last === "default" ? "If it times out" : "Recommended"}
+          onChange={next => {
+            setField(field, next === NONE ? undefined : next);
+          }}
+          options={[
+            { value: NONE, label: "None" },
+            ...answers.map(value => ({
+              value: String(value),
+              label: String(value),
+            })),
+          ]}
+          value={text ?? NONE}
+        />
+      );
+    }
   }
   if (last === "to" && field.path.includes("notify")) {
     return (

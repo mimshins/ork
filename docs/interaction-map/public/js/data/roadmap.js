@@ -702,7 +702,11 @@ export const MILESTONES = [
         status: "active",
         detail:
           "Prevent typos instead of reporting them. Tools and MCP calls can declare their output, a run holds every node to what it declared, and the builder's conditions become dropdowns over those values. RFC-010.",
-        docs: ["rfcs/active/RFC-010-conditions-from-declared-outputs.md"],
+        docs: [
+          "decisions/ADR-052-conditions-from-declared-outputs.md",
+          "rfcs/archived/RFC-010-conditions-from-declared-outputs.md",
+        ],
+        commits: ["bd80e12"],
       },
       {
         id: "workflow-walk",

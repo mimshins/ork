@@ -4,72 +4,119 @@
  *   needs a drag, so the keyboard and a pointer do the same thing.
  */
 
+import { conditionText, type WorkflowEdit } from "@krapht/ork-server/client";
 import { useState } from "react";
 
 import { Button } from "../components/button.tsx";
 import { Select } from "../components/select.tsx";
-import { TextField } from "../components/text-field.tsx";
+import { Unseen } from "../components/unseen.tsx";
+import {
+  connectEdit,
+  saysOf,
+  shownCondition,
+  unhandledAnswers,
+} from "./condition-model.ts";
+import { ConditionPicker } from "./condition-picker.tsx";
+import { CommitText } from "./form-parts.tsx";
 import type { Builder } from "./use-builder.ts";
 
 import styles from "./builder.module.css";
 
 type Edge = NonNullable<Builder["view"]>["graph"]["edges"][number];
 
-const optionsOf = (edge: Edge) => ({
-  ...(edge.when === undefined ? {} : { when: edge.when }),
-  ...(edge.maxRounds === undefined ? {} : { maxRounds: edge.maxRounds }),
-});
-
 /** Which edge this is, as two can link the same nodes. */
 const whichOf = (edge: Edge) =>
   edge.when === undefined ? {} : { whenWas: edge.when };
 
-const both = (when: string, rounds: string) => ({
-  ...(when === "" ? {} : { when }),
-  ...(rounds === "" ? {} : { maxRounds: Number(rounds) }),
-});
-
-/** One outgoing edge, whose text fields commit when they're left. */
-const OutEdge = ({ edge, builder }: { edge: Edge; builder: Builder }) => {
-  const [when, setWhen] = useState(edge.when ?? "");
-  const [rounds, setRounds] = useState(
-    edge.maxRounds === undefined ? "" : String(edge.maxRounds),
-  );
+/** One outgoing edge: when to follow it and, for a loop, how many times. */
+const OutEdge = ({
+  edge,
+  last,
+  builder,
+}: {
+  edge: Edge;
+  /** Whether it's the last edge its node has. */
+  last: boolean;
+  builder: Builder;
+}) => {
   const { from, to } = edge;
-  const change = (next: { when?: string; maxRounds?: number }): void => {
-    void builder.edit({ op: "setEdge", from, to, ...next, ...whichOf(edge) });
-  };
+  const graph = builder.view?.graph;
+  if (graph === undefined) return null;
+  const type = graph.nodes.find(({ id }) => id === from)?.type;
+  const says = saysOf(graph, from);
+  const rounds =
+    edge.maxRounds === undefined ? {} : { maxRounds: edge.maxRounds };
+  const setWhen = (when?: string): WorkflowEdit => ({
+    op: "setEdge",
+    from,
+    to,
+    ...(when === undefined ? {} : { when }),
+    ...rounds,
+    ...whichOf(edge),
+  });
+  const loop = edge.maxRounds !== undefined;
   return (
     <li className={styles["edge"]}>
       <p className={styles["edgeName"]}>To {to}</p>
-      <TextField
-        description="Follow this edge only when this holds, such as status == 'pass'."
-        label={`Condition, to ${to}`}
-        onChange={setWhen}
-        onCommit={() => {
-          if (when !== (edge.when ?? "")) change(both(when, rounds));
+      <ConditionPicker
+        canBeOtherwise={type === "control.router" && last}
+        condition={shownCondition(edge, says)}
+        gate={type === "human.gate"}
+        loop={loop}
+        onChange={when => {
+          void builder.edit(setWhen(when));
         }}
-        value={when}
+        onDeclare={(name, values) => {
+          const [first] = values;
+          void builder.edit(
+            {
+              op: "set",
+              path: ["nodes", from, "output", "schema", name],
+              value: values,
+            },
+            setWhen(
+              conditionText({
+                mode: "test",
+                join: "all",
+                rows: [
+                  {
+                    field: `json.${name}`,
+                    test: "is",
+                    ...(first === undefined ? {} : { value: first }),
+                  },
+                ],
+              }),
+            ),
+          );
+        }}
+        says={says}
+        to={to}
+        when={edge.when}
       />
-      <TextField
-        description="Needed on an edge that closes a loop."
-        label={`Max rounds, to ${to}`}
-        onChange={setRounds}
-        onCommit={() => {
-          const old =
-            edge.maxRounds === undefined ? "" : String(edge.maxRounds);
-          if (rounds !== old) change(both(when, rounds));
+      <CommitText
+        commit={typed => {
+          void builder.edit({
+            op: "setEdge",
+            from,
+            to,
+            ...(edge.when === undefined ? {} : { when: edge.when }),
+            ...(typed === "" ? {} : { maxRounds: Number(typed) }),
+            ...whichOf(edge),
+          });
         }}
-        type="number"
-        value={rounds}
+        description="Needed on an edge that closes a loop."
+        label="Max rounds"
+        unseen={`, to ${to}`}
+        number
+        shown={edge.maxRounds === undefined ? "" : String(edge.maxRounds)}
       />
       <Button
         onClick={() => {
           void builder.edit({ op: "disconnect", from, to, ...whichOf(edge) });
         }}
-        variant="ghost"
       >
-        Remove edge to {to}
+        Remove edge
+        <Unseen> to {to}</Unseen>
       </Button>
     </li>
   );
@@ -93,6 +140,7 @@ export const Connections = ({
     .filter(other => !out.some(({ to }) => to === other))
     .toSorted((a, b) => Number(a === id) - Number(b === id));
   const chosen = free.includes(target) ? target : (free[0] ?? "");
+  const unhandled = unhandledAnswers(graph, id);
   return (
     <section
       aria-label={`Edges of ${id}`}
@@ -108,14 +156,21 @@ export const Connections = ({
         <p className={styles["hint"]}>Nothing follows this node yet.</p>
       ) : (
         <ul className={styles["edges"]}>
-          {out.map(edge => (
+          {out.map((edge, index) => (
             <OutEdge
               builder={builder}
               edge={edge}
-              key={`${edge.to} ${optionsKey(edge)}`}
+              // Where it is, not what it says: changing a condition keeps focus.
+              key={`${edge.to} ${String(out.slice(0, index).filter(({ to }) => to === edge.to).length)}`}
+              last={index === out.length - 1}
             />
           ))}
         </ul>
+      )}
+      {unhandled.length === 0 ? null : (
+        <p className={styles["hint"]}>
+          Answering {unhandled.join(" or ")} ends the run here.
+        </p>
       )}
       {free.length === 0 ? null : (
         <div className={styles["connect"]}>
@@ -127,7 +182,7 @@ export const Connections = ({
           />
           <Button
             onClick={() => {
-              void builder.edit({ op: "connect", from: id, to: chosen });
+              void builder.edit(connectEdit(graph, id, chosen));
             }}
           >
             Connect
@@ -137,7 +192,6 @@ export const Connections = ({
             onClick={() => {
               builder.setConnecting(!builder.connecting);
             }}
-            variant="ghost"
           >
             {builder.connecting ? "Cancel picking" : "Pick a card"}
           </Button>
@@ -146,5 +200,3 @@ export const Connections = ({
     </section>
   );
 };
-
-const optionsKey = (edge: Edge): string => JSON.stringify(optionsOf(edge));

@@ -37,7 +37,13 @@ export const decideEdges = (
     const holds =
       edge.condition === undefined
         ? result.ok
-        : truthy(evaluate(edge.condition, { ...scope, output: result.output }));
+        : truthy(
+            evaluate(edge.condition, {
+              ...scope,
+              // How it ended, unless the node reports a field of that name.
+              output: { ok: result.ok, ...result.output },
+            }),
+          );
     const taken = holds && !(firstOnly && matched);
     if (taken) matched = true;
     return { edge, taken };

@@ -596,6 +596,30 @@ describe("Claude nodes", () => {
     });
   });
 
+  it("fails a report whose field isn't what the node declared", () => {
+    const fields = { verdict: "maybe" };
+    const report = { status: "pass", summary: "s", artifacts: {} } as const;
+    const declared = { verdict: ["approve", "escalate"] };
+    expect(
+      resultOf(outcome({ ...report, fields: { verdict: "approve" } }), declared)
+        .ok,
+    ).toBe(true);
+    expect(resultOf(outcome({ ...report, fields }), declared)).toMatchObject({
+      ok: false,
+      output: {
+        status: "fail",
+        verdict: "maybe",
+        summary: 'verdict is "maybe", expected approve or escalate',
+      },
+      error: 'verdict is "maybe", expected approve or escalate',
+      sessionId: "s",
+    });
+    // A node's own list for `status` narrows it; the value is on the report.
+    expect(
+      resultOf(outcome({ ...report, fields }), { status: ["pass"] }).ok,
+    ).toBe(true);
+  });
+
   it("runs a session with the run's outputs, its budget, and the re-entry input", async () => {
     const specs: SessionSpec[] = [];
     const runtime: ClaudeRuntime = {

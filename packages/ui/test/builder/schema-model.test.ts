@@ -97,16 +97,26 @@ describe("the whole format", () => {
   it("types only the values the format leaves free", () => {
     const paths = new Set(nodeTypesOf(ROOT).flatMap(type => nodeFree(type)));
     expect([...paths].toSorted()).toEqual([
+      "claude.leader.before.output.schema.*[]",
       "claude.leader.output.schema.*",
+      "claude.leader.verify.output.schema.*[]",
       "claude.subagent.output.schema.*",
+      "claude.worker.before.output.schema.*[]",
       "claude.worker.output.schema.*",
+      "claude.worker.verify.output.schema.*[]",
       "mcp.call.arguments.*",
+      "mcp.call.output.schema.*[]",
+      "tool.aws.output.schema.*[]",
+      "tool.gh.output.schema.*[]",
+      "tool.git.output.schema.*[]",
+      "tool.shell.output.schema.*[]",
     ]);
   });
 
   it("has a control for every top-level setting, agents included", () => {
     expect(freeTopLevel().toSorted()).toEqual([
       "workflow.agents.*.output.schema.*",
+      "workflow.defaults.before.output.schema.*[]",
       "workflow.inputs.*.default",
     ]);
   });
