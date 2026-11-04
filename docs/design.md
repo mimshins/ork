@@ -66,8 +66,8 @@ parts fit together is the [interaction map](./interaction-map/README.md).
 - **M2: UI.**
   - The local server: a JSON API and SSE streams on `node:http`, a client of the
     store (ADR-039).
-  - UI panels in this order: monitor, logs, decisions, chats, then the workflow
-    builder and the context inspector.
+  - UI panels in this order: monitor, logs, decisions, chats, the workflow
+    builder (built), then the context inspector.
   - The feedback loop: `ork:feedback-triage`, `ork feedback apply`, lessons,
     publishing to Discussions, export and import, and the Feedback panel.
 

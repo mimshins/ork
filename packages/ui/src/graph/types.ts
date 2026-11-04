@@ -27,8 +27,6 @@ export type GraphInput = {
   edges: readonly GraphEdge[];
   /** Pairs of nodes that may message each other. */
   channels?: readonly (readonly [string, string])[] | undefined;
-  /** From the workflow's `.layout.json`: these nodes stay where they are put. */
-  positions?: Readonly<Record<string, Point>> | undefined;
 };
 
 /**

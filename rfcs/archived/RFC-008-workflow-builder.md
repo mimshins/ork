@@ -1,9 +1,10 @@
 # RFC-008 — A workflow builder that keeps the YAML
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-04
 - **Supersedes:** —
 - **Superseded by:** —
+- **ADR:** [ADR-051](../../decisions/ADR-051-workflow-builder.md)
 
 ## Contents
 
@@ -346,3 +347,24 @@ The maintainer decided these on 2026-11-04.
    none. Keeping it would leave the Monitor a second way of drawing edges, and
    the builder a choice to make about pinned nodes. A hand-written file is
    ignored from then on.
+
+## As built
+
+Where the build moved from the decision above:
+
+- **No YAML box.** Every value got a control. What the format leaves free is
+  typed as text, or as JSON for a number or a list, and a test names those
+  paths.
+- **No drag to connect.** A node connects from a list or by picking a card,
+  which works the same by keyboard and pointer.
+- **`ork prune` leaves drafts.** It forgets old runs' logs, and a draft is
+  unfinished work, which goes only when it's saved or discarded.
+- **Untouched lines come back as written.** The measurements missed how much the
+  `yaml` library reprints: `[a, b]` as `[ a, b ]`, a file's indent, wrapped
+  text, a number's form. So the file is printed before and after the edits, and
+  only what differs between those two replaces anything in the original, a
+  three-way merge checked by parsing the result. Lines an edit changed are still
+  printed the library's way ([L105](../../specs/gaps/limits-builder.md)).
+- **Edges are edited in place.** Rewriting a written-out entry lost its comments
+  and any field Ork didn't know, and two entries between the same nodes changed
+  together. Now only the entry an edit names changes.

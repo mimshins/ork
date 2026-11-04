@@ -96,7 +96,10 @@ export const NodeCard = memo(
           </span>
           <span className={styles["cardId"]}>{id}</span>
         </span>
-        <StatusBadge status={facts.status} />
+        <StatusBadge
+          status={facts.status}
+          word={facts.word}
+        />
         <span className={styles["cardMeta"]}>{meta.join(" · ")}</span>
       </button>
     );

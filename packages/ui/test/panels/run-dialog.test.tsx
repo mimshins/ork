@@ -155,7 +155,7 @@ describe("the Run workflow dialog", () => {
     const opened = openPanelState({
       ...ONE,
       monitor: {
-        graph: { nodes: [], edges: [], channels: [], positions: {} },
+        graph: { nodes: [], edges: [], channels: [] },
         tree: [],
       },
     });

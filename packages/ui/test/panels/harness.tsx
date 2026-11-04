@@ -46,6 +46,8 @@ export type FakeRoutes = {
   usage?: (query: URLSearchParams) => UsageReport;
   /** Why it refuses a usage report, if it does. */
   refuseUsage?: string;
+  /** The builder's routes, when a test plays them. */
+  builder?: (path: string, body: unknown) => Response | undefined;
 };
 
 export type MonitorRoutes = {
@@ -77,6 +79,8 @@ export const openPanelState = (routes: FakeRoutes = {}) => {
   const controlled: { kind: string; run: string; body: unknown }[] = [];
   const answer = (path: string, body: unknown, query = ""): Response => {
     const { monitor } = routes;
+    const built = routes.builder?.(path, body);
+    if (built !== undefined) return built;
     if (path === "/api/usage") {
       return routes.refuseUsage === undefined
         ? json(

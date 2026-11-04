@@ -35,9 +35,9 @@ workflow, and tested on the example workflows.
   loop dashed, an owner sparsely dashed, and a channel dotted with no arrowhead.
 - **Conditions** show on their edge, cut to 28 characters, with the whole of one
   in a hover title. A gap widens to fit the condition of a curve crossing it.
-- **Nodes in the workflow's [`.layout.json`](../workflow-format.md)** stay where
-  it puts them, and edges then curve directly between them
-  ([L62](../gaps/limits.md)).
+- **Nothing about it is stored.** A workflow is always drawn from its nodes and
+  edges, so it looks the same in the Monitor and the Builder, and however it was
+  written ([ADR-051](../../decisions/ADR-051-workflow-builder.md)).
 
 ## View
 

@@ -14,6 +14,7 @@ still to come.
 - [Runs](#runs)
 - [Run workflow](#run-workflow)
 - [Monitor](#monitor)
+- [Builder](#builder)
 - [Logs](#logs)
 - [Decisions](#decisions)
 - [Chats](#chats)
@@ -80,8 +81,7 @@ Its CLI twin is `ork tree <run>`.
 
 - **The graph** ([graph](./graph.md)) is what the run recorded in `run.started`,
   so editing the workflow file later does not redraw it, with the workers it has
-  spawned added and cards where the file's `.layout.json` puts them now. A run
-  from before edges were kept is drawn from its file
+  spawned added. A run from before edges were kept is drawn from its file
   (`GET /api/runs/:id/graph`).
 - **Each card** shows its status, model, tokens and cost. The drawing changes
   only when the run's nodes do, so a busy run does not move it, and a view the
@@ -118,6 +118,42 @@ Its CLI twin is `ork tree <run>`.
   gone (WCAG 2.4.3).
 
 Selecting a node is shared with the other panels: Logs and Chats follow it.
+
+## Builder
+
+Creates or edits a workflow with no YAML to write
+([panel](../../packages/ui/src/builder/builder-panel.tsx),
+[tests](../../packages/ui/test/builder/),
+[edits](../../packages/schema/src/workflow-edit.ts),
+[server](../../packages/server/src/builder.ts),
+[ADR-051](../../decisions/ADR-051-workflow-builder.md)). Its CLI twin is your
+editor and `ork validate`.
+
+- **Choosing:** a project, then one of its workflows or drafts, or a new name.
+- **The palette** adds a node with a click or a key. It appears unconnected, in
+  the first column, and takes its place when it's connected.
+- **The canvas** is [the graph](./graph.md), so a workflow looks as it does in
+  the Monitor. Nothing is dragged, and nothing about where a card sits is saved.
+  A card's badge says its errors or warnings, or "not checked yet" while the
+  file fails the format's own checks, as those stop the compiler from running.
+- **The inspector** shows the selected node, or the workflow when none is
+  selected. Forms come from the format's JSON Schema, so a new field needs no UI
+  work: objects are groups, lists and named values are rows, and a union offers
+  its kinds. A text field commits when it's left. A value the format leaves free
+  (`mcp.call`'s `arguments`, `output.schema`, an input's `default`) is typed as
+  text, or as JSON for a number or a list. There is no YAML to read or write.
+- **Edges** are in the inspector: each with its condition and loop limit, added
+  from a list or by picking a card, neither of which needs a drag.
+- **Every change goes to the server,** which keeps it as a draft in the store
+  and answers with the new text and what the checks say. Changes go one at a
+  time and read what they build on when their turn comes, and an answer about a
+  workflow no longer open changes nothing on screen. Undo steps back through
+  this session's changes up to the last save, and Discard asks, then goes back
+  to the file. Choosing another project closes what's open.
+- **Save** writes the workflow's file, whole, and never commits. Errors block
+  it. If the file changed since the draft began, it asks before replacing it.
+- **Run…** saves, says this is a real run, names the nodes that act outside the
+  worktree, and opens the Run workflow dialog on it.
 
 ## Logs
 

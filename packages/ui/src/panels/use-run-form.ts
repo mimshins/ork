@@ -75,8 +75,13 @@ export const useRunForm = (
     () => (projectsRead.status === "ready" ? projectsRead.data : []),
     [projectsRead],
   );
-  const [chosenProject, setChosenProject] = useState<string | null>(null);
-  const [chosenWorkflow, setChosenWorkflow] = useState<string | null>(null);
+  const [preset] = useState(() => state.runPreset.getValue());
+  const [chosenProject, setChosenProject] = useState<string | null>(
+    preset?.project ?? null,
+  );
+  const [chosenWorkflow, setChosenWorkflow] = useState<string | null>(
+    preset?.workflow ?? null,
+  );
   const [typed, setTyped] = useState<InputValues>({});
   const [flags, setFlags] = useState<RunFlags>(NO_FLAGS);
   const [refusal, setRefusal] = useState<string | null>(null);

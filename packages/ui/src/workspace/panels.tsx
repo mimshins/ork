@@ -6,7 +6,9 @@
 
 import type { ComponentType } from "react";
 
+import { BuilderPanel } from "../builder/builder-panel.tsx";
 import {
+  IconBuilder,
   IconChats,
   IconDecisions,
   IconLogs,
@@ -30,7 +32,8 @@ export type PanelId =
   | "decisions"
   | "chats"
   | "notifications"
-  | "usage";
+  | "usage"
+  | "builder";
 
 export type PanelSpec = {
   id: PanelId;
@@ -76,6 +79,12 @@ const SPECS: Record<PanelId, PanelSpec> = {
     title: "Usage",
     Icon: IconUsage,
     Body: UsagePanel,
+  },
+  builder: {
+    id: "builder",
+    title: "Builder",
+    Icon: IconBuilder,
+    Body: BuilderPanel,
   },
 };
 

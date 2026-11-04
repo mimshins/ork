@@ -117,16 +117,3 @@ export const WorkflowSchema = z.strictObject({
     ),
 });
 export type Workflow = z.infer<typeof WorkflowSchema>;
-
-/** Canvas positions live next to the workflow so logic diffs stay clean. */
-export const LayoutSchema = z.strictObject({
-  schemaVersion: z.literal(SCHEMA_VERSION),
-  nodes: z.record(
-    NodeIdSchema,
-    z.strictObject({ x: z.number(), y: z.number() }),
-  ),
-  viewport: z
-    .strictObject({ x: z.number(), y: z.number(), zoom: z.number() })
-    .optional(),
-});
-export type Layout = z.infer<typeof LayoutSchema>;

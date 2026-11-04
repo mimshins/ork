@@ -9,10 +9,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   expandEdge,
-  parseLayout,
   parseWorkflow,
   renderJsonSchema,
-  serializeLayout,
   serializeWorkflow,
 } from "../src/index.ts";
 
@@ -108,24 +106,6 @@ describe("expandEdge", () => {
 
   it("rejects a chain", () => {
     expect(expandEdge("a -> b -> c", 0).ok).toBe(false);
-  });
-});
-
-const parseLayoutOk = (text: string) => {
-  const result = parseLayout(text);
-  if (!result.ok) throw new Error(result.message);
-  return result.layout;
-};
-
-describe("layout", () => {
-  it("sorts node ids and round-trips", () => {
-    const text = serializeLayout({
-      schemaVersion: 1,
-      nodes: { b: { x: 1, y: 2 }, a: { x: 3, y: 4 } },
-    });
-    expect(text.indexOf('"a"')).toBeLessThan(text.indexOf('"b"'));
-    expect(parseLayout(text)).toMatchObject({ ok: true });
-    expect(serializeLayout(parseLayoutOk(text))).toBe(text);
   });
 });
 

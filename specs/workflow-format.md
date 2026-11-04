@@ -11,13 +11,12 @@ Status: **Built**: the Zod model, edge shorthand, canonical YAML, diagnostics,
 **Files:**
 
 - `.ork/workflows/<name>.ork.yaml`: the committed workflow.
-- `.ork/workflows/<name>.layout.json`: optional canvas positions, kept separate
-  so that logic diffs stay clean: `{ "nodes": { "<id>": { "x": 0, "y": 0 } } }`.
-  A file that does not parse is treated as no file, since a run never reads it
-  ([layout.ts](../packages/schema/src/layout.ts)).
 
 **Serialization rules:**
 
+- Where a node sits on a canvas isn't stored: it follows from the nodes and
+  edges ([ADR-051](../decisions/ADR-051-workflow-builder.md)). A
+  `<name>.layout.json` left from before is ignored.
 - Stable node ids.
 - Deterministic key order.
 - No absolute paths.

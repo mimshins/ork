@@ -207,10 +207,6 @@ How something built works for now, by choice.
   kept results and open runs back in order, as it always has for any node, so
   with parallel activations a result or a run can return to a different
   activation than made it, with other inputs. ([calls](../scheduler/calls.md))
-- **L62 · Edges between hand-placed nodes can cross a card.** With a
-  `.layout.json`, an edge curves straight between its two nodes and does not
-  look for a way around what the user put between them.
-  ([graph](../ui/graph.md))
 - **L63 · A run's tree is read again, not folded in the browser.** The Monitor
   asks the server for it at most four times a second while the run is busy. That
   is the whole history each time, so a very long run costs more to watch.

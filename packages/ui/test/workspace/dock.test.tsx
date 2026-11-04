@@ -12,6 +12,7 @@ import { stubWindow } from "../dom.ts";
 import { keys, openShell, railNames, tabNames } from "./harness.tsx";
 
 const ALL = [
+  "Builder",
   "Chats",
   "Decisions",
   "Logs",
@@ -104,7 +105,7 @@ describe("the dock", () => {
     act(() => {
       workspace.restore("monitor");
     });
-    expect(tabsBeside("Monitor")).toEqual(["Monitor"]);
+    expect(tabsBeside("Monitor")).toEqual(["Monitor", "Builder"]);
     expect(tabNames()).toEqual(ALL);
   });
 
@@ -123,6 +124,7 @@ describe("the dock", () => {
     act(() => {
       for (const id of [
         "monitor",
+        "builder",
         "logs",
         "chats",
         "runs",
@@ -233,6 +235,7 @@ describe("the saved layout", () => {
     });
     await reload(first);
     expect(tabNames()).toEqual([
+      "Builder",
       "Chats",
       "Decisions",
       "Monitor",

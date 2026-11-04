@@ -24,7 +24,6 @@ const GRAPH: WorkflowGraph = {
   ],
   edges: [{ from: "lead", to: "kit", when: "ok" }],
   channels: [],
-  positions: {},
 };
 
 const ROUTES: MonitorRoutes = {

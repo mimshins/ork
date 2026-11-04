@@ -116,7 +116,6 @@ describe("the Monitor's model", () => {
         ],
         edges: [],
         channels: [],
-        positions: {},
       },
       TREE,
     );

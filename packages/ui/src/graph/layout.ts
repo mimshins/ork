@@ -3,15 +3,14 @@
  *   left to right, by longest path, with loop edges left out of the ranking and
  *   drawn going back; order within a rank by barycenter, to cut crossings; then
  *   rounded orthogonal routes. A long edge gets a stop on each rank it crosses,
- *   so it runs between nodes rather than over them. Nodes the workflow's
- *   `.layout.json` places stay where they are, and edges then go straight
- *   between them.
+ *   so it runs between nodes rather than over them. Nothing about it is stored,
+ *   so a workflow is always drawn one way (RFC-008).
  */
 
 import { type Link, orderLayers } from "./order.ts";
 import { placeLayers } from "./place.ts";
 import { assignRanks, edgesOf, type LaidEdge } from "./ranks.ts";
-import { type Chain, routeDirect, routeEdges } from "./route.ts";
+import { type Chain, routeEdges } from "./route.ts";
 import { straighten } from "./straighten.ts";
 import {
   type GraphInput,
@@ -172,15 +171,14 @@ export const layoutGraph = (input: GraphInput): GraphLayout => {
 
   const placed = new Map<string, PlacedNode>(
     input.nodes.map(({ id, type }) => {
-      const given = input.positions?.[id];
       const rank = rankOf(id);
       return [
         id,
         {
           id,
           type,
-          x: given?.x ?? columnX(rank),
-          y: given?.y ?? (centers.get(id) ?? 0) - NODE_HEIGHT / 2,
+          x: columnX(rank),
+          y: (centers.get(id) ?? 0) - NODE_HEIGHT / 2,
           width: NODE_WIDTH,
           height: NODE_HEIGHT,
           rank,
@@ -189,23 +187,14 @@ export const layoutGraph = (input: GraphInput): GraphLayout => {
     }),
   );
 
-  const placedByHand = Object.keys(input.positions ?? {}).length > 0;
-  const routed = placedByHand
-    ? edges.flatMap(edge => {
-        const from = placed.get(edge.from);
-        const to = placed.get(edge.to);
-        return from === undefined || to === undefined
-          ? []
-          : [routeDirect(edge, from, to)];
-      })
-    : routeEdges({
-        chains,
-        nodes: placed,
-        stopY: centers,
-        rankOf,
-        columnX,
-        columnWidth: NODE_WIDTH,
-        gapWidth,
-      });
+  const routed = routeEdges({
+    chains,
+    nodes: placed,
+    stopY: centers,
+    rankOf,
+    columnX,
+    columnWidth: NODE_WIDTH,
+    gapWidth,
+  });
   return framed([...placed.values()], routed);
 };

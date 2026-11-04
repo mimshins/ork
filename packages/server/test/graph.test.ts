@@ -47,25 +47,7 @@ describe("reading a workflow's graph", () => {
         { from: "b", to: "lead", when: "exitCode == 1", maxRounds: 2 },
       ],
       channels: [["a", "lead"]],
-      positions: {},
     });
-  });
-
-  it("takes positions from the layout file beside it", () => {
-    writeFileSync(
-      path.join(dir, "t.layout.json"),
-      JSON.stringify({ nodes: { lead: { x: 10, y: 20 } } }),
-    );
-    expect(readWorkflowGraph(file)?.positions).toEqual({
-      lead: { x: 10, y: 20 },
-    });
-  });
-
-  it("treats a broken layout file as none", () => {
-    writeFileSync(path.join(dir, "t.layout.json"), "{ not json");
-    expect(readWorkflowGraph(file)?.positions).toEqual({});
-    writeFileSync(path.join(dir, "t.layout.json"), '{"nodes":{"a":{"x":"1"}}}');
-    expect(readWorkflowGraph(file)?.positions).toEqual({});
   });
 
   it("says when there is no workflow to read", () => {
@@ -126,6 +108,6 @@ describe("reading a workflow's graph", () => {
         ],
         path.join(dir, "gone.ork.yaml"),
       ),
-    ).toMatchObject({ edges: [], channels: [], positions: {} });
+    ).toMatchObject({ edges: [], channels: [] });
   });
 });

@@ -82,3 +82,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [048](./ADR-048-scripts-and-rules-on-the-bus.md)   | Scripts and rules post to the message bus                                   | Accepted          | [RFC-005](../rfcs/archived/RFC-005-scripts-and-rules-on-the-bus.md) |
 | [049](./ADR-049-steps-mcp-calls-and-scripts.md)    | Deterministic steps around a session, MCP calls and inline scripts          | Accepted          | [RFC-006](../rfcs/archived/RFC-006-steps-around-a-session.md)       |
 | [050](./ADR-050-limits-across-runs.md)             | Limits across runs                                                          | Accepted          | [RFC-007](../rfcs/archived/RFC-007-limits-across-runs.md)           |
+| [051](./ADR-051-workflow-builder.md)               | A workflow builder that keeps the YAML                                      |

@@ -11,6 +11,8 @@ export type NodeFacts = {
   model?: string | undefined;
   tokens?: number | undefined;
   costUsd?: number | undefined;
+  /** Says this in place of the status's word: the builder's problems. */
+  word?: string | undefined;
   /** The `ork` command that shows this node, for its tooltip. */
   cli?: string | undefined;
 };
@@ -65,7 +67,7 @@ export const shortModel = (model: string): string =>
 export const nodeName = (id: string, type: string, facts: NodeFacts): string =>
   [
     id,
-    statusWord(facts.status),
+    facts.word ?? statusWord(facts.status),
     ...(facts.costUsd === undefined ? [] : [formatCost(facts.costUsd)]),
     ...(facts.tokens === undefined
       ? []

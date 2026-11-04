@@ -44,6 +44,11 @@ all views over the same events.
   Events are only appended, never changed.
 - **Before the terminal:** each event is stored, then printed (and sent to the
   run's socket followers), so a crash loses at most the event in flight.
+- **Workflow drafts:** `workflow_drafts` holds what the
+  [builder](./ui/panels.md#builder) hasn't saved: a project, a workflow's name,
+  its text, and the hash of the file it began from. It's kept here, not in the
+  workflows folder, as a running workflow's call must never read an unfinished
+  file. A draft goes when it's saved or discarded; `ork prune` leaves it.
 - **The usage ledger** has a table of its own: one row per finished Claude
   session, written as its event is appended, which outlives the run
   ([usage](./usage.md)).

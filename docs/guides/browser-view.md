@@ -82,6 +82,30 @@ makes your browser ask.
 totals, spend per day, and the costliest workflows, models and nodes, with what
 is worth a look. See [what you spent](./models-and-budgets.md#what-you-spent).
 
+### Builder
+
+Creates or edits a workflow, with no YAML to write. Choose a project, then a
+workflow, or type a new name and choose **Create**.
+
+- Add a node from the list on the left. The canvas arranges itself from the
+  nodes and their edges, so there's nothing to drag.
+- Select a card to fill it in on the right. With nothing selected, the same
+  place has the workflow's own settings.
+- To connect two nodes, select the first, then use **Connect to**, or **Pick a
+  card** and choose the next one.
+- What the checks say shows on the cards, on the fields and under the canvas.
+  They're the same checks as `ork validate`.
+- What you change is kept as a draft, so closing the tab loses nothing, and your
+  workflows folder only gets it when you choose **Save**, which needs no errors
+  left. Save never commits.
+- **Run…** saves and opens Run workflow. It's a real run: it can spend money,
+  and commit work. Before it starts, it names the nodes that act outside the
+  worktree.
+
+The file it saves is the one you could write by hand. Lines you didn't edit stay
+exactly as written, comments included. Cards have no saved positions, so a
+`<name>.layout.json` from an older version is ignored and can be deleted.
+
 ## The workspace
 
 Drag a tab to dock it beside or into another group, or use the buttons on each

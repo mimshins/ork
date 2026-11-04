@@ -203,7 +203,7 @@ describe("the Chats panel", () => {
     await open({
       monitor: {
         tree: [],
-        graph: { nodes: [], edges: [], channels: [], positions: {} },
+        graph: { nodes: [], edges: [], channels: [] },
         refuse: "Not running.",
       },
     });

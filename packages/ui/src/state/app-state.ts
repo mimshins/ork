@@ -84,6 +84,11 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
   /** The project the Runs panel shows: a root, or "all". */
   const runFilter = Container.create(ALL_PROJECTS);
   const runDialog = Container.create(false);
+  /** What the Run workflow dialog opens on, when something chose for it. */
+  const runPreset = Container.create<{
+    project: string;
+    workflow: string;
+  } | null>(null);
   const projects = createRead(() => client.call("projects"));
   const workflows = createRead((id: string) =>
     client.call("workflows", { params: { id } }),
@@ -148,6 +153,8 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     preferences,
     runFilter,
     runDialog,
+    runPreset,
+    client,
     settledDecisions: decisionHistory.settled,
     notifications,
     projects,

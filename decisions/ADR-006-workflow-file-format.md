@@ -1,6 +1,7 @@
 # ADR-006 — The workflow file format
 
-- **Status:** Accepted
+- **Status:** Accepted; points 2 (for edits) and 3 superseded by
+  [ADR-051](./ADR-051-workflow-builder.md)
 - **Date:** 2026-10-30
 - **Topic:** workflow format
 - **RFC:** waived — decided in design review on 2026-10-30

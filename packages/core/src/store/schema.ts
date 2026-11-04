@@ -176,6 +176,15 @@ export const MIGRATIONS: readonly (string | ((db: DatabaseSync) => void))[] = [
      resets_at TEXT,
      at TEXT NOT NULL
    );`,
+  // 10: what the workflow builder hasn't saved yet (RFC-008).
+  `CREATE TABLE workflow_drafts (
+     project TEXT NOT NULL,
+     workflow TEXT NOT NULL,
+     text TEXT NOT NULL,
+     base_hash TEXT,
+     at TEXT NOT NULL,
+     PRIMARY KEY (project, workflow)
+   );`,
 ];
 
 const versionOf = (db: DatabaseSync): number =>

@@ -5,7 +5,6 @@
 
 export * from "./agents.ts";
 export * from "./edges.ts";
-export * from "./layout.ts";
 export * from "./json-schema.ts";
 export * from "./mcp-node.ts";
 export * from "./nodes.ts";
@@ -14,4 +13,5 @@ export * from "./settings.ts";
 export * from "./steps.ts";
 export * from "./tool-nodes.ts";
 export * from "./workflow.ts";
+export * from "./workflow-edit.ts";
 export * from "./yaml.ts";

@@ -37,7 +37,6 @@ describe("announcing from a panel", () => {
           nodes: [{ id: "lead", type: "claude.leader" }],
           edges: [],
           channels: [],
-          positions: {},
         },
         tree: [treeNode("lead", { type: "claude.leader", state: "running" })],
       },

@@ -1,7 +1,7 @@
 /**
  * @file The event store's port (specs/event-store.md): every run's record and
- *   its append-only events, read back by `ork ps`, `logs` and `tree` and, in
- *   M2, by the server.
+ *   its append-only events, read back by `ork ps`, `logs`, `tree` and the
+ *   server.
  */
 
 import type {
@@ -14,6 +14,7 @@ import type {
 import type { ProjectRecord } from "../project/place.ts";
 import type { RunEvent, RunStatus } from "../run/types.ts";
 import type { DecisionChoice, PlanLimit } from "../runtime/types.ts";
+import type { DraftStore } from "./drafts.ts";
 
 /** A run's status in the store: `running` until `run.finished` is written. */
 export type StoredRunStatus = RunStatus | "running";
@@ -263,16 +264,13 @@ export type UsageStore = {
   usage: (filter?: UsageFilter) => UsageRow[];
   /** What was spent since an ISO time, in one project or all. */
   spentSince: (since: string, project?: string) => number;
-  /** The latest report of each of a plan's limits. */
+  /** Each of a plan's limits, as last reported. */
   planLimits: () => PlanLimit[];
   /** Forgets them, for one that has lifted early; a session reports them anew. */
   clearPlanLimits: () => void;
   /** When a run's last event was written; `undefined` with no events. */
   lastEventAt: (runId: string) => string | undefined;
-  /**
-   * Forgets a run and its transcript; what it spent stays in the ledger. False,
-   * and nothing changes, when the run is live.
-   */
+  /** Forgets a run and its transcript, but not its spending; false if it's live. */
   deleteRun: (runId: string) => boolean;
   /** Gives freed space back to the disk; why it could not, or `null`. */
   compact: () => string | null;
@@ -282,7 +280,8 @@ export type EventStore = DecisionStore &
   LinkStore &
   FeedbackStore &
   ProjectStore &
-  UsageStore & {
+  UsageStore &
+  DraftStore & {
     /** Records a new run as `running` in this process. */
     begin: (run: NewRun) => RunRecord;
     /** Marks a stored run `running` again, in this process (`ork resume`). */

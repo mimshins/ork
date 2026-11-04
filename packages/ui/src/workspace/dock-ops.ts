@@ -76,6 +76,10 @@ const add = (
 /** Runs on the left, Monitor over Logs, Chats and Usage, Decisions on the right. */
 export const addDefaultLayout = (api: DockviewApi): void => {
   const monitor = add(api, "monitor", {});
+  add(api, "builder", {
+    position: { referencePanel: "monitor", direction: "within" },
+    inactive: true,
+  });
   add(api, "runs", {
     position: { referencePanel: "monitor", direction: "left" },
     initialWidth: SIDE_WIDTH,

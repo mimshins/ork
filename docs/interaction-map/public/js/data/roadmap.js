@@ -684,12 +684,15 @@ export const MILESTONES = [
       {
         id: "workflow-builder",
         title: "Workflow builder",
-        status: "next",
+        status: "active",
         detail:
-          "Create a workflow from scratch in the UI, or edit one, on a canvas that saves the same YAML, with no file to write by hand. RFC-008 is accepted: forms for the whole format, edits that keep the YAML's comments, positions computed from the nodes and edges, drafts in the store, and a test run that is a real run.",
+          "Create a workflow from scratch in the UI, or edit one, on a canvas that saves the same YAML with its comments, with no file to write by hand. Forms cover the whole format, positions follow from the nodes and edges, and drafts wait in the store until they pass the checks (RFC-008).",
+        commits: ["c4ccda9"],
         docs: [
-          "rfcs/active/RFC-008-workflow-builder.md",
+          "decisions/ADR-051-workflow-builder.md",
+          "rfcs/archived/RFC-008-workflow-builder.md",
           "specs/ui.md#workflow-builder",
+          "docs/guides/browser-view.md#builder",
         ],
       },
       {

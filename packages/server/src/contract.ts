@@ -21,6 +21,8 @@ import type {
 import type { InputDef } from "@krapht/ork-schema";
 import { z } from "zod";
 
+import { BUILDER_API, type BuilderResponses } from "./contract-builder.ts";
+
 /** `/api/usage`: the report, and the limits that apply. */
 export type UsageAnswer = UsageReport & { limits: LimitsReport };
 
@@ -149,6 +151,7 @@ export type Route = {
 /** Every JSON route; the two event streams are in {@link STREAMS}. */
 export const API = {
   health: { method: "GET", path: "/api/health" },
+  ...BUILDER_API,
   projects: { method: "GET", path: "/api/projects" },
   workflows: { method: "GET", path: "/api/projects/:id/workflows" },
   runs: { method: "GET", path: "/api/runs", query: RunsQuerySchema },
@@ -201,11 +204,10 @@ export type WorkflowGraph = {
     maxRounds?: number | undefined;
   }[];
   channels: (readonly [string, string])[];
-  positions: Record<string, { x: number; y: number }>;
 };
 
 /** What each route answers with, on success. */
-export type Responses = {
+export type Responses = BuilderResponses & {
   health: Health;
   projects: ProjectRecord[];
   workflows: WorkflowView[];

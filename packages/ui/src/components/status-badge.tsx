@@ -72,8 +72,15 @@ export const statusWord = (status: Status): string => LOOKS[status].word;
 /** The color family the status belongs to, for what is drawn around a badge. */
 export const statusTone = (status: Status): string => LOOKS[status].tone;
 
-export const StatusBadge = ({ status }: { status: Status }) => {
-  const { Icon, word, tone } = LOOKS[status];
+export const StatusBadge = ({
+  status,
+  word,
+}: {
+  status: Status;
+  /** Says this in place of the status's own word. */
+  word?: string | undefined;
+}) => {
+  const { Icon, word: own, tone } = LOOKS[status];
   return (
     <span
       className={styles["badge"]}
@@ -82,7 +89,7 @@ export const StatusBadge = ({ status }: { status: Status }) => {
       <span className={styles["icon"]}>
         <Icon />
       </span>
-      {word}
+      {word ?? own}
     </span>
   );
 };

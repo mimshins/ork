@@ -9,27 +9,22 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import {
-  checkCallTargets,
+  checkWorkflowText,
   type CompiledGraph,
-  compileWorkflow,
-  contextDiagnostics,
-  loadAgents,
-  loadProject,
   placeFiles,
   placeFor,
   type ProjectPlace,
   workflowDirOf,
 } from "@krapht/ork-core";
-import {
-  type Diagnostic,
-  parseWorkflow,
-  type Workflow,
-} from "@krapht/ork-schema";
+import type { Diagnostic, Workflow } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
 import { style, write } from "../output.ts";
 import { projectAt, registeredProjects } from "../project/place.ts";
 import { findWorkflowFiles } from "../workflows.ts";
+
+const hasErrors = (diagnostics: readonly Diagnostic[]): boolean =>
+  diagnostics.some(d => d.severity === "error");
 
 export type FileReport = {
   file: string;
@@ -51,9 +46,6 @@ export type LoadedWorkflow = {
   /** Where its relative paths resolve from (ADR-035). */
   workflowDir: string;
 };
-
-const hasErrors = (diagnostics: readonly Diagnostic[]): boolean =>
-  diagnostics.some(d => d.severity === "error");
 
 /**
  * Parses and compiles one workflow file, with the agents the user and its
@@ -91,65 +83,19 @@ export const loadWorkflow = (
     };
   }
 
-  const parsed = parseWorkflow(text);
-  if (!parsed.ok) {
-    return {
-      report: { file, diagnostics: parsed.diagnostics },
-      workflow: null,
-      graph: null,
-      ...where,
-    };
-  }
-
-  const projectRoot = place.root;
-  const catalog = loadAgents({
-    projectRoot,
-    orkDir: place.dir,
-    ...(home === undefined ? {} : { home }),
+  const { diagnostics, workflow, graph, summary } = checkWorkflowText(text, {
+    ...where,
+    registered,
+    home,
   });
-  const loaded = loadProject(projectRoot, placeFiles(place).rules);
-  const compiled = compileWorkflow(parsed.workflow, {
-    catalog,
-    workflowDir,
-    projectRoot,
-    ...(loaded.project === undefined ? {} : { project: loaded.project }),
-  });
-  const { graph } = compiled;
-  const diagnostics = [
-    ...loaded.diagnostics,
-    ...compiled.diagnostics,
-    ...checkCallTargets(parsed.workflow, place, registered),
-    ...(graph === null
-      ? []
-      : contextDiagnostics(graph.workflow, { workflowDir, projectRoot })),
-  ];
-  const located: Diagnostic[] = [];
-  for (const diagnostic of diagnostics) {
-    const position = parsed.locate(diagnostic.path);
-    located.push(
-      position === null ? diagnostic : { ...diagnostic, ...position },
-    );
-  }
-  if (graph === null) {
-    return {
-      report: { file, diagnostics: located },
-      workflow: null,
-      graph: null,
-      ...where,
-    };
-  }
   return {
     report: {
       file,
-      diagnostics: located,
-      summary: {
-        nodes: graph.nodes.size,
-        edges: graph.edges.length,
-        entries: graph.entries,
-      },
+      diagnostics,
+      ...(summary === undefined ? {} : { summary }),
     },
-    workflow: hasErrors(located) ? null : graph.workflow,
-    graph: hasErrors(located) ? null : graph,
+    workflow,
+    graph,
     ...where,
   };
 };

@@ -153,7 +153,7 @@ export const NODES = [
     pkg: "server",
     src: "packages/server/src/server.ts",
     summary:
-      "Started by `ork ui`: a JSON API with live event streams on loopback, for the browser. It is one more client of the store and the run sockets, like `ork decide` in another terminal: it runs nothing itself.",
+      "Started by `ork ui`: a JSON API with live event streams on loopback, for the browser. The builder's saves are the only project files it writes. It is one more client of the store and the run sockets, like `ork decide` in another terminal: it runs nothing itself.",
     facts: [
       "Built: reads runs, trees, events and the open decisions from the store; answers, stops and messages are rows plus a wake on the run's socket; starts and resumes run as detached `ork` processes (ADR-039).",
       "Built: a run's stream follows its socket, or polls the store without one, after `Last-Event-ID`; the overview stream sends runs and decisions when they change.",
@@ -187,7 +187,7 @@ export const NODES = [
     summary:
       "The localhost UI: live panels for the run, the decisions inbox, chats with nodes, logs and notifications, then a workflow builder that creates a workflow from scratch on a canvas and saves the same YAML and layout files, and the context inspector.",
     facts: [
-      "Built: the app, bundled into the CLI's `dist/ui` and served by `ork ui`, with its Runs panel and the Monitor: a run's live graph and ownership tree, with its controls.",
+      "Built: the app, bundled into the CLI's `dist/ui` and served by `ork ui`, with its Runs panel, the Monitor (a run's live graph and ownership tree, with its controls) and the Builder, which creates or edits a workflow with no YAML to write, and saves the same file.",
       "Vite, React, Base UI, dockview and containerized-state; the run graph is drawn in-house, so no zustand ships.",
       "Browser code imports only `@krapht/ork-server/client`: the contract and the typed client.",
       "Strict CSP: no inline script or `<style>`, no remote fonts or CDNs.",
@@ -592,10 +592,10 @@ export const NODES = [
     status: "built",
     pkg: null,
     summary:
-      "The workflow itself, committed with the project: nodes, ownership, edges, inputs, layers. Canvas positions live in a separate `<name>.layout.json` so logic diffs stay clean.",
+      "The workflow itself, committed with the project: nodes, ownership, edges, inputs, layers. Where a node sits on a canvas isn't stored: it follows from the nodes and edges.",
     facts: [
       "In `.ork/workflows/`, or for a project registered from outside, `~/.ork/projects/<id>/workflows/`: read as if it were in `.ork/workflows/`, so its paths reach the repository.",
-      "Formatted only by Ork's serializer, never by a general formatter.",
+      "Formatted by Ork's serializer, never by a general formatter; the builder edits the document in place, so comments stay.",
       "Secrets appear only as `env:` references; no absolute paths.",
       "`schemaVersion` with migrations.",
     ],

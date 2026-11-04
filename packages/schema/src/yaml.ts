@@ -16,13 +16,7 @@ import { AgentSchema } from "./agents.ts";
 import { formatEdge } from "./edges.ts";
 import { NodeSchema, type NodeType } from "./nodes.ts";
 import { type Project, ProjectSchema, UserSettingsSchema } from "./project.ts";
-import {
-  type Layout,
-  LayoutSchema,
-  SCHEMA_VERSION,
-  type Workflow,
-  WorkflowSchema,
-} from "./workflow.ts";
+import { type Workflow, WorkflowSchema } from "./workflow.ts";
 
 export type DiagnosticPath = readonly (string | number)[];
 
@@ -258,36 +252,4 @@ export const serializeWorkflow = (workflow: Workflow): string => {
   );
   const body = stringify(canonical, { lineWidth: 0, indent: 2 });
   return `# yaml-language-server: $schema=${SCHEMA_URL}\n${body}`;
-};
-
-export const parseLayout = (
-  text: string,
-): { ok: true; layout: Layout } | { ok: false; message: string } => {
-  let raw: unknown;
-  try {
-    raw = JSON.parse(text);
-  } catch (error) {
-    return {
-      ok: false,
-      message: error instanceof Error ? error.message : "invalid JSON",
-    };
-  }
-  const result = LayoutSchema.safeParse(raw);
-  return result.success
-    ? { ok: true, layout: result.data }
-    : { ok: false, message: result.error.issues[0]?.message ?? "invalid" };
-};
-
-/** Layout JSON with node ids sorted, so moving one node is a one-line diff. */
-export const serializeLayout = (layout: Layout): string => {
-  const nodes: Layout["nodes"] = {};
-  for (const id of Object.keys(layout.nodes).toSorted()) {
-    const position = layout.nodes[id];
-    if (position !== undefined) nodes[id] = { x: position.x, y: position.y };
-  }
-  return `${JSON.stringify(
-    { schemaVersion: SCHEMA_VERSION, nodes, viewport: layout.viewport },
-    undefined,
-    2,
-  )}\n`;
 };

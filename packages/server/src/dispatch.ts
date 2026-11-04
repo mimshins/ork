@@ -6,15 +6,14 @@
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { apiRoutes } from "./api-routes.ts";
 import type { ServerContext } from "./context.ts";
 import { STREAMS } from "./contract.ts";
 import { guard } from "./guards.ts";
 import { BASE_HEADERS, sendError } from "./http.ts";
 import { sendNotice, sendPage } from "./page.ts";
-import { readRoutes } from "./read-routes.ts";
 import { compilePath, route } from "./router.ts";
 import { overviewStream, runStream } from "./streams.ts";
-import { writeRoutes } from "./write-routes.ts";
 
 export type Dispatch = (
   req: IncomingMessage,
@@ -27,7 +26,7 @@ export const createDispatch = (
   context: ServerContext,
   access: { port: () => number; token: string; shutdown: AbortSignal },
 ): Dispatch => {
-  const handlers = { ...readRoutes(context), ...writeRoutes(context) };
+  const handlers = apiRoutes(context);
   return async (req, res) => {
     const method = req.method ?? "GET";
     const url = new URL(req.url ?? "/", "http://127.0.0.1");

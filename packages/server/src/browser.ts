@@ -6,3 +6,4 @@
 
 export * from "./client.ts";
 export * from "./contract.ts";
+export * from "./contract-builder.ts";

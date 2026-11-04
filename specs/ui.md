@@ -8,10 +8,10 @@ components ([design system](./ui/design-system.md)); and the workspace that
 holds the panels ([workspace](./ui/workspace.md)). Its panels are built: Runs,
 the Monitor, Logs, Decisions, Chats and Notifications
 ([panels](./ui/panels.md)), with a user guide
-([the browser view](../docs/guides/browser-view.md)). The
-[workflow builder](#workflow-builder) and the context inspector are still to
-come. The stack is React, Base UI, dockview, containerized-state and an in-house
-graph ([ADR-040](../decisions/ADR-040-ui-stack.md)), with Material Design Icons
+([the browser view](../docs/guides/browser-view.md)). So is the
+[workflow builder](#workflow-builder). The context inspector is still to come.
+The stack is React, Base UI, dockview, containerized-state and an in-house graph
+([ADR-040](../decisions/ADR-040-ui-stack.md)), with Material Design Icons
 ([ADR-042](../decisions/ADR-042-icons-mdi.md)). The panels read the server's API
 through its typed client.
 
@@ -50,24 +50,22 @@ through its typed client.
 
 ## Workflow builder
 
-Status: **Not built.** Its design is accepted in
-[RFC-008](../rfcs/active/RFC-008-workflow-builder.md).
+Status: **Built**, in [the Builder panel](./ui/panels.md#builder)
+([ADR-051](../decisions/ADR-051-workflow-builder.md)).
 
 A user can create a workflow from scratch in the UI, and edit an existing one,
-on a canvas drawn in-house, without writing or reading YAML. It saves the same
-YAML a person would write, keeping any comments, so a workflow made either way
-works with every `ork` command. Positions aren't saved: the canvas lays out the
-nodes from their edges, as the Monitor does.
+on a canvas, without writing or reading YAML. It saves the same YAML a person
+would write, keeping any comments, so a workflow made either way works with
+every `ork` command.
 
-- **A palette of node types:** Claude leader, worker and sub-agent; GitHub; AWS;
-  shell; MCP call; workflow call; control; human gate.
-- **An inspector for each node,** with forms for the whole format and its steps
-  and rules (`before:`, `verify:`, `notify:`), and a skill picker that shows
-  which layer each skill comes from. A small YAML box is the last resort, for
-  values no form can describe.
-- **A validation overlay,** from the same checks as `ork validate`. Errors block
-  a save, and unfinished work stays as a draft in the store.
-- **A test run** is saving, then a real run through the Run dialog.
+- **A palette of node types,** read from the format, so a new type appears with
+  no UI work.
+- **An inspector for each node and for the workflow,** with forms generated from
+  the format's JSON Schema, all the way down, and controls of its own for
+  owners, message targets, agents and skills.
+- **The same checks as `ork validate`,** on the cards, the fields and in a list.
+  Errors block a save, and unfinished work stays as a draft in the store.
+- **A test run** is saving, then a real run through the Run workflow dialog.
 
 ## Style
 

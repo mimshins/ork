@@ -271,23 +271,6 @@ describe("the layout", () => {
     expect(layout.edges).toEqual([]);
   });
 
-  it("keeps nodes where the workflow's layout file puts them", () => {
-    const layout = layoutGraph({
-      nodes: [
-        { id: "a", type: "tool.shell" },
-        { id: "b", type: "tool.shell" },
-      ],
-      edges: [{ from: "a", to: "b" }],
-      positions: { a: { x: 500, y: 40 }, b: { x: 100, y: 300 } },
-    });
-    const a = nodeOf(layout, "a");
-    const b = nodeOf(layout, "b");
-    expect(a.x - b.x).toBe(400);
-    expect(a.y - b.y).toBe(-260);
-    expect(layout.edges[0]?.points.at(0)?.x).toBe(a.x);
-    expect(layout.edges[0]?.points.at(-1)?.x).toBe(b.x + b.width);
-  });
-
   it("makes a gap wide enough for a condition leaving across it", () => {
     const layout = layoutGraph({
       nodes: [

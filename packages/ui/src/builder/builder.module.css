@@ -1,0 +1,271 @@
+/**
+ * @file The look of the workflow builder: the palette, the canvas and the
+ *   inspector side by side, stacking when the panel is narrow. A field with a
+ *   problem has a line down its edge and the problem in words, so it reads
+ *   without color.
+ */
+
+.panel {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.tools {
+  align-items: flex-end;
+  border-block-end: var(--hairline) solid var(--panel-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  justify-content: space-between;
+  padding: var(--gap);
+}
+
+.chooser,
+.create,
+.actions,
+.connect {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+}
+
+.status {
+  color: var(--color-text-muted);
+  display: block;
+  font-size: var(--text-small);
+  min-height: 1lh;
+  padding-inline: var(--gap);
+}
+
+.error {
+  color: var(--color-danger-text);
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding-inline: var(--gap);
+}
+
+.body {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(10rem, 13rem) minmax(0, 1fr) minmax(
+      16rem,
+      24rem
+    );
+  min-height: 0;
+}
+
+.palette,
+.inspector {
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--gap);
+}
+
+.palette {
+  border-inline-end: var(--hairline) solid var(--panel-border);
+}
+
+.inspector {
+  border-inline-start: var(--hairline) solid var(--panel-border);
+}
+
+.middle {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.canvas {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.canvas [data-graph-node] {
+  transition: transform var(--duration-move) ease-out;
+}
+
+.problems,
+.clean {
+  border-block-start: var(--hairline) solid var(--panel-border);
+  display: block;
+  padding: var(--gap);
+}
+
+.clean {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+}
+
+.problems {
+  max-height: 30%;
+  overflow-y: auto;
+}
+
+.problemList,
+.types,
+.edges {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.problemLink {
+  background: transparent;
+  border: 0;
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  overflow-wrap: anywhere;
+  padding: 0;
+  text-align: start;
+  text-decoration: underline;
+}
+
+.heading,
+.subheading {
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+  margin: 0;
+}
+
+.heading {
+  margin-block-end: var(--gap-tight);
+}
+
+.type {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: var(--gap-tight);
+  min-height: 1.75rem;
+  padding: var(--gap-tight);
+  text-align: start;
+  width: 100%;
+}
+
+.type:hover {
+  background: var(--surface-hover);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.field,
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+  min-width: 0;
+}
+
+.field[data-problem] {
+  border-inline-start: var(--focus-width) solid var(--color-danger-text);
+  padding-inline-start: var(--gap-tight);
+}
+
+.problem {
+  color: var(--color-danger-text);
+  font-size: var(--text-small);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-small);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.group {
+  border-block-start: var(--hairline) solid var(--panel-border);
+  padding-block-start: var(--gap-tight);
+}
+
+.group > .fields {
+  margin-block-start: var(--gap-tight);
+}
+
+.summary {
+  cursor: pointer;
+  font-size: var(--text-small);
+  font-weight: var(--weight-medium);
+}
+
+.row {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-tight);
+  justify-content: space-between;
+}
+
+.row > .field {
+  flex: 1 1 10rem;
+}
+
+.rowName {
+  overflow-wrap: anywhere;
+}
+
+.edge {
+  border-block-start: var(--hairline) solid var(--panel-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+  padding-block-start: var(--gap-tight);
+}
+
+.edgeName {
+  font-weight: var(--weight-medium);
+  margin: 0;
+}
+
+@container (width < 44rem) {
+  .body {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .palette,
+  .inspector {
+    border: 0;
+    border-block-end: var(--hairline) solid var(--panel-border);
+    flex: none;
+    overflow-y: visible;
+  }
+
+  .types {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .middle {
+    flex: none;
+    height: 24rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .field[data-problem] {
+    border-inline-start-color: CanvasText;
+  }
+}

@@ -1,11 +1,12 @@
 /**
  * @file The store's queries beside runs and events, in one place: decisions and
- *   commands, feedback, registered projects, and usage.
+ *   commands, feedback, registered projects, usage and workflow drafts.
  */
 
 import type { DatabaseSync } from "node:sqlite";
 
 import { decisionQueries } from "./decisions.ts";
+import { draftQueries } from "./drafts.ts";
 import { feedbackQueries } from "./feedback.ts";
 import { linkQueries } from "./links.ts";
 import { planLimitQueries } from "./plan-limits.ts";
@@ -23,4 +24,5 @@ export const storeQueries = (db: DatabaseSync) => ({
   ...projectQueries(db),
   ...usageQueries(db),
   ...planLimitQueries(db),
+  ...draftQueries(db),
 });

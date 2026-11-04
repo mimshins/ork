@@ -27,6 +27,10 @@ export const projectQueries = (db: DatabaseSync): ProjectStore => {
      VALUES (?, ?, ?, ?, ?)`,
   );
   const remove = db.prepare("DELETE FROM projects WHERE id = ?");
+  // Or a project registered later under this id would get them back.
+  const removeDrafts = db.prepare(
+    "DELETE FROM workflow_drafts WHERE project = ?",
+  );
   const move = db.prepare(
     "UPDATE projects SET root = ?, mode = ?, dir = ? WHERE id = ?",
   );
@@ -52,7 +56,10 @@ export const projectQueries = (db: DatabaseSync): ProjectStore => {
       );
       return record;
     },
-    forgetProject: id => Number(remove.run(id).changes) > 0,
+    forgetProject: id => {
+      removeDrafts.run(id);
+      return Number(remove.run(id).changes) > 0;
+    },
     moveProject: (id, place) => {
       const before = all
         .all()

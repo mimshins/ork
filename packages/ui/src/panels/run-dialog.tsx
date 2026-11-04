@@ -137,7 +137,7 @@ const RunForm = ({
 };
 
 export const RunDialog = () => {
-  const { runDialog } = useAppState();
+  const { runDialog, runPreset } = useAppState();
   const open = useValue(runDialog);
   const { finalFocus, onStarted } = useStartFocus();
   return (
@@ -145,6 +145,7 @@ export const RunDialog = () => {
       description="Starts in the background, from the project's root."
       finalFocus={finalFocus}
       onOpenChange={next => {
+        if (!next) void runPreset.setValue(null);
         void runDialog.setValue(next);
       }}
       open={open}
@@ -152,6 +153,7 @@ export const RunDialog = () => {
     >
       <RunForm
         onDone={() => {
+          void runPreset.setValue(null);
           void runDialog.setValue(false);
         }}
         onStarted={onStarted}

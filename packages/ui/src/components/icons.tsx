@@ -31,6 +31,7 @@ import {
   mdiFileTreeOutline,
   mdiFitToScreenOutline,
   mdiChartBar,
+  mdiPencilRuler,
   mdiFormatListBulleted,
   mdiForumOutline,
   mdiGit,
@@ -107,6 +108,7 @@ export const IconDecisions = icon(mdiHelpBoxMultipleOutline);
 export const IconChats = icon(mdiForumOutline);
 export const IconNotifications = icon(mdiBellOutline);
 export const IconUsage = icon(mdiChartBar);
+export const IconBuilder = icon(mdiPencilRuler);
 
 export const IconLeader = icon(mdiAccountStarOutline);
 export const IconWorker = icon(mdiRobotOutline);
