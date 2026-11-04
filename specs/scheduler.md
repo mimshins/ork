@@ -64,7 +64,9 @@ A join outputs `statuses` (the `status` of each input that ran, in edge order),
 - A loop edge whose condition holds is taken until it has been taken `maxRounds`
   times in the run. Then the run emits `loop.exhausted` and asks: **stop** the
   run (recommended, and the answer when no one is at the terminal), allow **one
-  more round**, or go **onward** along the other edges.
+  more round**, or go **onward** along the other edges. Once the run stops, for
+  this or any reason, the node's remaining edges aren't followed and nothing new
+  starts.
 - **Who is asked** ([escalation.ts](../packages/core/src/run/escalation.ts)):
   the owner of the loop's nodes (of `from`, else of `to`) while its session is
   live, through the [message bus](./messaging.md#message-bus); the node runs in

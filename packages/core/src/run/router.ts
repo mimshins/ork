@@ -16,6 +16,8 @@ export type RouterOptions = {
   activate: (id: string, input: NodeOutput | undefined) => void;
   /** Takes a loop edge whose condition holds; false once it is out of rounds. */
   takeLoop: (edge: CompiledEdge, output: NodeOutput) => Promise<boolean>;
+  /** Whether the run has stopped, as answering a loop's question can make it. */
+  stopped: () => boolean;
   /** Records a skipped node in the run summary. */
   skipped: (id: string) => void;
   /** A failed node none of whose edges was taken fails the run. */
@@ -57,6 +59,7 @@ export const createRouter = (options: RouterOptions) => {
       result,
       options.scope(),
     )) {
+      if (options.stopped()) break;
       if (isLoopEdge(edge)) {
         // A loop edge that is not taken changes nothing downstream.
         if (

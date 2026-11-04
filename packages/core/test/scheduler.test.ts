@@ -130,6 +130,16 @@ const waiting: NodeExecutor = ({ signal }) =>
     });
   });
 
+const loopWithExit = () =>
+  workflow(
+    [
+      "a: { type: claude.worker }",
+      "b: { type: claude.worker }",
+      "done: { type: tool.shell, command: 'true' }",
+    ],
+    ["a -> b", "{ from: b, to: a, maxRounds: 1 }", "b -> done"],
+  );
+
 const failureEdge = () =>
   workflow(
     ["a: { type: claude.worker }", "b: { type: claude.worker }"],
@@ -221,6 +231,50 @@ describe("the scheduler", () => {
     expect(result.reasons).toEqual([
       "the loop reviews -> builder ran out of rounds",
     ]);
+  });
+
+  it("ends when told to stop with an edge still to follow", async () => {
+    const { executor, ran } = scripted({});
+    const { result, events } = await run(loopWithExit(), allTypes(executor));
+
+    expect(result.status).toBe("failed");
+    expect(result.reasons).toEqual(["the loop b -> a ran out of rounds"]);
+    expect(ran.filter(id => id === "done")).toHaveLength(1);
+    expect(events.at(-2)).toEqual({
+      type: "loop.exhausted",
+      from: "b",
+      to: "a",
+      maxRounds: 1,
+    });
+  });
+
+  it("ends when interrupted while a loop's question is open", async () => {
+    const { executor, ran } = scripted({});
+    const answer = Promise.withResolvers<string>();
+    const asked = Promise.withResolvers<null>();
+    const human: HumanChannel = {
+      ask: () => {
+        asked.resolve(null);
+        return answer.promise;
+      },
+      permit: () => Promise.resolve({ allow: true }),
+    };
+    const handle = startRun({
+      graph: loopWithExit(),
+      inputs: {},
+      cwd: repoRoot,
+      executors: allTypes(executor),
+      human,
+      runId: "r1",
+      onEvent: () => {},
+    });
+    await asked.promise;
+    handle.interrupt();
+    answer.resolve("onward");
+    const result = await handle.done;
+
+    expect(result.status).toBe("interrupted");
+    expect(ran.filter(id => id === "done")).toHaveLength(1);
   });
 
   it("allows one more round when asked to", async () => {

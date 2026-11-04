@@ -75,6 +75,11 @@ export const startRun = (options: RunOptions): RunHandle => {
     queue.length = 0;
   };
 
+  // A route still going when the run stops can't queue what nothing would run.
+  const enqueue = (id: string, input: NodeOutput | undefined): void => {
+    if (stopped === null) queue.push({ id, input });
+  };
+
   const stopping = abort.signal;
   const ports = createRunPorts({ options, slots, scope, stopping });
   const holds = createHolds({
@@ -90,9 +95,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     human,
     bus: ports.bus,
     onEvent,
-    activate: (id, input) => {
-      queue.push({ id, input });
-    },
+    activate: enqueue,
     fail: reason => {
       stop("failed", reason);
     },
@@ -101,10 +104,9 @@ export const startRun = (options: RunOptions): RunHandle => {
     graph,
     onEvent,
     scope,
-    activate: (id, input) => {
-      queue.push({ id, input });
-    },
+    activate: enqueue,
     takeLoop: loops.take,
+    stopped: () => stopped !== null,
     skipped: id => {
       summary(id);
     },
