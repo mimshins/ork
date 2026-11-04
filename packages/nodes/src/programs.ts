@@ -21,10 +21,14 @@ import { type Environ, readEnv } from "./tool-env.ts";
 
 export type NeededProgram = { node: string; type: string; program: string };
 
+const isRelativePath = (program: string): boolean =>
+  program.includes(path.sep) && !path.isAbsolute(program);
+
 /**
  * The programs the workflow's tool nodes run: an integration's own (`gh`,
  * `aws`), or the first word of a `tool.shell` command or interpreter, when it
- * is not a template.
+ * is not a template. A relative path is not asked about: it means a node's
+ * checkout, where a `before:` or an earlier node may yet make it.
  */
 export const neededPrograms = (workflow: Workflow): NeededProgram[] =>
   Object.entries(workflow.nodes).flatMap(([id, node]) =>
@@ -37,7 +41,9 @@ export const neededPrograms = (workflow: Workflow): NeededProgram[] =>
       }
       const tokens = tokenize(commandLineOf(program) ?? "");
       const first = tokens.ok ? tokens.args[0] : undefined;
-      return first === undefined || first.includes("{{")
+      return first === undefined ||
+        first.includes("{{") ||
+        isRelativePath(first)
         ? []
         : [{ node: id, type, program: first }];
     }),
@@ -163,6 +169,7 @@ export const envProblems = (
     own.root,
     process.env,
     finishedOf(history ?? new Map()),
+    program => isRelativePath(program) || onPath(program),
   );
   if (servers.length > 0) return servers;
   for (const line of calledEnvWarning(workflow, own, registered, history)) {

@@ -86,6 +86,8 @@ export type ExecuteContext = {
   budgetLeftUsd: number | undefined;
   /** The same as it stands now, with what other nodes have spent since. */
   budgetLeftNow?: () => number | undefined;
+  /** What a session has spent in this activation, from its reported total. */
+  ownSpend?: (sessionId: string, total: number) => number;
   human: HumanChannel;
   /** Held while the run or this node is paused; a run always passes one. */
   hold?: HoldPort;

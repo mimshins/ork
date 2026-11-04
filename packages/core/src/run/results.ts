@@ -10,7 +10,7 @@ import { isClaudeNode, type Node, type NodeType } from "@krapht/ork-schema";
 import type { AgentRef } from "../agents/apply.ts";
 import { parseTemplate, renderTemplate, type Scope } from "../expr/evaluate.ts";
 import type { CompiledGraph } from "../graph/types.ts";
-import { type EarlierSpend, ownSpend } from "../usage/spend.ts";
+import { type EarlierSpend, ownSpend, unreported } from "../usage/spend.ts";
 import { declaredNodes } from "./contacts.ts";
 import type { Activation, RunOptions } from "./handle.ts";
 import type {
@@ -65,6 +65,9 @@ export const createSpend = (
   let spent = earlier?.total ?? 0;
   return {
     total: () => spent,
+    /** What a session has spent in this activation, from its total so far. */
+    ownOf: (id: string, sessionId: string, total: number): number =>
+      unreported(reported, `${id}/${sessionId}`, total),
     left: () => (budgetUsd === undefined ? undefined : budgetUsd - spent),
     exhausted: () => budgetUsd !== undefined && spent >= budgetUsd,
     /**

@@ -240,6 +240,26 @@ describe("before:", () => {
     ).toEqual(["defaults", "before", "script"]);
   });
 
+  it("refuses a bare before where it would read as nothing", () => {
+    const { diagnostics } = compile(`schemaVersion: 1
+name: t
+nodes:
+  w: { type: claude.worker, prompt: hi, before: { command: x } }
+  n: { type: claude.worker, prompt: hi }
+edges:
+  - { from: w, to: n, when: "before.exitCode != 0" }
+`);
+    expect(diagnostics.map(d => d.code)).toContain("ref.before");
+  });
+
+  it("refuses a blank script beside a command, which would run instead", () => {
+    expect(
+      beforeOf("prompt: hi, before: { command: 'false', script: '' }").map(
+        d => d.code,
+      ),
+    ).toContain("tool.command");
+  });
+
   it("warns of an output field called before", () => {
     expect(
       beforeOf(

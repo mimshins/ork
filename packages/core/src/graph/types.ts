@@ -108,5 +108,6 @@ export const outputFieldsOf = (node: Node): readonly string[] | null => {
     ...base,
     ...("output" in node ? Object.keys(node.output?.schema ?? {}) : []),
     ...("verify" in node && node.verify !== undefined ? ["verify"] : []),
+    ...("before" in node && node.before !== undefined ? ["before"] : []),
   ];
 };

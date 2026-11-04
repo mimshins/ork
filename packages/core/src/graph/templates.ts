@@ -37,6 +37,16 @@ export const checkOwn = (
   const [root] = segments;
   const source = context.workflow.nodes[from];
   if (source === undefined) return [];
+  // Only a prompt has it: anywhere else it would read as nothing, and compare.
+  if (root === "before") {
+    return [
+      error(
+        "ref.before",
+        `"${describePath(segments)}": what a before: step gave is read only in its node's prompt; a field of this name reads as output.before`,
+        path,
+      ),
+    ];
+  }
   // A node may report a field called `env`; otherwise it means the user's.
   if (root === "env" && outputFieldsOf(source)?.includes("env") === false) {
     return [envOutsideEnv(segments, path)];

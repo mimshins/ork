@@ -57,6 +57,8 @@ export type ToolRunner = (
 /** How much of stdout and stderr a node's output keeps. */
 export const OUTPUT_LIMIT = 64 * 1024;
 
+const ERROR_LIMIT = 1024;
+
 /** Whether `args` starts with one of the allowed prefixes (`"pr merge"`). */
 export const isAllowed = (
   args: readonly string[],
@@ -98,6 +100,11 @@ export const commandOf = (
   if (!tokens.ok) return tokens;
   const args: string[] = [];
   for (const token of tokens.args) {
+    // What runs a script takes no templates, however it was written.
+    if (node.script !== undefined) {
+      args.push(token);
+      continue;
+    }
     const rendered = render(token, context);
     if (!rendered.ok) return rendered;
     args.push(rendered.value);
@@ -126,6 +133,13 @@ export const capped = (text: string, file: () => string): string => {
   if (text.length <= OUTPUT_LIMIT) return text;
   return `${text.slice(0, OUTPUT_LIMIT)}\n… (truncated; the full output is in ${file()})`;
 };
+
+/**
+ * Text for a node's `error`, which reaches its events, its `notify:` rules and
+ * what a session is told. All of it is kept in the output's fields and files.
+ */
+export const clipError = (text: string): string =>
+  text.length <= ERROR_LIMIT ? text : `${text.slice(0, ERROR_LIMIT)}…`;
 
 const failed = (error: string): NodeResult => ({
   ok: false,
@@ -268,6 +282,6 @@ export const toolExecutor =
     return {
       ok: false,
       output,
-      error: `${scrub(command.program)} exited with ${String(run.exitCode)}${last === "" ? "" : `: ${last}`}`,
+      error: `${scrub(command.program)} exited with ${String(run.exitCode)}${last === "" ? "" : `: ${clipError(last)}`}`,
     };
   };

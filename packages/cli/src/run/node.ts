@@ -26,7 +26,7 @@ import {
   userMessageText,
 } from "@krapht/ork-core";
 import { resultOf } from "@krapht/ork-nodes";
-import type { Driver } from "@krapht/ork-schema";
+import { beforeOf, type Driver } from "@krapht/ork-schema";
 
 import { formatReport, loadWorkflow } from "../commands/validate.ts";
 import { style } from "../output.ts";
@@ -115,12 +115,21 @@ export const runNode = async (
       `${style(["yellow", "bold"], "warning")} ${options.nodeId}'s notify: does nothing here: a run of one node has no message bus.`,
     );
   }
-  for (const step of ["before", "verify"]) {
-    if (planned !== undefined && step in planned) {
-      options.err(
-        `${style(["yellow", "bold"], "warning")} ${options.nodeId}'s ${step}: does not run in a run of one node.`,
-      );
-    }
+  const skipped =
+    planned === undefined
+      ? []
+      : [
+          ...(beforeOf(planned, workflow.defaults) === undefined
+            ? []
+            : ["before"]),
+          ...("verify" in planned && planned.verify !== undefined
+            ? ["verify"]
+            : []),
+        ];
+  for (const step of skipped) {
+    options.err(
+      `${style(["yellow", "bold"], "warning")} ${options.nodeId}'s ${step}: does not run in a run of one node.`,
+    );
   }
   for (const warning of plan.warnings) {
     options.err(`${style(["yellow", "bold"], "warning")} ${warning}`);

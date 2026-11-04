@@ -29,6 +29,8 @@ export type ContextDeps = {
   running: Set<string>;
   /** What is left of `limits.budgetUsd`, when the run has one. */
   budgetLeft: () => number | undefined;
+  /** What a node's session has spent in this activation. */
+  ownOf: (id: string, sessionId: string, total: number) => number;
   human: RunOptions["human"];
   holds: Holds;
   stops: Stops;
@@ -60,6 +62,7 @@ export const nodeContext = (
     ...foldersOf(options),
     budgetLeftUsd: deps.budgetLeft(),
     budgetLeftNow: deps.budgetLeft,
+    ownSpend: (sessionId, total) => deps.ownOf(id, sessionId, total),
     human: deps.human,
     hold: deps.holds.forNode(id, template),
     ...deps.ports.forNode(id, template, cwd),

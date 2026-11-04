@@ -27,14 +27,17 @@ A later node reads `{{nodes.issue.output.json.title}}`, and an edge can say
   value's type, so a tool that asks for a number gets one.
 - **Secrets stay in your environment.** `.mcp.json` reads them as `${VAR}` or
   `${VAR:-default}`, and `env:` can rename one with `{{env.NAME}}`. Ork stores
-  none, and masks each value it reads this way in what it records. An argument
-  can't read `{{env.NAME}}`, as arguments are recorded.
-- **It checks first.** A run won't start if a server isn't in `.mcp.json`, or a
-  variable it reads isn't set.
+  none, and a run masks each value it reads this way in all it records, from any
+  node. A value that isn't secret goes in the node's `plainEnv`. What is written
+  in the file itself, a default included, is not masked, so keep tokens in
+  variables. An argument can't read `{{env.NAME}}`, as arguments are recorded.
+- **It checks first.** A run won't start if a server isn't in `.mcp.json`, its
+  program isn't installed, or a variable it reads isn't set.
 - **It takes stdio servers and HTTP servers with static headers.** A server that
   needs an OAuth sign-in is refused, as those tokens are Claude Code's, and so
   is an SSE one. For those, call the tool from a session.
 - **It starts the server for each call,** so it suits a few calls, not hundreds.
-- **`timeout:`** limits the whole call; with none, the node's default applies.
+- **`timeout:`** limits the whole call, starting the server included; with none,
+  the node's default applies.
 - **It asks for no permission.** You named the tool in the workflow, as you name
   the command of a tool node.

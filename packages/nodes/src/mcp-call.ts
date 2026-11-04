@@ -26,9 +26,9 @@ import {
   secretsOf,
   withoutIdentity,
 } from "./tool-env.ts";
-import { keepFile, scrubbed } from "./tool-output.ts";
+import { keepFile, parseScrubbed, scrubbed } from "./tool-output.ts";
 import { scrubberOf } from "./tool-scrub.ts";
-import { capped, OUTPUT_LIMIT } from "./tools.ts";
+import { capped, clipError, OUTPUT_LIMIT } from "./tools.ts";
 
 /** A node's `timeout:` is what limits a call; this only lifts the SDK's 60 s. */
 const NO_LIMIT_MS = 24 * 60 * 60 * 1000;
@@ -94,10 +94,17 @@ const textOf = (content: unknown): string =>
     )
     .join("\n");
 
-const jsonOf = (structured: unknown, text: string): unknown => {
-  if (structured !== undefined) return structured;
+/** The result as JSON, read before masking so a masked number stays valid. */
+const jsonOf = (
+  structured: unknown,
+  text: string,
+  scrub: (text: string) => string,
+): unknown => {
   try {
-    return JSON.parse(text) as unknown;
+    return parseScrubbed(
+      structured === undefined ? text : JSON.stringify(structured),
+      scrub,
+    );
   } catch {
     return undefined;
   }
@@ -128,10 +135,11 @@ export const mcpCallExecutor =
     if (!declared.ok) return failed(declared.error);
     const nodeEnv = renderEnv(node, context, environ);
     if (!nodeEnv.ok) return failed(nodeEnv.error);
-    const expanded = expandServer(declared.value, {
-      ...environ,
-      ...nodeEnv.values,
-    });
+    const expanded = expandServer(
+      declared.value,
+      { ...environ, ...nodeEnv.values },
+      node.plainEnv,
+    );
     if (!expanded.ok) return failed(expanded.error);
     const scrub = scrubberOf([
       ...secretsOf(context.workflow, environ, options.maskedNames),
@@ -155,30 +163,37 @@ export const mcpCallExecutor =
     try {
       await client.connect(
         transportFor(expanded.value.server, context, environ, nodeEnv.values),
-        { signal: context.signal },
+        { signal: context.signal, timeout: NO_LIMIT_MS },
       );
       const result = await client.callTool(
         { name: node.tool, arguments: args },
         undefined,
         { signal: context.signal, timeout: NO_LIMIT_MS },
       );
-      const said = scrub(textOf(result.content));
+      const raw = textOf(result.content);
+      const said = scrub(raw);
       const text = capped(said, keepFile(context, "text", said));
-      const json = jsonOf(result.structuredContent, said);
+      const json = jsonOf(result.structuredContent, raw, scrub);
+      const tooLong = JSON.stringify(json ?? null).length > OUTPUT_LIMIT;
       const output: Record<string, unknown> = {
         text,
-        ...(json === undefined ? {} : { json: scrubbed(json, scrub) }),
+        ...(json === undefined || tooLong ? {} : { json }),
       };
-      const isError = result.isError === true;
-      context.emit({ type: "tool.result", id: context.id, isError });
-      if (isError) return failed(`${name} failed: ${said}`, output);
-      const size = JSON.stringify(output["json"] ?? null).length;
-      return size > OUTPUT_LIMIT
-        ? failed(`${name}'s result is over 64 KiB`, { text })
+      const reported = result.isError === true;
+      context.emit({
+        type: "tool.result",
+        id: context.id,
+        isError: reported || tooLong,
+      });
+      if (reported) {
+        return failed(`${name} failed: ${clipError(said)}`, output);
+      }
+      return tooLong
+        ? failed(`${name}'s result is over 64 KiB`, output)
         : { ok: true, output };
     } catch (error) {
       context.emit({ type: "tool.result", id: context.id, isError: true });
-      return failed(scrub(reasonOf(error, node.server)));
+      return failed(clipError(scrub(reasonOf(error, node.server))));
     } finally {
       await client.close().catch(() => {
         // Nothing is left to do with a connection that won't close.

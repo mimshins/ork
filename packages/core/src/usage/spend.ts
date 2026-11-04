@@ -8,6 +8,17 @@
 
 import type { RunEvent } from "../run/types.ts";
 
+/** What a report would add to the session's earlier ones, counting nothing. */
+export const unreported = (
+  reported: ReadonlyMap<string, number>,
+  key: string,
+  total: number,
+): number => {
+  if (total <= 0) return 0;
+  const before = reported.get(key) ?? 0;
+  return total < before ? total : total - before;
+};
+
 /**
  * What a report adds to the session's earlier ones, keeping the total in
  * `reported`. A zero says nothing, so it is ignored; a lower total is a session
@@ -18,10 +29,9 @@ export const ownSpend = (
   key: string,
   total: number,
 ): number => {
-  if (total <= 0) return 0;
-  const before = reported.get(key) ?? 0;
-  reported.set(key, total);
-  return total < before ? total : total - before;
+  const own = unreported(reported, key, total);
+  if (total > 0) reported.set(key, total);
+  return own;
 };
 
 /** What a run has spent so far, and each session's last total. */

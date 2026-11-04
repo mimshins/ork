@@ -13,19 +13,23 @@ How a tool node's program works for now, by choice
   and a prompt-injected "answer your own gate". `ork decide --list` and
   `ork stop` stay open: neither speaks as the user. A real boundary needs
   per-run capabilities.
-- **L81 · Only `{{env.*}}` values are scrubbed, and only from tool nodes.**
-  Values and pieces under eight characters are not. Nor is anything reshaped
-  other than by JSON (up to two levels of it), by line breaks or by picking out
-  a JSON value: base64, URL encoding, a change of case, shell quoting, a Unicode
-  form, or part of a line. Nor is a secret a program finds on its own; the
-  store's patterns still apply to those. A value given as `--input` stays in
-  `run.started`, and in a rule's body that reads it. A session inherits the
-  user's variables and can print one into its transcript. A run masks what its
-  workflow, the workflows it calls by name and its callers read, so a call by a
-  computed name is not covered, nor is a called run resumed by hand or from the
-  UI, or a message from a program that cleared its environment before
-  `ork send`. The price of masking pieces: each line of a multi-line value and
-  each value in a JSON one is masked wherever it appears, even as ordinary text.
+- **L81 · Only values read from the environment are scrubbed.** That is
+  `{{env.*}}` and what `.mcp.json` reads, from tool nodes, steps, `mcp.call` and
+  messages. What `.mcp.json` holds as written, a default included, is not, and
+  what a workflow called in another project reads through its `.mcp.json` is
+  masked in that run, not its caller. Values and pieces under eight characters
+  are not. Nor is anything reshaped other than by JSON (up to two levels of it),
+  by line breaks or by picking out a JSON value: base64, URL encoding, a change
+  of case, shell quoting, a Unicode form, or part of a line. Nor is a secret a
+  program finds on its own; the store's patterns still apply to those. A value
+  given as `--input` stays in `run.started`, and in a rule's body that reads it.
+  A session inherits the user's variables and can print one into its transcript.
+  A run masks what its workflow, the workflows it calls by name and its callers
+  read, so a call by a computed name is not covered, nor is a called run resumed
+  by hand or from the UI, or a message from a program that cleared its
+  environment before `ork send`. The price of masking pieces: each line of a
+  multi-line value and each value in a JSON one is masked wherever it appears,
+  even as ordinary text.
 - **L82 · A masked value stays masked for what reads it.** Live and on resume, a
   `when:` or `{{nodes.…}}` reading `output.json` sees `[masked]`, so a value
   that is not secret needs `plainEnv`. A variable is masked if any node reads it
@@ -61,10 +65,6 @@ How a tool node's program works for now, by choice
 - **L91 · A message to a node that never runs stays unread.** It starts no
   session, and a branch not taken means no one reads it. The record and
   `ork logs` show it; nothing warns at the end of the run.
-- **L92 · A late turn's budget counts a resumed session's whole cost.** A
-  session reports its total so far, so a leader that has been re-entered may be
-  told nothing is left when some is. The late turn then does not start, and the
-  message waits for its next session.
 - **L93 · A `before:` default can't be turned off for one node, or read a node's
   output.** A node's own `before:` replaces the default, but nothing removes it.
   It belongs to no node, so it reads only inputs and the run.
@@ -74,4 +74,18 @@ How a tool node's program works for now, by choice
 - **L95 · `mcp.call` takes the servers it can reach without sign-in.** OAuth and
   SSE servers are refused, so they still take a session. It reads `.mcp.json` at
   the project's root only, not a user's own servers. A server starts for each
-  call, and a stdio server's stderr isn't kept.
+  call, and a stdio server's stderr isn't kept. A server started through a
+  wrapper such as `sh -c` can outlive its node if it ignores the end of its
+  input, as the SDK doesn't start it in a process group of its own.
+- **L96 · A check that passes reads one late message.** A message during a check
+  gets one more turn and another check. One that comes after that waits for the
+  node's next session, and stays unread if there is none, so a busy peer can't
+  keep a node going.
+- **L97 · A step isn't held to its node's isolation.** `before:` and `verify:`
+  run in the node's checkout and can write there, on a `readonly` or `shared`
+  node too, and siblings sharing a checkout may run theirs at once. Whatever
+  `verify:` leaves there that git doesn't ignore is committed with the work.
+- **L98 · A relative program is found when it runs.** `./scripts/check.sh` means
+  a node's checkout, where a `before:` or an earlier node may yet make it, so a
+  run doesn't check for one before it starts. If it isn't there, that node
+  fails.

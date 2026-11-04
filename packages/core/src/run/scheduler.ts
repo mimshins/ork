@@ -191,6 +191,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     nodeOf,
     runChild,
     budgetLeft: spend.left,
+    ownOf: spend.ownOf,
   };
 
   const execute = createExecute({

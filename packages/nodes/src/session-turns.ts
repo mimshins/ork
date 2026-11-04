@@ -53,21 +53,30 @@ export const afterLateTurn = (
     : merged;
 };
 
+export type TurnLimits = { budgetUsd?: number; maxTurns?: number };
+
 /**
- * What a late turn may spend: what is left of the node's cap, which is per
- * process (ADR-046), and of the run's, which has not counted this session yet.
- * `null` when nothing is left, and the message waits for its next session. A
- * resumed session's cost is its total, so this may leave it less than it has.
+ * What another turn of a session may use: what is left of the node's cap and
+ * the run's budget, neither of which has counted this activation yet, and of
+ * the node's turns, as each process would otherwise count from zero. `spent` is
+ * what this activation spent, and `turns` what it took. `null` when nothing is
+ * left, and the turn does not start.
  */
-export const lateBudget = (
-  spec: Pick<SessionSpec, "budgetUsd">,
-  spent: number,
-  runLeft: number | undefined,
-): { budgetUsd?: number } | null => {
-  const limits = [spec.budgetUsd, runLeft].flatMap(limit =>
+export const lateLimits = (
+  spec: Pick<SessionSpec, "budgetUsd" | "maxTurns">,
+  { spent, turns }: { spent: number; turns: number },
+  runLeft?: number,
+): TurnLimits | null => {
+  const budgets = [spec.budgetUsd, runLeft].flatMap(limit =>
     limit === undefined ? [] : [limit - spent],
   );
-  if (limits.length === 0) return {};
-  const budgetUsd = Math.min(...limits);
-  return budgetUsd > 0 ? { budgetUsd } : null;
+  const budgetUsd = budgets.length === 0 ? undefined : Math.min(...budgets);
+  if (budgetUsd !== undefined && budgetUsd <= 0) return null;
+  const maxTurns =
+    spec.maxTurns === undefined ? undefined : spec.maxTurns - turns;
+  if (maxTurns !== undefined && maxTurns <= 0) return null;
+  return {
+    ...(budgetUsd === undefined ? {} : { budgetUsd }),
+    ...(maxTurns === undefined ? {} : { maxTurns }),
+  };
 };

@@ -25,7 +25,9 @@ const checkProgram = (
   path: DiagnosticPath,
 ): Diagnostic[] => {
   const found: Diagnostic[] = [];
-  if (hasText(command) === hasText(script)) {
+  // A blank script would still be what runs, so it can't sit beside a command.
+  const both = command !== undefined && script !== undefined;
+  if (both || hasText(command) === hasText(script)) {
     found.push(
       error("tool.command", "give a command or a script, one of them", path),
     );

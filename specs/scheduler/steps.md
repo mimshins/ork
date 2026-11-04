@@ -26,11 +26,16 @@ show in the node's events.
 
 - **When:** on a report that is not `fail` or `changes_requested`. `done`
   counts, so a session cannot report its way past a check.
-- **On a failure:** the same session resumes with the reason and the last 8 KiB
-  of the output, with the whole in `<run>/<node>.<round>.verify.txt` when there
-  is more, and gives a new report, up to `attempts` times. A resume may spend
-  only what is left of the node's cap and the run's budget, and does not start
-  with nothing left. Then the node fails with `its check failed: <reason>`.
+- **On a failure:** the same session resumes with the reason, cut to 1 KiB, and
+  the last 8 KiB of what it printed, past the 64 KiB a node's output keeps, with
+  all of it in `<run>/<node>.<round>.verify.txt` when there is more. It gives a
+  new report, up to `attempts` times. A resume may use only what is left of the
+  node's cap, the run's budget and `maxTurns`, counting from this activation,
+  and does not start with nothing left, or while the node is paused. Then the
+  node fails with `its check failed: <reason>`.
+- **A message during a check that passes** gets one turn, and the check runs
+  again, with its failures sent back as above. Later messages wait for the
+  node's next session ([L96](../gaps/limits-scripts.md)).
 - **A failed check stays failed:** a resume that reports `fail` or
   `changes_requested`, or nothing, ends it with no more checks, and the node
   fails. Only a report on which the check then passes is accepted.
@@ -47,13 +52,17 @@ node's executor, once its checkout exists, each time the node runs and for each
 spawned instance. It runs as `verify:` does.
 
 - **On a failure,** the node fails with `its before step failed: <reason>`, with
-  what it printed in `output.before`, and no session starts.
-- **Its result** is `before` in that node's `prompt`, and nowhere else:
-  `exitCode`, `stdout`, `stderr`, and `json` with `output: { format: json }`. A
-  resumed session keeps the prompt it started with.
+  what it printed in `output.before`, and no session starts. A node stopped
+  during it starts none either, and a paused one waits.
+- **Its result** is `before` in that node's `prompt`, and nowhere else, which
+  the compiler enforces (`ref.before`): `exitCode`, `stdout`, `stderr`, and
+  `json` with `output: { format: json }`. A resumed session keeps the prompt it
+  started with.
 - **`defaults:` may set it,** in a workflow or `.ork/project.yaml`, for every
   leader and worker with none of its own. It can't read a node's output, since
   it belongs to none ([L93](../gaps/limits-scripts.md)).
+- **It isn't held to `isolation`,** on a `readonly` or `shared` node too
+  ([L97](../gaps/limits-scripts.md)).
 - **`ork run --node`** does not run it, and says so.
 
 ## MCP calls
@@ -70,9 +79,15 @@ author named it.
   over which the node's rendered `env:` lies. A stdio server inherits what a
   program does, without `ORK_*`. It starts per call, in the project's root.
 - **Before a run:** `envProblems` refuses a run whose server is missing, can't
-  be called, or reads a variable that isn't set, so nothing is spent first.
-- **Masking:** each value read is masked in the call's events and output, with
-  the values the run masks. `arguments:` can't read `{{env.*}}`.
-- **Output:** `text`, and `json` from `structuredContent` or text that parses. A
-  result marked `isError` fails the node, and `json` over 64 KiB does too.
-- **Timeout:** the node's `timeout`, which lifts the SDK's own 60 seconds.
+  be called, runs a program that isn't installed, or reads a variable that isn't
+  set, so nothing is spent first. A value that isn't a string in its `args`,
+  `env` or `headers` is refused too, rather than dropped.
+- **Masking:** a run masks each value its workflow's servers read, in all it
+  records, from any node; `plainEnv` excuses one. What the file holds as
+  written, a default included, is not ([L81](../gaps/limits-scripts.md)).
+  `arguments:` can't read `{{env.*}}`.
+- **Output:** `text`, and `json` from `structuredContent` or text that parses,
+  its numbers masked too. A result marked `isError` fails the node, and `json`
+  over 64 KiB does too and is left out. The `error` is cut to 1 KiB.
+- **Timeout:** the node's `timeout`, which lifts the SDK's own 60 seconds on
+  starting the server as on the call.

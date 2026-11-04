@@ -20,10 +20,12 @@ import {
   type Workflow,
 } from "@krapht/ork-schema";
 
+import { type Environ, readEnv } from "./environ.ts";
+import { mcpVariablesOf } from "./mcp-servers.ts";
 import { scrubberOf } from "./tool-scrub.ts";
 import type { ToolRunner } from "./tools.ts";
 
-export type Environ = Readonly<Record<string, string | undefined>>;
+export { type Environ, readEnv };
 
 /** The file a node with `output: { format: json }` may write its result to. */
 export const OUTPUT_ENV = "ORK_OUTPUT";
@@ -97,10 +99,6 @@ export const identityOf = (
   ...(orkBin === undefined ? {} : { ORK_BIN: orkBin }),
 });
 
-/** A variable of the user's: only its own, as an expression reads them. */
-export const readEnv = (environ: Environ, name: string): string | undefined =>
-  Object.hasOwn(environ, name) ? environ[name] : undefined;
-
 /** The variables a workflow's nodes read that no `plainEnv` excuses. */
 const secretNamesOf = (workflow: Workflow): string[] =>
   Object.values(workflow.nodes)
@@ -117,9 +115,10 @@ const inheritedNames = (environ: Environ): string[] =>
   (environ[MASKED_ENV] ?? "").split(",").filter(name => name !== "");
 
 /**
- * The variables a run must mask: what its workflow reads, what the workflows it
- * calls by name read, and what its caller reads. Any of them may print any of
- * these, since a called run inherits the same environment.
+ * The variables a run must mask: what its workflow and its MCP servers read,
+ * what the workflows it calls by name read, and what its caller reads. Any of
+ * them may print any of these, since a called run inherits the same
+ * environment.
  */
 export const maskedNamesOfRun = (
   workflow: Workflow,
@@ -133,7 +132,7 @@ export const maskedNamesOfRun = (
       ...calledWorkflows(workflow, own, registered, { everyCall: true }),
     ]
       .flatMap(one => secretNamesOf(one))
-      .concat(inheritedNames(environ)),
+      .concat(mcpVariablesOf(workflow, own.root), inheritedNames(environ)),
   ),
 ];
 

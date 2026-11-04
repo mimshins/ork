@@ -5,7 +5,7 @@
  *   the session stays small, as a session's cost grows with what it holds.
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import {
@@ -17,7 +17,9 @@ import {
 } from "@krapht/ork-core";
 import { type Step, timeoutMs, type Verify } from "@krapht/ork-schema";
 
-import { withUsageOf } from "./session-turns.ts";
+import { afterLateTurn, withUsageOf } from "./session-turns.ts";
+import { keptFile } from "./tool-output.ts";
+import { OUTPUT_LIMIT } from "./tools.ts";
 
 /** How much of a failed check's output a session is sent. */
 const TAIL_LIMIT = 8 * 1024;
@@ -56,22 +58,42 @@ export const runStep = async (
   };
   void watch();
   const signal = AbortSignal.any([context.signal, limit.signal]);
-  const result = await tool({ ...context, node, signal });
-  finished.abort();
-  return expired
-    ? { ...result, ok: false, error: `timed out after ${String(timeout)}` }
-    : result;
+  try {
+    const result = await tool({ ...context, node, signal });
+    return expired
+      ? { ...result, ok: false, error: `timed out after ${String(timeout)}` }
+      : result;
+  } finally {
+    finished.abort();
+  }
 };
 
 const textOf = (value: unknown): string =>
   typeof value === "string" ? value.trim() : "";
 
+type Where = Pick<ExecuteContext, "runDir" | "id" | "round">;
+
+/**
+ * All a check printed on one stream. A node's output holds only the first 64
+ * KiB, and what matters in a failure is usually at the end, so a longer one is
+ * read back from the file it was kept in.
+ */
+const printed = (check: NodeResult, field: string, where: Where): string => {
+  const shown = textOf(check.output[field]);
+  if (shown.length <= OUTPUT_LIMIT) return shown;
+  try {
+    return readFileSync(keptFile(where, field), "utf8").trim();
+  } catch {
+    return shown;
+  }
+};
+
 /** The end of what a check printed, and a file with the rest when there is more. */
-const tailOf = (
-  check: NodeResult,
-  context: Pick<ExecuteContext, "runDir" | "id" | "round">,
-): string => {
-  const said = [textOf(check.output["stdout"]), textOf(check.output["stderr"])]
+const tailOf = (check: NodeResult, context: Where): string => {
+  const said = [
+    printed(check, "stdout", context),
+    printed(check, "stderr", context),
+  ]
     .filter(text => text !== "")
     .join("\n");
   if (said === "") return "It printed nothing.";
@@ -86,10 +108,7 @@ const tailOf = (
 };
 
 /** What a session is told when the check on its report failed. */
-export const checkFailedMessage = (
-  check: NodeResult,
-  context: Pick<ExecuteContext, "runDir" | "id" | "round">,
-): string =>
+export const checkFailedMessage = (check: NodeResult, context: Where): string =>
   `[ork] Your report was not accepted: the workflow's check failed (${check.error ?? "no reason given"}).\n\n${tailOf(check, context)}\n\nFix what it found, and end with a new structured report.`;
 
 export type Checked = {
@@ -115,11 +134,18 @@ export const checkReport = (given: {
     outcome: SessionOutcome,
     check: NodeResult,
   ) => Promise<SessionOutcome | null>;
+  /**
+   * A turn for a message that came during a check that passed; `null` when none
+   * came, or none can be spent. The check runs again after it, as the turn may
+   * change the work.
+   */
+  late?: (outcome: SessionOutcome) => Promise<SessionOutcome | null>;
 }): Promise<Checked> => {
   const attempts = given.verify.attempts ?? 1;
   const go = async (
     outcome: SessionOutcome,
     resumes: number,
+    readLate: boolean,
   ): Promise<Checked> => {
     const check = given.signal.aborted
       ? ({
@@ -128,6 +154,15 @@ export const checkReport = (given: {
           error: "the node was stopped before its check finished",
         } satisfies NodeResult)
       : await given.check();
+    if (check.ok && !readLate && !given.signal.aborted) {
+      const later = (await given.late?.(outcome)) ?? null;
+      if (later !== null) {
+        const merged = afterLateTurn(outcome, later);
+        return isAcceptance(merged)
+          ? go(merged, resumes, true)
+          : { outcome: merged, check, resumes };
+      }
+    }
     if (check.ok || given.signal.aborted || resumes >= attempts) {
       return { outcome, check, resumes };
     }
@@ -136,10 +171,10 @@ export const checkReport = (given: {
     const merged = withUsageOf(outcome, later);
     // Its last check failed, and a session can't report its way past that.
     return isAcceptance(merged)
-      ? go(merged, resumes + 1)
+      ? go(merged, resumes + 1, readLate)
       : { outcome: merged, check, resumes: resumes + 1 };
   };
-  return go(given.first, 0);
+  return go(given.first, 0, false);
 };
 
 /**

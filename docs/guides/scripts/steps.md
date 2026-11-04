@@ -22,9 +22,14 @@ builder:
   tool node takes: `command` or `script`, `env:`, `plainEnv`, and a `timeout`.
 - **A failure goes back to the same session.** It's told what failed, up to
   `attempts` times (1 by default, 0 to fail at once), and then the node fails.
-  Each try is another turn, and stays within what's left of the budgets. The
-  session gets the last 8 KiB of the output and the path of a file with the
-  rest.
+  Each try is another turn, and stays within what's left of the budgets and the
+  node's `maxTurns`. The session gets the last 8 KiB of what it printed and the
+  path of a file with all of it.
+- **A message that comes during a check that passes** gets one more turn, and
+  the check then runs again.
+- **What it writes counts.** A check runs in the node's checkout, and a file it
+  leaves there that git doesn't ignore, such as a coverage report, is committed
+  with the work.
 - **The session knows.** Its instructions name the check, so it can run it first
   and often save the extra turn.
 - **Read the result** as `{{nodes.builder.output.verify.exitCode}}`, or
@@ -47,6 +52,9 @@ builder:
 ```
 
 - **If it fails, the node fails** and no model turn is spent.
+- **It isn't held to the node's `isolation`.** On a `readonly` or `shared` node
+  it runs in the shared checkout and can write there, so keep a default such as
+  an install to nodes that have their own.
 - **It runs each time the node runs,** and for each spawned instance.
 - **Its prompt can read what it gave,** as `{{before.stdout}}`,
   `{{before.exitCode}}`, or `{{before.json.id}}` with

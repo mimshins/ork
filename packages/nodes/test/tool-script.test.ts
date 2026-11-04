@@ -127,6 +127,41 @@ describe("a tool node's script", () => {
     expect(JSON.stringify(given.events)).not.toContain("a-distinct-word");
   });
 
+  it("never renders its interpreter", async () => {
+    const { result } = await run({
+      interpreter: "sh '{''{inputs.x}}'",
+      script: "exit 0",
+    });
+    expect(String(result.output["stderr"])).toContain("{{inputs.x}}");
+  });
+
+  it("does not ask about a relative program, which a checkout may yet have", () => {
+    const workflow: Workflow = {
+      schemaVersion: 1,
+      name: "t",
+      nodes: {
+        a: { type: "tool.shell", command: "./node_modules/.bin/vitest run" },
+        b: {
+          type: "tool.shell",
+          interpreter: "./venv/bin/python",
+          script: "1",
+        },
+        c: { type: "tool.shell", command: "/an/absolute/program" },
+      },
+    };
+    expect(neededPrograms(workflow).map(needed => needed.program)).toEqual([
+      "/an/absolute/program",
+    ]);
+  });
+
+  it("keeps a failure's reason short however long its last line", async () => {
+    const { result } = await run({
+      interpreter: "node",
+      script: 'process.stderr.write("x".repeat(200000)); process.exit(1)',
+    });
+    expect(String(result.error).length).toBeLessThan(2000);
+  });
+
   it("names its interpreter as the program a run needs", () => {
     const workflow: Workflow = {
       schemaVersion: 1,

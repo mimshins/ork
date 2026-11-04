@@ -2,7 +2,7 @@
  * @file Reading an MCP server's definition from the project's `.mcp.json`, the
  *   file Claude Code reads too, so a server is defined in one place (RFC-006).
  *   `${VAR}` and `${VAR:-default}` read the user's environment, which is where
- *   secrets stay: Ork stores none, and masks each value it reads this way. A
+ *   secrets stay: Ork stores none, and a run masks each value read this way. A
  *   server that needs an OAuth sign-in holds Claude Code's tokens, not Ork's,
  *   so it is refused.
  */
@@ -12,7 +12,7 @@ import path from "node:path";
 
 import type { Workflow } from "@krapht/ork-schema";
 
-import { type Environ, readEnv } from "./tool-env.ts";
+import { type Environ, readEnv } from "./environ.ts";
 
 const MCP_FILE = ".mcp.json";
 
@@ -41,7 +41,13 @@ const serversIn = (root: string): Read<Record<string, unknown>> => {
     const servers = isRecord(parsed) ? parsed["mcpServers"] : undefined;
     return { ok: true, value: isRecord(servers) ? servers : {} };
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
+    // The parser's own message quotes the text, which may hold a secret.
+    const reason =
+      error instanceof SyntaxError
+        ? "it is not valid JSON"
+        : error instanceof Error
+          ? error.message
+          : String(error);
     return { ok: false, error: `${MCP_FILE} can't be read: ${reason}` };
   }
 };
@@ -59,6 +65,18 @@ const listOf = (value: unknown): string[] =>
   Array.isArray(value)
     ? value.flatMap(item => (typeof item === "string" ? [item] : []))
     : [];
+
+/** A server's field that holds something other than text: it would be dropped. */
+const notTextIn = (server: Record<string, unknown>): string | undefined =>
+  ["args", "env", "headers"].find(field => {
+    const value = server[field];
+    const items = Array.isArray(value)
+      ? value
+      : isRecord(value)
+        ? Object.values(value)
+        : [];
+    return items.some(item => typeof item !== "string");
+  });
 
 /** The server as written, or why Ork can't call it. */
 export const readMcpServer = (root: string, name: string): Read<McpServer> => {
@@ -78,6 +96,13 @@ export const readMcpServer = (root: string, name: string): Read<McpServer> => {
     return {
       ok: false,
       error: `MCP server "${name}" signs in with OAuth, whose tokens are Claude Code's: give it a token through headers and env:, or call it from a session`,
+    };
+  }
+  const notText = notTextIn(server);
+  if (notText !== undefined) {
+    return {
+      ok: false,
+      error: `MCP server "${name}" has a value in ${notText} that isn't a string: write it in quotes`,
     };
   }
   const { type, url, command } = server;
@@ -118,10 +143,14 @@ const readsOf = (server: McpServer): { name: string; fallback: boolean }[] => {
   );
 };
 
-/** The server with its variables filled in, and the values, for masking. */
+/**
+ * The server with its variables filled in, and the values to mask: all it read
+ * but those `plain` names, which aren't secret.
+ */
 export const expandServer = (
   server: McpServer,
   environ: Environ,
+  plain: readonly string[] = [],
 ): Read<{ server: McpServer; values: string[] }> => {
   const unset = readsOf(server).find(
     ({ name, fallback }) => !fallback && readEnv(environ, name) === undefined,
@@ -136,7 +165,7 @@ export const expandServer = (
   const fill = (text: string): string =>
     text.replaceAll(VARIABLE, (_all, name: string, fallback?: string) => {
       const value = readEnv(environ, name);
-      if (value !== undefined) values.push(value);
+      if (value !== undefined && !plain.includes(name)) values.push(value);
       return value ?? fallback ?? "";
     });
   const fillAll = (record: Record<string, string>): Record<string, string> =>
@@ -159,24 +188,50 @@ export const expandServer = (
   return { ok: true, value: { server: filled, values } };
 };
 
+/** What a workflow's MCP servers read of the user's, unless called not secret. */
+export const mcpVariablesOf = (workflow: Workflow, root: string): string[] =>
+  Object.values(workflow.nodes).flatMap(node => {
+    if (node.type !== "mcp.call") return [];
+    const read = readMcpServer(root, node.server);
+    return read.ok
+      ? readsOf(read.value)
+          .map(({ name }) => name)
+          .filter(name => node.plainEnv?.includes(name) !== true)
+      : [];
+  });
+
+/** A stdio server's program, when its name can be known before it is filled in. */
+const programOf = (server: McpServer): string | undefined =>
+  server.kind === "stdio" && !server.command.includes("$")
+    ? server.command
+    : undefined;
+
 /**
  * What stops a workflow's `mcp.call` nodes, found before a run spends anything:
- * a server that isn't there or can't be called, or a variable that is not set.
+ * a server that isn't there or can't be called, a program that isn't installed,
+ * or a variable that is not set.
  */
 export const mcpProblems = (
   workflow: Workflow,
   root: string,
   environ: Environ = process.env,
   finished: ReadonlySet<string> = new Set(),
+  installed: (program: string) => boolean = () => true,
 ): string[] =>
   Object.entries(workflow.nodes).flatMap(([id, node]) => {
     if (node.type !== "mcp.call" || finished.has(id)) return [];
     const read = readMcpServer(root, node.server);
     if (!read.ok) return [`${id}: ${read.error}`];
     const given = new Set(Object.keys(node.env ?? {}));
-    return readsOf(read.value).flatMap(({ name, fallback }) =>
+    const unset = readsOf(read.value).flatMap(({ name, fallback }) =>
       fallback || given.has(name) || readEnv(environ, name) !== undefined
         ? []
         : [`${id}: ${MCP_FILE} reads ${name}, which is not set`],
     );
+    const program = programOf(read.value);
+    return program === undefined || installed(program)
+      ? unset
+      : [
+          `${id}: MCP server "${node.server}" runs ${program}, which is not installed`,
+        ].concat(unset);
   });

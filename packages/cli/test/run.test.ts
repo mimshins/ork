@@ -138,6 +138,21 @@ describe("ork run --node", () => {
     expect(run.err).toEqual([]);
   });
 
+  it("says an inherited before: step does not run", async () => {
+    const run = options({});
+    writeFileSync(
+      path.join(run.value.cwd, "review.ork.yaml"),
+      WORKFLOW.replace(
+        "nodes:",
+        "defaults:\n  before: { command: 'true' }\nnodes:",
+      ),
+    );
+    await runNode(run.value);
+    expect(run.err.join("\n")).toContain(
+      "approver's before: does not run in a run of one node.",
+    );
+  });
+
   it("streams events as JSON lines with a driver override", async () => {
     const run = options({ json: true, driver: "cli" });
     await runNode(run.value);

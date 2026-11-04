@@ -49,6 +49,7 @@ const runNode = async (
   node: Node,
   defaults?: Workflow["defaults"],
   prepare?: (cwd: string) => void,
+  over: Partial<ExecuteContext> = {},
 ) => {
   const specs: SessionSpec[] = [];
   const runtime: ClaudeRuntime = {
@@ -94,9 +95,19 @@ const runNode = async (
     },
     emit: () => {},
     signal: new AbortController().signal,
+    ...over,
   };
   const result = await execute(context);
   return { result, specs };
+};
+
+/** Stops a node soon after its step has started. */
+const stopOnToolCall = (stop: AbortController) => (event: RuntimeEvent) => {
+  if (event.type === "tool.called") {
+    setTimeout(() => {
+      stop.abort();
+    }, 100);
+  }
 };
 
 describe("before:", () => {
@@ -144,6 +155,46 @@ describe("before:", () => {
     expect(result.ok).toBe(false);
     expect(result.error).toContain("its before step failed");
     expect(result.output["before"]).toMatchObject({ exitCode: 3 });
+  });
+
+  it("starts no session if the node was stopped during it", async () => {
+    const stop = new AbortController();
+    const { result, specs } = await runNode(
+      {
+        type: "claude.worker",
+        prompt: "Go",
+        before: { script: "trap 'exit 0' TERM; sleep 5 & wait" },
+      },
+      undefined,
+      undefined,
+      {
+        signal: stop.signal,
+        emit: stopOnToolCall(stop),
+      },
+    );
+    expect(specs).toEqual([]);
+    expect(result.ok).toBe(false);
+  });
+
+  it("waits out a pause before its session starts", async () => {
+    const waits: string[] = [];
+    const { specs } = await runNode(
+      { type: "claude.worker", prompt: "Go", before: { command: "true" } },
+      undefined,
+      undefined,
+      {
+        hold: {
+          held: () => false,
+          wait: at => {
+            waits.push(at);
+            return Promise.resolve();
+          },
+          watch: () => () => {},
+        },
+      },
+    );
+    expect(waits).toEqual(["start"]);
+    expect(specs).toHaveLength(1);
   });
 
   it("comes from the defaults, and a node's own wins", async () => {

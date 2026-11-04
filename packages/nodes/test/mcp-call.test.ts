@@ -15,12 +15,17 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type { ExecuteContext, RuntimeEvent } from "@krapht/ork-core";
+import {
+  type ExecuteContext,
+  inRepoPlace,
+  type RuntimeEvent,
+} from "@krapht/ork-core";
 import type { Node, Workflow } from "@krapht/ork-schema";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { mcpCallExecutor } from "../src/mcp-call.ts";
 import { mcpProblems, readMcpServer } from "../src/mcp-servers.ts";
+import { maskedNamesOfRun } from "../src/tool-env.ts";
 
 const FIXTURE = path.join(import.meta.dirname, "fixtures/echo-mcp-server.ts");
 const SECRET = "a-secret-value-42";
@@ -183,6 +188,40 @@ describe("mcp.call over stdio", () => {
     expect((await running).ok).toBe(false);
   }, 20_000);
 
+  it("keeps a failure's reason and output small", async () => {
+    const { result } = await call("fails-loudly");
+    expect(result.ok).toBe(false);
+    expect(String(result.error).length).toBeLessThan(2000);
+    expect(result.output["json"]).toBeUndefined();
+  });
+
+  it("masks a number in a structured result", async () => {
+    const { result } = await call(
+      "numbers",
+      {},
+      { ...PATH_ONLY, PROBE_TOKEN: "12345678" },
+    );
+    expect(result.output["json"]).toEqual({ pin: "[masked]", title: "x" });
+  });
+
+  it("keeps JSON whose text holds a masked number", async () => {
+    const { result } = await call(
+      "echo",
+      { arguments: { pin: 12345678, title: "x" } },
+      { ...PATH_ONLY, PROBE_TOKEN: "12345678" },
+    );
+    expect(result.output["json"]).toEqual({ pin: "[masked]", title: "x" });
+  });
+
+  it("does not mask what plainEnv says is not secret", async () => {
+    const { result } = await call(
+      "env",
+      { plainEnv: ["PROBE_TOKEN"] },
+      { ...PATH_ONLY, PROBE_TOKEN: SECRET },
+    );
+    expect(result.output["text"]).toBe(`token ${SECRET}`);
+  });
+
   it("fails clearly on a server that won't start", async () => {
     const { result } = await call(
       "echo",
@@ -324,6 +363,60 @@ describe("reading .mcp.json", () => {
     expect(JSON.stringify(readMcpServer(root, "echo"))).toContain(
       "can't be read",
     );
+  });
+
+  it("does not quote a file it can't parse, which may hold a secret", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "ork-mcp-"));
+    writeFileSync(
+      path.join(root, ".mcp.json"),
+      '{"Authorization":Bearer sk-1}',
+    );
+    const read = JSON.stringify(readMcpServer(root, "echo"));
+    expect(read).toContain("not valid JSON");
+    expect(read).not.toContain("sk-1");
+  });
+
+  it.each([
+    ["args", { command: "x", args: ["serve", 8080] }],
+    ["env", { command: "x", env: { PORT: 8080 } }],
+    ["headers", { type: "http", url: "http://x", headers: { Retry: 3 } }],
+  ])("refuses a value in %s that would be dropped", (field, server) => {
+    const read = JSON.stringify(
+      readMcpServer(projectWith({ echo: server }), "echo"),
+    );
+    expect(read).toContain(`a value in ${field}`);
+  });
+
+  it("finds a server's program that is not installed", () => {
+    const workflow: Workflow = {
+      schemaVersion: 1,
+      name: "t",
+      nodes: { a: { type: "mcp.call", server: "s", tool: "x" } },
+    };
+    const root = projectWith({ s: { command: "not-a-program" } });
+    expect(mcpProblems(workflow, root, {}, new Set(), () => false)).toEqual([
+      'a: MCP server "s" runs not-a-program, which is not installed',
+    ]);
+  });
+
+  it("has a run mask what its servers read, across all its nodes", () => {
+    const workflow: Workflow = {
+      schemaVersion: 1,
+      name: "t",
+      nodes: {
+        a: { type: "mcp.call", server: "s", tool: "x", plainEnv: ["REGION"] },
+      },
+    };
+    const root = projectWith({
+      s: {
+        type: "http",
+        url: "http://x/${REGION}",
+        headers: { Authorization: "Bearer ${LINEAR_TOKEN}" },
+      },
+    });
+    expect(maskedNamesOfRun(workflow, inRepoPlace(root), [], {})).toEqual([
+      "LINEAR_TOKEN",
+    ]);
   });
 
   it("finds what would stop a run before it starts", () => {

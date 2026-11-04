@@ -106,7 +106,6 @@ export const mailboxInstructions = (
   return lines;
 };
 
-/** Ork's own instructions for a node, kept short: they cost tokens every turn. */
 /** Says a report will be checked, so a session can often save the extra turn. */
 const verifyInstructions = (node: ClaudeNode): string[] => {
   if (!("verify" in node) || node.verify === undefined) return [];
@@ -120,6 +119,7 @@ const verifyInstructions = (node: ClaudeNode): string[] => {
   ];
 };
 
+/** Ork's own instructions for a node, kept short: they cost tokens every turn. */
 export const harnessInstructions = (
   workflow: Workflow,
   id: string,

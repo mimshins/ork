@@ -12,6 +12,8 @@ import path from "node:path";
 import type {
   ClaudeRuntime,
   ExecuteContext,
+  Mailbox,
+  NodeExecutor,
   NodeReport,
   NodeResult,
   RuntimeEvent,
@@ -22,6 +24,7 @@ import type { Node, Verify } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
 import { claudeExecutor } from "../src/claude.ts";
+import { spawnTool, toolExecutor } from "../src/index.ts";
 
 const USAGE = {
   costUsd: 0.5,
@@ -69,6 +72,10 @@ const runVerified = async (given: {
   checks: readonly NodeResult[];
   verify?: Partial<Verify>;
   over?: Partial<ExecuteContext>;
+  fields?: Partial<Extract<Node, { type: "claude.worker" }>>;
+  /** The whole check, for one that isn't the default command. */
+  program?: Verify;
+  steps?: NodeExecutor;
 }) => {
   const specs: SessionSpec[] = [];
   const stepNodes: Node[] = [];
@@ -87,21 +94,24 @@ const runVerified = async (given: {
   const execute = claudeExecutor({
     runtimeFor: () => Promise.resolve(runtime),
     inPlace: true,
-    steps: context => {
-      stepNodes.push(context.node);
-      return Promise.resolve(
-        given.checks[stepNodes.length - 1] ?? {
-          ok: false,
-          output: {},
-          error: "no more checks",
-        },
-      );
-    },
+    steps:
+      given.steps ??
+      (context => {
+        stepNodes.push(context.node);
+        return Promise.resolve(
+          given.checks[stepNodes.length - 1] ?? {
+            ok: false,
+            output: {},
+            error: "no more checks",
+          },
+        );
+      }),
   });
   const node: Node = {
     type: "claude.worker",
     prompt: "Fix",
-    verify: { command: "pnpm test", ...given.verify },
+    verify: given.program ?? { command: "pnpm test", ...given.verify },
+    ...given.fields,
   };
   const cwd = mkdtempSync(path.join(tmpdir(), "ork-verify-"));
   const context: ExecuteContext = {
@@ -128,6 +138,29 @@ const runVerified = async (given: {
   };
   const result = await execute(context);
   return { result, specs, stepNodes, runDir: context.runDir };
+};
+
+const mailOnce = (arrives: () => boolean): Mailbox => ({
+  peers: () => [],
+  send: () => ({ ok: false, error: "no" }),
+  read: () => [],
+  pending: () => (arrives() ? 1 : 0),
+  alias: () => {},
+  linkable: () => false,
+  hears: () => false,
+  wait: () => Promise.resolve(),
+  answer: () => ({ ok: true }),
+  connect: () => () => {},
+});
+
+/** One unread message, once, after a first check; none before or after. */
+const mailAfterFirst = (checks: () => number): Mailbox => {
+  let told = false;
+  return mailOnce(() => {
+    const now = checks() === 1 && !told;
+    told = told || now;
+    return now;
+  });
 };
 
 const PASS = reportOf("pass");
@@ -286,5 +319,125 @@ describe("verify:", () => {
     expect(prompt).toContain(file);
     expect(existsSync(file)).toBe(true);
     expect(readFileSync(file, "utf8")).toBe(long);
+  });
+
+  const realSteps = toolExecutor(spawnTool, { environ: {} });
+
+  it("sends the real end of an output too long to keep in an event", async () => {
+    const { specs, runDir, result } = await runVerified({
+      reports: [PASS, reportOf("fail")],
+      checks: [],
+      steps: realSteps,
+      program: {
+        script:
+          'i=0; while [ $i -lt 20000 ]; do echo "passing test $i"; i=$((i+1)); done; echo "3 tests failed at the end"; exit 1',
+      },
+    });
+    const prompt = String(specs[1]?.prompt);
+    expect(prompt.length).toBeLessThan(9000);
+    expect(prompt).toContain("3 tests failed at the end");
+    expect(prompt).not.toContain("truncated");
+    expect(
+      readFileSync(path.join(runDir, "fix.1.verify.txt"), "utf8"),
+    ).toContain("3 tests failed at the end");
+    expect(String(result.error).length).toBeLessThan(2000);
+  });
+
+  it("does not send a session a huge line as its reason", async () => {
+    const { specs, result } = await runVerified({
+      reports: [PASS, reportOf("fail")],
+      checks: [],
+      steps: realSteps,
+      program: {
+        interpreter: "node",
+        script:
+          'process.stderr.write("x".repeat(200000) + "\\n"); process.exit(1)',
+      },
+    });
+    expect(String(specs[1]?.prompt).length).toBeLessThan(10_000);
+    expect(String(result.error).length).toBeLessThan(2000);
+  });
+
+  it("counts turns across its resumes", async () => {
+    const { specs } = await runVerified({
+      reports: [PASS, PASS],
+      checks: [FAILED, PASSED],
+      fields: { maxTurns: 10 },
+    });
+    expect(specs.map(spec => spec.maxTurns)).toEqual([10, 9]);
+  });
+
+  it("fails rather than resuming with no turns left", async () => {
+    const { specs, result } = await runVerified({
+      reports: [PASS],
+      checks: [FAILED],
+      fields: { maxTurns: 1 },
+    });
+    expect(specs).toHaveLength(1);
+    expect(result.ok).toBe(false);
+  });
+
+  it("gives a re-entered session what the run has left, not less", async () => {
+    const { specs } = await runVerified({
+      reports: [PASS, PASS],
+      checks: [FAILED, PASSED],
+      over: { ownSpend: () => 0.1, budgetLeftNow: () => 1 },
+    });
+    expect(specs[1]?.budgetUsd).toBeCloseTo(0.9);
+  });
+
+  it("reads a message that came during a check that passed, and checks again", async () => {
+    let checks = 0;
+    const { result, specs } = await runVerified({
+      reports: [PASS, PASS],
+      checks: [],
+      steps: () => {
+        checks += 1;
+        return Promise.resolve(PASSED);
+      },
+      over: {
+        mailbox: mailAfterFirst(() => checks),
+      },
+    });
+    expect(specs).toHaveLength(2);
+    expect(String(specs[1]?.prompt)).toContain("message");
+    expect(checks).toBe(2);
+    expect(result.ok).toBe(true);
+  });
+
+  it("takes one late turn after a pass, however many messages come", async () => {
+    let checks = 0;
+    const { result, specs } = await runVerified({
+      reports: [PASS, PASS, PASS],
+      checks: [],
+      steps: () => {
+        checks += 1;
+        return Promise.resolve(PASSED);
+      },
+      over: { mailbox: mailOnce(() => checks >= 1) },
+    });
+    expect(specs).toHaveLength(2);
+    expect(checks).toBe(2);
+    expect(result.ok).toBe(true);
+  });
+
+  it("does not resume while the node is paused until it continues", async () => {
+    const waits: string[] = [];
+    const { specs } = await runVerified({
+      reports: [PASS, PASS],
+      checks: [FAILED, PASSED],
+      over: {
+        hold: {
+          held: () => false,
+          wait: at => {
+            waits.push(at);
+            return Promise.resolve();
+          },
+          watch: () => () => {},
+        },
+      },
+    });
+    expect(specs).toHaveLength(2);
+    expect(waits).toEqual(["start"]);
   });
 });

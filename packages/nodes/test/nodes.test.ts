@@ -46,7 +46,7 @@ import {
 } from "../src/index.ts";
 import {
   afterLateTurn,
-  lateBudget,
+  lateLimits,
   withUsageOf,
 } from "../src/session-turns.ts";
 
@@ -537,7 +537,17 @@ describe("Claude nodes", () => {
       ["nothing left of the cap", 1, undefined, 1, null],
       ["nothing left of the run's", 3, 1, 1, null],
     ])("spends within %s", (_name, cap, runLeft, spent, expected) => {
-      expect(lateBudget(capOf(cap), spent, runLeft)).toEqual(expected);
+      expect(lateLimits(capOf(cap), { spent, turns: 0 }, runLeft)).toEqual(
+        expected,
+      );
+    });
+
+    it("has only the turns its node has left", () => {
+      const spec = { maxTurns: 10 };
+      expect(lateLimits(spec, { spent: 0, turns: 4 })).toEqual({
+        maxTurns: 6,
+      });
+      expect(lateLimits(spec, { spent: 0, turns: 10 })).toBeNull();
     });
 
     it("keeps a later report when it gives one", () => {

@@ -10,7 +10,16 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
-const NAMES = ["echo", "env", "structured", "fails", "slow", "image"];
+const NAMES = [
+  "echo",
+  "env",
+  "structured",
+  "fails",
+  "slow",
+  "image",
+  "fails-loudly",
+  "numbers",
+];
 
 const text = (value: string, isError = false) => ({
   content: [{ type: "text", text: value }],
@@ -39,6 +48,13 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
     return { ...text("see the structure"), structuredContent: { state: "OPEN" } };
   }
   if (name === "fails") return text("the tracker is down", true);
+  if (name === "fails-loudly") {
+    return text(JSON.stringify({ log: "x".repeat(200_000) }), true);
+  }
+  if (name === "numbers") {
+    const pin = Number(process.env["PROBE_TOKEN"]);
+    return { ...text("see the structure"), structuredContent: { pin, title: "x" } };
+  }
   if (name === "image") {
     return { content: [{ type: "image", data: "AA==", mimeType: "image/png" }] };
   }

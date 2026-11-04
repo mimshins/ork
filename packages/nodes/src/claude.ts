@@ -20,7 +20,7 @@ import {
 } from "@krapht/ork-core";
 import { beforeOf, type Driver } from "@krapht/ork-schema";
 
-import { afterLateTurn, lateBudget } from "./session-turns.ts";
+import { afterLateTurn, lateLimits, type TurnLimits } from "./session-turns.ts";
 import {
   checkedResult,
   checkFailedMessage,
@@ -179,6 +179,11 @@ export const claudeExecutor =
     if (before !== undefined) {
       const ran = await runStep(options.steps ?? noSteps, context, before);
       if (!ran.ok) return beforeFailed(ran);
+      // A step that outlived a stop, or a pause, must not lead to a model turn.
+      await context.hold?.wait("start", context.signal);
+      if (context.signal.aborted) {
+        return beforeFailed({ ...ran, error: "the node was stopped" });
+      }
       planOptions.before = ran.output;
     }
     const plan = planNodeSession(context.workflow, context.id, planOptions);
@@ -203,6 +208,8 @@ export const claudeExecutor =
         void session.interrupt();
       };
       context.signal.addEventListener("abort", stop, { once: true });
+      // A listener never hears an abort that has already happened.
+      if (context.signal.aborted) stop();
       // Notices of new messages and owner questions go into the live session.
       const disconnect = context.mailbox?.connect(notice => {
         session.send(notice);
@@ -220,24 +227,33 @@ export const claudeExecutor =
       return outcome;
     };
     const first = await run(spec);
-    const budgetAfter = (outcome: SessionOutcome) =>
-      lateBudget(spec, outcome.usage.costUsd, context.budgetLeftNow?.());
+    const limitsAfter = ({ sessionId, usage }: SessionOutcome) =>
+      lateLimits(
+        spec,
+        {
+          // A re-entered session reports what it spent in earlier activations.
+          spent: context.ownSpend?.(sessionId, usage.costUsd) ?? usage.costUsd,
+          turns: usage.turns,
+        },
+        context.budgetLeftNow?.(),
+      );
     const resumeWith = (
       outcome: SessionOutcome,
       prompt: string,
-      budget: { budgetUsd?: number },
-    ) => run({ ...spec, ...budget, resume: outcome.sessionId, prompt });
+      limits: TurnLimits,
+    ) => run({ ...spec, ...limits, resume: outcome.sessionId, prompt });
     // A message that came while it wrote its report: one more turn to read it.
-    const late = context.mailbox?.pending() ?? 0;
-    const budget = first === null ? null : budgetAfter(first);
+    const lateTurn = (
+      current: SessionOutcome,
+    ): Promise<SessionOutcome | null> => {
+      const late = context.mailbox?.pending() ?? 0;
+      const limits = limitsAfter(current);
+      return late === 0 || context.signal.aborted || limits === null
+        ? Promise.resolve(null)
+        : resumeWith(current, lateMessage(late), limits);
+    };
     const again =
-      first === null ||
-      first.report === null ||
-      late === 0 ||
-      context.signal.aborted ||
-      budget === null
-        ? null
-        : await resumeWith(first, lateMessage(late), budget);
+      first === null || first.report === null ? null : await lateTurn(first);
     const outcome =
       first === null || again === null ? first : afterLateTurn(first, again);
     const { node } = context;
@@ -250,11 +266,15 @@ export const claudeExecutor =
       first: outcome,
       signal: context.signal,
       check: () => runStep(options.steps ?? noSteps, context, verify),
-      resume: (current, check) => {
-        const left = budgetAfter(current);
-        return left === null
-          ? Promise.resolve(null)
-          : resumeWith(current, checkFailedMessage(check, context), left);
+      late: lateTurn,
+      resume: async (current, check) => {
+        const limits = limitsAfter(current);
+        if (limits === null) return null;
+        // A paused node spends no model turn until it continues.
+        await context.hold?.wait("start", context.signal);
+        return context.signal.aborted
+          ? null
+          : resumeWith(current, checkFailedMessage(check, context), limits);
       },
     });
     return checkedResult(resultOf(checked.outcome), checked);

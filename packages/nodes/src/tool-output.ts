@@ -68,19 +68,20 @@ export const prepareOutputFile = (
   return file;
 };
 
+type KeptWhere = { runDir: string; id: string; round: number };
+
+/** Where a long field of a node's output is kept. */
+export const keptFile = (context: KeptWhere, field: string): string =>
+  path.join(
+    context.runDir,
+    `${context.id}.${String(context.round)}.${field}.txt`,
+  );
+
 /** A way to write a field of a node's output to the run's files, when it's long. */
 export const keepFile =
-  (
-    context: { runDir: string; id: string; round: number },
-    field: string,
-    text: string,
-  ) =>
-  (): string => {
+  (context: KeptWhere, field: string, text: string) => (): string => {
     mkdirSync(context.runDir, { recursive: true });
-    const file = path.join(
-      context.runDir,
-      `${context.id}.${String(context.round)}.${field}.txt`,
-    );
+    const file = keptFile(context, field);
     writeFileSync(file, text);
     return file;
   };
@@ -120,7 +121,7 @@ const scrubbedKeys = (
   });
 };
 
-/** A parsed value with its keys and strings scrubbed; numbers came scrubbed. */
+/** A parsed value with its keys and strings scrubbed; numbers are not touched. */
 export const scrubbed = (
   value: unknown,
   scrub: (text: string) => string,
@@ -162,6 +163,15 @@ const parseScrubbingNumbers = (
   );
 };
 
+/**
+ * Reads JSON with everything in it scrubbed, numbers too. Throws as a parser
+ * does.
+ */
+export const parseScrubbed = (
+  text: string,
+  scrub: (text: string) => string,
+): unknown => scrubbed(parseScrubbingNumbers(text, scrub), scrub);
+
 const parsed = (
   text: string,
   source: string,
@@ -169,10 +179,7 @@ const parsed = (
 ): JsonResult => {
   if (text.trim() === "") return { ok: false, error: `${source} is empty` };
   try {
-    return {
-      ok: true,
-      json: scrubbed(parseScrubbingNumbers(text, scrub), scrub),
-    };
+    return { ok: true, json: parseScrubbed(text, scrub) };
   } catch (error) {
     // The parser's own message quotes the text, which may hold a secret.
     return {
