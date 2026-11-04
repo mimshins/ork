@@ -156,8 +156,9 @@ nodes:
 - Each setting the node leaves unset takes the agent's: `model`, `effort`,
   `driver`, `skills`, `context`, `isolation`, `budgetUsd`, `maxTurns`,
   `practices`, `tools`, `output`. The node's own value wins, then the agent's,
-  then `defaults`. The agent's `instructions` are its role, a section of the
-  system prompt of its own ([context](./context.md#agents)).
+  then `defaults`; `practices` go one by one, so a node that sets one keeps the
+  agent's setting of the other. The agent's `instructions` are its role, a
+  section of the system prompt of its own ([context](./context.md#agents)).
 - Agents are filled in when the workflow compiles, so `when:` can read the
   agent's output fields. An agent no source defines is an `agent.unknown` error
   that lists the known ones.

@@ -148,9 +148,12 @@ Claude node unless turned off
 - **Settings:**
   `practices: { caveman: true | false, ponytail: true | false | lite | full | ultra }`
   on `defaults` and on any Claude node; `true` is `full`.
-- **Cascade:** a node takes its own setting, else its nearest owner's, else the
-  workflow's `defaults`, else on. Turning a practice off on a root node turns it
-  off for everything that node owns; a sub-agent follows the node it runs in.
+- **Cascade:** a node takes its own setting, else its agent's, else its nearest
+  owner's, else the workflow's `defaults`, else the project's `defaults`, else
+  on. Each practice falls through on its own, so setting `ponytail` at one level
+  leaves a `caveman: false` from another in place. Turning a practice off on a
+  root node turns it off for everything that node owns; a sub-agent follows the
+  node it runs in.
 - **Delivery:** the practices lead the session's appended system prompt, before
   Ork's harness instructions, so nodes with the same practices share a cached
   prefix.

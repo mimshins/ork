@@ -24,6 +24,7 @@ import {
   planNodeSession,
   type PlanResult,
   resolveBase,
+  resolvePractices,
   type RunEvent,
 } from "../src/index.ts";
 import { compile, repo, runIn, sh, working } from "./fixtures/git.ts";
@@ -100,6 +101,33 @@ describe("project rules under a workflow", () => {
       allow: ["Read"],
       deny: ["Bash(git push *)", "Bash(rm *)", "WebFetch"],
     });
+  });
+
+  it("keep a project's practice when the workflow sets only the other", () => {
+    const workflow = applyProject(
+      workflowOf([
+        "defaults: { practices: { ponytail: ultra } }",
+        "nodes:",
+        "  a: { type: claude.worker, prompt: go }",
+      ]),
+      { project: { ...PROJECT, defaults: { practices: { caveman: false } } } },
+    );
+    expect(resolvePractices(workflow, "a")).toEqual({
+      caveman: false,
+      ponytail: "ultra",
+    });
+  });
+
+  it("let a workflow turn a project's practice back on", () => {
+    const workflow = applyProject(
+      workflowOf([
+        "defaults: { practices: { caveman: true } }",
+        "nodes:",
+        "  a: { type: claude.worker, prompt: go }",
+      ]),
+      { project: { ...PROJECT, defaults: { practices: { caveman: false } } } },
+    );
+    expect(resolvePractices(workflow, "a").caveman).toBe(true);
   });
 
   it("let a readonly node read git, and write nothing", () => {

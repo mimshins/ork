@@ -23,6 +23,7 @@ import {
 } from "@krapht/ork-schema";
 
 import { error, warning } from "../graph/diagnostics.ts";
+import { layerPractices } from "../practices/practices.ts";
 import { shownPath } from "./place.ts";
 import { placeholdersOf, templateProblems } from "./templates.ts";
 
@@ -123,8 +124,8 @@ const dropUndefined = <T extends object>(value: T): T =>
 
 /**
  * The workflow with its project's rules under it: git rules key by key and
- * defaults key by key (the workflow's win), permissions added together, and the
- * project's context files before the workflow's.
+ * defaults key by key, practices one by one (the workflow's win), permissions
+ * added together, and the project's context files before the workflow's.
  */
 export const applyProject = (
   workflow: Workflow,
@@ -148,7 +149,14 @@ export const applyProject = (
     permissions:
       Object.keys(permissions).length === 0 ? undefined : permissions,
   });
-  const defaults = dropUndefined({ ...project.defaults, ...workflow.defaults });
+  const defaults = dropUndefined({
+    ...project.defaults,
+    ...workflow.defaults,
+    practices: layerPractices(
+      project.defaults?.practices,
+      workflow.defaults?.practices,
+    ),
+  });
   const root = options.projectRoot;
   const dir = options.workflowDir ?? root;
   const context = union(

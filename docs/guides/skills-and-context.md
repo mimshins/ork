@@ -94,9 +94,11 @@ nodes:
     practices: { ponytail: ultra } # this node and everything it owns
 ```
 
-A node takes its own setting, else its nearest owner's, else the workflow's
-`defaults`. When your project already has a skill named `caveman` or `ponytail`,
-the project's wins and Ork adds nothing.
+A node takes its own setting, else its agent's, else its nearest owner's, else
+the workflow's `defaults`, else the `defaults` in `.ork/project.yaml`. Each
+practice falls through on its own, so turning `caveman` off for a project stays
+off in a workflow that only sets `ponytail`. When your project already has a
+skill named `caveman` or `ponytail`, the project's wins and Ork adds nothing.
 
 ## See what a node loads
 

@@ -63,7 +63,7 @@ export const NODES = [
       "What ships with Ork: the built-in practices, the `ork:*` skills, and the `ork-*` agents, named so they never collide with anyone else's.",
     facts: [
       "Built: the caveman (terse voice) and ponytail (smallest complete change) practices, on for every Claude node and appended to its system prompt.",
-      "`practices:` on `defaults` or a node turns them off or sets ponytail's level; the setting cascades down the ownership tree.",
+      "`practices:` on a project's or workflow's `defaults`, an agent or a node turns them off or sets ponytail's level; each cascades on its own down the ownership tree, then through the defaults.",
       "Built: `ork:<name>` references. A built-in skill loads only where the workflow or a node names it, and competes at that layer.",
       "Built: `ork:review`, `ork:brief` and `ork:report`, shipped as text in the CLI and written into the run's plugin folder; an unknown `ork:` name is a `ref.skill` error.",
       "Built: the agents `ork-implementer` and `ork-reviewer`, the lowest layer of the agent catalog.",

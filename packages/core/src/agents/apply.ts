@@ -19,6 +19,7 @@ import {
 
 import { parseSkillRef } from "../context/skills.ts";
 import { error } from "../graph/diagnostics.ts";
+import { layerPractices } from "../practices/practices.ts";
 import {
   type AgentCatalog,
   type AgentSource,
@@ -73,6 +74,9 @@ const filled = (node: Node, agent: Agent): Node => {
     if (out[key] === undefined && agent[key] !== undefined) {
       out[key] = agent[key];
     }
+  }
+  if ("practices" in node) {
+    out["practices"] = layerPractices(agent.practices, node.practices);
   }
   // Sound: only settings both shapes share were copied onto a Claude node.
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see above

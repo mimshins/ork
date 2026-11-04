@@ -30,6 +30,7 @@ import {
   type NodeExecutor,
   planNodeSession,
   type PlanResult,
+  resolvePractices,
   type RunEvent,
   startRun,
   updateAgent,
@@ -179,6 +180,27 @@ describe("agent nodes", () => {
       "helper",
       "reviewer",
     ]);
+  });
+
+  it("keep an agent's practice when the node sets only the other", () => {
+    const graph = graphOf(
+      compile(
+        [
+          "agents:",
+          "  quiet:",
+          "    description: Quiet.",
+          "    instructions: Be quiet.",
+          "    practices: { caveman: false, ponytail: lite }",
+          "nodes:",
+          "  a: { type: claude.worker, agent: quiet, prompt: Go., practices: { ponytail: ultra } }",
+        ],
+        catalog,
+      ),
+    );
+    expect(resolvePractices(graph.workflow, "a")).toEqual({
+      caveman: false,
+      ponytail: "ultra",
+    });
   });
 
   it("prefer the workflow's own agent, whose output fields the edges can read", () => {

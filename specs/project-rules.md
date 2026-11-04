@@ -46,8 +46,8 @@ rules:
 ```
 
 - `git` keys: the workflow's win, key by key.
-- `defaults`: the workflow's `defaults` win, key by key; a node's own settings
-  (or its agent's) win over both.
+- `defaults`: the workflow's `defaults` win, key by key, and `practices` one
+  practice at a time; a node's own settings (or its agent's) win over both.
 - `permissions`: added together, the project's, the workflow's and each node's
   own `tools`; Claude Code lets `deny` win over `allow`.
 - `context`: the project's files come before the workflow's `layers.context`,

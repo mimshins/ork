@@ -20,6 +20,18 @@ export type ResolvedPractices = {
 const PRACTICE_NAMES = ["caveman", "ponytail"] as const;
 
 /**
+ * `over` on top of `under`, practice by practice, so that setting one practice
+ * doesn't undo a setting of the other from a layer below.
+ */
+export const layerPractices = (
+  under: Practices | undefined,
+  over: Practices | undefined,
+): Practices | undefined =>
+  under === undefined || over === undefined
+    ? (over ?? under)
+    : { ...under, ...over };
+
+/**
  * A node's practices: its own setting, else its nearest owner's, else the
  * workflow's `defaults`, else on (ADR-021). Turning one off on a root node
  * turns it off for everything that node owns.
