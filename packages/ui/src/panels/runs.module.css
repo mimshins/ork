@@ -1,9 +1,15 @@
 /**
- * @file The look of the Runs panel and the Run workflow form. The selected row
- *   has a line down its edge as well as its color, so it reads without color.
+ * @file The look of the Runs panel and the Run workflow form: a frame holding a
+ *   card each for the tools, the list and the triggers. The selected row has an
+ *   outline as well as its color, so it reads without color.
  */
 
 .panel {
+  --runs-panel-bg: var(--surface-frame);
+  --runs-panel-gap: var(--space-3);
+
+  background: var(--runs-panel-bg);
+  gap: var(--runs-panel-gap);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -11,12 +17,14 @@
 }
 
 .tools {
-  --runs-tools-border-block-end: var(--hairline) solid var(--color-border);
+  --runs-tools-bg: var(--surface-panel);
+  --runs-tools-radius: var(--radius-panel);
   --runs-tools-gap: var(--gap);
   --runs-tools-padding: var(--inset-tools);
 
   align-items: flex-end;
-  border-block-end: var(--runs-tools-border-block-end);
+  background: var(--runs-tools-bg);
+  border-radius: var(--runs-tools-radius);
   display: flex;
   flex-wrap: wrap;
   gap: var(--runs-tools-gap);
@@ -24,42 +32,48 @@
   padding: var(--runs-tools-padding);
 }
 
+.main {
+  --runs-main-bg: var(--surface-panel);
+  --runs-main-radius: var(--radius-panel);
+
+  background: var(--runs-main-bg);
+  border-radius: var(--runs-main-radius);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .list {
+  --runs-list-padding: var(--space-3);
+
   flex: 1;
   list-style: none;
   margin: 0;
   min-height: 0;
   overflow-y: auto;
-  padding: 0;
+  padding: var(--runs-list-padding);
 }
 
 .row {
   --runs-row-bg: transparent;
-  --runs-row-border-width: 0;
-  --runs-row-border-style: none;
-  --runs-row-border-color: currentcolor;
-  --runs-row-border-block-end: var(--hairline) solid var(--color-border);
-  --runs-row-border-inline-start-width: var(--focus-width);
-  --runs-row-border-inline-start-style: solid;
-  --runs-row-border-inline-start-color: transparent;
+  --runs-row-border-width: var(--hairline);
+  --runs-row-border-style: solid;
+  --runs-row-border-color: transparent;
+  --runs-row-radius: var(--radius-control);
   --runs-row-text: var(--color-text);
-  --runs-row-gap: var(--gap-tight);
-  --runs-row-padding: var(--gap);
+  --runs-row-padding: var(--space-4) var(--space-6);
 
   background: var(--runs-row-bg);
   border-width: var(--runs-row-border-width);
   border-style: var(--runs-row-border-style);
   border-color: var(--runs-row-border-color);
-  border-block-end: var(--runs-row-border-block-end);
-  border-inline-start-width: var(--runs-row-border-inline-start-width);
-  border-inline-start-style: var(--runs-row-border-inline-start-style);
-  border-inline-start-color: var(--runs-row-border-inline-start-color);
+  border-radius: var(--runs-row-radius);
   color: var(--runs-row-text);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   font: inherit;
-  gap: var(--runs-row-gap);
   padding: var(--runs-row-padding);
   text-align: start;
   width: 100%;
@@ -74,8 +88,8 @@
 }
 
 .row[aria-current="true"] {
-  --runs-row-bg: var(--surface-selected);
-  --runs-row-border-inline-start-color: var(--color-action-edge);
+  --runs-row-bg: var(--surface-current);
+  --runs-row-border-color: var(--color-border-strong);
 }
 
 .rowTop,
@@ -88,21 +102,27 @@
 
 .rowTop {
   --runs-row-top-gap: var(--gap);
+  --runs-row-top-min-height: 1.125rem;
 
   gap: var(--runs-row-top-gap);
+  min-height: var(--runs-row-top-min-height);
 }
 
 .rowMeta {
-  --runs-row-top-text: var(--color-text-muted);
-  --runs-row-top-column-gap: var(--gap);
-  --runs-row-top-font: var(--font-mono);
-  --runs-row-top-text-size: var(--text-mono);
+  --runs-row-meta-text: var(--color-text-muted);
+  --runs-row-meta-column-gap: var(--gap);
+  --runs-row-meta-font: var(--font-mono);
+  --runs-row-meta-text-size: var(--text-mono);
+  --runs-row-meta-leading: var(--leading-tight);
+  --runs-row-meta-min-height: 1rem;
 
-  color: var(--runs-row-top-text);
-  column-gap: var(--runs-row-top-column-gap);
-  font-family: var(--runs-row-top-font);
-  font-size: var(--runs-row-top-text-size);
+  color: var(--runs-row-meta-text);
+  column-gap: var(--runs-row-meta-column-gap);
+  font-family: var(--runs-row-meta-font);
+  font-size: var(--runs-row-meta-text-size);
   justify-content: flex-start;
+  line-height: var(--runs-row-meta-leading);
+  min-height: var(--runs-row-meta-min-height);
 }
 
 .workflow {
@@ -188,17 +208,24 @@
     --runs-row-border-inline-start-color: Canvas;
   }
 
+  /* A transparent edge would show in forced colors, on every row. */
+  .row {
+    --runs-row-border-color: Canvas;
+  }
+
   .row[aria-current="true"] {
-    --runs-row-border-inline-start-color: Highlight;
+    --runs-row-border-color: Highlight;
   }
 }
 
 .triggers {
-  --runs-triggers-border-block-start: var(--hairline) solid var(--color-border);
+  --runs-triggers-bg: var(--surface-panel);
+  --runs-triggers-radius: var(--radius-panel);
   --runs-triggers-gap: var(--gap-tight);
   --runs-triggers-padding: var(--gap);
 
-  border-block-start: var(--runs-triggers-border-block-start);
+  background: var(--runs-triggers-bg);
+  border-radius: var(--runs-triggers-radius);
   display: flex;
   flex-direction: column;
   gap: var(--runs-triggers-gap);

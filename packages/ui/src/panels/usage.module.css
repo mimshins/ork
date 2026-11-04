@@ -7,10 +7,14 @@
  */
 
 .panel {
+  --usage-panel-bg: var(--surface-frame);
+  --usage-panel-gap: var(--space-3);
   --usage-panel-container-type: initial;
   --usage-panel-container: usage / inline-size;
 
+  background: var(--usage-panel-bg);
   container: var(--usage-panel-container);
+  gap: var(--usage-panel-gap);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -29,12 +33,14 @@
 }
 
 .tools {
-  --usage-tools-border-block-end: var(--hairline) solid var(--color-border);
+  --usage-tools-bg: var(--surface-panel);
+  --usage-tools-radius: var(--radius-panel);
   --usage-tools-gap: var(--gap);
   --usage-tools-padding: var(--inset-tools);
 
   align-items: flex-end;
-  border-block-end: var(--usage-tools-border-block-end);
+  background: var(--usage-tools-bg);
+  border-radius: var(--usage-tools-radius);
   display: flex;
   flex-wrap: wrap;
   gap: var(--usage-tools-gap);
@@ -50,9 +56,13 @@
 }
 
 .body {
+  --usage-body-bg: var(--surface-panel);
+  --usage-body-radius: var(--radius-panel);
   --usage-body-gap: var(--gap-loose);
   --usage-body-padding: var(--gap);
 
+  background: var(--usage-body-bg);
+  border-radius: var(--usage-body-radius);
   display: flex;
   flex: 1;
   flex-direction: column;

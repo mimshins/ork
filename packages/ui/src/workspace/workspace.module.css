@@ -185,6 +185,8 @@ footer.bar {
 
   background: var(--workspace-stacked-body-bg);
   border-radius: var(--workspace-stacked-body-radius);
+  /* So a panel fills it, whatever height its content has. */
+  display: grid;
   min-height: var(--workspace-stacked-body-min-height);
 }
 

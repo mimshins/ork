@@ -24,6 +24,12 @@ of tech and pixel, and lit only where something needs the user
   Surfaces do the separating, and hairlines are left for inside a card. A frame
   has an edge only in more contrast and forced colors, and a faint shadow only
   on the light theme.
+- **Cards inside a panel:** a panel's toolbar, its main area, and anything else
+  that stands alone each take a card, a 3 px gutter apart, rather than a
+  hairline between them.
+- **Rows:** a run takes 44 px, on two lines, and a log event 24 px. An event
+  opens when clicked, so it stays at the minimum target size, though the
+  prototype drew log lines at 20 px.
 - **One toolbar inset:** whatever heads a card, in any panel, reads
   `--inset-tools`, so moving between tabs doesn't shift what's on them. A test
   holds this.
@@ -31,7 +37,8 @@ of tech and pixel, and lit only where something needs the user
   and controls of 24 px with 4 px corners. Sizes are for the default text size.
 - **The brand pair, from the [logo](../../assets/logo/README.md):**
   - **Amber `#ffb000` is primary:** action and attention. Primary buttons,
-    focus, the selected item, and anything waiting on the user.
+    focus, and anything waiting on the user. A selected row is neutral, with an
+    outline, so amber in a list always means it needs you.
   - **Phosphor `#3dff8a` is secondary:** live and done. Running, success, links.
   - **Text on either fill is the screen color `#0a0d0b`:** 10.7:1 on amber,
     14.8:1 on phosphor.

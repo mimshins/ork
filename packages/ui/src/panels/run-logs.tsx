@@ -64,27 +64,29 @@ export const RunLogs = ({
         text={text}
         type={type}
       />
-      <LogStatus
-        cli={logsCommand(runId, node)}
-        events={events}
-        feed={feed}
-        shown={shown.length}
-      />
-      {events.error === null ? null : (
-        <p
-          className={styles["error"]}
-          role="alert"
-        >
-          {events.error}
-        </p>
-      )}
-      <LogList
-        label={`Events of run ${runId}`}
-        listRef={listRef}
-        onScroll={onScroll}
-        reading={events.link === "loading" && events.events.length === 0}
-        shown={shown}
-      />
+      <div className={styles["main"]}>
+        <LogStatus
+          cli={logsCommand(runId, node)}
+          events={events}
+          feed={feed}
+          shown={shown.length}
+        />
+        {events.error === null ? null : (
+          <p
+            className={styles["error"]}
+            role="alert"
+          >
+            {events.error}
+          </p>
+        )}
+        <LogList
+          label={`Events of run ${runId}`}
+          listRef={listRef}
+          onScroll={onScroll}
+          reading={events.link === "loading" && events.events.length === 0}
+          shown={shown}
+        />
+      </div>
     </div>
   );
 };

@@ -1,9 +1,16 @@
 /**
- * @file The look of the Logs panel: its filters, then a dense list of events on a
- *   fixed grid, so times, nodes and types line up and the eye can run down them.
+ * @file The look of the Logs panel: a frame holding a card for its filters and a
+ *   card for a dense list of events on a fixed grid, so times, nodes and types
+ *   line up and the eye can run down them. A row stays the minimum target size,
+ *   as it opens the event.
  */
 
 .panel {
+  --logs-panel-bg: var(--surface-frame);
+  --logs-panel-gap: var(--space-3);
+
+  background: var(--logs-panel-bg);
+  gap: var(--logs-panel-gap);
   container-type: inline-size;
   display: flex;
   flex-direction: column;
@@ -13,16 +20,31 @@
 }
 
 .tools {
-  --logs-tools-border-block-end: var(--hairline) solid var(--color-border);
+  --logs-tools-bg: var(--surface-panel);
+  --logs-tools-radius: var(--radius-panel);
   --logs-tools-gap: var(--gap);
   --logs-tools-grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   --logs-tools-padding: var(--inset-tools);
 
-  border-block-end: var(--logs-tools-border-block-end);
+  background: var(--logs-tools-bg);
+  border-radius: var(--logs-tools-radius);
   display: grid;
   gap: var(--logs-tools-gap);
   grid-template-columns: var(--logs-tools-grid-template-columns);
   padding: var(--logs-tools-padding);
+}
+
+.main {
+  --logs-main-bg: var(--surface-panel);
+  --logs-main-radius: var(--radius-panel);
+  --logs-main-min-height: 7rem;
+
+  background: var(--logs-main-bg);
+  border-radius: var(--logs-main-radius);
+  display: flex;
+  flex: 1 1 7rem;
+  flex-direction: column;
+  min-height: var(--logs-main-min-height);
 }
 
 .status {
@@ -52,7 +74,7 @@
 }
 
 .status [aria-pressed="true"] {
-  --button-bg: var(--surface-selected);
+  --button-bg: var(--surface-current);
 }
 
 .error {
@@ -66,6 +88,7 @@
 
 .list {
   --logs-list-min-height: 5rem;
+  --logs-list-padding: var(--gap-hair) 0;
 
   flex: 1 1 5rem;
   list-style: none;
@@ -73,7 +96,7 @@
   min-height: var(--logs-list-min-height);
   overflow-anchor: none;
   overflow-y: auto;
-  padding: 0;
+  padding: var(--logs-list-padding);
 }
 
 .item {
@@ -87,13 +110,13 @@
   --logs-row-bg: transparent;
   --logs-row-text: var(--color-text);
   --logs-row-font: var(--font-mono);
-  --logs-row-text-size: var(--text-small);
+  --logs-row-text-size: var(--text-mono);
   --logs-row-gap: var(--gap);
   --logs-row-grid-template-columns: 6em minmax(4em, 8em) 11em minmax(0, 1fr);
   --logs-row-min-height: var(--target-min);
-  --logs-row-padding: var(--gap-hair) var(--gap);
+  --logs-row-padding: 0 var(--gap);
 
-  align-items: baseline;
+  align-items: center;
   background: var(--logs-row-bg);
   border: 0;
   color: var(--logs-row-text);
@@ -119,7 +142,7 @@
 }
 
 .row[aria-expanded="true"] {
-  --logs-row-bg: var(--surface-selected);
+  --logs-row-bg: var(--surface-current);
 }
 
 .time,
@@ -157,7 +180,7 @@
 }
 
 .detail {
-  --logs-detail-bg: var(--surface-panel);
+  --logs-detail-bg: var(--surface-sunken);
   --logs-detail-border-block-end: var(--hairline) solid var(--color-border);
   --logs-detail-text: var(--color-text);
   --logs-detail-font: var(--font-mono);

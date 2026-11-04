@@ -68,30 +68,32 @@ export const RunsPanel = () => {
           }}
         />
       </div>
-      {runs === null ? (
-        <p className={styles["note"]}>Reading runs…</p>
-      ) : shown.length === 0 ? (
-        <NoRuns filtered={filter !== ALL_PROJECTS} />
-      ) : (
-        // A list with its own keys; it stays a list to a screen reader.
-        // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the keys move focus between the buttons inside
-        <ul
-          aria-label="Runs"
-          className={styles["list"]}
-          onKeyDown={moveFocus}
-        >
-          {shown.map(run => (
-            <RunRow
-              key={run.id}
-              onSelect={state.selectRun}
-              run={run}
-              selected={run.id === selected}
-              tabStop={run.id === tabStop}
-              waiting={waiting.has(run.id)}
-            />
-          ))}
-        </ul>
-      )}
+      <div className={styles["main"]}>
+        {runs === null ? (
+          <p className={styles["note"]}>Reading runs…</p>
+        ) : shown.length === 0 ? (
+          <NoRuns filtered={filter !== ALL_PROJECTS} />
+        ) : (
+          // A list with its own keys; it stays a list to a screen reader.
+          // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the keys move focus between the buttons inside
+          <ul
+            aria-label="Runs"
+            className={styles["list"]}
+            onKeyDown={moveFocus}
+          >
+            {shown.map(run => (
+              <RunRow
+                key={run.id}
+                onSelect={state.selectRun}
+                run={run}
+                selected={run.id === selected}
+                tabStop={run.id === tabStop}
+                waiting={waiting.has(run.id)}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
       <TriggersSection />
     </div>
   );

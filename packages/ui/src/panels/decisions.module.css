@@ -1,6 +1,6 @@
 /**
- * @file The look of the Decisions panel. The recommended option has its words and
- *   a stronger edge as well as its color, so it reads without color.
+ * @file The look of the Decisions panel. The recommended option says so in a
+ *   caption as well as its color, so it reads without color.
  */
 
 .panel {
@@ -87,21 +87,18 @@
 }
 
 .option {
-  --decisions-option-border-inline-start-width: var(
-    --decisions-option-border-width
-  );
   --decisions-option-bg: transparent;
   --decisions-option-border-width: var(--hairline);
   --decisions-option-border-style: solid;
-  --decisions-option-border-color: var(--color-border-strong);
+  --decisions-option-border-color: var(--color-border);
   --decisions-option-radius: var(--radius-control);
   --decisions-option-text: var(--color-text);
   --decisions-option-cursor: pointer;
   --decisions-option-gap: var(--gap);
-  --decisions-option-min-height: var(--target-min);
-  --decisions-option-padding: var(--gap-tight) var(--inset-control);
+  --decisions-option-min-height: 1.75rem;
+  --decisions-option-padding: var(--space-3) var(--inset-control);
 
-  align-items: flex-start;
+  align-items: center;
   background: var(--decisions-option-bg);
   border-width: var(--decisions-option-border-width);
   border-style: var(--decisions-option-border-style);
@@ -116,7 +113,6 @@
   padding: var(--decisions-option-padding);
   text-align: start;
   width: 100%;
-  border-inline-start-width: var(--decisions-option-border-inline-start-width);
 }
 
 .option:hover {
@@ -124,9 +120,8 @@
 }
 
 .option[data-recommended] {
-  --decisions-option-bg: var(--surface-selected);
+  --decisions-option-bg: var(--surface-attention);
   --decisions-option-border-color: var(--color-action-edge);
-  --decisions-option-border-inline-start-width: var(--focus-width);
 }
 
 .option[aria-disabled="true"] {
@@ -137,9 +132,24 @@
   --decisions-option-text-gap: var(--gap-hair);
 
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--decisions-option-text-gap);
   min-width: 0;
+}
+
+.optionMark {
+  --decisions-option-mark-text: var(--color-action-text);
+  --decisions-option-mark-font: var(--font-caption);
+  --decisions-option-mark-text-size: var(--text-caption);
+  --decisions-option-mark-tracking: var(--tracking-caption);
+  --decisions-option-mark-case: var(--case-caption);
+
+  color: var(--decisions-option-mark-text);
+  font-family: var(--decisions-option-mark-font);
+  font-size: var(--decisions-option-mark-text-size);
+  letter-spacing: var(--decisions-option-mark-tracking);
+  text-transform: var(--decisions-option-mark-case);
 }
 
 .optionLabel {

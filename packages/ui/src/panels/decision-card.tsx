@@ -122,7 +122,6 @@ export const DecisionCard = ({
                   <span className={styles["optionText"]}>
                     <span className={styles["optionLabel"]}>
                       {choiceLabel(choice)}
-                      {isRecommended ? " (recommended)" : ""}
                     </span>
                     {choice.description === undefined ? null : (
                       <span className={styles["optionDescription"]}>
@@ -130,6 +129,9 @@ export const DecisionCard = ({
                       </span>
                     )}
                   </span>
+                  {isRecommended ? (
+                    <span className={styles["optionMark"]}>recommended</span>
+                  ) : null}
                 </button>
               </Tip>
             </li>

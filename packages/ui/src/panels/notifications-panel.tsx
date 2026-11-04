@@ -75,28 +75,30 @@ export const NotificationsPanel = () => {
           Mark all read
         </Button>
       </div>
-      {refused === null ? null : (
-        <p
-          className={styles["refused"]}
-          role="alert"
-        >
-          {refused}
-        </p>
-      )}
-      {items.length === 0 ? (
-        <EmptyState title="Nothing yet.">
-          Decisions, and runs that end, crash or pause, land here.
-        </EmptyState>
-      ) : (
-        <ul className={styles["list"]}>
-          {items.map(item => (
-            <NotificationRow
-              item={item}
-              key={item.id}
-            />
-          ))}
-        </ul>
-      )}
+      <div className={styles["main"]}>
+        {refused === null ? null : (
+          <p
+            className={styles["refused"]}
+            role="alert"
+          >
+            {refused}
+          </p>
+        )}
+        {items.length === 0 ? (
+          <EmptyState title="Nothing yet.">
+            Decisions, and runs that end, crash or pause, land here.
+          </EmptyState>
+        ) : (
+          <ul className={styles["list"]}>
+            {items.map(item => (
+              <NotificationRow
+                item={item}
+                key={item.id}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };

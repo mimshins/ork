@@ -66,17 +66,19 @@ const RunChats = ({
           value={node}
         />
       </div>
-      {items.length === 0 ? (
-        <EmptyState title={`Nothing from ${node} yet.`}>
-          What it says and what you write show here.
-        </EmptyState>
-      ) : (
-        <ChatThread
-          items={items}
-          key={node}
-          node={node}
-        />
-      )}
+      <div className={styles["main"]}>
+        {items.length === 0 ? (
+          <EmptyState title={`Nothing from ${node} yet.`}>
+            What it says and what you write show here.
+          </EmptyState>
+        ) : (
+          <ChatThread
+            items={items}
+            key={node}
+            node={node}
+          />
+        )}
+      </div>
       <ChatComposer
         key={`${run.id}/${node}`}
         node={node}

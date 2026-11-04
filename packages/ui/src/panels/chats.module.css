@@ -4,6 +4,11 @@
  */
 
 .panel {
+  --chats-panel-bg: var(--surface-frame);
+  --chats-panel-gap: var(--space-3);
+
+  background: var(--chats-panel-bg);
+  gap: var(--chats-panel-gap);
   container-type: inline-size;
   display: flex;
   flex-direction: column;
@@ -13,11 +18,26 @@
 }
 
 .tools {
-  --chats-tools-border-block-end: var(--hairline) solid var(--color-border);
+  --chats-tools-bg: var(--surface-panel);
+  --chats-tools-radius: var(--radius-panel);
   --chats-tools-padding: var(--inset-tools);
 
-  border-block-end: var(--chats-tools-border-block-end);
+  background: var(--chats-tools-bg);
+  border-radius: var(--chats-tools-radius);
   padding: var(--chats-tools-padding);
+}
+
+.main {
+  --chats-main-bg: var(--surface-panel);
+  --chats-main-radius: var(--radius-panel);
+  --chats-main-min-height: 5rem;
+
+  background: var(--chats-main-bg);
+  border-radius: var(--chats-main-radius);
+  display: flex;
+  flex: 1 1 5rem;
+  flex-direction: column;
+  min-height: var(--chats-main-min-height);
 }
 
 .thread {
@@ -125,11 +145,13 @@
 }
 
 .composer {
-  --chats-composer-border-block-start: var(--hairline) solid var(--color-border);
+  --chats-composer-bg: var(--surface-panel);
+  --chats-composer-radius: var(--radius-panel);
   --chats-composer-gap: var(--gap-tight);
   --chats-composer-padding: var(--gap-tight) var(--gap);
 
-  border-block-start: var(--chats-composer-border-block-start);
+  background: var(--chats-composer-bg);
+  border-radius: var(--chats-composer-radius);
   display: flex;
   flex-direction: column;
   gap: var(--chats-composer-gap);

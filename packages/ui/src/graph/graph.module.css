@@ -183,9 +183,9 @@
 }
 
 .card[data-selected] {
-  --graph-card-bg: var(--surface-selected);
-  --graph-card-border-color: var(--color-action-edge);
-  --graph-card-start-color: var(--color-action-edge);
+  --graph-card-bg: var(--surface-current);
+  --graph-card-border-color: var(--color-text);
+  --graph-card-start-color: var(--color-text);
 }
 
 .card[data-tone="running"] {

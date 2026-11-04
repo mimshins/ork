@@ -22,6 +22,7 @@ const SURFACES = [
   "--surface-hover",
   "--surface-selected",
   "--surface-attention",
+  "--surface-current",
   "--surface-live",
   "--surface-danger",
 ];

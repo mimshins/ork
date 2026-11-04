@@ -11,21 +11,26 @@
 
 .key {
   --key-bg: var(--surface-sunken);
-  --key-border: var(--hairline) solid var(--color-border-strong);
+  --key-border: var(--hairline) solid var(--color-border);
   --key-radius: var(--radius-badge);
   --key-text: var(--color-text-muted);
   --key-text-size: var(--text-small);
+  --key-height: var(--space-16);
   --key-min-width: var(--space-16);
-  --key-padding: 0 var(--gap-tight);
+  --key-padding: 0 var(--space-3);
 
+  align-items: center;
   background: var(--key-bg);
   border: var(--key-border);
   border-radius: var(--key-radius);
+  box-sizing: border-box;
   color: var(--key-text);
+  display: inline-flex;
   font-size: var(--key-text-size);
+  height: var(--key-height);
+  justify-content: center;
   min-width: var(--key-min-width);
   padding: var(--key-padding);
-  text-align: center;
 }
 
 .empty {

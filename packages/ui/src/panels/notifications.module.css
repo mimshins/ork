@@ -4,6 +4,11 @@
  */
 
 .panel {
+  --notifications-panel-bg: var(--surface-frame);
+  --notifications-panel-gap: var(--space-3);
+
+  background: var(--notifications-panel-bg);
+  gap: var(--notifications-panel-gap);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -12,18 +17,31 @@
 }
 
 .tools {
-  --notifications-tools-border-block-end: var(--hairline) solid
-    var(--color-border);
+  --notifications-tools-bg: var(--surface-panel);
+  --notifications-tools-radius: var(--radius-panel);
   --notifications-tools-gap: var(--gap);
   --notifications-tools-padding: var(--inset-tools);
 
   align-items: center;
-  border-block-end: var(--notifications-tools-border-block-end);
+  background: var(--notifications-tools-bg);
+  border-radius: var(--notifications-tools-radius);
   display: flex;
   flex-wrap: wrap;
   gap: var(--notifications-tools-gap);
   justify-content: space-between;
   padding: var(--notifications-tools-padding);
+}
+
+.main {
+  --notifications-main-bg: var(--surface-panel);
+  --notifications-main-radius: var(--radius-panel);
+
+  background: var(--notifications-main-bg);
+  border-radius: var(--notifications-main-radius);
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  min-height: auto;
 }
 
 .refused {
@@ -70,7 +88,7 @@
 }
 
 .item[data-unread] {
-  --notifications-item-bg: var(--surface-selected);
+  --notifications-item-bg: var(--surface-attention);
   --notifications-item-border-inline-start-color: var(--color-action-edge);
 }
 

@@ -223,8 +223,8 @@
 }
 
 .treeRow[data-selected] {
-  --monitor-tree-row-bg: var(--surface-selected);
-  --monitor-tree-row-border-inline-start-color: var(--color-action-edge);
+  --monitor-tree-row-bg: var(--surface-current);
+  --monitor-tree-row-border-inline-start-color: var(--color-border-strong);
 }
 
 .treeToggle {

@@ -74,7 +74,9 @@ describe("the Decisions panel", () => {
     const here = within(card("d1"));
     expect(here.getByText("The review passed.")).toBeDefined();
     expect(here.getByText("Goes to main.")).toBeDefined();
-    expect(here.getByText("Merge it (recommended)")).toBeDefined();
+    expect(
+      here.getByRole("button", { name: /Merge it.*recommended/u }),
+    ).toBeDefined();
     expect(here.getByText("reject")).toBeDefined();
     expect(here.getByText(/aaa11111 · gate/u)).toBeDefined();
   });
