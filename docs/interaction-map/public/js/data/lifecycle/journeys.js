@@ -1,6 +1,6 @@
 /** @file The run lifecycle map's journeys. */
 
-import { DESIGN, SCHEMA } from "../refs.js";
+import { DESIGN, SCHEMA, NODE_TYPES } from "../refs.js";
 
 /** @typedef {import("../types.js").Journey} Journey */
 
@@ -156,6 +156,50 @@ export const JOURNEYS = [
         title: "You answer",
         detail:
           "The run continues the way you chose, and the answer is logged.",
+      },
+    ],
+  },
+  {
+    id: "checked-report",
+    title: "A check sends the builder back",
+    who: "builder · its worktree",
+    summary:
+      "With a `verify:` on the builder, which `software-factory` doesn't declare: a report isn't accepted until a program agrees, and a failure costs a turn of the same session, not a new one.",
+    steps: [
+      {
+        from: "builder",
+        title: "It reports `pass`",
+        detail:
+          "Its instructions named the check, so it may well have run it first and saved all that follows.",
+        docs: [NODE_TYPES.steps],
+      },
+      {
+        from: "builder",
+        to: "worktrees",
+        title: "The check runs in its worktree",
+        detail:
+          "`pnpm test`, as a one-off tool node with the builder's identity, before any of its work is committed.",
+        docs: [NODE_TYPES.verify],
+      },
+      {
+        from: "worktrees",
+        to: "builder",
+        title: "It fails: the same session resumes",
+        detail:
+          "With the reason and the last 8 KiB of the output, within what is left of the budgets. `attempts` says how many times.",
+      },
+      {
+        from: "builder",
+        title: "It fixes it and reports again",
+        detail:
+          "If it reports `fail` or `changes_requested` instead, the check stays failed and so does the node.",
+      },
+      {
+        from: "builder",
+        to: "worktrees",
+        title: "The check passes",
+        detail:
+          "The report is accepted, `output.verify` holds the result, and the node's `notify:` rules and edges read it.",
       },
     ],
   },

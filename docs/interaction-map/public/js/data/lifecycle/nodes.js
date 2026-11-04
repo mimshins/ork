@@ -100,7 +100,7 @@ export const NODES = [
     facts: [
       "Built: `ork run <wf>` runs the whole workflow, and `--node <id>` one Claude node on its own; `--input`, `--driver`, `--in-place` and `--json` work for both.",
       "Built: `--detach` returns at once; `ork logs --follow`, `ork tree`, `ork decide`, `ork pause`, `ork continue` and `ork stop` reach it later.",
-      "Built: before anything starts, it checks that the programs the tool nodes run are installed; integrations a workflow does not use are never needed.",
+      "Built: before anything starts, it checks that the programs a workflow runs are installed, the variables it reads are set, and its MCP servers are in `.mcp.json`; integrations a workflow does not use are never needed.",
       "`--driver sdk|cli` overrides every node's driver for this run.",
     ],
     see: [
@@ -110,7 +110,7 @@ export const NODES = [
         label: "The CLI in the architecture",
       },
     ],
-    docs: [CLI.run, CLI.runWorkflow, CLI.runTests, DESIGN.cli],
+    docs: [CLI.run, CLI.runWorkflow, CLI.runTests, DESIGN.cli, NODE_TYPES.mcp],
   },
   {
     id: "compiler",
@@ -127,6 +127,7 @@ export const NODES = [
     facts: [
       "Here the only entry node is `spec`: the reviewers have a parent, the rest have incoming edges.",
       "The `reviews -> builder` edge closes a cycle, so it must carry `maxRounds`.",
+      "A `script:` takes no templates, so a value can't become code; that is checked here, as are a `notify:` rule's and a step's references.",
     ],
     see: [
       {
@@ -155,6 +156,8 @@ export const NODES = [
       "An edge without `when:` fires only on success; a skipped branch skips everything that only it feeds, so the join never waits on it.",
       "When a loop edge has used its `maxRounds`, you are asked: stop, one more round, or go on. A live leader that owns the loop's nodes is asked first; here the builder's session has ended, so it is you.",
       "Runs the children a leader delegates to, on the slot the waiting leader lends them.",
+      "A finished node's `notify:` rules go out after `node.finished` and before its edges are routed, so a node an edge starts already has the message. A stopping run fires none for what it cuts off.",
+      "`software-factory` declares none, but any leader or worker can take `before:`, which runs first, and `verify:`, which must pass before its report is accepted. Both run inside the node, so a delegated child gets them too.",
       "`ork resume` runs the workflow again under the same id: what finished is handed back from the run's events, and only the rest runs.",
       "A node cut off mid-session (stopped, crashed, out of budget) continues that session on resume; unread messages and queued `ork chat` messages are handed back too. `--detach` resumes in the background.",
     ],
@@ -175,6 +178,7 @@ export const NODES = [
       TIMEOUTS.code,
       TIMEOUTS.tests,
       DESIGN.scheduler,
+      NODE_TYPES.steps,
     ],
   },
   {
@@ -426,6 +430,7 @@ export const NODES = [
       "Its branch is the builder's `output.branch`, which the push and the pull request use; the approver, readonly with no owner, reads it here too.",
       "The spec the `spec` node wrote in the project root is carried in and committed.",
       "Kept after the run as its result; `ork worktrees clean` removes it when you are done.",
+      "A node's `before:` and `verify:` run here, which a tool node can't reach: tool nodes run in the shared checkout. Work is committed after its check.",
       "With `commit: never` in the project's rules it is detached and nothing is committed; its path is `output.worktree`.",
     ],
     see: [
@@ -435,7 +440,7 @@ export const NODES = [
         label: "Worktrees in the architecture",
       },
     ],
-    docs: [WORKTREES.workspace, DESIGN.worktrees],
+    docs: [WORKTREES.workspace, DESIGN.worktrees, NODE_TYPES.verify],
   },
   {
     id: "github",

@@ -646,10 +646,11 @@ export const MILESTONES = [
       {
         id: "script-access",
         title: "Scripts that reach the run",
-        status: "active",
+        status: "done",
+        date: "2026-11-04",
         detail:
           "Tool nodes know their run and node, take an `env:`, and return JSON a `when:` can read. They can send a message with `ork send`, and a workflow can declare one with `notify:`, so deterministic work takes no model turn (built, RFC-005). A node can check a report with `verify:`, set itself up with `before:`, hold a short `script:`, and call an MCP tool with `mcp.call` (built, RFC-006).",
-        commits: ["c4cdefe", "ef82721", "eeceaf2", "b98d841"],
+        commits: ["c4cdefe", "ef82721", "eeceaf2", "b98d841", "515b9eb"],
         docs: [
           "decisions/ADR-047-script-identity-env-json.md",
           "decisions/ADR-048-scripts-and-rules-on-the-bus.md",
@@ -662,7 +663,7 @@ export const MILESTONES = [
       {
         id: "quotas",
         title: "Quotas across runs",
-        status: "planned",
+        status: "next",
         detail:
           "Caps per day, month or project on top of each run's budget, for API and subscription users alike. Needs its own RFC, after the usage reports.",
         docs: ["specs/usage.md", "specs/scheduler.md#budget-and-concurrency"],

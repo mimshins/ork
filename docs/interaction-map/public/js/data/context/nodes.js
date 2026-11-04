@@ -182,9 +182,10 @@ export const NODES = [
     facts: [
       "Templates such as `{{nodes.spec.output.artifacts.spec}}` render to a path, not to the file's content.",
       "Built: a delegated brief follows the node's own prompt as `## Task from <owner>`.",
+      "Built: a prompt can read what the node's `before:` step gave, as `{{before.stdout}}` or `{{before.json.*}}`, so a program gathers what a session would spend turns finding. What goes in a prompt, the session pays for.",
       "Constraints from the owner (scope, files, deadline) travel with it.",
     ],
-    docs: [RUNTIME.plan, DESIGN.concepts, DESIGN.context],
+    docs: [RUNTIME.plan, DESIGN.concepts, DESIGN.context, NODE_TYPES.steps],
   },
 
   // ── Context compiler ─────────────────────────────────────────────────────

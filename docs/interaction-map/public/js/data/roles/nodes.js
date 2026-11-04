@@ -123,6 +123,7 @@ export const NODES = [
       "The other way a node runs: its leader asks for it. A leader's session gets two blocking tools that run owned children in parallel and return when each has reported.",
     facts: [
       "`delegate([{ child, brief }])` runs declared children; `spawn_worker([{ template, brief }])` runs new instances of a child worker.",
+      "A delegated child follows no edges, but its own `before:` and `verify:` still run, for each spawned instance too.",
       "A task is refused, with the reason in its report, when the child is not the leader's or is already running.",
       "While a leader waits, its session slot goes to its children, so it never deadlocks at `concurrency: 1`.",
     ],
@@ -130,6 +131,7 @@ export const NODES = [
       ENGINE.delegation,
       ENGINE.delegationTests,
       RUNTIME.delegate,
+      NODE_TYPES.steps,
       ROLES.delegation,
     ],
   },

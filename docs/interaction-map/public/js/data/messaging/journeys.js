@@ -1,6 +1,6 @@
 /** @file The messaging map's journeys. */
 
-import { DESIGN, LINKS, SCHEMA } from "../refs.js";
+import { DESIGN, LINKS, SCHEMA, BUS } from "../refs.js";
 
 /** @typedef {import("../types.js").Journey} Journey */
 
@@ -189,6 +189,57 @@ export const JOURNEYS = [
         to: "builderS",
         title: "The builder reads it",
         detail: "Its replies are its events, streamed to your chat.",
+      },
+    ],
+  },
+  {
+    id: "from-a-program",
+    title: "A program tells a session",
+    who: "A tool node's program · a rule · builder",
+    summary:
+      "A fact a program already has reaches a working session with no model turn: `ork send` from the program, or a `notify:` the workflow declared.",
+    steps: [
+      {
+        from: "orkSend",
+        to: "bus",
+        title: "A program runs `ork send`",
+        detail:
+          '`ork send builder -m "lint found 3 problems"`, checked on its own side, so a refusal is an exit code. A `script` row and a wake on the run\'s socket.',
+        docs: [BUS.send, BUS.scriptsSpec],
+      },
+      {
+        from: "notifyRules",
+        to: "bus",
+        title: "Or a node's rule fires",
+        detail:
+          "When the node finishes, if its `when:` holds, with no model turn. Masked, cut at 64 KiB, and starts no session.",
+        docs: [BUS.rules],
+      },
+      {
+        from: "bus",
+        to: "queue",
+        title: "It lands in the inbox",
+        detail:
+          "As `via: script` or `via: rule`, which shows in `ork logs` and the panels.",
+      },
+      {
+        from: "queue",
+        to: "sessionSend",
+        title: "A notice goes out",
+        detail: "One line, as for any message; the body waits to be pulled.",
+      },
+      {
+        from: "sessionSend",
+        to: "builderS",
+        title: "The builder sees it",
+        detail:
+          "At its next step, with a line that this holds no more authority than an agent's.",
+      },
+      {
+        from: "builderS",
+        to: "mcpTools",
+        title: "The builder calls `read_inbox`",
+        detail: "It pays for the body only when it reads it.",
       },
     ],
   },
