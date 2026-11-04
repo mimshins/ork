@@ -30,7 +30,29 @@ export const typeWord = (type: string): string =>
   WORDS[type] ??
   (type.startsWith("tool.") ? `${type.slice("tool.".length)} tool` : type);
 
-export const formatCost = (costUsd: number): string => `$${costUsd.toFixed(4)}`;
+/** Below this, four decimals would still read as nothing. */
+const SMALLEST_COST = 0.000_05;
+
+/**
+ * `$0.0312` for small sums, `$12.34` once cents are enough. `among` is the rest
+ * of its column: the numbers of a table share one precision, so they line up.
+ */
+export const formatCost = (
+  costUsd: number,
+  among: readonly number[] = [costUsd],
+): string => {
+  if (!Number.isFinite(costUsd)) return "–";
+  const size = Math.abs(costUsd);
+  if (size !== 0 && size < SMALLEST_COST) {
+    return costUsd > 0 ? "<$0.0001" : "$0.00";
+  }
+  // By what it reads as: 9.99996 shows as 10, so it needs no more than cents.
+  const small = among.some(cost => {
+    const shown = Math.abs(Number(cost.toFixed(4)));
+    return shown !== 0 && shown < 10;
+  });
+  return `${costUsd < 0 ? "-" : ""}$${size.toFixed(small ? 4 : 2)}`;
+};
 
 export const formatTokens = (tokens: number): string =>
   tokens < 1000 ? String(tokens) : `${(tokens / 1000).toFixed(1)}k`;

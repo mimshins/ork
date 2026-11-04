@@ -101,6 +101,11 @@ export const PAIRINGS: Pairing[] = [
     min: TEXT,
   },
   { fg: ["--panel-tab-indicator"], bg: ["--panel-header-bg"], min: UI },
+  {
+    fg: ["--chart-bar", "--chart-bar-pointed"],
+    bg: ["--panel-bg", "--chart-column-pointed"],
+    min: UI,
+  },
   { fg: ["--popup-text"], bg: ["--popup-bg"], min: TEXT },
   { fg: ["--kbd-text"], bg: ["--kbd-bg"], min: TEXT },
   {

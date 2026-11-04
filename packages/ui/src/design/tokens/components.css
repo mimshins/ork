@@ -28,6 +28,9 @@
 
   --panel-bg: var(--surface-panel);
   --panel-border: var(--color-border);
+  --chart-bar: var(--color-text-muted);
+  --chart-bar-pointed: var(--color-action-edge);
+  --chart-column-pointed: var(--surface-hover);
   --panel-header-bg: var(--surface-panel);
   --panel-header-text: var(--color-text-muted);
   --panel-header-text-active: var(--color-text);

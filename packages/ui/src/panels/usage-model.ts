@@ -7,6 +7,7 @@
 import type { UsageReport } from "@krapht/ork-server/client";
 
 import type { Option } from "../components/select.tsx";
+import { formatCost } from "../graph/facts.ts";
 
 const ALL_TIME = "all";
 
@@ -17,15 +18,35 @@ export const PERIODS: readonly Option[] = [
   { value: ALL_TIME, label: "All time" },
 ];
 
-export const DEFAULT_PERIOD = "30";
+/** Whether a period is everything there is. */
+export const isAllTime = (period: string): boolean => period === ALL_TIME;
 
-const DAY_MS = 86_400_000;
+/**
+ * When a period starts, as an ISO time; `undefined` for all time. It counts
+ * whole days, today among them, so seven days draw seven bars.
+ */
+export const sinceOf = (period: string, now: number): string | undefined => {
+  if (isAllTime(period)) return undefined;
+  const today = new Date(now);
+  return new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - (Number(period) - 1),
+  ).toISOString();
+};
 
-/** When a period starts, as an ISO time; `undefined` for all time. */
-export const sinceOf = (period: string, now: number): string | undefined =>
-  period === ALL_TIME
-    ? undefined
-    : new Date(now - Number(period) * DAY_MS).toISOString();
+/** The same report on the terminal; a project is the one it is run from. */
+export const usageCommand = (
+  everyProject: boolean,
+  period: string,
+  by?: string,
+): string =>
+  [
+    "ork usage",
+    ...(everyProject ? ["--all"] : []),
+    `--since ${isAllTime(period) ? "all" : `${period}d`}`,
+    ...(by === undefined ? [] : [`--by ${by}`]),
+  ].join(" ");
 
 export type Bar = { key: string; costUsd: number; sessions: number };
 
@@ -114,9 +135,14 @@ export const seriesOf = (
   };
 };
 
-/** `$0.0312` for small sums, `$12.34` once cents are enough. */
-export const money = (usd: number): string =>
-  `$${usd.toFixed(usd !== 0 && usd < 10 ? 4 : 2)}`;
+/** One sum on its own. */
+export const money = (usd: number): string => formatCost(usd);
+
+/** How a table's sums read, all to one precision. */
+export const moneyOf = (sums: readonly number[]): ((usd: number) => string) => {
+  const among = [...sums];
+  return usd => formatCost(usd, among);
+};
 
 /** `950`, `12.3k`, `4.5M`. */
 export const tokens = (count: number): string => {

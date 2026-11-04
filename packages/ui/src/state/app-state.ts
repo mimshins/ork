@@ -21,7 +21,11 @@ import { Container } from "react-containerized-state";
 
 import { createDecisionHistory } from "./decision-history.ts";
 import { createNotifications } from "./notifications.ts";
-import { createPreferences } from "./preferences.ts";
+import {
+  ALL_PROJECTS,
+  createPreferences,
+  DEFAULT_PERIOD,
+} from "./preferences.ts";
 import { createRead } from "./read.ts";
 import { reconcile } from "./reconcile.ts";
 import { createRunFeed, type RunFeed } from "./run-feed.ts";
@@ -78,15 +82,20 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
   let arriving: string | null = null;
   const preferences = createPreferences(storage);
   /** The project the Runs panel shows: a root, or "all". */
-  const runFilter = Container.create("all");
+  const runFilter = Container.create(ALL_PROJECTS);
   const runDialog = Container.create(false);
   const projects = createRead(() => client.call("projects"));
   const workflows = createRead((id: string) =>
     client.call("workflows", { params: { id } }),
   );
+  /** The Usage panel's filters, which outlive a change of layout. */
+  const usageFilter = Container.create({
+    project: ALL_PROJECTS,
+    period: DEFAULT_PERIOD,
+  });
   /** `now` is when it was asked, which the report's chart runs up to. */
   const usage = createRead(
-    ({ query }: { query: QueryOf<"usage">; now: number }) =>
+    ({ query }: { query: QueryOf<"usage">; now: number; period: string }) =>
       client.call("usage", { query }),
   );
   const feeds = new Map<string, HeldFeed>();
@@ -144,6 +153,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     projects,
     workflows,
     usage,
+    usageFilter,
     /** Asks for a run; it then arrives on the stream like any other. */
     startRun: (body: BodyOf<"start">) => client.call("start", { body }),
     /** Follows the server until the returned function is called. */

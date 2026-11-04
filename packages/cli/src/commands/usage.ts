@@ -39,7 +39,8 @@ export const usage = defineCommand({
     },
     since: {
       type: "string",
-      description: "An age (30d, 12w, 24h), a day (2026-11-01), or all",
+      description:
+        "Whole days counting today (30d, 12w), exact hours (24h), a day (2026-11-01), or all",
       default: "30d",
     },
     until: { type: "string", description: "The last day to include" },

@@ -1,14 +1,27 @@
 /**
  * @file The look of the Usage panel. Its numbers line up in the mono face, and
  *   its chart's bars take the muted ink, turning amber under the pointer: amber
- *   marks what is being acted on, and spending is not an alarm.
+ *   marks what is being acted on, and spending is not an alarm. A short, wide
+ *   panel, as the default dock gives it, keeps the chart in view by putting the
+ *   totals beside it. The last bar is a period still going, so it is hatched.
  */
 
 .panel {
+  container: usage / inline-size;
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
+}
+
+/*
+ * Only a docked panel has a height of its own to ask about: the stacked layout
+ * sizes a panel by its content, which size containment would collapse to nothing.
+ */
+@media (min-width: 1024px) {
+  .panel {
+    container-type: size;
+  }
 }
 
 .tools {
@@ -18,6 +31,12 @@
   flex-wrap: wrap;
   gap: var(--gap);
   padding: var(--gap);
+}
+
+/* A project's name changes its width; the period beside it stays put. */
+.projectFilter {
+  inline-size: 14rem;
+  max-inline-size: 100%;
 }
 
 .body {
@@ -30,16 +49,32 @@
   padding: var(--gap);
 }
 
+.body:focus-visible {
+  outline-offset: calc(var(--focus-width) * -1);
+}
+
+.overview {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: var(--gap-loose);
+  min-width: 0;
+}
+
+.breakdowns {
+  display: grid;
+  flex-shrink: 0;
+  gap: var(--gap-loose);
+  grid-template-columns: repeat(auto-fit, minmax(min(28rem, 100%), 1fr));
+}
+
+/* A term that wraps must not push its number out of line with the others. */
 .totals {
+  align-items: end;
   display: grid;
   gap: var(--gap);
   grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
   margin: 0;
-}
-
-.total {
-  border-inline-start: var(--hairline) solid var(--panel-border);
-  padding-inline-start: var(--gap);
 }
 
 .total dt {
@@ -61,8 +96,19 @@
 
 .heading {
   font-size: var(--text-ui);
-  font-weight: 600;
+  font-weight: var(--weight-strong);
   margin: 0;
+}
+
+.hintsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-tight);
+  min-width: 0;
+}
+
+.chartArea {
+  min-width: 0;
 }
 
 .hints {
@@ -73,16 +119,19 @@
 .chartHead {
   align-items: baseline;
   display: flex;
-  flex-wrap: wrap;
   gap: var(--gap);
   justify-content: space-between;
 }
 
+/* One line, always, so that what it says never moves the chart. */
 .readout {
   color: var(--color-text-muted);
   font-family: var(--font-mono);
   font-size: var(--text-mono);
   margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chart {
@@ -101,8 +150,14 @@
   min-width: 0;
 }
 
+.column[data-pointed] {
+  background: var(--chart-column-pointed);
+}
+
 .bar {
-  background: var(--color-text-muted);
+  --bar-ink: var(--chart-bar);
+
+  background: var(--bar-ink);
   border-start-end-radius: var(--radius-control);
   border-start-start-radius: var(--radius-control);
   max-width: 1.5rem;
@@ -110,15 +165,46 @@
 }
 
 .column[data-pointed] .bar {
-  background: var(--color-action);
+  --bar-ink: var(--chart-bar-pointed);
 }
 
-.axis {
+.column[data-partial] .bar {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--bar-ink) 0 calc(var(--hairline) * 2),
+    transparent 0 calc(var(--hairline) * 3)
+  );
+  box-shadow: inset 0 0 0 var(--hairline) var(--bar-ink);
+}
+
+.axis,
+.axisEvery {
   color: var(--color-text-muted);
   display: flex;
   font-family: var(--font-mono);
   font-size: var(--text-mono);
+}
+
+.axis {
   justify-content: space-between;
+}
+
+.axis[data-labelled="always"],
+.axisEvery[data-labelled="wide"],
+.axisEvery[data-labelled="never"] {
+  display: none;
+}
+
+/* Lined up under the columns: the same gap as the chart's. */
+.axisEvery {
+  gap: var(--gap-hair);
+}
+
+.axisEvery span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-align: center;
 }
 
 .details summary {
@@ -139,6 +225,14 @@
   text-align: start;
 }
 
+.table th:first-child {
+  padding-inline-start: 0;
+}
+
+.table tr > :last-child {
+  padding-inline-end: 0;
+}
+
 .table thead th {
   color: var(--color-text-muted);
 }
@@ -151,8 +245,25 @@
 }
 
 .table .name {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  /* It takes what the numbers leave, rather than widening the table. */
+  max-inline-size: 0;
   overflow-wrap: anywhere;
   width: 100%;
+}
+
+/* The start of a path tells projects apart; the name above is its end. */
+.path {
+  color: var(--color-text-muted);
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.retry {
+  display: flex;
 }
 
 .note {
@@ -166,12 +277,61 @@
   overflow-wrap: anywhere;
 }
 
+@container usage (max-height: 24rem) {
+  .chart {
+    height: 3.5rem;
+  }
+}
+
+@container usage (max-height: 24rem) and (min-width: 40rem) {
+  .overview {
+    display: grid;
+    grid-template-columns: minmax(14rem, 1fr) 2fr;
+  }
+
+  .totals {
+    align-self: start;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .total dd {
+    font-size: var(--text-ui);
+  }
+
+  .chartArea {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
+
+@container usage (min-width: 40rem) {
+  .axis[data-labelled="wide"] {
+    display: none;
+  }
+
+  .axisEvery[data-labelled="wide"] {
+    display: flex;
+  }
+}
+
+@container usage (max-width: 30rem) {
+  .chart,
+  .axisEvery {
+    gap: var(--hairline);
+  }
+
+  .chartHead {
+    flex-direction: column;
+    gap: var(--gap-hair);
+  }
+}
+
 @media (forced-colors: active) {
   .bar {
-    background: CanvasText;
+    --bar-ink: CanvasText;
   }
 
   .column[data-pointed] .bar {
-    background: Highlight;
+    --bar-ink: Highlight;
   }
 }

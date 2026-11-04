@@ -215,13 +215,23 @@ What runs spent over a period
 ([panel](../../packages/ui/src/panels/usage-panel.tsx),
 [tests](../../packages/ui/test/panels/usage-panel.test.tsx)), from
 [`/api/usage`](../usage.md#reports), read again when a run ends. It filters by
-project, and by the last 7, 30 or 90 days or all time. Two projects of the same
+project, in name order, and by the last 7, 30 or 90 days or all time, whole days
+counting today; the filters survive a change of layout. Two projects of the same
 name show their parent folder too.
 
 - **Totals, hints, then spend over time:** one bar per day, or per week past 92
-  days, up to today so an idle stretch shows. The line above the chart says what
-  the pointer is on; the chart is one image to a screen reader, with a table of
-  the same numbers below it.
+  days, up to today so an idle stretch shows, and hatched since that day or week
+  is still going. "Runs with sessions" leaves out runs that only ran tools. The
+  line above the chart says what the pointer is on, or the peak; the chart is
+  one image to a screen reader. In a short, wide panel the totals sit beside a
+  shorter chart, so the default dock shows it. Each column has its date when
+  there is room, otherwise the ends do.
+- **The table under the chart** lists the days or weeks with spend, newest
+  first, and counts the rest.
 - **Where it went:** by workflow, model and node, and by project when showing
-  all, the costliest 10 of each.
+  all, the costliest 10 of each, one precision per table. What does not fit
+  names its `ork usage --by` command. A project shows its path beneath its name.
+- **Words:** the empty state gives the next step and its CLI twin, a refusal
+  offers **Try again** and `ork usage` above the last good report, if there is
+  one, and the foot has the same report's command.
 - It says the costs are Claude Code's estimates.

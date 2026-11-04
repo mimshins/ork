@@ -12,7 +12,7 @@ import type {
 } from "@krapht/ork-core";
 
 import { previewInput } from "../human.ts";
-import { style } from "../output.ts";
+import { cost, style } from "../output.ts";
 import { firstLine, formatBusEvent } from "./format-bus.ts";
 
 /** Who answered a decision, as the log says it. */
@@ -42,7 +42,7 @@ export const formatUsage = ({ usage }: SessionOutcome): string =>
   style(
     "dim",
     [
-      `$${usage.costUsd.toFixed(4)}`,
+      cost(usage.costUsd),
       `${String(usage.inputTokens)} in / ${String(usage.outputTokens)} out (${String(usage.cacheReadTokens)} cached)`,
       `${String(usage.turns)} turns`,
       seconds(usage.durationMs),
@@ -150,11 +150,11 @@ export const formatRunEvent = (
   }
   if (event.type === "node.finished") {
     const mark = event.ok ? style("green", "✓") : style("red", "✗");
-    const cost =
+    const spent =
       event.usage === undefined
         ? ""
-        : style("dim", ` · $${event.usage.costUsd.toFixed(4)}`);
-    return [`${tag(event.id)} ${mark} ${nodeVerdict(event.output)}${cost}`];
+        : style("dim", ` · ${cost(event.usage.costUsd)}`);
+    return [`${tag(event.id)} ${mark} ${nodeVerdict(event.output)}${spent}`];
   }
   if (event.type === "node.skipped") {
     return [`${tag(event.id)} ${style("dim", "- skipped")}`];
@@ -246,7 +246,7 @@ export const formatRunResult = (result: RunResult): string[] => {
     "",
     `${RUN_MARK[result.status]} run ${result.runId} ${result.status.replace("_", " ")} ${style(
       "dim",
-      `· $${result.costUsd.toFixed(4)} · ${String(ran)} ran, ${String(skipped)} skipped`,
+      `· ${cost(result.costUsd)} · ${String(ran)} ran, ${String(skipped)} skipped`,
     )}`,
   ];
   for (const kept of result.worktrees) {

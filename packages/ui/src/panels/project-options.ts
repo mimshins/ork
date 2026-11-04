@@ -1,10 +1,12 @@
 /** @file The project filter's options, shared by the panels that have one. */
 
 import type { Option } from "../components/select.tsx";
+import { ALL_PROJECTS } from "../state/preferences.ts";
 
-export const ALL_PROJECTS = "all";
+export { ALL_PROJECTS };
 
-const baseName = (root: string): string => root.split("/").at(-1) ?? root;
+export const baseName = (root: string): string =>
+  root.split("/").at(-1) ?? root;
 
 /** The folder and its parent, to tell apart two projects of the same name. */
 const longName = (root: string): string => root.split("/").slice(-2).join("/");
@@ -23,9 +25,11 @@ export const projectOptions = (
     labels.indexOf(label) !== labels.lastIndexOf(label);
   return [
     { value: ALL_PROJECTS, label: "All projects" },
-    ...[...known].map(([value, label]) => ({
-      value,
-      label: repeated(label) ? longName(value) : label,
-    })),
+    ...[...known]
+      .map(([value, label]) => ({
+        value,
+        label: repeated(label) ? longName(value) : label,
+      }))
+      .toSorted((a, b) => a.label.localeCompare(b.label)),
   ];
 };

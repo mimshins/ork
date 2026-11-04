@@ -1,18 +1,20 @@
 /**
  * @file The Usage panel: what runs spent over a period (specs/usage.md), for
  *   one project or all. The totals, spend over time, where it went, and what is
- *   worth a look. It reads the report again when a run ends.
+ *   worth a look. It reads the report again when a run ends. The filters live
+ *   in the page's state, since a change of layout mounts the panel afresh.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useComputedValue, useValue } from "react-containerized-state";
 
-import { EmptyState } from "../components/bits.tsx";
 import { Select } from "../components/select.tsx";
 import { useAppState } from "../state/context.tsx";
-import { ALL_PROJECTS, projectOptions } from "./project-options.ts";
-import { DEFAULT_PERIOD, PERIODS, sinceOf } from "./usage-model.ts";
+import { shownOf } from "../state/read.ts";
+import { ALL_PROJECTS, baseName, projectOptions } from "./project-options.ts";
+import { PERIODS, sinceOf, usageCommand } from "./usage-model.ts";
 import { Report } from "./usage-report.tsx";
+import { NothingSpent, Refused } from "./usage-tables.tsx";
 
 import styles from "./usage.module.css";
 
@@ -21,15 +23,12 @@ export const UsagePanel = () => {
   const read = useValue(state.usage.state);
   const runs = useValue(state.runs);
   const projects = useValue(state.projects.state);
-  const [project, setProject] = useState(ALL_PROJECTS);
-  const [period, setPeriod] = useState(DEFAULT_PERIOD);
-  // What was there stays on the page while the next one is read.
-  const report =
-    read.status === "ready"
-      ? read.data
-      : read.status === "loading"
-        ? (read.previous ?? null)
-        : null;
+  const filter = useValue(state.usageFilter);
+  const { project, period } = filter;
+  const [attempt, setAttempt] = useState(0);
+  // What was there stays on the page, with what it was read for, meanwhile.
+  const shown = shownOf(read);
+  const body = useRef<HTMLElement>(null);
   // A run that ends has spent: the report is read again.
   const ended = useComputedValue(
     state.runs,
@@ -45,13 +44,14 @@ export const UsagePanel = () => {
     const since = sinceOf(period, now);
     void state.usage.load({
       now,
+      period,
       query: {
         ...(project === ALL_PROJECTS ? {} : { project }),
         ...(since === undefined ? {} : { since }),
       },
     });
-    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- `ended` is the reason to read again
-  }, [state, project, period, ended]);
+    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- `ended` and `attempt` are reasons to read again
+  }, [state, project, period, ended, attempt]);
   const options = useMemo(
     () =>
       projectOptions(
@@ -60,51 +60,68 @@ export const UsagePanel = () => {
       ),
     [projects, runs],
   );
+  const everyProject = project === ALL_PROJECTS;
   return (
     <div className={styles["panel"]}>
       <div className={styles["tools"]}>
-        <Select
-          label="Project"
-          onChange={setProject}
-          options={options}
-          value={project}
-        />
+        <div className={styles["projectFilter"]}>
+          <Select
+            label="Project"
+            onChange={value => {
+              void state.usageFilter.setValue({ ...filter, project: value });
+            }}
+            options={options}
+            value={project}
+          />
+        </div>
         <Select
           label="Period"
-          onChange={setPeriod}
+          onChange={value => {
+            void state.usageFilter.setValue({ ...filter, period: value });
+          }}
           options={PERIODS}
           value={period}
         />
       </div>
-      <div className={styles["body"]}>
+      <section
+        aria-busy={read.status === "loading"}
+        aria-label="Usage report"
+        className={styles["body"]}
+        ref={body}
+        // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the keys scroll it
+        tabIndex={0}
+      >
         {read.status === "failed" ? (
-          <p
-            className={styles["refused"]}
-            role="alert"
-          >
-            Cannot read usage: {read.error}
-          </p>
+          <Refused
+            command={usageCommand(everyProject, period)}
+            error={read.error}
+            retry={() => {
+              // The button goes while it reads: the keys stay in the panel.
+              body.current?.focus();
+              setAttempt(attempt + 1);
+            }}
+          />
         ) : null}
-        {report === null ? (
+        {shown === undefined ? (
           read.status === "failed" ? null : (
             <p className={styles["note"]}>Reading usage…</p>
           )
-        ) : report.totals.sessions === 0 ? (
-          <EmptyState title="Nothing spent in this period">
-            Claude sessions show here once they finish.
-          </EmptyState>
+        ) : shown.data.totals.sessions === 0 ? (
+          <NothingSpent period={shown.arg.period} />
         ) : (
           <Report
-            everyProject={project === ALL_PROJECTS}
+            everyProject={shown.arg.query.project === undefined}
+            now={shown.arg.now}
+            period={shown.arg.period}
             projectName={root =>
-              options.find(option => option.value === root)?.label ?? root
+              options.find(option => option.value === root)?.label ??
+              baseName(root)
             }
-            now={read.status === "idle" ? 0 : read.arg.now}
-            report={report}
-            since={read.status === "idle" ? undefined : read.arg.query.since}
+            report={shown.data}
+            since={shown.arg.query.since}
           />
         )}
-      </div>
+      </section>
     </div>
   );
 };

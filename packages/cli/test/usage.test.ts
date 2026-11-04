@@ -96,6 +96,16 @@ describe("ork usage", () => {
       new Date(2026, 10, 1).toISOString(),
     );
     expect(sinceTime("nope", NOW)).toBeNull();
+    const today = new Date(NOW);
+    const daysAgo = (days: number) =>
+      new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - days,
+      ).toISOString();
+    expect(sinceTime("7d", NOW)).toBe(daysAgo(6));
+    expect(sinceTime("2w", NOW)).toBe(daysAgo(13));
+    expect(sinceTime("24h", NOW)).toBe("2026-11-02T12:00:00.000Z");
     expect(agoTime("0d", NOW)).toBeNull();
     expect(agoTime("99999999999d", NOW)).toBeNull();
     expect(sinceTime("2026-13-45", NOW)).toBeNull();

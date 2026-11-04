@@ -11,7 +11,7 @@ import {
   type TreeNode,
 } from "@krapht/ork-core";
 
-import { style } from "../output.ts";
+import { cost, style } from "../output.ts";
 import { nodeVerdict } from "../run/format.ts";
 
 const STATUS_STYLE: Record<string, Parameters<typeof style>[0]> = {
@@ -46,7 +46,7 @@ export const duration = (ms: number): string => {
   return `${String(Math.floor(s / 3600))}h${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}m`;
 };
 
-export const cost = (usd: number): string => `$${usd.toFixed(4)}`;
+export { cost };
 
 /** The `ork ps` table; `withProject` adds each run's project. */
 export const formatRuns = (

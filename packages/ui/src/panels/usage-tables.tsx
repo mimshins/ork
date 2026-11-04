@@ -1,11 +1,15 @@
 /**
- * @file The Usage panel's numbers: the totals across its top, and a table of
- *   where the spend went by one dimension.
+ * @file The Usage panel's numbers: the totals across its top, a table of where
+ *   the spend went by one dimension, and what it says when it cannot read
+ *   them.
  */
 
 import type { UsageReport } from "@krapht/ork-server/client";
 
-import { money, percent, tokens } from "./usage-model.ts";
+import { EmptyState } from "../components/bits.tsx";
+import { Button } from "../components/button.tsx";
+import { CopyCommand } from "../components/copy-command.tsx";
+import { isAllTime, money, moneyOf, percent, tokens } from "./usage-model.ts";
 
 import styles from "./usage.module.css";
 
@@ -20,15 +24,20 @@ export const Breakdown = ({
   groups,
   total,
   nameOf,
+  moreCommand,
 }: {
   title: string;
   label: string;
   groups: readonly Group[];
   total: number;
-  /** What a group's key reads as; the key itself is its tooltip. */
+  /** What a group's key reads as; the key itself is then shown beneath it. */
   nameOf?: (key: string) => string;
+  /** The command that lists every row, for when they do not all fit. */
+  moreCommand: string;
 }) => {
   const more = groups.length - MOST_ROWS;
+  const shown = groups.slice(0, MOST_ROWS);
+  const cost = moneyOf(shown.map(group => group.costUsd));
   return (
     <section
       aria-label={title}
@@ -61,12 +70,12 @@ export const Breakdown = ({
               className={styles["number"]}
               scope="col"
             >
-              Cache
+              From cache
             </th>
           </tr>
         </thead>
         <tbody>
-          {groups.slice(0, MOST_ROWS).map(group => (
+          {shown.map(group => (
             <tr key={group.key}>
               <th
                 className={styles["name"]}
@@ -74,8 +83,11 @@ export const Breakdown = ({
                 title={group.key}
               >
                 {nameOf?.(group.key) ?? group.key}
+                {nameOf === undefined ? null : (
+                  <span className={styles["path"]}>{group.key}</span>
+                )}
               </th>
-              <td className={styles["number"]}>{money(group.costUsd)}</td>
+              <td className={styles["number"]}>{cost(group.costUsd)}</td>
               <td className={styles["number"]}>
                 {percent(total === 0 ? 0 : group.costUsd / total)}
               </td>
@@ -88,11 +100,51 @@ export const Breakdown = ({
         </tbody>
       </table>
       {more > 0 ? (
-        <p className={styles["note"]}>And {more} more that cost less.</p>
+        <>
+          <p className={styles["note"]}>
+            And {more} more that cost less. This lists them all:
+          </p>
+          <CopyCommand command={moreCommand} />
+        </>
       ) : null}
     </section>
   );
 };
+
+export const Refused = ({
+  error,
+  command,
+  retry,
+}: {
+  error: string;
+  command: string;
+  retry: () => void;
+}) => (
+  <div className={styles["section"]}>
+    <p
+      className={styles["refused"]}
+      role="alert"
+    >
+      Cannot read usage: {error}
+    </p>
+    <div className={styles["retry"]}>
+      <Button onClick={retry}>Try again</Button>
+    </div>
+    <p className={styles["note"]}>On a terminal, the same report:</p>
+    <CopyCommand command={command} />
+  </div>
+);
+
+export const NothingSpent = ({ period }: { period: string }) => (
+  <EmptyState
+    title={
+      isAllTime(period) ? "Nothing spent yet." : "Nothing spent in this period."
+    }
+  >
+    Claude sessions show here once they finish. Start one with Run workflow, or{" "}
+    <code>ork run &lt;workflow&gt;</code>.
+  </EmptyState>
+);
 
 export const Totals = ({ report }: { report: UsageReport }) => {
   const { totals } = report;
@@ -100,7 +152,7 @@ export const Totals = ({ report }: { report: UsageReport }) => {
     totals.inputTokens + totals.cacheReadTokens + totals.cacheWriteTokens;
   const items: readonly (readonly [string, string])[] = [
     ["Spend", money(totals.costUsd)],
-    ["Runs", String(totals.runs)],
+    ["Runs with sessions", String(totals.runs)],
     ["Sessions", String(totals.sessions)],
     ["Tokens in", tokens(read)],
     ["Tokens out", tokens(totals.outputTokens)],

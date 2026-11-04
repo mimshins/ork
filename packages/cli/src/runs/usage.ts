@@ -37,9 +37,27 @@ const dayTime = (text: string, after: number): string | null => {
   return start.toISOString();
 };
 
-/** `--since`: an age (`30d`) or the day it starts from. */
-export const sinceTime = (text: string, now: number): string | null =>
-  agoTime(text, now) ?? dayTime(text, 0);
+/** The start of the day `days` whole days ago, counting today as one. */
+const wholeDays = (days: number, now: number): string => {
+  const today = new Date(now);
+  return new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() - (days - 1),
+  ).toISOString();
+};
+
+/**
+ * `--since`: an age or the day it starts from. Days and weeks are whole days,
+ * today among them, as the Usage panel counts them; hours are exact.
+ */
+export const sinceTime = (text: string, now: number): string | null => {
+  const ago = agoTime(text, now);
+  if (ago === null) return dayTime(text, 0);
+  if (text.endsWith("h")) return ago;
+  const amount = Number(text.slice(0, -1));
+  return wholeDays(text.endsWith("w") ? amount * 7 : amount, now);
+};
 
 /** `--until`: the last day it includes. */
 export const untilTime = (text: string): string | null => dayTime(text, 1);

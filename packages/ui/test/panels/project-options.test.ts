@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { projectOptions } from "../../src/panels/project-options.ts";
 
 describe("the project filter's names", () => {
-  it("tells apart two projects of the same name", () => {
+  it("tells apart two projects of the same name, in name order", () => {
     const options = projectOptions(
       [{ id: "tools", root: "/work/tools" }],
       [
@@ -16,8 +16,8 @@ describe("the project filter's names", () => {
     );
     expect(options.map(option => option.label)).toEqual([
       "All projects",
-      "tools",
       "one/app",
+      "tools",
       "two/app",
     ]);
   });

@@ -84,10 +84,12 @@ ork usage [--all] [--since 30d|2026-11-01|all] [--until 2026-11-30]
           [--workflow <name>] [--json]
 ```
 
-This project's sessions from the last 30 days, or `--all` projects'. Without
-`--by` it prints the totals, the latest 10 days and the costliest 10 of each of
-workflow, model and node, then any hints; with it, that one table in full.
-`--json` prints the whole report.
+This project's sessions from the last 30 days, or `--all` projects'. Days and
+weeks in `--since` are whole days counting today, as in the Usage panel; hours
+are exact. A report's `runs` counts runs with a session, not those that only ran
+tools. Without `--by` it prints the totals, the latest 10 days and the costliest
+10 of each of workflow, model and node, then any hints; with it, that one table
+in full. `--json` prints the whole report.
 
 ## `ork prune`
 

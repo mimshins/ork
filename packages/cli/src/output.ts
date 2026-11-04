@@ -20,6 +20,10 @@ export const writeErr = (text: string): void => {
   process.stderr.write(`${text}\n`);
 };
 
+/** What a run spent: `$0.0312`, or `$0.00` for nothing. */
+export const cost = (usd: number): string =>
+  usd === 0 ? "$0.00" : `$${usd.toFixed(4)}`;
+
 /** Asks a yes-or-no question on the terminal; anything but yes is no. */
 export const confirm = async (question: string): Promise<boolean> => {
   const rl = createInterface({ input: process.stdin, output: process.stderr });

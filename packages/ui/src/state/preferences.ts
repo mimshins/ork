@@ -12,6 +12,12 @@ import { z } from "zod";
 
 import { applyChoice, followSystem, type View } from "../design/theme.ts";
 
+/** What the project filters start at. */
+export const ALL_PROJECTS = "all";
+
+/** What the Usage panel's period starts at. */
+export const DEFAULT_PERIOD = "30";
+
 const PREFERENCES_KEY = "ork.preferences.v1";
 
 export const PreferencesSchema = z.object({

@@ -87,7 +87,7 @@ describe("the Runs panel", () => {
     const [first, second] = rowNames();
     expect(first).toContain("running");
     expect(first).toContain("aaa11111");
-    expect(first).toContain("$0.0000");
+    expect(first).toContain("$0.00");
     expect(second).toContain("failed");
   });
 

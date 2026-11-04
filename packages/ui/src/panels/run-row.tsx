@@ -10,6 +10,7 @@ import { memo } from "react";
 
 import { EmptyState } from "../components/bits.tsx";
 import { type Status, StatusBadge } from "../components/status-badge.tsx";
+import { formatCost } from "../graph/facts.ts";
 import type { AppState } from "../state/app-state.ts";
 
 import styles from "./runs.module.css";
@@ -63,7 +64,7 @@ export const RunRow = memo(
           <span className={styles["rowMeta"]}>
             <span>{run.id}</span>
             <time dateTime={run.startedAt}>{timeOf(run.startedAt)}</time>
-            <span>${run.costUsd.toFixed(4)}</span>
+            <span>{formatCost(run.costUsd)}</span>
             {held === null ? null : <span>{held}</span>}
           </span>
         </button>
