@@ -78,6 +78,8 @@ edges:
   - `env:` sets the program's variables. Values are templates, and only they may
     read the user's own variables, as `{{env.NAME}}`. Keys starting `ORK_` are
     refused; those are [Ork's own](./scheduler.md#built-in-node-types).
+  - `plainEnv:` lists variables read as `{{env.NAME}}` that are not secret, such
+    as a region, so their values are not masked in what programs print.
   - `output: { format: json }` says the program returns JSON, read as
     `output.json`: the file at `$ORK_OUTPUT` if it wrote one, otherwise its
     stdout.

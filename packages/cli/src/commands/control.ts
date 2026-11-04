@@ -25,6 +25,7 @@ import { defineCommand } from "citty";
 import { createTerminalHuman } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
 import { runWorkflowFile } from "../run/workflow.ts";
+import { decideRefusal } from "./in-a-run.ts";
 import { flagValues, isDriver, loadRuntime, terminalHuman } from "./run.ts";
 
 const failed = (message: string): void => {
@@ -69,6 +70,15 @@ export const decide = defineCommand({
     choose: { type: "string", description: "…with this option" },
   },
   run: async ({ args }) => {
+    const answers =
+      args.id !== undefined ||
+      args.choose !== undefined ||
+      (process.stdin.isTTY && !args.list && !args.json);
+    const refusal = answers ? decideRefusal() : null;
+    if (refusal !== null) {
+      failed(refusal);
+      return;
+    }
     const store = openStore();
     const human = createTerminalHuman({
       input: process.stdin,

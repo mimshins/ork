@@ -134,7 +134,24 @@ const parseWith = <T>(text: string, schema: z.ZodType<T>): Parsed<T> => {
     };
   }
 
-  const raw: unknown = doc.toJS();
+  let raw: unknown;
+  try {
+    raw = doc.toJS();
+  } catch (error) {
+    // Too many aliases, for one: a file built to blow up when it is expanded.
+    return {
+      ok: false,
+      locate,
+      diagnostics: [
+        {
+          severity: "error",
+          code: "yaml.syntax",
+          message: error instanceof Error ? error.message : String(error),
+          path: [],
+        },
+      ],
+    };
+  }
   const result = schema.safeParse(raw);
   if (!result.success) {
     return {

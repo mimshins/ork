@@ -186,7 +186,6 @@ export const startRun = (options: RunOptions): RunHandle => {
     runDir,
     human,
     outputs,
-    rounds,
     sessionIds,
     running,
     holds,
@@ -221,7 +220,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     }
     const result = spend.count(
       id,
-      stops.ended(id, recorded ?? (await execute(activation))),
+      stops.ended(id, recorded ?? (await execute(activation, round))),
       recorded !== null,
     );
     holds.finished(id);

@@ -100,7 +100,10 @@ first (then the prompt is withdrawn and the transcript shows
   `--id <decision> --choose <option>` answers one without a prompt. An option
   that is not one of the decision's, or a decision already answered or
   withdrawn, is refused with the reason. Decisions of crashed runs are not
-  listed.
+  listed. A program or an agent in a run (`ORK_RUN` or `ORK_SESSION` is set) may
+  list them but not answer, since an answer speaks as the user, and
+  `ork continue` refuses there too, and `ork ui` withholds its sign-in link
+  ([L80](../gaps/limits-scripts.md)).
 - **`ork chat <run> <node>`**
   ([chat.ts](../../packages/cli/src/commands/chat.ts),
   [tests](../../packages/cli/test/chat.test.ts)) talks to a leader or worker;

@@ -26,6 +26,7 @@ export * from "./feedback/human.ts";
 export * from "./feedback/signals.ts";
 export * from "./feedback/types.ts";
 export { compileWorkflow } from "./graph/compile.ts";
+export { envReadsOf } from "./graph/env.ts";
 export * from "./graph/types.ts";
 export * from "./practices/caveman.ts";
 export * from "./practices/ponytail.ts";

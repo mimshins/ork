@@ -167,6 +167,47 @@ describe("pausing a run", () => {
   });
 });
 
+/** `c` notes its round and ends; the others are sessions. */
+const recordingC =
+  (others: NodeExecutor, rounds: [string, number][]): NodeExecutor =>
+  context => {
+    if (context.id !== "c") return others(context);
+    rounds.push([context.id, context.round]);
+    return Promise.resolve(OK);
+  };
+
+describe("two activations released together", () => {
+  it("keep a round each, so their files do not collide", async () => {
+    const { executor, call } = sessions();
+    const rounds: [string, number][] = [];
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: t",
+        "nodes:",
+        "  a: { type: claude.worker, prompt: a }",
+        "  b: { type: claude.worker, prompt: b }",
+        "  c: { type: claude.worker, prompt: c }",
+        "edges:",
+        "  - { from: a, to: c }",
+        "  - { from: b, to: c }",
+      ].join("\n"),
+    );
+    const { handle } = start(graph, recordingC(executor, rounds));
+    await tick();
+    handle.pause("c");
+    call("a");
+    call("b");
+    await tick();
+    handle.proceed("c");
+    expect((await handle.done).status).toBe("succeeded");
+    expect(rounds).toEqual([
+      ["c", 1],
+      ["c", 2],
+    ]);
+  });
+});
+
 describe("pausing one node", () => {
   it("holds that node alone while the rest of the run goes on", async () => {
     const { executor, call } = sessions();

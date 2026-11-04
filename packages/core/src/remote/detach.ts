@@ -33,6 +33,8 @@ export type DetachOptions = {
   script?: string;
   /** How long to wait for the run to be recorded (default 15 s). */
   timeoutMs?: number;
+  /** Set for the background process, over what it inherits. */
+  env?: Readonly<Record<string, string>> | undefined;
 };
 
 export type Detached =
@@ -54,7 +56,12 @@ export const detachRun = async (options: DetachOptions): Promise<Detached> => {
       cwd: options.cwd,
       detached: true,
       stdio: ["ignore", fd, fd],
-      env: { ...process.env, [DETACHED_ENV]: "1", NO_COLOR: "1" },
+      env: {
+        ...process.env,
+        ...options.env,
+        [DETACHED_ENV]: "1",
+        NO_COLOR: "1",
+      },
     },
   );
   child.on("exit", code => {

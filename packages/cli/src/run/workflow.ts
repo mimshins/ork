@@ -33,8 +33,10 @@ import {
 } from "@krapht/ork-core";
 import {
   builtinExecutors,
-  missingEnv,
-  missingEnvMessage,
+  clearOutputFiles,
+  envProblems,
+  maskedNamesOfRun,
+  missingProgramMessage,
   missingPrograms,
   onPath,
   type ToolRunner,
@@ -94,15 +96,6 @@ export type RunWorkflowOptions = {
   onRun?: (handle: RunHandle) => void;
 };
 
-/** Why a run refuses to start when a program its tool nodes need is missing. */
-export const missingProgramMessage = (
-  missing: ReturnType<typeof missingPrograms>,
-): string[] => [
-  "This workflow runs programs that are not installed:",
-  ...missing.map(m => `  ${m.program}, for ${m.nodes.join(", ")} (${m.type})`),
-  "Install them, or take those nodes out. Integrations are optional: only the ones a workflow uses must be installed (`ork doctor` shows what you have).",
-];
-
 export type RunWorkflowResult = {
   exitCode: number;
   result: RunResult | null;
@@ -145,8 +138,10 @@ export const runWorkflowFile = async (
     (options.tools === undefined ? (p: string) => onPath(p) : () => true);
   const missing = missingPrograms(workflow, installed);
   if (missing.length > 0) return failed(missingProgramMessage(missing));
-  const unset = missingEnv(workflow);
-  if (unset.length > 0) return failed(missingEnvMessage(unset));
+  const projects = options.store.projects();
+  const history = options.resume?.history;
+  const unset = envProblems(workflow, place, projects, history, options.err);
+  if (unset.length > 0) return failed(unset);
 
   const checkout = await prepareCheckout(
     workflow,
@@ -240,6 +235,7 @@ export const runWorkflowFile = async (
   const executorOptions: Parameters<typeof builtinExecutors>[0] = {
     runtimeFor: options.runtime,
     inPlace: options.inPlace,
+    maskedNames: maskedNamesOfRun(workflow, place, projects),
   };
   if (options.driver !== undefined) executorOptions.driver = options.driver;
   if (options.tools !== undefined) executorOptions.tools = options.tools;
@@ -265,10 +261,12 @@ export const runWorkflowFile = async (
     human: control.human,
     emit: onEvent,
   });
+  clearOutputFiles(runDir, options.err);
   const handle = startRun({
     graph: ports.graph,
     calls: ports.calls,
     runId,
+    runDir,
     inputs: inputs.inputs,
     cwd,
     executors: builtinExecutors(executorOptions),
@@ -293,6 +291,7 @@ export const runWorkflowFile = async (
   started.resolve(handle);
   options.onRun?.(handle);
   const result = await handle.done;
+  clearOutputFiles(runDir, options.err);
   await endLinksOf(options.store, runId, result.status, options.home);
   await control.close();
   return { exitCode: result.status === "succeeded" ? 0 : 1, result };

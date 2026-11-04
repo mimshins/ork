@@ -134,13 +134,21 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
     when `ork` can be run directly, `ORK_BIN`
     ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)). Then the
     node's `env:`, rendered. A variable that is not set stops `ork run` before
-    anything starts. Events record `env:` names only, and values read from
-    `{{env.*}}` are scrubbed from the output ([L81](./gaps/limits-scripts.md)).
-    A Claude session gets only `ORK_SESSION=1`.
-  - **JSON:** with `output: { format: json }` it also gets `ORK_OUTPUT`, a file,
-    which wins over stdout if written. On exit 0, invalid or empty JSON fails
-    the node, and a result over 64 KiB fails it and is kept in a run file, never
-    cut. A failed program's result is not read.
+    anything starts; for a workflow it calls by name, it warns, and the call
+    fails if reached ([L86](./gaps/limits-scripts.md)). Events record `env:`
+    names only. Values read from `{{env.*}}` by the workflow, by those it calls
+    by name, or by its callers (told as names in `ORK_MASKED`), except those in
+    `plainEnv`, are scrubbed from every tool node's output, in any form a JSON
+    encoder writes them, including JSON keys and numbers
+    ([L81](./gaps/limits-scripts.md)). A Claude session inherits the user's
+    variables like any program, without these, and also gets `ORK_SESSION=1`. A
+    detached run's programs and sessions also see `ORK_DETACHED=1`.
+  - **JSON:** with `output: { format: json }` it also gets `ORK_OUTPUT`, a file
+    in the run's private `.output` folder, which wins over stdout if written. On
+    exit 0, invalid or empty JSON or anything but a file there fails the node,
+    and a result over 64 KiB fails it and is kept in a run file, never cut. A
+    failed program's result is not read. A run clears the folder when it starts,
+    resumes and ends ([L85](./gaps/limits-scripts.md)).
 - **`workflow.call`** ([call.ts](../packages/nodes/src/call.ts)): starts a
   workflow as a separate run and waits as it says
   ([calling workflows](./scheduler/calls.md)).

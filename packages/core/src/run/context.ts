@@ -25,7 +25,6 @@ export type ContextDeps = {
   runId: string;
   runDir: string;
   outputs: Record<string, NodeOutput>;
-  rounds: Map<string, number>;
   sessionIds: Map<string, string>;
   running: Set<string>;
   /** What is left of `limits.budgetUsd`, when the run has one. */
@@ -43,6 +42,7 @@ export const nodeContext = (
   deps: ContextDeps,
   activation: Activation,
   cwd: string,
+  round: number,
 ): Omit<ExecuteContext, "node" | "checkout"> => {
   const { options, runId } = deps;
   const { graph } = options;
@@ -54,7 +54,7 @@ export const nodeContext = (
     inputs: options.inputs,
     outputs: deps.outputs,
     input: activation.input,
-    round: deps.rounds.get(id) ?? 1,
+    round,
     cwd,
     runDir: deps.runDir,
     ...foldersOf(options),
@@ -98,7 +98,7 @@ export const createExecute =
     graceMs: number;
     nodeOf: (activation: Activation) => Node | undefined;
   }) =>
-  async (activation: Activation): Promise<NodeResult> => {
+  async (activation: Activation, round: number): Promise<NodeResult> => {
     const { options, contextDeps, clock, graceMs, nodeOf } = deps;
     const node = nodeOf(activation);
     if (node === undefined) return failure(`unknown node ${activation.id}`);
@@ -111,7 +111,7 @@ export const createExecute =
         activation.id,
         activation.template,
       )) ?? { cwd: options.cwd };
-      const context = nodeContext(contextDeps, activation, place.cwd);
+      const context = nodeContext(contextDeps, activation, place.cwd, round);
       const result = await withTimeout({
         timeout: timeoutOf(node, options.graph.workflow),
         clock: clock.forNode(activation.id),

@@ -7,23 +7,33 @@
 import { DRIVER_IDS } from "@krapht/ork-integrations";
 import { z } from "zod";
 
-/** A tool node's own environment variables, by name. */
-export const ToolEnvSchema = z
-  .record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/u), z.string())
-  .describe(
-    "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
-  );
+const VariableNameSchema = z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/u);
 
-/** How a tool node returns structured output. */
-export const ToolOutputSchema = z
-  .strictObject({
-    format: z
-      .literal("json")
-      .describe(
-        "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout.",
-      ),
-  })
-  .describe("Structured output from the program.");
+/** What a tool node's program sees, and how it returns structured output. */
+export const toolProgramFields = {
+  env: z
+    .record(VariableNameSchema, z.string())
+    .optional()
+    .describe(
+      "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+    ),
+  plainEnv: z
+    .array(VariableNameSchema)
+    .optional()
+    .describe(
+      "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+    ),
+  output: z
+    .strictObject({
+      format: z
+        .literal("json")
+        .describe(
+          "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout.",
+        ),
+    })
+    .optional()
+    .describe("Structured output from the program."),
+};
 
 export const NodeIdSchema = z
   .string()

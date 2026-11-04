@@ -1000,6 +1000,7 @@
                 "pattern": "^\\d+[smh]$"
               },
               "env": {
+                "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
                 "type": "object",
                 "propertyNames": {
                   "type": "string",
@@ -1007,10 +1008,18 @@
                 },
                 "additionalProperties": {
                   "type": "string"
-                },
-                "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}."
+                }
+              },
+              "plainEnv": {
+                "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                }
               },
               "output": {
+                "description": "Structured output from the program.",
                 "type": "object",
                 "properties": {
                   "format": {
@@ -1022,8 +1031,7 @@
                 "required": [
                   "format"
                 ],
-                "additionalProperties": false,
-                "description": "Structured output from the program."
+                "additionalProperties": false
               }
             },
             "required": [
@@ -1070,6 +1078,7 @@
                 "pattern": "^\\d+[smh]$"
               },
               "env": {
+                "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
                 "type": "object",
                 "propertyNames": {
                   "type": "string",
@@ -1077,10 +1086,18 @@
                 },
                 "additionalProperties": {
                   "type": "string"
-                },
-                "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}."
+                }
+              },
+              "plainEnv": {
+                "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                }
               },
               "output": {
+                "description": "Structured output from the program.",
                 "type": "object",
                 "properties": {
                   "format": {
@@ -1092,8 +1109,7 @@
                 "required": [
                   "format"
                 ],
-                "additionalProperties": false,
-                "description": "Structured output from the program."
+                "additionalProperties": false
               },
               "profile": {
                 "type": "string"
@@ -1146,6 +1162,7 @@
                 "pattern": "^\\d+[smh]$"
               },
               "env": {
+                "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
                 "type": "object",
                 "propertyNames": {
                   "type": "string",
@@ -1153,10 +1170,18 @@
                 },
                 "additionalProperties": {
                   "type": "string"
-                },
-                "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}."
+                }
+              },
+              "plainEnv": {
+                "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                }
               },
               "output": {
+                "description": "Structured output from the program.",
                 "type": "object",
                 "properties": {
                   "format": {
@@ -1168,8 +1193,7 @@
                 "required": [
                   "format"
                 ],
-                "additionalProperties": false,
-                "description": "Structured output from the program."
+                "additionalProperties": false
               }
             },
             "required": [
@@ -1216,6 +1240,7 @@
                 "pattern": "^\\d+[smh]$"
               },
               "env": {
+                "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
                 "type": "object",
                 "propertyNames": {
                   "type": "string",
@@ -1223,10 +1248,18 @@
                 },
                 "additionalProperties": {
                   "type": "string"
-                },
-                "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}."
+                }
+              },
+              "plainEnv": {
+                "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                }
               },
               "output": {
+                "description": "Structured output from the program.",
                 "type": "object",
                 "properties": {
                   "format": {
@@ -1238,8 +1271,7 @@
                 "required": [
                   "format"
                 ],
-                "additionalProperties": false,
-                "description": "Structured output from the program."
+                "additionalProperties": false
               }
             },
             "required": [

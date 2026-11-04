@@ -19,13 +19,17 @@ export const builtinExecutors = (
     tools?: ToolRunner;
     /** The `ork` a program can run; only the CLI knows it. */
     orkBin?: string;
+    /** Variables to mask besides those the workflow reads. */
+    maskedNames?: readonly string[];
   },
 ): NodeExecutors => {
   const claude = claudeExecutor(options);
-  const tool = toolExecutor(
-    options.tools ?? spawnTool,
-    options.orkBin === undefined ? {} : { orkBin: options.orkBin },
-  );
+  const tool = toolExecutor(options.tools ?? spawnTool, {
+    ...(options.orkBin === undefined ? {} : { orkBin: options.orkBin }),
+    ...(options.maskedNames === undefined
+      ? {}
+      : { maskedNames: options.maskedNames }),
+  });
   const executors: NodeExecutors = {
     "claude.leader": claude,
     "claude.worker": claude,

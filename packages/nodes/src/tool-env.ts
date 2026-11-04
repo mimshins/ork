@@ -6,13 +6,17 @@
  */
 
 import {
-  collectPaths,
+  calledWorkflows,
+  envReadsOf,
   type ExecuteContext,
   parseTemplate,
+  type ProjectPlace,
   renderTemplate,
   runScope,
 } from "@krapht/ork-core";
-import type { ToolNode } from "@krapht/ork-schema";
+import { isToolNode, type ToolNode, type Workflow } from "@krapht/ork-schema";
+
+import type { ToolRunner } from "./tools.ts";
 
 export type Environ = Readonly<Record<string, string | undefined>>;
 
@@ -25,10 +29,14 @@ export const RUN_ENV = "ORK_RUN";
 /** Set for a Claude session. It says no more than that: no run, no node. */
 const SESSION_ENV = "ORK_SESSION";
 
+/** The variables a caller's run reads, for a run it calls to mask too. */
+const MASKED_ENV = "ORK_MASKED";
+
 /** Every variable Ork sets itself; a workflow's `env:` cannot set them. */
 const IDENTITY_KEYS = new Set([
   RUN_ENV,
   SESSION_ENV,
+  MASKED_ENV,
   "ORK_NODE",
   "ORK_ROUND",
   "ORK_RUN_DIR",
@@ -60,9 +68,12 @@ export const sessionEnv = (env: Environ): Record<string, string> => ({
   [SESSION_ENV]: "1",
 });
 
-/** Whether this process was started by a program in a run or by a session. */
-export const startedByARun = (env: Environ): boolean =>
-  env[RUN_ENV] !== undefined || env[SESSION_ENV] !== undefined;
+/**
+ * The variable that says a program in a run or a session started this process,
+ * or `null` when none does.
+ */
+export const runMarkerIn = (env: Environ): string | null =>
+  [RUN_ENV, SESSION_ENV].find(name => env[name] !== undefined) ?? null;
 
 /** Who a node's program is. It is attribution, not a security boundary. */
 export const identityOf = (
@@ -81,41 +92,75 @@ export const identityOf = (
   ...(orkBin === undefined ? {} : { ORK_BIN: orkBin }),
 });
 
-/** The user's variables a value of `env:` reads through `{{env.NAME}}`. */
-export const envReadsOf = (value: string): string[] => {
-  const template = parseTemplate(value);
-  if (!template.ok) return [];
-  return template.parts.flatMap(part =>
-    typeof part === "string"
-      ? []
-      : collectPaths(part.expr).flatMap(([root, name]) =>
-          root === "env" && name !== undefined ? [String(name)] : [],
-        ),
-  );
-};
+/** A variable of the user's: only its own, as an expression reads them. */
+export const readEnv = (environ: Environ, name: string): string | undefined =>
+  Object.hasOwn(environ, name) ? environ[name] : undefined;
 
-/** Shorter values than this would mask ordinary text: `1`, `true`, a word. */
-const MIN_SECRET_LENGTH = 8;
+/** The variables a workflow's nodes read that no `plainEnv` excuses. */
+const secretNamesOf = (workflow: Workflow): string[] =>
+  Object.values(workflow.nodes).flatMap(node => {
+    if (!isToolNode(node)) return [];
+    const plain = new Set(node.plainEnv);
+    return Object.values(node.env ?? {})
+      .flatMap(value => envReadsOf(value))
+      .filter(name => !plain.has(name));
+  });
 
-/** Replaces the values with `[masked]`, the longest first. */
-export const scrubberOf = (values: readonly string[]) => {
-  const secrets = values
-    .filter(value => value.length >= MIN_SECRET_LENGTH)
-    .toSorted((a, b) => b.length - a.length);
-  return (text: string): string =>
-    secrets.reduce((out, secret) => out.replaceAll(secret, "[masked]"), text);
-};
+/** What the run that called this one told it to mask. */
+const inheritedNames = (environ: Environ): string[] =>
+  (environ[MASKED_ENV] ?? "").split(",").filter(name => name !== "");
 
-/** A node's `env:`, rendered, and what must not show in its output. */
+/**
+ * The variables a run must mask: what its workflow reads, what the workflows it
+ * calls by name read, and what its caller reads. Any of them may print any of
+ * these, since a called run inherits the same environment.
+ */
+export const maskedNamesOfRun = (
+  workflow: Workflow,
+  own: ProjectPlace,
+  registered: readonly ProjectPlace[],
+  environ: Environ = process.env,
+): string[] => [
+  ...new Set(
+    [
+      workflow,
+      ...calledWorkflows(workflow, own, registered, { everyCall: true }),
+    ]
+      .flatMap(one => secretNamesOf(one))
+      .concat(inheritedNames(environ)),
+  ),
+];
+
+/** What a run tells a run it calls: names, never values. */
+export const maskedEnv = (names: readonly string[]): Record<string, string> =>
+  names.length === 0 ? {} : { [MASKED_ENV]: names.join(",") };
+
+/** The values to mask: what the workflow reads, and the names given. */
+export const secretsOf = (
+  workflow: Workflow,
+  environ: Environ,
+  also: readonly string[] = [],
+): string[] =>
+  [
+    ...new Set([
+      ...secretNamesOf(workflow),
+      ...also,
+      ...inheritedNames(environ),
+    ]),
+  ].flatMap(name => {
+    const value = readEnv(environ, name);
+    return value === undefined ? [] : [value];
+  });
+
+/** A node's `env:`, rendered. */
 export const renderEnv = (
   node: ToolNode,
   context: Pick<ExecuteContext, "inputs" | "outputs" | "runId">,
   environ: Environ,
 ):
-  | { ok: true; values: Record<string, string>; secrets: string[] }
+  | { ok: true; values: Record<string, string> }
   | { ok: false; error: string } => {
   const values: Record<string, string> = {};
-  const secrets: string[] = [];
   const scope = {
     ...runScope(context.inputs, context.outputs, context.runId),
     // A bare name reads inside `output`: nothing else here can read `env`.
@@ -125,16 +170,31 @@ export const renderEnv = (
     const template = parseTemplate(text);
     if (!template.ok) return { ok: false, error: template.message };
     for (const name of envReadsOf(text)) {
-      const value = environ[name];
-      if (value === undefined) {
+      if (readEnv(environ, name) === undefined) {
         return {
           ok: false,
           error: `env.${key} reads ${name}, which is not set`,
         };
       }
-      secrets.push(value);
     }
-    values[key] = renderTemplate(template.parts, scope);
+    const value = renderTemplate(template.parts, scope);
+    // The system's own refusal of this prints the whole value.
+    if (value.includes("\0")) {
+      return { ok: false, error: `env.${key} holds a null byte` };
+    }
+    values[key] = value;
   }
-  return { ok: true, values, secrets };
+  return { ok: true, values };
 };
+
+/** A runner whose refusal to start is a failed run, with nothing secret in it. */
+export const safeRunner =
+  (runner: ToolRunner, scrub: (text: string) => string): ToolRunner =>
+  async (program, args, options) => {
+    try {
+      return await runner(program, args, options);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      return { exitCode: -1, stdout: "", stderr: scrub(reason) };
+    }
+  };

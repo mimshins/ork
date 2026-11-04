@@ -21,6 +21,7 @@ import {
   type RunEvent,
   type RunSettings,
 } from "@krapht/ork-core";
+import { maskedEnv, maskedNamesOfRun } from "@krapht/ork-nodes";
 import type { Driver } from "@krapht/ork-schema";
 
 import { resumeChat } from "../runs/chat.ts";
@@ -78,6 +79,9 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
       home,
       adopt: adoptedCalls(store, runId),
       newId: () => newRunId(store),
+      env: maskedEnv(
+        maskedNamesOfRun(graph.workflow, options.place, store.projects()),
+      ),
       resumeSession: (run, node, body, signal) =>
         resumeChat({ store, run, node, body, runtime, human, out, signal }),
     }),

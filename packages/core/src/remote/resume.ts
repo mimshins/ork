@@ -70,6 +70,7 @@ export const detachResume = (
   run: RunRecord,
   flags: readonly string[],
   script?: string,
+  env?: Readonly<Record<string, string>>,
 ): Promise<Detached> =>
   detachRun({
     store,
@@ -78,6 +79,7 @@ export const detachResume = (
     cwd: run.project,
     runDir: storedRunDir(store, run),
     ...(script === undefined ? {} : { script }),
+    env,
     // Resuming records the run as the new process's, even if it ends at once.
     started: pid => store.lookup(run.id)[0]?.pid === pid,
   });

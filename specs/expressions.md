@@ -38,7 +38,9 @@ path       := name ( "." name | "[" ( number | string ) "]" )*
 
 - A missing path reads as `undefined`; only own properties are read, so
   `x.constructor` or `__proto__` is `undefined`.
-- A template reads only `inputs.*`, `nodes.<id>.output.*` and `run.*`.
+- A template reads only `inputs.*`, `nodes.<id>.output.*` and `run.*`; a tool
+  node's `env:` also reads `env.*`, and nothing else may
+  ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)).
 
 ## Semantics
 

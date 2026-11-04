@@ -27,19 +27,32 @@ only `ORK_SESSION=1`, which says no more than that it is a session.
 **`env:` on tool nodes.** Values are templates. Only these values may read the
 user's variables, as `{{env.NAME}}`, because a rendered `command` is recorded in
 `tool.called`. A variable that is not set stops `ork run` before anything
-starts. Events record key names, never values, and values read from `{{env.*}}`
-of eight characters or more are scrubbed from what the program prints. `ORK_*`
-keys are refused.
+starts; one a called workflow reads only warns, since that call may never run.
+Events record key names, never values, and values read from `{{env.*}}` of eight
+characters or more are scrubbed from what every tool node prints or returns, in
+any form a JSON encoder writes them and in JSON keys and numbers, by a plain
+search of the text as written and with its escapes decoded, so a value of any
+size takes time in step with the text. Each line of a multi-line value and each
+value in a JSON one are masked too. That covers what the workflow reads, what
+the workflows it calls by name read, and what its callers read, told to a called
+run as names in `ORK_MASKED`. A node's `plainEnv` lists variables it reads that
+are not secret, which stay unmasked unless another node reads them without
+listing them. `ORK_*` keys are refused.
 
 **`output: { format: json }`.** It declares that the program returns JSON, read
 as `output.json`. The file at `$ORK_OUTPUT` wins when the program wrote one;
 otherwise all of stdout is parsed. A program that exits 0 with invalid or empty
 JSON, or a bad file, fails the node. A result over 64 KiB once serialized fails
-and is kept in a run file; it is never cut. The file is removed once read, so
-the scrubbed value is the only copy.
+and is kept in a run file; it is never cut. A parse error does not quote the
+text. The file lives in the run's private `.output` folder and is removed once
+read, and a run clears that folder when it starts, resumes and ends, so after a
+clean run the scrubbed value is the only copy
+([L85](../specs/gaps/limits-scripts.md)).
 
-**`ork chat` refuses when `ORK_RUN` or `ORK_SESSION` is set,** since it speaks
-as the user, and a program or an agent in a run must not.
+**`ork chat`, `ork continue` and answering with `ork decide` refuse when
+`ORK_RUN` or `ORK_SESSION` is set,** and `ork ui` withholds its sign-in link,
+since they act as the user, and a program or an agent in a run must not. Listing
+decisions and `ork stop` stay open.
 
 ## Options considered
 
@@ -55,6 +68,10 @@ as the user, and a program or an agent in a run must not.
   capped text, breaks at 64 KiB, and templates read only paths.
 - **Merge JSON fields straight into `output`.** Shorter, but a program could
   shadow `exitCode`, and a value that is not an object has no home.
+- **Mask only names that look secret, or only values marked secret.** No format
+  addition or nothing masked by mistake, but a missed name or mark stores the
+  secret. Masking everything fails safe, so `plainEnv` is the exception, at the
+  cost of a small format addition.
 - **A clean environment for programs.** Would break `gh`, `aws` and `PATH`; Ork
   keeps inheriting, as the user's own tools expect.
 

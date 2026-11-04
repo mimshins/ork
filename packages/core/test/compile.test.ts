@@ -33,6 +33,15 @@ const envOf = (env: string) => `nodes:
     env: ${env}
 `;
 
+const plain = (reads: string, name: string) =>
+  codesOf(`nodes:
+  a:
+    type: tool.shell
+    command: prog
+    env: { R: "{{env.${reads}}}" }
+    plainEnv: [${name}]
+`);
+
 describe("compileWorkflow", () => {
   it("compiles the software-factory example with no diagnostics", () => {
     const example = readFileSync(
@@ -237,6 +246,84 @@ outputs:
     expect(codesOf(envOf(`{ API_KEY: abc123 }`))).toEqual(["env.literal"]);
     expect(codesOf(envOf(`{ PATH: "{{run.id}}" }`))).toEqual([]);
     expect(codesOf(envOf(`{ HOST: example.com }`))).toEqual([]);
+  });
+
+  it.each([
+    "API_KEY",
+    "GH_TOKEN",
+    "apiToken",
+    "DB_PASSWORD",
+    "CLIENT_SECRET",
+    "GHTOKEN",
+    "NPMTOKEN",
+    "PGPASSWORD",
+    "SECRETKEY",
+    "API_TOKENS",
+    "DB_PASS",
+    "PASSPHRASE",
+  ])("points out a literal under %s", name => {
+    expect(codesOf(envOf(`{ ${name}: abc123 }`))).toEqual(["env.literal"]);
+  });
+
+  it.each([
+    "MAX_TOKENS",
+    "TOKENIZERS_PARALLELISM",
+    "KEYBOARD",
+    "SSH_KEY_PATH",
+    "MONKEY",
+  ])("leaves a literal under %s alone", name => {
+    expect(codesOf(envOf(`{ ${name}: "4000" }`))).toEqual([]);
+  });
+
+  it("points out a URL with a password in it", () => {
+    expect(
+      codesOf(envOf(`{ DATABASE_URL: "postgres://me:hunter2@db/x" }`)),
+    ).toEqual(["env.literal"]);
+    expect(codesOf(envOf(`{ DATABASE_URL: "postgres://db/x" }`))).toEqual([]);
+    expect(codesOf(envOf(`{ REDIS_URL: "redis://:hunter2@h/0" }`))).toEqual([
+      "env.literal",
+    ]);
+    expect(
+      codesOf(envOf(`{ DB: "postgres://me:hunter2@{{inputs.host}}/db" }`)),
+    ).toContain("env.literal");
+    expect(codesOf(envOf(`{ DB: "postgres://me:{{env.P}}@h/db" }`))).toEqual(
+      [],
+    );
+  });
+
+  it.each(["BASH_ENV", "ENV", "GIT_SSH_COMMAND", "PYTHONSTARTUP"])(
+    "warns when a run's data sets %s",
+    name => {
+      const { diagnostics } = compile(
+        workflow(`nodes:
+  b: { type: tool.shell, command: prog }
+  a:
+    type: tool.shell
+    command: prog
+    env: { ${name}: "{{nodes.b.output.stdout}}" }
+edges:
+  - b -> a
+`),
+      );
+      expect(diagnostics.map(d => d.code)).toEqual(["env.code"]);
+    },
+  );
+
+  it("checks what plainEnv names", () => {
+    expect(plain("REGION", "REGION")).toEqual([]);
+    expect(plain("REGION", "OTHER")).toEqual(["env.plain"]);
+    expect(plain("MY_TOKEN", "MY_TOKEN")).toEqual(["env.plain"]);
+  });
+
+  it("refuses the user's variables in an edge's when", () => {
+    expect(
+      codesOf(`nodes:
+  a: { type: tool.shell, command: prog }
+  b: { type: tool.shell, command: prog }
+edges:
+  - { from: a, to: b, when: "env.X == 'y'" }
+`),
+    ).toEqual(["template.env"]);
   });
 
   it("warns when a run's data sets a name that changes which code runs", () => {

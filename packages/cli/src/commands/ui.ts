@@ -17,6 +17,7 @@ import { ORK_VERSION } from "../__build_info__.ts";
 import { uiFolders } from "../browser/folder.ts";
 import { openInBrowser } from "../browser/open.ts";
 import { style, write, writeErr } from "../output.ts";
+import { mayShowSignIn } from "./in-a-run.ts";
 
 /** The link that signs the browser in; the server swaps it for a cookie. */
 export const signInLink = (port: number, token: string): string =>
@@ -31,6 +32,13 @@ export const portArg = (value?: string): number | null => {
 
 /** Opens the link, or prints it when there is no browser to open. */
 const show = async (link: string, open: boolean): Promise<void> => {
+  // The link acts as the user, so a program or an agent in a run does not get it.
+  if (!mayShowSignIn()) {
+    writeErr(
+      "A program or an agent in a run does not get the sign-in link, which acts as you. Run `ork ui` in your own terminal.",
+    );
+    return;
+  }
   const opened = open && process.stdout.isTTY && (await openInBrowser(link));
   if (!opened) write(`Open it with this link, which signs you in: ${link}`);
 };

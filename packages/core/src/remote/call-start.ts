@@ -29,6 +29,8 @@ export type StartOptions = {
   detach?: ((options: DetachOptions) => Promise<Detached>) | undefined;
   /** Tests stand in for resuming a process. */
   resume?: ((run: RunRecord) => Promise<Detached>) | undefined;
+  /** Set for a called run's process, over what it inherits. */
+  env?: Readonly<Record<string, string>> | undefined;
 };
 
 export type Started =
@@ -180,6 +182,7 @@ export const startCall = async (
     args: argsOf(file, id, `${runId}/${request.callId}`, request),
     cwd: target.root,
     runDir: runDirOf(target, id),
+    env: options.env,
   });
   return detached.ok
     ? { ok: true, id, project: target.root }
@@ -206,7 +209,8 @@ export const reviveCall = async (
     return { ok: true, after: lastGo(store, id) };
   }
   const after = lastSeq(store, id);
-  const resume = options.resume ?? (r => detachResume(store, r, []));
+  const resume =
+    options.resume ?? (r => detachResume(store, r, [], undefined, options.env));
   const resumed = await resume(run);
   return resumed.ok
     ? { ok: true, after }

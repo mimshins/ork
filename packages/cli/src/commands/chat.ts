@@ -15,13 +15,13 @@ import {
   type RunRecord,
   tellLiveRun,
 } from "@krapht/ork-core";
-import { startedByARun } from "@krapht/ork-nodes";
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
 import { resumeChat } from "../runs/chat.ts";
 import { followRun } from "../runs/logs.ts";
+import { chatRefusal } from "./in-a-run.ts";
 import { isDriver, loadRuntime } from "./run.ts";
 
 /** Asks for one line; `null` once the input ends (Ctrl-D). */
@@ -88,10 +88,6 @@ const chatLive = async (
   );
 };
 
-/** A program or an agent in a run must not speak as the user (RFC-003). */
-export const CHAT_IN_A_RUN =
-  "`ork chat` speaks as you, so a program or an agent in a run cannot use it. Programs will write to a session with `ork send`, which is not built yet.";
-
 export const chat = defineCommand({
   meta: {
     name: "chat",
@@ -120,8 +116,10 @@ export const chat = defineCommand({
     },
   },
   run: async ({ args }) => {
-    if (startedByARun(process.env)) {
-      writeErr(CHAT_IN_A_RUN);
+    // A program or an agent in a run must not speak as the user (RFC-003).
+    const refusal = chatRefusal();
+    if (refusal !== null) {
+      writeErr(refusal);
       process.exitCode = 1;
       return;
     }

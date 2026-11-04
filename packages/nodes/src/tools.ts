@@ -7,7 +7,7 @@
  *   (`tool-env.ts`), and may return JSON (`tool-output.ts`).
  */
 
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import {
@@ -21,14 +21,21 @@ import {
 import { integrationFor } from "@krapht/ork-integrations";
 import { isToolNode, type ToolNode } from "@krapht/ork-schema";
 
+import { tokenize } from "./tool-command.ts";
 import {
   type Environ,
   identityOf,
   OUTPUT_ENV,
   renderEnv,
-  scrubberOf,
+  safeRunner,
+  secretsOf,
 } from "./tool-env.ts";
-import { prepareOutputFile, readJsonOutput } from "./tool-output.ts";
+import {
+  prepareOutputFile,
+  readJsonOutput,
+  removeOutputFile,
+} from "./tool-output.ts";
+import { scrubberOf } from "./tool-scrub.ts";
 
 export type ToolRun = { exitCode: number; stdout: string; stderr: string };
 
@@ -46,61 +53,6 @@ export type ToolRunner = (
 
 /** How much of stdout and stderr a node's output keeps. */
 export const OUTPUT_LIMIT = 64 * 1024;
-
-/**
- * Splits a command into arguments the way a shell would, without running one:
- * whitespace separates, `'…'` is literal, `"…"` and `\` escape, and `{{ … }}`
- * stays whole so a template is rendered inside its own argument.
- */
-export const tokenize = (
-  command: string,
-): { ok: true; args: string[] } | { ok: false; error: string } => {
-  const args: string[] = [];
-  let current: string | null = null;
-  let index = 0;
-  const add = (text: string) => {
-    current = (current ?? "") + text;
-  };
-  while (index < command.length) {
-    const char = command.charAt(index);
-    if (command.startsWith("{{", index)) {
-      const end = command.indexOf("}}", index + 2);
-      if (end === -1) return { ok: false, error: "unclosed {{ in command" };
-      add(command.slice(index, end + 2));
-      index = end + 2;
-    } else if (/\s/u.test(char)) {
-      if (current !== null) args.push(current);
-      current = null;
-      index += 1;
-    } else if (char === "'") {
-      const end = command.indexOf("'", index + 1);
-      if (end === -1) return { ok: false, error: "unclosed ' in command" };
-      add(command.slice(index + 1, end));
-      index = end + 1;
-    } else if (char === '"') {
-      let text = "";
-      index += 1;
-      while (index < command.length && command.charAt(index) !== '"') {
-        if (command.charAt(index) === "\\") index += 1;
-        text += command.charAt(index);
-        index += 1;
-      }
-      if (index >= command.length) {
-        return { ok: false, error: 'unclosed " in command' };
-      }
-      add(text);
-      index += 1;
-    } else if (char === "\\") {
-      add(command.charAt(index + 1));
-      index += 2;
-    } else {
-      add(char);
-      index += 1;
-    }
-  }
-  if (current !== null) args.push(current);
-  return { ok: true, args };
-};
 
 /** Whether `args` starts with one of the allowed prefixes (`"pr merge"`). */
 export const isAllowed = (
@@ -177,14 +129,23 @@ const failed = (error: string): NodeResult => ({
 /** Runs a user's CLI through its integration's adapter, with its own login. */
 export const toolExecutor =
   (
-    runner: ToolRunner,
-    options: { orkBin?: string; environ?: Environ } = {},
+    given: ToolRunner,
+    options: {
+      orkBin?: string;
+      environ?: Environ;
+      maskedNames?: readonly string[];
+    } = {},
   ): NodeExecutor =>
   async context => {
     const { node } = context;
     if (!isToolNode(node)) return failed(`${context.id} is not a tool node`);
+    const environ = options.environ ?? process.env;
+    // A value can also arrive through an input, so this covers the command too.
+    const scrub = scrubberOf(
+      secretsOf(context.workflow, environ, options.maskedNames),
+    );
     const command = commandOf(node, context);
-    if (!command.ok) return failed(command.error);
+    if (!command.ok) return failed(scrub(command.error));
     const integration = integrationFor(node.type);
     // A program-less integration (any program) checks the program too.
     const checked =
@@ -194,7 +155,9 @@ export const toolExecutor =
     const allow = node.allow ?? integration?.allow;
     if (!isAllowed(checked, allow)) {
       return failed(
-        `"${checked.join(" ")}" is not in the node's allow list (${(allow ?? []).join(", ")})`,
+        scrub(
+          `"${checked.join(" ")}" is not in the node's allow list (${(allow ?? []).join(", ")})`,
+        ),
       );
     }
     let cwd = context.cwd;
@@ -203,9 +166,9 @@ export const toolExecutor =
       if (!rendered.ok) return failed(rendered.error);
       cwd = path.resolve(context.cwd, rendered.value);
     }
-    const nodeEnv = renderEnv(node, context, options.environ ?? process.env);
+    const nodeEnv = renderEnv(node, context, environ);
     if (!nodeEnv.ok) return failed(nodeEnv.error);
-    const scrub = scrubberOf(nodeEnv.secrets);
+    const runner = safeRunner(given, scrub);
     const outputFile =
       node.output?.format === "json"
         ? prepareOutputFile(context.runDir, context.id, context.round)
@@ -219,9 +182,9 @@ export const toolExecutor =
     context.emit({
       type: "tool.called",
       id: context.id,
-      name: command.program,
+      name: scrub(command.program),
       input: {
-        command: [command.program, ...command.args].join(" "),
+        command: scrub([command.program, ...command.args].join(" ")),
         ...(names.length === 0 ? {} : { env: names }),
       },
     });
@@ -263,7 +226,7 @@ export const toolExecutor =
       output[field] = capped(scrub(text), keep(field, scrub(text)));
     }
     if (outputFile !== undefined && run.exitCode !== 0) {
-      rmSync(outputFile, { force: true });
+      removeOutputFile(outputFile);
     }
     const json =
       outputFile === undefined || run.exitCode !== 0
@@ -289,6 +252,6 @@ export const toolExecutor =
     return {
       ok: false,
       output,
-      error: `${command.program} exited with ${String(run.exitCode)}${last === "" ? "" : `: ${last}`}`,
+      error: `${scrub(command.program)} exited with ${String(run.exitCode)}${last === "" ? "" : `: ${last}`}`,
     };
   };

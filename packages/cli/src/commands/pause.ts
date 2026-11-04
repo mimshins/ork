@@ -18,6 +18,7 @@ import {
 import { defineCommand } from "citty";
 
 import { style, write, writeErr } from "../output.ts";
+import { continueRefusal } from "./in-a-run.ts";
 
 const args = {
   run: {
@@ -75,13 +76,20 @@ export const continueRun = defineCommand({
     description: "Let a paused run, or one paused node, go on",
   },
   args,
-  run: ({ args: given }) =>
-    ask(
+  run: async ({ args: given }) => {
+    const refused = continueRefusal();
+    if (refused !== null) {
+      writeErr(refused);
+      process.exitCode = 1;
+      return;
+    }
+    await ask(
       given.run,
       (store, run) => requestContinue(store, run, undefined, given.node),
       run =>
         given.node === undefined
           ? `Run ${run.id} goes on.`
           : `${given.node} in run ${run.id} goes on.`,
-    ),
+    );
+  },
 });

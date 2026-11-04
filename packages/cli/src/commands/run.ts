@@ -47,12 +47,21 @@ export const loadRuntime = async (driver: Driver): Promise<ClaudeRuntime> =>
     sessionEnv(process.env),
   );
 
-/** Ctrl-C asks the run to stop. */
+/**
+ * Ctrl-C asks the run to stop, and so does a terminal closing or a polite kill,
+ * so that the run ends tidily and leaves no result unscrubbed.
+ */
 const onInterrupt = (stop: () => void) => {
-  process.once("SIGINT", () => {
+  let asked = false;
+  const interrupt = () => {
+    if (asked) return;
+    asked = true;
     writeErr(style("dim", "\ninterrupting…"));
     stop();
-  });
+  };
+  process.once("SIGINT", interrupt);
+  process.once("SIGTERM", interrupt);
+  process.once("SIGHUP", interrupt);
 };
 
 /** The terminal that answers a run's questions; none in a detached run. */

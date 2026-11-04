@@ -165,7 +165,7 @@ const checkTemplate = (
         return [
           error(
             "template.scope",
-            `"${describePath(segments)}": templates read inputs.*, nodes.<id>.output.* or run.*`,
+            `"${describePath(segments)}": templates read inputs.*, nodes.<id>.output.* or run.*, and a tool node's env: also reads env.*`,
             path,
           ),
         ];
@@ -204,6 +204,10 @@ const checkCondition = (
       return checkAbsolute(segments, context, path);
     }
     if (source === undefined) return [];
+    // A node may report a field called `env`; otherwise it means the user's.
+    if (root === "env" && outputFieldsOf(source)?.includes("env") === false) {
+      return [envOutsideEnv(segments, path)];
+    }
     const relative = root === "output" ? segments.slice(1) : segments;
     const roots: readonly (string | number)[] = SCOPE_ROOTS;
     return roots.includes(String(relative[0]))

@@ -131,6 +131,167 @@ describe("scripts in a real run", () => {
     expect(done.stderr).toContain("ORK_TEST_TOKEN, for pr");
   });
 
+  it("tells a program the run's real folder from a subfolder", () => {
+    const place = project();
+    const sub = path.join(place.repo, "sub");
+    mkdirSync(sub);
+    const file = path.join(place.repo, "where.ork.yaml");
+    writeFileSync(
+      file,
+      `schemaVersion: 1
+name: where
+nodes:
+  n:
+    type: tool.shell
+    command: sh -c 'mkdir -p "$ORK_RUN_DIR" && test "$ORK_RUN_DIR" = "${place.repo}/.ork/runs/$ORK_RUN" && printf "{}" > "$ORK_OUTPUT"'
+    output: { format: json }
+`,
+    );
+    const done = spawnSync(process.execPath, [BIN, "run", file], {
+      cwd: sub,
+      encoding: "utf8",
+      env: { ...process.env, HOME: place.home },
+    });
+    expect(done.stderr).toBe("");
+    expect(done.status).toBe(0);
+    expect(existsSync(path.join(sub, ".ork"))).toBe(false);
+  });
+
+  it("leaves no unread result behind when a run ends", () => {
+    const place = project();
+    const done = ork(place, ["run", place.file], { ORK_TEST_TOKEN: SECRET });
+    expect(done.status).toBe(0);
+    const { id } = onlyRun(place.home);
+    const runDir = path.join(place.repo, ".ork", "runs", id);
+    expect(existsSync(path.join(runDir, ".output"))).toBe(false);
+  });
+
+  it("warns of a variable a called workflow reads, and fails if it gets there", () => {
+    const place = project();
+    const dir = path.join(place.repo, ".ork", "workflows");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      path.join(dir, "child.ork.yaml"),
+      `schemaVersion: 1
+name: child
+nodes:
+  deploy:
+    type: tool.shell
+    command: prog
+    env: { T: "{{env.ORK_TEST_CHILD}}" }
+`,
+    );
+    const side = path.join(place.repo, "side.txt");
+    const file = path.join(place.repo, "parent.ork.yaml");
+    writeFileSync(
+      file,
+      `schemaVersion: 1
+name: parent
+nodes:
+  first: { type: tool.shell, command: touch ${side} }
+  call: { type: workflow.call, workflow: child }
+edges:
+  - first -> call
+`,
+    );
+    const done = ork(place, ["run", file]);
+    expect(done.stderr).toContain("ORK_TEST_CHILD, for child/deploy");
+    expect(done.status).toBe(1);
+    expect(existsSync(side)).toBe(true);
+  });
+
+  it("is not stopped by a called workflow on a branch not taken", () => {
+    const place = project();
+    const dir = path.join(place.repo, ".ork", "workflows");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      path.join(dir, "child.ork.yaml"),
+      `schemaVersion: 1
+name: child
+nodes:
+  deploy:
+    type: tool.shell
+    command: prog
+    env: { T: "{{env.ORK_TEST_CHILD}}" }
+`,
+    );
+    const file = path.join(place.repo, "branch.ork.yaml");
+    writeFileSync(
+      file,
+      `schemaVersion: 1
+name: branch
+nodes:
+  first: { type: tool.shell, command: "true" }
+  call: { type: workflow.call, workflow: child }
+edges:
+  - { from: first, to: call, when: "exitCode == 1" }
+`,
+    );
+    const done = ork(place, ["run", file]);
+    expect(done.status).toBe(0);
+    expect(done.stderr).toContain("That call fails if the run reaches it.");
+  });
+
+  it("masks in a called run what only its caller reads", () => {
+    const place = project();
+    const dir = path.join(place.repo, ".ork", "workflows");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      path.join(dir, "child.ork.yaml"),
+      `schemaVersion: 1
+name: child
+nodes:
+  print: { type: tool.shell, command: printenv ORK_TEST_TOKEN }
+`,
+    );
+    const file = path.join(place.repo, "caller.ork.yaml");
+    writeFileSync(
+      file,
+      `schemaVersion: 1
+name: caller
+nodes:
+  read:
+    type: tool.shell
+    command: "true"
+    env: { T: "{{env.ORK_TEST_TOKEN}}" }
+  call: { type: workflow.call, workflow: child }
+edges:
+  - read -> call
+`,
+    );
+    const done = ork(place, ["run", file], { ORK_TEST_TOKEN: SECRET });
+    expect(done.status).toBe(0);
+    const store = openStore(storePath(place.home));
+    const events = store.runs().flatMap(run => store.events(run.id));
+    store.close();
+    expect(JSON.stringify(events)).toContain("[masked]");
+    expect(JSON.stringify(events)).not.toContain(SECRET);
+  });
+
+  it("refuses `ork continue` from a program in a run", () => {
+    const place = project();
+    const done = ork(place, ["continue", "r1"], { ORK_RUN: "r1" });
+    expect(done.status).toBe(1);
+    expect(done.stderr).toContain("undoes a pause you set");
+  });
+
+  it("refuses to answer a decision from a program in a run", () => {
+    const place = project();
+    const done = ork(place, ["decide", "--id", "d1", "--choose", "yes"], {
+      ORK_RUN: "r1",
+    });
+    expect(done.status).toBe(1);
+    expect(done.stderr).toContain("answers as you");
+    expect(done.stderr).toContain("ORK_RUN is set here");
+  });
+
+  it("still lists decisions for a program in a run", () => {
+    const place = project();
+    const done = ork(place, ["decide", "--list"], { ORK_SESSION: "1" });
+    expect(done.status).toBe(0);
+    expect(done.stdout).toContain("No open decisions.");
+  });
+
   it("refuses `ork chat` from an agent's Bash", () => {
     const place = project();
     const done = ork(place, ["chat", "r1", "n", "-m", "hi"], {
