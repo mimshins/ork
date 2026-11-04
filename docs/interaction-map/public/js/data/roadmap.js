@@ -748,6 +748,7 @@ export const MILESTONES = [
           "decisions/ADR-054-component-tokens.md",
           "specs/ui/design-system.md",
         ],
+        commits: ["b296577"],
       },
       {
         id: "ui-upgrade",
