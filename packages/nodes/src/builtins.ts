@@ -10,6 +10,7 @@ import { INTEGRATIONS, TOOL_PREFIX } from "@krapht/ork-integrations";
 import { callExecutor } from "./call.ts";
 import { type ClaudeExecutorOptions, claudeExecutor } from "./claude.ts";
 import { gateExecutor } from "./gate.ts";
+import { mcpCallExecutor } from "./mcp-call.ts";
 import { spawnTool } from "./spawn.ts";
 import { toolExecutor, type ToolRunner } from "./tools.ts";
 
@@ -23,18 +24,23 @@ export const builtinExecutors = (
     maskedNames?: readonly string[];
   },
 ): NodeExecutors => {
-  const claude = claudeExecutor(options);
   const tool = toolExecutor(options.tools ?? spawnTool, {
     ...(options.orkBin === undefined ? {} : { orkBin: options.orkBin }),
     ...(options.maskedNames === undefined
       ? {}
       : { maskedNames: options.maskedNames }),
   });
+  const claude = claudeExecutor({ ...options, steps: tool });
   const executors: NodeExecutors = {
     "claude.leader": claude,
     "claude.worker": claude,
     "human.gate": gateExecutor,
     "workflow.call": callExecutor,
+    "mcp.call": mcpCallExecutor(
+      options.maskedNames === undefined
+        ? {}
+        : { maskedNames: options.maskedNames },
+    ),
   };
   for (const integration of INTEGRATIONS) {
     executors[`${TOOL_PREFIX}${integration.id}`] = tool;

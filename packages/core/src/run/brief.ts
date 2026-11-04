@@ -32,6 +32,7 @@ export const renderBrief = (
   text: string | undefined,
   inputs: Values,
   outputs?: Record<string, NodeOutput>,
+  before?: NodeOutput,
 ): RenderedBrief => {
   const template = parseTemplate(text ?? "");
   if (!template.ok) return { ok: false, error: template.message };
@@ -44,7 +45,7 @@ export const renderBrief = (
         ]
       : [];
   });
-  const scope = runScope(inputs, outputs ?? {});
+  const scope = { ...runScope(inputs, outputs ?? {}), before };
   return {
     ok: true,
     text: renderTemplate(template.parts, scope).trim(),

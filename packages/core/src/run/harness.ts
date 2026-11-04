@@ -107,6 +107,19 @@ export const mailboxInstructions = (
 };
 
 /** Ork's own instructions for a node, kept short: they cost tokens every turn. */
+/** Says a report will be checked, so a session can often save the extra turn. */
+const verifyInstructions = (node: ClaudeNode): string[] => {
+  if (!("verify" in node) || node.verify === undefined) return [];
+  const { command } = node.verify;
+  const check =
+    command === undefined || command.includes("{{")
+      ? "a check the workflow defines"
+      : `\`${command}\``;
+  return [
+    `- A report that is not \`fail\` or \`changes_requested\` is accepted only if ${check} passes when you report. If it fails, you are told why and asked to fix it, so run it yourself first if you can.`,
+  ];
+};
+
 export const harnessInstructions = (
   workflow: Workflow,
   id: string,
@@ -136,6 +149,7 @@ export const harnessInstructions = (
     );
   }
   if (options.claims?.contended() === true) lines.push(CLAIMS_LINE);
+  lines.push(...verifyInstructions(node));
   if (node.instructions !== undefined) lines.push("", node.instructions);
   return lines.join("\n");
 };

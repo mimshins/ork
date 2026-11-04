@@ -40,9 +40,12 @@ Each is in [Limits](./gaps/limits.md), from L2 on.
 - **C6 · The UI has no browser tests in CI.** Its components are tested in jsdom
   with axe; a slice is checked by hand in a real browser until Playwright runs
   in CI. ([ADR-040](../decisions/ADR-040-ui-stack.md))
-- **C8 · `packages/ui` sets `skipLibCheck`.** dockview's declarations do not
-  pass under `exactOptionalPropertyTypes`, so the UI package does not check any
-  library's declarations. ([workspace](./ui/workspace.md#the-saved-layout))
+- **C8 · The repository sets `skipLibCheck`.** dockview's declarations and the
+  MCP SDK's HTTP client don't pass under `exactOptionalPropertyTypes`, so
+  `packages/ui` and the root config don't check any library's declarations, and
+  [mcp-sdk.d.ts](../packages/nodes/src/mcp-sdk.d.ts) retypes that client. Remove
+  both when those libraries fix them.
+  ([workspace](./ui/workspace.md#the-saved-layout))
 - **C9 · An age exclusion waits to be removed.** `pnpm-workspace.yaml` exempts
   containerized-state 3.4.0, its React package 3.4.0 and its persistence plugin
   1.4.0 from the 7-day rule, by exact version, at their author's choice. Remove

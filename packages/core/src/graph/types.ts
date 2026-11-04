@@ -77,6 +77,7 @@ export const OUTPUT_FIELDS: Record<
   "human.gate": ["choice", "answeredBy"],
   // A called run's outputs, or the report of the node it waits on.
   "workflow.call": null,
+  "mcp.call": ["text", "json"],
 };
 
 /**
@@ -103,8 +104,9 @@ export const outputFieldsOf = (node: Node): readonly string[] | null => {
   }
   const base = OUTPUT_FIELDS[node.type];
   if (base === null) return null;
-  if ("output" in node && node.output?.schema !== undefined) {
-    return [...base, ...Object.keys(node.output.schema)];
-  }
-  return base;
+  return [
+    ...base,
+    ...("output" in node ? Object.keys(node.output?.schema ?? {}) : []),
+    ...("verify" in node && node.verify !== undefined ? ["verify"] : []),
+  ];
 };

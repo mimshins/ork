@@ -1,11 +1,17 @@
 /**
- * @file Checks on a tool node's `env:`: names Ork keeps for itself are refused,
- *   a literal that looks like a secret is pointed out before it reaches git,
- *   and so is a template under a name that changes which code runs. `plainEnv`
- *   must name something the node reads, and should not name a secret.
+ * @file Checks on a program's `env:`, a tool node's or a step's: names Ork
+ *   keeps for itself are refused, a literal that looks like a secret is pointed
+ *   out before it reaches git, and so is a template under a name that changes
+ *   which code runs. `plainEnv` must name something the node reads, and should
+ *   not name a secret.
  */
 
-import { type Diagnostic, isToolNode, type Workflow } from "@krapht/ork-schema";
+import {
+  type Diagnostic,
+  programsOf,
+  type Step,
+  type Workflow,
+} from "@krapht/ork-schema";
 
 import { parseTemplate } from "../expr/evaluate.ts";
 import { collectPaths } from "../expr/parse.ts";
@@ -61,8 +67,12 @@ export const envReadsOf = (value: string): string[] => {
   );
 };
 
-const checkValue = (id: string, name: string, value: string): Diagnostic[] => {
-  const path = ["nodes", id, "env", name];
+const checkValue = (
+  at: readonly (string | number)[],
+  name: string,
+  value: string,
+): Diagnostic[] => {
+  const path = [...at, "env", name];
   if (name.startsWith("ORK_")) {
     return [error("env.reserved", `${name}: Ork sets ORK_* itself`, path)];
   }
@@ -96,11 +106,11 @@ const checkValue = (id: string, name: string, value: string): Diagnostic[] => {
 };
 
 const checkPlain = (
-  id: string,
+  at: readonly (string | number)[],
   name: string,
   reads: readonly string[],
 ): Diagnostic[] => {
-  const path = ["nodes", id, "plainEnv"];
+  const path = [...at, "plainEnv"];
   if (!reads.includes(name)) {
     return [
       warning(
@@ -121,14 +131,26 @@ const checkPlain = (
     : [];
 };
 
-export const checkToolEnv = (workflow: Workflow): Diagnostic[] =>
-  Object.entries(workflow.nodes).flatMap(([id, node]) => {
-    if (!isToolNode(node)) return [];
-    const env = Object.entries(node.env ?? {});
-    const reads = env.flatMap(([, value]) => envReadsOf(value));
-    return env
-      .flatMap(([name, value]) => checkValue(id, name, value))
-      .concat(
-        (node.plainEnv ?? []).flatMap(name => checkPlain(id, name, reads)),
-      );
-  });
+const checkProgramEnv = (
+  where: readonly (string | number)[],
+  program: Step,
+): Diagnostic[] => {
+  const env = Object.entries(program.env ?? {});
+  const reads = env.flatMap(([, value]) => envReadsOf(value));
+  return env
+    .flatMap(([name, value]) => checkValue(where, name, value))
+    .concat(
+      (program.plainEnv ?? []).flatMap(name => checkPlain(where, name, reads)),
+    );
+};
+
+export const checkToolEnv = (workflow: Workflow): Diagnostic[] => [
+  ...(workflow.defaults?.before === undefined
+    ? []
+    : checkProgramEnv(["defaults", "before"], workflow.defaults.before)),
+  ...Object.entries(workflow.nodes).flatMap(([id, node]) =>
+    programsOf(node).flatMap(({ at, program }) =>
+      checkProgramEnv(["nodes", id, ...at], program),
+    ),
+  ),
+];

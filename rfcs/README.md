@@ -57,10 +57,11 @@ and carries an RFC through this lifecycle.
 
 ## Index
 
-| RFC                                                            | Title                                        | Status      |
-| -------------------------------------------------------------- | -------------------------------------------- | ----------- |
-| [001](./archived/RFC-001-integrations-as-adapters.md)          | Integrations as adapters behind a registry   | Implemented |
-| [002](./archived/RFC-002-standalone-binaries-and-installer.md) | Standalone binaries and a one-line installer | Rejected    |
-| [003](./archived/RFC-003-relay-between-runs.md)                | A relay between runs                         | Implemented |
-| [004](./archived/RFC-004-workflows-calling-workflows.md)       | Workflows that call workflows                | Implemented |
-| [005](./archived/RFC-005-scripts-and-rules-on-the-bus.md)      | Scripts and rules on the message bus         | Implemented |
+| RFC                                                            | Title                                                              | Status      |
+| -------------------------------------------------------------- | ------------------------------------------------------------------ | ----------- |
+| [001](./archived/RFC-001-integrations-as-adapters.md)          | Integrations as adapters behind a registry                         | Implemented |
+| [002](./archived/RFC-002-standalone-binaries-and-installer.md) | Standalone binaries and a one-line installer                       | Rejected    |
+| [003](./archived/RFC-003-relay-between-runs.md)                | A relay between runs                                               | Implemented |
+| [004](./archived/RFC-004-workflows-calling-workflows.md)       | Workflows that call workflows                                      | Implemented |
+| [005](./archived/RFC-005-scripts-and-rules-on-the-bus.md)      | Scripts and rules on the message bus                               | Implemented |
+| [006](./archived/RFC-006-steps-around-a-session.md)            | Deterministic steps around a session, MCP calls and inline scripts | Implemented |

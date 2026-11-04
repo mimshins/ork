@@ -2,14 +2,29 @@
 schemaVersion: 1
 name: checked-build
 description: A session builds while programs check its work and tell it what they found, with no model turn to carry the news. It needs ./scripts/check.sh in your project and CI_TOKEN set.
+inputs:
+  branch:
+    type: string
+    default: main
+    description: The branch the check compares with.
 defaults:
   model: sonnet
   budgetUsd: 1
 nodes:
   builder:
     type: claude.worker
-    prompt: Make the change you were asked for. A check runs beside you and writes to you when it finds something; read it and act on it.
+    prompt: |-
+      Make the change you were asked for. The recent history is:
+      {{before.stdout}}
+      A check runs beside you and writes to you when it finds something; read it and act on it.
     isolation: readonly
+    before:
+      script: git log -5 --oneline
+    verify:
+      command: ./scripts/check.sh
+      env:
+        BRANCH: "{{inputs.branch}}"
+      attempts: 1
   branch:
     type: tool.git
     command: rev-parse --abbrev-ref HEAD

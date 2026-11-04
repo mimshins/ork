@@ -149,6 +149,9 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
     and a result over 64 KiB fails it and is kept in a run file, never cut. A
     failed program's result is not read. A run clears the folder when it starts,
     resumes and ends ([L85](./gaps/limits-scripts.md)).
+- **`mcp.call`** ([mcp-call.ts](../packages/nodes/src/mcp-call.ts)): calls one
+  tool on a server from the project's `.mcp.json`, with no session
+  ([steps](./scheduler/steps.md#mcp-calls)). Its output is `text` and `json`.
 - **`workflow.call`** ([call.ts](../packages/nodes/src/call.ts)): starts a
   workflow as a separate run and waits as it says
   ([calling workflows](./scheduler/calls.md)).
@@ -177,10 +180,10 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 [tests](../packages/core/test/timeouts.test.ts),
 [ADR-043](../decisions/ADR-043-timeouts.md).
 
-- `timeout` on a tool node, `claude.leader`, `claude.worker` or `workflow.call`
-  limits each activation, from when its executor starts; `defaults.timeout`
-  applies to those that set none; `limits.timeout` limits the run. None is set
-  unless a workflow sets it.
+- `timeout` on a tool node, `claude.leader`, `claude.worker`, `mcp.call` or
+  `workflow.call` limits each activation, from when its executor starts;
+  `defaults.timeout` applies to those that set none; `limits.timeout` limits the
+  run. None is set unless a workflow sets it.
 - **The clock measures work.** It stands still while the node is paused or has a
   question or permission prompt open, and while a node it owns does. A run's
   stands still while it is paused, or anything in it waits on the user.
@@ -199,6 +202,7 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 ## Contents
 
 - [Calling workflows](./scheduler/calls.md)
+- [Steps around a session](./scheduler/steps.md)
 - [Resuming a run, and run events](./scheduler/resuming-and-events.md)
   - [Resuming a run](./scheduler/resuming-and-events.md#resuming-a-run)
   - [Run events](./scheduler/resuming-and-events.md#run-events)

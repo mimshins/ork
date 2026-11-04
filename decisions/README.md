@@ -80,3 +80,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [045](./ADR-045-workflows-calling-workflows.md)    | A workflow calls another as its own run, through a node                     | Accepted          |
 | [047](./ADR-047-script-identity-env-json.md)       | Tool nodes know who they are, take an environment, and return JSON          | Accepted          | waived                                                              |
 | [048](./ADR-048-scripts-and-rules-on-the-bus.md)   | Scripts and rules post to the message bus                                   | Accepted          | [RFC-005](../rfcs/archived/RFC-005-scripts-and-rules-on-the-bus.md) |
+| [049](./ADR-049-steps-mcp-calls-and-scripts.md)    | Deterministic steps around a session, MCP calls and inline scripts          | Accepted          | [RFC-006](../rfcs/archived/RFC-006-steps-around-a-session.md)       |

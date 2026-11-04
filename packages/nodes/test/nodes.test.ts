@@ -31,7 +31,6 @@ import {
 } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
-import { afterLateTurn, lateBudget, withUsageOf } from "../src/claude.ts";
 import {
   callExecutor,
   claudeExecutor,
@@ -45,6 +44,11 @@ import {
   toolExecutor,
   type ToolRunner,
 } from "../src/index.ts";
+import {
+  afterLateTurn,
+  lateBudget,
+  withUsageOf,
+} from "../src/session-turns.ts";
 
 const human = (
   answer: (options: string[]) => Promise<string>,

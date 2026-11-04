@@ -648,12 +648,14 @@ export const MILESTONES = [
         title: "Scripts that reach the run",
         status: "active",
         detail:
-          "Tool nodes know their run and node, take an `env:`, and return JSON a `when:` can read. They can send a message with `ork send`, and a workflow can declare one with `notify:`, so deterministic work takes no model turn (built, RFC-005). Next, and not yet written up as an RFC: `verify:`, hooks, an MCP call node and inline scripts.",
-        commits: ["c4cdefe", "ef82721", "eeceaf2"],
+          "Tool nodes know their run and node, take an `env:`, and return JSON a `when:` can read. They can send a message with `ork send`, and a workflow can declare one with `notify:`, so deterministic work takes no model turn (built, RFC-005). A node can check a report with `verify:`, set itself up with `before:`, hold a short `script:`, and call an MCP tool with `mcp.call` (built, RFC-006).",
+        commits: ["c4cdefe", "ef82721", "eeceaf2", "b98d841"],
         docs: [
           "decisions/ADR-047-script-identity-env-json.md",
           "decisions/ADR-048-scripts-and-rules-on-the-bus.md",
           "specs/messaging/scripts.md",
+          "decisions/ADR-049-steps-mcp-calls-and-scripts.md",
+          "specs/scheduler/steps.md",
           "specs/workflow-format.md",
         ],
       },
@@ -711,6 +713,14 @@ export const MILESTONES = [
         detail:
           "Starting a run on a schedule or an event. Needs its own RFC after M2, because a local tool has no always-on process and its server binds loopback only.",
         docs: ["specs/server.md"],
+      },
+      {
+        id: "benchmark",
+        title: "Prove it costs less",
+        status: "planned",
+        detail:
+          "Once the core features above are in, run the same real jobs by hand and through Ork, and compare cost per completed task and the quality of the result. First record what a run lacks today: each session's peak context, compaction, and cache rewrites after idle time. The results decide what to build for hours-long runs, such as skipping unchanged work, or disposable sessions with a capped memory on the node, and whether Ork can claim to cost less.",
+        docs: ["specs/usage.md"],
       },
       {
         id: "gaps-review",
@@ -779,6 +789,8 @@ export const OFF_ROADMAP = [
   "9ac26f2",
   "a70514f",
   "1212977",
+  "3a7374c",
+  "9f781ba",
 ];
 
 /** The day the roadmap was last brought up to date. */

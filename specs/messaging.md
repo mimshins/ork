@@ -68,7 +68,9 @@ ports. It reaches other runs through [links](./messaging/links.md).
   ([claude.ts](../packages/nodes/src/claude.ts)). A turn that gives no report
   leaves the first one standing, so it cannot fail a node that passed. It may
   spend only what is left of the node's cap and the run's budget, and with
-  nothing left it does not start: the message waits, unread.
+  nothing left it does not start: the message waits, unread. A message that
+  arrives during a later [check](./scheduler/steps.md#checks-on-a-report) waits
+  too.
 - **Inboxes outlive the process:** the events are the record, so `ork resume`
   starts the bus with each node's unread messages (`message.sent` minus
   `message.read`), the user's `ork chat` messages still queued for a node that

@@ -26,6 +26,7 @@ const ICONS = new Map<string, ReactElement>([
   ["control.router", <IconRouter key="router" />],
   ["human.gate", <IconGate key="gate" />],
   ["workflow.call", <IconCall key="call" />],
+  ["mcp.call", <IconCall key="mcp" />],
   ["tool.gh", <IconGitHub key="gh" />],
   ["tool.aws", <IconAws key="aws" />],
   ["tool.git", <IconGit key="git" />],

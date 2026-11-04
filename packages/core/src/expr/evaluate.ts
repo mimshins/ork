@@ -15,9 +15,17 @@ export type Scope = {
   nodes: Record<string, { output?: unknown }>;
   output?: unknown;
   run?: Record<string, unknown>;
+  /** What the node's `before:` step gave; only its prompt reads it. */
+  before?: unknown;
 };
 
-export const SCOPE_ROOTS = ["inputs", "nodes", "output", "run"] as const;
+export const SCOPE_ROOTS = [
+  "inputs",
+  "nodes",
+  "output",
+  "run",
+  "before",
+] as const;
 
 const isRoot = (name: string | number): boolean =>
   (SCOPE_ROOTS as readonly (string | number)[]).includes(name);

@@ -7,7 +7,6 @@
  *   (`tool-env.ts`), and may return JSON (`tool-output.ts`).
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import {
@@ -21,7 +20,7 @@ import {
 import { integrationFor } from "@krapht/ork-integrations";
 import { isToolNode, type ToolNode } from "@krapht/ork-schema";
 
-import { tokenize } from "./tool-command.ts";
+import { commandLineOf, tokenize } from "./tool-command.ts";
 import {
   type Environ,
   identityOf,
@@ -33,9 +32,11 @@ import {
   secretsOf,
 } from "./tool-env.ts";
 import {
+  keepFile,
   prepareOutputFile,
   readJsonOutput,
   removeOutputFile,
+  writeScriptFile,
 } from "./tool-output.ts";
 import { scrubberOf } from "./tool-scrub.ts";
 
@@ -89,7 +90,11 @@ export const commandOf = (
 ):
   | { ok: true; program: string; args: string[] }
   | { ok: false; error: string } => {
-  const tokens = tokenize(node.command);
+  const line = commandLineOf(node);
+  if (line === undefined) {
+    return { ok: false, error: "the node has no command or script" };
+  }
+  const tokens = tokenize(line);
   if (!tokens.ok) return tokens;
   const args: string[] = [];
   for (const token of tokens.args) {
@@ -117,7 +122,7 @@ export const commandOf = (
 };
 
 /** Keeps the first `OUTPUT_LIMIT` characters; the rest goes to a file. */
-const capped = (text: string, file: () => string): string => {
+export const capped = (text: string, file: () => string): string => {
   if (text.length <= OUTPUT_LIMIT) return text;
   return `${text.slice(0, OUTPUT_LIMIT)}\n… (truncated; the full output is in ${file()})`;
 };
@@ -187,15 +192,31 @@ export const toolExecutor =
       id: context.id,
       name: scrub(command.program),
       input: {
-        command: scrub([command.program, ...command.args].join(" ")),
+        command: scrub(
+          [
+            command.program,
+            ...command.args,
+            ...(node.script === undefined ? [] : ["<script>"]),
+          ].join(" "),
+        ),
         ...(names.length === 0 ? {} : { env: names }),
       },
     });
-    const raw = await runner(command.program, command.args, {
-      cwd,
-      signal: context.signal,
-      env,
-    });
+    const scriptFile =
+      node.script === undefined
+        ? undefined
+        : writeScriptFile(
+            context.runDir,
+            context.id,
+            context.round,
+            node.script,
+          );
+    const raw = await runner(
+      command.program,
+      scriptFile === undefined ? command.args : [...command.args, scriptFile],
+      { cwd, signal: context.signal, env },
+    );
+    if (scriptFile !== undefined) removeOutputFile(scriptFile);
     const run = {
       exitCode: raw.exitCode,
       stdout: scrub(raw.stdout),
@@ -210,16 +231,8 @@ export const toolExecutor =
         });
         return { ok: seen.exitCode === 0, stdout: seen.stdout };
       })) ?? {};
-    const keep = (field: string, text: string) => () => {
-      const dir = context.runDir;
-      mkdirSync(dir, { recursive: true });
-      const file = path.join(
-        dir,
-        `${context.id}.${String(context.round)}.${field}.txt`,
-      );
-      writeFileSync(file, text);
-      return file;
-    };
+    const keep = (field: string, text: string) =>
+      keepFile(context, field, text);
     const output: Record<string, unknown> = {
       exitCode: run.exitCode,
       stdout: capped(run.stdout, keep("stdout", run.stdout)),

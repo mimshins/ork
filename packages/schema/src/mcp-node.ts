@@ -1,0 +1,33 @@
+/**
+ * @file The `mcp.call` node (RFC-006): one named tool on one MCP server, with
+ *   no session. Where the server is defined, and how it signs in, are not in
+ *   the workflow: they are in the project's `.mcp.json`.
+ */
+
+import { z } from "zod";
+
+import {
+  nodeBaseFields,
+  notifyFields,
+  TimeoutSchema,
+  toolProgramFields,
+} from "./settings.ts";
+
+export const McpCallNodeSchema = z.strictObject({
+  type: z.literal("mcp.call"),
+  ...nodeBaseFields,
+  server: z.string().describe("The server's name in the project's .mcp.json."),
+  tool: z.string().describe("The tool to call on it."),
+  arguments: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe(
+      "The tool's arguments. Strings are templates; one that is only {{ … }} keeps its value's type.",
+    ),
+  env: toolProgramFields.env,
+  plainEnv: toolProgramFields.plainEnv,
+  timeout: TimeoutSchema.optional().describe(
+    "How long the call may take, e.g. 5m; then the node fails.",
+  ),
+  ...notifyFields,
+});

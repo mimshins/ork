@@ -75,6 +75,12 @@ edges:
     outputs `staged` (`git diff --cached --stat`), `diff` (the staged patch) and
     `head` (the commit `HEAD` names) besides `exitCode`, `stdout` and `stderr`,
     so a gate after an `add` step shows what a commit will commit.
+  - `tool.shell` takes `script:`, the text of a short program, instead of
+    `command:`, one of them. It takes no templates, so a value can't become
+    code: values arrive through `env:`. `interpreter:` is what runs it, by
+    default `sh -eu`; the text is written to the run's private folder for that
+    go and passed as the last argument, so `allow:` checks the interpreter
+    ([RFC-006](../rfcs/archived/RFC-006-steps-around-a-session.md)).
   - `env:` sets the program's variables. Values are templates, and only they may
     read the user's own variables, as `{{env.NAME}}`. Keys starting `ORK_` are
     refused; those are [Ork's own](./scheduler.md#built-in-node-types).
@@ -83,10 +89,21 @@ edges:
   - `output: { format: json }` says the program returns JSON, read as
     `output.json`: the file at `$ORK_OUTPUT` if it wrote one, otherwise its
     stdout.
+- **Before a session:** leaders and workers take `before:`, a program run in
+  their checkout first, with what `verify:` takes but `attempts`. Their `prompt`
+  reads its result as `{{before.*}}`, and `defaults:` may set it
+  ([steps](./scheduler/steps.md#before-a-session)).
+- **Checks on a report:** leaders and workers take `verify:`, a program that
+  must pass before their report is accepted, with `command` or `script`, `env`,
+  `plainEnv`, `output`, `timeout` and `attempts` (default 1), and report it as
+  `output.verify` ([scheduler](./scheduler/steps.md#checks-on-a-report)).
 - **Messages on finishing:** leaders, workers, tool nodes, gates and calls take
   `notify:`, a list of `{ to, when?, body? }` sent through the bus when the node
   finishes, starting no session; `when:` and `body:` also read `ok` and `error`
   ([scripts and rules](./messaging/scripts.md#notify)).
+- **MCP calls:** `mcp.call` calls one `tool` on a `server` in the project's
+  `.mcp.json`, with `arguments`, `env`, `plainEnv` and `timeout`, and no session
+  ([steps](./scheduler/steps.md#mcp-calls)).
 - **Calls:** `workflow.call` starts a workflow as a separate run, in this
   project or a registered one, waits as it says, and hands back its outputs
   ([calling workflows](./scheduler/calls.md)). It takes `workflow`, and

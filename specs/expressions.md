@@ -28,13 +28,14 @@ path       := name ( "." name | "[" ( number | string ) "]" )*
 
 ## Scope
 
-| Root      | Reads                                                               |
-| --------- | ------------------------------------------------------------------- |
-| `inputs`  | the run's inputs                                                    |
-| `nodes`   | `nodes.<id>.output.<field>`: another node's report                  |
-| `output`  | the source node's report (in a `when:`)                             |
-| `run`     | run metadata                                                        |
-| bare name | in a `when:`, a field of `output`: `verdict` means `output.verdict` |
+| Root      | Reads                                                                |
+| --------- | -------------------------------------------------------------------- |
+| `inputs`  | the run's inputs                                                     |
+| `nodes`   | `nodes.<id>.output.<field>`: another node's report                   |
+| `before`  | `before.<field>`: what a node's `before:` gave; only in its `prompt` |
+| `output`  | the source node's report (in a `when:`)                              |
+| `run`     | run metadata                                                         |
+| bare name | in a `when:`, a field of `output`: `verdict` means `output.verdict`  |
 
 - A missing path reads as `undefined`; only own properties are read, so
   `x.constructor` or `__proto__` is `undefined`.

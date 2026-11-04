@@ -13,31 +13,35 @@ import {
   type ProjectPlace,
 } from "@krapht/ork-core";
 import { integrationFor } from "@krapht/ork-integrations";
-import { isToolNode, type Workflow } from "@krapht/ork-schema";
+import { isToolNode, programsRunBy, type Workflow } from "@krapht/ork-schema";
 
-import { tokenize } from "./tool-command.ts";
+import { mcpProblems } from "./mcp-servers.ts";
+import { commandLineOf, tokenize } from "./tool-command.ts";
 import { type Environ, readEnv } from "./tool-env.ts";
 
 export type NeededProgram = { node: string; type: string; program: string };
 
 /**
  * The programs the workflow's tool nodes run: an integration's own (`gh`,
- * `aws`), or a `tool.shell` command's first word when it is not a template.
+ * `aws`), or the first word of a `tool.shell` command or interpreter, when it
+ * is not a template.
  */
 export const neededPrograms = (workflow: Workflow): NeededProgram[] =>
-  Object.entries(workflow.nodes).flatMap(([id, node]) => {
-    if (!isToolNode(node)) return [];
-    const integration = integrationFor(node.type);
-    if (integration === undefined) return [];
-    if (integration.program !== null) {
-      return [{ node: id, type: node.type, program: integration.program }];
-    }
-    const tokens = tokenize(node.command);
-    const first = tokens.ok ? tokens.args[0] : undefined;
-    return first === undefined || first.includes("{{")
-      ? []
-      : [{ node: id, type: node.type, program: first }];
-  });
+  Object.entries(workflow.nodes).flatMap(([id, node]) =>
+    programsRunBy(node, workflow.defaults).flatMap(({ program }) => {
+      const type = isToolNode(node) ? node.type : "tool.shell";
+      const integration = integrationFor(type);
+      if (integration === undefined) return [];
+      if (integration.program !== null) {
+        return [{ node: id, type, program: integration.program }];
+      }
+      const tokens = tokenize(commandLineOf(program) ?? "");
+      const first = tokens.ok ? tokens.args[0] : undefined;
+      return first === undefined || first.includes("{{")
+        ? []
+        : [{ node: id, type, program: first }];
+    }),
+  );
 
 /** The `{{env.NAME}}` a workflow reads that are not set, with their nodes. */
 export const missingEnv = (
@@ -47,8 +51,11 @@ export const missingEnv = (
 ): { variable: string; nodes: string[] }[] => {
   const missing = new Map<string, Set<string>>();
   for (const [id, node] of Object.entries(workflow.nodes)) {
-    if (!isToolNode(node) || finished.has(id)) continue;
-    for (const value of Object.values(node.env ?? {})) {
+    if (finished.has(id)) continue;
+    const values = programsRunBy(node, workflow.defaults).flatMap(
+      ({ program }) => Object.values(program.env ?? {}),
+    );
+    for (const value of values) {
       for (const name of envReadsOf(value)) {
         if (readEnv(environ, name) !== undefined) continue;
         missing.set(name, (missing.get(name) ?? new Set()).add(id));
@@ -151,6 +158,13 @@ export const envProblems = (
     finishedOf(history ?? new Map()),
   );
   if (unset.length > 0) return missingEnvMessage(unset);
+  const servers = mcpProblems(
+    workflow,
+    own.root,
+    process.env,
+    finishedOf(history ?? new Map()),
+  );
+  if (servers.length > 0) return servers;
   for (const line of calledEnvWarning(workflow, own, registered, history)) {
     warn(line);
   }

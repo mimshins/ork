@@ -10,6 +10,7 @@ export * from "./gate.ts";
 export * from "./programs.ts";
 export * from "./spawn.ts";
 export * from "./tool-command.ts";
+export * from "./mcp-servers.ts";
 export * from "./tool-env.ts";
 export { clearOutputFiles } from "./tool-output.ts";
 export * from "./tool-scrub.ts";

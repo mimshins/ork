@@ -179,6 +179,64 @@
             }
           },
           "additionalProperties": false
+        },
+        "before": {
+          "description": "A program to run in the node's checkout before its session starts: if it fails, the node fails and no model turn is spent. Its prompt can read {{before.stdout}}, {{before.json.*}}.",
+          "type": "object",
+          "properties": {
+            "command": {
+              "description": "Program and arguments (no shell), or script: instead. Supports templates.",
+              "type": "string"
+            },
+            "script": {
+              "description": "The text of a short program, instead of command. It takes no templates: values arrive through env:, as $NAME, so a value cannot become code.",
+              "type": "string"
+            },
+            "interpreter": {
+              "description": "What runs script: a program and arguments. Default: sh -eu.",
+              "type": "string"
+            },
+            "env": {
+              "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "plainEnv": {
+              "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+              }
+            },
+            "output": {
+              "description": "Structured output from the program.",
+              "type": "object",
+              "properties": {
+                "format": {
+                  "type": "string",
+                  "const": "json",
+                  "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                }
+              },
+              "required": [
+                "format"
+              ],
+              "additionalProperties": false
+            },
+            "timeout": {
+              "description": "How long the program may run, e.g. 5m; then it is killed and the step fails.",
+              "type": "string",
+              "pattern": "^\\d+[smh]$"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -635,6 +693,128 @@
                   "additionalProperties": false
                 }
               },
+              "before": {
+                "description": "A program to run in the node's checkout before its session starts: if it fails, the node fails and no model turn is spent. Its prompt can read {{before.stdout}}, {{before.json.*}}.",
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "description": "Program and arguments (no shell), or script: instead. Supports templates.",
+                    "type": "string"
+                  },
+                  "script": {
+                    "description": "The text of a short program, instead of command. It takes no templates: values arrive through env:, as $NAME, so a value cannot become code.",
+                    "type": "string"
+                  },
+                  "interpreter": {
+                    "description": "What runs script: a program and arguments. Default: sh -eu.",
+                    "type": "string"
+                  },
+                  "env": {
+                    "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "plainEnv": {
+                    "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    }
+                  },
+                  "output": {
+                    "description": "Structured output from the program.",
+                    "type": "object",
+                    "properties": {
+                      "format": {
+                        "type": "string",
+                        "const": "json",
+                        "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                      }
+                    },
+                    "required": [
+                      "format"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "timeout": {
+                    "description": "How long the program may run, e.g. 5m; then it is killed and the step fails.",
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "verify": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "description": "Program and arguments (no shell), or script: instead. Supports templates.",
+                    "type": "string"
+                  },
+                  "script": {
+                    "description": "The text of a short program, instead of command. It takes no templates: values arrive through env:, as $NAME, so a value cannot become code.",
+                    "type": "string"
+                  },
+                  "interpreter": {
+                    "description": "What runs script: a program and arguments. Default: sh -eu.",
+                    "type": "string"
+                  },
+                  "env": {
+                    "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "plainEnv": {
+                    "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    }
+                  },
+                  "output": {
+                    "description": "Structured output from the program.",
+                    "type": "object",
+                    "properties": {
+                      "format": {
+                        "type": "string",
+                        "const": "json",
+                        "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                      }
+                    },
+                    "required": [
+                      "format"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "timeout": {
+                    "description": "How long the program may run, e.g. 5m; then it is killed and the step fails.",
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$"
+                  },
+                  "attempts": {
+                    "description": "How many times a failed check resumes the session to fix it before the node fails. Default: 1.",
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 5
+                  }
+                },
+                "additionalProperties": false,
+                "description": "A program that must pass before the node's report is accepted. It runs in the node's checkout."
+              },
               "maxWorkers": {
                 "description": "Cap on dynamically spawned workers.",
                 "type": "integer",
@@ -835,6 +1015,128 @@
                   ],
                   "additionalProperties": false
                 }
+              },
+              "before": {
+                "description": "A program to run in the node's checkout before its session starts: if it fails, the node fails and no model turn is spent. Its prompt can read {{before.stdout}}, {{before.json.*}}.",
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "description": "Program and arguments (no shell), or script: instead. Supports templates.",
+                    "type": "string"
+                  },
+                  "script": {
+                    "description": "The text of a short program, instead of command. It takes no templates: values arrive through env:, as $NAME, so a value cannot become code.",
+                    "type": "string"
+                  },
+                  "interpreter": {
+                    "description": "What runs script: a program and arguments. Default: sh -eu.",
+                    "type": "string"
+                  },
+                  "env": {
+                    "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "plainEnv": {
+                    "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    }
+                  },
+                  "output": {
+                    "description": "Structured output from the program.",
+                    "type": "object",
+                    "properties": {
+                      "format": {
+                        "type": "string",
+                        "const": "json",
+                        "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                      }
+                    },
+                    "required": [
+                      "format"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "timeout": {
+                    "description": "How long the program may run, e.g. 5m; then it is killed and the step fails.",
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "verify": {
+                "type": "object",
+                "properties": {
+                  "command": {
+                    "description": "Program and arguments (no shell), or script: instead. Supports templates.",
+                    "type": "string"
+                  },
+                  "script": {
+                    "description": "The text of a short program, instead of command. It takes no templates: values arrive through env:, as $NAME, so a value cannot become code.",
+                    "type": "string"
+                  },
+                  "interpreter": {
+                    "description": "What runs script: a program and arguments. Default: sh -eu.",
+                    "type": "string"
+                  },
+                  "env": {
+                    "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "plainEnv": {
+                    "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    }
+                  },
+                  "output": {
+                    "description": "Structured output from the program.",
+                    "type": "object",
+                    "properties": {
+                      "format": {
+                        "type": "string",
+                        "const": "json",
+                        "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                      }
+                    },
+                    "required": [
+                      "format"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "timeout": {
+                    "description": "How long the program may run, e.g. 5m; then it is killed and the step fails.",
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$"
+                  },
+                  "attempts": {
+                    "description": "How many times a failed check resumes the session to fix it before the node fails. Default: 1.",
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 5
+                  }
+                },
+                "additionalProperties": false,
+                "description": "A program that must pass before the node's report is accepted. It runs in the node's checkout."
               }
             },
             "required": [
@@ -1351,8 +1653,16 @@
                 "type": "string"
               },
               "command": {
-                "type": "string",
-                "description": "Program and arguments (no shell). Supports templates."
+                "description": "Program and arguments (no shell), or script: instead. Supports templates.",
+                "type": "string"
+              },
+              "script": {
+                "description": "The text of a short program, instead of command. It takes no templates: values arrive through env:, as $NAME, so a value cannot become code.",
+                "type": "string"
+              },
+              "interpreter": {
+                "description": "What runs script: a program and arguments. Default: sh -eu.",
+                "type": "string"
               },
               "allow": {
                 "description": "Allowed subcommand prefixes, e.g. ['pr view', 'pr merge'].",
@@ -1431,8 +1741,7 @@
               }
             },
             "required": [
-              "type",
-              "command"
+              "type"
             ],
             "additionalProperties": false
           },
@@ -1720,6 +2029,98 @@
             "required": [
               "type",
               "workflow"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "mcp.call"
+              },
+              "parent": {
+                "description": "Owner of this node in the ownership tree.",
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              },
+              "label": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "server": {
+                "type": "string",
+                "description": "The server's name in the project's .mcp.json."
+              },
+              "tool": {
+                "type": "string",
+                "description": "The tool to call on it."
+              },
+              "arguments": {
+                "description": "The tool's arguments. Strings are templates; one that is only {{ … }} keeps its value's type.",
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              },
+              "env": {
+                "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "plainEnv": {
+                "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                }
+              },
+              "timeout": {
+                "description": "How long the call may take, e.g. 5m; then the node fails.",
+                "type": "string",
+                "pattern": "^\\d+[smh]$"
+              },
+              "notify": {
+                "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "to": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]*$",
+                      "description": "The claude.leader or claude.worker to write to."
+                    },
+                    "when": {
+                      "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                      "type": "string"
+                    },
+                    "body": {
+                      "description": "The message, a template. Default: Ork's one line on the result.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "to"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "type",
+              "server",
+              "tool"
             ],
             "additionalProperties": false
           }

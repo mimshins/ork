@@ -65,3 +65,13 @@ How a tool node's program works for now, by choice
   session reports its total so far, so a leader that has been re-entered may be
   told nothing is left when some is. The late turn then does not start, and the
   message waits for its next session.
+- **L93 · A `before:` default can't be turned off for one node, or read a node's
+  output.** A node's own `before:` replaces the default, but nothing removes it.
+  It belongs to no node, so it reads only inputs and the run.
+- **L94 · A step's kept output can be overwritten.** A long `before:` and
+  `verify:` on one node, or two tries of a check, share the run file for their
+  cut output, so a path a session was given may later hold the newer output.
+- **L95 · `mcp.call` takes the servers it can reach without sign-in.** OAuth and
+  SSE servers are refused, so they still take a session. It reads `.mcp.json` at
+  the project's root only, not a user's own servers. A server starts for each
+  call, and a stdio server's stderr isn't kept.

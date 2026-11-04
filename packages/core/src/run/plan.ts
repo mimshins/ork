@@ -54,6 +54,8 @@ export type PlanOptions = {
    * node run on its own) `{{nodes.*}}` renders empty, with a warning.
    */
   outputs?: Readonly<Record<string, NodeOutput>>;
+  /** What the node's `before:` step gave, for its prompt to read. */
+  before?: NodeOutput;
   /** What is left of the run's budget; caps the node's own `budgetUsd`. */
   budgetLeftUsd?: number;
   /** The worktree the node works in, set up by the run (ADR-020). */
@@ -163,7 +165,12 @@ export const planNodeSession = (
   }
 
   const warnings: string[] = [];
-  const brief = renderBrief(node.prompt, options.inputs, options.outputs);
+  const brief = renderBrief(
+    node.prompt,
+    options.inputs,
+    options.outputs,
+    options.before,
+  );
   if (!brief.ok) return { ok: false, error: `prompt: ${brief.error}` };
   warnings.push(...brief.warnings);
   const rendered = brief.text;

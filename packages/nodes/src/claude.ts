@@ -15,11 +15,19 @@ import {
   type NodeResult,
   planNodeSession,
   type SessionOutcome,
-  type SessionUsage,
   type SessionPorts,
   type SessionSpec,
 } from "@krapht/ork-core";
-import type { Driver } from "@krapht/ork-schema";
+import { beforeOf, type Driver } from "@krapht/ork-schema";
+
+import { afterLateTurn, lateBudget } from "./session-turns.ts";
+import {
+  checkedResult,
+  checkFailedMessage,
+  checkReport,
+  isAcceptance,
+  runStep,
+} from "./verify.ts";
 
 export type ClaudeExecutorOptions = {
   runtimeFor: (driver: Driver) => Promise<ClaudeRuntime>;
@@ -27,7 +35,27 @@ export type ClaudeExecutorOptions = {
   driver?: Driver;
   /** Runs `worktree` nodes in the project checkout instead of worktrees. */
   inPlace: boolean;
+  /** What runs a node's `verify:`: the tool nodes' executor. */
+  steps?: NodeExecutor;
 };
+
+/** A setup that failed: no session started, so nothing was spent on it. */
+const beforeFailed = (ran: NodeResult): NodeResult => {
+  const error = `its before step failed: ${ran.error ?? "no reason given"}`;
+  return {
+    ok: false,
+    error,
+    output: { status: "fail", summary: error, before: ran.output },
+  };
+};
+
+/** With nothing to run a step, a report cannot be accepted. */
+const noSteps: NodeExecutor = () =>
+  Promise.resolve({
+    ok: false,
+    output: {},
+    error: "this run has no way to run a check",
+  });
 
 const MAX_INPUT = 8192;
 
@@ -64,68 +92,6 @@ const sentBack = (round: number, input: unknown): string =>
 /** What a session is told when messages came in as it finished. */
 export const lateMessage = (count: number): string =>
   `[ork] ${String(count)} message${count === 1 ? "" : "s"} came in while you finished. Call read_inbox, act on ${count === 1 ? "it" : "them"} if needed, and end with a new structured report.`;
-
-/**
- * The later outcome, with the tokens of both processes. Its cost is already the
- * session's total: Claude Code carries it across a resume (ADR-046).
- */
-export const withUsageOf = (
-  first: SessionOutcome,
-  later: SessionOutcome,
-): SessionOutcome => {
-  const sum = (key: keyof SessionUsage) => first.usage[key] + later.usage[key];
-  const usage: SessionUsage = {
-    costUsd: Math.max(first.usage.costUsd, later.usage.costUsd),
-    inputTokens: sum("inputTokens"),
-    outputTokens: sum("outputTokens"),
-    cacheReadTokens: sum("cacheReadTokens"),
-    cacheWriteTokens: sum("cacheWriteTokens"),
-    turns: sum("turns"),
-    durationMs: sum("durationMs"),
-  };
-  // A turn that never started has no session; the first one's goes on.
-  const sessionId = later.sessionId === "" ? first.sessionId : later.sessionId;
-  return { ...later, sessionId, usage };
-};
-
-/**
- * The session after a late turn. A turn that gave no report, as when it ran out
- * of budget or was stopped, does not undo the report the node already gave.
- */
-export const afterLateTurn = (
-  first: SessionOutcome,
-  later: SessionOutcome,
-): SessionOutcome => {
-  const merged = withUsageOf(first, later);
-  return later.report === null
-    ? {
-        ...merged,
-        report: first.report,
-        subtype: first.subtype,
-        text: first.text,
-        errors: first.errors,
-      }
-    : merged;
-};
-
-/**
- * What a late turn may spend: what is left of the node's cap, which is per
- * process (ADR-046), and of the run's, which has not counted this session yet.
- * `null` when nothing is left, and the message waits for its next session. A
- * resumed session's cost is its total, so this may leave it less than it has.
- */
-export const lateBudget = (
-  spec: Pick<SessionSpec, "budgetUsd">,
-  spent: number,
-  runLeft: number | undefined,
-): { budgetUsd?: number } | null => {
-  const limits = [spec.budgetUsd, runLeft].flatMap(limit =>
-    limit === undefined ? [] : [limit - spent],
-  );
-  if (limits.length === 0) return {};
-  const budgetUsd = Math.min(...limits);
-  return budgetUsd > 0 ? { budgetUsd } : null;
-};
 
 /** A finished session as a node result: its report is the node's output. */
 export const resultOf = (outcome: SessionOutcome | null): NodeResult => {
@@ -209,6 +175,12 @@ export const claudeExecutor =
     }
     if (context.mailbox !== undefined) planOptions.mailbox = context.mailbox;
     if (context.claims !== undefined) planOptions.claims = context.claims;
+    const before = beforeOf(context.node, context.workflow.defaults);
+    if (before !== undefined) {
+      const ran = await runStep(options.steps ?? noSteps, context, before);
+      if (!ran.ok) return beforeFailed(ran);
+      planOptions.before = ran.output;
+    }
     const plan = planNodeSession(context.workflow, context.id, planOptions);
     if (!plan.ok) {
       return {
@@ -248,23 +220,42 @@ export const claudeExecutor =
       return outcome;
     };
     const first = await run(spec);
+    const budgetAfter = (outcome: SessionOutcome) =>
+      lateBudget(spec, outcome.usage.costUsd, context.budgetLeftNow?.());
+    const resumeWith = (
+      outcome: SessionOutcome,
+      prompt: string,
+      budget: { budgetUsd?: number },
+    ) => run({ ...spec, ...budget, resume: outcome.sessionId, prompt });
     // A message that came while it wrote its report: one more turn to read it.
     const late = context.mailbox?.pending() ?? 0;
-    const stopped = context.signal.aborted;
-    if (first === null || first.report === null || late === 0 || stopped) {
-      return resultOf(first);
+    const budget = first === null ? null : budgetAfter(first);
+    const again =
+      first === null ||
+      first.report === null ||
+      late === 0 ||
+      context.signal.aborted ||
+      budget === null
+        ? null
+        : await resumeWith(first, lateMessage(late), budget);
+    const outcome =
+      first === null || again === null ? first : afterLateTurn(first, again);
+    const { node } = context;
+    const verify = "verify" in node ? node.verify : undefined;
+    if (outcome === null || verify === undefined || !isAcceptance(outcome)) {
+      return resultOf(outcome);
     }
-    const budget = lateBudget(
-      spec,
-      first.usage.costUsd,
-      context.budgetLeftNow?.(),
-    );
-    if (budget === null) return resultOf(first);
-    const again = await run({
-      ...spec,
-      ...budget,
-      resume: first.sessionId,
-      prompt: lateMessage(late),
+    const checked = await checkReport({
+      verify,
+      first: outcome,
+      signal: context.signal,
+      check: () => runStep(options.steps ?? noSteps, context, verify),
+      resume: (current, check) => {
+        const left = budgetAfter(current);
+        return left === null
+          ? Promise.resolve(null)
+          : resumeWith(current, checkFailedMessage(check, context), left);
+      },
     });
-    return resultOf(again === null ? first : afterLateTurn(first, again));
+    return checkedResult(resultOf(checked.outcome), checked);
   };

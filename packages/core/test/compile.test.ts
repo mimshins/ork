@@ -42,6 +42,265 @@ const plain = (reads: string, name: string) =>
     plainEnv: [${name}]
 `);
 
+const scriptCodes = (fields: string): string[] => {
+  const parsed = parseWorkflow(
+    `schemaVersion: 1\nname: t\nnodes:\n  a: { type: tool.shell, ${fields} }\n`,
+  );
+  return parsed.ok
+    ? compileWorkflow(parsed.workflow).diagnostics.map(d => d.code)
+    : parsed.diagnostics.map(d => d.code);
+};
+
+describe("a tool node's script", () => {
+  it.each([
+    ["a command", "command: prog"],
+    ["a script", "script: 'echo hi'"],
+    ["a script and its interpreter", "script: 'x', interpreter: python3"],
+  ])("takes %s", (_name, fields) => {
+    expect(scriptCodes(fields)).toEqual([]);
+  });
+
+  it.each([
+    ["neither", "cwd: x", "tool.command"],
+    ["both", "command: prog, script: 'echo hi'", "tool.command"],
+    ["an empty script", "script: '  '", "tool.command"],
+    ["a template", "script: 'echo {{inputs.x}}'", "script.template"],
+    [
+      "an interpreter alone",
+      "command: x, interpreter: sh",
+      "script.interpreter",
+    ],
+    [
+      "a template in the interpreter",
+      "script: x, interpreter: '{{inputs.x}}'",
+      "script.interpreter",
+    ],
+  ])("refuses %s", (_name, fields, code) => {
+    expect(scriptCodes(fields)).toContain(code);
+  });
+
+  it("is only for a program-less tool", () => {
+    const parsed = parseWorkflow(
+      "schemaVersion: 1\nname: t\nnodes:\n  a: { type: tool.gh, command: x, script: y }\n",
+    );
+    expect(parsed.ok).toBe(false);
+  });
+});
+
+const parsedOrThrow = (source: string) => {
+  const parsed = parseWorkflow(source);
+  if (!parsed.ok) throw new Error(JSON.stringify(parsed.diagnostics));
+  return parsed.workflow;
+};
+
+const verifyCodesOf = (source: string): string[] => {
+  const parsed = parseWorkflow(source);
+  return parsed.ok
+    ? compileWorkflow(parsed.workflow).diagnostics.map(d => d.code)
+    : ["did not parse"];
+};
+
+const verifyDiagnostics = (verify: string, more = "") => {
+  const parsed = parseWorkflow(
+    `schemaVersion: 1\nname: t\nnodes:\n  w: { type: claude.worker, verify: ${verify}${more} }\n`,
+  );
+  return parsed.ok ? compileWorkflow(parsed.workflow).diagnostics : [];
+};
+
+describe("verify:", () => {
+  it("takes a command or a script, with env: reading the user's variables", () => {
+    expect(verifyDiagnostics("{ command: pnpm test }")).toEqual([]);
+    expect(
+      verifyDiagnostics(
+        "{ script: 'pnpm test', env: { T: '{{env.PROBE}}' }, attempts: 2 }",
+      ),
+    ).toEqual([]);
+  });
+
+  it.each([
+    ["no program", "{ attempts: 2 }", "tool.command", ["nodes", "w", "verify"]],
+    [
+      "a template in a script",
+      "{ script: 'x {{inputs.a}}' }",
+      "script.template",
+      ["nodes", "w", "verify", "script"],
+    ],
+    [
+      "a reserved name",
+      "{ command: x, env: { ORK_RUN: y } }",
+      "env.reserved",
+      ["nodes", "w", "verify", "env", "ORK_RUN"],
+    ],
+    [
+      "the user's variable in its command",
+      "{ command: 'x {{env.HOME}}' }",
+      "template.env",
+      ["nodes", "w", "verify", "command"],
+    ],
+    [
+      "an unknown input",
+      "{ command: 'x {{inputs.nope}}' }",
+      "ref.input",
+      ["nodes", "w", "verify", "command"],
+    ],
+  ])("refuses %s, and says where", (_name, verify, code, where) => {
+    expect(verifyDiagnostics(verify).find(d => d.code === code)?.path).toEqual(
+      where,
+    );
+  });
+
+  it("keeps the name output.verify for itself", () => {
+    expect(
+      verifyDiagnostics(
+        "{ command: x }",
+        ", output: { schema: { verify: { type: string } } }",
+      ).map(d => d.code),
+    ).toContain("verify.field");
+  });
+
+  it("is read as an output field of the node", () => {
+    expect(
+      verifyCodesOf(
+        `schemaVersion: 1\nname: t\nnodes:\n  w: { type: claude.worker, verify: { command: x } }\n  n: { type: tool.shell, command: "y {{nodes.w.output.verify.exitCode}}" }\nedges:\n  - w -> n\n`,
+      ),
+    ).toEqual([]);
+  });
+
+  it("is only for leaders and workers", () => {
+    const parsed = parseWorkflow(
+      "schemaVersion: 1\nname: t\nnodes:\n  l: { type: claude.leader }\n  s: { type: claude.subagent, parent: l, verify: { command: x } }\n",
+    );
+    expect(parsed.ok).toBe(false);
+  });
+});
+
+const beforeOf = (fields: string, defaults = "") =>
+  compileWorkflow(
+    parsedOrThrow(
+      `schemaVersion: 1\nname: t\n${defaults}nodes:\n  w: { type: claude.worker, ${fields} }\n`,
+    ),
+  ).diagnostics;
+
+describe("before:", () => {
+  it("lets its node's prompt read it", () => {
+    expect(
+      beforeOf(
+        "prompt: '{{before.stdout}} {{before.exitCode}}', before: { command: x }",
+      ),
+    ).toEqual([]);
+    expect(
+      beforeOf(
+        "prompt: '{{before.json.id}}', before: { command: x, output: { format: json } }",
+      ),
+    ).toEqual([]);
+  });
+
+  it("takes one from the defaults", () => {
+    expect(
+      beforeOf(
+        "prompt: '{{before.stdout}}'",
+        "defaults:\n  before: { command: x }\n",
+      ),
+    ).toEqual([]);
+  });
+
+  it.each([
+    ["with no before:", "prompt: '{{before.stdout}}'", "template.scope"],
+    [
+      "outside a prompt",
+      "instructions: '{{before.stdout}}', before: { command: x }",
+      "template.scope",
+    ],
+    [
+      "a field it does not report",
+      "prompt: '{{before.nope}}', before: { command: x }",
+      "ref.before",
+    ],
+    [
+      "JSON it does not return",
+      "prompt: '{{before.json.x}}', before: { command: x }",
+      "ref.before",
+    ],
+  ])("refuses a read %s", (_name, fields, code) => {
+    expect(beforeOf(fields).map(d => d.code)).toContain(code);
+  });
+
+  it("checks a default where it is, and refuses a node's output there", () => {
+    const [found] = beforeOf(
+      "prompt: hi",
+      "defaults:\n  before: { command: 'x {{nodes.w.output.summary}}' }\n",
+    );
+    expect(found?.code).toBe("template.scope");
+    expect(found?.path).toEqual(["defaults", "before", "command"]);
+    expect(
+      beforeOf(
+        "prompt: hi",
+        "defaults:\n  before: { script: 'x {{inputs.a}}' }\n",
+      ).find(d => d.code === "script.template")?.path,
+    ).toEqual(["defaults", "before", "script"]);
+  });
+
+  it("warns of an output field called before", () => {
+    expect(
+      beforeOf(
+        "prompt: hi, output: { schema: { before: { type: string } } }",
+      ).map(d => [d.severity, d.code]),
+    ).toContainEqual(["warning", "before.field"]);
+  });
+});
+
+const mcpDiagnostics = (fields: string, more = "") =>
+  compileWorkflow(
+    parsedOrThrow(
+      `schemaVersion: 1\nname: t\ninputs:\n  a: { type: string }\nnodes:\n  m: { type: mcp.call, server: s, tool: t, ${fields} }\n${more}`,
+    ),
+  ).diagnostics;
+
+describe("mcp.call", () => {
+  it("takes templates in its arguments, and env: reads the user's variables", () => {
+    expect(
+      mcpDiagnostics(
+        "arguments: { id: '{{inputs.a}}', deep: { x: ['{{run.id}}'] } }, env: { T: '{{env.PROBE}}' }",
+      ),
+    ).toEqual([]);
+  });
+
+  it("says where a bad reference in its arguments is", () => {
+    const found = mcpDiagnostics(
+      "arguments: { deep: { x: '{{inputs.nope}}' } }",
+    ).find(d => d.code === "ref.input");
+    expect(found?.path).toEqual(["nodes", "m", "arguments", "deep", "x"]);
+  });
+
+  it("keeps the user's variables out of what it records", () => {
+    expect(
+      mcpDiagnostics("arguments: { id: '{{env.PROBE}}' }").map(d => d.code),
+    ).toContain("template.env");
+  });
+
+  it("reports text and json", () => {
+    expect(
+      mcpDiagnostics(
+        "arguments: {}",
+        "  n: { type: tool.shell, command: 'x {{nodes.m.output.json.a}} {{nodes.m.output.text}}' }\nedges:\n  - m -> n\n",
+      ),
+    ).toEqual([]);
+    expect(
+      mcpDiagnostics(
+        "arguments: {}",
+        "  n: { type: tool.shell, command: 'x {{nodes.m.output.nope}}' }\nedges:\n  - m -> n\n",
+      ).map(d => d.code),
+    ).toContain("ref.field");
+  });
+
+  it("needs a server and a tool", () => {
+    const parsed = parseWorkflow(
+      "schemaVersion: 1\nname: t\nnodes:\n  m: { type: mcp.call, server: s }\n",
+    );
+    expect(parsed.ok).toBe(false);
+  });
+});
+
 describe("compileWorkflow", () => {
   it("compiles the software-factory example with no diagnostics", () => {
     const example = readFileSync(

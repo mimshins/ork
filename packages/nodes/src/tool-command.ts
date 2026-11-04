@@ -3,6 +3,22 @@
  *   directly, so nothing in a rendered value can run as a command.
  */
 
+import type { ToolNode } from "@krapht/ork-schema";
+
+/** What runs a `script:` with no `interpreter:`: it stops at the first failure. */
+export const DEFAULT_INTERPRETER = "sh -eu";
+
+/**
+ * The command line a tool node declares: its `command`, or what runs its
+ * script.
+ */
+export const commandLineOf = (
+  node: Pick<ToolNode, "command" | "script" | "interpreter">,
+): string | undefined =>
+  node.script === undefined
+    ? node.command
+    : (node.interpreter ?? DEFAULT_INTERPRETER);
+
 /**
  * Splits a command into arguments the way a shell would, without running one:
  * whitespace separates, `'…'` is literal, `"…"` and `\` escape, and `{{ … }}`

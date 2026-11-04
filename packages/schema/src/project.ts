@@ -19,6 +19,7 @@ import {
   TimeoutSchema,
   TurnsSchema,
 } from "./settings.ts";
+import { stepFields } from "./steps.ts";
 
 export const PROJECT_SCHEMA_VERSION = 1;
 
@@ -34,6 +35,7 @@ export const DefaultsSchema = z.strictObject({
     "For tool and Claude nodes that set none; a gate's own timeout is separate.",
   ),
   practices: PracticesSchema.optional(),
+  before: stepFields.before,
 });
 export type Defaults = z.infer<typeof DefaultsSchema>;
 

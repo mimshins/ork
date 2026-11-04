@@ -7,7 +7,13 @@
  *   run clears when it starts and ends.
  */
 
-import { lstatSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import {
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 
 export type JsonResult =
@@ -62,6 +68,37 @@ export const prepareOutputFile = (
   return file;
 };
 
+/** A way to write a field of a node's output to the run's files, when it's long. */
+export const keepFile =
+  (
+    context: { runDir: string; id: string; round: number },
+    field: string,
+    text: string,
+  ) =>
+  (): string => {
+    mkdirSync(context.runDir, { recursive: true });
+    const file = path.join(
+      context.runDir,
+      `${context.id}.${String(context.round)}.${field}.txt`,
+    );
+    writeFileSync(file, text);
+    return file;
+  };
+
+/** Writes a node's `script:` where the run can start it, for this go only. */
+export const writeScriptFile = (
+  runDir: string,
+  id: string,
+  round: number,
+  text: string,
+): string => {
+  const folder = path.join(runDir, OUTPUT_FOLDER);
+  mkdirSync(folder, { mode: 0o700, recursive: true });
+  const file = path.join(folder, `${id}.${String(round)}.script`);
+  writeFileSync(file, text, { mode: 0o600 });
+  return file;
+};
+
 /** Two keys can mask to the same text; neither value is lost. */
 const scrubbedKeys = (
   value: object,
@@ -84,7 +121,10 @@ const scrubbedKeys = (
 };
 
 /** A parsed value with its keys and strings scrubbed; numbers came scrubbed. */
-const scrubbed = (value: unknown, scrub: (text: string) => string): unknown => {
+export const scrubbed = (
+  value: unknown,
+  scrub: (text: string) => string,
+): unknown => {
   if (typeof value === "string") return scrub(value);
   if (Array.isArray(value)) return value.map(item => scrubbed(item, scrub));
   if (typeof value === "object" && value !== null) {

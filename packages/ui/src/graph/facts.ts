@@ -24,6 +24,7 @@ const WORDS: Readonly<Record<string, string>> = {
   "control.router": "router",
   "human.gate": "gate",
   "workflow.call": "workflow call",
+  "mcp.call": "MCP call",
 };
 
 export const typeWord = (type: string): string =>

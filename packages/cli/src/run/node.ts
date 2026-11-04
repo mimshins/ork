@@ -115,6 +115,13 @@ export const runNode = async (
       `${style(["yellow", "bold"], "warning")} ${options.nodeId}'s notify: does nothing here: a run of one node has no message bus.`,
     );
   }
+  for (const step of ["before", "verify"]) {
+    if (planned !== undefined && step in planned) {
+      options.err(
+        `${style(["yellow", "bold"], "warning")} ${options.nodeId}'s ${step}: does not run in a run of one node.`,
+      );
+    }
+  }
   for (const warning of plan.warnings) {
     options.err(`${style(["yellow", "bold"], "warning")} ${warning}`);
   }

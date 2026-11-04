@@ -11,6 +11,7 @@ import {
 } from "@krapht/ork-schema";
 
 import { error, warning } from "./diagnostics.ts";
+import { checkScripts } from "./script.ts";
 import type { CompiledEdge } from "./types.ts";
 
 const optionId = (option: DecisionOption) =>
@@ -21,7 +22,7 @@ export const checkNodes = (
   workflow: Workflow,
   edges: readonly CompiledEdge[],
 ): Diagnostic[] => {
-  const diagnostics: Diagnostic[] = [];
+  const diagnostics: Diagnostic[] = checkScripts(workflow);
   for (const [id, node] of Object.entries(workflow.nodes)) {
     const path = ["nodes", id];
     const incoming = edges.filter(e => e.to === id);

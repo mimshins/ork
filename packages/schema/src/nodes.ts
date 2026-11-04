@@ -6,6 +6,7 @@
 import { TOOL_PREFIX } from "@krapht/ork-integrations";
 import { z } from "zod";
 
+import { McpCallNodeSchema } from "./mcp-node.ts";
 import {
   AgentNameSchema,
   BudgetSchema,
@@ -22,6 +23,7 @@ import {
   ToolRulesSchema,
   TurnsSchema,
 } from "./settings.ts";
+import { type Step, stepFields } from "./steps.ts";
 import { TOOL_NODE_SCHEMAS } from "./tool-nodes.ts";
 
 const base = nodeBaseFields;
@@ -104,6 +106,7 @@ export const ClaudeLeaderNodeSchema = z.strictObject({
   type: z.literal("claude.leader"),
   ...claudeFields,
   ...notifyFields,
+  ...stepFields,
   maxWorkers: z
     .number()
     .int()
@@ -116,6 +119,7 @@ export const ClaudeWorkerNodeSchema = z.strictObject({
   type: z.literal("claude.worker"),
   ...claudeFields,
   ...notifyFields,
+  ...stepFields,
 });
 
 export const ClaudeSubagentNodeSchema = z.strictObject({
@@ -225,6 +229,7 @@ export const NodeSchema = z.discriminatedUnion("type", [
   RouterNodeSchema,
   HumanGateNodeSchema,
   WorkflowCallNodeSchema,
+  McpCallNodeSchema,
 ]);
 export type Node = z.infer<typeof NodeSchema>;
 export type NodeType = Node["type"];
@@ -233,6 +238,44 @@ export type ToolNode = Extract<Node, { type: `tool.${string}` }>;
 
 export const isToolNode = (node: Node): node is ToolNode =>
   node.type.startsWith(TOOL_PREFIX);
+
+/** Each program a node itself declares, and where under the node it is. */
+export const programsOf = (
+  node: Node,
+): { at: readonly string[]; program: Step }[] => {
+  // An MCP call runs no program of its own, but its server reads its `env:`.
+  if (isToolNode(node) || node.type === "mcp.call") {
+    return [{ at: [], program: node }];
+  }
+  return [
+    ...("before" in node && node.before !== undefined
+      ? [{ at: ["before"], program: node.before }]
+      : []),
+    ...("verify" in node && node.verify !== undefined
+      ? [{ at: ["verify"], program: node.verify }]
+      : []),
+  ];
+};
+
+/** The `before:` a leader or worker runs: its own, or the workflow's default. */
+export const beforeOf = (
+  node: Node,
+  defaults: { before?: Step | undefined } | undefined,
+): Step | undefined =>
+  node.type === "claude.leader" || node.type === "claude.worker"
+    ? (node.before ?? defaults?.before)
+    : undefined;
+
+/** Each program a node runs, with what it takes from the workflow's defaults. */
+export const programsRunBy = (
+  node: Node,
+  defaults: { before?: Step | undefined } | undefined,
+): { at: readonly string[]; program: Step }[] => {
+  const inherited = beforeOf(node, defaults);
+  return inherited !== undefined && !("before" in node && node.before)
+    ? [{ at: ["before"], program: inherited }, ...programsOf(node)]
+    : programsOf(node);
+};
 
 export const CLAUDE_NODE_TYPES: readonly NodeType[] = [
   "claude.leader",

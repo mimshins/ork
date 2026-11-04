@@ -1,5 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
+  "compilerOptions": { "skipLibCheck": true },
   "include": [
     "packages/*/src",
     "packages/*/test",

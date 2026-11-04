@@ -152,6 +152,64 @@
             }
           },
           "additionalProperties": false
+        },
+        "before": {
+          "description": "A program to run in the node's checkout before its session starts: if it fails, the node fails and no model turn is spent. Its prompt can read {{before.stdout}}, {{before.json.*}}.",
+          "type": "object",
+          "properties": {
+            "command": {
+              "description": "Program and arguments (no shell), or script: instead. Supports templates.",
+              "type": "string"
+            },
+            "script": {
+              "description": "The text of a short program, instead of command. It takes no templates: values arrive through env:, as $NAME, so a value cannot become code.",
+              "type": "string"
+            },
+            "interpreter": {
+              "description": "What runs script: a program and arguments. Default: sh -eu.",
+              "type": "string"
+            },
+            "env": {
+              "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "plainEnv": {
+              "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+              }
+            },
+            "output": {
+              "description": "Structured output from the program.",
+              "type": "object",
+              "properties": {
+                "format": {
+                  "type": "string",
+                  "const": "json",
+                  "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                }
+              },
+              "required": [
+                "format"
+              ],
+              "additionalProperties": false
+            },
+            "timeout": {
+              "description": "How long the program may run, e.g. 5m; then it is killed and the step fails.",
+              "type": "string",
+              "pattern": "^\\d+[smh]$"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

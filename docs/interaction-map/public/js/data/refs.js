@@ -455,6 +455,12 @@ export const NODE_TYPES = {
   claude: d("packages/nodes/src/claude.ts", "Code: Claude nodes"),
   tools: d("packages/nodes/src/tools.ts", "Code: tool nodes"),
   gate: d("packages/nodes/src/gate.ts", "Code: human gates"),
+  verify: d("packages/nodes/src/verify.ts", "Code: checks on a report"),
+  mcp: d("packages/nodes/src/mcp-call.ts", "Code: MCP calls"),
+  steps: d(
+    "specs/scheduler/steps.md",
+    "Spec: steps around a session, and MCP calls",
+  ),
   tests: d("packages/nodes/test/nodes.test.ts", "Tests: the node types"),
 };
 

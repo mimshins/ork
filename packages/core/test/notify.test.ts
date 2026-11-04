@@ -25,6 +25,7 @@ import {
   declaredNodes,
   scriptContactsOf,
 } from "../src/run/contacts.ts";
+import { harnessInstructions } from "../src/run/harness.ts";
 import { mailOf } from "../src/run/mail.ts";
 import { createRules, defaultRuleBody } from "../src/run/rules.ts";
 
@@ -605,7 +606,23 @@ edges:
   });
 });
 
+const harnessOf = (verify: { command?: string; script?: string }): string =>
+  harnessInstructions({ schemaVersion: 1, name: "t", nodes: {} }, "w", {
+    type: "claude.worker",
+    verify,
+  });
+
 describe("what a session is told", () => {
+  it("names the check on its report, so it can run it first", () => {
+    expect(harnessOf({ command: "pnpm test" })).toContain(
+      "only if `pnpm test` passes",
+    );
+    expect(harnessOf({ script: "pnpm test" })).toContain(
+      "only if a check the workflow defines passes",
+    );
+    expect(harnessOf({ command: "x {{inputs.a}}" })).not.toContain("{{");
+  });
+
   it("names read_inbox when it has no one to write to, and says what via is", () => {
     const bus = createBus({ graph: TEAM, onEvent: () => {} });
     const lines = mailboxInstructions(bus.mailbox("apart"), false).join("\n");

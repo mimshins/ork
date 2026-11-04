@@ -14,7 +14,11 @@ import {
   renderTemplate,
   runScope,
 } from "@krapht/ork-core";
-import { isToolNode, type ToolNode, type Workflow } from "@krapht/ork-schema";
+import {
+  programsRunBy,
+  type ToolNode,
+  type Workflow,
+} from "@krapht/ork-schema";
 
 import { scrubberOf } from "./tool-scrub.ts";
 import type { ToolRunner } from "./tools.ts";
@@ -99,13 +103,14 @@ export const readEnv = (environ: Environ, name: string): string | undefined =>
 
 /** The variables a workflow's nodes read that no `plainEnv` excuses. */
 const secretNamesOf = (workflow: Workflow): string[] =>
-  Object.values(workflow.nodes).flatMap(node => {
-    if (!isToolNode(node)) return [];
-    const plain = new Set(node.plainEnv);
-    return Object.values(node.env ?? {})
-      .flatMap(value => envReadsOf(value))
-      .filter(name => !plain.has(name));
-  });
+  Object.values(workflow.nodes)
+    .flatMap(node => programsRunBy(node, workflow.defaults))
+    .flatMap(({ program }) => {
+      const plain = new Set(program.plainEnv);
+      return Object.values(program.env ?? {})
+        .flatMap(value => envReadsOf(value))
+        .filter(name => !plain.has(name));
+    });
 
 /** What the run that called this one told it to mask. */
 const inheritedNames = (environ: Environ): string[] =>
@@ -172,7 +177,7 @@ export const secretsOf = (
 
 /** A node's `env:`, rendered. */
 export const renderEnv = (
-  node: ToolNode,
+  node: Pick<ToolNode, "env">,
   context: Pick<ExecuteContext, "inputs" | "outputs" | "runId">,
   environ: Environ,
 ):

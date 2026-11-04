@@ -57,6 +57,7 @@ missing required input stops the run before anything starts.
 | `control.router`, `control.split` | Pass their input on; a router takes its first matching edge, or all                                          |
 | `human.gate`                      | Asks you a question with options, and a recommended one                                                      |
 | `workflow.call`                   | Starts a workflow as a separate run ([calling a workflow](./working-across-projects.md#calling-a-workflow))  |
+| `mcp.call`                        | Calls one tool on an MCP server, with no session ([MCP calls](./scripts/mcp.md))                             |
 
 ### Claude nodes
 
@@ -109,11 +110,10 @@ deploy:
   region: eu-west-1 # becomes --region
 ```
 
-There is no shell: the command is split like a shell would, and each `{{ }}`
-value stays one argument, so a value can never inject another command. With
-`allow`, the command must start with one of its prefixes or the node fails
-before it runs. A tool node outputs `exitCode`, `stdout` and `stderr`, and can
-return [JSON](./scripts.md); long output is cut, the rest kept in `.ork/runs/`.
+There is no shell: each `{{ }}` value stays one argument, so a value can't
+inject a command. With `allow`, the command must start with one of its prefixes
+or the node fails first. A tool node outputs `exitCode`, `stdout` and `stderr`,
+and can return [JSON](./scripts.md); long output goes to `.ork/runs/`.
 
 ### Gates
 
@@ -193,8 +193,8 @@ ork validate path/to/file.ork.yaml
 
 It reports schema errors, an unknown `parent`, cycles without `maxRounds`,
 references to nodes that do not exist or do not run first, and skill or context
-paths that resolve to nothing, each with its line. The full list of checks is
-the [graph compiler spec](../../specs/graph-compiler.md).
+paths that resolve to nothing, each with its line
+([all the checks](../../specs/graph-compiler.md)).
 
 A full example with every piece above:
 [examples/software-factory.ork.yaml](../../examples/software-factory.ork.yaml).

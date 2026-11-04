@@ -17,12 +17,11 @@ import {
   TimeoutSchema,
   toolProgramFields,
 } from "./settings.ts";
+import { runFields } from "./steps.ts";
 
 const toolFields = {
   ...nodeBaseFields,
-  command: z
-    .string()
-    .describe("Arguments for the CLI (no shell). Supports templates."),
+  ...runFields,
   allow: z
     .array(z.string())
     .optional()
@@ -47,19 +46,18 @@ type ToolNodeSchema = ReturnType<typeof toolBase>;
  * the options are validated at run time and read by the integration's adapter.
  */
 const toolNodeSchema = (integration: Integration): ToolNodeSchema => {
-  const command =
+  const base = toolBase(`${TOOL_PREFIX}${integration.id}`);
+  const schema: z.ZodObject =
     integration.program === null
-      ? {
+      ? base.extend(integration.options)
+      : base.omit({ script: true, interpreter: true }).extend({
           command: z
             .string()
-            .describe("Program and arguments (no shell). Supports templates."),
-        }
-      : {};
-  const schema: z.ZodObject = toolBase(
-    `${TOOL_PREFIX}${integration.id}`,
-  ).extend({ ...command, ...integration.options });
-  // Sound: the extension only adds the integration's fields to the shared
-  // shape, so every value it accepts has the shared shape's type.
+            .describe("Arguments for the CLI (no shell). Supports templates."),
+          ...integration.options,
+        });
+  // Sound: this only adds the integration's fields to the shared shape, and
+  // narrows optional ones, so every value it accepts has the shared shape's type.
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see above
   return schema as ToolNodeSchema;
 };

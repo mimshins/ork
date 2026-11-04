@@ -4,27 +4,27 @@
  */
 
 import {
+  beforeOf,
   type Diagnostic,
   type DiagnosticPath,
   isToolNode,
+  programsOf,
   type Workflow,
 } from "@krapht/ork-schema";
 
-import { parseTemplate, SCOPE_ROOTS } from "../expr/evaluate.ts";
+import { parseTemplate } from "../expr/evaluate.ts";
 import { collectPaths, type Expr } from "../expr/parse.ts";
-import { error, warning } from "./diagnostics.ts";
+import { error } from "./diagnostics.ts";
 import { checkToolEnv } from "./env.ts";
-import { ancestorsOf } from "./flow.ts";
 import type { CompiledRule } from "./notify.ts";
+import { checkAbsolute, type Context, envOutsideEnv } from "./ref-paths.ts";
 import {
-  checkAbsolute,
-  checkField,
-  type Context,
-  describePath,
-  envOutsideEnv,
-} from "./ref-paths.ts";
-import { ownersOf } from "./tree.ts";
-import { type CompiledEdge, outputFieldsOf } from "./types.ts";
+  beforeFields,
+  checkDefaultsBefore,
+  checkOwn,
+  checkTemplate,
+} from "./templates.ts";
+import type { CompiledEdge } from "./types.ts";
 
 const TEMPLATE_FIELDS = [
   "prompt",
@@ -36,99 +36,6 @@ const TEMPLATE_FIELDS = [
   "project",
   "ref",
 ] as const;
-
-/** A bare name or `output.*`, read from the node's own output. */
-const checkOwn = (
-  from: string,
-  path: DiagnosticPath,
-  segments: readonly (string | number)[],
-  context: Context,
-  extra: readonly string[],
-): Diagnostic[] => {
-  const [root] = segments;
-  const source = context.workflow.nodes[from];
-  if (source === undefined) return [];
-  // A node may report a field called `env`; otherwise it means the user's.
-  if (root === "env" && outputFieldsOf(source)?.includes("env") === false) {
-    return [envOutsideEnv(segments, path)];
-  }
-  const relative = root === "output" ? segments.slice(1) : segments;
-  const roots: readonly (string | number)[] = [...SCOPE_ROOTS, ...extra];
-  return roots.includes(String(relative[0]))
-    ? []
-    : checkField(source, relative[0], segments, path);
-};
-
-const checkTemplate = (
-  id: string,
-  at: string | readonly (string | number)[],
-  text: string,
-  context: Context,
-  reads: { env?: boolean; own?: readonly string[] } = {},
-): Diagnostic[] => {
-  const path: DiagnosticPath = ["nodes", id, ...[at].flat()];
-  const parsed = parseTemplate(text);
-  if (!parsed.ok) {
-    return [
-      error(
-        "template.syntax",
-        `${parsed.message} at column ${parsed.offset + 1}`,
-        path,
-      ),
-    ];
-  }
-  // A node can read its own ancestors and those of every owner above it.
-  const upstream = ancestorsOf(id, context.edges);
-  for (const owner of ownersOf(context.workflow, id)) {
-    upstream.add(owner);
-    for (const ancestor of ancestorsOf(owner, context.edges)) {
-      upstream.add(ancestor);
-    }
-  }
-  return parsed.parts.flatMap(part => {
-    if (typeof part === "string") return [];
-    return collectPaths(part.expr).flatMap(segments => {
-      const [root, name] = segments;
-      if (root === "run") return [];
-      if (root === "env" && reads.env === true) {
-        return name === undefined
-          ? [error("template.env", "name a variable: env.NAME", path)]
-          : [];
-      }
-      if (root === "env" && reads.own === undefined) {
-        return [envOutsideEnv(segments, path)];
-      }
-      if (root !== "inputs" && root !== "nodes") {
-        if (reads.own !== undefined) {
-          return checkOwn(id, path, segments, context, reads.own);
-        }
-        return [
-          error(
-            "template.scope",
-            `"${describePath(segments)}": templates read inputs.*, nodes.<id>.output.* or run.*, and a tool node's env: also reads env.*`,
-            path,
-          ),
-        ];
-      }
-      const found = checkAbsolute(segments, context, path);
-      if (
-        found.length === 0 &&
-        root === "nodes" &&
-        name !== id &&
-        !upstream.has(String(name))
-      ) {
-        found.push(
-          warning(
-            "template.not-upstream",
-            `"${describePath(segments)}": "${String(name)}" does not run before "${id}", so its output may be missing`,
-            path,
-          ),
-        );
-      }
-      return found;
-    });
-  });
-};
 
 const checkCondition = (
   from: string,
@@ -145,6 +52,18 @@ const checkCondition = (
     }
     return checkOwn(from, path, segments, context, extra);
   });
+};
+
+/** Every string under a value, and where it is: an MCP call's templates. */
+const stringsIn = (
+  value: unknown,
+  at: readonly (string | number)[],
+): { at: readonly (string | number)[]; text: string }[] => {
+  if (typeof value === "string") return [{ at, text: value }];
+  if (typeof value !== "object" || value === null) return [];
+  return Object.entries(value).flatMap(([key, item]) =>
+    stringsIn(item, [...at, key]),
+  );
 };
 
 /** Checks every template and `when:` against the workflow. */
@@ -179,8 +98,13 @@ export const checkReferences = (
   const fromTemplates = Object.entries(workflow.nodes).flatMap(([id, node]) =>
     TEMPLATE_FIELDS.flatMap(field => {
       const value: unknown = Reflect.get(node, field);
+      const before = beforeOf(node, workflow.defaults);
+      const reads =
+        field === "prompt" && before !== undefined
+          ? { before: beforeFields(before) }
+          : {};
       return typeof value === "string"
-        ? checkTemplate(id, field, value, context)
+        ? checkTemplate(id, field, value, context, reads)
         : [];
     }),
   );
@@ -192,11 +116,27 @@ export const checkReferences = (
       : [],
   );
   const fromEnv = Object.entries(workflow.nodes).flatMap(([id, node]) =>
-    isToolNode(node)
-      ? Object.entries(node.env ?? {}).flatMap(([name, value]) =>
-          checkTemplate(id, `env.${name}`, value, context, { env: true }),
+    programsOf(node).flatMap(({ at, program }) =>
+      Object.entries(program.env ?? {}).flatMap(([name, value]) =>
+        checkTemplate(id, [...at, "env", name], value, context, { env: true }),
+      ),
+    ),
+  );
+  const fromMcp = Object.entries(workflow.nodes).flatMap(([id, node]) =>
+    node.type === "mcp.call"
+      ? stringsIn(node.arguments ?? {}, ["arguments"]).flatMap(({ at, text }) =>
+          checkTemplate(id, at, text, context),
         )
       : [],
+  );
+  const fromSteps = Object.entries(workflow.nodes).flatMap(([id, node]) =>
+    isToolNode(node)
+      ? []
+      : programsOf(node).flatMap(({ at, program }) =>
+          program.command === undefined
+            ? []
+            : checkTemplate(id, [...at, "command"], program.command, context),
+        ),
   );
   const fromOutputs = Object.entries(workflow.outputs ?? {}).flatMap(
     ([name, value]) => {
@@ -226,10 +166,14 @@ export const checkReferences = (
           context,
         ),
   );
+  const fromDefaults = checkDefaultsBefore(workflow, context);
   return [
+    ...fromDefaults,
     ...fromTemplates,
     ...fromCalls,
     ...fromEnv,
+    ...fromSteps,
+    ...fromMcp,
     ...checkToolEnv(workflow),
     ...fromOutputs,
     ...fromConditions,
