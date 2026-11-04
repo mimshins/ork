@@ -635,7 +635,7 @@ export const MILESTONES = [
         status: "done",
         detail:
           "`ork usage` and a Usage panel add up what sessions spent over time, from a ledger the events fill, with hints from thresholds; no model is involved. `ork prune` forgets old runs and keeps the ledger. Corrects a resumed session's cost, which was counted again.",
-        commits: ["aea062e"],
+        commits: ["aea062e", "1c28826"],
         date: "2026-11-04",
         docs: [
           "decisions/ADR-046-usage-ledger-and-prune.md",
@@ -649,7 +649,7 @@ export const MILESTONES = [
         status: "active",
         detail:
           "Tool nodes know their run and node, take an `env:`, and return JSON a `when:` can read (built). Next, they can send a message, and a workflow can declare a message when a node finishes, so deterministic work takes no model turn. The messaging part needs an RFC.",
-        commits: ["c4cdefe"],
+        commits: ["c4cdefe", "ef82721", "eeceaf2"],
         docs: [
           "decisions/ADR-047-script-identity-env-json.md",
           "specs/messaging.md",
@@ -777,6 +777,7 @@ export const OFF_ROADMAP = [
   "713f18b",
   "9ac26f2",
   "a70514f",
+  "1212977",
 ];
 
 /** The day the roadmap was last brought up to date. */
