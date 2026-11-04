@@ -3,11 +3,7 @@
  *   nodes) as Zod schemas.
  */
 
-import {
-  INTEGRATIONS,
-  type Integration,
-  TOOL_PREFIX,
-} from "@krapht/ork-integrations";
+import { TOOL_PREFIX } from "@krapht/ork-integrations";
 import { z } from "zod";
 
 import {
@@ -19,20 +15,16 @@ import {
   IsolationSchema,
   ModelSchema,
   NodeIdSchema,
+  nodeBaseFields,
+  notifyFields,
   PracticesSchema,
   TimeoutSchema,
-  toolProgramFields,
   ToolRulesSchema,
   TurnsSchema,
 } from "./settings.ts";
+import { TOOL_NODE_SCHEMAS } from "./tool-nodes.ts";
 
-const base = {
-  parent: NodeIdSchema.optional().describe(
-    "Owner of this node in the ownership tree.",
-  ),
-  label: z.string().optional(),
-  description: z.string().optional(),
-};
+const base = nodeBaseFields;
 
 /**
  * What an agent brings to the node it fills, and what a plain Claude node sets
@@ -111,6 +103,7 @@ const claudeFields = {
 export const ClaudeLeaderNodeSchema = z.strictObject({
   type: z.literal("claude.leader"),
   ...claudeFields,
+  ...notifyFields,
   maxWorkers: z
     .number()
     .int()
@@ -122,6 +115,7 @@ export const ClaudeLeaderNodeSchema = z.strictObject({
 export const ClaudeWorkerNodeSchema = z.strictObject({
   type: z.literal("claude.worker"),
   ...claudeFields,
+  ...notifyFields,
 });
 
 export const ClaudeSubagentNodeSchema = z.strictObject({
@@ -134,56 +128,6 @@ export const ClaudeSubagentNodeSchema = z.strictObject({
     .string()
     .describe("When the parent should use this sub-agent."),
 });
-
-const toolFields = {
-  ...base,
-  command: z
-    .string()
-    .describe("Arguments for the CLI (no shell). Supports templates."),
-  allow: z
-    .array(z.string())
-    .optional()
-    .describe("Allowed subcommand prefixes, e.g. ['pr view', 'pr merge']."),
-  cwd: z.string().optional(),
-  timeout: TimeoutSchema.optional().describe(
-    "How long the command may run, e.g. 5m; then it is killed and the node fails.",
-  ),
-  ...toolProgramFields,
-};
-
-/** What every tool node has: `tool.<id>`, its command, allow list and cwd. */
-const toolBase = (type: `tool.${string}`) =>
-  z.strictObject({ type: z.literal(type), ...toolFields });
-
-type ToolNodeSchema = ReturnType<typeof toolBase>;
-
-/**
- * One integration's node schema: the shared tool fields plus the integration's
- * own options (AWS's `profile`, `region`). The static type is the shared part;
- * the options are validated at run time and read by the integration's adapter.
- */
-const toolNodeSchema = (integration: Integration): ToolNodeSchema => {
-  const command =
-    integration.program === null
-      ? {
-          command: z
-            .string()
-            .describe("Program and arguments (no shell). Supports templates."),
-        }
-      : {};
-  const schema: z.ZodObject = toolBase(
-    `${TOOL_PREFIX}${integration.id}`,
-  ).extend({ ...command, ...integration.options });
-  // Sound: the extension only adds the integration's fields to the shared
-  // shape, so every value it accepts has the shared shape's type.
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see above
-  return schema as ToolNodeSchema;
-};
-
-/** A node schema per registered integration (ADR-022), in registry order. */
-export const TOOL_NODE_SCHEMAS: readonly ToolNodeSchema[] = INTEGRATIONS.map(
-  i => toolNodeSchema(i),
-);
 
 export const SplitNodeSchema = z.strictObject({
   type: z.literal("control.split"),
@@ -219,6 +163,7 @@ export type DecisionOption = z.infer<typeof DecisionOptionSchema>;
 export const HumanGateNodeSchema = z.strictObject({
   type: z.literal("human.gate"),
   ...base,
+  ...notifyFields,
   question: z.string(),
   options: z.array(DecisionOptionSchema).min(2),
   recommended: z.string().optional(),
@@ -232,6 +177,7 @@ export const HumanGateNodeSchema = z.strictObject({
 export const WorkflowCallNodeSchema = z.strictObject({
   type: z.literal("workflow.call"),
   ...base,
+  ...notifyFields,
   workflow: z
     .string()
     .describe("The workflow's name, as in its project's workflows folder."),

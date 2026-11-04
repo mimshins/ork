@@ -17,12 +17,22 @@ const hasPeers = ({ ports }: ToolContext): boolean =>
   (ports.mailbox?.peers().length ?? 0) > 0 ||
   ports.mailbox?.linkable() === true;
 
+/** A program or a rule may write to a node with no one to write to itself. */
+const hasInbox = (context: ToolContext): boolean =>
+  hasPeers(context) || context.ports.mailbox?.hears() === true;
+
 const MAX_WAIT_SECONDS = 3600;
 const DEFAULT_WAIT_SECONDS = 300;
 
-const inboxText = (unread: readonly { from: string; body: string }[]): string =>
+const inboxText = (
+  unread: readonly { from: string; body: string; via?: string }[],
+): string =>
   JSON.stringify({
-    messages: unread.map(m => ({ from: m.from, body: m.body })),
+    messages: unread.map(m => ({
+      from: m.from,
+      ...(m.via === undefined ? {} : { via: m.via }),
+      body: m.body,
+    })),
   });
 
 export const sendMessageTool = defineTool({
@@ -58,7 +68,7 @@ export const readInboxTool = defineTool({
   description:
     "Read your unread messages from other nodes, oldest first. Ork tells you when one arrives.",
   shape: {},
-  available: hasPeers,
+  available: hasInbox,
   run: ({ ports }) => {
     const unread = ports.mailbox?.read() ?? [];
     return Promise.resolve(
@@ -80,7 +90,7 @@ export const waitForMessagesTool = defineTool({
       .optional()
       .describe(`How long to wait. Default: ${String(DEFAULT_WAIT_SECONDS)}.`),
   },
-  available: hasPeers,
+  available: hasInbox,
   run: async ({ ports }, args) => {
     const seconds = args.timeoutSeconds ?? DEFAULT_WAIT_SECONDS;
     await ports.mailbox?.wait(seconds * 1000);

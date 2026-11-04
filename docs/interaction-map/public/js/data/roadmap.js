@@ -648,11 +648,12 @@ export const MILESTONES = [
         title: "Scripts that reach the run",
         status: "active",
         detail:
-          "Tool nodes know their run and node, take an `env:`, and return JSON a `when:` can read (built). Next, they can send a message, and a workflow can declare a message when a node finishes, so deterministic work takes no model turn. The messaging part needs an RFC.",
+          "Tool nodes know their run and node, take an `env:`, and return JSON a `when:` can read. They can send a message with `ork send`, and a workflow can declare one with `notify:`, so deterministic work takes no model turn (built, RFC-005). Next, and not yet written up as an RFC: `verify:`, hooks, an MCP call node and inline scripts.",
         commits: ["c4cdefe", "ef82721", "eeceaf2"],
         docs: [
           "decisions/ADR-047-script-identity-env-json.md",
-          "specs/messaging.md",
+          "decisions/ADR-048-scripts-and-rules-on-the-bus.md",
+          "specs/messaging/scripts.md",
           "specs/workflow-format.md",
         ],
       },

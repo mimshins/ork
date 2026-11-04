@@ -63,6 +63,10 @@ export type RunOptions = {
   calls?: CallPort;
   /** How long a timed-out node or run may take to end (default 10 s). */
   timeoutGraceMs?: number;
+  /** Masks what the run was told to in a message a `notify:` writes. */
+  scrub?: (text: string) => string;
+  /** Called last before `run.finished`, to take what is still on its way. */
+  beforeFinish?: () => Promise<void>;
 };
 
 /**
@@ -98,8 +102,13 @@ export type RunHandle = {
   stopNode: (node: string) => boolean;
   /** A message from the user to a node's session (`ork chat`). */
   tell: (node: string, body: string) => "now" | "queued" | null;
-  /** A message from a linked node of another run (`<run>/<node>`). */
-  receive: (node: string, from: string, body: string) => void;
+  /** A message from a linked node (`<run>/<node>`), or a script in this run. */
+  receive: (
+    node: string,
+    from: string,
+    body: string,
+    via?: "script" | "rule",
+  ) => void;
   /** Ork's own line to a node's live session: a link was made or ended. */
   notice: (node: string, text: string) => void;
 };

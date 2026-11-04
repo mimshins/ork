@@ -122,6 +122,10 @@ first (then the prompt is withdrawn and the transcript shows
     The exchange is added to the run's record after `run.finished`, so
     `ork logs` shows it. A session whose folder is gone (a merged worktree is
     removed) cannot be resumed, and says so.
+- **`ork send <to> -m <body>`** or **`--stdin`**, from a program in a tool node,
+  writes to a session on its run's bus, up to 64 KiB. It prints nothing when it
+  works, and exits 1 with the reason on stderr when refused
+  ([scripts and rules](../messaging/scripts.md#ork-send)).
 - **`ork stop [<run>]`** asks a live run to stop (this project's newest without
   `<run>`), wakes it, and waits up to 15 s for it to end; a run that is not
   running is refused with its status. **`--node <n>`** stops one running node

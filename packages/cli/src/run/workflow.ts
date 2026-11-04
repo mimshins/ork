@@ -39,6 +39,7 @@ import {
   missingProgramMessage,
   missingPrograms,
   onPath,
+  runScrubber,
   type ToolRunner,
 } from "@krapht/ork-nodes";
 import type { Driver } from "@krapht/ork-schema";
@@ -47,7 +48,11 @@ import { formatReport, loadWorkflow } from "../commands/validate.ts";
 import { callPorts } from "./calls.ts";
 import { prepareCheckout } from "./checkout.ts";
 import { formatRunEvent } from "./format.ts";
-import { liveHandlers } from "./live-handlers.ts";
+import {
+  liveControl,
+  liveHandlers,
+  takeLastCommands,
+} from "./live-handlers.ts";
 import { feedbackOrigin } from "./origin.ts";
 
 export type RunWorkflowOptions = {
@@ -186,13 +191,7 @@ export const runWorkflowFile = async (
       onEvent(event);
     },
     ...liveHandlers(started.promise),
-    onControl: (command, node) => {
-      const { handle } = live;
-      if (handle === undefined) return false;
-      if (command === "pause") return handle.pause(node);
-      if (command === "continue") return handle.proceed(node);
-      return node !== undefined && handle.stopNode(node);
-    },
+    onControl: liveControl(live),
     ...(options.human === undefined ? {} : { local: options.human }),
     ...(options.home === undefined ? {} : { home: options.home }),
     ...(options.intervalMs === undefined
@@ -232,10 +231,11 @@ export const runWorkflowFile = async (
               }),
         });
 
+  const maskedNames = maskedNamesOfRun(workflow, place, projects);
   const executorOptions: Parameters<typeof builtinExecutors>[0] = {
     runtimeFor: options.runtime,
     inPlace: options.inPlace,
-    maskedNames: maskedNamesOfRun(workflow, place, projects),
+    maskedNames,
   };
   if (options.driver !== undefined) executorOptions.driver = options.driver;
   if (options.tools !== undefined) executorOptions.tools = options.tools;
@@ -286,6 +286,8 @@ export const runWorkflowFile = async (
     projectRoot: root ?? place.root,
     orkDir: place.dir,
     ...(workspace === undefined ? {} : { workspace }),
+    scrub: runScrubber(maskedNames, process.env),
+    beforeFinish: takeLastCommands(control, started.promise),
   });
   live.handle = handle;
   started.resolve(handle);

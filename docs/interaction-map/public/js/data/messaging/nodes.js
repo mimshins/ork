@@ -142,7 +142,47 @@ export const NODES = [
     docs: [LINKS.command, LINKS.cliTests, LINKS.guide],
   },
 
+  {
+    id: "orkSend",
+    title: "ork send",
+    sub: "from a tool node's program",
+    zone: "surfaces",
+    x: 320,
+    y: 120,
+    status: "built",
+    pkg: "cli",
+    src: "packages/cli/src/commands/send.ts",
+    summary:
+      "A program tells a session a fact with no model turn. It prints nothing when it works, as what it prints would be its node's output.",
+    facts: [
+      "It runs inside a tool node, and reads `ORK_RUN` and `ORK_NODE`, which are attribution, not proof.",
+      "It exits 1 with the reason on stderr for a run that is not running, a recipient that is not a contact, 100 messages sent, or a message over 64 KiB.",
+      "It masks its message before the store, with the names in `ORK_MASKED`.",
+    ],
+    docs: [BUS.scriptsSpec, BUS.sendCommand, BUS.send, BUS.sendTests],
+  },
+
   // ── Engine ───────────────────────────────────────────────────────────────
+  {
+    id: "notifyRules",
+    title: "notify: rules",
+    sub: "a message a workflow declares",
+    zone: "core",
+    x: 880,
+    y: 120,
+    status: "built",
+    pkg: "core",
+    src: "packages/core/src/run/rules.ts",
+    summary:
+      "A node's rules send a message when it finishes, after `node.finished` and before its edges are routed, with no model turn and no session started.",
+    facts: [
+      "Once per fresh result: a result a resumed run hands back does not fire again.",
+      "A node a stopping run cuts off fires nothing; `ork stop --node` does.",
+      "`when:` and `body:` also read `ok` and `error`. With no body, Ork writes one line on the result.",
+      "A body is masked before the inbox, and cut at 64 KiB.",
+    ],
+    docs: [BUS.scriptsSpec, BUS.rules, BUS.ruleTests],
+  },
   {
     id: "addr",
     title: "Address check",
@@ -152,16 +192,25 @@ export const NODES = [
     y: 120,
     status: "built",
     pkg: "core",
-    src: "packages/core/src/run/bus.ts",
+    src: "packages/core/src/run/contacts.ts",
     summary:
       "Decides whether a message may be sent at all. Owner and child may always talk; any other pair needs a `messages:` channel in the workflow.",
     facts: [
+      "One pure function decides for the bus and for `ork send`.",
+      "A tool node may write to its owner and its channels, one way: a session cannot write back to a program.",
       "In software-factory, `security` and `code` share a channel; `ux` can reach only `builder`.",
       "A refused message returns the reason and whom the sender can reach.",
       "A spawned worker has its template's owner and channels, both ways.",
       "A name with a slash is a node of another run, which needs a link; without a slash it means this run.",
     ],
-    docs: [DESIGN.messaging, BUS.bus, BUS.tests, SCHEMA.example, LINKS.spec],
+    docs: [
+      DESIGN.messaging,
+      BUS.contacts,
+      BUS.bus,
+      BUS.tests,
+      SCHEMA.example,
+      LINKS.spec,
+    ],
   },
   {
     id: "bus",
@@ -180,6 +229,7 @@ export const NODES = [
       "`read_inbox` returns the messages a session has not read yet, oldest first.",
       "A loop out of rounds asks the leader that owns its nodes while that leader's session is live; the leader replies with `answer`, and if its session ends first, you are asked.",
       "Your own messages (`ork chat`) are pushed in full, or kept for the node's next session.",
+      "A message from `ork send` or a `notify:` rule is labelled `via` in `read_inbox`, `ork logs` and the panels, and holds no more authority than an agent's.",
       "It reaches other runs through links: each run has its own bus, and each run's events hold its side of the conversation.",
     ],
     see: [
@@ -375,7 +425,7 @@ export const NODES = [
       "How a session reaches the rest of the run: ordinary tool calls that Ork answers.",
     facts: [
       "Built: `ask_user(question, options, recommended, context)`, a decision answered on the terminal or with `ork decide`.",
-      "Built: `send_message(to, body)`, `read_inbox()` and `wait_for_messages(timeoutSeconds?)` for every leader and worker, since a link can come later (with `links: off`, only those with someone to reach), and `answer(question, choice)` for leaders.",
+      "Built: `send_message(to, body)`, `read_inbox()` and `wait_for_messages(timeoutSeconds?)` for every leader and worker, since a link can come later (with `links: off`, only those with someone to reach, or that a program or a rule can write to), and `answer(question, choice)` for leaders.",
       "Built: `claim(resource)` and `release(resource)` for nodes that may write while another does; an overlapping claim is refused with who holds it, and the claimant hears when it is released. The report is structured output, not a tool.",
       "Built, for leaders: `delegate([{ child, brief }])` and `spawn_worker([{ template, brief }])`, blocking until every child has reported.",
       "Built: `feedback(kind, target, …)` reports what got in the way, capped at 3 per session.",

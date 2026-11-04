@@ -268,6 +268,25 @@ export const CONTROL = {
 
 export const BUS = {
   bus: d("packages/core/src/run/bus.ts", "Code: the message bus"),
+  contacts: d(
+    "packages/core/src/run/contacts.ts",
+    "Code: who may write to whom, for the bus and `ork send`",
+  ),
+  rules: d(
+    "packages/core/src/run/rules.ts",
+    "Code: firing a node's `notify:` rules",
+  ),
+  send: d("packages/core/src/remote/send.ts", "Code: `ork send`'s checks"),
+  sendCommand: d("packages/cli/src/commands/send.ts", "Code: `ork send`"),
+  sendTests: d("packages/cli/test/send.test.ts", "Tests: the real `ork send`"),
+  ruleTests: d(
+    "packages/core/test/notify.test.ts",
+    "Tests: contacts, rules and a message's `via`",
+  ),
+  scriptsSpec: d(
+    "specs/messaging/scripts.md",
+    "Spec: scripts and rules on the bus",
+  ),
   escalation: d(
     "packages/core/src/run/escalation.ts",
     "Code: loops out of rounds, asking a live owner first",

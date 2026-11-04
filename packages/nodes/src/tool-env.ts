@@ -16,6 +16,7 @@ import {
 } from "@krapht/ork-core";
 import { isToolNode, type ToolNode, type Workflow } from "@krapht/ork-schema";
 
+import { scrubberOf } from "./tool-scrub.ts";
 import type { ToolRunner } from "./tools.ts";
 
 export type Environ = Readonly<Record<string, string | undefined>>;
@@ -131,6 +132,33 @@ export const maskedNamesOfRun = (
   ),
 ];
 
+/**
+ * A program learns the names too, never their values: `ork send` masks with
+ * them before it writes to the store, and a run the program starts passes them
+ * on.
+ */
+export const namesToMask = (
+  workflow: Workflow,
+  environ: Environ,
+  also: readonly string[] = [],
+): string[] => [
+  ...new Set([...secretNamesOf(workflow), ...also, ...inheritedNames(environ)]),
+];
+
+const valuesOf = (names: readonly string[], environ: Environ): string[] =>
+  names.flatMap(name => {
+    const value = readEnv(environ, name);
+    return value === undefined ? [] : [value];
+  });
+
+/** What a process in a program masks: what its run told it to. */
+export const inheritedScrubber = (environ: Environ) =>
+  scrubberOf(valuesOf(inheritedNames(environ), environ));
+
+/** What a run masks in a message of its own: the same names' values. */
+export const runScrubber = (names: readonly string[], environ: Environ) =>
+  scrubberOf(valuesOf(names, environ));
+
 /** What a run tells a run it calls: names, never values. */
 export const maskedEnv = (names: readonly string[]): Record<string, string> =>
   names.length === 0 ? {} : { [MASKED_ENV]: names.join(",") };
@@ -140,17 +168,7 @@ export const secretsOf = (
   workflow: Workflow,
   environ: Environ,
   also: readonly string[] = [],
-): string[] =>
-  [
-    ...new Set([
-      ...secretNamesOf(workflow),
-      ...also,
-      ...inheritedNames(environ),
-    ]),
-  ].flatMap(name => {
-    const value = readEnv(environ, name);
-    return value === undefined ? [] : [value];
-  });
+): string[] => valuesOf(namesToMask(workflow, environ, also), environ);
 
 /** A node's `env:`, rendered. */
 export const renderEnv = (

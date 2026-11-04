@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: checked-build
+description: A session builds while programs check its work and tell it what they found, with no model turn to carry the news. It needs ./scripts/check.sh in your project and CI_TOKEN set.
+defaults:
+  model: sonnet
+  budgetUsd: 1
+nodes:
+  builder:
+    type: claude.worker
+    prompt: Make the change you were asked for. A check runs beside you and writes to you when it finds something; read it and act on it.
+    isolation: readonly
+  branch:
+    type: tool.git
+    command: rev-parse --abbrev-ref HEAD
+    allow:
+      - rev-parse
+  check:
+    type: tool.shell
+    command: ./scripts/check.sh
+    env:
+      BRANCH: "{{nodes.branch.output.stdout}}"
+      CI_TOKEN: "{{env.CI_TOKEN}}"
+    output:
+      format: json
+    notify:
+      - to: builder
+        when: "!ok"
+        body: |
+          The check failed:
+          {{nodes.check.output.stderr}}
+edges:
+  - branch -> check
+messages:
+  - between:
+      - check
+      - builder

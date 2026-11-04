@@ -9,19 +9,16 @@
 
 import type { CompiledGraph } from "../graph/types.ts";
 import type {
-  DecisionChoice,
   InboxMessage,
   Mailbox,
+  MessageVia,
   RelayPort,
 } from "../runtime/types.ts";
 import { createCallRoutes } from "./bus-calls.ts";
 import type { Mail, OwnerQuestion } from "./bus-events.ts";
-import {
-  inboxNotice,
-  notAContact,
-  ownerQuestionText,
-  userMessageText,
-} from "./bus-text.ts";
+import { createOwnerQuestions } from "./bus-questions.ts";
+import { inboxNotice, notAContact, userMessageText } from "./bus-text.ts";
+import { contactsOf, declaredNodes, hearsFromScripts } from "./contacts.ts";
 import type { Slots } from "./slots.ts";
 import type { RunEvent } from "./types.ts";
 
@@ -40,14 +37,10 @@ export type Bus = {
   tell: (node: string, body: string) => "now" | "queued" | null;
   /** Pushes Ork's own line into the node's live session; dropped otherwise. */
   notify: (node: string, text: string) => void;
-  /** A message from a linked node of another run: as any, a notice, then read. */
-  receive: (node: string, from: string, body: string) => void;
-};
-
-type Open = {
-  owner: string;
-  options: DecisionChoice[];
-  resolve: (answer: string | null) => void;
+  /** From a linked node or a script: as any message, a notice, then read. */
+  receive: (node: string, from: string, body: string, via?: MessageVia) => void;
+  /** A `notify:` of `from`'s: a message no session wrote. */
+  rule: (from: string, to: string, body: string) => void;
 };
 
 const SESSION_TYPES = new Set(["claude.leader", "claude.worker"]);
@@ -73,14 +66,18 @@ export const createBus = ({
     [...(mail?.inboxes ?? [])].map(([id, unread]) => [id, [...unread]]),
   );
   const live = new Map<string, (text: string) => void>();
-  const open = new Map<string, Open>();
   /** The user's messages for nodes not running now. */
   const waiting = new Map<string, string[]>(
     [...(mail?.waiting ?? [])].map(([id, bodies]) => [id, [...bodies]]),
   );
   let messages = mail?.last ?? 0;
-  let questions = 0;
   const calls = createCallRoutes(graph, relay, mail?.calls);
+  const nodes = declaredNodes(graph);
+  const questions = createOwnerQuestions({
+    ownerOf: node => declared(node)?.node.parent,
+    deliverTo: node => live.get(node),
+    onEvent,
+  });
   /** Sessions in `wait`: called when a message arrives or the session ends. */
   const waiters = new Map<string, () => void>();
 
@@ -98,11 +95,11 @@ export const createBus = ({
   const peersOf = (id: string): string[] => {
     const own = declared(id);
     if (own === undefined) return [];
-    const children = own.children.filter(hasSession);
-    const channels = graph.channels.flatMap(([a, b]) => {
-      if (a === own.id) return [b];
-      return b === own.id ? [a] : [];
-    });
+    const { owner, children, channels } = contactsOf(
+      own.id,
+      nodes,
+      graph.channels,
+    );
     // Spawned instances share their template's owner and channels.
     const instances = [...templates]
       .filter(
@@ -110,7 +107,6 @@ export const createBus = ({
           children.includes(template) || channels.includes(template),
       )
       .map(([instance]) => instance);
-    const owner = own.node.parent;
     return [
       ...new Set([
         ...(owner === undefined ? [] : [owner]),
@@ -131,11 +127,28 @@ export const createBus = ({
   };
 
   /** Numbers a message and records it; returns its number. */
-  const recordSent = (node: string, to: string, body: string): number => {
+  const recordSent = (
+    node: string,
+    to: string,
+    body: string,
+    via?: MessageVia,
+  ): number => {
     messages += 1;
-    onEvent({ type: "message.sent", node, to, message: messages, body });
+    onEvent({
+      type: "message.sent",
+      node,
+      to,
+      message: messages,
+      body,
+      ...(via === undefined ? {} : { via }),
+    });
     return messages;
   };
+
+  /** A spawned instance has its own id, which no program or rule can name. */
+  const hears = (id: string): boolean =>
+    hearsFromScripts(id, nodes, graph.channels) ||
+    [...graph.rules.values()].flat().some(rule => rule.to === id);
 
   const mailbox = (id: string, template?: string): Mailbox => {
     if (template !== undefined) templates.set(id, template);
@@ -167,6 +180,7 @@ export const createBus = ({
       },
       pending: () => inbox(id).length,
       linkable: () => relay !== undefined,
+      hears: () => hears(id),
       alias: address => {
         calls.alias(id, address, {
           sent: (from, body) => recordSent(from, id, body),
@@ -198,22 +212,7 @@ export const createBus = ({
         }
         return unread;
       },
-      answer: (question, choice) => {
-        const asked = open.get(question);
-        if (asked?.owner !== id) {
-          return { ok: false, error: `no open question ${question} for you` };
-        }
-        if (!asked.options.some(o => o.id === choice)) {
-          return {
-            ok: false,
-            error: `"${choice}" is not an option: ${asked.options.map(o => o.id).join(", ")}`,
-          };
-        }
-        open.delete(question);
-        onEvent({ type: "owner.answered", node: id, question, answer: choice });
-        asked.resolve(choice);
-        return { ok: true };
-      },
+      answer: (question, choice) => questions.answer(id, question, choice),
       connect: deliver => {
         live.set(id, deliver);
         for (const body of waiting.get(id) ?? []) {
@@ -225,41 +224,10 @@ export const createBus = ({
         return () => {
           if (live.get(id) === deliver) live.delete(id);
           waiters.get(id)?.();
-          for (const [question, asked] of open) {
-            if (asked.owner !== id) continue;
-            open.delete(question);
-            onEvent({ type: "owner.unanswered", node: id, question });
-            asked.resolve(null);
-          }
+          questions.ended(id);
         };
       },
     };
-  };
-
-  const askOwner: Bus["askOwner"] = (node, question) => {
-    const owner = declared(node)?.node.parent;
-    const deliver = owner === undefined ? undefined : live.get(owner);
-    if (owner === undefined || deliver === undefined) {
-      return Promise.resolve(null);
-    }
-    questions += 1;
-    const id = `q${String(questions)}`;
-    const { promise, resolve } = Promise.withResolvers<string | null>();
-    open.set(id, { owner, options: question.options, resolve });
-    const asked: RunEvent = {
-      type: "owner.asked",
-      node: owner,
-      about: node,
-      question: id,
-      text: question.question,
-      options: question.options,
-    };
-    if (question.recommended !== undefined) {
-      asked.recommended = question.recommended;
-    }
-    onEvent(asked);
-    deliver(ownerQuestionText(id, node, question));
-    return promise;
   };
 
   const tell: Bus["tell"] = (node, body) => {
@@ -275,24 +243,31 @@ export const createBus = ({
 
   return {
     mailbox,
-    askOwner,
+    askOwner: questions.ask,
     tell,
     notify: (node, text) => {
       live.get(node)?.(text);
       // A session waiting for a message should hear this at once too.
       waiters.get(node)?.();
     },
-    receive: (node, from, body) => {
+    receive: (node, from, body, via) => {
       messages += 1;
-      inbox(node).push({ id: messages, from, body });
+      const how = via === undefined ? {} : { via };
+      inbox(node).push({ id: messages, from, body, ...how });
       onEvent({
         type: "message.received",
         node,
         from,
         message: messages,
         body,
+        ...how,
       });
       land(node);
+    },
+    rule: (from, to, body) => {
+      const id = recordSent(from, to, body, "rule");
+      inbox(to).push({ id, from, body, via: "rule" });
+      land(to);
     },
   };
 };

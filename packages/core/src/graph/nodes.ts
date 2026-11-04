@@ -3,7 +3,12 @@
  *   gates, inputs), and the declared message channels.
  */
 
-import type { DecisionOption, Diagnostic, Workflow } from "@krapht/ork-schema";
+import {
+  type DecisionOption,
+  type Diagnostic,
+  type Workflow,
+  isToolNode,
+} from "@krapht/ork-schema";
 
 import { error, warning } from "./diagnostics.ts";
 import type { CompiledEdge } from "./types.ts";
@@ -121,7 +126,10 @@ export const checkNodes = (
   return diagnostics;
 };
 
-/** Declared message channels between nodes that have sessions. */
+/**
+ * Declared message channels between nodes that have sessions. A tool node may
+ * be on one too, one way: its program writes to the session with `ork send`.
+ */
 export const checkChannels = (
   workflow: Workflow,
 ): { channels: [string, string][]; diagnostics: Diagnostic[] } => {
@@ -141,6 +149,7 @@ export const checkChannels = (
       const talks =
         node?.type === "claude.leader" ||
         node?.type === "claude.worker" ||
+        (node !== undefined && isToolNode(node)) ||
         (node?.type === "workflow.call" && node.node !== undefined);
       return !talks;
     });
@@ -148,7 +157,7 @@ export const checkChannels = (
       diagnostics.push(
         error(
           "message.endpoint",
-          `${bad.map(id => `"${id}"`).join(", ")}: channels connect claude.leader and claude.worker nodes, and a workflow.call that names a node`,
+          `${bad.map(id => `"${id}"`).join(", ")}: channels connect claude.leader and claude.worker nodes, a tool node, and a workflow.call that names a node`,
           path,
         ),
       );
@@ -166,11 +175,30 @@ export const checkChannels = (
       );
       continue;
     }
+    const session = (node: typeof nodeA): boolean =>
+      node?.type === "claude.leader" || node?.type === "claude.worker";
+    if (
+      ((nodeA !== undefined && isToolNode(nodeA)) ||
+        (nodeB !== undefined && isToolNode(nodeB))) &&
+      !session(nodeA) &&
+      !session(nodeB)
+    ) {
+      diagnostics.push(
+        error(
+          "message.endpoint",
+          `"${a}", "${b}": a tool node writes to a session, so the other side must be a claude.leader or claude.worker`,
+          path,
+        ),
+      );
+      continue;
+    }
     if (nodeA?.parent === b || nodeB?.parent === a) {
       diagnostics.push(
         warning(
           "message.implicit",
-          "a parent and its child can always message each other; this channel is not needed",
+          [nodeA, nodeB].some(node => node !== undefined && isToolNode(node))
+            ? "a tool node can always write to its owner; this channel is not needed"
+            : "a parent and its child can always message each other; this channel is not needed",
           path,
         ),
       );

@@ -109,6 +109,12 @@ export const runNode = async (
     pluginDir: path.join(runDir, "plugins", options.nodeId),
   });
   if (!plan.ok) return failed([plan.error]);
+  const planned = workflow.nodes[options.nodeId];
+  if (planned !== undefined && "notify" in planned && planned.notify) {
+    options.err(
+      `${style(["yellow", "bold"], "warning")} ${options.nodeId}'s notify: does nothing here: a run of one node has no message bus.`,
+    );
+  }
   for (const warning of plan.warnings) {
     options.err(`${style(["yellow", "bold"], "warning")} ${warning}`);
   }

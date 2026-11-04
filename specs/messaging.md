@@ -23,6 +23,8 @@ binds. A node's report is its structured output, not a tool
 - ✓ `send_message(to, body)`, ✓ `read_inbox()` and ✓
   `wait_for_messages(timeoutSeconds?)`: leaders and workers in a run, unless the
   [`links` rule](./messaging/links.md) is off and they have no one to write to.
+  A node a [program or a rule](./messaging/scripts.md) may write to keeps the
+  last two.
 - ✓ `answer(question, choice)`: leaders in a run, for the questions Ork asks
   them as owners.
 - ✓ `delegate({ tasks: [{ child, brief }] })`: leaders with declared children
@@ -52,6 +54,7 @@ ports. It reaches other runs through [links](./messaging/links.md).
   [linked](./messaging/links.md) to. A spawned instance has its template's owner
   and channels, both ways. Anything else is refused with the reason and the list
   of whom the node can reach. A node's system prompt names whom it can write to.
+  A [program or a rule](./messaging/scripts.md) can write to a session too.
 - **Notice, then pull:** a message lands in the recipient's inbox
   (`message.sent` in the run's events, masked like every event). A live session
   gets a one-line notice,
@@ -62,7 +65,10 @@ ports. It reaches other runs through [links](./messaging/links.md).
 - **Late messages:** when a session ends with unread messages (one came in as it
   wrote its report), Ork resumes that session once, tells it how many came in,
   and takes its new report; the node's usage counts both
-  ([claude.ts](../packages/nodes/src/claude.ts)).
+  ([claude.ts](../packages/nodes/src/claude.ts)). A turn that gives no report
+  leaves the first one standing, so it cannot fail a node that passed. It may
+  spend only what is left of the node's cap and the run's budget, and with
+  nothing left it does not start: the message waits, unread.
 - **Inboxes outlive the process:** the events are the record, so `ork resume`
   starts the bus with each node's unread messages (`message.sent` minus
   `message.read`), the user's `ork chat` messages still queued for a node that
@@ -175,3 +181,4 @@ worker:
 ## Contents
 
 - [Links between runs](./messaging/links.md)
+- [Scripts and rules on the bus](./messaging/scripts.md)

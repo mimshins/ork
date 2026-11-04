@@ -45,7 +45,7 @@ under the same run id, with a `Replay` built from the run's events:
 | `edge.taken`        | an edge is taken                                                                                                        |
 | `loop.exhausted`    | a loop edge is out of rounds                                                                                            |
 | `worktree`          | a worktree is created, committed to, merged, conflicts, or removed                                                      |
-| `message.sent`      | a node wrote to another on the message bus: number, recipient, body                                                     |
+| `message.sent`      | a node wrote to another on the message bus: number, recipient, body; `via: rule` for a `notify:`                        |
 | `message.read`      | a node read its inbox: the message numbers                                                                              |
 | `owner.asked`       | the run asked a live owner about a loop of a node it owns                                                               |
 | `owner.answered`    | the owner answered with `answer`                                                                                        |
@@ -57,7 +57,7 @@ under the same run id, with a `Replay` built from the run's events:
 | `feedback.recorded` | an agent's report, or a signal Ork derived ([feedback](../feedback.md))                                                 |
 | `run.resumed`       | `ork resume` continues the run: the nodes that keep their results                                                       |
 | `call.started`      | a `workflow.call` started a run: its node, the run, the workflow and the project ([calls](./calls.md))                  |
-| `message.received`  | a linked node of another run wrote to this node ([messaging](../messaging/links.md))                                    |
+| `message.received`  | a linked node of another run, or `via: script` a program, wrote to it ([messaging](../messaging/scripts.md))            |
 | `link.notice`       | Ork told a node that a link was made or ended                                                                           |
 | `run.finished`      | the run ends: `succeeded`, `failed`, `budget_exhausted`, `timed_out`, `interrupted`                                     |
 

@@ -36,10 +36,14 @@ export const formatBusEvent = (
     return [style("dim", `⚑ released ${event.resource}`)];
   }
   if (event.type === "message.sent") {
-    return [style("dim", `✉ to ${event.to}: ${firstLine(event.body)}`)];
+    const how = event.via === undefined ? "" : ` (${event.via})`;
+    return [style("dim", `✉ to ${event.to}${how}: ${firstLine(event.body)}`)];
   }
   if (event.type === "message.received") {
-    return [style("dim", `✉ from ${event.from}: ${firstLine(event.body)}`)];
+    const how = event.via === undefined ? "" : ` (${event.via})`;
+    return [
+      style("dim", `✉ from ${event.from}${how}: ${firstLine(event.body)}`),
+    ];
   }
   if (event.type === "call.started") {
     return [style("dim", `↳ started ${event.workflow} as run ${event.run}`)];

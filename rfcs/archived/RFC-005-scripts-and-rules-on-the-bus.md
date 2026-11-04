@@ -1,9 +1,10 @@
 # RFC-005 — Scripts and rules on the message bus
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-04
 - **Supersedes:** —
 - **Superseded by:** —
+- **ADR:** [ADR-048](../../decisions/ADR-048-scripts-and-rules-on-the-bus.md)
 
 ## Contents
 

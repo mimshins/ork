@@ -106,6 +106,23 @@ describe("the message tools", () => {
     ]);
   });
 
+  it("let a node read when only a program or a rule writes to it", () => {
+    const { bus, tools } = setup();
+    const hearing = { ...bus.mailbox("alone"), hears: () => true };
+    expect(names(tools("alone", { mailbox: hearing }))).toEqual([
+      "ask_user",
+      "read_inbox",
+      "wait_for_messages",
+    ]);
+  });
+
+  it("show how a message came when no session wrote it", async () => {
+    const { bus, tools } = setup();
+    bus.receive("fix", "check", "tests failed", "script");
+    const reply = await call(tools("fix"), "read_inbox", {});
+    expect(reply).toContain(String.raw`\"via\":\"script\"`);
+  });
+
   it("send, read and refuse with the reason", async () => {
     const { tools } = setup();
     const fix = tools("fix");

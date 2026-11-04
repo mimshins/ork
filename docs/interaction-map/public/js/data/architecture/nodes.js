@@ -446,6 +446,7 @@ export const NODES = [
       "Tool types come from the integration registry: each integration is one adapter (program, extra options, arguments, default allow list, observed output, doctor check), so adding GitLab or GCP is one file.",
       "`control.join` waits for all, any or `n` inputs; `control.router` follows the first or every matching edge.",
       "`human.gate` asks you, with `timeout` and `default` answering by themselves; `ork decide` answers from another terminal.",
+      "A program in a tool node writes to its owner or a channel with `ork send`, and a node's `notify:` sends a message when it finishes; both land as `via` messages, with no model turn and no session started.",
       "`workflow.call` holds no session and no worktree: it renders what it asks for and hands it to the run's call port.",
       "A tool runs in its own process group: an abort, from a timeout or a stop, sends it SIGTERM, then SIGKILL after 2 seconds, so what it started ends too.",
       "Output over 64 KiB is cut, and the full text kept in the run's folder.",

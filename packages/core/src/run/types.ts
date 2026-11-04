@@ -84,6 +84,8 @@ export type ExecuteContext = {
   orkDir?: string;
   /** What is left of `limits.budgetUsd`, when the run has one. */
   budgetLeftUsd: number | undefined;
+  /** The same as it stands now, with what other nodes have spent since. */
+  budgetLeftNow?: () => number | undefined;
   human: HumanChannel;
   /** Held while the run or this node is paused; a run always passes one. */
   hold?: HoldPort;

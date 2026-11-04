@@ -31,7 +31,7 @@ import {
 } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
-import { withUsageOf } from "../src/claude.ts";
+import { afterLateTurn, lateBudget, withUsageOf } from "../src/claude.ts";
 import {
   callExecutor,
   claudeExecutor,
@@ -395,6 +395,7 @@ const mailboxWith = (pending: () => number): Mailbox => ({
   pending,
   alias: () => {},
   linkable: () => false,
+  hears: () => false,
   wait: () => Promise.resolve(),
   answer: () => ({ ok: true }),
   connect: () => () => {},
@@ -402,6 +403,9 @@ const mailboxWith = (pending: () => number): Mailbox => ({
 
 /** One unread message after the first session, none after the second. */
 const unreadAfter = (sessions: number): number => Number(sessions === 1);
+
+const capOf = (cap: number | undefined): { budgetUsd?: number } =>
+  cap === undefined ? {} : { budgetUsd: cap };
 
 describe("Claude nodes", () => {
   it("keeps the session when a late turn never started one", () => {
@@ -457,6 +461,86 @@ describe("Claude nodes", () => {
     specs.length = 0;
     await execute(context("fix", node, { mailbox: mailboxWith(() => 0) }));
     expect(specs).toHaveLength(1);
+  });
+
+  describe("a late turn", () => {
+    const PASSED = {
+      status: "pass",
+      summary: "ok",
+      artifacts: {},
+      fields: {},
+    } as const;
+
+    const lateRun = async (overrides: Partial<ExecuteContext>) => {
+      const specs: SessionSpec[] = [];
+      const runtime: ClaudeRuntime = {
+        driver: "sdk",
+        start: spec => {
+          specs.push(spec);
+          const report = specs.length === 1 ? PASSED : null;
+          return {
+            events: (async function* () {
+              await Promise.resolve();
+              yield {
+                type: "session.finished" as const,
+                outcome: outcome(report),
+              };
+            })(),
+            send: () => {},
+            interrupt: () => Promise.resolve(),
+          };
+        },
+      };
+      const execute = claudeExecutor({
+        runtimeFor: () => Promise.resolve(runtime),
+        inPlace: true,
+      });
+      const node: Node = { type: "claude.worker", prompt: "Fix" };
+      const mailbox = mailboxWith(() => unreadAfter(specs.length));
+      const result = await execute(
+        context("fix", node, { mailbox, ...overrides }),
+      );
+      return { specs, result };
+    };
+
+    it("does not fail a node that passed when it gives no report", async () => {
+      const { specs, result } = await lateRun({});
+      expect(specs).toHaveLength(2);
+      expect(result.ok).toBe(true);
+      expect(result.output["summary"]).toBe("ok");
+      expect(result.usage?.inputTokens).toBe(2 * usage.inputTokens);
+    });
+
+    it("does not start with none of the run's budget left", async () => {
+      const { specs, result } = await lateRun({
+        budgetLeftNow: () => usage.costUsd,
+      });
+      expect(specs).toHaveLength(1);
+      expect(result.ok).toBe(true);
+    });
+
+    it("gets only what the run has left", async () => {
+      const { specs } = await lateRun({
+        budgetLeftNow: () => usage.costUsd + 0.25,
+      });
+      expect(specs[1]?.budgetUsd).toBeCloseTo(0.25);
+    });
+
+    it.each([
+      ["no budget at all", undefined, undefined, 1, {}],
+      ["the node's cap", 3, undefined, 1, { budgetUsd: 2 }],
+      ["the run's, when lower", 3, 1.5, 1, { budgetUsd: 0.5 }],
+      ["nothing left of the cap", 1, undefined, 1, null],
+      ["nothing left of the run's", 3, 1, 1, null],
+    ])("spends within %s", (_name, cap, runLeft, spent, expected) => {
+      expect(lateBudget(capOf(cap), spent, runLeft)).toEqual(expected);
+    });
+
+    it("keeps a later report when it gives one", () => {
+      const first = outcome(PASSED);
+      const later = outcome({ ...PASSED, summary: "read it" });
+      expect(afterLateTurn(first, later).report?.summary).toBe("read it");
+    });
   });
 
   it("turns a report into the node's output", () => {

@@ -19,20 +19,19 @@ How a tool node's program works for now, by choice
   a JSON value: base64, URL encoding, a change of case, shell quoting, a Unicode
   form, or part of a line. Nor is a secret a program finds on its own; the
   store's patterns still apply to those. A value given as `--input` stays in
-  `run.started`. A session inherits the user's variables and can print one into
-  its transcript. A run masks what its workflow, the workflows it calls by name
-  and its callers read, so a call by a computed name is not covered, nor is a
-  called run resumed by hand or from the UI, or a run a program starts itself.
-  The price of masking pieces: each line of a multi-line value and each value in
-  a JSON one is masked wherever it appears, even as ordinary text.
+  `run.started`, and in a rule's body that reads it. A session inherits the
+  user's variables and can print one into its transcript. A run masks what its
+  workflow, the workflows it calls by name and its callers read, so a call by a
+  computed name is not covered, nor is a called run resumed by hand or from the
+  UI, or a message from a program that cleared its environment before
+  `ork send`. The price of masking pieces: each line of a multi-line value and
+  each value in a JSON one is masked wherever it appears, even as ordinary text.
 - **L82 · A masked value stays masked for what reads it.** Live and on resume, a
   `when:` or `{{nodes.…}}` reading `output.json` sees `[masked]`, so a value
   that is not secret needs `plainEnv`. A variable is masked if any node reads it
   without listing it there.
 - **L83 · `ORK_BIN` is only set when `ork` can be run directly.** Scripts use
   `"${ORK_BIN:-ork}"`.
-- **L84 · The `ork chat` refusal names a command to come.** `ork send` is not
-  built yet, so a program in a run has no way to write to a session.
 - **L85 · A hard kill can leave an unread result on disk.** What a program wrote
   to `$ORK_OUTPUT` is not yet scrubbed. It sits in the run's `.output` folder,
   mode 0700, until the run ends, resumes or is pruned. Ctrl-C, SIGTERM, SIGHUP
@@ -46,3 +45,23 @@ How a tool node's program works for now, by choice
   nor does a finished call that a loop would run again. A workflow that cannot
   be read gets a warning saying that what it reads is neither checked nor
   masked.
+- **L87 · A message can be lost around a crash or an ending.** Each event is
+  written on its own, so a crash between `node.finished` and a rule's
+  `message.sent` loses that message. A run takes its commands once more before
+  `run.finished`, so only a row written after that last look, or a crash before
+  it, loses a message `ork send` exited 0 for.
+- **L88 · A rule to a template reaches the declared node only.** Instances may
+  not exist yet when it fires, so its spawned workers don't get it.
+- **L89 · `ork send`'s cap and size are first guesses.** 100 per sending node,
+  as for links, and 64 KiB, as for a tool's output. At either it refuses and
+  asks nobody.
+- **L90 · A tool node can't receive.** It is one shot, so a program has no inbox
+  and no `ork inbox`, and `ork send` works only inside a run, not across a link
+  or a call.
+- **L91 · A message to a node that never runs stays unread.** It starts no
+  session, and a branch not taken means no one reads it. The record and
+  `ork logs` show it; nothing warns at the end of the run.
+- **L92 · A late turn's budget counts a resumed session's whole cost.** A
+  session reports its total so far, so a leader that has been re-entered may be
+  told nothing is left when some is. The late turn then does not start, and the
+  message waits for its next session.

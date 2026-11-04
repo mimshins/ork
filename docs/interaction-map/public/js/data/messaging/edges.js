@@ -5,7 +5,7 @@
  *   `Session.send` down to `code`.
  */
 
-import { CALLS, DESIGN, LINKS } from "../refs.js";
+import { BUS, CALLS, DESIGN, LINKS } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
 
@@ -66,6 +66,26 @@ export const EDGES = [
     detail:
       "Checks both ends, writes the row to the `links` table, and writes a `notice` command to each side.",
     docs: [LINKS.links, LINKS.cliTests],
+  },
+  {
+    id: "send-bus",
+    from: "orkSend",
+    to: "bus",
+    kind: "local",
+    label: "a row, and a wake",
+    detail:
+      "Checks on the sender's side, writes a `script` command to the store, and wakes the run's socket. The run takes it and files it as `message.received`.",
+    docs: [BUS.send, BUS.sendTests],
+  },
+  {
+    id: "rules-bus",
+    from: "notifyRules",
+    to: "bus",
+    kind: "local",
+    label: "when a node finishes",
+    detail:
+      "In-process: a rule that holds goes to the inbox of a leader or worker, as `message.sent` with `via: rule`.",
+    docs: [BUS.rules, BUS.ruleTests],
   },
   {
     id: "chat-bus",

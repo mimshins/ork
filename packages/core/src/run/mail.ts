@@ -23,7 +23,12 @@ export const mailOf = (events: readonly RunEvent[]): Mail => {
         const from = sent ? event.node : event.from;
         inboxes.set(to, [
           ...(inboxes.get(to) ?? []),
-          { id: event.message, from, body: event.body },
+          {
+            id: event.message,
+            from,
+            body: event.body,
+            ...(event.via === undefined ? {} : { via: event.via }),
+          },
         ]);
       }
     } else if (event.type === "message.read") {

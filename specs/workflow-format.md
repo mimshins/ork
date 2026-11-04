@@ -83,6 +83,10 @@ edges:
   - `output: { format: json }` says the program returns JSON, read as
     `output.json`: the file at `$ORK_OUTPUT` if it wrote one, otherwise its
     stdout.
+- **Messages on finishing:** leaders, workers, tool nodes, gates and calls take
+  `notify:`, a list of `{ to, when?, body? }` sent through the bus when the node
+  finishes, starting no session; `when:` and `body:` also read `ok` and `error`
+  ([scripts and rules](./messaging/scripts.md#notify)).
 - **Calls:** `workflow.call` starts a workflow as a separate run, in this
   project or a registered one, waits as it says, and hands back its outputs
   ([calling workflows](./scheduler/calls.md)). It takes `workflow`, and

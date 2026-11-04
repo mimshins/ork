@@ -7,7 +7,6 @@ import {
   type Diagnostic,
   type DiagnosticPath,
   isToolNode,
-  type Node,
   type Workflow,
 } from "@krapht/ork-schema";
 
@@ -16,6 +15,14 @@ import { collectPaths, type Expr } from "../expr/parse.ts";
 import { error, warning } from "./diagnostics.ts";
 import { checkToolEnv } from "./env.ts";
 import { ancestorsOf } from "./flow.ts";
+import type { CompiledRule } from "./notify.ts";
+import {
+  checkAbsolute,
+  checkField,
+  type Context,
+  describePath,
+  envOutsideEnv,
+} from "./ref-paths.ts";
 import { ownersOf } from "./tree.ts";
 import { type CompiledEdge, outputFieldsOf } from "./types.ts";
 
@@ -30,108 +37,36 @@ const TEMPLATE_FIELDS = [
   "ref",
 ] as const;
 
-type Context = {
-  workflow: Workflow;
-  edges: readonly CompiledEdge[];
-};
-
-const describePath = (segments: readonly (string | number)[]) =>
-  segments.join(".");
-
-/** Checks `inputs.*` and `nodes.<id>.output.*` references. */
-const checkAbsolute = (
-  segments: readonly (string | number)[],
-  { workflow }: Context,
+/** A bare name or `output.*`, read from the node's own output. */
+const checkOwn = (
+  from: string,
   path: DiagnosticPath,
-): Diagnostic[] => {
-  const [root, name, field] = segments;
-  if (root === "inputs") {
-    if (name === undefined) {
-      return [error("ref.input", "name an input: inputs.<name>", path)];
-    }
-    return workflow.inputs?.[String(name)] === undefined
-      ? [
-          error(
-            "ref.input",
-            `"${describePath(segments)}" reads an input the workflow does not declare`,
-            path,
-          ),
-        ]
-      : [];
-  }
-  if (root === "nodes") {
-    const target =
-      name === undefined ? undefined : workflow.nodes[String(name)];
-    if (target === undefined) {
-      return [
-        error(
-          "ref.node",
-          `"${describePath(segments)}" reads an unknown node`,
-          path,
-        ),
-      ];
-    }
-    if (field !== "output") {
-      return [
-        error(
-          "ref.node",
-          `read a node's report as nodes.${String(name)}.output.<field>`,
-          path,
-        ),
-      ];
-    }
-    return checkField(target, segments[3], segments, path);
-  }
-  return [];
-};
-
-const checkField = (
-  target: Node,
-  field: string | number | undefined,
   segments: readonly (string | number)[],
-  path: DiagnosticPath,
+  context: Context,
+  extra: readonly string[],
 ): Diagnostic[] => {
-  const known = outputFieldsOf(target);
-  if (field === undefined || known === null) return [];
-  if (field === "json" && isToolNode(target) && !known.includes("json")) {
-    return [
-      error(
-        "ref.json",
-        `"${describePath(segments)}": this tool node has no JSON result; give it output: { format: json }`,
-        path,
-      ),
-    ];
+  const [root] = segments;
+  const source = context.workflow.nodes[from];
+  if (source === undefined) return [];
+  // A node may report a field called `env`; otherwise it means the user's.
+  if (root === "env" && outputFieldsOf(source)?.includes("env") === false) {
+    return [envOutsideEnv(segments, path)];
   }
-  return known.includes(String(field))
+  const relative = root === "output" ? segments.slice(1) : segments;
+  const roots: readonly (string | number)[] = [...SCOPE_ROOTS, ...extra];
+  return roots.includes(String(relative[0]))
     ? []
-    : [
-        warning(
-          "ref.field",
-          `"${describePath(segments)}": a ${target.type} reports ${known.join(", ")}`,
-          path,
-        ),
-      ];
+    : checkField(source, relative[0], segments, path);
 };
-
-/** Only `env:` may read the user's variables: a rendered command is recorded. */
-const envOutsideEnv = (
-  segments: readonly (string | number)[],
-  path: DiagnosticPath,
-): Diagnostic =>
-  error(
-    "template.env",
-    `"${describePath(segments)}": only a tool node's env: may read the user's variables, so a secret never reaches a recorded command`,
-    path,
-  );
 
 const checkTemplate = (
   id: string,
-  field: string,
+  at: string | readonly (string | number)[],
   text: string,
   context: Context,
-  readsEnv = false,
+  reads: { env?: boolean; own?: readonly string[] } = {},
 ): Diagnostic[] => {
-  const path = ["nodes", id, field];
+  const path: DiagnosticPath = ["nodes", id, ...[at].flat()];
   const parsed = parseTemplate(text);
   if (!parsed.ok) {
     return [
@@ -155,13 +90,18 @@ const checkTemplate = (
     return collectPaths(part.expr).flatMap(segments => {
       const [root, name] = segments;
       if (root === "run") return [];
-      if (root === "env") {
-        if (!readsEnv) return [envOutsideEnv(segments, path)];
+      if (root === "env" && reads.env === true) {
         return name === undefined
           ? [error("template.env", "name a variable: env.NAME", path)]
           : [];
       }
+      if (root === "env" && reads.own === undefined) {
+        return [envOutsideEnv(segments, path)];
+      }
       if (root !== "inputs" && root !== "nodes") {
+        if (reads.own !== undefined) {
+          return checkOwn(id, path, segments, context, reads.own);
+        }
         return [
           error(
             "template.scope",
@@ -191,28 +131,19 @@ const checkTemplate = (
 };
 
 const checkCondition = (
-  edge: CompiledEdge,
+  from: string,
+  path: DiagnosticPath,
   condition: Expr,
   context: Context,
+  extra: readonly string[] = [],
 ): Diagnostic[] => {
-  const path = ["edges", edge.source, "when"];
-  const source = context.workflow.nodes[edge.from];
   return collectPaths(condition).flatMap(segments => {
     const [root] = segments;
     if (root === "run") return [];
     if (root === "inputs" || root === "nodes") {
       return checkAbsolute(segments, context, path);
     }
-    if (source === undefined) return [];
-    // A node may report a field called `env`; otherwise it means the user's.
-    if (root === "env" && outputFieldsOf(source)?.includes("env") === false) {
-      return [envOutsideEnv(segments, path)];
-    }
-    const relative = root === "output" ? segments.slice(1) : segments;
-    const roots: readonly (string | number)[] = SCOPE_ROOTS;
-    return roots.includes(String(relative[0]))
-      ? []
-      : checkField(source, relative[0], segments, path);
+    return checkOwn(from, path, segments, context, extra);
   });
 };
 
@@ -220,8 +151,31 @@ const checkCondition = (
 export const checkReferences = (
   workflow: Workflow,
   edges: readonly CompiledEdge[],
+  rules: ReadonlyMap<string, readonly CompiledRule[]> = new Map(),
 ): Diagnostic[] => {
   const context: Context = { workflow, edges };
+  const fromRules = [...rules].flatMap(([id, compiled]) =>
+    compiled.flatMap((rule, index) => [
+      ...(rule.bodySource === undefined
+        ? []
+        : checkTemplate(
+            id,
+            ["notify", index, "body"],
+            rule.bodySource,
+            context,
+            { own: ["ok", "error"] },
+          )),
+      ...(rule.condition === undefined
+        ? []
+        : checkCondition(
+            id,
+            ["nodes", id, "notify", index, "when"],
+            rule.condition,
+            context,
+            ["ok", "error"],
+          )),
+    ]),
+  );
   const fromTemplates = Object.entries(workflow.nodes).flatMap(([id, node]) =>
     TEMPLATE_FIELDS.flatMap(field => {
       const value: unknown = Reflect.get(node, field);
@@ -240,7 +194,7 @@ export const checkReferences = (
   const fromEnv = Object.entries(workflow.nodes).flatMap(([id, node]) =>
     isToolNode(node)
       ? Object.entries(node.env ?? {}).flatMap(([name, value]) =>
-          checkTemplate(id, `env.${name}`, value, context, true),
+          checkTemplate(id, `env.${name}`, value, context, { env: true }),
         )
       : [],
   );
@@ -265,7 +219,12 @@ export const checkReferences = (
   const fromConditions = edges.flatMap(edge =>
     edge.condition === undefined
       ? []
-      : checkCondition(edge, edge.condition, context),
+      : checkCondition(
+          edge.from,
+          ["edges", edge.source, "when"],
+          edge.condition,
+          context,
+        ),
   );
   return [
     ...fromTemplates,
@@ -274,5 +233,6 @@ export const checkReferences = (
     ...checkToolEnv(workflow),
     ...fromOutputs,
     ...fromConditions,
+    ...fromRules,
   ];
 };

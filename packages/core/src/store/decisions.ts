@@ -8,7 +8,7 @@ import type { DatabaseSync } from "node:sqlite";
 
 import type { DecisionChoice } from "../runtime/types.ts";
 import { maskSecrets } from "./mask.ts";
-import { type Row, text } from "./rows.ts";
+import { inTransaction, type Row, text } from "./rows.ts";
 import type {
   AnsweredBy,
   DecisionKind,
@@ -95,6 +95,9 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
     "SELECT id, kind, node, body, sender FROM commands WHERE run_id = ? AND handled_at IS NULL ORDER BY id",
   );
   const handled = db.prepare("UPDATE commands SET handled_at = ? WHERE id = ?");
+  const scriptsSent = db.prepare(
+    "SELECT COUNT(*) AS sent FROM commands WHERE run_id = ? AND kind = 'script' AND sender = ?",
+  );
 
   return {
     openDecision: decision => {
@@ -145,7 +148,9 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
           command.kind,
           command.node,
           maskSecrets(command.body),
-          command.kind === "relay" ? command.from : null,
+          command.kind === "relay" || command.kind === "script"
+            ? command.from
+            : null,
           at,
         );
       } else {
@@ -159,6 +164,20 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
         );
       }
     },
+    scriptCommand: (runId, command, atMost) =>
+      inTransaction(db, () => {
+        const row = scriptsSent.get(runId, command.from);
+        if (Number(row?.["sent"] ?? 0) >= atMost) return false;
+        addCommand.run(
+          runId,
+          command.kind,
+          command.node,
+          maskSecrets(command.body),
+          command.from,
+          new Date().toISOString(),
+        );
+        return true;
+      }),
     takeCommands: runId => {
       const at = new Date().toISOString();
       return pending.all(runId).flatMap((row): RunCommand[] => {
@@ -171,7 +190,7 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
         if (kind === "message" || kind === "notice") {
           return [{ kind, node: text(row, "node"), body: text(row, "body") }];
         }
-        if (kind === "relay") {
+        if (kind === "relay" || kind === "script") {
           return [
             {
               kind,

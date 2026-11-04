@@ -17,6 +17,10 @@ export const nodeOf = (event: Event): string | undefined => {
 
 const oneLine = (text: string): string => text.replaceAll(/\s+/gu, " ").trim();
 
+/** How a message came, when no session wrote it. */
+const viaOf = (via: string | undefined): string =>
+  via === undefined ? "" : ` (${via})`;
+
 const innerLine = ({ event }: Of<"node.event">): string => {
   switch (event.type) {
     case "session.started": {
@@ -98,10 +102,10 @@ export const lineOf = (event: Event): string => {
       return `${event.answer}, by ${event.by}`;
     }
     case "message.sent": {
-      return `to ${event.to}: ${oneLine(event.body)}`;
+      return `to ${event.to}${viaOf(event.via)}: ${oneLine(event.body)}`;
     }
     case "message.received": {
-      return `from ${event.from}: ${oneLine(event.body)}`;
+      return `from ${event.from}${viaOf(event.via)}: ${oneLine(event.body)}`;
     }
     case "call.started": {
       return `${event.workflow} as ${event.run}`;

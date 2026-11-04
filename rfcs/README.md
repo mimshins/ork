@@ -63,4 +63,4 @@ and carries an RFC through this lifecycle.
 | [002](./archived/RFC-002-standalone-binaries-and-installer.md) | Standalone binaries and a one-line installer | Rejected    |
 | [003](./archived/RFC-003-relay-between-runs.md)                | A relay between runs                         | Implemented |
 | [004](./archived/RFC-004-workflows-calling-workflows.md)       | Workflows that call workflows                | Implemented |
-| [005](./active/RFC-005-scripts-and-rules-on-the-bus.md)        | Scripts and rules on the message bus         | Accepted    |
+| [005](./archived/RFC-005-scripts-and-rules-on-the-bus.md)      | Scripts and rules on the message bus         | Implemented |

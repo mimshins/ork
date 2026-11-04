@@ -4,7 +4,11 @@
  *   claims taken, refused and released. Part of `RunEvent`.
  */
 
-import type { DecisionChoice, InboxMessage } from "../runtime/types.ts";
+import type {
+  DecisionChoice,
+  InboxMessage,
+  MessageVia,
+} from "../runtime/types.ts";
 
 /** A question Ork asks a node's owner. */
 export type OwnerQuestion = {
@@ -34,14 +38,20 @@ export type BusEvent =
       to: string;
       message: number;
       body: string;
+      /** `rule`: no session wrote it, a `notify:` of `node` did. */
+      via?: MessageVia;
     }
-  /** A linked node of another run (`from`, `<run>/<node>`) wrote to `node`. */
+  /**
+   * A linked node of another run (`from`, `<run>/<node>`) wrote to `node`, or,
+   * `via` `script`, a program in the tool node `from` did.
+   */
   | {
       type: "message.received";
       node: string;
       from: string;
       message: number;
       body: string;
+      via?: MessageVia;
     }
   | { type: "message.read"; node: string; ids: number[] }
   /** The `workflow.call` node `node` started `workflow` as `run` (RFC-004). */

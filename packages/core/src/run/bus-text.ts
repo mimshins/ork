@@ -9,6 +9,15 @@ import type { OwnerQuestion } from "./bus-events.ts";
 const plural = (count: number, word: string): string =>
   `${String(count)} ${word}${count === 1 ? "" : "s"}`;
 
+/** The most a program or a rule may say at once, in bytes: as a tool's output. */
+export const MESSAGE_LIMIT = 64 * 1024;
+
+/** A rule cannot be refused, so what it says past the limit is cut. */
+export const clipMessage = (body: string): string =>
+  Buffer.byteLength(body) <= MESSAGE_LIMIT
+    ? body
+    : `${Buffer.from(body).subarray(0, MESSAGE_LIMIT).toString()}\n… (cut at 64 KiB)`;
+
 /** What a live session sees when its inbox has unread messages. */
 export const inboxNotice = (unread: readonly InboxMessage[]): string =>
   `[ork] ${plural(unread.length, "unread message")} from ${[...new Set(unread.map(m => m.from))].join(", ")}. Call read_inbox to read them.`;

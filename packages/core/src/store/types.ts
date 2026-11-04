@@ -90,6 +90,8 @@ export type RunCommand =
   | { kind: "message"; node: string; body: string }
   /** A message from a linked node of another run; `from` is `<run>/<node>`. */
   | { kind: "relay"; node: string; from: string; body: string }
+  /** `ork send`: from a program in the tool node `from` of this run. */
+  | { kind: "script"; node: string; from: string; body: string }
   /** Ork's own line for a node's live session: a link was made or ended. */
   | { kind: "notice"; node: string; body: string };
 
@@ -137,6 +139,15 @@ export type DecisionStore = {
   }) => DecisionRecord[];
   /** Queues a command for a live run; a message's body is masked. */
   command: (runId: string, command: RunCommand) => void;
+  /**
+   * Queues a program's message unless its node has sent `atMost` in this run,
+   * counted and written as one step, so a burst cannot pass it.
+   */
+  scriptCommand: (
+    runId: string,
+    command: Extract<RunCommand, { kind: "script" }>,
+    atMost: number,
+  ) => boolean;
   /** The run's unhandled commands, marked handled. */
   takeCommands: (runId: string) => RunCommand[];
 };

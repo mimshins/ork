@@ -48,6 +48,10 @@ const DELIVERED = {
   resumed: "resumed its session",
 } as const;
 
+/** What a message says of itself when no session wrote it. */
+const viaNote = (via: "script" | "rule" | undefined): { note?: string } =>
+  via === undefined ? {} : { note: via === "script" ? "a script" : "a rule" };
+
 /** Ork's own tools, by the names the node knows them by. */
 const ORK_TOOL = /^mcp__ork__/u;
 /** How a report is sent: the report itself shows next. */
@@ -100,7 +104,13 @@ const itemOf = (
     return activity(event.ok ? "Finished." : `Failed${reason}`);
   }
   if (event.type === "message.sent" && event.to === node) {
-    return { ...base, kind: "peer", from: event.node, text: event.body };
+    return {
+      ...base,
+      kind: "peer",
+      from: event.node,
+      text: event.body,
+      ...viaNote(event.via),
+    };
   }
   if (!("node" in event) || event.node !== node) return undefined;
   if (event.type === "user.message") {
@@ -112,10 +122,20 @@ const itemOf = (
     };
   }
   if (event.type === "message.sent") {
-    return activity(`Wrote to ${event.to}: ${event.body}`);
+    return activity(
+      event.via === "rule"
+        ? `A rule wrote to ${event.to}: ${event.body}`
+        : `Wrote to ${event.to}: ${event.body}`,
+    );
   }
   if (event.type === "message.received") {
-    return { ...base, kind: "peer", from: event.from, text: event.body };
+    return {
+      ...base,
+      kind: "peer",
+      from: event.from,
+      text: event.body,
+      ...viaNote(event.via),
+    };
   }
   if (event.type === "decision.opened") {
     return activity(`Asked you: ${event.question}`);

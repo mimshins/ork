@@ -13,14 +13,9 @@ import {
   type ProjectOptions,
 } from "../project/rules.ts";
 import { checkCalls } from "./calls.ts";
-import { error, warning } from "./diagnostics.ts";
-import {
-  checkCycles,
-  compileEdges,
-  findEntries,
-  findUnreachable,
-} from "./flow.ts";
+import { checkCycles, checkReach, compileEdges, findEntries } from "./flow.ts";
 import { checkChannels, checkNodes } from "./nodes.ts";
+import { compileRules } from "./notify.ts";
 import { checkReferences } from "./refs.ts";
 import { checkOwnership } from "./tree.ts";
 import type { CompiledGraph, CompiledNode, CompileResult } from "./types.ts";
@@ -45,6 +40,7 @@ export const compileWorkflow = (
   const { edges } = flow;
   const entries = findEntries(workflow, edges);
   const channels = checkChannels(workflow);
+  const rules = compileRules(workflow);
 
   const diagnostics: Diagnostic[] = [
     ...applied.diagnostics,
@@ -53,32 +49,12 @@ export const compileWorkflow = (
     ...checkCycles(workflow, edges),
     ...checkNodes(workflow, edges),
     ...checkCalls(workflow),
-    ...checkReferences(workflow, edges),
+    ...checkReferences(workflow, edges, rules.rules),
+    ...rules.diagnostics,
     ...channels.diagnostics,
     ...checkRules(workflow),
+    ...checkReach(workflow, edges, entries),
   ];
-
-  if (entries.length === 0) {
-    diagnostics.push(
-      error(
-        "graph.no-entry",
-        "no node can start: every unowned node has an incoming edge that is not a loop",
-        ["edges"],
-      ),
-    );
-  }
-  // With no entry everything is unreachable; the error above says enough.
-  const unreachable =
-    entries.length === 0 ? [] : findUnreachable(workflow, edges, entries);
-  for (const id of unreachable) {
-    diagnostics.push(
-      warning(
-        "graph.unreachable",
-        `"${id}" never runs: no entry reaches it through edges or ownership`,
-        ["nodes", id],
-      ),
-    );
-  }
 
   diagnostics.sort(
     (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity],
@@ -106,6 +82,7 @@ export const compileWorkflow = (
     entries,
     channels: channels.channels,
     agents: applied.agents,
+    rules: rules.rules,
   };
   return { graph, diagnostics };
 };

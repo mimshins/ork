@@ -59,6 +59,7 @@ export const nodeContext = (
     runDir: deps.runDir,
     ...foldersOf(options),
     budgetLeftUsd: deps.budgetLeft(),
+    budgetLeftNow: deps.budgetLeft,
     human: deps.human,
     hold: deps.holds.forNode(id, template),
     ...deps.ports.forNode(id, template, cwd),

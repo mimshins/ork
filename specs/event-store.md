@@ -49,8 +49,9 @@ all views over the same events.
 - **Decisions and commands** have tables of their own: a decision's question,
   options, recommended option, status (`open`, `answered`, `withdrawn`), answer
   and who answered; a command's kind (`stop`, `pause` and `continue`, each with
-  an optional node; or `message` from `ork chat` with its node and masked body)
-  and when the run handled it. The run events `decision.opened`,
+  an optional node; `message` from `ork chat` with its node and masked body; or
+  `relay`, `script` from `ork send`, and `notice`, likewise, the first two with
+  their sender) and when the run handled it. The run events `decision.opened`,
   `decision.answered`, `decision.withdrawn` and `run.command` record the same in
   the run's stream ([messaging](./messaging.md)).
 - **A resumed run** (`ork resume`) is the same run: its record is `running`

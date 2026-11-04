@@ -16,7 +16,7 @@ const refusal = (why: string, env: NodeJS.ProcessEnv): string | null => {
 /** Why `ork chat` refuses here, or `null` when it may run. */
 export const chatRefusal = (env = process.env): string | null =>
   refusal(
-    "`ork chat` speaks as you, so a program or an agent in a run cannot use it. Programs will write to a session with `ork send`, which is not built yet.",
+    "`ork chat` speaks as you, so a program or an agent in a run cannot use it. A program writes to a session with `ork send`.",
     env,
   );
 

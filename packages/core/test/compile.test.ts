@@ -360,7 +360,7 @@ edges:
   - j -> g
 messages:
   - between: [a, b]
-  - between: [a, t]
+  - between: [a, g]
 `),
       ),
     ).toEqual([

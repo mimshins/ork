@@ -25,6 +25,8 @@ import { tokenize } from "./tool-command.ts";
 import {
   type Environ,
   identityOf,
+  maskedEnv,
+  namesToMask,
   OUTPUT_ENV,
   renderEnv,
   safeRunner,
@@ -176,6 +178,7 @@ export const toolExecutor =
     const env = {
       ...nodeEnv.values,
       ...identityOf(context, options.orkBin),
+      ...maskedEnv(namesToMask(context.workflow, environ, options.maskedNames)),
       ...(outputFile === undefined ? {} : { [OUTPUT_ENV]: outputFile }),
     };
     const names = Object.keys(nodeEnv.values);

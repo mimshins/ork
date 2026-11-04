@@ -609,6 +609,32 @@
                 },
                 "additionalProperties": false
               },
+              "notify": {
+                "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "to": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]*$",
+                      "description": "The claude.leader or claude.worker to write to."
+                    },
+                    "when": {
+                      "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                      "type": "string"
+                    },
+                    "body": {
+                      "description": "The message, a template. Default: Ork's one line on the result.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "to"
+                  ],
+                  "additionalProperties": false
+                }
+              },
               "maxWorkers": {
                 "description": "Cap on dynamically spawned workers.",
                 "type": "integer",
@@ -783,6 +809,32 @@
                   }
                 },
                 "additionalProperties": false
+              },
+              "notify": {
+                "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "to": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]*$",
+                      "description": "The claude.leader or claude.worker to write to."
+                    },
+                    "when": {
+                      "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                      "type": "string"
+                    },
+                    "body": {
+                      "description": "The message, a template. Default: Ork's one line on the result.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "to"
+                  ],
+                  "additionalProperties": false
+                }
               }
             },
             "required": [
@@ -1032,6 +1084,32 @@
                   "format"
                 ],
                 "additionalProperties": false
+              },
+              "notify": {
+                "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "to": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]*$",
+                      "description": "The claude.leader or claude.worker to write to."
+                    },
+                    "when": {
+                      "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                      "type": "string"
+                    },
+                    "body": {
+                      "description": "The message, a template. Default: Ork's one line on the result.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "to"
+                  ],
+                  "additionalProperties": false
+                }
               }
             },
             "required": [
@@ -1110,6 +1188,32 @@
                   "format"
                 ],
                 "additionalProperties": false
+              },
+              "notify": {
+                "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "to": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]*$",
+                      "description": "The claude.leader or claude.worker to write to."
+                    },
+                    "when": {
+                      "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                      "type": "string"
+                    },
+                    "body": {
+                      "description": "The message, a template. Default: Ork's one line on the result.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "to"
+                  ],
+                  "additionalProperties": false
+                }
               },
               "profile": {
                 "type": "string"
@@ -1194,6 +1298,32 @@
                   "format"
                 ],
                 "additionalProperties": false
+              },
+              "notify": {
+                "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "to": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]*$",
+                      "description": "The claude.leader or claude.worker to write to."
+                    },
+                    "when": {
+                      "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                      "type": "string"
+                    },
+                    "body": {
+                      "description": "The message, a template. Default: Ork's one line on the result.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "to"
+                  ],
+                  "additionalProperties": false
+                }
               }
             },
             "required": [
@@ -1272,6 +1402,32 @@
                   "format"
                 ],
                 "additionalProperties": false
+              },
+              "notify": {
+                "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "to": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]*$",
+                      "description": "The claude.leader or claude.worker to write to."
+                    },
+                    "when": {
+                      "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                      "type": "string"
+                    },
+                    "body": {
+                      "description": "The message, a template. Default: Ork's one line on the result.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "to"
+                  ],
+                  "additionalProperties": false
+                }
               }
             },
             "required": [
@@ -1392,6 +1548,32 @@
               "description": {
                 "type": "string"
               },
+              "notify": {
+                "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "to": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]*$",
+                      "description": "The claude.leader or claude.worker to write to."
+                    },
+                    "when": {
+                      "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                      "type": "string"
+                    },
+                    "body": {
+                      "description": "The message, a template. Default: Ork's one line on the result.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "to"
+                  ],
+                  "additionalProperties": false
+                }
+              },
               "question": {
                 "type": "string"
               },
@@ -1460,6 +1642,32 @@
               },
               "description": {
                 "type": "string"
+              },
+              "notify": {
+                "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "to": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_-]*$",
+                      "description": "The claude.leader or claude.worker to write to."
+                    },
+                    "when": {
+                      "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                      "type": "string"
+                    },
+                    "body": {
+                      "description": "The message, a template. Default: Ork's one line on the result.",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "to"
+                  ],
+                  "additionalProperties": false
+                }
               },
               "workflow": {
                 "type": "string",

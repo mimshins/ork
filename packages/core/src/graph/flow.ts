@@ -239,3 +239,28 @@ export const ancestorsOf = (
   seen.delete(id);
   return seen;
 };
+
+/** A workflow with no node to start from, and nodes that never run. */
+export const checkReach = (
+  workflow: Workflow,
+  edges: readonly CompiledEdge[],
+  entries: readonly string[],
+): Diagnostic[] => {
+  // With no entry everything is unreachable; this error says enough.
+  if (entries.length === 0) {
+    return [
+      error(
+        "graph.no-entry",
+        "no node can start: every unowned node has an incoming edge that is not a loop",
+        ["edges"],
+      ),
+    ];
+  }
+  return findUnreachable(workflow, edges, entries).map(id =>
+    warning(
+      "graph.unreachable",
+      `"${id}" never runs: no entry reaches it through edges or ownership`,
+      ["nodes", id],
+    ),
+  );
+};

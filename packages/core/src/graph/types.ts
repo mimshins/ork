@@ -12,6 +12,7 @@ import {
 
 import type { AgentRef } from "../agents/apply.ts";
 import type { Expr } from "../expr/parse.ts";
+import type { CompiledRule } from "./notify.ts";
 
 export type CompiledEdge = Edge & { condition?: Expr };
 
@@ -34,6 +35,8 @@ export type CompiledGraph = {
   channels: [string, string][];
   /** Node id → the agent that filled it. */
   agents: Map<string, AgentRef>;
+  /** Node id → the messages it sends when it finishes (`notify:`). */
+  rules: Map<string, CompiledRule[]>;
 };
 
 export type CompileResult = {

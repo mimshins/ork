@@ -200,6 +200,31 @@ describe("run lookup and formatting", () => {
     ]);
   });
 
+  it("says how a message came when no session wrote it", () => {
+    const lines = (
+      [
+        {
+          type: "message.received",
+          node: "lead",
+          from: "check",
+          message: 1,
+          body: "tests failed",
+          via: "script",
+        },
+        {
+          type: "message.sent",
+          node: "check",
+          to: "lead",
+          message: 2,
+          body: "check exited 1",
+          via: "rule",
+        },
+      ] as const
+    ).flatMap(event => formatRunEvent(event, 4, new Map()));
+    expect(lines.join("\n")).toContain("from check (script): tests failed");
+    expect(lines.join("\n")).toContain("to lead (rule): check exited 1");
+  });
+
   it("prints messages, owner questions and claims with their node", () => {
     const lines = (
       [

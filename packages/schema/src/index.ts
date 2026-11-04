@@ -10,5 +10,6 @@ export * from "./json-schema.ts";
 export * from "./nodes.ts";
 export * from "./project.ts";
 export * from "./settings.ts";
+export * from "./tool-nodes.ts";
 export * from "./workflow.ts";
 export * from "./yaml.ts";

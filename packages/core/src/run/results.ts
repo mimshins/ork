@@ -11,6 +11,7 @@ import type { AgentRef } from "../agents/apply.ts";
 import { parseTemplate, renderTemplate, type Scope } from "../expr/evaluate.ts";
 import type { CompiledGraph } from "../graph/types.ts";
 import { type EarlierSpend, ownSpend } from "../usage/spend.ts";
+import { declaredNodes } from "./contacts.ts";
 import type { Activation, RunOptions } from "./handle.ts";
 import type {
   KeptWorktree,
@@ -18,7 +19,6 @@ import type {
   NodeResult,
   NodeSummary,
   RunEvent,
-  RunNodeInfo,
   Workspace,
   RunResult,
   RunStatus,
@@ -146,14 +146,6 @@ export const summaryOf = (
   summaries.set(id, created);
   return created;
 };
-
-/** Every declared node with its owner, for `run.started`. */
-export const declaredNodes = (graph: CompiledGraph): RunNodeInfo[] =>
-  [...graph.nodes.values()].map(({ id, node }) =>
-    node.parent === undefined
-      ? { id, type: node.type }
-      : { id, type: node.type, parent: node.parent },
-  );
 
 /** The `run.started` event: the workflow, its entries, nodes and inputs. */
 export const runStartedEvent = (

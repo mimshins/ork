@@ -75,13 +75,8 @@ export const startRun = (options: RunOptions): RunHandle => {
     queue.length = 0;
   };
 
-  const ports = createRunPorts({
-    graph,
-    onEvent,
-    mail: options.replay?.mail,
-    relay: options.relay,
-    slots,
-  });
+  const stopping = abort.signal;
+  const ports = createRunPorts({ options, slots, scope, stopping });
   const holds = createHolds({
     onEvent,
     onChange: () => {
@@ -137,6 +132,7 @@ export const startRun = (options: RunOptions): RunHandle => {
   const close = async (): Promise<void> => {
     cancelTimeout();
     const worktrees = await closeWorkspace(options.workspace, reasons);
+    await options.beforeFinish?.();
     const nodes = [...summaries.values()];
     const result = runResult({
       runId,
@@ -232,6 +228,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     if (recorded === null) {
       options.replay?.ran(result);
       onEvent(finishedEvent(id, round, result));
+      ports.fireRules(activation, result);
     }
     return result;
   };

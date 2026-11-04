@@ -37,6 +37,8 @@ export const main = defineCommand({
       import("./commands/pause.ts").then(module => module.continueRun),
     stop,
     chat,
+    // Loaded on use: a program may call it many times in a run.
+    send: () => import("./commands/send.ts").then(module => module.send),
     resume,
     feedback,
     context,

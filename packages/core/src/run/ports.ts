@@ -4,32 +4,35 @@
  *   agents' feedback (`feedback/agent.ts`).
  */
 
+import type { Scope } from "../expr/evaluate.ts";
 import { createFeedback } from "../feedback/agent.ts";
-import type { CompiledGraph } from "../graph/types.ts";
-import type { RelayPort } from "../runtime/types.ts";
-import type { Mail } from "./bus-events.ts";
 import { createBus } from "./bus.ts";
 import { createClaims } from "./claims.ts";
+import type { RunOptions } from "./handle.ts";
+import { createRules } from "./rules.ts";
 import type { Slots } from "./slots.ts";
-import type { ExecuteContext, RunEvent } from "./types.ts";
+import type { ExecuteContext } from "./types.ts";
 
 export const createRunPorts = ({
-  graph,
-  onEvent,
-  mail,
-  relay,
+  options,
   slots,
+  scope,
+  stopping,
 }: {
-  graph: CompiledGraph;
-  onEvent: (event: RunEvent) => void;
-  /** A resumed run's messages, from its events. */
-  mail?: Mail | undefined;
-  relay?: RelayPort | undefined;
+  options: RunOptions;
   slots?: Slots | undefined;
+  /** What a `notify:` reads, once its node's output is recorded. */
+  scope: () => Scope;
+  /** Aborted when the whole run stops. */
+  stopping: AbortSignal;
 }) => {
+  const { graph, onEvent, relay, scrub } = options;
+  const mail = options.replay?.mail;
   const bus = createBus({ graph, onEvent, mail, relay, slots });
   const claims = createClaims({ graph, onEvent, notify: bus.notify });
   const feedback = createFeedback({ graph, onEvent });
+  const send = bus.rule;
+  const rules = createRules({ graph, send, scope, stopping, scrub });
   return {
     bus,
     /** One activation's ports; `template` is a spawned worker's node. */
@@ -42,6 +45,8 @@ export const createRunPorts = ({
       claims: claims.port(id, template, cwd),
       feedback: feedback.port(id, template),
     }),
+    /** Sends what a node's fresh result declares (`notify:`). */
+    fireRules: rules.fire,
     /** The activation of `id` ended: its claims are released. */
     finished: (id: string): void => {
       claims.releaseAll(id);

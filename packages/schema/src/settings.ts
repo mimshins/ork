@@ -122,3 +122,39 @@ export const AgentNameSchema = z
     /^[a-z][a-z0-9_-]*$/u,
     "agent names are lowercase: letters, digits, '-' and '_'",
   );
+
+/** What every node has: its owner, and what it reads as. */
+export const nodeBaseFields = {
+  parent: NodeIdSchema.optional().describe(
+    "Owner of this node in the ownership tree.",
+  ),
+  label: z.string().optional(),
+  description: z.string().optional(),
+};
+
+/** A message a workflow declares, sent when its node finishes (RFC-005). */
+export const NotifyRuleSchema = z.strictObject({
+  to: NodeIdSchema.describe("The claude.leader or claude.worker to write to."),
+  when: z
+    .string()
+    .optional()
+    .describe(
+      "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+    ),
+  body: z
+    .string()
+    .optional()
+    .describe(
+      "The message, a template. Default: Ork's one line on the result.",
+    ),
+});
+
+/** The nodes with a result of their own may declare messages. */
+export const notifyFields = {
+  notify: z
+    .array(NotifyRuleSchema)
+    .optional()
+    .describe(
+      "Messages to send when this node finishes, with no model turn. Each starts no session.",
+    ),
+};

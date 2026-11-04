@@ -46,6 +46,7 @@ export * from "./remote/follow.ts";
 export * from "./remote/links.ts";
 export * from "./remote/relay.ts";
 export * from "./remote/resume.ts";
+export * from "./remote/send.ts";
 export * from "./remote/session.ts";
 export type * from "./run/bus-events.ts";
 export type * from "./run/handle.ts";
