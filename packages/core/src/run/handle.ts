@@ -66,6 +66,8 @@ export type RunOptions = {
   calls?: CallPort;
   /** How long a timed-out node or run may take to end (default 10 s). */
   timeoutGraceMs?: number;
+  /** For tests: the wait between looks of a `watch:`, under its floor. */
+  watchEveryMs?: number;
   /** Masks what the run was told to in a message a `notify:` writes. */
   scrub?: (text: string) => string;
   /** Called last before `run.finished`, to take what is still on its way. */

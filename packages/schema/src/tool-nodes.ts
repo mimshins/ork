@@ -16,6 +16,7 @@ import {
   notifyFields,
   TimeoutSchema,
   toolProgramFields,
+  WatchSchema,
 } from "./settings.ts";
 import { runFields } from "./steps.ts";
 
@@ -28,7 +29,10 @@ const toolFields = {
     .describe("Allowed subcommand prefixes, e.g. ['pr view', 'pr merge']."),
   cwd: z.string().optional(),
   timeout: TimeoutSchema.optional().describe(
-    "How long the command may run, e.g. 5m; then it is killed and the node fails.",
+    "How long the command may run, e.g. 5m; then it is killed and the node fails. With watch:, how long one look may take.",
+  ),
+  watch: WatchSchema.optional().describe(
+    "Run the command again and again until a condition holds, with no model turn.",
   ),
   ...toolProgramFields,
   ...notifyFields,

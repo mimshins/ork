@@ -44,6 +44,9 @@ under the same run id, with a `Replay` built from the run's events:
 | `node.skipped`      | a dead path skips the node                                                                                              |
 | `edge.taken`        | an edge is taken                                                                                                        |
 | `loop.exhausted`    | a loop edge is out of rounds                                                                                            |
+| `watch.started`     | a [`watch:`](./watching.md) begins: until, every, timeout                                                               |
+| `watch.changed`     | a look said something the last one didn't: looks so far, ok, what it said                                               |
+| `watch.ended`       | how the wait ended, and how many looks it took                                                                          |
 | `worktree`          | a worktree is created, committed to, merged, conflicts, or removed                                                      |
 | `message.sent`      | a node wrote to another on the message bus: number, recipient, body; `via: rule` for a `notify:`                        |
 | `message.read`      | a node read its inbox: the message numbers                                                                              |

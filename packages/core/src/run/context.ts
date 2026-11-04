@@ -3,20 +3,18 @@
  *   executor. Its inputs and the outputs so far, where it works, the budget
  *   left, the human, its hold and its own stop signal (ADR-041), its ports on
  *   the bus, the session it resumes, and, for a leader, its ownership of its
- *   children. And running it: the checkout, the executor under its timeout, and
- *   what the workspace does afterwards.
+ *   children.
  */
 
 import type { Node } from "@krapht/ork-schema";
 
 import { createOwnership, type DelegationHooks } from "./delegation.ts";
-import type { Activation, NodeResult, RunOptions } from "./handle.ts";
+import type { Activation, RunOptions } from "./handle.ts";
 import type { Holds, Stops } from "./holds.ts";
 import type { createRunPorts } from "./ports.ts";
-import { type createSpend, failure, passThrough, resumeOf } from "./results.ts";
+import { type createSpend, resumeOf } from "./results.ts";
 import { foldersOf } from "./scope.ts";
 import type { Slots } from "./slots.ts";
-import { type createClock, timeoutOf, withTimeout } from "./timeouts.ts";
 import type { ExecuteContext, NodeOutput } from "./types.ts";
 
 /** What the scheduler shares with every activation's context. */
@@ -91,47 +89,3 @@ export const nodeContext = (
   }
   return context;
 };
-
-/** Runs an activation; control nodes pass their input through. */
-export const createExecute =
-  (deps: {
-    options: RunOptions;
-    contextDeps: ContextDeps;
-    clock: ReturnType<typeof createClock>;
-    graceMs: number;
-    nodeOf: (activation: Activation) => Node | undefined;
-  }) =>
-  async (activation: Activation, round: number): Promise<NodeResult> => {
-    const { options, contextDeps, clock, graceMs, nodeOf } = deps;
-    const node = nodeOf(activation);
-    if (node === undefined) return failure(`unknown node ${activation.id}`);
-    if (node.type.startsWith("control.")) return passThrough(activation.input);
-    const executor = options.executors[node.type];
-    if (executor === undefined) return failure(`no executor for ${node.type}`);
-    try {
-      const { workspace } = options;
-      const place = (await workspace?.prepare(
-        activation.id,
-        activation.template,
-      )) ?? { cwd: options.cwd };
-      const context = nodeContext(contextDeps, activation, place.cwd, round);
-      const result = await withTimeout({
-        timeout: timeoutOf(node, options.graph.workflow),
-        clock: clock.forNode(activation.id),
-        signal: context.signal,
-        graceMs,
-        start: signal =>
-          executor({
-            ...context,
-            signal,
-            node,
-            ...(place.checkout === undefined
-              ? {}
-              : { checkout: place.checkout }),
-          }),
-      });
-      return (await workspace?.finish(activation.id, result)) ?? result;
-    } catch (error) {
-      return failure(error instanceof Error ? error.message : String(error));
-    }
-  };

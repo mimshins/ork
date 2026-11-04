@@ -81,6 +81,7 @@ bug fixes need no spec unless they are architectural.
 | -------------------------------------------- | --------------------------------------------------------- |
 | User docs: install, quickstart, guides       | [docs/](./docs/README.md)                                 |
 | Contributor guide                            | [CONTRIBUTING.md](./CONTRIBUTING.md)                      |
+| How to read the project, in order            | [ONBOARDING.md](./ONBOARDING.md)                          |
 | Overview, milestones                         | [docs/design.md](./docs/design.md)                        |
 | Contracts: what each part does               | [specs/](./specs/README.md)                               |
 | Accepted decisions and why (ADRs)            | [decisions/](./decisions/README.md)                       |
@@ -107,14 +108,14 @@ bug fixes need no spec unless they are architectural.
 ## Interaction map
 
 [docs/interaction-map/](./docs/interaction-map/README.md) is an interactive map
-of how Ork works (architecture, run lifecycle, context and skills, messaging and
-decisions), with an honest status on every card. `pnpm map` serves it on
-`http://localhost:8791`; `pnpm map:check` (part of `pnpm check`) validates its
-data, doc links and statuses. When a change builds, moves or reshapes something
-the map shows, update the map in the same change, or run the `/resync-map` skill
-([sync.md](./docs/interaction-map/sync.md)). The **roadmap** page beside it
-(`roadmap.html`) tracks milestones and what shipped; when an item ships or new
-work is planned, update
+of how Ork works (architecture, run lifecycle, node roles, context and skills,
+messaging and decisions, the feedback loop), with an honest status on every
+card. `pnpm map` serves it on `http://localhost:8791`; `pnpm map:check` (part of
+`pnpm check`) validates its data, doc links and statuses. When a change builds,
+moves or reshapes something the map shows, update the map in the same change, or
+run the `/resync-map` skill ([sync.md](./docs/interaction-map/sync.md)). The
+**roadmap** page beside it (`roadmap.html`) tracks milestones and what shipped;
+when an item ships or new work is planned, update
 [its data](./docs/interaction-map/public/js/data/roadmap.js) too
 ([roadmap.md](./docs/interaction-map/roadmap.md)).
 

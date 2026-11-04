@@ -4,8 +4,15 @@
  *   the next step when empty, and re-renders only the row that changed.
  */
 
-import type { RunView } from "@krapht/ork-server/client";
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import type { RunView, TriggersReport } from "@krapht/ork-server/client";
+import {
+  act,
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -189,5 +196,67 @@ describe("the Runs panel", () => {
     expect(reads.a).toBe(0);
     rerender(<Rows runs={[a, b]} />);
     expect(reads.b).toBeGreaterThan(0);
+  });
+});
+
+const LIVE: TriggersReport["triggers"][number] = {
+  project: "p",
+  trigger: "new-issue",
+  run: "triage",
+  every: "5m",
+  standing: "live",
+  lookedAt: "2026-11-04T10:00:00Z",
+  problems: [],
+  warnings: [],
+};
+
+describe("the triggers under the runs", () => {
+  it("says nothing when there are none", async () => {
+    const { state } = openPanelState();
+    renderPanel(state, <RunsPanel />);
+    await waitFor(() => {
+      expect(state.triggers.state.getValue().status).toBe("ready");
+    });
+    expect(screen.queryByRole("region", { name: "Triggers" })).toBeNull();
+  });
+
+  it("says what's live, what's off and what's in the way", async () => {
+    const { state } = openPanelState({
+      triggers: {
+        pid: 7,
+        broken: [],
+        triggers: [
+          { ...LIVE, held: "1 of its runs still going" },
+          { ...LIVE, trigger: "fresh", standing: "new" },
+        ],
+      },
+    });
+    renderPanel(state, <RunsPanel />);
+    expect(await screen.findByText("new-issue")).toBeDefined();
+    expect(screen.getByText("Live")).toBeDefined();
+    expect(screen.getByText(/^Waiting: 1 of its runs/u)).toBeDefined();
+    expect(screen.getByText(/ork watch --accept/u)).toBeDefined();
+    expect(screen.queryByText(/isn't running/u)).toBeNull();
+  });
+
+  it("says so when nothing is looking", async () => {
+    const { state } = openPanelState({
+      triggers: { broken: [], triggers: [LIVE] },
+    });
+    renderPanel(state, <RunsPanel />);
+    expect(await screen.findByText(/isn't running/u)).toBeDefined();
+  });
+
+  it("offers no way to accept one: that takes a terminal", async () => {
+    const { state } = openPanelState({
+      triggers: {
+        pid: 7,
+        broken: [],
+        triggers: [{ ...LIVE, standing: "new" }],
+      },
+    });
+    renderPanel(state, <RunsPanel />);
+    await screen.findByText("new-issue");
+    expect(screen.queryByRole("button", { name: /accept/iu })).toBeNull();
   });
 });

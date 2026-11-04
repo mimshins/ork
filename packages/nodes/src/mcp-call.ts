@@ -37,6 +37,10 @@ const NO_LIMIT_MS = 24 * 60 * 60 * 1000;
 const failed = (error: string, output: Record<string, unknown> = {}) =>
   ({ ok: false, output, error }) satisfies NodeResult;
 
+/** A failure another try might not have, so a `watch:` looks again. */
+const missed = (error: string, output: Record<string, unknown> = {}) =>
+  ({ ok: false, transient: true, output, error }) satisfies NodeResult;
+
 /**
  * A string's templates rendered. A string that is one `{{ … }}` and nothing
  * else keeps its value's type, so a tool that asks for a number gets one.
@@ -188,13 +192,13 @@ export const mcpCallExecutor =
         isError: reported || tooLong || problem !== null,
       });
       if (reported) {
-        return failed(`${name} failed: ${clipError(said)}`, output);
+        return missed(`${name} failed: ${clipError(said)}`, output);
       }
       if (tooLong) return failed(`${name}'s result is over 64 KiB`, output);
       return problem === null ? { ok: true, output } : failed(problem, output);
     } catch (error) {
       context.emit({ type: "tool.result", id: context.id, isError: true });
-      return failed(clipError(scrub(reasonOf(error, node.server))));
+      return missed(clipError(scrub(reasonOf(error, node.server))));
     } finally {
       await client.close().catch(() => {
         // Nothing is left to do with a connection that won't close.

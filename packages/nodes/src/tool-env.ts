@@ -30,6 +30,9 @@ export { type Environ, readEnv };
 /** The file a node with `output: { format: json }` may write its result to. */
 export const OUTPUT_ENV = "ORK_OUTPUT";
 
+/** A file a `watch:` node's program keeps between looks (RFC-011). */
+export const STATE_ENV = "ORK_STATE";
+
 /** Set for a program in a run. */
 export const RUN_ENV = "ORK_RUN";
 
@@ -51,6 +54,7 @@ const IDENTITY_KEYS = new Set([
   "ORK_WORKFLOW",
   "ORK_BIN",
   OUTPUT_ENV,
+  STATE_ENV,
 ]);
 
 /**

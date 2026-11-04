@@ -87,6 +87,15 @@ export const draftGraph = (
       ? [[a, b] as const]
       : [];
   });
+  const untils = isRecord(document["nodes"])
+    ? Object.entries(document["nodes"]).flatMap(([id, node]) => {
+        const watch = isRecord(node) ? node["watch"] : undefined;
+        const until = isRecord(watch) ? watch["until"] : undefined;
+        return typeof until === "string"
+          ? [[id, readCondition(until)] as const]
+          : [];
+      })
+    : [];
   return {
     document,
     graph: {
@@ -94,6 +103,7 @@ export const draftGraph = (
       edges,
       channels,
       says: nodeSays(validNodes(document), edges),
+      untils: Object.fromEntries(untils),
     },
   };
 };

@@ -31,6 +31,9 @@ export const projectQueries = (db: DatabaseSync): ProjectStore => {
   const removeDrafts = db.prepare(
     "DELETE FROM workflow_drafts WHERE project = ?",
   );
+  // And it would inherit what was accepted here, unasked.
+  const removeTriggers = db.prepare("DELETE FROM triggers WHERE project = ?");
+  const removeSeen = db.prepare("DELETE FROM trigger_seen WHERE project = ?");
   const move = db.prepare(
     "UPDATE projects SET root = ?, mode = ?, dir = ? WHERE id = ?",
   );
@@ -58,6 +61,8 @@ export const projectQueries = (db: DatabaseSync): ProjectStore => {
     },
     forgetProject: id => {
       removeDrafts.run(id);
+      removeTriggers.run(id);
+      removeSeen.run(id);
       return Number(remove.run(id).changes) > 0;
     },
     moveProject: (id, place) => {

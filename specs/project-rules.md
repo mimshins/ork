@@ -115,6 +115,13 @@ Without it, any registered project may [call a workflow](./scheduler/calls.md)
 here. With it, only those named may, and others fail with the reason. A call
 from within the project is always allowed.
 
+## Triggers
+
+What starts a run with nobody there isn't a rule: it's in `triggers.yaml`,
+beside this file, and [accepted on each machine](./scheduler/watching.md#trust).
+[Quotas](#quotas) hold a trigger until they reset. A change to `project.yaml`
+doesn't turn a trigger off ([L119](./gaps/limits-watching.md)).
+
 ## Safety
 
 Whatever the rules say:

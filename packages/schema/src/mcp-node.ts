@@ -12,6 +12,7 @@ import {
   notifyFields,
   TimeoutSchema,
   toolProgramFields,
+  WatchSchema,
 } from "./settings.ts";
 
 export const McpCallNodeSchema = z.strictObject({
@@ -36,7 +37,10 @@ export const McpCallNodeSchema = z.strictObject({
   env: toolProgramFields.env,
   plainEnv: toolProgramFields.plainEnv,
   timeout: TimeoutSchema.optional().describe(
-    "How long the call may take, e.g. 5m; then the node fails.",
+    "How long the call may take, e.g. 5m; then the node fails. With watch:, how long one look may take.",
+  ),
+  watch: WatchSchema.optional().describe(
+    "Call the tool again and again until a condition holds, with no model turn.",
   ),
   ...notifyFields,
 });

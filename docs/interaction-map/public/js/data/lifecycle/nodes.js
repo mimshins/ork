@@ -18,6 +18,7 @@ import {
   STORE,
   RESUME,
   TIMEOUTS,
+  WATCH,
 } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
@@ -25,7 +26,7 @@ import {
 /** @typedef {import("../types.js").Group} Group */
 
 /** The map's extent, in map units. */
-export const SIZE = { w: 1660, h: 1010 };
+export const SIZE = { w: 1660, h: 1120 };
 
 /**
  * The columns, left to right.
@@ -103,12 +104,18 @@ export const NODES = [
       "Built: before anything starts, it checks that the programs a workflow runs are installed, the variables it reads are set, and its MCP servers are in `.mcp.json`; integrations a workflow does not use are never needed.",
       "Built: nor does it start with a quota spent, if the workflow has a session or a call to spend it on.",
       "`--driver sdk|cli` overrides every node's driver for this run.",
+      "Not on `main` yet: `ork watch` can start a run too, as `ork run --expect-workflow`, which refuses a file whose text has changed since it was accepted.",
     ],
     see: [
       {
         map: "architecture",
         node: "cli",
         label: "The CLI in the architecture",
+      },
+      {
+        map: "architecture",
+        node: "watchCmd",
+        label: "`ork watch` starts runs",
       },
     ],
     docs: [CLI.run, CLI.runWorkflow, CLI.runTests, DESIGN.cli, NODE_TYPES.mcp],
@@ -162,6 +169,7 @@ export const NODES = [
       "`software-factory` declares none, but any leader or worker can take `before:`, which runs first, and `verify:`, which must pass before its report is accepted. Both run inside the node, so a delegated child gets them too.",
       "`ork resume` runs the workflow again under the same id: what finished is handed back from the run's events, and only the rest runs.",
       "A node cut off mid-session (stopped, crashed, out of budget) continues that session on resume; unread messages and queued `ork chat` messages are handed back too. `--detach` resumes in the background.",
+      "Not on `main` yet: a tool or MCP node with `watch:` looks until a condition holds. `limits.timeout` stands still while every running node is between looks.",
     ],
     see: [
       { map: "roles", node: "scheduler", label: "When each node runs" },
@@ -212,15 +220,14 @@ export const NODES = [
     zone: "engine",
     x: 320,
     y: 840,
-    status: "partial",
+    status: "built",
     pkg: "core",
     src: "packages/core/src/control/queue.ts",
     summary:
       "Questions waiting for you, from every node of every run, each with its options and a recommended answer.",
     facts: [
-      "Built: answered on the run's terminal or with `ork decide` from any other; the first answer wins.",
+      "Built: answered on the run's terminal, with `ork decide` from any other, or in the UI's Decisions panel; the first answer wins.",
       "A gate with `timeout` and `default` answers itself when the time runs out.",
-      "Planned: the UI inbox (M2).",
     ],
     see: [
       { map: "messaging", node: "decisions", label: "Decisions in detail" },
@@ -228,6 +235,47 @@ export const NODES = [
     docs: [DESIGN.messaging, CONTROL.queue, CONTROL.commands],
   },
 
+  {
+    id: "watching",
+    title: "Waiting on a source",
+    sub: "`watch:` · no model turn",
+    zone: "engine",
+    x: 320,
+    y: 1000,
+    status: "partial",
+    pkg: "core",
+    src: "packages/core/src/run/watch.ts",
+    summary:
+      "`software-factory` waits on nothing outside it, but a run can: a tool or MCP node with `watch:` repeats its call until a condition holds, with no model turn. `examples/wait-for-ci.ork.yaml` watches a pull request's checks.",
+    facts: [
+      "Not on `main` yet: built and tested in the working tree, uncommitted. Not tried against real GitHub.",
+      "The last look is the node's output. The node runs once: `runs` is 1, and `round` doesn't change between looks.",
+      "A failed look is tried again, up to `misses` in a row. An answer it didn't declare fails it at once, and so does `watch.timeout` passing, with `timedOut`.",
+      "It holds no session slot. The time between looks doesn't count against `limits.timeout` unless something else in the run is working.",
+      "A resumed run looks again from the start. `$ORK_STATE`, a file a tool's program keeps, lasts across looks, rounds and a resume, and goes when the run succeeds.",
+    ],
+    see: [
+      {
+        map: "architecture",
+        node: "nodeWatch",
+        label: "Watching in the architecture",
+      },
+      {
+        map: "architecture",
+        journey: "trigger",
+        label: "From outside a run: a trigger starts one",
+      },
+    ],
+    docs: [
+      WATCH.node,
+      WATCH.state,
+      WATCH.example,
+      WATCH.tests,
+      WATCH.spec,
+      WATCH.adr,
+      WATCH.guide,
+    ],
+  },
   {
     id: "called",
     title: "Called runs",

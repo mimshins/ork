@@ -5,12 +5,14 @@
  */
 
 import type { BuilderCatalog } from "@krapht/ork-server/client";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 import { Button } from "../components/button.tsx";
 import { Combobox } from "../components/combobox.tsx";
 import { TextField } from "../components/text-field.tsx";
 import type { FieldProps } from "./form-parts.tsx";
+import { kindOf } from "./schema-model.ts";
+import type { Builder } from "./use-builder.ts";
 
 import styles from "./builder.module.css";
 
@@ -93,3 +95,15 @@ export const SkillRows = ({
     </div>
   );
 };
+
+/** Only a plain list: `layers.project.skills` says something else entirely. */
+export const skillsControl = (
+  builder: Builder,
+  field: FieldProps,
+): ReactNode =>
+  kindOf(field.schema).kind === "list" ? (
+    <SkillRows
+      catalog={builder.catalog}
+      field={field}
+    />
+  ) : null;

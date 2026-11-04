@@ -16,9 +16,12 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import {
+  compileWorkflow,
   type ExecuteContext,
   inRepoPlace,
+  type RunEvent,
   type RuntimeEvent,
+  startRun,
 } from "@krapht/ork-core";
 import type { Node, Workflow } from "@krapht/ork-schema";
 import { afterEach, describe, expect, it } from "vitest";
@@ -247,6 +250,52 @@ describe("mcp.call over stdio", () => {
   });
 });
 
+/** A real run of one watching call, with the floor on `every` out of the way. */
+const watched = async (
+  arguments_: Record<string, unknown>,
+  tool: string,
+  root = projectWith(STDIO),
+) => {
+  const events: RunEvent[] = [];
+  const { graph, diagnostics } = compileWorkflow({
+    schemaVersion: 1,
+    name: "t",
+    nodes: {
+      m: {
+        type: "mcp.call",
+        server: "echo",
+        tool,
+        arguments: arguments_,
+        watch: {
+          every: "5s",
+          until: "json.state == 'OPEN'",
+          timeout: "1m",
+          misses: 2,
+        },
+      },
+    },
+  });
+  if (graph === null) throw new Error(JSON.stringify(diagnostics));
+  const result = await startRun({
+    graph,
+    inputs: {},
+    cwd: root,
+    runDir: path.join(root, "runs"),
+    projectRoot: root,
+    executors: { "mcp.call": mcpCallExecutor({ environ: PATH_ONLY }) },
+    human: {
+      ask: () => Promise.resolve(""),
+      permit: () => Promise.resolve({ allow: true }),
+    },
+    onEvent: event => {
+      events.push(event);
+    },
+    watchEveryMs: 1,
+  }).done;
+  const ended = events.filter(event => event.type === "watch.ended");
+  return { result, ended };
+};
+
 const bodyOf = async (request: IncomingMessage): Promise<string> => {
   const chunks: Buffer[] = [];
   for await (const chunk of request) chunks.push(Buffer.from(String(chunk)));
@@ -303,6 +352,67 @@ const httpServer = (status = 200) => {
   });
   return server;
 };
+
+describe("a watching mcp.call", () => {
+  it("can try again after the server says it failed", async () => {
+    const { result } = await call("fails");
+    expect(result.ok).toBe(false);
+    expect(result.transient).toBe(true);
+  });
+
+  it("can try again after a server that won't start", async () => {
+    const { result } = await call(
+      "echo",
+      {},
+      PATH_ONLY,
+      projectWith({ echo: { command: "no-such-program-here" } }),
+    );
+    expect(result.ok).toBe(false);
+    expect(result.transient).toBe(true);
+  });
+
+  it("can't mend an answer it didn't declare", async () => {
+    const { result } = await call("structured", {
+      output: { schema: { state: ["CLOSED"] } },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.transient).toBeUndefined();
+  });
+
+  it("looks again after a failed look, and goes on from a good one", async () => {
+    const seen = path.join(
+      mkdtempSync(path.join(tmpdir(), "ork-mcp-seen-")),
+      "seen",
+    );
+    const { result, ended } = await watched({ seen }, "fails-once");
+    expect(result.status).toBe("succeeded");
+    expect(ended).toEqual([
+      { type: "watch.ended", id: "m", looks: 2, outcome: "met" },
+    ]);
+  }, 20_000);
+
+  it("counts failed looks toward misses, rather than failing at the first", async () => {
+    const { result, ended } = await watched({}, "fails");
+    expect(result.status).toBe("failed");
+    expect(result.nodes[0]?.error).toContain("2 looks in a row failed");
+    expect(result.nodes[0]?.error).toContain("the tracker is down");
+    expect(ended).toEqual([
+      { type: "watch.ended", id: "m", looks: 2, outcome: "failed" },
+    ]);
+  }, 20_000);
+
+  it("counts a server that won't start the same way", async () => {
+    const { result, ended } = await watched(
+      {},
+      "echo",
+      projectWith({ echo: { command: "no-such-program-here" } }),
+    );
+    expect(result.nodes[0]?.error).toContain("2 looks in a row failed");
+    expect(ended).toEqual([
+      { type: "watch.ended", id: "m", looks: 2, outcome: "failed" },
+    ]);
+  }, 20_000);
+});
 
 describe("mcp.call over HTTP", () => {
   const servers: Server[] = [];

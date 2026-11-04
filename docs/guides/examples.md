@@ -1,10 +1,11 @@
 # The example workflows
 
-Two workflows in [`examples/`](../../examples/) show Ork's main patterns end to
-end. Both stop for your go-ahead before anything leaves your machine. Both keep
-their roles as [agents](./agents.md) in the workflow's own `agents:` section,
-and their nodes take them: the `security` node is the `security-reviewer` agent
-with the task "review the builder's branch".
+The workflows in [`examples/`](../../examples/) show Ork's main patterns end to
+end. The first two, `software-factory` and `pr-review`, stop for your go-ahead
+before anything leaves your machine. They keep their roles as
+[agents](./agents.md) in the workflow's own `agents:` section, and their nodes
+take them: the `security` node is the `security-reviewer` agent with the task
+"review the builder's branch".
 
 ## software-factory
 
@@ -73,6 +74,24 @@ worker. `ork validate` warns until the project is registered. See
 
 ```sh
 ork run examples/across-projects.ork.yaml --input feature="Add a farewell endpoint"
+```
+
+## checked-build
+
+[`checked-build.ork.yaml`](../../examples/checked-build.ork.yaml) has a session
+build while programs check its work and tell it what they found, with no model
+turn to carry the news. It needs `./scripts/check.sh` in your project and
+`CI_TOKEN` set. See [Scripts in a workflow](./scripts.md).
+
+## wait-for-ci
+
+[`wait-for-ci.ork.yaml`](../../examples/wait-for-ci.ork.yaml) watches a pull
+request's checks with no model turn, and starts a session only if one fails. It
+looks every 30 seconds for up to 2 hours, and after a fix it watches again, at
+most three times. See [Watching a source](./watching.md).
+
+```sh
+ork run examples/wait-for-ci.ork.yaml --input pr=12
 ```
 
 ## Running them unattended

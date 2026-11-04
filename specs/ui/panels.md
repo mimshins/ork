@@ -40,6 +40,12 @@ filtered by project ([L37](../gaps/limits.md)).
 
 The empty state teaches the next step: **Run workflow** or `ork run <workflow>`.
 
+**Triggers,** under the list when any registered project has some, say how each
+stands, from [`GET /api/triggers`](../server.md#api): whether it's live and when
+it last looked, or why it's off, with `ork watch --accept` as the way to change
+that. It only shows: accepting takes a terminal
+([trust](../scheduler/watching.md#trust)).
+
 ## Run workflow
 
 Opened from the panel's button or the palette, so it works with the panel
@@ -111,6 +117,11 @@ Its CLI twin is `ork tree <run>`.
   [notifications](#notifications), so they are not said twice
   ([use-run-announcer.ts](../../packages/ui/src/panels/use-run-announcer.ts)).
   What the run already was when opened is not news (WCAG 4.1.3).
+- **Waiting on a source:** a node with a `watch:` says, while its run is going,
+  what it's waiting for, how often it looks, how many looks and what the last
+  said ([watch-facts.ts](../../packages/ui/src/panels/watch-facts.ts)). Looks
+  aren't recorded, so the count and the next look are estimates and say "about"
+  ([L118](../gaps/limits-watching.md)). A run that's over shows none of this.
 - **Across runs:** a `workflow.call` node opens the run it started, a called run
   links back to its caller, and a run's links are listed with their message
   counts, each opening the run at the other end ([L50](../gaps/limits.md)). The
@@ -142,6 +153,9 @@ editor and `ork validate`.
   its kinds. A text field commits when it's left. A value the format leaves free
   (`mcp.call`'s `arguments`, `output.schema`, an input's `default`) is typed as
   text, or as JSON for a number or a list. There is no YAML to read or write.
+- **A `watch:`'s `until`** is the same choice as an edge's condition, from what
+  the node declares, except that waiting for it to fail isn't offered
+  ([until-picker.tsx](../../packages/ui/src/builder/until-picker.tsx)).
 - **Edges** are in the inspector: each with its condition and loop limit, added
   from a list or by picking a card, neither of which needs a drag.
 - **Every change goes to the server,** which keeps it as a draft in the store

@@ -9,6 +9,8 @@ import type { RunView } from "@krapht/ork-server/client";
 import { memo } from "react";
 
 import { EmptyState } from "../components/bits.tsx";
+import { Button } from "../components/button.tsx";
+import { IconPlay } from "../components/icons.tsx";
 import { type Status, StatusBadge } from "../components/status-badge.tsx";
 import { formatCost } from "../graph/facts.ts";
 import type { AppState } from "../state/app-state.ts";
@@ -73,6 +75,18 @@ export const RunRow = memo(
   },
 );
 RunRow.displayName = "RunRow";
+
+/** The way to start a run. */
+export const RunWorkflowButton = ({ onClick }: { onClick: () => void }) => (
+  <Button
+    cli="ork run <workflow>"
+    onClick={onClick}
+    variant="primary"
+  >
+    <IconPlay />
+    Run workflow
+  </Button>
+);
 
 /** What the list says with nothing to show, and the next step. */
 export const NoRuns = ({ filtered }: { filtered: boolean }) =>

@@ -2,8 +2,9 @@
 
 Status: **Partial**: `@krapht/ork-integrations`, `@krapht/ork-schema`,
 `@krapht/ork-core`, `@krapht/ork-runtime-claude`, `@krapht/ork-nodes` and the
-CLI `@krapht/ork` exist, and `@krapht/ork-server` with `ork ui` and a
-placeholder page ([server](./server.md)); the UI's panels are planned. Why:
+CLI `@krapht/ork` exist, and so do `@krapht/ork-server` with `ork ui`
+([server](./server.md)) and `@krapht/ork-ui`, with its panels and the workflow
+builder; the context inspector is still to come ([ui](./ui.md)). Why:
 [ADR-002](../decisions/ADR-002-typescript-from-source.md),
 [ADR-003](../decisions/ADR-003-oxlint-oxfmt-and-boundaries.md),
 [ADR-039](../decisions/ADR-039-local-server.md).

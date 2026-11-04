@@ -39,6 +39,8 @@ export type CallPortsOptions = {
   out: (line: string) => void;
   home?: string | undefined;
   calledBy?: string | undefined;
+  trigger?: string | undefined;
+  untrusted?: string[] | undefined;
   budgetCap?: number | undefined;
   baseRef?: string | undefined;
   resume?: ResumeState | undefined;
@@ -50,7 +52,10 @@ export type CallPorts = {
   calls: CallPort;
   relay?: RelayPort;
   /** What the run records, for its own resume. */
-  settings: Pick<RunSettings, "links" | "budgetCap" | "calledBy" | "baseRef">;
+  settings: Pick<
+    RunSettings,
+    "links" | "budgetCap" | "calledBy" | "baseRef" | "trigger" | "untrusted"
+  >;
 };
 
 export const callPorts = (options: CallPortsOptions): CallPorts => {
@@ -59,6 +64,8 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
   const cap = options.budgetCap ?? options.resume?.settings.budgetCap;
   const calledBy = options.calledBy ?? options.resume?.settings.calledBy;
   const baseRef = options.baseRef ?? options.resume?.settings.baseRef;
+  const trigger = options.trigger ?? options.resume?.settings.trigger;
+  const untrusted = options.untrusted ?? options.resume?.settings.untrusted;
   const own = graph.workflow.limits?.budgetUsd;
   const budgetUsd =
     cap === undefined ? own : Math.min(cap, own ?? Number.POSITIVE_INFINITY);
@@ -113,6 +120,8 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
       ...(cap === undefined ? {} : { budgetCap: cap }),
       ...(calledBy === undefined ? {} : { calledBy }),
       ...(baseRef === undefined ? {} : { baseRef }),
+      ...(trigger === undefined ? {} : { trigger }),
+      ...(untrusted === undefined ? {} : { untrusted }),
     },
   };
 };

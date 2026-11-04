@@ -110,6 +110,23 @@
   padding-block-end: var(--gap-tight);
 }
 
+.watching {
+  display: grid;
+  flex-basis: 100%;
+  gap: var(--gap-tight) var(--gap);
+  grid-template-columns: max-content minmax(0, 1fr);
+  margin: 0;
+}
+
+.watching dt {
+  color: var(--color-text-muted);
+}
+
+.watching dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .tree {
   display: flex;
   flex-direction: column;

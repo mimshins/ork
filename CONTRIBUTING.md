@@ -15,6 +15,8 @@ participating, you are expected to uphold it.
 - New to Ork as a user? The [documentation center](./docs/README.md) has the
   installation guide, a quickstart and guides. This page is for working on Ork
   itself.
+- New to the code? [ONBOARDING.md](./ONBOARDING.md) is an ordered path through
+  the docs, the interaction map and the packages.
 - Read [docs/design.md](./docs/design.md) for the overview, the
   [specs](./specs/README.md) for what each part must do, the
   [ADRs](./decisions/README.md) for why, and the
@@ -48,7 +50,7 @@ Requirements: Node.js `>= 24.20` and pnpm (the exact version is pinned in
 
 ```sh
 pnpm install          # install dependencies and the git hooks
-pnpm check            # format check, lint, typecheck, tests
+pnpm check            # format check, lint, typecheck, tests, docs and map checks
 pnpm format           # fix formatting (oxfmt)
 pnpm lint:fix         # fix what oxlint can fix
 pnpm test             # unit tests (vitest)

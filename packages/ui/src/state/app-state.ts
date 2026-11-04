@@ -90,6 +90,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     workflow: string;
   } | null>(null);
   const projects = createRead(() => client.call("projects"));
+  const triggers = createRead(() => client.call("triggers"));
   const workflows = createRead((id: string) =>
     client.call("workflows", { params: { id } }),
   );
@@ -161,6 +162,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     workflows,
     usage,
     usageFilter,
+    triggers,
     /** Asks for a run; it then arrives on the stream like any other. */
     startRun: (body: BodyOf<"start">) => client.call("start", { body }),
     /** Follows the server until the returned function is called. */

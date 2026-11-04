@@ -137,6 +137,14 @@ export const formatRunEvent = (
         "dim",
         `▸ run ${event.runId} of ${event.workflow} (starts at ${event.entries.join(", ")})`,
       ),
+      ...(event.settings?.trigger === undefined
+        ? []
+        : [
+            style(
+              "dim",
+              `  started by trigger ${event.settings.trigger}; untrusted inputs: ${(event.settings.untrusted ?? []).join(", ") || "none"}`,
+            ),
+          ]),
     ];
   }
   if (event.type === "node.started") {
@@ -172,6 +180,21 @@ export const formatRunEvent = (
   if (event.type === "loop.exhausted") {
     return [
       `${style(["yellow", "bold"], "!")} the loop ${event.from} -> ${event.to} used all ${String(event.maxRounds)} rounds`,
+    ];
+  }
+  if (event.type === "watch.started") {
+    return [
+      `${tag(event.id)} ${style("dim", `watching until ${event.until}, every ${event.every}`)}`,
+    ];
+  }
+  if (event.type === "watch.changed") {
+    return [
+      `${tag(event.id)} ${style("dim", `look ${String(event.looks)}:`)} ${event.said}`,
+    ];
+  }
+  if (event.type === "watch.ended") {
+    return [
+      `${tag(event.id)} ${style("dim", `${event.outcome} after ${String(event.looks)} looks`)}`,
     ];
   }
   if (event.type === "edge.taken") return [];

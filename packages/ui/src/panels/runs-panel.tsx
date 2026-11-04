@@ -4,16 +4,15 @@
  *   tab stop, and the arrow keys move through it.
  */
 
-import { type KeyboardEvent, useEffect, useMemo } from "react";
+import { type KeyboardEvent, useMemo } from "react";
 import { useComputedValue, useValue } from "react-containerized-state";
 
-import { Button } from "../components/button.tsx";
-import { IconPlay } from "../components/icons.tsx";
 import { Select } from "../components/select.tsx";
-import type { AppState } from "../state/app-state.ts";
 import { useAppState } from "../state/context.tsx";
 import { ALL_PROJECTS, projectOptions } from "./project-options.ts";
-import { NoRuns, RunRow } from "./run-row.tsx";
+import { NoRuns, RunRow, RunWorkflowButton } from "./run-row.tsx";
+import { TriggersSection } from "./triggers-section.tsx";
+import { useProjectList, useWaitingRuns } from "./use-runs-panel.ts";
 
 import styles from "./runs.module.css";
 
@@ -33,20 +32,6 @@ const moveFocus = (event: KeyboardEvent<HTMLUListElement>): void => {
     event.preventDefault();
     buttons[target]?.focus();
   }
-};
-
-const useWaitingRuns = (state: AppState): ReadonlySet<string> =>
-  useComputedValue(
-    state.decisions,
-    list => new Set((list ?? []).map(({ runId }) => runId)),
-  );
-
-const useProjectList = (state: AppState) => {
-  const projects = useValue(state.projects.state);
-  useEffect(() => {
-    void state.projects.load();
-  }, [state]);
-  return projects.status === "ready" ? projects.data : [];
 };
 
 export const RunsPanel = () => {
@@ -77,16 +62,11 @@ export const RunsPanel = () => {
           options={options}
           value={filter}
         />
-        <Button
-          cli="ork run <workflow>"
+        <RunWorkflowButton
           onClick={() => {
             void state.runDialog.setValue(true);
           }}
-          variant="primary"
-        >
-          <IconPlay />
-          Run workflow
-        </Button>
+        />
       </div>
       {runs === null ? (
         <p className={styles["note"]}>Reading runs…</p>
@@ -112,6 +92,7 @@ export const RunsPanel = () => {
           ))}
         </ul>
       )}
+      <TriggersSection />
     </div>
   );
 };

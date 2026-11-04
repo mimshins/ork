@@ -34,6 +34,7 @@ const NO_USAGE = {
 
 const replyTo = (url: string, health: unknown): unknown => {
   if (url === "/api/health") return health;
+  if (url === "/api/triggers") return { broken: [], triggers: [] };
   return url.startsWith("/api/usage") ? NO_USAGE : [];
 };
 

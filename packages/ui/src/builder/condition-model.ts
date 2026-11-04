@@ -68,7 +68,7 @@ const rowFits = (row: ConditionRow, fields: readonly SaidField[]): boolean => {
  * fixed.
  */
 export const shownCondition = (
-  { condition, when }: Edge,
+  { condition, when }: Pick<Edge, "condition" | "when">,
   says: NodeSays,
 ): Condition => {
   const read = condition ?? { mode: "succeeds" as const };

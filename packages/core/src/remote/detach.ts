@@ -7,7 +7,7 @@
  */
 
 import { spawn } from "node:child_process";
-import { mkdirSync, openSync, readFileSync } from "node:fs";
+import { closeSync, mkdirSync, openSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
@@ -41,6 +41,16 @@ export type Detached =
   | { ok: true; runId: string; log: string }
   | { ok: false; error: string; log: string };
 
+const killGroup = (pid: number | undefined): void => {
+  if (pid === undefined) return;
+  try {
+    // Started detached, so it leads its own process group.
+    process.kill(-pid, "SIGKILL");
+  } catch {
+    // It has gone already.
+  }
+};
+
 export const detachRun = async (options: DetachOptions): Promise<Detached> => {
   const { runId } = options;
   const dir = options.runDir;
@@ -68,6 +78,8 @@ export const detachRun = async (options: DetachOptions): Promise<Detached> => {
     exited = code ?? 1;
   });
   child.unref();
+  // The child has its own copy; a long-lived caller mustn't keep one per start.
+  closeSync(fd);
 
   const deadline = Date.now() + (options.timeoutMs ?? 15_000);
   while (Date.now() < deadline) {
@@ -80,5 +92,8 @@ export const detachRun = async (options: DetachOptions): Promise<Detached> => {
     // oxlint-disable-next-line no-await-in-loop -- waiting for the child to record its run
     await sleep(100);
   }
+  // Reported as not started, so it mustn't go on and start anyway: a caller may
+  // try again, and that would spend twice.
+  killGroup(child.pid);
   return { ok: false, error: "the run did not start in time", log };
 };

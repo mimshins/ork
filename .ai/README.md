@@ -22,7 +22,7 @@ internal hostnames, dashboard links, or personal data, in memories included.
 | `rfcs/`                 | proposals (`active/`) and closed ones (`archived/`)       | Is it proposed, not yet decided?                                     |
 | `decisions/`            | accepted decisions and why (ADRs)                         | Does it record _why_ something was decided?                          |
 | `runbook/`              | procedures: develop, release, docs                        | Would a human follow it step by step, with no AI tooling?            |
-| `docs/`                 | the overview and the interaction map                      | Does it explain how the whole fits together?                         |
+| `docs/`                 | user guides, the overview and the interaction map         | Does it teach a user, or explain how the whole fits together?        |
 | `.ai/memories/`         | short, present-state orientation for agents               | Does it help an agent decide, without being a contract or procedure? |
 | `.ai/memories/working/` | committed in-flight context                               | Is it still unresolved?                                              |
 | `.ai/specs/`            | local task specs (**gitignored**, never committed)        | Is it one piece of work's working spec?                              |

@@ -141,7 +141,7 @@ const RowControls = ({
 /** Rows have no identity of their own: each is where it is. */
 const rowKey = (index: number): string => `row ${String(index)}`;
 
-const TestRows = ({
+export const TestRows = ({
   condition,
   says,
   to,

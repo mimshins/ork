@@ -1,0 +1,32 @@
+schemaVersion: 1
+name: wait-for-ci
+description: Watch a pull request's checks with no model turn, and fix what fails.
+inputs:
+  pr:
+    type: string
+    required: true
+nodes:
+  ci:
+    type: tool.gh
+    command: pr view {{inputs.pr}} --json statusCheckRollup --jq '{result:(if (.statusCheckRollup|map(.conclusion)|any(.=="FAILURE")) then "failed" elif (.statusCheckRollup|map(.status)|all(.=="COMPLETED")) then "passed" else "pending" end)}'
+    allow:
+      - pr view
+    output:
+      format: json
+      schema:
+        result:
+          - pending
+          - passed
+          - failed
+    watch:
+      every: 30s
+      until: json.result != 'pending'
+      timeout: 2h
+  fix:
+    type: claude.worker
+    prompt: The checks on pull request {{inputs.pr}} failed. Find out why, and fix it.
+edges:
+  - { from: ci, to: fix, when: "json.result == 'failed'" }
+  - { from: fix, to: ci, maxRounds: 3 }
+limits:
+  budgetUsd: 5

@@ -96,17 +96,6 @@ export const QuotasSchema = z.strictObject({
 });
 export type Quotas = z.infer<typeof QuotasSchema>;
 
-/** A length of time: `30s`, `15m`, `2h`. */
-export const DurationSchema = z
-  .string()
-  .regex(/^\d+[smh]$/u, "use e.g. 30s, 15m, 2h");
-
-/** How long a node or a run may work; time waiting on the user does not count. */
-export const TimeoutSchema = DurationSchema.refine(
-  duration => !/^0+[smh]$/u.test(duration),
-  "a timeout must be longer than zero",
-);
-
 const UNITS: Record<string, number> = { s: 1000, m: 60_000, h: 3_600_000 };
 
 /** `30s`, `15m`, `2h` in milliseconds; `undefined` without a timeout. */
@@ -116,6 +105,67 @@ export const timeoutMs = (timeout: string | undefined): number | undefined => {
   const [, amount = "0", unit = "s"] = match;
   return Number(amount) * (UNITS[unit] ?? 1000);
 };
+
+/** The most a timer can hold; a longer one fires at once. */
+const LONGEST_MS = 2 ** 31 - 1;
+
+/** A length of time: `30s`, `15m`, `2h`. */
+export const DurationSchema = z
+  .string()
+  .regex(/^\d+[smh]$/u, "use e.g. 30s, 15m, 2h")
+  .refine(
+    duration => (timeoutMs(duration) ?? 0) <= LONGEST_MS,
+    "the longest this can be is 596h",
+  );
+
+/** How long a node or a run may work; time waiting on the user does not count. */
+export const TimeoutSchema = DurationSchema.refine(
+  duration => !/^0+[smh]$/u.test(duration),
+  "a timeout must be longer than zero",
+);
+
+/** How often a `watch:` may look at most (RFC-011): each look uses a quota. */
+export const WATCH_EVERY_FLOOR = "5s";
+
+/** A length of time no shorter than `floor`. */
+export const everySchema = (floor: string) =>
+  DurationSchema.refine(
+    duration => (timeoutMs(duration) ?? 0) >= (timeoutMs(floor) ?? 0),
+    `look no more often than every ${floor}`,
+  );
+
+/**
+ * Repeating a tool or MCP call until a condition holds (RFC-011). Every field
+ * that bounds it is required, so a wait can't be endless by leaving one out.
+ */
+export const WatchSchema = z
+  .strictObject({
+    every: everySchema(WATCH_EVERY_FLOOR).describe(
+      "How long to wait between looks, e.g. 30s. At least 5s.",
+    ),
+    until: z
+      .string()
+      .min(1)
+      .describe(
+        "Stop looking when this holds. It reads what an edge's when: does.",
+      ),
+    timeout: TimeoutSchema.describe(
+      "How long to go on looking, e.g. 2h; then the node fails. Time between looks doesn't count against limits.timeout.",
+    ),
+    misses: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe(
+        "How many failed looks in a row end the wait, such as a network error. Default: 3.",
+      ),
+  })
+  .refine(
+    ({ every, timeout }) => (timeoutMs(timeout) ?? 0) > (timeoutMs(every) ?? 0),
+    "watch.timeout must be longer than watch.every",
+  );
+export type Watch = z.infer<typeof WatchSchema>;
 
 /**
  * Ork's built-in practices (ADR-021), on unless turned off. A node without a

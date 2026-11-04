@@ -136,6 +136,18 @@ export const run = defineCommand({
       type: "string",
       description: "Internal: what this run's worktrees start from",
     },
+    trigger: {
+      type: "string",
+      description: "Internal: the trigger that started this run",
+    },
+    "expect-workflow": {
+      type: "string",
+      description: "Internal: the hash the workflow's text must have",
+    },
+    untrusted: {
+      type: "string",
+      description: "Internal: an input from what a trigger's check reported",
+    },
   },
   run: async ({ args, rawArgs }) => {
     if (args.driver !== undefined && !isDriver(args.driver)) {
@@ -212,6 +224,15 @@ export const run = defineCommand({
               ...(args["base-ref"] === undefined
                 ? {}
                 : { baseRef: args["base-ref"] }),
+              ...(args["expect-workflow"] === undefined
+                ? {}
+                : { expectWorkflow: args["expect-workflow"] }),
+              ...(args.trigger === undefined
+                ? {}
+                : {
+                    trigger: args.trigger,
+                    untrusted: flagValues(rawArgs, "--untrusted"),
+                  }),
               onRun: handle => {
                 onInterrupt(handle.interrupt);
               },

@@ -24,6 +24,10 @@ import type { AnsweredBy, DecisionKind } from "../store/types.ts";
 import type { RunLimits } from "../usage/quota.ts";
 import type { BusEvent } from "./bus-events.ts";
 import type { CallPort } from "./calls.ts";
+import type { WatchEvent } from "./watch-events.ts";
+import type { Checkout, KeptWorktree, Workspace } from "./workspace-types.ts";
+
+export type { Checkout, KeptWorktree, Workspace };
 
 export type Inputs = Record<string, string | number | boolean>;
 
@@ -44,6 +48,8 @@ export type NodeResult = {
    * then stops, no edge acts on the failure, and a resume goes on.
    */
   limited?: string;
+  /** Another try might not fail, so a `watch:` looks again (RFC-011). */
+  transient?: true;
 };
 
 /** The task an owner handed a node through `delegate` or `spawn_worker`. */
@@ -105,48 +111,6 @@ export type ExecuteContext = {
   signal: AbortSignal;
 };
 
-export type Checkout = {
-  path: string;
-  /** Absent when the worktree is detached (`commit: never`). */
-  branch?: string;
-  /** The project's git rules: may it commit, how its work reaches its owner. */
-  commit?: "auto" | "never";
-  merge?: "auto" | "patch" | "never";
-  /** The node's own worktree, or its owner's that it shares or reads. */
-  own: boolean;
-  /** The node that owns the worktree. */
-  owner: string;
-};
-
-/** Where nodes work, and what happens to their branches (worktrees, ADR-020). */
-export type Workspace = {
-  /**
-   * The node's checkout; creates its worktree the first time it is needed and
-   * brings it up to date with its owner's branch on later runs. `template` is
-   * the declared node a spawned worker is an instance of.
-   */
-  prepare: (
-    id: string,
-    template?: string,
-  ) => Promise<{ cwd: string; checkout?: Checkout }>;
-  /**
-   * Before a leader delegates: commits its work so far, so children branch from
-   * it. Returns why it could not, or `null`.
-   */
-  checkpoint: (id: string) => Promise<string | null>;
-  /** After a node: commits leftovers, sets `branch`, merges into the owner. */
-  finish: (id: string, result: NodeResult) => Promise<NodeResult>;
-  /** At the end: removes merged worktrees and lists the kept ones. */
-  close: () => Promise<KeptWorktree[]>;
-};
-
-export type KeptWorktree = {
-  id: string;
-  path: string;
-  branch?: string;
-  reason: string;
-};
-
 export type NodeExecutor = (context: ExecuteContext) => Promise<NodeResult>;
 
 /** Executors for the node types that do work; control nodes are built in. */
@@ -206,6 +170,13 @@ export type RunSettings = {
   calledBy?: string;
   /** What this run's worktrees start from, instead of the project's `HEAD`. */
   baseRef?: string;
+  /** The trigger that started this run (RFC-011). */
+  trigger?: string;
+  /**
+   * The inputs it took from what its check reported: anyone may have written
+   * them.
+   */
+  untrusted?: string[];
 };
 
 export type RunEvent =
@@ -247,6 +218,7 @@ export type RunEvent =
   | { type: "node.skipped"; id: string }
   | { type: "edge.taken"; from: string; to: string }
   | { type: "loop.exhausted"; from: string; to: string; maxRounds: number }
+  | WatchEvent
   | {
       type: "worktree";
       id: string;

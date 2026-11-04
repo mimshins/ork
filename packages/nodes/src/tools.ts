@@ -31,6 +31,7 @@ import {
   renderEnv,
   safeRunner,
   secretsOf,
+  STATE_ENV,
 } from "./tool-env.ts";
 import {
   keepFile,
@@ -40,6 +41,7 @@ import {
   writeScriptFile,
 } from "./tool-output.ts";
 import { scrubberOf } from "./tool-scrub.ts";
+import { prepareStateFile } from "./tool-state.ts";
 
 export type ToolRun = { exitCode: number; stdout: string; stderr: string };
 
@@ -200,6 +202,9 @@ export const toolExecutor =
       ...identityOf(context, options.orkBin),
       ...maskedEnv(namesToMask(context.workflow, environ, options.maskedNames)),
       ...(outputFile === undefined ? {} : { [OUTPUT_ENV]: outputFile }),
+      ...(node.watch === undefined
+        ? {}
+        : { [STATE_ENV]: prepareStateFile(context.runDir, context.id) }),
     };
     const names = Object.keys(nodeEnv.values);
     context.emit({
@@ -287,6 +292,7 @@ export const toolExecutor =
     const last = run.stderr.trim().split("\n").at(-1) ?? "";
     return {
       ok: false,
+      transient: true,
       output,
       error: `${scrub(command.program)} exited with ${String(run.exitCode)}${last === "" ? "" : `: ${clipError(last)}`}`,
     };

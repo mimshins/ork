@@ -2,12 +2,14 @@
  * @file The run lifecycle map's connections. Edges inside the run graph are the
  *   example's flow edges, drawn as in-process routing by the scheduler. Lanes
  *   in use: `x` 290 from you up to `ork run`; `x` 550 from the scheduler down
- *   to called runs; `x` 570 from the scheduler up to `spec`; `x` 1355 for the
- *   review loop on the right of the graph; `y` 530 under the reviewers for
- *   their message channel; `y` 950 and 975 under every card.
+ *   to called runs; `x` 556 from the scheduler down to a wait; `x` 310 from a
+ *   wait up to the run's events; `x` 570 from the scheduler up to `spec`; `x`
+ *   1355 for the review loop on the right of the graph; `y` 530 under the
+ *   reviewers for their message channel; `y` 950, 975 and 1056 under every
+ *   card.
  */
 
-import { CALLS, DESIGN, SCHEMA, STORE } from "../refs.js";
+import { CALLS, DESIGN, SCHEMA, STORE, WATCH } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
 
@@ -265,9 +267,51 @@ export const EDGES = [
     to: "inbox",
     kind: "human",
     label: "answer",
-    detail: "On the run's terminal or in `ork decide`; the UI inbox in M2.",
-    status: "partial",
+    detail:
+      "On the run's terminal, in `ork decide`, or in the UI's Decisions panel.",
     docs: [DESIGN.messaging],
     via: [[150, 876]],
+  },
+  {
+    id: "scheduler-watching",
+    from: "scheduler",
+    to: "watching",
+    kind: "local",
+    label: "a node with `watch:`",
+    detail:
+      "One activation, however many looks it takes. When it ends, the scheduler routes its edges on the last look's output, as for any node. Not in this example, and not on `main` yet.",
+    status: "partial",
+    via: [
+      [556, 480],
+      [556, 1036],
+    ],
+    docs: [WATCH.execute, WATCH.node],
+  },
+  {
+    id: "watching-events",
+    from: "watching",
+    to: "events",
+    kind: "event",
+    label: "`watch.*`",
+    detail:
+      "`watch.started`, `watch.changed` when a look says something new, and `watch.ended` with the number of looks and how it ended. A look alone isn't recorded, so an hours-long wait doesn't fill the store. Not on `main` yet.",
+    status: "partial",
+    via: [
+      [310, 1036],
+      [310, 606],
+    ],
+    docs: [WATCH.events],
+  },
+  {
+    id: "watching-github",
+    from: "watching",
+    to: "github",
+    kind: "process",
+    label: "a look · `gh pr view`",
+    detail:
+      "In `examples/wait-for-ci.ork.yaml`, a look is the node's `gh` command with its `allow` rule, and your login. It's tested against stand-ins, not real GitHub. Not on `main` yet.",
+    status: "partial",
+    via: [[1560, 1056]],
+    docs: [WATCH.example, WATCH.tests],
   },
 ];

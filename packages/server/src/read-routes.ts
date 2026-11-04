@@ -12,6 +12,7 @@ import {
   capsHere,
   limitsReport,
   placeFor,
+  triggersReport,
   usageReport,
 } from "@krapht/ork-core";
 
@@ -34,6 +35,7 @@ type ReadRoutes = Pick<
   | "decision"
   | "links"
   | "usage"
+  | "triggers"
 >;
 
 /** A project filter's root: a registered project's, or the value as a root. */
@@ -57,6 +59,9 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
     }),
 
   projects: () => ok(context.store.projects()),
+
+  triggers: () =>
+    ok(triggersReport(context.store, context.store.projects(), context.home)),
 
   links: ({ query }) =>
     ok(context.store.links(query.run === undefined ? {} : { run: query.run })),

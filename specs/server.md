@@ -8,9 +8,9 @@ Status: **Built** ([server](../packages/server/src/server.ts),
 [tests](../packages/server/test/),
 [end-to-end](../packages/cli/test/ui.test.ts)). It serves the built UI
 ([assets](../packages/server/src/assets.ts)), or a placeholder page when there
-is none; the UI's panels are M2 ([ui](./ui.md)). Decided in
-[ADR-039](../decisions/ADR-039-local-server.md) and
-[ADR-040](../decisions/ADR-040-ui-stack.md).
+is none, as in a checkout that hasn't built it; the UI is in
+[its spec](./ui.md). Decided in [ADR-039](../decisions/ADR-039-local-server.md)
+and [ADR-040](../decisions/ADR-040-ui-stack.md).
 
 `@krapht/ork-server` is the way into Ork from a browser: a JSON API with live
 event streams, on loopback only. `ork ui` starts it and opens it.
@@ -84,6 +84,7 @@ are named by id or a unique prefix: no match is 404, several are 400.
 | GET    | `/api/runs/:id/graph`                     | what its graph is drawn from: nodes, edges, channels                                                           |
 | GET    | `/api/runs/:id/events`                    | stored events; `?after`, `?node`, `?limit`, `?last` (the newest N)                                             | `ork logs --json`     |
 | GET    | `/api/usage`                              | the [usage report](./usage.md#reports); `?project`, `?workflow`, `?since`, `?until`                            |
+| GET    | `/api/triggers`                           | how [triggers](./scheduler/watching.md#the-process) stand, and whether `ork watch` is running                  |
 | GET    | `/api/decisions`                          | open decisions of live runs; `?run`, `?project`                                                                | `ork decide --list`   |
 | GET    | `/api/decisions/:id`                      | one decision, open or not, with its answer and who gave it                                                     | `ork logs <run>`      |
 | POST   | `/api/decisions/:id`                      | `{ choose }`: answers it as `ui`, wakes the run                                                                | `ork decide --id`     |

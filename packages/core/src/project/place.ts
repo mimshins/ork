@@ -2,8 +2,8 @@
  * @file Where Ork keeps a project's own files (ADR-035): `.ork/` in the
  *   repository (in-repo), or `~/.ork/projects/<id>/` for a project registered
  *   from outside it (attached), which leaves the repository untouched. Both
- *   hold the same things: `workflows/`, `project.yaml`, `runs/`, `lessons/` and
- *   `agents/`.
+ *   hold the same things: `workflows/`, `project.yaml`, `triggers.yaml`,
+ *   `runs/`, `lessons/` and `agents/`.
  */
 
 import { existsSync, realpathSync } from "node:fs";
@@ -49,6 +49,7 @@ export const placeFiles = (place: ProjectPlace) => ({
   runs: path.join(place.dir, "runs"),
   lessons: path.join(place.dir, "lessons"),
   agents: path.join(place.dir, "agents"),
+  triggers: path.join(place.dir, "triggers.yaml"),
 });
 
 /** A run's own folder: logs, plugins, long tool output. */

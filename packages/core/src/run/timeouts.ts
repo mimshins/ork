@@ -4,7 +4,9 @@
  *   open question or a permission prompt, its own or one of the nodes it owns.
  *   An expired node is aborted and fails with `timedOut` in its output; an
  *   executor that does not end after that is left behind, so a stuck session
- *   cannot hold the run.
+ *   cannot hold the run. A `watch:` between looks (RFC-011) is no more work
+ *   than a wait on the user, so the run's clock stands still when nothing else
+ *   runs.
  */
 
 import {
@@ -51,9 +53,11 @@ export const timeoutOf = (
 export const createClock = (options: {
   graph: CompiledGraph;
   holds: Holds;
-  running: ReadonlySet<string>;
+  running: Set<string>;
 }) => {
   const { graph, holds, running } = options;
+  /** Nodes between two looks of a `watch:`. */
+  const resting = new Set<string>();
   /** Nodes with a question or a prompt open, and how many. */
   const waiting = new Map<string, number>();
   const listeners = new Set<() => void>();
@@ -97,6 +101,23 @@ export const createClock = (options: {
   };
 
   return {
+    /** An activation began: what the run's clock reads may have changed. */
+    enter: (id: string): void => {
+      running.add(id);
+      changed();
+    },
+    /** An activation ended. */
+    leave: (id: string): void => {
+      running.delete(id);
+      resting.delete(id);
+      changed();
+    },
+    /** A node between looks, or not any more. */
+    resting: (id: string, on: boolean): void => {
+      if (on) resting.add(id);
+      else resting.delete(id);
+      changed();
+    },
     /** The same channel, noting who waits on the user for how long. */
     human: (channel: HumanChannel): HumanChannel => ({
       permit: request => asking(request.nodeId, () => channel.permit(request)),
@@ -110,7 +131,7 @@ export const createClock = (options: {
         [...waiting.keys(), ...running].some(
           other =>
             isOwnedBy(declared(id), other) &&
-            (waiting.has(other) || isHeld(other)),
+            (waiting.has(other) || isHeld(other) || resting.has(other)),
         ),
       watch,
     }),
@@ -119,7 +140,8 @@ export const createClock = (options: {
       held: () =>
         holds.runPaused() ||
         waiting.size > 0 ||
-        [...running].some(id => isHeld(id)),
+        [...running].some(id => isHeld(id)) ||
+        (running.size > 0 && [...running].every(id => resting.has(id))),
       watch,
     }),
   };

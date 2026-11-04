@@ -36,10 +36,7 @@ export const SCHEMA = {
     "packages/schema/src/nodes.ts",
     "Code: the node types and their fields",
   ),
-  workflow: d(
-    "packages/schema/src/workflow.ts",
-    "Code: the workflow and layout schema",
-  ),
+  workflow: d("packages/schema/src/workflow.ts", "Code: the workflow schema"),
   yaml: d(
     "packages/schema/src/yaml.ts",
     "Code: parsing, diagnostics, canonical YAML",
@@ -424,6 +421,110 @@ export const TIMEOUTS = {
   ),
   spec: d("specs/scheduler.md#timeouts", "Spec: timeouts"),
   adr: d("decisions/ADR-043-timeouts.md", "ADR-043: timeouts"),
+};
+
+export const WATCH = {
+  node: d(
+    "packages/core/src/run/watch.ts",
+    "Code: a `watch:`, repeating a look until a condition holds",
+  ),
+  execute: d(
+    "packages/core/src/run/execute.ts",
+    "Code: running an activation, or each look of one",
+  ),
+  events: d(
+    "packages/core/src/run/watch-events.ts",
+    "Code: what a `watch:` records",
+  ),
+  check: d(
+    "packages/core/src/graph/watch.ts",
+    "Code: refusing a wait that can't end",
+  ),
+  format: d(
+    "packages/schema/src/settings.ts",
+    "Code: the `watch:` block and its floor",
+  ),
+  state: d("packages/nodes/src/tool-state.ts", "Code: `$ORK_STATE`"),
+  tests: d("packages/core/test/watch.test.ts", "Tests: a `watch:`"),
+  example: d("examples/wait-for-ci.ork.yaml", "Example: wait for CI, fix it"),
+  watcher: d(
+    "packages/core/src/triggers/watcher.ts",
+    "Code: the watcher and its guards",
+  ),
+  trust: d(
+    "packages/core/src/triggers/trust.ts",
+    "Code: what a person accepts, as a hash",
+  ),
+  project: d(
+    "packages/core/src/triggers/project.ts",
+    "Code: reading each project's triggers",
+  ),
+  checkTrigger: d(
+    "packages/core/src/triggers/check.ts",
+    "Code: checking triggers against the workflows",
+  ),
+  lock: d(
+    "packages/core/src/triggers/lock.ts",
+    "Code: one `ork watch` per machine",
+  ),
+  status: d(
+    "packages/core/src/triggers/status.ts",
+    "Code: how the triggers stand",
+  ),
+  store: d(
+    "packages/core/src/store/triggers.ts",
+    "Code: the `triggers`, `trigger_seen` and `watch_lock` tables",
+  ),
+  file: d(
+    "packages/schema/src/triggers.ts",
+    "Code: the `triggers.yaml` format",
+  ),
+  command: d("packages/cli/src/commands/watch.ts", "Code: `ork watch`"),
+  look: d("packages/cli/src/watch/look.ts", "Code: one look at a source"),
+  start: d("packages/cli/src/watch/start.ts", "Code: starting a trigger's run"),
+  report: d(
+    "packages/cli/src/watch/report.ts",
+    "Code: what `--status` and `--accept` print",
+  ),
+  expect: d(
+    "packages/cli/src/run/workflow.ts",
+    "Code: `--expect-workflow`, refusing a changed file",
+  ),
+  triggerTests: d(
+    "packages/core/test/triggers.test.ts",
+    "Tests: the guards, trust and checks",
+  ),
+  cliTests: d(
+    "packages/cli/test/watch.test.ts",
+    "Tests: looks, starts, the lock and who may accept",
+  ),
+  route: d(
+    "packages/server/src/read-routes.ts",
+    "Code: `GET /api/triggers`, among the read routes",
+  ),
+  facts: d(
+    "packages/ui/src/panels/watch-facts.ts",
+    "Code: the Monitor's watch facts",
+  ),
+  factsTests: d(
+    "packages/ui/test/panels/watch-facts.test.ts",
+    "Tests: the Monitor's watch facts",
+  ),
+  section: d(
+    "packages/ui/src/panels/triggers-section.tsx",
+    "Code: the Triggers section of the Runs panel",
+  ),
+  until: d(
+    "packages/ui/src/builder/until-picker.tsx",
+    "Code: the builder's until picker",
+  ),
+  spec: d("specs/scheduler/watching.md", "Spec: watching a source"),
+  limits: d("specs/gaps/limits-watching.md", "Limits: watching a source"),
+  adr: d(
+    "decisions/ADR-053-watching-a-source.md",
+    "ADR-053: watching a source",
+  ),
+  guide: d("docs/guides/watching.md", "Guide: watching a source"),
 };
 
 export const RESUME = {

@@ -6,8 +6,8 @@
  *   (`holds.ts`, ADR-041), and timeouts (`timeouts.ts`, ADR-043).
  */
 
-import { type ContextDeps, createExecute } from "./context.ts";
 import { createLoops } from "./escalation.ts";
+import { type ContextDeps, createExecute } from "./execute.ts";
 import type {
   Activation,
   NodeOutput,
@@ -65,7 +65,7 @@ export const startRun = (options: RunOptions): RunHandle => {
   });
   const scope = () => runScope(options.inputs, outputs, runId);
   const summary = (id: string): NodeSummary => summaryOf(summaries, id);
-  const nodeOf = (activation: Activation) =>
+  const nodeOf = (activation: Pick<Activation, "id" | "template">) =>
     graph.nodes.get(activation.template ?? activation.id)?.node;
 
   const stop = (status: RunStatus, reason: string): void => {
@@ -208,7 +208,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     const { id } = activation;
     const round = (rounds.get(id) ?? 0) + 1;
     rounds.set(id, round);
-    running.add(id);
+    clock.enter(id);
     // A resumed run hands back what an activation did last time.
     const recorded = options.replay?.take(activation) ?? null;
     const type = nodeOf(activation)?.type ?? "control.split";
@@ -225,7 +225,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     if (result.limited !== undefined) stop("quota_exhausted", result.limited);
     holds.finished(id);
     ports.finished(id);
-    running.delete(id);
+    clock.leave(id);
     outputs[id] = result.output;
     if (result.sessionId !== undefined) sessionIds.set(id, result.sessionId);
     recordRun(summary(id), result);

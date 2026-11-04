@@ -11,6 +11,7 @@ import { feedbackQueries } from "./feedback.ts";
 import { linkQueries } from "./links.ts";
 import { planLimitQueries } from "./plan-limits.ts";
 import { projectQueries } from "./projects.ts";
+import { triggerQueries } from "./triggers.ts";
 import { usageQueries } from "./usage.ts";
 
 /**
@@ -24,5 +25,6 @@ export const storeQueries = (db: DatabaseSync) => ({
   ...projectQueries(db),
   ...usageQueries(db),
   ...planLimitQueries(db),
+  ...triggerQueries(db),
   ...draftQueries(db),
 });

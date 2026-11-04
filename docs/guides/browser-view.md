@@ -49,13 +49,17 @@ command.
 each one's status and cost. Choosing a run opens it in the other panels. **Run
 workflow** asks for a project, a workflow and its inputs, shows the command as
 you fill them in, and says why it cannot start yet. Once started, the focus goes
-to the new run in the Monitor.
+to the new run in the Monitor. If your projects have
+[triggers](./watching.md#starting-a-run-when-something-happens), they're listed
+under the runs, with whether each is live. Accepting one takes a terminal.
 
 **Monitor** draws the run as it goes, beside the same nodes as a tree. Each node
 shows its status, cost, tokens and model. Select a node for its own controls.
 Stopping asks first and says what will happen: a stopped node fails, and the
 workflow's failure rules apply; a stopped run can be resumed. A node that called
-another workflow links to that run.
+another workflow links to that run, and one that's
+[watching a source](./watching.md) says what it's waiting for and how often it
+looks.
 
 **Logs** shows a run's events. It stays on the newest; scroll up and it holds
 still, and **Follow** counts what is new. Filter by node, by event type or by
@@ -98,6 +102,7 @@ workflow, or type a new name and choose **Create**.
   A tool's JSON has choices once it declares them, and **Add a field** does that
   from the condition. A condition these can't show stays as you wrote it, under
   **Written by hand**.
+- A `watch:`'s **until** is chosen the same way, from what the node declares.
 - A new edge starts valid. Closing a loop fills in a condition and a limit on
   rounds, and a gate's edge takes its next answer. Under a gate, it says which
   answers end the run.
@@ -164,9 +169,8 @@ not work for you, please
 
 ## What it does not do yet
 
-- **Designing workflows.** The canvas and the context inspector are the next
-  milestone. For now, [write the YAML](./writing-workflows.md), and use
-  `ork context explain`.
+- **Showing what a node loads.** The context inspector is still to come. For
+  now, use `ork context explain`.
 - **Resuming a run** has no button ([L71](../../specs/gaps/limits.md)).
 - **Runs older than the newest 50** are in `ork ps`.
 

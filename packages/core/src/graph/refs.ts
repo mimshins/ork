@@ -25,6 +25,7 @@ import {
   checkTemplate,
 } from "./templates.ts";
 import type { CompiledEdge } from "./types.ts";
+import { compileWatches } from "./watch.ts";
 
 const TEMPLATE_FIELDS = [
   "prompt",
@@ -167,6 +168,12 @@ export const checkReferences = (
           ["ok"],
         ),
   );
+  const fromWatches = compileWatches(workflow.nodes);
+  const fromUntil = fromWatches.conditions.flatMap(({ id, condition }) =>
+    checkCondition(id, ["nodes", id, "watch", "until"], condition, context, [
+      "ok",
+    ]),
+  );
   const fromDefaults = checkDefaultsBefore(workflow, context);
   return [
     ...fromDefaults,
@@ -179,5 +186,7 @@ export const checkReferences = (
     ...fromOutputs,
     ...fromConditions,
     ...fromRules,
+    ...fromWatches.diagnostics,
+    ...fromUntil,
   ];
 };

@@ -44,6 +44,8 @@ export const main = defineCommand({
     context,
     worktrees,
     wt: worktrees,
+    // Loaded on use: most commands never need it.
+    watch: () => import("./commands/watch.ts").then(module => module.watch),
     // Loaded only for `ork ui`, so other commands do not load the server.
     ui: () => import("./commands/ui.ts").then(module => module.ui),
     doctor,

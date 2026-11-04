@@ -185,6 +185,31 @@ export const MIGRATIONS: readonly (string | ((db: DatabaseSync) => void))[] = [
      at TEXT NOT NULL,
      PRIMARY KEY (project, workflow)
    );`,
+  // 11: what `ork watch` keeps of each trigger (RFC-011).
+  `CREATE TABLE triggers (
+     project TEXT NOT NULL,
+     trigger TEXT NOT NULL,
+     accepted_hash TEXT,
+     baselined INTEGER NOT NULL DEFAULT 0,
+     looked_at TEXT,
+     error TEXT,
+     held TEXT,
+     PRIMARY KEY (project, trigger)
+   ) WITHOUT ROWID;
+   CREATE TABLE trigger_seen (
+     project TEXT NOT NULL,
+     trigger TEXT NOT NULL,
+     key TEXT NOT NULL,
+     run_id TEXT,
+     at TEXT NOT NULL,
+     PRIMARY KEY (project, trigger, key)
+   ) WITHOUT ROWID;`,
+  // 12: the one `ork watch` on this machine (RFC-011).
+  `CREATE TABLE watch_lock (
+     id INTEGER PRIMARY KEY CHECK (id = 1),
+     pid INTEGER NOT NULL,
+     at TEXT NOT NULL
+   );`,
 ];
 
 const versionOf = (db: DatabaseSync): number =>

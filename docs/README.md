@@ -6,7 +6,7 @@ them.
 
 > **Pre-alpha.** Everything in Getting started and Guides works today, unless a
 > page marks it as coming later. `ork ui` shows and controls your runs in the
-> browser; designing workflows there comes in a later release.
+> browser, and builds workflows there too.
 
 ## Getting started
 
@@ -23,6 +23,8 @@ them.
   answering questions and permissions, one node on its own.
 - [Scripts in a workflow](./guides/scripts.md): JSON results, `env:`, and what a
   program knows about its run.
+- [Watching a source](./guides/watching.md): wait on CI or a review inside a
+  run, or start a run when something happens, with no model turn until it does.
 - [The browser view](./guides/browser-view.md): `ork ui`, its panels and keys,
   and the command that does the same as each action.
 - [Agents](./guides/agents.md): define who does the work once, give it to any
@@ -44,8 +46,8 @@ them.
   workflow.
 - [Models, effort and budgets](./guides/models-and-budgets.md): picking models
   per node, limits, and saving tokens.
-- [The example workflows](./guides/examples.md): `software-factory` and
-  `pr-review`, what they do and how to run them.
+- [The example workflows](./guides/examples.md): what each one in `examples/`
+  does, and how to run it.
 - [Feedback from your runs](./guides/feedback.md): what Ork and the agents note
   as runs go, and `ork feedback`.
 - [Accounts and credentials](./guides/accounts.md): the two Claude drivers, `gh`
@@ -58,8 +60,8 @@ them.
 - [Design overview](./design.md): the idea, the milestones, and where each part
   is specified.
 - [Interaction map](./interaction-map/README.md): an interactive map of the
-  architecture, a run's lifecycle, context and messaging, with what is built on
-  every card (`pnpm map` in a clone).
+  architecture, a run's lifecycle, node roles, context, messaging and the
+  feedback loop, with what is built on every card (`pnpm map` in a clone).
 - [Roadmap](./interaction-map/roadmap.md): milestones, what has shipped and what
   is left (the Roadmap page beside the map).
 
@@ -78,6 +80,8 @@ them.
 
 - [Decisions (ADRs)](../decisions/README.md): what was decided, and why.
 - [Proposals (RFCs)](../rfcs/README.md): what is being considered.
+- [Onboarding](../ONBOARDING.md): an ordered way to read the project and its
+  code.
 - [Contributing](../CONTRIBUTING.md), the
   [Code of Conduct](../CODE_OF_CONDUCT.md) and the
   [security policy](../SECURITY.md).

@@ -1,14 +1,22 @@
 /**
  * @file Tests for `ork validate`, `ork init`, `ork link` and its doctor checks,
- *   and the `ork worktrees` output.
+ *   the `ork worktrees` output, and a yes-or-no question on the terminal.
  */
 
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { PassThrough } from "node:stream";
 
 import { parseWorkflow } from "@krapht/ork-schema";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   findWorkflowFiles,
@@ -20,10 +28,70 @@ import {
   linkChecks,
   validateFile,
 } from "../src/index.ts";
+import { confirm } from "../src/output.ts";
 
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
 
 const tempProject = () => mkdtempSync(path.join(tmpdir(), "ork-cli-"));
+
+const BIN = path.resolve(import.meta.dirname, "../src/bin.ts");
+
+const TRIAGE =
+  "schemaVersion: 1\nname: triage\nnodes:\n  a: { type: tool.shell, command: x }\nlimits: { budgetUsd: 1 }\n";
+
+/** `ork validate` for real, in a project with these triggers and its own `~`. */
+const validateWithTriggers = (triggers: string, ...args: string[]) => {
+  const root = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-cli-")));
+  const home = path.join(root, "home");
+  const repo = path.join(root, "repo");
+  mkdirSync(home);
+  mkdirSync(path.join(repo, ".ork", "workflows"), { recursive: true });
+  execFileSync("git", ["init", "-q"], { cwd: repo });
+  writeFileSync(path.join(repo, ".ork/workflows/triage.ork.yaml"), TRIAGE);
+  writeFileSync(
+    path.join(repo, ".ork/triggers.yaml"),
+    `schemaVersion: 1\ntriggers:\n${triggers}`,
+  );
+  return spawnSync(process.execPath, [BIN, "validate", ...args], {
+    cwd: repo,
+    encoding: "utf8",
+    env: {
+      PATH: process.env["PATH"] ?? "",
+      HOME: home,
+      ORK_NO_UPDATE_CHECK: "1",
+    },
+  });
+};
+
+const VALID = "  good: { every: 1m, run: triage }\n";
+const INVALID = "  broken: { every: 1m, run: gone }\n";
+
+describe("ork validate on a project's triggers", () => {
+  it("reports an invalid one, and fails", () => {
+    const { status, stdout } = validateWithTriggers(VALID + INVALID);
+    expect(status).toBe(1);
+    expect(stdout).toMatch(
+      /\.ork\/triggers\.yaml:\d+:\d+ error .*gone.*\(trigger\.\w+\)/u,
+    );
+    expect(stdout).toContain("✗ .ork/triggers.yaml (1 error, 0 warnings)");
+  });
+
+  it("has nothing to say of a valid one", () => {
+    const { status, stdout } = validateWithTriggers(VALID);
+    expect(status).toBe(0);
+    expect(stdout).toContain("✓ .ork/triggers.yaml");
+    expect(stdout).not.toContain("error");
+  });
+
+  it("reads them only when no workflow is named", () => {
+    const { status, stdout } = validateWithTriggers(
+      INVALID,
+      ".ork/workflows/triage.ork.yaml",
+    );
+    expect(status).toBe(0);
+    expect(stdout).not.toContain("triggers.yaml");
+  });
+});
 
 describe("ork validate", () => {
   it("reports the example as valid with a summary", () => {
@@ -187,5 +255,32 @@ describe("ork worktrees", () => {
       "  ork/r1/fix: remove worktree + delete branch",
     ]);
     expect(formatWorktrees([])).toEqual(["No Ork worktrees or branches."]);
+  });
+});
+
+/** Answers `confirm` with what's typed, as a terminal's input would. */
+const confirmTyping = (typed: string): Promise<boolean> => {
+  const input = new PassThrough();
+  vi.spyOn(process, "stdin", "get").mockReturnValue(
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- stands in for a terminal
+    input as unknown as typeof process.stdin,
+  );
+  vi.spyOn(process.stderr, "write").mockReturnValue(true);
+  const answer = confirm("Accept? ");
+  input.end(typed);
+  return answer;
+};
+
+describe("a yes-or-no question", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("takes input ending as no, rather than waiting for ever", async () => {
+    expect(await confirmTyping("")).toBe(false);
+  });
+
+  it("takes yes as yes", async () => {
+    expect(await confirmTyping("yes\n")).toBe(true);
   });
 });

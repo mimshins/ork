@@ -10,6 +10,7 @@ export * from "./mcp-node.ts";
 export * from "./nodes.ts";
 export * from "./project.ts";
 export * from "./settings.ts";
+export * from "./triggers.ts";
 export * from "./steps.ts";
 export * from "./tool-nodes.ts";
 export * from "./workflow.ts";

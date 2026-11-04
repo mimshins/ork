@@ -1,9 +1,28 @@
-/** @file Tests for `ork doctor`'s checks, against a fake `exec`. */
+/**
+ * @file Tests for `ork doctor`'s checks, against a fake `exec`, and what it
+ *   says of triggers, against a store in a temp `~`.
+ */
 
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+import {
+  type EventStore,
+  openStore,
+  readProjectTriggers,
+  storePath,
+  takeWatchLock,
+} from "@krapht/ork-core";
 import type { Exec } from "@krapht/ork-integrations";
 import { describe, expect, it } from "vitest";
 
-import { checkNode, formatCheck, runChecks } from "../src/index.ts";
+import {
+  checkNode,
+  formatCheck,
+  runChecks,
+  triggerChecks,
+} from "../src/index.ts";
 
 /** A fake `exec`: maps "program arg arg" to stdout; anything else fails. */
 const fakeExec =
@@ -89,5 +108,95 @@ describe("ork doctor", () => {
     expect(
       formatCheck({ name: "gh", status: "warn", detail: "d", hint: "do x" }),
     ).toEqual(["! gh                   d", "  do x"]);
+  });
+});
+
+/** A store in a temp `~`, with a project declaring one trigger `t`. */
+const triggerHome = () => {
+  const root = mkdtempSync(path.join(tmpdir(), "ork-doctor-"));
+  const home = path.join(root, "home");
+  const dir = path.join(root, "project", ".ork");
+  mkdirSync(path.join(dir, "workflows"), { recursive: true });
+  writeFileSync(
+    path.join(dir, "workflows", "triage.ork.yaml"),
+    "schemaVersion: 1\nname: triage\nnodes:\n  a: { type: tool.shell, command: x }\nlimits: { budgetUsd: 1 }\n",
+  );
+  writeFileSync(
+    path.join(dir, "triggers.yaml"),
+    "schemaVersion: 1\ntriggers:\n  t: { every: 1m, run: triage }\n",
+  );
+  const store = openStore(storePath(home));
+  const place = store.addProject({
+    id: "p",
+    root: path.dirname(dir),
+    mode: "in-repo",
+    dir,
+  });
+  return { home, dir, place, store };
+};
+
+/** Accepts `t` as a person would, which makes it live. */
+const accepted = (given: ReturnType<typeof triggerHome>): EventStore => {
+  const [item] = readProjectTriggers(given.place).triggers;
+  if (item === undefined) throw new Error("no trigger");
+  given.store.acceptTrigger("p", item.id, item.hash);
+  return given.store;
+};
+
+const unparsable = (file: string): void => {
+  writeFileSync(file, "triggers: [not, what, it, wants\n");
+};
+
+const aFolder = (file: string): void => {
+  rmSync(file);
+  mkdirSync(file);
+};
+
+describe("ork doctor on triggers", () => {
+  it("warns of a live trigger with nothing watching", () => {
+    const given = triggerHome();
+    accepted(given).close();
+    expect(triggerChecks(given.home)).toEqual([
+      {
+        name: "ork watch",
+        status: "warn",
+        detail: "not looking: t",
+        hint: "Start it with `ork watch --detach`.",
+      },
+    ]);
+  });
+
+  it("is content when something is watching it", () => {
+    const given = triggerHome();
+    const store = accepted(given);
+    expect(takeWatchLock(store).ok).toBe(true);
+    store.close();
+    expect(triggerChecks(given.home)).toEqual([
+      { name: "ork watch", status: "ok", detail: "1 trigger(s) looking" },
+    ]);
+  });
+
+  it("says nothing of a trigger nobody has accepted", () => {
+    const given = triggerHome();
+    given.store.close();
+    expect(triggerChecks(given.home)).toEqual([]);
+  });
+
+  it.each([
+    ["is no YAML", unparsable],
+    ["is a folder", aFolder],
+  ])("warns of a file it can't read, that %s", (_, spoil) => {
+    const given = triggerHome();
+    given.store.close();
+    const file = path.join(given.dir, "triggers.yaml");
+    spoil(file);
+    const [check, ...rest] = triggerChecks(given.home);
+    expect(rest).toEqual([]);
+    expect(check).toMatchObject({
+      name: "triggers",
+      status: "warn",
+      hint: "Its triggers are off until it can be read.",
+    });
+    expect(check?.detail).toContain(file);
   });
 });

@@ -30,7 +30,27 @@ export type TreeNode = {
   model?: string;
   /** For a `workflow.call`, the run it last started (RFC-004). */
   calledRun?: string;
+  /** What its `watch:` is waiting for, while it's waiting (RFC-011). */
+  watching?: Watching;
   children: TreeNode[];
+};
+
+/**
+ * A wait as the store knows it. Only changes are recorded, so how many looks
+ * there have been since `at`, and when the next is, are worked out from
+ * `every`.
+ */
+export type Watching = {
+  until: string;
+  every: string;
+  timeout: string;
+  startedAt: string;
+  /** Looks up to the last change, and when that was. */
+  looks: number;
+  at: string;
+  /** What the last look that changed anything said, and if it failed. */
+  said?: string;
+  ok?: boolean;
 };
 
 const blank = (id: string, type: NodeType, parent?: string): TreeNode => {
@@ -87,10 +107,30 @@ export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
     } else if (event.type === "node.released") {
       const node = nodes.get(event.id);
       if (node !== undefined) delete node.held;
+    } else if (event.type === "watch.started") {
+      const node = nodes.get(event.id);
+      if (node !== undefined) {
+        const { until, every, timeout, at } = event;
+        node.watching = {
+          until,
+          every,
+          timeout,
+          startedAt: at,
+          looks: 0,
+          at,
+        };
+      }
+    } else if (event.type === "watch.changed") {
+      const node = nodes.get(event.id);
+      if (node?.watching !== undefined) {
+        const { looks, at, said, ok } = event;
+        node.watching = { ...node.watching, looks, at, said, ok };
+      }
     } else if (event.type === "node.finished") {
       const node = nodes.get(event.id);
       if (node === undefined) continue;
       delete node.held;
+      delete node.watching;
       node.state = event.ok ? "ok" : "failed";
       node.output = event.output;
       node.costUsd += event.usage?.costUsd ?? 0;

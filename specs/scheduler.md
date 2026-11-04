@@ -154,6 +154,8 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
     ([L81](./gaps/limits-scripts.md)). A Claude session inherits the user's
     variables like any program, without these, and also gets `ORK_SESSION=1`. A
     detached run's programs and sessions also see `ORK_DETACHED=1`.
+  - **Watching:** with [`watch:`](./scheduler/watching.md) it also gets
+    `ORK_STATE`, a file kept between looks.
   - **JSON:** with `output: { format: json }` it also gets `ORK_OUTPUT`, a file
     in the run's private `.output` folder, which wins over stdout if written. On
     exit 0, invalid or empty JSON or anything but a file there fails the node,
@@ -220,3 +222,4 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 - [Resuming a run, and run events](./scheduler/resuming-and-events.md)
   - [Resuming a run](./scheduler/resuming-and-events.md#resuming-a-run)
   - [Run events](./scheduler/resuming-and-events.md#run-events)
+- [Watching a source](./scheduler/watching.md)

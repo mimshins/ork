@@ -90,6 +90,9 @@ edges:
     stdout. `schema:` under it declares the fields a later node relies on, as a
     list of values or a type (`string`, `number`, `integer`, `boolean`), and a
     value that doesn't fit fails the node ([scheduler](./scheduler.md#edges)).
+- **Waiting on a source:** tool nodes and `mcp.call` take
+  `watch: { every, until, timeout, misses? }`, repeating the look until `until`
+  holds, with no model turn ([watching a source](./scheduler/watching.md)).
 - **Before a session:** leaders and workers take `before:`, a program run in
   their checkout first, with what `verify:` takes but `attempts`. Their `prompt`
   reads its result as `{{before.*}}`, and `defaults:` may set it

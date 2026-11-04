@@ -1,9 +1,13 @@
 /**
  * @file Tests for the API's read routes against a store a run's process fills:
  *   projects, runs with their live status, a run by prefix, its tree and
- *   events, the open decisions of live runs, and the refusals.
+ *   events, the open decisions of live runs, triggers, and the refusals.
  */
 
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import path from "node:path";
+
+import { readProjectTriggers } from "@krapht/ork-core";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -32,6 +36,80 @@ const withRuns = async (): Promise<TestServer> => {
   openGate(fixture, "aaa11111", "d-done");
   return fixture;
 };
+
+/** A server whose project declares a trigger `t`, and `bad` with no workflow. */
+const withTriggers = async (): Promise<TestServer> => {
+  fixture = await startTestServer();
+  const { dir } = fixture.project;
+  writeFileSync(
+    path.join(dir, "workflows", "triage.ork.yaml"),
+    "schemaVersion: 1\nname: triage\nnodes:\n  a: { type: tool.shell, command: x }\nlimits: { budgetUsd: 1 }\n",
+  );
+  writeFileSync(
+    path.join(dir, "triggers.yaml"),
+    "schemaVersion: 1\ntriggers:\n  t: { every: 1m, run: triage }\n  bad: { every: 1m, run: gone }\n",
+  );
+  return fixture;
+};
+
+/** Accepts `t` in the store, as `ork watch --accept` would. */
+const acceptT = ({ project, store }: TestServer): void => {
+  const item = readProjectTriggers(project).triggers.find(
+    ({ id }) => id === "t",
+  );
+  if (item === undefined) throw new Error("no trigger t");
+  store.acceptTrigger(project.id, item.id, item.hash);
+};
+
+describe("GET /api/triggers", () => {
+  it("is empty for a project that declares none", async () => {
+    fixture = await startTestServer();
+    const response = await fixture.get("/api/triggers");
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ triggers: [], broken: [] });
+  });
+
+  it("reports how each stands, read from the project's file and the store", async () => {
+    const { client } = await withTriggers();
+    expect(await client.call("triggers")).toMatchObject({
+      ok: true,
+      data: {
+        broken: [],
+        triggers: [
+          {
+            project: "demo",
+            trigger: "t",
+            run: "triage",
+            every: "1m",
+            standing: "new",
+            problems: [],
+          },
+          { project: "demo", trigger: "bad", standing: "invalid" },
+        ],
+      },
+    });
+  });
+
+  it("says a trigger someone accepted is live", async () => {
+    const given = await withTriggers();
+    acceptT(given);
+    expect(await given.client.call("triggers")).toMatchObject({
+      ok: true,
+      data: { triggers: [{ trigger: "t", standing: "live" }, {}] },
+    });
+  });
+
+  it("says a file it can't read is broken, rather than failing", async () => {
+    fixture = await startTestServer();
+    const file = path.join(fixture.project.dir, "triggers.yaml");
+    mkdirSync(file);
+    expect(await fixture.client.call("triggers")).toMatchObject({
+      ok: true,
+      data: { triggers: [], broken: [{ project: "demo", file }] },
+    });
+    rmSync(file, { recursive: true });
+  });
+});
 
 describe("the read routes", () => {
   it("report usage from the ledger, by project and time", async () => {

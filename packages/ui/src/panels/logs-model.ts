@@ -97,6 +97,15 @@ export const lineOf = (event: Event): string => {
     case "loop.exhausted": {
       return `${event.from} -> ${event.to} after ${String(event.maxRounds)} rounds`;
     }
+    case "watch.started": {
+      return `until ${event.until}, every ${event.every}`;
+    }
+    case "watch.changed": {
+      return `look ${String(event.looks)}: ${event.said}`;
+    }
+    case "watch.ended": {
+      return `${event.outcome} after ${String(event.looks)} looks`;
+    }
     case "worktree": {
       return `${event.action} ${event.branch ?? event.path}`;
     }

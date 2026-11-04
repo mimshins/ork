@@ -15,6 +15,7 @@ import type { ProjectRecord } from "../project/place.ts";
 import type { RunEvent, RunStatus } from "../run/types.ts";
 import type { DecisionChoice, PlanLimit } from "../runtime/types.ts";
 import type { DraftStore } from "./drafts.ts";
+import type { TriggerStore } from "./trigger-types.ts";
 
 /** A run's status in the store: `running` until `run.finished` is written. */
 export type StoredRunStatus = RunStatus | "running";
@@ -281,7 +282,8 @@ export type EventStore = DecisionStore &
   FeedbackStore &
   ProjectStore &
   UsageStore &
-  DraftStore & {
+  DraftStore &
+  TriggerStore & {
     /** Records a new run as `running` in this process. */
     begin: (run: NewRun) => RunRecord;
     /** Marks a stored run `running` again, in this process (`ork resume`). */

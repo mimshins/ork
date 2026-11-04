@@ -127,6 +127,7 @@ A program also sees:
 | `ORK_WORKFLOW` | The workflow's name                                       |
 | `ORK_BIN`      | The `ork` to call; use `"${ORK_BIN:-ork}"`                |
 | `ORK_OUTPUT`   | With `output: { format: json }`, the file above           |
+| `ORK_STATE`    | With [`watch:`](./watching.md), a file kept between looks |
 | `ORK_MASKED`   | The names of the variables to mask, never values          |
 
 These say who a program is but don't limit what it can do: it runs as you.

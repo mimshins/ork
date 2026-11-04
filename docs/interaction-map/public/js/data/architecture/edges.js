@@ -1,11 +1,13 @@
 /**
- * @file The architecture map's connections. Lanes in use: `x` 554, 562, 570 and
- *   580 between the surfaces and the engine; `x` 826, 834, 840, 848 and 862
- *   between the engine's two columns; `x` 1112 down the engine's right, from
- *   the bus to the links; `x` 1130 between the engine and your machine; `y` 456
- *   above the message bus; `x` 1410 and 1690 in the runtime. The rows at y 360,
- *   480 and 600 of "Your machine" stay empty so the engine and the runtime can
- *   reach each other straight across.
+ * @file The architecture map's connections. Lanes in use: `x` 290 between you
+ *   and the surfaces; `x` 548, 554, 562, 570, 572 and 580 between the surfaces
+ *   and the engine; `x` 826, 834, 840, 848, 850, 856 and 862 between the
+ *   engine's two columns; `x` 1112 down the engine's right, from the bus to the
+ *   links; `x` 1130 between the engine and your machine; `y` 456 above the
+ *   message bus; `x` 1410 and 1690 in the runtime. The rows at y 360, 480 and
+ *   600 of "Your machine" stay empty so the engine and the runtime can reach
+ *   each other straight across. The row at y 1320 is `ork watch`, from outside
+ *   any run.
  */
 
 import {
@@ -20,6 +22,7 @@ import {
   SERVER,
   STORE,
   UI,
+  WATCH,
   WORKTREES,
 } from "../refs.js";
 
@@ -44,7 +47,7 @@ export const EDGES = [
     kind: "human",
     label: "designs · watches · answers",
     detail:
-      "You watch and control a run live, chat with its nodes and answer decisions in the browser. Building workflows on a canvas comes with the workflow builder.",
+      "You watch and control a run live, chat with its nodes and answer decisions in the browser, and build a workflow there with no YAML to write.",
     status: "partial",
     docs: [DESIGN.ui, UI.guide],
   },
@@ -80,6 +83,10 @@ export const EDGES = [
     label: "`ork validate`",
     detail:
       "The CLI parses the file with the schema, compiles the graph and prints every diagnostic with its file, line and column; the exit code is 1 when there is an error.",
+    via: [
+      [570, 384],
+      [570, 156],
+    ],
     docs: [CLI.validate, CORE.compile, DESIGN.cli],
   },
   {
@@ -536,5 +543,138 @@ export const EDGES = [
     detail:
       "With your API key, cloud provider or `claude` login. Ork never sees the credential.",
     docs: [README.accounts],
+  },
+
+  // ── Watching a source ────────────────────────────────────────────────────
+  {
+    id: "scheduler-watch",
+    from: "scheduler",
+    to: "nodeWatch",
+    kind: "local",
+    label: "a node with `watch:`",
+    detail:
+      "An activation with a `watch:` runs its executor once per look, not once. It's one activation: `runs` is 1, and `round` doesn't change between looks. Not on `main` yet.",
+    status: "partial",
+    docs: [WATCH.execute, WATCH.node],
+  },
+  {
+    id: "watch-nodes",
+    from: "nodeWatch",
+    to: "nodeTypes",
+    kind: "local",
+    label: "each look",
+    detail:
+      "Each look is the node's own call, under the node's own `timeout`, so every integration, `allow` rule and declared output works unchanged. A look past that timeout counts as failed. Not on `main` yet.",
+    status: "partial",
+    via: [
+      [856, 276],
+      [856, 1108],
+    ],
+    docs: [WATCH.node, WATCH.tests],
+  },
+  {
+    id: "user-watch",
+    from: "user",
+    to: "watchCmd",
+    kind: "human",
+    label: "`ork watch` · `--accept`",
+    detail:
+      "You start and stop it, and accept each trigger in a terminal on this machine. Without a terminal, or inside a run, `--accept` refuses. Not on `main` yet.",
+    status: "partial",
+    via: [[150, 1356]],
+    docs: [WATCH.command, WATCH.guide],
+  },
+  {
+    id: "watch-watcher",
+    from: "watchCmd",
+    to: "watcher",
+    kind: "local",
+    label: "`tick()` every 10 s",
+    detail:
+      "The process takes the lock and asks the watcher what's due every 10 seconds, passing in how to look and how to start. Not on `main` yet.",
+    status: "partial",
+    docs: [WATCH.command, WATCH.watcher],
+  },
+  {
+    id: "watch-cli",
+    from: "watchCmd",
+    to: "cli",
+    kind: "process",
+    label: "`ork run --expect-workflow`",
+    detail:
+      "A run it starts is an ordinary detached `ork run`, of the file that was accepted, by its whole path. A file whose text has changed since is refused, and nothing starts. Not on `main` yet.",
+    status: "partial",
+    via: [
+      [290, 1340],
+      [290, 420],
+    ],
+    docs: [WATCH.start, WATCH.expect, WATCH.cliTests],
+  },
+  {
+    id: "watcher-trust",
+    from: "watcher",
+    to: "triggerTrust",
+    kind: "local",
+    label: "live, new or changed",
+    detail:
+      "A trigger that's new, or whose hash isn't the accepted one, isn't due: it doesn't look at all. Accepting it anew also takes it back to a first look. Not on `main` yet.",
+    status: "partial",
+    docs: [WATCH.watcher, WATCH.trust],
+  },
+  {
+    id: "trust-files",
+    from: "triggerTrust",
+    to: "triggerFiles",
+    kind: "file",
+    label: "reads and hashes",
+    detail:
+      "Each project's `triggers.yaml` and the text of each workflow it starts, read fresh every time. A file that can't be read turns off what's in it, and is said in `--status`. Not on `main` yet.",
+    status: "partial",
+    docs: [WATCH.project, WATCH.trust],
+  },
+  {
+    id: "watcher-store",
+    from: "watcher",
+    to: "eventStore",
+    kind: "local",
+    label: "seen keys · lock · hashes",
+    detail:
+      "The store's `triggers`, `trigger_seen` and `watch_lock` tables: what was accepted, each key seen and the run it started, and which process is watching. The lock is a row, not a file. Not on `main` yet.",
+    status: "partial",
+    via: [
+      [572, 1340],
+      [572, 1016],
+    ],
+    docs: [WATCH.store, WATCH.lock],
+  },
+  {
+    id: "watcher-nodes",
+    from: "watcher",
+    to: "nodeTypes",
+    kind: "local",
+    label: "a check, no session",
+    detail:
+      "A look runs the trigger's check with a node's executor, and nobody to ask: it reads the list `{ events: [{ key, inputs }] }`, or fails and starts nothing. A trigger's MCP check hasn't been run end to end. Not on `main` yet.",
+    status: "partial",
+    via: [
+      [850, 1330],
+      [850, 1144],
+    ],
+    docs: [WATCH.look, WATCH.cliTests],
+  },
+  {
+    id: "server-watcher",
+    from: "server",
+    to: "watcher",
+    kind: "local",
+    label: "`GET /api/triggers`",
+    detail:
+      "How the triggers stand, from each project's file and this machine's store, for the Runs panel's Triggers section. It only reads: accepting takes a terminal. Not on `main` yet.",
+    status: "partial",
+    via: [
+      [548, 784],
+      [548, 1376],
+    ],
+    docs: [WATCH.route, WATCH.status, WATCH.section],
   },
 ];

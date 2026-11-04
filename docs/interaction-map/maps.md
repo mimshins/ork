@@ -17,22 +17,25 @@ two cards with `see`.
 
 ### `architecture`
 
-Every package and process: the CLI, the planned server and UI; the engine's
+Every package and process: the CLI, the server and the UI; the engine's
 subsystems (graph compiler, schema, scheduler, context compiler, message bus,
 decision queue, worktree manager, node types, event store, workflow calls, links
-between runs); the files and CLIs on your machine; the runtime adapter, its two
-drivers and Ork's MCP tools; the Claude session and the model providers. Rows
-3–5 of "Your machine" stay empty as a corridor for the engine–runtime edges.
-Journeys: validating a file, one Claude node from start to report, and a
-workflow calling a workflow.
+between runs, a `watch:` on a node); the files and CLIs on your machine; the
+runtime adapter, its two drivers and Ork's MCP tools; the Claude session and the
+model providers. The bottom row is `ork watch`, from outside any run: the
+command, the watcher and its guards, accepting a trigger, and the trigger files.
+Rows 3–5 of "Your machine" stay empty as a corridor for the engine–runtime
+edges. Journeys: validating a file, one Claude node from start to report, a
+workflow calling a workflow, and a trigger starting a run.
 
 ### `lifecycle`
 
 The `software-factory` example laid out as its run graph, with the engine pieces
-a run passes through on the left (called runs among them, though the example has
-none) and the builder's worktree and GitHub on the right. Edges inside the graph
-are the example's flow edges. Journeys: the happy path, the bounded review loop
-and its escalation, and the human gate.
+a run passes through on the left (called runs and a wait on a source among them,
+though the example has neither) and the builder's worktree and GitHub on the
+right. Edges inside the graph are the example's flow edges. Journeys: the happy
+path, the bounded review loop and its escalation, the human gate, and a node
+waiting on a source.
 
 ### `roles`
 
@@ -65,16 +68,18 @@ builder, and two runs talking over a link.
 
 ### `feedback`
 
-The planned feedback and self-improvement loop; nothing on it is built. The
-three sources (system signals from the event store, the agent's `feedback` tool,
-your notes), the recorder that masks and fingerprints them, and the local
-`feedback` table that groups records into items; `ork feedback` and its
-milestone-2 actions; the `ork:feedback-triage` workflow, fixes and lessons, and
-the publish preview, all through the decision queue; the lessons file the
-context compiler reads into the workflow layer, the repo files a fix changes,
-JSONL export, and your `gh` posting to the "Agent feedback" Discussions
-category. Capture is milestone 1d (`specified`); the rest is milestone 2
-(`planned`). Rows 1, 2 and 4 of "Your machine" and all but row 2 of "Claude
+The feedback and self-improvement loop, of which capture is built. The three
+sources (system signals from the event store, the agent's `feedback` tool, your
+notes), the recorder that masks and fingerprints them, and the local `feedback`
+table that groups records into items; `ork feedback` and its milestone-2
+actions; the `ork:feedback-triage` workflow, fixes and lessons, and the publish
+preview, all through the decision queue; the lessons file the context compiler
+reads into the workflow layer, the repo files a fix changes, JSONL export, and
+your `gh` posting to the "Agent feedback" Discussions category. Capture is
+`built`: the system signals, the agent's tool, the recorder, the table and
+`ork feedback`. The lessons file and the compiler reading it are `partial`.
+Triage, fixes, the panel, the milestone-2 actions, export and publishing are
+`planned`. Rows 1, 2 and 4 of "Your machine" and all but row 2 of "Claude
 runtime" stay empty as corridors. Journeys: an agent reports friction, triage
 then a lesson, applying a fix, and publishing to Ork's Discussions.
 

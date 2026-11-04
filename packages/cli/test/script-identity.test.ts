@@ -1,7 +1,7 @@
 /**
  * @file The real `ork` with scripts: a workflow's tool nodes get their
  *   identity, pass JSON along and keep a secret out of the store, and a program
- *   in a run cannot use `ork chat`.
+ *   in a run cannot use `ork chat` or accept a trigger.
  */
 
 import { execFileSync, spawnSync } from "node:child_process";
@@ -20,6 +20,8 @@ import path from "node:path";
 
 import { openStore, type RunEvent, storePath } from "@krapht/ork-core";
 import { afterEach, describe, expect, it } from "vitest";
+
+import { acceptRefusal } from "../src/commands/in-a-run.ts";
 
 const BIN = path.resolve(import.meta.dirname, "../src/bin.ts");
 const SECRET = "marker-secret-value-42";
@@ -306,5 +308,24 @@ edges:
     const done = ork(place, ["chat", "r1", "n", "-m", "hi"], { ORK_RUN: "r1" });
     expect(done.status).toBe(1);
     expect(done.stderr).toContain("speaks as you");
+  });
+
+  it("refuses `ork watch --accept` from a program in a run", () => {
+    const place = project();
+    const done = ork(place, ["watch", "--accept"], { ORK_RUN: "r1" });
+    expect(done.status).toBe(1);
+    expect(done.stderr).toContain("`ork watch --accept` approves code to run");
+  });
+});
+
+describe("who may accept a trigger", () => {
+  it.each(["ORK_RUN", "ORK_SESSION"])("isn't anyone under %s", marker => {
+    const refused = acceptRefusal({ PATH: "/bin", [marker]: "1" });
+    expect(refused).toContain("`ork watch --accept`");
+    expect(refused).toContain(marker);
+  });
+
+  it("is someone with neither", () => {
+    expect(acceptRefusal({ PATH: "/bin" })).toBeNull();
   });
 });

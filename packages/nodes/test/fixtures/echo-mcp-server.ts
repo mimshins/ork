@@ -3,6 +3,8 @@
  *   with what the node gives it and answers each way a server can.
  */
 
+import { existsSync, writeFileSync } from "node:fs";
+
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -18,6 +20,7 @@ const NAMES = [
   "slow",
   "image",
   "fails-loudly",
+  "fails-once",
   "numbers",
 ];
 
@@ -50,6 +53,13 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
   if (name === "fails") return text("the tracker is down", true);
   if (name === "fails-loudly") {
     return text(JSON.stringify({ log: "x".repeat(200_000) }), true);
+  }
+  if (name === "fails-once") {
+    // Each look starts its own server, so what it remembers is in a file.
+    const seen = String(args?.["seen"]);
+    if (existsSync(seen)) return text('{"state":"OPEN"}');
+    writeFileSync(seen, "");
+    return text("the tracker is down", true);
   }
   if (name === "numbers") {
     const pin = Number(process.env["PROBE_TOKEN"]);

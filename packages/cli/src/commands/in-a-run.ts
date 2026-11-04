@@ -13,6 +13,13 @@ const refusal = (why: string, env: NodeJS.ProcessEnv): string | null => {
     : `${why} ${marker} is set here. If this is your own terminal, it inherited that from a program in a run (a tmux server started by one, say); open a shell without it.`;
 };
 
+/** Why `ork watch --accept` refuses here, or `null` when it may run. */
+export const acceptRefusal = (env = process.env): string | null =>
+  refusal(
+    "`ork watch --accept` approves code to run with nobody there, so a program or an agent in a run cannot use it.",
+    env,
+  );
+
 /** Why `ork chat` refuses here, or `null` when it may run. */
 export const chatRefusal = (env = process.env): string | null =>
   refusal(

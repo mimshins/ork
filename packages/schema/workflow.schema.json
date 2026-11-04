@@ -1504,9 +1504,42 @@
                 "type": "string"
               },
               "timeout": {
-                "description": "How long the command may run, e.g. 5m; then it is killed and the node fails.",
+                "description": "How long the command may run, e.g. 5m; then it is killed and the node fails. With watch:, how long one look may take.",
                 "type": "string",
                 "pattern": "^\\d+[smh]$"
+              },
+              "watch": {
+                "description": "Run the command again and again until a condition holds, with no model turn.",
+                "type": "object",
+                "properties": {
+                  "every": {
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$",
+                    "description": "How long to wait between looks, e.g. 30s. At least 5s."
+                  },
+                  "until": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Stop looking when this holds. It reads what an edge's when: does."
+                  },
+                  "timeout": {
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$",
+                    "description": "How long to go on looking, e.g. 2h; then the node fails. Time between looks doesn't count against limits.timeout."
+                  },
+                  "misses": {
+                    "description": "How many failed looks in a row end the wait, such as a network error. Default: 3.",
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "every",
+                  "until",
+                  "timeout"
+                ],
+                "additionalProperties": false
               },
               "env": {
                 "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
@@ -1639,9 +1672,42 @@
                 "type": "string"
               },
               "timeout": {
-                "description": "How long the command may run, e.g. 5m; then it is killed and the node fails.",
+                "description": "How long the command may run, e.g. 5m; then it is killed and the node fails. With watch:, how long one look may take.",
                 "type": "string",
                 "pattern": "^\\d+[smh]$"
+              },
+              "watch": {
+                "description": "Run the command again and again until a condition holds, with no model turn.",
+                "type": "object",
+                "properties": {
+                  "every": {
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$",
+                    "description": "How long to wait between looks, e.g. 30s. At least 5s."
+                  },
+                  "until": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Stop looking when this holds. It reads what an edge's when: does."
+                  },
+                  "timeout": {
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$",
+                    "description": "How long to go on looking, e.g. 2h; then the node fails. Time between looks doesn't count against limits.timeout."
+                  },
+                  "misses": {
+                    "description": "How many failed looks in a row end the wait, such as a network error. Default: 3.",
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "every",
+                  "until",
+                  "timeout"
+                ],
+                "additionalProperties": false
               },
               "env": {
                 "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
@@ -1780,9 +1846,42 @@
                 "type": "string"
               },
               "timeout": {
-                "description": "How long the command may run, e.g. 5m; then it is killed and the node fails.",
+                "description": "How long the command may run, e.g. 5m; then it is killed and the node fails. With watch:, how long one look may take.",
                 "type": "string",
                 "pattern": "^\\d+[smh]$"
+              },
+              "watch": {
+                "description": "Run the command again and again until a condition holds, with no model turn.",
+                "type": "object",
+                "properties": {
+                  "every": {
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$",
+                    "description": "How long to wait between looks, e.g. 30s. At least 5s."
+                  },
+                  "until": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Stop looking when this holds. It reads what an edge's when: does."
+                  },
+                  "timeout": {
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$",
+                    "description": "How long to go on looking, e.g. 2h; then the node fails. Time between looks doesn't count against limits.timeout."
+                  },
+                  "misses": {
+                    "description": "How many failed looks in a row end the wait, such as a network error. Default: 3.",
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "every",
+                  "until",
+                  "timeout"
+                ],
+                "additionalProperties": false
               },
               "env": {
                 "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
@@ -1923,9 +2022,42 @@
                 "type": "string"
               },
               "timeout": {
-                "description": "How long the command may run, e.g. 5m; then it is killed and the node fails.",
+                "description": "How long the command may run, e.g. 5m; then it is killed and the node fails. With watch:, how long one look may take.",
                 "type": "string",
                 "pattern": "^\\d+[smh]$"
+              },
+              "watch": {
+                "description": "Run the command again and again until a condition holds, with no model turn.",
+                "type": "object",
+                "properties": {
+                  "every": {
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$",
+                    "description": "How long to wait between looks, e.g. 30s. At least 5s."
+                  },
+                  "until": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Stop looking when this holds. It reads what an edge's when: does."
+                  },
+                  "timeout": {
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$",
+                    "description": "How long to go on looking, e.g. 2h; then the node fails. Time between looks doesn't count against limits.timeout."
+                  },
+                  "misses": {
+                    "description": "How many failed looks in a row end the wait, such as a network error. Default: 3.",
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "every",
+                  "until",
+                  "timeout"
+                ],
+                "additionalProperties": false
               },
               "env": {
                 "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
@@ -2403,9 +2535,42 @@
                 }
               },
               "timeout": {
-                "description": "How long the call may take, e.g. 5m; then the node fails.",
+                "description": "How long the call may take, e.g. 5m; then the node fails. With watch:, how long one look may take.",
                 "type": "string",
                 "pattern": "^\\d+[smh]$"
+              },
+              "watch": {
+                "description": "Call the tool again and again until a condition holds, with no model turn.",
+                "type": "object",
+                "properties": {
+                  "every": {
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$",
+                    "description": "How long to wait between looks, e.g. 30s. At least 5s."
+                  },
+                  "until": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Stop looking when this holds. It reads what an edge's when: does."
+                  },
+                  "timeout": {
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$",
+                    "description": "How long to go on looking, e.g. 2h; then the node fails. Time between looks doesn't count against limits.timeout."
+                  },
+                  "misses": {
+                    "description": "How many failed looks in a row end the wait, such as a network error. Default: 3.",
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "every",
+                  "until",
+                  "timeout"
+                ],
+                "additionalProperties": false
               },
               "notify": {
                 "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",

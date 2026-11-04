@@ -21,8 +21,8 @@ for agents and engineering tasks:
 > **Status: pre-alpha.** The workflow format, `ork run` with delegation and
 > worktrees, the context compiler, `ork doctor`, run logs, decisions from any
 > terminal, messages between nodes, chat, resume, claims and local feedback work
-> today, with two example workflows, and `ork ui` watches, controls and answers
-> runs in your browser; designing workflows there comes next. See the
+> today, with example workflows, and `ork ui` watches, controls and answers runs
+> in your browser, where you can also build workflows. See the
 > [roadmap](./docs/interaction-map/roadmap.md).
 
 ## Quickstart
@@ -65,12 +65,13 @@ Everything is in the [documentation center](./docs/README.md):
   [JSON Schema](./packages/schema/workflow.schema.json).
 - **Why:** [decisions (ADRs)](./decisions/README.md) and
   [proposals (RFCs)](./rfcs/README.md).
-- **Contribute:** [CONTRIBUTING.md](./CONTRIBUTING.md), the
+- **Contribute:** [ONBOARDING.md](./ONBOARDING.md) for how to read the project,
+  [CONTRIBUTING.md](./CONTRIBUTING.md), the
   [Code of Conduct](./CODE_OF_CONDUCT.md), and the
   [runbook](./runbook/development/release.md). Report vulnerabilities as
   [SECURITY.md](./SECURITY.md) describes.
 
-Two full example workflows, `software-factory` and `pr-review`:
+Full example workflows, such as `software-factory` and `pr-review`, are in
 [the examples guide](./docs/guides/examples.md).
 
 ## License

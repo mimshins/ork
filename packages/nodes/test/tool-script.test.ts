@@ -4,7 +4,14 @@
  *   program can run one, and no copy of it stays behind.
  */
 
-import { existsSync, mkdtempSync, readdirSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -20,6 +27,7 @@ import {
   toolExecutor,
 } from "../src/index.ts";
 import { commandLineOf } from "../src/tool-command.ts";
+import { clearStateFiles, prepareStateFile } from "../src/tool-state.ts";
 
 const context = (
   node: Node,
@@ -203,5 +211,120 @@ describe("a tool node's script", () => {
     expect(secretsOf(workflow, { PROBE_SECRET: "a-value-to-mask" })).toEqual([
       "a-value-to-mask",
     ]);
+  });
+});
+
+const LOOK = { every: "5s", until: "ok", timeout: "1m" };
+
+const runDir = (): string =>
+  path.join(mkdtempSync(path.join(tmpdir(), "ork-tool-state-")), "run");
+
+describe("what a program keeps", () => {
+  it("names a file in a folder only the user can read, for the program to create", () => {
+    const dir = runDir();
+    const file = prepareStateFile(dir, "ci");
+    expect(path.dirname(path.dirname(file))).toBe(dir);
+    expect(path.basename(file)).toBe("ci");
+    expect(existsSync(file)).toBe(false);
+    expect(statSync(path.dirname(file)).mode & 0o777).toBe(0o700);
+  });
+
+  it("gives a node the same file each time, and each node its own", () => {
+    const dir = runDir();
+    const file = prepareStateFile(dir, "ci");
+    writeFileSync(file, "kept");
+    expect(prepareStateFile(dir, "ci")).toBe(file);
+    expect(existsSync(file)).toBe(true);
+    expect(prepareStateFile(dir, "other")).not.toBe(file);
+  });
+
+  it("clears what every node kept, and nothing else of the run's", () => {
+    const dir = runDir();
+    const file = prepareStateFile(dir, "ci");
+    writeFileSync(file, "kept");
+    const beside = path.join(dir, "beside");
+    writeFileSync(beside, "stays");
+    const warnings: string[] = [];
+    clearStateFiles(dir, line => {
+      warnings.push(line);
+    });
+    expect(existsSync(path.dirname(file))).toBe(false);
+    expect(existsSync(beside)).toBe(true);
+    expect(warnings).toEqual([]);
+  });
+
+  it("is content to clear what was never kept", () => {
+    const warnings: string[] = [];
+    clearStateFiles(runDir(), line => {
+      warnings.push(line);
+    });
+    expect(warnings).toEqual([]);
+  });
+
+  it("says so when it can't clear it", () => {
+    const dir = runDir();
+    writeFileSync(prepareStateFile(dir, "ci"), "kept");
+    // A folder that can't be changed keeps what's in it.
+    chmodSync(path.join(dir, ".state"), 0o500);
+    const warnings: string[] = [];
+    clearStateFiles(dir, line => {
+      warnings.push(line);
+    });
+    chmodSync(path.join(dir, ".state"), 0o700);
+    expect(warnings.join("\n")).toContain("which holds what a program kept");
+  });
+});
+
+describe("a look of a watch", () => {
+  it("keeps a file between looks, for a script to tell what's new", async () => {
+    const node: Node = {
+      type: "tool.shell",
+      watch: LOOK,
+      script:
+        'n=$(cat "$ORK_STATE" 2>/dev/null || echo 0); n=$((n+1)); echo $n | tee "$ORK_STATE"',
+    };
+    const given = context(node);
+    const look = toolExecutor(spawnTool, { environ: {} });
+    await look(given);
+    const second = await look(given);
+    expect(second.output["stdout"]).toBe("2\n");
+  });
+
+  it("names the file in the run's folder, for that node", async () => {
+    const node: Node = {
+      type: "tool.shell",
+      watch: LOOK,
+      script: 'printf "%s" "$ORK_STATE"',
+    };
+    const given = context(node);
+    const result = await toolExecutor(spawnTool, { environ: {} })(given);
+    expect(result.output["stdout"]).toBe(
+      path.join(given.runDir, ".state", "n"),
+    );
+  });
+
+  it("has no such file when it isn't watching", async () => {
+    const { result } = await run({ script: 'echo "[${ORK_STATE:-none}]"' });
+    expect(result.output["stdout"]).toBe("[none]\n");
+  });
+
+  it("can try again after a non-zero exit", async () => {
+    const { result } = await run({ script: "exit 3" });
+    expect(result.transient).toBe(true);
+  });
+
+  it("can't mend a program that says what it didn't declare", async () => {
+    const { result } = await run({
+      script: 'echo \'{"state":"nope"}\'',
+      output: { format: "json", schema: { state: ["open"] } },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.transient).toBeUndefined();
+  });
+
+  it("can't mend a command the node doesn't allow", async () => {
+    const { result } = await run({ command: "ls", allow: ["echo"] });
+    expect(result.ok).toBe(false);
+    expect(result.transient).toBeUndefined();
   });
 });

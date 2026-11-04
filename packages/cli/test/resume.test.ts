@@ -1,21 +1,24 @@
 /**
  * @file Tests for `ork resume`: a failed run continues under its own id, its
  *   finished Claude node keeps its result (no new session), the failed tool
- *   node runs again, and runs that are running or succeeded are refused.
+ *   node runs again, runs that are running or succeeded are refused, and what a
+ *   `watch:` node's program kept is still there for it.
  */
 
-import { mkdtempSync, realpathSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import {
   type EventStore,
   type HumanChannel,
+  inRepoPlace,
   openStore,
   resumable,
+  runDirOf,
   type RunRecord,
 } from "@krapht/ork-core";
-import type { ToolRunner } from "@krapht/ork-nodes";
+import { spawnTool, type ToolRunner } from "@krapht/ork-nodes";
 import { createCliRuntime } from "@krapht/ork-runtime-claude";
 import { describe, expect, it } from "vitest";
 
@@ -102,6 +105,24 @@ const readyToResume = (store: EventStore, record: RunRecord) => {
   return ready;
 };
 
+/** Says what it didn't declare, which ends the wait, until it finds its file. */
+const KEEPING = [
+  "schemaVersion: 1",
+  "name: kept",
+  "nodes:",
+  "  ci:",
+  "    type: tool.shell",
+  "    script: |",
+  '      if [ -f "$ORK_STATE" ]; then echo \'{"result":"done"}\'; exit 0; fi',
+  '      echo kept > "$ORK_STATE"',
+  '      echo \'{"result":"nope"}\'',
+  "    output:",
+  "      format: json",
+  "      schema: { result: [pending, done] }",
+  "    watch: { every: 5s, until: \"json.result == 'done'\", timeout: 1m }",
+  "",
+].join("\n");
+
 describe("ork resume", () => {
   it("continues a failed run: finished nodes keep their results", async () => {
     const s = setup();
@@ -128,5 +149,33 @@ describe("ork resume", () => {
       ok: false,
       error: `Run ${record.id} succeeded; there is nothing to resume.`,
     });
+  });
+
+  it("keeps what a watching program kept, until the run has succeeded", async () => {
+    const s = setup();
+    writeFileSync(path.join(s.dir, "kept.ork.yaml"), KEEPING);
+    const given = {
+      file: "kept.ork.yaml",
+      inputs: [],
+      tools: spawnTool,
+    };
+    const first = await s.run(spawnTool, given);
+    expect(first.result?.status).toBe("failed");
+    const record = only(s.store);
+    const kept = path.join(
+      runDirOf(inRepoPlace(s.dir), record.id),
+      ".state",
+      "ci",
+    );
+    expect(existsSync(kept)).toBe(true);
+
+    const again = await s.run(spawnTool, {
+      ...given,
+      runId: record.id,
+      resume: readyToResume(s.store, record).state,
+    });
+    // It only passes by finding what the first run left.
+    expect(again.result?.status).toBe("succeeded");
+    expect(existsSync(path.dirname(kept))).toBe(false);
   });
 });

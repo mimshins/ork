@@ -12,8 +12,8 @@ import { messageTargets } from "./builder-model.ts";
 import { saysOf } from "./condition-model.ts";
 import { type FieldProps, isRecord, setField } from "./form-parts.tsx";
 import { controlOf } from "./schema-form.tsx";
-import { kindOf } from "./schema-model.ts";
-import { SkillRows } from "./skill-rows.tsx";
+import { skillsControl } from "./skill-rows.tsx";
+import { UntilControl } from "./until-picker.tsx";
 import type { Builder } from "./use-builder.ts";
 
 const NONE = "__none__";
@@ -109,6 +109,15 @@ export const customControl = (
       );
     }
   }
+  if (last === "until" && id !== null && field.path.includes("watch")) {
+    return (
+      <UntilControl
+        builder={builder}
+        field={field}
+        id={id}
+      />
+    );
+  }
   if (last === "to" && field.path.includes("notify")) {
     return (
       <Select
@@ -141,14 +150,6 @@ export const customControl = (
   if (last === "default" && field.path[0] === "inputs") {
     return inputDefault(builder, field);
   }
-  // Only a plain list: `layers.project.skills` says something else entirely.
-  if (last === "skills" && kindOf(field.schema).kind === "list") {
-    return (
-      <SkillRows
-        catalog={builder.catalog}
-        field={field}
-      />
-    );
-  }
+  if (last === "skills") return skillsControl(builder, field);
   return null;
 };

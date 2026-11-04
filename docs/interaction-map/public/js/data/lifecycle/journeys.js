@@ -1,6 +1,6 @@
 /** @file The run lifecycle map's journeys. */
 
-import { DESIGN, SCHEMA, NODE_TYPES } from "../refs.js";
+import { DESIGN, SCHEMA, NODE_TYPES, WATCH } from "../refs.js";
 
 /** @typedef {import("../types.js").Journey} Journey */
 
@@ -229,7 +229,7 @@ export const JOURNEYS = [
         to: "inbox",
         title: "You choose",
         detail:
-          "The terminal or `ork decide` preselects the recommendation; in the UI (M2) it will be one click.",
+          "The terminal or `ork decide` preselects the recommendation; in the UI's Decisions panel it's one click.",
         docs: [DESIGN.messaging],
       },
       {
@@ -244,6 +244,75 @@ export const JOURNEYS = [
         to: "merge",
         title: "On `open`, the same as `ship`",
         detail: "The push and `gh pr create` run with your logins.",
+      },
+    ],
+  },
+  {
+    id: "watch",
+    title: "A node waits on a source",
+    who: "The scheduler · a node that watches · GitHub",
+    summary:
+      "From a tool node with `watch:` to the edges its last look picks, with no model turn. `software-factory` has none: this follows `examples/wait-for-ci.ork.yaml`. Not on `main` yet, and not tried against real GitHub.",
+    steps: [
+      {
+        from: "compiler",
+        title: "A wait that can't end is refused",
+        detail:
+          "`until` is read as an edge's `when:` is. A value or field the node doesn't declare is an error, and so is waiting for `!ok`, since a failed look doesn't hold it.",
+        status: "partial",
+        docs: [WATCH.check],
+      },
+      {
+        from: "scheduler",
+        to: "watching",
+        title: "The node starts, and holds no session slot",
+        detail:
+          "It's one activation, however many looks it takes, recorded as `watch.started` with what it's waiting for. The Monitor shows that.",
+        status: "partial",
+        docs: [WATCH.execute, WATCH.facts],
+      },
+      {
+        from: "watching",
+        to: "github",
+        title: "It looks, with no model turn",
+        detail:
+          "The node's own command, under its own `timeout`. Here `gh pr view` says `pending`, which isn't what `until` wants, so it waits.",
+        status: "partial",
+        docs: [WATCH.example],
+      },
+      {
+        from: "watching",
+        to: "events",
+        title: "Only what changed is recorded",
+        detail:
+          "`watch.changed` when a look says something the last one didn't, comparing only the declared fields, so a timestamp isn't a change.",
+        status: "partial",
+        docs: [WATCH.events, WATCH.tests],
+      },
+      {
+        from: "watching",
+        title: "Between looks, nothing is working",
+        detail:
+          "It waits `every`. That doesn't count against `limits.timeout` unless something else in the run is working. A pause holds it here and stops its clock, and `ork stop` ends it.",
+        status: "partial",
+        docs: [WATCH.node, WATCH.spec],
+      },
+      {
+        from: "watching",
+        title: "A failed look tries again",
+        detail:
+          "A non-zero exit or a lost connection is tried at the next look, and `misses` in a row (default 3) fail the node. A value off the declared list fails it at once: waiting can't mend that.",
+        status: "partial",
+        docs: [WATCH.tests],
+      },
+      {
+        from: "watching",
+        to: "scheduler",
+        title: "`until` holds: the last look is its output",
+        detail:
+          "`watch.ended` says how it ended and after how many looks, and the node's edges read the output as usual, here `json.result == 'failed'`. A wait past `watch.timeout` fails with `timedOut`, and `when: \"!ok\"` can catch it.",
+        status: "partial",
+        docs: [WATCH.node, WATCH.example],
       },
     ],
   },

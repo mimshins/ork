@@ -27,4 +27,6 @@ export type WorkflowGraph = {
   channels: (readonly [string, string])[];
   /** What each node can say; only a draft's graph has it. */
   says?: Readonly<Record<string, NodeSays>> | undefined;
+  /** Each `watch.until` as choices, for a draft (RFC-011). */
+  untils?: Readonly<Record<string, Condition>> | undefined;
 };

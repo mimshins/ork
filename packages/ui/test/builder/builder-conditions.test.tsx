@@ -1,13 +1,23 @@
 /**
  * @file Tests for an edge's condition as choices in the panel (RFC-010),
- *   against the real document edits: what's chosen is what the file says.
+ *   against the real document edits: what's chosen is what the file says. And
+ *   what a `watch:` waits for, chosen the same way (RFC-011).
  */
 
-import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
+import type { NodeSays } from "@krapht/ork-server/client";
+import {
+  act,
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BuilderPanel } from "../../src/builder/builder-panel.tsx";
+import { UntilPicker } from "../../src/builder/until-picker.tsx";
 import { stubWindow } from "../dom.ts";
 import {
   openPanelState,
@@ -179,5 +189,109 @@ describe("a condition as choices", () => {
     expect(
       screen.getByLabelText<HTMLInputElement>("Max rounds, to build").value,
     ).toBe("3");
+  });
+});
+
+const DECLARES: NodeSays = {
+  fields: [
+    { field: "json.result", kind: "values", values: ["pending", "passed"] },
+  ],
+  canFail: false,
+  canDeclare: false,
+};
+
+const SAYS_NOTHING: NodeSays = {
+  fields: [],
+  canFail: false,
+  canDeclare: false,
+};
+
+/** The picker on its own, with the `until` it's given and what it wrote. */
+const untilPicker = (says: NodeSays, until?: string) => {
+  const onChange = vi.fn<(until?: string) => void>();
+  render(
+    <UntilPicker
+      condition={
+        until === undefined
+          ? undefined
+          : {
+              mode: "test",
+              join: "all",
+              rows: [{ field: "json.result", test: "isnt", value: "pending" }],
+            }
+      }
+      onChange={onChange}
+      onDeclare={() => {
+        // Nothing here declares anything.
+      }}
+      says={says}
+      until={until}
+    />,
+  );
+  return { onChange, user: userEvent.setup() };
+};
+
+/** The words of a select's options, once it's open. */
+const optionsOf = async (
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+): Promise<(string | null)[]> => {
+  await user.click(screen.getByRole("combobox", { name: label }));
+  const list = await screen.findByRole("listbox");
+  return within(list)
+    .getAllByRole("option")
+    .map(option => option.textContent);
+};
+
+const lookUntil = (): HTMLElement =>
+  screen.getByRole("combobox", { name: "Look until" });
+
+describe("what a watch waits for", () => {
+  it("offers the values the node declares", async () => {
+    const { user } = untilPicker(DECLARES, "json.result != 'pending'");
+    expect(lookUntil().textContent).toContain("A test holds");
+    expect(await optionsOf(user, "Value, to stop looking")).toEqual([
+      "pending",
+      "passed",
+    ]);
+  });
+
+  it("shows an unset one as nothing chosen yet", async () => {
+    const { user, onChange } = untilPicker(DECLARES);
+    expect(lookUntil().textContent).toContain("Choose one");
+    expect(screen.queryByRole("combobox", { name: /^Field/u })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: /^Value/u })).toBeNull();
+    expect(screen.queryByRole("textbox", { name: /^Condition/u })).toBeNull();
+    expect(await optionsOf(user, "Look until")).toEqual([
+      "Choose one",
+      "A test holds",
+      "Written by hand",
+    ]);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("starts a test from what the node declares", async () => {
+    const { user, onChange } = untilPicker(DECLARES);
+    await user.click(lookUntil());
+    await user.click(
+      await screen.findByRole("option", { name: "A test holds" }),
+    );
+    expect(onChange).toHaveBeenCalledWith("json.result == 'pending'");
+  });
+
+  it("offers no test when the node declares nothing to test", async () => {
+    const { user } = untilPicker(SAYS_NOTHING);
+    expect(await optionsOf(user, "Look until")).toEqual([
+      "Choose one",
+      "Written by hand",
+    ]);
+  });
+
+  it("doesn't offer to go back to nothing once it's set", async () => {
+    const { user } = untilPicker(DECLARES, "json.result != 'pending'");
+    expect(await optionsOf(user, "Look until")).toEqual([
+      "A test holds",
+      "Written by hand",
+    ]);
   });
 });

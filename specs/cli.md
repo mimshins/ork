@@ -27,7 +27,7 @@ ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agen
 ork migrate --from-agents a,b [--reviewer r] [--name n]  # draft a gated workflow from the project's agents
 ork link [tools…] [--check]      # point tools' agents and skills folders (.claude/agents, …) at .ork/
 ork doctor                       # node, git, every Claude driver and integration (its own login check), links
-ork validate <wf>                # schema, graph, project rules, agents and skill/context references; errors with yaml line numbers
+ork validate <wf>                # schema, graph, project rules, agents and skill/context references; errors with yaml line numbers; with no file, the project's triggers too
 ork agents list [--json] | show <name> [--json]   # the agents nodes can take, and where each comes from
 ork agents add <name> [--description d] [--model m] [--from <agent>] [--user] | rm <name> [--user]
 ork run <wf> [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json] [--detach]
@@ -45,6 +45,7 @@ ork stop [<run>] [--node n]      # stop a live run from any terminal, or one nod
 ork pause [<run>] [--node n]     # nothing new starts; sessions wait before their next tool call
 ork continue [<run>] [--node n]  # let a paused run, or one paused node, go on
 ork resume [<run>] [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json] [--detach]  # continue a stopped or crashed run
+ork watch [--detach] | --status | --accept | --stop  # look at each project's triggers, and start a run for each new thing
 ork worktrees [list|clean]       # Ork's worktrees and branches; clean them up safely
 ork context explain <wf> <node> [--json]  # what one node's session loads, layer by layer
 ork feedback list [--all] [--json] | show <item> [--json] | note <run> [<node>] -m <text> | dismiss <item> | restore <item>  # local feedback (triage, apply, lessons, publish: M2)

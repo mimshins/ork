@@ -84,3 +84,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [050](./ADR-050-limits-across-runs.md)               | Limits across runs                                                          | Accepted          | [RFC-007](../rfcs/archived/RFC-007-limits-across-runs.md)           |
 | [051](./ADR-051-workflow-builder.md)                 | A workflow builder that keeps the YAML                                      |
 | [052](./ADR-052-conditions-from-declared-outputs.md) | Conditions chosen from what a node declares it can say                      |
+| [053](./ADR-053-watching-a-source.md)                | Watching a source, inside a run and to start one                            |

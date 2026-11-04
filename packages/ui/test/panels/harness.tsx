@@ -12,6 +12,7 @@ import {
   type ProjectRecord,
   type StoredEvent,
   type TreeNode,
+  type TriggersReport,
   type UsageReport,
   type WorkflowGraph,
   type WorkflowView,
@@ -31,6 +32,7 @@ import { openFakeSources } from "../fake-source.ts";
 
 export type FakeRoutes = {
   projects?: ProjectRecord[];
+  triggers?: TriggersReport;
   workflows?: Record<string, WorkflowView[]>;
   /** The server's refusal of a start, if it refuses. */
   refuse?: string;
@@ -132,6 +134,9 @@ export const openPanelState = (routes: FakeRoutes = {}) => {
       return json({ runId: "new11111" }, 202);
     }
     if (path === "/api/projects") return json(routes.projects ?? []);
+    if (path === "/api/triggers") {
+      return json(routes.triggers ?? { broken: [], triggers: [] });
+    }
     const id = /^\/api\/projects\/(.+)\/workflows$/u.exec(path)?.[1];
     return json(routes.workflows?.[id ?? ""] ?? []);
   };

@@ -14,6 +14,7 @@ import {
   type ClaudeRuntime,
   type HumanChannel,
   openStore,
+  workflowTextHash,
 } from "@krapht/ork-core";
 import type { ToolRunner } from "@krapht/ork-nodes";
 import { createCliRuntime } from "@krapht/ork-runtime-claude";
@@ -374,6 +375,26 @@ const pipeline = (overrides: Partial<RunWorkflowOptions>) => {
 };
 
 describe("ork run (a whole workflow)", () => {
+  it("refuses a file that isn't the text it was told to expect", async () => {
+    const run = pipeline({ expectWorkflow: workflowTextHash(`${PIPELINE}#`) });
+    const { exitCode, result } = await runWorkflowFile(run.value);
+    expect(exitCode).toBe(1);
+    expect(result).toBeNull();
+    expect(run.err.join("\n")).toContain("isn't what was accepted");
+    expect(run.value.store.runs()).toEqual([]);
+    expect(run.commands).toEqual([]);
+    expect(run.out).toEqual([]);
+  });
+
+  it("runs a file that is", async () => {
+    const run = pipeline({ expectWorkflow: workflowTextHash(PIPELINE) });
+    const { exitCode, result } = await runWorkflowFile(run.value);
+    expect(exitCode).toBe(0);
+    expect(result?.status).toBe("succeeded");
+    expect(run.commands).toEqual(["echo approve"]);
+    expect(run.value.store.runs()).toHaveLength(1);
+  });
+
   it("runs every node through the scheduler and prints a summary", async () => {
     const run = pipeline({});
     const { exitCode, result } = await runWorkflowFile(run.value);

@@ -1,6 +1,6 @@
 /** @file The architecture map's journeys. */
 
-import { CALLS, CLI, CORE, DESIGN, RUNTIME, SCHEMA } from "../refs.js";
+import { CALLS, CLI, CORE, DESIGN, RUNTIME, SCHEMA, WATCH } from "../refs.js";
 
 /** @typedef {import("../types.js").Journey} Journey */
 
@@ -203,6 +203,104 @@ export const JOURNEYS = [
         detail:
           "`ork resume` on the caller takes the runs `call.started` names and its results leave open. A stopped, crashed or failed one is resumed with its finished nodes, cap, caller and `ref`; a running or succeeded one is attached to.",
         docs: [CALLS.start, CALLS.spec],
+      },
+    ],
+  },
+  {
+    id: "trigger",
+    title: "A trigger starts a run",
+    who: "You · ork watch",
+    summary:
+      "From accepting a trigger in a terminal to a run started for each new thing its check reports, with no model turn until then. Not on `main` yet, and launchd, systemd and a trigger's MCP check aren't tried for real.",
+    steps: [
+      {
+        from: "user",
+        to: "watchCmd",
+        title: "You accept it, with `ork watch --accept`",
+        detail:
+          "It shows what the trigger looks with and what the run does, and asks. It needs a terminal, and refuses inside a run. It takes this machine only: the hash isn't in the repository.",
+        status: "partial",
+        docs: [WATCH.command, WATCH.report],
+      },
+      {
+        from: "triggerTrust",
+        to: "triggerFiles",
+        title: "The hash covers what could change",
+        detail:
+          "The trigger, the text of its workflow, the project's folder, and what its check reads. A change to any turns it off until it's accepted again.",
+        status: "partial",
+        docs: [WATCH.trust, WATCH.project],
+      },
+      {
+        from: "watchCmd",
+        to: "watcher",
+        title: "`ork watch` takes the lock, and ticks",
+        detail:
+          "One per machine: the lock is a row in the store, and a second process refuses. Every 10 seconds the watcher sees what's due.",
+        status: "partial",
+        docs: [WATCH.lock, WATCH.command],
+      },
+      {
+        from: "watcher",
+        to: "nodeTypes",
+        title: "A trigger that's due looks",
+        detail:
+          "Only one that's live, apart from the others, so a stuck check can't delay the rest. It takes no model turn. A failed look starts nothing, and the next goes on as usual.",
+        status: "partial",
+        docs: [WATCH.look, WATCH.watcher],
+      },
+      {
+        from: "watcher",
+        to: "eventStore",
+        title: "The first look starts nothing",
+        detail:
+          "It records every key it found, so a backlog of 400 issues doesn't start 400 runs. A schedule's first look starts nothing either.",
+        status: "partial",
+        docs: [WATCH.triggerTests],
+      },
+      {
+        from: "watcher",
+        title: "A later look finds a new key",
+        detail:
+          "Each is checked against the caps first: a limit across runs, `maxRunsPerDay`, then `concurrency`. What's held waits for the next look, and `--status` says why.",
+        status: "partial",
+        docs: [WATCH.watcher, WATCH.triggerTests],
+      },
+      {
+        from: "watcher",
+        to: "eventStore",
+        title: "The key is marked, then the run starts",
+        detail:
+          "In that order, so a crash can't start it twice, and a run that fails isn't started again. One that didn't start at all is unmarked and tried again, up to 3 times.",
+        status: "partial",
+        docs: [WATCH.store, WATCH.watcher],
+      },
+      {
+        from: "watchCmd",
+        to: "cli",
+        title: "An ordinary run starts, detached",
+        detail:
+          "`ork run` is given the accepted file and `--expect-workflow`, so it refuses a file whose text has changed. Each input is joined to its flag, and must be one the workflow declares.",
+        status: "partial",
+        docs: [WATCH.start, WATCH.expect],
+      },
+      {
+        from: "cli",
+        to: "scheduler",
+        title: "It runs like any other",
+        detail:
+          "`ork logs`, `ork stop` and the Monitor all work on it. Its `run.started` names the trigger and which inputs came from the check, so `trigger.untrusted` and `ork logs` can say so.",
+        status: "partial",
+        docs: [WATCH.checkTrigger, WATCH.guide],
+      },
+      {
+        from: "server",
+        to: "watcher",
+        title: "The UI shows how it stands",
+        detail:
+          "`GET /api/triggers` feeds the Runs panel's Triggers section: what's live, when each last looked, and what's holding it. It can't accept one.",
+        status: "partial",
+        docs: [WATCH.route, WATCH.section],
       },
     ],
   },

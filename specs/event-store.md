@@ -49,6 +49,11 @@ all views over the same events.
   its text, and the hash of the file it began from. It's kept here, not in the
   workflows folder, as a running workflow's call must never read an unfinished
   file. A draft goes when it's saved or discarded; `ork prune` leaves it.
+- **Triggers:** `triggers` holds what was accepted on this machine, when each
+  last looked and what's holding it; `trigger_seen` the keys it has seen, and
+  the run each started; and `watch_lock` the one
+  [`ork watch`](./scheduler/watching.md#the-process). None of it is in the
+  repository, and forgetting a project takes its rows with it.
 - **The usage ledger** has a table of its own: one row per finished Claude
   session, written as its event is appended, which outlives the run
   ([usage](./usage.md)).

@@ -22,7 +22,7 @@ import type { CheckResult } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
 import { ORK_NAME, ORK_VERSION } from "../__build_info__.ts";
-import { exec, orkCheck, runChecks } from "../doctor/checks.ts";
+import { exec, orkCheck, runChecks, triggerChecks } from "../doctor/checks.ts";
 import { confirm, style, write, writeErr } from "../output.ts";
 import { linkChecks } from "../project/link.ts";
 import { projectAt } from "../project/place.ts";
@@ -72,6 +72,7 @@ export const doctor = defineCommand({
       orkCheck(),
       ...results,
       ...(place.mode === "attached" ? [] : linkChecks(place.root)),
+      ...triggerChecks(),
     ]) {
       for (const line of formatCheck(result)) write(line);
     }

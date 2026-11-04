@@ -1,6 +1,7 @@
 # RFC-011 — Watching a source, and acting on what it says
 
-- **Status:** Accepted
+- **Status:** Implemented
+  ([ADR-053](../../decisions/ADR-053-watching-a-source.md))
 - **Date:** 2026-11-04
 - **Supersedes:** —
 - **Superseded by:** —
@@ -13,6 +14,7 @@
 - [Consequences](#consequences)
 - [Open questions](#open-questions)
 - [Answered questions](#answered-questions)
+- [As built](#as-built)
 
 ## Context
 
@@ -26,10 +28,9 @@ node or command for this. There are two different needs here:
   issue was filed, so triage it.
 
 They share one thing: a look at the source is a deterministic program, with no
-model turn, and
-[declared output](../archived/RFC-010-conditions-from-declared-outputs.md) says
-what it can report. That's why one RFC covers both, at the maintainer's request.
-Each part below can still be built without the other.
+model turn, and [declared output](./RFC-010-conditions-from-declared-outputs.md)
+says what it can report. That's why one RFC covers both, at the maintainer's
+request. Each part below can still be built without the other.
 
 ### What works today
 
@@ -168,7 +169,7 @@ edges:
 - **All three fields are required,** so a wait can't be endless by omission. A
   `timeout` is an ordinary failure, as in ADR-043, so `when: "!ok"` handles it.
 - **`until` is a condition,** chosen in the builder with
-  [the same picker as an edge](../archived/RFC-010-conditions-from-declared-outputs.md).
+  [the same picker as an edge](./RFC-010-conditions-from-declared-outputs.md).
   It's checked like one, so a typo in a value can't wait forever on something
   that will never come: with RFC-009, that is `when.value`.
 - **The last look is the node's output.** A value outside the declared list
@@ -310,3 +311,30 @@ The maintainer's answers, on 2026-11-04.
    untrusted, and warn when a prompt reads one with broad tools.
 4. **Where can a trigger be accepted?** In a terminal only. A future builder for
    triggers can't finish that step on its own.
+
+## As built
+
+Built as decided, with these differences, each recorded in
+[ADR-053](../../decisions/ADR-053-watching-a-source.md):
+
+- **What's accepted is wider.** The hash covers the trigger, the text of the
+  workflow it starts, what its check reads and the project's folder. A run
+  starts from the accepted file by its whole path and refuses if its text
+  changed, so a branch can't change what runs by editing the workflow. It can't
+  cover everything a run reads ([L119](../../specs/gaps/limits-watching.md)).
+- **The lock is a row in the store, not a file,** so taking it is one
+  transaction, and a process that was later given a holder's id doesn't hold it.
+- **A key that won't start doesn't hold up the others,** and is given up on
+  after 3 tries, which the RFC didn't consider.
+- **The clock is narrower.** The time between looks stands still only while
+  nothing else in the run is working, so a stuck session beside a long wait
+  still times out.
+- **`until` was checked here, not in RFC-009.** A value the node doesn't declare
+  is `watch.value`, built with this rather than waiting on the walk, and waiting
+  for `!ok` is refused too, as a failed look doesn't hold a wait.
+- **A look past its own `timeout` counts as failed,** which the RFC left open.
+- **Added:** `ork watch --stop`, a trigger's `inputs:` for what every run gets,
+  and `$ORK_STATE`'s folder going when the run succeeds.
+- **The Monitor's count and next look are estimates,** as looks aren't recorded.
+- **The `every` floors** stayed as suggested, unmeasured
+  ([L116](../../specs/gaps/limits-watching.md)).

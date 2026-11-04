@@ -16,6 +16,7 @@ import { AgentSchema } from "./agents.ts";
 import { formatEdge } from "./edges.ts";
 import { NodeSchema, type NodeType } from "./nodes.ts";
 import { type Project, ProjectSchema, UserSettingsSchema } from "./project.ts";
+import { type TriggersFile, TriggersFileSchema } from "./triggers.ts";
 import { type Workflow, WorkflowSchema } from "./workflow.ts";
 
 export type DiagnosticPath = readonly (string | number)[];
@@ -185,6 +186,18 @@ export const parseProject = (text: string): ProjectLoadResult => {
   const parsed = parseWith(text, ProjectSchema);
   return parsed.ok
     ? { ok: true, project: parsed.data, locate: parsed.locate }
+    : parsed;
+};
+
+export type TriggersLoadResult =
+  | { ok: true; file: TriggersFile; locate: Locate }
+  | { ok: false; diagnostics: Diagnostic[]; locate: Locate };
+
+/** Parses and structurally validates a project's `triggers.yaml` (RFC-011). */
+export const parseTriggers = (text: string): TriggersLoadResult => {
+  const parsed = parseWith(text, TriggersFileSchema);
+  return parsed.ok
+    ? { ok: true, file: parsed.data, locate: parsed.locate }
     : parsed;
 };
 

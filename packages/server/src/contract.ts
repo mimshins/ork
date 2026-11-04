@@ -16,6 +16,7 @@ import type {
   LimitsReport,
   StoredRunStatus,
   TreeNode,
+  TriggersReport,
   UsageReport,
 } from "@krapht/ork-core";
 import type { InputDef } from "@krapht/ork-schema";
@@ -35,6 +36,7 @@ export type {
   ProjectRecord,
   StoredEvent,
   TreeNode,
+  TriggersReport,
   LimitsReport,
   UsageReport,
 };
@@ -190,6 +192,7 @@ export const API = {
     body: MessageSchema,
   },
   usage: { method: "GET", path: "/api/usage", query: UsageQuerySchema },
+  triggers: { method: "GET", path: "/api/triggers" },
   links: { method: "GET", path: "/api/links", query: LinksQuerySchema },
   link: { method: "POST", path: "/api/links", body: LinkSchema },
   unlink: { method: "POST", path: "/api/links/end", body: UnlinkSchema },
@@ -198,6 +201,7 @@ export const API = {
 /** What each route answers with, on success. */
 export type Responses = BuilderResponses & {
   health: Health;
+  triggers: TriggersReport;
   projects: ProjectRecord[];
   workflows: WorkflowView[];
   runs: RunView[];

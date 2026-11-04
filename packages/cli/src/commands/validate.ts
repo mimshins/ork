@@ -14,7 +14,9 @@ import {
   placeFiles,
   placeFor,
   type ProjectPlace,
+  readProjectTriggers,
   workflowDirOf,
+  workflowTextHash,
 } from "@krapht/ork-core";
 import type { Diagnostic, Workflow } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
@@ -45,6 +47,8 @@ export type LoadedWorkflow = {
   place: ProjectPlace;
   /** Where its relative paths resolve from (ADR-035). */
   workflowDir: string;
+  /** The hash of the text read, which a trigger's run checks. */
+  textHash?: string;
 };
 
 /**
@@ -96,6 +100,7 @@ export const loadWorkflow = (
     },
     workflow,
     graph,
+    textHash: workflowTextHash(text),
     ...where,
   };
 };
@@ -121,7 +126,11 @@ export const formatReport = (report: FileReport): string[] => {
   });
   const errors = report.diagnostics.filter(d => d.severity === "error").length;
   const warnings = report.diagnostics.length - errors;
-  if (report.summary !== undefined && errors === 0) {
+  if (report.summary === undefined && errors === 0) {
+    lines.push(
+      `${style("green", "✓")} ${report.file}${warnings === 0 ? "" : style("dim", ` (${plural(warnings, "warning")})`)}`,
+    );
+  } else if (report.summary !== undefined && errors === 0) {
     const { nodes, edges, entries } = report.summary;
     const extra = warnings > 0 ? `, ${plural(warnings, "warning")}` : "";
     lines.push(
@@ -166,7 +175,26 @@ export const validate = defineCommand({
       process.exitCode = 1;
       return;
     }
-    const reports = files.map(file => validateFile(file, cwd));
+    const place = projectAt(cwd);
+    const triggers =
+      args._.length === 0
+        ? readProjectTriggers(place, undefined, registeredProjects())
+        : undefined;
+    const reports: FileReport[] = [
+      ...files.map(file => validateFile(file, cwd)),
+      // The project's triggers are read with its workflows, not when one is named.
+      ...(triggers?.present === true
+        ? [
+            {
+              file: path.relative(cwd, triggers.file),
+              diagnostics: [
+                ...triggers.diagnostics,
+                ...triggers.triggers.flatMap(item => item.diagnostics),
+              ],
+            },
+          ]
+        : []),
+    ];
     if (args.json) {
       write(JSON.stringify(reports, undefined, 2));
     } else {

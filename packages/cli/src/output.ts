@@ -4,13 +4,20 @@
  */
 
 import { createInterface } from "node:readline/promises";
-import { styleText } from "node:util";
+import { stripVTControlCharacters, styleText } from "node:util";
 
 type Format = Parameters<typeof styleText>[0];
 
 /** Styles text for stdout; plain when stdout is not a TTY or NO_COLOR is set. */
 export const style = (format: Format, text: string): string =>
   styleText(format, text, { stream: process.stdout });
+
+/**
+ * Text from outside, fit for a terminal: escape sequences could hide a line on
+ * the very screen a person judges from, and a line break could forge one.
+ */
+export const plain = (text: string): string =>
+  stripVTControlCharacters(text).replaceAll(/[\p{Cc}\p{Bidi_Control}]/gu, " ");
 
 export const write = (text: string): void => {
   process.stdout.write(`${text}\n`);
@@ -27,8 +34,13 @@ export const cost = (usd: number): string =>
 /** Asks a yes-or-no question on the terminal; anything but yes is no. */
 export const confirm = async (question: string): Promise<boolean> => {
   const rl = createInterface({ input: process.stdin, output: process.stderr });
+  // Input ending (Ctrl-D) answers nothing, which is no.
+  const { promise: ended, resolve: end } = Promise.withResolvers<string>();
+  rl.once("close", () => {
+    end("");
+  });
   try {
-    const answer = await rl.question(question);
+    const answer = await Promise.race([rl.question(question), ended]);
     return ["y", "yes"].includes(answer.trim().toLowerCase());
   } finally {
     rl.close();

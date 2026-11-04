@@ -7,7 +7,14 @@
 
 import { execFile } from "node:child_process";
 
-import { readUpdateCache, updateCachePath } from "@krapht/ork-core";
+import {
+  lateTriggers,
+  openStore,
+  readUpdateCache,
+  storePath,
+  triggersReport,
+  updateCachePath,
+} from "@krapht/ork-core";
 import {
   CLAUDE_DRIVERS,
   type CheckResult,
@@ -108,4 +115,49 @@ export const runChecks = async (
   const anyDriver = drivers.some(d => d.status === "ok");
   const ok = anyDriver && !results.some(r => r.status === "fail");
   return { results, ok };
+};
+
+/**
+ * What it says of triggers (RFC-011): a long-lived process can die quietly, so
+ * a live trigger that hasn't looked when it should have is worth saying. `home`
+ * is the user's `~` (tests pass a folder).
+ */
+export const triggerChecks = (home?: string): CheckResult[] => {
+  const store = openStore(storePath(home));
+  try {
+    const report = triggersReport(store, store.projects(), home);
+    const broken: CheckResult[] = report.broken.map(({ file, message }) => ({
+      name: "triggers",
+      status: "warn",
+      detail: `${file}: ${message}`,
+      hint: "Its triggers are off until it can be read.",
+    }));
+    const live = report.triggers.filter(({ standing }) => standing === "live");
+    if (live.length === 0) return broken;
+    const late = lateTriggers(report, new Date());
+    if (late.length === 0) {
+      return [
+        ...broken,
+        {
+          name: "ork watch",
+          status: "ok",
+          detail: `${String(live.length)} trigger(s) looking`,
+        },
+      ];
+    }
+    return [
+      ...broken,
+      {
+        name: "ork watch",
+        status: "warn",
+        detail: `not looking: ${late.map(({ trigger }) => trigger).join(", ")}`,
+        hint:
+          report.pid === undefined
+            ? "Start it with `ork watch --detach`."
+            : "See `ork watch --status`.",
+      },
+    ];
+  } finally {
+    store.close();
+  }
 };
