@@ -44,8 +44,8 @@ Each is in [Limits](./gaps/limits.md), from L2 on.
   pass under `exactOptionalPropertyTypes`, so the UI package does not check any
   library's declarations. ([workspace](./ui/workspace.md#the-saved-layout))
 - **C9 · An age exclusion waits to be removed.** `pnpm-workspace.yaml` exempts
-  containerized-state 3.3.1, its React package 3.3.1 and its persistence plugin
-  1.3.0 from the 7-day rule, by exact version, at their author's choice. Remove
+  containerized-state 3.4.0, its React package 3.4.0 and its persistence plugin
+  1.4.0 from the 7-day rule, by exact version, at their author's choice. Remove
   the list from 2026-11-10; the versions then satisfy the rule.
   ([ADR-002](../decisions/ADR-002-typescript-from-source.md))
 
