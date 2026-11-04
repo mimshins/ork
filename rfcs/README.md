@@ -66,3 +66,4 @@ and carries an RFC through this lifecycle.
 | [005](./archived/RFC-005-scripts-and-rules-on-the-bus.md)      | Scripts and rules on the message bus                               | Implemented |
 | [006](./archived/RFC-006-steps-around-a-session.md)            | Deterministic steps around a session, MCP calls and inline scripts | Implemented |
 | [007](./archived/RFC-007-limits-across-runs.md)                | Limits across runs                                                 | Implemented |
+| [008](./active/RFC-008-workflow-builder.md)                    | A workflow builder that keeps the YAML                             | Accepted    |

@@ -686,8 +686,11 @@ export const MILESTONES = [
         title: "Workflow builder",
         status: "next",
         detail:
-          "Create a workflow from scratch in the UI, or edit one, on a canvas that saves the same YAML, with no file to write by hand. Needs its own RFC first: how much of the format the canvas can edit, how edits keep the YAML's comments, where node positions are saved, and how a draft is checked and test-run.",
-        docs: ["specs/ui.md#workflow-builder"],
+          "Create a workflow from scratch in the UI, or edit one, on a canvas that saves the same YAML, with no file to write by hand. RFC-008 is accepted: forms for the whole format, edits that keep the YAML's comments, positions computed from the nodes and edges, drafts in the store, and a test run that is a real run.",
+        docs: [
+          "rfcs/active/RFC-008-workflow-builder.md",
+          "specs/ui.md#workflow-builder",
+        ],
       },
       {
         id: "worktrees-panel",
@@ -763,6 +766,8 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "e61aade",
+  "fcf9d40",
   "e97d75c",
   "57bdb6f",
   "dc89e77",

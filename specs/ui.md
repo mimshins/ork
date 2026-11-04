@@ -50,27 +50,24 @@ through its typed client.
 
 ## Workflow builder
 
-Status: **Not built.** It needs an RFC first.
+Status: **Not built.** Its design is accepted in
+[RFC-008](../rfcs/active/RFC-008-workflow-builder.md).
 
 A user can create a workflow from scratch in the UI, and edit an existing one,
-on a canvas drawn in-house, without writing or reading YAML. It saves exactly
-the same YAML and layout files a person would write, so a workflow made either
-way works with every `ork` command.
+on a canvas drawn in-house, without writing or reading YAML. It saves the same
+YAML a person would write, keeping any comments, so a workflow made either way
+works with every `ork` command. Positions aren't saved: the canvas lays out the
+nodes from their edges, as the Monitor does.
 
 - **A palette of node types:** Claude leader, worker and sub-agent; GitHub; AWS;
   shell; MCP call; workflow call; control; human gate.
-- **An inspector for each node,** with its steps and rules (`before:`,
-  `verify:`, `notify:`), and a skill picker that shows which layer each skill
-  comes from.
-- **A validation overlay,** from the same compiler as `ork validate`.
-
-The RFC decides:
-
-- how much of the workflow format the canvas can edit, and what happens to
-  fields it can't show;
-- how edits round-trip through the YAML without losing comments;
-- where node positions are saved;
-- how drafts are checked and test-run.
+- **An inspector for each node,** with forms for the whole format and its steps
+  and rules (`before:`, `verify:`, `notify:`), and a skill picker that shows
+  which layer each skill comes from. A small YAML box is the last resort, for
+  values no form can describe.
+- **A validation overlay,** from the same checks as `ork validate`. Errors block
+  a save, and unfinished work stays as a draft in the store.
+- **A test run** is saving, then a real run through the Run dialog.
 
 ## Style
 
