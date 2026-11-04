@@ -743,7 +743,7 @@ export const MILESTONES = [
         title: "A new look for the console",
         status: "active",
         detail:
-          "Nested surfaces, two type voices, block meters and a pixel touch, at console density, from a prototype the maintainer approved. Each component now owns its tokens, and a state only sets tokens, so the look changes by changing values. The values themselves are next.",
+          "Nested surfaces, two type voices, block meters and a pixel touch, at console density, from a prototype the maintainer approved. Each component now owns its tokens, and a state only sets tokens, so the look changes by changing values. Frames, status glyphs, block meters, tighter panels and the rebuilt Monitor are in; Notifications rows, the Builder toolbar and the guide's screenshot are left.",
         docs: [
           "decisions/ADR-054-component-tokens.md",
           "decisions/ADR-055-console-language.md",
@@ -757,6 +757,8 @@ export const MILESTONES = [
           "b84951e",
           "f1f5123",
           "41621da",
+          "41dab31",
+          "58133bb",
         ],
       },
       {
