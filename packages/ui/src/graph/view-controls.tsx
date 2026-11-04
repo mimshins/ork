@@ -11,7 +11,7 @@ import {
   IconArrowUp,
   IconFit,
   IconPlus,
-  IconSkipped,
+  IconMinus,
 } from "../components/icons.tsx";
 
 import styles from "./graph.module.css";
@@ -50,7 +50,7 @@ export const ViewControls = ({
         zoom(1 / ZOOM_STEP);
       }}
     >
-      <IconSkipped />
+      <IconMinus />
     </IconButton>
     <IconButton
       keys={["0"]}

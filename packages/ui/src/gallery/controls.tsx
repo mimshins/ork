@@ -70,6 +70,15 @@ export const Controls = () => {
           />
         ))}
       </Section>
+      <Section title="Status, as a pill">
+        {STATUSES.map(status => (
+          <StatusBadge
+            key={status}
+            pill
+            status={status}
+          />
+        ))}
+      </Section>
       <Section title="Toggles">
         <Checkbox
           checked={check}
@@ -103,6 +112,14 @@ export const Controls = () => {
             max={2}
             text="$1.82 of $2.00"
             value={1.82}
+          />
+        </div>
+        <div className={styles["meter"]}>
+          <Meter
+            label="Budget"
+            max={2}
+            text="$2.00 of $2.00"
+            value={2}
           />
         </div>
       </Section>

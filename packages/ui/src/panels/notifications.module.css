@@ -15,7 +15,7 @@
   --notifications-tools-border-block-end: var(--hairline) solid
     var(--color-border);
   --notifications-tools-gap: var(--gap);
-  --notifications-tools-padding: var(--gap-tight) var(--gap);
+  --notifications-tools-padding: var(--inset-tools);
 
   align-items: center;
   border-block-end: var(--notifications-tools-border-block-end);

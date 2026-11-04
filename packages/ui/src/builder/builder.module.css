@@ -16,7 +16,7 @@
 .tools {
   --builder-tools-border-block-end: var(--hairline) solid var(--color-border);
   --builder-tools-gap: var(--gap);
-  --builder-tools-padding: var(--gap) var(--inset-panel);
+  --builder-tools-padding: var(--inset-tools);
 
   align-items: flex-end;
   border-block-end: var(--builder-tools-border-block-end);

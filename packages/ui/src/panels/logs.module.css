@@ -16,7 +16,7 @@
   --logs-tools-border-block-end: var(--hairline) solid var(--color-border);
   --logs-tools-gap: var(--gap);
   --logs-tools-grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
-  --logs-tools-padding: var(--gap-tight) var(--gap);
+  --logs-tools-padding: var(--inset-tools);
 
   border-block-end: var(--logs-tools-border-block-end);
   display: grid;

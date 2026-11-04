@@ -30,6 +30,8 @@
   --text-caption: var(--size-11);
   --tracking-caption: 0.04em;
   --case-caption: uppercase;
+  /* A status's word, in mono, opened up a little to read at this size. */
+  --tracking-status: 0.02em;
 
   /* Space and shape. */
   --gap-hair: var(--space-2);
@@ -39,6 +41,8 @@
   --gap-panels: var(--space-6);
   --inset-control: var(--space-8);
   --inset-panel: var(--space-12);
+  /* A toolbar heads a card, so it's the same in every panel. */
+  --inset-tools: var(--space-8);
   --inset-empty: var(--space-24);
   --window-margin: var(--space-32);
   --radius-control: var(--radius-4);
@@ -54,6 +58,8 @@
 
   --icon-size: var(--space-16);
   --icon-size-small: var(--space-12);
+  /* A status glyph's five cells land on whole 2 px at the default text size. */
+  --icon-size-glyph: 0.625rem;
 
   /* Layers, from the workspace up. */
   --layer-dock-overlay: 50;
@@ -69,7 +75,7 @@
   /* Motion: brief, and none when the user asks for less. */
   --duration-quick: var(--time-120);
   --duration-move: var(--time-200);
-  --duration-pulse: var(--time-1600);
+  --duration-blink: var(--time-1200);
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 

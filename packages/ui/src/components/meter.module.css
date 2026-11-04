@@ -1,5 +1,5 @@
 /**
- * @file The meter's look: its label and value in a row over a thin bar, the
+ * @file The meter's look: its label and value in a row over a row of blocks, the
  *   value in monospace with tabular numerals.
  */
 
@@ -37,24 +37,45 @@
 }
 
 .track {
-  --meter-track-bg: var(--surface-sunken);
-  --meter-track-radius: var(--space-4);
-  --meter-track-height: var(--space-4);
+  --meter-track-gap: var(--hairline);
 
-  background: var(--meter-track-bg);
-  border-radius: var(--meter-track-radius);
+  display: flex;
+  gap: var(--meter-track-gap);
   grid-column: 1 / -1;
-  height: var(--meter-track-height);
-  overflow: hidden;
 }
 
-.fill {
-  --meter-fill-bg: var(--color-live-edge);
+.block {
+  --meter-block-bg: var(--color-border);
+  --meter-block-height: var(--space-8);
+  --meter-block-width: var(--space-4);
 
-  background: var(--meter-fill-bg);
-  height: 100%;
+  background: var(--meter-block-bg);
+  forced-color-adjust: none;
+  height: var(--meter-block-height);
+  width: var(--meter-block-width);
 }
 
-.meter[data-level="high"] .fill {
-  --meter-fill-bg: var(--color-action-edge);
+.block[data-on] {
+  --meter-block-bg: var(--color-live-edge);
+}
+
+.meter[data-level="high"] .block[data-on] {
+  --meter-block-bg: var(--color-action-edge);
+}
+
+.meter[data-level="full"] .block[data-on] {
+  --meter-block-bg: var(--color-danger-text);
+}
+
+/* Forced colors take fills away, so a filled block keeps a solid system color. */
+@media (forced-colors: active) {
+  .block {
+    --meter-block-bg: GrayText;
+  }
+
+  .block[data-on],
+  .meter[data-level="high"] .block[data-on],
+  .meter[data-level="full"] .block[data-on] {
+    --meter-block-bg: Highlight;
+  }
 }

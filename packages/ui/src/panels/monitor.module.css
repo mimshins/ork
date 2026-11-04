@@ -18,7 +18,7 @@
 .header {
   --monitor-header-border-block-end: var(--hairline) solid var(--color-border);
   --monitor-header-gap: var(--gap);
-  --monitor-header-padding: var(--gap-tight) var(--gap);
+  --monitor-header-padding: var(--inset-tools);
 
   align-items: center;
   border-block-end: var(--monitor-header-border-block-end);

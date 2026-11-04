@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { EmptyState, Kbd } from "../../src/components/bits.tsx";
 import { CopyCommand } from "../../src/components/copy-command.tsx";
-import { Meter } from "../../src/components/meter.tsx";
+import { blocksOn, Meter } from "../../src/components/meter.tsx";
 import {
   type Status,
   StatusBadge,
@@ -109,6 +109,17 @@ describe("the status badge", () => {
     });
     expect(new Set(shapes).size).toBe(shapes.length);
   });
+
+  it.each(WORDS)("says %s in words as a pill too", async (status, word) => {
+    const { container } = render(
+      <StatusBadge
+        pill
+        status={status}
+      />,
+    );
+    expect(screen.getByText(word)).toBeDefined();
+    expect(await violations(container)).toEqual([]);
+  });
 });
 
 describe("the meter", () => {
@@ -137,6 +148,34 @@ describe("the meter", () => {
       />,
     );
     expect(screen.getByRole("meter").getAttribute("aria-valuenow")).toBe("2");
+  });
+
+  it.each([
+    ["nothing spent", 0, 2, 0],
+    ["a tiny amount, which still shows", 0.001, 2, 1],
+    ["about half", 1, 2, 10],
+    ["almost all, which isn't full", 1.99, 2, 19],
+    ["the limit", 2, 2, 20],
+    ["past the limit", 2.5, 2, 20],
+    ["a limit of nothing", 0, 0, 20],
+  ])("fills its blocks for %s", (_name, value, max, on) => {
+    expect(blocksOn(value, max)).toBe(on);
+  });
+
+  it.each([
+    ["normal", 1],
+    ["high", 1.8],
+    ["full", 2],
+  ])("is %s at %s of 2", (level, value) => {
+    render(
+      <Meter
+        label="Budget"
+        max={2}
+        text="spent"
+        value={value}
+      />,
+    );
+    expect(screen.getByRole("meter").dataset["level"]).toBe(level);
   });
 });
 

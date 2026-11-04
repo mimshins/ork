@@ -31,7 +31,7 @@
 .tools {
   --usage-tools-border-block-end: var(--hairline) solid var(--color-border);
   --usage-tools-gap: var(--gap);
-  --usage-tools-padding: var(--gap);
+  --usage-tools-padding: var(--inset-tools);
 
   align-items: flex-end;
   border-block-end: var(--usage-tools-border-block-end);

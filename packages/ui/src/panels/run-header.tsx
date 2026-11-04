@@ -43,7 +43,10 @@ export const RunHeader = ({
         {run.workflow}
       </h2>
       <code className={styles["runId"]}>{run.id}</code>
-      <StatusBadge status={runStatusOf(run, waiting)} />
+      <StatusBadge
+        pill
+        status={runStatusOf(run, waiting)}
+      />
       <span className={styles["cost"]}>{formatCost(run.costUsd)}</span>
       {parent === undefined ? null : (
         <Button

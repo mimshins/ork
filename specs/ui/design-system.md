@@ -24,6 +24,9 @@ of tech and pixel, and lit only where something needs the user
   Surfaces do the separating, and hairlines are left for inside a card. A frame
   has an edge only in more contrast and forced colors, and a faint shadow only
   on the light theme.
+- **One toolbar inset:** whatever heads a card, in any panel, reads
+  `--inset-tools`, so moving between tabs doesn't shift what's on them. A test
+  holds this.
 - **Small elements:** a top bar of 30 px, tabs of 26 px, a status bar of 22 px
   and controls of 24 px with 4 px corners. Sizes are for the default text size.
 - **The brand pair, from the [logo](../../assets/logo/README.md):**
@@ -46,9 +49,14 @@ of tech and pixel, and lit only where something needs the user
   Mono in `--text-caption`, upper case, tracked and muted, as a column's head, a
   stat's name or a section's heading. Never an identifier, as upper case would
   misstate it.
-- **Status is never color alone.** Each status has its own icon shape and a
-  word; the colors are running and succeeded in phosphor, waiting and paused in
-  amber, failed in red, and queued, skipped and interrupted in a neutral.
+- **Status is never color alone.** Each status has its own glyph, on a 5×5 pixel
+  grid, and a word in mono; the colors are running and succeeded in phosphor,
+  waiting and paused in amber, failed in red, and queued, skipped and
+  interrupted in a neutral. A status sits bare among other facts, and is a
+  tinted pill where it heads a view, as in a run's header.
+- **Meters are blocks, not bars:** 20 of them, in phosphor, amber from 80% and
+  red at the limit. Anything spent shows a block, and only the limit fills them
+  all. The value is always in words too.
 
 ## Tokens
 
@@ -152,6 +160,7 @@ The page's root carries `data-theme` and `data-contrast`
   `Highlight`, the highlighted list item takes `Highlight`, and disabled
   controls use `GrayText`.
 - **Motion** is brief, and none when `prefers-reduced-motion: reduce` is set.
+  What repeats moves in steps, not smoothly: a running status's glyph blinks.
 
 ## Components
 
@@ -159,28 +168,31 @@ Each lives in [`src/components/`](../../packages/ui/src/components/) with a CSS
 module on the tokens, and has a keyboard test and an axe test
 ([tests](../../packages/ui/test/components/)).
 
-| Component                 | On      | Notes                                                                    |
-| ------------------------- | ------- | ------------------------------------------------------------------------ |
-| `Button`, `IconButton`    | Base UI | primary, danger, ghost and default; an icon button needs a `label`       |
-| `Tip`                     | Base UI | opens on hover and focus, Escape closes it, and it can be hovered        |
-| `Menu`                    | Base UI | actions and separators; arrows reach a disabled item, which does nothing |
-| `Popover`                 | Base UI | a small titled panel, anchored to its trigger                            |
-| `Dialog`, `ConfirmDialog` | Base UI | modal; a confirm dialog is an alert dialog, and focus starts on Cancel   |
-| `Tabs`                    | Base UI | the active tab has a line as well as brighter text                       |
-| `Select`, `Combobox`      | Base UI | a short list, or one long enough to filter                               |
-| `Checkbox`, `Switch`      | Base UI | inside their label, so the whole row is the target                       |
-| `Toasts`                  | Base UI | `toasts` adds one from outside React; F6 jumps into them                 |
-| `Meter`                   | Base UI | the value is always in words too                                         |
-| `StatusBadge`             | Ork     | an icon and a word; each status color has its own shape                  |
-| `Kbd`, `EmptyState`       | Ork     | a key hint, and what is missing with the next step                       |
-| `CopyCommand`             | Ork     | a CLI command, a copy button, and a live result                          |
-| icons                     | MDI     | one path each, in the text color; named for what they mean here          |
+| Component                 | On      | Notes                                                                     |
+| ------------------------- | ------- | ------------------------------------------------------------------------- |
+| `Button`, `IconButton`    | Base UI | primary, danger, ghost and default; an icon button needs a `label`        |
+| `Tip`                     | Base UI | opens on hover and focus, Escape closes it, and it can be hovered         |
+| `Menu`                    | Base UI | actions and separators; arrows reach a disabled item, which does nothing  |
+| `Popover`                 | Base UI | a small titled panel, anchored to its trigger                             |
+| `Dialog`, `ConfirmDialog` | Base UI | modal; a confirm dialog is an alert dialog, and focus starts on Cancel    |
+| `Tabs`                    | Base UI | the active tab has a line as well as brighter text                        |
+| `Select`, `Combobox`      | Base UI | a short list, or one long enough to filter                                |
+| `Checkbox`, `Switch`      | Base UI | inside their label, so the whole row is the target                        |
+| `Toasts`                  | Base UI | `toasts` adds one from outside React; F6 jumps into them                  |
+| `Meter`                   | Base UI | a row of blocks; the value is always in words too                         |
+| `StatusBadge`             | Ork     | a pixel glyph and a word, bare or as a pill; each color has its own shape |
+| `Kbd`, `EmptyState`       | Ork     | a key hint, and what is missing with the next step                        |
+| `CopyCommand`             | Ork     | a CLI command, a copy button, and a live result                           |
+| icons                     | MDI     | one path each, in the text color; named for what they mean here           |
 
 - **Icons come from**
   [Material Design Icons](https://pictogrammers.com/library/mdi/) through
   `@mdi/js`, and only through
   [icons.tsx](../../packages/ui/src/components/icons.tsx); the bundle takes only
-  the ones imported ([ADR-042](../../decisions/ADR-042-icons-mdi.md)).
+  the ones imported ([ADR-042](../../decisions/ADR-042-icons-mdi.md)). The
+  status glyphs are the exception, drawn in
+  [status-glyphs.tsx](../../packages/ui/src/components/status-glyphs.tsx), as
+  MDI's blur at 10 px.
 - **Every control can name its CLI twin** (`cli`). A button shows it in a
   tooltip and gives it to screen readers as its description. A confirm dialog
   shows it as text, because a tooltip there would cover the description, and

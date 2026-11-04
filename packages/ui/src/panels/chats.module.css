@@ -14,7 +14,7 @@
 
 .tools {
   --chats-tools-border-block-end: var(--hairline) solid var(--color-border);
-  --chats-tools-padding: var(--gap-tight) var(--gap);
+  --chats-tools-padding: var(--inset-tools);
 
   border-block-end: var(--chats-tools-border-block-end);
   padding: var(--chats-tools-padding);

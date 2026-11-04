@@ -2,9 +2,9 @@
  * @file The UI's icons, from Material Design Icons (`@mdi/js`, ADR-042), named
  *   for what they mean here. Each is one path on MDI's 24 px grid, drawn in the
  *   current text color at the font's size, and the bundle takes only the ones
- *   imported. Each status has its own shape, so a status reads without color
- *   and in red-green color blindness. Icons are decoration: the word or the
- *   accessible name beside one says what it means.
+ *   imported. A status has its own drawn glyph instead (status-glyphs.tsx).
+ *   Icons are decoration: the word or the accessible name beside one says what
+ *   it means.
  */
 
 import {
@@ -21,8 +21,6 @@ import {
   mdiCheck,
   mdiChevronDown,
   mdiChevronRight,
-  mdiCircleOutline,
-  mdiCircleSlice8,
   mdiClose,
   mdiConsoleLine,
   mdiContentCopy,
@@ -38,7 +36,6 @@ import {
   mdiGithub,
   mdiGraphOutline,
   mdiHelpBoxMultipleOutline,
-  mdiHelpRhombusOutline,
   mdiMagnify,
   mdiMinus,
   mdiPause,
@@ -48,7 +45,6 @@ import {
   mdiRobotOutline,
   mdiSourceBranch,
   mdiStop,
-  mdiStopCircleOutline,
   mdiTextBoxOutline,
   mdiWindowMaximize,
   mdiWindowMinimize,
@@ -70,15 +66,6 @@ const icon = (path: string) => {
   );
   return Icon;
 };
-
-export const IconRunning = icon(mdiCircleSlice8);
-export const IconSucceeded = icon(mdiCheck);
-export const IconWaiting = icon(mdiHelpRhombusOutline);
-export const IconPaused = icon(mdiPause);
-export const IconFailed = icon(mdiClose);
-export const IconQueued = icon(mdiCircleOutline);
-export const IconSkipped = icon(mdiMinus);
-export const IconInterrupted = icon(mdiStopCircleOutline);
 
 export const IconPlay = icon(mdiPlay);
 export const IconPause = icon(mdiPause);
@@ -122,4 +109,5 @@ export const IconGitHub = icon(mdiGithub);
 export const IconAws = icon(mdiAws);
 export const IconGit = icon(mdiGit);
 export const IconPlus = icon(mdiPlus);
+export const IconMinus = icon(mdiMinus);
 export const IconFit = icon(mdiFitToScreenOutline);

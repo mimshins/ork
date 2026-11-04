@@ -1,37 +1,47 @@
 /**
- * @file The status badge's look: each tone names its status color, a paused
- *   badge is outlined, and a running badge's icon pulses. Base styles turn the
- *   pulse off under reduced motion.
+ * @file The status badge's look: its word in mono beside a pixel glyph. Each tone
+ *   names its status color and its tint, which only a pill shows, and a running
+ *   badge's glyph blinks in steps. Base styles turn that off under reduced
+ *   motion.
  */
 
 .badge {
   --status-badge-badge-text: initial;
-  --status-badge-badge-border-width: var(--hairline);
-  --status-badge-badge-border-style: solid;
-  --status-badge-badge-border-color: transparent;
+  --status-badge-badge-tint: transparent;
+  --status-badge-badge-bg: transparent;
   --status-badge-badge-radius: var(--radius-badge);
+  --status-badge-badge-font: var(--font-mono);
   --status-badge-badge-text-size: var(--text-small);
-  --status-badge-badge-weight: var(--weight-medium);
-  --status-badge-badge-gap: var(--gap-tight);
-  --status-badge-badge-padding: 0 var(--gap-tight);
+  --status-badge-badge-weight: var(--weight-regular);
+  --status-badge-badge-tracking: var(--tracking-status);
+  --status-badge-badge-gap: var(--space-6);
+  --status-badge-badge-min-height: 0;
+  --status-badge-badge-padding: 0;
 
   align-items: center;
-  border-width: var(--status-badge-badge-border-width);
-  border-style: var(--status-badge-badge-border-style);
-  border-color: var(--status-badge-badge-border-color);
+  background: var(--status-badge-badge-bg);
   border-radius: var(--status-badge-badge-radius);
   display: inline-flex;
+  font-family: var(--status-badge-badge-font);
   font-size: var(--status-badge-badge-text-size);
   font-weight: var(--status-badge-badge-weight);
   gap: var(--status-badge-badge-gap);
+  letter-spacing: var(--status-badge-badge-tracking);
+  min-height: var(--status-badge-badge-min-height);
   padding: var(--status-badge-badge-padding);
   white-space: nowrap;
   color: var(--status-badge-badge-text, revert);
 }
 
+.badge[data-look="pill"] {
+  --status-badge-badge-bg: var(--status-badge-badge-tint);
+  --status-badge-badge-min-height: 1.125rem;
+  --status-badge-badge-padding: 0 var(--space-6);
+}
+
 .icon {
   --status-badge-icon-animation: initial;
-  --status-badge-icon-text-size: var(--icon-size-small);
+  --status-badge-icon-text-size: var(--icon-size-glyph);
 
   align-items: center;
   display: flex;
@@ -41,44 +51,55 @@
 
 .badge[data-tone="running"] {
   --status-badge-badge-text: var(--color-status-running);
+  --status-badge-badge-tint: var(--surface-live);
 }
 
 .badge[data-tone="running"] .icon {
-  --status-badge-icon-animation: pulse var(--duration-pulse) ease-in-out
+  --status-badge-icon-animation: blink var(--duration-blink) steps(2, jump-none)
     infinite;
 }
 
 .badge[data-tone="succeeded"] {
   --status-badge-badge-text: var(--color-status-succeeded);
+  --status-badge-badge-tint: var(--surface-live);
 }
 
 .badge[data-tone="waiting"] {
   --status-badge-badge-text: var(--color-status-waiting);
+  --status-badge-badge-tint: var(--surface-attention);
 }
 
 .badge[data-tone="paused"] {
-  --status-badge-badge-border-color: var(--color-status-paused);
   --status-badge-badge-text: var(--color-status-paused);
+  --status-badge-badge-tint: var(--surface-attention);
 }
 
 .badge[data-tone="failed"] {
   --status-badge-badge-text: var(--color-status-failed);
+  --status-badge-badge-tint: var(--surface-danger);
 }
 
 .badge[data-tone="queued"] {
   --status-badge-badge-text: var(--color-status-queued);
+  --status-badge-badge-tint: var(--surface-frame);
 }
 
 .badge[data-tone="skipped"] {
   --status-badge-badge-text: var(--color-status-skipped);
+  --status-badge-badge-tint: var(--surface-frame);
 }
 
 .badge[data-tone="interrupted"] {
   --status-badge-badge-text: var(--color-status-interrupted);
+  --status-badge-badge-tint: var(--surface-frame);
 }
 
-@keyframes pulse {
-  50% {
-    opacity: 0.4;
+@keyframes blink {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.35;
   }
 }

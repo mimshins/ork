@@ -22,6 +22,7 @@
   --surface-raised: var(--ink-920);
   --surface-hover: var(--ink-900);
   --surface-selected: var(--amber-950);
+  --surface-attention: var(--amber-950);
   --surface-live: var(--phosphor-950);
   --surface-danger: var(--red-950);
   --surface-scrim: var(--scrim-dark);
@@ -77,6 +78,7 @@
   --surface-raised: var(--ink-0);
   --surface-hover: var(--ink-100);
   --surface-selected: var(--amber-50);
+  --surface-attention: var(--amber-50);
   --surface-live: var(--phosphor-50);
   --surface-danger: var(--red-50);
   --surface-scrim: var(--scrim-light);

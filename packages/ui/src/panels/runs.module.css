@@ -13,7 +13,7 @@
 .tools {
   --runs-tools-border-block-end: var(--hairline) solid var(--color-border);
   --runs-tools-gap: var(--gap);
-  --runs-tools-padding: var(--gap);
+  --runs-tools-padding: var(--inset-tools);
 
   align-items: flex-end;
   border-block-end: var(--runs-tools-border-block-end);

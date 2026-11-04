@@ -181,6 +181,21 @@ const faintStates = (file: string, look: Look): string[] => {
 
 const STYLE_SHEETS = sourceFiles().filter(file => file.endsWith(".css"));
 
+/**
+ * Toolbars that set their own padding, so one panel's would differ from the
+ * next.
+ */
+const looseToolbars = (): string[] =>
+  STYLE_SHEETS.flatMap(file =>
+    [
+      ...textOf(file).matchAll(
+        /(--[\w-]*(?:tools|monitor-header)-padding)\s*:\s*([^;]+);/gu,
+      ),
+    ]
+      .filter(([, , value = ""]) => value.trim() !== "var(--inset-tools)")
+      .map(([, name = ""]) => `${file}: ${name}`),
+  );
+
 const textOf = (file: string): string =>
   withoutComments(readFileSync(join(SRC, file), "utf8"));
 
@@ -245,6 +260,10 @@ describe("a component's states", () => {
       });
     },
   );
+
+  it("gives every panel's toolbar the same inset", () => {
+    expect(looseToolbars()).toEqual([]);
+  });
 
   it("finds a state's pair, so the check above can fail", () => {
     const button = statesOf(readSheet("components/button.module.css"));

@@ -47,6 +47,9 @@ looks.
 
 ## Consequences
 
+- **Status glyphs are drawn here, not taken from Material Design Icons,** which
+  is the one exception to [ADR-042](./ADR-042-icons-mdi.md): its icons blur at
+  10 px, and a 5×5 grid stays crisp. Everything else still comes from MDI.
 - **The active group keeps its amber line,** which the prototype didn't have.
   Tab weight alone can't say which group the keyboard is in.
 - **A control's border is the quieter line.** A button has its word or icon to
