@@ -142,14 +142,20 @@
 
 /* A legend stays out of its group's gap, and heads labels so stands out from them. */
 .legend {
-  --runs-legend-text: var(--color-text);
-  --runs-legend-text-size: var(--text-small);
-  --runs-legend-weight: var(--weight-strong);
+  --runs-legend-text: var(--color-text-muted);
+  --runs-legend-font: var(--font-caption);
+  --runs-legend-text-size: var(--text-caption);
+  --runs-legend-weight: var(--weight-regular);
+  --runs-legend-tracking: var(--tracking-caption);
+  --runs-legend-case: var(--case-caption);
   --runs-legend-margin-block-end: var(--gap);
 
   color: var(--runs-legend-text);
+  font-family: var(--runs-legend-font);
   font-size: var(--runs-legend-text-size);
   font-weight: var(--runs-legend-weight);
+  letter-spacing: var(--runs-legend-tracking);
+  text-transform: var(--runs-legend-case);
   margin-block-end: var(--runs-legend-margin-block-end);
   padding: 0;
 }
@@ -205,12 +211,18 @@
 
 .triggersTitle {
   --runs-triggers-title-text: var(--color-text-muted);
-  --runs-triggers-title-text-size: var(--text-mono);
-  --runs-triggers-title-weight: var(--weight-medium);
+  --runs-triggers-title-font: var(--font-caption);
+  --runs-triggers-title-text-size: var(--text-caption);
+  --runs-triggers-title-weight: var(--weight-regular);
+  --runs-triggers-title-tracking: var(--tracking-caption);
+  --runs-triggers-title-case: var(--case-caption);
 
   color: var(--runs-triggers-title-text);
+  font-family: var(--runs-triggers-title-font);
   font-size: var(--runs-triggers-title-text-size);
   font-weight: var(--runs-triggers-title-weight);
+  letter-spacing: var(--runs-triggers-title-tracking);
+  text-transform: var(--runs-triggers-title-case);
   margin: 0;
 }
 

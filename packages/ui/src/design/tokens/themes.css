@@ -11,8 +11,12 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  /* Surfaces, from the canvas up. */
+  /*
+   * Surfaces. A panel is a frame on the canvas, with a card (--surface-panel)
+   * inside it, and a well (--surface-sunken) is set into a card.
+   */
   --surface-canvas: var(--ink-1000);
+  --surface-frame: var(--ink-920);
   --surface-sunken: var(--ink-960);
   --surface-panel: var(--ink-940);
   --surface-raised: var(--ink-920);
@@ -21,14 +25,15 @@
   --surface-live: var(--phosphor-950);
   --surface-danger: var(--red-950);
   --surface-scrim: var(--scrim-dark);
+  --shadow-frame: none;
 
   /* Text and lines. */
-  --color-text: var(--ink-100);
+  --color-text: var(--ink-25);
   --color-text-muted: var(--ink-400);
   --color-text-disabled: var(--ink-700);
   --color-border: var(--ink-850);
   --color-border-strong: var(--ink-600);
-  --color-grid-dot: var(--ink-900);
+  --color-grid-dot: var(--ink-850);
   --color-focus: var(--amber-500);
 
   /* Amber: action and attention. */
@@ -65,8 +70,9 @@
 [data-theme="light"] {
   color-scheme: light;
 
-  --surface-canvas: var(--ink-25);
-  --surface-sunken: var(--ink-50);
+  --surface-canvas: var(--ink-100);
+  --surface-frame: var(--ink-50);
+  --surface-sunken: var(--ink-25);
   --surface-panel: var(--ink-0);
   --surface-raised: var(--ink-0);
   --surface-hover: var(--ink-100);
@@ -74,11 +80,12 @@
   --surface-live: var(--phosphor-50);
   --surface-danger: var(--red-50);
   --surface-scrim: var(--scrim-light);
+  --shadow-frame: var(--shadow-faint);
 
   --color-text: var(--ink-1000);
   --color-text-muted: var(--ink-700);
   --color-text-disabled: var(--ink-400);
-  --color-border: var(--ink-100);
+  --color-border: var(--ink-200);
   --color-border-strong: var(--ink-500);
   --color-grid-dot: var(--ink-200);
   --color-focus: var(--amber-700);

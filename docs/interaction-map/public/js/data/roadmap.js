@@ -746,6 +746,7 @@ export const MILESTONES = [
           "Nested surfaces, two type voices, block meters and a pixel touch, at console density, from a prototype the maintainer approved. Each component now owns its tokens, and a state only sets tokens, so the look changes by changing values. The values themselves are next.",
         docs: [
           "decisions/ADR-054-component-tokens.md",
+          "decisions/ADR-055-console-language.md",
           "specs/ui/design-system.md",
         ],
         commits: ["b296577"],

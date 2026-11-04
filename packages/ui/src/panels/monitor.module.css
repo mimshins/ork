@@ -164,8 +164,18 @@
 
 .watching dt {
   --monitor-dt-text: var(--color-text-muted);
+  --monitor-dt-font: var(--font-caption);
+  --monitor-dt-text-size: var(--text-caption);
+  --monitor-dt-weight: var(--weight-regular);
+  --monitor-dt-tracking: var(--tracking-caption);
+  --monitor-dt-case: var(--case-caption);
 
   color: var(--monitor-dt-text);
+  font-family: var(--monitor-dt-font);
+  font-size: var(--monitor-dt-text-size);
+  font-weight: var(--monitor-dt-weight);
+  letter-spacing: var(--monitor-dt-tracking);
+  text-transform: var(--monitor-dt-case);
 }
 
 .watching dd {

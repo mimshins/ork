@@ -1,22 +1,25 @@
 /**
  * @file The dock's theme: dockview's variables set from the design tokens, on
- *   Ork's own theme class, so none of dockview's skins apply. Groups sit apart
- *   on the canvas with hairline borders; the selected tab of the active group
- *   carries the amber line, and any focused tab the page's focus ring.
+ *   Ork's own theme class, so none of dockview's skins apply. A group is a frame
+ *   on the canvas holding its tabs and a card; its edge is there only for more
+ *   contrast and forced colors, which see a transparent one. The selected tab of
+ *   the active group carries the amber line, and any focused tab the page's
+ *   focus ring.
  */
 
 .dock {
   --dock-bg: var(--surface-canvas);
   --dock-text: var(--color-text);
-  --dv-group-view-background-color: var(--surface-panel);
-  --dv-tabs-and-actions-container-background-color: var(--surface-panel);
+  /* Dockview also paints this behind the groups, so it is the gaps' color. */
+  --dv-group-view-background-color: var(--surface-canvas);
+  --dv-tabs-and-actions-container-background-color: var(--surface-frame);
   --dv-tabs-and-actions-container-height: var(--panel-header-height);
   --dv-tabs-and-actions-container-font-size: var(--text-ui);
   --dv-tabs-container-scrollbar-color: var(--color-border-strong);
-  --dv-activegroup-visiblepanel-tab-background-color: var(--surface-panel);
-  --dv-activegroup-hiddenpanel-tab-background-color: var(--surface-panel);
-  --dv-inactivegroup-visiblepanel-tab-background-color: var(--surface-panel);
-  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--surface-panel);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--surface-frame);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--surface-frame);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--surface-frame);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--surface-frame);
   --dv-activegroup-visiblepanel-tab-color: var(--color-text);
   --dv-activegroup-hiddenpanel-tab-color: var(--color-text-muted);
   --dv-inactivegroup-visiblepanel-tab-color: var(--color-text);
@@ -24,8 +27,8 @@
   --dv-tab-divider-color: transparent;
   --dv-tab-font-size: var(--text-ui);
   --dv-tab-margin: 0;
-  --dv-border-radius: var(--radius-panel);
-  /* Groups sit apart with their own borders: a split's line would stick out. */
+  --dv-border-radius: var(--radius-frame);
+  /* Groups sit apart as frames: a split's line would stick out. */
   --dv-separator-border: transparent;
   --dv-sash-color: transparent;
   --dv-active-sash-color: var(--color-action-edge);
@@ -52,25 +55,43 @@
 }
 
 .dock :global(.dv-groupview) {
+  --dock-dv-groupview-bg: var(--surface-frame);
   --dock-dv-groupview-border-width: var(--hairline);
   --dock-dv-groupview-border-style: solid;
-  --dock-dv-groupview-border-color: var(--color-border);
-  --dock-dv-groupview-radius: var(--radius-panel);
+  --dock-dv-groupview-border-color: transparent;
+  --dock-dv-groupview-radius: var(--radius-frame);
+  --dock-dv-groupview-shadow: var(--shadow-frame);
+  /* The gutter around the card, with the edge's hairline making up the rest. */
+  --dock-dv-groupview-padding: 0 var(--space-2) var(--space-2);
   --dock-dv-groupview-overflow: hidden;
 
+  background: var(--dock-dv-groupview-bg);
   border-width: var(--dock-dv-groupview-border-width);
   border-style: var(--dock-dv-groupview-border-style);
   border-color: var(--dock-dv-groupview-border-color);
   border-radius: var(--dock-dv-groupview-radius);
+  box-shadow: var(--dock-dv-groupview-shadow);
+  box-sizing: border-box;
+  padding: var(--dock-dv-groupview-padding);
   overflow: var(--dock-dv-groupview-overflow);
 }
 
+:global([data-contrast="more"]) .dock :global(.dv-groupview) {
+  --dock-dv-groupview-border-color: var(--color-border);
+}
+
+.dock :global(.dv-content-container) {
+  --dock-dv-content-container-bg: var(--surface-panel);
+  --dock-dv-content-container-radius: var(--radius-panel);
+
+  background: var(--dock-dv-content-container-bg);
+  border-radius: var(--dock-dv-content-container-radius);
+  overflow: hidden;
+}
+
 .dock :global(.dv-tabs-and-actions-container) {
-  --dock-dv-tabs-and-actions-container-border-bottom: var(--hairline) solid
-    var(--color-border);
   --dock-dv-tabs-and-actions-container-box-sizing: content-box;
 
-  border-bottom: var(--dock-dv-tabs-and-actions-container-border-bottom);
   box-sizing: var(--dock-dv-tabs-and-actions-container-box-sizing);
 }
 
@@ -78,7 +99,7 @@
   --dock-dv-tab-outline: initial;
   --dock-dv-tab-align-items: center;
   --dock-dv-tab-display: flex;
-  --dock-dv-tab-padding: 0 var(--inset-control);
+  --dock-dv-tab-padding: 0 var(--space-6);
 
   align-items: var(--dock-dv-tab-align-items);
   display: var(--dock-dv-tab-display);
@@ -134,12 +155,18 @@
 .tab {
   --dock-tab-text-size: var(--text-ui);
   --dock-tab-gap: var(--gap-tight);
+  --dock-tab-weight: var(--weight-regular);
 
   align-items: center;
   display: flex;
   font-size: var(--dock-tab-text-size);
+  font-weight: var(--dock-tab-weight);
   gap: var(--dock-tab-gap);
   white-space: nowrap;
+}
+
+.dock :global(.dv-active-tab) .tab {
+  --dock-tab-weight: var(--weight-medium);
 }
 
 .tab > svg {

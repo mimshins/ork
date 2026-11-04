@@ -78,8 +78,8 @@ every `ork` command.
 
 ## Style
 
-An instrument panel for agents: a Figma-like dark canvas, dense and quiet, lit
-only where something needs the user; the logo's amber `#ffb000` as primary
-(action, attention) and phosphor `#3dff8a` as secondary (live, done); Geist and
-Geist Mono; WCAG 2.2 AA in every theme; copy in the CLI's words. The details are
-in the [design system](./ui/design-system.md).
+An instrument panel for agents, sized as a console: frames holding cards on a
+near-black canvas, lit only where something needs the user; the logo's amber
+`#ffb000` as primary (action, attention) and phosphor `#3dff8a` as secondary
+(live, done); Geist and Geist Mono; WCAG 2.2 AA in every theme; copy in the
+CLI's words. The details are in the [design system](./ui/design-system.md).

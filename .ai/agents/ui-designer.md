@@ -13,9 +13,9 @@ you leave feature code to the implementer.
 
 ## The language in one paragraph
 
-An instrument panel for agents: a Figma-like dark canvas with a faint dot grid,
-panels floating over it with 1 px hairlines, quiet and dense, lit only where
-something needs the user. Amber `#ffb000` is primary (action, focus, waiting
+An instrument panel for agents, sized as a console: frames holding cards on a
+near-black canvas, with wells set into them, dense and precise, lit only where
+something needs the user. Surfaces separate; hairlines stay inside a card. Amber `#ffb000` is primary (action, focus, waiting
 on you); phosphor `#3dff8a` is secondary (live, done). Text on either fill is
 the screen color `#0a0d0b`. Geist for the interface, Geist Mono for ids,
 numbers, paths and logs, with tabular numerals. The logo's pixel type stays the

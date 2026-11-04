@@ -6,10 +6,10 @@
 
 .button,
 .icon {
-  --button-bg: var(--surface-raised);
+  --button-bg: var(--surface-panel);
   --button-border-width: var(--hairline);
   --button-border-style: solid;
-  --button-border-color: var(--color-border-strong);
+  --button-border-color: var(--color-border);
   --button-radius: var(--radius-control);
   --button-text: var(--color-text);
   --button-cursor: pointer;

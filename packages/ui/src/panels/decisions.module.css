@@ -178,14 +178,18 @@
 
 .settledTitle {
   --decisions-settled-title-text: var(--color-text-muted);
-  --decisions-settled-title-font: var(--font-mono);
-  --decisions-settled-title-text-size: var(--text-mono);
-  --decisions-settled-title-weight: var(--weight-medium);
+  --decisions-settled-title-font: var(--font-caption);
+  --decisions-settled-title-text-size: var(--text-caption);
+  --decisions-settled-title-weight: var(--weight-regular);
+  --decisions-settled-title-tracking: var(--tracking-caption);
+  --decisions-settled-title-case: var(--case-caption);
 
   color: var(--decisions-settled-title-text);
   font-family: var(--decisions-settled-title-font);
   font-size: var(--decisions-settled-title-text-size);
   font-weight: var(--decisions-settled-title-weight);
+  letter-spacing: var(--decisions-settled-title-tracking);
+  text-transform: var(--decisions-settled-title-case);
   margin: 0;
 }
 

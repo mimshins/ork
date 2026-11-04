@@ -101,7 +101,7 @@ const SEMANTIC = new Set([
 ]);
 
 /** The primitives that change with a theme, so only themes.css may name them. */
-const COLOR_PRIMITIVE = /^--(?:ink|amber|phosphor|red|scrim)-/u;
+const COLOR_PRIMITIVE = /^--(?:ink|amber|phosphor|red|scrim|shadow)-/u;
 
 /** Uses of a color primitive outside the semantic layer. */
 const primitiveUses = (): string[] =>
@@ -193,7 +193,7 @@ describe("type", () => {
 
   it("has no size below 11 px", () => {
     expect(textSizes().filter(px => px < 11)).toEqual([]);
-    expect(textSizes()).toHaveLength(5);
+    expect(textSizes()).toHaveLength(6);
   });
 });
 

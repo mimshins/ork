@@ -12,20 +12,22 @@
 }
 
 .bar {
-  --workspace-bar-bg: var(--surface-panel);
-  --workspace-bar-border-block: var(--hairline) solid var(--color-border);
+  --workspace-bar-bg: var(--surface-canvas);
   --workspace-bar-gap: var(--gap);
-  --workspace-bar-min-height: 2rem;
+  --workspace-bar-min-height: 1.875rem;
   --workspace-bar-padding: 0 var(--gap);
 
   align-items: center;
   background: var(--workspace-bar-bg);
-  border-block: var(--workspace-bar-border-block);
   display: flex;
   flex-wrap: wrap;
   gap: var(--workspace-bar-gap);
   min-height: var(--workspace-bar-min-height);
   padding: var(--workspace-bar-padding);
+}
+
+footer.bar {
+  --workspace-bar-min-height: 1.375rem;
 }
 
 .name {
@@ -75,8 +77,8 @@
 }
 
 .middle {
-  --workspace-middle-padding: var(--gap-tight);
-  --workspace-middle-gap: var(--gap-tight);
+  --workspace-middle-padding: 0 var(--gap-panels);
+  --workspace-middle-gap: var(--gap-panels);
 
   display: flex;
   min-height: 0;
@@ -90,23 +92,29 @@
 }
 
 .rail {
-  --workspace-rail-bg: var(--surface-panel);
-  --workspace-rail-border: var(--hairline) solid var(--color-border);
-  --workspace-rail-radius: var(--radius-panel);
+  --workspace-rail-bg: var(--surface-frame);
+  --workspace-rail-border: var(--hairline) solid transparent;
+  --workspace-rail-radius: var(--radius-frame);
+  --workspace-rail-shadow: var(--shadow-frame);
   --workspace-rail-gap: var(--gap-hair);
   --workspace-rail-padding: var(--gap-hair);
 
   background: var(--workspace-rail-bg);
   border: var(--workspace-rail-border);
   border-radius: var(--workspace-rail-radius);
+  box-shadow: var(--workspace-rail-shadow);
   display: flex;
   flex-direction: column;
   gap: var(--workspace-rail-gap);
   padding: var(--workspace-rail-padding);
 }
 
+:global([data-contrast="more"]) .rail {
+  --workspace-rail-border: var(--hairline) solid var(--color-border);
+}
+
 .stack {
-  --workspace-stack-gap: var(--gap-tight);
+  --workspace-stack-gap: var(--gap-panels);
 
   display: flex;
   flex: 1;
@@ -117,14 +125,22 @@
 }
 
 .stacked {
-  --workspace-stacked-bg: var(--surface-panel);
-  --workspace-stacked-border: var(--hairline) solid var(--color-border);
-  --workspace-stacked-radius: var(--radius-panel);
+  --workspace-stacked-bg: var(--surface-frame);
+  --workspace-stacked-border: var(--hairline) solid transparent;
+  --workspace-stacked-radius: var(--radius-frame);
+  --workspace-stacked-shadow: var(--shadow-frame);
+  --workspace-stacked-padding: 0 var(--space-2) var(--space-2);
 
   background: var(--workspace-stacked-bg);
   border: var(--workspace-stacked-border);
   border-radius: var(--workspace-stacked-radius);
+  box-shadow: var(--workspace-stacked-shadow);
   flex: none;
+  padding: var(--workspace-stacked-padding);
+}
+
+:global([data-contrast="more"]) .stacked {
+  --workspace-stacked-border: var(--hairline) solid var(--color-border);
 }
 
 .stackedHeading {
@@ -138,7 +154,7 @@
 
 .stackedButton {
   --workspace-stacked-button-bg: transparent;
-  --workspace-stacked-button-radius: var(--radius-panel);
+  --workspace-stacked-button-radius: var(--radius-frame);
   --workspace-stacked-button-text: var(--color-text);
   --workspace-stacked-button-gap: var(--gap-tight);
   --workspace-stacked-button-min-height: var(--panel-header-height);
@@ -163,10 +179,12 @@
 }
 
 .stackedBody {
-  --workspace-stacked-body-border-top: var(--hairline) solid var(--color-border);
+  --workspace-stacked-body-bg: var(--surface-panel);
+  --workspace-stacked-body-radius: var(--radius-panel);
   --workspace-stacked-body-min-height: 18rem;
 
-  border-top: var(--workspace-stacked-body-border-top);
+  background: var(--workspace-stacked-body-bg);
+  border-radius: var(--workspace-stacked-body-radius);
   min-height: var(--workspace-stacked-body-min-height);
 }
 

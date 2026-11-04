@@ -15,6 +15,7 @@ const UI = 3;
 /** Every surface text and controls are drawn on. */
 const SURFACES = [
   "--surface-canvas",
+  "--surface-frame",
   "--surface-sunken",
   "--surface-panel",
   "--surface-raised",

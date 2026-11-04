@@ -22,7 +22,7 @@ import type { Workspace } from "./workspace.ts";
 
 import styles from "./dock.module.css";
 
-const GROUP_GAP = 4;
+const GROUP_GAP = 6;
 
 const Tab = ({ api }: IDockviewPanelHeaderProps) => {
   const Icon = isPanelId(api.id) ? panelOf(api.id).Icon : null;

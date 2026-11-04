@@ -35,13 +35,19 @@
 
 .heading {
   --gallery-heading-text: var(--color-text-muted);
-  --gallery-heading-text-size: var(--text-small);
-  --gallery-heading-weight: var(--weight-medium);
+  --gallery-heading-font: var(--font-caption);
+  --gallery-heading-text-size: var(--text-caption);
+  --gallery-heading-weight: var(--weight-regular);
+  --gallery-heading-tracking: var(--tracking-caption);
+  --gallery-heading-case: var(--case-caption);
   --gallery-heading-margin: 0 0 var(--gap);
 
   color: var(--gallery-heading-text);
+  font-family: var(--gallery-heading-font);
   font-size: var(--gallery-heading-text-size);
   font-weight: var(--gallery-heading-weight);
+  letter-spacing: var(--gallery-heading-tracking);
+  text-transform: var(--gallery-heading-case);
   margin: var(--gallery-heading-margin);
 }
 

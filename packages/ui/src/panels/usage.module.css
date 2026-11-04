@@ -108,8 +108,18 @@
 
 .total dt {
   --usage-dt-text: var(--color-text-muted);
+  --usage-dt-font: var(--font-caption);
+  --usage-dt-text-size: var(--text-caption);
+  --usage-dt-weight: var(--weight-regular);
+  --usage-dt-tracking: var(--tracking-caption);
+  --usage-dt-case: var(--case-caption);
 
   color: var(--usage-dt-text);
+  font-family: var(--usage-dt-font);
+  font-size: var(--usage-dt-text-size);
+  font-weight: var(--usage-dt-weight);
+  letter-spacing: var(--usage-dt-tracking);
+  text-transform: var(--usage-dt-case);
 }
 
 .total dd {
@@ -330,8 +340,18 @@
 
 .table thead th {
   --usage-th-text: var(--color-text-muted);
+  --usage-head-font: var(--font-caption);
+  --usage-head-text-size: var(--text-caption);
+  --usage-head-weight: var(--weight-regular);
+  --usage-head-tracking: var(--tracking-caption);
+  --usage-head-case: var(--case-caption);
 
   color: var(--usage-th-text);
+  font-family: var(--usage-head-font);
+  font-size: var(--usage-head-text-size);
+  font-weight: var(--usage-head-weight);
+  letter-spacing: var(--usage-head-tracking);
+  text-transform: var(--usage-head-case);
 }
 
 .table .number {

@@ -14,10 +14,18 @@
 
 .label {
   --meter-label-text: var(--color-text-muted);
-  --meter-label-text-size: var(--text-small);
+  --meter-label-font: var(--font-caption);
+  --meter-label-text-size: var(--text-caption);
+  --meter-label-weight: var(--weight-regular);
+  --meter-label-tracking: var(--tracking-caption);
+  --meter-label-case: var(--case-caption);
 
   color: var(--meter-label-text);
+  font-family: var(--meter-label-font);
   font-size: var(--meter-label-text-size);
+  font-weight: var(--meter-label-weight);
+  letter-spacing: var(--meter-label-tracking);
+  text-transform: var(--meter-label-case);
 }
 
 .value {

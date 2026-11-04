@@ -15,9 +15,9 @@
 .canvas {
   /* The viewport sets this on the element as the user zooms. */
   --graph-zoom: 1;
-  --graph-canvas-bg: var(--surface-panel);
+  --graph-canvas-bg: var(--surface-sunken);
   --graph-canvas-background-image: radial-gradient(
-    var(--color-border) var(--hairline),
+    var(--color-grid-dot) var(--hairline),
     transparent var(--hairline)
   );
   --graph-canvas-background-size: var(--gap-loose) var(--gap-loose);
@@ -126,7 +126,7 @@
 }
 
 .edgeLabelBack {
-  --graph-edge-label-back-fill: var(--surface-panel);
+  --graph-edge-label-back-fill: var(--surface-sunken);
 
   fill: var(--graph-edge-label-back-fill);
 }
@@ -134,7 +134,7 @@
 .card {
   --graph-card-transition: initial;
   --graph-card-outline: none;
-  --graph-card-bg: var(--surface-raised);
+  --graph-card-bg: var(--surface-panel);
   --graph-card-border-width: var(--hairline);
   --graph-card-border-style: solid;
   --graph-card-border-color: var(--color-border-strong);

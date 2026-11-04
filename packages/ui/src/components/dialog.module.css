@@ -26,7 +26,7 @@
   --dialog-opacity: initial;
   --dialog-bg: var(--surface-raised);
   --dialog-border: var(--hairline) solid var(--color-border-strong);
-  --dialog-radius: var(--radius-panel);
+  --dialog-radius: var(--radius-frame);
   --dialog-text: var(--color-text);
   --dialog-gap: var(--gap);
   --dialog-left: 50%;

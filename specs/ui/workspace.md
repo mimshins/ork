@@ -11,8 +11,9 @@ cannot: sizes, drawn positions, focus rings and contrast (gap [C6](../gaps.md)).
 
 ## The frame
 
-Three rows: a top bar (the mark, **Window**, and **Commands**), the middle, and
-a status bar with the [server's state](./state.md#streams-that-stay-connected).
+Three rows on the canvas: a top bar (the mark, **Window**, and **Commands**),
+the middle, whose panels are [frames](./design-system.md#the-language), and a
+status bar with the [server's state](./state.md#streams-that-stay-connected).
 The status bar also holds the workspace's one polite live region, which
 dockview's own announcements are routed to. A message stays for a second so the
 next does not cut it off, and what comes meanwhile is said together after it

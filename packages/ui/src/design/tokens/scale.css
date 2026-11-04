@@ -22,24 +22,35 @@
   --weight-medium: var(--weight-500);
   --weight-strong: var(--weight-600);
 
+  /*
+   * A caption says what a value is: a column's head, a stat's name, a group's
+   * heading. Mono, small and upper case, so it reads apart from names and values.
+   */
+  --font-caption: var(--font-mono);
+  --text-caption: var(--size-11);
+  --tracking-caption: 0.04em;
+  --case-caption: uppercase;
+
   /* Space and shape. */
   --gap-hair: var(--space-2);
   --gap-tight: var(--space-4);
   --gap: var(--space-8);
   --gap-loose: var(--space-16);
+  --gap-panels: var(--space-6);
   --inset-control: var(--space-8);
   --inset-panel: var(--space-12);
   --inset-empty: var(--space-24);
   --window-margin: var(--space-32);
   --radius-control: var(--radius-4);
+  --radius-frame: var(--radius-8);
   --radius-panel: var(--radius-6);
-  --radius-badge: var(--radius-2);
+  --radius-badge: var(--radius-3);
   --hairline: 0.0625rem;
 
   /* Sizes: compact by default. */
   --control-height: max(1.5rem, var(--target-min));
   --target-min: 1.5rem;
-  --panel-header-height: 1.75rem;
+  --panel-header-height: 1.625rem;
 
   --icon-size: var(--space-16);
   --icon-size-small: var(--space-12);

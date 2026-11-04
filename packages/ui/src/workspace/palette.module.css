@@ -7,7 +7,7 @@
   --palette-opacity: initial;
   --palette-bg: var(--surface-raised);
   --palette-border: var(--hairline) solid var(--color-border-strong);
-  --palette-radius: var(--radius-panel);
+  --palette-radius: var(--radius-frame);
   --palette-text: var(--color-text);
   --palette-left: 50%;
   --palette-max-height: calc(100vh - 5rem - var(--window-margin));
@@ -85,13 +85,19 @@
 
 .group {
   --palette-group-text: var(--color-text-muted);
-  --palette-group-text-size: var(--text-small);
-  --palette-group-weight: var(--weight-medium);
+  --palette-group-font: var(--font-caption);
+  --palette-group-text-size: var(--text-caption);
+  --palette-group-weight: var(--weight-regular);
+  --palette-group-tracking: var(--tracking-caption);
+  --palette-group-case: var(--case-caption);
   --palette-group-padding: var(--gap) var(--inset-control) var(--gap-tight);
 
   color: var(--palette-group-text);
+  font-family: var(--palette-group-font);
   font-size: var(--palette-group-text-size);
   font-weight: var(--palette-group-weight);
+  letter-spacing: var(--palette-group-tracking);
+  text-transform: var(--palette-group-case);
   padding: var(--palette-group-padding);
 }
 
