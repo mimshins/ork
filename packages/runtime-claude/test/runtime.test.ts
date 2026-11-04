@@ -90,6 +90,44 @@ describe("normalize", () => {
       { type: "assistant.text", text: "hi" },
       { type: "tool.called", id: "t", name: "Read", input: { path: "a" } },
     ]);
+    expect(
+      normalize({
+        type: "rate_limit_event",
+        rate_limit_info: {
+          status: "rejected",
+          rateLimitType: "five_hour",
+          resetsAt: 1_800_000_000,
+          unifiedWindows: { five_hour: { utilization: 1 } },
+        },
+      }),
+    ).toEqual([
+      {
+        type: "plan.limit",
+        status: "rejected",
+        window: "five_hour",
+        resetsAt: "2027-01-15T08:00:00.000Z",
+      },
+    ]);
+    expect(
+      normalize({
+        type: "rate_limit_event",
+        rate_limit_info: { status: "new" },
+      }),
+    ).toEqual([]);
+    expect(normalize({ type: "rate_limit_event" })).toEqual([]);
+    expect(
+      normalize({
+        type: "rate_limit_event",
+        rate_limit_info: {
+          status: "rejected",
+          overageStatus: "allowed",
+          rateLimitType: "five_hour",
+          resetsAt: 1_800_000_000_000,
+        },
+      }),
+    ).toEqual([
+      { type: "plan.limit", status: "allowed_warning", window: "five_hour" },
+    ]);
     expect(normalize({ type: "stream_event" })).toEqual([]);
     expect(normalize("not json")).toEqual([]);
   });

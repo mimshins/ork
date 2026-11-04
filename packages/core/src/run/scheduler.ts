@@ -25,7 +25,7 @@ import {
   failure,
   finishedEvent,
   renderOutputs,
-  createSpend,
+  spendOf,
   recordRun,
   runResult,
   runStartedEvent,
@@ -48,7 +48,7 @@ export const startRun = (options: RunOptions): RunHandle => {
   const outputs: Record<string, NodeOutput> = {};
   const rounds = new Map<string, number>();
   const sessionIds = new Map<string, string>();
-  const spend = createSpend(limits.budgetUsd, options.replay?.earlier);
+  const spend = spendOf(limits.budgetUsd, options);
   const running = new Set<string>();
   const summaries = new Map<string, NodeSummary>();
   const queue: Activation[] = [];
@@ -153,11 +153,11 @@ export const startRun = (options: RunOptions): RunHandle => {
     void close();
   };
 
-  /** True, and the run stops, once `limits.budgetUsd` is spent. */
+  /** True, and the run stops, once its budget or a quota is spent. */
   const budgetSpent = (): boolean => {
-    if (!spend.exhausted()) return false;
-    const budget = `$${String(limits.budgetUsd)}`;
-    stop("budget_exhausted", `the run's budget of ${budget} is spent`);
+    const out = spend.spentOut();
+    if (out === null) return false;
+    stop(out.status, out.reason);
     return true;
   };
 
@@ -190,8 +190,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     slots,
     nodeOf,
     runChild,
-    budgetLeft: spend.left,
-    ownOf: spend.ownOf,
+    spend,
   };
 
   const execute = createExecute({
@@ -220,6 +219,8 @@ export const startRun = (options: RunOptions): RunHandle => {
       stops.ended(id, recorded ?? (await execute(activation, round))),
       recorded !== null,
     );
+    // A limit cut it off: no edge acts on its failure, and a resume goes on.
+    if (result.limited !== undefined) stop("quota_exhausted", result.limited);
     holds.finished(id);
     ports.finished(id);
     running.delete(id);

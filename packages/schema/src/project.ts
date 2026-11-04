@@ -15,6 +15,7 @@ import {
   IsolationSchema,
   ModelSchema,
   PracticesSchema,
+  QuotasSchema,
   ToolRulesSchema,
   TimeoutSchema,
   TurnsSchema,
@@ -113,6 +114,9 @@ export const ProjectSchema = z.strictObject({
   defaults: DefaultsSchema.optional().describe(
     "Defaults for every workflow in the project; a workflow's own win.",
   ),
+  quotas: QuotasSchema.optional().describe(
+    "Most this project may spend on this machine. The user's own caps apply too.",
+  ),
   calls: z
     .strictObject({
       accept: z
@@ -131,6 +135,18 @@ export const ProjectSchema = z.strictObject({
     ),
 });
 export type Project = z.infer<typeof ProjectSchema>;
+
+/** `~/.ork/settings.yaml`: the user's own settings, and never a credential. */
+export const UserSettingsSchema = z.strictObject({
+  schemaVersion: z.literal(PROJECT_SCHEMA_VERSION),
+  quotas: QuotasSchema.optional().describe(
+    "Most to spend across every project on this machine.",
+  ),
+});
+export type UserSettings = z.infer<typeof UserSettingsSchema>;
+
+export const SETTINGS_SCHEMA_URL =
+  "https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/settings.schema.json";
 
 export const PROJECT_SCHEMA_URL =
   "https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/project.schema.json";

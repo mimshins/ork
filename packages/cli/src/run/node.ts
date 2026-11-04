@@ -31,6 +31,7 @@ import { beforeOf, type Driver } from "@krapht/ork-schema";
 import { formatReport, loadWorkflow } from "../commands/validate.ts";
 import { style } from "../output.ts";
 import { formatEvent, formatRunEvent } from "./format.ts";
+import { limitsRefusal, runLimits } from "./limits.ts";
 import { feedbackOrigin } from "./origin.ts";
 
 export type RunNodeOptions = {
@@ -93,6 +94,11 @@ export const runNode = async (
   const inputs = resolveInputs(workflow, pairs.raw);
   if (!inputs.ok) return failed(inputs.errors);
 
+  const limits = runLimits(options.store, place, options.home);
+  const refused = limitsRefusal(limits, workflow);
+  if (refused.length > 0) return failed(refused);
+  const left = limits.now().leftUsd;
+
   const projectRoot = place.root;
   const runId = options.runId ?? newRunId(options.store, "node-");
   const runDir = runDirOf(place, runId);
@@ -100,6 +106,7 @@ export const runNode = async (
   // the project then.
   const cwd = inside(projectRoot, options.cwd) ? options.cwd : projectRoot;
   const plan = planNodeSession(workflow, options.nodeId, {
+    ...(left === undefined ? {} : { budgetLeftUsd: left }),
     cwd,
     inputs: inputs.inputs,
     inPlace: options.inPlace,

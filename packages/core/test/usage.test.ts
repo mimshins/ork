@@ -524,7 +524,7 @@ describe("what a resumed run starts from", () => {
   it("is what a run's budget goes on from", () => {
     const counter = createSpend(4, earlierSpend(cut));
     expect(counter.left()).toBe(1);
-    expect(counter.exhausted()).toBe(false);
+    expect(counter.spentOut()).toBeNull();
   });
 });
 

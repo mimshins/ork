@@ -57,6 +57,43 @@ export const outcomeOf = (result: Json): SessionOutcome => {
   };
 };
 
+/** The year 2286: a reset beyond this is not in seconds. */
+const MAX_RESET_SECONDS = 1e10;
+
+/**
+ * What a subscription's limit said (RFC-007). Only the fields Claude Code
+ * documents are read, so `utilization`, often absent, plays no part.
+ */
+const planLimitOf = (info: unknown): RuntimeEvent[] => {
+  const status = get(info, "status");
+  if (
+    status !== "allowed" &&
+    status !== "allowed_warning" &&
+    status !== "rejected"
+  ) {
+    return [];
+  }
+  const window = get(info, "rateLimitType");
+  const resets = get(info, "resetsAt");
+  const overage = get(info, "overageStatus");
+  // A plan with extra usage to draw on goes on past its own limit.
+  const refused =
+    status === "rejected" &&
+    overage !== "allowed" &&
+    overage !== "allowed_warning";
+  return [
+    {
+      type: "plan.limit",
+      status: status === "rejected" && !refused ? "allowed_warning" : status,
+      window: typeof window === "string" ? window : "plan",
+      // In seconds: anything else would hold every run for ever.
+      ...(typeof resets === "number" && resets > 0 && resets < MAX_RESET_SECONDS
+        ? { resetsAt: new Date(resets * 1000).toISOString() }
+        : {}),
+    },
+  ];
+};
+
 /** Maps one driver message to zero or more normalized events. */
 export const normalize = (message: unknown): RuntimeEvent[] => {
   if (!isObject(message)) return [];
@@ -98,6 +135,9 @@ export const normalize = (message: unknown): RuntimeEvent[] => {
           id: str(block["tool_use_id"]),
           isError: block["is_error"] === true,
         }));
+    }
+    case "rate_limit_event": {
+      return planLimitOf(message["rate_limit_info"]);
     }
     case "result": {
       return [{ type: "session.finished", outcome: outcomeOf(message) }];

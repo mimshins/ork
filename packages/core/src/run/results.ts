@@ -10,6 +10,7 @@ import { isClaudeNode, type Node, type NodeType } from "@krapht/ork-schema";
 import type { AgentRef } from "../agents/apply.ts";
 import { parseTemplate, renderTemplate, type Scope } from "../expr/evaluate.ts";
 import type { CompiledGraph } from "../graph/types.ts";
+import type { RunLimits } from "../usage/quota.ts";
 import { type EarlierSpend, ownSpend, unreported } from "../usage/spend.ts";
 import { declaredNodes } from "./contacts.ts";
 import type { Activation, RunOptions } from "./handle.ts";
@@ -60,16 +61,43 @@ export const withOwnSpend = (
 export const createSpend = (
   budgetUsd: number | undefined,
   earlier?: EarlierSpend,
+  limits?: () => RunLimits,
 ) => {
   const reported = new Map(earlier?.reported);
   let spent = earlier?.total ?? 0;
+  const budgetLeft = () =>
+    budgetUsd === undefined ? undefined : budgetUsd - spent;
   return {
     total: () => spent,
     /** What a session has spent in this activation, from its total so far. */
     ownOf: (id: string, sessionId: string, total: number): number =>
       unreported(reported, `${id}/${sessionId}`, total),
-    left: () => (budgetUsd === undefined ? undefined : budgetUsd - spent),
-    exhausted: () => budgetUsd !== undefined && spent >= budgetUsd,
+    /** What a session may spend: the least of the budget and any quota. */
+    left: () => {
+      const known = [budgetLeft(), limits?.().leftUsd].filter(
+        left => left !== undefined,
+      );
+      return known.length === 0 ? undefined : Math.min(...known);
+    },
+    budgetLeft,
+    /** What the limits across runs allow now. */
+    quota: (): RunLimits => limits?.() ?? {},
+    /**
+     * What stops anything new from starting: a quota first, as a budget can be
+     * raised.
+     */
+    spentOut: (): { status: RunStatus; reason: string } | null => {
+      const blocked = limits?.().blocked;
+      if (blocked !== undefined) {
+        return { status: "quota_exhausted", reason: blocked };
+      }
+      return budgetUsd !== undefined && spent >= budgetUsd
+        ? {
+            status: "budget_exhausted",
+            reason: `the run's budget of $${String(budgetUsd)} is spent`,
+          }
+        : null;
+    },
     /**
      * Counts a result, and gives it back with only its own spend. A replayed
      * result is as stored, and already in what the run started from.
@@ -82,6 +110,12 @@ export const createSpend = (
     },
   };
 };
+
+/** A run's spending, from what the scheduler is given. */
+export const spendOf = (
+  budgetUsd: number | undefined,
+  options: Pick<RunOptions, "replay" | "limits">,
+) => createSpend(budgetUsd, options.replay?.earlier, options.limits);
 
 export const recordRun = (entry: NodeSummary, result: NodeResult): void => {
   entry.runs += 1;

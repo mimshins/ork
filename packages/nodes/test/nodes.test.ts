@@ -17,6 +17,7 @@ import {
   type ExecuteContext,
   type HumanChannel,
   type Mailbox,
+  type NodeResult,
   type Ownership,
   type RuntimeEvent,
   type SessionOutcome,
@@ -542,6 +543,13 @@ describe("Claude nodes", () => {
       );
     });
 
+    it("takes a quota's left as it is: the ledger has this session", () => {
+      expect(
+        lateLimits({ budgetUsd: 10 }, { spent: 6, turns: 0 }, undefined, 4),
+      ).toEqual({ budgetUsd: 4 });
+      expect(lateLimits({}, { spent: 6, turns: 0 }, undefined, 0)).toBeNull();
+    });
+
     it("has only the turns its node has left", () => {
       const spec = { maxTurns: 10 };
       expect(lateLimits(spec, { spent: 0, turns: 4 })).toEqual({
@@ -735,6 +743,12 @@ const recording = () => {
   return { asked, calls };
 };
 
+/** A call port that answers every call with `result`. */
+const callAnswering = (result: NodeResult): CallPort => ({
+  ...recording().calls,
+  invoke: () => Promise.resolve(result),
+});
+
 describe("workflow.call", () => {
   const CALL: Node = {
     type: "workflow.call",
@@ -774,6 +788,49 @@ describe("workflow.call", () => {
       }),
     );
     expect(asked[0]).toMatchObject({ wait: "node", channels: ["writer"] });
+  });
+
+  it("passes on the run's budget, not a quota the called run reads itself", async () => {
+    const { asked, calls } = recording();
+    await callExecutor(
+      context("kit", CALL, {
+        calls,
+        budgetLeftUsd: 0.5,
+        budgetLeftNow: () => 9,
+      }),
+    );
+    expect(asked[0]).toMatchObject({ budgetLeftUsd: 9 });
+  });
+
+  it.each([
+    [
+      "ended by a quota",
+      { ok: false, output: { runStatus: "quota_exhausted" }, error: "spent" },
+      "spent",
+    ],
+    [
+      "refused at its start",
+      { ok: false, output: {}, error: "Not started: its quota is spent." },
+      "Not started: its quota is spent.",
+    ],
+  ])("is cut off when the called run was %s", async (_name, result, why) => {
+    const called = await callExecutor(
+      context("kit", CALL, { calls: callAnswering(result) }),
+    );
+    expect(called.limited).toBe(why);
+  });
+
+  it("is an ordinary failure otherwise", async () => {
+    const called = await callExecutor(
+      context("kit", CALL, {
+        calls: callAnswering({
+          ok: false,
+          output: { runStatus: "failed" },
+          error: "tests are red",
+        }),
+      }),
+    );
+    expect(called.limited).toBeUndefined();
   });
 
   it("fails when the run has no way to call", async () => {

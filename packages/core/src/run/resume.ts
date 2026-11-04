@@ -55,7 +55,12 @@ export type ResumeState = {
 };
 
 /** How a run ended that cut its working nodes off, rather than failing them. */
-const CUTTING = new Set(["interrupted", "budget_exhausted", "timed_out"]);
+const CUTTING = new Set([
+  "interrupted",
+  "budget_exhausted",
+  "quota_exhausted",
+  "timed_out",
+]);
 
 type Open = { sessionId?: string };
 

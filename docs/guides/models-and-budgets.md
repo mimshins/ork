@@ -64,6 +64,44 @@ run summary shows the total, and `--json` gives each node's usage: cost, tokens
 (including cache reads and writes), turns and time. To see them over time, see
 [what you spent](#what-you-spent).
 
+## Limits across runs
+
+A run's budget is one workflow's. To cap what your runs spend together, set
+quotas:
+
+```yaml
+# ~/.ork/settings.yaml: every project on this machine
+schemaVersion: 1
+quotas:
+  dayUsd: 20
+  monthUsd: 300
+```
+
+```yaml
+# .ork/project.yaml: this project
+quotas:
+  dayUsd: 5
+```
+
+- **All that apply are enforced,** so a repository can lower what you spend but
+  can't raise your own cap. `weekUsd` takes weeks from Monday.
+- **At a cap,** nothing new starts, what is working finishes under what was
+  left, and the run ends `quota_exhausted`, saying when it lifts. `ork resume`
+  goes on from there, in the same session, then or once you raise the cap.
+- **While a cap is spent,** `ork run` refuses a workflow with a Claude session
+  or a call. One of only tool nodes still runs. `ork chat` still works, says so,
+  and counts.
+- **A cap can be passed.** Running sessions don't see what each other spend
+  until they finish, so the most it passes by is what they were given. Lower
+  caps or `limits.concurrency` make that smaller.
+- **On a subscription** these are a yardstick, as costs are estimates and not a
+  bill. What stops you there is your plan's rate limit: when Claude Code says
+  the plan has refused a session, every run here stops starting sessions until
+  the time it gives, and `ork resume` goes on.
+
+`ork usage` and the Usage panel show each cap, what it has left and when it
+resets.
+
 ## Timeouts
 
 A run has no time limit unless you set one:

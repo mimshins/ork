@@ -13,12 +13,16 @@ import type {
   ProjectRecord,
   RunRecord,
   StoredEvent,
+  LimitsReport,
   StoredRunStatus,
   TreeNode,
   UsageReport,
 } from "@krapht/ork-core";
 import type { InputDef } from "@krapht/ork-schema";
 import { z } from "zod";
+
+/** `/api/usage`: the report, and the limits that apply. */
+export type UsageAnswer = UsageReport & { limits: LimitsReport };
 
 /** The records the answers are made of, for a client that imports only this. */
 export type {
@@ -28,6 +32,7 @@ export type {
   ProjectRecord,
   StoredEvent,
   TreeNode,
+  LimitsReport,
   UsageReport,
 };
 
@@ -218,7 +223,7 @@ export type Responses = {
   pause: Accepted;
   continue: Accepted;
   message: Accepted;
-  usage: UsageReport;
+  usage: UsageAnswer;
   links: LinkRecord[];
   link: LinkRecord;
   unlink: { ended: true };

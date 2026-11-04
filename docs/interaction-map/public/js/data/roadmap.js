@@ -663,10 +663,14 @@ export const MILESTONES = [
       {
         id: "quotas",
         title: "Quotas across runs",
-        status: "next",
+        status: "active",
         detail:
-          "Caps per day, month or project on top of each run's budget, for API and subscription users alike. Needs its own RFC, after the usage reports.",
-        docs: ["specs/usage.md", "specs/scheduler.md#budget-and-concurrency"],
+          "Caps per day, week or month, for all projects or one, on top of each run's budget, from the ledger. A plan's rate limit stops runs too, on a subscription. At a limit a run stops, and `ork resume` goes on in the same session.",
+        docs: [
+          "decisions/ADR-050-limits-across-runs.md",
+          "specs/usage.md#limits-across-runs",
+          "docs/guides/models-and-budgets.md#limits-across-runs",
+        ],
       },
       {
         id: "worktrees-panel",
@@ -742,6 +746,7 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "e97d75c",
   "57bdb6f",
   "dc89e77",
   "61f7edb",

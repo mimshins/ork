@@ -34,10 +34,7 @@ import {
 import {
   builtinExecutors,
   clearOutputFiles,
-  envProblems,
   maskedNamesOfRun,
-  missingProgramMessage,
-  missingPrograms,
   onPath,
   runScrubber,
   type ToolRunner,
@@ -46,7 +43,6 @@ import type { Driver } from "@krapht/ork-schema";
 
 import { formatReport, loadWorkflow } from "../commands/validate.ts";
 import { callPorts } from "./calls.ts";
-import { prepareCheckout } from "./checkout.ts";
 import { formatRunEvent } from "./format.ts";
 import {
   liveControl,
@@ -54,6 +50,7 @@ import {
   takeLastCommands,
 } from "./live-handlers.ts";
 import { feedbackOrigin } from "./origin.ts";
+import { preflight } from "./preflight.ts";
 
 export type RunWorkflowOptions = {
   file: string;
@@ -138,23 +135,15 @@ export const runWorkflowFile = async (
   const inputs = resolveInputs(workflow, { ...recorded, ...pairs.raw });
   if (!inputs.ok) return failed(inputs.errors);
 
-  const installed =
-    options.installed ??
-    (options.tools === undefined ? (p: string) => onPath(p) : () => true);
-  const missing = missingPrograms(workflow, installed);
-  if (missing.length > 0) return failed(missingProgramMessage(missing));
   const projects = options.store.projects();
-  const history = options.resume?.history;
-  const unset = envProblems(workflow, place, projects, history, options.err);
-  if (unset.length > 0) return failed(unset);
-
-  const checkout = await prepareCheckout(
+  const ready = await preflight(options, {
     workflow,
-    { ...options, cwd: place.root },
-    inputs.inputs,
-  );
-  if (!checkout.ok) return failed(checkout.lines);
-  const { root, base } = checkout;
+    place,
+    projects,
+    inputs: inputs.inputs,
+  });
+  if (!ready.ok) return failed(ready.lines);
+  const { root, base } = ready;
   // Without worktrees nodes work where `ork run` was started, if that is in
   // the project (an attached project's workflow can be run from anywhere).
   const cwd =
@@ -287,6 +276,7 @@ export const runWorkflowFile = async (
     orkDir: place.dir,
     ...(workspace === undefined ? {} : { workspace }),
     scrub: runScrubber(maskedNames, process.env),
+    limits: ready.limits,
     beforeFinish: takeLastCommands(control, started.promise),
   });
   live.handle = handle;

@@ -6,7 +6,12 @@
 import { z } from "zod";
 
 import { AGENT_SCHEMA_URL, AgentSettingsSchema } from "./agents.ts";
-import { PROJECT_SCHEMA_URL, ProjectSchema } from "./project.ts";
+import {
+  PROJECT_SCHEMA_URL,
+  ProjectSchema,
+  SETTINGS_SCHEMA_URL,
+  UserSettingsSchema,
+} from "./project.ts";
 import { WorkflowSchema } from "./workflow.ts";
 import { SCHEMA_URL } from "./yaml.ts";
 
@@ -31,6 +36,19 @@ export const renderAgentJsonSchema = (): string => {
   });
   return `${JSON.stringify(
     { ...schema, $id: AGENT_SCHEMA_URL, title: "Ork agent settings" },
+    undefined,
+    2,
+  )}\n`;
+};
+
+/** The published JSON Schema for the user's `~/.ork/settings.yaml`. */
+export const renderSettingsJsonSchema = (): string => {
+  const schema = z.toJSONSchema(UserSettingsSchema, {
+    io: "input",
+    target: "draft-2020-12",
+  });
+  return `${JSON.stringify(
+    { ...schema, $id: SETTINGS_SCHEMA_URL, title: "Ork user settings" },
     undefined,
     2,
   )}\n`;

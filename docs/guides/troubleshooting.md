@@ -44,6 +44,11 @@ the committed versions.
 Integrations are optional, so Ork only asks for the ones a workflow uses:
 install the program (and sign in with its own login), or take the node out.
 
+**`Not started: your day quota … is spent`, or a run ends `quota_exhausted`.** A
+[limit across runs](./models-and-budgets.md#limits-across-runs) is spent, or
+your Claude plan refused a session. Wait until the time it gives, or raise the
+cap in `~/.ork/settings.yaml` or `.ork/project.yaml`, then `ork resume <run>`.
+
 **`missing required input "feature" (--input feature=…)`.** Pass every required
 input: `--input feature="…"`.
 

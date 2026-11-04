@@ -169,6 +169,13 @@ export const MIGRATIONS: readonly (string | ((db: DatabaseSync) => void))[] = [
      CREATE INDEX feedback_by_fingerprint ON feedback (fingerprint, at);`);
     backfillUsage(db);
   },
+  // 9: what Claude Code last said of each of a plan's limits (RFC-007).
+  `CREATE TABLE plan_limits (
+     name TEXT PRIMARY KEY,
+     status TEXT NOT NULL,
+     resets_at TEXT,
+     at TEXT NOT NULL
+   );`,
 ];
 
 const versionOf = (db: DatabaseSync): number =>

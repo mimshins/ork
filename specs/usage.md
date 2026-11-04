@@ -1,15 +1,15 @@
 # Usage: what runs spent over time
 
 Status: **Built**: the ledger, reports, `ork usage`, `ork prune`,
-`GET /api/usage` and the Usage panel
+`GET /api/usage`, the Usage panel and limits across runs
 ([ledger](../packages/core/src/store/usage.ts),
 [reports](../packages/core/src/usage/report.ts),
 [prune](../packages/core/src/store/prune.ts),
 [commands](../packages/cli/src/commands/usage.ts),
 [panel](../packages/ui/src/panels/usage-panel.tsx),
-[tests](../packages/core/test/usage.test.ts)). Quotas across runs are not built
-([L39](./gaps/limits.md)). Why:
-[ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md).
+[tests](../packages/core/test/usage.test.ts)). Why:
+[ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md) and
+[ADR-050](../decisions/ADR-050-limits-across-runs.md).
 
 Usage answers where the money went and what to improve. No model is involved:
 the ledger is folded from a run's events, and a report is a pure function of it.
@@ -74,7 +74,53 @@ cache write.
 | `cache`        | Under 50% of 100,000 or more input tokens came from cache |
 
 Costs are Claude Code's own estimates. On a subscription they are not what the
-user is billed, and Ork does not track rate limits ([L74](./gaps/limits.md)).
+user is billed ([L74](./gaps/limits-usage.md)).
+
+## Limits across runs
+
+[quota.ts](../packages/core/src/usage/quota.ts),
+[caps.ts](../packages/core/src/usage/caps.ts),
+[tests](../packages/core/test/quota.test.ts).
+
+`quotas` takes `dayUsd`, `weekUsd` and `monthUsd`, in `~/.ork/settings.yaml` for
+every project on this machine and `.ork/project.yaml` for one. All that apply
+are enforced, so a project can't raise the user's. A window is the calendar day,
+week from Monday or month in the machine's time zone, as in a report. What
+counts is the ledger in it, so `ork chat` and called runs do, and a call into
+another project counts there and against the user's caps.
+
+- **`ork run`** refuses a workflow with a session or a call while a limit is
+  spent, or while it can't read its settings, and so does a resume with one of
+  those left to run. A tool-only workflow still runs.
+- **While running,** the scheduler checks before each session and call, and a
+  node checks again before its session starts, and before each late turn or
+  `verify:` retry. A session may spend no more than what is left of any cap. The
+  files and the ledger are read each time, so a changed cap reaches a running
+  run; a file that breaks meanwhile keeps the last it could read.
+- **At a limit** nothing new starts, what is working goes on under its cap, and
+  the run ends `quota_exhausted`, saying which limit and when it lifts. A node a
+  limit ended is cut off, so no edge acts on its failure, and `ork resume`
+  continues its session. That is a session that reached a cap that was a
+  quota's, one its plan refused that gave no report, one with no retry left for
+  a limit, and a call whose run ended `quota_exhausted` or was refused at its
+  start. Any other failure stays a failure, even while a limit is spent.
+- **Plan limits:** Claude Code reports a subscription's limits as
+  `rate_limit_event`, normalized to `plan.limit`, and the store keeps the latest
+  of each window. While one on the whole account (`five_hour`, `seven_day`,
+  `overage`) is `rejected` and its `resetsAt` is ahead, no run here starts a
+  session. One on a single model, such as `seven_day_opus`, stops only the
+  session it refused. A `rejected` with extra usage to draw on (`overageStatus`)
+  counts as `allowed_warning`, which is shown and changes nothing. A session
+  that goes on to succeed is left alone. `ork usage --clear-plan-limits` forgets
+  them, for one that has lifted early.
+- **`ork chat`** counts, and says when a limit is spent. It isn't stopped.
+- **A call that activates a finished run again** is held as any session, as a
+  workflow did it and not a person.
+- **A called run** reads the quotas for itself, so its `--budget-cap` is only
+  its caller's budget.
+
+A cap can be passed ([L99](./gaps/limits-usage.md)) and sees only this store
+([L100](./gaps/limits-usage.md)).
 
 ## `ork usage`
 
@@ -89,7 +135,7 @@ weeks in `--since` are whole days counting today, as in the Usage panel; hours
 are exact. A report's `runs` counts runs with a session, not those that only ran
 tools. Without `--by` it prints the totals, the latest 10 days and the costliest
 10 of each of workflow, model and node, then any hints; with it, that one table
-in full. `--json` prints the whole report.
+in full. Any limits go first. `--json` prints the whole report, with `limits`.
 
 ## `ork prune`
 

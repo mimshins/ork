@@ -9,6 +9,9 @@ import {
   nodeOf,
   pendingDecisions,
   runTree,
+  capsHere,
+  limitsReport,
+  placeFor,
   usageReport,
 } from "@krapht/ork-core";
 
@@ -34,6 +37,14 @@ type ReadRoutes = Pick<
 >;
 
 /** A project filter's root: a registered project's, or the value as a root. */
+/** A registered project's place; caps are only known for one. */
+const placeOf = (context: ServerContext, key: string | undefined) => {
+  const known = key === undefined ? undefined : projectOf(context, key);
+  return known === undefined
+    ? undefined
+    : placeFor(known.root, context.store.projects());
+};
+
 const projectRoot = (context: ServerContext, key: string): string =>
   projectOf(context, key)?.root ?? key;
 
@@ -51,8 +62,8 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
     ok(context.store.links(query.run === undefined ? {} : { run: query.run })),
 
   usage: ({ query }) =>
-    ok(
-      usageReport(
+    ok({
+      ...usageReport(
         context.store.usage({
           ...(query.project === undefined
             ? {}
@@ -62,7 +73,12 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
           ...(query.until === undefined ? {} : { until: query.until }),
         }),
       ),
-    ),
+      limits: limitsReport(
+        context.store,
+        capsHere(context.home, placeOf(context, query.project)),
+        new Date(),
+      ),
+    }),
 
   workflows: ({ params }) => {
     const project = projectOf(context, params.id);

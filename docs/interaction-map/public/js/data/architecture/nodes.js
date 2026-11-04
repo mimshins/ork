@@ -201,6 +201,7 @@ export const NODES = [
       "Built: Notifications, items worked out from the overview stream with a read state per browser, a bell with the unread count, a polite live region, and opt-in desktop notifications.",
       "Checked in a real browser and on a real session: axe, keyboard only, 200% zoom, both themes, reduced motion and forced colors. Not yet with a real screen reader or by touch.",
       "Built: Usage, what runs spent over a period from the usage ledger, with a chart, the costliest workflows, models and nodes, and hints from thresholds.",
+      "Built: limits across runs. `quotas` per day, week or month, for all projects or one, read from the ledger, with each cap's meter on the Usage panel. A plan's refusal stops every run here until it resets.",
       "No Resume button yet: `ork resume` does that.",
       "Panels still to come: the designer and context inspector.",
     ],
@@ -716,6 +717,7 @@ export const NODES = [
     facts: [
       "`start(spec, human)` takes the cwd, model, brief, system prompt addition, setting sources, tool rules, limits and the report schema.",
       "Both drivers emit the same normalized events: started, text, tool called, tool result, finished with the outcome and usage.",
+      "A subscription's rate limit reaches the engine as `plan.limit`; only `rejected` stops anything, and it stops the run rather than failing the node.",
       "`Session.send` injects a message between turns; `interrupt()` stops the session.",
       "Each node picks its driver with `driver: sdk | cli`; `ork run --driver` overrides it.",
     ],

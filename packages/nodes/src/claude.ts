@@ -20,13 +20,22 @@ import {
 } from "@krapht/ork-core";
 import { beforeOf, type Driver } from "@krapht/ork-schema";
 
-import { afterLateTurn, lateLimits, type TurnLimits } from "./session-turns.ts";
+import {
+  afterLateTurn,
+  budgetNow,
+  lateLimits,
+  limitWatch,
+  notStarted,
+  type TurnLimits,
+} from "./session-turns.ts";
 import {
   checkedResult,
   checkFailedMessage,
   checkReport,
   isAcceptance,
   runStep,
+  beforeFailed,
+  noSteps,
 } from "./verify.ts";
 
 export type ClaudeExecutorOptions = {
@@ -38,24 +47,6 @@ export type ClaudeExecutorOptions = {
   /** What runs a node's `verify:`: the tool nodes' executor. */
   steps?: NodeExecutor;
 };
-
-/** A setup that failed: no session started, so nothing was spent on it. */
-const beforeFailed = (ran: NodeResult): NodeResult => {
-  const error = `its before step failed: ${ran.error ?? "no reason given"}`;
-  return {
-    ok: false,
-    error,
-    output: { status: "fail", summary: error, before: ran.output },
-  };
-};
-
-/** With nothing to run a step, a report cannot be accepted. */
-const noSteps: NodeExecutor = () =>
-  Promise.resolve({
-    ok: false,
-    output: {},
-    error: "this run has no way to run a check",
-  });
 
 const MAX_INPUT = 8192;
 
@@ -164,9 +155,6 @@ export const claudeExecutor =
       ...(context.orkDir === undefined ? {} : { orkDir: context.orkDir }),
       pluginDir: path.join(context.runDir, "plugins", context.id),
     };
-    if (context.budgetLeftUsd !== undefined) {
-      planOptions.budgetLeftUsd = context.budgetLeftUsd;
-    }
     if (context.checkout !== undefined) planOptions.checkout = context.checkout;
     if (context.brief !== undefined) planOptions.brief = context.brief;
     if (context.template !== undefined) planOptions.template = context.template;
@@ -186,6 +174,14 @@ export const claudeExecutor =
       }
       planOptions.before = ran.output;
     }
+    // Checked now: a step, or the node's checkout, may have taken a while.
+    const blocked = context.quota?.().blocked;
+    if (blocked !== undefined) return notStarted(blocked, blocked);
+    const budget = budgetNow(context);
+    if (budget !== undefined && budget <= 0) {
+      return notStarted("nothing is left of the run's budget");
+    }
+    if (budget !== undefined) planOptions.budgetLeftUsd = budget;
     const plan = planNodeSession(context.workflow, context.id, planOptions);
     if (!plan.ok) {
       return {
@@ -202,7 +198,9 @@ export const claudeExecutor =
     if (context.mailbox !== undefined) ports.mailbox = context.mailbox;
     if (context.claims !== undefined) ports.claims = context.claims;
     if (context.feedback !== undefined) ports.feedback = context.feedback;
+    const watch = limitWatch(context);
     const run = async (asked: SessionSpec): Promise<SessionOutcome | null> => {
+      const watching = watch.session(asked);
       const session = runtime.start(asked, ports);
       const stop = () => {
         void session.interrupt();
@@ -218,17 +216,27 @@ export const claudeExecutor =
       try {
         for await (const event of session.events) {
           if (event.type === "session.finished") outcome = event.outcome;
+          watching.saw(event);
           context.emit(event);
         }
       } finally {
         disconnect?.();
         context.signal.removeEventListener("abort", stop);
       }
+      watching.ended(outcome);
       return outcome;
     };
     const first = await run(spec);
-    const limitsAfter = ({ sessionId, usage }: SessionOutcome) =>
-      lateLimits(
+    const limitsAfter = ({
+      sessionId,
+      usage,
+    }: SessionOutcome): TurnLimits | null => {
+      const quota = context.quota?.();
+      if (quota?.blocked !== undefined) {
+        watch.stoppedBy(quota.blocked);
+        return null;
+      }
+      return lateLimits(
         spec,
         {
           // A re-entered session reports what it spent in earlier activations.
@@ -236,7 +244,9 @@ export const claudeExecutor =
           turns: usage.turns,
         },
         context.budgetLeftNow?.(),
+        quota?.leftUsd,
       );
+    };
     const resumeWith = (
       outcome: SessionOutcome,
       prompt: string,
@@ -259,7 +269,7 @@ export const claudeExecutor =
     const { node } = context;
     const verify = "verify" in node ? node.verify : undefined;
     if (outcome === null || verify === undefined || !isAcceptance(outcome)) {
-      return resultOf(outcome);
+      return watch.result(resultOf(outcome));
     }
     const checked = await checkReport({
       verify,
@@ -277,5 +287,5 @@ export const claudeExecutor =
           : resumeWith(current, checkFailedMessage(check, context), limits);
       },
     });
-    return checkedResult(resultOf(checked.outcome), checked);
+    return watch.result(checkedResult(resultOf(checked.outcome), checked));
   };

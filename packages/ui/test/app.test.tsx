@@ -27,6 +27,7 @@ afterEach(() => {
 
 const NO_USAGE = {
   totals: { sessions: 0 },
+  limits: { problems: [], caps: [], plan: [] },
   groups: {},
   hints: [],
 };

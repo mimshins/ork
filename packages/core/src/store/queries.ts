@@ -8,6 +8,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { decisionQueries } from "./decisions.ts";
 import { feedbackQueries } from "./feedback.ts";
 import { linkQueries } from "./links.ts";
+import { planLimitQueries } from "./plan-limits.ts";
 import { projectQueries } from "./projects.ts";
 import { usageQueries } from "./usage.ts";
 
@@ -21,4 +22,5 @@ export const storeQueries = (db: DatabaseSync) => ({
   ...feedbackQueries(db),
   ...projectQueries(db),
   ...usageQueries(db),
+  ...planLimitQueries(db),
 });

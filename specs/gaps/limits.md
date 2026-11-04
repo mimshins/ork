@@ -124,9 +124,10 @@ How something built works for now, by choice.
   nothing: it looks at the store every second instead, so answers and commands
   take up to a second, and followers poll the store too.
   ([messaging](../messaging.md#reaching-a-live-run))
-- **L39 · Limits are per run.** `limits.concurrency` and `limits.budgetUsd` do
-  not add up across runs, so three runs at the default can hold 12 Claude
-  sessions. ([scheduler](../scheduler.md#budget-and-concurrency))
+- **L39 · Concurrency is per run.** `limits.concurrency` does not add up across
+  runs, so three runs at the default can hold 12 Claude sessions. Spending does,
+  through [quotas](../usage.md#limits-across-runs).
+  ([scheduler](../scheduler.md#budget-and-concurrency))
 - **L40 · Claims are per run.** Two runs in one repository work in separate
   worktrees but do not see each other's claims.
   ([messaging](../messaging.md#claims))
@@ -259,10 +260,6 @@ How something built works for now, by choice.
   only that process's spend. Held legs and late-message turns reuse the cap set
   before the session began, so a run can pass its budget by that much.
   ([ADR-046](../../decisions/ADR-046-usage-ledger-and-prune.md))
-- **L74 · Usage shows estimates, and no rate limits.** Costs are Claude Code's
-  estimates, which are not a subscription's bill, and Ork does not track rate
-  limits, which are what a subscription runs into first.
-  ([usage](../usage.md#reports))
 - **L75 · Usage hints have fixed thresholds.** They are not set per project.
   ([usage](../usage.md#reports))
 - **L76 · Old runs keep their old cost.** Runs recorded before ADR-046 keep

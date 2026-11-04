@@ -50,9 +50,17 @@ Each is in [Limits](./gaps/limits.md), from L2 on.
   containerized-state 3.4.0, its React package 3.4.0 and its persistence plugin
   1.4.0 from the 7-day rule, by exact version, at their author's choice. Remove
   the list from 2026-11-10; the versions then satisfy the rule.
+- **C11 · A session a plan refuses has not been seen.** Claude Code's types
+  describe `rate_limit_event` and a `rate_limit` error, and one real session
+  showed the event with `status: allowed`, but a refusal can't be provoked on
+  purpose. Ork acts on the documented `rejected`, tested against stand-ins.
+  Check it against the first real refusal: that the event comes, that the
+  session ends, and that `ork resume` goes on.
+  ([usage](./usage.md#limits-across-runs))
   ([ADR-002](../decisions/ADR-002-typescript-from-source.md))
 
 ## Contents
 
 - [Limits](./gaps/limits.md)
 - [Limits: scripts](./gaps/limits-scripts.md)
+- [Limits: usage and quotas](./gaps/limits-usage.md)

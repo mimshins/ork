@@ -104,6 +104,20 @@ const limited = (limits: string): CompiledGraph =>
   compile(TEAM.map(l => (l.startsWith("limits") ? `limits: ${limits}` : l)));
 
 /** Review asks for another round once. */
+/** A leader that delegates, and a child a limit ends. */
+const limitedChild: NodeExecutor = async context => {
+  if (context.ownership !== undefined && context.brief === undefined) {
+    await context.ownership.delegate([{ child: "fix", brief: "go" }]);
+    return passing("led");
+  }
+  return {
+    ok: false,
+    output: { status: "fail", summary: "refused" },
+    error: "refused",
+    limited: "a limit",
+  };
+};
+
 const reviewOnce: NodeExecutor = context => {
   const again = context.id === "review" && context.round === 1;
   return Promise.resolve(passing(again ? "again" : "ok"));
@@ -207,6 +221,12 @@ describe("delegation", () => {
       "not started: the run's budget of $1 is spent",
     );
     expect(result.status).toBe("budget_exhausted");
+  });
+
+  it("stops the run when a limit ended a delegated child", async () => {
+    const { result } = await run(limited("{ budgetUsd: 100 }"), limitedChild);
+    expect(result.status).toBe("quota_exhausted");
+    expect(result.reasons).toEqual(["a limit"]);
   });
 
   it("resumes a re-entered leader's session; workers start fresh", async () => {

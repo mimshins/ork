@@ -82,6 +82,7 @@ export const openPanelState = (routes: FakeRoutes = {}) => {
         ? json(
             routes.usage?.(new URLSearchParams(query)) ?? {
               totals: { sessions: 0 },
+              limits: { problems: [], caps: [], plan: [] },
               groups: {},
               hints: [],
             },

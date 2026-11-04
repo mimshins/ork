@@ -19,6 +19,7 @@ import {
   type NodeResult,
   type RunEvent,
   startRun,
+  type RunLimits,
 } from "../src/index.ts";
 
 const repoRoot = path.resolve(import.meta.dirname, "../../..");
@@ -99,6 +100,7 @@ const run = async (
   graph: CompiledGraph,
   executors: NodeExecutors,
   human: HumanChannel = answering("stop").human,
+  limits?: () => RunLimits,
 ) => {
   const events: RunEvent[] = [];
   const handle = startRun({
@@ -111,6 +113,7 @@ const run = async (
     onEvent: event => {
       events.push(event);
     },
+    ...(limits === undefined ? {} : { limits }),
   });
   const result = await handle.done;
   const of = (type: RunEvent["type"]) => events.filter(e => e.type === type);
@@ -126,6 +129,22 @@ const waiting: NodeExecutor = ({ signal }) =>
       resolve({ ok: false, output: {}, error: "aborted" });
     });
   });
+
+const failureEdge = () =>
+  workflow(
+    ["a: { type: claude.worker }", "b: { type: claude.worker }"],
+    ["{ from: a, to: b, when: \"status == 'fail'\" }"],
+  );
+
+const twoSessions = () =>
+  workflow(
+    ["a: { type: claude.worker }", "b: { type: claude.worker }"],
+    ["a -> b"],
+  );
+
+/** Nothing is limited until `spent()` says so. */
+const blockedOnce = (spent: () => boolean) => (): RunLimits =>
+  spent() ? { blocked: "spent" } : {};
 
 const pass = { output: { status: "pass", summary: "ok" } };
 const changes = { output: { status: "changes_requested", summary: "fix" } };
@@ -367,6 +386,158 @@ describe("limits", () => {
       status: "budget_exhausted",
       costUsd: 1.5,
       reasons: ["the run's budget of $1 is spent"],
+    });
+  });
+
+  describe("limits across runs", () => {
+    it("starts no session while a quota is spent", async () => {
+      const { executor, ran } = scripted({});
+      const { result } = await run(
+        twoSessions(),
+        allTypes(executor),
+        undefined,
+        () => ({ leftUsd: 0, blocked: "your day quota is spent" }),
+      );
+      expect(ran).toEqual([]);
+      expect(result).toMatchObject({
+        status: "quota_exhausted",
+        reasons: ["your day quota is spent"],
+      });
+    });
+
+    it("stops when another run spends what was left", async () => {
+      let spent = false;
+      const { executor, ran } = scripted({});
+      const counted: NodeExecutor = context =>
+        executor(context).finally(() => {
+          spent = true;
+        });
+      const { result } = await run(
+        twoSessions(),
+        allTypes(counted),
+        undefined,
+        blockedOnce(() => spent),
+      );
+      expect(ran).toEqual(["a"]);
+      expect(result.status).toBe("quota_exhausted");
+    });
+
+    it("gives a session the least of its run's budget and the quota", async () => {
+      const graph = workflow(
+        ["a: { type: claude.worker }", "b: { type: claude.worker }"],
+        ["a -> b"],
+        ["limits: { budgetUsd: 2 }"],
+      );
+      const seen: (number | undefined)[] = [];
+      const { executor } = scripted({});
+      const watching: NodeExecutor = context => {
+        seen.push(context.budgetLeftUsd);
+        return executor(context);
+      };
+      await run(graph, allTypes(watching), undefined, () => ({ leftUsd: 0.5 }));
+      expect(seen).toEqual([0.5, 0.5]);
+    });
+
+    it("lets tools run while a quota is spent", async () => {
+      const graph = workflow(
+        [
+          "t: { type: tool.shell, command: x }",
+          "u: { type: tool.shell, command: x }",
+        ],
+        ["t -> u"],
+      );
+      const { executor, ran } = scripted({});
+      const { result } = await run(
+        graph,
+        allTypes(executor),
+        undefined,
+        () => ({
+          blocked: "spent",
+        }),
+      );
+      expect(ran).toEqual(["t", "u"]);
+      expect(result.status).toBe("succeeded");
+    });
+
+    it("stops a run when a limit ended a node, and no edge acts on it", async () => {
+      const ran: string[] = [];
+      const limited: NodeExecutor = context => {
+        ran.push(context.id);
+        return Promise.resolve({
+          ok: false,
+          output: { status: "fail", summary: "refused" },
+          error: "refused",
+          limited: "your Claude plan's five hour limit was reached",
+        });
+      };
+      const { result } = await run(failureEdge(), allTypes(limited));
+      expect(ran).toEqual(["a"]);
+      expect(result.status).toBe("quota_exhausted");
+      expect(result.reasons).toEqual([
+        "your Claude plan's five hour limit was reached",
+      ]);
+    });
+
+    it("leaves an ordinary failure to its edges while a limit is spent", async () => {
+      let spent = false;
+      const ran: string[] = [];
+      const fails: NodeExecutor = context => {
+        ran.push(context.id);
+        spent = true;
+        return Promise.resolve({
+          ok: false,
+          output: { status: "fail", summary: "the tests are red" },
+          error: "the tests are red",
+        });
+      };
+      const graph = workflow(
+        ["a: { type: claude.worker }", "t: { type: tool.shell, command: x }"],
+        ["{ from: a, to: t, when: \"status == 'fail'\" }"],
+      );
+      const { result } = await run(
+        graph,
+        allTypes(fails),
+        undefined,
+        blockedOnce(() => spent),
+      );
+      expect(ran).toEqual(["a", "t"]);
+      expect(result.status).not.toBe("quota_exhausted");
+    });
+
+    it("tells a node what a quota and its budget each leave", async () => {
+      const graph = workflow(
+        ["a: { type: claude.worker }", "b: { type: claude.worker }"],
+        ["a -> b"],
+        ["limits: { budgetUsd: 9 }"],
+      );
+      const seen: unknown[] = [];
+      const { executor } = scripted({});
+      const watching: NodeExecutor = context => {
+        seen.push([context.budgetLeftNow?.(), context.quota?.().leftUsd]);
+        return executor(context);
+      };
+      await run(graph, allTypes(watching), undefined, () => ({ leftUsd: 2 }));
+      expect(seen[0]).toEqual([9, 2]);
+    });
+
+    it("goes on after a warning", async () => {
+      const graph = twoSessions();
+      const ran: string[] = [];
+      const warned: NodeExecutor = context => {
+        ran.push(context.id);
+        context.emit({
+          type: "plan.limit",
+          status: "allowed_warning",
+          window: "seven_day",
+        });
+        return Promise.resolve({
+          ok: true,
+          output: { status: "pass", summary: "ok" },
+        });
+      };
+      const { result } = await run(graph, allTypes(warned));
+      expect(ran).toEqual(["a", "b"]);
+      expect(result.status).toBe("succeeded");
     });
   });
 

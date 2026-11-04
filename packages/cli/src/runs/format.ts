@@ -21,6 +21,7 @@ const STATUS_STYLE: Record<string, Parameters<typeof style>[0]> = {
   failed: "red",
   crashed: "red",
   budget_exhausted: "yellow",
+  quota_exhausted: "yellow",
   timed_out: "yellow",
   interrupted: "yellow",
 };

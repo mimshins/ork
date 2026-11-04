@@ -15,7 +15,7 @@ import type { z } from "zod";
 import { AgentSchema } from "./agents.ts";
 import { formatEdge } from "./edges.ts";
 import { NodeSchema, type NodeType } from "./nodes.ts";
-import { type Project, ProjectSchema } from "./project.ts";
+import { type Project, ProjectSchema, UserSettingsSchema } from "./project.ts";
 import {
   type Layout,
   LayoutSchema,
@@ -192,6 +192,12 @@ export const parseProject = (text: string): ProjectLoadResult => {
   return parsed.ok
     ? { ok: true, project: parsed.data, locate: parsed.locate }
     : parsed;
+};
+
+/** Parses `~/.ork/settings.yaml`. */
+export const parseUserSettings = (text: string) => {
+  const parsed = parseWith(text, UserSettingsSchema);
+  return parsed.ok ? { ok: true as const, settings: parsed.data } : parsed;
 };
 
 const TOP_LEVEL_ORDER = Object.keys(WorkflowSchema.shape);

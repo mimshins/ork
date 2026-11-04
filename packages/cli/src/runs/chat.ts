@@ -23,9 +23,14 @@ import type { Driver } from "@krapht/ork-schema";
 
 import { loadWorkflow } from "../commands/validate.ts";
 import { formatEvent } from "../run/format.ts";
+import { chatNotice } from "../run/limits.ts";
 
 export type ResumeChatOptions = {
   store: EventStore;
+  /** Where the user's settings are; default: their home. */
+  home?: string;
+  /** Caps the session; a person chatting has none, a workflow's call does. */
+  budgetLeftUsd?: number;
   run: RunRecord;
   node: string;
   body: string;
@@ -76,6 +81,8 @@ export const resumeChat = async (
   if (workflow === null) {
     return `The workflow ${run.file} is gone or no longer valid.`;
   }
+  const notice = chatNotice(store, place, options.home);
+  if (notice !== null) options.out(notice);
   const runDir = runDirOf(place, run.id);
   const template = templateOf(workflow.nodes, node);
   const plan = planNodeSession(workflow, node, {
@@ -87,6 +94,9 @@ export const resumeChat = async (
     projectRoot: run.project,
     orkDir: place.dir,
     pluginDir: path.join(runDir, "plugins", node),
+    ...(options.budgetLeftUsd === undefined
+      ? {}
+      : { budgetLeftUsd: options.budgetLeftUsd }),
     ...(session.checkout === undefined ? {} : { checkout: session.checkout }),
     ...(template === undefined ? {} : { template }),
   });

@@ -30,6 +30,7 @@ export type Status =
   | "skipped"
   | "interrupted"
   | "budget_exhausted"
+  | "quota_exhausted"
   | "timed_out";
 
 type Look = { Icon: ComponentType; word: string; tone: string };
@@ -51,6 +52,11 @@ const LOOKS: Record<Status, Look> = {
   budget_exhausted: {
     Icon: IconInterrupted,
     word: "budget exhausted",
+    tone: "interrupted",
+  },
+  quota_exhausted: {
+    Icon: IconInterrupted,
+    word: "quota spent",
     tone: "interrupted",
   },
   timed_out: {

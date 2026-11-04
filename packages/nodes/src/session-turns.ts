@@ -4,10 +4,14 @@
  *   session that has finished, and neither is free.
  */
 
-import type {
-  SessionOutcome,
-  SessionSpec,
-  SessionUsage,
+import {
+  type ExecuteContext,
+  type NodeResult,
+  planReason,
+  type RuntimeEvent,
+  type SessionOutcome,
+  type SessionSpec,
+  type SessionUsage,
 } from "@krapht/ork-core";
 
 /**
@@ -56,20 +60,23 @@ export const afterLateTurn = (
 export type TurnLimits = { budgetUsd?: number; maxTurns?: number };
 
 /**
- * What another turn of a session may use: what is left of the node's cap and
- * the run's budget, neither of which has counted this activation yet, and of
- * the node's turns, as each process would otherwise count from zero. `spent` is
- * what this activation spent, and `turns` what it took. `null` when nothing is
- * left, and the turn does not start.
+ * What another turn of a session may use. `spent` and `turns` are this
+ * activation's, which neither the node's cap nor the run's budget has counted.
+ * The quota has: the ledger took it as the session finished, so what it says is
+ * left is left. `null` when nothing is, and the turn does not start.
  */
 export const lateLimits = (
   spec: Pick<SessionSpec, "budgetUsd" | "maxTurns">,
   { spent, turns }: { spent: number; turns: number },
   runLeft?: number,
+  quotaLeft?: number,
 ): TurnLimits | null => {
-  const budgets = [spec.budgetUsd, runLeft].flatMap(limit =>
-    limit === undefined ? [] : [limit - spent],
-  );
+  const budgets = [
+    ...[spec.budgetUsd, runLeft].flatMap(limit =>
+      limit === undefined ? [] : [limit - spent],
+    ),
+    ...(quotaLeft === undefined ? [] : [quotaLeft]),
+  ];
   const budgetUsd = budgets.length === 0 ? undefined : Math.min(...budgets);
   if (budgetUsd !== undefined && budgetUsd <= 0) return null;
   const maxTurns =
@@ -80,3 +87,63 @@ export const lateLimits = (
     ...(maxTurns === undefined ? {} : { maxTurns }),
   };
 };
+
+/** What a session may spend as it starts: the least of the budget and any quota. */
+export const budgetNow = (
+  context: Pick<ExecuteContext, "budgetLeftUsd" | "budgetLeftNow" | "quota">,
+): number | undefined => {
+  if (context.budgetLeftNow === undefined) return context.budgetLeftUsd;
+  const known = [context.budgetLeftNow(), context.quota?.().leftUsd].flatMap(
+    left => (left === undefined ? [] : [left]),
+  );
+  return known.length === 0 ? undefined : Math.min(...known);
+};
+
+/**
+ * Whether a limit across runs, rather than the node's work, ended a node: a
+ * session whose cap was a quota's and that ran into it, or one its plan refused
+ * and that gave no report. A node that still succeeded is left alone.
+ */
+export const limitWatch = (context: Pick<ExecuteContext, "quota">) => {
+  let why: string | undefined;
+  return {
+    stoppedBy: (reason: string): void => {
+      why = reason;
+    },
+    session: (asked: Pick<SessionSpec, "budgetUsd">) => {
+      const left = context.quota?.().leftUsd;
+      let refused: string | undefined;
+      return {
+        saw: (event: RuntimeEvent): void => {
+          if (event.type === "plan.limit" && event.status === "rejected") {
+            refused = planReason(event);
+          }
+        },
+        ended: (outcome: SessionOutcome | null): void => {
+          if (refused !== undefined && (outcome?.report ?? null) === null) {
+            why = refused;
+          }
+          const capped =
+            left !== undefined &&
+            asked.budgetUsd !== undefined &&
+            asked.budgetUsd >= left;
+          if (capped && outcome?.subtype === "error_max_budget_usd") {
+            why =
+              context.quota?.().blocked ??
+              "a session reached what was left of a quota";
+          }
+        },
+      };
+    },
+    result: (result: NodeResult): NodeResult =>
+      result.ok || why === undefined ? result : { ...result, limited: why },
+  };
+};
+
+/** No session started: nothing was left for one. */
+export const notStarted = (reason: string, limited?: string): NodeResult => ({
+  ok: false,
+  error: `not started: ${reason}`,
+  output: { status: "fail", summary: `not started: ${reason}` },
+  ...(limited === undefined ? {} : { limited }),
+});

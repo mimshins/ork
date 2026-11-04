@@ -68,6 +68,18 @@ export type Isolation = z.infer<typeof IsolationSchema>;
 
 export const BudgetSchema = z.number().positive();
 
+/** Caps across runs (RFC-007), in Claude Code's estimated dollars. */
+export const QuotasSchema = z.strictObject({
+  dayUsd: BudgetSchema.optional().describe("Most to spend in a calendar day."),
+  weekUsd: BudgetSchema.optional().describe(
+    "Most to spend in a calendar week, from Monday.",
+  ),
+  monthUsd: BudgetSchema.optional().describe(
+    "Most to spend in a calendar month.",
+  ),
+});
+export type Quotas = z.infer<typeof QuotasSchema>;
+
 /** A length of time: `30s`, `15m`, `2h`. */
 export const DurationSchema = z
   .string()

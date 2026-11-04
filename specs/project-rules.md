@@ -92,6 +92,18 @@ a name git accepts.
 and refuses links to the run. The default is on
 ([messaging](./messaging/links.md)). A workflow's value wins.
 
+## Quotas
+
+```yaml
+quotas:
+  dayUsd: 5
+  monthUsd: 50
+```
+
+The most this project may spend on this machine, across runs. The user's own
+caps in `~/.ork/settings.yaml` apply too, so these can only lower what is spent
+([limits across runs](./usage.md#limits-across-runs)).
+
 ## Calls
 
 ```yaml

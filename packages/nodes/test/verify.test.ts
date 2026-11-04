@@ -16,6 +16,7 @@ import type {
   NodeExecutor,
   NodeReport,
   NodeResult,
+  RunLimits,
   RuntimeEvent,
   SessionOutcome,
   SessionSpec,
@@ -161,6 +162,24 @@ const mailAfterFirst = (checks: () => number): Mailbox => {
     told = told || now;
     return now;
   });
+};
+
+/** $10 of a quota left, and $9.50 once the ledger has the first session. */
+const quotaAfterSession = () => {
+  let looks = 0;
+  return (): RunLimits => {
+    looks += 1;
+    return { leftUsd: looks > 2 ? 9.5 : 10 };
+  };
+};
+
+/** Nothing is limited on the first look or the second; then a limit holds. */
+const blockedAfterFirst = () => {
+  let looks = 0;
+  return (): RunLimits => {
+    looks += 1;
+    return looks > 2 ? { blocked: "a limit" } : {};
+  };
 };
 
 const PASS = reportOf("pass");
@@ -419,6 +438,45 @@ describe("verify:", () => {
     expect(specs).toHaveLength(2);
     expect(checks).toBe(2);
     expect(result.ok).toBe(true);
+  });
+
+  it("does not count a finished session against a quota twice", async () => {
+    const { specs } = await runVerified({
+      reports: [PASS, PASS],
+      checks: [FAILED, PASSED],
+      over: { quota: quotaAfterSession() },
+    });
+    expect(specs[1]?.budgetUsd).toBeCloseTo(9.5);
+  });
+
+  it("says a limit ended a node when no retry could start", async () => {
+    const { specs, result } = await runVerified({
+      reports: [PASS],
+      checks: [FAILED],
+      over: { quota: blockedAfterFirst() },
+    });
+    expect(specs).toHaveLength(1);
+    expect(result.limited).toBe("a limit");
+  });
+
+  it("does not start a session once a limit is spent", async () => {
+    const { specs, result } = await runVerified({
+      reports: [PASS],
+      checks: [PASSED],
+      over: { quota: () => ({ blocked: "a limit" }) },
+    });
+    expect(specs).toEqual([]);
+    expect(result).toMatchObject({ ok: false, limited: "a limit" });
+  });
+
+  it("does not start with nothing left of the budget", async () => {
+    const { specs, result } = await runVerified({
+      reports: [PASS],
+      checks: [PASSED],
+      over: { budgetLeftNow: () => -2 },
+    });
+    expect(specs).toEqual([]);
+    expect(result.ok).toBe(false);
   });
 
   it("does not resume while the node is paused until it continues", async () => {

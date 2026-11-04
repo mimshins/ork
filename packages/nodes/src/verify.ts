@@ -21,6 +21,24 @@ import { afterLateTurn, withUsageOf } from "./session-turns.ts";
 import { keptFile } from "./tool-output.ts";
 import { OUTPUT_LIMIT } from "./tools.ts";
 
+/** A setup that failed: no session started, so nothing was spent on it. */
+export const beforeFailed = (ran: NodeResult): NodeResult => {
+  const error = `its before step failed: ${ran.error ?? "no reason given"}`;
+  return {
+    ok: false,
+    error,
+    output: { status: "fail", summary: error, before: ran.output },
+  };
+};
+
+/** With nothing to run a step, a report cannot be accepted. */
+export const noSteps: NodeExecutor = () =>
+  Promise.resolve({
+    ok: false,
+    output: {},
+    error: "this run has no way to run a check",
+  });
+
 /** How much of a failed check's output a session is sent. */
 const TAIL_LIMIT = 8 * 1024;
 

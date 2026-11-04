@@ -7,6 +7,7 @@
 
 import type { CompiledGraph } from "../graph/types.ts";
 import type { HumanChannel, RelayPort } from "../runtime/types.ts";
+import type { RunLimits } from "../usage/quota.ts";
 import type { EarlierSpend } from "../usage/spend.ts";
 import type { Mail } from "./bus-events.ts";
 import type { CallPort } from "./calls.ts";
@@ -57,6 +58,8 @@ export type RunOptions = {
   settings?: RunSettings;
   /** For `ork resume`: the results a run recorded, handed back in order. */
   replay?: Replay;
+  /** What the limits across runs allow now (RFC-007); none with none set. */
+  limits?: () => RunLimits;
   /** How to reach linked nodes of other runs; none when links are off. */
   relay?: RelayPort;
   /** How `workflow.call` nodes start other workflows (RFC-004). */

@@ -27,6 +27,7 @@ const STATUSES: Status[] = [
   "skipped",
   "interrupted",
   "budget_exhausted",
+  "quota_exhausted",
   "timed_out",
 ];
 

@@ -13,7 +13,7 @@ import { createOwnership, type DelegationHooks } from "./delegation.ts";
 import type { Activation, NodeResult, RunOptions } from "./handle.ts";
 import type { Holds, Stops } from "./holds.ts";
 import type { createRunPorts } from "./ports.ts";
-import { failure, passThrough, resumeOf } from "./results.ts";
+import { type createSpend, failure, passThrough, resumeOf } from "./results.ts";
 import { foldersOf } from "./scope.ts";
 import type { Slots } from "./slots.ts";
 import { type createClock, timeoutOf, withTimeout } from "./timeouts.ts";
@@ -27,10 +27,8 @@ export type ContextDeps = {
   outputs: Record<string, NodeOutput>;
   sessionIds: Map<string, string>;
   running: Set<string>;
-  /** What is left of `limits.budgetUsd`, when the run has one. */
-  budgetLeft: () => number | undefined;
-  /** What a node's session has spent in this activation. */
-  ownOf: (id: string, sessionId: string, total: number) => number;
+  /** What the run has spent, and what is left of its budget and any quota. */
+  spend: ReturnType<typeof createSpend>;
   human: RunOptions["human"];
   holds: Holds;
   stops: Stops;
@@ -60,9 +58,10 @@ export const nodeContext = (
     cwd,
     runDir: deps.runDir,
     ...foldersOf(options),
-    budgetLeftUsd: deps.budgetLeft(),
-    budgetLeftNow: deps.budgetLeft,
-    ownSpend: (sessionId, total) => deps.ownOf(id, sessionId, total),
+    budgetLeftUsd: deps.spend.left(),
+    budgetLeftNow: deps.spend.budgetLeft,
+    quota: deps.spend.quota,
+    ownSpend: (sessionId, total) => deps.spend.ownOf(id, sessionId, total),
     human: deps.human,
     hold: deps.holds.forNode(id, template),
     ...deps.ports.forNode(id, template, cwd),

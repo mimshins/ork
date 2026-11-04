@@ -194,8 +194,16 @@ const alive = (row: Row): boolean => processAlive(Number(row?.["pid"]));
 /** The ledger's queries; `recordUsage` is the store's own, called on append. */
 export const usageQueries = (
   db: DatabaseSync,
-): UsageStore & { recordUsage: (runId: string) => void } => {
+): Omit<UsageStore, "planLimits" | "clearPlanLimits"> & {
+  recordUsage: (runId: string) => void;
+} => {
   const insert = db.prepare(INSERT);
+  const spentAll = db.prepare(
+    "SELECT COALESCE(SUM(cost_usd), 0) AS spent FROM usage WHERE at >= ?",
+  );
+  const spentHere = db.prepare(
+    "SELECT COALESCE(SUM(cost_usd), 0) AS spent FROM usage WHERE at >= ? AND project = ?",
+  );
   const runById = db.prepare(
     "SELECT id, project, workflow FROM runs WHERE id = ?",
   );
@@ -225,6 +233,12 @@ export const usageQueries = (
       });
       for (const row of rows) writeRow(insert, row);
     },
+    spentSince: (since, project) =>
+      Number(
+        (project === undefined
+          ? spentAll.get(since)
+          : spentHere.get(since, project))?.["spent"] ?? 0,
+      ),
     usage: (filter = {}) => {
       const { sql, values } = whereOf(filter);
       return db

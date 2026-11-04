@@ -59,7 +59,7 @@ under the same run id, with a `Replay` built from the run's events:
 | `call.started`      | a `workflow.call` started a run: its node, the run, the workflow and the project ([calls](./calls.md))                  |
 | `message.received`  | a linked node of another run, or `via: script` a program, wrote to it ([messaging](../messaging/scripts.md))            |
 | `link.notice`       | Ork told a node that a link was made or ended                                                                           |
-| `run.finished`      | the run ends: `succeeded`, `failed`, `budget_exhausted`, `timed_out`, `interrupted`                                     |
+| `run.finished`      | the run ends: `succeeded`, `failed`, `budget_exhausted`, `quota_exhausted`, `timed_out`, `interrupted`                  |
 
 The decision queue adds `decision.opened`, `decision.answered`,
 `decision.withdrawn` and `run.command` ([messaging](../messaging.md)); a pause

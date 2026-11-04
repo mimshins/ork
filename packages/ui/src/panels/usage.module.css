@@ -335,3 +335,9 @@
     --bar-ink: Highlight;
   }
 }
+
+.limits {
+  display: grid;
+  gap: var(--gap);
+  margin-block-end: var(--gap-loose);
+}

@@ -126,6 +126,17 @@ export type SessionOutcome = {
   errors: string[];
 };
 
+/** What Claude Code says of a subscription's rate limit (RFC-007). */
+export type PlanReport = {
+  status: "allowed" | "allowed_warning" | "rejected";
+  /** `five_hour`, `seven_day` and so on; `plan` when it does not say. */
+  window: string;
+  resetsAt?: string;
+};
+
+/** The latest report of one of a plan's limits, as a store keeps it. */
+export type PlanLimit = PlanReport & { at: string };
+
 /** Normalized events, the same for every driver. */
 export type RuntimeEvent =
   | {
@@ -145,6 +156,7 @@ export type RuntimeEvent =
       input: Record<string, unknown>;
     }
   | { type: "tool.result"; id: string; isError: boolean }
+  | ({ type: "plan.limit" } & PlanReport)
   | { type: "session.finished"; outcome: SessionOutcome };
 
 export type Session = {

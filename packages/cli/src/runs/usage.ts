@@ -3,7 +3,13 @@
  *   times its `--since`, `--until` and `ork prune --older-than` take.
  */
 
-import type { UsageDimension, UsageGroup, UsageReport } from "@krapht/ork-core";
+import {
+  type LimitsReport,
+  type UsageDimension,
+  type UsageGroup,
+  type UsageReport,
+  usd,
+} from "@krapht/ork-core";
 
 import { style } from "../output.ts";
 import { cost } from "./format.ts";
@@ -119,6 +125,39 @@ const OVERVIEW: readonly UsageDimension[] = [
 ];
 /** How many rows the overview shows of each; `--by` shows them all. */
 const OVERVIEW_ROWS = 10;
+
+const shortTime = (iso: string): string =>
+  new Date(iso).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+/** The limits across runs, above a report; nothing with none set. */
+export const formatLimits = ({
+  problems,
+  caps,
+  plan,
+}: LimitsReport): string[] => {
+  if (problems.length === 0 && caps.length === 0 && plan.length === 0) {
+    return [];
+  }
+  return [
+    style("bold", "Limits"),
+    ...problems.map(problem => style("yellow", `  ${problem}`)),
+    ...caps.map(cap => {
+      const whose = cap.project === undefined ? "all projects" : "this project";
+      const line = `  ${whose}, this ${cap.window}: ${usd(cap.spentUsd)} of ${usd(cap.capUsd)}, resets ${shortTime(cap.resetsAt)}`;
+      return cap.leftUsd <= 0 ? style("yellow", line) : line;
+    }),
+    ...plan.map(limit =>
+      style(
+        "yellow",
+        `  Claude plan's ${limit.window.replaceAll("_", " ")} limit ${limit.status === "rejected" ? "was reached" : "is close"}${limit.resetsAt === undefined ? "" : `, resets ${shortTime(limit.resetsAt)}`}`,
+      ),
+    ),
+    "",
+  ];
+};
 
 /** The report, as the terminal shows it. */
 export const formatUsage = (

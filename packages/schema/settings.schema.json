@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "quotas": {
+      "description": "Most to spend across every project on this machine.",
+      "type": "object",
+      "properties": {
+        "dayUsd": {
+          "description": "Most to spend in a calendar day.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "weekUsd": {
+          "description": "Most to spend in a calendar week, from Monday.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "monthUsd": {
+          "description": "Most to spend in a calendar month.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["schemaVersion"],
+  "additionalProperties": false,
+  "$id": "https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/settings.schema.json",
+  "title": "Ork user settings"
+}

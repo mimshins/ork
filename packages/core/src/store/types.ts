@@ -13,7 +13,7 @@ import type {
 } from "../feedback/types.ts";
 import type { ProjectRecord } from "../project/place.ts";
 import type { RunEvent, RunStatus } from "../run/types.ts";
-import type { DecisionChoice } from "../runtime/types.ts";
+import type { DecisionChoice, PlanLimit } from "../runtime/types.ts";
 
 /** A run's status in the store: `running` until `run.finished` is written. */
 export type StoredRunStatus = RunStatus | "running";
@@ -261,6 +261,12 @@ export type UsageFilter = {
 export type UsageStore = {
   /** The sessions in the filter, oldest first. */
   usage: (filter?: UsageFilter) => UsageRow[];
+  /** What was spent since an ISO time, in one project or all. */
+  spentSince: (since: string, project?: string) => number;
+  /** The latest report of each of a plan's limits. */
+  planLimits: () => PlanLimit[];
+  /** Forgets them, for one that has lifted early; a session reports them anew. */
+  clearPlanLimits: () => void;
   /** When a run's last event was written; `undefined` with no events. */
   lastEventAt: (runId: string) => string | undefined;
   /**

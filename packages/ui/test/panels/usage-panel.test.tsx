@@ -5,7 +5,7 @@
  *   filled, by week once it is long.
  */
 
-import type { UsageReport } from "@krapht/ork-server/client";
+import type { UsageAnswer, UsageReport } from "@krapht/ork-server/client";
 import { act, cleanup, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -47,8 +47,9 @@ const group = (key: string, costUsd: number): Group => ({
   cacheHitRate: 0.75,
 });
 
-const report = (extra: Partial<UsageReport> = {}): UsageReport => ({
+const report = (extra: Partial<UsageAnswer> = {}): UsageAnswer => ({
   totals: group("", 12.5),
+  limits: { problems: [], caps: [], plan: [] },
   groups: {
     day: [group("2026-11-01", 2), group("2026-11-03", 10.5)],
     week: [group("2026-10-26", 2), group("2026-11-02", 10.5)],
@@ -150,6 +151,39 @@ describe("the Usage panel", () => {
       await settle();
     });
     expect(asked.length).toBe(before + 1);
+  });
+
+  it("shows each limit, and a plan limit in force", async () => {
+    await open({
+      usage: () =>
+        report({
+          limits: {
+            problems: [],
+            caps: [
+              {
+                window: "day",
+                capUsd: 20,
+                spentUsd: 5,
+                leftUsd: 15,
+                resetsAt: "2030-01-01T00:00:00.000Z",
+              },
+            ],
+            plan: [
+              {
+                status: "rejected",
+                window: "five_hour",
+                at: "2029-12-31T20:00:00.000Z",
+              },
+            ],
+          },
+        }),
+    });
+    expect(
+      screen.queryByRole("meter", { name: "All projects, this day" }),
+    ).not.toBeNull();
+    expect(
+      screen.queryByText("Your Claude plan's five hour limit was reached."),
+    ).not.toBeNull();
   });
 
   it("says when nothing was spent, and what to do", async () => {

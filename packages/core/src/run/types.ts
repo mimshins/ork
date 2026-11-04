@@ -21,6 +21,7 @@ import type {
   SessionUsage,
 } from "../runtime/types.ts";
 import type { AnsweredBy, DecisionKind } from "../store/types.ts";
+import type { RunLimits } from "../usage/quota.ts";
 import type { BusEvent } from "./bus-events.ts";
 import type { CallPort } from "./calls.ts";
 
@@ -38,6 +39,11 @@ export type NodeResult = {
   error?: string;
   /** The Claude session it ran, so a leader can resume it (ADR-019). */
   sessionId?: string;
+  /**
+   * Why a limit across runs, not the node's work, ended it (RFC-007). The run
+   * then stops, no edge acts on the failure, and a resume goes on.
+   */
+  limited?: string;
 };
 
 /** The task an owner handed a node through `delegate` or `spawn_worker`. */
@@ -84,8 +90,10 @@ export type ExecuteContext = {
   orkDir?: string;
   /** What is left of `limits.budgetUsd`, when the run has one. */
   budgetLeftUsd: number | undefined;
-  /** The same as it stands now, with what other nodes have spent since. */
+  /** What is left of the run's own budget now, with what others have spent. */
   budgetLeftNow?: () => number | undefined;
+  /** What the limits across runs allow now. */
+  quota?: () => RunLimits;
   /** What a session has spent in this activation, from its reported total. */
   ownSpend?: (sessionId: string, total: number) => number;
   human: HumanChannel;
@@ -148,6 +156,7 @@ export type RunStatus =
   | "succeeded"
   | "failed"
   | "budget_exhausted"
+  | "quota_exhausted"
   | "timed_out"
   | "interrupted";
 

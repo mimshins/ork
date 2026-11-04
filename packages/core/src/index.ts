@@ -77,6 +77,8 @@ export * from "./store/view.ts";
 export * from "./update/check.ts";
 export * from "./update/installers.ts";
 export * from "./update/version.ts";
+export * from "./usage/caps.ts";
+export * from "./usage/quota.ts";
 export * from "./usage/report.ts";
 export * from "./worktree/list.ts";
 export * from "./worktree/manager.ts";

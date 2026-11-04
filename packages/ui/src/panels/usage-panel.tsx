@@ -107,7 +107,10 @@ export const UsagePanel = () => {
             <p className={styles["note"]}>Reading usage…</p>
           )
         ) : shown.data.totals.sessions === 0 ? (
-          <NothingSpent period={shown.arg.period} />
+          <NothingSpent
+            limits={shown.data.limits}
+            period={shown.arg.period}
+          />
         ) : (
           <Report
             everyProject={shown.arg.query.project === undefined}

@@ -35,6 +35,11 @@ const innerLine = ({ event }: Of<"node.event">): string => {
     case "tool.result": {
       return event.isError ? "tool failed" : "tool done";
     }
+    case "plan.limit": {
+      return event.status === "allowed"
+        ? ""
+        : `plan: ${event.window.replaceAll("_", " ")} limit ${event.status === "rejected" ? "reached" : "is close"}`;
+    }
     case "session.finished": {
       return "session finished";
     }

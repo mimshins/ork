@@ -65,3 +65,4 @@ and carries an RFC through this lifecycle.
 | [004](./archived/RFC-004-workflows-calling-workflows.md)       | Workflows that call workflows                                      | Implemented |
 | [005](./archived/RFC-005-scripts-and-rules-on-the-bus.md)      | Scripts and rules on the message bus                               | Implemented |
 | [006](./archived/RFC-006-steps-around-a-session.md)            | Deterministic steps around a session, MCP calls and inline scripts | Implemented |
+| [007](./archived/RFC-007-limits-across-runs.md)                | Limits across runs                                                 | Implemented |

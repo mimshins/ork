@@ -4,11 +4,12 @@
  *   them.
  */
 
-import type { UsageReport } from "@krapht/ork-server/client";
+import type { LimitsReport, UsageReport } from "@krapht/ork-server/client";
 
 import { EmptyState } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
+import { UsageLimits } from "./usage-limits.tsx";
 import { isAllTime, money, moneyOf, percent, tokens } from "./usage-model.ts";
 
 import styles from "./usage.module.css";
@@ -135,15 +136,26 @@ export const Refused = ({
   </div>
 );
 
-export const NothingSpent = ({ period }: { period: string }) => (
-  <EmptyState
-    title={
-      isAllTime(period) ? "Nothing spent yet." : "Nothing spent in this period."
-    }
-  >
-    Claude sessions show here once they finish. Start one with Run workflow, or{" "}
-    <code>ork run &lt;workflow&gt;</code>.
-  </EmptyState>
+export const NothingSpent = ({
+  period,
+  limits,
+}: {
+  period: string;
+  limits: LimitsReport;
+}) => (
+  <>
+    <UsageLimits limits={limits} />
+    <EmptyState
+      title={
+        isAllTime(period)
+          ? "Nothing spent yet."
+          : "Nothing spent in this period."
+      }
+    >
+      Claude sessions show here once they finish. Start one with Run workflow,
+      or <code>ork run &lt;workflow&gt;</code>.
+    </EmptyState>
+  </>
 );
 
 export const Totals = ({ report }: { report: UsageReport }) => {

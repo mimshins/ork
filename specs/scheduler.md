@@ -169,6 +169,9 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   `min(node budget, what is left)` ([L73](./gaps/limits.md)), and once it is
   spent no session or [call](./scheduler/calls.md) starts and the run ends
   `budget_exhausted`.
+- [Quotas](./usage.md#limits-across-runs) cap what runs spend together: a
+  session also gets no more than what is left of them, and at one a run ends
+  `quota_exhausted`.
 - `limits.concurrency` (default 4) caps the Claude sessions running at once;
   other nodes are not limited.
 - `interrupt()` stops starting nodes, aborts the running ones, stops the runs

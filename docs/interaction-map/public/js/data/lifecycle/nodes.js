@@ -101,6 +101,7 @@ export const NODES = [
       "Built: `ork run <wf>` runs the whole workflow, and `--node <id>` one Claude node on its own; `--input`, `--driver`, `--in-place` and `--json` work for both.",
       "Built: `--detach` returns at once; `ork logs --follow`, `ork tree`, `ork decide`, `ork pause`, `ork continue` and `ork stop` reach it later.",
       "Built: before anything starts, it checks that the programs a workflow runs are installed, the variables it reads are set, and its MCP servers are in `.mcp.json`; integrations a workflow does not use are never needed.",
+      "Built: nor does it start with a quota spent, if the workflow has a session or a call to spend it on.",
       "`--driver sdk|cli` overrides every node's driver for this run.",
     ],
     see: [
@@ -157,6 +158,7 @@ export const NODES = [
       "When a loop edge has used its `maxRounds`, you are asked: stop, one more round, or go on. A live leader that owns the loop's nodes is asked first; here the builder's session has ended, so it is you.",
       "Runs the children a leader delegates to, on the slot the waiting leader lends them.",
       "A finished node's `notify:` rules go out after `node.finished` and before its edges are routed, so a node an edge starts already has the message. A stopping run fires none for what it cuts off.",
+      "Before each session it checks the quotas too, from the ledger, and caps the session to what is left. At one the run ends `quota_exhausted`, and `ork resume` continues the session a quota cut short.",
       "`software-factory` declares none, but any leader or worker can take `before:`, which runs first, and `verify:`, which must pass before its report is accepted. Both run inside the node, so a delegated child gets them too.",
       "`ork resume` runs the workflow again under the same id: what finished is handed back from the run's events, and only the rest runs.",
       "A node cut off mid-session (stopped, crashed, out of budget) continues that session on resume; unread messages and queued `ork chat` messages are handed back too. `--detach` resumes in the background.",

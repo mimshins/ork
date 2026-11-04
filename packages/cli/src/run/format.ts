@@ -97,6 +97,16 @@ export const formatEvent = (
       ? [style("red", `  ✗ ${tools.get(event.id) ?? "tool"} failed`)]
       : [];
   }
+  if (event.type === "plan.limit") {
+    return event.status === "allowed"
+      ? []
+      : [
+          style(
+            "yellow",
+            `  ! plan: ${event.window.replaceAll("_", " ")} limit ${event.status === "rejected" ? "reached" : "is close"}`,
+          ),
+        ];
+  }
   return formatOutcome(nodeId, event.outcome);
 };
 
@@ -234,6 +244,7 @@ const RUN_MARK: Record<RunResult["status"], string> = {
   succeeded: style("green", "✓"),
   failed: style("red", "✗"),
   budget_exhausted: style("yellow", "!"),
+  quota_exhausted: style("yellow", "!"),
   timed_out: style("yellow", "!"),
   interrupted: style("yellow", "!"),
 };

@@ -214,6 +214,28 @@
       },
       "additionalProperties": false
     },
+    "quotas": {
+      "description": "Most this project may spend on this machine. The user's own caps apply too.",
+      "type": "object",
+      "properties": {
+        "dayUsd": {
+          "description": "Most to spend in a calendar day.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "weekUsd": {
+          "description": "Most to spend in a calendar week, from Monday.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "monthUsd": {
+          "description": "Most to spend in a calendar month.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
     "calls": {
       "description": "Default: any registered project may call this one's workflows.",
       "type": "object",

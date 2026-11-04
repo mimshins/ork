@@ -3,11 +3,12 @@
  *   look, spend over time, and where it went.
  */
 
-import type { UsageReport } from "@krapht/ork-server/client";
+import type { UsageAnswer } from "@krapht/ork-server/client";
 import { useMemo } from "react";
 
 import { CopyCommand } from "../components/copy-command.tsx";
 import { UsageChart } from "./usage-chart.tsx";
+import { UsageLimits } from "./usage-limits.tsx";
 import { seriesOf, usageCommand } from "./usage-model.ts";
 import { Breakdown, Totals } from "./usage-tables.tsx";
 
@@ -21,7 +22,7 @@ export const Report = ({
   everyProject,
   projectName,
 }: {
-  report: UsageReport;
+  report: UsageAnswer;
   since: string | undefined;
   now: number;
   /** The period chosen, for the commands that show the same on a terminal. */
@@ -37,6 +38,7 @@ export const Report = ({
   const command = (by?: string) => usageCommand(everyProject, period, by);
   return (
     <>
+      <UsageLimits limits={report.limits} />
       <div className={styles["overview"]}>
         <Totals report={report} />
         {report.hints.length === 0 ? null : (

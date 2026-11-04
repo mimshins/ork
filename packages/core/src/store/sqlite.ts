@@ -27,6 +27,7 @@ const STATUSES: readonly StoredRunStatus[] = [
   "succeeded",
   "failed",
   "budget_exhausted",
+  "quota_exhausted",
   "timed_out",
   "interrupted",
 ];
@@ -103,7 +104,8 @@ export const openStore = (file: string = storePath()): EventStore => {
     "SELECT seq, at, data FROM events WHERE run_id = ? AND seq > ? ORDER BY seq",
   );
 
-  const { insertFeedback, recordUsage, ...queries } = storeQueries(db);
+  const { insertFeedback, recordUsage, recordPlanLimit, ...queries } =
+    storeQueries(db);
 
   return {
     ...queries,
@@ -156,6 +158,9 @@ export const openStore = (file: string = storePath()): EventStore => {
           event.event.type === "session.finished"
         ) {
           recordUsage(runId);
+        }
+        if (event.type === "node.event" && event.event.type === "plan.limit") {
+          recordPlanLimit(event.event, at);
         }
         if (event.type === "feedback.recorded") {
           insertFeedback(runId, seq, at, event.node, event.feedback);

@@ -17,6 +17,7 @@ import {
   newRunId,
   type ProjectPlace,
   type RelayPort,
+  NOT_STARTED,
   type ResumeState,
   type RunEvent,
   type RunSettings,
@@ -25,6 +26,7 @@ import { maskedEnv, maskedNamesOfRun } from "@krapht/ork-nodes";
 import type { Driver } from "@krapht/ork-schema";
 
 import { resumeChat } from "../runs/chat.ts";
+import { runLimits } from "./limits.ts";
 
 export type CallPortsOptions = {
   graph: CompiledGraph;
@@ -82,8 +84,28 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
       env: maskedEnv(
         maskedNamesOfRun(graph.workflow, options.place, store.projects()),
       ),
-      resumeSession: (run, node, body, signal) =>
-        resumeChat({ store, run, node, body, runtime, human, out, signal }),
+      resumeSession: (run, node, body, signal) => {
+        // A workflow did this, not a person, so the limits hold it as any session.
+        const { blocked, leftUsd } = runLimits(
+          store,
+          options.place,
+          home,
+        ).now();
+        return blocked === undefined
+          ? resumeChat({
+              store,
+              run,
+              node,
+              body,
+              runtime,
+              human,
+              out,
+              signal,
+              ...(home === undefined ? {} : { home }),
+              ...(leftUsd === undefined ? {} : { budgetLeftUsd: leftUsd }),
+            })
+          : Promise.resolve(`${NOT_STARTED}${blocked}.`);
+      },
     }),
     ...(linksOff ? {} : { relay: createRelay({ store, runId, home, human }) }),
     settings: {

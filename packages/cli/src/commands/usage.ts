@@ -16,7 +16,14 @@ import {
 import { defineCommand } from "citty";
 
 import { confirm, style, write, writeErr } from "../output.ts";
-import { agoTime, formatUsage, sinceTime, untilTime } from "../runs/usage.ts";
+import { limitsHere } from "../run/limits.ts";
+import {
+  agoTime,
+  formatLimits,
+  formatUsage,
+  sinceTime,
+  untilTime,
+} from "../runs/usage.ts";
 
 const isDimension = (value: string): value is UsageDimension =>
   USAGE_DIMENSIONS.some(dimension => dimension === value);
@@ -35,6 +42,12 @@ export const usage = defineCommand({
     all: {
       type: "boolean",
       description: "Every project's runs",
+      default: false,
+    },
+    "clear-plan-limits": {
+      type: "boolean",
+      description:
+        "Forget what Claude Code last said of your plan's limits, for one that has lifted",
       default: false,
     },
     since: {
@@ -70,6 +83,7 @@ export const usage = defineCommand({
     }
     const store = openStore();
     try {
+      if (args["clear-plan-limits"]) store.clearPlanLimits();
       const report = usageReport(
         store.usage({
           ...(args.all
@@ -80,10 +94,15 @@ export const usage = defineCommand({
           ...(until === undefined ? {} : { until }),
         }),
       );
+      const limits = limitsHere(
+        store,
+        args.all ? undefined : placeFor(process.cwd(), store.projects()),
+      );
       if (args.json) {
-        write(JSON.stringify(report, undefined, 2));
+        write(JSON.stringify({ ...report, limits }, undefined, 2));
         return;
       }
+      for (const line of formatLimits(limits)) write(line);
       const place = args.all ? "every project" : "this project";
       const period = args.since === "all" ? "" : `, since ${args.since}`;
       for (const line of formatUsage(report, `${place}${period}`, args.by)) {
