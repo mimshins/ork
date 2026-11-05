@@ -2,11 +2,14 @@
  * @file The checks on a workflow's text: the format, then the compiler with the
  *   project's rules and agents, its call targets, and its skill and context
  *   references. `ork validate`, `ork run` and the workflow builder all use
- *   this, so they can't disagree (RFC-008).
+ *   this, so they can't disagree (RFC-008). Those three also walk it
+ *   (`walkChecks`, RFC-009), which is async and costs up to a second, so the
+ *   others that read a workflow, such as triggers, don't pay for a walk.
  */
 
 import {
   type Diagnostic,
+  type Locate,
   parseWorkflow,
   type Workflow,
 } from "@krapht/ork-schema";
@@ -15,6 +18,7 @@ import { loadAgents } from "../agents/catalog.ts";
 import { contextDiagnostics } from "../context/resolve.ts";
 import { compileWorkflow } from "../graph/compile.ts";
 import type { CompiledGraph } from "../graph/types.ts";
+import { walkWorkflow, type WalkResult } from "../run/walk.ts";
 import { checkCallTargets } from "./calls.ts";
 import { placeFiles, type ProjectPlace } from "./place.ts";
 import { loadProject } from "./rules.ts";
@@ -27,7 +31,15 @@ export type WorkflowChecks = {
   graph: CompiledGraph | null;
   /** What compiled, errors or not. */
   summary?: { nodes: number; edges: number; entries: string[] };
+  /** Finds a diagnostic's line and column in the text. */
+  locate?: Locate;
 };
+
+/** What a walk needs of the checks. */
+export type WalkableChecks = Pick<
+  WorkflowChecks,
+  "diagnostics" | "graph" | "locate"
+>;
 
 export type CheckWhere = {
   /** The project the workflow belongs to. */
@@ -49,6 +61,7 @@ export const checkWorkflowText = (
   if (!parsed.ok) {
     return { diagnostics: parsed.diagnostics, workflow: null, graph: null };
   }
+  const { locate } = parsed;
   const projectRoot = place.root;
   const catalog = loadAgents({
     projectRoot,
@@ -77,16 +90,39 @@ export const checkWorkflowText = (
       position === null ? diagnostic : { ...diagnostic, ...position },
     );
   }
-  if (graph === null) return { diagnostics, workflow: null, graph: null };
+  if (graph === null) {
+    return { diagnostics, workflow: null, graph: null, locate };
+  }
   const clean = !diagnostics.some(d => d.severity === "error");
   return {
     diagnostics,
     workflow: clean ? graph.workflow : null,
     graph: clean ? graph : null,
+    locate,
     summary: {
       nodes: graph.nodes.size,
       edges: graph.edges.length,
       entries: graph.entries,
     },
+  };
+};
+
+/**
+ * Walks what passed the checks, and adds what it found to their diagnostics,
+ * each with its line and column. With errors, there's nothing to walk.
+ */
+export const walkChecks = async <Checks extends WalkableChecks>(
+  checks: Checks,
+): Promise<Checks & { walk?: WalkResult }> => {
+  if (checks.graph === null) return checks;
+  const walk = await walkWorkflow(checks.graph);
+  const found = walk.findings.map(finding => {
+    const position = checks.locate?.(finding.path) ?? null;
+    return position === null ? finding : { ...finding, ...position };
+  });
+  return {
+    ...checks,
+    diagnostics: [...checks.diagnostics, ...found],
+    walk,
   };
 };

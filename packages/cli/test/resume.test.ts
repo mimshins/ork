@@ -57,9 +57,9 @@ const exits =
   () =>
     Promise.resolve({ exitCode: code, stdout: "", stderr: "" });
 
-const setup = () => {
+const setup = (workflow = WORKFLOW) => {
   const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-resume-")));
-  writeFileSync(path.join(dir, "notes.ork.yaml"), WORKFLOW);
+  writeFileSync(path.join(dir, "notes.ork.yaml"), workflow);
   const store: EventStore = openStore(":memory:");
   const home = mkdtempSync(path.join(tmpdir(), "ork-home-"));
   const run = async (
@@ -124,6 +124,30 @@ const KEEPING = [
 ].join("\n");
 
 describe("ork resume", () => {
+  it("says what a walk found when the run starts, not again", async () => {
+    const s = setup(
+      [
+        WORKFLOW.replace(
+          "edges:",
+          '  off:\n    type: tool.shell\n    command: "publish"\nedges:',
+        ),
+        '  - { from: publish, to: off, when: "false" }',
+        "",
+      ].join(""),
+    );
+    const first = await s.run(exits(1));
+    expect(first.out.join("\n")).toContain("(walk.never-runs)");
+    const record = only(s.store);
+    const again = await s.run(exits(0), {
+      inputs: [],
+      inPlace: true,
+      runId: record.id,
+      resume: readyToResume(s.store, record).state,
+    });
+    expect(again.result?.status).toBe("succeeded");
+    expect(again.out.join("\n")).not.toContain("(walk.never-runs)");
+  });
+
   it("continues a failed run: finished nodes keep their results", async () => {
     const s = setup();
     const first = await s.run(exits(1));

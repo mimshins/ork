@@ -46,7 +46,7 @@ describe("ork run and the checks", () => {
     }
   });
 
-  const run = (text: string) => {
+  const run = (text: string, args: readonly string[] = []) => {
     const root = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-warn-")));
     dirs.push(root);
     const home = path.join(root, "home");
@@ -55,15 +55,19 @@ describe("ork run and the checks", () => {
     mkdirSync(repo);
     execFileSync("git", ["init", "-q"], { cwd: repo });
     writeFileSync(path.join(repo, "w.ork.yaml"), text);
-    const done = spawnSync(process.execPath, [BIN, "run", "w.ork.yaml"], {
-      cwd: repo,
-      encoding: "utf8",
-      env: {
-        PATH: process.env["PATH"] ?? "",
-        HOME: home,
-        ORK_NO_UPDATE_CHECK: "1",
+    const done = spawnSync(
+      process.execPath,
+      [BIN, "run", "w.ork.yaml", ...args],
+      {
+        cwd: repo,
+        encoding: "utf8",
+        env: {
+          PATH: process.env["PATH"] ?? "",
+          HOME: home,
+          ORK_NO_UPDATE_CHECK: "1",
+        },
       },
-    });
+    );
     return { ...done, ran: existsSync(path.join(repo, "ran")) };
   };
 
@@ -71,6 +75,23 @@ describe("ork run and the checks", () => {
     const done = run(LOOPING);
     expect(done.stderr).toContain("(when.never)");
     expect(done.status).toBe(0);
+  });
+
+  it("prints what walking it found, with its line, and goes ahead", () => {
+    const done = run(LOOPING);
+    expect(done.stderr).toMatch(/w\.ork\.yaml:5:\d+ .*`b` never runs/u);
+    expect(done.stderr).toContain("(walk.never-runs)");
+    expect(done.status).toBe(0);
+  });
+
+  it("doesn't print the summary of a walk: only what it found", () => {
+    expect(run(LOOPING).stderr).not.toContain("Walked");
+  });
+
+  it("doesn't walk for a run of one node", () => {
+    const { stderr } = run(LOOPING, ["--node", "a"]);
+    expect(stderr).toContain("(when.never)");
+    expect(stderr).not.toContain("walk.never-runs");
   });
 
   it("stops on a value the source can't have, before anything runs", () => {

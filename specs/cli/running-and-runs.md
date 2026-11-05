@@ -9,7 +9,8 @@ with the built-in node types
 ([workflow.ts](../../packages/cli/src/run/workflow.ts)):
 
 - The workflow and its inputs are checked as for `--node`; nothing starts on an
-  error, and warnings print before it starts.
+  error, and warnings print before it starts, with what
+  [walking it](../scheduler/walking.md) found. `ork resume` doesn't walk.
 - `worktree` Claude nodes get their own worktree beside the clone, and the run
   first checks the project ([worktrees](../worktrees.md#before-the-run)):
   uncommitted instructions or skills stop it unless `--allow-dirty`.

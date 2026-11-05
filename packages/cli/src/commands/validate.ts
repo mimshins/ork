@@ -15,15 +15,18 @@ import {
   placeFor,
   type ProjectPlace,
   readProjectTriggers,
+  type WalkResult,
+  walkChecks,
   workflowDirOf,
   workflowTextHash,
 } from "@krapht/ork-core";
-import type { Diagnostic, Workflow } from "@krapht/ork-schema";
+import type { Diagnostic, Locate, Workflow } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
 import { style, write } from "../output.ts";
 import { projectAt, registeredProjects } from "../project/place.ts";
 import { findWorkflowFiles } from "../workflows.ts";
+import { pathLines, walkLine } from "./walk-report.ts";
 
 const hasErrors = (diagnostics: readonly Diagnostic[]): boolean =>
   diagnostics.some(d => d.severity === "error");
@@ -32,6 +35,8 @@ export type FileReport = {
   file: string;
   diagnostics: Diagnostic[];
   summary?: { nodes: number; edges: number; entries: string[] };
+  /** What walking it found; a run of one node, or one with errors, has none. */
+  walk?: WalkResult;
 };
 
 export type LoadedWorkflow = {
@@ -49,6 +54,8 @@ export type LoadedWorkflow = {
   workflowDir: string;
   /** The hash of the text read, which a trigger's run checks. */
   textHash?: string;
+  /** Finds a diagnostic's line and column in the text. */
+  locate?: Locate;
 };
 
 /**
@@ -87,11 +94,10 @@ export const loadWorkflow = (
     };
   }
 
-  const { diagnostics, workflow, graph, summary } = checkWorkflowText(text, {
-    ...where,
-    registered,
-    home,
-  });
+  const { diagnostics, workflow, graph, summary, locate } = checkWorkflowText(
+    text,
+    { ...where, registered, home },
+  );
   return {
     report: {
       file,
@@ -101,12 +107,35 @@ export const loadWorkflow = (
     workflow,
     graph,
     textHash: workflowTextHash(text),
+    ...(locate === undefined ? {} : { locate }),
     ...where,
   };
 };
 
 export const validateFile = (file: string, cwd: string): FileReport =>
   loadWorkflow(file, cwd).report;
+
+/**
+ * Walks what loaded, with its findings on its report. `ork validate` and `ork
+ * run` do this; the rest of what loads a workflow doesn't pay for a walk.
+ */
+export const walkLoaded = async (
+  loaded: LoadedWorkflow,
+): Promise<LoadedWorkflow> => {
+  const { diagnostics, walk } = await walkChecks({
+    diagnostics: loaded.report.diagnostics,
+    graph: loaded.graph,
+    ...(loaded.locate === undefined ? {} : { locate: loaded.locate }),
+  });
+  return {
+    ...loaded,
+    report: {
+      ...loaded.report,
+      diagnostics,
+      ...(walk === undefined ? {} : { walk }),
+    },
+  };
+};
 
 const plural = (count: number, word: string) =>
   `${count} ${word}${count === 1 ? "" : "s"}`;
@@ -153,14 +182,14 @@ export const formatReport = (report: FileReport): string[] => {
       )}`,
     );
   }
-  return lines;
+  return [...lines, ...walkLine(report.walk)];
 };
 
 export const validate = defineCommand({
   meta: {
     name: "validate",
     description:
-      "Check workflow files: schema, ownership tree, edges, loops, and references",
+      "Check workflow files: schema, ownership tree, edges, loops and references, and walk every way through them",
   },
   args: {
     json: {
@@ -168,8 +197,14 @@ export const validate = defineCommand({
       description: "Print the reports as JSON",
       default: false,
     },
+    paths: {
+      type: "boolean",
+      description:
+        "List each way a run can end, and the choices that lead there",
+      default: false,
+    },
   },
-  run: ({ args }) => {
+  run: async ({ args }) => {
     const cwd = process.cwd();
     const files = findWorkflowFiles(
       args._,
@@ -186,8 +221,11 @@ export const validate = defineCommand({
       args._.length === 0
         ? readProjectTriggers(place, undefined, registeredProjects())
         : undefined;
+    const walked = await Promise.all(
+      files.map(file => walkLoaded(loadWorkflow(file, cwd))),
+    );
     const reports: FileReport[] = [
-      ...files.map(file => validateFile(file, cwd)),
+      ...walked.map(({ report }) => report),
       // The project's triggers are read with its workflows, not when one is named.
       ...(triggers?.present === true
         ? [
@@ -206,6 +244,7 @@ export const validate = defineCommand({
     } else {
       for (const report of reports) {
         for (const line of formatReport(report)) write(line);
+        if (args.paths) for (const line of pathLines(report.walk)) write(line);
       }
     }
     if (reports.some(r => hasErrors(r.diagnostics))) {

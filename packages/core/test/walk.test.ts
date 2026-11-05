@@ -13,6 +13,7 @@ import {
   type CompiledGraph,
   compileWorkflow,
   type RunHandle,
+  walkSummary,
   walkWorkflow,
   type WalkResult,
 } from "../src/index.ts";
@@ -364,6 +365,37 @@ describe("how a walk goes", () => {
   it("counts each path once", async () => {
     const result = await walkWorkflow(graphOf([`a: ${CLAUDE}`], []));
     expect(result).toMatchObject({ paths: 2, succeeded: 1, failed: 1 });
+  });
+});
+
+const summary = (parts: Partial<WalkResult>): string =>
+  walkSummary({
+    paths: 0,
+    complete: true,
+    succeeded: 0,
+    failed: 0,
+    endings: [],
+    findings: [],
+    ...parts,
+  });
+
+describe("what a walk comes to", () => {
+  it("counts the ways through", () => {
+    expect(summary({ paths: 73, succeeded: 5, failed: 68 })).toBe(
+      "Walked 73 ways through: 5 succeed, 68 fail.",
+    );
+  });
+
+  it("reads right for one", () => {
+    expect(summary({ paths: 1, succeeded: 1, failed: 1 })).toBe(
+      "Walked 1 way through: 1 succeeds, 1 fails.",
+    );
+  });
+
+  it("says when it stopped", () => {
+    expect(summary({ paths: 4096, complete: false })).toBe(
+      "Walked 4,096 ways through and stopped; not every way was tried.",
+    );
   });
 });
 

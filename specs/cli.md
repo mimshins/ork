@@ -27,7 +27,7 @@ ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agen
 ork migrate --from-agents a,b [--reviewer r] [--name n]  # draft a gated workflow from the project's agents
 ork link [tools…] [--check]      # point tools' agents and skills folders (.claude/agents, …) at .ork/
 ork doctor                       # node, git, every Claude driver and integration (its own login check), links
-ork validate <wf>                # schema, graph, project rules, agents and skill/context references; errors with yaml line numbers; with no file, the project's triggers too
+ork validate <wf> [--paths] [--json]   # schema, graph, project rules, agents and skill/context references, with yaml line numbers, then a walk of every way through; `--paths` lists each ending; with no file, the project's triggers too
 ork agents list [--json] | show <name> [--json]   # the agents nodes can take, and where each comes from
 ork agents add <name> [--description d] [--model m] [--from <agent>] [--user] | rm <name> [--user]
 ork run <wf> [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json] [--detach]

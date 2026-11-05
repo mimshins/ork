@@ -4,9 +4,8 @@ _Part of [The scheduler](../scheduler.md)._
 
 Status: **Partial** ([walk.ts](../../packages/core/src/run/walk.ts),
 [tests](../../packages/core/test/walk.test.ts),
-[RFC-009](../../rfcs/active/RFC-009-walking-a-workflow.md)). `walkWorkflow` is
-built, and nothing calls it yet: `ork validate`, `ork run` and the builder come
-next.
+[RFC-009](../../rfcs/active/RFC-009-walking-a-workflow.md)). `ork validate` and
+`ork run` walk a workflow; the builder doesn't yet.
 
 `walkWorkflow(graph)` tries every way through a compiled workflow on the real
 `startRun`, so it can't disagree with how a run behaves. It starts no session,
@@ -21,6 +20,7 @@ shows what the graph does for an outcome, not that the outcome will occur.
 - [Loops](#loops)
 - [Watched nodes](#watched-nodes)
 - [Limits](#limits)
+- [Who walks](#who-walks)
 - [What it reports](#what-it-reports)
 
 ## One path
@@ -92,12 +92,27 @@ It doesn't cover the order parallel branches finish in, so a `control.join` in
 `any` mode goes one way; running out of budget or time; resuming; or what a
 leader delegates, so an owned node runs only if an edge reaches it.
 
+## Who walks
+
+`checkWorkflowText` stays synchronous, and triggers, `ork context` and chat use
+it without paying for a walk. `walkChecks` adds a walk to what it returned:
+
+- `ork validate` prints the findings with its other diagnostics, then one line,
+  `walkSummary`'s: `Walked 73 ways through: 5 succeed, 68 fail.`, or
+  `Walked 4,096 ways through and stopped; not every way was tried.` `--paths`
+  lists each ending, and `--json` carries the walk on each file's report. A file
+  with errors isn't walked. Findings don't change its exit code.
+- `ork run` prints the findings before it starts, and they don't stop it. A run
+  of one node with `--node` doesn't walk, and nor does `ork resume`, as the run
+  was walked when it started.
+
 ## What it reports
 
 `WalkResult` gives the number of paths, how many succeeded and failed, whether
 it was `complete`, its `endings`, and its `findings`. An ending groups the paths
 that ended with the same status and the same nodes not run, with the choices of
-the first of them. Owned nodes aren't listed as not run.
+the first of them: a gate's answer, a loop's, and anything but a node going on
+as hoped. Owned nodes aren't listed as not run.
 
 Findings are warnings, since an outcome tried may never happen:
 

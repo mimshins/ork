@@ -39,6 +39,7 @@ import {
 import {
   formatReport,
   loadWorkflow,
+  walkLoaded,
   warningLines,
 } from "../commands/validate.ts";
 import { callPorts } from "./calls.ts";
@@ -71,13 +72,13 @@ export const runWorkflowFile = async (
     return { exitCode: 1, result: null };
   };
 
-  const { report, workflow, graph, place, workflowDir, textHash } =
-    loadWorkflow(
-      options.file,
-      options.cwd,
-      options.home,
-      options.store.projects(),
-    );
+  const loaded = loadWorkflow(
+    options.file,
+    options.cwd,
+    options.home,
+    options.store.projects(),
+  );
+  const { workflow, graph, place, workflowDir, textHash } = loaded;
   if (
     options.expectWorkflow !== undefined &&
     options.expectWorkflow !== textHash
@@ -86,7 +87,12 @@ export const runWorkflowFile = async (
       `${options.file} isn't what was accepted: it changed after ork watch read it. Accept it again with \`ork watch --accept\`.`,
     ]);
   }
-  if (workflow === null || graph === null) return failed(formatReport(report));
+  if (workflow === null || graph === null) {
+    return failed(formatReport(loaded.report));
+  }
+  // A resumed run was walked when it started, and said so then.
+  const { report } =
+    options.resume === undefined ? await walkLoaded(loaded) : loaded;
   for (const line of warningLines(report)) options.err(line);
 
   const pairs = parseInputPairs(options.inputs);

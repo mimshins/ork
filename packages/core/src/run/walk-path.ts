@@ -57,11 +57,11 @@ const createChoices = (given: readonly Decision[]) => {
   return {
     decisions,
     said,
-    /** Which way to go; `saying` names it, for the list of what led there. */
+    /** Which way to go; `saying` names it, if it's worth listing as a choice. */
     choose: (
       key: string,
       count: number,
-      saying: (index: number) => string,
+      saying: (index: number) => string | null,
     ): number => {
       const earlier = taken.get(key);
       if (earlier !== undefined) return Math.min(earlier, count - 1);
@@ -69,7 +69,8 @@ const createChoices = (given: readonly Decision[]) => {
       taken.set(key, index);
       if (count > 1) {
         decisions.push({ key, index, count });
-        said.push(saying(index));
+        const words = saying(index);
+        if (words !== null) said.push(words);
       }
       return index;
     },
@@ -93,7 +94,7 @@ const scriptedHuman = (
       const index = choices.choose(
         `ask:${question}:${String(times)}`,
         open.length,
-        at => `${nodeId}: ${open[at]?.id ?? ""}`,
+        at => `${nodeId} ran out of rounds: ${open[at]?.id ?? ""}`,
       );
       return Promise.resolve(open[index]?.id ?? LOOP_CHOICES.stop);
     },
@@ -136,7 +137,7 @@ const standIn =
     choices: ReturnType<typeof createChoices>,
     outputs: Readonly<Record<string, NodeOutput>>,
   ): NodeExecutor =>
-  ({ id, round }) => {
+  ({ id, round, node }) => {
     const until = plan.untils.get(id) ?? null;
     const all = plan.outcomes.get(id) ?? [];
     // A watched node ends only ways a wait can: its condition holds, or it fails.
@@ -161,7 +162,10 @@ const standIn =
       open.length,
       at => {
         const name = round > 1 ? `${id}, round ${String(round)}` : id;
-        return `${name}: ${open[at]?.said ?? ""}`;
+        const said = open[at]?.said ?? "";
+        // Going on as hoped isn't a choice that led anywhere; a person's is.
+        const hoped = round === 1 && at === 0 && node.type !== "human.gate";
+        return hoped || said === "succeeded" ? null : `${name}: ${said}`;
       },
     );
     const outcome = open[index];

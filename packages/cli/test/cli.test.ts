@@ -66,6 +66,106 @@ const validateWithTriggers = (triggers: string, ...args: string[]) => {
 const VALID = "  good: { every: 1m, run: triage }\n";
 const INVALID = "  broken: { every: 1m, run: gone }\n";
 
+/** `ork validate` for real, on one file with this text. */
+const validateText = (text: string, ...args: string[]) => {
+  const dir = tempProject();
+  writeFileSync(path.join(dir, "w.ork.yaml"), text);
+  return spawnSync(process.execPath, [BIN, "validate", "w.ork.yaml", ...args], {
+    cwd: dir,
+    encoding: "utf8",
+    env: {
+      PATH: process.env["PATH"] ?? "",
+      HOME: dir,
+      ORK_NO_UPDATE_CHECK: "1",
+    },
+  });
+};
+
+const GATED = [
+  "schemaVersion: 1",
+  "name: gated",
+  "nodes:",
+  "  ask: { type: human.gate, question: Go?, options: [go, keep] }",
+  '  ship: { type: tool.shell, command: "true", allow: ["true"] }',
+  "edges:",
+  "  - { from: ask, to: ship, when: \"choice == 'go'\" }",
+  "",
+].join("\n");
+
+const STRANDED = [
+  "schemaVersion: 1",
+  "name: stranded",
+  "nodes:",
+  '  a: { type: tool.shell, command: "true", allow: ["true"] }',
+  '  b: { type: tool.shell, command: "true", allow: ["true"] }',
+  "edges:",
+  '  - { from: a, to: b, when: "false" }',
+  "",
+].join("\n");
+
+const parallel = (count: number): string =>
+  [
+    "schemaVersion: 1",
+    "name: wide",
+    "nodes:",
+    "  s: { type: control.split }",
+    ...Array.from(
+      { length: count },
+      (_, at) => `  n${String(at)}: { type: claude.worker, prompt: x }`,
+    ),
+    "edges:",
+    ...Array.from({ length: count }, (_, at) => `  - s -> n${String(at)}`),
+    "",
+  ].join("\n");
+
+describe("ork validate's walk", () => {
+  it("says how many ways it walked", () => {
+    const { status, stdout } = validateText(GATED);
+    expect(status).toBe(0);
+    expect(stdout).toContain("Walked 3 ways through: 2 succeed, 1 fails.");
+  });
+
+  it("reports what it found as a warning, with its line", () => {
+    const { status, stdout } = validateText(STRANDED);
+    expect(status).toBe(0);
+    expect(stdout).toMatch(/w\.ork\.yaml:5:\d+ warning .*`b` never runs/u);
+  });
+
+  it("says when it stopped, and claims nothing", () => {
+    const { stdout } = validateText(parallel(14));
+    expect(stdout).toContain(
+      "Walked 4,096 ways through and stopped; not every way was tried.",
+    );
+    expect(stdout).not.toContain("walk.");
+  });
+
+  it("doesn't walk a file with errors", () => {
+    const { status, stdout } = validateText(
+      GATED.replace("choice == 'go'", "choice == 'og'"),
+    );
+    expect(status).toBe(1);
+    expect(stdout).not.toContain("Walked");
+  });
+
+  it("lists how a run can end only when asked", () => {
+    expect(validateText(GATED).stdout).not.toContain("didn't run");
+  });
+
+  it("lists a gate's answer that ends the run as an ending", () => {
+    const { stdout } = validateText(GATED, "--paths");
+    expect(stdout).toMatch(
+      /succeeded \(1 way\) didn't run: ship\n +ask: choice = keep/u,
+    );
+    expect(stdout).not.toContain("warning");
+  });
+
+  it("carries the walk in its JSON", () => {
+    const { stdout } = validateText(GATED, "--json");
+    expect(stdout).toContain('"paths": 3');
+    expect(stdout).toContain('"endings"');
+  });
+});
+
 describe("ork validate on a project's triggers", () => {
   it("reports an invalid one, and fails", () => {
     const { status, stdout } = validateWithTriggers(VALID + INVALID);

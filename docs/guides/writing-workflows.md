@@ -6,6 +6,18 @@ and how work flows between them (the **edges**). This guide walks through the
 parts; the exact contract is the
 [workflow format spec](../../specs/workflow-format.md).
 
+## Contents
+
+- [The shape of a file](#the-shape-of-a-file)
+- [Inputs](#inputs)
+- [Node types](#node-types)
+- [Edges](#edges)
+- [Loops](#loops)
+- [Templates and conditions](#templates-and-conditions)
+- [Check it](#check-it)
+- [Checking a workflow](./writing-workflows/checking.md): what `ork validate`
+  tells you
+
 ## The shape of a file
 
 ```yaml
@@ -191,10 +203,8 @@ ork validate                    # every workflow in .ork/workflows/
 ork validate path/to/file.ork.yaml
 ```
 
-It reports schema errors, an unknown `parent`, cycles without `maxRounds`,
-references to nodes that do not exist or do not run first, and skill or context
-paths that resolve to nothing, each with its line
-([all the checks](../../specs/graph-compiler.md)).
+It reports what's wrong, with the line, then tries every way through the
+workflow without running anything.
 
 A full example with every piece above:
 [examples/software-factory.ork.yaml](../../examples/software-factory.ork.yaml).
