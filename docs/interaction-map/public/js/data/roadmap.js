@@ -833,6 +833,14 @@ export const MILESTONES = [
         date: "2026-11-04",
       },
       {
+        id: "claude-code",
+        title: "Ork for Claude Code",
+        status: "planned",
+        detail:
+          "Claude Code, outside a run, learns to write, check and run workflows the way Ork is built to save: an `ork mcp` server on the same code as the CLI, skills for writing, running and Ork's principles, a plugin with both, and the skills through `ork init`. It reads, checks and starts runs, and never answers a decision (RFC-012, accepted).",
+        docs: ["rfcs/active/RFC-012-teaching-claude-code-ork.md"],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",
