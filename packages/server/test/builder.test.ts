@@ -59,6 +59,9 @@ edges:
 
 const PARAMS = { id: "demo", name: "real" };
 
+const waysIn = (walk: string | null): number =>
+  Number(/Walked ([\d,]+)/u.exec(walk ?? "")?.[1]?.replaceAll(",", ""));
+
 const answer = async <T>(call: Promise<CallResult<T>>) => {
   const result = await call;
   if (!result.ok) throw new Error(result.error);
@@ -506,6 +509,23 @@ describe("saving", () => {
       }),
     );
     expect(after.data.walk).toContain("Walked 4 ways");
+  });
+
+  it("keeps an edit's walk short on a wide workflow", async () => {
+    const wide = Array.from(
+      { length: 300 },
+      (_, at) => `  n${String(at)}: { type: tool.shell, command: "true" }`,
+    );
+    writeFileSync(
+      fileIn("real"),
+      ["schemaVersion: 1", "name: real", "nodes:", ...wide, ""].join("\n"),
+    );
+    const { data } = await answer(
+      fixture.client.call("builderView", { params: PARAMS }),
+    );
+    expect(data.walk).toContain("and stopped");
+    // In a second, the limit elsewhere, it gets about 100 ways through this.
+    expect(waysIn(data.walk)).toBeLessThan(70);
   });
 
   it("doesn't walk what has errors", async () => {

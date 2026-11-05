@@ -5,7 +5,7 @@
  *   builder's choices read too, so the two can't disagree.
  */
 
-import type { Diagnostic, Workflow } from "@krapht/ork-schema";
+import { type Diagnostic, markValue, type Workflow } from "@krapht/ork-schema";
 
 import { evaluate, truthy } from "../expr/evaluate.ts";
 import { collectPaths, type Expr } from "../expr/parse.ts";
@@ -95,7 +95,7 @@ const comparisonsIn = (expr: Expr, own: string): Comparison[] => {
 };
 
 const shown = (value: string | number | boolean): string =>
-  `\`${String(value)}\``;
+  markValue(String(value));
 
 const listed = (values: readonly (string | number | boolean)[]): string => {
   const names = values.map(value => shown(value));

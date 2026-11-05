@@ -64,6 +64,35 @@ afterEach(() => {
 });
 
 describe("the Decisions panel", () => {
+  const WRITTEN = "Run `rm -rf build` and ``deploy``?";
+
+  it("shows a question exactly as written, marks and all", async () => {
+    await open([decision("d1", { question: WRITTEN, context: "See `a`." })]);
+    const heading = screen.getByRole("heading", { name: WRITTEN });
+    expect(heading.textContent).toBe(WRITTEN);
+    expect(heading.querySelector("code")).toBeNull();
+    expect(screen.getByText("See `a`.")).toBeDefined();
+  });
+
+  it("shows a settled question as written too", async () => {
+    const { overview } = await open([decision("d1", { question: WRITTEN })], {
+      decisions: {
+        d1: decision("d1", { question: WRITTEN, status: "withdrawn" }),
+      },
+    });
+    await act(async () => {
+      overview.send("decisions", []);
+      await Promise.resolve();
+    });
+    const settled = await screen.findByRole("region", {
+      name: "Settled decisions",
+    });
+    await vi.waitFor(() => {
+      expect(settled.textContent).toContain(WRITTEN);
+    });
+    expect(screen.getByText(WRITTEN).querySelector("code")).toBeNull();
+  });
+
   it("says when nothing waits", async () => {
     await open([]);
     expect(screen.getByText("No decisions waiting.")).toBeDefined();

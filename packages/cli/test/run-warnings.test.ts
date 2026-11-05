@@ -79,7 +79,9 @@ describe("ork run and the checks", () => {
 
   it("prints what walking it found, with its line, and goes ahead", () => {
     const done = run(LOOPING);
-    expect(done.stderr).toMatch(/w\.ork\.yaml:5:\d+ .*`b` never runs/u);
+    expect(done.stderr).toMatch(
+      /w\.ork\.yaml:5:\d+ .*no way the walk tried reaches `b`/u,
+    );
     expect(done.stderr).toContain("(walk.never-runs)");
     expect(done.status).toBe(0);
   });

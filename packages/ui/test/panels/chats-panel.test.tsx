@@ -95,6 +95,34 @@ describe("the Chats panel", () => {
     expect(screen.getByText("No run chosen.")).toBeDefined();
   });
 
+  it("shows what was asked as written, and marks Ork's own words", async () => {
+    await open({
+      events: [
+        ...EVENTS,
+        stored(6, {
+          type: "decision.opened",
+          node: "lead",
+          decision: "d",
+          kind: "question",
+          question: "Run `rm`?",
+          options: [],
+        }),
+        stored(7, {
+          type: "node.finished",
+          id: "lead",
+          round: 1,
+          ok: false,
+          output: {},
+          error: "`lead` broke",
+        }),
+      ],
+    });
+    const asked = await screen.findByText("Asked you: Run `rm`?");
+    expect(asked.querySelector("code")).toBeNull();
+    const failed = await screen.findByText("Failed: `lead` broke");
+    expect(failed.querySelector("code")).toBeNull();
+  });
+
   it("shows the first node's thread, naming who said what", async () => {
     await open();
     const log = await screen.findByRole("log", {

@@ -219,7 +219,8 @@ is `ork decide`, and each option's tooltip gives `ork decide <run> --id <id>
 <option>`.
 
 - **A card** has where the question comes from, the question, its context and
-  its options. The recommended option says so in words, and stands out.
+  its options. The question and context show exactly as written, as a person
+  approves that text. The recommended option says so in words, and stands out.
 - **An answer** takes one click. With the focus in the card, `1` to `9` choose
   an option, and `Enter` on the card itself takes the recommended one.
 - **Nothing is optimistic:** the card stays until the server says it has settled

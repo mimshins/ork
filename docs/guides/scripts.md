@@ -28,8 +28,10 @@ matching nothing. To handle that, or any failure, give an edge `when: "!ok"`.
 
 `ork validate` and `ork run` stop on a condition that compares a field with a
 value it can't have: one outside a declared list, a Claude node's `status`, or a
-gate's `choice`. The message names the values it can have. A warning, such as a
-loop only its rounds can end, prints too, and the run goes ahead.
+gate's `choice`. The message names the values it can have. A Claude node's own
+`status` list can narrow the built-in ones, but can't add others, as a session
+can't report them; declare another field, such as `verdict`. A warning, such as
+a loop only its rounds can end, prints too, and the run goes ahead.
 
 A script that logs to stdout writes its result to the file at `$ORK_OUTPUT`
 instead. That file wins when it is written. Otherwise Ork parses all of stdout.

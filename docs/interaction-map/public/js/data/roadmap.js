@@ -739,7 +739,7 @@ export const MILESTONES = [
           "49b1e74",
         ],
         detail:
-          "Before a run, find what can't work: a condition that's never true, a node no path reaches, a loop that can only run out of rounds. The stricter compiler checks are in: a value a condition can never see stops the run, and loops without an exit or a budget warn. The walk of every outcome on the real scheduler is built too, with no sessions and no scripts, and `ork validate`, `ork run` and the builder show what it finds. A review found false warnings, so next the walk is held to a fuzz against the real scheduler. Then the guide, the decision record and the limits. RFC-009, after RFC-010.",
+          "Before a run, find what can't work: a condition that's never true, a node no path reaches, a loop that can only run out of rounds. The stricter compiler checks are in: a value a condition can never see stops the run, and loops without an exit or a budget warn. The walk of every outcome on the real scheduler is built too, with no sessions and no scripts, and `ork validate`, `ork run` and the builder show what it finds. Reviews found false warnings, so its warnings now say only what it tried, held to a fuzz against the real scheduler and to each case found. Next the guide, the decision record and the limits. RFC-009, after RFC-010.",
         docs: ["rfcs/active/RFC-009-walking-a-workflow.md"],
       },
       {

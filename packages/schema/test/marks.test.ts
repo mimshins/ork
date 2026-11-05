@@ -13,6 +13,8 @@ describe("markValue", () => {
     ["a backtick inside", "a`b", "``a`b``"],
     ["two in a row", "a``b", "```a``b```"],
     ["one at the edge, which needs room", "`a", "`` `a ``"],
+    ["one at the other edge", "a`", "`` a` ``"],
+    ["spaces inside, which stay one", "a  \t b", "`a b`"],
     ["only a backtick", "`", "`` ` ``"],
     ["a line break", "x == 1\n", "`x == 1`"],
     ["nothing", " ", "(nothing)"],

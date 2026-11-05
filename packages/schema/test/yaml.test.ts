@@ -37,6 +37,13 @@ const expandOk = (input: string) => {
   return result.edges;
 };
 
+const messagesOf = (text: string): string => {
+  const parsed = parseWorkflow(text);
+  return parsed.ok
+    ? ""
+    : parsed.diagnostics.map(({ message }) => message).join();
+};
+
 describe("parseWorkflow", () => {
   it("accepts the software-factory example", () => {
     const workflow = parseOk(example);
@@ -47,6 +54,14 @@ describe("parseWorkflow", () => {
     const [diagnostic] = parseErrors("schemaVersion: 1\nnodes: [\n");
     expect(diagnostic?.code).toBe("yaml.syntax");
     expect(diagnostic?.line).toBeGreaterThanOrEqual(2);
+  });
+
+  it("marks the values Zod quotes", () => {
+    const said = messagesOf(
+      "schemaVersion: 1\nname: t\ninputs:\n  x: { type: nope }\nnodes: {}\n",
+    );
+    expect(said).toContain("`string`");
+    expect(said).not.toContain('"');
   });
 
   it("names the unknown node type and points at its line", () => {

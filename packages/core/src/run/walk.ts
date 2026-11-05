@@ -22,14 +22,14 @@ import {
   type WalkTally,
 } from "./walk-findings.ts";
 import { outcomesOf } from "./walk-outcomes.ts";
+import { BRANCHING_ROUNDS, createPath, type Decision } from "./walk-path.ts";
 import {
-  BRANCHING_ROUNDS,
-  createPath,
-  type Decision,
+  loopGroupsOf,
   readers,
   untilsOf,
+  untilsReadingOthers,
   type WalkPlan,
-} from "./walk-path.ts";
+} from "./walk-plan.ts";
 
 /** Where a walk stops and says it did: twelve parallel nodes just fit. */
 export const WALK_PATH_CAP = 4096;
@@ -215,12 +215,15 @@ export const walkWorkflow = async (
   const { outcomes, cutShort } = outcomesOf(graph);
   // Not every value was tried, so a closed list doesn't settle anything here.
   for (const id of cutShort) tally.undecided.add(id);
+  // An input or another node can end a wait, and a walk doesn't vary those.
+  for (const id of untilsReadingOthers(graph)) tally.undecided.add(id);
   const plan: WalkPlan = {
     graph: walked,
     inputs: inputsOf(graph.workflow),
     outcomes,
     untils: untilsOf(graph),
     reading: readers(graph),
+    loopGroups: loopGroupsOf(graph),
     deadline,
     tally,
     secondRounds: new Map(),

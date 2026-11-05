@@ -113,6 +113,48 @@ describe("the Logs panel, for assistive tech", () => {
 });
 
 describe("the Logs panel", () => {
+  it("shows someone else's text as written, and marks Ork's own", async () => {
+    const opened = openPanelState({
+      events: [
+        {
+          runId: "r",
+          seq: 1,
+          at,
+          event: {
+            type: "node.event",
+            id: "a",
+            event: { type: "assistant.text", text: "echo `date` > x" },
+          },
+        },
+        {
+          runId: "r",
+          seq: 2,
+          at,
+          event: {
+            type: "node.finished",
+            id: "a",
+            round: 1,
+            ok: false,
+            output: {},
+            error: "`a` broke",
+          },
+        },
+      ],
+    });
+    renderPanel(opened.state, <LogsPanel />);
+    await act(async () => {
+      opened.state.selectRun("r");
+      await Promise.resolve();
+    });
+    await screen.findByRole("list", { name: "Events of run r" });
+    const [said, finished] = rows();
+    expect(said?.textContent).toContain("echo `date` > x");
+    expect(said?.querySelector("code")).toBeNull();
+    // Why it failed can be a model's or a tool's words.
+    expect(finished?.textContent).toContain("`a` broke");
+    expect(finished?.querySelector("code")).toBeNull();
+  });
+
   it("asks for a run when none is chosen", () => {
     const { state } = openPanelState({});
     renderPanel(state, <LogsPanel />);

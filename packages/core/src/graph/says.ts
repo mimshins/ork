@@ -44,10 +44,13 @@ const declaredField = (field: string, rule: unknown): SaidField => {
       ? rule.enum
       : rule;
   if (Array.isArray(list)) {
+    const values = list.filter(item => isScalar(item));
     return {
       field,
       kind: "values",
-      values: list.filter(item => isScalar(item)),
+      values,
+      // Null and the like are allowed, and no condition's value can be checked.
+      ...(values.length === list.length ? {} : { open: true as const }),
     };
   }
   if (rule === "number" || rule === "integer") return { field, kind: "number" };
@@ -155,14 +158,41 @@ const allInputsOf = (id: string, links: readonly Link[]): string[] =>
  * What a node says, reading through routers and splits to the node before, and
  * from a join's inputs. A pass-through with several inputs can't be known.
  */
+/**
+ * What's known so far, and how many times a search was cut short by a cycle: a
+ * result cut short depends on where it was entered from, so it isn't kept.
+ */
+type Memo = { known: Map<string, NodeSays>; cuts: number };
+
 const saysOf = (
   id: string,
   nodes: Readonly<Record<string, Node>>,
   links: readonly Link[],
   seen: ReadonlySet<string>,
+  memo: Memo,
 ): NodeSays => {
+  const known = memo.known.get(id);
+  if (known !== undefined) return known;
   const node = nodes[id];
-  if (node === undefined || seen.has(id)) return NOTHING;
+  if (node === undefined) return NOTHING;
+  if (seen.has(id)) {
+    memo.cuts += 1;
+    return NOTHING;
+  }
+  const before = memo.cuts;
+  const said = computedSays(id, node, nodes, links, seen, memo);
+  if (memo.cuts === before) memo.known.set(id, said);
+  return said;
+};
+
+const computedSays = (
+  id: string,
+  node: Node,
+  nodes: Readonly<Record<string, Node>>,
+  links: readonly Link[],
+  seen: ReadonlySet<string>,
+  memo: Memo,
+): NodeSays => {
   const next = new Set([...seen, id]);
   if (node.type === "control.router" || node.type === "control.split") {
     const inputs = allInputsOf(id, links);
@@ -170,14 +200,14 @@ const saysOf = (
     return only === undefined || inputs.length > 1
       ? NOTHING
       : {
-          ...saysOf(only, nodes, links, next),
+          ...saysOf(only, nodes, links, next, memo),
           canFail: false,
           canDeclare: false,
         };
   }
   if (node.type === "control.join") {
     const sources = forwardInputsOf(id, links).map(input =>
-      saysOf(input, nodes, links, next).fields.find(
+      saysOf(input, nodes, links, next, memo).fields.find(
         ({ field }) => field === "status",
       ),
     );
@@ -209,7 +239,13 @@ const saysOf = (
 export const nodeSays = (
   nodes: Readonly<Record<string, Node>>,
   links: readonly Link[],
-): Record<string, NodeSays> =>
-  Object.fromEntries(
-    Object.keys(nodes).map(id => [id, saysOf(id, nodes, links, new Set())]),
+): Record<string, NodeSays> => {
+  // Joins that feed each other would otherwise be read once per way between them.
+  const memo: Memo = { known: new Map(), cuts: 0 };
+  return Object.fromEntries(
+    Object.keys(nodes).map(id => [
+      id,
+      saysOf(id, nodes, links, new Set(), memo),
+    ]),
   );
+};

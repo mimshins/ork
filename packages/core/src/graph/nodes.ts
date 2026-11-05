@@ -120,7 +120,7 @@ export const checkNodes = (
           diagnostics.push(
             error(
               "gate.option",
-              `${key} ${markValue(value)} is not one of the options (\`${ids.join("`, `")}\`)`,
+              `${key} ${markValue(value)} is not one of the options (${ids.map(option => markValue(option)).join(", ")})`,
               [...path, key],
             ),
           );

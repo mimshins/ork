@@ -129,6 +129,13 @@ const statusCodesOf = (schema: string): string[] =>
   );
 
 describe("output.status", () => {
+  it("leaves a tool's own field called status alone", () => {
+    const codes = allCodesOf(
+      '  a: { type: tool.shell, command: "true", output: { format: json, schema: { status: [ready] } } }',
+    );
+    expect(codes).not.toContain("output.status");
+  });
+
   it("leaves a sub-agent alone, as it has no report of its own", () => {
     const codes = allCodesOf(`  lead: { type: claude.leader, prompt: p }
   helper:

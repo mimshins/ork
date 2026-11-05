@@ -19,6 +19,12 @@ describe("code text", () => {
     ["more backticks hold one", "see `` a`b `` here", ["a`b"]],
     ["a pair beside a longer one", "``foo`` and ```bar```", ["foo", "bar"]],
     ["a lone pair of them beside real ones", "`x` and `` and `y`", ["x", "y"]],
+    // What `markValue` writes, which schema can't be imported to check here.
+    ["a backtick at the start", "is `` `a `` ok", ["`a"]],
+    ["a backtick at the end", "is `` a` `` ok", ["a`"]],
+    ["only a backtick", "is `` ` `` ok", ["`"]],
+    ["a space on one side stays", "is ` a` ok", [" a"]],
+    ["a shorter closing run doesn't close it", "``a` b", []],
     ["space alone isn't a value", "` `", []],
     ["a line break ends a run", "`a\nb`", []],
   ])("pairs them as Markdown does: %s", (_, text, code) => {

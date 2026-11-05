@@ -617,6 +617,18 @@ describe("Claude nodes", () => {
     expect(
       resultOf(outcome({ ...report, fields }), declared).output,
     ).not.toHaveProperty("verdict");
+    // What every report has stays.
+    expect(
+      resultOf(
+        outcome({
+          ...report,
+          artifacts: { log: "l.txt" },
+          branch: "b",
+          fields,
+        }),
+        declared,
+      ).output,
+    ).toMatchObject({ artifacts: { log: "l.txt" }, branch: "b" });
     // A node's own list for `status` narrows it; the value is on the report.
     expect(
       resultOf(outcome({ ...report, fields }), { status: ["pass"] }).ok,

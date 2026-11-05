@@ -32,8 +32,15 @@ type Combo = readonly (readonly [field: string, value: unknown])[];
 type Shape = {
   succeeds: NodeOutput;
   fails: NodeOutput | null;
-  varyOnFailure: readonly string[];
+  /**
+   * A session or a call's report keeps its values when it fails; a tool's has
+   * none.
+   */
+  varyOnFailure: readonly string[] | "all";
 };
+
+const jsonTool = (node: Node): boolean =>
+  isToolNode(node) && "output" in node && node.output?.format === "json";
 
 const shapeOf = (node: Node): Shape => {
   if (isToolNode(node)) {
@@ -51,13 +58,13 @@ const shapeOf = (node: Node): Shape => {
     return {
       succeeds: { status: "pass", summary: "" },
       fails: { status: "fail", summary: "" },
-      varyOnFailure: [],
+      varyOnFailure: "all",
     };
   }
   return {
     succeeds: node.type === "mcp.call" ? { text: "" } : {},
     fails: {},
-    varyOnFailure: [],
+    varyOnFailure: "all",
   };
 };
 
@@ -152,15 +159,30 @@ const outcomesOfNode = (
   }));
   if (shape.fails === null) return successes;
   const { fails } = shape;
-  const failing = without(fields, "exitCode", 0).filter(
-    ([name, values]) => values.length > 0 && shape.varyOnFailure.includes(name),
+  const { varyOnFailure } = shape;
+  // A tool whose JSON says it failed exits 0 and still fails.
+  const failing = (
+    jsonTool(node) ? [...fields] : without(fields, "exitCode", 0)
+  ).filter(
+    ([name, values]) =>
+      values.length > 0 &&
+      name !== "status" &&
+      (varyOnFailure === "all" || varyOnFailure.includes(name)),
   );
   const failures = combosOf(failing).map(combo => ({
     ok: false,
     output: applied(fails, combo),
     said: ["failed", ...saidOf(combo)].join(", "),
   }));
-  return [...successes, ...failures];
+  // A session can also end with no report at all, so with none of its values.
+  const bare = {
+    ok: false,
+    output: fails,
+    said: "failed",
+  };
+  return varyOnFailure === "all" && failing.length > 0
+    ? [...successes, bare, ...failures]
+    : [...successes, ...failures];
 };
 
 /** A watched node can also run out of time on any look it could make. */

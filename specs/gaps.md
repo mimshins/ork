@@ -74,3 +74,4 @@ Each is in [Limits](./gaps/limits.md), from L2 on.
 - [Limits: the workflow builder](./gaps/limits-builder.md)
 - [Limits: watching a source](./gaps/limits-watching.md)
 - [Limits: design tokens](./gaps/limits-tokens.md)
+- [Limits: walking a workflow](./gaps/limits-walking.md)

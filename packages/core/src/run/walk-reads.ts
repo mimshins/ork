@@ -8,7 +8,7 @@
 
 import { type Expr, parseExpr } from "../expr/parse.ts";
 import { type FieldRead, fieldRead } from "../graph/condition-checks.ts";
-import type { CompiledGraph } from "../graph/types.ts";
+import { type CompiledGraph, declaredOutputOf } from "../graph/types.ts";
 
 type Literal = string | number | boolean | null;
 
@@ -160,10 +160,16 @@ export const readsOf = (graph: CompiledGraph): Reads => {
     }
   };
 
+  const declaresOk = (id: string): boolean => {
+    const node = graph.nodes.get(id)?.node;
+    return node !== undefined && declaredOutputOf(node)?.["ok"] !== undefined;
+  };
+
   const add = (expr: Expr, own: string): void => {
     for (const { read, values } of wantedIn(expr, own)) {
-      // How it ended is tried anyway, and isn't a field of its output.
-      if (read.field !== "" && read.field !== "ok") {
+      // How it ended is tried anyway, and isn't a field of its output,
+      // unless the node declares a field of that name, which it then reports.
+      if (read.field !== "" && (read.field !== "ok" || declaresOk(read.id))) {
         attach(read.id, read.field, values, new Set());
       }
     }

@@ -1,9 +1,10 @@
 /**
  * @file What a walk says it found (RFC-009). An outcome it tried may never
- *   happen, so every finding is a warning. Saying a node never runs is a claim
- *   about every way through, so it's only made when it's proved: not when the
- *   walk stopped early, and not for what's behind a condition the walk couldn't
- *   make go both ways, or behind a node a leader may delegate to.
+ *   happen, and it can't try every one a run can have, so every finding is a
+ *   warning and says only what the walk tried. It says nothing when the walk
+ *   stopped early, or about what's behind a condition the walk couldn't make go
+ *   both ways, or behind a node a leader may delegate to, as those are where it
+ *   would most often be wrong.
  */
 
 import type { Diagnostic } from "@krapht/ork-schema";
@@ -25,7 +26,7 @@ export type WalkTally = {
   undecided: Set<string>;
   /** Loop edges taken on some path. */
   entered: Set<string>;
-  /** Loop edges on a path that succeeded without them running out. */
+  /** Loop edges whose nodes a path went through and out of, not running out. */
   left: Set<string>;
 };
 
@@ -74,9 +75,30 @@ const ownFields = ({ condition, from }: CompiledEdge): string[] | null => {
 };
 
 /**
+ * Whether a node is a gate, or passes one's answer on through routers and
+ * splits.
+ */
+const fromGate = (graph: CompiledGraph, id: string): boolean => {
+  const seen = new Set<string>();
+  const queue = [id];
+  while (queue.length > 0) {
+    const at = queue.pop();
+    const compiled =
+      at === undefined || seen.has(at) ? undefined : graph.nodes.get(at);
+    if (at !== undefined && compiled !== undefined) {
+      seen.add(at);
+      if (compiled.node.type === "human.gate") return true;
+      if (passesThrough(graph, at)) {
+        queue.push(...compiled.incoming.map(({ from }) => from));
+      }
+    }
+  }
+  return false;
+};
+
+/**
  * Whether going one way isn't for want of trying: one field, either how a node
- * ended or with a closed list of values. A gate's failure isn't tried. With two
- * fields it may be: failures aren't tried with each of a node's values.
+ * ended or with a closed list of values, and not a gate's.
  */
 const settled = (
   graph: CompiledGraph,
@@ -86,10 +108,11 @@ const settled = (
 ): boolean => {
   const [only] = fields;
   if (only === undefined || fields.length > 1) return false;
-  if (only === "ok") {
-    return graph.nodes.get(from)?.node.type !== "human.gate";
-  }
+  // A gate someone stops has no `choice`, and a walk doesn't try that.
+  if (fromGate(graph, from)) return false;
   const said = says[from]?.fields.find(({ field }) => field === only);
+  // A node can declare a field called `ok` of its own, which it then reports.
+  if (only === "ok") return said === undefined;
   return said?.values !== undefined && said.open !== true;
 };
 
@@ -97,12 +120,13 @@ const undecided = (
   graph: CompiledGraph,
   says: ReturnType<typeof nodeSays>,
   tally: WalkTally,
+  eager: ReadonlySet<string>,
   edge: CompiledEdge,
 ): boolean => {
   if (edge.condition === undefined) return false;
   if (collectPaths(edge.condition).length === 0) return false;
   const fields = ownFields(edge);
-  if (fields === null) return true;
+  if (fields === null || eager.has(edge.from)) return true;
   const went = tally.went.get(linkOf(edge));
   return (
     went !== undefined &&
@@ -112,19 +136,65 @@ const undecided = (
 };
 
 /**
- * Joins a loop can feed. A join remembers its inputs between rounds, so it may
- * fill only across rounds a walk cuts or repeats. Nothing else remembers: every
- * other node goes where its own latest output says.
+ * Nodes that can run more than once on a path: what a loop edge reaches, and
+ * what has more than one edge in.
  */
-const joinsAfterLoops = (graph: CompiledGraph, tally: WalkTally): string[] => {
-  const entered = graph.edges
+const repeated = (graph: CompiledGraph, tally: WalkTally): string[] => [
+  ...graph.edges
     .filter(
       edge => edge.maxRounds !== undefined && tally.entered.has(linkOf(edge)),
     )
-    .map(({ to }) => to);
-  return [...behind(graph, entered)].filter(
+    .map(({ to }) => to),
+  ...[...graph.nodes]
+    .filter(
+      ([, { node, incoming }]) =>
+        node.type !== "control.join" &&
+        incoming.filter(({ maxRounds }) => maxRounds === undefined).length > 1,
+    )
+    .map(([id]) => id),
+];
+
+/**
+ * Joins behind a node that can run more than once. They can fill across rounds
+ * a walk cuts or repeats, or when a later run overtakes a slower branch, an
+ * order a walk doesn't try.
+ */
+const joinsAfterRepeats = (graph: CompiledGraph, tally: WalkTally): string[] =>
+  [...behind(graph, repeated(graph, tally))].filter(
     id => graph.nodes.get(id)?.node.type === "control.join",
   );
+
+const passesThrough = (graph: CompiledGraph, id: string): boolean => {
+  const type = graph.nodes.get(id)?.node.type;
+  return type === "control.router" || type === "control.split";
+};
+
+/**
+ * The nodes whose output comes from a join that fires before all its inputs are
+ * in, directly or through routers and splits. Whether it fires doesn't depend
+ * on what finished first, but what it reports does, and a walk tries one
+ * order.
+ */
+const fedByEagerJoins = (graph: CompiledGraph): Set<string> => {
+  const fed = new Set<string>();
+  const queue = [...graph.nodes]
+    .filter(
+      ([, { node }]) =>
+        node.type === "control.join" && (node.mode ?? "all") !== "all",
+    )
+    .map(([id]) => id);
+  while (queue.length > 0) {
+    const id = queue.pop();
+    if (id !== undefined && !fed.has(id)) {
+      fed.add(id);
+      queue.push(
+        ...(graph.nodes.get(id)?.outgoing ?? [])
+          .map(({ to }) => to)
+          .filter(to => passesThrough(graph, to)),
+      );
+    }
+  }
+  return fed;
 };
 
 /**
@@ -136,18 +206,26 @@ const unproved = (graph: CompiledGraph, tally: WalkTally): Set<string> => {
   const owned = [...graph.nodes]
     .filter(([, { node }]) => node.parent !== undefined)
     .map(([id]) => id);
+  const eager = fedByEagerJoins(graph);
   const sources = graph.edges
-    .filter(edge => undecided(graph, says, tally, edge))
+    .filter(edge => undecided(graph, says, tally, eager, edge))
     .map(({ from }) => from);
   return behind(graph, [
     ...owned,
     ...sources,
     ...tally.undecided,
-    ...joinsAfterLoops(graph, tally),
+    ...joinsAfterRepeats(graph, tally),
   ]);
 };
 
-/** `walk.never-runs` and `walk.only-rounds`, for a walk that tried every way. */
+/** Whether what comes after a node holds anything unproved: a way out may be. */
+const anyBehind = (
+  graph: CompiledGraph,
+  from: string,
+  hidden: ReadonlySet<string>,
+): boolean => [...behind(graph, [from])].some(id => hidden.has(id));
+
+/** `walk.never-runs` and `walk.only-rounds`, for a walk that didn't stop early. */
 export const walkFindings = (
   graph: CompiledGraph,
   tally: WalkTally,
@@ -156,11 +234,10 @@ export const walkFindings = (
   const neverRuns = [...graph.nodes.keys()]
     .filter(id => !tally.ran.has(id) && !hidden.has(id))
     .map(id =>
-      warning(
-        "walk.never-runs",
-        `\`${id}\` never runs: no way through this workflow reaches it`,
-        ["nodes", id],
-      ),
+      warning("walk.never-runs", `no way the walk tried reaches \`${id}\``, [
+        "nodes",
+        id,
+      ]),
     );
   // The compiler already said this of a loop with no condition at all.
   const said = new Set(
@@ -172,15 +249,17 @@ export const walkFindings = (
     .filter(
       edge =>
         edge.maxRounds !== undefined &&
+        // Off a cycle, another loop decides how often its source runs.
+        behind(graph, [edge.to]).has(edge.from) &&
         tally.entered.has(linkOf(edge)) &&
         !tally.left.has(linkOf(edge)) &&
-        !hidden.has(edge.from) &&
+        !anyBehind(graph, edge.from, hidden) &&
         !said.has(edge.source),
     )
     .map(edge =>
       warning(
         "walk.only-rounds",
-        `every way through the loop \`${linkOf(edge)}\` ends with it running out of rounds`,
+        `every way the walk tried through the loop \`${linkOf(edge)}\` ran out of rounds`,
         ["edges", edge.source],
       ),
     );

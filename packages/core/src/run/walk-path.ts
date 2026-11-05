@@ -6,20 +6,18 @@
  */
 
 import { evaluate, truthy } from "../expr/evaluate.ts";
-import { collectPaths, type Expr, parseExpr } from "../expr/parse.ts";
 import type { CompiledGraph } from "../graph/types.ts";
 import type { HumanChannel } from "../runtime/types.ts";
 import { LOOP_CHOICES } from "./escalation.ts";
 import { runScope } from "./scope.ts";
 import type {
-  Inputs,
   NodeExecutor,
   NodeExecutors,
   NodeOutput,
   RunEvent,
 } from "./types.ts";
-import { linkOf, type WalkTally } from "./walk-findings.ts";
-import type { Outcome } from "./walk-outcomes.ts";
+import { linkOf } from "./walk-findings.ts";
+import type { WalkPlan } from "./walk-plan.ts";
 
 /**
  * Only a loop's first two rounds branch, and later ones repeat the second. What
@@ -41,23 +39,6 @@ const CLOCK_EVERY = 64;
 
 /** One choice on a path: which of its `count` ways it took. */
 export type Decision = { key: string; index: number; count: number };
-
-/** What a walk shares between its paths. */
-export type WalkPlan = {
-  /** The graph as walked: no `watch:`, and `maxRounds` cut to what branches. */
-  graph: CompiledGraph;
-  inputs: Inputs;
-  outcomes: ReadonlyMap<string, readonly Outcome[]>;
-  /** Each watched node's condition: what a wait ends on. */
-  untils: ReadonlyMap<string, Expr>;
-  /** The edges whose condition reads something: only those can go one way. */
-  reading: ReadonlySet<string>;
-  /** When the walk runs out of time, by `performance.now()`. */
-  deadline: number;
-  tally: WalkTally;
-  /** Node id, then the history of first rounds its second round branches for. */
-  secondRounds: Map<string, string>;
-};
 
 /** The choices of one path: the ones it was given, then the first way on. */
 const createChoices = (given: readonly Decision[]) => {
@@ -111,16 +92,6 @@ const scriptedHuman = (
     },
   };
 };
-
-/** Each watched node's condition, parsed. */
-export const untilsOf = (graph: CompiledGraph): ReadonlyMap<string, Expr> =>
-  new Map(
-    [...graph.nodes].flatMap(([id, { node }]) => {
-      const until = "watch" in node ? node.watch?.until : undefined;
-      const parsed = until === undefined ? null : parseExpr(until);
-      return parsed?.ok === true ? [[id, parsed.expr] as const] : [];
-    }),
-  );
 
 const nodeKey = (id: string, round: number): string =>
   `node:${id}:${String(round)}`;
@@ -191,17 +162,6 @@ const standIn =
     );
   };
 
-/** The edges whose condition reads something. */
-export const readers = (graph: CompiledGraph): Set<string> =>
-  new Set(
-    graph.edges
-      .filter(
-        ({ condition }) =>
-          condition !== undefined && collectPaths(condition).length > 0,
-      )
-      .map(edge => linkOf(edge)),
-  );
-
 const executorsFor = (
   graph: CompiledGraph,
   executor: NodeExecutor,
@@ -222,7 +182,10 @@ export const createPath = (plan: WalkPlan, given: readonly Decision[]) => {
   let overran = false;
   let stop = nothingYet;
 
-  /** One path can multiply activations, so the clock can't wait for its end. */
+  /**
+   * One path can multiply activations, and each finish can cost as much as the
+   * graph, so the clock can't wait for its end.
+   */
   const checkClock = (): void => {
     activations += 1;
     if (activations % CLOCK_EVERY === 0 && performance.now() > plan.deadline) {
@@ -256,6 +219,7 @@ export const createPath = (plan: WalkPlan, given: readonly Decision[]) => {
     } else if (event.type === "node.finished") {
       outputs[event.id] = event.output;
       noteConditions(event.id, event.ok, event.output);
+      checkClock();
     } else if (event.type === "edge.taken") {
       taken.add(linkOf(event));
     } else if (event.type === "loop.exhausted") {
@@ -285,9 +249,12 @@ export const createPath = (plan: WalkPlan, given: readonly Decision[]) => {
     overran: (): boolean => overran,
     /** Notes which loops this path went through, now that it's ended. */
     finish: (succeeded: boolean): void => {
-      for (const link of taken) {
-        tally.entered.add(link);
-        if (succeeded && !exhausted.has(link)) tally.left.add(link);
+      for (const link of taken) tally.entered.add(link);
+      if (!succeeded) return;
+      // It went through the loop's nodes and out, without this edge running out.
+      for (const [link, group] of plan.loopGroups) {
+        const through = [...group].some(id => started.has(id));
+        if (through && !exhausted.has(link)) tally.left.add(link);
       }
     },
   };

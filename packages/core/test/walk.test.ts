@@ -18,6 +18,7 @@ import {
   walkWorkflow,
   type WalkResult,
 } from "../src/index.ts";
+import { explore } from "./fixtures/walk-fuzz.ts";
 
 const examples = path.resolve(import.meta.dirname, "../../../examples");
 
@@ -340,12 +341,309 @@ describe("what a walk won't claim", () => {
         "{ from: ci, to: go, when: \"json.state == 'done'\" }",
       ],
     ],
+    [
+      "a join behind a node that runs twice with no loop",
+      [
+        "g: { type: human.gate, question: q, options: [a, b] }",
+        `xb: ${CLAUDE}`,
+        "s: { type: control.split }",
+        `b: ${CLAUDE}`,
+        `c: ${CLAUDE}`,
+        `d: ${CLAUDE}`,
+        `e: ${CLAUDE}`,
+        `h: ${CLAUDE}`,
+        "j: { type: control.join }",
+        `z: ${CLAUDE}`,
+      ],
+      [
+        "{ from: g, to: xb, when: \"choice == 'b'\" }",
+        "g -> s",
+        '{ from: xb, to: j, when: "true" }',
+        "s -> b, c",
+        "b -> d",
+        "c -> d",
+        "d -> e",
+        '{ from: d, to: h, when: "!ok" }',
+        '{ from: e, to: j, when: "true" }',
+        '{ from: h, to: j, when: "true" }',
+        '{ from: j, to: z, when: "len(statuses) == 3" }',
+      ],
+    ],
+    [
+      "a gate's answer read through a router",
+      [
+        "g: { type: human.gate, question: q, options: [a, b] }",
+        `r: ${ROUTER}`,
+        `n: ${CLAUDE}`,
+        `h: ${CLAUDE}`,
+      ],
+      [
+        '{ from: g, to: r, when: "true" }',
+        "{ from: r, to: n, when: \"choice == 'a' || choice == 'b'\" }",
+        "{ from: r, to: h, when: \"choice != 'a' && choice != 'b'\" }",
+      ],
+    ],
+    [
+      "a field a node declares called ok",
+      [
+        "a: { type: claude.worker, prompt: x, output: { schema: { ok: boolean } } }",
+        `b: ${CLAUDE}`,
+      ],
+      ['{ from: a, to: a, maxRounds: 2, when: "ok" }', "a -> b"],
+    ],
+    [
+      "a wait an input can end",
+      [
+        "w: { type: tool.shell, command: 'true', allow: ['true'], output: { format: json, schema: { state: [go, pending] } }, watch: { every: 30s, until: \"inputs.env == 'prod' || json.state == 'go'\", timeout: 1h } }",
+        `r: ${ROUTER}`,
+        `h: ${CLAUDE}`,
+      ],
+      ["w -> r", "{ from: r, to: h, when: \"json.state == 'pending'\" }"],
+    ],
   ])("makes no claim about %s", async (_, nodes, edges) => {
     const graph = graphOf(nodes, edges, [
       "inputs:",
       "  env: { type: string, default: dev }",
     ]);
     expect(found(await walkWorkflow(graph))).toEqual([]);
+  });
+
+  it.each([
+    [
+      "a loop that a first round can leave",
+      [
+        `plan: ${CLAUDE}`,
+        `impl: ${CLAUDE}`,
+        "review: { type: claude.worker, prompt: x, output: { schema: { verdict: [approved, rework, replan] } } }",
+        `ship: ${CLAUDE}`,
+      ],
+      [
+        "plan -> impl",
+        "impl -> review",
+        "{ from: review, to: ship, when: \"verdict == 'approved'\" }",
+        "{ from: review, to: impl, maxRounds: 3, when: \"verdict == 'rework'\" }",
+        "{ from: review, to: plan, maxRounds: 2, when: \"verdict == 'replan'\" }",
+      ],
+    ],
+    [
+      "a loop whose way out goes through a watch that may not end",
+      [
+        `impl: ${CLAUDE}`,
+        `review: ${CLAUDE}`,
+        "ci: { type: tool.shell, command: 'true', allow: ['true'], output: { format: json, schema: { head: string } }, watch: { every: 30s, until: 'json.head == inputs.env', timeout: 1h } }",
+      ],
+      [
+        "impl -> review",
+        "{ from: review, to: ci, when: \"status != 'changes_requested'\" }",
+        "{ from: review, to: impl, maxRounds: 3, when: \"status == 'changes_requested'\" }",
+      ],
+    ],
+    [
+      "what an any join reports, which depends on what finished first",
+      [
+        "s: { type: control.split }",
+        "a: { type: claude.worker, prompt: x, output: { schema: { status: [pass] } } }",
+        "b: { type: claude.worker, prompt: x, output: { schema: { status: [done] } } }",
+        "j: { type: control.join, mode: any }",
+        `x: ${CLAUDE}`,
+      ],
+      [
+        "s -> a, b",
+        '{ from: a, to: j, when: "true" }',
+        '{ from: b, to: j, when: "true" }',
+        "{ from: j, to: x, when: \"any(statuses, 'done')\" }",
+      ],
+    ],
+    [
+      "a failed node that still carries a value",
+      [
+        "a: { type: claude.worker, prompt: x, output: { schema: { verdict: [keep, drop] } } }",
+        `x: ${ROUTER}`,
+        `y: ${ROUTER}`,
+        "j: { type: control.join, mode: n, n: 2 }",
+        `t: ${CLAUDE}`,
+      ],
+      [
+        '{ from: a, to: x, when: "!ok" }',
+        "{ from: a, to: y, when: \"verdict == 'keep'\" }",
+        "x, y -> j",
+        "j -> t",
+      ],
+    ],
+    [
+      "a gate someone stops, which has no choice",
+      [
+        "g: { type: human.gate, question: q, options: [a, b] }",
+        `h: ${CLAUDE}`,
+        `o: ${CLAUDE}`,
+      ],
+      [
+        "{ from: g, to: o, when: \"choice == 'a'\" }",
+        "{ from: g, to: h, when: \"choice != 'a' && choice != 'b'\" }",
+      ],
+    ],
+    [
+      "a null a list allows",
+      [
+        "a: { type: claude.worker, prompt: x, output: { schema: { verdict: [yes, ~] } } }",
+        `h: ${CLAUDE}`,
+      ],
+      ['{ from: a, to: h, when: "verdict == null" }'],
+    ],
+    [
+      "a watch no outcome tried could end",
+      [
+        "ci: { type: tool.shell, command: 'true', allow: ['true'], output: { format: json, schema: { head: string } }, watch: { every: 30s, until: 'json.head == inputs.env', timeout: 1h } }",
+        `go: ${CLAUDE}`,
+      ],
+      ['{ from: ci, to: go, when: "ok" }'],
+    ],
+    [
+      "values cut at the 32 ways",
+      [
+        "a: { type: claude.worker, prompt: x, output: { schema: { p: [a, b, c], q: [a, b, c], r: [a, b, c], s: [a, b, c] } } }",
+        `t: ${CLAUDE}`,
+        `u: ${CLAUDE}`,
+      ],
+      [
+        "{ from: a, to: t, when: \"p == 'c'\" }",
+        "{ from: a, to: u, when: \"q == 'a' && r == 'a' && s == 'a'\" }",
+      ],
+    ],
+    [
+      "a status that depends on what a call called",
+      ["c: { type: workflow.call, workflow: other }", `t: ${CLAUDE}`],
+      ["{ from: c, to: t, when: \"status == 'one' && status == 'two'\" }"],
+    ],
+  ])("makes no claim about %s", async (_, nodes, edges) => {
+    const graph = graphOf(nodes, edges, [
+      "limits: { budgetUsd: 1 }",
+      "inputs:",
+      "  env: { type: string, default: dev }",
+    ]);
+    expect(found(await walkWorkflow(graph))).toEqual([]);
+  });
+
+  it.each([
+    [
+      "a value a loop brings back to a router",
+      "out",
+      [
+        "a: { type: tool.shell, command: 'true', allow: ['true'], output: { format: json } }",
+        `r: ${ROUTER}`,
+        "b: { type: tool.shell, command: 'true', allow: ['true'], output: { format: json } }",
+        `out: ${CLAUDE}`,
+      ],
+      [
+        "a -> r",
+        "{ from: r, to: out, when: \"json.x == 'quit'\" }",
+        "{ from: r, to: b, when: \"json.x != 'quit'\" }",
+        "{ from: b, to: r, maxRounds: 2 }",
+      ],
+    ],
+    [
+      "what a watch waits for, which no edge reads",
+      "go",
+      [
+        "w: { type: tool.shell, command: 'true', allow: ['true'], output: { format: json }, watch: { every: 30s, until: \"json.s == 'ok'\", timeout: 1h } }",
+        `go: ${CLAUDE}`,
+      ],
+      ["w -> go"],
+    ],
+    [
+      "a value a call's status can have beyond its list",
+      "t",
+      ["c: { type: workflow.call, workflow: other }", `t: ${CLAUDE}`],
+      ["{ from: c, to: t, when: \"status == 'custom'\" }"],
+    ],
+    [
+      "what a join is asked of its inputs",
+      "x",
+      [
+        "s: { type: control.split }",
+        "a: { type: claude.worker, prompt: x, output: { schema: { status: [pass] } } }",
+        `b: ${CLAUDE}`,
+        "j: { type: control.join }",
+        `x: ${CLAUDE}`,
+      ],
+      [
+        "s -> a, b",
+        "a, b -> j",
+        "{ from: j, to: x, when: \"any(statuses, 'done')\" }",
+      ],
+    ],
+    [
+      "a session that ends with no report",
+      "x",
+      [
+        "a: { type: claude.worker, prompt: x, output: { schema: { verdict: [yes, no] } } }",
+        `x: ${CLAUDE}`,
+      ],
+      [
+        "{ from: a, to: x, when: \"!ok && verdict != 'yes' && verdict != 'no'\" }",
+      ],
+    ],
+    [
+      "a tool whose JSON says it failed, on exit 0",
+      "x",
+      [
+        "a: { type: tool.shell, command: 'true', allow: ['true'], output: { format: json, schema: { state: [ready, pending] } } }",
+        `x: ${CLAUDE}`,
+      ],
+      ['{ from: a, to: x, when: "!ok && exitCode == 0" }'],
+    ],
+  ])("tries %s", async (_, target, nodes, edges) => {
+    const result = await walkWorkflow(graphOf(nodes, edges));
+    expect(ran(result)(target)).toBe(true);
+  });
+
+  it("makes no claim about a loop edge off a cycle, whose source another loop runs again", async () => {
+    const graph = graphOf(
+      [
+        `n0: ${CLAUDE}`,
+        "n1: { type: human.gate, question: q, options: [a, b] }",
+        `n2: ${CLAUDE}`,
+        `n3: ${CLAUDE}`,
+        `n4: ${CLAUDE}`,
+      ],
+      [
+        '{ from: n0, to: n1, when: "!ok" }',
+        "{ from: n0, to: n2, when: \"status == 'fail'\" }",
+        "{ from: n1, to: n3, when: \"choice != 'a'\" }",
+        "{ from: n1, to: n4, when: \"choice == 'b'\" }",
+        '{ from: n2, to: n1, maxRounds: 3, when: "ok" }',
+        "{ from: n2, to: n2, maxRounds: 2, when: \"status != 'fail'\" }",
+      ],
+    );
+    // `n2 -> n1` is on no cycle: how often it's crossed is up to `n2 -> n2`.
+    expect(found(await walkWorkflow(graph))).not.toContain(
+      "walk.only-rounds edges.4",
+    );
+  });
+
+  it("judges layers of routers that feed each other in a moment", async () => {
+    const layers = 60;
+    const routers = Array.from({ length: layers }, (_, at) => [
+      `x${String(at)}: ${ROUTER}`,
+      `y${String(at)}: ${ROUTER}`,
+    ]).flat();
+    const links = Array.from({ length: layers - 1 }, (_, at) =>
+      ["x", "y"].map(
+        from =>
+          `${from}${String(at)} -> x${String(at + 1)}, y${String(at + 1)}`,
+      ),
+    ).flat();
+    const graph = graphOf(
+      [`a: ${CLAUDE}`, ...routers, `z: ${CLAUDE}`],
+      [
+        "a -> x0, y0",
+        ...links,
+        `{ from: x${String(layers - 1)}, to: z, when: "status == 'pass'" }`,
+      ],
+    );
+    // Each router reads through to every way back to `a`: 2 to the 60th, if
+    // they weren't shared.
+    expect((await walkWorkflow(graph)).complete).toBe(true);
   });
 
   it("stays within its time even inside one path", async () => {
@@ -471,11 +769,67 @@ describe("how a walk goes", () => {
     );
     const result = await walkWorkflow(graph);
     const said = result.endings.flatMap(({ choices }) => choices);
+    // A wait can't run out on a look its condition holds for.
+    expect(said).not.toContain("ci: timed out, json.state = done");
     // It only says `pending` by running out of time, and that's a failure.
     expect(said).toContain("ci: timed out, json.state = pending");
     expect(
       said.filter(choice => choice === "ci: json.state = pending"),
     ).toEqual([]);
+  });
+
+  it("can't end a wait by running out on a look its condition holds for", async () => {
+    const graph = graphOf(
+      [WATCHED, `after: ${CLAUDE}`],
+      ["{ from: ci, to: after, when: \"!ok && json.state == 'done'\" }"],
+    );
+    expect(ran(await walkWorkflow(graph))("after")).toBe(false);
+  });
+
+  it("asks a loop edge into a router what the router reads", async () => {
+    const graph = graphOf(
+      [
+        "a: { type: claude.worker, prompt: x, output: { schema: { status: [pass] } } }",
+        `r: ${ROUTER}`,
+        `b: ${CLAUDE}`,
+        `out: ${CLAUDE}`,
+      ],
+      [
+        "a -> r",
+        "{ from: r, to: out, when: \"status == 'done'\" }",
+        "{ from: r, to: b, when: \"status != 'done'\" }",
+        "{ from: b, to: r, maxRounds: 2 }",
+      ],
+    );
+    // Only `b` can say `done`, and only a loop edge carries it to the router.
+    expect(ran(await walkWorkflow(graph))("out")).toBe(true);
+  });
+
+  it("makes no claim about a join a loop's next round can fill early", async () => {
+    const graph = graphOf(
+      [
+        `a: ${SHELL}`,
+        `b: ${CLAUDE}`,
+        `c: ${CLAUDE}`,
+        "j: { type: control.join, mode: n, n: 2 }",
+      ],
+      [
+        '{ from: a, to: b, when: "exitCode == 0" }',
+        "{ from: b, to: c, when: \"status == 'done'\" }",
+        '{ from: a, to: j, when: "exitCode != 0" }',
+        "{ from: c, to: j }",
+        "{ from: b, to: a, maxRounds: 3, when: \"status == 'done'\" }",
+      ],
+    );
+    const result = await walkWorkflow(graph);
+    // In the order a walk tries, `c` finishes before `a` comes round again.
+    expect(ran(result)("j")).toBe(false);
+    expect(found(result)).toEqual([]);
+    // If it finishes after, the join has both.
+    const orders = await Promise.all(
+      [0, 1, 2, 3].map(order => explore(graph, order, 1500)),
+    );
+    expect(orders.some(({ ran: seen }) => seen.has("j"))).toBe(true);
   });
 
   it("makes a condition go both ways from what it asks", async () => {

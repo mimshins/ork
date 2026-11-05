@@ -76,6 +76,24 @@ describe("nodeSays", () => {
     ).toHaveLength(1);
   });
 
+  it("leaves a list open if a value on it can't be compared", () => {
+    const allowsNull = nodeSays(
+      {
+        a: node({
+          type: "claude.worker",
+          output: { schema: { verdict: ["yes", null] } },
+        }),
+      },
+      [],
+    );
+    expect(allowsNull["a"]?.fields).toContainEqual({
+      field: "verdict",
+      kind: "values",
+      values: ["yes"],
+      open: true,
+    });
+  });
+
   it("reads a tool's JSON through its declaration", () => {
     expect(says["tool"]).toMatchObject({ canFail: true, canDeclare: true });
     expect(says["tool"]?.fields).toContainEqual({
@@ -109,6 +127,24 @@ describe("nodeSays", () => {
     expect(says["many"]?.fields).toEqual([]);
   });
 
+  it("reads joins that feed each other in a moment, not once per way", () => {
+    const stages = Array.from({ length: 40 }, (_, at) => String(at));
+    const nodes = Object.fromEntries(
+      stages.flatMap(at => [
+        [`j${at}`, node({ type: "control.join" })],
+        [`a${at}`, node({ type: "control.router" })],
+        [`b${at}`, node({ type: "control.router" })],
+      ]),
+    );
+    const links = stages.flatMap((at, index) => [
+      { from: `j${at}`, to: `a${at}` },
+      { from: `j${at}`, to: `b${at}` },
+      { from: `a${at}`, to: `j${String(index + 1)}` },
+      { from: `b${at}`, to: `j${String(index + 1)}` },
+    ]);
+    expect(Object.keys(nodeSays(nodes, links))).toHaveLength(120);
+  }, 2000);
+
   it("counts a loop back as one of them, as it brings its own output", () => {
     expect(says["looped"]?.fields).toEqual([]);
   });
@@ -139,6 +175,20 @@ describe("nodeSays", () => {
       kind: "statuses",
       values: [...REPORT_STATUSES],
     });
+  });
+
+  it("says the same whichever node it's asked about first", () => {
+    const links = [
+      { from: "a", to: "j" },
+      { from: "r", to: "j" },
+      { from: "j", to: "r", maxRounds: 2 },
+    ];
+    const a = node({ type: "claude.worker", prompt: "x" });
+    const j = node({ type: "control.join" });
+    const r = node({ type: "control.router" });
+    const fieldsOfR = (nodes: Record<string, Node>) =>
+      nodeSays(nodes, links)["r"]?.fields.map(({ field }) => field);
+    expect(fieldsOfR({ a, j, r })).toEqual(fieldsOfR({ a, r, j }));
   });
 
   it("gives up on a loop of pass-throughs", () => {

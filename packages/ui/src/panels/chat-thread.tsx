@@ -7,7 +7,6 @@
 
 import { memo, useEffect, useLayoutEffect, useRef } from "react";
 
-import { CodeText } from "../components/code-text.tsx";
 import type { ThreadItem } from "./chats-model.ts";
 import { timeOf } from "./logs-model.ts";
 
@@ -23,9 +22,7 @@ const speaker = ({ kind, from }: ThreadItem, node: string): string => {
 const Item = memo(({ item, node }: { item: ThreadItem; node: string }) =>
   item.kind === "activity" ? (
     <li className={styles["activity"]}>
-      <span className={styles["activityText"]}>
-        <CodeText text={item.text} />
-      </span>
+      <span className={styles["activityText"]}>{item.text}</span>
       <span className={styles["time"]}>{timeOf(item.at)}</span>
     </li>
   ) : (

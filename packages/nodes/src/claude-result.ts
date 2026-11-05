@@ -51,6 +51,7 @@ export const resultOf = (
         summary: problem,
         artifacts: report.artifacts,
         usage,
+        ...(report.branch === undefined ? {} : { branch: report.branch }),
       },
       usage,
       error: problem,

@@ -128,7 +128,9 @@ describe("ork validate's walk", () => {
   it("reports what it found as a warning, with its line", () => {
     const { status, stdout } = validateText(STRANDED);
     expect(status).toBe(0);
-    expect(stdout).toMatch(/w\.ork\.yaml:5:\d+ warning .*`b` never runs/u);
+    expect(stdout).toMatch(
+      /w\.ork\.yaml:5:\d+ warning no way the walk tried reaches `b`/u,
+    );
   });
 
   it("says when it stopped, and claims nothing", () => {
