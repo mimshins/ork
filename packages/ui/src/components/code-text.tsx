@@ -8,12 +8,34 @@
 
 export type CodePart = { code: boolean; text: string };
 
-/** A text's plain and code runs, in order. A lone backtick stays as it is. */
-export const codeParts = (text: string): CodePart[] =>
-  text
-    .split(/`([^`\n]+)`/u)
-    .map((part, index) => ({ code: index % 2 === 1, text: part }))
-    .filter(part => part.text !== "");
+/** The same number of backticks either side, as Markdown pairs them. */
+const CODE_RUN = /(?<!`)(`+)(?!`)(.+?)(?<!`)\1(?!`)/gu;
+
+/** What's in a code run: a space either side is what lets it hold a backtick. */
+const codeInside = (text: string): string =>
+  text.startsWith(" ") && text.endsWith(" ") ? text.slice(1, -1) : text;
+
+/**
+ * A text's plain and code runs, in order. A backtick with no partner stays as
+ * it is, and so does a pair with nothing in it.
+ */
+export const codeParts = (text: string): CodePart[] => {
+  const parts: CodePart[] = [];
+  let plain = "";
+  let at = 0;
+  for (const match of text.matchAll(CODE_RUN)) {
+    const inside = match[2] ?? "";
+    if (inside.trim() !== "") {
+      plain += text.slice(at, match.index);
+      if (plain !== "") parts.push({ code: false, text: plain });
+      plain = "";
+      parts.push({ code: true, text: codeInside(inside) });
+      at = match.index + match[0].length;
+    }
+  }
+  plain += text.slice(at);
+  return plain === "" ? parts : [...parts, { code: false, text: plain }];
+};
 
 /** The same words, for where markup can't go. */
 export const plainWords = (text: string): string =>

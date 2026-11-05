@@ -25,18 +25,18 @@ describe("declaredProblem", () => {
         { state: ["OPEN", "CLOSED", "MERGED"] },
         { state: "DRAFT" },
       ),
-    ).toBe('state is "DRAFT", expected OPEN, CLOSED or MERGED');
+    ).toBe("state is `DRAFT`, expected `OPEN`, `CLOSED` or `MERGED`");
     expect(declaredProblem({ n: "integer" }, { n: 1.5 })).toBe(
-      "n is 1.5, expected a whole number",
+      "n is `1.5`, expected a whole number",
     );
     expect(declaredProblem({ n: "number" }, { n: "1" })).toBe(
-      'n is "1", expected a number',
+      "n is `1`, expected a number",
     );
   });
 
   it("reports a missing field, and every problem", () => {
     expect(declaredProblem({ a: ["x"], b: "string" }, {})).toBe(
-      "a is missing, expected x; b is missing, expected text",
+      "a is missing, expected `x`; b is missing, expected text",
     );
   });
 

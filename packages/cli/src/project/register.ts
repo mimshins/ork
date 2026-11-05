@@ -76,7 +76,7 @@ export const registerProject = (
     if (!ID.test(options.id)) {
       return {
         ok: false,
-        error: `--id "${options.id}" must be lowercase letters, digits, ".", "_" or "-"`,
+        error: `--id \`${options.id}\` must be lowercase letters, digits, ".", "_" or "-"`,
       };
     }
     if (taken.includes(options.id)) {

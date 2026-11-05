@@ -18,6 +18,8 @@ export type Outcome = {
   output: NodeOutput;
   /** How it ended, for the list of choices that led to an ending. */
   said: string;
+  /** A wait that ran out, which keeps its last look. */
+  timedOut?: true;
 };
 
 /** Enough to try every pair of two fields of five values, and a few more. */
@@ -161,6 +163,23 @@ const outcomesOfNode = (
   return [...successes, ...failures];
 };
 
+/** A watched node can also run out of time on any look it could make. */
+const withWaits = (node: Node, outcomes: readonly Outcome[]): Outcome[] =>
+  "watch" in node && node.watch !== undefined
+    ? [
+        ...outcomes,
+        ...outcomes.filter(({ ok }) => ok).map(look => timedOutFrom(look)),
+      ]
+    : [...outcomes];
+
+/** A wait that ran out: its last look's values, as a failure. */
+const timedOutFrom = ({ output, said }: Outcome): Outcome => ({
+  ok: false,
+  timedOut: true,
+  output: { ...output, status: "fail", summary: "", timedOut: true },
+  said: said === "succeeded" ? "timed out" : `timed out, ${said}`,
+});
+
 /** The ways each node can end, the ones a run would most hope for first. */
 export const outcomesOf = (
   graph: CompiledGraph,
@@ -173,7 +192,7 @@ export const outcomesOf = (
   const entries = [...graph.nodes].map(([id, { node }]) => ({
     id,
     fields: fieldsOf(node, says[id], reads.get(id)),
-    outcomes: outcomesOfNode(node, says[id], reads.get(id)),
+    outcomes: withWaits(node, outcomesOfNode(node, says[id], reads.get(id))),
   }));
   return {
     outcomes: new Map(entries.map(({ id, outcomes }) => [id, outcomes])),

@@ -38,11 +38,13 @@ with parsed conditions), the entry nodes, and the declared message channels.
   compares a field with `==`, `!=`, or `any`, `all`, `count` or `contains` on a
   join's `statuses`, is checked against
   [what its source says](../packages/core/src/graph/says.ts): a Claude `status`,
-  a gate's `choice`, or an `output.schema` field that lists its values, where a
-  node's own `status` wins over the built-in one. A router or split follows to
-  its single input. A `workflow.call`'s status isn't checked, since it depends
-  on what it calls, nor is a join's when an input has no list. A `watch.until`
-  has its own check, `watch.value`.
+  a gate's `choice`, or an `output.schema` field that lists its values. A node's
+  own `status` list narrows the built-in one, and `fail` always stays, as a
+  session with no good report has it (`output.status`: it can't add others). A
+  router or split follows to its single input, and a loop edge into one counts
+  as another input, so it isn't checked. A `workflow.call`'s status isn't
+  checked, since it depends on what it calls, nor is a join's when an input has
+  no list. A `watch.until` has its own check, `watch.value`.
 - **Loops:** a first-match router's plain edge is its fallback, so
   `loop.beside-edge` leaves it alone. `loop.uncapped` counts the leaders and
   workers in the loop and those they own, times its rounds; a leader can spawn
@@ -70,6 +72,7 @@ warnings do not. Schema problems come first, from
 | `edge.max-rounds-unused` | warning  | `maxRounds` on an edge outside any cycle                                   |
 | `graph.unbounded-cycle`  | error    | a cycle has no `maxRounds` edge                                            |
 | `when.value`             | error    | a condition compares a field with a value it can't have (see below)        |
+| `output.status`          | error    | a Claude node declares a `status` a session can't report                   |
 | `when.never`             | warning  | a condition that reads nothing and is false                                |
 | `loop.no-condition`      | warning  | no edge of a loop has a `when:`, so only its rounds can end it             |
 | `loop.beside-edge`       | warning  | a plain edge from the node a loop edge leaves, which fires every round     |

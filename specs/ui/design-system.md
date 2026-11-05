@@ -227,8 +227,8 @@ Written for engineers, in the CLI's words:
   and copy mark one with backticks, and
   [`CodeText`](../../packages/ui/src/components/code-text.tsx) shows it as
   inline code, so `human.gate` reads apart from the sentence. A screen reader
-  hears the words without the marks. Button labels and a run's own name stay
-  plain.
+  hears the words without the marks. A problem's link names its node in code;
+  other button labels and a run's own name stay plain.
 - **Terse and exact:** "Paused — 2 nodes held", "build failed: exit 1", "3
   decisions waiting". No marketing, no exclamation marks, never "Oops".
 - **Every control has its CLI twin on hover:** the Pause button's tooltip says

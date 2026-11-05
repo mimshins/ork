@@ -14,6 +14,7 @@ import type { z } from "zod";
 
 import { AgentSchema } from "./agents.ts";
 import { formatEdge } from "./edges.ts";
+import { markValue } from "./marks.ts";
 import { NodeSchema, type NodeType } from "./nodes.ts";
 import { type Project, ProjectSchema, UserSettingsSchema } from "./project.ts";
 import { type TriggersFile, TriggersFileSchema } from "./triggers.ts";
@@ -85,12 +86,16 @@ const describeIssue = (
     return {
       message:
         value === undefined
-          ? `node needs a "type": one of ${NODE_TYPES.join(", ")}`
-          : `unknown node type ${JSON.stringify(value)}: expected one of ${NODE_TYPES.join(", ")}`,
+          ? `node needs a \`type\`: one of ${NODE_TYPES.map(type => markValue(type)).join(", ")}`
+          : `unknown node type ${markValue(typeof value === "string" ? value : (JSON.stringify(value) ?? ""))}: expected one of ${NODE_TYPES.map(type => markValue(type)).join(", ")}`,
       path,
     };
   }
-  return { message: issue.message, path };
+  // Zod quotes the values it names, where Ork's messages mark them.
+  return {
+    message: issue.message.replaceAll(/"([^"`\n]+)"/gu, "`$1`"),
+    path,
+  };
 };
 
 const withPosition = (diagnostic: Diagnostic, locate: Locate): Diagnostic => {

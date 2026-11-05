@@ -178,7 +178,7 @@ describe("ork run --node", () => {
 
     const tool = options({ nodeId: "merge" });
     await runNode(tool.value);
-    expect(tool.err).toEqual(["`merge` is a tool.gh, not a Claude node"]);
+    expect(tool.err).toEqual(["`merge` is a `tool.gh`, not a Claude node"]);
     expect([...missing.drivers, ...tool.drivers]).toEqual([]);
   });
 

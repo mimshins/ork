@@ -53,7 +53,7 @@ const fieldProblems = (id: string, node: Node, expr: Expr): Diagnostic[] => {
   return [...new Set(missing)].map(name =>
     error(
       "watch.field",
-      `${id} waits on json.${name}, which it never says: it declares ${Object.keys(declared).join(", ")}`,
+      `\`${id}\` waits on \`json.${name}\`, which it never says: it declares \`${Object.keys(declared).join("`, `")}\``,
       ["nodes", id, "watch", "until"],
     ),
   );
@@ -67,7 +67,7 @@ const valueProblems = (id: string, node: Node, when: string): Diagnostic[] => {
     return [
       error(
         "watch.until",
-        `${id} waits for itself to fail, but a failed look is tried again, and then ends the wait; say what a look reports instead`,
+        `\`${id}\` waits for itself to fail, but a failed look is tried again, and then ends the wait; say what a look reports instead`,
         path,
       ),
     ];

@@ -107,6 +107,15 @@ export const checkWorkflowText = (
   };
 };
 
+/** A finding, with its line and column if the text has it. */
+const located = (
+  finding: Diagnostic,
+  locate: Locate | undefined,
+): Diagnostic => {
+  const position = locate?.(finding.path) ?? null;
+  return position === null ? finding : { ...finding, ...position };
+};
+
 /**
  * Walks what passed the checks, and adds what it found to their diagnostics,
  * each with its line and column. With errors, there's nothing to walk.
@@ -117,10 +126,16 @@ export const walkChecks = async <Checks extends WalkableChecks>(
 ): Promise<Checks & { walk?: WalkResult }> => {
   if (checks.graph === null) return checks;
   const walk = await walkWorkflow(checks.graph, options);
-  const found = walk.findings.map(finding => {
-    const position = checks.locate?.(finding.path) ?? null;
-    return position === null ? finding : { ...finding, ...position };
-  });
+  const reported = new Set(
+    checks.diagnostics
+      .filter(({ code }) => code === "graph.unreachable")
+      .map(({ path }) => path.join(".")),
+  );
+  const fresh = walk.findings.filter(
+    ({ code, path }) =>
+      code !== "walk.never-runs" || !reported.has(path.join(".")),
+  );
+  const found = fresh.map(finding => located(finding, checks.locate));
   return {
     ...checks,
     diagnostics: [...checks.diagnostics, ...found],

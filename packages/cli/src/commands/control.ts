@@ -240,7 +240,7 @@ export const resume = defineCommand({
   },
   run: async ({ args, rawArgs }) => {
     if (args.driver !== undefined && !isDriver(args.driver)) {
-      failed(`--driver must be sdk or cli, got "${args.driver}"`);
+      failed(`--driver must be sdk or cli, got \`${args.driver}\``);
       return;
     }
     const store = openStore();

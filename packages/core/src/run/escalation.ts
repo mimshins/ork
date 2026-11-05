@@ -20,14 +20,14 @@ export const LOOP_CHOICES = {
 
 /** The question about a loop out of rounds; the recommended choice stops. */
 export const loopQuestion = (edge: CompiledEdge): OwnerQuestion => ({
-  question: `The loop \`${edge.from} -> ${edge.to}\` used all ${String(edge.maxRounds ?? 0)} of its rounds. What now?`,
+  question: `The loop ${edge.from} -> ${edge.to} used all ${String(edge.maxRounds ?? 0)} of its rounds. What now?`,
   options: [
     { id: LOOP_CHOICES.stop, description: "Stop the run" },
     { id: LOOP_CHOICES.again, description: "Allow one more round" },
     { id: LOOP_CHOICES.onward, description: "Go on along the other edges" },
   ],
   recommended: LOOP_CHOICES.stop,
-  context: `\`${edge.from}\` still wants another round${edge.when === undefined ? "" : ` (\`${edge.when}\`)`}.`,
+  context: `${edge.from} still wants another round${edge.when === undefined ? "" : ` (${edge.when.trim()})`}.`,
 });
 
 /**

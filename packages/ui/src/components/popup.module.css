@@ -130,6 +130,13 @@
   margin: var(--popup-separator-margin);
 }
 
+/* Code keeps to the tip's size, as it does to a sentence's anywhere. */
+.tip code {
+  --popup-tip-code-size: inherit;
+
+  font-size: var(--popup-tip-code-size);
+}
+
 .tipPositioner {
   --popup-tip-positioner-z-index: var(--layer-tooltip);
 

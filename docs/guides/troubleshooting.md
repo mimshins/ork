@@ -49,8 +49,8 @@ install the program (and sign in with its own login), or take the node out.
 your Claude plan refused a session. Wait until the time it gives, or raise the
 cap in `~/.ork/settings.yaml` or `.ork/project.yaml`, then `ork resume <run>`.
 
-**`missing required input "feature" (--input feature=…)`.** Pass every required
-input: `--input feature="…"`.
+**``missing required input `feature` (`--input feature=…`)``.** Pass every
+required input: `--input feature="…"`.
 
 **`ref.skill` or `ref.context` errors.** A skill or context path resolves to
 nothing. Paths are relative to the workflow file, start with `./` or `../`, and
@@ -61,7 +61,7 @@ Project skills are never listed: they load by themselves
 **A cycle without `maxRounds`.** Every loop needs a bound on one of its edges
 ([Writing workflows](./writing-workflows.md#loops)).
 
-**`"x" uses worktree isolation, which a run on its own does not set up`.**
+**`` `x` uses worktree isolation, which a run on its own does not set up ``.**
 `ork run --node` sets up no worktrees. Add `--in-place`, or run the whole
 workflow.
 

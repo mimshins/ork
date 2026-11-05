@@ -152,7 +152,7 @@ export const run = defineCommand({
   run: async ({ args, rawArgs }) => {
     if (args.driver !== undefined && !isDriver(args.driver)) {
       writeErr(
-        `--driver must be ${CLAUDE_DRIVERS.map(d => d.id).join(" or ")}, got "${args.driver}"`,
+        `--driver must be ${CLAUDE_DRIVERS.map(d => d.id).join(" or ")}, got \`${args.driver}\``,
       );
       process.exitCode = 1;
       return;

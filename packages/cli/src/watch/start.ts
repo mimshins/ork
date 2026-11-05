@@ -76,7 +76,7 @@ export const startTriggerRun = async (options: {
   if (unknown !== undefined) {
     return {
       ok: false,
-      error: `the check reported input "${unknown}", which ${trigger.run} doesn't declare`,
+      error: `the check reported input \`${unknown}\`, which ${trigger.run} doesn't declare`,
     };
   }
   const detached = await detachRun({

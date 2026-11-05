@@ -74,10 +74,10 @@ const write = (
   const files = filesOf(dir, name);
   const exists = existsSync(files.markdown);
   if (mode === "create" && exists) {
-    return { ok: false, error: `${name} already exists in ${dir}` };
+    return { ok: false, error: `\`${name}\` already exists in \`${dir}\`` };
   }
   if (mode === "update" && !exists) {
-    return { ok: false, error: `${name} is not in ${dir}` };
+    return { ok: false, error: `\`${name}\` is not in \`${dir}\`` };
   }
   const { markdown, sidecar } = serializeAgent(name, parsed.data);
   mkdirSync(dir, { recursive: true });
@@ -115,7 +115,7 @@ export const deleteAgent = (
   if (dir === null) return { ok: false, error: "no project to delete from" };
   const files = filesOf(dir, name);
   if (!existsSync(files.markdown)) {
-    return { ok: false, error: `${name} is not in ${dir}` };
+    return { ok: false, error: `\`${name}\` is not in \`${dir}\`` };
   }
   const removed = [files.markdown];
   rmSync(files.markdown);

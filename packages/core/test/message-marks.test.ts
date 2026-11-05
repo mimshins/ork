@@ -10,10 +10,31 @@ import { describe, expect, it } from "vitest";
 
 const root = path.resolve(import.meta.dirname, "../..");
 
-/** The page served before the UI is built is HTML, whose quotes are its own. */
-const NOT_MESSAGES = new Set(["server/src/placeholder.ts"]);
+/**
+ * A value in either kind of quote, or written out as JSON after a word. Also
+ * caught: a condition's own literal, which is meant, so its two places are
+ * named.
+ */
+const QUOTED = /["']\$\{|[a-z] \$\{JSON\.stringify\(/iu;
 
-const sources = ["core", "nodes", "server", "schema"].flatMap(name =>
+/** The page served before the UI is built is HTML, whose quotes are its own. */
+const NOT_MESSAGES = new Set([
+  "server/src/placeholder.ts",
+  "server/src/condition-text.ts",
+  "schema/src/edit-values.ts",
+]);
+
+const PACKAGES = [
+  "integrations",
+  "schema",
+  "core",
+  "runtime-claude",
+  "nodes",
+  "server",
+  "cli",
+];
+
+const sources = PACKAGES.flatMap(name =>
   readdirSync(path.join(root, name, "src"), {
     recursive: true,
     encoding: "utf8",
@@ -26,7 +47,7 @@ const sources = ["core", "nodes", "server", "schema"].flatMap(name =>
 const quotedIn = (file: string): string[] =>
   readFileSync(path.join(root, file), "utf8")
     .split("\n")
-    .filter(line => line.includes('"${'));
+    .filter(line => QUOTED.test(line));
 
 describe("what the engine says", () => {
   it.each(sources)("%s marks values with backticks", file => {

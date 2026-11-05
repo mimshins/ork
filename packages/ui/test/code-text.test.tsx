@@ -9,7 +9,22 @@ import {
   plainWords,
 } from "../src/components/code-text.tsx";
 
+const codeOf = (text: string): string[] =>
+  codeParts(text)
+    .filter(part => part.code)
+    .map(part => part.text);
+
 describe("code text", () => {
+  it.each([
+    ["more backticks hold one", "see `` a`b `` here", ["a`b"]],
+    ["a pair beside a longer one", "``foo`` and ```bar```", ["foo", "bar"]],
+    ["a lone pair of them beside real ones", "`x` and `` and `y`", ["x", "y"]],
+    ["space alone isn't a value", "` `", []],
+    ["a line break ends a run", "`a\nb`", []],
+  ])("pairs them as Markdown does: %s", (_, text, code) => {
+    expect(codeOf(text)).toEqual(code);
+  });
+
   it("shows what's between backticks as code", () => {
     expect(
       renderToStaticMarkup(<CodeText text="`human.gate` is broken!" />),

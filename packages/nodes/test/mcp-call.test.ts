@@ -127,8 +127,9 @@ describe("mcp.call over stdio", () => {
       output: { schema: { state: ["CLOSED"] } },
     });
     expect(result.ok).toBe(false);
-    expect(result.error).toContain('state is "OPEN", expected CLOSED');
-    expect(result.output["json"]).toEqual({ state: "OPEN" });
+    expect(result.error).toContain("state is `OPEN`, expected `CLOSED`");
+    // What it didn't declare isn't its output, so no condition can read it.
+    expect(result.output["json"]).toBeUndefined();
   });
 
   it("takes a structured result as output.json", async () => {
@@ -518,7 +519,7 @@ describe("reading .mcp.json", () => {
     };
     const root = projectWith({ s: { command: "not-a-program" } });
     expect(mcpProblems(workflow, root, {}, new Set(), () => false)).toEqual([
-      "a: MCP server `s` runs not-a-program, which is not installed",
+      "`a`: MCP server `s` runs `not-a-program`, which is not installed",
     ]);
   });
 

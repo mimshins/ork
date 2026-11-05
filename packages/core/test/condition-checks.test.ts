@@ -62,7 +62,7 @@ const fromSchema = (when: string) => `nodes:
   a:
     type: claude.worker
     prompt: p
-    output: { schema: { status: [good, bad], verdict: [yes, no] } }
+    output: { schema: { status: [pass, done], verdict: [yes, no] } }
   b: ${TOOL}
 edges:
   - { from: a, to: b, when: "${when}" }
@@ -100,6 +100,62 @@ edges:
 
 const ERROR = ["error:when.value"];
 
+const FROM_SCHEMA =
+  "{ type: claude.worker, prompt: p, output: { schema: { status: [pass, done] } } }";
+
+const loopedRouter = (when: string) => `nodes:
+  a: { type: human.gate, question: q, options: [start, cancel] }
+  r: { type: control.router }
+  b: { type: human.gate, question: q, options: [retry, quit] }
+  out: ${TOOL}
+edges:
+  - a -> r
+  - { from: r, to: out, when: "${when}" }
+  - { from: r, to: b, when: "choice != 'x'" }
+  - { from: b, to: r, maxRounds: 3 }
+`;
+
+/** Every code the compiler gives these nodes. */
+const allCodesOf = (nodes: string): string[] => {
+  const parsed = parseWorkflow(`schemaVersion: 1\nname: t\nnodes:\n${nodes}\n`);
+  if (!parsed.ok) throw new Error(JSON.stringify(parsed.diagnostics));
+  return compileWorkflow(parsed.workflow).diagnostics.map(({ code }) => code);
+};
+
+/** Every code the compiler gives a node declaring this. */
+const statusCodesOf = (schema: string): string[] =>
+  allCodesOf(
+    `  a: { type: claude.worker, prompt: p, output: { schema: ${schema} } }`,
+  );
+
+describe("output.status", () => {
+  it("leaves a sub-agent alone, as it has no report of its own", () => {
+    const codes = allCodesOf(`  lead: { type: claude.leader, prompt: p }
+  helper:
+    type: claude.subagent
+    parent: lead
+    description: d
+    prompt: p
+    output: { schema: { status: [approved] } }`);
+    expect(codes).not.toContain("output.status");
+  });
+
+  it.each([
+    ["a list", "{ status: [ready, blocked] }"],
+    ["one value on the list too", "{ status: [pass, ready] }"],
+    ["JSON Schema", "{ status: { enum: [ready] } }"],
+  ])("refuses a status a session can't report: %s", (_, schema) => {
+    expect(statusCodesOf(schema)).toContain("output.status");
+  });
+
+  it.each([
+    ["narrowing the built-ins", "{ status: [pass] }"],
+    ["another field", "{ verdict: [ready, blocked] }"],
+  ])("takes %s", (_, schema) => {
+    expect(statusCodesOf(schema)).not.toContain("output.status");
+  });
+});
+
 describe("when.value", () => {
   it.each([
     ["a Claude status it can't report", fromWorker("status == 'failed'")],
@@ -110,7 +166,10 @@ describe("when.value", () => {
     ["inside !", fromWorker("!(status == 'failed')")],
     ["a gate's option", fromGate("choice == 'aprove'")],
     ["a value outside a list", fromSchema("verdict == 'maybe'")],
-    ["outside the node's own status", fromSchema("status == 'pass'")],
+    [
+      "outside the node's own status",
+      fromSchema("status == 'changes_requested'"),
+    ],
     ["a tool's declared value", fromTool("json.state == 'CLOSED'")],
     ["through a router", throughRouter("status == 'failed'")],
     ["a join's statuses", throughJoin(WORKER, "any(statuses, 'failed')")],
@@ -121,7 +180,13 @@ describe("when.value", () => {
   it.each([
     ["a status it can report", fromWorker("status == 'pass'")],
     ["a gate's option", fromGate("choice == 'approve'")],
-    ["the node's own status", fromSchema("status == 'good'")],
+    ["the node's own status", fromSchema("status == 'done'")],
+    ["`fail` beside its own statuses", fromSchema("status == 'fail'")],
+    [
+      "a join of its own statuses",
+      throughJoin(FROM_SCHEMA, "any(statuses, 'fail')"),
+    ],
+    ["a router a loop comes back to", loopedRouter("choice == 'quit'")],
     ["a listed value", fromTool("json.state == 'OPEN'")],
     ["a free field", fromTool("json.free == 'anything'")],
     ["any status from a call", fromCall("status == 'done'")],

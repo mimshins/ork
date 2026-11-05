@@ -6,6 +6,8 @@
  *   to enforce.
  */
 
+import { markValue } from "@krapht/ork-schema";
+
 const TYPE_NAMES: Readonly<Record<string, string>> = {
   string: "text",
   number: "a number",
@@ -24,7 +26,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const listed = (values: readonly unknown[]): string => {
-  const names = values.map(String);
+  const names = values.map(value => markValue(String(value)));
   const last = names.pop();
   return names.length === 0
     ? String(last)
@@ -32,8 +34,11 @@ const listed = (values: readonly unknown[]): string => {
 };
 
 const shown = (value: unknown): string => {
-  const text = JSON.stringify(value) ?? String(value);
-  return text.length > 80 ? `${text.slice(0, 80)}…` : text;
+  const text =
+    typeof value === "string"
+      ? value
+      : (JSON.stringify(value) ?? String(value));
+  return markValue(text.length > 80 ? `${text.slice(0, 80)}…` : text);
 };
 
 /** What's wrong with one field, if it's a shape this can read. */

@@ -40,8 +40,6 @@ export const viewOf = async (
   text: string,
 ): Promise<BuilderView> => {
   const file = fileOf(project, name);
-  const draft = context.store.draft(project.id, name);
-  const onDisk = hashOfFile(file);
   const { diagnostics, workflow, walk } = await walkChecks(
     checkWorkflowText(text, {
       place: project,
@@ -51,6 +49,9 @@ export const viewOf = async (
     }),
     { maxMs: EDIT_WALK_MS },
   );
+  // After the walk, which waits: another tab may have saved or discarded it.
+  const draft = context.store.draft(project.id, name);
+  const onDisk = hashOfFile(file);
   const graph = draftGraph(text);
   return {
     name,

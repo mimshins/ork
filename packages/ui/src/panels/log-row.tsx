@@ -7,6 +7,7 @@
 import type { StoredEvent } from "@krapht/ork-server/client";
 import { memo } from "react";
 
+import { CodeText } from "../components/code-text.tsx";
 import { lineOf, nodeOf, timeOf } from "./logs-model.ts";
 
 import styles from "./logs.module.css";
@@ -37,7 +38,9 @@ export const LogRow = memo(
           <span className={styles["time"]}>{timeOf(at)}</span>
           <span className={styles["node"]}>{nodeOf(event) ?? "run"}</span>
           <span className={styles["type"]}>{event.type}</span>
-          <span className={styles["line"]}>{lineOf(event)}</span>
+          <span className={styles["line"]}>
+            <CodeText text={lineOf(event)} />
+          </span>
         </button>
         {open ? (
           <pre

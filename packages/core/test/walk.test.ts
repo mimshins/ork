@@ -13,6 +13,7 @@ import {
   type CompiledGraph,
   compileWorkflow,
   type RunHandle,
+  walkChecks,
   walkSummary,
   walkWorkflow,
   type WalkResult,
@@ -61,6 +62,35 @@ const ran = (result: WalkResult): ((name: string) => boolean) => {
   const everywhere = result.endings.map(({ notRun }) => new Set(notRun));
   return (name: string) => everywhere.some(set => !set.has(name));
 };
+
+const WATCHED = [
+  "ci: { type: tool.shell, command: 'true', allow: ['true'],",
+  "output: { format: json, schema: { state: [pending, done] } },",
+  "watch: { every: 30s, until: \"json.state != 'pending'\", timeout: 1h } }",
+].join(" ");
+
+/** A chain of splits, each feeding the next twice, with no join to merge them. */
+const diamonds = (count: number): CompiledGraph => {
+  const steps = Array.from({ length: count }, (_, at) => at);
+  return graphOf(
+    [
+      "s0: { type: control.split }",
+      ...steps.flatMap(at => [
+        `a${String(at)}: { type: control.split }`,
+        `b${String(at)}: { type: control.split }`,
+        `s${String(at + 1)}: { type: control.split }`,
+      ]),
+    ],
+    steps.flatMap(at => [
+      `s${String(at)} -> a${String(at)}, b${String(at)}`,
+      `a${String(at)} -> s${String(at + 1)}`,
+      `b${String(at)} -> s${String(at + 1)}`,
+    ]),
+  );
+};
+
+const endedOnPending = (choice: string): boolean =>
+  choice.includes("pending") && !choice.includes("timed out");
 
 const exampleFiles = readdirSync(examples).filter(file =>
   file.endsWith(".ork.yaml"),
@@ -204,6 +234,158 @@ describe("what a walk won't claim", () => {
     expect(result.endings.flatMap(({ notRun }) => notRun)).not.toContain("kid");
   });
 
+  it.each([
+    [
+      "a condition reading an owned child",
+      [
+        "lead: { type: claude.leader, prompt: x }",
+        "child: { type: claude.worker, prompt: x, parent: lead }",
+        `t: ${CLAUDE}`,
+      ],
+      ["{ from: lead, to: t, when: \"nodes.child.output.status == 'pass'\" }"],
+    ],
+    [
+      "a loop that a child's report would end",
+      [
+        "lead: { type: claude.leader, prompt: x }",
+        "child: { type: claude.worker, prompt: x, parent: lead }",
+        `t: ${CLAUDE}`,
+      ],
+      [
+        "{ from: lead, to: lead, when: \"nodes.child.output.status != 'pass'\", maxRounds: 2 }",
+        "{ from: lead, to: t, when: \"nodes.child.output.status == 'pass'\" }",
+      ],
+    ],
+    [
+      "an input beside a status on a first-match router",
+      [
+        `build: ${CLAUDE}`,
+        `r: ${ROUTER}`,
+        `stage: ${CLAUDE}`,
+        `prod: ${CLAUDE}`,
+      ],
+      [
+        "build -> r",
+        "{ from: r, to: stage, when: \"status == 'pass' && inputs.env != 'prod'\" }",
+        "{ from: r, to: prod, when: \"status == 'pass'\" }",
+      ],
+    ],
+    [
+      "a join an input could fill",
+      [
+        "a: { type: tool.shell, command: 'true', allow: ['true'], output: { format: json } }",
+        `r1: ${ROUTER}`,
+        `r2: ${ROUTER}`,
+        "j: { type: control.join, mode: n, n: 2 }",
+        `after: ${CLAUDE}`,
+      ],
+      [
+        "{ from: a, to: r1, when: \"json.v == 'a'\" }",
+        "{ from: a, to: r2, when: \"json.v == 'b' || inputs.env == 'go'\" }",
+        "r1, r2 -> j",
+        "j -> after",
+      ],
+    ],
+    [
+      "a read of a node that may finish first",
+      [`b: ${CLAUDE}`, `p: ${CLAUDE}`, `x: ${CLAUDE}`, `t: ${CLAUDE}`],
+      [
+        "p -> x",
+        "{ from: b, to: t, when: \"nodes.x.output.status == 'done'\" }",
+      ],
+    ],
+    [
+      "a gate's failure, which isn't tried",
+      [
+        'g: { type: human.gate, question: q, options: ["yes", "no"] }',
+        `h: ${CLAUDE}`,
+      ],
+      ['{ from: g, to: h, when: "!ok" }'],
+    ],
+    [
+      "stages a loop reaches in rounds it cuts",
+      [`drive: ${CLAUDE}`, `s1: ${CLAUDE}`, `s2: ${CLAUDE}`, `s3: ${CLAUDE}`],
+      [
+        "{ from: drive, to: s1, when: \"status == 'pass'\" }",
+        "{ from: drive, to: s2, when: \"nodes.s1.output.status == 'pass'\" }",
+        "{ from: drive, to: s3, when: \"nodes.s2.output.status == 'pass'\" }",
+        "{ from: drive, to: drive, when: \"status == 'changes_requested'\", maxRounds: 10 }",
+      ],
+    ],
+    [
+      "a join a loop feeds across rounds",
+      [
+        "c: { type: human.gate, question: q, options: [x, y] }",
+        `a: ${CLAUDE}`,
+        `p: ${CLAUDE}`,
+        `u: ${CLAUDE}`,
+        "j: { type: control.join, mode: n, n: 2 }",
+        `t: ${CLAUDE}`,
+      ],
+      [
+        "c -> a",
+        "{ from: a, to: p, when: \"status == 'changes_requested'\" }",
+        "{ from: p, to: a, maxRounds: 2 }",
+        "{ from: a, to: u, when: \"status == 'done'\" }",
+        "u -> j",
+        "{ from: c, to: j, when: \"choice == 'y'\" }",
+        "j -> t",
+      ],
+    ],
+    [
+      "a handler for a wait that ran out",
+      [WATCHED, `giveup: ${CLAUDE}`, `go: ${CLAUDE}`],
+      [
+        "{ from: ci, to: giveup, when: \"json.state == 'pending'\" }",
+        "{ from: ci, to: go, when: \"json.state == 'done'\" }",
+      ],
+    ],
+  ])("makes no claim about %s", async (_, nodes, edges) => {
+    const graph = graphOf(nodes, edges, [
+      "inputs:",
+      "  env: { type: string, default: dev }",
+    ]);
+    expect(found(await walkWorkflow(graph))).toEqual([]);
+  });
+
+  it("stays within its time even inside one path", async () => {
+    const result = await walkWorkflow(diamonds(30), { maxMs: 50 });
+    expect(result.complete).toBe(false);
+    expect(found(result)).toEqual([]);
+  }, 5000);
+
+  it("ends what a live owner would answer, with no owner live", async () => {
+    const graph = graphOf(
+      [
+        "lead: { type: claude.leader, prompt: x }",
+        "kid: { type: claude.worker, prompt: x, parent: lead }",
+      ],
+      [
+        "lead -> kid",
+        "{ from: kid, to: kid, when: \"status == 'changes_requested'\", maxRounds: 1 }",
+      ],
+    );
+    const result = await walkWorkflow(graph);
+    expect(result.complete).toBe(true);
+    expect(found(result)).toEqual([]);
+  });
+
+  it("doesn't repeat what the compiler already said of a node", async () => {
+    const graph = graphOf(stranded, [off]);
+    const { diagnostics } = await walkChecks({
+      graph,
+      diagnostics: [
+        {
+          severity: "warning",
+          code: "graph.unreachable",
+          message: "`b` never runs",
+          path: ["nodes", "b"],
+        },
+      ],
+    });
+    expect(diagnostics.map(({ code }) => code)).toEqual(["graph.unreachable"]);
+  });
+
   it("says when a path never settles, and claims nothing else", async () => {
     const graph = graphOf(stranded, [off]);
     const stuck: RunHandle = {
@@ -281,23 +463,19 @@ describe("how a walk goes", () => {
 
   it("walks a watched node only to the ends a wait can have", async () => {
     const graph = graphOf(
-      [
-        [
-          "ci: { type: tool.shell, command: 'true', allow: ['true'],",
-          "output: { format: json, schema: { state: [pending, done] } },",
-          "watch: { every: 30s, until: \"json.state != 'pending'\", timeout: 1h } }",
-        ].join(" "),
-        `waiting: ${CLAUDE}`,
-        `finished: ${CLAUDE}`,
-      ],
+      [WATCHED, `waiting: ${CLAUDE}`, `finished: ${CLAUDE}`],
       [
         "{ from: ci, to: waiting, when: \"json.state == 'pending'\" }",
         "{ from: ci, to: finished, when: \"json.state == 'done'\" }",
       ],
     );
     const result = await walkWorkflow(graph);
-    expect(found(result)).toEqual(["walk.never-runs nodes.waiting"]);
-    expect(ran(result)("finished")).toBe(true);
+    const said = result.endings.flatMap(({ choices }) => choices);
+    // It only says `pending` by running out of time, and that's a failure.
+    expect(said).toContain("ci: timed out, json.state = pending");
+    expect(
+      said.filter(choice => choice === "ci: json.state = pending"),
+    ).toEqual([]);
   });
 
   it("makes a condition go both ways from what it asks", async () => {
@@ -408,10 +586,10 @@ describe("every example", () => {
     expect(result.paths).toBe(result.succeeded + result.failed);
   });
 
-  it("wait-for-ci never ends its wait on `pending`", async () => {
+  it("wait-for-ci only says `pending` by running out of time", async () => {
     const file = path.join(examples, "wait-for-ci.ork.yaml");
     const result = await walkWorkflow(compile(readFileSync(file, "utf8")));
     const said = result.endings.flatMap(({ choices }) => choices);
-    expect(said.some(choice => choice.includes("pending"))).toBe(false);
+    expect(said.filter(choice => endedOnPending(choice))).toEqual([]);
   });
 });

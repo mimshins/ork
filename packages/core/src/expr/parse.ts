@@ -5,6 +5,8 @@
  *   way to reach JavaScript.
  */
 
+import { markValue } from "@krapht/ork-schema";
+
 export type BinaryOp = "==" | "!=" | "<" | "<=" | ">" | ">=" | "&&" | "||";
 
 export type Expr =
@@ -103,7 +105,7 @@ const tokenize = (source: string): Token[] => {
       const at = i;
       const punct = PUNCTUATION.find(p => source.startsWith(p, at));
       if (punct === undefined) {
-        throw new ExprError(`unexpected character \`${char}\``, i);
+        throw new ExprError(`unexpected character ${markValue(char)}`, i);
       }
       tokens.push({ type: "punct", value: punct, offset: i });
       i += punct.length;

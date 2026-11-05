@@ -98,7 +98,7 @@ export const checkTemplate = (
       if (root === "run") return [];
       if (root === "env" && reads.env === true) {
         return name === undefined
-          ? [error("template.env", "name a variable: env.NAME", path)]
+          ? [error("template.env", "name a variable: `env.NAME`", path)]
           : [];
       }
       if (root === "before" && reads.before !== undefined) {

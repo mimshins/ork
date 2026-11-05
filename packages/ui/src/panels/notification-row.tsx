@@ -6,7 +6,6 @@
 import { use } from "react";
 
 import { Button } from "../components/button.tsx";
-import { CodeText } from "../components/code-text.tsx";
 import { StatusBadge } from "../components/status-badge.tsx";
 import { useAppState } from "../state/context.tsx";
 import type { ShownNotification } from "../state/notifications.ts";
@@ -24,9 +23,7 @@ export const NotificationRow = ({ item }: { item: ShownNotification }) => {
       data-notification={item.id}
       data-unread={item.unread ? "" : undefined}
     >
-      <p className={styles["title"]}>
-        <CodeText text={item.title} />
-      </p>
+      <p className={styles["title"]}>{item.title}</p>
       <p className={styles["meta"]}>
         <StatusBadge status={item.status} />
         <span>{timeOf(item.at)}</span>

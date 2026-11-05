@@ -67,17 +67,19 @@ export const usage = defineCommand({
     const until = args.until === undefined ? undefined : untilTime(args.until);
     if (since === null) {
       refuse(
-        `--since takes an age (30d), a day (2026-11-01) or all, not "${args.since}".`,
+        `--since takes an age (30d), a day (2026-11-01) or all, not \`${args.since}\`.`,
       );
       return;
     }
     if (until === null) {
-      refuse(`--until takes a day (2026-11-01), not "${String(args.until)}".`);
+      refuse(
+        `--until takes a day (2026-11-01), not \`${String(args.until)}\`.`,
+      );
       return;
     }
     if (args.by !== undefined && !isDimension(args.by)) {
       refuse(
-        `--by takes one of ${USAGE_DIMENSIONS.join(", ")}, not "${args.by}".`,
+        `--by takes one of ${USAGE_DIMENSIONS.join(", ")}, not \`${args.by}\`.`,
       );
       return;
     }
@@ -146,7 +148,7 @@ export const prune = defineCommand({
     const before = agoTime(args["older-than"], Date.now());
     if (before === null) {
       refuse(
-        `--older-than takes an age (90d, 12w), not "${args["older-than"]}".`,
+        `--older-than takes an age (90d, 12w), not \`${args["older-than"]}\`.`,
       );
       return;
     }

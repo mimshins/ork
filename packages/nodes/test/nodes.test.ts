@@ -159,7 +159,7 @@ describe("tool commands", () => {
     expect(calls).toEqual([]);
     expect(result).toMatchObject({
       ok: false,
-      error: "`repo delete me` is not in the node's allow list (pr view)",
+      error: "`repo delete me` is not in the node's allow list (`pr view`)",
     });
   });
 
@@ -231,7 +231,8 @@ describe("git nodes", () => {
     expect(calls).toEqual([]);
     expect(push).toMatchObject({
       ok: false,
-      error: "`push origin main` is not in the node's allow list (add, commit)",
+      error:
+        "`push origin main` is not in the node's allow list (`add`, `commit`)",
     });
     const allowed = await toolExecutor(runner)(
       context("ship", {
@@ -607,12 +608,15 @@ describe("Claude nodes", () => {
       ok: false,
       output: {
         status: "fail",
-        verdict: "maybe",
-        summary: 'verdict is "maybe", expected approve or escalate',
+        summary: "verdict is `maybe`, expected `approve` or `escalate`",
       },
-      error: 'verdict is "maybe", expected approve or escalate',
+      error: "verdict is `maybe`, expected `approve` or `escalate`",
       sessionId: "s",
     });
+    // What it didn't declare isn't its output, so no condition can read it.
+    expect(
+      resultOf(outcome({ ...report, fields }), declared).output,
+    ).not.toHaveProperty("verdict");
     // A node's own list for `status` narrows it; the value is on the report.
     expect(
       resultOf(outcome({ ...report, fields }), { status: ["pass"] }).ok,

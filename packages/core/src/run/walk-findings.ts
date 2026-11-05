@@ -58,46 +58,93 @@ const behind = (
 };
 
 /**
- * Whether the walk tried all a condition can read: one field, either how its
- * node ended or with a closed list of values. Then going one way isn't for want
- * of trying. With two fields it may be: a failed node can still carry values,
- * and failures aren't tried with each of them.
+ * The fields a condition reads of its own source, or `null` if it reads
+ * anything else. An input is chosen at run time, and another node's output
+ * depends on what finished first and on rounds a walk cuts, so neither is
+ * proved by a walk.
  */
-const triedAll = (
+const ownFields = ({ condition, from }: CompiledEdge): string[] | null => {
+  const reads = (condition === undefined ? [] : collectPaths(condition)).map(
+    segments => fieldRead({ kind: "path", segments }, from),
+  );
+  const own = reads.flatMap(read =>
+    read !== null && read.id === from ? [read.field] : [],
+  );
+  return own.length === reads.length ? [...new Set(own)] : null;
+};
+
+/**
+ * Whether going one way isn't for want of trying: one field, either how a node
+ * ended or with a closed list of values. A gate's failure isn't tried. With two
+ * fields it may be: failures aren't tried with each of a node's values.
+ */
+const settled = (
+  graph: CompiledGraph,
   says: ReturnType<typeof nodeSays>,
+  from: string,
+  fields: readonly string[],
+): boolean => {
+  const [only] = fields;
+  if (only === undefined || fields.length > 1) return false;
+  if (only === "ok") {
+    return graph.nodes.get(from)?.node.type !== "human.gate";
+  }
+  const said = says[from]?.fields.find(({ field }) => field === only);
+  return said?.values !== undefined && said.open !== true;
+};
+
+const undecided = (
+  graph: CompiledGraph,
+  says: ReturnType<typeof nodeSays>,
+  tally: WalkTally,
   edge: CompiledEdge,
 ): boolean => {
-  const reads = (
-    edge.condition === undefined ? [] : collectPaths(edge.condition)
-  ).map(segments => fieldRead({ kind: "path", segments }, edge.from));
-  const fields = new Set(reads.map(read => `${read?.id}.${read?.field}`));
-  const [read] = reads;
-  if (fields.size !== 1 || read === null || read === undefined) return false;
-  const said = says[read.id]?.fields.find(({ field }) => field === read.field);
+  if (edge.condition === undefined) return false;
+  if (collectPaths(edge.condition).length === 0) return false;
+  const fields = ownFields(edge);
+  if (fields === null) return true;
+  const went = tally.went.get(linkOf(edge));
   return (
-    read.field === "ok" || (said?.values !== undefined && said.open !== true)
+    went !== undefined &&
+    went.held !== went.unheld &&
+    !settled(graph, says, edge.from, fields)
   );
 };
 
 /**
- * Nothing can be proved after these. A one-way condition may only have gone one
- * way for what the walk tried, and it decides its node's other edges too, as a
- * first-match router's are.
+ * Joins a loop can feed. A join remembers its inputs between rounds, so it may
+ * fill only across rounds a walk cuts or repeats. Nothing else remembers: every
+ * other node goes where its own latest output says.
+ */
+const joinsAfterLoops = (graph: CompiledGraph, tally: WalkTally): string[] => {
+  const entered = graph.edges
+    .filter(
+      edge => edge.maxRounds !== undefined && tally.entered.has(linkOf(edge)),
+    )
+    .map(({ to }) => to);
+  return [...behind(graph, entered)].filter(
+    id => graph.nodes.get(id)?.node.type === "control.join",
+  );
+};
+
+/**
+ * Nothing can be proved after these. An undecided condition decides its node's
+ * other edges too, as a first-match router's are.
  */
 const unproved = (graph: CompiledGraph, tally: WalkTally): Set<string> => {
   const says = nodeSays(graph.workflow.nodes, graph.edges);
   const owned = [...graph.nodes]
     .filter(([, { node }]) => node.parent !== undefined)
     .map(([id]) => id);
-  const oneWay = graph.edges
-    .filter(edge => {
-      const went = tally.went.get(linkOf(edge));
-      return (
-        went !== undefined && went.held !== went.unheld && !triedAll(says, edge)
-      );
-    })
+  const sources = graph.edges
+    .filter(edge => undecided(graph, says, tally, edge))
     .map(({ from }) => from);
-  return behind(graph, [...owned, ...oneWay, ...tally.undecided]);
+  return behind(graph, [
+    ...owned,
+    ...sources,
+    ...tally.undecided,
+    ...joinsAfterLoops(graph, tally),
+  ]);
 };
 
 /** `walk.never-runs` and `walk.only-rounds`, for a walk that tried every way. */

@@ -53,7 +53,7 @@ describe("parseWorkflow", () => {
     const [diagnostic] = parseErrors(
       "schemaVersion: 1\nname: x\nnodes:\n  a:\n    type: claude.boss\n",
     );
-    expect(diagnostic?.message).toContain('unknown node type "claude.boss"');
+    expect(diagnostic?.message).toContain("unknown node type `claude.boss`");
     expect(diagnostic?.path).toEqual(["nodes", "a", "type"]);
     expect(diagnostic?.line).toBe(5);
   });

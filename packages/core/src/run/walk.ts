@@ -72,7 +72,7 @@ export type WalkEnding = {
 export type WalkResult = {
   /** How many ways through it tried. */
   paths: number;
-  /** Whether it tried every way; if not, it claims nothing is absent. */
+  /** False if it stopped early, when it claims nothing is absent. */
   complete: boolean;
   succeeded: number;
   failed: number;
@@ -82,7 +82,7 @@ export type WalkResult = {
 
 export type WalkOptions = {
   cap?: number;
-  /** How long it may take; it stops after the path that goes past this. */
+  /** How long it may take, even within one path. */
   maxMs?: number;
   settleMs?: number;
   /** For tests: what starts a path's run. */
@@ -100,6 +100,9 @@ const cutRounds = (edge: CompiledEdge): CompiledEdge =>
     ? edge
     : { ...edge, maxRounds: Math.min(edge.maxRounds, BRANCHING_ROUNDS) };
 
+const concurrencyOf = ({ limits }: Workflow) =>
+  limits?.concurrency === undefined ? {} : { concurrency: limits.concurrency };
+
 const walkedNode = (
   compiled: NonNullable<ReturnType<CompiledGraph["nodes"]["get"]>>,
 ) => ({
@@ -116,6 +119,11 @@ const walkedNode = (
  */
 const walkedGraph = (graph: CompiledGraph): CompiledGraph => ({
   ...graph,
+  // A stand-in spends nothing and takes no time, so no budget or timer applies.
+  workflow: {
+    ...graph.workflow,
+    limits: concurrencyOf(graph.workflow),
+  },
   edges: graph.edges.map(edge => cutRounds(edge)),
   nodes: new Map(
     [...graph.nodes].map(([id, compiled]) => [id, walkedNode(compiled)]),
@@ -213,6 +221,7 @@ export const walkWorkflow = async (
     outcomes,
     untils: untilsOf(graph),
     reading: readers(graph),
+    deadline,
     tally,
     secondRounds: new Map(),
   };
@@ -221,22 +230,29 @@ export const walkWorkflow = async (
   const counts = { paths: 0, succeeded: 0, failed: 0 };
   let given: Decision[] | null = [];
   let stuck: string[] | null = null;
+  let overran = false;
   let turn = performance.now();
 
   while (
     given !== null &&
     counts.paths < cap &&
     stuck === null &&
+    !overran &&
     (counts.paths === 0 || performance.now() < deadline)
   ) {
     const path = createPath(plan, given);
     const handle = start(path.options);
+    path.stopWith(() => {
+      handle.interrupt();
+    });
     // One path at a time: each replays what the last one chose.
     // oxlint-disable-next-line eslint/no-await-in-loop -- see above
     const result = await settled(handle, settleMs);
     if (result === null) {
       handle.interrupt();
       stuck = path.said;
+    } else if (path.overran()) {
+      overran = true;
     } else {
       counts.paths += 1;
       const succeeded = result.status === "succeeded";
@@ -254,7 +270,7 @@ export const walkWorkflow = async (
     }
   }
 
-  const complete = given === null && stuck === null;
+  const complete = given === null && stuck === null && !overran;
   return {
     ...counts,
     complete,

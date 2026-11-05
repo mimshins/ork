@@ -45,7 +45,13 @@ export const resultOf = (
   if (problem !== null) {
     return {
       ok: false,
-      output: { ...output, status: "fail", summary: problem },
+      // What it didn't declare isn't its output, so no condition can read it.
+      output: {
+        status: "fail",
+        summary: problem,
+        artifacts: report.artifacts,
+        usage,
+      },
       usage,
       error: problem,
       ...ran,

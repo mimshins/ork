@@ -92,7 +92,7 @@ export const RunControls = ({
         description={
           node === undefined
             ? "Running nodes are interrupted, and runs it called stop too. `ork resume` can pick it up again."
-            : `Its session is interrupted and \`${node}\` fails with "stopped by the user". The workflow's failure rules then apply.`
+            : `Its session is interrupted and \`${node}\` fails with \`stopped by the user\`. The workflow's failure rules then apply.`
         }
         onConfirm={() => {
           setConfirming(false);

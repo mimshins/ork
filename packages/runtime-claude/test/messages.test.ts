@@ -133,7 +133,7 @@ describe("the message tools", () => {
     expect(
       await call(fix, "send_message", { to: "alone", body: "x" }),
     ).toContain(
-      "Not sent: `alone` is not one of your contacts; you can message lead",
+      "Not sent: `alone` is not one of your contacts; you can message `lead`",
     );
     expect(await call(lead, "read_inbox", {})).toContain(
       String.raw`{\"messages\":[{\"from\":\"fix\",\"body\":\"half done\"}]}`,

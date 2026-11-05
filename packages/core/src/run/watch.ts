@@ -7,7 +7,7 @@
  *   run's clock stands still. It records what changed, not every look.
  */
 
-import { timeoutMs, type Watch } from "@krapht/ork-schema";
+import { timeoutMs, type Watch, markValue } from "@krapht/ork-schema";
 
 import { evaluate, type Scope, truthy } from "../expr/evaluate.ts";
 import { parseExpr } from "../expr/parse.ts";
@@ -98,7 +98,7 @@ export const runWatch = async (options: {
   };
 
   const expiredResult = (): NodeResult => {
-    const error = `watched for ${watch.timeout}, and \`${watch.until}\` never held`;
+    const error = `watched for ${watch.timeout}, and ${markValue(watch.until)} never held`;
     return {
       ...last,
       ok: false,

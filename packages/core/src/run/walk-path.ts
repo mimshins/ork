@@ -23,12 +23,21 @@ import type { Outcome } from "./walk-outcomes.ts";
 
 /**
  * Only a loop's first two rounds branch, and later ones repeat the second. What
- * routes a run is the latest outputs and the loop counters, so a second round
- * has nothing new to show after each first one: it branches for the first
- * history of first rounds to reach it, and others repeat their first round. If
- * that hides a route, a condition goes only one way, and nothing is claimed.
+ * routes a node is its own latest output, so a second round has nothing new to
+ * show after each first one: it branches for the first history of first rounds
+ * to reach it, and others repeat their first round. What this could hide makes
+ * no claim (`walk-findings.ts`): a condition reading another node, and a join a
+ * loop feeds.
  */
 export const BRANCHING_ROUNDS = 2;
+
+/** What stops a path before its run has started. */
+const nothingYet = (): void => {
+  // Nothing has started.
+};
+
+/** How many activations a path goes between looks at the clock. */
+const CLOCK_EVERY = 64;
 
 /** One choice on a path: which of its `count` ways it took. */
 export type Decision = { key: string; index: number; count: number };
@@ -43,6 +52,8 @@ export type WalkPlan = {
   untils: ReadonlyMap<string, Expr>;
   /** The edges whose condition reads something: only those can go one way. */
   reading: ReadonlySet<string>;
+  /** When the walk runs out of time, by `performance.now()`. */
+  deadline: number;
   tally: WalkTally;
   /** Node id, then the history of first rounds its second round branches for. */
   secondRounds: Map<string, string>;
@@ -140,20 +151,20 @@ const standIn =
   ({ id, round, node }) => {
     const until = plan.untils.get(id) ?? null;
     const all = plan.outcomes.get(id) ?? [];
-    // A watched node ends only ways a wait can: its condition holds, or it fails.
+    // A watched node ends only ways a wait can: its condition holds, it runs
+    // out of time on a look where it doesn't, or a look fails.
     const open =
       until === null
         ? all
-        : all.filter(
-            ({ ok, output }) =>
-              !ok ||
-              truthy(
-                evaluate(until, {
-                  ...runScope(plan.inputs, outputs),
-                  output: { ok, ...output },
-                }),
-              ),
-          );
+        : all.filter(outcome => {
+            const holds = truthy(
+              evaluate(until, {
+                ...runScope(plan.inputs, outputs),
+                output: { ok: true, ...outcome.output },
+              }),
+            );
+            return outcome.ok ? holds : outcome.timedOut !== true || !holds;
+          });
     if (until !== null && !open.some(({ ok }) => ok)) {
       plan.tally.undecided.add(id);
     }
@@ -207,6 +218,18 @@ export const createPath = (plan: WalkPlan, given: readonly Decision[]) => {
   const started = new Set<string>();
   const taken = new Set<string>();
   const exhausted = new Set<string>();
+  let activations = 0;
+  let overran = false;
+  let stop = nothingYet;
+
+  /** One path can multiply activations, so the clock can't wait for its end. */
+  const checkClock = (): void => {
+    activations += 1;
+    if (activations % CLOCK_EVERY === 0 && performance.now() > plan.deadline) {
+      overran = true;
+      stop();
+    }
+  };
 
   const noteConditions = (id: string, ok: boolean, output: NodeOutput) => {
     const scope = runScope(inputs, outputs);
@@ -229,6 +252,7 @@ export const createPath = (plan: WalkPlan, given: readonly Decision[]) => {
     if (event.type === "node.started") {
       started.add(event.id);
       tally.ran.add(event.id);
+      checkClock();
     } else if (event.type === "node.finished") {
       outputs[event.id] = event.output;
       noteConditions(event.id, event.ok, event.output);
@@ -253,6 +277,12 @@ export const createPath = (plan: WalkPlan, given: readonly Decision[]) => {
     decisions: choices.decisions,
     said: choices.said,
     started,
+    /** How to stop this path's run if it runs out of time. */
+    stopWith: (interrupt: () => void): void => {
+      stop = interrupt;
+    },
+    /** Whether it ran out of time, so its ending says nothing. */
+    overran: (): boolean => overran,
     /** Notes which loops this path went through, now that it's ended. */
     finish: (succeeded: boolean): void => {
       for (const link of taken) {

@@ -180,12 +180,13 @@ export const mcpCallExecutor =
       const text = capped(said, keepFile(context, "text", said));
       const json = jsonOf(result.structuredContent, raw, scrub);
       const tooLong = JSON.stringify(json ?? null).length > OUTPUT_LIMIT;
-      const output: Record<string, unknown> = {
-        text,
-        ...(json === undefined || tooLong ? {} : { json }),
-      };
       const reported = result.isError === true;
       const problem = declaredProblem(node.output?.schema, json);
+      // What it didn't declare isn't its output, so no condition can read it.
+      const output: Record<string, unknown> = {
+        text,
+        ...(json === undefined || tooLong || problem !== null ? {} : { json }),
+      };
       context.emit({
         type: "tool.result",
         id: context.id,

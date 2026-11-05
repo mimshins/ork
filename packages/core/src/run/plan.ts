@@ -143,7 +143,7 @@ export const planNodeSession = (
   if (!isClaudeNode(node)) {
     return {
       ok: false,
-      error: `\`${id}\` is a ${node.type}, not a Claude node`,
+      error: `\`${id}\` is a \`${node.type}\`, not a Claude node`,
     };
   }
   if (node.type === "claude.subagent") {

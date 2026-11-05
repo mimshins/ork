@@ -95,12 +95,10 @@ export const DecisionCard = ({
         className={styles["question"]}
         id={questionId}
       >
-        <CodeText text={question} />
+        {question}
       </h3>
       {context === undefined ? null : (
-        <p className={styles["context"]}>
-          <CodeText text={context} />
-        </p>
+        <p className={styles["context"]}>{context}</p>
       )}
       <ul className={styles["options"]}>
         {options.map((choice, index) => {

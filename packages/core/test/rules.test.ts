@@ -394,7 +394,7 @@ describe("git rules at work", () => {
       { slug: "--orphan" },
     );
     expect(result.nodes.find(n => n.id === "lead")?.error).toContain(
-      "gives lead the branch `--orphan/lead`, which is not a valid branch name",
+      "gives `lead` the branch `--orphan/lead`, which is not a valid branch name",
     );
     await expect(
       resolveBase(

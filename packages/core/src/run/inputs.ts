@@ -3,7 +3,7 @@
  *   against the workflow's declared inputs, with defaults and types.
  */
 
-import type { Workflow } from "@krapht/ork-schema";
+import { markValue, type Workflow } from "@krapht/ork-schema";
 
 export type InputsResult =
   | { ok: true; inputs: Record<string, string | number | boolean> }
@@ -18,7 +18,7 @@ const coerce = (
   if (type === "number") {
     const value = Number(raw);
     return raw.trim() === "" || Number.isNaN(value)
-      ? { error: `input \`${name}\` must be a number, got \`${raw}\`` }
+      ? { error: `input \`${name}\` must be a number, got ${markValue(raw)}` }
       : { value };
   }
   if (raw === "true" || raw === "false") return { value: raw === "true" };
@@ -68,7 +68,10 @@ export const parseInputPairs = (
   for (const pair of pairs) {
     const at = pair.indexOf("=");
     if (at <= 0)
-      return { ok: false, error: `expected name=value, got \`${pair}\`` };
+      return {
+        ok: false,
+        error: `expected name=value, got ${markValue(pair)}`,
+      };
     raw[pair.slice(0, at)] = pair.slice(at + 1);
   }
   return { ok: true, raw };

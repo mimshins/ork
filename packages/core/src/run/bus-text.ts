@@ -43,4 +43,4 @@ export const ownerQuestionText = (
 export const notAContact = (to: string, peers: readonly string[]): string =>
   peers.length === 0
     ? "you have no one to message in this run"
-    : `\`${to}\` is not one of your contacts; you can message ${peers.join(", ")} (your owner, the nodes you own, and your declared channels)`;
+    : `\`${to}\` is not one of your contacts; you can message \`${peers.join("`, `")}\` (your owner, the nodes you own, and your declared channels)`;

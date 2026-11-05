@@ -73,7 +73,7 @@ export const ui = defineCommand({
     const port = portArg(args.port);
     if (port === null) {
       writeErr(
-        `--port must be a number from 0 to 65535, not "${args.port ?? ""}".`,
+        `--port must be a number from 0 to 65535, not \`${args.port ?? ""}\`.`,
       );
       process.exitCode = 1;
       return;

@@ -139,7 +139,9 @@ messages:
     expect(JSON.stringify(events)).toContain("sent 0");
     expect(
       readFileSync(path.join(place.repo, "refused.txt"), "utf8"),
-    ).toContain("`gone` is not a contact of check, which can write to later");
+    ).toContain(
+      "`gone` is not a contact of `check`, which can write to `later`",
+    );
   });
 
   const refusalOf = async (

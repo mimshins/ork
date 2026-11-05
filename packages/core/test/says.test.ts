@@ -33,6 +33,7 @@ const NODES = {
   router: node({ type: "control.router" }),
   split: node({ type: "control.split" }),
   many: node({ type: "control.router" }),
+  looped: node({ type: "control.router" }),
   join: node({ type: "control.join" }),
 };
 
@@ -43,7 +44,8 @@ const LINKS = [
   { from: "tool", to: "many" },
   { from: "claude", to: "join" },
   { from: "call", to: "join" },
-  { from: "gate", to: "router", maxRounds: 3 },
+  { from: "gate", to: "looped", maxRounds: 3 },
+  { from: "claude", to: "looped" },
 ];
 
 describe("nodeSays", () => {
@@ -66,7 +68,8 @@ describe("nodeSays", () => {
     expect(says["narrow"]?.fields).toContainEqual({
       field: "status",
       kind: "values",
-      values: ["pass"],
+      // A session with no good report fails, whatever is declared.
+      values: ["pass", "fail"],
     });
     expect(
       says["narrow"]?.fields.filter(({ field }) => field === "status"),
@@ -96,7 +99,7 @@ describe("nodeSays", () => {
     });
   });
 
-  it("reads through a router or split, ignoring a loop back", () => {
+  it("reads through a router or split", () => {
     expect(says["router"]?.fields).toEqual(says["claude"]?.fields);
     expect(says["split"]?.fields).toEqual(says["claude"]?.fields);
     expect(says["router"]).toMatchObject({ canFail: false, canDeclare: false });
@@ -104,6 +107,10 @@ describe("nodeSays", () => {
 
   it("can't know a pass-through with several inputs", () => {
     expect(says["many"]?.fields).toEqual([]);
+  });
+
+  it("counts a loop back as one of them, as it brings its own output", () => {
+    expect(says["looped"]?.fields).toEqual([]);
   });
 
   it("gathers a join's statuses from its inputs", () => {

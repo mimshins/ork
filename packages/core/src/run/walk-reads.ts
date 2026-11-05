@@ -139,14 +139,17 @@ export const readsOf = (graph: CompiledGraph): Reads => {
     const compiled = graph.nodes.get(id);
     if (compiled === undefined || seen.has(id)) return;
     seen.add(id);
-    const inputs = compiled.incoming
-      .filter(({ maxRounds }) => maxRounds === undefined)
-      .map(({ from }) => from);
     const { type } = compiled.node;
     if (type === "control.router" || type === "control.split") {
-      for (const input of inputs) attach(input, field, values, seen);
+      // A loop edge into one brings its source's output too.
+      for (const { from } of compiled.incoming) {
+        attach(from, field, values, seen);
+      }
     } else if (type === "control.join") {
       if (!REPORTS_INPUTS.test(field)) return;
+      const inputs = compiled.incoming
+        .filter(({ maxRounds }) => maxRounds === undefined)
+        .map(({ from }) => from);
       for (const input of inputs) {
         attach(input, "status", statusesIn(values), seen);
       }

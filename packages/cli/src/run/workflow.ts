@@ -25,6 +25,7 @@ import {
   type RunResult,
   startControl,
   startRun,
+  walkSummary,
   type Workspace,
 } from "@krapht/ork-core";
 import {
@@ -94,6 +95,8 @@ export const runWorkflowFile = async (
   const { report } =
     options.resume === undefined ? await walkLoaded(loaded) : loaded;
   for (const line of warningLines(report)) options.err(line);
+  // No finding could mean a clean walk, or one that stopped too early to say.
+  if (report.walk?.complete === false) options.err(walkSummary(report.walk));
 
   const pairs = parseInputPairs(options.inputs);
   if (!pairs.ok) return failed([`--input: ${pairs.error}`]);

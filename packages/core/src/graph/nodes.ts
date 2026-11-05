@@ -6,16 +6,48 @@
 import {
   type DecisionOption,
   type Diagnostic,
+  type Node,
   type Workflow,
+  isClaudeNode,
   isToolNode,
+  markValue,
 } from "@krapht/ork-schema";
 
 import { error, warning } from "./diagnostics.ts";
 import { checkScripts } from "./script.ts";
-import type { CompiledEdge } from "./types.ts";
+import {
+  declaredOutputOf,
+  REPORT_STATUSES,
+  type CompiledEdge,
+} from "./types.ts";
 
 const optionId = (option: DecisionOption) =>
   typeof option === "string" ? option : option.id;
+
+/**
+ * A session can only report the built-in statuses, so a node that declares
+ * another would fail on every run. It can narrow them, to fail on the rest.
+ */
+const statusProblems = (id: string, node: Node): Diagnostic[] => {
+  // A sub-agent runs inside its parent's session, and has no report of its own.
+  if (!isClaudeNode(node) || node.type === "claude.subagent") return [];
+  const rule = declaredOutputOf(node)?.["status"];
+  const list =
+    typeof rule === "object" && rule !== null && "enum" in rule
+      ? rule.enum
+      : rule;
+  if (!Array.isArray(list)) return [];
+  const known: readonly unknown[] = REPORT_STATUSES;
+  return list
+    .filter(value => !known.includes(value))
+    .map(value =>
+      error(
+        "output.status",
+        `a session can't report \`status: ${String(value)}\`: it can only be \`${REPORT_STATUSES.join("`, `")}\`. Declare another field for this, such as \`verdict\``,
+        ["nodes", id, "output", "schema", "status"],
+      ),
+    );
+};
 
 /** Per-type checks that need the rest of the graph. */
 export const checkNodes = (
@@ -37,6 +69,8 @@ export const checkNodes = (
         ),
       );
     }
+
+    diagnostics.push(...statusProblems(id, node));
 
     if (node.type === "control.join") {
       const sources = new Set(incoming.map(e => e.from)).size;
@@ -86,7 +120,7 @@ export const checkNodes = (
           diagnostics.push(
             error(
               "gate.option",
-              `${key} \`${value}\` is not one of the options (\`${ids.join("`, `")}\`)`,
+              `${key} ${markValue(value)} is not one of the options (\`${ids.join("`, `")}\`)`,
               [...path, key],
             ),
           );

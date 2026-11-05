@@ -221,11 +221,15 @@ export const validate = defineCommand({
       args._.length === 0
         ? readProjectTriggers(place, undefined, registeredProjects())
         : undefined;
-    const walked = await Promise.all(
-      files.map(file => walkLoaded(loadWorkflow(file, cwd))),
-    );
+    // One at a time: a walk's limit is on the clock, which others would share.
+    const walked: FileReport[] = [];
+    for (const file of files) {
+      // oxlint-disable-next-line eslint/no-await-in-loop -- see above
+      const { report } = await walkLoaded(loadWorkflow(file, cwd));
+      walked.push(report);
+    }
     const reports: FileReport[] = [
-      ...walked.map(({ report }) => report),
+      ...walked,
       // The project's triggers are read with its workflows, not when one is named.
       ...(triggers?.present === true
         ? [

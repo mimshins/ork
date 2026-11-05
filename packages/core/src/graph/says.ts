@@ -68,6 +68,12 @@ const optionIds = (node: Node): readonly string[] =>
       )
     : [];
 
+/** A session with no good report has `status: fail`, whatever is declared. */
+const withFail = (said: SaidField): SaidField =>
+  said.field === "status" && said.values !== undefined
+    ? { ...said, values: [...new Set([...said.values, "fail"])] }
+    : said;
+
 /** What a node says on its own; a router or split says nothing of its own. */
 const ownSays = (node: Node): NodeSays => {
   if (isToolNode(node)) {
@@ -116,7 +122,7 @@ const ownSays = (node: Node): NodeSays => {
     };
   }
   if (!node.type.startsWith("claude.")) return NOTHING;
-  const declared = declaredFields(node, "");
+  const declared = declaredFields(node, "").map(field => withFail(field));
   return {
     fields: [
       ...(declared.some(({ field }) => field === "status")
@@ -136,10 +142,14 @@ const ownSays = (node: Node): NodeSays => {
   };
 };
 
-const inputsOf = (id: string, links: readonly Link[]): string[] =>
+const forwardInputsOf = (id: string, links: readonly Link[]): string[] =>
   links
     .filter(({ to, maxRounds }) => to === id && maxRounds === undefined)
     .map(({ from }) => from);
+
+/** Every edge into a node: a loop edge brings its source's output too. */
+const allInputsOf = (id: string, links: readonly Link[]): string[] =>
+  links.filter(({ to }) => to === id).map(({ from }) => from);
 
 /**
  * What a node says, reading through routers and splits to the node before, and
@@ -153,9 +163,9 @@ const saysOf = (
 ): NodeSays => {
   const node = nodes[id];
   if (node === undefined || seen.has(id)) return NOTHING;
-  const inputs = inputsOf(id, links);
   const next = new Set([...seen, id]);
   if (node.type === "control.router" || node.type === "control.split") {
+    const inputs = allInputsOf(id, links);
     const [only] = inputs;
     return only === undefined || inputs.length > 1
       ? NOTHING
@@ -166,7 +176,7 @@ const saysOf = (
         };
   }
   if (node.type === "control.join") {
-    const sources = inputs.map(input =>
+    const sources = forwardInputsOf(id, links).map(input =>
       saysOf(input, nodes, links, next).fields.find(
         ({ field }) => field === "status",
       ),

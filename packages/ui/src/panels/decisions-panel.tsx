@@ -80,7 +80,7 @@ export const DecisionsPanel = () => {
             {settled.map(decision => (
               <li key={decision.id}>
                 <span className={styles["settledQuestion"]}>
-                  <CodeText text={decision.question} />
+                  {decision.question}
                 </span>
                 <span className={styles["settledEnding"]}>
                   <code>{decision.runId}</code> · <code>{decision.node}</code>.{" "}

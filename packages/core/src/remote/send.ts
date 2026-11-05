@@ -62,8 +62,8 @@ export const scriptRefusal = (
   );
   if (contacts.includes(to)) return null;
   return contacts.length === 0
-    ? `${node} has no one to write to: give it an owner, or a channel under messages:.`
-    : `\`${to}\` is not a contact of ${node}, which can write to ${contacts.join(", ")} (its owner and its channels).`;
+    ? `\`${node}\` has no one to write to: give it an owner, or a channel under \`messages:\`.`
+    : `\`${to}\` is not a contact of \`${node}\`, which can write to \`${contacts.join("`, `")}\` (its owner and its channels).`;
 };
 
 /** Reading all of it would cost as much as sending it. */
@@ -91,7 +91,7 @@ export const sendFromScript = async (
   if (!taken) {
     return {
       ok: false,
-      error: `${node} has sent ${String(DEFAULT_SCRIPT_MESSAGES)} messages in this run, which is the most it may.`,
+      error: `\`${node}\` has sent ${String(DEFAULT_SCRIPT_MESSAGES)} messages in this run, which is the most it may.`,
     };
   }
   // With no socket, the run's one-second poll finds the row.

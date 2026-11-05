@@ -143,7 +143,7 @@ export const chat = defineCommand({
         return;
       }
       if (args.driver !== undefined && !isDriver(args.driver)) {
-        writeErr(`--driver must be sdk or cli, not "${args.driver}".`);
+        writeErr(`--driver must be sdk or cli, not \`${args.driver}\`.`);
         process.exitCode = 1;
         return;
       }

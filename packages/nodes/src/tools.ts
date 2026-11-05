@@ -19,7 +19,7 @@ import {
   runScope,
 } from "@krapht/ork-core";
 import { integrationFor } from "@krapht/ork-integrations";
-import { isToolNode, type ToolNode } from "@krapht/ork-schema";
+import { isToolNode, type ToolNode, markValue } from "@krapht/ork-schema";
 
 import { commandLineOf, tokenize } from "./tool-command.ts";
 import {
@@ -180,7 +180,7 @@ export const toolExecutor =
     if (!isAllowed(checked, allow)) {
       return failed(
         scrub(
-          `\`${checked.join(" ")}\` is not in the node's allow list (${(allow ?? []).join(", ")})`,
+          `${markValue(checked.join(" "))} is not in the node's allow list (${(allow ?? []).map(entry => markValue(entry)).join(", ")})`,
         ),
       );
     }
@@ -286,8 +286,9 @@ export const toolExecutor =
     if (json?.ok === false) {
       return { ok: false, output, error: `${context.id}: ${json.error}` };
     }
-    if (json !== null) output["json"] = json.json;
+    // What it didn't declare isn't its output, so no condition can read it.
     if (declared !== null) return { ok: false, output, error: declared };
+    if (json !== null) output["json"] = json.json;
     if (run.exitCode === 0) return { ok: true, output };
     const last = run.stderr.trim().split("\n").at(-1) ?? "";
     return {

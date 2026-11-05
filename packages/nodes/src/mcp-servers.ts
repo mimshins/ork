@@ -232,6 +232,6 @@ export const mcpProblems = (
     return program === undefined || installed(program)
       ? unset
       : [
-          `${id}: MCP server \`${node.server}\` runs ${program}, which is not installed`,
+          `\`${id}\`: MCP server \`${node.server}\` runs \`${program}\`, which is not installed`,
         ].concat(unset);
   });

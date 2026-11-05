@@ -84,6 +84,23 @@ describe("ork run and the checks", () => {
     expect(done.status).toBe(0);
   });
 
+  it("says when a walk stopped too early to find anything", () => {
+    const steps = Array.from({ length: 13 }, (_, at) => String(at));
+    const wide = [
+      "schemaVersion: 1",
+      "name: wide",
+      "nodes:",
+      "  s: { type: control.split }",
+      ...steps.map(at => `  n${at}: { type: tool.shell, command: "true" }`),
+      "edges:",
+      ...steps.map(at => `  - s -> n${at}`),
+      "",
+    ].join("\n");
+    const done = run(wide);
+    expect(done.stderr).toContain("not every way was tried");
+    expect(done.status).toBe(0);
+  });
+
   it("doesn't print the summary of a walk: only what it found", () => {
     expect(run(LOOPING).stderr).not.toContain("Walked");
   });

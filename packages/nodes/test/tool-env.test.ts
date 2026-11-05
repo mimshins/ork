@@ -317,7 +317,7 @@ describe("a tool node's JSON result", () => {
     expect(tooBig.output["json"]).toBeUndefined();
   });
 
-  it("fails a node whose JSON isn't what it declared, and keeps the JSON", async () => {
+  it("fails a node whose JSON isn't what it declared, and leaves it out", async () => {
     const node = json({
       output: { format: "json", schema: { state: ["OPEN", "CLOSED"] } },
     });
@@ -334,8 +334,10 @@ describe("a tool node's JSON result", () => {
       runnerOf({ stdout: '{"state":"DRAFT"}' }).runner,
     )(run);
     expect(result.ok).toBe(false);
-    expect(result.error).toBe('state is "DRAFT", expected OPEN or CLOSED');
-    expect(result.output["json"]).toEqual({ state: "DRAFT" });
+    expect(result.error).toBe("state is `DRAFT`, expected `OPEN` or `CLOSED`");
+    // What it didn't declare isn't its output, so no condition can read it.
+    expect(result.output["json"]).toBeUndefined();
+    expect(result.output["stdout"]).toContain("DRAFT");
     expect(events).toContainEqual(
       expect.objectContaining({ type: "tool.result", isError: true }),
     );
