@@ -37,8 +37,10 @@ without one
    `packages/cli/CHANGELOG.md` and deletes the consumed changesets, then
    [build-info.ts](../../tools/release/build-info.ts) binds the new version into
    `packages/cli/src/__build_info__.ts`, which `ork --version` and feedback
-   read. `pnpm build` binds it again, and a test fails when the file and
-   `package.json` disagree.
+   read. It also binds it into the Claude Code plugins: their `plugin.json`
+   versions, and the Ork `ork mcp --expects` in `plugins/ork/.mcp.json`.
+   `pnpm build` binds them again, and a test fails when one and `package.json`
+   disagree.
 3. A maintainer reviews and merges the release pull request.
 4. The workflow runs again with no changesets left and publishes:
    `pnpm run release` builds the bundle and runs `changeset publish`, which

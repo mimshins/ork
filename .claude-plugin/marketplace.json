@@ -1,0 +1,17 @@
+{
+  "name": "ork",
+  "owner": { "name": "Ork", "url": "https://github.com/mimshins/ork" },
+  "description": "Ork's plugins for Claude Code: writing, checking and running Ork workflows, and contributing to Ork.",
+  "plugins": [
+    {
+      "name": "ork",
+      "source": "./plugins/ork",
+      "description": "Write, check and run Ork workflows from Claude Code, the way Ork is built to save."
+    },
+    {
+      "name": "ork-dev",
+      "source": "./.ai",
+      "description": "Contribute to Ork: its RFC, docs and knowledge-sync skills, and its agents."
+    }
+  ]
+}

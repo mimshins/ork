@@ -9,7 +9,8 @@
     "oxlint.config.ts",
     "oxfmt.config.ts",
     "types",
-    "tools"
+    "tools",
+    "plugins"
   ],
   "exclude": ["packages/ui"]
 }

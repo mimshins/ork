@@ -2,8 +2,9 @@
  * @file Binds the CLI's name and version into
  *   `packages/cli/src/__build_info__.ts` from its `package.json`, so `ork
  *   --version` and feedback origins read a constant in the sources and in the
- *   bundle alike. Runs after `changeset version` bumps the package and before
- *   every build. Usage: `node tools/release/build-info.ts`.
+ *   bundle alike, and into the Claude Code plugins (RFC-012): their versions,
+ *   and the Ork `ork mcp --expects`. Runs after `changeset version` bumps the
+ *   package and before every build. Usage: `node tools/release/build-info.ts`.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -28,6 +29,21 @@ export const buildInfo = (name: string, version: string): string =>
     "",
   ].join("\n");
 
+const ROOT = path.resolve(import.meta.dirname, "../..");
+
+/** The files that carry the CLI's version for the plugins. */
+export const PLUGIN_FILES = [
+  "plugins/ork/.claude-plugin/plugin.json",
+  ".ai/.claude-plugin/plugin.json",
+  "plugins/ork/.mcp.json",
+].map(file => path.join(ROOT, file));
+
+/** A plugin file's text with `version` bound: its own, and what it expects. */
+export const withVersion = (text: string, version: string): string =>
+  text
+    .replace(/("version":\s*)"[^"]*"/u, `$1${JSON.stringify(version)}`)
+    .replace(/("--expects",\s*)"[^"]*"/u, `$1${JSON.stringify(version)}`);
+
 /** The CLI's `package.json` name and version. */
 export const cliPackage = (): { name: string; version: string } => {
   const parsed: unknown = JSON.parse(
@@ -51,6 +67,11 @@ if (import.meta.main) {
   const source = buildInfo(name, version);
   if (readFileSync(BUILD_INFO, "utf8") !== source) {
     writeFileSync(BUILD_INFO, source);
+  }
+  for (const file of PLUGIN_FILES) {
+    const text = readFileSync(file, "utf8");
+    const bound = withVersion(text, version);
+    if (bound !== text) writeFileSync(file, bound);
   }
   process.stdout.write(`Bound ${name}@${version}\n`);
 }

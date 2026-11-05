@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "ork": { "command": "ork", "args": ["mcp", "--expects", "0.2.0"] }
+  }
+}

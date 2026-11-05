@@ -25,8 +25,8 @@ them.
   program knows about its run.
 - [Watching a source](./guides/watching.md): wait on CI or a review inside a
   run, or start a run when something happens, with no model turn until it does.
-- [Ork from Claude Code](./guides/claude-code.md): let Claude Code read your
-  runs, check the workflows it writes, and start them, with `ork mcp`.
+- [Ork from Claude Code](./guides/claude-code.md): Ork's plugin, so Claude Code
+  writes workflows Ork accepts, reads your runs, and starts them when you say.
 - [The browser view](./guides/browser-view.md): `ork ui`, its panels and keys,
   and the command that does the same as each action.
 - [Agents](./guides/agents.md): define who does the work once, give it to any

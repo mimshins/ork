@@ -1,9 +1,11 @@
 # Ork for Claude Code
 
-Status: **Partial**: `ork mcp` ([its tools](./cli/mcp.md)) and the skills are
-built ([skills](../plugins/ork/skills/),
-[tests](../packages/core/test/plugin-skills.test.ts)); the plugin, its hook and
-`ork init`'s copies are to come
+Status: **Partial**: `ork mcp` ([its tools](./cli/mcp.md)), the skills
+([skills](../plugins/ork/skills/),
+[tests](../packages/core/test/plugin-skills.test.ts)) and the plugins
+([marketplace](../.claude-plugin/marketplace.json),
+[tests](../packages/cli/test/plugin.test.ts)) are built; `ork init`'s copies of
+the skills are to come
 ([RFC-012](../rfcs/active/RFC-012-teaching-claude-code-ork.md)).
 
 Claude Code, working with a person in their project outside any run, learns
@@ -30,3 +32,32 @@ load as `/ork:<name>` from the plugin.
   holds the list.
 - **Each says when to use it**, in a description that starts "Use when", and
   names Ork's tools, with the CLI command to use without them.
+
+## The plugins
+
+The repository is a Claude Code marketplace
+([.claude-plugin/marketplace.json](../.claude-plugin/marketplace.json)) with two
+plugins:
+
+```
+/plugin marketplace add mimshins/ork
+/plugin install ork@ork          # for anyone using Ork
+/plugin install ork-dev@ork      # for contributors to Ork
+```
+
+- **`ork`** ([plugins/ork/](../plugins/ork/)) has the skills above, Ork's tools
+  through `ork mcp` ([.mcp.json](../plugins/ork/.mcp.json)), and a hook. Its
+  server runs the `ork` on the person's `PATH`, one Ork per machine and one
+  store, with `--expects` set to the plugin's version, so an older `ork` says to
+  upgrade rather than fail. Without `ork` on `PATH`, Claude Code shows the
+  server as failed in `/mcp`.
+- **The hook** ([no-decide.ts](../plugins/ork/hooks/no-decide.ts)) runs before
+  each of Claude Code's shell commands and stops `ork decide`, however `ork` is
+  reached (a path, `npx @krapht/ork`, `pnpm ork`), unless it only lists
+  (`--list`, `-l`). It tells Claude Code where the person answers. It stops
+  accidents; it isn't a boundary ([gaps](./gaps/limits-claude-code.md)).
+- **`ork-dev`** is [.ai/](../.ai/README.md) itself, as its folders already have
+  a plugin's layout: the repository's own skills and agents.
+- **Versions** are the CLI's: the release binds them into both `plugin.json`
+  files and the `--expects` of `ork`'s server, and a test fails when one differs
+  from the CLI's `package.json` ([release](../runbook/development/release.md)).

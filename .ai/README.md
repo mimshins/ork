@@ -11,6 +11,14 @@ Entry point for agents: [`AGENTS.md`](../AGENTS.md), the only instruction
 source. Tool adapters are pointers only: `CLAUDE.md` (`@AGENTS.md`) and the
 symlinks `.claude/skills` → `.ai/skills` and `.claude/agents` → `.ai/agents`.
 
+`.ai/` is also a Claude Code plugin, `ork-dev`, listed in the repository's
+marketplace, so a contributor can take these skills and agents into Claude Code
+anywhere ([Ork for Claude Code](../specs/claude-code.md)):
+
+```
+/plugin install ork-dev --marketplace mimshins/ork
+```
+
 **Public repository:** everything here is world-readable. No secrets, tokens,
 internal hostnames, dashboard links, or personal data, in memories included.
 
