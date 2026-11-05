@@ -840,7 +840,15 @@ export const MILESTONES = [
         detail:
           "Claude Code, outside a run, learns to write, check and run workflows the way Ork is built to save: an `ork mcp` server on the same code as the CLI, skills for writing, running and Ork's principles, a plugin with both, and the skills through `ork init`. It reads, checks and starts runs, and never answers a decision (RFC-012, accepted).",
         docs: ["rfcs/active/RFC-012-teaching-claude-code-ork.md"],
-        commits: ["ee4a55e", "3a289d5", "00ec407", "36ac878", "b15911c"],
+        commits: [
+          "ee4a55e",
+          "3a289d5",
+          "00ec407",
+          "36ac878",
+          "b15911c",
+          "f84dc9e",
+          "9751231",
+        ],
       },
       {
         id: "benchmark",
