@@ -220,8 +220,25 @@ can't.
 
 1. **Should `ork init` offer the skills when the plugin is installed?** It can't
    reliably tell. Proposed: it asks, and says the plugin has them too.
-2. **Does a marketplace at the repository's root, beside the packages, need
-   anything else?** Not found in the docs; to try before building.
+
+## Tried before building
+
+On 2026-11-06, with Claude Code 2.1.318, a trial marketplace at a repository's
+root beside a `packages/` folder, with two plugins (`ork` and `ork-dev`):
+
+- `claude plugin validate` passed it, and `claude plugin marketplace add` and
+  `claude plugin install ork@ork` installed both from a local path. A
+  marketplace at the root needs nothing else.
+- In a session, the MCP server from `.mcp.json` connected as `plugin:ork:ork`,
+  its tool was `mcp__plugin_ork_ork__ping`, the skill was `/ork:write`, and a
+  `PreToolUse` hook on Bash blocked `ork decide` and handed its message back.
+- **A run's own plugin is also named `ork`**
+  ([session.ts](../../packages/core/src/context/session.ts)). With both loaded,
+  Claude Code merged them: `ork:review` and `ork:write` side by side, and the
+  plugin's MCP server connected. So a project that enables the plugin in its own
+  settings gives a run's sessions `start_run`. `ork mcp` has to know it's inside
+  a run and offer no start there, and skill names mustn't repeat the built-in
+  ones (`review`, `brief`, `report`).
 
 ## Answered questions
 
