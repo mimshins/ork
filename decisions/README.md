@@ -87,3 +87,4 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [053](./ADR-053-watching-a-source.md)                | Watching a source, inside a run and to start one                            |
 | [054](./ADR-054-component-tokens.md)                 | Each component owns its tokens, and a state only sets tokens                |
 | [055](./ADR-055-console-language.md)                 | The console's language: frames, cards and two voices                        |
+| [056](./ADR-056-walking-a-workflow.md)               | Walking every way through a workflow before it runs                         | Accepted          | [RFC-009](../rfcs/archived/RFC-009-walking-a-workflow.md)           |

@@ -75,6 +75,6 @@ because edges didn't have `ok`. That's why it's part of this decision.
 - The format gains `output.schema` on tools, MCP calls and steps.
 - Some edits now refuse, where they used to leave a condition that never
   matches.
-- The checks in [RFC-009](../rfcs/active/RFC-009-walking-a-workflow.md) become
+- The checks in [RFC-009](../rfcs/archived/RFC-009-walking-a-workflow.md) become
   the fallback for hand-written files, and read this list.
 - Limits: [L112 to L115](../specs/gaps/limits-builder.md).

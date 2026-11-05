@@ -726,7 +726,8 @@ export const MILESTONES = [
       {
         id: "workflow-walk",
         title: "Check every way through",
-        status: "active",
+        status: "done",
+        date: "2026-11-06",
         commits: [
           "3cb93db",
           "7b82d08",
@@ -741,8 +742,11 @@ export const MILESTONES = [
           "e15d478",
         ],
         detail:
-          "Before a run, find what can't work: a condition that's never true, a node no path reaches, a loop that can only run out of rounds. The stricter compiler checks are in: a value a condition can never see stops the run, and loops without an exit or a budget warn. The walk of every outcome on the real scheduler is built too, with no sessions and no scripts, and `ork validate`, `ork run` and the builder show what it finds. Reviews found false warnings, so its warnings now say only what it tried, held to a fuzz against the real scheduler and to each case found. Next the guide, the decision record and the limits. RFC-009, after RFC-010.",
-        docs: ["rfcs/active/RFC-009-walking-a-workflow.md"],
+          "Before a run, find what can't work: a condition that's never true, a node no path reaches, a loop that can only run out of rounds. The stricter compiler checks are in: a value a condition can never see stops the run, and loops without an exit or a budget warn. The walk of every outcome on the real scheduler is built too, with no sessions and no scripts, and `ork validate`, `ork run` and the builder show what it finds. Reviews found false warnings, so its warnings say only what it tried, held to a fuzz against the real scheduler and to each case found. The guide says what it can't tell, and the limits are in the register. RFC-009, after RFC-010.",
+        docs: [
+          "decisions/ADR-056-walking-a-workflow.md",
+          "rfcs/archived/RFC-009-walking-a-workflow.md",
+        ],
       },
       {
         id: "worktrees-panel",

@@ -53,10 +53,18 @@ export const JOURNEYS = [
       },
       {
         from: "compiler",
+        to: "scheduler",
+        title: "The walk tries every way through",
+        detail:
+          "The real scheduler runs once per way through, with stand-ins for every node and a scripted person: no session, tool or script starts. Its warnings say only what it tried, such as a node no way it tried reaches.",
+        docs: [CORE.walk, CORE.walkCode, CORE.walkAdr],
+      },
+      {
+        from: "compiler",
         to: "cli",
         title: "The CLI prints the diagnostics",
         detail:
-          "Errors and warnings with file, line and column; the exit code is non-zero when there is an error.",
+          "Errors and warnings with file, line and column, then how many ways it walked; the exit code is non-zero when there is an error.",
       },
     ],
   },

@@ -68,6 +68,12 @@ export const CORE = {
     "packages/core/test/compile.test.ts",
     "Tests: the compiler's checks",
   ),
+  walk: d("specs/scheduler/walking.md", "Spec: walking every way through"),
+  walkCode: d("packages/core/src/run/walk.ts", "Code: the walk"),
+  walkAdr: d(
+    "decisions/ADR-056-walking-a-workflow.md",
+    "ADR-056: walking a workflow before it runs",
+  ),
 };
 
 export const UI = {

@@ -4,7 +4,7 @@ _Part of [Known gaps and limits](../gaps.md)._
 
 What walking a workflow does for now, by choice
 ([walking](../scheduler/walking.md),
-[RFC-009](../../rfcs/active/RFC-009-walking-a-workflow.md)).
+[RFC-009](../../rfcs/archived/RFC-009-walking-a-workflow.md)).
 
 - **L139 · A walk's warnings can be wrong.** `walk.never-runs` and
   `walk.only-rounds` say only what the walk tried, and it doesn't try every

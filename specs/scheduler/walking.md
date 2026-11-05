@@ -2,10 +2,12 @@
 
 _Part of [The scheduler](../scheduler.md)._
 
-Status: **Partial** ([walk.ts](../../packages/core/src/run/walk.ts),
+Status: **Built** ([walk.ts](../../packages/core/src/run/walk.ts),
 [tests](../../packages/core/test/walk.test.ts),
-[RFC-009](../../rfcs/active/RFC-009-walking-a-workflow.md)). `ork validate`,
-`ork run` and the builder walk a workflow.
+[fuzz](../../packages/core/test/walk-fuzz.test.ts)). `ork validate`, `ork run`
+and the builder walk a workflow. Why:
+[ADR-056](../../decisions/ADR-056-walking-a-workflow.md),
+[RFC-009](../../rfcs/archived/RFC-009-walking-a-workflow.md).
 
 `walkWorkflow(graph)` tries every way through a compiled workflow on the real
 `startRun`, so what the graph does for an outcome is what a run does. Stand-ins

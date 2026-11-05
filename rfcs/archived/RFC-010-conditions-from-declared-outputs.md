@@ -17,11 +17,11 @@
 
 ## Context
 
-[RFC-009](../active/RFC-009-walking-a-workflow.md) finds workflows that can't do
-what they say. The maintainer's response set the order: **prevent a mistake
-where possible, and detect only what's left.** A typo that can't be typed needs
-no error message. That takes structured outputs, as a list of choices can only
-come from a declared shape.
+[RFC-009](./RFC-009-walking-a-workflow.md) finds workflows that can't do what
+they say. The maintainer's response set the order: **prevent a mistake where
+possible, and detect only what's left.** A typo that can't be typed needs no
+error message. That takes structured outputs, as a list of choices can only come
+from a declared shape.
 
 ### Where a condition comes from today
 

@@ -294,6 +294,7 @@ export const NODES = [
       "A `workflow.call` has no `parent`, and cannot call its own workflow in its own project; `ork validate` also checks the project, workflow, node and required inputs it names.",
       "The project's rules (`.ork/project.yaml`) go under the workflow first; git templates are checked: known placeholders, `{node}` when a run can make several worktrees.",
       "One list of what each node can say (`graph/says.ts`) feeds the compiler, the Builder and the run. An edge can read `ok`.",
+      "A condition comparing a field with a value its node can't report is an error (`when.value`); then a walk on the real scheduler warns about what no way it tried reaches.",
     ],
     see: [
       { map: "roles", node: "compiler", label: "Entries, roots and orphans" },
