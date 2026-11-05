@@ -68,6 +68,7 @@ export * from "./run/resume.ts";
 export * from "./run/routing.ts";
 export * from "./run/scheduler.ts";
 export * from "./run/scope.ts";
+export * from "./run/walk.ts";
 export type * from "./run/types.ts";
 export * from "./runtime/report.ts";
 export type * from "./runtime/types.ts";

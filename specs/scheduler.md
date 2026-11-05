@@ -223,3 +223,4 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   - [Resuming a run](./scheduler/resuming-and-events.md#resuming-a-run)
   - [Run events](./scheduler/resuming-and-events.md#run-events)
 - [Watching a source](./scheduler/watching.md)
+- [Walking every way through](./scheduler/walking.md)

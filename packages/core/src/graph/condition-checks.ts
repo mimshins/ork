@@ -27,10 +27,13 @@ const constantOf = (condition: Expr): boolean | null =>
 export const alwaysHolds = ({ condition }: CompiledEdge): boolean =>
   condition === undefined || constantOf(condition) === true;
 
-type FieldRead = { id: string; field: string };
+export type FieldRead = { id: string; field: string };
 
 /** Which node's field a path reads; `own` is the node a bare name means. */
-const fieldRead = (expr: Expr | undefined, own: string): FieldRead | null => {
+export const fieldRead = (
+  expr: Expr | undefined,
+  own: string,
+): FieldRead | null => {
   if (expr?.kind !== "path") return null;
   const { segments } = expr;
   if (segments.some(segment => typeof segment !== "string")) return null;
