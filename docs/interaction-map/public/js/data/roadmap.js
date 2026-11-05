@@ -742,6 +742,7 @@ export const MILESTONES = [
           "e15d478",
           "9389c79",
           "49b3681",
+          "3947f51",
         ],
         detail:
           "Before a run, find what can't work: a condition that's never true, a node no path reaches, a loop that can only run out of rounds. The stricter compiler checks are in: a value a condition can never see stops the run, and loops without an exit or a budget warn. The walk of every outcome on the real scheduler is built too, with no sessions and no scripts, and `ork validate`, `ork run` and the builder show what it finds. Reviews found false warnings, so its warnings say only what it tried, held to a fuzz against the real scheduler and to each case found. The guide says what it can't tell, and the limits are in the register. RFC-009, after RFC-010.",
@@ -839,6 +840,7 @@ export const MILESTONES = [
         detail:
           "Claude Code, outside a run, learns to write, check and run workflows the way Ork is built to save: an `ork mcp` server on the same code as the CLI, skills for writing, running and Ork's principles, a plugin with both, and the skills through `ork init`. It reads, checks and starts runs, and never answers a decision (RFC-012, accepted).",
         docs: ["rfcs/active/RFC-012-teaching-claude-code-ork.md"],
+        commits: ["ee4a55e"],
       },
       {
         id: "benchmark",
