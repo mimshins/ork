@@ -110,7 +110,9 @@ workflow, or type a new name and choose **Create**.
   it. Removing one that's read is refused, and it names the edge to change
   first.
 - What the checks say shows on the cards, on the fields and under the canvas.
-  They're the same checks as `ork validate`.
+  They're the same checks as `ork validate`, including its walk of every way
+  through the workflow, and only an error stops you saving. On a very large
+  workflow the walk may stop early here to keep editing quick, and it says so.
 - What you change is kept as a draft, so closing the tab loses nothing, and your
   workflows folder only gets it when you choose **Save**, which needs no errors
   left. Save never commits.

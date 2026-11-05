@@ -4,8 +4,8 @@ _Part of [The scheduler](../scheduler.md)._
 
 Status: **Partial** ([walk.ts](../../packages/core/src/run/walk.ts),
 [tests](../../packages/core/test/walk.test.ts),
-[RFC-009](../../rfcs/active/RFC-009-walking-a-workflow.md)). `ork validate` and
-`ork run` walk a workflow; the builder doesn't yet.
+[RFC-009](../../rfcs/active/RFC-009-walking-a-workflow.md)). `ork validate`,
+`ork run` and the builder walk a workflow.
 
 `walkWorkflow(graph)` tries every way through a compiled workflow on the real
 `startRun`, so it can't disagree with how a run behaves. It starts no session,
@@ -105,6 +105,13 @@ it without paying for a walk. `walkChecks` adds a walk to what it returned:
 - `ork run` prints the findings before it starts, and they don't stop it. A run
   of one node with `--node` doesn't walk, and nor does `ork resume`, as the run
   was walked when it started.
+- The builder walks on each view of a workflow, and each edit waits for it, so
+  there it stops after 200 ms, not a second
+  ([builder-view.ts](../../packages/server/src/builder-view.ts)). The findings
+  go in Problems and on the cards with the other diagnostics, and the summary
+  line comes beside them. On `software-factory`, the largest example, an edit
+  takes about 40 ms with its 461 paths. Saving doesn't walk: only errors block
+  it.
 
 ## What it reports
 

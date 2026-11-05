@@ -57,22 +57,32 @@ export const Palette = ({ builder }: { builder: Builder }) => {
 
 export const Problems = ({
   problems,
+  walk,
   onChoose,
 }: {
   problems: readonly Diagnostic[];
+  /** What walking every way through came to, when it could be walked. */
+  walk: string | null;
   onChoose: (node: string) => void;
 }) => {
   if (problems.length === 0) {
-    return <output className={styles["clean"]}>No problems found.</output>;
+    return (
+      <output className={styles["clean"]}>
+        No problems found.{walk === null ? "" : ` ${walk}`}
+      </output>
+    );
   }
   return (
     <section
       aria-label="Problems"
       className={styles["problems"]}
     >
-      <h2 className={styles["heading"]}>
-        {errorCount(problems) > 0 ? "Fix these before saving" : "Warnings"}
-      </h2>
+      <div className={styles["problemsHead"]}>
+        <h2 className={styles["heading"]}>
+          {errorCount(problems) > 0 ? "Fix these before saving" : "Warnings"}
+        </h2>
+        {walk === null ? null : <p className={styles["walk"]}>{walk}</p>}
+      </div>
       <ul className={styles["problemList"]}>
         {problems.map(problem => {
           const node = nodeOfProblem(problem);
@@ -91,7 +101,13 @@ export const Problems = ({
                   }}
                   type="button"
                 >
-                  <code>{node}</code>: <CodeText text={problemWords(problem)} />
+                  {/* A message that starts by naming it needs no label. */}
+                  {problemWords(problem).startsWith(`\`${node}\``) ? null : (
+                    <>
+                      <code>{node}</code>:{" "}
+                    </>
+                  )}
+                  <CodeText text={problemWords(problem)} />
                 </button>
               )}
             </li>

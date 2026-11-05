@@ -101,6 +101,16 @@ describe("the builder", () => {
     expect(parseWorkflow(held.text).ok).toBe(true);
   }, 20_000);
 
+  it("says what walking it came to, with no problem to list", async () => {
+    const { user } = await open();
+    await addNode(user, "worker", "worker");
+    expect(
+      await screen.findByText(
+        "No problems found. Walked 2 ways through: 1 succeeds, 1 fails.",
+      ),
+    ).toBeDefined();
+  }, 20_000);
+
   it("blocks saving on errors, and takes a person to them", async () => {
     const { user } = await open();
     await addNode(user, "gate", "gate");

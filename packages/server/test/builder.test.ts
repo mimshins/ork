@@ -43,6 +43,20 @@ nodes:
     command: echo hi # short
 `;
 
+/** Its last node can't run: the only edge to it is switched off. */
+const STRANDED = `schemaVersion: 1
+name: real
+nodes:
+  hello:
+    type: tool.shell
+    command: echo hi
+  off:
+    type: tool.shell
+    command: echo off
+edges:
+  - { from: hello, to: off, when: "false" }
+`;
+
 const PARAMS = { id: "demo", name: "real" };
 
 const answer = async <T>(call: Promise<CallResult<T>>) => {
@@ -449,6 +463,75 @@ describe("saving", () => {
     );
     expect(blocked.status).toBe(409);
     expect(blocked.error).toContain("isn't a file");
+  });
+
+  it("shows what walking it found, with its line", async () => {
+    writeFileSync(fileIn("real"), STRANDED);
+    const { data } = await answer(
+      fixture.client.call("builderView", { params: PARAMS }),
+    );
+    expect(data.walk).toBe("Walked 2 ways through: 1 succeeds, 1 fails.");
+    expect(data.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "walk.never-runs",
+        severity: "warning",
+        path: ["nodes", "off"],
+        line: 8,
+      }),
+    );
+  });
+
+  it("walks again as an edit changes it", async () => {
+    writeFileSync(fileIn("real"), VALID);
+    const before = await answer(
+      fixture.client.call("builderView", { params: PARAMS }),
+    );
+    expect(before.data.walk).toContain("Walked 2 ways");
+    const after = await answer(
+      fixture.client.call("builderEdit", {
+        params: PARAMS,
+        body: {
+          edits: [
+            {
+              op: "set",
+              path: ["nodes", "ask"],
+              value: {
+                type: "human.gate",
+                question: "Go?",
+                options: ["go", "keep"],
+              },
+            },
+          ],
+        },
+      }),
+    );
+    expect(after.data.walk).toContain("Walked 4 ways");
+  });
+
+  it("doesn't walk what has errors", async () => {
+    writeFileSync(fileIn("real"), "schemaVersion: 1\nname: real\nnodes: {}\n");
+    const { data } = await answer(
+      fixture.client.call("builderView", { params: PARAMS }),
+    );
+    expect(data.walk).toBeNull();
+  });
+
+  it("saves over what walking it found: a warning never blocks", async () => {
+    writeFileSync(fileIn("real"), VALID);
+    await answer(
+      fixture.client.call("builderRestore", {
+        params: PARAMS,
+        body: { text: STRANDED, baseHash: null },
+      }),
+    );
+    const saved = await answer(
+      fixture.client.call("builderSave", {
+        params: PARAMS,
+        body: { force: true },
+      }),
+    );
+    expect(saved.data.saved).toBe(true);
+    expect(readFileSync(fileIn("real"), "utf8")).toBe(STRANDED);
   });
 
   it("refuses a name too long to be a file", async () => {

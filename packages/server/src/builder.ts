@@ -10,8 +10,6 @@ import path from "node:path";
 
 import {
   checkWorkflowText,
-  nodeSays,
-  placeFiles,
   type ProjectRecord,
   workflowDirOf,
 } from "@krapht/ork-core";
@@ -30,7 +28,7 @@ import {
   unreadableReason,
   writeWhole,
 } from "./builder-files.ts";
-import { draftGraph } from "./builder-graph.ts";
+import { fileOf, viewOf } from "./builder-view.ts";
 import type { ServerContext } from "./context.ts";
 import type {
   BuilderEditAnswer,
@@ -38,49 +36,7 @@ import type {
   SaveAnswer,
 } from "./contract-builder.ts";
 
-const SUFFIX = ".ork.yaml";
-
 export type Refused = { refused: 400 | 404 | 409; error: string };
-
-const fileOf = (project: ProjectRecord, name: string): string =>
-  path.join(placeFiles(project).workflows, `${name}${SUFFIX}`);
-
-/** The workflow as it stands: its draft, or else its file. */
-const viewOf = (
-  context: ServerContext,
-  project: ProjectRecord,
-  name: string,
-  text: string,
-): BuilderView => {
-  const file = fileOf(project, name);
-  const draft = context.store.draft(project.id, name);
-  const onDisk = hashOfFile(file);
-  const { diagnostics, workflow } = checkWorkflowText(text, {
-    place: project,
-    workflowDir: workflowDirOf(project, file),
-    registered: context.store.projects(),
-    home: context.home,
-  });
-  const graph = draftGraph(text);
-  return {
-    name,
-    file,
-    text,
-    document: graph.document,
-    // With an agent's settings in, where it's valid enough to have them.
-    graph:
-      workflow === null
-        ? graph.graph
-        : {
-            ...graph.graph,
-            says: nodeSays(workflow.nodes, graph.graph.edges),
-          },
-    diagnostics,
-    draft: draft !== undefined,
-    baseHash: draft === undefined ? onDisk : draft.baseHash,
-    changedOnDisk: draft !== undefined && onDisk !== draft.baseHash,
-  };
-};
 
 const notFound = (project: ProjectRecord, name: string): Refused => ({
   refused: 404,
@@ -103,29 +59,29 @@ const problemWith = (
 };
 
 /** What the builder shows for a workflow. */
-export const builderView = (
+export const builderView = async (
   context: ServerContext,
   project: ProjectRecord,
   name: string,
-): BuilderView | Refused => {
+): Promise<BuilderView | Refused> => {
   const problem = problemWith(project, name);
   if (problem !== undefined) return problem;
   const text =
     context.store.draft(project.id, name)?.text ??
     readText(fileOf(project, name));
-  return text === undefined
-    ? notFound(project, name)
-    : viewOf(context, project, name, text);
+  if (text === undefined) return notFound(project, name);
+  const view = await viewOf(context, project, name, text);
+  return view;
 };
 
 const NAME = /^[a-z0-9][a-z0-9._-]*$/u;
 
 /** Starts a draft of a new workflow. */
-export const createDraft = (
+export const createDraft = async (
   context: ServerContext,
   project: ProjectRecord,
   name: string,
-): BuilderView | Refused => {
+): Promise<BuilderView | Refused> => {
   if (!NAME.test(name) || !safeName(name)) {
     return {
       refused: 400,
@@ -148,7 +104,8 @@ export const createDraft = (
     baseHash: null,
     at: new Date().toISOString(),
   });
-  return viewOf(context, project, name, text);
+  const view = await viewOf(context, project, name, text);
+  return view;
 };
 
 /**
@@ -184,12 +141,12 @@ const keep = (
 };
 
 /** Applies edits to the draft, starting one from the file if there's none. */
-export const editDraft = (
+export const editDraft = async (
   context: ServerContext,
   project: ProjectRecord,
   name: string,
   edits: readonly WorkflowEdit[],
-): BuilderEditAnswer | Refused => {
+): Promise<BuilderEditAnswer | Refused> => {
   const problem = problemWith(project, name);
   if (problem !== undefined) return problem;
   const checked = WorkflowEditSchema.array().safeParse(edits);
@@ -210,17 +167,17 @@ export const editDraft = (
     baseHash: draft === undefined ? hashOfFile(file) : draft.baseHash,
   };
   keep(context, project, name, result.text);
-  return { ...viewOf(context, project, name, result.text), previous };
+  return { ...(await viewOf(context, project, name, result.text)), previous };
 };
 
 /** Puts a draft back to earlier text: the builder's undo. */
-export const restoreDraft = (
+export const restoreDraft = async (
   context: ServerContext,
   project: ProjectRecord,
   name: string,
   text: string,
   baseHash: string | null,
-): BuilderView | Refused => {
+): Promise<BuilderView | Refused> => {
   const problem = problemWith(project, name);
   if (problem !== undefined) return problem;
   const known =
@@ -228,23 +185,24 @@ export const restoreDraft = (
     existsSync(fileOf(project, name));
   if (!known) return notFound(project, name);
   keep(context, project, name, text, baseHash);
-  return viewOf(context, project, name, text);
+  const view = await viewOf(context, project, name, text);
+  return view;
 };
 
 /** Throws away a draft; what's left is the file, if there is one. */
-export const discardDraft = (
+export const discardDraft = async (
   context: ServerContext,
   project: ProjectRecord,
   name: string,
-): BuilderView | { gone: true } | Refused => {
+): Promise<BuilderView | { gone: true } | Refused> => {
   if (!safeName(name)) return badName(name);
   context.store.dropDraft(project.id, name);
   const problem = problemWith(project, name);
   if (problem !== undefined) return problem;
   const text = readText(fileOf(project, name));
-  return text === undefined
-    ? { gone: true }
-    : viewOf(context, project, name, text);
+  if (text === undefined) return { gone: true };
+  const view = await viewOf(context, project, name, text);
+  return view;
 };
 
 /**

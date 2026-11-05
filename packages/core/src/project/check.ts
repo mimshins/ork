@@ -113,9 +113,10 @@ export const checkWorkflowText = (
  */
 export const walkChecks = async <Checks extends WalkableChecks>(
   checks: Checks,
+  options: { maxMs?: number } = {},
 ): Promise<Checks & { walk?: WalkResult }> => {
   if (checks.graph === null) return checks;
-  const walk = await walkWorkflow(checks.graph);
+  const walk = await walkWorkflow(checks.graph, options);
   const found = walk.findings.map(finding => {
     const position = checks.locate?.(finding.path) ?? null;
     return position === null ? finding : { ...finding, ...position };

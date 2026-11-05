@@ -65,6 +65,7 @@ export const fakeWorkflows = () => {
       document,
       graph,
       diagnostics: parsed.ok ? [] : parsed.diagnostics,
+      walk: parsed.ok ? "Walked 2 ways through: 1 succeeds, 1 fails." : null,
       draft: file.draft,
       baseHash: null,
       changedOnDisk: false,

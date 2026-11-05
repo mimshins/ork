@@ -51,6 +51,16 @@ export const builderRoutes = (context: ServerContext): BuilderRoutes => {
       ? fail(404, `No registered project \`${id}\`.`)
       : replyOf(work(project));
   };
+  /** The same, for work the server walks a workflow for. */
+  const walkedInProject = async <T extends object>(
+    id: string,
+    work: (project: ProjectRecord) => Promise<T | Refused>,
+  ): Promise<Reply<T>> => {
+    const project = projectOf(context, id);
+    return project === undefined
+      ? fail(404, `No registered project \`${id}\`.`)
+      : replyOf(await work(project));
+  };
   return {
     builderSchema: () => ok(JSON.parse(renderJsonSchema()) as unknown),
     builderCatalog: ({ params }) =>
@@ -83,21 +93,23 @@ export const builderRoutes = (context: ServerContext): BuilderRoutes => {
         return names;
       }),
     builderView: ({ params }) =>
-      inProject(params.id, project =>
+      walkedInProject(params.id, project =>
         builderView(context, project, params.name),
       ),
     builderCreate: ({ params, body }) =>
-      inProject(params.id, project => createDraft(context, project, body.name)),
+      walkedInProject(params.id, project =>
+        createDraft(context, project, body.name),
+      ),
     builderEdit: ({ params, body }) =>
-      inProject(params.id, project =>
+      walkedInProject(params.id, project =>
         editDraft(context, project, params.name, body.edits),
       ),
     builderRestore: ({ params, body }) =>
-      inProject(params.id, project =>
+      walkedInProject(params.id, project =>
         restoreDraft(context, project, params.name, body.text, body.baseHash),
       ),
     builderDiscard: ({ params }) =>
-      inProject(params.id, project =>
+      walkedInProject(params.id, project =>
         discardDraft(context, project, params.name),
       ),
     builderSave: ({ params, body }) =>

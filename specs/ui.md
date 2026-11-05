@@ -72,8 +72,10 @@ every `ork` command.
   edge its next unhandled answer, and a way out of a loop the opposite of its
   condition. Renaming a value follows into what reads it, and removing one
   that's read is refused.
-- **The same checks as `ork validate`,** on the cards, the fields and in a list.
-  Errors block a save, and unfinished work stays as a draft in the store.
+- **The same checks as `ork validate`,** on the cards, the fields and in a list,
+  with what [walking it](./scheduler/walking.md) found and how many ways it
+  tried. Errors block a save and warnings never do, and unfinished work stays as
+  a draft in the store.
 - **A test run** is saving, then a real run through the Run workflow dialog.
 
 ## Style

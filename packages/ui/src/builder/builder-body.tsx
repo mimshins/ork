@@ -81,6 +81,7 @@ export const BuilderBody = ({ builder }: { builder: Builder }) => {
         <Problems
           onChoose={builder.select}
           problems={view.diagnostics}
+          walk={view.walk}
         />
       </div>
       <aside

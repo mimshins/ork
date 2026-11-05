@@ -41,6 +41,8 @@ export type BuilderView = {
   /** The nodes and edges to draw. */
   graph: WorkflowGraph;
   diagnostics: Diagnostic[];
+  /** What walking every way through came to; `null` if it has errors. */
+  walk: string | null;
   /** Whether there's anything unsaved. */
   draft: boolean;
   /** The file this text began from, by hash; `null` if there was no file. */

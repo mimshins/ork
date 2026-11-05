@@ -47,6 +47,7 @@ export const fakeBuilder = () => {
       document,
       graph,
       diagnostics: parsed.ok ? [] : parsed.diagnostics,
+      walk: parsed.ok ? "Walked 2 ways through: 1 succeeds, 1 fails." : null,
       draft: held.draft,
       baseHash: null,
       changedOnDisk: false,

@@ -195,6 +195,27 @@
   overflow-y: auto;
 }
 
+.problemsHead {
+  --builder-problems-head-gap: var(--gap-tight) var(--gap-loose);
+  --builder-problems-head-margin-block-end: var(--gap-tight);
+
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--builder-problems-head-gap);
+  justify-content: space-between;
+  margin-block-end: var(--builder-problems-head-margin-block-end);
+}
+
+.walk {
+  --builder-walk-text: var(--color-text-muted);
+  --builder-walk-text-size: var(--text-small);
+
+  color: var(--builder-walk-text);
+  font-size: var(--builder-walk-text-size);
+  margin: 0;
+}
+
 .problemList,
 .types,
 .edges {
