@@ -16,43 +16,9 @@ import {
   RunsQuerySchema,
   UsageQuerySchema,
 } from "./contract.ts";
-import {
-  formatPart,
-  fromReply,
-  type McpAnswer,
-  refused,
-} from "./mcp-answers.ts";
+import { formatPart, fromReply, refused } from "./mcp-answers.ts";
+import { tool, type McpTool } from "./mcp-tool.ts";
 import { readRoutes } from "./read-routes.ts";
-
-/** A tool as `ork mcp` registers it. */
-export type McpTool = {
-  name: string;
-  description: string;
-  shape: z.ZodRawShape;
-  call: (args: unknown) => Promise<McpAnswer>;
-};
-
-const tool = <S extends z.ZodRawShape>(
-  name: string,
-  description: string,
-  shape: S,
-  run: (args: z.infer<z.ZodObject<S>>) => McpAnswer | Promise<McpAnswer>,
-): McpTool => {
-  const schema = z.strictObject(shape);
-  return {
-    name,
-    description,
-    shape,
-    call: args => {
-      const parsed = schema.safeParse(args ?? {});
-      return Promise.resolve(
-        parsed.success
-          ? run(parsed.data)
-          : refused(z.prettifyError(parsed.error)),
-      );
-    },
-  };
-};
 
 const NO_QUERY = { params: {}, query: undefined, body: undefined };
 

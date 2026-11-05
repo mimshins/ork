@@ -33,7 +33,7 @@ const withRuns = async (): Promise<OpenMcp> => {
   fixture.store.append("aaa11111", finished("aaa11111"));
   liveRun(fixture, "bbb22222");
   openGate(fixture, "bbb22222", "d-live");
-  mcp = openMcp({ version: "9.9.9", home: fixture.home });
+  mcp = openMcp({ version: "9.9.9", home: fixture.home, start: false });
   return mcp;
 };
 
@@ -47,7 +47,7 @@ const parsed = async (name: string, args: unknown = {}): Promise<unknown> =>
   JSON.parse((await call(name, args)).text) as unknown;
 
 describe("ork mcp's tools", () => {
-  it("only read: none answers, starts, stops, pauses or messages", async () => {
+  it("only read and check: none answers, starts, stops, pauses or messages", async () => {
     const { tools } = await withRuns();
     expect(tools.map(({ name }) => name)).toEqual([
       "projects",
@@ -59,6 +59,7 @@ describe("ork mcp's tools", () => {
       "run_events",
       "usage",
       "decisions",
+      "check",
     ]);
   });
 

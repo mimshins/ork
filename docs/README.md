@@ -26,7 +26,7 @@ them.
 - [Watching a source](./guides/watching.md): wait on CI or a review inside a
   run, or start a run when something happens, with no model turn until it does.
 - [Ork from Claude Code](./guides/claude-code.md): let Claude Code read your
-  projects, workflows, runs and costs with `ork mcp`.
+  runs, check the workflows it writes, and start them, with `ork mcp`.
 - [The browser view](./guides/browser-view.md): `ork ui`, its panels and keys,
   and the command that does the same as each action.
 - [Agents](./guides/agents.md): define who does the work once, give it to any

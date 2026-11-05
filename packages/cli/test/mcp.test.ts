@@ -1,13 +1,15 @@
 /**
  * @file Tests for `ork mcp` (RFC-012) through a real MCP client: it lists Ork's
- *   tools as read-only, answers a call, says when a call is refused, and starts
- *   on stdio with nothing but the protocol on stdout.
+ *   tools, read-only but `start_run`, answers a call, says when a call is
+ *   refused, explains a node's context, starts nothing inside a run, says when
+ *   it's older than its caller needs, and serves on stdio.
  */
 
-import { mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { openStore, storePath } from "@krapht/ork-core";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
@@ -26,8 +28,10 @@ afterEach(async () => {
 const home = (): string => mkdtempSync(path.join(tmpdir(), "ork-mcp-home-"));
 
 /** A client talking to `ork mcp`'s server in this process. */
-const connected = async (): Promise<Client> => {
-  const { server, close } = orkMcpServer({ home: home() });
+const connected = async (
+  options: Parameters<typeof orkMcpServer>[0] = {},
+): Promise<Client> => {
+  const { server, close } = orkMcpServer({ home: home(), env: {}, ...options });
   const [near, far] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "test", version: "1.0.0" });
   await Promise.all([server.connect(far), client.connect(near)]);
@@ -48,13 +52,34 @@ const textOf = (result: Awaited<ReturnType<Client["callTool"]>>): string => {
   return typeof text === "string" ? text : "";
 };
 
+/** A home with project `p` registered, and its workflow `w`. */
+const withProject = (): string => {
+  const at = home();
+  const root = mkdtempSync(path.join(tmpdir(), "ork-mcp-project-"));
+  const dir = path.join(root, ".ork");
+  mkdirSync(path.join(dir, "workflows"), { recursive: true });
+  writeFileSync(
+    path.join(dir, "workflows", "w.ork.yaml"),
+    "schemaVersion: 1\nname: w\nnodes:\n  lead: { type: claude.worker, prompt: Plan it }\n",
+  );
+  const store = openStore(storePath(at));
+  store.addProject({ id: "p", root, mode: "in-repo", dir });
+  store.close();
+  return at;
+};
+
+const names = async (client: Client): Promise<string[]> =>
+  (await client.listTools()).tools.map(({ name }) => name);
+
 describe("ork mcp", () => {
-  it("lists Ork's tools, each marked read-only", async () => {
+  it("lists Ork's tools, each but `start_run` marked read-only", async () => {
     const { tools } = await (await connected()).listTools();
-    expect(tools.map(({ name }) => name)).toContain("workflow_format");
+    expect(tools.map(({ name }) => name)).toContain("explain_context");
     expect(
-      tools.every(({ annotations }) => annotations?.readOnlyHint === true),
-    ).toBe(true);
+      tools
+        .filter(({ annotations }) => annotations?.readOnlyHint !== true)
+        .map(({ name }) => name),
+    ).toEqual(["start_run"]);
   });
 
   it("answers a call", async () => {
@@ -90,5 +115,31 @@ describe("ork mcp", () => {
     expect(client.getServerVersion()?.name).toBe("ork");
     const { tools } = await client.listTools();
     expect(tools.length).toBeGreaterThan(0);
+  });
+
+  it("explains what a node's session loads", async () => {
+    const client = await connected({ home: withProject() });
+    const result = await client.callTool({
+      name: "explain_context",
+      arguments: { project: "p", workflow: "w", node: "lead" },
+    });
+    expect(JSON.parse(textOf(result))).toMatchObject({
+      node: "lead",
+      type: "claude.worker",
+    });
+  });
+
+  it("starts nothing inside a run, as a project's plugin can load there", async () => {
+    const outside = await connected();
+    const inside = await connected({ env: { ORK_RUN: "r1" } });
+    expect(await names(outside)).toContain("start_run");
+    expect(await names(inside)).not.toContain("start_run");
+  });
+
+  it("refuses every call when it's older than its caller needs", async () => {
+    const client = await connected({ expects: "999.0.0" });
+    const result = await client.callTool({ name: "projects", arguments: {} });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("ork upgrade");
   });
 });
