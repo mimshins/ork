@@ -8,6 +8,7 @@
 import { Toast } from "@base-ui/react/toast";
 import type { ReactNode } from "react";
 
+import { CodeText } from "./code-text.tsx";
 import { IconClose } from "./icons.tsx";
 
 import styles from "./toast.module.css";
@@ -23,8 +24,20 @@ const List = () => {
       toast={toast}
     >
       <Toast.Content className={styles["content"]}>
-        <Toast.Title className={styles["title"]} />
-        <Toast.Description className={styles["description"]} />
+        <Toast.Title className={styles["title"]}>
+          {typeof toast.title === "string" ? (
+            <CodeText text={toast.title} />
+          ) : (
+            toast.title
+          )}
+        </Toast.Title>
+        <Toast.Description className={styles["description"]}>
+          {typeof toast.description === "string" ? (
+            <CodeText text={toast.description} />
+          ) : (
+            toast.description
+          )}
+        </Toast.Description>
       </Toast.Content>
       <Toast.Close
         aria-label="Dismiss"

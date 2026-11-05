@@ -223,7 +223,10 @@ describe("ork migrate", () => {
       home,
       [],
     );
-    expect(loaded.report.diagnostics).toEqual([]);
+    // A draft sets no budget: that's the project's to choose, and the check says so.
+    expect(loaded.report.diagnostics.map(({ code }) => code)).toEqual([
+      "loop.uncapped",
+    ]);
     expect(loaded.workflow?.rules?.git?.commit).toBe("never");
     expect(draftWorkflow(options).edges).toContainEqual({
       from: "reviewer",

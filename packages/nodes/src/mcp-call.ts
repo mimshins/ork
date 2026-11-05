@@ -122,7 +122,7 @@ const reasonOf = (error: unknown, server: string): string => {
       ? error.code
       : undefined;
   return code === 401 || error?.constructor.name === "UnauthorizedError"
-    ? `MCP server "${server}" asks for a sign-in: give it a token through headers and env:, or call it from a session`
+    ? `MCP server \`${server}\` asks for a sign-in: give it a token through headers and \`env:\`, or call it from a session`
     : message;
 };
 

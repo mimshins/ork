@@ -98,7 +98,7 @@ export const runWatch = async (options: {
   };
 
   const expiredResult = (): NodeResult => {
-    const error = `watched for ${watch.timeout}, and "${watch.until}" never held`;
+    const error = `watched for ${watch.timeout}, and \`${watch.until}\` never held`;
     return {
       ...last,
       ok: false,

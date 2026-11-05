@@ -256,7 +256,7 @@ describe("agent nodes", () => {
       expect.objectContaining({
         code: "agent.unknown",
         message:
-          '"a" names agent "nobody", which is not defined; known: helper, ork-implementer, ork-reviewer, reviewer',
+          "`a` names agent `nobody`, which is not defined; known: helper, ork-implementer, ork-reviewer, reviewer",
         path: ["nodes", "a", "agent"],
       }),
     );

@@ -79,16 +79,16 @@ const resolve = (store: EventStore, address: string): Resolved => {
   if (runArg === "" || node === "") {
     return {
       ok: false,
-      error: `Name a node as <run>/<node>, not "${address}".`,
+      error: `Name a node as <run>/<node>, not \`${address}\`.`,
     };
   }
   const found = store.lookup(runArg);
   const [run] = found;
-  if (run === undefined) return { ok: false, error: `No run "${runArg}".` };
+  if (run === undefined) return { ok: false, error: `No run \`${runArg}\`.` };
   if (found.length > 1) {
     return {
       ok: false,
-      error: `"${runArg}" matches ${String(found.length)} runs; use more of the id.`,
+      error: `\`${runArg}\` matches ${String(found.length)} runs; use more of the id.`,
     };
   }
   const refused = refusal(store, run, node);

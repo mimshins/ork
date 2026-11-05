@@ -8,6 +8,7 @@ import type { WorkflowView } from "@krapht/ork-server/client";
 
 import { EmptyState } from "../components/bits.tsx";
 import { Checkbox } from "../components/checkbox.tsx";
+import { CodeText } from "../components/code-text.tsx";
 import { Select } from "../components/select.tsx";
 import { TextField } from "../components/text-field.tsx";
 import type { DriverChoice, InputValues, RunFlags } from "./run-form.ts";
@@ -97,4 +98,14 @@ export const NoProjects = () => (
   <EmptyState title="No projects yet.">
     Run <code>ork init</code> in a repository.
   </EmptyState>
+);
+
+/** Why a run can't start, or the form can't show. */
+export const RunError = ({ error }: { error: string }) => (
+  <p
+    className={styles["error"]}
+    role="alert"
+  >
+    <CodeText text={error} />
+  </p>
 );

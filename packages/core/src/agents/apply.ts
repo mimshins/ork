@@ -123,7 +123,7 @@ export const applyAgents = (
       diagnostics.push(
         error(
           "agent.unknown",
-          `"${id}" names agent "${name}", which is not defined${known.length === 0 ? "" : `; known: ${known.join(", ")}`}`,
+          `\`${id}\` names agent \`${name}\`, which is not defined${known.length === 0 ? "" : `; known: ${known.join(", ")}`}`,
           ["nodes", id, "agent"],
         ),
       );

@@ -122,7 +122,7 @@ describe("ork validate", () => {
     );
     const report = validateFile("x.ork.yaml", dir);
     expect(formatReport(report)).toEqual([
-      'x.ork.yaml:6:13 error "inputs.nope" reads an input the workflow does not declare (ref.input)',
+      "x.ork.yaml:6:13 error `inputs.nope` reads an input the workflow does not declare (ref.input)",
       "✗ x.ork.yaml (1 error, 0 warnings)",
     ]);
   });

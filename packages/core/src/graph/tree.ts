@@ -26,17 +26,17 @@ export const checkOwnership = (workflow: Workflow): Diagnostic[] => {
     const path = ["nodes", id, "parent"];
     const owner = nodes[node.parent];
     if (node.parent === id) {
-      diagnostics.push(error("tree.self", `"${id}" cannot own itself`, path));
+      diagnostics.push(error("tree.self", `\`${id}\` cannot own itself`, path));
     } else if (owner === undefined) {
       diagnostics.push(
-        error("tree.unknown-parent", `unknown parent "${node.parent}"`, path),
+        error("tree.unknown-parent", `unknown parent \`${node.parent}\``, path),
       );
     } else if (node.type === "claude.subagent") {
       if (owner.type !== "claude.leader" && owner.type !== "claude.worker") {
         diagnostics.push(
           error(
             "tree.owner-kind",
-            `a sub-agent runs inside a claude.leader or claude.worker session, not a ${owner.type}`,
+            `a sub-agent runs inside a \`claude.leader\` or \`claude.worker\` session, not a \`${owner.type}\``,
             path,
           ),
         );
@@ -45,7 +45,7 @@ export const checkOwnership = (workflow: Workflow): Diagnostic[] => {
       diagnostics.push(
         error(
           "tree.owner-kind",
-          `only a claude.leader can own a ${node.type} ("${node.parent}" is a ${owner.type})`,
+          `only a claude.leader can own a \`${node.type}\` (\`${node.parent}\` is a \`${owner.type}\`)`,
           path,
         ),
       );
@@ -59,7 +59,7 @@ export const checkOwnership = (workflow: Workflow): Diagnostic[] => {
       diagnostics.push(
         error(
           "tree.continue",
-          `"${id}" continues in its input's worktree, so it can neither own nodes nor have a parent`,
+          `\`${id}\` continues in its input's worktree, so it can neither own nodes nor have a parent`,
           ["nodes", id, "isolation"],
         ),
       );

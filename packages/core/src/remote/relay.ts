@@ -68,7 +68,7 @@ export const createRelay = (options: {
     const status = liveStatus(run);
     return status === "running"
       ? null
-      : `its run has finished (${status}). A finished run's session is not resumed by another agent; the user can resume it with ork chat`;
+      : `its run has finished (${status}). A finished run's session is not resumed by another agent; the user can resume it with \`ork chat\``;
   };
 
   const isRunning = (peer: LinkEnd): boolean => {

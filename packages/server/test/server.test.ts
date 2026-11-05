@@ -39,7 +39,7 @@ describe("the server", () => {
     const anonymous = await fetch(`${server.url}/api/health`);
     expect(anonymous.status).toBe(401);
     expect(await anonymous.json()).toEqual({
-      error: "Not signed in; open the UI with ork ui.",
+      error: "Not signed in; open the UI with `ork ui`.",
     });
   });
 
@@ -117,7 +117,7 @@ describe("the server", () => {
         record: false,
       }),
     ).rejects.toThrow(
-      `Port ${String(server.port)} is in use; start Ork's UI on another with --port <n>.`,
+      `Port ${String(server.port)} is in use; start Ork's UI on another with \`--port <n>\`.`,
     );
   });
 });

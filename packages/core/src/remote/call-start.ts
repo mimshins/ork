@@ -144,7 +144,7 @@ export const startCall = async (
   if (!isPlainName(request.workflow)) {
     return {
       ok: false,
-      error: `"${request.workflow}" is not a workflow's name.`,
+      error: `\`${request.workflow}\` is not a workflow's name.`,
     };
   }
   const target =
@@ -154,7 +154,7 @@ export const startCall = async (
   if (target === undefined) {
     return {
       ok: false,
-      error: `No registered project "${String(request.project)}"; register it there with ork register.`,
+      error: `No registered project \`${String(request.project)}\`; register it there with \`ork register\`.`,
     };
   }
   const file = path.join(
@@ -164,7 +164,7 @@ export const startCall = async (
   if (!existsSync(file)) {
     return {
       ok: false,
-      error: `No workflow "${request.workflow}" in ${target.root}.`,
+      error: `No workflow \`${request.workflow}\` in ${target.root}.`,
     };
   }
   if ((store.lookup(runId)[0]?.depth ?? 0) + 1 > MAX_CALL_DEPTH) {

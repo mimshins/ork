@@ -8,6 +8,7 @@
 
 import type { ReactNode } from "react";
 
+import { CodeText } from "../components/code-text.tsx";
 import {
   ChoiceField,
   CommitText,
@@ -177,7 +178,7 @@ export const Field = (props: FieldProps) => {
           className={styles["problem"]}
           key={problem}
         >
-          {problem}
+          <CodeText text={problem} />
         </p>
       ))}
     </div>

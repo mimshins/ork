@@ -115,7 +115,7 @@ const checkPlain = (
     return [
       warning(
         "env.plain",
-        `${name}: this node's env: does not read {{env.${name}}}`,
+        `${name}: this node's \`env:\` does not read \`{{env.${name}}}\``,
         path,
       ),
     ];

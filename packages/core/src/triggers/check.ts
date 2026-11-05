@@ -100,7 +100,7 @@ const checkProblems = (id: string, check: TriggerCheck): Diagnostic[] => {
       : [
           error(
             "trigger.check",
-            `a check has no ${field}: ork watch does the looking, and starts the run`,
+            `a check has no ${field}: \`ork watch\` does the looking, and starts the run`,
             [...path, field],
           ),
         ],
@@ -135,12 +135,11 @@ const inputProblems = (
   const unknown = Object.keys(given)
     .filter(name => !Object.hasOwn(declared, name))
     .map(name =>
-      error("trigger.input", `${trigger.run} declares no input "${name}"`, [
-        "triggers",
-        id,
-        "inputs",
-        name,
-      ]),
+      error(
+        "trigger.input",
+        `\`${trigger.run}\` declares no input \`${name}\``,
+        ["triggers", id, "inputs", name],
+      ),
     );
   // A schedule has nothing else to fill them from.
   const missing =
@@ -155,7 +154,7 @@ const inputProblems = (
           .map(([name]) =>
             error(
               "trigger.input",
-              `${trigger.run} requires input "${name}", and a trigger with no check has only its own inputs`,
+              `\`${trigger.run}\` requires input \`${name}\`, and a trigger with no check has only its own inputs`,
               ["triggers", id, "inputs"],
             ),
           )
@@ -176,7 +175,7 @@ export const checkTrigger = (
       ...own,
       error(
         "trigger.workflow",
-        `there is no valid workflow "${trigger.run}" in this project`,
+        `there is no valid workflow \`${trigger.run}\` in this project`,
         ["triggers", id, "run"],
       ),
     ];
@@ -187,7 +186,7 @@ export const checkTrigger = (
       ? [
           error(
             "trigger.budget",
-            `${trigger.run} has no limits.budgetUsd, and a trigger spends with nobody watching: give it a cap`,
+            `\`${trigger.run}\` has no \`limits.budgetUsd\`, and a trigger spends with nobody watching: give it a cap`,
             ["triggers", id, "run"],
           ),
         ]

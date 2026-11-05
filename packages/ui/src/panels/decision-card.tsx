@@ -12,6 +12,7 @@ import { type KeyboardEvent, useId, useState } from "react";
 
 import { Kbd } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
+import { CodeText } from "../components/code-text.tsx";
 import { cliDescription, Tip } from "../components/tip.tsx";
 import {
   answerCommand,
@@ -94,10 +95,12 @@ export const DecisionCard = ({
         className={styles["question"]}
         id={questionId}
       >
-        {question}
+        <CodeText text={question} />
       </h3>
       {context === undefined ? null : (
-        <p className={styles["context"]}>{context}</p>
+        <p className={styles["context"]}>
+          <CodeText text={context} />
+        </p>
       )}
       <ul className={styles["options"]}>
         {options.map((choice, index) => {
@@ -143,7 +146,7 @@ export const DecisionCard = ({
           className={styles["refusal"]}
           role="alert"
         >
-          Could not answer: {refusal}
+          Could not answer: <CodeText text={refusal} />
         </p>
       )}
     </section>

@@ -159,7 +159,7 @@ describe("tool commands", () => {
     expect(calls).toEqual([]);
     expect(result).toMatchObject({
       ok: false,
-      error: '"repo delete me" is not in the node\'s allow list (pr view)',
+      error: "`repo delete me` is not in the node's allow list (pr view)",
     });
   });
 
@@ -231,8 +231,7 @@ describe("git nodes", () => {
     expect(calls).toEqual([]);
     expect(push).toMatchObject({
       ok: false,
-      error:
-        '"push origin main" is not in the node\'s allow list (add, commit)',
+      error: "`push origin main` is not in the node's allow list (add, commit)",
     });
     const allowed = await toolExecutor(runner)(
       context("ship", {

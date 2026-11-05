@@ -112,7 +112,8 @@ describe("a run with no terminal", () => {
       await answerDecision(run.store, decision.id, "maybe", run.home),
     ).toEqual({
       ok: false,
-      error: `"maybe" is not an option of ${decision.id}: ship, hold`,
+      error:
+        "`maybe` is not an option of `" + decision.id + "`: `ship`, `hold`",
     });
     expect(
       await answerDecision(run.store, decision.id, "ship", run.home),

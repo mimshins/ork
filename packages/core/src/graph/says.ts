@@ -16,6 +16,8 @@ export type SaidField = {
   kind: "values" | "statuses" | "number" | "boolean" | "text";
   /** The values it can have, for `values` and `statuses`. */
   values?: readonly SaidValue[];
+  /** Others can occur too, so these suggest and nothing checks against them. */
+  open?: true;
 };
 
 export type NodeSays = {
@@ -100,7 +102,13 @@ const ownSays = (node: Node): NodeSays => {
   if (node.type === "workflow.call") {
     return {
       fields: [
-        { field: "status", kind: "values", values: ["pass", "fail"] },
+        // A call reports what it called, so any status can come back.
+        {
+          field: "status",
+          kind: "values",
+          values: ["pass", "fail"],
+          open: true,
+        },
         { field: "summary", kind: "text" },
       ],
       canFail: true,
@@ -158,14 +166,26 @@ const saysOf = (
         };
   }
   if (node.type === "control.join") {
-    const statuses = inputs.flatMap(input =>
-      saysOf(input, nodes, links, next).fields.flatMap(({ field, values }) =>
-        field === "status" ? (values ?? []) : [],
+    const sources = inputs.map(input =>
+      saysOf(input, nodes, links, next).fields.find(
+        ({ field }) => field === "status",
       ),
     );
+    const statuses = sources.flatMap(source => source?.values ?? []);
+    // An input with no known list can bring any status, or none.
+    const open =
+      sources.length === 0 ||
+      sources.some(
+        source => source?.values === undefined || source.open === true,
+      );
     return {
       fields: [
-        { field: "statuses", kind: "statuses", values: [...new Set(statuses)] },
+        {
+          field: "statuses",
+          kind: "statuses",
+          values: [...new Set(statuses)],
+          ...(open ? { open } : {}),
+        },
         { field: "count", kind: "number" },
       ],
       canFail: false,

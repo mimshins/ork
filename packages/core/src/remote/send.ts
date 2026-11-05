@@ -35,7 +35,7 @@ export const scriptRefusal = (
 ): string | null => {
   const { run: runId, node, to } = send;
   if (runId === undefined || node === undefined) {
-    return "`ork send` runs inside a tool node of a run: ORK_RUN and ORK_NODE are not set.";
+    return "`ork send` runs inside a tool node of a run: `ORK_RUN` and `ORK_NODE` are not set.";
   }
   // It has no message bus to take a message.
   if (runId.startsWith("node-")) {
@@ -63,7 +63,7 @@ export const scriptRefusal = (
   if (contacts.includes(to)) return null;
   return contacts.length === 0
     ? `${node} has no one to write to: give it an owner, or a channel under messages:.`
-    : `"${to}" is not a contact of ${node}, which can write to ${contacts.join(", ")} (its owner and its channels).`;
+    : `\`${to}\` is not a contact of ${node}, which can write to ${contacts.join(", ")} (its owner and its channels).`;
 };
 
 /** Reading all of it would cost as much as sending it. */

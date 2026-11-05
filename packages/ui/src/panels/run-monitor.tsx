@@ -8,7 +8,7 @@ import { useState } from "react";
 
 import { EmptyState } from "../components/bits.tsx";
 import { GraphView } from "../graph/graph-view.tsx";
-import { NodeSection } from "./node-section.tsx";
+import { MonitorError, NodeSection } from "./node-section.tsx";
 import { OwnershipTree } from "./ownership-tree.tsx";
 import { RunHeader } from "./run-header.tsx";
 import { RunLinks } from "./run-links.tsx";
@@ -45,14 +45,7 @@ export const RunMonitor = ({ run }: { run: RunView }) => {
         run={run}
         waiting={waiting}
       />
-      {error === null ? null : (
-        <p
-          className={styles["error"]}
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
+      {error === null ? null : <MonitorError error={error} />}
       <div className={styles["canvas"]}>
         {layout === null ? (
           <EmptyState title="Reading the run…">

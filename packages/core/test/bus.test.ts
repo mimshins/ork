@@ -83,7 +83,7 @@ describe("addressing", () => {
     expect(bus.mailbox("security").send("docs", "hi")).toEqual({
       ok: false,
       error:
-        '"docs" is not one of your contacts; you can message lead (your owner, the nodes you own, and your declared channels)',
+        "`docs` is not one of your contacts; you can message lead (your owner, the nodes you own, and your declared channels)",
     });
     expect(bus.mailbox("other").send("lead", "hi")).toEqual({
       ok: false,
@@ -204,7 +204,7 @@ describe("questions to a live owner", () => {
     );
     expect(lead.mailbox.answer("q1", "maybe")).toEqual({
       ok: false,
-      error: '"maybe" is not an option: stop, again',
+      error: "`maybe` is not an option: stop, again",
     });
     expect(bus.mailbox("code").answer("q1", "again")).toMatchObject({
       ok: false,

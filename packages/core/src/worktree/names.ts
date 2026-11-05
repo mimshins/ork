@@ -53,7 +53,7 @@ export const namesFor = async (options: {
     : await git(root, ["check-ref-format", "--branch", branch]);
   if (valid.code !== 0 || branch === "") {
     throw new Error(
-      `git.branch gives ${options.nodeId} the branch "${branch}", which is not a valid branch name`,
+      `git.branch gives ${options.nodeId} the branch \`${branch}\`, which is not a valid branch name`,
     );
   }
   return { path: target, branch };

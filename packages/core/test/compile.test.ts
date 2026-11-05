@@ -370,7 +370,7 @@ edges:
   - { from: c, to: b, maxRounds: 3 }
 `),
       ),
-    ).toEqual([]);
+    ).toEqual(["warning:loop.no-condition"]);
   });
 
   it("checks the ownership tree", () => {
@@ -474,7 +474,7 @@ edges:
 `),
     ).diagnostics;
     expect(diagnostics.map(d => `${d.code} ${d.message}`)).toEqual([
-      'ref.field "nodes.stage.output.nope": a tool.git reports exitCode, stdout, stderr, staged, diff, head',
+      "ref.field `nodes.stage.output.nope`: a `tool.git` reports `exitCode`, `stdout`, `stderr`, `staged`, `diff`, `head`",
     ]);
   });
 

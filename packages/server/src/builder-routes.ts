@@ -48,7 +48,7 @@ export const builderRoutes = (context: ServerContext): BuilderRoutes => {
   ): Reply<T> => {
     const project = projectOf(context, id);
     return project === undefined
-      ? fail(404, `No registered project "${id}".`)
+      ? fail(404, `No registered project \`${id}\`.`)
       : replyOf(work(project));
   };
   return {

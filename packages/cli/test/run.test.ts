@@ -173,12 +173,12 @@ describe("ork run --node", () => {
     const missing = options({ inputs: [] });
     expect((await runNode(missing.value)).exitCode).toBe(1);
     expect(missing.err).toEqual([
-      'missing required input "branch" (--input branch=…)',
+      "missing required input `branch` (`--input branch=…`)",
     ]);
 
     const tool = options({ nodeId: "merge" });
     await runNode(tool.value);
-    expect(tool.err).toEqual(['"merge" is a tool.gh, not a Claude node']);
+    expect(tool.err).toEqual(["`merge` is a tool.gh, not a Claude node"]);
     expect([...missing.drivers, ...tool.drivers]).toEqual([]);
   });
 

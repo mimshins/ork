@@ -6,6 +6,7 @@
 
 import type { Diagnostic } from "@krapht/ork-server/client";
 
+import { CodeText } from "../components/code-text.tsx";
 import { typeWord } from "../graph/facts.ts";
 import { TypeIcon } from "../graph/type-icon.tsx";
 import {
@@ -79,7 +80,9 @@ export const Problems = ({
           return (
             <li key={key}>
               {node === undefined ? (
-                <span>{problemWords(problem)}</span>
+                <span>
+                  <CodeText text={problemWords(problem)} />
+                </span>
               ) : (
                 <button
                   className={styles["problemLink"]}
@@ -88,7 +91,7 @@ export const Problems = ({
                   }}
                   type="button"
                 >
-                  {node}: {problemWords(problem)}
+                  <code>{node}</code>: <CodeText text={problemWords(problem)} />
                 </button>
               )}
             </li>

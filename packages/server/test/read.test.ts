@@ -193,7 +193,7 @@ describe("the read routes", () => {
     expect(await client.call("run", { params: { id: "zzz" } })).toEqual({
       ok: false,
       status: 404,
-      error: 'No run "zzz".',
+      error: "No run `zzz`.",
     });
     fixture?.store.begin({
       id: "bbb33333",
@@ -204,7 +204,7 @@ describe("the read routes", () => {
     expect(await client.call("run", { params: { id: "bbb" } })).toMatchObject({
       ok: false,
       status: 400,
-      error: '"bbb" matches 2 runs: bbb33333, bbb22222',
+      error: "`bbb` matches 2 runs: bbb33333, bbb22222",
     });
   });
 

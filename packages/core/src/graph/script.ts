@@ -36,7 +36,7 @@ const checkProgram = (
     found.push(
       error(
         "script.template",
-        "a script takes no templates, so a value cannot become code: pass it through env: and read it as $NAME",
+        "a script takes no templates, so a value cannot become code: pass it through `env:` and read it as `$NAME`",
         [...path, "script"],
       ),
     );
@@ -71,7 +71,7 @@ const fieldClash = (id: string, node: Node): Diagnostic[] => {
       ? [
           error(
             "verify.field",
-            "verify: reports as output.verify, so output.schema cannot name a field verify",
+            "`verify:` reports as `output.verify`, so `output.schema` cannot name a field verify",
             ["nodes", id, "output", "schema", "verify"],
           ),
         ]
@@ -80,7 +80,7 @@ const fieldClash = (id: string, node: Node): Diagnostic[] => {
       ? [
           warning(
             "before.field",
-            "a bare before means the before: step's output; read this field as output.before",
+            "a bare before means the `before:` step's output; read this field as `output.before`",
             ["nodes", id, "output", "schema", "before"],
           ),
         ]

@@ -91,8 +91,8 @@ export const RunControls = ({
         confirm={node === undefined ? "Stop run" : `Stop ${node}`}
         description={
           node === undefined
-            ? "Running nodes are interrupted, and runs it called stop too. ork resume can pick it up again."
-            : `Its session is interrupted and ${node} fails with "stopped by the user". The workflow's failure rules then apply.`
+            ? "Running nodes are interrupted, and runs it called stop too. `ork resume` can pick it up again."
+            : `Its session is interrupted and \`${node}\` fails with "stopped by the user". The workflow's failure rules then apply.`
         }
         onConfirm={() => {
           setConfirming(false);

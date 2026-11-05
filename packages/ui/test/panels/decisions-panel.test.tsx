@@ -184,9 +184,11 @@ describe("the Decisions panel", () => {
     const settled = await screen.findByRole("region", {
       name: "Settled decisions",
     });
-    expect(
-      await within(settled).findByText(/Answered Merge it with ork decide\./u),
-    ).toBeDefined();
+    await vi.waitFor(() => {
+      expect(settled.textContent).toContain(
+        "Answered Merge it with ork decide.",
+      );
+    });
   });
 
   it("has nothing for axe to find", async () => {

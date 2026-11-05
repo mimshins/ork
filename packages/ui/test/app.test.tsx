@@ -53,6 +53,12 @@ const answering = (status: number, health: unknown) => {
   );
 };
 
+/** The status line, which reads across the code in it. */
+const saysItCannotReach = (_text: string, element: Element | null): boolean =>
+  element?.tagName === "OUTPUT" &&
+  element.textContent ===
+    "Cannot reach ork ui: Sign in with the link ork ui printed.";
+
 describe("the app", () => {
   it("shows the version of the Ork that serves it", async () => {
     answering(200, { version: "0.3.0", pid: 1, startedAt: "now" });
@@ -67,11 +73,7 @@ describe("the app", () => {
   it("says why it cannot reach the server", async () => {
     answering(401, { error: "Sign in with the link ork ui printed." });
     render(<App />);
-    expect(
-      await screen.findByText(
-        "Cannot reach ork ui: Sign in with the link ork ui printed.",
-      ),
-    ).toBeDefined();
+    expect(await screen.findByText(saysItCannotReach)).toBeDefined();
   });
 
   it("shows what is live, and closes the stream when it unmounts", async () => {

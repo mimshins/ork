@@ -56,12 +56,12 @@ type HeldFeed = { feed: RunFeed; retained: number };
 /** What the status bar says about the server. */
 export const describeConnection = ({ link, server }: Connection): string => {
   if (server !== null && "error" in server) {
-    return `Cannot reach ork ui: ${server.error}`;
+    return `Cannot reach \`ork ui\`: ${server.error}`;
   }
-  if (link === "lost") return "Lost the stream from ork ui. Retrying…";
+  if (link === "lost") return "Lost the stream from `ork ui`. Retrying…";
   return link === "open" && server !== null
     ? `Ork ${server.version}`
-    : "Connecting to ork ui…";
+    : "Connecting to `ork ui`…";
 };
 
 const isLive = (run: RunView): boolean =>

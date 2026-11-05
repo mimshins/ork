@@ -84,12 +84,12 @@ const viewOf = (
 
 const notFound = (project: ProjectRecord, name: string): Refused => ({
   refused: 404,
-  error: `No workflow "${name}" in ${project.id}'s workflows.`,
+  error: `No workflow \`${name}\` in \`${project.id}\`'s workflows.`,
 });
 
 const badName = (name: string): Refused => ({
   refused: 400,
-  error: `"${name}" can't be a workflow's file name.`,
+  error: `\`${name}\` can't be a workflow's file name.`,
 });
 
 /** Why this workflow can't be touched at all, by its name or where it leads. */
@@ -138,7 +138,7 @@ export const createDraft = (
     existsSync(fileOf(project, name)) ||
     context.store.draft(project.id, name) !== undefined
   ) {
-    return { refused: 409, error: `There is already a workflow "${name}".` };
+    return { refused: 409, error: `There is already a workflow \`${name}\`.` };
   }
   const text = newWorkflowText(name);
   context.store.putDraft({

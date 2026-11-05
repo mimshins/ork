@@ -36,7 +36,11 @@ import {
   runScrubber,
 } from "@krapht/ork-nodes";
 
-import { formatReport, loadWorkflow } from "../commands/validate.ts";
+import {
+  formatReport,
+  loadWorkflow,
+  warningLines,
+} from "../commands/validate.ts";
 import { callPorts } from "./calls.ts";
 import { formatRunEvent } from "./format.ts";
 import {
@@ -83,6 +87,7 @@ export const runWorkflowFile = async (
     ]);
   }
   if (workflow === null || graph === null) return failed(formatReport(report));
+  for (const line of warningLines(report)) options.err(line);
 
   const pairs = parseInputPairs(options.inputs);
   if (!pairs.ok) return failed([`--input: ${pairs.error}`]);

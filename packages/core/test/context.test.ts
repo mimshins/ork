@@ -160,7 +160,7 @@ describe("the layer resolver", () => {
     expect(allow.stack.projectOff).toEqual(["beta", "gamma"]);
     expect(
       allow.stack.diagnostics.map(d => `${d.severity} ${d.message}`),
-    ).toEqual(['warning the project has no skill "missing"']);
+    ).toEqual(["warning the project has no skill `missing`"]);
     const ignore = resolve([
       "layers:",
       "  project: { skills: ignore, instructions: ignore }",
@@ -196,11 +196,11 @@ describe("the layer resolver", () => {
     expect(
       stack.diagnostics.map(d => `${d.code} ${d.path.join(".")}: ${d.message}`),
     ).toEqual([
-      'ref.skill layers.skills.0: "review" is neither a built-in (ork:<name>) nor a path to a skill folder (./…); project skills load by themselves',
-      'ref.skill layers.skills.1: Ork has no built-in skill "nope"',
+      "ref.skill layers.skills.0: `review` is neither a built-in (ork:<name>) nor a path to a skill folder (./…); project skills load by themselves",
+      "ref.skill layers.skills.1: Ork has no built-in skill `nope`",
       "ref.skill layers.skills.2: ./skills/none has no SKILL.md",
       "ref.skill layers.skills.3: ../../../outside is outside the project",
-      'ref.skill layers.skills: two workflow skills are named "beta"',
+      "ref.skill layers.skills: two workflow skills are named `beta`",
       "ref.context layers.context.0: ./context/missing.md does not exist",
     ]);
   });
@@ -296,7 +296,7 @@ describe("a planned session", () => {
     );
     expect(plan).toEqual({
       ok: false,
-      error: 'Ork has no built-in skill "nope"',
+      error: "Ork has no built-in skill `nope`",
     });
   });
 });

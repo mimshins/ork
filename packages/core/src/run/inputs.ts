@@ -18,11 +18,11 @@ const coerce = (
   if (type === "number") {
     const value = Number(raw);
     return raw.trim() === "" || Number.isNaN(value)
-      ? { error: `input "${name}" must be a number, got "${raw}"` }
+      ? { error: `input \`${name}\` must be a number, got \`${raw}\`` }
       : { value };
   }
   if (raw === "true" || raw === "false") return { value: raw === "true" };
-  return { error: `input "${name}" must be true or false, got "${raw}"` };
+  return { error: `input \`${name}\` must be true or false, got \`${raw}\`` };
 };
 
 /**
@@ -39,7 +39,7 @@ export const resolveInputs = (
 
   for (const name of Object.keys(raw)) {
     if (declared[name] === undefined) {
-      errors.push(`unknown input "${name}"`);
+      errors.push(`unknown input \`${name}\``);
     }
   }
   for (const [name, def] of Object.entries(declared)) {
@@ -47,7 +47,9 @@ export const resolveInputs = (
     if (value === undefined) {
       if (def.default !== undefined) inputs[name] = def.default;
       else if (def.required === true) {
-        errors.push(`missing required input "${name}" (--input ${name}=…)`);
+        errors.push(
+          `missing required input \`${name}\` (\`--input ${name}=…\`)`,
+        );
       }
       continue;
     }
@@ -66,7 +68,7 @@ export const parseInputPairs = (
   for (const pair of pairs) {
     const at = pair.indexOf("=");
     if (at <= 0)
-      return { ok: false, error: `expected name=value, got "${pair}"` };
+      return { ok: false, error: `expected name=value, got \`${pair}\`` };
     raw[pair.slice(0, at)] = pair.slice(at + 1);
   }
   return { ok: true, raw };

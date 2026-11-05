@@ -89,7 +89,7 @@ describe("ork send", () => {
     const place = project();
     const done = ork(place, ["send", "lead", "-m", "hi"], { ORK_SESSION: "1" });
     expect(done.status).toBe(1);
-    expect(done.stderr).toContain("ORK_RUN and ORK_NODE are not set");
+    expect(done.stderr).toContain("`ORK_RUN` and `ORK_NODE` are not set");
   });
 
   it("takes one way of giving the message", () => {
@@ -139,7 +139,7 @@ messages:
     expect(JSON.stringify(events)).toContain("sent 0");
     expect(
       readFileSync(path.join(place.repo, "refused.txt"), "utf8"),
-    ).toContain('"gone" is not a contact of check, which can write to later');
+    ).toContain("`gone` is not a contact of check, which can write to later");
   });
 
   const refusalOf = async (
@@ -308,7 +308,7 @@ messages:
         {},
         "x".repeat(64 * 1024 + 1),
       );
-      expect(done.stderr).toContain("ORK_RUN and ORK_NODE are not set");
+      expect(done.stderr).toContain("`ORK_RUN` and `ORK_NODE` are not set");
     });
   });
 

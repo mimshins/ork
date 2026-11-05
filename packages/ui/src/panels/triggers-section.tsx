@@ -9,6 +9,7 @@ import type { TriggersReport } from "@krapht/ork-server/client";
 import { useEffect } from "react";
 import { useValue } from "react-containerized-state";
 
+import { CodeText } from "../components/code-text.tsx";
 import { useAppState } from "../state/context.tsx";
 import { shownOf } from "../state/read.ts";
 
@@ -68,20 +69,22 @@ export const TriggersSection = () => {
       <h3 className={styles["triggersTitle"]}>Triggers</h3>
       {report.pid === undefined ? (
         <p className={styles["note"]}>
-          ork watch isn&apos;t running, so nothing is looking.
+          <code>ork watch</code> isn&apos;t running, so nothing is looking.
         </p>
       ) : null}
       <ul className={styles["triggerList"]}>
         {report.triggers.map(status => (
           <li key={`${status.project}/${status.trigger}`}>
             <span className={styles["triggerName"]}>{status.trigger}</span>
-            {` starts ${status.run}, every ${status.every}`}
+            {" starts "}
+            <code>{status.run}</code>
+            {`, every ${status.every}`}
             {triggerLines(status).map(line => (
               <span
                 className={styles["triggerLine"]}
                 key={line}
               >
-                {line}
+                <CodeText text={line} />
               </span>
             ))}
             {NEXT[status.standing] === undefined ? null : (

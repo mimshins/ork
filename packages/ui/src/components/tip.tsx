@@ -10,6 +10,7 @@ import { Tooltip } from "@base-ui/react/tooltip";
 import type { ReactElement, ReactNode } from "react";
 
 import { Kbd } from "./bits.tsx";
+import { CodeText } from "./code-text.tsx";
 
 import styles from "./popup.module.css";
 
@@ -52,7 +53,11 @@ export const Tip = ({ children, label, cli, keys }: TipProps) => (
         sideOffset={6}
       >
         <Tooltip.Popup className={styles["tip"]}>
-          {label === undefined ? null : <span>{label}</span>}
+          {label === undefined ? null : (
+            <span>
+              <CodeText text={label} />
+            </span>
+          )}
           {cli === undefined ? null : (
             <code className={styles["tipCommand"]}>{cli}</code>
           )}

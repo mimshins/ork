@@ -9,6 +9,7 @@
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "../components/button.tsx";
+import { CodeText } from "../components/code-text.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
 import { useAppState } from "../state/context.tsx";
 import { chatCommand, whyNoSend } from "./chats-model.ts";
@@ -75,7 +76,7 @@ export const ChatComposer = ({ run, node }: { run: RunView; node: string }) => {
           className={styles["why"]}
           id={id}
         >
-          {why}
+          <CodeText text={why} />
         </p>
         {run.live === "paused" ? null : <CopyCommand command={command} />}
       </div>
@@ -136,7 +137,7 @@ export const ChatComposer = ({ run, node }: { run: RunView; node: string }) => {
           className={styles["refusal"]}
           role="alert"
         >
-          {refusal}
+          <CodeText text={refusal} />
         </p>
       )}
     </form>

@@ -5,6 +5,7 @@
 
 import type { LimitsReport } from "@krapht/ork-server/client";
 
+import { CodeText } from "../components/code-text.tsx";
 import { Meter } from "../components/meter.tsx";
 
 import styles from "./usage.module.css";
@@ -33,7 +34,7 @@ export const UsageLimits = ({ limits }: { limits: LimitsReport }) =>
           className={styles["note"]}
           key={problem}
         >
-          {problem}
+          <CodeText text={problem} />
         </p>
       ))}
       {limits.caps.map(cap => (

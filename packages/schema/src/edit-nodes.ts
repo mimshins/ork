@@ -38,7 +38,7 @@ const refuseBadId = (id: string): void => {
   const checked = NodeIdSchema.safeParse(id);
   if (!checked.success) {
     throw new EditRefused(
-      checked.error.issues[0]?.message ?? `"${id}" can't be a node id.`,
+      checked.error.issues[0]?.message ?? `\`${id}\` can't be a node id.`,
     );
   }
 };

@@ -41,7 +41,7 @@ export const checkAbsolute = (
       ? [
           error(
             "ref.input",
-            `"${describePath(segments)}" reads an input the workflow does not declare`,
+            `\`${describePath(segments)}\` reads an input the workflow does not declare`,
             path,
           ),
         ]
@@ -54,7 +54,7 @@ export const checkAbsolute = (
       return [
         error(
           "ref.node",
-          `"${describePath(segments)}" reads an unknown node`,
+          `\`${describePath(segments)}\` reads an unknown node`,
           path,
         ),
       ];
@@ -85,7 +85,7 @@ export const checkField = (
     return [
       error(
         "ref.json",
-        `"${describePath(segments)}": this tool node has no JSON result; give it output: { format: json }`,
+        `\`${describePath(segments)}\`: this tool node has no JSON result; give it \`output: { format: json }\``,
         path,
       ),
     ];
@@ -94,7 +94,7 @@ export const checkField = (
     return [
       warning(
         "ref.field",
-        `"${describePath(segments)}": a ${target.type} reports ${known.join(", ")}`,
+        `\`${describePath(segments)}\`: a \`${target.type}\` reports \`${known.join("`, `")}\``,
         path,
       ),
     ];
@@ -115,7 +115,7 @@ const checkDeclared = (
   return [
     warning(
       "ref.undeclared",
-      `"${describePath(segments)}": nothing declares ${String(name)}; add it to this node's output.schema, so a run checks it`,
+      `\`${describePath(segments)}\`: nothing declares \`${String(name)}\`; add it to this node's \`output.schema\`, so a run checks it`,
       path,
     ),
   ];
@@ -128,6 +128,6 @@ export const envOutsideEnv = (
 ): Diagnostic =>
   error(
     "template.env",
-    `"${describePath(segments)}": only a tool node's env: may read the user's variables, so a secret never reaches a recorded command`,
+    `\`${describePath(segments)}\`: only a tool node's \`env:\` may read the user's variables, so a secret never reaches a recorded command`,
     path,
   );

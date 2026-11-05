@@ -89,20 +89,20 @@ export const readMcpServer = (root: string, name: string): Read<McpServer> => {
   if (!isRecord(server)) {
     return {
       ok: false,
-      error: `no MCP server "${name}" in ${MCP_FILE}${known.length === 0 ? "" : `, which has ${known.join(", ")}`}`,
+      error: `no MCP server \`${name}\` in ${MCP_FILE}${known.length === 0 ? "" : `, which has ${known.join(", ")}`}`,
     };
   }
   if ("oauth" in server) {
     return {
       ok: false,
-      error: `MCP server "${name}" signs in with OAuth, whose tokens are Claude Code's: give it a token through headers and env:, or call it from a session`,
+      error: `MCP server \`${name}\` signs in with OAuth, whose tokens are Claude Code's: give it a token through headers and \`env:\`, or call it from a session`,
     };
   }
   const notText = notTextIn(server);
   if (notText !== undefined) {
     return {
       ok: false,
-      error: `MCP server "${name}" has a value in ${notText} that isn't a string: write it in quotes`,
+      error: `MCP server \`${name}\` has a value in ${notText} that isn't a string: write it in quotes`,
     };
   }
   const { type, url, command } = server;
@@ -125,7 +125,7 @@ export const readMcpServer = (root: string, name: string): Read<McpServer> => {
   }
   return {
     ok: false,
-    error: `MCP server "${name}" is not one Ork can call: it takes stdio and http servers`,
+    error: `MCP server \`${name}\` is not one Ork can call: it takes stdio and http servers`,
   };
 };
 
@@ -232,6 +232,6 @@ export const mcpProblems = (
     return program === undefined || installed(program)
       ? unset
       : [
-          `${id}: MCP server "${node.server}" runs ${program}, which is not installed`,
+          `${id}: MCP server \`${node.server}\` runs ${program}, which is not installed`,
         ].concat(unset);
   });

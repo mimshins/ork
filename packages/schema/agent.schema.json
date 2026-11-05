@@ -69,7 +69,7 @@
           "type": "boolean"
         },
         "ponytail": {
-          "description": "Smallest complete change. true is full. Default: full.",
+          "description": "Smallest complete change. `true` is `full`. Default: `full`.",
           "anyOf": [
             {
               "type": "boolean"

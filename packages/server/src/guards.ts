@@ -81,7 +81,7 @@ const exchange = (
       kind: "refuse",
       status: 401,
       error:
-        "That link's token is not this server's; open it again with ork ui.",
+        "That link's token is not this server's; open it again with `ork ui`.",
     };
   }
   url.searchParams.delete("token");
@@ -115,7 +115,7 @@ export const guard = (
     return {
       kind: "refuse",
       status: 401,
-      error: "Not signed in; open the UI with ork ui.",
+      error: "Not signed in; open the UI with `ork ui`.",
     };
   }
   if (!WRITES.has(request.method)) return { kind: "pass" };

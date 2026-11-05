@@ -13,6 +13,7 @@ import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 import type { ReactNode } from "react";
 
 import { Button } from "./button.tsx";
+import { CodeText } from "./code-text.tsx";
 
 import styles from "./dialog.module.css";
 
@@ -55,7 +56,7 @@ export const Dialog = ({
         <BaseDialog.Title className={styles["title"]}>{title}</BaseDialog.Title>
         {description === undefined ? null : (
           <BaseDialog.Description className={styles["description"]}>
-            {description}
+            <CodeText text={description} />
           </BaseDialog.Description>
         )}
         {children}
@@ -108,7 +109,7 @@ export const ConfirmDialog = ({
           {title}
         </AlertDialog.Title>
         <AlertDialog.Description className={styles["description"]}>
-          {description}
+          <CodeText text={description} />
         </AlertDialog.Description>
         {cli === undefined ? null : (
           <code className={styles["command"]}>{cli}</code>

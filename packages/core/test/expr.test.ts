@@ -76,10 +76,10 @@ describe("evaluate", () => {
 describe("parseExpr", () => {
   it.each([
     ["verdict ==", "unexpected end of expression"],
-    ["eval('x')", 'unknown function "eval"'],
+    ["eval('x')", "unknown function `eval`"],
     ["a.b()", "unexpected input after expression"],
     ["'open", "unterminated string"],
-    ["a = 1", 'unexpected character "="'],
+    ["a = 1", "unexpected character `=`"],
   ])("rejects %s", (source, message) => {
     expect(parseError(source)).toContain(message);
   });
@@ -108,7 +108,7 @@ describe("templates", () => {
   it("reports an unclosed template with its offset", () => {
     expect(parseTemplate("hi {{ inputs.x")).toEqual({
       ok: false,
-      message: 'unclosed "{{"',
+      message: "unclosed `{{`",
       offset: 3,
     });
   });

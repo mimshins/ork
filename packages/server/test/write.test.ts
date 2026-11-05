@@ -85,12 +85,12 @@ describe("answering a decision", () => {
     expect(await answer("nope", "ship")).toMatchObject({
       ok: false,
       status: 404,
-      error: 'No decision "nope".',
+      error: "No decision `nope`.",
     });
     expect(await answer("d2", "maybe")).toMatchObject({
       ok: false,
       status: 400,
-      error: '"maybe" is not an option of d2: ship, hold',
+      error: "`maybe` is not an option of `d2`: `ship`, `hold`",
     });
     await answer("d2", "hold");
     expect(await answer("d2", "ship")).toMatchObject({
@@ -143,7 +143,7 @@ describe("stopping and messaging a run", () => {
     endedRun(server, "done1234", "succeeded");
     expect(await say("done1234", "lead")).toMatchObject({
       status: 409,
-      error: text("use ork chat done1234 lead"),
+      error: text("use `ork chat done1234 lead`"),
     });
   });
 });
@@ -191,11 +191,11 @@ describe("starting and resuming a run", () => {
       server.client.call("start", { body: { project, workflow } });
     expect(await start("nope", "demo")).toMatchObject({
       status: 404,
-      error: text('No registered project "nope"'),
+      error: text("No registered project `nope`"),
     });
     expect(await start("demo", "missing")).toMatchObject({
       status: 404,
-      error: text('No workflow "missing"'),
+      error: text("No workflow `missing`"),
     });
     expect(await start("demo", "../../../etc/hosts")).toMatchObject({
       status: 404,

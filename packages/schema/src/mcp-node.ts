@@ -18,7 +18,9 @@ import {
 export const McpCallNodeSchema = z.strictObject({
   type: z.literal("mcp.call"),
   ...nodeBaseFields,
-  server: z.string().describe("The server's name in the project's .mcp.json."),
+  server: z
+    .string()
+    .describe("The server's name in the project's `.mcp.json`."),
   tool: z.string().describe("The tool to call on it."),
   arguments: z
     .record(z.string(), z.unknown())

@@ -12,11 +12,10 @@ import {
   checkRules,
   type ProjectOptions,
 } from "../project/rules.ts";
-import { checkCalls } from "./calls.ts";
-import { checkCycles, checkReach, compileEdges, findEntries } from "./flow.ts";
-import { checkChannels, checkNodes } from "./nodes.ts";
+import { checkFlow } from "./checks.ts";
+import { checkReach, compileEdges, findEntries } from "./flow.ts";
+import { checkChannels } from "./nodes.ts";
 import { compileRules } from "./notify.ts";
-import { checkReferences } from "./refs.ts";
 import { checkOwnership } from "./tree.ts";
 import type { CompiledGraph, CompiledNode, CompileResult } from "./types.ts";
 
@@ -25,10 +24,11 @@ const SEVERITY_ORDER = { error: 0, warning: 1 } as const;
 /**
  * Compiles a structurally valid workflow into an executable graph and checks
  * everything the schema cannot: the agents its nodes name, the ownership tree,
- * edges, bounded cycles, references in templates and conditions, and per-type
- * rules. The project's rules go under the workflow and agent nodes are filled
- * from their agents first, so every check sees the effective node; the graph
- * holds that effective workflow.
+ * edges, bounded cycles, the shape of loops, references in templates and
+ * conditions, the values conditions compare, and per-type rules. The project's
+ * rules go under the workflow and agent nodes are filled from their agents
+ * first, so every check sees the effective node; the graph holds that effective
+ * workflow.
  */
 export const compileWorkflow = (
   authored: Workflow,
@@ -46,10 +46,7 @@ export const compileWorkflow = (
     ...applied.diagnostics,
     ...checkOwnership(workflow),
     ...flow.diagnostics,
-    ...checkCycles(workflow, edges),
-    ...checkNodes(workflow, edges),
-    ...checkCalls(workflow),
-    ...checkReferences(workflow, edges, rules.rules),
+    ...checkFlow(workflow, edges, rules.rules),
     ...rules.diagnostics,
     ...channels.diagnostics,
     ...checkRules(workflow),

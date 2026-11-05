@@ -32,7 +32,7 @@ export const checkNodes = (
       diagnostics.push(
         warning(
           "timeout.subagent",
-          `sub-agent "${id}" runs inside its parent's session, so its timeout has no effect; set one on the parent`,
+          `sub-agent \`${id}\` runs inside its parent's session, so its timeout has no effect; set one on the parent`,
           [...path, "timeout"],
         ),
       );
@@ -44,7 +44,7 @@ export const checkNodes = (
         diagnostics.push(
           warning(
             "join.inputs",
-            `join "${id}" has ${sources} incoming node(s); a join waits for two or more`,
+            `join \`${id}\` has ${sources} incoming node(s); a join waits for two or more`,
             path,
           ),
         );
@@ -71,7 +71,7 @@ export const checkNodes = (
         diagnostics.push(
           warning(
             "router.conditions",
-            `router "${id}" has no edge with a when: condition`,
+            `router \`${id}\` has no edge with a \`when:\` condition`,
             path,
           ),
         );
@@ -86,7 +86,7 @@ export const checkNodes = (
           diagnostics.push(
             error(
               "gate.option",
-              `${key} "${value}" is not one of the options (${ids.join(", ")})`,
+              `${key} \`${value}\` is not one of the options (\`${ids.join("`, `")}\`)`,
               [...path, key],
             ),
           );
@@ -117,7 +117,7 @@ export const checkNodes = (
       diagnostics.push(
         warning(
           "input.required-default",
-          `input "${name}" is required and has a default; the default is never used`,
+          `input \`${name}\` is required and has a default; the default is never used`,
           ["inputs", name],
         ),
       );
@@ -158,7 +158,7 @@ export const checkChannels = (
       diagnostics.push(
         error(
           "message.endpoint",
-          `${bad.map(id => `"${id}"`).join(", ")}: channels connect claude.leader and claude.worker nodes, a tool node, and a workflow.call that names a node`,
+          `${bad.map(id => `\`${id}\``).join(", ")}: channels connect \`claude.leader\` and \`claude.worker\` nodes, a tool node, and a \`workflow.call\` that names a node`,
           path,
         ),
       );
@@ -170,7 +170,7 @@ export const checkChannels = (
       diagnostics.push(
         error(
           "message.endpoint",
-          `"${a}", "${b}": a channel needs a session on this side, and a workflow.call has none`,
+          `\`${a}\`, \`${b}\`: a channel needs a session on this side, and a \`workflow.call\` has none`,
           path,
         ),
       );
@@ -187,7 +187,7 @@ export const checkChannels = (
       diagnostics.push(
         error(
           "message.endpoint",
-          `"${a}", "${b}": a tool node writes to a session, so the other side must be a claude.leader or claude.worker`,
+          `\`${a}\`, \`${b}\`: a tool node writes to a session, so the other side must be a \`claude.leader\` or \`claude.worker\``,
           path,
         ),
       );

@@ -28,7 +28,11 @@ import {
 import { resultOf } from "@krapht/ork-nodes";
 import { beforeOf, type Driver } from "@krapht/ork-schema";
 
-import { formatReport, loadWorkflow } from "../commands/validate.ts";
+import {
+  formatReport,
+  loadWorkflow,
+  warningLines,
+} from "../commands/validate.ts";
 import { style } from "../output.ts";
 import { formatEvent, formatRunEvent } from "./format.ts";
 import { limitsRefusal, runLimits } from "./limits.ts";
@@ -88,6 +92,7 @@ export const runNode = async (
     options.store.projects(),
   );
   if (workflow === null) return failed(formatReport(report));
+  for (const line of warningLines(report)) options.err(line);
 
   const pairs = parseInputPairs(options.inputs);
   if (!pairs.ok) return failed([`--input: ${pairs.error}`]);

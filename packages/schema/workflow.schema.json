@@ -162,7 +162,7 @@
               "type": "boolean"
             },
             "ponytail": {
-              "description": "Smallest complete change. true is full. Default: full.",
+              "description": "Smallest complete change. `true` is `full`. Default: `full`.",
               "anyOf": [
                 {
                   "type": "boolean"
@@ -193,7 +193,7 @@
               "type": "string"
             },
             "interpreter": {
-              "description": "What runs script: a program and arguments. Default: sh -eu.",
+              "description": "What runs `script:`: a program and arguments. Default: `sh -eu`.",
               "type": "string"
             },
             "env": {
@@ -436,7 +436,7 @@
                 "type": "boolean"
               },
               "ponytail": {
-                "description": "Smallest complete change. true is full. Default: full.",
+                "description": "Smallest complete change. `true` is `full`. Default: `full`.",
                 "anyOf": [
                   {
                     "type": "boolean"
@@ -633,7 +633,7 @@
                     "type": "boolean"
                   },
                   "ponytail": {
-                    "description": "Smallest complete change. true is full. Default: full.",
+                    "description": "Smallest complete change. `true` is `full`. Default: `full`.",
                     "anyOf": [
                       {
                         "type": "boolean"
@@ -707,7 +707,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The claude.leader or claude.worker to write to."
+                      "description": "The `claude.leader` or `claude.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -737,7 +737,7 @@
                     "type": "string"
                   },
                   "interpreter": {
-                    "description": "What runs script: a program and arguments. Default: sh -eu.",
+                    "description": "What runs `script:`: a program and arguments. Default: `sh -eu`.",
                     "type": "string"
                   },
                   "env": {
@@ -825,7 +825,7 @@
                     "type": "string"
                   },
                   "interpreter": {
-                    "description": "What runs script: a program and arguments. Default: sh -eu.",
+                    "description": "What runs `script:`: a program and arguments. Default: `sh -eu`.",
                     "type": "string"
                   },
                   "env": {
@@ -1018,7 +1018,7 @@
                     "type": "boolean"
                   },
                   "ponytail": {
-                    "description": "Smallest complete change. true is full. Default: full.",
+                    "description": "Smallest complete change. `true` is `full`. Default: `full`.",
                     "anyOf": [
                       {
                         "type": "boolean"
@@ -1092,7 +1092,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The claude.leader or claude.worker to write to."
+                      "description": "The `claude.leader` or `claude.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -1122,7 +1122,7 @@
                     "type": "string"
                   },
                   "interpreter": {
-                    "description": "What runs script: a program and arguments. Default: sh -eu.",
+                    "description": "What runs `script:`: a program and arguments. Default: `sh -eu`.",
                     "type": "string"
                   },
                   "env": {
@@ -1210,7 +1210,7 @@
                     "type": "string"
                   },
                   "interpreter": {
-                    "description": "What runs script: a program and arguments. Default: sh -eu.",
+                    "description": "What runs `script:`: a program and arguments. Default: `sh -eu`.",
                     "type": "string"
                   },
                   "env": {
@@ -1398,7 +1398,7 @@
                     "type": "boolean"
                   },
                   "ponytail": {
-                    "description": "Smallest complete change. true is full. Default: full.",
+                    "description": "Smallest complete change. `true` is `full`. Default: `full`.",
                     "anyOf": [
                       {
                         "type": "boolean"
@@ -1494,7 +1494,7 @@
                 "description": "Arguments for the CLI (no shell). Supports templates."
               },
               "allow": {
-                "description": "Allowed subcommand prefixes, e.g. ['pr view', 'pr merge'].",
+                "description": "Allowed subcommand prefixes, e.g. `pr view`, `pr merge`.",
                 "type": "array",
                 "items": {
                   "type": "string"
@@ -1615,7 +1615,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The claude.leader or claude.worker to write to."
+                      "description": "The `claude.leader` or `claude.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -1662,7 +1662,7 @@
                 "description": "Arguments for the CLI (no shell). Supports templates."
               },
               "allow": {
-                "description": "Allowed subcommand prefixes, e.g. ['pr view', 'pr merge'].",
+                "description": "Allowed subcommand prefixes, e.g. `pr view`, `pr merge`.",
                 "type": "array",
                 "items": {
                   "type": "string"
@@ -1783,7 +1783,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The claude.leader or claude.worker to write to."
+                      "description": "The `claude.leader` or `claude.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -1836,7 +1836,7 @@
                 "description": "Arguments for the CLI (no shell). Supports templates."
               },
               "allow": {
-                "description": "Allowed subcommand prefixes, e.g. ['pr view', 'pr merge'].",
+                "description": "Allowed subcommand prefixes, e.g. `pr view`, `pr merge`.",
                 "type": "array",
                 "items": {
                   "type": "string"
@@ -1957,7 +1957,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The claude.leader or claude.worker to write to."
+                      "description": "The `claude.leader` or `claude.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -2008,11 +2008,11 @@
                 "type": "string"
               },
               "interpreter": {
-                "description": "What runs script: a program and arguments. Default: sh -eu.",
+                "description": "What runs `script:`: a program and arguments. Default: `sh -eu`.",
                 "type": "string"
               },
               "allow": {
-                "description": "Allowed subcommand prefixes, e.g. ['pr view', 'pr merge'].",
+                "description": "Allowed subcommand prefixes, e.g. `pr view`, `pr merge`.",
                 "type": "array",
                 "items": {
                   "type": "string"
@@ -2133,7 +2133,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The claude.leader or claude.worker to write to."
+                      "description": "The `claude.leader` or `claude.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -2277,7 +2277,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The claude.leader or claude.worker to write to."
+                      "description": "The `claude.leader` or `claude.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -2372,7 +2372,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The claude.leader or claude.worker to write to."
+                      "description": "The `claude.leader` or `claude.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -2463,7 +2463,7 @@
               },
               "server": {
                 "type": "string",
-                "description": "The server's name in the project's .mcp.json."
+                "description": "The server's name in the project's `.mcp.json`."
               },
               "tool": {
                 "type": "string",
@@ -2581,7 +2581,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The claude.leader or claude.worker to write to."
+                      "description": "The `claude.leader` or `claude.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",

@@ -6,6 +6,7 @@
 
 import { type ReactNode, useState } from "react";
 
+import { CodeText } from "../components/code-text.tsx";
 import { Select } from "../components/select.tsx";
 import { TextField } from "../components/text-field.tsx";
 import {
@@ -134,7 +135,9 @@ export const ChoiceField = ({
         value={value === undefined ? (items[0]?.value ?? "") : choiceKey(value)}
       />
       {description === undefined ? null : (
-        <p className={styles["hint"]}>{description}</p>
+        <p className={styles["hint"]}>
+          <CodeText text={description} />
+        </p>
       )}
     </div>
   );
@@ -158,7 +161,9 @@ export const Group = ({
   >
     <summary className={styles["summary"]}>{labelOf(name)}</summary>
     {description === undefined ? null : (
-      <p className={styles["hint"]}>{description}</p>
+      <p className={styles["hint"]}>
+        <CodeText text={description} />
+      </p>
     )}
     <div className={styles["fields"]}>{children}</div>
   </details>

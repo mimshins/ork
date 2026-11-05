@@ -36,7 +36,7 @@ export const compileEdges = (workflow: Workflow): FlowResult => {
         diagnostics.push(
           error(
             "edge.unknown-node",
-            `edge ${label}: unknown node ${missing.map(m => `"${m}"`).join(", ")}`,
+            `edge \`${label}\`: unknown node ${missing.map(m => `\`${m}\``).join(", ")}`,
             path,
           ),
         );
@@ -49,7 +49,7 @@ export const compileEdges = (workflow: Workflow): FlowResult => {
         diagnostics.push(
           error(
             "edge.subagent",
-            `edge ${label}: "${subagent}" is a sub-agent; it runs inside its parent's session and takes no edges`,
+            `edge \`${label}\`: \`${subagent}\` is a sub-agent; it runs inside its parent's session and takes no edges`,
             path,
           ),
         );
@@ -58,7 +58,11 @@ export const compileEdges = (workflow: Workflow): FlowResult => {
       const key = `${edge.from}\u0000${edge.to}\u0000${edge.when ?? ""}`;
       if (seen.has(key)) {
         diagnostics.push(
-          warning("edge.duplicate", `edge ${label} is declared twice`, path),
+          warning(
+            "edge.duplicate",
+            `edge \`${label}\` is declared twice`,
+            path,
+          ),
         );
       }
       seen.add(key);
@@ -72,7 +76,7 @@ export const compileEdges = (workflow: Workflow): FlowResult => {
           diagnostics.push(
             error(
               "edge.when-syntax",
-              `when: ${parsed.message} at column ${parsed.offset + 1}`,
+              `\`when:\` ${parsed.message} at column ${parsed.offset + 1}`,
               [...path, "when"],
             ),
           );
@@ -85,7 +89,7 @@ export const compileEdges = (workflow: Workflow): FlowResult => {
 };
 
 /** Tarjan's strongly connected components over `ids` and `edges`. */
-const stronglyConnected = (
+export const stronglyConnected = (
   ids: readonly string[],
   edges: readonly CompiledEdge[],
 ): string[][] => {
@@ -174,7 +178,7 @@ export const checkCycles = (
       diagnostics.push(
         error(
           "graph.unbounded-cycle",
-          `cycle through ${members.join(", ")} has no edge with maxRounds`,
+          `cycle through \`${members.join("`, `")}\` has no edge with \`maxRounds\``,
           first === undefined ? ["edges"] : ["edges", first.source],
         ),
       );
@@ -187,7 +191,7 @@ export const checkCycles = (
       diagnostics.push(
         warning(
           "edge.max-rounds-unused",
-          `edge ${edge.from} -> ${edge.to} is not part of a cycle; maxRounds has no effect`,
+          `edge \`${edge.from} -> ${edge.to}\` is not part of a cycle; \`maxRounds\` has no effect`,
           ["edges", edge.source, "maxRounds"],
         ),
       );
@@ -259,7 +263,7 @@ export const checkReach = (
   return findUnreachable(workflow, edges, entries).map(id =>
     warning(
       "graph.unreachable",
-      `"${id}" never runs: no entry reaches it through edges or ownership`,
+      `\`${id}\` never runs: no entry reaches it through edges or ownership`,
       ["nodes", id],
     ),
   );

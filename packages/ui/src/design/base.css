@@ -51,6 +51,15 @@ samp {
   font-size: var(--text-mono);
 }
 
+/* A value named in a sentence. A component's own code element styles itself. */
+code:not([class]) {
+  padding-inline: var(--gap-hair);
+  border-radius: var(--radius-badge);
+  background: var(--surface-hover);
+  box-decoration-break: clone;
+  overflow-wrap: anywhere;
+}
+
 a {
   color: var(--color-link);
   text-underline-offset: 0.2em;

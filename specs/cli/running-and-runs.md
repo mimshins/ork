@@ -9,7 +9,7 @@ with the built-in node types
 ([workflow.ts](../../packages/cli/src/run/workflow.ts)):
 
 - The workflow and its inputs are checked as for `--node`; nothing starts on an
-  error.
+  error, and warnings print before it starts.
 - `worktree` Claude nodes get their own worktree beside the clone, and the run
   first checks the project ([worktrees](../worktrees.md#before-the-run)):
   uncommitted instructions or skills stop it unless `--allow-dirty`.

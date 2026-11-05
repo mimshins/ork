@@ -175,11 +175,11 @@ describe("run lookup and formatting", () => {
     expect(findRun(store, "aa1", "/p")).toMatchObject({ ok: true });
     expect(findRun(store, "aa", "/p")).toEqual({
       ok: false,
-      error: '"aa" matches 2 runs: aa22, aa11',
+      error: "`aa` matches 2 runs: aa22, aa11",
     });
     expect(findRun(store, "zz", "/p")).toEqual({
       ok: false,
-      error: 'No run "zz".',
+      error: "No run `zz`.",
     });
   });
 

@@ -68,6 +68,6 @@ export const parseSkillRef = (ref: string): SkillRef => {
   }
   return {
     kind: "invalid",
-    message: `"${ref}" is neither a built-in (ork:<name>) nor a path to a skill folder (./…); project skills load by themselves`,
+    message: `\`${ref}\` is neither a built-in (ork:<name>) nor a path to a skill folder (./…); project skills load by themselves`,
   };
 };

@@ -180,7 +180,7 @@ export const toolExecutor =
     if (!isAllowed(checked, allow)) {
       return failed(
         scrub(
-          `"${checked.join(" ")}" is not in the node's allow list (${(allow ?? []).join(", ")})`,
+          `\`${checked.join(" ")}\` is not in the node's allow list (${(allow ?? []).join(", ")})`,
         ),
       );
     }

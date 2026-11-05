@@ -8,6 +8,7 @@ import type { TreeNode } from "@krapht/ork-server/client";
 import { type Ref, useEffect, useState } from "react";
 
 import { Button } from "../components/button.tsx";
+import { CodeText } from "../components/code-text.tsx";
 import { formatTokens, typeWord } from "../graph/facts.ts";
 import { nodeActions } from "./monitor-model.ts";
 import { RunControls } from "./run-controls.tsx";
@@ -134,3 +135,13 @@ export const NodeSection = ({
     </section>
   );
 };
+
+/** What went wrong reading the run. */
+export const MonitorError = ({ error }: { error: string }) => (
+  <p
+    className={styles["error"]}
+    role="alert"
+  >
+    <CodeText text={error} />
+  </p>
+);

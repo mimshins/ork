@@ -10,7 +10,7 @@ import { useAppState } from "../state/context.tsx";
 import { WorkspaceContext } from "../workspace/context.ts";
 import { LogFiltersBar } from "./log-filters.tsx";
 import { LogList } from "./log-list.tsx";
-import { LogStatus } from "./log-status.tsx";
+import { LogError, LogStatus } from "./log-status.tsx";
 import { countsLine, filterEvents, logsCommand } from "./logs-model.ts";
 import { useLogScroll } from "./use-log-scroll.ts";
 
@@ -71,14 +71,7 @@ export const RunLogs = ({
           feed={feed}
           shown={shown.length}
         />
-        {events.error === null ? null : (
-          <p
-            className={styles["error"]}
-            role="alert"
-          >
-            {events.error}
-          </p>
-        )}
+        {events.error === null ? null : <LogError error={events.error} />}
         <LogList
           label={`Events of run ${runId}`}
           listRef={listRef}

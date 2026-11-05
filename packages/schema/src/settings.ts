@@ -179,7 +179,7 @@ export const PracticesSchema = z.strictObject({
   ponytail: z
     .union([z.boolean(), z.enum(["lite", "full", "ultra"])])
     .optional()
-    .describe("Smallest complete change. true is full. Default: full."),
+    .describe("Smallest complete change. `true` is `full`. Default: `full`."),
 });
 export type Practices = z.infer<typeof PracticesSchema>;
 export const TurnsSchema = z.number().int().positive();
@@ -212,7 +212,9 @@ export const nodeBaseFields = {
 
 /** A message a workflow declares, sent when its node finishes (RFC-005). */
 export const NotifyRuleSchema = z.strictObject({
-  to: NodeIdSchema.describe("The claude.leader or claude.worker to write to."),
+  to: NodeIdSchema.describe(
+    "The `claude.leader` or `claude.worker` to write to.",
+  ),
   when: z
     .string()
     .optional()

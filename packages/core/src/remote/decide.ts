@@ -44,11 +44,11 @@ export const answerDecision = async (
 ): Promise<Answered> => {
   const decision = store.decision(id);
   if (decision === undefined)
-    return { ok: false, error: `No decision "${id}".` };
+    return { ok: false, error: `No decision \`${id}\`.` };
   if (!decision.options.some(o => o.id === choice)) {
     return {
       ok: false,
-      error: `"${choice}" is not an option of ${id}: ${decision.options.map(o => o.id).join(", ")}`,
+      error: `\`${choice}\` is not an option of \`${id}\`: \`${decision.options.map(o => o.id).join("`, `")}\``,
     };
   }
   if (!store.answerDecision(id, choice, by)) {

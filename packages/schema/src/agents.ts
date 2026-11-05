@@ -120,7 +120,7 @@ export const parseAgentFile = (
   if (!AgentNameSchema.safeParse(name).success) {
     return {
       ok: false,
-      message: `"${name}" is not an agent name (lowercase letters, digits, '-' and '_')`,
+      message: `\`${name}\` is not an agent name (lowercase letters, digits, '-' and '_')`,
     };
   }
   const agent: Agent = {};

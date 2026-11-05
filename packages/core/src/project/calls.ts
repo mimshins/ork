@@ -107,7 +107,7 @@ export const checkCallTargets = (
       return [
         error(
           "call.workflow",
-          `call "${id}": "${node.workflow}" is not a workflow's name`,
+          `call \`${id}\`: \`${node.workflow}\` is not a workflow's name`,
           [...at, "workflow"],
         ),
       ];
@@ -120,7 +120,7 @@ export const checkCallTargets = (
       return [
         warning(
           "call.project",
-          `call "${id}": project "${String(node.project)}" is not registered here, so a run will refuse it; register it with ork register`,
+          `call \`${id}\`: project \`${String(node.project)}\` is not registered here, so a run will refuse it; register it with \`ork register\``,
           [...at, "project"],
         ),
       ];
@@ -134,7 +134,7 @@ export const checkCallTargets = (
       return [
         error(
           "call.workflow",
-          `call "${id}": no workflow "${node.workflow}" in ${target.root}`,
+          `call \`${id}\`: no workflow \`${node.workflow}\` in ${target.root}`,
           [...at, "workflow"],
         ),
       ];
@@ -144,7 +144,7 @@ export const checkCallTargets = (
       return [
         error(
           "call.workflow",
-          `call "${id}": the workflow "${node.workflow}" cannot be read or is not valid; run ork validate on it`,
+          `call \`${id}\`: the workflow \`${node.workflow}\` cannot be read or is not valid; run \`ork validate\` on it`,
           [...at, "workflow"],
         ),
       ];
@@ -156,7 +156,7 @@ export const checkCallTargets = (
         found.push(
           error(
             "call.node",
-            `call "${id}": "${node.node}" is not a leader or worker of ${node.workflow}`,
+            `call \`${id}\`: \`${node.node}\` is not a leader or worker of \`${node.workflow}\``,
             [...at, "node"],
           ),
         );
@@ -171,7 +171,7 @@ export const checkCallTargets = (
         found.push(
           error(
             "call.input",
-            `call "${id}": ${node.workflow} requires the input "${name}"`,
+            `call \`${id}\`: \`${node.workflow}\` requires the input \`${name}\``,
             [...at, "inputs"],
           ),
         );

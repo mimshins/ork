@@ -65,7 +65,7 @@ export const createOwnerQuestions = ({
       if (!asked.options.some(o => o.id === choice)) {
         return {
           ok: false,
-          error: `"${choice}" is not an option: ${asked.options.map(o => o.id).join(", ")}`,
+          error: `\`${choice}\` is not an option: ${asked.options.map(o => o.id).join(", ")}`,
         };
       }
       open.delete(question);

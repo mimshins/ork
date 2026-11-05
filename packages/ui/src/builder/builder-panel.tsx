@@ -8,6 +8,7 @@
 import { useState } from "react";
 
 import { Button } from "../components/button.tsx";
+import { CodeText } from "../components/code-text.tsx";
 import { ConfirmDialog } from "../components/dialog.tsx";
 import { useAppState } from "../state/context.tsx";
 import { BuilderBody } from "./builder-body.tsx";
@@ -90,7 +91,7 @@ export const BuilderPanel = () => {
               className={styles["error"]}
               role="alert"
             >
-              {refusal}
+              <CodeText text={refusal} />
             </p>
           )}
           <output className={styles["status"]}>

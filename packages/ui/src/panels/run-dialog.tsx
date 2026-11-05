@@ -13,7 +13,12 @@ import { Combobox } from "../components/combobox.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
 import { Dialog, DialogActions } from "../components/dialog.tsx";
 import { useAppState } from "../state/context.tsx";
-import { FlagFields, InputFields, NoProjects } from "./run-fields.tsx";
+import {
+  FlagFields,
+  InputFields,
+  NoProjects,
+  RunError,
+} from "./run-fields.tsx";
 import { commandOf, workflowPlaceholder } from "./run-form.ts";
 import { useRunForm, useStartFocus } from "./use-run-form.ts";
 
@@ -43,12 +48,7 @@ const RunForm = ({
   if (projectsRead.status === "failed") {
     return (
       <>
-        <p
-          className={styles["error"]}
-          role="alert"
-        >
-          Cannot read the projects: {projectsRead.error}
-        </p>
+        <RunError error={`Cannot read the projects: ${projectsRead.error}`} />
         {close}
       </>
     );
@@ -107,14 +107,7 @@ const RunForm = ({
         <CopyCommand command={commandOf(workflow, values, flags)} />
       )}
       <output className={styles["reason"]}>{blocked}</output>
-      {refusal === null ? null : (
-        <p
-          className={styles["error"]}
-          role="alert"
-        >
-          {refusal}
-        </p>
-      )}
+      {refusal === null ? null : <RunError error={refusal} />}
       <DialogActions>
         <Button
           onClick={onDone}

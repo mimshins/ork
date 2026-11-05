@@ -36,6 +36,7 @@ nodes:
       TOKEN: "{{env.ORK_TEST_TOKEN}}"
     output:
       format: json
+      schema: { state: string }
   check:
     type: tool.shell
     command: sh -c 'echo "$ORK_RUN $ORK_NODE $ORK_ROUND $STATE $("$ORK_BIN" --version)"; printf "{\\"n\\":1}" > "$ORK_OUTPUT"'

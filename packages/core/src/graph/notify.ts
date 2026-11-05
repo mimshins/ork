@@ -59,7 +59,7 @@ export const compileRules = (
         diagnostics.push(
           error(
             "notify.target",
-            `"${rule.to}": a rule goes to a claude.leader or claude.worker, which has a session to read it`,
+            `\`${rule.to}\`: a rule goes to a \`claude.leader\` or \`claude.worker\`, which has a session to read it`,
             [...path, "to"],
           ),
         );
@@ -72,7 +72,7 @@ export const compileRules = (
           diagnostics.push(
             error(
               "notify.when-syntax",
-              `when: ${parsed.message} at column ${String(parsed.offset + 1)}`,
+              `\`when:\` ${parsed.message} at column ${String(parsed.offset + 1)}`,
               [...path, "when"],
             ),
           );

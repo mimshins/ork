@@ -9,6 +9,7 @@ import { use, useEffect, useRef } from "react";
 import { useValue } from "react-containerized-state";
 
 import { EmptyState } from "../components/bits.tsx";
+import { CodeText } from "../components/code-text.tsx";
 import { useAppState } from "../state/context.tsx";
 import { WorkspaceContext } from "../workspace/context.ts";
 import { DecisionCard } from "./decision-card.tsx";
@@ -79,10 +80,11 @@ export const DecisionsPanel = () => {
             {settled.map(decision => (
               <li key={decision.id}>
                 <span className={styles["settledQuestion"]}>
-                  {decision.question}
+                  <CodeText text={decision.question} />
                 </span>
                 <span className={styles["settledEnding"]}>
-                  {decision.runId} · {decision.node}. {endingOf(decision)}
+                  <code>{decision.runId}</code> · <code>{decision.node}</code>.{" "}
+                  <CodeText text={endingOf(decision)} />
                 </span>
               </li>
             ))}

@@ -62,7 +62,7 @@ const write = (
   if (!AgentNameSchema.safeParse(name).success) {
     return {
       ok: false,
-      error: `"${name}" is not an agent name (lowercase letters, digits, '-' and '_')`,
+      error: `\`${name}\` is not an agent name (lowercase letters, digits, '-' and '_')`,
     };
   }
   const parsed = AgentSchema.safeParse(agent);

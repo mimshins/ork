@@ -8,6 +8,7 @@ import type { LimitsReport, UsageReport } from "@krapht/ork-server/client";
 
 import { EmptyState } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
+import { CodeText } from "../components/code-text.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
 import { UsageLimits } from "./usage-limits.tsx";
 import { isAllTime, money, moneyOf, percent, tokens } from "./usage-model.ts";
@@ -126,7 +127,7 @@ export const Refused = ({
       className={styles["refused"]}
       role="alert"
     >
-      Cannot read usage: {error}
+      Cannot read usage: <CodeText text={error} />
     </p>
     <div className={styles["retry"]}>
       <Button onClick={retry}>Try again</Button>

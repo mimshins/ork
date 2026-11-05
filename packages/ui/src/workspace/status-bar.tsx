@@ -5,6 +5,7 @@
 
 import { useComputedValue, useValue } from "react-containerized-state";
 
+import { CodeText } from "../components/code-text.tsx";
 import { describeConnection, liveRuns } from "../state/app-state.ts";
 import { useAppState } from "../state/context.tsx";
 import type { Workspace } from "./workspace.ts";
@@ -34,7 +35,9 @@ export const StatusBar = ({ workspace }: { workspace: Workspace }) => {
   const status = useComputedValue(connection, describeConnection);
   return (
     <footer className={styles["bar"]}>
-      <output className={styles["status"]}>{status}</output>
+      <output className={styles["status"]}>
+        <CodeText text={status} />
+      </output>
       <Counts />
       <output
         aria-atomic="true"

@@ -68,7 +68,7 @@ export const refuseLostAnchors = (doc: Document): void => {
     Alias: (_key, alias) => {
       if (alias.resolve(doc) === undefined) {
         throw new EditRefused(
-          `Something else shares this through the anchor "${alias.source}", so it can't be removed. Replace the anchor in the file first.`,
+          `Something else shares this through the anchor \`${alias.source}\`, so it can't be removed. Replace the anchor in the file first.`,
         );
       }
     },

@@ -84,7 +84,7 @@ describe("the page's state", () => {
     sources.last().refused();
     await vi.advanceTimersByTimeAsync(0);
     expect(describeConnection(state.connection.getValue())).toBe(
-      "Cannot reach ork ui: Refused: 401.",
+      "Cannot reach `ork ui`: Refused: 401.",
     );
     server.failing = null;
     server.version = "0.4.0";
@@ -105,7 +105,7 @@ describe("the page's state", () => {
     sources.last().refused();
     await vi.advanceTimersByTimeAsync(0);
     expect(describeConnection(state.connection.getValue())).toBe(
-      "Cannot reach ork ui: Refused: 401.",
+      "Cannot reach `ork ui`: Refused: 401.",
     );
   });
 

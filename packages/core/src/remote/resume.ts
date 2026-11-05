@@ -39,7 +39,7 @@ export const resumable = (
   if (run.id.startsWith("node-")) {
     return {
       ok: false,
-      error: `Run ${run.id} ran one node; run it again with ork run --node.`,
+      error: `Run \`${run.id}\` ran one node; run it again with \`ork run --node\`.`,
     };
   }
   const driver = flags.driver ?? state.settings.driver;

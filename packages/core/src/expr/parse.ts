@@ -103,7 +103,7 @@ const tokenize = (source: string): Token[] => {
       const at = i;
       const punct = PUNCTUATION.find(p => source.startsWith(p, at));
       if (punct === undefined) {
-        throw new ExprError(`unexpected character "${char}"`, i);
+        throw new ExprError(`unexpected character \`${char}\``, i);
       }
       tokens.push({ type: "punct", value: punct, offset: i });
       i += punct.length;
@@ -143,7 +143,7 @@ const createParser = (tokens: Token[]) => {
   const expect = (value: string) => {
     const token = next();
     if (token.type !== "punct" || token.value !== value) {
-      throw new ExprError(`expected "${value}"`, token.offset);
+      throw new ExprError(`expected \`${value}\``, token.offset);
     }
   };
 
@@ -182,7 +182,7 @@ const createParser = (tokens: Token[]) => {
         if (!isPunct("(")) return parsePath(token.value);
         if (!isFunctionName(token.value)) {
           throw new ExprError(
-            `unknown function "${token.value}" (have: ${FUNCTIONS.join(", ")})`,
+            `unknown function \`${token.value}\` (have: ${FUNCTIONS.join(", ")})`,
             token.offset,
           );
         }
@@ -201,7 +201,7 @@ const createParser = (tokens: Token[]) => {
           expect(")");
           return inner;
         }
-        throw new ExprError(`unexpected "${token.value}"`, token.offset);
+        throw new ExprError(`unexpected \`${token.value}\``, token.offset);
       }
       case "end": {
         throw new ExprError("unexpected end of expression", token.offset);

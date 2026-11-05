@@ -138,15 +138,18 @@ export const planNodeSession = (
   const declared = options.template ?? id;
   const node = workflow.nodes[declared];
   if (node === undefined) {
-    return { ok: false, error: `unknown node "${declared}"` };
+    return { ok: false, error: `unknown node \`${declared}\`` };
   }
   if (!isClaudeNode(node)) {
-    return { ok: false, error: `"${id}" is a ${node.type}, not a Claude node` };
+    return {
+      ok: false,
+      error: `\`${id}\` is a ${node.type}, not a Claude node`,
+    };
   }
   if (node.type === "claude.subagent") {
     return {
       ok: false,
-      error: `"${id}" is a sub-agent; it runs inside "${node.parent}"'s session`,
+      error: `\`${id}\` is a sub-agent; it runs inside \`${node.parent}\`'s session`,
     };
   }
 
@@ -160,7 +163,7 @@ export const planNodeSession = (
   if (needs && options.inPlace !== true) {
     return {
       ok: false,
-      error: `"${id}" uses worktree isolation, which a run on its own does not set up; run the whole workflow, or pass --in-place to run it in this checkout`,
+      error: `\`${id}\` uses worktree isolation, which a run on its own does not set up; run the whole workflow, or pass \`--in-place\` to run it in this checkout`,
     };
   }
 

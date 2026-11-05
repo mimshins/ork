@@ -225,7 +225,7 @@ describe("the scheduler", () => {
       { type: "loop.exhausted", from: "reviews", to: "builder", maxRounds: 2 },
     ]);
     expect(asked).toEqual([
-      "The loop reviews -> builder used all 2 of its rounds. What now?",
+      "The loop `reviews -> builder` used all 2 of its rounds. What now?",
     ]);
     expect(result.status).toBe("failed");
     expect(result.reasons).toEqual([

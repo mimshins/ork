@@ -111,19 +111,25 @@ export const validateFile = (file: string, cwd: string): FileReport =>
 const plural = (count: number, word: string) =>
   `${count} ${word}${count === 1 ? "" : "s"}`;
 
+const diagnosticLine = (file: string, d: Diagnostic): string => {
+  const where =
+    d.line === undefined ? file : `${file}:${d.line}:${d.column ?? 1}`;
+  const severity =
+    d.severity === "error"
+      ? style(["red", "bold"], "error")
+      : style(["yellow", "bold"], "warning");
+  return `${style("dim", where)} ${severity} ${d.message} ${style("dim", `(${d.code})`)}`;
+};
+
+/** The warnings alone, for a run that goes ahead despite them. */
+export const warningLines = (report: FileReport): string[] =>
+  report.diagnostics
+    .filter(d => d.severity === "warning")
+    .map(d => diagnosticLine(report.file, d));
+
 /** Human-readable report, one line per diagnostic, compiler style. */
 export const formatReport = (report: FileReport): string[] => {
-  const lines = report.diagnostics.map(d => {
-    const where =
-      d.line === undefined
-        ? report.file
-        : `${report.file}:${d.line}:${d.column ?? 1}`;
-    const severity =
-      d.severity === "error"
-        ? style(["red", "bold"], "error")
-        : style(["yellow", "bold"], "warning");
-    return `${style("dim", where)} ${severity} ${d.message} ${style("dim", `(${d.code})`)}`;
-  });
+  const lines = report.diagnostics.map(d => diagnosticLine(report.file, d));
   const errors = report.diagnostics.filter(d => d.severity === "error").length;
   const warnings = report.diagnostics.length - errors;
   if (report.summary === undefined && errors === 0) {

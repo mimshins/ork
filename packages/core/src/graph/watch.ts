@@ -87,7 +87,7 @@ const valueProblems = (id: string, node: Node, when: string): Diagnostic[] => {
     return [
       error(
         "watch.value",
-        `${id} waits for ${field} to be ${JSON.stringify(value)}, which it never says: it declares ${(said.values ?? []).join(", ")}`,
+        `\`${id}\` waits for \`${field}\` to be \`${String(value)}\`, which it never says: it declares \`${(said.values ?? []).join("`, `")}\``,
         path,
       ),
     ];

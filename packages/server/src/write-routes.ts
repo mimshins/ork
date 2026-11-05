@@ -176,7 +176,7 @@ export const writeRoutes = (context: ServerContext): WriteRoutes => {
       if (liveStatus(run) !== "running") {
         return fail(
           409,
-          `Run ${run.id} is not running; to talk to a finished run's node, use ork chat ${run.id} ${body.node}.`,
+          `Run \`${run.id}\` is not running; to talk to a finished run's node, use \`ork chat ${run.id} ${body.node}\`.`,
         );
       }
       await tellLiveRun(context.store, run, body.node, body.body, context.home);
@@ -207,14 +207,14 @@ export const writeRoutes = (context: ServerContext): WriteRoutes => {
       if (project === undefined) {
         return fail(
           404,
-          `No registered project "${request.project}"; register it with ork init or ork register.`,
+          `No registered project \`${request.project}\`; register it with \`ork init\` or \`ork register\`.`,
         );
       }
       const file = workflowFile(project, request.workflow);
       if (file === null) {
         return fail(
           404,
-          `No workflow "${request.workflow}" in ${project.id}'s workflows or inside its root.`,
+          `No workflow \`${request.workflow}\` in \`${project.id}\`'s workflows or inside its root.`,
         );
       }
       const runId = newRunId(context.store);

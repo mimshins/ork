@@ -36,11 +36,11 @@ export const ownerQuestionText = (
     `[ork] Question ${id} for you, as the owner of ${node}: ${question.question}`,
     ...(question.context === undefined ? [] : [question.context]),
     `Options: ${question.options.map(o => (o.description === undefined ? o.id : `${o.id} (${o.description})`)).join("; ")}.${question.recommended === undefined ? "" : ` Recommended: ${question.recommended}.`}`,
-    `Answer with the answer tool (question "${id}").`,
+    `Answer with the answer tool (question \`${id}\`).`,
   ].join("\n");
 
 /** Why a node may not write to `to`. */
 export const notAContact = (to: string, peers: readonly string[]): string =>
   peers.length === 0
     ? "you have no one to message in this run"
-    : `"${to}" is not one of your contacts; you can message ${peers.join(", ")} (your owner, the nodes you own, and your declared channels)`;
+    : `\`${to}\` is not one of your contacts; you can message ${peers.join(", ")} (your owner, the nodes you own, and your declared channels)`;

@@ -6,6 +6,7 @@
 import { Input } from "@base-ui/react/input";
 import { useId } from "react";
 
+import { CodeText } from "./code-text.tsx";
 import { Unseen } from "./unseen.tsx";
 
 import styles from "./field.module.css";
@@ -74,7 +75,7 @@ export const TextField = ({
           className={styles["hint"]}
           id={descriptionId}
         >
-          {description}
+          <CodeText text={description} />
         </p>
       )}
     </div>

@@ -5,6 +5,7 @@
  */
 
 import { Button } from "../components/button.tsx";
+import { CodeText } from "../components/code-text.tsx";
 import { IconCheck } from "../components/icons.tsx";
 import { hasOlder, lastOf } from "../state/event-window.ts";
 import type { RunEvents, RunFeed } from "../state/run-feed.ts";
@@ -56,3 +57,13 @@ export const LogStatus = ({
     </div>
   );
 };
+
+/** What went wrong reading the run's events. */
+export const LogError = ({ error }: { error: string }) => (
+  <p
+    className={styles["error"]}
+    role="alert"
+  >
+    <CodeText text={error} />
+  </p>
+);

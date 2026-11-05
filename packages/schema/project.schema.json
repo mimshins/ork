@@ -135,7 +135,7 @@
               "type": "boolean"
             },
             "ponytail": {
-              "description": "Smallest complete change. true is full. Default: full.",
+              "description": "Smallest complete change. `true` is `full`. Default: `full`.",
               "anyOf": [
                 {
                   "type": "boolean"
@@ -166,7 +166,7 @@
               "type": "string"
             },
             "interpreter": {
-              "description": "What runs script: a program and arguments. Default: sh -eu.",
+              "description": "What runs `script:`: a program and arguments. Default: `sh -eu`.",
               "type": "string"
             },
             "env": {

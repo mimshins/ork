@@ -476,7 +476,7 @@ describe("reading .mcp.json", () => {
   it("says so with no file", () => {
     const root = mkdtempSync(path.join(tmpdir(), "ork-mcp-"));
     expect(JSON.stringify(readMcpServer(root, "echo"))).toContain(
-      'no MCP server \\"echo\\"',
+      "no MCP server `echo`",
     );
   });
 
@@ -518,7 +518,7 @@ describe("reading .mcp.json", () => {
     };
     const root = projectWith({ s: { command: "not-a-program" } });
     expect(mcpProblems(workflow, root, {}, new Set(), () => false)).toEqual([
-      'a: MCP server "s" runs not-a-program, which is not installed',
+      "a: MCP server `s` runs not-a-program, which is not installed",
     ]);
   });
 
@@ -563,7 +563,7 @@ describe("reading .mcp.json", () => {
       ok: { command: "x", env: { T: "${TOK:-fine}" } },
     });
     expect(mcpProblems(workflow, root, {})).toEqual([
-      'a: no MCP server "gone" in .mcp.json, which has needs, ok',
+      "a: no MCP server `gone` in .mcp.json, which has needs, ok",
       "b: .mcp.json reads TOK, which is not set",
     ]);
     expect(mcpProblems(workflow, root, {}, new Set(["a", "b"]))).toEqual([]);

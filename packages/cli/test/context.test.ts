@@ -89,7 +89,7 @@ describe("ork context explain", () => {
       explainNode(".ork/workflows/t.ork.yaml", "nope", root, home),
     ).toEqual({
       ok: false,
-      lines: ['unknown node "nope"'],
+      lines: ["unknown node `nope`"],
     });
   });
 });

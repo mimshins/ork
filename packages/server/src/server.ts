@@ -58,7 +58,7 @@ const listen = (
       reject(
         error.code === "EADDRINUSE"
           ? new Error(
-              `Port ${String(port)} is in use; start Ork's UI on another with --port <n>.`,
+              `Port ${String(port)} is in use; start Ork's UI on another with \`--port <n>\`.`,
             )
           : error,
       );

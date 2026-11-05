@@ -26,7 +26,7 @@ const toolFields = {
   allow: z
     .array(z.string())
     .optional()
-    .describe("Allowed subcommand prefixes, e.g. ['pr view', 'pr merge']."),
+    .describe("Allowed subcommand prefixes, e.g. `pr view`, `pr merge`."),
   cwd: z.string().optional(),
   timeout: TimeoutSchema.optional().describe(
     "How long the command may run, e.g. 5m; then it is killed and the node fails. With watch:, how long one look may take.",

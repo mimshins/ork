@@ -112,9 +112,26 @@ describe("nodeSays", () => {
         field: "statuses",
         kind: "statuses",
         values: [...REPORT_STATUSES],
+        // A call's status depends on what it called.
+        open: true,
       },
       { field: "count", kind: "number" },
     ]);
+  });
+
+  it("knows a join's statuses when every input has a list", () => {
+    const closed = nodeSays(
+      { a: NODES.claude, b: NODES.narrow, join: NODES.join },
+      [
+        { from: "a", to: "join" },
+        { from: "b", to: "join" },
+      ],
+    );
+    expect(closed["join"]?.fields[0]).toEqual({
+      field: "statuses",
+      kind: "statuses",
+      values: [...REPORT_STATUSES],
+    });
   });
 
   it("gives up on a loop of pass-throughs", () => {

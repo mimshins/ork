@@ -148,6 +148,6 @@ describe("a project's workflows", () => {
     });
     expect(
       await fixture.client.call("workflows", { params: { id: "nope" } }),
-    ).toMatchObject({ status: 404, error: 'No registered project "nope".' });
+    ).toMatchObject({ status: 404, error: "No registered project `nope`." });
   });
 });

@@ -88,7 +88,7 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
   workflows: ({ params }) => {
     const project = projectOf(context, params.id);
     return project === undefined
-      ? fail(404, `No registered project "${params.id}".`)
+      ? fail(404, `No registered project \`${params.id}\`.`)
       : ok(projectWorkflows(project));
   },
 
@@ -158,7 +158,7 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
   decision: ({ params }) => {
     const found = context.store.decision(params.id);
     return found === undefined
-      ? fail(404, `No decision "${params.id}".`)
+      ? fail(404, `No decision \`${params.id}\`.`)
       : ok(found);
   },
 });

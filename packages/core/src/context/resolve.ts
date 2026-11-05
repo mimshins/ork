@@ -94,7 +94,7 @@ const referenced = (
         diagnostics.push(
           error(
             "ref.skill",
-            `Ork has no built-in skill "${parsed.name}"`,
+            `Ork has no built-in skill \`${parsed.name}\``,
             where,
           ),
         );
@@ -128,7 +128,11 @@ const referenced = (
   for (const skill of skills) {
     if (names.has(skill.name)) {
       diagnostics.push(
-        error("ref.skill", `two ${layer} skills are named "${skill.name}"`, at),
+        error(
+          "ref.skill",
+          `two ${layer} skills are named \`${skill.name}\``,
+          at,
+        ),
       );
     }
     names.add(skill.name);
@@ -155,7 +159,7 @@ const filterProject = (
   setting.allow.forEach((name, index) => {
     if (!project.some(s => s.name === name)) {
       diagnostics.push(
-        warning("ref.skill", `the project has no skill "${name}"`, [
+        warning("ref.skill", `the project has no skill \`${name}\``, [
           "layers",
           "project",
           "skills",

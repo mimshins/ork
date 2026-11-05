@@ -6,6 +6,7 @@
 import type { UsageAnswer } from "@krapht/ork-server/client";
 import { useMemo } from "react";
 
+import { CodeText } from "../components/code-text.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
 import { UsageChart } from "./usage-chart.tsx";
 import { UsageLimits } from "./usage-limits.tsx";
@@ -49,7 +50,9 @@ export const Report = ({
             <h3 className={styles["heading"]}>Worth a look</h3>
             <ul className={styles["hints"]}>
               {report.hints.map(hint => (
-                <li key={hint.code}>{hint.message}</li>
+                <li key={hint.code}>
+                  <CodeText text={hint.message} />
+                </li>
               ))}
             </ul>
           </section>

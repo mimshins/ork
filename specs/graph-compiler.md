@@ -1,7 +1,8 @@
 # Graph compiler
 
 Status: **Built** ([graph/](../packages/core/src/graph/compile.ts),
-[tests](../packages/core/test/compile.test.ts)); `ork validate` runs it. Why:
+[tests](../packages/core/test/compile.test.ts)); `ork validate` runs it, and
+`ork run` prints its warnings before it starts. Why:
 [ADR-006](../decisions/ADR-006-workflow-file-format.md),
 [ADR-008](../decisions/ADR-008-ownership-hierarchy.md).
 
@@ -33,6 +34,20 @@ with parsed conditions), the entry nodes, and the declared message channels.
   through; a `workflow.call`'s fields are not checked, since they depend on what
   it calls.
 
+- **Values in conditions:** an edge's or a `notify:` rule's `when:` that
+  compares a field with `==`, `!=`, or `any`, `all`, `count` or `contains` on a
+  join's `statuses`, is checked against
+  [what its source says](../packages/core/src/graph/says.ts): a Claude `status`,
+  a gate's `choice`, or an `output.schema` field that lists its values, where a
+  node's own `status` wins over the built-in one. A router or split follows to
+  its single input. A `workflow.call`'s status isn't checked, since it depends
+  on what it calls, nor is a join's when an input has no list. A `watch.until`
+  has its own check, `watch.value`.
+- **Loops:** a first-match router's plain edge is its fallback, so
+  `loop.beside-edge` leaves it alone. `loop.uncapped` counts the leaders and
+  workers in the loop and those they own, times its rounds; a leader can spawn
+  more, and a person can allow another round, so the number is a guide.
+
 ## Diagnostics
 
 Each diagnostic has a severity, a code, a message and a path into the workflow,
@@ -54,6 +69,11 @@ warnings do not. Schema problems come first, from
 | `edge.duplicate`         | warning  | the same edge is declared twice                                            |
 | `edge.max-rounds-unused` | warning  | `maxRounds` on an edge outside any cycle                                   |
 | `graph.unbounded-cycle`  | error    | a cycle has no `maxRounds` edge                                            |
+| `when.value`             | error    | a condition compares a field with a value it can't have (see below)        |
+| `when.never`             | warning  | a condition that reads nothing and is false                                |
+| `loop.no-condition`      | warning  | no edge of a loop has a `when:`, so only its rounds can end it             |
+| `loop.beside-edge`       | warning  | a plain edge from the node a loop edge leaves, which fires every round     |
+| `loop.uncapped`          | warning  | a loop of sessions with no `limits.budgetUsd` or `limits.timeout`          |
 | `graph.no-entry`         | error    | no node can start                                                          |
 | `graph.unreachable`      | warning  | a node no entry reaches through edges or ownership                         |
 | `join.inputs`            | warning  | a join has fewer than two inputs                                           |

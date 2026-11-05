@@ -31,11 +31,11 @@ export const findRun = (
   }
   const found = store.lookup(arg);
   const [only] = found;
-  if (only === undefined) return { ok: false, error: `No run "${arg}".` };
+  if (only === undefined) return { ok: false, error: `No run \`${arg}\`.` };
   if (found.length > 1) {
     return {
       ok: false,
-      error: `"${arg}" matches ${String(found.length)} runs: ${found.map(r => r.id).join(", ")}`,
+      error: `\`${arg}\` matches ${String(found.length)} runs: ${found.map(r => r.id).join(", ")}`,
     };
   }
   return { ok: true, run: only };

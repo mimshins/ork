@@ -42,7 +42,7 @@ export const checkOwn = (
     return [
       error(
         "ref.before",
-        `"${describePath(segments)}": what a before: step gave is read only in its node's prompt; a field of this name reads as output.before`,
+        `\`${describePath(segments)}\`: what a \`before:\` step gave is read only in its node's prompt; a field of this name reads as \`output.before\``,
         path,
       ),
     ];
@@ -107,7 +107,7 @@ export const checkTemplate = (
           : [
               error(
                 "ref.before",
-                `"${describePath(segments)}": a before: step reports ${reads.before.join(", ")}`,
+                `\`${describePath(segments)}\`: a \`before:\` step reports \`${reads.before.join("`, `")}\``,
                 path,
               ),
             ];
@@ -116,7 +116,7 @@ export const checkTemplate = (
         return [
           error(
             "template.scope",
-            `"${describePath(segments)}": defaults run for every node, so they can't read a node's output`,
+            `\`${describePath(segments)}\`: defaults run for every node, so they can't read a node's output`,
             path,
           ),
         ];
@@ -131,7 +131,7 @@ export const checkTemplate = (
         return [
           error(
             "template.scope",
-            `"${describePath(segments)}": templates read inputs.*, nodes.<id>.output.* or run.*, and a tool node's env: also reads env.*`,
+            `\`${describePath(segments)}\`: templates read \`inputs.*\`, \`nodes.<id>.output.*\` or \`run.*\`, and a tool node's \`env:\` also reads \`env.*\``,
             path,
           ),
         ];
@@ -146,7 +146,7 @@ export const checkTemplate = (
         found.push(
           warning(
             "template.not-upstream",
-            `"${describePath(segments)}": "${String(name)}" does not run before "${id}", so its output may be missing`,
+            `\`${describePath(segments)}\`: \`${String(name)}\` does not run before \`${id}\`, so its output may be missing`,
             path,
           ),
         );

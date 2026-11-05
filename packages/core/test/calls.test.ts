@@ -490,7 +490,7 @@ describe("calling a workflow", () => {
       request({ project: "kit" }),
       signal(),
     );
-    expect(result.error).toContain('No registered project "kit"');
+    expect(result.error).toContain("No registered project `kit`");
     expect(seen).toEqual([]);
   });
 
@@ -499,7 +499,7 @@ describe("calling a workflow", () => {
       request({ workflow: "ghost" }),
       signal(),
     );
-    expect(result.error).toContain('No workflow "ghost"');
+    expect(result.error).toContain("No workflow `ghost`");
   });
 
   it("refuses to nest too deep", async () => {

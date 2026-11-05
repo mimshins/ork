@@ -19,8 +19,8 @@ export const answerCommand = (
 const BY: Readonly<Record<NonNullable<DecisionRecord["answeredBy"]>, string>> =
   {
     terminal: "in the run's terminal",
-    decide: "with ork decide",
-    ui: "in ork ui",
+    decide: "with `ork decide`",
+    ui: "in `ork ui`",
   };
 
 /** A sentence on how it ended, with who gave the answer. */

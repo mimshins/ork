@@ -26,7 +26,9 @@ export const runFields = {
   interpreter: z
     .string()
     .optional()
-    .describe("What runs script: a program and arguments. Default: sh -eu."),
+    .describe(
+      "What runs `script:`: a program and arguments. Default: `sh -eu`.",
+    ),
 };
 
 export const StepSchema = z.strictObject({

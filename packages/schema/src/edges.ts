@@ -54,7 +54,7 @@ export const expandEdge = (
   if (parts.length !== 2) {
     return {
       ok: false,
-      message: `edge "${input}" must have exactly one "${ARROW}"`,
+      message: `edge \`${input}\` must have exactly one \`${ARROW}\``,
     };
   }
   const [left = "", right = ""] = parts;
@@ -63,7 +63,7 @@ export const expandEdge = (
   if (froms.length === 0 || tos.length === 0) {
     return {
       ok: false,
-      message: `edge "${input}" needs node ids on both sides of "${ARROW}"`,
+      message: `edge \`${input}\` needs node ids on both sides of \`${ARROW}\``,
     };
   }
   return {

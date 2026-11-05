@@ -17,22 +17,23 @@ export const checkCalls = (workflow: Workflow): Diagnostic[] =>
       found.push(
         error(
           "call.parent",
-          `call "${id}" cannot have an owner: a leader delegates to its own children, not to another run`,
+          `call \`${id}\` cannot have an owner: a leader delegates to its own children, not to another run`,
           [...path, "parent"],
         ),
       );
     }
     if (node.wait === "node" && node.node === undefined) {
       found.push(
-        error("call.wait-node", `call "${id}" waits on a node but names none`, [
-          ...path,
-          "wait",
-        ]),
+        error(
+          "call.wait-node",
+          `call \`${id}\` waits on a node but names none`,
+          [...path, "wait"],
+        ),
       );
     }
     if (node.project === undefined && node.workflow === workflow.name) {
       found.push(
-        error("call.self", `call "${id}" calls its own workflow`, [
+        error("call.self", `call \`${id}\` calls its own workflow`, [
           ...path,
           "workflow",
         ]),
@@ -45,7 +46,7 @@ export const checkCalls = (workflow: Workflow): Diagnostic[] =>
       found.push(
         error(
           "call.links-off",
-          `call "${id}" is in a messages channel, but this workflow's rules turn links off`,
+          `call \`${id}\` is in a messages channel, but this workflow's rules turn links off`,
           path,
         ),
       );

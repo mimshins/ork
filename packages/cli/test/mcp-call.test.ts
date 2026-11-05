@@ -33,6 +33,7 @@ nodes:
     server: echo
     tool: echo
     arguments: { id: ENG-7 }
+    output: { schema: { id: string } }
   env:
     type: mcp.call
     server: echo
@@ -127,6 +128,6 @@ describe("mcp.call from the command line", () => {
     );
     const done = run(place, { PROBE_TOKEN: SECRET });
     expect(done.status).toBe(1);
-    expect(done.stderr).toContain('no MCP server "echo"');
+    expect(done.stderr).toContain("no MCP server `echo`");
   });
 });

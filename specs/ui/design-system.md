@@ -223,6 +223,12 @@ Written for engineers, in the CLI's words:
 
 - **Say what is true, with the CLI's nouns:** run, node, decision, session,
   worktree. Ids are monospace and short (`4f2a1c`), and copy in full.
+- **A value reads as code:** a node, a field, a node type, a command. Messages
+  and copy mark one with backticks, and
+  [`CodeText`](../../packages/ui/src/components/code-text.tsx) shows it as
+  inline code, so `human.gate` reads apart from the sentence. A screen reader
+  hears the words without the marks. Button labels and a run's own name stay
+  plain.
 - **Terse and exact:** "Paused — 2 nodes held", "build failed: exit 1", "3
   decisions waiting". No marketing, no exclamation marks, never "Oops".
 - **Every control has its CLI twin on hover:** the Pause button's tooltip says

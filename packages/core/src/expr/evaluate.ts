@@ -161,7 +161,7 @@ export const parseTemplate = (source: string): TemplateParseResult => {
     if (open > cursor) parts.push(source.slice(cursor, open));
     const close = source.indexOf(CLOSE, open + OPEN.length);
     if (close === -1) {
-      return { ok: false, message: `unclosed "${OPEN}"`, offset: open };
+      return { ok: false, message: `unclosed \`${OPEN}\``, offset: open };
     }
     const inner = source.slice(open + OPEN.length, close);
     const parsed = parseExpr(inner);
