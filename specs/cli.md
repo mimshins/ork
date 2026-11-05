@@ -21,7 +21,7 @@ specified. Published as `@krapht/ork`
 [ADR-015](../decisions/ADR-015-changesets-and-one-bundled-cli.md)).
 
 ```
-ork init [--no-link]             # scaffold .ork/, .gitignore entries, example workflow; link tool folders; record the project
+ork init [--no-link] [--skills]  # scaffold .ork/, .gitignore entries, example workflow; link tool folders; record the project; Ork's skills for Claude Code
 ork register [path] [--id <id>] [--json]  # attach a project from outside: its files in ~/.ork/projects/<id>/, nothing in the repo
 ork projects [--json] | forget <id> | move <id> <path>  # the registered projects; follow a moved clone
 ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agents and skills under .ork/, tool folders relinked; commits nothing

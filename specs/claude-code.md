@@ -1,12 +1,13 @@
 # Ork for Claude Code
 
-Status: **Partial**: `ork mcp` ([its tools](./cli/mcp.md)), the skills
+Status: **Built**: `ork mcp` ([its tools](./cli/mcp.md)), the skills
 ([skills](../plugins/ork/skills/),
-[tests](../packages/core/test/plugin-skills.test.ts)) and the plugins
+[tests](../packages/core/test/plugin-skills.test.ts)), the plugins
 ([marketplace](../.claude-plugin/marketplace.json),
-[tests](../packages/cli/test/plugin.test.ts)) are built; `ork init`'s copies of
-the skills are to come
-([RFC-012](../rfcs/active/RFC-012-teaching-claude-code-ork.md)).
+[tests](../packages/cli/test/plugin.test.ts)), and the skills' copies in a
+project ([init-skills.ts](../packages/cli/src/project/init-skills.ts),
+[tests](../packages/cli/test/init-skills.test.ts)). Proposed in
+[RFC-012](../rfcs/active/RFC-012-teaching-claude-code-ork.md).
 
 Claude Code, working with a person in their project outside any run, learns
 Ork's standards from three skills and reaches Ork through `ork mcp`. It reads,
@@ -61,3 +62,30 @@ plugins:
 - **Versions** are the CLI's: the release binds them into both `plugin.json`
   files and the `--expects` of `ork`'s server, and a test fails when one differs
   from the CLI's `package.json` ([release](../runbook/development/release.md)).
+
+## Copies in a project
+
+Without the plugin, a project can carry the skills itself, so everyone who
+clones it gets them:
+
+```sh
+ork init --skills
+```
+
+- **Where:** `.ork/skills/ork-<name>/SKILL.md`, which Claude Code sees as
+  `/ork-write`, `/ork-run` and `/ork-principles` through `.claude/skills`, which
+  `ork init` links to `.ork/skills` unless `--no-link`. Their references to
+  `/ork:<name>` read `/ork-<name>`.
+- **Asked once.** `--skills` writes them and `--no-skills` doesn't. Otherwise
+  `ork init` asks on a terminal, saying the plugin has them too, and only when
+  the project has none; without a terminal it says how to add them.
+- **Ork's copies only.** Each copy names the Ork that wrote it on the line after
+  its frontmatter. `--skills` rewrites a copy Ork wrote that differs, leaves a
+  current one, and never touches a skill of that name with no such line. The
+  copies come from the CLI, which bundles `plugins/ork/skills/` as text
+  ([plugin-skills.ts](../tools/release/plugin-skills.ts)); a test fails when the
+  bundle is stale.
+- **`ork doctor`** warns when a copy is older than Ork, with `ork init --skills`
+  as the fix.
+- **Inside a run,** a session loads them as it loads any project skill; the
+  `run` skill's `start_run` isn't offered there.

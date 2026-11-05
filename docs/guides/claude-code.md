@@ -35,7 +35,14 @@ run.
 
 ## Without the plugin
 
-Add only the tools:
+Put the skills in your project, so everyone who clones it gets them, as
+`/ork-write`, `/ork-run` and `/ork-principles`:
+
+```sh
+ork init --skills
+```
+
+`ork doctor` says when they're older than your Ork. Then add the tools:
 
 ```sh
 claude mcp add ork -- ork mcp

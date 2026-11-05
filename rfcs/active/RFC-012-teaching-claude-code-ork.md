@@ -218,8 +218,7 @@ can't.
 
 ## Open questions
 
-1. **Should `ork init` offer the skills when the plugin is installed?** It can't
-   reliably tell. Proposed: it asks, and says the plugin has them too.
+None left.
 
 ## Tried before building
 
@@ -252,3 +251,7 @@ The maintainer's answers, on 2026-11-06, with the RFC accepted.
 3. **Should the hook block `ork decide` even when the person asks Claude Code to
    answer?** Yes. Decisions stay with a person, and Claude Code says where to
    answer.
+4. **Should `ork init` offer the skills when the plugin is installed?** Not
+   asked: settled as this RFC proposed when it was built, on 2026-11-06. It
+   can't reliably tell, so it asks once on a terminal, saying the plugin has
+   them too, and only when the project has none.

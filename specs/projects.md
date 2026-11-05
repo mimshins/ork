@@ -42,7 +42,9 @@ Both folders hold the same things:
   `.ork/workflows/` or `.ork/project.yaml` is in-repo and is refused.
 - **`ork init`** records the project at the current folder's git root as
   in-repo, then scaffolds `.ork/`; it refuses an attached project, so Ork never
-  writes into it.
+  writes into it. It offers Ork's skills for Claude Code (`--skills`,
+  `--no-skills`, or asked once on a terminal):
+  [Ork for Claude Code](./claude-code.md#copies-in-a-project).
 - **`ork projects [--json]`** lists registered projects: id, mode, root (marked
   missing when it is gone), and Ork's folder. **`ork projects forget <id>`**
   drops the record; the files and runs stay. **`ork projects move <id> <path>`**

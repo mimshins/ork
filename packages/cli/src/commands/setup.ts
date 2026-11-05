@@ -23,6 +23,7 @@ import { style, write, writeErr } from "../output.ts";
 import { initRecorded } from "../project/init.ts";
 import { formatLinks } from "../project/link.ts";
 import { projectAt } from "../project/place.ts";
+import { skillsStep } from "../project/skills-step.ts";
 import { WORKFLOW_DIR } from "../workflows.ts";
 
 export const init = defineCommand({
@@ -38,8 +39,13 @@ export const init = defineCommand({
         "Link .claude/agents and the like to .ork/ (--no-link: don't)",
       default: true,
     },
+    skills: {
+      type: "boolean",
+      description:
+        "Write Ork's skills for Claude Code into .ork/skills/ (--no-skills: don't; asked otherwise)",
+    },
   },
-  run: ({ args }) => {
+  run: async ({ args }) => {
     const store = openStore();
     let result: ReturnType<typeof initRecorded>;
     try {
@@ -58,6 +64,7 @@ export const init = defineCommand({
     for (const line of formatLinks(links.filter(l => l.state !== "linked"))) {
       write(line);
     }
+    await skillsStep(process.cwd(), { skills: args.skills, link: args.link });
     write(
       `\nNext: edit ${WORKFLOW_DIR}/, then run ${style("bold", "ork validate")}.`,
     );

@@ -94,4 +94,6 @@ check warns when `claude` is older than 2.1.281, which Ork needs to read
 Once a project has `.ork/`, doctor adds one check per tool the project uses:
 `ok` when its folders link to `.ork/`, a warning when one is missing or broken
 (with `ork link <tool>` as the fix), and `skip` when the project keeps its own
-folder or links elsewhere. These checks never fail the doctor.
+folder or links elsewhere. These checks never fail the doctor. It also warns
+when the project's copies of Ork's skills for Claude Code are older than Ork,
+with `ork init --skills` as the fix ([Ork for Claude Code](../claude-code.md)).

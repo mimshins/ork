@@ -68,7 +68,9 @@ ork projects move app ~/src/app  # you moved or renamed the clone
 ```
 
 `ork init` records an in-repo project, and refuses one that is registered from
-outside, so it never writes into it.
+outside, so it never writes into it. On a terminal it also offers Ork's skills
+for Claude Code, so it writes workflows Ork accepts
+([Ork from Claude Code](./claude-code.md)).
 
 ## Moving into the repository
 

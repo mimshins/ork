@@ -23,8 +23,8 @@ import { defineCommand } from "citty";
 
 import { ORK_NAME, ORK_VERSION } from "../__build_info__.ts";
 import { exec, orkCheck, runChecks, triggerChecks } from "../doctor/checks.ts";
+import { projectChecks } from "../doctor/project-checks.ts";
 import { confirm, style, write, writeErr } from "../output.ts";
-import { linkChecks } from "../project/link.ts";
 import { projectAt } from "../project/place.ts";
 import { registryOf } from "../update/notify.ts";
 import {
@@ -71,7 +71,7 @@ export const doctor = defineCommand({
     for (const result of [
       orkCheck(),
       ...results,
-      ...(place.mode === "attached" ? [] : linkChecks(place.root)),
+      ...(place.mode === "attached" ? [] : projectChecks(place.root)),
       ...triggerChecks(),
     ]) {
       for (const line of formatCheck(result)) write(line);
