@@ -46,6 +46,8 @@ export const main = defineCommand({
     wt: worktrees,
     // Loaded on use: most commands never need it.
     watch: () => import("./commands/watch.ts").then(module => module.watch),
+    // Loaded on use: it loads the server and the MCP SDK.
+    mcp: () => import("./commands/mcp.ts").then(module => module.mcp),
     // Loaded only for `ork ui`, so other commands do not load the server.
     ui: () => import("./commands/ui.ts").then(module => module.ui),
     doctor,

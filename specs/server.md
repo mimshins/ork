@@ -35,6 +35,8 @@ event streams, on loopback only. `ork ui` starts it and opens it.
 - **The same code as the CLI.** Finding a run, the open decisions and answering
   one, stopping and messaging a live run, detaching, resuming and following a
   run's events are core functions (`packages/core/src/remote/`) that both use.
+- **Its read handlers serve `ork mcp` too,** Claude Code's tools over stdio,
+  without HTTP or a token ([ork mcp](./cli/mcp.md)).
 - **One per machine,** serving every registered project; `?project=` narrows a
   list to one, by id or root.
 - **`node:http`,** with no framework (ADR-039).

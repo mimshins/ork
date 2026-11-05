@@ -117,6 +117,7 @@ export const NODES = [
       "Built: `ps`, `logs --follow`, `tree` read runs from the store; `run --detach` runs in the background; `stop` stops a live run from any terminal.",
       "Built: `ork decide` answers open decisions from any terminal, though not from a program or an agent in a run; the recommended option is preselected. `ork chat` talks to a node, live or by resuming its session; `ork resume` continues a stopped or crashed run, handing back what finished.",
       "Built: `ork context explain <wf> <node>` shows the resolved layer stack for one node.",
+      "Built: `ork mcp` serves Claude Code Ork's tools over stdio, on the same handlers as `ork ui`'s API: projects, workflows, the format, runs, events, usage and open decisions. It only reads, so far (RFC-012).",
       "Built: `ork relay <run>/<node> <run>/<node>` lets two running nodes of different runs message each other; `relay end` and `relay list`.",
       "Built: once a day a detached copy of `ork` asks the npm registry for the latest version (its only request of its own; off in CI, without a terminal, or with `ORK_NO_UPDATE_CHECK=1`), and a later command ends with a one-line notice; `ork upgrade` upgrades through the package manager that installed Ork, after asking (ADR-038).",
       "`ork run --expect-workflow`, which refuses a file whose text has changed; `ork validate`, with no file named, checks the project's triggers too; `ork doctor` warns of a live trigger that isn't looking. `ork watch` has its own card.",

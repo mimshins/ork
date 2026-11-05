@@ -8,7 +8,8 @@ node with `--node`), `ork ps`, `ork logs`, `ork tree`, `ork decide`, `ork stop`,
 `ork agents list | show | add | rm`,
 `ork feedback list | show | note | dismiss | restore`
 ([feedback](./feedback.md)), `ork upgrade` and the new-version notice
-([updates](./cli/updates.md)), and `ork ui` ([server](./server.md)) are built
+([updates](./cli/updates.md)), `ork ui` ([server](./server.md)), and `ork mcp`'s
+reading tools ([mcp](./cli/mcp.md)) are built
 ([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts),
 [agents tests](../packages/cli/test/agents.test.ts),
@@ -51,6 +52,7 @@ ork context explain <wf> <node> [--json]  # what one node's session loads, layer
 ork feedback list [--all] [--json] | show <item> [--json] | note <run> [<node>] -m <text> | dismiss <item> | restore <item>  # local feedback (triage, apply, lessons, publish: M2)
 ork upgrade [--check] [--yes]    # a newer version? upgrade the way Ork was installed, after asking
 ork ui [--port <n>] [--no-open]  # the local server (127.0.0.1:4417) and its page; opens the running one
+ork mcp                          # Ork's tools for Claude Code over stdio (MCP); reading only, for now
 ```
 
 ## Contents
@@ -69,6 +71,8 @@ ork ui [--port <n>] [--no-open]  # the local server (127.0.0.1:4417) and its pag
   - [Linking tool folders](./cli/worktrees-agents-context-and-doctor.md#linking-tool-folders)
   - [Context](./cli/worktrees-agents-context-and-doctor.md#context)
   - [Doctor](./cli/worktrees-agents-context-and-doctor.md#doctor)
+- [ork mcp](./cli/mcp.md)
+  - [Tools](./cli/mcp.md#tools)
 - [Updates](./cli/updates.md)
   - [The new-version notice](./cli/updates.md#the-new-version-notice)
   - [ork upgrade](./cli/updates.md#ork-upgrade)
