@@ -726,9 +726,10 @@ export const MILESTONES = [
       {
         id: "workflow-walk",
         title: "Check every way through",
-        status: "next",
+        status: "active",
+        commits: ["3cb93db"],
         detail:
-          "Before a run, find what can't work: a condition that's never true, a node no path reaches, a loop that can only run out of rounds. Stricter compiler checks, plus a walk of every outcome on the real scheduler, with no sessions and no scripts. RFC-009, after RFC-010.",
+          "Before a run, find what can't work: a condition that's never true, a node no path reaches, a loop that can only run out of rounds. The stricter compiler checks are in: a value a condition can never see stops the run, and loops without an exit or a budget warn. Next is the walk of every outcome on the real scheduler, with no sessions and no scripts. RFC-009, after RFC-010.",
         docs: ["rfcs/active/RFC-009-walking-a-workflow.md"],
       },
       {
@@ -761,6 +762,7 @@ export const MILESTONES = [
           "58133bb",
           "9d49d01",
           "db5c52c",
+          "06a6627",
         ],
         date: "2026-11-05",
       },
