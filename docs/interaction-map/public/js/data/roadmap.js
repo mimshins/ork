@@ -741,9 +741,9 @@ export const MILESTONES = [
       {
         id: "console-language",
         title: "A new look for the console",
-        status: "active",
+        status: "done",
         detail:
-          "Nested surfaces, two type voices, block meters and a pixel touch, at console density, from a prototype the maintainer approved. Each component now owns its tokens, and a state only sets tokens, so the look changes by changing values. Frames, status glyphs, block meters, tighter panels and the rebuilt Monitor are in; Notifications rows, the Builder toolbar and the guide's screenshot are left.",
+          "Nested surfaces, two type voices, block meters and a pixel touch, at console density, from a prototype the maintainer approved. Each component now owns its tokens, and a state only sets tokens, so the look changes by changing values. Frames, status glyphs, block meters, tighter panels, the rebuilt Monitor, shorter Notifications rows and the Builder's cards are all in, with new screenshots in the browser guide.",
         docs: [
           "decisions/ADR-054-component-tokens.md",
           "decisions/ADR-055-console-language.md",
@@ -759,7 +759,10 @@ export const MILESTONES = [
           "41621da",
           "41dab31",
           "58133bb",
+          "9d49d01",
+          "db5c52c",
         ],
+        date: "2026-11-05",
       },
       {
         id: "ui-upgrade",
