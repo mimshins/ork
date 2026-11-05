@@ -740,6 +740,8 @@ export const MILESTONES = [
           "49b1e74",
           "c70d82f",
           "e15d478",
+          "9389c79",
+          "49b3681",
         ],
         detail:
           "Before a run, find what can't work: a condition that's never true, a node no path reaches, a loop that can only run out of rounds. The stricter compiler checks are in: a value a condition can never see stops the run, and loops without an exit or a budget warn. The walk of every outcome on the real scheduler is built too, with no sessions and no scripts, and `ork validate`, `ork run` and the builder show what it finds. Reviews found false warnings, so its warnings say only what it tried, held to a fuzz against the real scheduler and to each case found. The guide says what it can't tell, and the limits are in the register. RFC-009, after RFC-010.",
