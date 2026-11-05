@@ -62,11 +62,13 @@ export const BuilderBody = ({ builder }: { builder: Builder }) => {
   const { view } = builder;
   if (view === null) {
     return (
-      <EmptyState title="No workflow open.">
-        Choose one above, or name a new one. A workflow you make here is the
-        same file you could write by hand, and works with every <code>ork</code>{" "}
-        command.
-      </EmptyState>
+      <div className={styles["empty"]}>
+        <EmptyState title="No workflow open.">
+          Choose one above, or name a new one. A workflow you make here is the
+          same file you could write by hand, and works with every{" "}
+          <code>ork</code> command.
+        </EmptyState>
+      </div>
     );
   }
   return (

@@ -63,11 +63,11 @@
 .item {
   --notifications-item-bg: initial;
   --notifications-item-border-block-end: var(--hairline) solid
-    var(--color-border);
+    var(--color-border-soft);
   --notifications-item-border-inline-start-width: var(--focus-width);
   --notifications-item-border-inline-start-style: solid;
   --notifications-item-border-inline-start-color: transparent;
-  --notifications-item-gap: var(--gap-hair);
+  --notifications-item-gap: 0 var(--gap);
   --notifications-item-padding: var(--gap-tight) var(--gap);
 
   border-block-end: var(--notifications-item-border-block-end);
@@ -80,8 +80,9 @@
   border-inline-start-color: var(
     --notifications-item-border-inline-start-color
   );
+  align-items: center;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: var(--notifications-item-gap);
   padding: var(--notifications-item-padding);
   background: var(--notifications-item-bg, revert);
@@ -95,6 +96,7 @@
 .title {
   --notifications-title-weight: initial;
 
+  flex-basis: 100%;
   margin: 0;
   overflow-wrap: anywhere;
   font-weight: var(--notifications-title-weight, revert);
@@ -113,11 +115,13 @@
   align-items: center;
   color: var(--notifications-meta-text);
   display: flex;
+  flex: 1;
   flex-wrap: wrap;
   font-family: var(--notifications-meta-font);
   font-size: var(--notifications-meta-text-size);
   gap: var(--notifications-meta-gap);
   margin: 0;
+  min-width: 0;
 }
 
 .unread {

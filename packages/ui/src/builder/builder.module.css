@@ -1,25 +1,33 @@
 /**
- * @file The look of the workflow builder: the palette, the canvas and the
- *   inspector side by side, stacking when the panel is narrow. A field with a
+ * @file The look of the workflow builder: a frame holding a card each for the
+ *   tools, the palette, the canvas and the inspector, side by side, stacking when
+ *   the panel is narrow. A field with a
  *   problem has a line down its edge and the problem in words, so it reads
  *   without color.
  */
 
 .panel {
+  --builder-panel-bg: var(--surface-frame);
+  --builder-panel-gap: var(--space-3);
+
+  background: var(--builder-panel-bg);
   container-type: inline-size;
   display: flex;
   flex-direction: column;
+  gap: var(--builder-panel-gap);
   height: 100%;
   min-height: 0;
 }
 
 .tools {
-  --builder-tools-border-block-end: var(--hairline) solid var(--color-border);
+  --builder-tools-bg: var(--surface-panel);
+  --builder-tools-radius: var(--radius-panel);
   --builder-tools-gap: var(--gap);
   --builder-tools-padding: var(--inset-tools);
 
   align-items: flex-end;
-  border-block-end: var(--builder-tools-border-block-end);
+  background: var(--builder-tools-bg);
+  border-radius: var(--builder-tools-radius);
   display: flex;
   flex-wrap: wrap;
   gap: var(--builder-tools-gap);
@@ -44,15 +52,15 @@
  * message coming or going doesn't move the canvas.
  */
 .notices {
-  --builder-notices-border-block-end: var(--hairline) solid var(--color-border);
+  --builder-notices-text: var(--color-text);
   --builder-notices-text-size: var(--text-small);
   --builder-notices-gap: var(--gap-tight) var(--gap-loose);
   --builder-notices-leading: var(--leading-ui);
   --builder-notices-min-height: calc(1lh + var(--gap) * 2);
-  --builder-notices-padding: var(--gap) var(--inset-panel);
+  --builder-notices-padding: var(--gap);
 
   align-items: baseline;
-  border-block-end: var(--builder-notices-border-block-end);
+  color: var(--builder-notices-text);
   display: flex;
   flex-wrap: wrap;
   font-size: var(--builder-notices-text-size);
@@ -79,15 +87,27 @@
   overflow-wrap: anywhere;
 }
 
+.empty {
+  --builder-empty-bg: var(--surface-panel);
+  --builder-empty-radius: var(--radius-panel);
+
+  background: var(--builder-empty-bg);
+  border-radius: var(--builder-empty-radius);
+  flex: 1;
+  min-height: 0;
+}
+
 .body {
   --builder-body-overflow-y: initial;
   --builder-body-flex-direction: initial;
   --builder-body-display: grid;
-  --builder-body-grid-template-columns: minmax(10rem, 13rem) minmax(0, 1fr)
-    minmax(16rem, 24rem);
+  --builder-body-gap: var(--space-3);
+  --builder-body-grid-template-columns: minmax(10rem, 12%) minmax(0, 1fr)
+    minmax(16rem, 30%);
 
   display: var(--builder-body-display);
   flex: 1;
+  gap: var(--builder-body-gap);
   grid-template-columns: var(--builder-body-grid-template-columns);
   min-height: 0;
   flex-direction: var(--builder-body-flex-direction, revert);
@@ -96,44 +116,26 @@
 
 .palette,
 .inspector {
+  --builder-palette-bg: var(--surface-panel);
+  --builder-palette-radius: var(--radius-panel);
   --builder-palette-overflow-y: auto;
   --builder-palette-padding: var(--inset-panel);
 
+  background: var(--builder-palette-bg);
+  border-radius: var(--builder-palette-radius);
   min-height: 0;
   overflow-y: var(--builder-palette-overflow-y);
   padding: var(--builder-palette-padding);
 }
 
+.palette,
 .inspector {
   --builder-palette-flex: initial;
-  --builder-palette-border-block-end: initial;
-  --builder-palette-border: initial;
 
-  border: var(--builder-palette-border, revert);
-  border-block-end: var(--builder-palette-border-block-end, revert);
   flex: var(--builder-palette-flex, revert);
 }
 
-.palette {
-  --builder-palette-flex: initial;
-  --builder-palette-border-block-end: initial;
-  --builder-palette-border: initial;
-
-  border: var(--builder-palette-border, revert);
-  border-block-end: var(--builder-palette-border-block-end, revert);
-  flex: var(--builder-palette-flex, revert);
-}
-
-.palette {
-  --builder-palette-border-inline-end: var(--hairline) solid var(--color-border);
-
-  border-inline-end: var(--builder-palette-border-inline-end);
-}
-
 .inspector {
-  --builder-palette-border-inline-start: var(--hairline) solid
-    var(--color-border);
-  border-inline-start: var(--builder-palette-border-inline-start);
   /* Holds words kept for screen readers, or they'd stretch the panel. */
   position: relative;
 }
@@ -141,9 +143,11 @@
 .middle {
   --builder-middle-height: initial;
   --builder-middle-flex: initial;
+  --builder-middle-gap: var(--space-3);
 
   display: flex;
   flex-direction: column;
+  gap: var(--builder-middle-gap);
   min-height: 0;
   min-width: 0;
   flex: var(--builder-middle-flex, revert);
@@ -151,8 +155,12 @@
 }
 
 .canvas {
+  --builder-canvas-radius: var(--radius-panel);
+
+  border-radius: var(--builder-canvas-radius);
   flex: 1;
   min-height: 0;
+  overflow: hidden;
   position: relative;
 }
 
@@ -162,11 +170,12 @@
 
 .problems,
 .clean {
-  --builder-problems-border-block-start: var(--hairline) solid
-    var(--color-border);
+  --builder-problems-bg: var(--surface-panel);
+  --builder-problems-radius: var(--radius-panel);
   --builder-problems-padding: var(--gap) var(--inset-panel);
 
-  border-block-start: var(--builder-problems-border-block-start);
+  background: var(--builder-problems-bg);
+  border-radius: var(--builder-problems-radius);
   display: block;
   padding: var(--builder-problems-padding);
 }
@@ -457,9 +466,6 @@
 
   .palette,
   .inspector {
-    --builder-palette-border: 0;
-    --builder-palette-border-block-end: var(--hairline) solid
-      var(--color-border);
     --builder-palette-flex: none;
     --builder-palette-overflow-y: visible;
   }

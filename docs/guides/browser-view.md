@@ -6,7 +6,7 @@ you, and what each node has said. It reads and writes the same store as the
 here has a command that does the same. The contract is the
 [UI spec](../../specs/ui.md).
 
-![Ork's workspace: the Runs panel, the Monitor with a run's graph and ownership tree, Logs below it, and an open decision in the Decisions panel.](./images/browser-view-dark.png)
+![Ork's workspace: the Runs panel, the Monitor with a run's graph and node table, Logs below it, and an open decision in the Decisions panel.](./images/browser-view-dark.png)
 
 ## Starting it
 
