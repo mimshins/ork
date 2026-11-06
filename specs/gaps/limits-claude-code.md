@@ -15,9 +15,9 @@ What Ork's Claude Code plugin and `ork mcp` do for now, by choice
   the hook, and Claude Code goes ahead. `ork decide` itself refuses inside a
   run, and the skills say not to answer.
 - **L144 · The plugin needs `ork` on `PATH`.** It runs the person's own `ork`,
-  so one Ork reads one store. Without it, or before a release with `ork mcp`,
-  Claude Code shows the server as failed; an `ork` too old for the plugin
-  refuses each call and says to upgrade.
+  so one Ork reads one store. Without it, or with an Ork before 0.3.0, which has
+  no `ork mcp`, Claude Code shows the server as failed; an `ork` too old for the
+  plugin refuses each call and says to upgrade.
 - **L145 · The plugin follows `main`, not a release.** Claude Code reads the
   plugin from the marketplace's git `main`, so a skill edited between releases
   reaches plugin users at once, and could name something their Ork lacks. A
