@@ -812,7 +812,7 @@ export const MILESTONES = [
         id: "feedback-loop",
         title: "Feedback loop",
         status: "active",
-        commits: ["2a0882a"],
+        commits: ["2a0882a", "74cb402", "e1e2814"],
         detail:
           "Triage, `ork feedback apply`, lessons, sharing to Discussions, and the Feedback panel.",
         docs: ["specs/feedback.md"],
