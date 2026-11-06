@@ -6,8 +6,9 @@ Status: **Built**: `ork mcp` ([its tools](./cli/mcp.md)), the skills
 ([marketplace](../.claude-plugin/marketplace.json),
 [tests](../packages/cli/test/plugin.test.ts)), and the skills' copies in a
 project ([init-skills.ts](../packages/cli/src/project/init-skills.ts),
-[tests](../packages/cli/test/init-skills.test.ts)). Proposed in
-[RFC-012](../rfcs/active/RFC-012-teaching-claude-code-ork.md).
+[tests](../packages/cli/test/init-skills.test.ts)). Why:
+[ADR-057](../decisions/ADR-057-ork-for-claude-code.md),
+[RFC-012](../rfcs/archived/RFC-012-teaching-claude-code-ork.md).
 
 Claude Code, working with a person in their project outside any run, learns
 Ork's standards from three skills and reaches Ork through `ork mcp`. It reads,

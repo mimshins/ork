@@ -1,6 +1,7 @@
 # RFC-012 — Teaching Claude Code Ork's standards: an MCP server and skills
 
-- **Status:** Accepted
+- **Status:** Implemented
+  ([ADR-057](../../decisions/ADR-057-ork-for-claude-code.md))
 - **Date:** 2026-11-06
 - **Supersedes:** —
 - **Superseded by:** —

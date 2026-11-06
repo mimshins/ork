@@ -2,14 +2,14 @@
 
 _Part of [The ork CLI](../cli.md)._
 
-Status: **Partial**: the tools are built
-([command](../../packages/cli/src/commands/mcp.ts),
+Status: **Built** ([command](../../packages/cli/src/commands/mcp.ts),
 [reading](../../packages/server/src/mcp-tools.ts),
 [checking and starting](../../packages/server/src/mcp-act.ts),
 [tests](../../packages/server/test/mcp.test.ts),
 [more tests](../../packages/server/test/mcp-act.test.ts),
-[client tests](../../packages/cli/test/mcp.test.ts)). The skills and the plugin
-are to come ([RFC-012](../../rfcs/active/RFC-012-teaching-claude-code-ork.md)).
+[client tests](../../packages/cli/test/mcp.test.ts)). Why:
+[ADR-057](../../decisions/ADR-057-ork-for-claude-code.md). The plugin that runs
+it: [Ork for Claude Code](../claude-code.md).
 
 ```
 ork mcp [--expects <version>]    # Ork's tools for Claude Code, over stdio

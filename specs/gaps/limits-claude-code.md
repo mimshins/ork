@@ -4,7 +4,7 @@ _Part of [Known gaps and limits](../gaps.md)._
 
 What Ork's Claude Code plugin and `ork mcp` do for now, by choice
 ([Ork for Claude Code](../claude-code.md),
-[RFC-012](../../rfcs/active/RFC-012-teaching-claude-code-ork.md)).
+[RFC-012](../../rfcs/archived/RFC-012-teaching-claude-code-ork.md)).
 
 - **L143 · The hook on `ork decide` stops accidents, not a determined agent.**
   It reads each shell command Claude Code is about to run. A command that
