@@ -10,6 +10,7 @@ import path from "node:path";
 import type { Diagnostic, DiagnosticPath } from "@krapht/ork-schema";
 
 import { error } from "../graph/diagnostics.ts";
+import { plainPathInside } from "../project/plain-files.ts";
 import { capLessons } from "./lesson-cap.ts";
 
 export type ContextLayer = "user" | "workflow" | "node";
@@ -88,7 +89,9 @@ export const userContext = (home: string): ContextFile[] => {
 
 /**
  * The workflow's accepted lessons, `<lessons>/<workflow>.md` (`.ork/lessons/`
- * in the repository by default), if any, cut at their cap (ADR-059).
+ * in the repository by default), if any, cut at their cap (ADR-059). A file
+ * that is a link, or behind one, isn't read: a cloned repository could aim it
+ * at any file of the person's, and every session would load it.
  */
 export const lessons = (
   workflowName: string,
@@ -99,7 +102,8 @@ export const lessons = (
   const name = inside(projectRoot, file)
     ? path.relative(projectRoot, file)
     : file;
-  if (!existsSync(file)) return [];
+  const base = inside(projectRoot, folder) ? projectRoot : path.dirname(folder);
+  if (!existsSync(file) || !plainPathInside(base, file)) return [];
   const capped = capLessons(readFileSync(file, "utf8"));
   return [{ layer: "workflow", name, ...capped }];
 };

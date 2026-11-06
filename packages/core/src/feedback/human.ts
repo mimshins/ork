@@ -86,40 +86,73 @@ const checked = <T extends string>(
     : { ok: true, value: found };
 };
 
+export type CheckedNote =
+  | {
+      ok: true;
+      kind?: FeedbackKind;
+      severity?: FeedbackSeverity;
+      rating?: Rating;
+    }
+  | { ok: false; error: string };
+
+/**
+ * Whether a note can be recorded, before anything else is done: its words,
+ * kind, severity and rating. `flag` names the options as the caller does (`--`
+ * for the CLI).
+ */
+export const checkNote = (ask: NoteAsk, flag = ""): CheckedNote => {
+  if (ask.text.trim() === "") return { ok: false, error: "The note is empty." };
+  const kind = checked(`${flag}kind`, ask.kind, FEEDBACK_KINDS);
+  const severity = checked(
+    `${flag}severity`,
+    ask.severity,
+    FEEDBACK_SEVERITIES,
+  );
+  const rating = checked(`${flag}rating`, ask.rating, RATINGS);
+  if (!kind.ok) return kind;
+  if (!severity.ok) return severity;
+  if (!rating.ok) return rating;
+  return {
+    ok: true,
+    ...(kind.value === undefined ? {} : { kind: kind.value }),
+    ...(severity.value === undefined ? {} : { severity: severity.value }),
+    ...(rating.value === undefined ? {} : { rating: rating.value }),
+  };
+};
+
 /**
  * Records a person's note on `run`, or one node that ran in it, as that run's
- * feedback (a run that ended takes it too); returns the item it joins, or why
- * it can't. `ork feedback note`, `ork decide --note` and the UI write it.
+ * feedback (a run that ended takes it too); returns the item it joins (the one
+ * it was merged into, when triage merged it), or why it can't. `ork feedback
+ * note`, `ork decide --note` and the UI write it.
  */
 export const recordNote = (
-  store: Pick<EventStore, "events" | "append">,
+  store: Pick<EventStore, "events" | "append" | "findFeedback">,
   run: Pick<RunRecord, "id" | "workflow">,
   ask: NoteAsk,
+  flag = "",
 ): Noted => {
-  if (ask.text.trim() === "") return { ok: false, error: "The note is empty." };
+  const note = checkNote(ask, flag);
+  if (!note.ok) return note;
   const ran = store
     .events(run.id)
     .some(({ event }) => "id" in event && event.id === ask.node);
   if (ask.node !== undefined && !ran) {
     return { ok: false, error: `No node ${ask.node} ran in run ${run.id}.` };
   }
-  const kind = checked("kind", ask.kind, FEEDBACK_KINDS);
-  const severity = checked("severity", ask.severity, FEEDBACK_SEVERITIES);
-  const rating = checked("rating", ask.rating, RATINGS);
-  if (!kind.ok) return kind;
-  if (!severity.ok) return severity;
-  if (!rating.ok) return rating;
   const event = humanNoteEvent({
     text: ask.text,
     workflow: run.workflow,
     ...(ask.node === undefined ? {} : { node: ask.node }),
-    ...(kind.value === undefined ? {} : { kind: kind.value }),
-    ...(severity.value === undefined ? {} : { severity: severity.value }),
-    ...(rating.value === undefined ? {} : { rating: rating.value }),
+    ...(note.kind === undefined ? {} : { kind: note.kind }),
+    ...(note.severity === undefined ? {} : { severity: note.severity }),
+    ...(note.rating === undefined ? {} : { rating: note.rating }),
   });
   store.append(run.id, event);
+  const recorded =
+    event.type === "feedback.recorded" ? event.feedback.fingerprint : "";
   return {
     ok: true,
-    item: event.type === "feedback.recorded" ? event.feedback.fingerprint : "",
+    item: store.findFeedback(recorded)[0]?.id ?? recorded,
   };
 };

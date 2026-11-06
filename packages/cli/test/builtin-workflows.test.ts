@@ -60,8 +60,10 @@ describe("an `ork:` workflow argument", () => {
     const errors = vi
       .spyOn(process.stderr, "write")
       .mockImplementation(() => true);
-    expect(refusedBuiltin(["ork:feedback-apply", "hello"])).toBe(false);
-    expect(refusedBuiltin(["ork:nope"])).toBe(true);
+    expect(refusedBuiltin(["ork:feedback-apply", "hello"], project())).toBe(
+      false,
+    );
+    expect(refusedBuiltin(["ork:nope"], base)).toBe(true);
     expect(String(errors.mock.calls.at(-1)?.[0])).toContain(
       "`ork:nope` isn't one of Ork's workflows",
     );

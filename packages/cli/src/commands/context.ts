@@ -1,9 +1,10 @@
 /**
  * @file `ork context explain <wf> <node>`: what one node's session would load,
  *   layer by layer, as core's `explainSession` plans it without writing
- *   anything: its project instructions, every skill with the layer it came from
- *   and whether it is live, shadowed or switched off, its context files, its
- *   practices, and estimated tokens.
+ *   anything (one of Ork's own `ork:` workflows is written into the project's
+ *   run folder first, as `ork run` does): its project instructions, every skill
+ *   with the layer it came from and whether it is live, shadowed or switched
+ *   off, its context files, its practices, and estimated tokens.
  */
 
 import {
@@ -120,7 +121,7 @@ const explain = defineCommand({
   },
   run: ({ args }) => {
     const cwd = process.cwd();
-    if (refusedBuiltin([args.workflow])) return;
+    if (refusedBuiltin([args.workflow], cwd)) return;
     const result = explainNode(
       workflowArg(args.workflow, cwd).file,
       args.node,

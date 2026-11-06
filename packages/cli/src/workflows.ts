@@ -13,8 +13,8 @@ import {
   isBuiltinArg,
   placeFiles,
   type ProjectPlace,
+  builtinProblem,
   runDirOf,
-  unknownBuiltin,
 } from "@krapht/ork-core";
 
 import { writeErr } from "./output.ts";
@@ -70,11 +70,17 @@ export const resolveWorkflowArg = (
 };
 
 /**
- * Refuses an `ork:` name that isn't one of Ork's workflows, saying which are;
- * true when it did, so the command stops.
+ * Refuses an `ork:` name that isn't one of Ork's workflows, saying which are,
+ * or whose file's place in the project is a link; true when it did, so the
+ * command stops.
  */
-export const refusedBuiltin = (args: readonly string[]): boolean => {
-  const problems = args.flatMap(arg => unknownBuiltin(arg) ?? []);
+export const refusedBuiltin = (
+  args: readonly string[],
+  cwd: string,
+): boolean => {
+  const problems = args
+    .filter(arg => isBuiltinArg(arg))
+    .flatMap(arg => builtinProblem(projectAt(cwd), arg) ?? []);
   for (const problem of problems) writeErr(problem);
   if (problems.length > 0) process.exitCode = 1;
   return problems.length > 0;

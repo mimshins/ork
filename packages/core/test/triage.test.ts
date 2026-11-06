@@ -13,6 +13,7 @@ import {
   humanNoteEvent,
   openStore,
   proposeMerges,
+  recordNote,
   titleOverlap,
 } from "../src/index.ts";
 
@@ -86,6 +87,18 @@ describe("proposed merges", () => {
     ).toEqual([]);
   });
 
+  it("compares each with the group's first item, never only with another", () => {
+    expect(
+      ids(
+        proposeMerges([
+          item("1", "a b c d"),
+          item("2", "a b c d e"),
+          item("3", "a b c d e f"),
+        ]),
+      ),
+    ).toEqual([["1", ["2"]]]);
+  });
+
   it("asks only when something new joins a group", () => {
     const triaged = [
       item("1", "AGENTS.md has no test command", "triaged"),
@@ -140,7 +153,13 @@ describe("merging in the store", () => {
       [root, 3, [other]],
     ]);
     expect(store.feedbackRecords(root)).toHaveLength(3);
-    expect(store.findFeedback(other)).toEqual([]);
+    const noted = recordNote(
+      store,
+      { id: "r1", workflow: "w" },
+      { text: "No test command at all" },
+    );
+    expect(noted).toEqual({ ok: true, item: root });
+    expect(store.findFeedback(other).map(i => i.id)).toEqual([root]);
   });
 
   it("follows a merged item's own merges, and splits them back", () => {

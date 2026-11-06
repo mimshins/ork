@@ -113,7 +113,7 @@ export const EDGES = [
     detail:
       "Refused for any item whose target is not `ork`. The redacted post, header included, is shown, and nothing is sent without your `y`.",
     both: true,
-    status: "planned",
+    status: "built",
     via: [
       [566, 656],
       [566, 876],
@@ -193,7 +193,7 @@ export const EDGES = [
     kind: "file",
     label: "export ⇄ import",
     detail: "Items as JSON lines, written out or read back in.",
-    status: "planned",
+    status: "built",
     both: true,
   },
   {
@@ -246,7 +246,7 @@ export const EDGES = [
     label: "search marker · post",
     detail:
       "Runs your `gh` to look for the fingerprint marker, then to comment or to start a discussion.",
-    status: "planned",
+    status: "built",
     docs: [DESIGN.feedback],
   },
   {
@@ -257,6 +257,6 @@ export const EDGES = [
     label: 'comment "+1" or new thread',
     detail:
       "An existing thread with the same marker gets a comment with the new context; otherwise a new discussion in the category.",
-    status: "planned",
+    status: "built",
   },
 ];

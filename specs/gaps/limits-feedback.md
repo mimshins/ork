@@ -13,3 +13,11 @@ How closing the feedback loop works for now, by choice
   `accepted`, and a discarded branch stays until `ork worktrees clean`.
   Recording the item on the run, so any process that ends it settles the item,
   would close this.
+- **L150 · A publish looks for its thread among 100.** Ork reads the "Agent
+  feedback" category's 100 most recently updated threads for the item's marker.
+  A thread quieter than those gets a second thread for the same problem instead
+  of a "+1". GitHub's search doesn't reliably index a hidden marker; paging
+  through the whole category would close this.
+- **L151 · Export carries records, not their items' state.** An imported record
+  joins its item by fingerprint, and a new item starts `new`: a status, a merge
+  or a lesson made elsewhere doesn't travel.

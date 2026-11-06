@@ -11,6 +11,7 @@ import {
   mkdtempSync,
   readFileSync,
   realpathSync,
+  rmSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -30,8 +31,9 @@ const noted = (
   workflows: readonly string[],
   title = "Say where the spec is",
   kind: "context-gap" | "bug" = "context-gap",
+  within: string = tmpdir(),
 ) => {
-  const root = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-accept-")));
+  const root = realpathSync(mkdtempSync(path.join(within, "ork-accept-")));
   mkdirSync(path.join(root, ".git"));
   mkdirSync(path.join(root, ".ork", "workflows"), { recursive: true });
   const store = openStore(":memory:");
@@ -107,6 +109,20 @@ describe("ork feedback accept", () => {
       error: `${item.id.slice(0, 12)} is about Ork itself, so it isn't a lesson for a workflow; share it with Ork's maintainers instead.`,
     });
     expect(theItem(store).status).toBe("new");
+  });
+
+  it("refuses a project that is no longer a repository of its own", () => {
+    // A monorepo above the project, in the test's own folder.
+    const outer = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-outer-")));
+    mkdirSync(path.join(outer, ".git"));
+    const { root, store, item } = noted(["notes"], undefined, undefined, outer);
+    rmSync(path.join(root, ".git"), { recursive: true });
+    const accepted = acceptItem(store, item, { lesson: true }, []);
+    expect(accepted).toEqual({
+      ok: false,
+      error: `Its project at ${root} isn't a project any more: Ork would take it for ${outer}.`,
+    });
+    expect(existsSync(path.join(outer, ".ork"))).toBe(false);
   });
 
   it("asks which workflow when it was seen in two", () => {

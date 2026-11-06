@@ -7,6 +7,7 @@
 
 import {
   answerDecision,
+  checkNote,
   type DecisionRecord,
   type EventStore,
   findRun,
@@ -43,11 +44,26 @@ export const noteDecision = (
   if (decision === undefined || run === undefined) {
     return { ok: false, error: `No decision ${id} to note.` };
   }
-  return recordNote(store, run, {
-    text: note ?? `Rated ${rating ?? ""} at ${decision.question}`,
-    node: decision.node,
-    rating,
-  });
+  return recordNote(
+    store,
+    run,
+    {
+      text: note ?? `Rated ${rating ?? ""} at ${decision.question}`,
+      node: decision.node,
+      rating,
+    },
+    "--",
+  );
+};
+
+/** Why a note given with an answer can't be recorded, before answering. */
+export const noteProblem = (
+  note?: string,
+  rating?: string,
+): string | undefined => {
+  if (note === undefined && rating === undefined) return undefined;
+  const checked = checkNote({ text: note ?? "rated", rating }, "--");
+  return checked.ok ? undefined : checked.error;
 };
 
 /** One line per open decision, for `--list`. */
@@ -112,6 +128,12 @@ export const decide = defineCommand({
       if (args.id !== undefined || args.choose !== undefined) {
         if (args.id === undefined || args.choose === undefined) {
           failed("--id and --choose go together.");
+          return;
+        }
+        // A bad note is said before the answer, which can't be taken back.
+        const problem = noteProblem(args.note, args.rating);
+        if (problem !== undefined) {
+          failed(problem);
           return;
         }
         const answered = await answerDecision(store, args.id, args.choose);

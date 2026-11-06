@@ -33,7 +33,13 @@ const ITEM = "0123456789abcdef0123";
 const fresh = () => {
   const root = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-lessons-")));
   const file = lessonsFileOf(inRepoPlace(root), "notes");
-  return { root, file, shownAs: ".ork/lessons/notes.md", workflow: "notes" };
+  return {
+    root,
+    base: root,
+    file,
+    shownAs: ".ork/lessons/notes.md",
+    workflow: "notes",
+  };
 };
 
 /** A line of about `tokens` tokens. */

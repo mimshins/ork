@@ -52,7 +52,9 @@ ork context explain <wf> <node> [--json]  # what one node's session loads, layer
 ork feedback list [--all] [--json] | show <item> [--json] | note <run> [<node>] -m <text> | dismiss <item> | restore <item>  # local feedback
 ork feedback accept <item> [--lesson [-m <text>] [--workflow <w>]]  # accept an item; --lesson: every later session of its workflow reads it
 ork feedback apply <item> [--driver sdk|cli]  # Ork's own workflow proposes a fix on a branch; keep or discard it
-ork feedback triage [--yes] | split <item>   # merge items about the same problem, by rules, asking each time; split one back (publish: M2)
+ork feedback triage [--yes] | split <item>   # merge items about the same problem, by rules, asking each time; split one back
+ork feedback publish <item> [--hide-names]   # share an item about Ork with its maintainers: redacted, previewed, then y/N, with your own gh
+ork feedback export [--all] [-o <file>] | import <file>  # move feedback records as JSON lines
 ork upgrade [--check] [--yes]    # a newer version? upgrade the way Ork was installed, after asking
 ork ui [--port <n>] [--no-open]  # the local server (127.0.0.1:4417) and its page; opens the running one
 ork mcp [--expects <version>]    # Ork's tools for Claude Code over stdio (MCP): read, check, start; never decide

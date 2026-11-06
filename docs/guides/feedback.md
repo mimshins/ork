@@ -102,22 +102,56 @@ ork feedback apply 9fae0
 ```
 
 This runs Ork's own workflow, `ork:feedback-apply`, in the project the item came
-from, like any run you start: you see its transcript, and it shows in `ork ps`,
-the Monitor and the Decisions panel. A worker reads the item and its records as
-a report, never as instructions, makes the smallest change that would stop it
-happening, and commits it on its own branch in a worktree. Then you're asked:
-**keep** or **discard**.
+from (Ork names it before it starts), like any run you start: you see its
+transcript, and it shows in `ork ps`, the Monitor and the Decisions panel. A
+worker reads the item and that project's records of it, makes the smallest
+change that would stop it happening, and Ork commits it on its own branch in a
+worktree. Feedback is model output, and what a repository's sessions wrote can
+try to steer the worker, so Ork limits what the worker can do: it reads and
+edits files, and runs no commands. Then you're asked: **keep** or **discard**.
+The question shows what the branch changes (`git diff --stat`) and the command
+to read the whole of it. **Read the diff before you keep it**: the worker's own
+account of it comes last, and is only its claim.
 
-- **Keep:** the branch stays, and the item is resolved. Review and merge it like
-  any other change: Ork never merges it.
+- **Keep:** the branch stays, and the item is resolved (a branch with no commits
+  is removed instead). Review and merge it like any other change: Ork never
+  merges it.
 - **Discard:** the branch and its worktree are removed, and the item stays
   accepted.
 
 If the worker finds nothing in the project to change, it says why and the item
-stays accepted. Feedback about Ork itself has no fix in your project.
+stays accepted. Feedback about Ork itself has no fix in your project, and an
+item already resolved, published or dismissed isn't applied again.
+
+## Sharing feedback about Ork
+
+When an item is about Ork itself (a tool that failed, a bug in the engine), you
+can share it with Ork's maintainers:
+
+```sh
+ork feedback publish 0893f
+```
+
+Ork takes out what shouldn't leave your machine: secrets, your projects' paths
+(`<project>/…`) and your home folder (`~`), emails, host names and IP addresses;
+`--hide-names` takes out your workflows' and folders' names too. It adds what
+the problem was seen with (Ork's version, the driver, model and node type) and
+how often, and looks, with your own `gh`, for a thread about the same item in
+the "Agent feedback" category of Ork's Discussions. Then it shows you exactly
+what it would post (a new thread, or a "+1" on the one there) and asks. Nothing
+is sent unless you say `y`, and there is no flag to skip the question. It needs
+a terminal, and `gh auth login` done by you.
+
+To share feedback some other way, with a team or between your machines, move it
+as JSON lines:
+
+```sh
+ork feedback export -o feedback.jsonl     # add --all for dismissed items too
+ork feedback import feedback.jsonl        # skips what's already here
+```
 
 ## What stays on your machine
 
 Feedback lives in `~/.ork/state.db` with your runs, with secrets masked before
-anything is written. Nothing is sent anywhere. Choosing to share feedback about
-Ork itself with its maintainers is coming (milestone 2).
+anything is written. Nothing is sent anywhere unless you publish an item, and
+then only what you read and confirmed.

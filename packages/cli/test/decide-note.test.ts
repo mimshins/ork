@@ -7,7 +7,7 @@
 import { type EventStore, openStore } from "@krapht/ork-core";
 import { describe, expect, it } from "vitest";
 
-import { noteDecision } from "../src/commands/decide.ts";
+import { noteDecision, noteProblem } from "../src/commands/decide.ts";
 
 /** A run whose `review` node asked decision `d1`. */
 const asked = (): EventStore => {
@@ -64,6 +64,13 @@ describe("ork decide --note", () => {
     expect(store.feedbackItems()[0]?.title).toBe("Rated good at Ship it?");
   });
 
+  it("checks a note before the answer, which can't be taken back", () => {
+    expect(noteProblem()).toBeUndefined();
+    expect(noteProblem("fine", "good")).toBeUndefined();
+    expect(noteProblem(undefined, "meh")).toBe("--rating is one of good, bad");
+    expect(noteProblem("  ")).toBe("The note is empty.");
+  });
+
   it("names a decision that isn't there, and a rating it doesn't know", () => {
     const store = asked();
     expect(noteDecision(store, "nope", "x")).toEqual({
@@ -72,7 +79,7 @@ describe("ork decide --note", () => {
     });
     expect(noteDecision(store, "d1", "x", "meh")).toEqual({
       ok: false,
-      error: "rating is one of good, bad",
+      error: "--rating is one of good, bad",
     });
   });
 });

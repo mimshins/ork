@@ -7,7 +7,13 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -95,7 +101,9 @@ const options = (
   store: EventStore,
   item: FeedbackItem,
   choice: string,
+  commits = 1,
 ): ApplyOptions => ({
+  ahead: () => Promise.resolve(commits),
   store,
   item,
   registered: [],
@@ -200,6 +208,45 @@ describe("ork feedback apply", () => {
     expect(await outcome(applyItem(options(store, item, "keep")))).toBe("kept");
     expect(branches(root)).toMatch(/ork\/[^/]+\/fix/u);
     expect(statusOf(store, item)).toBe("resolved");
+  });
+
+  it("keeps nothing when the fix's branch holds no commits", async () => {
+    const root = gitProject();
+    const { store, item } = noted(root);
+    expect(await outcome(applyItem(options(store, item, "keep", 0)))).toBe(
+      "kept",
+    );
+    expect(branches(root)).toBe("");
+    expect(statusOf(store, item)).toBe("accepted");
+  });
+
+  it("refuses an item already resolved, and one dismissed", async () => {
+    const root = gitProject();
+    const { store, item } = noted(root);
+    store.setFeedbackStatus(item.id, "resolved");
+    expect(
+      await applyItem(options(store, { ...item, status: "resolved" }, "keep")),
+    ).toEqual({
+      ok: false,
+      error: `${item.id.slice(0, 12)} is resolved already.`,
+    });
+    expect(
+      await applyItem(options(store, { ...item, status: "dismissed" }, "keep")),
+    ).toEqual({
+      ok: false,
+      error: `${item.id.slice(0, 12)} is dismissed; restore it first.`,
+    });
+  });
+
+  it("refuses an item whose project is gone", async () => {
+    const root = gitProject();
+    const { store, item } = noted(root);
+    rmSync(root, { recursive: true, force: true });
+    expect(await applyItem(options(store, item, "keep"))).toEqual({
+      ok: false,
+      error: `Its project at ${root} is gone.`,
+    });
+    expect(statusOf(store, item)).toBe("new");
   });
 
   it("removes a discarded fix's branch, and leaves the item accepted", async () => {

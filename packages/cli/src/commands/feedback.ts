@@ -2,7 +2,9 @@
  * @file `ork feedback`: the feedback every run recorded, grouped into items
  *   (specs/feedback.md): list and show them, note a run, dismiss and restore an
  *   item, and accept one, as a lesson its workflow reads from then on. What
- *   closes the loop further (apply, triage, split) is in `feedback-loop.ts`.
+ *   closes the loop further (apply, triage, split) is in `feedback-loop.ts`,
+ *   and what moves feedback off the machine (publish, export, import) in
+ *   `feedback-share.ts`.
  */
 
 import type { EventStore, FeedbackItem } from "@krapht/ork-core";
@@ -19,6 +21,7 @@ import {
 } from "../runs/feedback.ts";
 import { withStore } from "../store.ts";
 import { apply, split, triage } from "./feedback-loop.ts";
+import { exportFeedback, importFeedback, publish } from "./feedback-share.ts";
 
 /** Runs `body` on the item `prefix` names, or says why there's none. */
 const withItem = (
@@ -51,7 +54,7 @@ export const feedback = defineCommand({
   meta: {
     name: "feedback",
     description:
-      "What got in the way in your runs, grouped: list, show, note, triage, accept, apply, split, dismiss, restore",
+      "What got in the way in your runs, grouped: list, show, note, triage, accept, apply, publish, export, import",
   },
   subCommands: {
     list: defineCommand({
@@ -174,6 +177,9 @@ export const feedback = defineCommand({
     apply,
     triage,
     split,
+    publish,
+    export: exportFeedback,
+    import: importFeedback,
     dismiss: defineCommand({
       meta: {
         name: "dismiss",

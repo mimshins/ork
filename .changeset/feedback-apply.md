@@ -4,6 +4,6 @@
 
 `ork feedback apply <item>` has Ork propose a fix for a feedback item: it runs
 Ork's own `ork:feedback-apply` workflow in the project the item came from, whose
-worker commits the smallest change that would stop the problem on its own
-branch. You keep the branch, and the item is resolved, or discard it, and the
-branch is removed. Ork never merges it.
+worker can read and edit files but run no command, and Ork commits its change on
+its own branch. Before you keep or discard it, you see what the branch changes
+(`git diff --stat`) and how to read the whole of it. Ork never merges it.

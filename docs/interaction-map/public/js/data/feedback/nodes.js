@@ -100,13 +100,12 @@ export const NODES = [
     zone: "surfaces",
     x: 320,
     y: 600,
-    status: "partial",
+    status: "built",
     pkg: "cli",
     summary:
       "The subcommands that close the loop: triage new items, apply one as a fix or a lesson, publish an `ork` item, and move feedback as JSONL.",
     facts: [
-      "Built: `triage`, `split`, `accept <item> [--lesson]` and `apply <item>`, beside `list`, `show`, `note`, `dismiss` and `restore`.",
-      "Planned, milestone 2: `publish <item>`, `export`, `import`.",
+      "`triage`, `split`, `accept <item> [--lesson]`, `apply <item>`, `publish <item>`, `export` and `import`, beside `list`, `show`, `note`, `dismiss` and `restore`.",
     ],
     docs: [DESIGN.cli, DESIGN.milestones, FEEDBACK.accept],
   },
@@ -253,9 +252,9 @@ export const NODES = [
     summary:
       "`ork feedback apply <item>` runs Ork's own `ork:feedback-apply` workflow, whose worker proposes a fix on a branch; or you accept the item as a lesson. Nothing changes without your answer.",
     facts: [
-      "`ork feedback apply` runs `ork:feedback-apply`, a built-in workflow, in the item's project; its worker commits a fix (a workflow edit, or an `AGENTS.md`, `CLAUDE.md` or skill change) on a branch in a worktree.",
-      "A gate asks to keep or discard it, recommending neither; Ork never merges. Kept, the item is `resolved`; discarded, the branch goes.",
-      "`ork feedback accept --lesson` writes a lesson instead (ADR-059).",
+      "`ork feedback apply` runs `ork:feedback-apply`, a built-in workflow, in the item's project, with that project's records only; its worker can read and edit files but run no command, and Ork commits its fix on a branch in a worktree.",
+      "The gate shows the branch's `git diff --stat` and the command to read it all, then the worker's own account; it recommends neither answer, and Ork never merges. Kept, the item is `resolved`; discarded, the branch goes.",
+      "`ork feedback accept --lesson` writes a lesson instead, never through a link (ADR-059).",
     ],
     docs: [
       DESIGN.feedback,
@@ -302,17 +301,23 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 840,
-    status: "planned",
+    status: "built",
     pkg: "core",
     summary:
-      "Turns an `ork`-target item into a post: redacts it, adds a structured header and a fingerprint marker, and shows you the exact text before anything leaves your machine.",
+      'Turns an `ork`-target item into a post: redacts it, adds a structured header and a fingerprint marker, and shows you the exact text, a new thread or a "+1", before anything leaves your machine.',
     facts: [
-      "Redacts secrets, emails and hostnames; absolute paths become `<project>/…`; optionally repo and workflow names.",
+      "Redacts secrets, emails, hosts and IPs; your projects' paths become `<project>/…` and your home `~`; `--hide-names` takes out workflow and folder names.",
       "Header: Ork version, driver, model, node type, kind, count.",
-      "Every post carries a hidden `<!-- ork-fingerprint: … -->` marker.",
-      "Milestone 2.",
+      "Every post carries a hidden `<!-- ork-fingerprint: … -->` marker; the newest 100 threads are read for it first.",
+      "`ork feedback publish` asks `y/N` with no flag to skip it.",
     ],
-    docs: [DESIGN.feedback],
+    docs: [
+      DESIGN.feedback,
+      FEEDBACK.redact,
+      FEEDBACK.discussions,
+      FEEDBACK.share,
+      FEEDBACK.publishTests,
+    ],
   },
 
   // ── Your machine ─────────────────────────────────────────────────────────
@@ -323,15 +328,15 @@ export const NODES = [
     zone: "machine",
     x: 1160,
     y: 360,
-    status: "planned",
+    status: "built",
     pkg: null,
     summary:
       "Feedback moved as JSON lines, so a team can share it without GitHub. Publish targets are adapters, and this is one.",
     facts: [
+      "A line per record; import checks each, masks secrets again and skips what's here; items start `new`.",
       "Issues in the project's own repository can be a later adapter.",
-      "Milestone 2.",
     ],
-    docs: [DESIGN.feedback],
+    docs: [DESIGN.feedback, FEEDBACK.jsonl, FEEDBACK.shareTests],
   },
   {
     id: "lessons",

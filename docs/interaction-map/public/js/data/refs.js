@@ -211,6 +211,24 @@ export const FEEDBACK = {
     "Code: near-duplicate items, by rules",
   ),
   triageTests: d("packages/core/test/triage.test.ts", "Tests: triage"),
+  redact: d(
+    "packages/core/src/feedback/redact.ts",
+    "Code: redaction, the post and its marker",
+  ),
+  discussions: d(
+    "packages/core/src/feedback/discussions.ts",
+    "Code: Discussions through your gh",
+  ),
+  publishTests: d("packages/core/test/publish.test.ts", "Tests: publishing"),
+  share: d(
+    "packages/cli/src/commands/feedback-share.ts",
+    "Code: `ork feedback publish`, `export`, `import`",
+  ),
+  jsonl: d("packages/cli/src/runs/jsonl.ts", "Code: feedback as JSON lines"),
+  shareTests: d(
+    "packages/cli/test/share.test.ts",
+    "Tests: export, import, preview",
+  ),
   applyWorkflow: d(
     "packages/core/workflows/feedback-apply.ork.yaml",
     "Code: Ork's own `ork:feedback-apply` workflow",

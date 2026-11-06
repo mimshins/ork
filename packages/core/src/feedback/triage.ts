@@ -2,9 +2,10 @@
  * @file Triage by rules (ADR-059): items about the same problem, the same
  *   target and kind with normalized titles that share at least 80% of their
  *   words, are proposed as one, under the item seen first. No model runs. Only
- *   unsettled items take part (`new` or `triaged`), and a group is proposed
- *   only when it holds a `new` one, so a merge someone declined isn't asked
- *   again until something new joins it.
+ *   unsettled items take part (`new` or `triaged`); each is compared with the
+ *   first-seen item of a group, never only with another member, and a group is
+ *   proposed only when it holds a `new` one, so a merge someone declined isn't
+ *   asked again until something new joins it.
  */
 
 import type { FeedbackItem } from "../store/feedback-types.ts";
@@ -40,27 +41,23 @@ const unsettled = (item: FeedbackItem): boolean =>
 const firstSeen = (a: FeedbackItem, b: FeedbackItem): number =>
   a.firstSeen.localeCompare(b.firstSeen) || a.id.localeCompare(b.id);
 
-/** One kind of item's groups: each pair near enough joins their groups. */
+/**
+ * One kind of item's groups, oldest first: an item joins the first group whose
+ * first-seen item it is near enough, so every member is within the rule of the
+ * item the others go under, never only of one another.
+ */
 const groupsOf = (items: readonly FeedbackItem[]): FeedbackItem[][] => {
-  const parent = items.map((_, index) => index);
-  const find = (index: number): number => {
-    let at = index;
-    while (parent[at] !== at) at = parent[at] ?? at;
-    return at;
-  };
-  for (const [i, a] of items.entries()) {
-    for (const [j, b] of items.entries()) {
-      if (j > i && titleOverlap(a.title, b.title) >= NEAR_DUPLICATE) {
-        parent[find(j)] = find(i);
-      }
-    }
+  const groups: FeedbackItem[][] = [];
+  for (const item of items.toSorted(firstSeen)) {
+    const group = groups.find(
+      ([root]) =>
+        root !== undefined &&
+        titleOverlap(root.title, item.title) >= NEAR_DUPLICATE,
+    );
+    if (group === undefined) groups.push([item]);
+    else group.push(item);
   }
-  const groups = new Map<number, FeedbackItem[]>();
-  for (const [index, item] of items.entries()) {
-    const root = find(index);
-    groups.set(root, [...(groups.get(root) ?? []), item]);
-  }
-  return [...groups.values()];
+  return groups;
 };
 
 /** The merges triage would make among `items`, oldest group first. */
@@ -78,7 +75,7 @@ export const proposeMerges = (
       group => group.length > 1 && group.some(item => item.status === "new"),
     )
     .map(group => {
-      const [into, ...from] = group.toSorted(firstSeen);
+      const [into, ...from] = group;
       return into === undefined ? undefined : { into, from };
     })
     .filter(merge => merge !== undefined)

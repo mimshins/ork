@@ -2,15 +2,21 @@
  * @file Accepting a feedback item as a lesson (specs/feedback.md, ADR-059): one
  *   line in the workflow's `.ork/lessons/<workflow>.md`, marked with the item
  *   it came from so it isn't added twice, and refused when it would take the
- *   file past the cap a session loads. Only a person's acceptance writes one:
- *   feedback is model output that repository content can steer.
+ *   file past the cap a session loads, or when the file, or a folder on the way
+ *   to it, is a link a cloned repository could aim at the person's own files.
+ *   Only a person's acceptance writes one: feedback is model output that
+ *   repository content can steer.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { estimateTokens, LESSON_CAP_TOKENS } from "../context/lesson-cap.ts";
 import { placeFiles, type ProjectPlace } from "../project/place.ts";
+import { plainPathInside, writePlainFile } from "../project/plain-files.ts";
+
+/** A workflow's name, as the format allows it: never a path. */
+const SLUG = /^[a-z0-9][a-z0-9._-]*$/u;
 
 /** A workflow's lessons file in a project. */
 export const lessonsFileOf = (place: ProjectPlace, workflow: string): string =>
@@ -23,6 +29,8 @@ export const lessonMark = (item: string): string =>
 export type LessonAsk = {
   /** The lessons file. */
   file: string;
+  /** What it must be inside with no link on the way: the project. */
+  base: string;
   /** How messages name the file: project-relative. */
   shownAs: string;
   workflow: string;
@@ -52,6 +60,12 @@ export const addLesson = (ask: LessonAsk): LessonResult => {
   if (ask.text.trim() === "") {
     return { ok: false, error: "The lesson is empty." };
   }
+  if (!SLUG.test(ask.workflow) || !plainPathInside(ask.base, ask.file)) {
+    return {
+      ok: false,
+      error: `${ask.shownAs} is a link, or behind one, or outside the project: Ork writes lessons only to a plain file there, so it wrote nothing.`,
+    };
+  }
   const current = existsSync(ask.file)
     ? readFileSync(ask.file, "utf8")
     : `# Lessons for ${ask.workflow}\n\n`;
@@ -70,7 +84,6 @@ export const addLesson = (ask: LessonAsk): LessonResult => {
       error: `${ask.shownAs} would be about ${tokens.toLocaleString("en")} tokens, over the ${LESSON_CAP_TOKENS.toLocaleString("en")} a session loads. Edit it to make room, then accept again.`,
     };
   }
-  mkdirSync(path.dirname(ask.file), { recursive: true });
-  writeFileSync(ask.file, next);
-  return { ok: true, tokens };
+  const written = writePlainFile(ask.base, ask.file, next, ask.shownAs);
+  return written.ok ? { ok: true, tokens } : written;
 };

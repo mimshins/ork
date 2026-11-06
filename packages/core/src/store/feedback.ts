@@ -23,7 +23,7 @@ import type {
   FeedbackStore,
 } from "./feedback-types.ts";
 import { maskSecrets } from "./mask.ts";
-import { type Row, text } from "./rows.ts";
+import { inTransaction, type Row, text } from "./rows.ts";
 
 const STATUSES: readonly FeedbackStatus[] = [
   "new",
@@ -159,11 +159,16 @@ export const feedbackQueries = (
     `${ITEMS} GROUP BY r.fingerprint ORDER BY last_seen DESC`,
   );
   const byPrefix = db.prepare(
-    `${ITEMS} WHERE substr(r.fingerprint, 1, ?) = ? GROUP BY r.fingerprint ORDER BY last_seen DESC`,
+    `${ITEMS} WHERE r.fingerprint IN (
+       SELECT COALESCE(merged_into, fingerprint) FROM feedback_items
+       WHERE substr(fingerprint, 1, ?) = ?
+     ) GROUP BY r.fingerprint ORDER BY last_seen DESC`,
   );
   const records = db.prepare(
-    `SELECT f.* FROM feedback f LEFT JOIN feedback_items i ON i.fingerprint = f.fingerprint
-     WHERE COALESCE(i.merged_into, f.fingerprint) = ? ORDER BY f.id`,
+    `SELECT * FROM feedback
+     WHERE fingerprint = ? OR fingerprint IN (
+       SELECT fingerprint FROM feedback_items WHERE merged_into = ?
+     ) ORDER BY id`,
   );
   const rootOf = db.prepare(
     "SELECT COALESCE(merged_into, fingerprint) AS root FROM feedback_items WHERE fingerprint = ?",
@@ -172,6 +177,15 @@ export const feedbackQueries = (
     `UPDATE feedback_items SET merged_into = ?, updated_at = ?
      WHERE (fingerprint = ? OR merged_into = ?) AND fingerprint != ?`,
   );
+  const exported = db.prepare(
+    `SELECT f.* FROM feedback f
+     LEFT JOIN feedback_items i ON i.fingerprint = f.fingerprint
+     LEFT JOIN feedback_items r ON r.fingerprint = COALESCE(i.merged_into, f.fingerprint)
+     WHERE ? = 1 OR COALESCE(r.status, 'new') != 'dismissed' ORDER BY f.id`,
+  );
+  const known = db.prepare(
+    "SELECT 1 FROM feedback WHERE run_id = ? AND seq = ?",
+  );
   const split = db.prepare(
     "UPDATE feedback_items SET merged_into = NULL, updated_at = ? WHERE merged_into = ?",
   );
@@ -179,39 +193,48 @@ export const feedbackQueries = (
     "UPDATE feedback_items SET status = ?, updated_at = ? WHERE fingerprint = ?",
   );
 
+  /** Writes a record, its secrets masked, and its item when it's new. */
+  const insertRecord = (
+    runId: string,
+    seq: number,
+    at: string,
+    node: string | undefined,
+    feedback: FeedbackReport,
+  ): void => {
+    const { origin } = feedback;
+    insert.run(
+      runId,
+      seq,
+      at,
+      node ?? null,
+      feedback.source,
+      feedback.kind,
+      feedback.target,
+      feedback.severity,
+      maskSecrets(feedback.title),
+      maskSecrets(feedback.body),
+      JSON.stringify(feedback.evidence.map(e => maskSecrets(e))),
+      feedback.code ?? null,
+      feedback.fingerprint,
+      origin.workflow ?? null,
+      origin.workflowHash ?? null,
+      origin.nodeType ?? null,
+      origin.model ?? null,
+      origin.driver ?? null,
+      origin.version ?? null,
+      FEEDBACK_VERSION,
+    );
+    insertItem.run(feedback.fingerprint, at);
+  };
+
   return {
-    insertFeedback: (runId, seq, at, node, feedback) => {
-      const { origin } = feedback;
-      insert.run(
-        runId,
-        seq,
-        at,
-        node ?? null,
-        feedback.source,
-        feedback.kind,
-        feedback.target,
-        feedback.severity,
-        maskSecrets(feedback.title),
-        maskSecrets(feedback.body),
-        JSON.stringify(feedback.evidence.map(e => maskSecrets(e))),
-        feedback.code ?? null,
-        feedback.fingerprint,
-        origin.workflow ?? null,
-        origin.workflowHash ?? null,
-        origin.nodeType ?? null,
-        origin.model ?? null,
-        origin.driver ?? null,
-        origin.version ?? null,
-        FEEDBACK_VERSION,
-      );
-      insertItem.run(feedback.fingerprint, at);
-    },
+    insertFeedback: insertRecord,
     feedbackItems: (filter = {}) =>
       (filter.all === true ? every : shown).all().map(r => itemOf(r)),
     findFeedback: prefix =>
       byPrefix.all(prefix.length, prefix).map(r => itemOf(r)),
     feedbackRecords: fingerprint =>
-      records.all(fingerprint).map(r => recordOf(r)),
+      records.all(fingerprint, fingerprint).map(r => recordOf(r)),
     setFeedbackStatus: (fingerprint, status) =>
       Number(
         setStatus.run(status, new Date().toISOString(), fingerprint).changes,
@@ -220,16 +243,33 @@ export const feedbackQueries = (
       const root = text(rootOf.get(into), "root");
       if (root === "") return 0;
       const at = new Date().toISOString();
-      let moved = 0;
-      for (const fingerprint of from) {
-        if (fingerprint === root) continue;
-        moved += Number(
-          mergeInto.run(root, at, fingerprint, fingerprint, root).changes,
-        );
-      }
-      return moved;
+      return inTransaction(db, () =>
+        from
+          .filter(fingerprint => fingerprint !== root)
+          .reduce(
+            (moved, fingerprint) =>
+              moved +
+              Number(
+                mergeInto.run(root, at, fingerprint, fingerprint, root).changes,
+              ),
+            0,
+          ),
+      );
     },
     splitFeedback: fingerprint =>
       Number(split.run(new Date().toISOString(), fingerprint).changes),
+    exportFeedback: (filter = {}) =>
+      exported.all(filter.all === true ? 1 : 0).map(r => recordOf(r)),
+    importFeedback: record => {
+      if (known.get(record.runId, record.seq) !== undefined) return false;
+      insertRecord(
+        record.runId,
+        record.seq,
+        record.at,
+        record.node,
+        record.feedback,
+      );
+      return true;
+    },
   };
 };

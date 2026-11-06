@@ -125,6 +125,7 @@ const apply = async (fix: NodeOutput, choice = "keep") => {
   const ran: string[] = [];
   const outputs: Record<string, NodeOutput> = {
     fix,
+    changes: { exitCode: 0, stdout: " AGENTS.md | 1 +", stderr: "" },
     keep: { choice, answeredBy: "terminal" },
   };
   const executor: NodeExecutor = ({ id }) => {
@@ -136,7 +137,11 @@ const apply = async (fix: NodeOutput, choice = "keep") => {
     graph,
     inputs: { item: "ab12", about: "AGENTS.md has no test command." },
     cwd: place.root,
-    executors: { "claude.worker": executor, "human.gate": executor },
+    executors: {
+      "claude.worker": executor,
+      "tool.git": executor,
+      "human.gate": executor,
+    },
     human,
     onEvent: () => {
       // What ran is enough here.
@@ -152,7 +157,7 @@ describe("ork:feedback-apply", () => {
       summary: "Added the test command to AGENTS.md.",
       branch: "ork/r1/fix",
     });
-    expect(ran).toEqual(["fix", "keep"]);
+    expect(ran).toEqual(["fix", "changes", "keep"]);
     expect(result.status).toBe("succeeded");
   });
 

@@ -134,5 +134,5 @@ export const noteRun = (
 ): Noted => {
   const found = findRun(store, args.run, cwd);
   if (!found.ok) return found;
-  return recordNote(store, found.run, args);
+  return recordNote(store, found.run, args, "--");
 };

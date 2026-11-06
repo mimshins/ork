@@ -198,7 +198,6 @@ export const JOURNEYS = [
         title: "You run `ork feedback publish <item>`",
         detail:
           "For an `ork` item, for example a tool error seen in a dozen runs. Opt-in, one item at a time.",
-        status: "planned",
         docs: [DESIGN.feedback],
       },
       {
@@ -206,21 +205,18 @@ export const JOURNEYS = [
         to: "publish",
         title: "Only `ork` items go out",
         detail: "`workflow` and `project` items stay local.",
-        status: "planned",
       },
       {
         from: "publish",
         title: "Redacted",
         detail:
           "Secrets, emails and hostnames removed; absolute paths rewritten to `<project>/…`; repo and workflow names too, if you ask.",
-        status: "planned",
       },
       {
         from: "publish",
         title: "A header and a marker",
         detail:
           "Ork version, driver, model, node type, kind and count, and a hidden `<!-- ork-fingerprint: … -->`.",
-        status: "planned",
       },
       {
         from: "publish",
@@ -228,14 +224,12 @@ export const JOURNEYS = [
         title: "You see the exact text",
         detail:
           "In the terminal, or the Feedback panel: what you confirm is what is posted.",
-        status: "planned",
       },
       {
         from: "actions",
         title: "You confirm",
         detail:
           "With `y`, or the panel's Publish; anything else, and nothing leaves your machine.",
-        status: "planned",
       },
       {
         from: "publish",
@@ -243,7 +237,6 @@ export const JOURNEYS = [
         title: "Your `gh` looks for the marker",
         detail:
           'In the "Agent feedback" category, found by its slug `agent-feedback`.',
-        status: "planned",
       },
       {
         from: "gh",
@@ -251,13 +244,11 @@ export const JOURNEYS = [
         title: 'A "+1" on the existing thread',
         detail:
           "With the new context as a comment. With no match, a new discussion starts.",
-        status: "planned",
       },
       {
         from: "table",
         title: "The item is `published`",
         detail: "Its status becomes `published`.",
-        status: "planned",
       },
     ],
   },

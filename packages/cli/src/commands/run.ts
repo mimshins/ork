@@ -158,7 +158,7 @@ export const run = defineCommand({
       return;
     }
     const cwd = process.cwd();
-    if (refusedBuiltin([args.workflow])) return;
+    if (refusedBuiltin([args.workflow], cwd)) return;
     const target = workflowArg(args.workflow, cwd);
     const store = openStore();
     if (args.detach) {

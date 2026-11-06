@@ -8,6 +8,7 @@
 
 import {
   applyClean,
+  builtinProblem,
   builtinWorkflowFile,
   createdWorktrees,
   type EventStore,
@@ -111,6 +112,16 @@ export const discardRun = async (
   );
 };
 
+/** How many commits the run's worktrees hold that the current branch hasn't. */
+export const commitsAhead = async (
+  store: EventStore,
+  root: string,
+  runId: string,
+): Promise<number> =>
+  (await listOrkWorktrees(root, createdWorktrees(store, root)))
+    .filter(item => item.runId === runId)
+    .reduce((sum, item) => sum + item.ahead, 0);
+
 export type ApplyOptions = Pick<
   RunWorkflowOptions,
   "runtime" | "human" | "out" | "err" | "driver" | "home" | "onRun"
@@ -118,6 +129,8 @@ export type ApplyOptions = Pick<
   store: EventStore;
   item: FeedbackItem;
   registered: readonly ProjectPlace[];
+  /** Counts the run's commits; tests pass their own. */
+  ahead?: typeof commitsAhead;
 };
 
 export type Applied =
@@ -132,28 +145,35 @@ const settle = async (
   outcome: ApplyOutcome,
 ): Promise<string[]> => {
   const { store, item } = options;
+  const short = item.id.slice(0, 12);
   switch (outcome.kind) {
-    case "kept":
+    case "kept": {
+      const ahead = await (options.ahead ?? commitsAhead)(store, root, runId);
+      if (ahead === 0) {
+        const done = await discardRun(store, root, runId);
+        return [
+          `the fix's branch holds no commits, so there's nothing to keep; ${short} stays accepted`,
+          ...done,
+        ];
+      }
       store.setFeedbackStatus(item.id, "resolved");
       return [
-        `kept the fix on ${outcome.branch}; ${item.id.slice(0, 12)} is resolved`,
+        `kept the fix on ${outcome.branch}; ${short} is resolved`,
         "Review and merge it like any other change; Ork never merges it.",
       ];
+    }
     case "discarded": {
       const done = await discardRun(store, root, runId);
-      return [
-        `discarded the fix; ${item.id.slice(0, 12)} stays accepted`,
-        ...done,
-      ];
+      return [`discarded the fix; ${short} stays accepted`, ...done];
     }
     case "nothing":
       return [
-        `no fix proposed; ${item.id.slice(0, 12)} stays accepted`,
+        `no fix proposed; ${short} stays accepted`,
         ...(outcome.summary === "" ? [] : [outcome.summary]),
       ];
     case "unfinished":
       return [
-        `run ${runId} didn't finish, so ${item.id.slice(0, 12)} stays accepted`,
+        `run ${runId} didn't finish, so ${short} stays as it was`,
         ...outcome.reasons,
       ];
     default:
@@ -161,35 +181,52 @@ const settle = async (
   }
 };
 
+const SETTLED = new Set(["resolved", "published", "dismissed"]);
+
+/** Why an item gets no fix: it's about Ork, or it's settled. */
+const refusalOf = (item: FeedbackItem): string | undefined => {
+  const short = item.id.slice(0, 12);
+  if (item.target === "ork") {
+    return `${short} is about Ork itself, so its fix isn't in this project; share it with Ork's maintainers instead.`;
+  }
+  if (!SETTLED.has(item.status)) return undefined;
+  return item.status === "dismissed"
+    ? `${short} is dismissed; restore it first.`
+    : `${short} is ${item.status} already.`;
+};
+
 /** Proposes a fix for an item, in the project it came from. */
 export const applyItem = async (options: ApplyOptions): Promise<Applied> => {
   const { store, item } = options;
   const short = item.id.slice(0, 12);
-  if (item.target === "ork") {
-    return {
-      ok: false,
-      error: `${short} is about Ork itself, so its fix isn't in this project; share it with Ork's maintainers instead.`,
-    };
+  const refusal = refusalOf(item);
+  if (refusal !== undefined) return { ok: false, error: refusal };
+  const found = placeOf(store, item, undefined, options.registered);
+  if (!found.ok) return found;
+  const { place, project } = found;
+  const problem = builtinProblem(place, BUILTIN);
+  const file = builtinWorkflowFile(place, BUILTIN);
+  if (problem !== undefined || file === undefined) {
+    return { ok: false, error: problem ?? `${BUILTIN} couldn't be written.` };
   }
-  const place = placeOf(store, item, undefined, options.registered);
-  const file =
-    place === undefined ? undefined : builtinWorkflowFile(place, BUILTIN);
-  if (place === undefined || file === undefined) {
-    return {
-      ok: false,
-      error: `The runs ${short} was seen in are gone, so its project isn't known.`,
-    };
-  }
-  store.setFeedbackStatus(item.id, "accepted");
-  const about = aboutItem(item, store.feedbackRecords(item.id));
+  // Only what runs of this project recorded: a record from another project
+  // could steer a worker here.
+  const records = store
+    .feedbackRecords(item.id)
+    .filter(r => store.lookup(r.runId)[0]?.project === project);
+  options.out(`▸ proposing a fix for ${short} in ${place.root}`);
   const { result } = await runWorkflowFile({
     ...options,
     file,
     cwd: place.root,
-    inputs: [`item=${short}`, `about=${about}`],
+    inputs: [`item=${short}`, `about=${aboutItem(item, records)}`],
     untrusted: ["about"],
     inPlace: false,
     json: false,
+    onRun: handle => {
+      store.setFeedbackStatus(item.id, "accepted");
+      options.onRun?.(handle);
+    },
   });
   if (result === null) {
     return { ok: false, error: `${BUILTIN} didn't start.` };

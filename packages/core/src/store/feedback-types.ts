@@ -73,4 +73,11 @@ export type FeedbackStore = {
   mergeFeedback: (into: string, from: readonly string[]) => number;
   /** Takes apart what was merged into an item; returns how many came back. */
   splitFeedback: (fingerprint: string) => number;
+  /** Every record, oldest first; without `all`, not dismissed items'. */
+  exportFeedback: (filter?: { all?: boolean }) => FeedbackRecord[];
+  /**
+   * Adds a record from elsewhere (`ork feedback import`), unless one of its run
+   * and event is here; true when it was added. Secrets are masked again.
+   */
+  importFeedback: (record: Omit<FeedbackRecord, "id">) => boolean;
 };

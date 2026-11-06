@@ -206,7 +206,7 @@ export const validate = defineCommand({
   },
   run: async ({ args }) => {
     const cwd = process.cwd();
-    if (refusedBuiltin(args._)) return;
+    if (refusedBuiltin(args._, cwd)) return;
     const files = findWorkflowFiles(
       args._,
       cwd,

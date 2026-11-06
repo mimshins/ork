@@ -10,7 +10,7 @@ others are optional, needed only when a workflow has a node of their type. Why:
 | ----------- | ----------------------------------------------------------------------------- | ---------------------------------------- |
 | Claude      | the Agent SDK driver, with an API key or a cloud provider                     | `ANTHROPIC_API_KEY`, or Bedrock / Vertex |
 | Claude      | the CLI driver, running your own `claude`                                     | `claude` (Claude Code's own login)       |
-| GitHub      | optional: your `gh` CLI, for `tool.gh` nodes                                  | `gh auth login`                          |
+| GitHub      | optional: your `gh` CLI, for `tool.gh` nodes and `ork feedback publish`       | `gh auth login`                          |
 | AWS         | optional: your `aws` CLI, for `tool.aws` nodes (`profile`, `region` per node) | `aws sso login`, or a profile            |
 
 `ork doctor` runs each tool's own status check and prints whether it is ready,

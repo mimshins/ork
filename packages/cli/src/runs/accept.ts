@@ -5,12 +5,13 @@
  *   Ork itself, so it's never a lesson: it can be published instead.
  */
 
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import path from "node:path";
 
 import {
   addLesson,
   type EventStore,
+  guardedBase,
   type FeedbackItem,
   inside,
   LESSON_CAP_TOKENS,
@@ -62,25 +63,57 @@ const workflowFor = (
       };
 };
 
+const real = (dir: string): string => {
+  try {
+    return realpathSync(dir);
+  } catch {
+    return path.resolve(dir);
+  }
+};
+
+export type FoundPlace =
+  | {
+      ok: true;
+      place: ProjectPlace;
+      /** The project root as the item's runs recorded it. */
+      project: string;
+    }
+  | { ok: false; error: string };
+
 /**
- * The project of the item's newest record (in `workflow`, when given), from its
- * run's workflow file, or the folder it started in when that's gone.
+ * The project of the item's newest record (in `workflow`, when given): the
+ * folder its run started in, when that's still the same project. A clone that
+ * was deleted is refused, never taken for a repository above it.
  */
 export const placeOf = (
   store: EventStore,
   item: FeedbackItem,
   workflow: string | undefined,
   registered: readonly ProjectPlace[],
-): ProjectPlace | undefined => {
+): FoundPlace => {
   const record = store
     .feedbackRecords(item.id)
     .findLast(
       r => workflow === undefined || r.feedback.origin.workflow === workflow,
     );
   const [run] = record === undefined ? [] : store.lookup(record.runId);
-  if (run === undefined) return undefined;
+  if (run === undefined) {
+    return {
+      ok: false,
+      error: `The runs ${item.id.slice(0, 12)} was seen in are gone, so its project isn't known.`,
+    };
+  }
+  if (!existsSync(run.project)) {
+    return { ok: false, error: `Its project at ${run.project} is gone.` };
+  }
   const folder = path.dirname(run.file);
-  return placeFor(existsSync(folder) ? folder : run.project, registered);
+  const place = placeFor(existsSync(folder) ? folder : run.project, registered);
+  return real(place.root) === real(run.project)
+    ? { ok: true, place, project: run.project }
+    : {
+        ok: false,
+        error: `Its project at ${run.project} isn't a project any more: Ork would take it for ${place.root}.`,
+      };
 };
 
 /** Accepts `item`, as a lesson with `--lesson`. */
@@ -103,19 +136,16 @@ export const acceptItem = (
   }
   const chosen = workflowFor(item, args.workflow);
   if (!chosen.ok) return chosen;
-  const place = placeOf(store, item, chosen.workflow, registered);
-  if (place === undefined) {
-    return {
-      ok: false,
-      error: `The runs ${item.id.slice(0, 12)} was seen in are gone, so its project isn't known.`,
-    };
-  }
+  const found = placeOf(store, item, chosen.workflow, registered);
+  if (!found.ok) return found;
+  const { place } = found;
   const file = lessonsFileOf(place, chosen.workflow);
   const shownAs = inside(place.root, file)
     ? path.relative(place.root, file)
     : file;
   const added = addLesson({
     file,
+    base: guardedBase(place),
     shownAs,
     workflow: chosen.workflow,
     item: item.id,
