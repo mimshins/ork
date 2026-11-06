@@ -1,5 +1,337 @@
 # @krapht/ork
 
+## 0.3.0
+
+### Minor Changes
+
+- [`515b9eb`](https://github.com/mimshins/ork/commit/515b9ebd7075a334e47b0331b4fed4029dd34cff) Thanks [@mimshins](https://github.com/mimshins)! - A leader or worker can now run `before:`, a program in its own checkout before
+  its session starts. If it fails, no model turn is spent, and its prompt can read
+  what it gave as `{{before.*}}`. `defaults:` can set one for every node in a
+  workflow or project.
+
+- [`3df572f`](https://github.com/mimshins/ork/commit/3df572f30fadddcd651c369fc2478e169803ce2a) Thanks [@mimshins](https://github.com/mimshins)! - Tools and MCP calls can declare their output with `output.schema`, and a run
+  holds every node to what it declared: a value that doesn't fit fails the node
+  and says why. An edge can now read `ok`, so `when: "!ok"` handles any failure.
+  In the builder, conditions are picked from what a node can say, new edges start
+  valid, and renaming a value follows into the conditions that read it.
+
+- [`515b9eb`](https://github.com/mimshins/ork/commit/515b9ebd7075a334e47b0331b4fed4029dd34cff) Thanks [@mimshins](https://github.com/mimshins)! - A `tool.shell` node can now hold a short program as `script:`, instead of
+  `command:`. It takes no templates, so a value can't become code: values arrive
+  through `env:`. It runs under `sh -eu` by default, or the `interpreter:` it
+  names.
+
+- [`53e1826`](https://github.com/mimshins/ork/commit/53e18266c9d682a11b9da6bbd32b3bc541f6fa05) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` starts Ork's local server on `127.0.0.1:4417` and opens it in your
+  browser, signed in; run it again to open the one that is running. For now its
+  page lists your runs and open decisions live; the UI's panels come next. Behind
+  it is a JSON API with live event streams: runs, trees, events and decisions to
+  read, and starting, resuming, stopping, messaging runs and answering decisions,
+  each as the matching `ork` command does. The server runs nothing itself: closing
+  it stops no run. It listens on loopback only, behind a per-start token that
+  becomes an `HttpOnly` cookie, and refuses other hosts and other sites.
+  
+  `ork logs -f` now ends as soon as a run's `run.finished` arrives over its
+  socket, instead of waiting for the run's process to close it.
+
+- [`515b9eb`](https://github.com/mimshins/ork/commit/515b9ebd7075a334e47b0331b4fed4029dd34cff) Thanks [@mimshins](https://github.com/mimshins)! - `mcp.call` is a new node that calls one named tool on an MCP server, with no
+  session and so no model turn. It reads the server from the project's
+  `.mcp.json`, keeps secrets in your environment and masks them, and a run won't
+  start if a server is missing or a variable it reads isn't set. Stdio servers and
+  HTTP servers with static headers work; OAuth and SSE ones are refused.
+
+- [`c624bbd`](https://github.com/mimshins/ork/commit/c624bbd293f91ac9b577892a54a1400c1367c981) Thanks [@mimshins](https://github.com/mimshins)! - `ork init` offers Ork's skills for Claude Code: `--skills` writes them into
+  `.ork/skills/` as `/ork-write`, `/ork-run` and `/ork-principles`, linked from
+  `.claude/skills`, so everyone who clones the project gets them. On a terminal it
+  asks once. `ork doctor` says when the copies are older than your Ork.
+
+- [`9751231`](https://github.com/mimshins/ork/commit/975123169959662e9474d19bbc3a3008e6612b9b) Thanks [@mimshins](https://github.com/mimshins)! - `ork mcp` can now check a workflow as `ork validate` does (a draft's text or a
+  file, each problem with its line, then the walk), explain what a node's session
+  loads, and start a run in the background, which Claude Code asks you about
+  first. Inside a run it starts nothing. `--expects <version>` lets a caller such
+  as a plugin say which Ork it needs.
+
+- [`b15911c`](https://github.com/mimshins/ork/commit/b15911ceb8967f85ca8c8d24eafc0e3e2fe15a0b) Thanks [@mimshins](https://github.com/mimshins)! - `ork mcp` serves Ork's tools to Claude Code over stdio: your projects and
+  workflows, the workflow format a part at a time, runs and their events, what
+  they spent, and the decisions waiting on you. Add it with
+  `claude mcp add ork -- ork mcp`. It only reads: no tool answers a decision or
+  acts on a run.
+
+- [`e3998b2`](https://github.com/mimshins/ork/commit/e3998b248ba6d72746f1e2a000431c987cffa8f8) Thanks [@mimshins](https://github.com/mimshins)! - Pause, continue, and stop one node. `ork pause [run] [--node n]` pauses a live
+  run, or one of its nodes, without cutting anything short: nothing new starts, a
+  running session finishes its step and waits before its next tool call, and a
+  gate's timeout waits too. `ork continue` lets it go on from where it waited,
+  even after a long pause. `ork stop --node n` stops one running node: it fails,
+  "stopped by the user", and the rest of the run goes on. `ork ps` shows a paused
+  run as `paused`, and `ork tree` marks the nodes that are waiting. The local
+  server has the same as `POST /api/runs/:id/pause`, `/continue` and `/stop` (each
+  with `{ node? }`), and lists a project's workflows at
+  `GET /api/projects/:id/workflows`.
+
+- [`636fcd6`](https://github.com/mimshins/ork/commit/636fcd658cef70f5d41eeedf7956dddef05fd02e) Thanks [@mimshins](https://github.com/mimshins)! - Limits across runs. `quotas` with `dayUsd`, `weekUsd` and `monthUsd`, in
+  `~/.ork/settings.yaml` for all your projects and `.ork/project.yaml` for one,
+  caps what runs spend together. At a cap, or when your Claude plan refuses a
+  session, a run starts nothing new and ends `quota_exhausted`, and `ork resume`
+  goes on. `ork usage` and the Usage panel show each cap and when it resets.
+
+- [`e26fb35`](https://github.com/mimshins/ork/commit/e26fb358330dd9acef48a78d43794ee698169c72) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` has its Logs and Decisions panels. Logs shows a run's events live,
+  filtered by node, type or text, holds its place when you scroll up, and reads
+  older events a page at a time. Decisions lists every open question across runs,
+  with the recommended option standing out: answer with a click or the keys `1` to
+  `9`, and see who answered one that was settled elsewhere. The server gains
+  `GET /api/decisions/:id`.
+
+- [`dead65e`](https://github.com/mimshins/ork/commit/dead65e27303c8b80d99f8cdc4c4a6c5b6060a5c) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` has its notification center: a bell with the unread count, and a panel
+  of open decisions and of runs that ended, crashed or paused. Mark items read
+  singly or all together, per browser. New items are announced to screen readers,
+  and desktop notifications can be turned on from the panel.
+
+- [`c4cdefe`](https://github.com/mimshins/ork/commit/c4cdefe344ba6f4f2589d7d938589e206de0d5f9) Thanks [@mimshins](https://github.com/mimshins)! - Tool nodes can steer a run without a model turn. A program now sees who it is
+  (`ORK_RUN`, `ORK_NODE` and more), a node takes an `env:` that can read your own
+  variables as `{{env.NAME}}`, and `output: { format: json }` gives `output.json`
+  from stdout or `$ORK_OUTPUT`. `ork chat` now refuses when run by a program or an
+  agent in a run.
+
+- [`b98d841`](https://github.com/mimshins/ork/commit/b98d8417529e59596878f862baf6bf60c1ec6538) Thanks [@mimshins](https://github.com/mimshins)! - Deterministic steps can now tell a working session what happened with no model
+  turn. A program in a tool node writes with `ork send <to> -m <body>` or
+  `--stdin`, and a node's `notify:` declares a message to send when it finishes.
+  Both land as a notice and `read_inbox`, labelled `via`, and show in `ork logs`
+  and the Logs and Chats panels. A channel can now have a tool node on one side,
+  one way. The extra turn that reads a late message now stays within what's left
+  of the budgets, and can no longer fail a node that already reported.
+
+- [`0f0b3f0`](https://github.com/mimshins/ork/commit/0f0b3f0787ff43fd380369b66e26e7b9297cc8d4) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` has its Chats panel: one thread per leader or worker of a run, built
+  from its events and following the node chosen in the Monitor. Write to it while
+  the run is live; for a run that has ended it gives the `ork chat` command, ready
+  to copy.
+
+- [`08d40b8`](https://github.com/mimshins/ork/commit/08d40b89a6dfd35a2cae7395e6ce655a6c169953) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` now serves Ork's browser app, bundled inside the package and loaded
+  only from your machine (no CDNs, no remote fonts). This first cut only shows
+  which Ork serves it; the panels follow. The page runs under a strict content
+  security policy, and the licenses of the third-party code it bundles are in
+  `dist/ui/THIRD_PARTY_LICENSES.txt`.
+
+- [`aea062e`](https://github.com/mimshins/ork/commit/aea062e20f69ebf2e43ae7ba4de5c22d97b436f1) Thanks [@mimshins](https://github.com/mimshins)! - Add `ork usage` and the Usage panel, to see what runs spent over time, and
+  `ork prune`, to forget old runs' logs while keeping what they spent. Costs in
+  `ork ps`, `ork tree` and run budgets no longer count a resumed session's earlier
+  spend again.
+
+- [`515b9eb`](https://github.com/mimshins/ork/commit/515b9ebd7075a334e47b0331b4fed4029dd34cff) Thanks [@mimshins](https://github.com/mimshins)! - A leader or worker can now declare `verify:`, a program that must pass before
+  its report is accepted. A failure goes back to the same session, up to
+  `attempts` times and within its budgets, with only the end of the output, and
+  then the node fails.
+
+- [`fb6009d`](https://github.com/mimshins/ork/commit/fb6009dcccc2164df6a61488ebabc020ec9b9c49) Thanks [@mimshins](https://github.com/mimshins)! - The workflow builder now shows what walking a workflow finds, in Problems and on
+  the cards, with how many ways it tried, such as
+  `Walked 14 ways through: 8 succeed, 6 fail.` A finding never blocks a save. A
+  problem no longer names its node twice.
+
+- [`9071e39`](https://github.com/mimshins/ork/commit/9071e39a1ff80cf19297d7e3357218074cdef430) Thanks [@mimshins](https://github.com/mimshins)! - `ork validate` now tries every way through a workflow, without running a
+  session, a tool or a script. It warns about a node no way reaches and a loop
+  only its rounds can end, says how many ways it walked, and `--paths` lists how a
+  run can end. `ork run` prints the same warnings before it starts.
+
+- [`01fd0d4`](https://github.com/mimshins/ork/commit/01fd0d446b3e77a274bc7d8afcfebd822ae01c0f) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` has its Monitor: the selected run's graph and ownership tree, live,
+  with each node's status, model, tokens and cost. Pause, continue and stop the
+  run or a node from it; stop asks first, and a control that does not apply says
+  why. A `workflow.call` opens the run it started, and a run lists its links to
+  other runs. A run now records its edges and channels, so its graph shows what it
+  ran even after the workflow file changes.
+
+- [`1ea63a7`](https://github.com/mimshins/ork/commit/1ea63a7c52e5cf7d6d725ea411319d7fd94a3c44) Thanks [@mimshins](https://github.com/mimshins)! - Wait on something outside a run, or start one when it happens, with no model
+  turn until it does. A tool or MCP node takes `watch: { every, until, timeout }`,
+  looking again until a condition holds: the time between looks doesn't count as
+  work, it holds no session slot, and `$ORK_STATE` keeps what a script has seen.
+  `ork watch` runs the triggers in a project's `triggers.yaml`, starting a run for
+  each new thing a check reports. Its first look starts nothing, each key starts
+  once, the workflow must have a budget, and each trigger has a daily cap and
+  takes one run at a time. It runs only what you accepted on this machine with
+  `ork watch --accept`, in a terminal. See the guide, Watching a source.
+
+- [`3cb93db`](https://github.com/mimshins/ork/commit/3cb93db7a61c17b5dd9acd67bfedfdb082e70ec7) Thanks [@mimshins](https://github.com/mimshins)! - `ork validate` and `ork run` now stop on a condition that compares a field with
+  a value it can't have, such as `status == 'failed'` or a gate's `choice` with a
+  typo, and warn on a condition that's always false, a loop only its rounds can
+  end, a plain edge beside a loop, and a loop of sessions with no budget or
+  timeout. `ork run` prints warnings before it starts.
+
+- [`ef213ef`](https://github.com/mimshins/ork/commit/ef213efdcc4d645ca996b073b44af234d9ca7e22) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` has a Builder panel: create or edit a workflow with no YAML to write.
+  It saves the same file you could write by hand, keeping its comments, and what
+  you change waits as a draft until it passes the same checks as `ork validate`.
+  
+  Cards now always follow from a workflow's nodes and edges, so
+  `<name>.layout.json` is no longer read. A file left behind is ignored and can be
+  deleted.
+
+- [`5e3411d`](https://github.com/mimshins/ork/commit/5e3411d4bd79cf3b2e9c33523d28a6d6e5a86a1e) Thanks [@mimshins](https://github.com/mimshins)! - A new node type, `workflow.call`, starts a workflow as a run of its own, in this
+  project or another registered one, and waits for it. Workflows can declare
+  `outputs:`, which later conditions and prompts read through
+  `{{nodes.<call>.output.outputs.*}}`. Name a `node` to wait on its report and
+  keep one run as a conversation, and add a `messages` channel for your agents to
+  write to it by name. A called run shares its caller's budget, stops when its
+  caller stops, and resumes when its caller resumes. A project can limit who calls
+  it with `calls.accept` in `.ork/project.yaml`, and `ork validate` checks what a
+  call names. See the guide, Working across projects.
+
+### Patch Changes
+
+- [`2a0a15f`](https://github.com/mimshins/ork/commit/2a0a15fd7e97bd037f46ebea8750da0a269b4bb1) Thanks [@mimshins](https://github.com/mimshins)! - The UI shows Ork's wordmark in the top bar, and titles, labels and descriptions
+  read as three things. Panels no longer have lines sticking out behind their
+  corners, and cards that nearly line up get a straight edge between them. In the
+  builder, a message has its own line, so it no longer moves the canvas, and
+  focusing a field can no longer slide a panel under the top bar.
+
+- [`41621da`](https://github.com/mimshins/ork/commit/41621dab7a658c9aa8fb515ccda1a5d883075db5) Thanks [@mimshins](https://github.com/mimshins)! - Runs, Logs, Chats, Usage and Notifications in the browser view are tighter: each
+  toolbar sits in its own card, run rows are shorter, and a selected row is now a
+  neutral outline, so amber in a list always means something needs you. The
+  recommended option in a decision says so in a caption.
+
+- [`b296577`](https://github.com/mimshins/ork/commit/b29657775de06ad488fdca2029385df5d22e9580) Thanks [@mimshins](https://github.com/mimshins)! - The browser view now follows your browser's text size throughout: borders,
+  corners and spacing scale with the text, not just the text itself. At the
+  default size nothing looks different.
+
+- [`db5c52c`](https://github.com/mimshins/ork/commit/db5c52c940cd5962bf6bad67edc577b8e5b17e67) Thanks [@mimshins](https://github.com/mimshins)! - The Builder's tools, palette, canvas and inspector are now cards in a frame,
+  like the other panels, and Notifications rows are shorter.
+
+- [`1ad00e4`](https://github.com/mimshins/ork/commit/1ad00e4fe282fac43e7f30ebd45131baacd5f7e7) Thanks [@mimshins](https://github.com/mimshins)! - The browser view has a new frame: each panel is a frame holding a card, on a
+  darker canvas, with slimmer bars and tabs. Column heads, stat names and section
+  headings are now small monospace captions. The light theme's canvas is darker,
+  so panels stand out from it.
+
+- [`9f781ba`](https://github.com/mimshins/ork/commit/9f781baffcde3664aa2cb89134c55159e363a641) Thanks [@mimshins](https://github.com/mimshins)! - The browser UI uses containerized-state 3.4.0, its React package 3.4.0 and its
+  persistence plugin 1.4.0.
+
+- [`b737814`](https://github.com/mimshins/ork/commit/b7378146e7f7d78687cc639b3e89ddc7b98ce492) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` reads better and keeps its place. Chats shows what a node reported, and
+  tool names in words; a run that has ended no longer shows nodes as queued; and
+  the Monitor's header says when a run is waiting on you. For keyboards and screen
+  readers: the focus stays in Notifications when an item goes, and goes to a new
+  run's heading after starting it; lists stay named while open; filter results and
+  the run's changes are said without talking over each other, and a minimized
+  panel is no longer called closed. Selected, unread and disabled states now show
+  in forced colors.
+
+- [`01fd0d4`](https://github.com/mimshins/ork/commit/01fd0d446b3e77a274bc7d8afcfebd822ae01c0f) Thanks [@mimshins](https://github.com/mimshins)! - In `ork ui`, the Run workflow dialog's Project, Workflow and Driver lists opened
+  behind the dialog, so typing seemed to do nothing. They show now, and typing
+  highlights the first match for Enter to take. The dialog also says what to type,
+  holds Workflow back until there is a project, and says when a project has no
+  workflows or they cannot be read.
+
+- [`60fff55`](https://github.com/mimshins/ork/commit/60fff55b7ca2551a03698810b2dea0190d9eb5f1) Thanks [@mimshins](https://github.com/mimshins)! - A workflow's first node can now loop back to itself with `maxRounds`, for a
+  simple retry. `ork validate` used to reject this with "no node can start".
+
+- [`58133bb`](https://github.com/mimshins/ork/commit/58133bb94bed48b57450f8d211d283f9555d5365) Thanks [@mimshins](https://github.com/mimshins)! - The Monitor in the browser view is rebuilt for long runs: a stat strip with
+  spend against the budget, nodes done and elapsed time; smaller graph cards, with
+  dotted edges for what hasn't started and moving packets into what's running; and
+  a node table with a Now column saying what each node is doing, with its time and
+  cost.
+
+- [`28b5e51`](https://github.com/mimshins/ork/commit/28b5e5101301657f73e0bacdb329c9463b4b6213) Thanks [@mimshins](https://github.com/mimshins)! - `ork mcp` refuses an argument a tool doesn't take, rather than drop it, and
+  `ork init --skills` keeps a copy of Ork's skills that a newer Ork wrote. The
+  Claude Code plugin's hook stops `ork decide` only when it answers (`--id` or
+  `--choose`), whatever else is on the line, and lets listing through; the plugin
+  expects the oldest Ork it works with, not the newest release.
+
+- [`e61aade`](https://github.com/mimshins/ork/commit/e61aadece634bf5391a89e9d409c49792fb562ce) Thanks [@mimshins](https://github.com/mimshins)! - A workflow or node that sets one built-in practice no longer undoes the other.
+  Before, `defaults: { practices: { ponytail: ultra } }` in a workflow switched
+  caveman back on when `.ork/project.yaml` had turned it off, and a node's
+  `practices:` did the same to its agent's.
+
+- [`445bf7c`](https://github.com/mimshins/ork/commit/445bf7c7b9376de4cc30dac8058357e6af2d4df4) Thanks [@mimshins](https://github.com/mimshins)! - Toasts in `ork ui` stay in their corner when more arrive than can show. Those
+  over the limit were invisible but still took up room, which pushed the ones
+  showing up the screen with each new one.
+
+- [`74fd6bb`](https://github.com/mimshins/ork/commit/74fd6bb18b0008c0a2637dcf9e5b28252f440383) Thanks [@mimshins](https://github.com/mimshins)! - Add `ork relay`: introduce two running nodes of different runs, even in
+  different repositories, so they can message each other while they work. Sessions
+  get `wait_for_messages` to wait for a reply. See the guide, Working across
+  projects.
+
+- [`b86ebfc`](https://github.com/mimshins/ork/commit/b86ebfcb81ae86183257d3c0d42b2b94b63523bc) Thanks [@mimshins](https://github.com/mimshins)! - Fixes to checks, setup steps and MCP calls. A failed `verify:` now sends the
+  real end of a long output, and a long error line no longer reaches the session
+  whole. A resume stays within `maxTurns`, and a re-entered leader no longer loses
+  a retry it can afford. A message that arrives during a passing check gets read.
+  A node stopped or paused during `before:` starts no session. A run masks what
+  `.mcp.json` reads across all its nodes, `plainEnv` works there, and numbers are
+  masked in results. A server's slow start no longer fails at 60 seconds. A run no
+  longer refuses a relative program it can't yet see, and `when: before.x` is now
+  a compile error.
+
+- [`eeceaf2`](https://github.com/mimshins/ork/commit/eeceaf2a9aba962c258040b40590b137cce50e41) Thanks [@mimshins](https://github.com/mimshins)! - Secrets read through `{{env.NAME}}` no longer reach the store in a JSON parse
+  error, in JSON keys or numbers, in any form a JSON encoder writes them, line by
+  line, as the values of a JSON secret, or from a later node or a called run that
+  prints them. A node's new `plainEnv` lists variables that are not secret, so a
+  region isn't masked. `$ORK_OUTPUT` and `$ORK_RUN_DIR` now point at the run's
+  real folder. `ork decide` and `ork continue` refuse from a program or an agent
+  in a run, and `ork ui` withholds its sign-in link there. A variable a called
+  workflow needs gets a warning at the start, and the call fails if reached.
+  SIGTERM and SIGHUP stop a run as Ctrl-C does.
+
+- [`b84951e`](https://github.com/mimshins/ork/commit/b84951ea540b9d5210c853d6fbaddba563f1a853) Thanks [@mimshins](https://github.com/mimshins)! - Statuses in the browser view have new pixel glyphs and a monospace word, with a
+  tinted pill in a run's header, and meters are now rows of blocks that turn red
+  at the limit.
+
+- [`879c00a`](https://github.com/mimshins/ork/commit/879c00ac17f383bc86b5e8e8a11b64b991bb3d1c) Thanks [@mimshins](https://github.com/mimshins)! - A run no longer hangs when a loop runs out of rounds and the answer is to stop,
+  or when it's interrupted while that question is open, if the node had another
+  edge still to follow. It now ends with the reason.
+
+- [`c7a7e8f`](https://github.com/mimshins/ork/commit/c7a7e8f5cf8276183642bd7061109873260af5cb) Thanks [@mimshins](https://github.com/mimshins)! - Add `timeout` to tool and Claude nodes, `defaults` and `limits`, such as
+  `timeout: 30m`. Time spent waiting on you doesn't count. A node that runs out
+  fails with `timedOut` in its output, and a run ends as `timed_out`.
+  
+  `ork stop`, Ctrl-C and a timeout now end a tool node's command and whatever it
+  started, even if they ignore SIGTERM. Before, they could keep running.
+
+- [`f077fd2`](https://github.com/mimshins/ork/commit/f077fd21b2b8b5c840bf4d1063229c5d523348dd) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` now has Ork's look: a dark theme by default and a light one, each
+  following your system's setting, with more contrast when the system asks for it.
+  Text and controls meet WCAG 2.2 AA in every theme. The interface uses Geist and
+  Geist Mono, served by `ork ui` itself.
+
+- [`be3e2f8`](https://github.com/mimshins/ork/commit/be3e2f8c5486c2d3ffd668c0a866050c4245d1c2) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` now has its first panel: Runs lists your runs live, filtered by
+  project, and **Run workflow** starts one, with a form for the workflow's inputs
+  and the `ork run` command that does the same.
+
+- [`dd9cf4c`](https://github.com/mimshins/ork/commit/dd9cf4c80fc4fe778cead50f7816189a76da6de7) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` keeps your saved layout and preferences more reliably: a change is
+  saved even if something reacting to it fails, and saved data that does not fit
+  is ignored.
+
+- [`060c6be`](https://github.com/mimshins/ork/commit/060c6be59f9f467b3680a48be45d971701b3ddcf) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` now follows the server live: its status bar shows the runs and
+  decisions in play, says why when it cannot reach the server, and recovers by
+  itself when the server returns. The command palette sets the theme and the
+  density, and your browser remembers them. The events API takes `?last=` for a
+  run's newest events.
+
+- [`97fec6c`](https://github.com/mimshins/ork/commit/97fec6c61102b1c1ce84f887e969b4d0a24f6a18) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` now opens a workspace: panels you can resize, dock, tab, float,
+  maximize and minimize to a rail, by mouse or by keyboard, with a Window menu, a
+  command palette (`⌘K` or `Ctrl K`) and a layout your browser remembers. Below
+  1024 px wide the panels stack in one column. The panels themselves come next;
+  until then each names the `ork` command that shows the same thing.
+
+- [`1c28826`](https://github.com/mimshins/ork/commit/1c2882619e4d4727743d62f27b3f7f5d51b1aa8d) Thanks [@mimshins](https://github.com/mimshins)! - The Usage panel keeps its chart in view in the default dock, labels columns with
+  their dates when there is room, marks the day or week still going, lines up its
+  costs, lists only days with spend in its table, and offers `ork usage` commands
+  and a retry. `ork usage --since 7d` now counts seven whole days, as the panel
+  does. The Runs panel and the CLI show no spend as `$0.00`.
+
+- [`3cb93db`](https://github.com/mimshins/ork/commit/3cb93db7a61c17b5dd9acd67bfedfdb082e70ec7) Thanks [@mimshins](https://github.com/mimshins)! - The browser view shows the values it names as inline code: a node, a field, a
+  node type or a command, in Problems, notifications, decisions, dialogs and
+  errors. Ork's messages mark those values with backticks in the terminal too.
+
+- [`49b1e74`](https://github.com/mimshins/ork/commit/49b1e7406a4e0bccd517a184bee7fff1d32b7c05) Thanks [@mimshins](https://github.com/mimshins)! - A decision's card now shows its question exactly as written, backticks included,
+  so a person approves the text they were asked about. Values with backticks of
+  their own stay one value in more messages, and more values show as inline code,
+  in the terminal too.
+
+- [`e15d478`](https://github.com/mimshins/ork/commit/e15d47823397a03a0aa47948c351fc57571df6fe) Thanks [@mimshins](https://github.com/mimshins)! - Walking a workflow now says only what it tried: "no way the walk tried reaches
+  `x`", not that no way does. It holds those warnings back in more places where
+  they'd be wrong, such as a join behind a node that can run twice, a wait an
+  input can end, or a gate's answer read through a router, and a walk of layered
+  routers no longer takes minutes. A tool whose JSON says it failed is tried on
+  exit 0 too. A failed Claude node keeps its branch. Logs and Chats show what a
+  node said when it finished, and why it failed, exactly as written.
+
+- [`49b1e74`](https://github.com/mimshins/ork/commit/49b1e7406a4e0bccd517a184bee7fff1d32b7c05) Thanks [@mimshins](https://github.com/mimshins)! - Fix what `ork validate` got wrong. `when.value` no longer stops a condition that
+  can hold, such as `status == 'fail'` on a node with its own list of statuses, or
+  a value a loop brings back to a router. A declared `status` a session can't
+  report is now an error. Walking a workflow says a node never runs in fewer cases
+  where it can, and stops at its time limit even inside one path. A failed node's
+  output no longer holds values it didn't declare.
+
 ## 0.2.0
 
 ### Minor Changes
