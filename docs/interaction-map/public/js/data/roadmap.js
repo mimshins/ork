@@ -806,12 +806,13 @@ export const MILESTONES = [
           "docs/guides/browser-view.md",
           "specs/gaps/limits-context-inspector.md",
         ],
-        commits: ["284a23b", "37090bb"],
+        commits: ["284a23b", "37090bb", "354c8b3"],
       },
       {
         id: "feedback-loop",
         title: "Feedback loop",
-        status: "planned",
+        status: "active",
+        commits: ["2a0882a"],
         detail:
           "Triage, `ork feedback apply`, lessons, sharing to Discussions, and the Feedback panel.",
         docs: ["specs/feedback.md"],
@@ -905,6 +906,7 @@ export const MILESTONES = [
  */
 export const OFF_ROADMAP = [
   "71c09e7",
+  "d6c8d68",
   "2a0a15f",
   "879c00a",
   "e61aade",
