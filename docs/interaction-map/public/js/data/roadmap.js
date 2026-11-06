@@ -866,6 +866,8 @@ export const MILESTONES = [
           "b717604",
           "f956dc2",
           "28b5e51",
+          "87c7e8f",
+          "02c90de",
         ],
       },
       {
@@ -950,6 +952,7 @@ export const OFF_ROADMAP = [
   "1212977",
   "3a7374c",
   "9f781ba",
+  "3d967d4",
 ];
 
 /** The day the roadmap was last brought up to date. */
