@@ -9,8 +9,8 @@ _Part of [Feedback and self-improvement](../feedback.md)._
 [tests](../../packages/core/test/publish.test.ts),
 [CLI tests](../../packages/cli/test/share.test.ts)):
 
-1. `ork feedback publish <item> [--hide-names]` works only on `ork`-target
-   items, and only in a terminal.
+1. `ork feedback publish <item> [--hide-names]` works only on `ork`-target items
+   not published or dismissed already, and only in a terminal.
 2. Ork redacts the item:
    - secrets, masked again;
    - absolute paths: the projects its runs came from and every registered one

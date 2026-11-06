@@ -76,3 +76,18 @@ export const GlyphInterrupted = glyph([
   "#...#",
   "#####",
 ]);
+export const GlyphNew = glyph(["..#..", "..#..", "#####", "..#..", "..#.."]);
+export const GlyphAccepted = glyph([
+  "#....",
+  ".#...",
+  "..#..",
+  ".#...",
+  "#....",
+]);
+export const GlyphPublished = glyph([
+  "..#..",
+  ".###.",
+  "#.#.#",
+  "..#..",
+  "..#..",
+]);

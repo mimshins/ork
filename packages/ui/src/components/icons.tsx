@@ -39,7 +39,10 @@ import {
   mdiHelpBoxMultipleOutline,
   mdiLayersOutline,
   mdiMagnify,
+  mdiMessageAlertOutline,
   mdiMinus,
+  mdiNoteEditOutline,
+  mdiOpenInNew,
   mdiPause,
   mdiPlay,
   mdiPlus,
@@ -100,6 +103,9 @@ export const IconUsage = icon(mdiChartBar);
 export const IconBuilder = icon(mdiPencilRuler);
 export const IconContext = icon(mdiLayersOutline);
 export const IconAlert = icon(mdiAlertOutline);
+export const IconFeedback = icon(mdiMessageAlertOutline);
+export const IconNote = icon(mdiNoteEditOutline);
+export const IconExternal = icon(mdiOpenInNew);
 
 export const IconLeader = icon(mdiAccountStarOutline);
 export const IconWorker = icon(mdiRobotOutline);

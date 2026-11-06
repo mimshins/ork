@@ -14,14 +14,16 @@ import {
   type EventStore,
   type FeedbackItem,
   type FeedbackRecord,
+  feedbackActions,
   listOrkWorktrees,
+  openFixRun,
+  placeOf,
   planClean,
   type ProjectPlace,
   type RunResult,
 } from "@krapht/ork-core";
 
 import { runWorkflowFile, type RunWorkflowOptions } from "../run/workflow.ts";
-import { placeOf } from "./accept.ts";
 
 /** The most of an item's records the worker reads, newest first. */
 const RECORDS = 10;
@@ -124,7 +126,7 @@ export const commitsAhead = async (
 
 export type ApplyOptions = Pick<
   RunWorkflowOptions,
-  "runtime" | "human" | "out" | "err" | "driver" | "home" | "onRun"
+  "runtime" | "human" | "out" | "err" | "driver" | "home" | "onRun" | "runId"
 > & {
   store: EventStore;
   item: FeedbackItem;
@@ -181,26 +183,12 @@ const settle = async (
   }
 };
 
-const SETTLED = new Set(["resolved", "published", "dismissed"]);
-
-/** Why an item gets no fix: it's about Ork, or it's settled. */
-const refusalOf = (item: FeedbackItem): string | undefined => {
-  const short = item.id.slice(0, 12);
-  if (item.target === "ork") {
-    return `${short} is about Ork itself, so its fix isn't in this project; share it with Ork's maintainers instead.`;
-  }
-  if (!SETTLED.has(item.status)) return undefined;
-  return item.status === "dismissed"
-    ? `${short} is dismissed; restore it first.`
-    : `${short} is ${item.status} already.`;
-};
-
 /** Proposes a fix for an item, in the project it came from. */
 export const applyItem = async (options: ApplyOptions): Promise<Applied> => {
   const { store, item } = options;
   const short = item.id.slice(0, 12);
-  const refusal = refusalOf(item);
-  if (refusal !== undefined) return { ok: false, error: refusal };
+  const allowed = feedbackActions(item, openFixRun(store, item)).apply;
+  if (!allowed.ok) return { ok: false, error: allowed.error };
   const found = placeOf(store, item, undefined, options.registered);
   if (!found.ok) return found;
   const { place, project } = found;

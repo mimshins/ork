@@ -8,14 +8,14 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 
-import { planPost, sendPost } from "@krapht/ork-core";
+import { planPost, previewPost, sendPost } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import { confirm, style, write, writeErr } from "../output.ts";
 import { registeredProjects } from "../project/place.ts";
 import { findFeedbackItem } from "../runs/feedback.ts";
 import { exportLines, parseLines } from "../runs/jsonl.ts";
-import { formatPreview, previewPost } from "../runs/publish.ts";
+import { formatPreview } from "../runs/publish.ts";
 import { withStore } from "../store.ts";
 
 const failed = (message: string): void => {

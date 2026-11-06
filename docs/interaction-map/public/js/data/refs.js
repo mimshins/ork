@@ -191,11 +191,11 @@ export const FEEDBACK = {
     "Tests: lessons and their cap",
   ),
   accept: d(
-    "packages/cli/src/runs/accept.ts",
+    "packages/core/src/feedback/accept.ts",
     "Code: `ork feedback accept`, as a lesson",
   ),
   acceptTests: d(
-    "packages/cli/test/accept.test.ts",
+    "packages/core/test/accept.test.ts",
     "Tests: `ork feedback accept`",
   ),
   apply: d(

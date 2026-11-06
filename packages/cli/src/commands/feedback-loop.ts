@@ -38,6 +38,10 @@ export const apply = defineCommand({
       type: "string",
       description: "sdk (API key or cloud provider) or cli (your claude login)",
     },
+    "run-id": {
+      type: "string",
+      description: "Internal: the id `ork ui` picked for the run",
+    },
   },
   run: async ({ args }) => {
     if (args.driver !== undefined && !isDriver(args.driver)) {
@@ -62,6 +66,7 @@ export const apply = defineCommand({
         runtime: loadRuntime,
         ...(human === undefined ? {} : { human }),
         ...(driver === undefined ? {} : { driver }),
+        ...(args["run-id"] === undefined ? {} : { runId: args["run-id"] }),
         out: write,
         err: writeErr,
         onRun: handle => {

@@ -7,7 +7,12 @@
 import type { AppState } from "../state/app-state.ts";
 import type { Preferences, PreferenceStore } from "../state/preferences.ts";
 import { PANELS, panelOf } from "./panels.tsx";
-import { type Direction, type Shortcut, SHORTCUTS } from "./shortcuts.ts";
+import {
+  type Direction,
+  goToShortcut,
+  type Shortcut,
+  SHORTCUTS,
+} from "./shortcuts.ts";
 import type { WorkspaceView } from "./workspace-view.ts";
 import type { Workspace } from "./workspace.ts";
 
@@ -51,15 +56,19 @@ const blockedFor = (view: WorkspaceView): string | undefined => {
 };
 
 const panelCommands = (workspace: Workspace): Command[] =>
-  PANELS.map((panel, index) => ({
-    id: `go-${panel.id}`,
-    title: `Go to ${panel.title}`,
-    group: "Panels",
-    shortcut: SHORTCUTS.goTo(index + 1),
-    run: () => {
-      workspace.goTo(panel.id);
-    },
-  }));
+  PANELS.map((panel, index) => {
+    const command: Command = {
+      id: `go-${panel.id}`,
+      title: `Go to ${panel.title}`,
+      group: "Panels",
+      run: () => {
+        workspace.goTo(panel.id);
+      },
+    };
+    const shortcut = goToShortcut(index + 1);
+    if (shortcut !== undefined) command.shortcut = shortcut;
+    return command;
+  });
 
 const runCommands = (state: AppState): Command[] => [
   {

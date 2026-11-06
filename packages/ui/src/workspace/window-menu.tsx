@@ -11,9 +11,14 @@ import { IconChevronDown } from "../components/icons.tsx";
 import { Menu, type MenuEntry } from "../components/menu.tsx";
 import { platformIsMac } from "./keys.ts";
 import { type PanelId, PANELS } from "./panels.tsx";
-import { keysOf, SHORTCUTS } from "./shortcuts.ts";
+import { goToShortcut, keysOf, type Shortcut } from "./shortcuts.ts";
 import type { WorkspaceView } from "./workspace-view.ts";
 import type { Workspace } from "./workspace.ts";
+
+const hintOf = (shortcut: Shortcut | undefined, mac: boolean) =>
+  shortcut === undefined
+    ? undefined
+    : keysOf(shortcut, mac).join(mac ? "" : "+");
 
 const stateOf = (view: WorkspaceView, id: PanelId): string | undefined => {
   if (!view.wide) return undefined;
@@ -28,7 +33,7 @@ export const WindowMenu = ({ workspace }: { workspace: Workspace }) => {
     ...PANELS.map(({ id, title }, index) => ({
       label: title,
       detail: stateOf(view, id),
-      hint: keysOf(SHORTCUTS.goTo(index + 1), mac).join(mac ? "" : "+"),
+      hint: hintOf(goToShortcut(index + 1), mac),
       onSelect: () => {
         workspace.goTo(id);
       },

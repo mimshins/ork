@@ -1,24 +1,22 @@
 /**
- * @file `ork feedback accept`: marks an item accepted and, with `--lesson`,
- *   writes it as a lesson into the lessons file of the workflow it was seen in,
- *   in the project of its newest record there (ADR-059). An `ork` item is about
- *   Ork itself, so it's never a lesson: it can be published instead.
+ * @file Accepting a feedback item (`ork feedback accept`, the Feedback panel):
+ *   marks an item accepted and, with `--lesson`, writes it as a lesson into the
+ *   lessons file of the workflow it was seen in, in the project of its newest
+ *   record there (ADR-059). An `ork` item is about Ork itself, so it's never a
+ *   lesson: it can be published instead.
  */
 
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 
-import {
-  addLesson,
-  type EventStore,
-  guardedBase,
-  type FeedbackItem,
-  inside,
-  LESSON_CAP_TOKENS,
-  lessonsFileOf,
-  placeFor,
-  type ProjectPlace,
-} from "@krapht/ork-core";
+import { inside } from "../context/files.ts";
+import { estimateTokens, LESSON_CAP_TOKENS } from "../context/lesson-cap.ts";
+import { placeFor, type ProjectPlace } from "../project/place.ts";
+import { guardedBase } from "../project/plain-files.ts";
+import type { FeedbackItem } from "../store/feedback-types.ts";
+import type { EventStore } from "../store/types.ts";
+import { feedbackActions } from "./actions.ts";
+import { addLesson, lessonsFileOf } from "./lessons.ts";
 
 export type AcceptArgs = {
   lesson: boolean;
@@ -28,8 +26,18 @@ export type AcceptArgs = {
   workflow?: string | undefined;
 };
 
+/** Where a lesson went: its file as shown, the project, and its size. */
+export type LessonWritten = {
+  /** Project-relative, or whole when it's outside the project. */
+  file: string;
+  root: string;
+  workflow: string;
+  /** About how many tokens the whole file is now. */
+  tokens: number;
+};
+
 export type Accepted =
-  | { ok: true; lines: string[] }
+  | { ok: true; lines: string[]; lesson?: LessonWritten }
   | { ok: false; error: string };
 
 const listed = (names: readonly string[]): string =>
@@ -124,16 +132,13 @@ export const acceptItem = (
   registered: readonly ProjectPlace[],
 ): Accepted => {
   const name = `${item.id.slice(0, 12)}: ${item.title}`;
+  const actions = feedbackActions(item);
   if (!args.lesson) {
+    if (!actions.accept.ok) return { ok: false, error: actions.accept.error };
     store.setFeedbackStatus(item.id, "accepted");
     return { ok: true, lines: [`accepted ${name}`] };
   }
-  if (item.target === "ork") {
-    return {
-      ok: false,
-      error: `${item.id.slice(0, 12)} is about Ork itself, so it isn't a lesson for a workflow; share it with Ork's maintainers instead.`,
-    };
-  }
+  if (!actions.lesson.ok) return { ok: false, error: actions.lesson.error };
   const chosen = workflowFor(item, args.workflow);
   if (!chosen.ok) return chosen;
   const found = placeOf(store, item, chosen.workflow, registered);
@@ -152,12 +157,54 @@ export const acceptItem = (
     text: args.text ?? item.title,
   });
   if (!added.ok) return added;
-  store.setFeedbackStatus(item.id, "accepted");
+  // A lesson for an item settled already leaves its status as it is.
+  if (actions.accept.ok) store.setFeedbackStatus(item.id, "accepted");
   return {
     ok: true,
+    lesson: {
+      file: shownAs,
+      root: place.root,
+      workflow: chosen.workflow,
+      tokens: added.tokens,
+    },
     lines: [
       `accepted ${name}`,
       `lesson added to ${shownAs} in ${place.root} (about ${added.tokens.toLocaleString("en")} of ${LESSON_CAP_TOKENS.toLocaleString("en")} tokens); every session of \`${chosen.workflow}\` reads it from now on`,
     ],
+  };
+};
+
+/** Where a lesson for `workflow` would go, and how big that file is now. */
+export type LessonPlace =
+  | {
+      ok: true;
+      workflow: string;
+      /** Project-relative, or whole when it's outside the project. */
+      file: string;
+      root: string;
+      /** About how many tokens the file is; 0 when it isn't there yet. */
+      tokens: number;
+      exists: boolean;
+    }
+  | { ok: false; workflow: string; error: string };
+
+export const lessonPlaceOf = (
+  store: EventStore,
+  item: FeedbackItem,
+  workflow: string,
+  registered: readonly ProjectPlace[],
+): LessonPlace => {
+  const found = placeOf(store, item, workflow, registered);
+  if (!found.ok) return { ok: false, workflow, error: found.error };
+  const { place } = found;
+  const file = lessonsFileOf(place, workflow);
+  const exists = existsSync(file);
+  return {
+    ok: true,
+    workflow,
+    file: inside(place.root, file) ? path.relative(place.root, file) : file,
+    root: place.root,
+    tokens: exists ? estimateTokens(readFileSync(file, "utf8")) : 0,
+    exists,
   };
 };

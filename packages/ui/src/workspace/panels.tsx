@@ -8,22 +8,19 @@ import { BuilderPanel } from "../builder/builder-panel.tsx";
 import {
   IconBuilder,
   IconChats,
-  IconContext,
   IconDecisions,
   IconLogs,
   IconMonitor,
   IconNotifications,
-  IconUsage,
   IconRuns,
 } from "../components/icons.tsx";
 import { ChatsPanel } from "../panels/chats-panel.tsx";
-import { ContextPanel } from "../panels/context-panel.tsx";
 import { DecisionsPanel } from "../panels/decisions-panel.tsx";
 import { LogsPanel } from "../panels/logs-panel.tsx";
 import { MonitorPanel } from "../panels/monitor-panel.tsx";
 import { NotificationsPanel } from "../panels/notifications-panel.tsx";
 import { RunsPanel } from "../panels/runs-panel.tsx";
-import { UsagePanel } from "../panels/usage-panel.tsx";
+import { REVIEW_PANELS } from "./review-panels.tsx";
 
 export type PanelId =
   | "runs"
@@ -34,7 +31,8 @@ export type PanelId =
   | "notifications"
   | "usage"
   | "builder"
-  | "context";
+  | "context"
+  | "feedback";
 
 export type PanelSpec = {
   id: PanelId;
@@ -76,24 +74,16 @@ const SPECS: Record<PanelId, PanelSpec> = {
     Icon: IconNotifications,
     Body: NotificationsPanel,
   },
-  usage: {
-    id: "usage",
-    title: "Usage",
-    Icon: IconUsage,
-    Body: UsagePanel,
-  },
+  usage: { id: "usage", ...REVIEW_PANELS.usage },
   builder: {
     id: "builder",
     title: "Builder",
     Icon: IconBuilder,
     Body: BuilderPanel,
   },
-  context: {
-    id: "context",
-    title: "Context",
-    Icon: IconContext,
-    Body: ContextPanel,
-  },
+  context: { id: "context", ...REVIEW_PANELS.context },
+  // Last, so the others keep their Go to digits: it has none of its own.
+  feedback: { id: "feedback", ...REVIEW_PANELS.feedback },
 };
 
 export const PANELS: readonly PanelSpec[] = Object.values(SPECS);

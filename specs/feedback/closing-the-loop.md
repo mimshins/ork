@@ -19,12 +19,23 @@ _Part of [Feedback and self-improvement](../feedback.md)._
   `apply`, one item at a time
   ([ADR-059](../../decisions/ADR-059-closing-the-feedback-loop.md)).
 - `ork feedback split <item>` takes apart what triage merged into an item.
+- **Which actions an item allows** is one rule, for `ork feedback`, the server
+  and the Feedback panel alike
+  ([actions.ts](../../packages/core/src/feedback/actions.ts),
+  [tests](../../packages/core/test/feedback-actions.test.ts)): nothing on a
+  `dismissed` item until it's restored; accepting only a `new` or `triaged` one;
+  a lesson or a fix never for an `ork` item, a lesson only when a workflow is
+  recorded, a fix not once `resolved` or `published`; publishing only an `ork`
+  item, and only once. A lesson added to an item that's settled already leaves
+  its status as it is.
 - **Fixes** (built: [apply.ts](../../packages/cli/src/runs/apply.ts),
   [workflow](../../packages/core/workflows/feedback-apply.ork.yaml),
   [tests](../../packages/cli/test/apply.test.ts)): `ork feedback apply <item>`
   runs Ork's own workflow, `ork:feedback-apply`, in the project of its newest
   record, in the foreground like `ork run` (`--driver` as there), saying which
-  project first. The item becomes `accepted` once the run has started.
+  project first; the Feedback panel starts the same command in the background
+  ([server](../server.md)). The item becomes `accepted` once the run has
+  started.
   - **Refused:** an `ork` item (its fix isn't in the project); one already
     `resolved` or `published`; a `dismissed` one (restore it first); and one
     whose project is gone, or is no longer a repository of its own (Ork never
@@ -47,9 +58,9 @@ _Part of [Feedback and self-improvement](../feedback.md)._
     removes the run's worktree and branch and leaves the item `accepted`; no fix
     leaves it `accepted` too, saying why ([L149](../gaps/limits-feedback.md)).
 - **Lessons** (built: [lessons.ts](../../packages/core/src/feedback/lessons.ts),
-  [accept.ts](../../packages/cli/src/runs/accept.ts),
+  [accept.ts](../../packages/core/src/feedback/accept.ts),
   [tests](../../packages/core/test/lessons.test.ts),
-  [accept tests](../../packages/cli/test/accept.test.ts)):
+  [accept tests](../../packages/core/test/accept.test.ts)):
   `ork feedback accept <item>` marks an item `accepted`; with `--lesson` it is
   also written as a lesson.
   - Lessons are kept in `.ork/lessons/<workflow>.md` (an attached project's

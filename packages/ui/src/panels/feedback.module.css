@@ -1,0 +1,567 @@
+/**
+ * @file The look of the Feedback panel and its dialogs: a frame of cards (the
+ *   tools, the list, an item's detail), the list beside the detail when the
+ *   panel is wide and one in the other's place when it's narrow. The chosen
+ *   row has an outline as well as its color, so it reads without color; a
+ *   post's text sits in a sunken well, wrapped, exactly as it will be sent.
+ */
+
+.panel {
+  --feedback-panel-bg: var(--surface-frame);
+  --feedback-panel-gap: var(--space-3);
+
+  background: var(--feedback-panel-bg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--feedback-panel-gap);
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.panel:focus-visible {
+  --focus-ring-offset: calc(var(--focus-width) * -1);
+}
+
+.tools,
+.card {
+  --feedback-card-bg: var(--surface-panel);
+  --feedback-card-radius: var(--radius-panel);
+  --feedback-card-padding: var(--inset-tools);
+  --feedback-card-gap: var(--gap);
+
+  background: var(--feedback-card-bg);
+  border-radius: var(--feedback-card-radius);
+  display: flex;
+  gap: var(--feedback-card-gap);
+  padding: var(--feedback-card-padding);
+}
+
+.tools {
+  align-items: flex-end;
+  flex: none;
+  flex-wrap: wrap;
+}
+
+.card {
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+/* Below the list's least height the whole panel scrolls, as one column. */
+.body {
+  --feedback-columns: 1fr;
+  --feedback-list-min-height: 8rem;
+  --feedback-body-gap: var(--space-3);
+
+  display: grid;
+  flex: 1 1 auto;
+  gap: var(--feedback-body-gap);
+  grid-template-columns: var(--feedback-columns);
+  min-height: var(--feedback-list-min-height);
+}
+
+.panel[data-layout="wide"] .body {
+  --feedback-columns: minmax(16rem, 2fr) minmax(22rem, 3fr);
+}
+
+.toolsEnd {
+  --feedback-tools-end-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: var(--feedback-tools-end-gap);
+  justify-content: flex-end;
+}
+
+.count,
+.updating {
+  --feedback-count-text: var(--color-text-muted);
+  --feedback-count-font: var(--font-mono);
+  --feedback-count-text-size: var(--text-small);
+
+  color: var(--feedback-count-text);
+  font-family: var(--feedback-count-font);
+  font-size: var(--feedback-count-text-size);
+}
+
+.list {
+  --feedback-list-gap: var(--gap-hair);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--feedback-list-gap);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  --feedback-row-bg: transparent;
+  --feedback-row-text: var(--color-text);
+  --feedback-row-border-width: var(--hairline);
+  --feedback-row-border-style: solid;
+  --feedback-row-border-color: transparent;
+  --feedback-row-radius: var(--radius-control);
+  --feedback-row-min-height: 2.75rem;
+  --feedback-row-padding: var(--space-4) var(--space-6);
+  --feedback-row-gap: var(--gap-hair);
+
+  background: var(--feedback-row-bg);
+  border-color: var(--feedback-row-border-color);
+  border-radius: var(--feedback-row-radius);
+  border-style: var(--feedback-row-border-style);
+  border-width: var(--feedback-row-border-width);
+  color: var(--feedback-row-text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  gap: var(--feedback-row-gap);
+  min-height: var(--feedback-row-min-height);
+  padding: var(--feedback-row-padding);
+  text-align: start;
+  width: 100%;
+}
+
+.row:hover {
+  --feedback-row-bg: var(--surface-hover);
+}
+
+.row:focus-visible {
+  --focus-ring-offset: calc(var(--focus-width) * -1);
+}
+
+.row[aria-current="true"] {
+  --feedback-row-bg: var(--surface-current);
+  --feedback-row-border-color: var(--color-border-strong);
+}
+
+.rowTop {
+  --feedback-row-top-gap: var(--gap);
+
+  align-items: flex-start;
+  display: flex;
+  gap: var(--feedback-row-top-gap);
+  justify-content: space-between;
+  width: 100%;
+}
+
+.rowTitle {
+  --feedback-row-title-weight: var(--weight-medium);
+  --feedback-row-title-lines: 2;
+  --feedback-row-title-box-orient: vertical;
+
+  -webkit-box-orient: var(--feedback-row-title-box-orient);
+  display: -webkit-box;
+  font-weight: var(--feedback-row-title-weight);
+  -webkit-line-clamp: var(--feedback-row-title-lines);
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.rowMeta {
+  --feedback-row-meta-text: var(--color-text-muted);
+  --feedback-row-meta-font: var(--font-mono);
+  --feedback-row-meta-text-size: var(--text-mono);
+  --feedback-row-meta-leading: var(--leading-tight);
+  --feedback-row-meta-column-gap: var(--gap);
+
+  color: var(--feedback-row-meta-text);
+  column-gap: var(--feedback-row-meta-column-gap);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--feedback-row-meta-font);
+  font-size: var(--feedback-row-meta-text-size);
+  line-height: var(--feedback-row-meta-leading);
+  overflow-wrap: anywhere;
+}
+
+.high {
+  --feedback-high-weight: var(--weight-strong);
+  --feedback-high-text: var(--color-text);
+
+  color: var(--feedback-high-text);
+  font-weight: var(--feedback-high-weight);
+}
+
+.detail {
+  --feedback-detail-gap: var(--gap);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--feedback-detail-gap);
+  min-width: 0;
+}
+
+.head {
+  --feedback-head-gap: var(--gap);
+
+  align-items: flex-start;
+  display: flex;
+  gap: var(--feedback-head-gap);
+  justify-content: space-between;
+}
+
+.title {
+  --feedback-title-text-size: var(--text-title);
+  --feedback-title-weight: var(--weight-strong);
+  --feedback-title-leading: var(--leading-tight);
+
+  font-size: var(--feedback-title-text-size);
+  font-weight: var(--feedback-title-weight);
+  line-height: var(--feedback-title-leading);
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.facts {
+  --feedback-facts-column-gap: var(--gap-loose);
+  --feedback-facts-row-gap: var(--gap-tight);
+
+  column-gap: var(--feedback-facts-column-gap);
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  row-gap: var(--feedback-facts-row-gap);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.factName,
+.caption {
+  --feedback-fact-name-text: var(--color-text-muted);
+  --feedback-fact-name-font: var(--font-caption);
+  --feedback-fact-name-text-size: var(--text-caption);
+  --feedback-fact-name-tracking: var(--tracking-caption);
+  --feedback-fact-name-case: var(--case-caption);
+  --feedback-fact-name-weight: var(--weight-regular);
+
+  color: var(--feedback-fact-name-text);
+  font-family: var(--feedback-fact-name-font);
+  font-size: var(--feedback-fact-name-text-size);
+  font-weight: var(--feedback-fact-name-weight);
+  letter-spacing: var(--feedback-fact-name-tracking);
+  margin: 0;
+  text-transform: var(--feedback-fact-name-case);
+}
+
+.factValue {
+  --feedback-fact-value-font: var(--font-mono);
+  --feedback-fact-value-text-size: var(--text-ui);
+  --feedback-fact-value-gap: var(--gap-tight);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--feedback-fact-value-font);
+  font-size: var(--feedback-fact-value-text-size);
+  gap: var(--feedback-fact-value-gap);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.actions,
+.line {
+  --feedback-actions-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--feedback-actions-gap);
+}
+
+.note,
+.message {
+  --feedback-note-text: var(--color-text-muted);
+  --feedback-note-text-size: var(--text-small);
+
+  color: var(--feedback-note-text);
+  font-size: var(--feedback-note-text-size);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.lineIcon {
+  --feedback-line-icon-text: var(--color-action-text);
+  --feedback-line-icon-size: var(--icon-size-small);
+
+  color: var(--feedback-line-icon-text);
+  display: inline-flex;
+  font-size: var(--feedback-line-icon-size);
+}
+
+.alert[data-tone="failed"] .lineIcon {
+  --feedback-line-icon-text: var(--color-danger-text);
+}
+
+.alert {
+  --feedback-alert-text: var(--color-danger-text);
+  --feedback-alert-text-size: var(--text-small);
+  --feedback-alert-gap: var(--gap-tight);
+
+  align-items: flex-start;
+  color: var(--feedback-alert-text);
+  display: flex;
+  font-size: var(--feedback-alert-text-size);
+  gap: var(--feedback-alert-gap);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.section {
+  --feedback-section-border-block-start: var(--hairline) solid
+    var(--color-border);
+  --feedback-section-padding-block-start: var(--gap);
+  --feedback-section-gap: var(--gap-tight);
+
+  border-block-start: var(--feedback-section-border-block-start);
+  display: flex;
+  flex-direction: column;
+  gap: var(--feedback-section-gap);
+  padding-block-start: var(--feedback-section-padding-block-start);
+}
+
+.records {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.record {
+  --feedback-record-border-block-start: var(--hairline) solid
+    var(--color-border);
+  --feedback-record-gap: var(--gap-tight);
+  --feedback-record-padding-block: var(--gap-tight);
+
+  border-block-start: var(--feedback-record-border-block-start);
+  display: flex;
+  flex-direction: column;
+  gap: var(--feedback-record-gap);
+  padding-block: var(--feedback-record-padding-block);
+}
+
+.record:first-child {
+  --feedback-record-border-block-start: 0;
+}
+
+.recordMeta {
+  --feedback-record-meta-text: var(--color-text-muted);
+  --feedback-record-meta-font: var(--font-mono);
+  --feedback-record-meta-text-size: var(--text-small);
+  --feedback-record-meta-gap: var(--gap);
+
+  align-items: center;
+  color: var(--feedback-record-meta-text);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--feedback-record-meta-font);
+  font-size: var(--feedback-record-meta-text-size);
+  gap: var(--feedback-record-meta-gap);
+  justify-content: space-between;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.recordTitle {
+  --feedback-record-title-text-size: var(--text-ui);
+  --feedback-record-title-weight: var(--weight-medium);
+
+  font-size: var(--feedback-record-title-text-size);
+  font-weight: var(--feedback-record-title-weight);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.recordBody {
+  --feedback-record-body-text: var(--color-text);
+
+  color: var(--feedback-record-body-text);
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.evidence {
+  --feedback-evidence-font: var(--font-mono);
+  --feedback-evidence-text-size: var(--text-small);
+
+  font-family: var(--feedback-evidence-font);
+  font-size: var(--feedback-evidence-text-size);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.form {
+  --feedback-form-gap: var(--gap);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--feedback-form-gap);
+}
+
+.pair {
+  --feedback-pair-gap: var(--gap);
+
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--feedback-pair-gap);
+}
+
+/* Always there, so a reason is heard as it changes and the form doesn't jump. */
+.reason {
+  --feedback-reason-text: var(--color-text-muted);
+  --feedback-reason-min-height: 1lh;
+
+  color: var(--feedback-reason-text);
+  display: block;
+  min-height: var(--feedback-reason-min-height);
+  overflow-wrap: anywhere;
+}
+
+.place {
+  --feedback-place-font: var(--font-mono);
+  --feedback-place-text-size: var(--text-small);
+
+  font-family: var(--feedback-place-font);
+  font-size: var(--feedback-place-text-size);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.wellHead {
+  --feedback-well-head-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  gap: var(--feedback-well-head-gap);
+  justify-content: space-between;
+}
+
+.wellCopy {
+  --feedback-well-copy-gap: var(--gap-tight);
+
+  align-items: center;
+  display: inline-flex;
+  gap: var(--feedback-well-copy-gap);
+}
+
+.preview {
+  --feedback-preview-bg: var(--surface-sunken);
+  --feedback-preview-text: var(--color-text);
+  --feedback-preview-font: var(--font-mono);
+  --feedback-preview-text-size: var(--text-mono);
+  --feedback-preview-padding: var(--inset-control);
+  --feedback-preview-radius: var(--radius-control);
+  --feedback-preview-max-height: none;
+  --feedback-preview-min-height: auto;
+  --feedback-preview-border-color: transparent;
+  --feedback-preview-border-width: var(--hairline);
+  --feedback-preview-border-style: solid;
+
+  background: var(--feedback-preview-bg);
+  border-color: var(--feedback-preview-border-color);
+  border-radius: var(--feedback-preview-radius);
+  border-style: var(--feedback-preview-border-style);
+  border-width: var(--feedback-preview-border-width);
+  color: var(--feedback-preview-text);
+  font-family: var(--feedback-preview-font);
+  font-size: var(--feedback-preview-text-size);
+  margin: 0;
+  max-height: var(--feedback-preview-max-height);
+  min-height: var(--feedback-preview-min-height);
+  overflow-wrap: anywhere;
+  overflow-y: auto;
+  padding: var(--feedback-preview-padding);
+  white-space: pre-wrap;
+}
+
+.preview[data-scrolls] {
+  --feedback-preview-max-height: 16rem;
+  /* Room for a short post, so the first read's text doesn't jump the dialog. */
+  --feedback-preview-min-height: 6rem;
+}
+
+/* The preview before, while the new one is read: dimmed, never moved. */
+.preview[data-stale] {
+  --feedback-preview-text: var(--color-text-muted);
+}
+
+.preview:focus-visible {
+  --focus-ring-offset: calc(var(--focus-width) * -1);
+}
+
+.failureSlot {
+  --feedback-failure-slot-min-height: var(--control-height);
+  --feedback-failure-slot-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--feedback-failure-slot-gap);
+  min-height: var(--feedback-failure-slot-min-height);
+}
+
+.link {
+  --feedback-link-text: var(--color-link);
+  --feedback-link-gap: var(--gap-hair);
+
+  align-items: center;
+  color: var(--feedback-link-text);
+  display: inline-flex;
+  gap: var(--feedback-link-gap);
+  overflow-wrap: anywhere;
+}
+
+.result {
+  --feedback-result-text-size: var(--text-title);
+  --feedback-result-weight: var(--weight-strong);
+
+  font-size: var(--feedback-result-text-size);
+  font-weight: var(--feedback-result-weight);
+  margin: 0;
+}
+
+.dialogFoot {
+  --feedback-dialog-foot-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--feedback-dialog-foot-gap);
+  justify-content: space-between;
+}
+
+@media (prefers-contrast: more) {
+  .preview {
+    --feedback-preview-border-color: var(--color-border);
+  }
+}
+
+/*
+ * Forced colors take the fills away: only the chosen row keeps an outline, and
+ * the preview's well keeps its edge.
+ */
+@media (forced-colors: active) {
+  .row {
+    --feedback-row-border-color: Canvas;
+  }
+
+  .row[aria-current="true"] {
+    --feedback-row-border-color: Highlight;
+  }
+
+  .preview {
+    --feedback-preview-border-color: CanvasText;
+  }
+}

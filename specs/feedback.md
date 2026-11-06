@@ -14,8 +14,9 @@ fingerprints, records grouped into items, and human notes, and
 item, as a lesson its workflow reads under a token cap, `apply`, which has that
 workflow propose a fix, triage by rules, and notes from `ork decide` and the
 server ([routes](../packages/server/src/feedback-routes.ts)), publishing to
-Ork's Discussions, and export and import as JSON lines. The UI's Feedback panel
-is M2. Why: [ADR-013](../decisions/ADR-013-feedback-loop.md), amended by
+Ork's Discussions, and export and import as JSON lines, and the UI's Feedback
+panel ([panels](./ui/panels.md#feedback), [routes](./server.md)). Why:
+[ADR-013](../decisions/ADR-013-feedback-loop.md), amended by
 [ADR-059](../decisions/ADR-059-closing-the-feedback-loop.md).
 
 Every run teaches something: a tool that got in the way, a brief that missed

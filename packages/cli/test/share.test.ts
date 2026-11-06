@@ -11,6 +11,7 @@ import {
   humanNoteEvent,
   openStore,
   planPost,
+  previewPost,
   type GhRunner,
   type Post,
   type PostPlan,
@@ -18,7 +19,7 @@ import {
 import { describe, expect, it } from "vitest";
 
 import { exportLines, parseLines } from "../src/runs/jsonl.ts";
-import { formatPreview, previewPost } from "../src/runs/publish.ts";
+import { formatPreview } from "../src/runs/publish.ts";
 
 const ROOT = "/Users/ann/code/acme";
 

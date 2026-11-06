@@ -20,6 +20,8 @@ export type SelectProps = {
   options: readonly Option[];
   value: string;
   onChange: (value: string) => void;
+  /** The id of what says more about the choice, read out with it. */
+  describedBy?: string | undefined;
 };
 
 export const Select = ({
@@ -28,6 +30,7 @@ export const Select = ({
   options,
   value,
   onChange,
+  describedBy,
 }: SelectProps) => (
   <BaseSelect.Root
     items={options}
@@ -41,7 +44,10 @@ export const Select = ({
         {label}
         {unseen === undefined ? null : <Unseen>{unseen}</Unseen>}
       </BaseSelect.Label>
-      <BaseSelect.Trigger className={fields["control"]}>
+      <BaseSelect.Trigger
+        aria-describedby={describedBy}
+        className={fields["control"]}
+      >
         <BaseSelect.Value />
         <BaseSelect.Icon className={fields["icon"]}>
           <IconChevronDown />

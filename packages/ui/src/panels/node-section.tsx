@@ -1,7 +1,7 @@
 /**
  * @file The selected node's strip in the Monitor: what it is and what it has
- *   used, what its `watch:` is waiting for, its controls, and for a call, the
- *   way to the run it started.
+ *   used, what its `watch:` is waiting for, its controls and the way to a note
+ *   on it, and for a call, the way to the run it started.
  */
 
 import type { TreeNode } from "@krapht/ork-server/client";
@@ -10,7 +10,7 @@ import { type Ref, useEffect, useState } from "react";
 import { Button } from "../components/button.tsx";
 import { CodeText } from "../components/code-text.tsx";
 import { formatTokens, typeWord } from "../graph/facts.ts";
-import { nodeActions } from "./monitor-model.ts";
+import { nodeActions, noteAction } from "./monitor-model.ts";
 import { RunControls } from "./run-controls.tsx";
 import type { RunView } from "./use-run-monitor.ts";
 import { stillGoing, watchFacts } from "./watch-facts.ts";
@@ -117,6 +117,7 @@ export const NodeSection = ({
       <RunControls
         actions={nodeActions(run, node)}
         node={node.id}
+        note={noteAction(node)}
         runId={run.id}
       />
       {node.watching === undefined || !stillGoing(run.status) ? null : (

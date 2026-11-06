@@ -16,6 +16,7 @@ const ALL = [
   "Chats",
   "Context",
   "Decisions",
+  "Feedback",
   "Logs",
   "Monitor",
   "Notifications",
@@ -57,7 +58,7 @@ describe("the dock", () => {
   it("opens every panel in the default layout", () => {
     const { workspace } = openShell();
     expect(tabNames()).toEqual(ALL);
-    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage"]);
+    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage", "Feedback"]);
     expect(tabsBeside("Decisions")).toEqual(["Decisions", "Notifications"]);
     expect(tabsBeside("Context")).toEqual(["Context"]);
     expect(workspace.view.getValue().active).toBe("monitor");
@@ -84,11 +85,11 @@ describe("the dock", () => {
     const user = keys();
     const { workspace } = openShell();
     await user.click(screen.getByRole("button", { name: "Minimize Logs" }));
-    expect(tabsBeside("Chats")).toEqual(["Chats", "Usage"]);
+    expect(tabsBeside("Chats")).toEqual(["Chats", "Usage", "Feedback"]);
     expect(railNames()).toEqual(["Restore Logs"]);
     expect(workspace.announcement.getValue()).toBe("Logs minimized.");
     await user.click(screen.getByRole("button", { name: "Restore Logs" }));
-    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage"]);
+    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage", "Feedback"]);
     expect(railNames()).toEqual([]);
     await vi.waitFor(
       () => {
@@ -134,6 +135,7 @@ describe("the dock", () => {
         "notifications",
         "context",
         "usage",
+        "feedback",
       ] as const) {
         workspace.minimize(id);
       }
@@ -141,7 +143,7 @@ describe("the dock", () => {
     expect(tabNames()).toEqual([]);
     await waitFor(() => {
       expect(document.activeElement?.getAttribute("aria-label")).toBe(
-        "Restore Usage",
+        "Restore Feedback",
       );
     });
     expect(screen.getByText("No panels open.")).toBeDefined();
@@ -167,7 +169,7 @@ describe("the dock", () => {
       workspace.minimize("logs");
       workspace.goTo("logs");
     });
-    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage"]);
+    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage", "Feedback"]);
     expect(railNames()).toEqual([]);
   });
 
@@ -196,7 +198,7 @@ describe("the dock", () => {
       workspace.toggleFloat();
     });
     expect(workspace.view.getValue().floating).toBe(false);
-    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage"]);
+    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage", "Feedback"]);
   });
 
   it("maximizes a group, offers to restore it, and restores", () => {
@@ -242,6 +244,7 @@ describe("the saved layout", () => {
       "Chats",
       "Context",
       "Decisions",
+      "Feedback",
       "Monitor",
       "Notifications",
       "Usage",
@@ -258,7 +261,21 @@ describe("the saved layout", () => {
     act(() => {
       workspace.restore("logs");
     });
-    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage"]);
+    expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage", "Feedback"]);
+  });
+
+  it("keeps a layout saved without a panel, and opens it when asked", async () => {
+    const first = openShell();
+    act(() => {
+      first.workspace.close("feedback");
+    });
+    const { workspace } = await reload(first);
+    expect(tabNames()).not.toContain("Feedback");
+    act(() => {
+      workspace.goTo("feedback");
+    });
+    expect(tabNames()).toEqual(ALL);
+    expect(workspace.view.getValue().active).toBe("feedback");
   });
 
   it("falls back to the default when it is damaged, and says so", () => {

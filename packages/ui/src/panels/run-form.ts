@@ -97,7 +97,7 @@ export const inputsToSend = (
 const SAFE_WORD = /^[\w./:=@%+,-]+$/u;
 
 /** A word as a POSIX shell reads it back unchanged. */
-const quoted = (word: string): string =>
+export const quoted = (word: string): string =>
   SAFE_WORD.test(word) ? word : `'${word.replaceAll("'", String.raw`'\''`)}'`;
 
 /** The CLI twin, to run from the project's root. */

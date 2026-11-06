@@ -14,6 +14,7 @@ import { CopyCommand } from "../../src/components/copy-command.tsx";
 import { blocksOn, Meter } from "../../src/components/meter.tsx";
 import {
   type Status,
+  ItemStatusBadge,
   StatusBadge,
 } from "../../src/components/status-badge.tsx";
 import { Tabs } from "../../src/components/tabs.tsx";
@@ -119,6 +120,66 @@ describe("the status badge", () => {
     );
     expect(screen.getByText(word)).toBeDefined();
     expect(await violations(container)).toEqual([]);
+  });
+});
+
+const ITEM_STATUSES = [
+  "new",
+  "triaged",
+  "accepted",
+  "resolved",
+  "published",
+  "dismissed",
+] as const;
+
+describe("the item status badge", () => {
+  it.each(ITEM_STATUSES)(
+    "says %s in words, bare or as a pill",
+    async status => {
+      const { container } = render(
+        <>
+          <ItemStatusBadge status={status} />
+          <ItemStatusBadge
+            pill
+            status={status}
+          />
+        </>,
+      );
+      expect(screen.getAllByText(status)).toHaveLength(2);
+      expect(await violations(container)).toEqual([]);
+    },
+  );
+
+  it("gives each item status its own shape", () => {
+    const shapes = ITEM_STATUSES.map(status => {
+      const { container, unmount } = render(
+        <ItemStatusBadge status={status} />,
+      );
+      const shape = container.querySelector("svg")?.innerHTML;
+      unmount();
+      return shape;
+    });
+    expect(new Set(shapes).size).toBe(shapes.length);
+  });
+
+  it("marks only a new item with attention", () => {
+    const tones = ITEM_STATUSES.map(status => {
+      const { container, unmount } = render(
+        <ItemStatusBadge status={status} />,
+      );
+      const tone =
+        container.querySelector<HTMLElement>("[data-tone]")?.dataset["tone"];
+      unmount();
+      return tone;
+    });
+    expect(tones).toEqual([
+      "waiting",
+      "queued",
+      "queued",
+      "succeeded",
+      "succeeded",
+      "skipped",
+    ]);
   });
 });
 

@@ -71,13 +71,18 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
   });
   const selection = Container.create<Selection>({ run: null, node: null });
   const context = createContextTarget();
-  /** Every choice of a run or node is a choice for the Context panel too. */
+  /** The run the focus goes to once the Monitor shows it. */
+  let arriving: string | null = null;
+  /**
+   * Every choice of a run or node is a choice for the Context panel too. A
+   * choice of another run ends a wait for one to arrive, so a run shown later
+   * never takes the focus it wasn't asked to.
+   */
   const chooseNode = (next: Selection): void => {
+    if (next.run !== arriving) arriving = null;
     void selection.setValue(next);
     context.chooseRun(next.run, next.node);
   };
-  /** The run the focus goes to once the Monitor shows it. */
-  let arriving: string | null = null;
   const preferences = createPreferences(storage);
   /** The project the Runs panel shows: a root, or "all". */
   const runFilter = Container.create(ALL_PROJECTS);
@@ -102,6 +107,10 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     ({ query }: { query: QueryOf<"usage">; now: number; period: string }) =>
       client.call("usage", { query }),
   );
+  /** The Feedback panel's filters, for the page's life. */
+  const feedbackFilter = Container.create({ status: "open", about: "all" });
+  /** Every feedback item, dismissed ones too: no stream sends them. */
+  const feedback = createRead(() => client.call("feedbackItems"));
   const feeds = createFeeds({ client, open });
   const decisionHistory = createDecisionHistory(client);
   const notifications = createNotifications({ runs, decisions, storage });
@@ -135,6 +144,8 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     workflows,
     usage,
     usageFilter,
+    feedback,
+    feedbackFilter,
     triggers,
     /** Asks for a run; it then arrives on the stream like any other. */
     startRun: (body: BodyOf<"start">) => client.call("start", { body }),

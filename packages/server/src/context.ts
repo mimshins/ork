@@ -7,6 +7,7 @@
 import {
   type EventStore,
   findRun,
+  type GhRunner,
   pausedOf,
   type ProjectRecord,
   type RunRecord,
@@ -27,6 +28,11 @@ export type ServerContext = {
   script?: string;
   /** The built UI's folder; without one the placeholder page is served. */
   uiDir?: string;
+  /**
+   * Runs `gh` for publishing feedback (default: the real one); tests pass their
+   * own.
+   */
+  gh?: GhRunner;
 };
 
 type Refusal = { status: 400 | 404 | 409; error: string };

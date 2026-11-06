@@ -41,11 +41,13 @@ The workspace's own state (the view, the saved layout, the palette) stays in the
 ([panels](./panels.md#notifications)).
 
 What no stream sends is a one-off read in a container
-([read.ts](../../packages/ui/src/state/read.ts)): `projects`, and a project's
-`workflows`. When reads overlap the newest wins, so a slow answer about the last
-project chosen cannot replace the answer about this one. `runFilter` and
-`runDialog` belong to the [Runs panel](./panels.md), and live here so they
-outlast it when it is minimized or closed.
+([read.ts](../../packages/ui/src/state/read.ts)): `projects`, a project's
+`workflows`, and `feedback`, every feedback item, which the
+[Feedback panel](./panels.md#feedback) reads again as the runs change. When
+reads overlap the newest wins, so a slow answer about the last project chosen
+cannot replace the answer about this one. `runFilter` and `runDialog` belong to
+the [Runs panel](./panels.md), and `feedbackFilter` to the Feedback panel; they
+live here so they outlast a panel when it is minimized or closed.
 
 **`contextTarget`**
 ([context-target.ts](../../packages/ui/src/state/context-target.ts)) follows

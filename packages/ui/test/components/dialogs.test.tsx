@@ -1,11 +1,13 @@
 /**
  * @file Tests for the dialog and the confirm dialog: focus moves in and stays
- *   in, Escape closes, confirming runs the action, and they have no
- *   accessibility violations.
+ *   in, Escape closes, confirming runs the action, one that waits for the
+ *   server stays open and keeps its refusal, and they have no accessibility
+ *   violations.
  */
 
 import { cleanup, render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import { useRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Button } from "../../src/components/button.tsx";
@@ -89,5 +91,85 @@ describe("the confirm dialog", () => {
     await userEvent.keyboard("{Escape}");
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(onConfirm).not.toHaveBeenCalled();
+  });
+});
+
+const renderWaiting = (answer: Promise<string | null>) => {
+  const onOpenChange = vi.fn<(open: boolean) => void>();
+  render(
+    <ConfirmDialog
+      confirm="Start run"
+      description="It's a paid run."
+      onConfirm={() => answer}
+      onOpenChange={onOpenChange}
+      open
+      pending="Starting…"
+      title="Propose a fix?"
+      variant="primary"
+    />,
+  );
+  return { onOpenChange };
+};
+
+describe("a confirm dialog that waits", () => {
+  it("stays open while it waits, and closes once it's done", async () => {
+    const answer = Promise.withResolvers<string | null>();
+    const { onOpenChange } = renderWaiting(answer.promise);
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Start run" }),
+    );
+    expect(screen.getByRole("button", { name: "Starting…" })).toBeDefined();
+    await userEvent.keyboard("{Escape}");
+    expect(onOpenChange).not.toHaveBeenCalled();
+    answer.resolve(null);
+    await vi.waitFor(() => {
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it("keeps a refusal in it, as an alert", async () => {
+    const { onOpenChange } = renderWaiting(
+      Promise.resolve("Could not start the run: it's gone."),
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Start run" }),
+    );
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Could not start the run: it's gone.",
+    );
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(await violations(document.body)).toEqual([]);
+  });
+});
+
+const Wide = () => {
+  const start = useRef<HTMLParagraphElement>(null);
+  return (
+    <Dialog
+      initialFocus={start}
+      onOpenChange={() => {}}
+      open
+      size="wide"
+      title="Publish"
+    >
+      <Button>First</Button>
+      <p
+        ref={start}
+        tabIndex={-1}
+      >
+        Read me first.
+      </p>
+    </Dialog>
+  );
+};
+
+describe("a wide dialog", () => {
+  it("says it's wide, for its width, and starts the focus where asked", async () => {
+    render(<Wide />);
+    const dialog = await screen.findByRole("dialog", { name: "Publish" });
+    expect(dialog.dataset["size"]).toBe("wide");
+    await vi.waitFor(() => {
+      expect(document.activeElement?.textContent).toBe("Read me first.");
+    });
   });
 });

@@ -16,15 +16,15 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { describe, expect, it } from "vitest";
+
 import {
+  acceptItem,
   type EventStore,
   type FeedbackItem,
   humanNoteEvent,
   openStore,
-} from "@krapht/ork-core";
-import { describe, expect, it } from "vitest";
-
-import { acceptItem } from "../src/runs/accept.ts";
+} from "../src/index.ts";
 
 /** A project with a run of each workflow, each noting `title` (`kind`). */
 const noted = (

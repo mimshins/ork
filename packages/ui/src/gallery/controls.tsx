@@ -11,10 +11,24 @@ import { Checkbox, Switch } from "../components/checkbox.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
 import { IconPause, IconPlay, IconStop } from "../components/icons.tsx";
 import { Meter } from "../components/meter.tsx";
-import { type Status, StatusBadge } from "../components/status-badge.tsx";
+import {
+  type ItemStatus,
+  ItemStatusBadge,
+  type Status,
+  StatusBadge,
+} from "../components/status-badge.tsx";
 import { Section } from "./section.tsx";
 
 import styles from "./gallery.module.css";
+
+const ITEM_STATUSES: ItemStatus[] = [
+  "new",
+  "triaged",
+  "accepted",
+  "resolved",
+  "published",
+  "dismissed",
+];
 
 const STATUSES: Status[] = [
   "running",
@@ -74,6 +88,21 @@ export const Controls = () => {
         {STATUSES.map(status => (
           <StatusBadge
             key={status}
+            pill
+            status={status}
+          />
+        ))}
+      </Section>
+      <Section title="Feedback item status">
+        {ITEM_STATUSES.map(status => (
+          <ItemStatusBadge
+            key={status}
+            status={status}
+          />
+        ))}
+        {ITEM_STATUSES.map(status => (
+          <ItemStatusBadge
+            key={`${status}-pill`}
             pill
             status={status}
           />

@@ -78,12 +78,23 @@ describe("the commands", () => {
     expect(commands().filter(command => holdsNoModifier(command))).toEqual([]);
   });
 
-  it("reach every panel, with keys", () => {
+  it("reach every panel, the first nine with a digit key", () => {
     const reached = commands().filter(command => command.group === "Panels");
     expect(reached.map(command => command.title)).toEqual(
       PANELS.map(panel => `Go to ${panel.title}`),
     );
-    expect(reached.every(command => command.shortcut !== undefined)).toBe(true);
+    expect(reached.map(command => command.shortcut?.key)).toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      undefined,
+    ]);
   });
 
   it("name the active panel", () => {

@@ -21,3 +21,16 @@ How closing the feedback loop works for now, by choice
 - **L151 · Export carries records, not their items' state.** An imported record
   joins its item by fingerprint, and a new item starts `new`: a status, a merge
   or a lesson made elsewhere doesn't travel.
+- **L152 · The Feedback panel proposes a fix with the default driver.** Its
+  Propose fix starts `ork:feedback-apply` as `ork feedback apply` without
+  `--driver` does; the route takes a driver, but the panel offers no choice. The
+  Run workflow dialog's driver field beside the confirmation would close this.
+- **L153 · Merging items is only in the CLI.** The Feedback panel splits a
+  merged item, but merges are made with `ork feedback triage`, which shows each
+  group and asks. A plan-then-merge pair of routes and a dialog of groups, each
+  unchecked to start, would close this.
+- **L154 · The Feedback panel follows the runs, not the feedback.** No stream
+  says a record was added, so the panel reads the items again when the runs
+  change while it shows, at most every 5 s, and after each action. A run's
+  `feedback.recorded` on the overview stream, or a count of records, would let
+  it follow feedback itself.

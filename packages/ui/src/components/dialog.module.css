@@ -99,3 +99,15 @@
   justify-content: flex-end;
   margin-top: var(--dialog-actions-margin-top);
 }
+
+.dialog[data-size="wide"] {
+  --dialog-width: 40rem;
+}
+
+.refusal {
+  --dialog-refusal-text: var(--color-danger-text);
+
+  color: var(--dialog-refusal-text);
+  margin: 0;
+  overflow-wrap: anywhere;
+}

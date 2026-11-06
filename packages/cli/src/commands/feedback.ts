@@ -7,12 +7,15 @@
  *   `feedback-share.ts`.
  */
 
-import type { EventStore, FeedbackItem } from "@krapht/ork-core";
+import {
+  acceptItem,
+  type EventStore,
+  type FeedbackItem,
+} from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import { style, write, writeErr } from "../output.ts";
 import { registeredProjects } from "../project/place.ts";
-import { acceptItem } from "../runs/accept.ts";
 import {
   findFeedbackItem,
   formatFeedbackItem,

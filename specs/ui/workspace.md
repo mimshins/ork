@@ -30,9 +30,10 @@ new panel is one entry there.
 The dock is dockview, on Ork's own theme class: its variables are set from the
 design tokens ([dock theme](../../packages/ui/src/workspace/dock.module.css))
 and no dockview skin class is applied. The default layout has Runs on the left,
-Monitor and the Builder over Logs, Chats and Usage in the middle, and Decisions
-and Notifications over Context on the right, so the Context panel is read beside
-the Monitor or the Builder without hiding a decision.
+Monitor and the Builder over Logs, Chats, Usage and Feedback in the middle, and
+Decisions and Notifications over Context on the right, so the Context panel is
+read beside the Monitor or the Builder without hiding a decision, and Feedback
+is wide enough for its list beside an item.
 
 - **A tab** holds an icon and a title and no button, since a control inside a
   tab is invalid. **A group's header** carries Minimize and Close, for its
@@ -68,7 +69,7 @@ Alt, ⇧ reads Shift and ⌃ reads Ctrl.
 | Keys            | What it does                               |
 | --------------- | ------------------------------------------ |
 | `⌘K`            | Command palette                            |
-| `⌥⇧1` to `⌥⇧6`  | Go to a panel, bringing it back if it must |
+| `⌥⇧1` to `⌥⇧9`  | Go to a panel, bringing it back if it must |
 | `⌥⇧M`           | Minimize the active panel                  |
 | `⌥⇧X`           | Maximize its group, or restore it          |
 | `⌥⇧F`           | Float its group, or dock it                |
@@ -76,6 +77,9 @@ Alt, ⇧ reads Shift and ⌃ reads Ctrl.
 | `⌥⇧` + arrows   | Resize its group by 32 px                  |
 | `⌃⌥⇧` + arrows  | Move it                                    |
 | `⌥⇧]` and `⌥⇧[` | Focus the next or previous group           |
+
+The digits follow the panels' order; a panel past the ninth (Feedback) has none,
+and is reached by **Go to Feedback** in the palette and the Window menu.
 
 Moving a docked panel takes it into the neighboring group as a tab, or to that
 edge of the workspace when there is no neighbor. Moving a floating one shifts

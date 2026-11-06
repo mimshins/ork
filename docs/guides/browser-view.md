@@ -40,6 +40,10 @@ Hover or focus a control to see its command, and copy it where one is shown.
 | Resume a stopped or crashed run       | `ork resume <run>` (the terminal only)      |
 | See what runs spent                   | `ork usage`                                 |
 | See what a node's session loads       | `ork context explain <workflow> <node>`     |
+| Note how a run or a node went         | `ork feedback note <run> [node] -m "…"`     |
+| Read, dismiss or accept feedback      | `ork feedback list`, `dismiss`, `accept`    |
+| Make an item a lesson, or a fix       | `ork feedback accept --lesson`, `apply`     |
+| Share an item about Ork itself        | `ork feedback publish <item>`               |
 
 Notifications, the theme and the layout belong to the browser and have no
 command.
@@ -60,7 +64,8 @@ Stopping asks first and says what will happen: a stopped node fails, and the
 workflow's failure rules apply; a stopped run can be resumed. A node that called
 another workflow links to that run, and one that's
 [watching a source](./watching.md) says what it's waiting for and how often it
-looks.
+looks. **Note…** on a node, or among the run's controls, adds your
+[feedback](./feedback.md) on how it went.
 
 **Logs** shows a run's events. It stays on the newest; scroll up and it holds
 still, and **Follow** counts what is new. Filter by node, by event type or by
@@ -95,6 +100,10 @@ Choose a node in the Monitor, Logs or Chats, or select a card in the Builder,
 where it follows your draft as you edit. A run's node is planned from your files
 as they are now, so if one changed after the run started, it names it: what you
 see may not be what the run loaded.
+
+**Feedback** lists what got in your runs' way: read an item's records, then
+dismiss it, accept it, make it a lesson, have Ork propose a fix, or share one
+about Ork ([in the browser](./feedback.md#in-the-browser)).
 
 ### Builder
 
@@ -151,15 +160,15 @@ panel, the theme, the density, starting a run.
 Everything works from the keyboard. These are the Mac's keys; elsewhere ⌘ is
 Ctrl, ⌥ is Alt, ⇧ is Shift and ⌃ is Ctrl.
 
-| Keys                | What it does                                         |
-| ------------------- | ---------------------------------------------------- |
-| `⌘K`                | The command palette                                  |
-| `⌥⇧1` to `⌥⇧6`      | Runs, Monitor, Logs, Decisions, Chats, Notifications |
-| `⌥⇧M`, `⌥⇧X`, `⌥⇧F` | Minimize, maximize or float the active panel         |
-| `⌥⇧W`               | Close it                                             |
-| `⌥⇧` + arrows       | Resize its group                                     |
-| `⌃⌥⇧` + arrows      | Move it                                              |
-| `⌥⇧]`, `⌥⇧[`        | Focus the next or previous group                     |
+| Keys                | What it does                                 |
+| ------------------- | -------------------------------------------- |
+| `⌘K`                | The command palette                          |
+| `⌥⇧1` to `⌥⇧9`      | Go to a panel, in the Window menu's order    |
+| `⌥⇧M`, `⌥⇧X`, `⌥⇧F` | Minimize, maximize or float the active panel |
+| `⌥⇧W`               | Close it                                     |
+| `⌥⇧` + arrows       | Resize its group                             |
+| `⌃⌥⇧` + arrows      | Move it                                      |
+| `⌥⇧]`, `⌥⇧[`        | Focus the next or previous group             |
 
 On the graph, the arrow keys move the view, and on a node they follow its edges.
 `Enter` selects a node, `Shift+F10` goes to its controls and `Escape` comes
@@ -183,6 +192,8 @@ not work for you, please
 
 - **Resuming a run** has no button ([L71](../../specs/gaps/limits.md)).
 - **Runs older than the newest 50** are in `ork ps`.
+- **Feedback** merges only with `ork feedback triage`, and fixes with the
+  default driver ([L152, L153](../../specs/gaps/limits-feedback.md)).
 
 ## Next
 

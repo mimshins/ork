@@ -3,14 +3,19 @@
  *   has its own shape. It holds the words for run and node states in the CLI's
  *   nouns; a running one blinks, unless the user asks for less motion. It sits
  *   bare among other facts; a pill tints it, for the one that heads a view.
+ *   `ItemStatusBadge` does the same for a feedback item's status, on the same
+ *   tones, so `Status` stays the run and node states.
  */
 
 import type { ComponentType } from "react";
 
 import {
+  GlyphAccepted,
   GlyphFailed,
   GlyphInterrupted,
+  GlyphNew,
   GlyphPaused,
+  GlyphPublished,
   GlyphQueued,
   GlyphRunning,
   GlyphSkipped,
@@ -73,6 +78,22 @@ export const statusWord = (status: Status): string => LOOKS[status].word;
 /** The color family the status belongs to, for what is drawn around a badge. */
 export const statusTone = (status: Status): string => LOOKS[status].tone;
 
+const Badge = ({ look, pill }: { look: Look; pill: boolean }) => {
+  const { Icon, word, tone } = look;
+  return (
+    <span
+      className={styles["badge"]}
+      data-look={pill ? "pill" : "bare"}
+      data-tone={tone}
+    >
+      <span className={styles["icon"]}>
+        <Icon />
+      </span>
+      {word}
+    </span>
+  );
+};
+
 export const StatusBadge = ({
   status,
   word,
@@ -84,17 +105,43 @@ export const StatusBadge = ({
   /** Tints it, for the status that heads a view. */
   pill?: boolean;
 }) => {
-  const { Icon, word: own, tone } = LOOKS[status];
+  const look = LOOKS[status];
   return (
-    <span
-      className={styles["badge"]}
-      data-look={pill ? "pill" : "bare"}
-      data-tone={tone}
-    >
-      <span className={styles["icon"]}>
-        <Icon />
-      </span>
-      {word ?? own}
-    </span>
+    <Badge
+      look={{ ...look, word: word ?? look.word }}
+      pill={pill}
+    />
   );
 };
+
+/** A feedback item's place in triage, as `ork feedback list` says it. */
+export type ItemStatus =
+  | "new"
+  | "triaged"
+  | "accepted"
+  | "resolved"
+  | "published"
+  | "dismissed";
+
+/** `new` needs the person (amber); what's settled is done (phosphor). */
+const ITEM_LOOKS: Record<ItemStatus, Look> = {
+  new: { Icon: GlyphNew, word: "new", tone: "waiting" },
+  triaged: { Icon: GlyphQueued, word: "triaged", tone: "queued" },
+  accepted: { Icon: GlyphAccepted, word: "accepted", tone: "queued" },
+  resolved: { Icon: GlyphSucceeded, word: "resolved", tone: "succeeded" },
+  published: { Icon: GlyphPublished, word: "published", tone: "succeeded" },
+  dismissed: { Icon: GlyphSkipped, word: "dismissed", tone: "skipped" },
+};
+
+export const ItemStatusBadge = ({
+  status,
+  pill = false,
+}: {
+  status: ItemStatus;
+  pill?: boolean;
+}) => (
+  <Badge
+    look={ITEM_LOOKS[status]}
+    pill={pill}
+  />
+);

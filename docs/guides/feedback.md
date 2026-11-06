@@ -87,6 +87,11 @@ yours: commit it, edit it, take a lesson out. If the item was seen in more than
 one workflow, say which with `--workflow`. Without `--lesson`, `accept` only
 marks the item accepted.
 
+What you can do with an item depends on where it stands, the same in a terminal
+and in the browser: a dismissed item takes nothing until you `restore` it, an
+item you've accepted, resolved or published isn't accepted again (a lesson can
+still be added to it), and an item is published once.
+
 Lessons cost tokens in every session, so a workflow's file is held to 1,500
 tokens: accepting one that would pass that is refused, and a file you made
 longer by hand is cut there. `ork context explain <workflow> <node>` lists the
@@ -149,6 +154,25 @@ as JSON lines:
 ork feedback export -o feedback.jsonl     # add --all for dismissed items too
 ork feedback import feedback.jsonl        # skips what's already here
 ```
+
+## In the browser
+
+`ork ui`'s **Feedback** panel does the same, beside your runs. It lists every
+item (Status shows the dismissed ones too, About narrows to `ork`, `workflow` or
+`project`), and an item you choose shows its facts, its records newest first
+with the way to each run, and what you can do with it. A button that doesn't
+apply says why, by the same rule `ork feedback` keeps.
+
+- **Add lesson…** shows the lessons file and how full it is before anything is
+  written, and asks which workflow when there's more than one.
+- **Propose fix…** names the project and asks before it starts the run, then
+  takes you to it in the Monitor; keep or discard it in Decisions.
+- **Publish…** shows exactly what would be posted, as text, and posts only when
+  you press **Post**. If what it would send changed since you read it, it shows
+  you the new text instead.
+
+To note how a run or one of its nodes went, use **Note…** in the Monitor.
+Merging items stays `ork feedback triage`'s.
 
 ## What stays on your machine
 

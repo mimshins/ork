@@ -16,6 +16,8 @@ export type ToggleProps = {
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
+  /** The id of what says more about it, read out with it. */
+  describedBy?: string | undefined;
 };
 
 export const Checkbox = ({
@@ -23,9 +25,11 @@ export const Checkbox = ({
   checked,
   onChange,
   disabled = false,
+  describedBy,
 }: ToggleProps) => (
   <label className={styles["toggle"]}>
     <BaseCheckbox.Root
+      aria-describedby={describedBy}
       checked={checked}
       className={styles["box"]}
       disabled={disabled}

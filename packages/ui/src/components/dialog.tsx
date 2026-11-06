@@ -4,13 +4,15 @@
  *   thought, such as stopping a run. Each traps focus, closes on Escape and
  *   gives focus back. A confirm dialog is an alert dialog: a click outside does
  *   not dismiss it, its description says what the action will do, and focus
- *   starts on Cancel. Each carries `data-modal`, by which the workspace's keys
- *   know to wait (a floating panel is a `dialog` to dockview, but not modal).
+ *   starts on Cancel. One whose action waits for the server stays open until it
+ *   answers, and keeps a refusal in it. Each carries `data-modal`, by which the
+ *   workspace's keys know to wait (a floating panel is a `dialog` to dockview,
+ *   but not modal).
  */
 
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
-import type { ReactNode } from "react";
+import { type ReactNode, type RefObject, useState } from "react";
 
 import { Button } from "./button.tsx";
 import { CodeText } from "./code-text.tsx";
@@ -22,12 +24,19 @@ type Controlled = {
   onOpenChange: (open: boolean) => void;
 };
 
+/** Where the focus goes on closing: an element, back (true), or nowhere. */
+export type FinalFocus = () => HTMLElement | boolean;
+
 export type DialogProps = Controlled & {
   title: string;
   description?: string;
   children: ReactNode;
   /** Where the focus goes on closing, if not back where it came from. */
-  finalFocus?: () => HTMLElement | true;
+  finalFocus?: FinalFocus;
+  /** Where the focus starts, if not on the first thing that takes it. */
+  initialFocus?: RefObject<HTMLElement | null>;
+  /** Wide holds text to read, such as a post's preview. */
+  size?: "default" | "wide";
 };
 
 const backWhereItCameFrom = (): true => true;
@@ -39,6 +48,8 @@ export const Dialog = ({
   description,
   children,
   finalFocus = backWhereItCameFrom,
+  initialFocus,
+  size = "default",
 }: DialogProps) => (
   <BaseDialog.Root
     onOpenChange={next => {
@@ -51,9 +62,13 @@ export const Dialog = ({
       <BaseDialog.Popup
         className={styles["dialog"]}
         data-modal=""
+        data-size={size}
         finalFocus={finalFocus}
+        initialFocus={initialFocus ?? true}
       >
-        <BaseDialog.Title className={styles["title"]}>{title}</BaseDialog.Title>
+        <BaseDialog.Title className={styles["title"]}>
+          <CodeText text={title} />
+        </BaseDialog.Title>
         {description === undefined ? null : (
           <BaseDialog.Description className={styles["description"]}>
             <CodeText text={description} />
@@ -70,18 +85,30 @@ export const DialogActions = ({ children }: { children: ReactNode }) => (
   <div className={styles["actions"]}>{children}</div>
 );
 
+/** What an action that waits says: nothing when it's done, or its refusal. */
+export type Confirmed = Promise<string | null>;
+
 export type ConfirmDialogProps = Controlled & {
   title: string;
   /** What the action will do, in the CLI's words. */
   description: string;
   /** The action, as a verb: "Stop run". */
   confirm: string;
-  onConfirm: () => void;
+  /**
+   * The action. One that returns a promise keeps the dialog open until it
+   * settles, and a refusal it resolves to stays in the dialog.
+   */
+  onConfirm: () => void | Confirmed;
+  /** The confirm button's words while it waits: "Starting…". */
+  pending?: string | undefined;
+  /** Danger for what can't be undone; primary for a cost, such as a run. */
+  variant?: "danger" | "primary";
   /**
    * The CLI command that does the same, shown in the dialog: a tooltip here
    * would cover the description, and Escape would close it, not the dialog.
    */
   cli?: string | undefined;
+  finalFocus?: FinalFocus;
 };
 
 export const ConfirmDialog = ({
@@ -91,43 +118,78 @@ export const ConfirmDialog = ({
   description,
   confirm,
   onConfirm,
+  pending,
+  variant = "danger",
   cli,
-}: ConfirmDialogProps) => (
-  <AlertDialog.Root
-    onOpenChange={next => {
-      onOpenChange(next);
-    }}
-    open={open}
-  >
-    <AlertDialog.Portal>
-      <AlertDialog.Backdrop className={styles["backdrop"]} />
-      <AlertDialog.Popup
-        className={styles["dialog"]}
-        data-modal=""
-      >
-        <AlertDialog.Title className={styles["title"]}>
-          {title}
-        </AlertDialog.Title>
-        <AlertDialog.Description className={styles["description"]}>
-          <CodeText text={description} />
-        </AlertDialog.Description>
-        {cli === undefined ? null : (
-          <code className={styles["command"]}>{cli}</code>
-        )}
-        <div className={styles["actions"]}>
-          <AlertDialog.Close render={<Button>Cancel</Button>} />
-          <AlertDialog.Close
-            render={
-              <Button
-                onClick={onConfirm}
-                variant="danger"
-              >
-                {confirm}
-              </Button>
-            }
-          />
-        </div>
-      </AlertDialog.Popup>
-    </AlertDialog.Portal>
-  </AlertDialog.Root>
-);
+  finalFocus = backWhereItCameFrom,
+}: ConfirmDialogProps) => {
+  const [waiting, setWaiting] = useState(false);
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const run = async (): Promise<void> => {
+    const done = onConfirm();
+    if (done === undefined) {
+      onOpenChange(false);
+      return;
+    }
+    setWaiting(true);
+    setRefusal(null);
+    const refused = await done;
+    setWaiting(false);
+    setRefusal(refused);
+    if (refused === null) onOpenChange(false);
+  };
+  return (
+    <AlertDialog.Root
+      onOpenChange={next => {
+        // Closing while it waits would hide how it ended.
+        if (waiting) return;
+        if (!next) setRefusal(null);
+        onOpenChange(next);
+      }}
+      open={open}
+    >
+      <AlertDialog.Portal>
+        <AlertDialog.Backdrop className={styles["backdrop"]} />
+        <AlertDialog.Popup
+          className={styles["dialog"]}
+          data-modal=""
+          finalFocus={finalFocus}
+        >
+          <AlertDialog.Title className={styles["title"]}>
+            <CodeText text={title} />
+          </AlertDialog.Title>
+          <AlertDialog.Description className={styles["description"]}>
+            <CodeText text={description} />
+          </AlertDialog.Description>
+          {cli === undefined ? null : (
+            <code className={styles["command"]}>{cli}</code>
+          )}
+          {refusal === null ? null : (
+            <p
+              className={styles["refusal"]}
+              role="alert"
+            >
+              <CodeText text={refusal} />
+            </p>
+          )}
+          <div className={styles["actions"]}>
+            <AlertDialog.Close
+              disabled={waiting}
+              render={<Button focusableWhenDisabled>Cancel</Button>}
+            />
+            <Button
+              disabled={waiting}
+              focusableWhenDisabled
+              onClick={() => {
+                void run();
+              }}
+              variant={variant}
+            >
+              {waiting ? (pending ?? confirm) : confirm}
+            </Button>
+          </div>
+        </AlertDialog.Popup>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
+  );
+};

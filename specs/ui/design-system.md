@@ -206,10 +206,17 @@ module on the tokens, and has a keyboard test and an axe test
   status glyphs are the exception, drawn in
   [status-glyphs.tsx](../../packages/ui/src/components/status-glyphs.tsx), as
   MDI's blur at 10 px.
+- **A confirm dialog whose action waits** for the server (`onConfirm` returns a
+  promise) stays open until it answers, Escape included, and keeps a refusal in
+  it as an alert; its confirm can be primary, for a cost such as a paid run,
+  rather than danger. A dialog can be **wide** (40rem), for text to read.
+  `ItemStatusBadge` is the status badge for a feedback item's status, on the
+  same tones, with its own shapes for `new`, `accepted` and `published`.
 - **Every control can name its CLI twin** (`cli`). A button shows it in a
-  tooltip and gives it to screen readers as its description. A confirm dialog
-  shows it as text, because a tooltip there would cover the description, and
-  Escape would close the tooltip and not the dialog.
+  tooltip and gives it to screen readers as its description, and the tooltip can
+  say more above it (`tip`), such as why it's disabled. A confirm dialog shows
+  it as text, because a tooltip there would cover the description, and Escape
+  would close the tooltip and not the dialog.
 - **Base UI's `<style>` elements are off** under the page's policy. Its one
   rule, for lists that scroll, is carried in `base.css`.
 - **Component styles write out no size, duration or layer,** only tokens (tested

@@ -38,6 +38,11 @@ export type ServerOptions = {
    * that does is served, and the placeholder page when none does.
    */
   ui?: readonly string[];
+  /**
+   * Runs `gh` for publishing feedback (default: the real one); tests pass their
+   * own.
+   */
+  gh?: ServerContext["gh"];
 };
 
 export type RunningServer = {
@@ -83,6 +88,7 @@ export const startServer = async (
     ...(options.home === undefined ? {} : { home: options.home }),
     ...(options.script === undefined ? {} : { script: options.script }),
     ...(uiDir === undefined ? {} : { uiDir }),
+    ...(options.gh === undefined ? {} : { gh: options.gh }),
   };
   const token = newToken();
   const shutdown = new AbortController();

@@ -100,3 +100,10 @@ export const SHORTCUTS = {
     return { ...panelKey(code, code, glyph), ctrl: true };
   },
 } as const satisfies Record<string, Shortcut | ((argument: never) => Shortcut)>;
+
+/** The digits run out: a panel past the ninth has no Go to key of its own. */
+const DIGITS = 9;
+
+/** The Go to key of the panel at this place in the list, if it has one. */
+export const goToShortcut = (position: number): Shortcut | undefined =>
+  position <= DIGITS ? SHORTCUTS.goTo(position) : undefined;

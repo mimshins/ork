@@ -204,3 +204,9 @@ export const nodeActions = (run: RunView, node: TreeNode): Actions => {
     stop,
   };
 };
+
+/** Whether a node takes a note: one that never ran has done nothing to note. */
+export const noteAction = (node: TreeNode): Action =>
+  node.state === "waiting" || node.state === "skipped"
+    ? no("it hasn't run")
+    : YES;

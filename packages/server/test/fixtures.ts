@@ -18,6 +18,7 @@ import path from "node:path";
 
 import {
   type EventStore,
+  type GhRunner,
   openStore,
   type RunEvent,
   type RunResult,
@@ -81,7 +82,7 @@ const project = (store: EventStore) => {
 };
 
 export const startTestServer = async (
-  options: { ui?: readonly string[] } = {},
+  options: { ui?: readonly string[]; gh?: GhRunner } = {},
 ) => {
   const home = temp("ork-srv-home-");
   const fake = fakeOrk(storePath(home));
