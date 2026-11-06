@@ -904,6 +904,7 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "71c09e7",
   "2a0a15f",
   "879c00a",
   "e61aade",
