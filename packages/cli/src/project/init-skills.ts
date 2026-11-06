@@ -2,8 +2,9 @@
  * @file Ork's skills for Claude Code in a project (RFC-012): `ork init
  *   --skills` writes the plugin's skills into `.ork/skills/ork-<name>/`, each
  *   naming the Ork that wrote it, and links Claude Code's skills folder there,
- *   so teammates get them through git. It rewrites Ork's own copies and never a
- *   skill someone else wrote; `ork doctor` says when a copy is older than Ork.
+ *   so teammates get them through git. It rewrites Ork's own copies, but never
+ *   one a newer Ork wrote or a skill someone else wrote; `ork doctor` says when
+ *   a copy is older than Ork.
  */
 
 import {
@@ -64,6 +65,8 @@ export type SkillsResult = {
   updated: string[];
   /** Ork's copies that were current, and skills Ork didn't write. */
   skipped: string[];
+  /** Copies a newer Ork wrote, with its version: kept, not downgraded. */
+  newer: string[];
   links: ToolLink[];
 };
 
@@ -80,6 +83,7 @@ export const writeSkills = (
     created: [],
     updated: [],
     skipped: [],
+    newer: [],
     links: [],
   };
   for (const [name, text] of Object.entries(ORK_SKILLS)) {
@@ -87,8 +91,11 @@ export const writeSkills = (
     const shown = path.relative(root, file);
     const wanted = projectSkill(name, text, version);
     const current = existsSync(file) ? readFileSync(file, "utf8") : null;
-    if (current !== null && (current === wanted || stampOf(current) === null)) {
+    const stamp = current === null ? null : stampOf(current);
+    if (current !== null && (current === wanted || stamp === null)) {
       result.skipped.push(shown);
+    } else if (stamp !== null && isNewer(stamp, version)) {
+      result.newer.push(`${shown} (Ork ${stamp})`);
     } else {
       mkdirSync(path.dirname(file), { recursive: true });
       writeFileSync(file, wanted);

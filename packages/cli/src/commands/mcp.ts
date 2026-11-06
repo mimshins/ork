@@ -92,7 +92,9 @@ export const orkMcpServer = (
       each.name,
       {
         description: each.description,
-        inputSchema: each.shape,
+        // Strict, so the SDK refuses an argument a tool doesn't take rather
+        // than drop it before `call` sees it.
+        inputSchema: z.strictObject(each.shape),
         annotations: { readOnlyHint: each.readOnly, openWorldHint: false },
       },
       async args => {

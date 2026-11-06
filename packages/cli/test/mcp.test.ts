@@ -102,6 +102,17 @@ describe("ork mcp", () => {
     expect(result.isError).toBe(true);
   });
 
+  it("refuses an argument a tool doesn't take, rather than drop it", async () => {
+    const result = await (
+      await connected()
+    ).callTool({
+      name: "run_events",
+      arguments: { run: "zzz", nodeId: "x" },
+    });
+    expect(result).toMatchObject({ isError: true });
+    expect(textOf(result)).toContain("nodeId");
+  });
+
   it("serves on stdio from the command line", async () => {
     const transport = new StdioClientTransport({
       command: process.execPath,

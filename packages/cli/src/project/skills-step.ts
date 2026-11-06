@@ -14,7 +14,7 @@ const QUESTION =
   "Add Ork's skills for Claude Code to .ork/skills/, so it writes workflows Ork accepts? Ork's Claude Code plugin has them too. [y/N] ";
 
 const HINT =
-  "Ork's skills for Claude Code: add them here with `ork init --skills`, or install Ork's plugin (/plugin marketplace add mimshins/ork).";
+  "Ork's skills for Claude Code: add them here with `ork init --skills`, or install Ork's plugin in Claude Code (/plugin marketplace add mimshins/ork, then /plugin install ork@ork).";
 
 /** Whether to write the skills: as asked, or the person's answer. */
 const wanted = (
@@ -46,6 +46,10 @@ export const skillsStep = async (
     write(`${style("green", "updated")} ${item}`);
   for (const item of result.skipped)
     write(`${style("dim", "exists")}  ${item}`);
+  for (const item of result.newer)
+    write(
+      `${style("yellow", "kept")}    ${item}, from a newer Ork than ${ORK_VERSION}`,
+    );
   for (const line of formatLinks(
     result.links.filter(l => l.state !== "linked"),
   )) {

@@ -22,7 +22,7 @@ data.
 | `packages/core`           | `@krapht/ork-core`           | Compiler, expressions, runtime port, scheduler, context |
 | `packages/runtime-claude` | `@krapht/ork-runtime-claude` | The Agent SDK and headless `claude` CLI drivers         |
 | `packages/nodes`          | `@krapht/ork-nodes`          | Built-in node types                                     |
-| `packages/server`         | `@krapht/ork-server`         | `ork ui`'s local HTTP + SSE API, a client of the store  |
+| `packages/server`         | `@krapht/ork-server`         | `ork ui`'s HTTP + SSE API and `ork mcp`'s tools         |
 | `packages/ui`             | `@krapht/ork-ui`             | The browser UI `ork ui` serves, built into the CLI      |
 | `packages/cli`            | `@krapht/ork`                | The `ork` command, the only published package           |
 

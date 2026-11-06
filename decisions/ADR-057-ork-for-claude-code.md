@@ -1,6 +1,7 @@
 # ADR-057 — Teaching Claude Code Ork's standards: `ork mcp`, skills and a plugin
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by
+  [ADR-058](./ADR-058-plugin-expects-oldest-ork.md)
 - **Date:** 2026-11-06
 - **Topic:** CLI / integrations / distribution
 - **RFC:** [RFC-012](../rfcs/archived/RFC-012-teaching-claude-code-ork.md)

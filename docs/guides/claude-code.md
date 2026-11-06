@@ -28,10 +28,10 @@ Then ask it things such as:
 - "Start the `release` workflow." It asks you first, as a run spends money.
 
 It can't act for you. No tool answers a decision, or stops, pauses or resumes a
-run, and the plugin stops Claude Code running `ork decide`: when something waits
-on you, it says so, and you answer in `ork ui` or with `ork decide` in your own
-terminal. Inside a run, its sessions can read and check, but not start another
-run.
+run, and the plugin stops Claude Code answering with `ork decide` (it may still
+list what's open): when something waits on you, it says so, and you answer in
+`ork ui` or with `ork decide` in your own terminal. Inside a run, its sessions
+can read and check, but not start another run.
 
 ## Without the plugin
 

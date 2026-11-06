@@ -63,6 +63,15 @@ describe("Ork's skills in a project", () => {
     expect(stampOf(read(root, "ork-run"))).toBe("1.1.0");
   });
 
+  it("keep a copy a newer Ork wrote", () => {
+    const root = project();
+    writeSkills(root, "1.1.0", { link: false });
+    const older = writeSkills(root, "1.0.0", { link: false });
+    expect(older.updated).toEqual([]);
+    expect(older.newer).toContain(".ork/skills/ork-run/SKILL.md (Ork 1.1.0)");
+    expect(stampOf(read(root, "ork-run"))).toBe("1.1.0");
+  });
+
   it("never rewrite a skill someone else wrote under that name", () => {
     const root = project();
     mkdirSync(path.dirname(skillFile(root, "ork-run")), { recursive: true });

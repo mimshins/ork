@@ -88,4 +88,5 @@ proposals belong in [`rfcs/`](../rfcs/README.md).
 | [054](./ADR-054-component-tokens.md)                 | Each component owns its tokens, and a state only sets tokens                |
 | [055](./ADR-055-console-language.md)                 | The console's language: frames, cards and two voices                        |
 | [056](./ADR-056-walking-a-workflow.md)               | Walking every way through a workflow before it runs                         | Accepted          | [RFC-009](../rfcs/archived/RFC-009-walking-a-workflow.md)           |
-| [057](./ADR-057-ork-for-claude-code.md)              | Teaching Claude Code Ork's standards: `ork mcp`, skills and a plugin        | Accepted          | [RFC-012](../rfcs/archived/RFC-012-teaching-claude-code-ork.md)     |
+| [057](./ADR-057-ork-for-claude-code.md)              | Teaching Claude Code Ork's standards: `ork mcp`, skills and a plugin        | Amended by 058    | [RFC-012](../rfcs/archived/RFC-012-teaching-claude-code-ork.md)     |
+| [058](./ADR-058-plugin-expects-oldest-ork.md)        | The plugin expects the oldest Ork it works with                             | Accepted          | waived                                                              |

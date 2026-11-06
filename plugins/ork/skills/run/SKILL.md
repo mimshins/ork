@@ -40,8 +40,8 @@ node's own words rather than retelling them.
 - **Decisions.** `decisions` lists the questions waiting on them: a gate, a loop
   that ran out of rounds, a permission. Tell them what each asks, the options,
   and the recommended one, and that they answer in `ork ui` or with
-  `ork decide` in their own terminal. Don't answer one, and don't run
-  `ork decide`; with Ork's plugin, a hook stops it.
+  `ork decide` in their own terminal. Don't answer one: never run
+  `ork decide --id … --choose …`; with Ork's plugin, a hook stops it.
 - **Stopping, pausing, resuming.** Tell them the command: `ork stop <run>`,
   `ork pause <run>`, `ork continue <run>`, `ork resume <run>`. A node can be
   stopped alone with `--node <id>`.

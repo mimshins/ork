@@ -27,12 +27,12 @@ describe("the bound build info", () => {
     expect(text).toBe(withVersion(text, cliPackage().version));
   });
 
-  it("binds both a plugin's version and what it expects", () => {
+  it("binds a plugin's version, and not the Ork it expects", () => {
     expect(
       withVersion(
         '{ "version": "0.1.0", "args": ["mcp", "--expects", "0.1.0"] }',
         "1.2.3",
       ),
-    ).toBe('{ "version": "1.2.3", "args": ["mcp", "--expects", "1.2.3"] }');
+    ).toBe('{ "version": "1.2.3", "args": ["mcp", "--expects", "0.1.0"] }');
   });
 });

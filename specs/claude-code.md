@@ -50,19 +50,25 @@ plugins:
 - **`ork`** ([plugins/ork/](../plugins/ork/)) has the skills above, Ork's tools
   through `ork mcp` ([.mcp.json](../plugins/ork/.mcp.json)), and a hook. Its
   server runs the `ork` on the person's `PATH`, one Ork per machine and one
-  store, with `--expects` set to the plugin's version, so an older `ork` says to
-  upgrade rather than fail. Without `ork` on `PATH`, Claude Code shows the
-  server as failed in `/mcp`.
+  store, with `--expects` set to the oldest Ork the plugin works with, so an
+  older `ork` says to upgrade rather than fail
+  ([ADR-058](../decisions/ADR-058-plugin-expects-oldest-ork.md)). Without `ork`
+  on `PATH`, Claude Code shows the server as failed in `/mcp`.
 - **The hook** ([no-decide.ts](../plugins/ork/hooks/no-decide.ts)) runs before
-  each of Claude Code's shell commands and stops `ork decide`, however `ork` is
-  reached (a path, `npx @krapht/ork`, `pnpm ork`), unless it only lists
-  (`--list`, `-l`). It tells Claude Code where the person answers. It stops
-  accidents; it isn't a boundary ([gaps](./gaps/limits-claude-code.md)).
+  each of Claude Code's shell commands and stops `ork decide` answering (`--id`
+  or `--choose`), however `ork` is reached (a path, `npx @krapht/ork`,
+  `pnpm ork`) and whatever else is on the line. Without a terminal, which Claude
+  Code's shell doesn't give it, `ork decide` answers only with those, so listing
+  goes ahead. It tells Claude Code where the person answers. It stops accidents;
+  it isn't a boundary ([gaps](./gaps/limits-claude-code.md)).
 - **`ork-dev`** is [.ai/](../.ai/README.md) itself, as its folders already have
   a plugin's layout: the repository's own skills and agents.
 - **Versions** are the CLI's: the release binds them into both `plugin.json`
-  files and the `--expects` of `ork`'s server, and a test fails when one differs
-  from the CLI's `package.json` ([release](../runbook/development/release.md)).
+  files, and a test fails when one differs from the CLI's `package.json`
+  ([release](../runbook/development/release.md)). The `--expects` of `ork`'s
+  server is kept by hand, raised only when the plugin or its skills need
+  something a newer Ork added; a test fails when it names an Ork newer than the
+  CLI's `package.json`.
 
 ## Copies in a project
 

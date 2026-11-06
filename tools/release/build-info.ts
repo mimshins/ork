@@ -2,8 +2,9 @@
  * @file Binds the CLI's name and version into
  *   `packages/cli/src/__build_info__.ts` from its `package.json`, so `ork
  *   --version` and feedback origins read a constant in the sources and in the
- *   bundle alike, and into the Claude Code plugins (RFC-012): their versions,
- *   and the Ork `ork mcp --expects`. Runs after `changeset version` bumps the
+ *   bundle alike, and into the Claude Code plugins' versions (RFC-012). The Ork
+ *   `ork mcp --expects` in `plugins/ork/.mcp.json` is kept by hand, as the
+ *   oldest Ork the plugin works with. Runs after `changeset version` bumps the
  *   package and before every build. Usage: `node tools/release/build-info.ts`.
  */
 
@@ -31,18 +32,15 @@ export const buildInfo = (name: string, version: string): string =>
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 
-/** The files that carry the CLI's version for the plugins. */
+/** The plugins' manifests, which carry the CLI's version. */
 export const PLUGIN_FILES = [
   "plugins/ork/.claude-plugin/plugin.json",
   ".ai/.claude-plugin/plugin.json",
-  "plugins/ork/.mcp.json",
 ].map(file => path.join(ROOT, file));
 
-/** A plugin file's text with `version` bound: its own, and what it expects. */
+/** A plugin manifest's text with its `version` bound. */
 export const withVersion = (text: string, version: string): string =>
-  text
-    .replace(/("version":\s*)"[^"]*"/u, `$1${JSON.stringify(version)}`)
-    .replace(/("--expects",\s*)"[^"]*"/u, `$1${JSON.stringify(version)}`);
+  text.replace(/("version":\s*)"[^"]*"/u, `$1${JSON.stringify(version)}`);
 
 /** The CLI's `package.json` name and version. */
 export const cliPackage = (): { name: string; version: string } => {

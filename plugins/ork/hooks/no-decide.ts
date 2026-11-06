@@ -1,13 +1,18 @@
 /**
  * @file A Claude Code hook (RFC-012): it stops Claude Code answering an Ork
- *   decision through its shell with `ork decide`, as a decision is the
- *   person's. Listing what's open (`--list`) goes ahead. It stops accidents; it
- *   is not a boundary. Node runs it as it is, as Ork needs Node 24.
+ *   decision through its shell with `ork decide --id … --choose …`, as a
+ *   decision is the person's. Listing what's open goes ahead: without a
+ *   terminal, which Claude Code's shell doesn't give it, `ork decide` answers
+ *   only with `--id` or `--choose`. It stops accidents; it is not a boundary.
+ *   Node runs it as it is, as Ork needs Node 24.
  */
 
-/** `ork decide`, however `ork` is reached, unless it only lists. */
+/**
+ * `ork decide` with an answer, however `ork` is reached, to the end of its
+ * command; a backslash carries the command over a line.
+ */
 const ANSWERS =
-  /(?:^|[\s;&|()`$/])ork(?:@\S*)?\s+decide\b(?![^;&|\n]*(?:--list|\s-l\b))/u;
+  /(?:^|[\s;&|()`$/])ork(?:@\S*)?\s+decide\b(?=(?:[^;&|\n\\]|\\[\s\S])*\s--(?:id|choose)\b)/u;
 
 export const answersADecision = (command: string): boolean =>
   ANSWERS.test(command);

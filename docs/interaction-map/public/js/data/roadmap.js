@@ -743,6 +743,7 @@ export const MILESTONES = [
           "9389c79",
           "49b3681",
           "3947f51",
+          "b5a2bee",
         ],
         detail:
           "Before a run, find what can't work: a condition that's never true, a node no path reaches, a loop that can only run out of rounds. The stricter compiler checks are in: a value a condition can never see stops the run, and loops without an exit or a budget warn. The walk of every outcome on the real scheduler is built too, with no sessions and no scripts, and `ork validate`, `ork run` and the builder show what it finds. Reviews found false warnings, so its warnings say only what it tried, held to a fuzz against the real scheduler and to each case found. The guide says what it can't tell, and the limits are in the register. RFC-009, after RFC-010.",
@@ -839,9 +840,10 @@ export const MILESTONES = [
         status: "done",
         date: "2026-11-06",
         detail:
-          "Claude Code, outside a run, learns to write, check and run workflows the way Ork is built to save: an `ork mcp` server on the same code as the CLI, skills for writing, running and Ork's principles, a plugin with both, and the skills through `ork init`. It reads, checks and starts runs, and never answers a decision (RFC-012, ADR-057).",
+          "Claude Code, outside a run, learns to write, check and run workflows the way Ork is built to save: an `ork mcp` server on the same code as the CLI, skills for writing, running and Ork's principles, a plugin with both, and the skills through `ork init`. It reads, checks and starts runs, and never answers a decision (RFC-012, ADR-057). A review's fixes: the hook stops an answer whatever else is on the line, unknown arguments are refused, a newer Ork's skills aren't downgraded, and the plugin expects the oldest Ork it works with (ADR-058).",
         docs: [
           "decisions/ADR-057-ork-for-claude-code.md",
+          "decisions/ADR-058-plugin-expects-oldest-ork.md",
           "rfcs/archived/RFC-012-teaching-claude-code-ork.md",
           "specs/claude-code.md",
           "docs/guides/claude-code.md",
@@ -862,6 +864,7 @@ export const MILESTONES = [
           "c624bbd",
           "49bbd0d",
           "b717604",
+          "f956dc2",
         ],
       },
       {
