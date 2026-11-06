@@ -10,6 +10,7 @@ import path from "node:path";
 import type { Diagnostic, DiagnosticPath } from "@krapht/ork-schema";
 
 import { error } from "../graph/diagnostics.ts";
+import { capLessons } from "./lesson-cap.ts";
 
 export type ContextLayer = "user" | "workflow" | "node";
 
@@ -18,6 +19,8 @@ export type ContextFile = {
   /** Repository-relative, or `~/.ork/…` for the user layer. */
   name: string;
   text: string;
+  /** A lessons file cut at its cap: the whole file's tokens. */
+  cutFrom?: number;
 };
 
 /**
@@ -85,7 +88,7 @@ export const userContext = (home: string): ContextFile[] => {
 
 /**
  * The workflow's accepted lessons, `<lessons>/<workflow>.md` (`.ork/lessons/`
- * in the repository by default), if any.
+ * in the repository by default), if any, cut at their cap (ADR-059).
  */
 export const lessons = (
   workflowName: string,
@@ -96,7 +99,7 @@ export const lessons = (
   const name = inside(projectRoot, file)
     ? path.relative(projectRoot, file)
     : file;
-  return existsSync(file)
-    ? [{ layer: "workflow", name, text: readFileSync(file, "utf8") }]
-    : [];
+  if (!existsSync(file)) return [];
+  const capped = capLessons(readFileSync(file, "utf8"));
+  return [{ layer: "workflow", name, ...capped }];
 };

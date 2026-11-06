@@ -31,14 +31,14 @@ ork doctor                       # node, git, every Claude driver and integratio
 ork validate <wf> [--paths] [--json]   # schema, graph, project rules, agents and skill/context references, with yaml line numbers, then a walk of every way through; `--paths` lists each ending; with no file, the project's triggers too
 ork agents list [--json] | show <name> [--json]   # the agents nodes can take, and where each comes from
 ork agents add <name> [--description d] [--model m] [--from <agent>] [--user] | rm <name> [--user]
-ork run <wf> [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json] [--detach]
+ork run <wf> [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json] [--detach]  # <wf>: a file, a name in .ork/workflows/, or ork:<name>
 ork run <wf> --node <id> [--input k=v] [--driver sdk|cli] [--in-place] [--json]
 ork ps [--all] [--limit n] [--json]               # this project's runs, newest first
 ork logs [<run>] [--node n] [--follow] [--json]   # a run's transcript, replayed or live
 ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node
 ork usage [--all] [--since 30d] [--until day] [--by day|workflow|model|…] [--workflow w] [--json]  # what runs spent over time
 ork prune --older-than 90d [--all] [--dry-run] [--yes]  # forget old runs' logs; what they spent stays
-ork decide [<run>] [--all] [--list] [--json] [--id <d> --choose <option>]  # answer open decisions
+ork decide [<run>] [--all] [--list] [--json] [--id <d> --choose <option> [--note <text>] [--rating good|bad]]  # answer open decisions; --note notes the decision's node
 ork chat <run> <node> [-m <text>] [--driver sdk|cli]  # talk to a node, live or by resuming its session
 ork relay <run>/<node> <run>/<node> [--max-messages n]  # let two running nodes of different runs message each other
 ork relay end <a> <b> | ork relay list [run] [--all] [--json]
@@ -49,7 +49,10 @@ ork resume [<run>] [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty]
 ork watch [--detach] | --status | --accept | --stop  # look at each project's triggers, and start a run for each new thing
 ork worktrees [list|clean]       # Ork's worktrees and branches; clean them up safely
 ork context explain <wf> <node> [--json]  # what one node's session loads, layer by layer
-ork feedback list [--all] [--json] | show <item> [--json] | note <run> [<node>] -m <text> | dismiss <item> | restore <item>  # local feedback (triage, apply, lessons, publish: M2)
+ork feedback list [--all] [--json] | show <item> [--json] | note <run> [<node>] -m <text> | dismiss <item> | restore <item>  # local feedback
+ork feedback accept <item> [--lesson [-m <text>] [--workflow <w>]]  # accept an item; --lesson: every later session of its workflow reads it
+ork feedback apply <item> [--driver sdk|cli]  # Ork's own workflow proposes a fix on a branch; keep or discard it
+ork feedback triage [--yes] | split <item>   # merge items about the same problem, by rules, asking each time; split one back (publish: M2)
 ork upgrade [--check] [--yes]    # a newer version? upgrade the way Ork was installed, after asking
 ork ui [--port <n>] [--no-open]  # the local server (127.0.0.1:4417) and its page; opens the running one
 ork mcp [--expects <version>]    # Ork's tools for Claude Code over stdio (MCP): read, check, start; never decide

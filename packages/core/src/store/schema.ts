@@ -210,6 +210,9 @@ export const MIGRATIONS: readonly (string | ((db: DatabaseSync) => void))[] = [
      pid INTEGER NOT NULL,
      at TEXT NOT NULL
    );`,
+  // 13: items triage merged into another (ADR-059).
+  `ALTER TABLE feedback_items ADD COLUMN merged_into TEXT;
+   CREATE INDEX feedback_items_merged ON feedback_items (merged_into);`,
 ];
 
 const versionOf = (db: DatabaseSync): number =>

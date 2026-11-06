@@ -80,7 +80,7 @@ export const JOURNEYS = [
   {
     id: "lesson",
     title: "Triage, then a lesson",
-    who: "You · ork:feedback-triage",
+    who: "You · Ork's triage",
     summary:
       "You triage new items, accept one as a lesson, and the workflow's next run starts knowing it.",
     steps: [
@@ -89,25 +89,22 @@ export const JOURNEYS = [
         to: "actions",
         title: "You run `ork feedback triage`",
         detail: "Over every item still `new`.",
-        status: "planned",
         docs: [DESIGN.cli],
       },
       {
         from: "actions",
         to: "triage",
-        title: "Ork runs its own triage workflow",
+        title: "Ork merges near-duplicates by rules",
         detail:
-          "`ork:feedback-triage` is a workflow like yours, run by the same engine.",
-        status: "planned",
+          "The same target and kind, and titles that share 80% of their words. It shows each merge and asks first; no model runs.",
         docs: [DESIGN.feedback],
       },
       {
         from: "triage",
         to: "table",
-        title: "Items merged and summarized",
+        title: "Items merged",
         detail:
-          "Near-duplicates become one item, each gets a summary and a proposed fix, and they are marked `triaged`.",
-        status: "planned",
+          "Near-duplicates become one item, and what triage saw is marked `triaged`.",
       },
       {
         from: "you",
@@ -115,21 +112,18 @@ export const JOURNEYS = [
         title: "You accept an item as a lesson",
         detail:
           'The builder\'s context gap: "The spec is at `nodes.spec.output.artifacts.spec`." Feedback is model output, so only your acceptance makes it a lesson.',
-        status: "planned",
       },
       {
         from: "actions",
         to: "apply",
         title: "The lesson is written",
         detail: "The item becomes `accepted`.",
-        status: "planned",
       },
       {
         from: "apply",
         to: "lessons",
         title: "Into `.ork/lessons/software-factory.md`",
         detail: "A committed file you can review, edit and version with git.",
-        status: "planned",
         docs: [DESIGN.feedback],
       },
       {
@@ -137,8 +131,7 @@ export const JOURNEYS = [
         to: "compiler",
         title: "The next run loads it",
         detail:
-          "As part of the workflow layer, for every node of that workflow; the 1,500-token cap is planned.",
-        status: "partial",
+          "As part of the workflow layer, for every node of that workflow, up to 1,500 tokens.",
         docs: [DESIGN.context],
       },
       {
@@ -159,39 +152,36 @@ export const JOURNEYS = [
         from: "you",
         to: "actions",
         title: "You run `ork feedback apply <item>`",
-        detail: "On a triaged `workflow` or `project` item.",
-        status: "planned",
+        detail:
+          "On a `workflow` or `project` item; it runs Ork's own `ork:feedback-apply`.",
         docs: [DESIGN.cli],
       },
       {
         from: "actions",
         to: "apply",
-        title: "A node proposes the fix",
+        title: "`ork:feedback-apply` proposes the fix",
         detail:
-          "For example, an edit to the builder's brief in the workflow file, or a line in `AGENTS.md`.",
-        status: "planned",
+          "Ork's own workflow: a worker in a worktree commits, for example, an edit to the builder's brief in the workflow file, or a line in `AGENTS.md`.",
         docs: [DESIGN.feedback],
       },
       {
         from: "apply",
         to: "decisions",
-        title: "The diff becomes a decision",
-        detail: "Nothing is applied while it waits.",
-        status: "planned",
+        title: "A gate asks: keep or discard",
+        detail: "Nothing is merged, whatever you answer.",
       },
       {
         from: "actions",
         to: "decisions",
-        title: "You read it and accept",
-        detail: "Decline, and nothing changes.",
-        status: "planned",
+        title: "You read it and keep it",
+        detail: "Discard, and its branch is removed.",
       },
       {
         from: "apply",
         to: "repoFiles",
-        title: "It lands on a branch",
-        detail: "You review and merge it like any other change.",
-        status: "planned",
+        title: "It stays on its branch",
+        detail:
+          "The item is `resolved`; you review and merge it like any other change.",
       },
     ],
   },
@@ -234,16 +224,17 @@ export const JOURNEYS = [
       },
       {
         from: "publish",
-        to: "decisions",
+        to: "actions",
         title: "You see the exact text",
-        detail: "As a decision: what you confirm is what is posted.",
+        detail:
+          "In the terminal, or the Feedback panel: what you confirm is what is posted.",
         status: "planned",
       },
       {
         from: "actions",
-        to: "decisions",
         title: "You confirm",
-        detail: "Decline, and nothing leaves your machine.",
+        detail:
+          "With `y`, or the panel's Publish; anything else, and nothing leaves your machine.",
         status: "planned",
       },
       {

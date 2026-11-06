@@ -50,6 +50,23 @@ describe("the Context panel's model", () => {
     ]);
   });
 
+  it("says a lessons file was cut at its cap", () => {
+    const [, , , files] = sectionsOf({
+      ...EXPLANATION,
+      files: [
+        {
+          layer: "workflow",
+          name: ".ork/lessons/review.md",
+          tokens: 1500,
+          cutFrom: 2100,
+        },
+      ],
+    });
+    expect(files?.pieces[0]?.why).toBe(
+      "cut at the lessons cap a session loads; the whole file is about 2,100 tokens",
+    );
+  });
+
   it("makes the planner's words a sentence without changing them", () => {
     expect(sentence("shadowed by the workflow layer")).toBe(
       "Shadowed by the workflow layer.",

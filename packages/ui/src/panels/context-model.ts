@@ -118,6 +118,11 @@ export const sectionsOf = (e: Explanation): Section[] => {
     tokens: f.tokens,
     text: f.text ?? "",
     place: f.name,
+    ...(f.cutFrom === undefined
+      ? {}
+      : {
+          why: `cut at the lessons cap a session loads; the whole file is about ${count(f.cutFrom)} tokens`,
+        }),
   }));
   const practices: Piece[] = [
     ...e.practices.map(p => ({

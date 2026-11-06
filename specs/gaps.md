@@ -83,5 +83,6 @@ Each is in [Limits](./gaps/limits.md), from L2 on.
 - [Limits: watching a source](./gaps/limits-watching.md)
 - [Limits: design tokens](./gaps/limits-tokens.md)
 - [Limits: walking a workflow](./gaps/limits-walking.md)
+- [Limits: the feedback loop](./gaps/limits-feedback.md)
 - [Limits: Ork for Claude Code](./gaps/limits-claude-code.md)
 - [Limits: the context inspector](./gaps/limits-context-inspector.md)

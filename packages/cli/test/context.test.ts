@@ -91,6 +91,22 @@ describe("ork context explain", () => {
     );
   });
 
+  it("loads the workflow's lessons, saying when they were cut at the cap", () => {
+    const { root, home } = project();
+    const line = `- ${"x".repeat(3997)}\n`;
+    write(root, ".ork/lessons/t.md", line + line);
+    const e = explained(".ork/workflows/t.ork.yaml", "fix", root, home);
+    expect(e.files.at(-1)).toEqual({
+      layer: "workflow",
+      name: ".ork/lessons/t.md",
+      tokens: tokens(line),
+      cutFrom: tokens(line + line),
+    });
+    expect(formatExplanation(e).join("\n")).toContain(
+      "cut at the 1,500-token cap; the whole file is ≈2,000",
+    );
+  });
+
   it("reports a node that does not exist", () => {
     const { root, home } = project();
     expect(

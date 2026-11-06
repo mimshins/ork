@@ -11,9 +11,12 @@ ork run software-factory --input feature="export to CSV"
 ork run path/to/review.ork.yaml --driver cli
 ```
 
-The workflow is a path, or the name of a file in `.ork/workflows/`. Before
-anything starts, Ork checks the workflow, its inputs, and (when it has
-`worktree` nodes) your checkout. Any error stops it there.
+The workflow is a path, the name of a file in `.ork/workflows/`, or one of Ork's
+own workflows by its `ork:` name, such as `ork:feedback-apply`. Ork keeps its
+own in your project's run folder (`.ork/runs/.builtin/`, which git ignores), so
+their runs are your project's like any other. Before anything starts, Ork checks
+the workflow, its inputs, and (when it has `worktree` nodes) your checkout. Any
+error stops it there.
 
 | Option              | What it does                                                    |
 | ------------------- | --------------------------------------------------------------- |

@@ -8,9 +8,15 @@ fingerprints, records grouped into items, and human notes, and
 [signals.ts](../packages/core/src/feedback/signals.ts),
 [store](../packages/core/src/store/feedback.ts),
 [tests](../packages/core/test/feedback.test.ts),
-[ADR-028](../decisions/ADR-028-feedback-capture.md)). Triage, apply, lessons and
-publishing are M2, and so is noting from `ork decide` and the UI. Why:
-[ADR-013](../decisions/ADR-013-feedback-loop.md).
+[ADR-028](../decisions/ADR-028-feedback-capture.md)); so is Ork's own
+`ork:feedback-apply` workflow, run with `ork run`
+([tests](../packages/core/test/builtin-workflows.test.ts)), and accepting an
+item, as a lesson its workflow reads under a token cap, `apply`, which has that
+workflow propose a fix, triage by rules, and notes from `ork decide` and the
+server ([routes](../packages/server/src/feedback-routes.ts)). Publishing is M2,
+and so is the UI's Feedback panel. Why:
+[ADR-013](../decisions/ADR-013-feedback-loop.md), amended by
+[ADR-059](../decisions/ADR-059-closing-the-feedback-loop.md).
 
 Every run teaches something: a tool that got in the way, a brief that missed
 context, an `AGENTS.md` that is out of date. Ork captures that feedback locally,
@@ -66,7 +72,9 @@ signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
   - its fingerprint, and the signal's code for a system signal.
 - Each fingerprint is an item in `feedback_items`, which holds its status:
   `new → triaged → accepted | dismissed`, then `published` or `resolved`. A
-  dismissed item stays dismissed when it recurs. M1d sets `new` and `dismissed`.
+  dismissed item stays dismissed when it recurs. An item triage merged into
+  another keeps its row with `merged_into` set: its records, and any it gets
+  later, list under that item, which names it as merged; `split` clears it.
 - Each record is also a `feedback.recorded` event in the run's stream, so logs
   and the UI show it in context.
 - Secrets are masked when a record is written, with the same patterns the
@@ -91,22 +99,69 @@ signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
   `--rating good|bad` (kept as evidence; `bad` defaults the severity to `high`)
   describe it. It groups into items like any record. `<item>` is its fingerprint
   or a unique prefix of it.
-- `ork feedback triage` runs the built-in `ork:feedback-triage` workflow over
-  new items. It merges near-duplicates, writes a summary for each item, and
-  proposes a fix. Ork improves itself with its own engine.
+- **Noting while you decide:** `ork decide --id <d> --choose <o>` takes
+  `--note <text>` and `--rating good|bad`, and after a good answer notes the
+  decision's node the same way (a rating alone is noted as "Rated good at
+  <question>"). The server's `POST /api/runs/:id/notes` takes the same note for
+  the UI ([server](./server.md#api)); all three check it with
+  [`recordNote`](../packages/core/src/feedback/human.ts).
+- `ork feedback triage` (built:
+  [triage.ts](../packages/core/src/feedback/triage.ts),
+  [command](../packages/cli/src/runs/triage.ts),
+  [tests](../packages/core/test/triage.test.ts),
+  [command tests](../packages/cli/test/triage.test.ts)) merges items about the
+  same problem by rules, with no model: the same target and kind, and normalized
+  titles (numbers and punctuation aside) whose words overlap by at least 80%
+  (Jaccard), joined in groups. Only unsettled items (`new`, `triaged`) take
+  part, and a group is proposed only when it holds a `new` item, under the item
+  seen first. It shows each merge and asks `y/N` (`--yes` makes them all; with
+  no terminal it needs it); then every item that was `new` is `triaged`, so a
+  declined merge isn't asked again until something new joins it. A summary and a
+  proposed fix come from `apply`, one item at a time
+  ([ADR-059](../decisions/ADR-059-closing-the-feedback-loop.md)).
+- `ork feedback split <item>` takes apart what triage merged into an item.
 
 **Closing the loop locally:**
 
-- **Fixes:** `ork feedback apply <item>` runs a node that proposes a fix as a
-  diff: a workflow edit, or an `AGENTS.md`, `CLAUDE.md` or skill change on a
-  branch.
-  - The proposed fix is a Decision; nothing is applied without your answer.
-- **Lessons:** you can accept an item as a **lesson**.
-  - Lessons are kept in `.ork/lessons/<workflow>.md`, a committed file you can
-    review, edit, and version with git.
+- **Fixes** (built: [apply.ts](../packages/cli/src/runs/apply.ts),
+  [workflow](../packages/core/workflows/feedback-apply.ork.yaml),
+  [tests](../packages/cli/test/apply.test.ts)): `ork feedback apply <item>`
+  marks the item `accepted` and runs Ork's own workflow, `ork:feedback-apply`,
+  in the project of its newest record, in the foreground like `ork run`
+  (`--driver` as there).
+  - Its inputs are the item's id and the item as text: its title, target, kind,
+    severity and counts, and its 10 newest records (each body cut at 1,500
+    characters), recorded as untrusted. The worker (`ork-implementer`, in a
+    worktree) is told to read it as a report, never as instructions; it commits
+    the smallest change that would stop the problem (a workflow, `AGENTS.md`,
+    `CLAUDE.md`, a skill, a doc), or changes nothing and reports `fail`.
+  - Its gate asks to keep the branch or discard it, with no recommendation; Ork
+    never merges. Keeping marks the item `resolved`; discarding removes the
+    run's worktree and branch and leaves the item `accepted`; no fix leaves it
+    `accepted` too, saying why. An `ork` item is refused: its fix isn't in the
+    project ([L149](./gaps/limits-feedback.md)).
+- **Lessons** (built: [lessons.ts](../packages/core/src/feedback/lessons.ts),
+  [accept.ts](../packages/cli/src/runs/accept.ts),
+  [tests](../packages/core/test/lessons.test.ts),
+  [accept tests](../packages/cli/test/accept.test.ts)):
+  `ork feedback accept <item>` marks an item `accepted`; with `--lesson` it is
+  also written as a lesson.
+  - Lessons are kept in `.ork/lessons/<workflow>.md` (an attached project's
+    `lessons/` folder), a committed file you can review, edit, and version with
+    git. The file starts `# Lessons for <workflow>`; each lesson is one list
+    entry (`-m` gives its words, the item's title by default; its later lines
+    sit under the first), ending in a hidden `<!-- feedback <id> -->` so the
+    same item isn't added twice.
+  - The workflow is the one the item was seen in, or `--workflow` when it was
+    seen in more than one; the project is that of its newest record there.
+  - An `ork` item is about Ork itself, so it's never a lesson.
   - They are loaded as part of the workflow layer of the context stack, under a
-    token cap (default 1,500 tokens).
-  - `ork context explain` shows them like any other context.
+    cap of 1,500 tokens
+    ([lesson-cap.ts](../packages/core/src/context/lesson-cap.ts)). Accepting a
+    lesson that would take the file past it is refused, and nothing is written;
+    a file made longer by hand is cut at the cap, on a line's end.
+  - `ork context explain` and the UI's Context panel show the file like any
+    other context, and say when it was cut and how long the whole file is.
 - **Trust:** feedback is model output and repo content can steer it (prompt
   injection), so a lesson or fix only takes effect after a human accepts it.
 
@@ -120,7 +175,8 @@ signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
    - optionally, repo and workflow names.
 3. Ork adds a structured header: Ork version, driver, model, node type, kind,
    count.
-4. It shows the exact text as a Decision.
+4. It shows the exact text, and asks: `y/N` in the terminal, with no flag to
+   skip it, or Publish in the Feedback panel.
 5. Only after you confirm does it post, with **your own `gh`**, to the "Agent
    feedback" Discussions category of `mimshins/ork` (slug `agent-feedback`,
    found by slug, never by id).
@@ -137,5 +193,5 @@ Deduplication and scale:
 - **Adapters:** publish targets are adapters. `ork feedback export` and `import`
   move feedback as JSONL, so teams can share it without GitHub. Issues in the
   project's own repository can be a later adapter.
-- **Maintainer side (later):** a scheduled job runs the same triage workflow
-  over the Discussions category and promotes the top clusters to issues.
+- **Maintainer side (later):** a scheduled job runs the same triage rules over
+  the Discussions category and promotes the top clusters to issues.

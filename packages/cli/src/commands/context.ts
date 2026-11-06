@@ -10,11 +10,12 @@ import {
   estimateTokens,
   type Explanation,
   explainSession,
+  LESSON_CAP_TOKENS,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import { style, write } from "../output.ts";
-import { workflowArg } from "../workflows.ts";
+import { refusedBuiltin, workflowArg } from "../workflows.ts";
 import { formatReport, loadWorkflow } from "./validate.ts";
 
 /** A rough count, for comparing sizes: about four characters a token. */
@@ -78,7 +79,11 @@ export const formatExplanation = (e: Explanation): string[] => {
   lines.push("", style("bold", "Context files"));
   if (e.files.length === 0) lines.push(style("dim", "  none"));
   for (const f of e.files) {
-    lines.push(`  ${f.layer.padEnd(8)}  ${f.name}  ${approx(f.tokens)}`);
+    const cut =
+      f.cutFrom === undefined
+        ? ""
+        : `  ${style("yellow", `cut at the ${LESSON_CAP_TOKENS.toLocaleString("en")}-token cap; the whole file is ${approx(f.cutFrom)}`)}`;
+    lines.push(`  ${f.layer.padEnd(8)}  ${f.name}  ${approx(f.tokens)}${cut}`);
   }
   lines.push("", style("bold", "Practices"));
   for (const p of e.practices)
@@ -107,7 +112,7 @@ const explain = defineCommand({
     workflow: {
       type: "positional",
       description:
-        "A workflow file, or the name of one in the project's workflows (.ork/workflows/)",
+        "A workflow file, the name of one in the project's workflows (.ork/workflows/), or one of Ork's own (ork:feedback-apply)",
       required: true,
     },
     node: { type: "positional", description: "Node id", required: true },
@@ -115,6 +120,7 @@ const explain = defineCommand({
   },
   run: ({ args }) => {
     const cwd = process.cwd();
+    if (refusedBuiltin([args.workflow])) return;
     const result = explainNode(
       workflowArg(args.workflow, cwd).file,
       args.node,

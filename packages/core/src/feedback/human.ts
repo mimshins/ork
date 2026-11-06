@@ -1,18 +1,21 @@
 /**
  * @file Human notes (specs/feedback.md): a person's rating or note on a run or
- *   one node's result, from `ork feedback note`. It becomes a
- *   `feedback.recorded` event of that run with source `human`, grouped and
- *   triaged like agent and system records.
+ *   one node's result, from `ork feedback note`, `ork decide --note` or the UI.
+ *   It becomes a `feedback.recorded` event of that run with source `human`,
+ *   grouped and triaged like agent and system records.
  */
 
 import type { RunEvent } from "../run/types.ts";
 import { maskSecrets } from "../store/mask.ts";
+import type { EventStore, RunRecord } from "../store/types.ts";
 import { fingerprint, targetOf } from "./fingerprint.ts";
-import type {
-  FeedbackKind,
-  FeedbackReport,
-  FeedbackSeverity,
-  FeedbackTarget,
+import {
+  FEEDBACK_KINDS,
+  FEEDBACK_SEVERITIES,
+  type FeedbackKind,
+  type FeedbackReport,
+  type FeedbackSeverity,
+  type FeedbackTarget,
 } from "./types.ts";
 
 export const RATINGS = ["good", "bad"] as const;
@@ -56,5 +59,67 @@ export const humanNoteEvent = (note: HumanNote): RunEvent => {
     type: "feedback.recorded",
     ...(note.node === undefined ? {} : { node: note.node }),
     feedback,
+  };
+};
+
+/** What a person writes to note a run or one of its nodes, unchecked. */
+export type NoteAsk = {
+  text: string;
+  node?: string | undefined;
+  kind?: string | undefined;
+  severity?: string | undefined;
+  rating?: string | undefined;
+};
+
+export type Noted = { ok: true; item: string } | { ok: false; error: string };
+
+/** `value` when it's one of `allowed`, or why not. */
+const checked = <T extends string>(
+  name: string,
+  value: string | undefined,
+  allowed: readonly T[],
+): { ok: true; value?: T } | { ok: false; error: string } => {
+  if (value === undefined) return { ok: true };
+  const found = allowed.find(a => a === value);
+  return found === undefined
+    ? { ok: false, error: `${name} is one of ${allowed.join(", ")}` }
+    : { ok: true, value: found };
+};
+
+/**
+ * Records a person's note on `run`, or one node that ran in it, as that run's
+ * feedback (a run that ended takes it too); returns the item it joins, or why
+ * it can't. `ork feedback note`, `ork decide --note` and the UI write it.
+ */
+export const recordNote = (
+  store: Pick<EventStore, "events" | "append">,
+  run: Pick<RunRecord, "id" | "workflow">,
+  ask: NoteAsk,
+): Noted => {
+  if (ask.text.trim() === "") return { ok: false, error: "The note is empty." };
+  const ran = store
+    .events(run.id)
+    .some(({ event }) => "id" in event && event.id === ask.node);
+  if (ask.node !== undefined && !ran) {
+    return { ok: false, error: `No node ${ask.node} ran in run ${run.id}.` };
+  }
+  const kind = checked("kind", ask.kind, FEEDBACK_KINDS);
+  const severity = checked("severity", ask.severity, FEEDBACK_SEVERITIES);
+  const rating = checked("rating", ask.rating, RATINGS);
+  if (!kind.ok) return kind;
+  if (!severity.ok) return severity;
+  if (!rating.ok) return rating;
+  const event = humanNoteEvent({
+    text: ask.text,
+    workflow: run.workflow,
+    ...(ask.node === undefined ? {} : { node: ask.node }),
+    ...(kind.value === undefined ? {} : { kind: kind.value }),
+    ...(severity.value === undefined ? {} : { severity: severity.value }),
+    ...(rating.value === undefined ? {} : { rating: rating.value }),
+  });
+  store.append(run.id, event);
+  return {
+    ok: true,
+    item: event.type === "feedback.recorded" ? event.feedback.fingerprint : "",
   };
 };

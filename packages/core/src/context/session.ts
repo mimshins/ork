@@ -12,6 +12,8 @@ import type { ContextFile, ContextLayer } from "./files.ts";
 import type { ContextStack } from "./resolve.ts";
 import { SKILL_FILE } from "./skills.ts";
 
+export { SKILL_FILE };
+
 /** The plugin's name, and so the namespace of its skills. */
 export const PLUGIN_NAME = "ork";
 

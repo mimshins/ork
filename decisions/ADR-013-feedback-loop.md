@@ -1,6 +1,7 @@
 # ADR-013 — The feedback loop
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by
+  [ADR-059](./ADR-059-closing-the-feedback-loop.md)
 - **Date:** 2026-10-30
 - **Topic:** feedback / self-improvement
 - **RFC:** waived — decided in design review on 2026-10-30

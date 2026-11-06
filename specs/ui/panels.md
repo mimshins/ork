@@ -330,8 +330,9 @@ What the latest chosen node's session loads, layer by layer, as
   sum (never a total across them, since they don't add up). Each piece is a row
   that opens its words exactly as the session reads them, in monospace, with a
   copy button; it shows whether it's live, its layer, where it comes from and
-  its estimated size, and an off piece says why, in the planner's words. A row's
-  name is what it shows, in order, with the words only a screen reader needs
+  its estimated size, and an off piece says why, in the planner's words; a
+  lessons file cut at its cap says so, with the whole file's size. A row's name
+  is what it shows, in order, with the words only a screen reader needs
   ("layer", "about", "tokens"), so a spoken command can say what's seen.
 - **Words:** a node with no session, or a workflow with errors, shows "No
   context to show." and the planner's reason; a failed ask offers **Try again**,

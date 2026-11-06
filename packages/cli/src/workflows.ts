@@ -1,14 +1,23 @@
 /**
  * @file Finding workflow files: the project's workflows folder by default
- *   (`.ork/workflows/`, or an attached project's), directories expanded, and a
- *   workflow given by name.
+ *   (`.ork/workflows/`, or an attached project's), directories expanded, a
+ *   workflow given by name, and one of Ork's own by its `ork:` name, written
+ *   into the project's run folder.
  */
 
 import { existsSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
-import { placeFiles, type ProjectPlace, runDirOf } from "@krapht/ork-core";
+import {
+  builtinWorkflowFile,
+  isBuiltinArg,
+  placeFiles,
+  type ProjectPlace,
+  runDirOf,
+  unknownBuiltin,
+} from "@krapht/ork-core";
 
+import { writeErr } from "./output.ts";
 import { fromCwd, projectAt } from "./project/place.ts";
 
 export const WORKFLOW_DIR = path.join(".ork", "workflows");
@@ -39,20 +48,36 @@ export const findWorkflowFiles = (
 };
 
 /**
- * A workflow given by path, or by name for one in the project's workflows
- * folder: `hello` is `.ork/workflows/hello.ork.yaml` when no file `hello`
- * exists.
+ * A workflow given by path, by name for one in the project's workflows folder
+ * (`hello` is `.ork/workflows/hello.ork.yaml` when no file `hello` exists), or
+ * by its `ork:` name for one of Ork's own. An unknown `ork:` name comes back as
+ * it is: commands refuse it first (`unknownBuiltin`).
  */
 export const resolveWorkflowArg = (
   arg: string,
   cwd: string,
   workflows: string = path.join(cwd, WORKFLOW_DIR),
 ): string => {
+  if (isBuiltinArg(arg)) {
+    const file = builtinWorkflowFile(projectAt(cwd), arg);
+    return file === undefined ? arg : fromCwd(file, cwd);
+  }
   if (existsSync(path.resolve(cwd, arg)) || arg.endsWith(WORKFLOW_SUFFIX)) {
     return arg;
   }
   const named = path.join(workflows, `${arg}${WORKFLOW_SUFFIX}`);
   return existsSync(named) ? fromCwd(named, cwd) : arg;
+};
+
+/**
+ * Refuses an `ork:` name that isn't one of Ork's workflows, saying which are;
+ * true when it did, so the command stops.
+ */
+export const refusedBuiltin = (args: readonly string[]): boolean => {
+  const problems = args.flatMap(arg => unknownBuiltin(arg) ?? []);
+  for (const problem of problems) writeErr(problem);
+  if (problems.length > 0) process.exitCode = 1;
+  return problems.length > 0;
 };
 
 /**

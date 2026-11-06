@@ -1,40 +1,17 @@
 /**
- * @file `ork ps`, `ork logs`, `ork tree` and `ork feedback`: read what every
- *   project's runs recorded in `~/.ork/state.db` (specs/event-store.md,
- *   specs/feedback.md).
+ * @file `ork ps`, `ork logs` and `ork tree`: read what every project's runs
+ *   recorded in `~/.ork/state.db` (specs/event-store.md).
  */
 
-import {
-  type EventStore,
-  findRun,
-  openStore,
-  placeFor,
-  runStatus,
-  runTree,
-} from "@krapht/ork-core";
+import { findRun, placeFor, runStatus, runTree } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import { style, write, writeErr } from "../output.ts";
-import {
-  findFeedbackItem,
-  noteRun,
-  formatFeedbackItem,
-  formatFeedbackItems,
-} from "../runs/feedback.ts";
 import { cost, formatRuns, formatTree } from "../runs/format.ts";
 import { followRun } from "../runs/logs.ts";
+import { withStore } from "../store.ts";
 
-/** Runs `body` with the user's store open, and closes it after. */
-const withStore = async (
-  body: (store: EventStore) => Promise<void> | void,
-): Promise<void> => {
-  const store = openStore();
-  try {
-    await body(store);
-  } finally {
-    store.close();
-  }
-};
+export { feedback } from "./feedback.ts";
 
 export const ps = defineCommand({
   meta: { name: "ps", description: "List this project's runs, newest first" },
@@ -145,145 +122,4 @@ export const tree = defineCommand({
       );
       for (const line of formatTree(roots)) write(line);
     }),
-});
-
-const itemArg = {
-  type: "positional",
-  description: "A feedback item's id, or a prefix of one",
-  required: true,
-} as const;
-
-const json = {
-  type: "boolean",
-  description: "Print JSON",
-  default: false,
-} as const;
-
-export const feedback = defineCommand({
-  meta: {
-    name: "feedback",
-    description:
-      "What got in the way in your runs, grouped: list, show, note, dismiss, restore",
-  },
-  subCommands: {
-    list: defineCommand({
-      meta: { name: "list", description: "List feedback items, newest first" },
-      args: {
-        all: {
-          type: "boolean",
-          description: "Dismissed items too",
-          default: false,
-        },
-        json,
-      },
-      run: ({ args }) =>
-        withStore(store => {
-          const items = store.feedbackItems({ all: args.all });
-          if (args.json) write(JSON.stringify(items, undefined, 2));
-          else for (const line of formatFeedbackItems(items)) write(line);
-        }),
-    }),
-    show: defineCommand({
-      meta: { name: "show", description: "Show an item and its records" },
-      args: { item: itemArg, json },
-      run: ({ args }) =>
-        withStore(store => {
-          const found = findFeedbackItem(store, args.item);
-          if (!found.ok) {
-            writeErr(found.error);
-            process.exitCode = 1;
-            return;
-          }
-          const records = store.feedbackRecords(found.item.id);
-          if (args.json) {
-            write(JSON.stringify({ ...found.item, records }, undefined, 2));
-            return;
-          }
-          for (const line of formatFeedbackItem(found.item, records)) {
-            write(line);
-          }
-        }),
-    }),
-    note: defineCommand({
-      meta: {
-        name: "note",
-        description:
-          "Note how a run or one of its nodes went; it joins the feedback",
-      },
-      args: {
-        run: {
-          type: "positional",
-          description: "A run id or a prefix of one",
-          required: true,
-        },
-        node: {
-          type: "positional",
-          description: "One of its nodes",
-          required: false,
-        },
-        message: {
-          type: "string",
-          alias: "m",
-          description: "The note; its first line is the title",
-          required: true,
-        },
-        kind: { type: "string", description: "friction (default), bug, …" },
-        severity: { type: "string", description: "low, medium or high" },
-        rating: { type: "string", description: "good or bad" },
-      },
-      run: ({ args }) =>
-        withStore(store => {
-          const noted = noteRun(store, process.cwd(), {
-            ...args,
-            text: args.message,
-          });
-          if (noted.ok) {
-            write(`${style("green", "✓")} noted in item ${noted.item}`);
-            return;
-          }
-          writeErr(noted.error);
-          process.exitCode = 1;
-        }),
-    }),
-    dismiss: defineCommand({
-      meta: {
-        name: "dismiss",
-        description: "Dismiss an item: it leaves the list, and stays dismissed",
-      },
-      args: { item: itemArg },
-      run: ({ args }) =>
-        withStore(store => {
-          const found = findFeedbackItem(store, args.item);
-          if (!found.ok) {
-            writeErr(found.error);
-            process.exitCode = 1;
-            return;
-          }
-          store.setFeedbackStatus(found.item.id, "dismissed");
-          write(
-            `${style("green", "✓")} dismissed ${found.item.id}: ${found.item.title}`,
-          );
-        }),
-    }),
-    restore: defineCommand({
-      meta: {
-        name: "restore",
-        description: "Bring a dismissed item back to the list, as new",
-      },
-      args: { item: itemArg },
-      run: ({ args }) =>
-        withStore(store => {
-          const found = findFeedbackItem(store, args.item);
-          if (!found.ok) {
-            writeErr(found.error);
-            process.exitCode = 1;
-            return;
-          }
-          store.setFeedbackStatus(found.item.id, "new");
-          write(
-            `${style("green", "✓")} restored ${found.item.id}: ${found.item.title}`,
-          );
-        }),
-    }),
-  },
 });

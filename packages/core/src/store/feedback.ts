@@ -1,7 +1,8 @@
 /**
  * @file The store's feedback (specs/feedback.md): each `feedback.recorded`
  *   event written as a record, with secrets masked, and records grouped by
- *   fingerprint into items that carry a status (`ork feedback`).
+ *   fingerprint into items that carry a status (`ork feedback`). An item triage
+ *   merged into another lists under it, with its later records too (ADR-059).
  */
 
 import type { DatabaseSync } from "node:sqlite";
@@ -15,14 +16,14 @@ import {
   type FeedbackReport,
   type FeedbackSource,
 } from "../feedback/types.ts";
-import { maskSecrets } from "./mask.ts";
-import { type Row, text } from "./rows.ts";
 import type {
   FeedbackItem,
   FeedbackRecord,
   FeedbackStatus,
   FeedbackStore,
-} from "./types.ts";
+} from "./feedback-types.ts";
+import { maskSecrets } from "./mask.ts";
+import { type Row, text } from "./rows.ts";
 
 const STATUSES: readonly FeedbackStatus[] = [
   "new",
@@ -91,8 +92,10 @@ const recordOf = (row: Row): FeedbackRecord => {
 
 const itemOf = (row: Row): FeedbackItem => {
   const severities = strings(row, "severities");
+  const id = text(row, "fingerprint");
   return {
-    id: text(row, "fingerprint"),
+    id,
+    merged: strings(row, "fingerprints").filter(f => f !== id),
     status: oneOf(STATUSES, text(row, "status"), "new"),
     title: text(row, "title"),
     target: oneOf(FEEDBACK_TARGETS, text(row, "target"), "workflow"),
@@ -112,16 +115,20 @@ const itemOf = (row: Row): FeedbackItem => {
   };
 };
 
-const ITEMS = `SELECT f.fingerprint, i.status,
-     (SELECT title FROM feedback WHERE fingerprint = f.fingerprint ORDER BY id LIMIT 1) AS title,
+/** Each record with the item it lists under: its own, or the one it merged into. */
+const ITEMS = `SELECT r.fingerprint, r.status,
+     (SELECT title FROM feedback WHERE fingerprint = r.fingerprint ORDER BY id LIMIT 1) AS title,
      MIN(f.target) AS target, MIN(f.kind) AS kind,
      json_group_array(DISTINCT f.severity) AS severities,
      json_group_array(DISTINCT f.source) AS sources,
      COUNT(*) AS count, MIN(f.at) AS first_seen, MAX(f.at) AS last_seen,
      json_group_array(DISTINCT f.run_id) AS runs,
      json_group_array(DISTINCT f.workflow) AS workflows,
-     json_group_array(DISTINCT f.model) AS models
-   FROM feedback f JOIN feedback_items i ON i.fingerprint = f.fingerprint`;
+     json_group_array(DISTINCT f.model) AS models,
+     json_group_array(DISTINCT f.fingerprint) AS fingerprints
+   FROM feedback f
+   JOIN feedback_items i ON i.fingerprint = f.fingerprint
+   JOIN feedback_items r ON r.fingerprint = COALESCE(i.merged_into, i.fingerprint)`;
 
 export const feedbackQueries = (
   db: DatabaseSync,
@@ -146,16 +153,27 @@ export const feedbackQueries = (
      VALUES (?, 'new', ?) ON CONFLICT (fingerprint) DO NOTHING`,
   );
   const shown = db.prepare(
-    `${ITEMS} WHERE i.status != 'dismissed' GROUP BY f.fingerprint ORDER BY last_seen DESC`,
+    `${ITEMS} WHERE r.status != 'dismissed' GROUP BY r.fingerprint ORDER BY last_seen DESC`,
   );
   const every = db.prepare(
-    `${ITEMS} GROUP BY f.fingerprint ORDER BY last_seen DESC`,
+    `${ITEMS} GROUP BY r.fingerprint ORDER BY last_seen DESC`,
   );
   const byPrefix = db.prepare(
-    `${ITEMS} WHERE substr(f.fingerprint, 1, ?) = ? GROUP BY f.fingerprint ORDER BY last_seen DESC`,
+    `${ITEMS} WHERE substr(r.fingerprint, 1, ?) = ? GROUP BY r.fingerprint ORDER BY last_seen DESC`,
   );
   const records = db.prepare(
-    "SELECT * FROM feedback WHERE fingerprint = ? ORDER BY id",
+    `SELECT f.* FROM feedback f LEFT JOIN feedback_items i ON i.fingerprint = f.fingerprint
+     WHERE COALESCE(i.merged_into, f.fingerprint) = ? ORDER BY f.id`,
+  );
+  const rootOf = db.prepare(
+    "SELECT COALESCE(merged_into, fingerprint) AS root FROM feedback_items WHERE fingerprint = ?",
+  );
+  const mergeInto = db.prepare(
+    `UPDATE feedback_items SET merged_into = ?, updated_at = ?
+     WHERE (fingerprint = ? OR merged_into = ?) AND fingerprint != ?`,
+  );
+  const split = db.prepare(
+    "UPDATE feedback_items SET merged_into = NULL, updated_at = ? WHERE merged_into = ?",
   );
   const setStatus = db.prepare(
     "UPDATE feedback_items SET status = ?, updated_at = ? WHERE fingerprint = ?",
@@ -198,5 +216,20 @@ export const feedbackQueries = (
       Number(
         setStatus.run(status, new Date().toISOString(), fingerprint).changes,
       ) > 0,
+    mergeFeedback: (into, from) => {
+      const root = text(rootOf.get(into), "root");
+      if (root === "") return 0;
+      const at = new Date().toISOString();
+      let moved = 0;
+      for (const fingerprint of from) {
+        if (fingerprint === root) continue;
+        moved += Number(
+          mergeInto.run(root, at, fingerprint, fingerprint, root).changes,
+        );
+      }
+      return moved;
+    },
+    splitFeedback: fingerprint =>
+      Number(split.run(new Date().toISOString(), fingerprint).changes),
   };
 };

@@ -16,7 +16,9 @@ Status: **Built** (M1c): the context compiler
 2. **Project repo:** `CLAUDE.md` or `AGENTS.md`, `.claude/skills`,
    `.claude/agents`, loaded by Claude Code itself from the node's checkout.
 3. **Workflow:** `layers.skills`, `layers.context`, and the workflow's accepted
-   lessons in `.ork/lessons/<workflow>.md`.
+   lessons in `.ork/lessons/<workflow>.md`, at most 1,500 tokens of it: a longer
+   file is cut on a line's end, and `ork context explain` says so
+   ([feedback](./feedback.md)).
 4. **Node:** the node's own `skills`, `context` and `instructions`.
 
 Ork's **built-in skills** (`ork:<name>`) load only where a workflow or node

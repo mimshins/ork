@@ -8,6 +8,14 @@ _Part of [The ork CLI](../cli.md)._
 with the built-in node types
 ([workflow.ts](../../packages/cli/src/run/workflow.ts)):
 
+- **Ork's own workflows:** `<wf>` can be `ork:<name>`, one of the workflows Ork
+  ships ([sources](../../packages/core/workflows/),
+  [ADR-059](../../decisions/ADR-059-closing-the-feedback-loop.md)), such as
+  `ork:feedback-apply`. Ork writes it into the project's gitignored run folder,
+  `.ork/runs/.builtin/<hash of its text>/<name>.ork.yaml`, and runs that file,
+  so the run belongs to the project and resumes from the text it started with.
+  `validate` and `context explain` take the name too; an unknown one is refused,
+  naming the built-ins.
 - The workflow and its inputs are checked as for `--node`; nothing starts on an
   error, and warnings print before it starts, with what
   [walking it](../scheduler/walking.md) found. `ork resume` doesn't walk.

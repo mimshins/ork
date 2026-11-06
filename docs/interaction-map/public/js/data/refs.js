@@ -178,6 +178,51 @@ export const CLI = {
 };
 
 export const FEEDBACK = {
+  lessons: d(
+    "packages/core/src/feedback/lessons.ts",
+    "Code: writing a lesson, marked with its item",
+  ),
+  lessonCap: d(
+    "packages/core/src/context/lesson-cap.ts",
+    "Code: the 1,500-token cap on a workflow's lessons",
+  ),
+  lessonTests: d(
+    "packages/core/test/lessons.test.ts",
+    "Tests: lessons and their cap",
+  ),
+  accept: d(
+    "packages/cli/src/runs/accept.ts",
+    "Code: `ork feedback accept`, as a lesson",
+  ),
+  acceptTests: d(
+    "packages/cli/test/accept.test.ts",
+    "Tests: `ork feedback accept`",
+  ),
+  apply: d(
+    "packages/cli/src/runs/apply.ts",
+    "Code: `ork feedback apply`, and settling the item",
+  ),
+  applyTests: d(
+    "packages/cli/test/apply.test.ts",
+    "Tests: `ork feedback apply`",
+  ),
+  triage: d(
+    "packages/core/src/feedback/triage.ts",
+    "Code: near-duplicate items, by rules",
+  ),
+  triageTests: d("packages/core/test/triage.test.ts", "Tests: triage"),
+  applyWorkflow: d(
+    "packages/core/workflows/feedback-apply.ork.yaml",
+    "Code: Ork's own `ork:feedback-apply` workflow",
+  ),
+  builtins: d(
+    "packages/core/src/project/builtin-files.ts",
+    "Code: built-in workflows by their `ork:` names",
+  ),
+  builtinTests: d(
+    "packages/core/test/builtin-workflows.test.ts",
+    "Tests: the built-in workflows",
+  ),
   agent: d(
     "packages/core/src/feedback/agent.ts",
     "Code: agents' reports, capped and masked",

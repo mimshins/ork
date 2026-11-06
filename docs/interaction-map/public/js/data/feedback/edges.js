@@ -80,8 +80,9 @@ export const EDGES = [
     to: "triage",
     kind: "local",
     label: "`triage`",
-    detail: "Starts a run of the built-in triage workflow over new items.",
-    status: "planned",
+    detail:
+      "Merges near-duplicate new items by rules, after showing each merge.",
+    status: "built",
   },
   {
     id: "actions-apply",
@@ -90,17 +91,17 @@ export const EDGES = [
     kind: "local",
     label: "`apply <item>` · lesson",
     detail: "Asks for a fix to be proposed, or accepts the item as a lesson.",
-    status: "planned",
+    status: "built",
   },
   {
     id: "actions-decisions",
     from: "actions",
     to: "decisions",
     kind: "local",
-    label: "preview ⇄ your answer",
+    label: "the fix ⇄ keep or discard",
     detail:
-      "The command shows the proposed diff or the exact post, and resolves the decision with your answer.",
-    status: "planned",
+      "The command shows the proposed fix's branch and summary, and answers its run's gate with your choice.",
+    status: "built",
     both: true,
   },
   {
@@ -108,8 +109,10 @@ export const EDGES = [
     from: "actions",
     to: "publish",
     kind: "local",
-    label: "`publish <item>`",
-    detail: "Refused for any item whose target is not `ork`.",
+    label: "`publish <item>` ⇄ exact text, y/N",
+    detail:
+      "Refused for any item whose target is not `ork`. The redacted post, header included, is shown, and nothing is sent without your `y`.",
+    both: true,
     status: "planned",
     via: [
       [566, 656],
@@ -177,10 +180,10 @@ export const EDGES = [
     from: "table",
     to: "triage",
     kind: "local",
-    label: "new items ⇄ summaries",
+    label: "new items ⇄ merged",
     detail:
-      "Triage reads `new` items and writes back merged items, a summary each and a proposed fix; they become `triaged`.",
-    status: "planned",
+      "Triage reads `new` items and writes back which merge into which; they become `triaged`.",
+    status: "built",
     both: true,
   },
   {
@@ -198,9 +201,9 @@ export const EDGES = [
     from: "apply",
     to: "decisions",
     kind: "local",
-    label: "proposed diff ⇄ answer",
-    detail: "The fix waits as a decision; declined, nothing changes.",
-    status: "planned",
+    label: "the fix ⇄ keep or discard",
+    detail: "The fix waits as its run's gate; discarded, its branch goes.",
+    status: "built",
     both: true,
     docs: [DESIGN.feedback],
   },
@@ -210,8 +213,9 @@ export const EDGES = [
     to: "lessons",
     kind: "file",
     label: "accepted lesson",
-    detail: "Appended to the workflow's lessons file.",
-    status: "planned",
+    detail:
+      "Added as one line to the workflow's lessons file, refused past its 1,500-token cap.",
+    status: "built",
   },
   {
     id: "apply-repoFiles",
@@ -219,8 +223,9 @@ export const EDGES = [
     to: "repoFiles",
     kind: "git",
     label: "a diff on a branch",
-    detail: "Only after you accept the proposed fix.",
-    status: "planned",
+    detail:
+      "Committed on its own branch; kept only if you say so, never merged.",
+    status: "built",
   },
   {
     id: "lessons-compiler",
@@ -229,19 +234,9 @@ export const EDGES = [
     kind: "file",
     label: "read into the workflow layer",
     detail:
-      "Every later run of the workflow loads its lessons; the token cap is planned.",
-    status: "partial",
+      "Every later run of the workflow loads its lessons, up to 1,500 tokens.",
+    status: "built",
     docs: [DESIGN.context],
-  },
-  {
-    id: "publish-decisions",
-    from: "publish",
-    to: "decisions",
-    kind: "local",
-    label: "exact text ⇄ confirm",
-    detail: "The redacted post, header included, waits for your confirmation.",
-    status: "planned",
-    both: true,
   },
   {
     id: "publish-gh",

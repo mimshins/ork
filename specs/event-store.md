@@ -104,5 +104,6 @@ records use the same patterns.
   forgets old runs while keeping that ledger and their feedback
   ([usage](./usage.md)).
 - **Feedback** is recorded with the run: each `feedback.recorded` event is also
-  a row in the `feedback` table, grouped by fingerprint into `feedback_items`
+  a row in the `feedback` table, grouped by fingerprint into `feedback_items`,
+  which triage can merge into one another (`merged_into`, migration 13)
   ([feedback](./feedback.md)); `ork feedback` reads them.

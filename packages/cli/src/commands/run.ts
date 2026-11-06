@@ -20,7 +20,7 @@ import { createTerminalHuman } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
 import { runNode } from "../run/node.ts";
 import { runWorkflowFile } from "../run/workflow.ts";
-import { workflowArg } from "../workflows.ts";
+import { refusedBuiltin, workflowArg } from "../workflows.ts";
 
 export const flagValues = (
   rawArgs: readonly string[],
@@ -51,7 +51,7 @@ export const loadRuntime = async (driver: Driver): Promise<ClaudeRuntime> =>
  * Ctrl-C asks the run to stop, and so does a terminal closing or a polite kill,
  * so that the run ends tidily and leaves no result unscrubbed.
  */
-const onInterrupt = (stop: () => void) => {
+export const onInterrupt = (stop: () => void) => {
   let asked = false;
   const interrupt = () => {
     if (asked) return;
@@ -83,7 +83,7 @@ export const run = defineCommand({
     workflow: {
       type: "positional",
       description:
-        "A workflow file, or the name of one in the project's workflows (.ork/workflows/)",
+        "A workflow file, the name of one in the project's workflows (.ork/workflows/), or one of Ork's own (ork:feedback-apply)",
       required: true,
     },
     node: {
@@ -158,6 +158,7 @@ export const run = defineCommand({
       return;
     }
     const cwd = process.cwd();
+    if (refusedBuiltin([args.workflow])) return;
     const target = workflowArg(args.workflow, cwd);
     const store = openStore();
     if (args.detach) {

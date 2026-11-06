@@ -68,8 +68,9 @@ parts fit together is the [interaction map](./interaction-map/README.md).
     store (ADR-039).
   - UI panels in this order: monitor, logs, decisions, chats, the workflow
     builder, then the context inspector (all built).
-  - The feedback loop: `ork:feedback-triage`, `ork feedback apply`, lessons,
-    publishing to Discussions, export and import, and the Feedback panel.
+  - The feedback loop: triage by rules, `ork feedback apply` (on Ork's own
+    `ork:feedback-apply` workflow), lessons, publishing to Discussions, export
+    and import, and the Feedback panel.
 
 ## Verification
 

@@ -25,7 +25,7 @@ import { defineCommand } from "citty";
 
 import { style, write } from "../output.ts";
 import { projectAt, registeredProjects } from "../project/place.ts";
-import { findWorkflowFiles } from "../workflows.ts";
+import { findWorkflowFiles, refusedBuiltin } from "../workflows.ts";
 import { pathLines, walkLine } from "./walk-report.ts";
 
 const hasErrors = (diagnostics: readonly Diagnostic[]): boolean =>
@@ -206,6 +206,7 @@ export const validate = defineCommand({
   },
   run: async ({ args }) => {
     const cwd = process.cwd();
+    if (refusedBuiltin(args._)) return;
     const files = findWorkflowFiles(
       args._,
       cwd,

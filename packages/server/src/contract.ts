@@ -24,6 +24,7 @@ import { z } from "zod";
 
 import { BUILDER_API, type BuilderResponses } from "./contract-builder.ts";
 import { CONTEXT_API, type ContextResponses } from "./contract-context.ts";
+import { FEEDBACK_API, type FeedbackResponses } from "./contract-feedback.ts";
 import type { WorkflowGraph } from "./contract-graph.ts";
 
 /** `/api/usage`: the report, and the limits that apply. */
@@ -157,6 +158,7 @@ export const API = {
   health: { method: "GET", path: "/api/health" },
   ...BUILDER_API,
   ...CONTEXT_API,
+  ...FEEDBACK_API,
   projects: { method: "GET", path: "/api/projects" },
   workflows: { method: "GET", path: "/api/projects/:id/workflows" },
   runs: { method: "GET", path: "/api/runs", query: RunsQuerySchema },
@@ -202,7 +204,8 @@ export const API = {
 
 /** What each route answers with, on success. */
 export type Responses = BuilderResponses &
-  ContextResponses & {
+  ContextResponses &
+  FeedbackResponses & {
     health: Health;
     triggers: TriggersReport;
     projects: ProjectRecord[];

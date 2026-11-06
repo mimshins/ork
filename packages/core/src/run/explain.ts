@@ -12,9 +12,9 @@ import path from "node:path";
 
 import type { Workflow } from "@krapht/ork-schema";
 
+import { estimateTokens } from "../context/lesson-cap.ts";
 import type { ContextStack } from "../context/resolve.ts";
-import { PLUGIN_NAME } from "../context/session.ts";
-import { SKILL_FILE } from "../context/skills.ts";
+import { PLUGIN_NAME, SKILL_FILE } from "../context/session.ts";
 import type { CompiledGraph } from "../graph/types.ts";
 import {
   practiceInstructions,
@@ -22,10 +22,6 @@ import {
 } from "../practices/practices.ts";
 import { templateOf } from "../store/view.ts";
 import { planNodeSession } from "./plan.ts";
-
-/** A rough count, for comparing sizes: about four characters a token. */
-export const estimateTokens = (text: string): number =>
-  Math.ceil(text.length / 4);
 
 export type SkillLine = {
   /** How the session sees it: `ork:<name>` for Ork's, the bare name otherwise. */
@@ -59,7 +55,14 @@ export type Explanation = {
   /** With `texts`: the instruction files Claude Code reads, and their words. */
   instructionFiles?: { name: string; tokens: number; text: string }[];
   skills: SkillLine[];
-  files: { layer: string; name: string; tokens: number; text?: string }[];
+  files: {
+    layer: string;
+    name: string;
+    tokens: number;
+    /** A lessons file cut at its cap: the whole file's tokens. */
+    cutFrom?: number;
+    text?: string;
+  }[];
   practices: { name: string; tokens: number; text?: string }[];
   skippedPractices: string[];
   /** The whole appended system prompt. */
@@ -220,7 +223,12 @@ export const explainSession = (
       skills: skillLines(context, root, texts),
       files: context.files.map(f =>
         withText(
-          { layer: f.layer, name: f.name, tokens: estimateTokens(f.text) },
+          {
+            layer: f.layer,
+            name: f.name,
+            tokens: estimateTokens(f.text),
+            ...(f.cutFrom === undefined ? {} : { cutFrom: f.cutFrom }),
+          },
           f.text,
           texts,
         ),

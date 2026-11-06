@@ -72,16 +72,17 @@ The feedback and self-improvement loop, of which capture is built. The three
 sources (system signals from the event store, the agent's `feedback` tool, your
 notes), the recorder that masks and fingerprints them, and the local `feedback`
 table that groups records into items; `ork feedback` and its milestone-2
-actions; the `ork:feedback-triage` workflow, fixes and lessons, and the publish
-preview, all through the decision queue; the lessons file the context compiler
-reads into the workflow layer, the repo files a fix changes, JSONL export, and
-your `gh` posting to the "Agent feedback" Discussions category. Capture is
-`built`: the system signals, the agent's tool, the recorder, the table and
-`ork feedback`. The lessons file and the compiler reading it are `partial`.
-Triage, fixes, the panel, the milestone-2 actions, export and publishing are
-`planned`. Rows 1, 2 and 4 of "Your machine" and all but row 2 of "Claude
-runtime" stay empty as corridors. Journeys: an agent reports friction, triage
-then a lesson, applying a fix, and publishing to Ork's Discussions.
+actions; triage by rules, fixes through Ork's own `ork:feedback-apply` workflow
+and its gate, lessons, and the publish preview you confirm; the lessons file the
+context compiler reads into the workflow layer, the repo files a fix changes,
+JSONL export, and your `gh` posting to the "Agent feedback" Discussions
+category. Capture is `built`: the system signals, the agent's tool, the
+recorder, the table and `ork feedback`. The lessons file and the compiler
+reading it are `partial`. Triage, fixes, the panel, the milestone-2 actions,
+export and publishing are `planned`. Rows 1, 2 and 4 of "Your machine" and all
+but row 2 of "Claude runtime" stay empty as corridors. Journeys: an agent
+reports friction, triage then a lesson, applying a fix, and publishing to Ork's
+Discussions.
 
 ## Adding a map
 
