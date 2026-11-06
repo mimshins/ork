@@ -797,10 +797,16 @@ export const MILESTONES = [
       {
         id: "context-inspector",
         title: "Context inspector",
-        status: "planned",
+        status: "done",
+        date: "2026-11-06",
         detail:
-          "A read-only panel with each node's resolved layer stack: what it is told, and where each piece comes from.",
-        docs: ["specs/ui.md#panels"],
+          "A read-only Context panel with the latest chosen node's layer stack, as `ork context explain` prints it: what it is told, where each piece comes from, its size, and its words a click away. It follows the Monitor's node and the Builder's draft, and names the files that changed after a run started. Its review dropped side stripes from the whole UI.",
+        docs: [
+          "specs/ui/panels.md#context",
+          "docs/guides/browser-view.md",
+          "specs/gaps/limits-context-inspector.md",
+        ],
+        commits: ["284a23b", "37090bb"],
       },
       {
         id: "feedback-loop",
@@ -868,6 +874,7 @@ export const MILESTONES = [
           "28b5e51",
           "87c7e8f",
           "02c90de",
+          "46be492",
         ],
       },
       {
@@ -956,4 +963,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-05";
+export const ROADMAP_UPDATED = "2026-11-06";
