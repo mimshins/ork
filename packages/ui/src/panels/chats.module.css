@@ -1,6 +1,7 @@
 /**
- * @file The look of the Chats panel. Each message names who said it, and yours
- *   and others' also differ by their edge, so nothing rests on color or position.
+ * @file The look of the Chats panel. Each message is its speaker's line, then
+ *   the words: who said it is said in a word, never by an edge, color or
+ *   position.
  */
 
 .panel {
@@ -66,27 +67,11 @@
 }
 
 .message {
-  --chats-message-border-inline-start-width: var(--focus-width);
-  --chats-message-border-inline-start-style: solid;
-  --chats-message-border-inline-start-color: var(--color-border-strong);
   --chats-message-gap: var(--gap-hair);
-  --chats-message-padding-inline-start: var(--gap);
 
-  border-inline-start-width: var(--chats-message-border-inline-start-width);
-  border-inline-start-style: var(--chats-message-border-inline-start-style);
-  border-inline-start-color: var(--chats-message-border-inline-start-color);
   display: flex;
   flex-direction: column;
   gap: var(--chats-message-gap);
-  padding-inline-start: var(--chats-message-padding-inline-start);
-}
-
-.message[data-kind="you"] {
-  --chats-message-border-inline-start-color: var(--color-action-edge);
-}
-
-.message[data-kind="peer"] {
-  --chats-message-border-inline-start-style: dashed;
 }
 
 .meta {

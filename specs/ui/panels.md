@@ -29,7 +29,7 @@ filtered by project ([L37](../gaps/limits.md)).
   run's id, when it started, what it cost, and how many nodes are paused. A
   running run with an open decision reads "waiting on you".
 - **Choosing a row** selects the run for the other panels. The selected row has
-  a line down its edge as well as its color.
+  an outline as well as its color.
 - **Keys:** the list is one tab stop. The arrow keys, Home and End move through
   it, and Enter or Space chooses.
 - **The filter** lists the registered projects, and the projects of the runs
@@ -264,7 +264,8 @@ bar's bell shows how many are unread and goes to the panel.
   out of budget, timed out or interrupted), crashed or paused. A decision's item
   goes when it settles, and a paused run's when it continues
   ([L68](../gaps/limits.md)).
-- **Read state** is kept per browser. An item can be marked read singly, or all
+- **Read state** is kept per browser. An unread item is tinted, with a heavier
+  title and the word "unread". An item can be marked read singly, or all
   together. In a new browser what had already ended counts as read, so it does
   not start with a pile; what still wants the user stays unread however old it
   is.

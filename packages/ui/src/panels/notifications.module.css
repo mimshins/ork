@@ -1,6 +1,7 @@
 /**
- * @file The look of the Notifications panel. An unread item has a line down its
- *   edge and says so in a word, so it reads without color.
+ * @file The look of the Notifications panel. An unread item is tinted (and
+ *   outlined in forced colors), its title is heavier and it says so in a word,
+ *   so it reads without color.
  */
 
 .panel {
@@ -64,33 +65,24 @@
   --notifications-item-bg: initial;
   --notifications-item-border-block-end: var(--hairline) solid
     var(--color-border-soft);
-  --notifications-item-border-inline-start-width: var(--focus-width);
-  --notifications-item-border-inline-start-style: solid;
-  --notifications-item-border-inline-start-color: transparent;
   --notifications-item-gap: 0 var(--gap);
   --notifications-item-padding: var(--gap-tight) var(--gap);
+  --notifications-item-outline: none;
+  --notifications-item-outline-offset: calc(var(--hairline) * -1);
 
   border-block-end: var(--notifications-item-border-block-end);
-  border-inline-start-width: var(
-    --notifications-item-border-inline-start-width
-  );
-  border-inline-start-style: var(
-    --notifications-item-border-inline-start-style
-  );
-  border-inline-start-color: var(
-    --notifications-item-border-inline-start-color
-  );
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: var(--notifications-item-gap);
   padding: var(--notifications-item-padding);
   background: var(--notifications-item-bg, revert);
+  outline: var(--notifications-item-outline);
+  outline-offset: var(--notifications-item-outline-offset);
 }
 
 .item[data-unread] {
   --notifications-item-bg: var(--surface-attention);
-  --notifications-item-border-inline-start-color: var(--color-action-edge);
 }
 
 .title {
@@ -139,13 +131,9 @@
   margin: 0;
 }
 
-/* Forced colors draw a see-through edge, so only what is unread keeps one. */
+/* Forced colors take the tint away, so what is unread is outlined instead. */
 @media (forced-colors: active) {
-  .item {
-    --notifications-item-border-inline-start-color: Canvas;
-  }
-
   .item[data-unread] {
-    --notifications-item-border-inline-start-color: Highlight;
+    --notifications-item-outline: var(--hairline) solid Highlight;
   }
 }

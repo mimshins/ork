@@ -9,6 +9,7 @@
 import type { ReactNode } from "react";
 
 import { CodeText } from "../components/code-text.tsx";
+import { GlyphFailed } from "../components/status-glyphs.tsx";
 import {
   ChoiceField,
   CommitText,
@@ -178,7 +179,12 @@ export const Field = (props: FieldProps) => {
           className={styles["problem"]}
           key={problem}
         >
-          <CodeText text={problem} />
+          <span className={styles["problemIcon"]}>
+            <GlyphFailed />
+          </span>
+          <span className={styles["problemWords"]}>
+            <CodeText text={problem} />
+          </span>
         </p>
       ))}
     </div>

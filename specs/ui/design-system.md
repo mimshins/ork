@@ -56,6 +56,12 @@ of tech and pixel, and lit only where something needs the user
   Mono in `--text-caption`, upper case, tracked and muted, as a column's head, a
   stat's name or a section's heading. Never an identifier, as upper case would
   misstate it.
+- **No side stripes.** Nothing is marked by a colored edge down one side of a
+  card, a row or a message. A note is a line with its icon beside its first
+  line, attention is a tint, a heavier weight or a word, and a problem is the
+  failed glyph with its words. The one inside edge is the neutral hairline that
+  shows nesting, as the Builder's groups do. A
+  [test](../../packages/ui/test/side-stripes.test.ts) holds this.
 - **Status is never color alone.** Each status has its own glyph, on a 5×5 pixel
   grid, and a word in mono; the colors are running and succeeded in phosphor,
   waiting and paused in amber, failed in red, and queued, skipped and
@@ -163,7 +169,7 @@ The page's root carries `data-theme` and `data-contrast`
 - **Focus** is a `--focus-width` amber outline outside the element, on every
   focusable element (`:focus-visible`), never only a glow.
 - **Forced colors** take fills and shadows away, so what they say moves to what
-  stays: the selected run, node and tab and an unread item keep an edge in
+  stays: the selected run, node and tab and an unread item keep an outline in
   `Highlight`, the highlighted list item takes `Highlight`, and disabled
   controls use `GrayText`.
 - **Motion** is brief, and none when `prefers-reduced-motion: reduce` is set.

@@ -205,11 +205,6 @@
 /* Forced colors draw a see-through edge, so only the chosen run keeps one. */
 @media (forced-colors: active) {
   .row {
-    --runs-row-border-inline-start-color: Canvas;
-  }
-
-  /* A transparent edge would show in forced colors, on every row. */
-  .row {
     --runs-row-border-color: Canvas;
   }
 
