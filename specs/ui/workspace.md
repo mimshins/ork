@@ -30,8 +30,9 @@ new panel is one entry there.
 The dock is dockview, on Ork's own theme class: its variables are set from the
 design tokens ([dock theme](../../packages/ui/src/workspace/dock.module.css))
 and no dockview skin class is applied. The default layout has Runs on the left,
-Monitor over Logs, Chats and Usage in the middle, and Decisions and
-Notifications on the right.
+Monitor and the Builder over Logs, Chats and Usage in the middle, and Decisions
+and Notifications over Context on the right, so the Context panel is read beside
+the Monitor or the Builder without hiding a decision.
 
 - **A tab** holds an icon and a title and no button, since a control inside a
   tab is invalid. **A group's header** carries Minimize and Close, for its
@@ -138,7 +139,9 @@ Below 64rem wide (1024 px at the default text size), which includes a wide
 window at 200% zoom, the dock gives way to one column of every panel in the
 list's order, each under a heading whose button folds it. The saved dock is
 untouched and comes back when the window grows. Commands that need a dock stay
-listed and say so. Going to a panel unfolds and focuses it.
+listed and say so. Going to a panel unfolds and focuses it. Crossing that width
+closes the workflow open in the Builder, though its draft is kept
+([G9](../gaps.md#gaps)).
 
 ## Limits
 

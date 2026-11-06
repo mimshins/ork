@@ -28,6 +28,14 @@ G1–G7 were built on 2026-11-02.
   its nodes skipped, and nothing in the result says so. Found while writing
   [RFC-009](../rfcs/archived/RFC-009-walking-a-workflow.md), which checks
   workflows before they run and leaves this for its own decision.
+- **G9 · Crossing the narrow window's width closes the Builder's workflow.** The
+  Builder keeps what it has open in its panel's own state, and the dock and the
+  one column below 64rem each mount their own panels, so a window resized or
+  zoomed across that width closes the workflow. Its unsaved draft is kept, and
+  opening it again brings that back; the Context panel loses the Builder's node
+  meanwhile. Keeping the open workflow in the app's state, as the run selection
+  is, would carry it across. Found in the Context panel's design review.
+  ([workspace](./ui/workspace.md#a-narrow-window))
 
 ## Limits
 
@@ -76,3 +84,4 @@ Each is in [Limits](./gaps/limits.md), from L2 on.
 - [Limits: design tokens](./gaps/limits-tokens.md)
 - [Limits: walking a workflow](./gaps/limits-walking.md)
 - [Limits: Ork for Claude Code](./gaps/limits-claude-code.md)
+- [Limits: the context inspector](./gaps/limits-context-inspector.md)

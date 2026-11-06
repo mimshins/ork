@@ -10,6 +10,7 @@
 import {
   mdiAccountCheckOutline,
   mdiAccountStarOutline,
+  mdiAlertOutline,
   mdiArrowDown,
   mdiArrowLeft,
   mdiArrowRight,
@@ -36,6 +37,7 @@ import {
   mdiGithub,
   mdiGraphOutline,
   mdiHelpBoxMultipleOutline,
+  mdiLayersOutline,
   mdiMagnify,
   mdiMinus,
   mdiPause,
@@ -96,6 +98,8 @@ export const IconChats = icon(mdiForumOutline);
 export const IconNotifications = icon(mdiBellOutline);
 export const IconUsage = icon(mdiChartBar);
 export const IconBuilder = icon(mdiPencilRuler);
+export const IconContext = icon(mdiLayersOutline);
+export const IconAlert = icon(mdiAlertOutline);
 
 export const IconLeader = icon(mdiAccountStarOutline);
 export const IconWorker = icon(mdiRobotOutline);

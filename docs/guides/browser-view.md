@@ -39,6 +39,7 @@ Hover or focus a control to see its command, and copy it where one is shown.
 | Go on with a session whose run ended  | `ork chat <run> <node>` (the terminal only) |
 | Resume a stopped or crashed run       | `ork resume <run>` (the terminal only)      |
 | See what runs spent                   | `ork usage`                                 |
+| See what a node's session loads       | `ork context explain <workflow> <node>`     |
 
 Notifications, the theme and the layout belong to the browser and have no
 command.
@@ -85,6 +86,15 @@ makes your browser ask.
 **Usage** shows what runs spent over a period, for a project or all of them:
 totals, spend per day, and the costliest workflows, models and nodes, with what
 is worth a look. See [what you spent](./models-and-budgets.md#what-you-spent).
+
+**Context** shows what the node you chose last is told, and where each piece
+comes from: its agent, the project's instructions, its skills (live, or off and
+why), its context files, Ork's practices, and the whole prompt Ork appends, each
+with its estimated size. Open a piece to read it exactly as the session does.
+Choose a node in the Monitor, Logs or Chats, or select a card in the Builder,
+where it follows your draft as you edit. A run's node is planned from your files
+as they are now, so if one changed after the run started, it names it: what you
+see may not be what the run loaded.
 
 ### Builder
 
@@ -171,8 +181,6 @@ not work for you, please
 
 ## What it does not do yet
 
-- **Showing what a node loads.** The context inspector is still to come. For
-  now, use `ork context explain`.
 - **Resuming a run** has no button ([L71](../../specs/gaps/limits.md)).
 - **Runs older than the newest 50** are in `ork ps`.
 

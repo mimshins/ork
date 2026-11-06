@@ -1,0 +1,517 @@
+/**
+ * @file The look of the Context panel: a frame of cards (the header, notes
+ *   when one applies, the stack of six sections and the foot) scrolling as one
+ *   column. A piece's row wraps its cells as the panel narrows, so nothing
+ *   scrolls sideways, and its words open in a sunken well, wrapped, exactly as
+ *   the session reads them.
+ */
+
+.host {
+  height: 100%;
+}
+
+/*
+ * An opened row sticks to the top as its words scroll under it, so whatever
+ * takes the focus scrolls clear of it: a row can wrap to three lines.
+ */
+.panel {
+  --context-panel-bg: var(--surface-frame);
+  --context-panel-gap: var(--space-3);
+  --context-panel-scroll-padding-block-start: calc(
+    var(--target-min) * 2 + var(--gap)
+  );
+
+  background: var(--context-panel-bg);
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--context-panel-gap);
+  height: 100%;
+  overflow-y: auto;
+  scroll-padding-block-start: var(--context-panel-scroll-padding-block-start);
+}
+
+.header,
+.card,
+.foot {
+  --context-card-bg: var(--surface-panel);
+  --context-card-radius: var(--radius-panel);
+  --context-card-padding: var(--inset-tools);
+  --context-card-gap: var(--gap-tight);
+
+  background: var(--context-card-bg);
+  border-radius: var(--context-card-radius);
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--context-card-gap);
+  margin: 0;
+  padding: var(--context-card-padding);
+}
+
+.facts {
+  --context-facts-column-gap: var(--gap-loose);
+  --context-facts-row-gap: var(--gap-tight);
+
+  column-gap: var(--context-facts-column-gap);
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  row-gap: var(--context-facts-row-gap);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.factName {
+  --context-fact-name-text: var(--color-text-muted);
+  --context-fact-name-font: var(--font-caption);
+  --context-fact-name-text-size: var(--text-caption);
+  --context-fact-name-tracking: var(--tracking-caption);
+  --context-fact-name-case: var(--case-caption);
+
+  color: var(--context-fact-name-text);
+  font-family: var(--context-fact-name-font);
+  font-size: var(--context-fact-name-text-size);
+  letter-spacing: var(--context-fact-name-tracking);
+  text-transform: var(--context-fact-name-case);
+}
+
+.factValue {
+  --context-fact-value-font: var(--font-mono);
+  --context-fact-value-text-size: var(--text-ui);
+
+  font-family: var(--context-fact-value-font);
+  font-size: var(--context-fact-value-text-size);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.title {
+  --context-title-font: var(--font-mono);
+  --context-title-text-size: var(--text-ui);
+  --context-title-weight: var(--weight-medium);
+
+  font-family: var(--context-title-font);
+  font-size: var(--context-title-text-size);
+  font-weight: var(--context-title-weight);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.plannedLine {
+  --context-planned-line-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--context-planned-line-gap);
+}
+
+.planned,
+.description,
+.why,
+.emptyText {
+  --context-description-text: var(--color-text-muted);
+  --context-description-text-size: var(--text-small);
+
+  color: var(--context-description-text);
+  font-size: var(--context-description-text-size);
+  margin: 0;
+}
+
+.planned {
+  flex: 1 1 auto;
+}
+
+.updating {
+  --context-updating-text: var(--color-text-muted);
+  --context-updating-font: var(--font-mono);
+  --context-updating-text-size: var(--text-small);
+
+  color: var(--context-updating-text);
+  font-family: var(--context-updating-font);
+  font-size: var(--context-updating-text-size);
+}
+
+.cardTitle {
+  --context-card-title-weight: var(--weight-strong);
+
+  font-weight: var(--context-card-title-weight);
+  margin: 0;
+}
+
+/* A line under the header's first: its icon beside the first line, and the
+   words hanging under the first word, not under the icon. */
+.notice {
+  --context-notice-text: var(--color-text);
+  --context-notice-text-size: var(--text-small);
+  --context-notice-columns: var(--icon-size-small) minmax(0, 1fr);
+  --context-notice-gap: var(--gap-tight);
+
+  color: var(--context-notice-text);
+  column-gap: var(--context-notice-gap);
+  display: grid;
+  font-size: var(--context-notice-text-size);
+  grid-template-columns: var(--context-notice-columns);
+  margin: 0;
+}
+
+.notice[data-note="spawned"] {
+  --context-notice-text: var(--color-text-muted);
+  --context-notice-columns: minmax(0, 1fr);
+}
+
+.notice[data-note="failed"] {
+  --context-notice-text: var(--color-danger-text);
+}
+
+.noticeIcon {
+  --context-notice-icon-text: var(--color-action-text);
+  --context-notice-icon-size: var(--icon-size-small);
+  --context-notice-icon-block-size: 1lh;
+
+  align-items: center;
+  block-size: var(--context-notice-icon-block-size);
+  color: var(--context-notice-icon-text);
+  display: inline-flex;
+  font-size: var(--context-notice-icon-size);
+}
+
+.notice[data-note="failed"] .noticeIcon {
+  --context-notice-icon-text: var(--color-danger-text);
+}
+
+.noticeWords {
+  min-width: 0;
+}
+
+.stack {
+  --context-stack-bg: var(--surface-panel);
+  --context-stack-radius: var(--radius-panel);
+
+  background: var(--context-stack-bg);
+  border-radius: var(--context-stack-radius);
+  flex: none;
+}
+
+.section {
+  --context-section-border: var(--hairline) solid var(--color-border);
+  --context-section-padding: var(--gap-tight) 0;
+  --context-section-gap: var(--gap-hair);
+
+  border-block-start: var(--context-section-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--context-section-gap);
+  padding: var(--context-section-padding);
+}
+
+.section:first-child {
+  --context-section-border: 0;
+}
+
+.sectionHead {
+  --context-section-head-gap: var(--gap);
+  --context-section-head-padding: 0 var(--gap);
+
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--context-section-head-gap);
+  padding: var(--context-section-head-padding);
+}
+
+.sectionNote {
+  --context-section-note-text: var(--color-text-muted);
+  --context-section-note-text-size: var(--text-small);
+  --context-section-note-padding: 0 var(--gap);
+
+  color: var(--context-section-note-text);
+  font-size: var(--context-section-note-text-size);
+  margin: 0;
+  padding: var(--context-section-note-padding);
+}
+
+.heading {
+  --context-heading-text-size: var(--text-ui);
+  --context-heading-weight: var(--weight-strong);
+
+  flex: 1 1 auto;
+  font-size: var(--context-heading-text-size);
+  font-weight: var(--context-heading-weight);
+  margin: 0;
+}
+
+.meta,
+.layer,
+.source,
+.tokens,
+.state {
+  --context-meta-text: var(--color-text-muted);
+  --context-meta-font: var(--font-mono);
+  --context-meta-text-size: var(--text-small);
+
+  color: var(--context-meta-text);
+  font-family: var(--context-meta-font);
+  font-size: var(--context-meta-text-size);
+  overflow-wrap: anywhere;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  position: relative;
+}
+
+/*
+ * A row is a grid with one column for each of its cells, so names and states
+ * line up down the stack. In a narrow panel, state, layer and source go on a
+ * second line under the name; from 36rem they take their own columns.
+ */
+.row {
+  --context-row-bg: transparent;
+  --context-row-text: var(--color-text);
+  --context-row-border: var(--hairline) solid transparent;
+  --context-row-gap: var(--gap);
+  --context-row-min-height: var(--target-min);
+  --context-row-padding: var(--gap-hair) var(--gap);
+  --context-row-position: static;
+  --context-row-top: auto;
+  --context-row-columns: var(--icon-size-small) var(--icon-size-small)
+    minmax(0, 1fr) auto;
+  --context-row-areas: "toggle mark name tokens" ". . details details";
+
+  align-items: center;
+  background: var(--context-row-bg);
+  border: var(--context-row-border);
+  color: var(--context-row-text);
+  column-gap: var(--context-row-gap);
+  display: grid;
+  font: inherit;
+  grid-template-areas: var(--context-row-areas);
+  grid-template-columns: var(--context-row-columns);
+  min-height: var(--context-row-min-height);
+  padding: var(--context-row-padding);
+  position: var(--context-row-position);
+  text-align: start;
+  top: var(--context-row-top);
+  width: 100%;
+}
+
+@container (width >= 36rem) {
+  .row {
+    --context-row-columns: var(--icon-size-small) var(--icon-size-small)
+      minmax(6em, 1fr) 3.5em 5em minmax(0, 1.5fr) 5em;
+    --context-row-areas: "toggle mark name state layer source tokens";
+  }
+
+  .details {
+    --context-details-display: contents;
+  }
+}
+
+button.row {
+  cursor: pointer;
+}
+
+button.row:hover {
+  --context-row-bg: var(--surface-hover);
+}
+
+button.row:focus-visible {
+  --focus-ring-offset: calc(var(--focus-width) * -1);
+}
+
+button.row[aria-expanded="true"] {
+  --context-row-bg: var(--surface-current);
+  --context-row-position: sticky;
+  --context-row-top: 0;
+}
+
+.toggle,
+.mark {
+  --context-mark-text: var(--color-text-muted);
+  --context-mark-size: var(--icon-size-small);
+
+  color: var(--context-mark-text);
+  display: inline-flex;
+  font-size: var(--context-mark-size);
+}
+
+.toggle {
+  grid-area: toggle;
+}
+
+.mark {
+  --context-mark-text: var(--color-live-text);
+
+  grid-area: mark;
+}
+
+.mark[data-state="off"] {
+  --context-mark-text: var(--color-text-muted);
+}
+
+.name {
+  --context-name-text: var(--color-text);
+  --context-name-font: var(--font-mono);
+  --context-name-text-size: var(--text-mono);
+
+  color: var(--context-name-text);
+  font-family: var(--context-name-font);
+  font-size: var(--context-name-text-size);
+  grid-area: name;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.row[data-state="off"] .name {
+  --context-name-text: var(--color-text-muted);
+}
+
+.details {
+  --context-details-display: flex;
+  --context-details-column-gap: var(--gap);
+
+  column-gap: var(--context-details-column-gap);
+  display: var(--context-details-display);
+  flex-wrap: wrap;
+  grid-area: details;
+  min-width: 0;
+}
+
+.state {
+  --context-meta-text: var(--color-live-text);
+
+  grid-area: state;
+}
+
+.row[data-state="off"] .state {
+  --context-meta-text: var(--color-text-muted);
+}
+
+.layer {
+  grid-area: layer;
+}
+
+.source {
+  grid-area: source;
+  min-width: 0;
+}
+
+.tokens {
+  font-variant-numeric: tabular-nums;
+  grid-area: tokens;
+  justify-self: end;
+}
+
+/* The reason an off piece is off starts under its name. */
+.why {
+  --context-why-padding: 0 var(--gap) var(--gap-hair)
+    calc(var(--gap) * 3 + var(--icon-size-small) * 2);
+
+  padding: var(--context-why-padding);
+}
+
+.visuallyHidden {
+  --context-visually-hidden-size: var(--hairline);
+
+  block-size: var(--context-visually-hidden-size);
+  clip-path: inset(50%);
+  inline-size: var(--context-visually-hidden-size);
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
+.well {
+  --context-well-bg: var(--surface-sunken);
+  --context-well-radius: var(--radius-control);
+  --context-well-border: var(--hairline) solid var(--color-border);
+  --context-well-margin: var(--gap-hair) var(--gap) var(--gap-tight);
+
+  background: var(--context-well-bg);
+  border: var(--context-well-border);
+  border-radius: var(--context-well-radius);
+  margin: var(--context-well-margin);
+}
+
+.wellBar {
+  --context-well-bar-text: var(--color-text-muted);
+  --context-well-bar-font: var(--font-mono);
+  --context-well-bar-text-size: var(--text-small);
+  --context-well-bar-gap: var(--gap);
+  --context-well-bar-padding: var(--gap-hair) var(--gap);
+
+  align-items: center;
+  color: var(--context-well-bar-text);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--context-well-bar-font);
+  font-size: var(--context-well-bar-text-size);
+  gap: var(--context-well-bar-gap);
+  padding: var(--context-well-bar-padding);
+}
+
+.wellPlace {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.copied {
+  --context-copied-text: var(--color-text-muted);
+
+  color: var(--context-copied-text);
+}
+
+.text {
+  --context-text-text: var(--color-text);
+  --context-text-font: var(--font-mono);
+  --context-text-text-size: var(--text-mono);
+  --context-text-leading: var(--leading-ui);
+  --context-text-measure: 100ch;
+  --context-text-padding: var(--gap-tight) var(--gap);
+
+  color: var(--context-text-text);
+  font-family: var(--context-text-font);
+  font-size: var(--context-text-text-size);
+  line-height: var(--context-text-leading);
+  margin: 0;
+  max-inline-size: var(--context-text-measure);
+  overflow-wrap: anywhere;
+  padding: var(--context-text-padding);
+  white-space: pre-wrap;
+}
+
+.emptyText {
+  --context-empty-text-padding: var(--gap-tight) var(--gap);
+
+  padding: var(--context-empty-text-padding);
+}
+
+/*
+ * Forced colors take the fills away: the open row keeps an outline, and a
+ * see-through one would show on every row; the well keeps its edge.
+ */
+@media (forced-colors: active) {
+  .row {
+    --context-row-border: var(--hairline) solid Canvas;
+  }
+
+  button.row[aria-expanded="true"] {
+    --context-row-border: var(--hairline) solid Highlight;
+  }
+
+  .well {
+    --context-well-border: var(--hairline) solid CanvasText;
+  }
+}

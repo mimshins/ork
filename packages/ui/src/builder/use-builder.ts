@@ -19,6 +19,7 @@ import { toasts } from "../components/toast.tsx";
 import { useAppState } from "../state/context.tsx";
 import { readAt, sameJson } from "./builder-model.ts";
 import type { FormPath } from "./form-parts.tsx";
+import { useBuilderContext } from "./use-builder-context.ts";
 import { useBuilderLists } from "./use-builder-lists.ts";
 
 export type Opened = { project: string; name: string };
@@ -45,6 +46,7 @@ export const useBuilder = () => {
   const latest = useRef<BuilderView | null>(null);
   const openedNow = useRef<Opened | null>(null);
   const history = useRef<readonly Step[]>([]);
+  const tellContext = useBuilderContext(opened, view);
 
   /** Runs after everything sent before it. */
   const inTurn = useCallback(<T>(work: () => Promise<T>): Promise<T> => {
@@ -281,7 +283,11 @@ export const useBuilder = () => {
     undo,
     discard,
     save,
-    select: setSelected,
+    /** The person selects a card, or none: the Context panel follows. */
+    select: (node: string | null) => {
+      setSelected(node);
+      tellContext(node);
+    },
     setConnecting,
     setReplaceAsked,
   };

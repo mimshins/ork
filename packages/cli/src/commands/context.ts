@@ -1,21 +1,15 @@
 /**
  * @file `ork context explain <wf> <node>`: what one node's session would load,
- *   layer by layer. Its project instructions, every skill with the layer it
- *   came from and whether it is live, shadowed or switched off, its context
- *   files, its practices, and estimated tokens. Plans the session without
- *   writing anything.
+ *   layer by layer, as core's `explainSession` plans it without writing
+ *   anything: its project instructions, every skill with the layer it came from
+ *   and whether it is live, shadowed or switched off, its context files, its
+ *   practices, and estimated tokens.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
-
 import {
-  type ContextStack,
-  PLUGIN_NAME,
-  planNodeSession,
-  practiceInstructions,
-  resolvePractices,
-  SKILL_FILE,
+  estimateTokens,
+  type Explanation,
+  explainSession,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
@@ -24,85 +18,13 @@ import { workflowArg } from "../workflows.ts";
 import { formatReport, loadWorkflow } from "./validate.ts";
 
 /** A rough count, for comparing sizes: about four characters a token. */
-export const tokens = (text: string): number => Math.ceil(text.length / 4);
-
-export type SkillLine = {
-  /** How the session sees it: `ork:<name>` for Ork's, the bare name otherwise. */
-  name: string;
-  layer: string;
-  source: string;
-  state: "live" | "off";
-  why?: string;
-  /** Its SKILL.md, loaded only when the skill is used. */
-  tokens: number;
-};
-
-export type Explanation = {
-  node: string;
-  type: string;
-  workflow: string;
-  /** The agent that fills the node: its name, where it is, its role's size. */
-  agent?: { name: string; where: string; tokens: number };
-  instructions: string;
-  skills: SkillLine[];
-  files: { layer: string; name: string; tokens: number }[];
-  practices: { name: string; tokens: number }[];
-  skippedPractices: string[];
-  /** The whole appended system prompt. */
-  appendedTokens: number;
-};
-
-/** Which project instruction file Claude Code reads from the checkout. */
-const instructionsOf = (stack: ContextStack, checkout: string): string => {
-  if (stack.instructions === "ignore") {
-    return "left out (project.instructions: ignore)";
-  }
-  const has = (file: string) => existsSync(path.join(checkout, file));
-  if (
-    ["CLAUDE.md", ".claude/CLAUDE.md", "CLAUDE.local.md"].some(file =>
-      has(file),
-    )
-  ) {
-    return "CLAUDE.md, loaded by Claude Code";
-  }
-  if (has("AGENTS.md")) return "AGENTS.md, loaded by Claude Code";
-  return "none in the project";
-};
-
-const skillLines = (stack: ContextStack, root: string): SkillLine[] =>
-  stack.skills.map(skill => {
-    const source =
-      skill.text === undefined
-        ? path.relative(root, skill.dir) || "."
-        : "built-in";
-    const ours = skill.layer !== "project";
-    const line: SkillLine = {
-      name: ours ? `${PLUGIN_NAME}:${skill.name}` : skill.name,
-      layer: skill.layer,
-      source: source.startsWith("..") ? skill.dir : source,
-      state:
-        skill.shadowedBy === undefined && skill.ignored === undefined
-          ? "live"
-          : "off",
-      tokens: tokens(
-        skill.text ?? readFileSync(path.join(skill.dir, SKILL_FILE), "utf8"),
-      ),
-    };
-    if (skill.shadowedBy !== undefined) {
-      line.why = `shadowed by the ${skill.shadowedBy} layer`;
-    } else if (skill.ignored !== undefined) {
-      line.why =
-        skill.ignored === "ignore"
-          ? "project.skills: ignore"
-          : "not in project.skills.allow";
-    }
-    return line;
-  });
+export const tokens = estimateTokens;
 
 export type ExplainResult =
   | { ok: true; explanation: Explanation }
   | { ok: false; lines: string[] };
 
+/** Loads a workflow file and plans one node's session in it, in place. */
 export const explainNode = (
   file: string,
   nodeId: string,
@@ -115,58 +37,13 @@ export const explainNode = (
     home,
   );
   if (workflow === null) return { ok: false, lines: formatReport(report) };
-  const { root } = place;
-  const plan = planNodeSession(workflow, nodeId, {
-    cwd: root,
-    inputs: {},
-    inPlace: true,
-    workflowDir,
-    projectRoot: root,
+  const result = explainSession(workflow, graph, nodeId, {
+    root: place.root,
     orkDir: place.dir,
+    workflowDir,
     ...(home === undefined ? {} : { home }),
   });
-  if (!plan.ok) return { ok: false, lines: [plan.error] };
-  const { context } = plan;
-  const practices = practiceInstructions(
-    resolvePractices(workflow, nodeId),
-    root,
-  );
-  const names = ["caveman", "ponytail"].filter(
-    n => !practices.skipped.includes(n),
-  );
-  const ref = graph?.agents.get(nodeId);
-  const role =
-    ref === undefined ? undefined : workflow.agents?.[ref.name]?.instructions;
-  return {
-    ok: true,
-    explanation: {
-      node: nodeId,
-      type: workflow.nodes[nodeId]?.type ?? "",
-      workflow: workflow.name,
-      ...(ref === undefined
-        ? {}
-        : {
-            agent: {
-              name: ref.name,
-              where: ref.where,
-              tokens: tokens(role ?? ""),
-            },
-          }),
-      instructions: instructionsOf(context, root),
-      skills: skillLines(context, root),
-      files: context.files.map(f => ({
-        layer: f.layer,
-        name: f.name,
-        tokens: tokens(f.text),
-      })),
-      practices: practices.text.map((text, index) => ({
-        name: names[index] ?? "practice",
-        tokens: tokens(text),
-      })),
-      skippedPractices: practices.skipped,
-      appendedTokens: tokens(plan.spec.systemAppend),
-    },
-  };
+  return result.ok ? result : { ok: false, lines: [result.error] };
 };
 
 const approx = (count: number): string =>
@@ -176,7 +53,7 @@ export const formatExplanation = (e: Explanation): string[] => {
   const width = Math.max(8, ...e.skills.map(s => s.name.length));
   const sourceWidth = Math.max(0, ...e.skills.map(s => s.source.length));
   const lines = [
-    `${style("bold", e.node)} ${style("dim", `(${e.type}) in ${e.workflow}`)}`,
+    `${style("bold", e.node)} ${style("dim", `(${e.type}) in ${e.workflow}`)}${e.template === undefined ? "" : style("dim", `, planned as ${e.template}, the node it was spawned from`)}`,
     "",
     ...(e.agent === undefined
       ? []

@@ -3,8 +3,8 @@
  *   streams (ADR-024: the store is the truth, so a write goes through the
  *   client and comes back on a stream; nothing here updates optimistically).
  *   `runs` and `decisions` follow the overview stream; each run a panel looks
- *   at has its own feed, read only while some panel retains it, since a browser
- *   gives a page few connections.
+ *   at has its own feed (feeds.ts). What the user chose, a run and a node, is
+ *   the shared selection, and the Context panel's target follows every choice.
  */
 
 import {
@@ -19,7 +19,9 @@ import {
 } from "@krapht/ork-server/client";
 import { Container } from "react-containerized-state";
 
+import { createContextTarget } from "./context-target.ts";
 import { createDecisionHistory } from "./decision-history.ts";
+import { createFeeds, isLive } from "./feeds.ts";
 import { createNotifications } from "./notifications.ts";
 import {
   ALL_PROJECTS,
@@ -28,8 +30,6 @@ import {
 } from "./preferences.ts";
 import { createRead } from "./read.ts";
 import { reconcile } from "./reconcile.ts";
-import { createRunFeed, type RunFeed } from "./run-feed.ts";
-import { createRunWatch, type RunWatch } from "./run-watch.ts";
 import { type LinkStatus, type OpenSource, openLink } from "./stream-link.ts";
 
 export type Connection = {
@@ -48,11 +48,6 @@ export type AppStateOptions = {
 
 export type AppState = ReturnType<typeof createAppState>;
 
-/** How many feeds no panel retains stay in memory, ready to come back to. */
-const KEPT_FEEDS = 4;
-
-type HeldFeed = { feed: RunFeed; retained: number };
-
 /** What the status bar says about the server. */
 export const describeConnection = ({ link, server }: Connection): string => {
   if (server !== null && "error" in server) {
@@ -63,9 +58,6 @@ export const describeConnection = ({ link, server }: Connection): string => {
     ? `Ork ${server.version}`
     : "Connecting to `ork ui`…";
 };
-
-const isLive = (run: RunView): boolean =>
-  run.live === "running" || run.live === "paused";
 
 export const liveRuns = (runs: readonly RunView[] | null): number | null =>
   runs === null ? null : runs.filter(run => isLive(run)).length;
@@ -78,6 +70,12 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     server: null,
   });
   const selection = Container.create<Selection>({ run: null, node: null });
+  const context = createContextTarget();
+  /** Every choice of a run or node is a choice for the Context panel too. */
+  const chooseNode = (next: Selection): void => {
+    void selection.setValue(next);
+    context.chooseRun(next.run, next.node);
+  };
   /** The run the focus goes to once the Monitor shows it. */
   let arriving: string | null = null;
   const preferences = createPreferences(storage);
@@ -104,7 +102,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     ({ query }: { query: QueryOf<"usage">; now: number; period: string }) =>
       client.call("usage", { query }),
   );
-  const feeds = new Map<string, HeldFeed>();
+  const feeds = createFeeds({ client, open });
   const decisionHistory = createDecisionHistory(client);
   const notifications = createNotifications({ runs, decisions, storage });
 
@@ -116,41 +114,16 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     });
   };
 
-  const heldFeed = (runId: string): HeldFeed => {
-    const held = feeds.get(runId) ?? {
-      feed: createRunFeed({ runId, client, open }),
-      retained: 0,
-    };
-    feeds.set(runId, held);
-    return held;
-  };
-
-  /** Drops the feeds no panel retains, the longest unused first. */
-  const evict = (): void => {
-    const idle = [...feeds].filter(([, held]) => held.retained === 0);
-    for (const [runId] of idle.slice(0, -KEPT_FEEDS)) feeds.delete(runId);
-  };
-
-  /** A resumed run's stream has ended, but the run goes on: read it again. */
-  const reopenResumed = (list: readonly RunView[] | null): void => {
-    for (const run of list ?? []) {
-      const held = feeds.get(run.id);
-      if (
-        held !== undefined &&
-        held.retained > 0 &&
-        isLive(run) &&
-        held.feed.state.getValue().link === "ended"
-      ) {
-        held.feed.start();
-      }
-    }
-  };
-
   return {
     runs,
     decisions,
     connection,
     selection,
+    /** The node the Context panel shows: the latest chosen, anywhere. */
+    contextTarget: context.target,
+    chooseBuilderNode: context.chooseBuilder,
+    builderChanged: context.builderChanged,
+    builderClosed: context.builderClosed,
     preferences,
     runFilter,
     runDialog,
@@ -167,7 +140,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     startRun: (body: BodyOf<"start">) => client.call("start", { body }),
     /** Follows the server until the returned function is called. */
     start: (): (() => void) => {
-      const stopWatching = runs.subscribe(reopenResumed);
+      const stopWatching = runs.subscribe(feeds.reopenResumed);
       const stopSettling = decisions.subscribe(decisionHistory.saw);
       const stopNotifying = notifications.start();
       const link = openLink<OverviewEvents>({
@@ -195,22 +168,9 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
       };
     },
     /** A run's feed, which holds its events only while retained. */
-    feedOf: (runId: string): RunFeed => heldFeed(runId).feed,
+    feedOf: feeds.feedOf,
     /** Reads the run until the returned function is called. */
-    retainRun: (runId: string): (() => void) => {
-      const held = heldFeed(runId);
-      held.retained += 1;
-      held.feed.start();
-      return () => {
-        held.retained -= 1;
-        if (held.retained === 0) {
-          held.feed.stop();
-          feeds.delete(runId);
-          feeds.set(runId, held);
-          evict();
-        }
-      };
-    },
+    retainRun: feeds.retainRun,
     /** Pause, continue or stop: the answer comes back on the run's stream. */
     control: (
       kind: "pause" | "continue" | "stop",
@@ -228,16 +188,15 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     answerDecision: (id: string, choose: string) =>
       client.call("answer", { params: { id }, body: { choose } }),
     /** What the Monitor shows of a run, read while it is started. */
-    watchRun: (runId: string): RunWatch =>
-      createRunWatch({ runId, client, feed: heldFeed(runId).feed }),
+    watchRun: feeds.watchRun,
     selectRun: (run: string | null): void => {
       arriving = null;
-      void selection.setValue({ run, node: null });
+      chooseNode({ run, node: null });
     },
     /** Chooses a run for the focus to follow, since what opened it may go. */
     arriveAt: (run: string): void => {
       arriving = run;
-      void selection.setValue({ run, node: null });
+      chooseNode({ run, node: null });
     },
     /** Whether the focus should go to this run, now it shows: asking clears it. */
     takeArrival: (run: string): boolean => {
@@ -246,7 +205,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
       return arrived;
     },
     selectNode: (node: string | null): void => {
-      void selection.setValue({ ...selection.getValue(), node });
+      chooseNode({ ...selection.getValue(), node });
     },
   };
 };

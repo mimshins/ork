@@ -1,6 +1,7 @@
 /**
  * @file The copy-command field's look: the command on a sunken surface, which
- *   wraps rather than overflows, with the result beside it.
+ *   wraps rather than overflows, leaving room for its copy button beside it,
+ *   with the result after them.
  */
 
 .field {
@@ -18,11 +19,15 @@
   --copy-command-command-radius: var(--radius-control);
   --copy-command-command-text: var(--color-text);
   --copy-command-command-padding: var(--gap-hair) var(--inset-control);
+  --copy-command-command-max-width: calc(
+    100% - var(--control-height) - var(--copy-command-field-gap)
+  );
 
   background: var(--copy-command-command-bg);
   border: var(--copy-command-command-border);
   border-radius: var(--copy-command-command-radius);
   color: var(--copy-command-command-text);
+  max-width: var(--copy-command-command-max-width);
   overflow-wrap: anywhere;
   padding: var(--copy-command-command-padding);
   user-select: all;

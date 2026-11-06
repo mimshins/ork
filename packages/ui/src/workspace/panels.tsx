@@ -4,12 +4,11 @@
  *   Window menu and the command palette all read this list.
  */
 
-import type { ComponentType } from "react";
-
 import { BuilderPanel } from "../builder/builder-panel.tsx";
 import {
   IconBuilder,
   IconChats,
+  IconContext,
   IconDecisions,
   IconLogs,
   IconMonitor,
@@ -18,6 +17,7 @@ import {
   IconRuns,
 } from "../components/icons.tsx";
 import { ChatsPanel } from "../panels/chats-panel.tsx";
+import { ContextPanel } from "../panels/context-panel.tsx";
 import { DecisionsPanel } from "../panels/decisions-panel.tsx";
 import { LogsPanel } from "../panels/logs-panel.tsx";
 import { MonitorPanel } from "../panels/monitor-panel.tsx";
@@ -33,13 +33,15 @@ export type PanelId =
   | "chats"
   | "notifications"
   | "usage"
-  | "builder";
+  | "builder"
+  | "context";
 
 export type PanelSpec = {
   id: PanelId;
   title: string;
-  Icon: ComponentType;
-  Body: ComponentType;
+  /** Every panel's icon and body take no props, as these do. */
+  Icon: typeof IconRuns;
+  Body: typeof RunsPanel;
 };
 
 const SPECS: Record<PanelId, PanelSpec> = {
@@ -85,6 +87,12 @@ const SPECS: Record<PanelId, PanelSpec> = {
     title: "Builder",
     Icon: IconBuilder,
     Body: BuilderPanel,
+  },
+  context: {
+    id: "context",
+    title: "Context",
+    Icon: IconContext,
+    Body: ContextPanel,
   },
 };
 

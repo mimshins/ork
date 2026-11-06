@@ -25,14 +25,15 @@ One [containerized-state](../../decisions/ADR-040-ui-stack.md) container per
 concern, in [app-state.ts](../../packages/ui/src/state/app-state.ts), reached
 through `useAppState()`:
 
-| Container     | Holds                                          | Fed by                  |
-| ------------- | ---------------------------------------------- | ----------------------- |
-| `runs`        | the newest 50 runs, or null before the first   | the overview stream     |
-| `decisions`   | the open decisions, or null before the first   | the overview stream     |
-| `connection`  | the stream's state and what `/api/health` said | the stream and `health` |
-| `selection`   | the run and the node in view                   | the user                |
-| `preferences` | theme, density, desktop notifications          | the user, saved         |
-| a run's feed  | its events, in a window                        | that run's stream       |
+| Container       | Holds                                                                         | Fed by                     |
+| --------------- | ----------------------------------------------------------------------------- | -------------------------- |
+| `runs`          | the newest 50 runs, or null before the first                                  | the overview stream        |
+| `decisions`     | the open decisions, or null before the first                                  | the overview stream        |
+| `connection`    | the stream's state and what `/api/health` said                                | the stream and `health`    |
+| `selection`     | the run and the node in view                                                  | the user                   |
+| `contextTarget` | the node the Context panel shows: the latest chosen, a run's or the Builder's | the selection, the Builder |
+| `preferences`   | theme, density, desktop notifications                                         | the user, saved            |
+| a run's feed    | its events, in a window                                                       | that run's stream          |
 
 The workspace's own state (the view, the saved layout, the palette) stays in the
 [workspace](./workspace.md). Notifications are worked out from `runs` and
@@ -45,6 +46,14 @@ What no stream sends is a one-off read in a container
 project chosen cannot replace the answer about this one. `runFilter` and
 `runDialog` belong to the [Runs panel](./panels.md), and live here so they
 outlast it when it is minimized or closed.
+
+**`contextTarget`**
+([context-target.ts](../../packages/ui/src/state/context-target.ts)) follows
+every choice of a run's node, and the card the person selects in the Builder,
+whose state lives in its own hook: the Builder bumps its `revision` with each
+new answer about the workflow, which is what makes the
+[Context panel](./panels.md#context) plan again, without a timer. A change in
+the Builder never takes the panel from a run's node.
 
 **The store is the truth** ([ADR-024](../../decisions/ADR-024-event-store.md)).
 A write goes through the typed client and comes back on a stream; nothing here
@@ -72,7 +81,8 @@ decisions, outside the live region: they change too often to read out.
 
 ## A run's feed
 
-[run-feed.ts](../../packages/ui/src/state/run-feed.ts) holds one run's events.
+[run-feed.ts](../../packages/ui/src/state/run-feed.ts) holds one run's events,
+and [feeds.ts](../../packages/ui/src/state/feeds.ts) the feeds the page holds.
 
 - **It starts from the end.** It reads the newest page with `?last=`, then opens
   the stream after it, so a long run's history is not sent again on every open.

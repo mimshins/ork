@@ -14,6 +14,7 @@ import { keys, openShell, railNames, tabNames } from "./harness.tsx";
 const ALL = [
   "Builder",
   "Chats",
+  "Context",
   "Decisions",
   "Logs",
   "Monitor",
@@ -58,6 +59,7 @@ describe("the dock", () => {
     expect(tabNames()).toEqual(ALL);
     expect(tabsBeside("Logs")).toEqual(["Logs", "Chats", "Usage"]);
     expect(tabsBeside("Decisions")).toEqual(["Decisions", "Notifications"]);
+    expect(tabsBeside("Context")).toEqual(["Context"]);
     expect(workspace.view.getValue().active).toBe("monitor");
     expect(workspace.announcement.getValue()).toBe("");
   });
@@ -130,6 +132,7 @@ describe("the dock", () => {
         "runs",
         "decisions",
         "notifications",
+        "context",
         "usage",
       ] as const) {
         workspace.minimize(id);
@@ -237,6 +240,7 @@ describe("the saved layout", () => {
     expect(tabNames()).toEqual([
       "Builder",
       "Chats",
+      "Context",
       "Decisions",
       "Monitor",
       "Notifications",

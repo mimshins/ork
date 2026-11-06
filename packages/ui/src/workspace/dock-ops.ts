@@ -73,7 +73,10 @@ const add = (
     ...placement,
   });
 
-/** Runs on the left, Monitor over Logs, Chats and Usage, Decisions on the right. */
+/**
+ * Runs on the left, Monitor over Logs, Chats and Usage, and Decisions and
+ * Notifications over Context on the right.
+ */
 export const addDefaultLayout = (api: DockviewApi): void => {
   const monitor = add(api, "monitor", {});
   add(api, "builder", {
@@ -93,6 +96,11 @@ export const addDefaultLayout = (api: DockviewApi): void => {
   add(api, "notifications", {
     position: { referencePanel: "decisions", direction: "within" },
     inactive: true,
+  });
+  // Its own group under Decisions: read beside the Monitor or the Builder,
+  // and never hiding a decision that waits on the person.
+  add(api, "context", {
+    position: { referencePanel: "decisions", direction: "below" },
   });
   add(api, "logs", {
     position: { referencePanel: "monitor", direction: "below" },

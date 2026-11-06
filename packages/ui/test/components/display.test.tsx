@@ -220,6 +220,23 @@ describe("the copy-command field", () => {
     expect(await violations(container)).toEqual([]);
   });
 
+  it("says it again when copied again", async () => {
+    stubClipboard(() => Promise.resolve());
+    render(<CopyCommand command="ork logs 4f2a1c" />);
+    await userEvent.tab();
+    await userEvent.keyboard("{Enter}");
+    const status = await screen.findByRole("status");
+    await vi.waitFor(() => {
+      expect(status.textContent).toBe("Copied.");
+    });
+    const first = status.firstElementChild;
+    await userEvent.keyboard("{Enter}");
+    await vi.waitFor(() => {
+      expect(status.firstElementChild).not.toBe(first);
+    });
+    expect(status.textContent).toBe("Copied.");
+  });
+
   it("says what to do when the copy fails", async () => {
     stubClipboard(() => Promise.reject(new Error("denied")));
     render(<CopyCommand command="ork logs 4f2a1c" />);

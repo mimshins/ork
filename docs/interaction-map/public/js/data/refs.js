@@ -642,6 +642,14 @@ export const CONTEXT = {
     "packages/cli/src/commands/context.ts",
     "Code: `ork context explain`",
   ),
+  explainSession: d(
+    "packages/core/src/run/explain.ts",
+    "Code: planning what a node's session loads",
+  ),
+  explainSessionTests: d(
+    "packages/core/test/explain.test.ts",
+    "Tests: what a node's session loads, with its words",
+  ),
   explainTests: d(
     "packages/cli/test/context.test.ts",
     "Tests: `ork context explain`",

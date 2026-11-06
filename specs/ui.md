@@ -6,11 +6,11 @@ build, its license list and its tests ([ui](../packages/ui/src/app/app.tsx),
 [tests](../packages/ui/test/)); the design system's tokens and themes and base
 components ([design system](./ui/design-system.md)); and the workspace that
 holds the panels ([workspace](./ui/workspace.md)). Its panels are built: Runs,
-the Monitor, Logs, Decisions, Chats and Notifications
-([panels](./ui/panels.md)), with a user guide
+the Monitor, Logs, Decisions, Chats, Notifications, Usage and Context, the
+context inspector ([panels](./ui/panels.md)), with a user guide
 ([the browser view](../docs/guides/browser-view.md)). So is the
-[workflow builder](#workflow-builder). The context inspector is still to come.
-The stack is React, Base UI, dockview, containerized-state and an in-house graph
+[workflow builder](#workflow-builder). The stack is React, Base UI, dockview,
+containerized-state and an in-house graph
 ([ADR-040](../decisions/ADR-040-ui-stack.md)), with Material Design Icons
 ([ADR-042](../decisions/ADR-042-icons-mdi.md)). The panels read the server's API
 through its typed client.
@@ -24,7 +24,8 @@ through its typed client.
   to the rail, the keys and why they are Ork's own, the command palette, focus,
   the saved layout, and the stack on a narrow window.
 - [Panels](./ui/panels.md): the Runs panel, the Run workflow dialog, the
-  Monitor, Logs, Decisions, Chats and Notifications.
+  Monitor, the Builder, Logs, Decisions, Chats, Notifications, Usage and
+  Context.
 - [Graph](./ui/graph.md): the layout, its edges in the interaction map's style,
   pan and zoom, and the keys and names that make it accessible.
 - [State](./ui/state.md): the containers, streams that stay connected, a run's
@@ -40,8 +41,9 @@ through its typed client.
 - **Decisions inbox:** shaped like the Question tool, with the question, the
   options, the recommended option and one-click answers.
 - **Logs:** a filterable event stream.
-- **Context inspector:** a read-only panel with the resolved layer stack for
-  each node: what it is told, and where each piece comes from.
+- **Context inspector** (built, [Context](./ui/panels.md#context)): a read-only
+  panel with the resolved layer stack for each node: what it is told, and where
+  each piece comes from.
 - **Feedback:** items grouped by fingerprint and target, with triage, apply,
   accept as a lesson, and the publish preview.
 - **New version:** the CLI's notice as a banner, read from the same record, with

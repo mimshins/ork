@@ -78,7 +78,11 @@ loads ([context](../context.md#how-a-nodes-session-is-compiled)):
 - the estimated size of everything appended to Claude Code's system prompt.
 
 Tokens are estimated at about four characters each. `--json` prints the same as
-JSON.
+JSON. The planning is core's `explainSession`
+([explain.ts](../../packages/core/src/run/explain.ts)), which `ork mcp`'s
+`explain_context` uses too; with `texts` it adds each piece's words, which these
+two leave out. A worker spawned in a run (`<template>-<n>`) is planned as the
+node it came from.
 
 ## Doctor
 

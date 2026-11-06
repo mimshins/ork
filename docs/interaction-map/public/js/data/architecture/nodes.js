@@ -191,7 +191,7 @@ export const NODES = [
     status: "partial",
     pkg: "ui",
     summary:
-      "The localhost UI: live panels for the run, the decisions inbox, chats with nodes, logs and notifications, and a workflow builder that creates or edits a workflow and saves the same YAML. The context inspector is still to come.",
+      "The localhost UI: live panels for the run, the decisions inbox, chats with nodes, logs and notifications, a workflow builder that creates or edits a workflow and saves the same YAML, and the context inspector, which shows what a node's session loads.",
     facts: [
       "Built: the app, bundled into the CLI's `dist/ui` and served by `ork ui`, with its Runs panel, the Monitor (a run's live graph and ownership tree, with its controls) and the Builder, which creates or edits a workflow with no YAML to write, and saves the same file.",
       "Vite, React, Base UI, dockview and containerized-state; the run graph is drawn in-house, so no zustand ships.",
@@ -211,7 +211,7 @@ export const NODES = [
       "Built: limits across runs. `quotas` per day, week or month, for all projects or one, read from the ledger, with each cap's meter on the Usage panel. A plan's refusal stops every run here until it resets.",
       "No Resume button yet: `ork resume` does that.",
       "Built: the Builder's conditions are a field, a test and a value from what a node declares it can say, and they write the same `when:` a person would.",
-      "Panel still to come: the context inspector.",
+      "Built: Context, the context inspector: the latest chosen node's stack (agent, project instructions, skills live or off and why, context files, practices, the appended prompt) with each piece's words a click away, from a run's files as they are now, naming any that changed since it started, or from the Builder's draft as it's edited.",
       "The Monitor shows what a `watch:` node is waiting for. Looks aren't recorded, so its count and next look are worked out from `every`, and say about.",
       "The Runs panel's Triggers section says what's live and when each last looked. It only shows: accepting takes a terminal.",
       "The Builder's until picker chooses what a `watch:` waits for from what the node declares, so it can't wait for a value that never comes.",

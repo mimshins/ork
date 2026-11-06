@@ -250,9 +250,16 @@ export const NODES = [
     facts: [
       "`ork context explain <wf> <node>`, or `--json`; it plans the session without writing anything.",
       "Tokens are estimates, about four characters each; a skill's count is what it costs when used.",
-      "The UI's context inspector (milestone 2) will show the same.",
+      "Core plans it (`explainSession`), so `ork mcp`'s `explain_context` and the UI's Context panel give the same; the panel adds each piece's words.",
     ],
-    docs: [CONTEXT.explain, CONTEXT.explainTests, DESIGN.context, DESIGN.cli],
+    docs: [
+      CONTEXT.explain,
+      CONTEXT.explainTests,
+      CONTEXT.explainSession,
+      CONTEXT.explainSessionTests,
+      DESIGN.context,
+      DESIGN.cli,
+    ],
   },
   {
     id: "resolver",

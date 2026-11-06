@@ -38,7 +38,7 @@ import type {
 
 export type Refused = { refused: 400 | 404 | 409; error: string };
 
-const notFound = (project: ProjectRecord, name: string): Refused => ({
+export const notFound = (project: ProjectRecord, name: string): Refused => ({
   refused: 404,
   error: `No workflow \`${name}\` in \`${project.id}\`'s workflows.`,
 });
@@ -49,7 +49,7 @@ const badName = (name: string): Refused => ({
 });
 
 /** Why this workflow can't be touched at all, by its name or where it leads. */
-const problemWith = (
+export const problemWith = (
   project: ProjectRecord,
   name: string,
 ): Refused | undefined => {

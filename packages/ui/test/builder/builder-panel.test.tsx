@@ -101,6 +101,37 @@ describe("the builder", () => {
     expect(parseWorkflow(held.text).ok).toBe(true);
   }, 20_000);
 
+  it("tells the Context panel which card is selected, and when the draft changes", async () => {
+    const { user, state } = await open();
+    await addNode(user, "worker", "worker");
+    await user.click(screen.getByRole("button", { name: /^worker,/u }));
+    await waitFor(() => {
+      expect(state.contextTarget.getValue()).toMatchObject({
+        kind: "builder",
+        project: "shop",
+        workflow: "fresh",
+        node: "worker",
+        draft: true,
+      });
+    });
+    const before = state.contextTarget.getValue();
+    await user.type(await screen.findByLabelText("Prompt"), "Do the work.");
+    await user.tab();
+    await waitFor(() => {
+      expect(state.contextTarget.getValue()).not.toEqual(before);
+    });
+    expect(state.contextTarget.getValue()).toMatchObject({ node: "worker" });
+    act(() => {
+      state.selectRun("aaa11111");
+    });
+    expect(state.contextTarget.getValue()).toMatchObject({ kind: "run" });
+    await user.click(screen.getByRole("button", { name: /^worker,/u }));
+    expect(state.contextTarget.getValue()).toMatchObject({
+      kind: "builder",
+      node: "worker",
+    });
+  }, 20_000);
+
   it("says what walking it came to, with no problem to list", async () => {
     const { user } = await open();
     await addNode(user, "worker", "worker");

@@ -2,12 +2,10 @@
 
 _Part of [The UI](../ui.md)._
 
-Status: **Built:** the Runs panel, the Run workflow dialog, the Monitor, Logs,
-Decisions, Chats, Notifications and Usage
+Status: **Built:** the Runs panel, the Run workflow dialog, the Monitor, the
+Builder, Logs, Decisions, Chats, Notifications, Usage and Context
 ([panels](../../packages/ui/src/panels/),
-[tests](../../packages/ui/test/panels/)). The
-[workflow builder](../ui.md#workflow-builder) and the context inspector are
-still to come.
+[tests](../../packages/ui/test/panels/)).
 
 ## Contents
 
@@ -20,6 +18,7 @@ still to come.
 - [Chats](#chats)
 - [Notifications](#notifications)
 - [Usage](#usage)
+- [Context](#context)
 
 ## Runs
 
@@ -304,3 +303,41 @@ name show their parent folder too.
   offers **Try again** and `ork usage` above the last good report, if there is
   one, and the foot has the same report's command.
 - It says the costs are Claude Code's estimates.
+
+## Context
+
+What the latest chosen node's session loads, layer by layer, as
+`ork context explain` prints it
+([panel](../../packages/ui/src/panels/context-panel.tsx),
+[tests](../../packages/ui/test/panels/context-panel.test.tsx),
+[access tests](../../packages/ui/test/panels/context-access.test.tsx)), from the
+[node context routes](../server.md#api). It edits nothing.
+
+- **Which node:** the latest chosen anywhere: a run's node from the shared
+  selection (the Monitor, Logs, Chats), or the card the person selects in the
+  Builder, whose draft it follows, asking again after each edit. A run with no
+  node, or none selected in the Builder, says so.
+- **The header** names the node (the panel's heading), its type, where it's
+  planned from (`review · 4f2a1c`, or `Builder · review · draft`) and the size
+  of what Ork appends to its system prompt, with **Reload** and its CLI twin. A
+  run's node is planned from the project's files as they are now; a line under
+  the header, with its icon beside it, names each file behind it changed since
+  the run started ([limits](../gaps/limits-context-inspector.md)). A worker
+  spawned in the run is planned as the node it came from, and says so.
+- **The stack:** Agent, Project instructions, Skills, Context files, Practices
+  and the whole appended system prompt, in the CLI's order, each with its own
+  sum (never a total across them, since they don't add up). Each piece is a row
+  that opens its words exactly as the session reads them, in monospace, with a
+  copy button; it shows whether it's live, its layer, where it comes from and
+  its estimated size, and an off piece says why, in the planner's words. A row's
+  name is what it shows, in order, with the words only a screen reader needs
+  ("layer", "about", "tokens"), so a spoken command can say what's seen.
+- **Words:** a node with no session, or a workflow with errors, shows "No
+  context to show." and the planner's reason; a failed ask offers **Try again**,
+  keeping the answer before it on screen, and the failure is also said through
+  the workspace's live region.
+- **Focus:** it moves to the node's heading when the shown node changes only if
+  the focus was in the panel, and to what the panel says when no node is left;
+  it never takes it from the Monitor or the Builder. An opened row sticks to the
+  top as its words scroll, and the panel scrolls what takes the focus clear of
+  it.

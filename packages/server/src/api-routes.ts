@@ -1,6 +1,7 @@
 /** @file Every JSON route's handler, in one place. */
 
 import { builderRoutes } from "./builder-routes.ts";
+import { contextRoutes } from "./context-routes.ts";
 import type { ServerContext } from "./context.ts";
 import { readRoutes } from "./read-routes.ts";
 import type { Handlers } from "./router.ts";
@@ -10,4 +11,5 @@ export const apiRoutes = (context: ServerContext): Handlers => ({
   ...readRoutes(context),
   ...writeRoutes(context),
   ...builderRoutes(context),
+  ...contextRoutes(context),
 });

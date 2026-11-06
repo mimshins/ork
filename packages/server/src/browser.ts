@@ -9,3 +9,4 @@ export * from "./condition-text.ts";
 export * from "./contract.ts";
 export * from "./contract-graph.ts";
 export * from "./contract-builder.ts";
+export * from "./contract-context.ts";

@@ -83,6 +83,14 @@ describe("ork context explain", () => {
     );
   });
 
+  it("says a spawned worker is planned as the node it came from", () => {
+    const { root, home } = project();
+    const e = explained(".ork/workflows/t.ork.yaml", "fix-2", root, home);
+    expect(formatExplanation(e)[0]).toContain(
+      "planned as fix, the node it was spawned from",
+    );
+  });
+
   it("reports a node that does not exist", () => {
     const { root, home } = project();
     expect(
