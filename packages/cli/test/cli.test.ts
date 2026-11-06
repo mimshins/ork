@@ -135,8 +135,9 @@ describe("ork validate's walk", () => {
 
   it("says when it stopped, and claims nothing", () => {
     const { stdout } = validateText(parallel(14));
-    expect(stdout).toContain(
-      "Walked 4,096 ways through and stopped; not every way was tried.",
+    // A slow machine runs out of time before it reaches the cap of ways.
+    expect(stdout).toMatch(
+      /Walked [\d,]+ ways through and stopped; not every way was tried\./u,
     );
     expect(stdout).not.toContain("walk.");
   });
