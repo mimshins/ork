@@ -83,7 +83,11 @@ Each is in one of the limits chunks under [Contents](#contents), from L2 on.
 
 ## Contents
 
-- [Limits](./gaps/limits.md)
+- [Limits: running, resuming and stopping](./gaps/limits-running.md)
+- [Limits: projects, git and installs](./gaps/limits-projects.md)
+- [Limits: messaging, claims and links](./gaps/limits-messaging.md)
+- [Limits: workflows calling workflows](./gaps/limits-calls.md)
+- [Limits: the usage ledger and pruning](./gaps/limits-ledger.md)
 - [Limits: the browser view](./gaps/limits-ui.md)
 - [Limits: scripts](./gaps/limits-scripts.md)
 - [Limits: usage and quotas](./gaps/limits-usage.md)

@@ -46,7 +46,7 @@ What Ork has now, checked on 2026-11-03:
   ([workflow.ts](../../packages/schema/src/workflow.ts)). A caller could see
   only that a run ended, and how.
 - **Budgets are per run**, and nothing caps runs together
-  ([L39](../../specs/gaps/limits.md)).
+  ([L39](../../specs/gaps/limits-running.md)).
 
 ## Options
 
@@ -198,7 +198,7 @@ messages:
   `ork decide` or the UI's inbox, even when the caller runs in a terminal.
 - Runs are heavier than inlined nodes: each is a process with its own worktrees.
 - Concurrency stays per run, unlike the budget, so a tree of runs can hold more
-  sessions than any one limit says ([L39](../../specs/gaps/limits.md)).
+  sessions than any one limit says ([L39](../../specs/gaps/limits-running.md)).
 - Calling across projects depends on what is registered on the machine, as a
   tool node depends on what is installed.
 

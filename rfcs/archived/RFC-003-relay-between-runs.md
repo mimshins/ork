@@ -88,7 +88,7 @@ MCP server.
   needs no daemon: every run works without `ork ui` running. A second place that
   knows about messages, beside the store that replay, logs and resume already
   read. Ork binds loopback only and has one local user
-  ([L28](../../specs/gaps/limits.md)), so the reach adds nothing yet.
+  ([L28](../../specs/gaps/limits-ui.md)), so the reach adds nothing yet.
 
 ## Decision
 
@@ -151,17 +151,18 @@ ork relay a1/builder b2/builder
 - `ork logs` on either run shows both sides of a conversation, and replay and
   resume keep working from the events.
 - Two runs in one repository can link too, which gives them a way to coordinate
-  though their claims stay separate ([L40](../../specs/gaps/limits.md)).
+  though their claims stay separate
+  ([L40](../../specs/gaps/limits-messaging.md)).
 
 **Negative**
 
 - Budgets and concurrency stay per run, so linked runs spend independently
-  ([L39](../../specs/gaps/limits.md)).
+  ([L39](../../specs/gaps/limits-running.md)).
 - Two agents answering each other can still spend up to the link's limit before
   anyone is asked.
 - Linked work is one machine's, as is everything in Ork for now.
 - A blocked tool call on the CLI driver lasts at most 24 hours, as `delegate`
-  does ([L6](../../specs/gaps/limits.md)).
+  does ([L6](../../specs/gaps/limits-running.md)).
 
 **Follow-up work**
 

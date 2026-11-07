@@ -21,7 +21,7 @@ here has a command that does the same. The contract is the
   - [What it does not do yet](./browser-view/keys-and-accessibility.md#what-it-does-not-do-yet)
 - [New versions](./browser-view/new-versions.md)
 
-![Ork's workspace: the Runs panel, the Monitor with a run's graph and node table, Logs below it, and an open decision in the Decisions panel.](./images/browser-view-dark.png)
+![Ork's workspace: the Runs panel, the Monitor with a run's graph and node table, Logs below it, an open decision in the Decisions panel, and the Context panel under it.](./images/browser-view-dark.png)
 
 ## Next
 

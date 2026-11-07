@@ -2,8 +2,9 @@
  * @file `ork feedback apply` (ADR-059): runs Ork's own `ork:feedback-apply` in
  *   the project an item came from, with the item as its untrusted input. Its
  *   worker proposes a fix on a branch and its gate asks to keep or discard it;
- *   Ork never merges. Kept, the item is `resolved`; discarded, the run's
- *   worktree and branch go and the item stays `accepted`.
+ *   Ork never merges. Kept, the item is `resolved`, unless its branch holds no
+ *   new commits: then there is nothing to keep, and, as when discarded, the
+ *   run's worktree and branch go and the item stays `accepted`.
  */
 
 import {

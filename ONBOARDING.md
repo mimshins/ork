@@ -102,7 +102,7 @@ a run from file to record: [architecture](./specs/architecture.md),
 [worktrees](./specs/worktrees.md), [runtime](./specs/runtime.md),
 [context](./specs/context.md), [messaging](./specs/messaging.md),
 [event store](./specs/event-store.md). Read the others when your work reaches
-them. Finish with [gaps](./specs/gaps.md) and [limits](./specs/gaps/limits.md).
+them. Finish with [gaps](./specs/gaps.md) and [limits](./specs/gaps.md#limits).
 **Why now:** a spec says what a part must do, so you can read its code as an
 answer to it, and some of what looks wrong in the code is a known limit.
 

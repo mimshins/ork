@@ -53,10 +53,13 @@ _Part of [Feedback and self-improvement](../feedback.md)._
   - A `tool.git` node runs `git diff --stat HEAD...<branch>`, and the gate shows
     that, the command to read the whole change, and last the worker's own
     summary. It asks to keep the branch or discard it, with no recommendation;
-    Ork never merges. Keeping marks the item `resolved`, unless the branch holds
-    no commits, when it's removed and the item stays `accepted`; discarding
-    removes the run's worktree and branch and leaves the item `accepted`; no fix
-    leaves it `accepted` too, saying why ([L149](../gaps/limits-feedback.md)).
+    Ork never merges. Keeping marks the item `resolved`, unless the run's
+    branches hold no commit the project's `HEAD` lacks (`HEAD..<branch>`): then
+    there's nothing to keep, so Ork removes the run's worktrees and branches, as
+    on discard, and the item stays `accepted`. (ADR-059's "keeping marks the
+    item resolved" assumes the worker committed a change.) Discarding removes
+    the run's worktree and branch and leaves the item `accepted`; no fix leaves
+    it `accepted` too, saying why ([L149](../gaps/limits-feedback.md)).
 - **Lessons** (built: [lessons.ts](../../packages/core/src/feedback/lessons.ts),
   [accept.ts](../../packages/core/src/feedback/accept.ts),
   [tests](../../packages/core/test/lessons.test.ts),

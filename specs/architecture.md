@@ -1,10 +1,11 @@
 # Architecture
 
-Status: **Partial**: `@krapht/ork-integrations`, `@krapht/ork-schema`,
+Status: **Built**: `@krapht/ork-integrations`, `@krapht/ork-schema`,
 `@krapht/ork-core`, `@krapht/ork-runtime-claude`, `@krapht/ork-nodes` and the
 CLI `@krapht/ork` exist, and so do `@krapht/ork-server` with `ork ui`
 ([server](./server.md)) and `@krapht/ork-ui`, with its panels and the workflow
-builder and the context inspector ([ui](./ui.md)). Why:
+builder and the context inspector ([ui](./ui.md)). `schemaVersion` is still 1,
+so `schema/` has no migration yet. Why:
 [ADR-002](../decisions/ADR-002-typescript-from-source.md),
 [ADR-003](../decisions/ADR-003-oxlint-oxfmt-and-boundaries.md),
 [ADR-039](../decisions/ADR-039-local-server.md).
@@ -20,7 +21,7 @@ ork/
     nodes/           built-in node-type registry (each: schema, defaults, execute(), UI metadata)
     server/          node:http JSON API + SSE streams, typed contract and client; loopback + token (ADR-039)
     cli/             `ork` bin (citty): init, validate, run, ps, logs, chat, decide, ui, doctor, context
-    ui/              (M2) Vite + React + @xyflow/react + TanStack Query + zustand
+    ui/              Vite + React + Base UI + dockview + containerized-state; an in-house graph (ADR-040)
   examples/          software-factory.ork.yaml, pr-review.ork.yaml, …
   docs/
 ```

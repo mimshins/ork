@@ -24,7 +24,7 @@ What the new-version banner and the Upgrade dialog do for now, by choice
   `ork ui --serve` (an older version, after a downgrade) can't serve; the
   terminal says so with `ork ui --port <n>`, and the page that it didn't come
   back. Windows' `.cmd` package managers still can't be started
-  ([L9](./limits.md)).
+  ([L9](./limits-projects.md)).
 - **L167 · A registry URL with a user name and password can't be asked.** Node's
   `fetch` refuses a URL that carries credentials, so an `ORK_UPDATE_REGISTRY` of
   `https://user:token@mirror…` reads as unreachable; the page shows it without

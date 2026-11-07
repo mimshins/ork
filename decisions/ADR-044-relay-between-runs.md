@@ -55,9 +55,10 @@ to stay running.
 ## Consequences
 
 - Budgets, concurrency and claims stay per run
-  ([L39, L40](../specs/gaps/limits.md)).
+  ([L39](../specs/gaps/limits-running.md),
+  [L40](../specs/gaps/limits-messaging.md)).
 - A link does not survive a resume, names one exact node, and has a limit of 100
-  that is a guess ([L48, L49, L51](../specs/gaps/limits.md)).
+  that is a guess ([L48, L49, L51](../specs/gaps/limits-messaging.md)).
 - Proven on real sessions in two repositories on the CLI driver. The RFC asked
   for both drivers, but the machine had no API key: the maintainer accepted
   shipping with the SDK driver tracked in chore C5

@@ -118,9 +118,10 @@ The question shows what the branch changes (`git diff --stat`) and the command
 to read the whole of it. **Read the diff before you keep it**: the worker's own
 account of it comes last, and is only its claim.
 
-- **Keep:** the branch stays, and the item is resolved (a branch with no commits
-  is removed instead). Review and merge it like any other change: Ork never
-  merges it.
+- **Keep:** the branch stays, and the item is resolved. Review and merge it like
+  any other change: Ork never merges it. If the branch holds no new commits,
+  there's nothing to keep: Ork removes it and its worktree, and the item stays
+  accepted.
 - **Discard:** the branch and its worktree are removed, and the item stays
   accepted.
 

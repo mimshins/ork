@@ -20,8 +20,8 @@ A long unattended run should not be able to spend without limit, and several
 runs should not add up to more than the user meant to spend. Today nothing looks
 across runs:
 
-- **Limits are per run** ([L39](../../specs/gaps/limits.md)). `limits.budgetUsd`
-  is the only cap, and three runs each get the whole of it.
+- **Limits are per run** ([L39](../../specs/gaps/limits-running.md)).
+  `limits.budgetUsd` is the only cap, and three runs each get the whole of it.
 - **A workflow's budget is the workflow's.** It says what one run may cost, not
   what this user will spend today. It travels with the file, so it is not a
   statement about the person running it.
@@ -50,7 +50,7 @@ in to a subscription (`apiKeySource: none`). Both drivers emit this same JSON.
   rest on a field that isn't documented.
 - `maxBudgetUsd` is the only cap Claude Code takes for a process that is
   measured in spend. It has no token cap, and it counts that process only
-  ([L73](../../specs/gaps/limits.md)).
+  ([L73](../../specs/gaps/limits-ledger.md)).
 - A session reports its cost only when it finishes, so the ledger can't see a
   session that is still working.
 
@@ -196,7 +196,7 @@ The user's file is new, and holds settings only, never credentials.
   off. It needs no migration, as the status is stored as text.
 - **`schemaVersion` stays 1:** `quotas` is a new optional field, and a new file.
 - **A store migration** adds the plan limits' table.
-- **Closes** [L39](../../specs/gaps/limits.md) for spend and part of
+- **Closes** [L39](../../specs/gaps/limits-running.md) for spend and part of
   [L74](../../specs/gaps/limits-usage.md). `limits.concurrency` across runs
   stays open, as a separate question.
 - **To update on shipping:** the usage, scheduler, workflow-format and

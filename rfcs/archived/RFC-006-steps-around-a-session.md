@@ -93,9 +93,9 @@ failure, so the session never ends. Ork already has such a hook for holds
 ([hold.ts](../../packages/runtime-claude/src/hold.ts)).
 
 - **Pros:** No new process, and the failure arrives inside the turn.
-- **Cons:** Two drivers to get right. [L29](../../specs/gaps/limits.md) shows
-  managed settings can stop a hook firing, which here would let a report pass
-  unchecked. A session's own timeout and budget have to cover the check.
+- **Cons:** Two drivers to get right. [L29](../../specs/gaps/limits-running.md)
+  shows managed settings can stop a hook firing, which here would let a report
+  pass unchecked. A session's own timeout and budget have to cover the check.
 
 ### Option C — Fail the node, and let a loop edge retry
 

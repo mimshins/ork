@@ -71,3 +71,4 @@ and carries an RFC through this lifecycle.
 | [010](./archived/RFC-010-conditions-from-declared-outputs.md)  | Conditions chosen from what a node declares it can say             | Implemented |
 | [011](./archived/RFC-011-watching-a-source.md)                 | Watching a source, and acting on what it says                      | Implemented |
 | [012](./archived/RFC-012-teaching-claude-code-ork.md)          | Teaching Claude Code Ork's standards: an MCP server and skills     | Implemented |
+| [013](./active/RFC-013-for-each.md)                            | Running a node once per item of a list                             | Accepted    |

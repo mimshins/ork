@@ -78,7 +78,7 @@ of the first build found them almost all in resume and stop.
   session; `ref` started a worktree from a branch; and a stop ended a resumed
   session within a second, with nothing left running. The SDK driver only
   against stand-ins ([C5](../specs/gaps.md#chores)).
-- **Limits:** [L53–L61](../specs/gaps/limits.md). The budget is settled late, so
-  calls running together can overspend it.
+- **Limits:** [L53–L61](../specs/gaps/limits-calls.md). The budget is settled
+  late, so calls running together can overspend it.
 - **The Monitor must show a tree of runs,** and a tree's total, since `ork ps`
   shows a called run's cost on both it and its caller.

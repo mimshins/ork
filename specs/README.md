@@ -20,25 +20,25 @@ Long specs follow the hub and chunk layout
 | Spec                                              | Status    | Milestone |
 | ------------------------------------------------- | --------- | --------- |
 | [Core concepts](./concepts.md)                    | Specified | M1        |
-| [Architecture](./architecture.md)                 | Partial   | M1, M2    |
+| [Architecture](./architecture.md)                 | Built     | M1, M2    |
 | [Workflow file format](./workflow-format.md)      | Built     | M1a       |
 | [Expressions](./expressions.md)                   | Built     | M1a       |
 | [Graph compiler](./graph-compiler.md)             | Built     | M1a       |
 | [Runtime: the Claude drivers](./runtime.md)       | Built     | M1b       |
-| [Scheduler: running a workflow](./scheduler.md)   | Partial   | M1c       |
+| [Scheduler: running a workflow](./scheduler.md)   | Built     | M1c       |
 | [Worktrees: where nodes work](./worktrees.md)     | Built     | M1c       |
 | [Project rules](./project-rules.md)               | Built     | M1e       |
-| [Projects: in-repo or attached](./projects.md)    | Partial   | M1e       |
-| [Context, skills and precedence](./context.md)    | Partial   | M1c       |
+| [Projects: in-repo or attached](./projects.md)    | Built     | M1e       |
+| [Context, skills and precedence](./context.md)    | Built     | M1c       |
 | [Messaging, decisions and logs](./messaging.md)   | Built     | M1d       |
 | [Pause, continue and stop](./run-control.md)      | Built     | M2        |
 | [Event store: what a run keeps](./event-store.md) | Built     | M1d       |
 | [Usage: what runs spent over time](./usage.md)    | Built     | M2        |
-| [Feedback and self-improvement](./feedback.md)    | Partial   | M1d, M2   |
-| [The ork CLI](./cli.md)                           | Partial   | M1        |
+| [Feedback and self-improvement](./feedback.md)    | Built     | M1d, M2   |
+| [The ork CLI](./cli.md)                           | Built     | M1        |
 | [The local server](./server.md)                   | Built     | M2        |
 | [Ork for Claude Code](./claude-code.md)           | Built     | M2        |
-| [The UI](./ui.md)                                 | Partial   | M2        |
+| [The UI](./ui.md)                                 | Built     | M2        |
 | [Known gaps and limits](./gaps.md)                | Open      | All       |
 
 **Status:** _Built_ means on `main` with tests; _Partial_ means some of it is

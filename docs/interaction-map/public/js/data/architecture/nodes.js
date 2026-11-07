@@ -104,7 +104,7 @@ export const NODES = [
     zone: "surfaces",
     x: 320,
     y: 360,
-    status: "partial",
+    status: "built",
     pkg: "cli",
     src: "packages/cli/src/bin.ts",
     summary:
@@ -210,7 +210,7 @@ export const NODES = [
     zone: "surfaces",
     x: 320,
     y: 960,
-    status: "partial",
+    status: "built",
     pkg: "ui",
     summary:
       "The localhost UI: live panels for the run, the decisions inbox, chats with nodes, logs and notifications, a workflow builder that creates or edits a workflow and saves the same YAML, the context inspector, which shows what a node's session loads, and the Worktrees panel. A banner says when a newer Ork is out, and upgrades it.",
@@ -428,7 +428,7 @@ export const NODES = [
     zone: "core",
     x: 600,
     y: 360,
-    status: "partial",
+    status: "built",
     pkg: "core",
     summary:
       "The heart of a run. It starts entry nodes, follows flow edges whose `when:` holds, waits on joins, counts loop rounds, and runs the children a leader delegates to.",

@@ -149,7 +149,7 @@ ended links, including those shared with a run that stays, and the run's folder.
 It lists them and asks first, and looks again after the answer. The store's file
 then shrinks, unless a run is going or the store is busy: its free space is used
 first, and the next prune tries again. Ork never prunes on its own
-([L72](./gaps/limits.md)).
+([L72](./gaps/limits-ledger.md)).
 
 What stays: the ledger, so `ork usage` is unchanged, and feedback records.
 
@@ -160,7 +160,7 @@ A run stays, and says why, if it:
 - has a worktree or branch left, since `ork worktrees` finds those through its
   events. `ork worktrees clean` deals with them first. If git fails, the run
   stays and says so; a project folder that is gone or no longer a repository has
-  nothing left to clean up ([L78](./gaps/limits.md));
+  nothing left to clean up ([L78](./gaps/limits-ledger.md));
 - belongs to a call with a run that must stay, or that is out of scope. A run
   and the runs it called go together or not at all.
 

@@ -148,8 +148,7 @@ shift when the graph changes.
 **B. Dragged by hand and saved in `<name>.layout.json`,** as ADR-006 planned.
 People can arrange what they like, but it adds a file to commit, drag handling
 with a keyboard equivalent, updates on every rename and removal, and a second
-edge-drawing mode whose edges can cross cards
-([L62](../../specs/gaps/limits.md)).
+edge-drawing mode whose edges can cross cards ([L62](../../specs/gaps.md)).
 
 **C. Computed, with optional pins saved in the sidecar.** Keeps hand placement
 for those who want it, and all of B's costs.

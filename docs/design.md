@@ -55,12 +55,13 @@ parts fit together is the [interaction map](./interaction-map/README.md).
   - Ownership: delegation, reports, `spawn_worker`.
   - Worktree manager.
   - Context compiler and layer precedence; `ork context explain`.
-- **M1d: human loop** (in progress; built: the
-  [event store](../specs/event-store.md) with `ps`, `logs`, `tree`; the decision
-  queue with `decide`, `stop` and `run --detach`; the message bus with
-  `send_message`, `read_inbox` and loops asking a live owner; `chat` and
-  `resume`; `claim` and `release`; feedback capture). Ship the
-  `software-factory` and `pr-review` examples.
+- **M1d: human loop** (built: the [event store](../specs/event-store.md) with
+  `ps`, `logs`, `tree`; the decision queue with `decide`, `stop` and
+  `run --detach`; the message bus with `send_message`, `read_inbox` and loops
+  asking a live owner; `chat` and `resume`; `claim` and `release`; feedback
+  capture; the `software-factory` and `pr-review` examples, run end to end on
+  the CLI driver). Running the examples on the SDK driver waits for an
+  `ANTHROPIC_API_KEY` ([C5](../specs/gaps.md#chores)).
   - Feedback capture: the `feedback` tool, system signals, the local table and
     fingerprints, `ork feedback list | show | dismiss`.
 - **M2: UI.**

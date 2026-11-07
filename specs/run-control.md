@@ -67,7 +67,7 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 - **Nothing new starts.** Queued activations wait, and so does a leader's
   delegated child before it starts. A tool node (`tool.shell`, `tool.gh`,
   `tool.aws`) runs to its end, and a [`workflow.call`](./scheduler/calls.md)'s
-  run goes on ([L56](./gaps/limits.md)).
+  run goes on ([L56](./gaps/limits-calls.md)).
 - **A gate** stays open, and it can still be answered (`ork decide`). Its
   `timeout` counts only while the gate isn't held: it keeps the time it had
   left, and no default answer is chosen while the run is paused.
@@ -126,7 +126,7 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 - **Managed settings can forbid HTTP hooks** (`allowManagedHooksOnly`,
   `allowedHttpHookUrls`). Then the CLI driver's hold never fires, and a
   CLI-driven node pauses only at its next activation
-  ([limits](./gaps/limits.md)).
+  ([L29](./gaps/limits-running.md)).
 - **The SDK path hasn't run live** (it needs an API key), only against its types
   and the fake runtime ([gaps](./gaps.md#chores), C5).
 - **A single-node run** (`ork run <wf> --node n`) takes `stop`, but not pause or

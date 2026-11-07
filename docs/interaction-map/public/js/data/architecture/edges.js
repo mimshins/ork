@@ -48,7 +48,7 @@ export const EDGES = [
     label: "designs · watches · answers",
     detail:
       "You watch and control a run live, chat with its nodes and answer decisions in the browser, build a workflow there with no YAML to write, tidy what runs left in their worktrees, and upgrade Ork.",
-    status: "partial",
+    status: "built",
     docs: [DESIGN.ui, UI.guide],
   },
   {

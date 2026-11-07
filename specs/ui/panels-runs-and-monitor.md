@@ -133,8 +133,8 @@ Its CLI twin is `ork tree <run>`.
   ([L118](../gaps/limits-watching.md)). A run that's over shows none of this.
 - **Across runs:** a `workflow.call` node opens the run it started, a called run
   links back to its caller, and a run's links are listed with their message
-  counts, each opening the run at the other end ([L50](../gaps/limits.md)). The
-  focus then lands on the opened run's heading, since the button that had it is
-  gone (WCAG 2.4.3).
+  counts, each opening the run at the other end
+  ([L50](../gaps/limits-messaging.md)). The focus then lands on the opened run's
+  heading, since the button that had it is gone (WCAG 2.4.3).
 
 Selecting a node is shared with the other panels: Logs and Chats follow it.

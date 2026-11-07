@@ -1,13 +1,13 @@
 # The UI
 
-Status: **In progress** (M2). Built: its way in, the local server and `ork ui`
+Status: **Built** (M2): its way in, the local server and `ork ui`
 ([server](./server.md)); and `packages/ui`, the app the server serves, with its
 build, its license list and its tests ([ui](../packages/ui/src/app/app.tsx),
 [tests](../packages/ui/test/)); the design system's tokens and themes and base
 components ([design system](./ui/design-system.md)); and the workspace that
 holds the panels ([workspace](./ui/workspace.md)). Its panels are built: Runs,
 the Monitor, Logs, Decisions, Chats, Notifications, Usage, Context, the context
-inspector, and Feedback ([panels](./ui/panels.md)), with a user guide
+inspector, Feedback and Worktrees ([panels](./ui/panels.md)), with a user guide
 ([the browser view](../docs/guides/browser-view.md)). So is the
 [workflow builder](#workflow-builder). The stack is React, Base UI, dockview,
 containerized-state and an in-house graph

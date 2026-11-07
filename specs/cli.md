@@ -1,22 +1,30 @@
 # The ork CLI
 
-Status: **Partial**: `ork init`, `ork register`, `ork projects`, `ork migrate`,
-`ork link`, `ork validate`, `ork doctor`, `ork run` (a whole workflow, or one
-node with `--node`), `ork ps`, `ork logs`, `ork tree`, `ork decide`, `ork stop`,
-`ork pause`, `ork continue` ([run control](./run-control.md)), `ork chat`,
-`ork resume`, `ork worktrees`, `ork context explain`,
-`ork agents list | show | add | rm`,
+Status: **Built**: every command below. `ork init`, `ork register`,
+`ork projects`, `ork migrate` (with `--from-agents`), `ork link`,
+`ork validate`, `ork doctor`, `ork run` (a whole workflow, or one node with
+`--node`), `ork ps`, `ork logs`, `ork tree`, `ork usage` and `ork prune`
+([usage](./usage.md)), `ork decide`, `ork chat`, `ork relay`
+([links](./messaging/links.md)), `ork stop`, `ork pause`, `ork continue`
+([run control](./run-control.md)), `ork resume`, `ork watch`
+([watching](./scheduler/watching.md)), `ork worktrees` (`ork wt`),
+`ork context explain`, `ork agents list | show | add | rm`,
 `ork feedback list | show | note | dismiss | restore | accept | apply | triage | split | publish | export | import`
 ([feedback](./feedback.md)), `ork upgrade` and the new-version notice
-([updates](./cli/updates.md)), `ork ui` ([server](./server.md)), and `ork mcp`
-([mcp](./cli/mcp.md)) are built ([code](../packages/cli/src/main.ts),
-[tests](../packages/cli/test/cli.test.ts),
+([updates](./cli/updates.md)), `ork ui` ([server](./server.md)), `ork mcp`
+([mcp](./cli/mcp.md)), and `ork send`, which a tool node's program runs
+([scripts](./messaging/scripts.md#ork-send))
+([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts),
 [agents tests](../packages/cli/test/agents.test.ts),
 [link tests](../packages/core/test/links.test.ts),
 [projects tests](../packages/cli/test/projects.test.ts),
-[migrate tests](../packages/cli/test/migrate.test.ts)); the other commands are
-specified. Published as `@krapht/ork`
+[migrate tests](../packages/cli/test/migrate.test.ts),
+[usage tests](../packages/cli/test/usage.test.ts),
+[prune tests](../packages/core/test/prune.test.ts),
+[relay tests](../packages/cli/test/relay.test.ts),
+[watch tests](../packages/cli/test/watch.test.ts),
+[send tests](../packages/cli/test/send.test.ts)). Published as `@krapht/ork`
 ([release](../runbook/development/release.md),
 [ADR-015](../decisions/ADR-015-changesets-and-one-bundled-cli.md)).
 

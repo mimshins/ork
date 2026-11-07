@@ -1,6 +1,6 @@
 # Scheduler: running a workflow
 
-Status: **Partial**: the scheduler, delegation, the built-in node types and
+Status: **Built**: the scheduler, delegation, the built-in node types and
 `ork run <wf>` are built ([scheduler.ts](../packages/core/src/run/scheduler.ts),
 [routing.ts](../packages/core/src/run/routing.ts),
 [delegation.ts](../packages/core/src/run/delegation.ts),
@@ -179,8 +179,8 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   down to what it added ([usage](./usage.md#what-a-resumed-session-spent)).
   `ork resume` goes on from all the run had spent, failed nodes included.
 - `limits.budgetUsd` caps the run: each session starts with
-  `min(node budget, what is left)` ([L73](./gaps/limits.md)), and once it is
-  spent no session or [call](./scheduler/calls.md) starts and the run ends
+  `min(node budget, what is left)` ([L73](./gaps/limits-ledger.md)), and once it
+  is spent no session or [call](./scheduler/calls.md) starts and the run ends
   `budget_exhausted`.
 - [Quotas](./usage.md#limits-across-runs) cap what runs spend together: a
   session also gets no more than what is left of them, and at one a run ends

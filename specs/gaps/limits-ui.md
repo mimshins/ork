@@ -15,6 +15,10 @@ choice.
 - **L27 · The overview stream polls.** It compares the newest 50 runs and the
   open decisions every second; only a run's own stream is pushed, over its
   socket. ([server](../server/streams-contract-and-security.md#streams))
+- **L28 · One local user.** The server binds loopback only, with one token per
+  start; there is no remote access, TLS, or second user, and anything that can
+  read `~/.ork/ui.json` as the user can drive it, as it can drive `ork`.
+  ([ADR-039](../../decisions/ADR-039-local-server.md))
 - **L32 · The UI shows dark for a moment before light.** The page's policy
   allows no inline script, so the look is set when the app's module runs; until
   then a light system sees the dark theme. A theme cookie the server reads could
