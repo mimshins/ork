@@ -914,7 +914,9 @@ export const MILESTONES = [
       {
         id: "agent-setup",
         title: "Set up Ork with your agent",
-        status: "active",
+        status: "done",
+        date: "2026-11-08",
+        commits: ["2388727"],
         detail:
           "Getting started opens with two ways in: by hand (Installation, then the Quickstart) or by your coding agent. The `/ork:setup` skill and `ork init --skills`'s `ork-setup` have Claude Code check for `ork`, run `ork doctor`, set up the project with `ork init` or `ork register`, add Ork's tools and offer a first workflow, asking before each change; any MCP client or an agent with a shell gets the same path from the guide. The user docs were reviewed as a newcomer reads them: a What's new page with upgrade notes, How Ork works in plain words, where Ork keeps things and how to remove it, example downloads that match your version, and specs and codes moved out of the guides' running text.",
         docs: [
@@ -928,7 +930,9 @@ export const MILESTONES = [
       {
         id: "answer-notes",
         title: "A note with an answer",
-        status: "active",
+        status: "done",
+        date: "2026-11-08",
+        commits: ["2388727"],
         detail:
           "Any decision can be answered with a note: a `human.gate` outputs it as `note`, so a `revise` answer can say what to change; `ask_user` returns it with the choice; a denied tool's message ends with it. Given with `ork decide --say`, the Decisions panel's note box, or a line after the choice on the run's terminal. Built (G19); a note to a loop out of rounds or a link at its limit is only recorded for now (G22).",
         docs: [
@@ -939,7 +943,9 @@ export const MILESTONES = [
       {
         id: "leader-questions",
         title: "A leader answers its children",
-        status: "active",
+        status: "done",
+        date: "2026-11-08",
+        commits: ["2388727"],
         detail:
           "With `questions: owner` on a `claude.leader`, a child's `ask_user` goes first to a read-only fork of the leader's latest session, which answers when its task settles the question, or passes it on to you with a note; you're asked as before when the fork can't. Every answer records who gave it. Built and tested against stand-in sessions; next, a real leader forked while it waits in `delegate` (G25).",
         docs: [
@@ -959,7 +965,9 @@ export const MILESTONES = [
       {
         id: "gaps-review",
         title: "Decide the known gaps",
-        status: "active",
+        status: "done",
+        date: "2026-11-08",
+        commits: ["2063edb", "2388727"],
         detail:
           "Every open gap, limit and chore in the register decided, on 2026-11-07. Fixed: a run that skipped nodes or handled a failure still reads `succeeded` and now says so; the Builder keeps its workflow across a narrow window; every docked panel has a heading; a run of one node refuses pause, continue and a node's stop with a reason; `ork` from a git hook leaves the hook's repository alone; `ork doctor` warns of a home path too long for sockets; `ork ps` marks a called run's cost as its caller's; a light system gets no dark flash; the graph's card keys are shown; starting a run with no Monitor focuses the Runs panel; the Monitor resumes a run; mail to a node that never ran is warned of; a step's kept output isn't overwritten; `triggers.schema.json`; publishing pages for its thread; Propose fix picks a driver; leaders get the 1-hour cache; a newer file says so. Kept limits moved out of the register, each into a Limits chunk beside its area's spec, ids kept; the register now holds only open work: 31 carried limits, to `benchmark`, `for-each` or unplanned, and four chores.",
         docs: ["specs/gaps.md", "decisions/README.md"],
@@ -975,6 +983,9 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "87f9e47",
+  "aaf80c6",
+  "f2457c7",
   "71c09e7",
   "d6c8d68",
   "2a0a15f",
