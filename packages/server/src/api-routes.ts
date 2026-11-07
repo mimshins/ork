@@ -6,12 +6,17 @@ import type { ServerContext } from "./context.ts";
 import { feedbackRoutes } from "./feedback-routes.ts";
 import { readRoutes } from "./read-routes.ts";
 import type { Handlers } from "./router.ts";
+import { updateRoutes } from "./update-routes.ts";
 import { writeRoutes } from "./write-routes.ts";
 
-export const apiRoutes = (context: ServerContext): Handlers => ({
+export const apiRoutes = (
+  context: ServerContext,
+  port: () => number,
+): Handlers => ({
   ...readRoutes(context),
   ...writeRoutes(context),
   ...builderRoutes(context),
   ...contextRoutes(context),
   ...feedbackRoutes(context),
+  ...updateRoutes(context, port),
 });

@@ -27,7 +27,7 @@ import {
   readLayout,
   withFold,
 } from "./layout.ts";
-import { isPanelId, type PanelId, panelOf } from "./panels.tsx";
+import { isPanelId, type PanelId, PANELS, panelOf } from "./panels.tsx";
 import { createWindowActions } from "./window-actions.ts";
 import {
   focusById,
@@ -148,6 +148,13 @@ export const createWorkspace = ({
     });
   };
 
+  /** Focus back into the panels, as after a close: for what leaves the bars. */
+  const focusPanels = (): void => {
+    const [first] = PANELS;
+    if (view.getValue().wide) refocus();
+    else if (first !== undefined) focusById(stackHeadingId(first.id));
+  };
+
   const minimize = (id?: PanelId): void => {
     const panel = targetPanel(id);
     if (api === null || panel === undefined) return;
@@ -258,6 +265,7 @@ export const createWorkspace = ({
     restore,
     toggleFold,
     resetLayout,
+    focusPanels,
     ...windowActions,
     setWide,
   };

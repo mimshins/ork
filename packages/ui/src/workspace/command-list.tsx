@@ -71,9 +71,10 @@ export const CommandList = ({
                   value={item}
                 >
                   <span>{item.label}</span>
-                  {item.command.disabled === undefined ? null : (
+                  {(item.command.disabled ?? item.command.detail) ===
+                  undefined ? null : (
                     <span className={popup["itemDetail"]}>
-                      {item.command.disabled}
+                      {item.command.disabled ?? item.command.detail}
                     </span>
                   )}
                   {item.command.shortcut === undefined ? null : (

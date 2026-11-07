@@ -16,6 +16,7 @@ import {
 
 import type { RunView } from "./contract.ts";
 import { fail } from "./router.ts";
+import type { Updates } from "./updates.ts";
 
 export type ServerContext = {
   store: EventStore;
@@ -33,6 +34,10 @@ export type ServerContext = {
    * own.
    */
   gh?: GhRunner;
+  /** The record of versions, the daily check, and the one upgrade. */
+  updates: Updates;
+  /** Restarts `ork ui` onto the installed `ork`, when `ork ui` started it. */
+  restart?: () => void;
 };
 
 type Refusal = { status: 400 | 404 | 409; error: string };

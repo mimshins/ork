@@ -49,9 +49,11 @@ through its typed client.
   restore, accept, accept as a lesson, apply (going to the Monitor), split, and
   publish after a preview; a note on a run or a node is written in the Monitor.
   Merging stays `ork feedback triage`'s.
-- **New version:** the CLI's notice as a banner, read from the same record, with
-  an upgrade button that runs `ork upgrade`'s plan after the user confirms
-  ([updates](./cli/updates.md)).
+- **New version** (built,
+  [the banner](./ui/workspace.md#the-new-version-banner)): the CLI's notice as a
+  banner, read from the same record, with an upgrade that runs `ork upgrade`'s
+  plan after the user confirms, and a restart onto the new install
+  ([updates](./cli/updates.md#in-ork-ui)).
 
 ## Workflow builder
 

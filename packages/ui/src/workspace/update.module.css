@@ -1,0 +1,261 @@
+/**
+ * @file The new-version banner and the Upgrade dialog's parts: the banner is a
+ *   frame in the shell's own row, never over the panels, with the amber icon
+ *   and one primary button for attention instead of a tint; the dialog's
+ *   versions, facts, command well, notes and clocks.
+ */
+
+.slot {
+  --update-slot-padding: 0 var(--gap-panels);
+
+  padding: var(--update-slot-padding);
+}
+
+.banner {
+  --update-banner-bg: var(--surface-frame);
+  --update-banner-border: var(--hairline) solid transparent;
+  --update-banner-radius: var(--radius-frame);
+  --update-banner-shadow: var(--shadow-frame);
+  --update-banner-padding: var(--inset-tools);
+  --update-banner-gap: var(--gap);
+  --update-banner-margin: 0 0 var(--gap-panels);
+  --update-banner-text: var(--color-text);
+  --update-banner-text-size: var(--text-ui);
+
+  align-items: center;
+  background: var(--update-banner-bg);
+  border: var(--update-banner-border);
+  border-radius: var(--update-banner-radius);
+  box-shadow: var(--update-banner-shadow);
+  color: var(--update-banner-text);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--update-banner-text-size);
+  gap: var(--update-banner-gap);
+  margin: var(--update-banner-margin);
+  padding: var(--update-banner-padding);
+}
+
+:global([data-contrast="more"]) .banner {
+  --update-banner-border: var(--hairline) solid var(--color-border);
+}
+
+.icon {
+  --update-icon-color: var(--color-action-text);
+  --update-icon-size: var(--icon-size);
+
+  color: var(--update-icon-color);
+  display: inline-flex;
+  font-size: var(--update-icon-size);
+}
+
+.line {
+  --update-line-margin: 0;
+
+  margin: var(--update-line-margin);
+  overflow-wrap: anywhere;
+}
+
+.version {
+  --update-version-font: var(--font-mono);
+  --update-version-weight: var(--weight-regular);
+
+  font-family: var(--update-version-font);
+  font-weight: var(--update-version-weight);
+}
+
+.version[data-new] {
+  --update-version-weight: var(--weight-strong);
+}
+
+.link {
+  --update-link-text: var(--color-link);
+  --update-link-gap: var(--gap-hair);
+
+  align-items: center;
+  color: var(--update-link-text);
+  display: inline-flex;
+  gap: var(--update-link-gap);
+  overflow-wrap: anywhere;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.facts {
+  --update-facts-column-gap: var(--gap-loose);
+  --update-facts-row-gap: var(--gap-tight);
+  --update-facts-margin: 0;
+  --update-facts-columns: auto minmax(0, 1fr);
+
+  column-gap: var(--update-facts-column-gap);
+  display: grid;
+  grid-template-columns: var(--update-facts-columns);
+  margin: var(--update-facts-margin);
+  row-gap: var(--update-facts-row-gap);
+}
+
+.factName {
+  --update-fact-name-text: var(--color-text-muted);
+  --update-fact-name-font: var(--font-caption);
+  --update-fact-name-text-size: var(--text-caption);
+  --update-fact-name-tracking: var(--tracking-caption);
+  --update-fact-name-case: var(--case-caption);
+
+  color: var(--update-fact-name-text);
+  font-family: var(--update-fact-name-font);
+  font-size: var(--update-fact-name-text-size);
+  letter-spacing: var(--update-fact-name-tracking);
+  text-transform: var(--update-fact-name-case);
+}
+
+.factValue {
+  --update-fact-value-margin: 0;
+
+  margin: var(--update-fact-value-margin);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.well {
+  --update-well-bg: var(--surface-sunken);
+  --update-well-font: var(--font-mono);
+  --update-well-text-size: var(--text-mono);
+  --update-well-padding: var(--inset-control);
+  --update-well-radius: var(--radius-control);
+  --update-well-border-color: transparent;
+  --update-well-border-width: var(--hairline);
+  --update-well-border-style: solid;
+  --update-well-gap: var(--gap);
+
+  align-items: flex-start;
+  background: var(--update-well-bg);
+  border-color: var(--update-well-border-color);
+  border-radius: var(--update-well-radius);
+  border-style: var(--update-well-border-style);
+  border-width: var(--update-well-border-width);
+  display: flex;
+  font-family: var(--update-well-font);
+  font-size: var(--update-well-text-size);
+  gap: var(--update-well-gap);
+  justify-content: space-between;
+  overflow-wrap: anywhere;
+  padding: var(--update-well-padding);
+  white-space: pre-wrap;
+}
+
+.note {
+  --update-note-text: var(--color-text-muted);
+  --update-note-text-size: var(--text-small);
+  --update-note-margin: 0;
+
+  color: var(--update-note-text);
+  font-size: var(--update-note-text-size);
+  margin: var(--update-note-margin);
+  overflow-wrap: anywhere;
+}
+
+.message {
+  --update-message-margin: 0;
+
+  margin: var(--update-message-margin);
+  overflow-wrap: anywhere;
+}
+
+.alert {
+  --update-alert-text: var(--color-danger-text);
+  --update-alert-text-size: var(--text-small);
+  --update-alert-gap: var(--gap-tight);
+  --update-alert-margin: 0;
+
+  align-items: flex-start;
+  color: var(--update-alert-text);
+  display: flex;
+  font-size: var(--update-alert-text-size);
+  gap: var(--update-alert-gap);
+  margin: var(--update-alert-margin);
+  overflow-wrap: anywhere;
+}
+
+.alert[data-tone="note"] {
+  --update-alert-text: var(--color-text);
+}
+
+.alertIcon {
+  --update-alert-icon-text: var(--color-action-text);
+
+  color: var(--update-alert-icon-text);
+  display: inline-flex;
+}
+
+.heading {
+  --update-heading-text-size: var(--text-title);
+  --update-heading-weight: var(--weight-strong);
+  --update-heading-gap: var(--gap-tight);
+  --update-heading-margin: 0;
+
+  align-items: center;
+  display: flex;
+  font-size: var(--update-heading-text-size);
+  font-weight: var(--update-heading-weight);
+  gap: var(--update-heading-gap);
+  margin: var(--update-heading-margin);
+}
+
+.glyph {
+  --update-glyph-text: var(--color-status-succeeded);
+
+  color: var(--update-glyph-text);
+  display: inline-flex;
+}
+
+.glyph[data-tone="failed"] {
+  --update-glyph-text: var(--color-status-failed);
+}
+
+.clock {
+  --update-clock-text: var(--color-text-muted);
+  --update-clock-font: var(--font-mono);
+  --update-clock-text-size: var(--text-mono);
+
+  color: var(--update-clock-text);
+  font-family: var(--update-clock-font);
+  font-size: var(--update-clock-text-size);
+}
+
+.foot {
+  --update-foot-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--update-foot-gap);
+  justify-content: space-between;
+}
+
+.actions {
+  --update-actions-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--update-actions-gap);
+  margin-inline-start: auto;
+}
+
+@media (prefers-contrast: more) {
+  .well {
+    --update-well-border-color: var(--color-border);
+  }
+}
+
+@media (forced-colors: active) {
+  .banner {
+    --update-banner-border: var(--hairline) solid CanvasText;
+  }
+
+  .well {
+    --update-well-border-color: CanvasText;
+  }
+}

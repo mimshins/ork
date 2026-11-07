@@ -27,7 +27,7 @@ import {
 import { expect } from "vitest";
 import { z } from "zod";
 
-import { createClient, startServer } from "../src/index.ts";
+import { createClient, type ServerOptions, startServer } from "../src/index.ts";
 
 export const temp = (prefix: string): string =>
   realpathSync(mkdtempSync(path.join(tmpdir(), prefix)));
@@ -82,7 +82,10 @@ const project = (store: EventStore) => {
 };
 
 export const startTestServer = async (
-  options: { ui?: readonly string[]; gh?: GhRunner } = {},
+  options: { ui?: readonly string[]; gh?: GhRunner } & Pick<
+    ServerOptions,
+    "update" | "restart"
+  > = {},
 ) => {
   const home = temp("ork-srv-home-");
   const fake = fakeOrk(storePath(home));
@@ -255,3 +258,17 @@ export const sessionOf = (response: Response): string =>
 export const runIdOf = (
   answer: { ok: true; data: { runId: string } } | { ok: false },
 ): string => (answer.ok ? answer.data.runId : "");
+
+/** A registry that answers `latest` (or fails), and lists what it was asked. */
+export const fakeRegistry = (latest: string | null) => {
+  const asked: string[] = [];
+  const fetch = (input: string | URL | Request): Promise<Response> => {
+    asked.push(input instanceof Request ? input.url : input.toString());
+    return Promise.resolve(
+      latest === null
+        ? Response.json({}, { status: 503 })
+        : Response.json({ latest }),
+    );
+  };
+  return { fetch, asked };
+};

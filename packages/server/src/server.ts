@@ -16,6 +16,7 @@ import { createDispatch } from "./dispatch.ts";
 import { newToken } from "./guards.ts";
 import { sendError } from "./http.ts";
 import { removeUiFile, uiFilePath, writeUiFile } from "./ui-file.ts";
+import { createUpdates, type UpdateOptions } from "./updates.ts";
 
 /** The port `ork ui` serves on unless told otherwise. */
 export const DEFAULT_PORT = 4417;
@@ -43,6 +44,18 @@ export type ServerOptions = {
    * own.
    */
   gh?: ServerContext["gh"];
+  /**
+   * The sign-in token (default: a new one). `ork ui` hands the same one to the
+   * server it restarts, so the open tab stays signed in.
+   */
+  token?: string;
+  /**
+   * The new-version check and the upgrade; without it the server reports the
+   * check off and offers no upgrade.
+   */
+  update?: UpdateOptions;
+  /** Restarts `ork ui` onto the installed `ork`; only `ork ui` knows how. */
+  restart?: () => void;
 };
 
 export type RunningServer = {
@@ -80,6 +93,11 @@ export const startServer = async (
   const store = openStore(storePath(options.home));
   const startedAt = new Date().toISOString();
   const uiDir = options.ui?.find(dir => hasUi(dir));
+  const updates = createUpdates({
+    version: options.version,
+    ...(options.home === undefined ? {} : { home: options.home }),
+    ...(options.update === undefined ? {} : { options: options.update }),
+  });
   const context: ServerContext = {
     store,
     version: options.version,
@@ -89,8 +107,10 @@ export const startServer = async (
     ...(options.script === undefined ? {} : { script: options.script }),
     ...(uiDir === undefined ? {} : { uiDir }),
     ...(options.gh === undefined ? {} : { gh: options.gh }),
+    updates,
+    ...(options.restart === undefined ? {} : { restart: options.restart }),
   };
-  const token = newToken();
+  const token = options.token ?? newToken();
   const shutdown = new AbortController();
   const log =
     options.log ??
@@ -117,6 +137,7 @@ export const startServer = async (
   try {
     port = await listen(server, port);
   } catch (error) {
+    updates.close();
     store.close();
     throw error;
   }
@@ -132,6 +153,7 @@ export const startServer = async (
     close: () => {
       closed ??= new Promise<void>(resolve => {
         shutdown.abort();
+        updates.close();
         server.close(() => {
           store.close();
           if (options.record !== false) removeUiFile(file, process.pid);

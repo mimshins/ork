@@ -7,6 +7,7 @@ export * from "./client.ts";
 export * from "./contract.ts";
 export * from "./contract-context.ts";
 export * from "./contract-feedback.ts";
+export * from "./contract-update.ts";
 export * from "./graph.ts";
 export * from "./guards.ts";
 export * from "./mcp.ts";

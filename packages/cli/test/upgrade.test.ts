@@ -11,7 +11,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import {
+  planUpgrade,
   readUpdateCache,
+  releaseNotes,
   updateCachePath,
   writeUpdateCache,
 } from "@krapht/ork-core";
@@ -19,8 +21,6 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import {
   ORK_META,
-  planUpgrade,
-  releaseNotes,
   showUpdateNotice,
   updateCheckOff,
   versionCheck,
@@ -73,6 +73,10 @@ describe("when the check is off", () => {
     expect(updateCheckOff({}, ["ps"], false)).toBe("no terminal");
     expect(off({}, ["ps", "--json"])).toBe("JSON output");
     expect(off({}, ["upgrade"])).toBe("ork upgrade checks for itself");
+    expect(off({}, ["ui", "--serve"])).toBe(
+      "ork ui's server checks for itself",
+    );
+    expect(off({}, ["ui"])).toBeNull();
   });
 });
 

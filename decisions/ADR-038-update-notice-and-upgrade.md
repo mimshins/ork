@@ -17,6 +17,10 @@ Nothing told them a new version was out. Until now Ork never contacted a server
 of its own: every network request was made by the user's own tools (`claude`,
 `gh`, `aws`, `git`).
 
+How `ork ui` offers this upgrade, restarts itself onto the new install, and runs
+the daily check while it stays open is
+[ADR-060](./ADR-060-ork-ui-supervises-its-server.md).
+
 ## Decision
 
 1. **A daily background check.** At most once a day, a command starts a detached

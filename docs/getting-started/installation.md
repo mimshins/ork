@@ -66,6 +66,12 @@ with `ORK_NO_UPDATE_CHECK=1` (or `NO_UPDATE_NOTIFIER=1`), or point it at a
 mirror with `ORK_UPDATE_REGISTRY`. `ork doctor` shows your version against the
 last check.
 
+`ork ui` checks too, while it stays open, by the same once-a-day record, and
+shows a newer version as a banner, with an upgrade and a restart in the page
+([new versions](../guides/browser-view/new-versions.md)). `ORK_NO_UPDATE_CHECK`,
+`NO_UPDATE_NOTIFIER` and `CI` turn it off there too; set them where you start
+`ork ui`.
+
 ## Install from source
 
 For working on Ork itself, or trying changes that are not released yet. You need
@@ -170,9 +176,10 @@ comes in a later release. See [the browser view](../guides/browser-view.md).
 It listens only on `127.0.0.1`, and only your browser gets in: `ork ui` opens it
 with a one-time link that becomes a cookie, and the server refuses any other
 site, any other host name, and any request without it. The link's token is kept
-in `~/.ork/ui.json`, readable only by you, and changes each time the server
-starts. If `ork ui` cannot open a browser (on a server, or without `open` or
-`xdg-open`), it prints the link for you to open.
+in `~/.ork/ui.json`, readable only by you, and changes each time you start
+`ork ui` (a restart from the page keeps it, so the tab stays signed in). If
+`ork ui` cannot open a browser (on a server, or without `open` or `xdg-open`),
+it prints the link for you to open.
 
 ## Next
 

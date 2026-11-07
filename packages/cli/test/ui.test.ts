@@ -1,9 +1,10 @@
 /**
- * @file End-to-end test of `ork ui` (ADR-039): it serves and prints its sign-in
- *   link, a second `ork ui` finds it, a workflow started through the API runs
- *   detached and waits for its decision, the API's answer finishes it, `ork ps`
- *   sees the run, and Ctrl-C stops the server and removes `ui.json` while runs
- *   are unaffected.
+ * @file End-to-end test of `ork ui` (ADR-039, ADR-060): it supervises its
+ *   server, which serves while it prints its sign-in link; a second `ork ui`
+ *   finds it; a workflow started through the API runs detached and waits for
+ *   its decision, the API's answer finishes it, `ork ps` sees the run, and
+ *   Ctrl-C stops the server and removes `ui.json` while runs are unaffected.
+ *   `ork ui --serve` serves only for the `ork ui` that supervises it.
  */
 
 import { type ChildProcess, execFile, spawn } from "node:child_process";
@@ -129,6 +130,10 @@ describe("ork ui", () => {
     expect(portArg("70000")).toBeNull();
     expect(portArg("http")).toBeNull();
     expect(signInLink(4417, "t")).toBe("http://127.0.0.1:4417/?token=t");
+  });
+
+  it("serves only for `ork ui`, which supervises it", async () => {
+    expect(await ork(["ui", "--serve"])).toEqual({ code: 1, stdout: "" });
   });
 
   it("looks for the built UI beside the bundle, then in the workspace", () => {

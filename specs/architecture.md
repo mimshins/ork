@@ -42,6 +42,9 @@ ork/
   reads the store, writes answers and commands as rows, and starts runs as
   detached processes; it runs nothing itself, and the CLI never goes through it
   ([server](./server.md), [ADR-039](../decisions/ADR-039-local-server.md)).
+  `ork ui` supervises it in a child process, so the page can restart it onto a
+  newly installed `ork`
+  ([ADR-060](../decisions/ADR-060-ork-ui-supervises-its-server.md)).
 - **Integrations are adapters:** each CLI tool and Claude driver is one adapter
   in `@krapht/ork-integrations`, listed in a registry that the schema, the tool
   executor, `ork doctor` and `ork run` read

@@ -10,12 +10,14 @@ import { openEventSource } from "../state/stream-link.ts";
 import { WIDE_QUERY } from "../workspace/workspace-view.ts";
 import { createWorkspace, type Workspace } from "../workspace/workspace.ts";
 import { api } from "./api.ts";
+import { PAGE_VERSION } from "./page-version.ts";
 
 export const openState = (): AppState =>
   createAppState({
     client: api,
     open: openEventSource,
     storage: browserStorage(),
+    pageVersion: PAGE_VERSION,
   });
 
 export const openWorkspace = (): Workspace =>

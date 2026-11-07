@@ -6,6 +6,18 @@ you, and what each node has said. It reads and writes the same store as the
 here has a command that does the same. The contract is the
 [UI spec](../../specs/ui.md).
 
+## Contents
+
+- [Starting it](#starting-it)
+- [What you can do, and the command for it](#what-you-can-do-and-the-command-for-it)
+- [The panels](#the-panels)
+- [The workspace](#the-workspace)
+- [Keys](#keys)
+- [Accessibility](#accessibility)
+- [What it does not do yet](#what-it-does-not-do-yet)
+- [New versions](./browser-view/new-versions.md): the banner, upgrading from the
+  page, and the restart
+
 ![Ork's workspace: the Runs panel, the Monitor with a run's graph and node table, Logs below it, and an open decision in the Decisions panel.](./images/browser-view-dark.png)
 
 ## Starting it
@@ -44,6 +56,7 @@ Hover or focus a control to see its command, and copy it where one is shown.
 | Read, dismiss or accept feedback      | `ork feedback list`, `dismiss`, `accept`    |
 | Make an item a lesson, or a fix       | `ork feedback accept --lesson`, `apply`     |
 | Share an item about Ork itself        | `ork feedback publish <item>`               |
+| Upgrade Ork                           | `ork upgrade`, then restart `ork ui`        |
 
 Notifications, the theme and the layout belong to the browser and have no
 command.
@@ -151,7 +164,9 @@ is saved in your browser, and **Reset layout** in the palette brings the default
 back. Below about 1024 px wide the panels stack, and each one folds.
 
 The command palette, `⌘K` or `Ctrl K`, runs everything by name: going to a
-panel, the theme, the density, starting a run.
+panel, the theme, the density, starting a run, upgrading Ork. When a newer Ork
+is out, a banner above the panels says so
+([new versions](./browser-view/new-versions.md)).
 
 ![The same workspace in the light theme.](./images/browser-view-light.png)
 
