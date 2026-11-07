@@ -6,6 +6,12 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
+# Git sets GIT_DIR (and friends) for a hook. Pushed from a linked worktree it is
+# an absolute path to this repository, and the tests' own git commands in their
+# temp repos would inherit it and act on this one instead. Clear them all.
+# shellcheck disable=SC2046
+unset $(git rev-parse --local-env-vars)
+
 echo "pre-push: running pnpm check..."
 if ! pnpm run check; then
   echo >&2
