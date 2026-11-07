@@ -57,7 +57,7 @@ export const feedback = defineCommand({
   meta: {
     name: "feedback",
     description:
-      "What got in the way in your runs, grouped: list, show, note, triage, accept, apply, publish, export, import",
+      "What got in the way in your runs, grouped: list, show, note, dismiss, restore, accept, apply, triage, split, publish, export, import",
   },
   subCommands: {
     list: defineCommand({

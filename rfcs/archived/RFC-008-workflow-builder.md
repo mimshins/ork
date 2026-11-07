@@ -363,7 +363,7 @@ Where the build moved from the decision above:
   text, a number's form. So the file is printed before and after the edits, and
   only what differs between those two replaces anything in the original, a
   three-way merge checked by parsing the result. Lines an edit changed are still
-  printed the library's way ([L105](../../specs/gaps/limits-builder.md)).
+  printed the library's way ([L105](../../specs/ui/builder-limits.md)).
 - **Edges are edited in place.** Rewriting a written-out entry lost its comments
   and any field Ork didn't know, and two entries between the same nodes changed
   together. Now only the entry an edit names changes.

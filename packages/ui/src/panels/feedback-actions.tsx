@@ -4,16 +4,16 @@
  *   project's no publish); whether each is enabled, and why not, is the
  *   server's answer, by the rule `ork feedback` keeps too. A disabled button
  *   stays focusable and says why. Dismiss and Restore undo each other, so they
- *   don't ask; Propose fix starts a paid run, so it does, naming the project.
+ *   don't ask; Propose fix starts a paid run, so it does (fix-dialog.tsx).
  */
 
 import type { FeedbackDetail, FeedbackItem } from "@krapht/ork-server/client";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "../components/button.tsx";
-import { ConfirmDialog } from "../components/dialog.tsx";
 import { useAppState } from "../state/context.tsx";
 import { buttonsFor, labelOf, short } from "./feedback-model.ts";
+import { FixDialog } from "./fix-dialog.tsx";
 import { LessonDialog } from "./lesson-dialog.tsx";
 import { PublishDialog } from "./publish-dialog.tsx";
 import type { FeedbackActs } from "./use-feedback-acts.ts";
@@ -21,9 +21,6 @@ import type { FeedbackActs } from "./use-feedback-acts.ts";
 import styles from "./feedback.module.css";
 
 type Open = "lesson" | "apply" | "publish" | null;
-
-const fixWords = (root: string): string =>
-  `Starts a run of \`ork:feedback-apply\` in \`${root}\`. It's a paid run, like any you start. A worker reads this item and that project's records of it, and Ork commits the smallest change that would stop it on a branch of its own, in a worktree. The worker reads and edits files and runs no commands. Then you're asked to keep or discard the branch, in Decisions.`;
 
 export const ItemActions = ({
   item,
@@ -38,8 +35,6 @@ export const ItemActions = ({
   const [open, setOpen] = useState<Open>(null);
   /** Each opening starts a dialog afresh. */
   const [opened, setOpened] = useState(0);
-  /** A started fix's run takes the focus in the Monitor, not this button. */
-  const started = useRef(false);
   const id = short(item.id);
   const dismissed = item.status === "dismissed";
   const show = (which: Open): void => {
@@ -106,27 +101,14 @@ export const ItemActions = ({
           open={open === "lesson"}
         />
       )}
-      <ConfirmDialog
-        cli={`ork feedback apply ${id}`}
-        confirm="Start run"
-        description={fixWords(
-          detail?.project.ok === true ? detail.project.root : "its project",
-        )}
-        finalFocus={() => {
-          const away = started.current;
-          started.current = false;
-          return !away;
-        }}
-        onConfirm={async () => {
-          const refused = await acts.apply(item);
-          started.current = refused === null;
-          return refused;
-        }}
+      <FixDialog
+        acts={acts}
+        id={id}
+        item={item}
+        key={`fix-${String(opened)}`}
         onOpenChange={shut}
         open={open === "apply"}
-        pending="Starting…"
-        title={`Propose a fix for ${id}?`}
-        variant="primary"
+        root={detail?.project.ok === true ? detail.project.root : null}
       />
       {item.target === "ork" ? (
         <PublishDialog

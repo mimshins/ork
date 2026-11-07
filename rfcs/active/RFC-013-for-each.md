@@ -83,7 +83,7 @@ Checked against the code on 2026-11-07:
 - **Concurrency caps sessions only.** `limits.concurrency` (default 4) caps
   Claude sessions; tool nodes, MCP calls and calls are not limited
   ([scheduler](../../specs/scheduler.md#budget-and-concurrency)), and the cap is
-  per run (L39 in [gaps](../../specs/gaps.md)).
+  per run ([L39](../../specs/scheduler/limits.md)).
 - **What a session sees.** A node's `instructions` are rendered into its system
   prompt and its `prompt` is the task, last
   ([brief.ts](../../packages/core/src/run/brief.ts)), in the cache-friendly

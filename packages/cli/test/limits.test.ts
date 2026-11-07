@@ -15,6 +15,7 @@ import { describe, expect, it } from "vitest";
 
 import { runWorkflowFile } from "../src/index.ts";
 import { limitsHere, runLimits } from "../src/run/limits.ts";
+import { sdkReady } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
@@ -61,6 +62,7 @@ const setup = () => {
       inPlace: true,
       json: false,
       runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
+      driverChecks: sdkReady,
       human: recommending,
       store,
       home,

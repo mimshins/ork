@@ -1,6 +1,7 @@
 /**
- * @file Tests for the workflow format: parsing, diagnostics with positions, the
- *   canonical round trip, and the committed JSON Schema.
+ * @file Tests for the workflow format: parsing, diagnostics with positions, a
+ *   file from a newer Ork, the canonical round trip, and the committed JSON
+ *   Schemas.
  */
 
 import { readFileSync } from "node:fs";
@@ -9,8 +10,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   expandEdge,
+  parseTriggers,
   parseWorkflow,
   renderJsonSchema,
+  renderProjectJsonSchema,
+  renderSettingsJsonSchema,
+  renderTriggersJsonSchema,
   serializeWorkflow,
 } from "../src/index.ts";
 
@@ -80,6 +85,30 @@ describe("parseWorkflow", () => {
     expect(diagnostic?.message).toBe("unknown key: colour");
     expect(diagnostic?.line).toBe(6);
   });
+
+  it("says a file with a higher schemaVersion was made by a newer Ork, and only that", () => {
+    expect(
+      parseErrors("schemaVersion: 2\nname: x\nnodes:\n  a: { future: 1 }\n"),
+    ).toEqual([
+      {
+        severity: "error",
+        code: "schema.newer_version",
+        message:
+          "this file was made by a newer Ork (`schemaVersion: 2`; this one reads 1). Upgrade with `ork upgrade`.",
+        path: ["schemaVersion"],
+        line: 1,
+        column: 16,
+      },
+    ]);
+    expect(parseTriggers("schemaVersion: 3\ntriggers: {}\n")).toMatchObject({
+      ok: false,
+      diagnostics: [{ code: "schema.newer_version" }],
+    });
+    // An older or made-up one is only wrong.
+    expect(messagesOf("schemaVersion: 0\nname: x\nnodes: {}\n")).toContain(
+      "expected 1",
+    );
+  });
 });
 
 describe("serializeWorkflow", () => {
@@ -132,4 +161,21 @@ describe("workflow.schema.json", () => {
     );
     expect(committed).toBe(renderJsonSchema());
   });
+});
+
+describe("the other committed JSON Schemas", () => {
+  it.each([
+    ["project.schema.json", renderProjectJsonSchema],
+    ["settings.schema.json", renderSettingsJsonSchema],
+    ["triggers.schema.json", renderTriggersJsonSchema],
+  ])(
+    "%s is up to date (run `pnpm --dir packages/schema gen:json-schema`)",
+    (file, render) => {
+      const committed = readFileSync(
+        new URL(`../${file}`, import.meta.url),
+        "utf8",
+      );
+      expect(committed).toBe(render());
+    },
+  );
 });

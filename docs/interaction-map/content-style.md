@@ -32,7 +32,7 @@ Pick the status the repository supports today:
   `packages/` (or `examples/`) and, if `src` is set, that it exists.
 - `partial`: a minimum is built; say in a fact what isn't. For example, a field
   the schema accepts but nothing reads yet.
-- `specified`: described in [docs/design.md](../design.md), not built.
+- `specified`: described in [specs/design.md](../../specs/design.md), not built.
 - `planned`: designed for a later milestone (the UI and server are milestone 2).
 - `external`: someone else's: you, the `claude`, `gh` and `aws` CLIs, Claude
   Code sessions, model providers, the project's own files.

@@ -88,12 +88,10 @@ export const startUpdateCheck = (
 /** The background copy's whole job: ask the registry, record the answer. */
 export const runUpdateChild = async (): Promise<void> => {
   const registry = registryOf(process.env);
-  await refreshUpdateCache(
-    updateCachePath(),
-    ORK_NAME,
-    new Date(),
-    registry === undefined ? {} : { registry },
-  );
+  await refreshUpdateCache(updateCachePath(), ORK_NAME, new Date(), {
+    current: ORK_VERSION,
+    ...(registry === undefined ? {} : { registry }),
+  });
 };
 
 /** Prints the notice when a newer version is known and not told today. */

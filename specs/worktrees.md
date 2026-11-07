@@ -9,7 +9,8 @@ Status: **Built** ([manager.ts](../packages/core/src/worktree/manager.ts),
 [`ork worktrees`](../packages/cli/src/commands/worktrees.ts), the
 [Worktrees panel](./ui/panels-worktrees.md),
 [tests](../packages/core/test/worktree.test.ts),
-[remove tests](../packages/core/test/worktree-remove.test.ts)). Why:
+[remove tests](../packages/core/test/worktree-remove.test.ts),
+[git variable tests](../packages/core/test/git-env.test.ts)). Why:
 [ADR-020](../decisions/ADR-020-worktrees-beside-the-clone.md),
 [ADR-018](../decisions/ADR-018-ork-merges-children.md),
 [ADR-032](../decisions/ADR-032-project-rules.md).
@@ -22,6 +23,15 @@ never merge.
 A run of a workflow with `worktree` Claude nodes gives each of them its own git
 worktree and branch; `ork run --in-place` runs everything in the project
 checkout instead.
+
+**Git's local variables are cleared.** Ork finds a project by its path, never
+through `GIT_DIR`. So `ork` drops every variable
+`git rev-parse --local-env-vars` names (`GIT_DIR`, `GIT_WORK_TREE`,
+`GIT_INDEX_FILE`, … in [git-env.ts](../packages/core/src/worktree/git-env.ts))
+at its entry, and core's git runner leaves them out too: run from a git hook,
+Ork, its sessions, tool nodes and detached runs act on their own repositories,
+not the hook's. An outer `git -c key=value` (`GIT_CONFIG_PARAMETERS`) no longer
+reaches Ork's git either.
 
 ## Where each node works
 
@@ -186,3 +196,7 @@ The [Worktrees panel](./ui/panels-worktrees.md) shows the same list for every
 project Ork knows, with **Remove…** (the twin of `ork worktrees remove`) and
 **Clean merged…** (the twin of `ork worktrees clean`, never forced), through the
 [worktrees routes](./server/api.md).
+
+## Contents
+
+- [Limits: the Worktrees panel](./worktrees/limits.md)

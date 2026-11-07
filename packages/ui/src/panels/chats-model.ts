@@ -91,7 +91,15 @@ const itemOf = (
     text,
   });
   if (event.type === "node.event") {
-    return event.id === node ? sessionItem(event.event, base) : undefined;
+    if (event.id !== node) return undefined;
+    // A fork answering a child's question (ADR-063) isn't the node talking:
+    // one line says it ran, and the decision says what it chose.
+    if (event.event.fork === true) {
+      return event.event.type === "session.started"
+        ? activity("A fork took a child's question")
+        : undefined;
+    }
+    return sessionItem(event.event, base);
   }
   if (event.type === "node.finished") {
     if (event.id !== node) return undefined;
@@ -140,9 +148,12 @@ const itemOf = (
   if (event.type === "decision.opened") {
     return activity(`Asked you: ${event.question}`);
   }
-  return event.type === "decision.answered"
-    ? activity(`You answered: ${event.answer}`)
-    : undefined;
+  if (event.type !== "decision.answered") return undefined;
+  return activity(
+    event.note === undefined
+      ? `You answered: ${event.answer}`
+      : `You answered: ${event.answer}. You said: ${event.note}`,
+  );
 };
 
 export const threadOf = (

@@ -86,4 +86,4 @@ reviewer, which branch), not a process Ork imposes.
   ([gaps](../specs/gaps.md)).
 - A move that fails halfway (a permission, a full disk) stops there: nothing is
   lost, and running `ork migrate` again plans what is left
-  ([gaps](../specs/gaps.md)).
+  ([L22](../specs/projects/limits.md)).

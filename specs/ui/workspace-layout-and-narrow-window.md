@@ -22,17 +22,17 @@ window at 200% zoom, the dock gives way to one column of every panel in the
 list's order, each under a heading whose button folds it. The saved dock is
 untouched and comes back when the window grows. Commands that need a dock stay
 listed and say so. Going to a panel unfolds and focuses it. Crossing that width
-closes the workflow open in the Builder, though its draft is kept
-([G9](../gaps.md#gaps)).
+keeps what the Builder has open, its selected card and its undo, which live in
+the page's [state](./state.md), not in the panel.
 
 ## Limits
 
-- **Sizes after several minimizes** ([L33](../gaps/limits-ui.md)). One minimize
-  and restore comes back exact, as does float and dock. Minimizing several
-  panels and restoring them out of order puts each in the right place, but other
+- **Sizes after several minimizes** ([L33](./limits.md)). One minimize and
+  restore comes back exact, as does float and dock. Minimizing several panels
+  and restoring them out of order puts each in the right place, but other
   groups' sizes can shift.
-- **Keyboard moves are coarser than the mouse** ([L34](../gaps/limits-ui.md)). A
-  key moves a panel into its neighbor or to an edge; splitting beside one
-  particular group takes the mouse, or those two steps.
-- **dockview's other skins still ship** ([L35](../gaps/limits-ui.md)). Its one
-  style sheet holds them, unused.
+- **Keyboard moves are coarser than the mouse** ([L34](./limits.md)). A key
+  moves a panel into its neighbor or to an edge; splitting beside one particular
+  group takes the mouse, or those two steps.
+- **dockview's other skins still ship** ([L35](./limits.md)). Its one style
+  sheet holds them, unused.

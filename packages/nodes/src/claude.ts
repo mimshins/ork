@@ -16,11 +16,14 @@ import {
   planNodeSession,
   type SessionOutcome,
   type SessionPorts,
+  sessionDriver,
   type SessionSpec,
+  type StepRun,
 } from "@krapht/ork-core";
 import { beforeOf, type Driver } from "@krapht/ork-schema";
 
 import { resultOf } from "./claude-result.ts";
+import { ownerFirst } from "./owner-asks.ts";
 import {
   afterLateTurn,
   budgetNow,
@@ -45,6 +48,8 @@ export type ClaudeExecutorOptions = {
   runtimeFor: (driver: Driver) => Promise<ClaudeRuntime>;
   /** Overrides every node's driver, as `ork run --driver` does. */
   driver?: Driver;
+  /** The driver ready here when the run started, for nodes that name none. */
+  readyDriver?: Driver;
   /** Runs `worktree` nodes in the project checkout instead of worktrees. */
   inPlace: boolean;
   /** What runs a node's `verify:`: the tool nodes' executor. */
@@ -129,7 +134,10 @@ export const claudeExecutor =
     if (context.claims !== undefined) planOptions.claims = context.claims;
     const before = beforeOf(context.node, context.workflow.defaults);
     if (before !== undefined) {
-      const ran = await runStep(options.steps ?? noSteps, context, before);
+      const ran = await runStep(options.steps ?? noSteps, context, before, {
+        name: "before",
+        try: 1,
+      });
       if (!ran.ok) return beforeFailed(ran);
       // A step that outlived a stop, or a pause, must not lead to a model turn.
       await context.hold?.wait("start", context.signal);
@@ -155,8 +163,27 @@ export const claudeExecutor =
       };
     }
     const spec = specFor(plan.spec, context);
-    const runtime = await options.runtimeFor(options.driver ?? plan.driver);
-    const ports: SessionPorts = { human: context.human };
+    const driver = sessionDriver({
+      override: options.driver,
+      named: plan.driver,
+      ready: options.readyDriver,
+    });
+    if (driver === undefined) {
+      return notStarted("no Claude driver is ready; see `ork doctor`");
+    }
+    const runtime = await options.runtimeFor(driver);
+    const ports: SessionPorts = {
+      // A leader that takes its children's questions answers them first.
+      human:
+        context.owner === undefined
+          ? context.human
+          : ownerFirst(context, context.owner, {
+              runtimeFor: options.runtimeFor,
+              driver: options.driver,
+              readyDriver: options.readyDriver,
+              inPlace: options.inPlace,
+            }),
+    };
     if (context.hold !== undefined) ports.hold = context.hold;
     if (context.ownership !== undefined) ports.ownership = context.ownership;
     if (context.mailbox !== undefined) ports.mailbox = context.mailbox;
@@ -235,11 +262,17 @@ export const claudeExecutor =
     if (outcome === null || verify === undefined || !isAcceptance(outcome)) {
       return watch.result(resultOf(outcome, declaredOutputOf(node)));
     }
+    // Each try of the check keeps what it printed in its own files.
+    let tries = 0;
+    const step = (): StepRun => ({ name: "verify", try: tries });
     const checked = await checkReport({
       verify,
       first: outcome,
       signal: context.signal,
-      check: () => runStep(options.steps ?? noSteps, context, verify),
+      check: () => {
+        tries += 1;
+        return runStep(options.steps ?? noSteps, context, verify, step());
+      },
       late: lateTurn,
       resume: async (current, check) => {
         const limits = limitsAfter(current);
@@ -248,7 +281,11 @@ export const claudeExecutor =
         await context.hold?.wait("start", context.signal);
         return context.signal.aborted
           ? null
-          : resumeWith(current, checkFailedMessage(check, context), limits);
+          : resumeWith(
+              current,
+              checkFailedMessage(check, { ...context, step: step() }),
+              limits,
+            );
       },
     });
     return watch.result(

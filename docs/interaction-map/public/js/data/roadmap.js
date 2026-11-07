@@ -310,6 +310,14 @@ export const MILESTONES = [
           "specs/cli/updates.md",
         ],
       },
+      {
+        id: "alpha-channel",
+        title: "Toward 1.0.0: alpha, beta, rc",
+        status: "active",
+        detail:
+          "1.0.0 comes through pre-release channels, `alpha`, then `beta`, then `rc`, each Changesets pre mode, and every pre-release is `latest` too. Built: the update check offers the newest version across the `latest`, `alpha`, `beta` and `rc` tags, and a `canary` only to someone running a canary; the release moves `latest` to a just-published pre-release; a workflow needn't name a Claude driver, so `ork init`'s starter names none, and a run takes the one ready on the machine running it. Next, when the maintainer says: pre mode and a major changeset, for `1.0.0-alpha.0`. Later: canary snapshots from `main`, with features behind an opt-in.",
+        docs: ["runbook/development/release.md", "specs/cli/updates.md"],
+      },
     ],
   },
   {
@@ -420,14 +428,6 @@ export const MILESTONES = [
           "examples/pr-review.ork.yaml",
           "decisions/ADR-029-readonly-follows-its-input.md",
         ],
-      },
-      {
-        id: "examples-sdk",
-        title: "The examples on the SDK driver",
-        status: "waiting",
-        detail:
-          "Needs `ANTHROPIC_API_KEY` (or Bedrock or Vertex) on the machine that runs it.",
-        docs: ["specs/gaps.md"],
       },
     ],
   },
@@ -607,7 +607,7 @@ export const MILESTONES = [
         date: "2026-11-03",
         commits: ["74fd6bb", "bf37ee7"],
         detail:
-          "`ork relay` introduces nodes of runs in different repositories, so they work in parallel and message each other through the store and the runs' sockets. Proven on real sessions in two repositories on the CLI driver; the SDK driver is tracked in C5.",
+          "`ork relay` introduces nodes of runs in different repositories, so they work in parallel and message each other through the store and the runs' sockets. Proven on real sessions in two repositories on the CLI driver; the SDK driver is covered by unit tests only (C5).",
         docs: [
           "decisions/ADR-044-relay-between-runs.md",
           "specs/messaging/links.md",
@@ -746,10 +746,11 @@ export const MILESTONES = [
           "b5a2bee",
         ],
         detail:
-          "Before a run, find what can't work: a condition that's never true, a node no path reaches, a loop that can only run out of rounds. The stricter compiler checks are in: a value a condition can never see stops the run, and loops without an exit or a budget warn. The walk of every outcome on the real scheduler is built too, with no sessions and no scripts, and `ork validate`, `ork run` and the builder show what it finds. Reviews found false warnings, so its warnings say only what it tried, held to a fuzz against the real scheduler and to each case found. The guide says what it can't tell, and the limits are in the register. RFC-009, after RFC-010.",
+          "Before a run, find what can't work: a condition that's never true, a node no path reaches, a loop that can only run out of rounds. The stricter compiler checks are in: a value a condition can never see stops the run, and loops without an exit or a budget warn. The walk of every outcome on the real scheduler is built too, with no sessions and no scripts, and `ork validate`, `ork run` and the builder show what it finds. Reviews found false warnings, so its warnings say only what it tried, held to a fuzz against the real scheduler and to each case found. The guide says what it can't tell, and the limits are beside the walking spec. RFC-009, after RFC-010.",
         docs: [
           "decisions/ADR-056-walking-a-workflow.md",
           "rfcs/archived/RFC-009-walking-a-workflow.md",
+          "specs/scheduler/walking-limits.md",
         ],
       },
       {
@@ -758,12 +759,12 @@ export const MILESTONES = [
         status: "done",
         date: "2026-11-07",
         detail:
-          "What `ork worktrees` lists, in the browser, for every project Ork knows, with cleanup a click away: Remove… for one item, with a second, explicit confirm listing what's lost when it needs force, and Clean merged…, merged only and never forced, each read, then confirmed against a digest of the plan shown. `ork worktrees remove` is its twin in a terminal, and both plan in core, so neither removes what the other would keep. Building it found that a clean could take a live run's worktree, which it now always keeps. Its accessibility review set the focus, the names and the failures right, and found the panels' headings skip a level (G10).",
+          "What `ork worktrees` lists, in the browser, for every project Ork knows, with cleanup a click away: Remove… for one item, with a second, explicit confirm listing what's lost when it needs force, and Clean merged…, merged only and never forced, each read, then confirmed against a digest of the plan shown. `ork worktrees remove` is its twin in a terminal, and both plan in core, so neither removes what the other would keep. Building it found that a clean could take a live run's worktree, which it now always keeps. Its accessibility review set the focus, the names and the failures right, and found the panels' headings skip a level (G10, fixed at the gaps review).",
         docs: [
           "specs/worktrees.md",
           "specs/ui/panels-worktrees.md",
           "docs/guides/worktrees.md",
-          "specs/gaps/limits-worktrees.md",
+          "specs/worktrees/limits.md",
         ],
         commits: ["9b568c9", "52dc034", "4be0fe3"],
       },
@@ -807,7 +808,7 @@ export const MILESTONES = [
           "decisions/ADR-060-ork-ui-supervises-its-server.md",
           "specs/cli/updates.md",
           "docs/guides/browser-view/new-versions.md",
-          "specs/gaps/limits-upgrade.md",
+          "specs/cli/upgrade-limits.md",
         ],
         commits: ["0cb18a2", "52dc034", "4be0fe3"],
       },
@@ -821,7 +822,7 @@ export const MILESTONES = [
         docs: [
           "specs/ui/panels-context-and-feedback.md#context",
           "docs/guides/browser-view.md",
-          "specs/gaps/limits-context-inspector.md",
+          "specs/ui/panels-context-limits.md",
         ],
         commits: ["284a23b", "37090bb", "354c8b3"],
       },
@@ -846,7 +847,7 @@ export const MILESTONES = [
           "specs/feedback.md",
           "docs/guides/feedback.md",
           "decisions/ADR-059-closing-the-feedback-loop.md",
-          "specs/gaps/limits-feedback.md",
+          "specs/feedback/limits.md",
         ],
       },
       {
@@ -854,8 +855,8 @@ export const MILESTONES = [
         title: "A node once per item",
         status: "planned",
         detail:
-          "Running a node for each item of a list from the workflow file, as `matrix` does elsewhere, rather than leaving it to a leader's `spawn_worker`. Needs its own RFC, after workflow calls.",
-        docs: ["specs/scheduler.md"],
+          "Running a node for each item of a list from the workflow file, as `matrix` does elsewhere, rather than leaving it to a leader's `spawn_worker`. Needs its own RFC, after workflow calls. It also settles L61, carried here by the gaps review: a resume hands parallel activations their results by position.",
+        docs: ["specs/scheduler.md", "specs/scheduler/calls-limits.md"],
       },
       {
         id: "triggers",
@@ -911,20 +912,57 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "agent-setup",
+        title: "Set up Ork with your agent",
+        status: "active",
+        detail:
+          "Getting started opens with two ways in: by hand (Installation, then the Quickstart) or by your coding agent. The `/ork:setup` skill and `ork init --skills`'s `ork-setup` have Claude Code check for `ork`, run `ork doctor`, set up the project with `ork init` or `ork register`, add Ork's tools and offer a first workflow, asking before each change; any MCP client or an agent with a shell gets the same path from the guide. The user docs were reviewed as a newcomer reads them: a What's new page with upgrade notes, How Ork works in plain words, where Ork keeps things and how to remove it, example downloads that match your version, and specs and codes moved out of the guides' running text.",
+        docs: [
+          "docs/getting-started/with-your-agent.md",
+          "docs/whats-new.md",
+          "docs/how-ork-works.md",
+          "docs/guides/where-ork-keeps-things.md",
+          "plugins/ork/skills/setup/SKILL.md",
+        ],
+      },
+      {
+        id: "answer-notes",
+        title: "A note with an answer",
+        status: "active",
+        detail:
+          "Any decision can be answered with a note: a `human.gate` outputs it as `note`, so a `revise` answer can say what to change; `ask_user` returns it with the choice; a denied tool's message ends with it. Given with `ork decide --say`, the Decisions panel's note box, or a line after the choice on the run's terminal. Built (G19); a note to a loop out of rounds or a link at its limit is only recorded for now (G22).",
+        docs: [
+          "decisions/ADR-062-notes-on-decision-answers.md",
+          "specs/messaging.md#decisions",
+        ],
+      },
+      {
+        id: "leader-questions",
+        title: "A leader answers its children",
+        status: "active",
+        detail:
+          "With `questions: owner` on a `claude.leader`, a child's `ask_user` goes first to a read-only fork of the leader's latest session, which answers when its task settles the question, or passes it on to you with a note; you're asked as before when the fork can't. Every answer records who gave it. Built and tested against stand-in sessions; next, a real leader forked while it waits in `delegate` (G25).",
+        docs: [
+          "decisions/ADR-063-leader-questions.md",
+          "specs/messaging/leader-questions.md",
+          "docs/guides/leaders-and-delegation.md",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",
         detail:
-          "Once the core features above are in, run the same real jobs by hand and through Ork, and compare cost per completed task and the quality of the result. First record what a run lacks today: each session's peak context, compaction, and cache rewrites after idle time. The results decide what to build for hours-long runs, such as skipping unchanged work, or disposable sessions with a capped memory on the node, and whether Ork can claim to cost less.",
-        docs: ["specs/usage.md"],
+          "Once the core features above are in, run the same real jobs by hand and through Ork, and compare cost per completed task and the quality of the result. First record what a run lacks today: each session's peak context, compaction, and cache rewrites after idle time, and measure what the 1-hour prompt cache leaders now get saves against its dearer writes. The results decide what to build for hours-long runs, such as skipping unchanged work, or disposable sessions with a capped memory on the node, and whether Ork can claim to cost less. It also sets what the gaps review carried here: the link and `ork send` caps (L51, L52, L89), and a size threshold for a Claude report's fields (L171).",
+        docs: ["specs/usage.md", "specs/gaps.md#limits"],
       },
       {
         id: "gaps-review",
         title: "Decide the known gaps",
-        status: "planned",
+        status: "active",
         detail:
-          "Close, keep or carry each open gap, limit and chore in the register.",
-        docs: ["specs/gaps.md"],
+          "Every open gap, limit and chore in the register decided, on 2026-11-07. Fixed: a run that skipped nodes or handled a failure still reads `succeeded` and now says so; the Builder keeps its workflow across a narrow window; every docked panel has a heading; a run of one node refuses pause, continue and a node's stop with a reason; `ork` from a git hook leaves the hook's repository alone; `ork doctor` warns of a home path too long for sockets; `ork ps` marks a called run's cost as its caller's; a light system gets no dark flash; the graph's card keys are shown; starting a run with no Monitor focuses the Runs panel; the Monitor resumes a run; mail to a node that never ran is warned of; a step's kept output isn't overwritten; `triggers.schema.json`; publishing pages for its thread; Propose fix picks a driver; leaders get the 1-hour cache; a newer file says so. Kept limits moved out of the register, each into a Limits chunk beside its area's spec, ids kept; the register now holds only open work: 31 carried limits, to `benchmark`, `for-each` or unplanned, and four chores.",
+        docs: ["specs/gaps.md", "decisions/README.md"],
       },
     ],
   },
@@ -995,7 +1033,13 @@ export const OFF_ROADMAP = [
   "3a7374c",
   "9f781ba",
   "3d967d4",
+  "092acca",
+  "d93c598",
+  "ba468ce",
+  "71f9ca0",
+  "1cc3da9",
+  "17ba18b",
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-07";
+export const ROADMAP_UPDATED = "2026-11-08";

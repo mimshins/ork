@@ -25,13 +25,15 @@ binds. A node's report is its structured output, not a tool
   [`links` rule](./messaging/links.md) is off and they have no one to write to.
   A node a [program or a rule](./messaging/scripts.md) may write to keeps the
   last two.
-- ✓ `answer(question, choice)`: leaders in a run, for the questions Ork asks
-  them as owners.
+- ✓ `answer(question, choice, note?)`: leaders in a run, for the questions Ork
+  asks them as owners; the note is recorded in `owner.answered`.
 - ✓ `delegate({ tasks: [{ child, brief }] })`: leaders with declared children
   only ([scheduler](./scheduler.md#delegation)).
 - ✓ `spawn_worker({ tasks: [{ template, brief }] })`: leaders with a child
   worker and `maxWorkers` left only.
-- ✓ `ask_user(question, options[], recommended, context)`
+- ✓ `ask_user(question, options[], recommended, context)`: a leader with
+  `questions: owner` takes its children's first
+  ([leader questions](./messaging/leader-questions.md)).
 - ✓ `claim(resource)` and ✓ `release(resource)`: sessions in a run that may
   write while another does ([claims](#claims)).
 - ✓ `feedback(kind, target?, title, body?, severity?, evidence?)`: every session
@@ -122,7 +124,18 @@ The decision queue ([queue.ts](../packages/core/src/control/queue.ts)):
 - The **first answer wins**: the run's own terminal (when it has one, with the
   prompts below) races `ork decide` in any other terminal. The loser's prompt is
   withdrawn, and `decision.answered` records the answer and who gave it
-  (`terminal`, `decide`, or `ui` for the local server).
+  (`terminal`, `decide`, `ui` for the local server, or `owner` for a leader that
+  answered its child's question, named in `owner`).
+- **An answer may carry a note**: what the person said with it, trimmed (blank
+  is none), masked, kept on the record (`note`; records from before notes have
+  none) and in `decision.answered`. It goes back to whoever asked: a gate
+  outputs it as `note` (`{{nodes.<gate>.output.note}}`, empty when none),
+  `ask_user` returns it after the choice, and a denied tool's message ends with
+  it; a loop out of rounds or a link's limit only records it. It is given in the
+  Decisions panel, by `ork decide --say` (its `--note` stays feedback), on the
+  run's terminal as an optional line after the choice that Enter skips, and as
+  the server's `{ choose, note? }`. Why:
+  [ADR-062](../decisions/ADR-062-notes-on-decision-answers.md).
 - A permission prompt is a decision with the options `allow` and `deny`; its
   context is the tool's input (at most 400 characters).
 - A gate's `timeout` + `default` withdraws the question (`decision.withdrawn`)
@@ -156,7 +169,9 @@ every second, and at once when woken on its socket.
   stream use it; a follower stops at `run.finished`). It is removed when the run
   ends; a stale one is replaced when a run with that id starts.
 - **Without the socket** (it could not listen, or the run is gone) nothing is
-  lost: the store has every answer, command and event.
+  lost: the store has every answer, command and event. A socket path is limited
+  (103 bytes on macOS, 107 on Linux); `ork doctor` warns when the longest one
+  under `~` is past it.
 - **Commands:** `stop` interrupts the run as Ctrl-C does (`run.command` in its
   events, then `run.finished` with `interrupted`). `pause`, `continue` and
   `stop --node` hold, release or stop the run or one node
@@ -184,3 +199,6 @@ worker:
 
 - [Links between runs](./messaging/links.md)
 - [Scripts and rules on the bus](./messaging/scripts.md)
+- [A child's question to its leader first](./messaging/leader-questions.md)
+- [Limits: messaging, claims and links](./messaging/limits.md)
+- [Limits: scripts](./messaging/scripts-limits.md)

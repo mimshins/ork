@@ -1,8 +1,9 @@
 /**
  * @file The token tests' reader: parses the design system's flat token files,
  *   applies them the way the cascade would for each look (theme and contrast
- *   set on the root), resolves a token through its `var()` chain to a hex
- *   color, and measures WCAG 2.2 contrast between two colors.
+ *   set on the root, so the page's look before a script sets them never
+ *   applies), resolves a token through its `var()` chain to a hex color, and
+ *   measures WCAG 2.2 contrast between two colors.
  */
 
 import { readdirSync, readFileSync } from "node:fs";
@@ -50,12 +51,24 @@ export const rulesOf = (css: string): Rule[] =>
 export const readToken = (file: string): string =>
   readFileSync(join(TOKENS, file), "utf8");
 
+/** An attribute the root must not carry: `:not([data-theme])`. */
+const ABSENT = /:not\(\[([\w-]+)\]\)/gu;
+
 /** Whether one comma-separated part of a selector matches the root. */
 const partMatches = (part: string, attributes: Record<string, string>) => {
-  const rest = part.replace(":root", "").replaceAll(ATTRIBUTE, "").trim();
+  const rest = part
+    .replace(":root", "")
+    .replaceAll(ABSENT, "")
+    .replaceAll(ATTRIBUTE, "")
+    .trim();
   if (rest !== "") throw new Error(`Unsupported token selector: ${part}`);
-  return [...part.matchAll(ATTRIBUTE)].every(
-    ([, name = "", value]) => attributes[name] === value,
+  return (
+    [...part.matchAll(ATTRIBUTE)].every(
+      ([, name = "", value]) => attributes[name] === value,
+    ) &&
+    [...part.matchAll(ABSENT)].every(
+      ([, name = ""]) => attributes[name] === undefined,
+    )
   );
 };
 

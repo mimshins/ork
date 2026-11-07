@@ -72,7 +72,7 @@ From RFC-005, in full there:
   controls.
 - A crash between `node.finished` and `message.sent`, or a row written after a
   run's last look at its commands, loses that message
-  ([L87](../specs/gaps/limits-scripts.md)).
+  ([L87](../specs/messaging/scripts-limits.md)).
 - `notify` and tool nodes in channels are optional additions, so `schemaVersion`
   stays 1.
 - Rules are not drawn in the graph. That waits for a design review to find it

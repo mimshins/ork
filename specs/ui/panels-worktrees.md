@@ -12,15 +12,15 @@ so it has no Go to digit; its tab sits after Feedback in the bottom group.
 
 - **The list** is read when the panel shows, after every remove or clean, on
   **Reload**, and when the runs change while it shows, at most every 5 s; a
-  change made outside Ork shows on **Reload**
-  ([L155](../gaps/limits-worktrees.md)). One card per project with something
-  left, in the filter's name order, its heading the project's name with its
-  path, the branch "merged" is measured against and its count; under the cards,
-  "Nothing left in N other projects." A project git can't read keeps its card,
-  with its words in place of the list (and no branch), and, for a registered
-  project whose folder is gone, `ork projects move` as a command block.
-  "Updating…" is a polite status; **Reload** keeps its name after a failed read,
-  which an alert says once, and Clean merged… then says why it waits.
+  change made outside Ork shows on **Reload** ([L155](../worktrees/limits.md)).
+  One card per project with something left, in the filter's name order, its
+  heading the project's name with its path, the branch "merged" is measured
+  against and its count; under the cards, "Nothing left in N other projects." A
+  project git can't read keeps its card, with its words in place of the list
+  (and no branch), and, for a registered project whose folder is gone,
+  `ork projects move` as a command block. "Updating…" is a polite status;
+  **Reload** keeps its name after a failed read, which an alert says once, and
+  Clean merged… then says why it waits.
 - **A row** is the item's name (its branch, or its run and node when detached),
   a merge badge (`merged`, `not merged`, `detached`: a glyph and a word), then
   its run and node, path, and state as core words it; work removing would lose
@@ -62,4 +62,4 @@ so it has no Go to digit; its tab sits after Feedback in the bottom group.
   before. Cancelled, it says nothing was removed.
 - **Won't do:** `clean --all`, `--force` and `--run` in bulk, and `--yes`;
   unmerged or dirty work goes one row at a time, through the explicit confirm
-  ([L156](../gaps/limits-worktrees.md)).
+  ([L156](../worktrees/limits.md)).

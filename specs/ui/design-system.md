@@ -22,3 +22,4 @@ and the panels' own pieces are built with their panels ([panels](./panels.md)).
 - [Components and copy](./design-components-and-copy.md)
   - [Components](./design-components-and-copy.md#components)
   - [Copy](./design-components-and-copy.md#copy)
+- [Limits: design tokens](./design-tokens-limits.md)

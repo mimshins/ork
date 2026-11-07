@@ -7,6 +7,7 @@
 
 import {
   type ClaudeNode,
+  type Driver,
   isClaudeNode,
   type Workflow,
 } from "@krapht/ork-schema";
@@ -30,6 +31,7 @@ import type {
   ToolRules,
 } from "../runtime/types.ts";
 import { AGENT_TOOL, renderBrief, subagentsOf } from "./brief.ts";
+import { namedDriver } from "./driver.ts";
 import { harnessInstructions } from "./harness.ts";
 import type { Brief, Checkout, NodeOutput } from "./types.ts";
 
@@ -86,7 +88,8 @@ export type PlanResult =
   | {
       ok: true;
       spec: SessionSpec;
-      driver: "sdk" | "cli";
+      /** What the workflow names (`driver.ts`); else the one ready here. */
+      driver: Driver | undefined;
       warnings: string[];
       context: ContextStack;
     }
@@ -221,6 +224,9 @@ export const planNodeSession = (
     permissionMode: "default",
     reportSchema: reportSchemaFor(node),
   };
+  // A leader is long-lived and waits in `delegate`: an hour's cache keeps its
+  // prefix across the wait (specs/context.md, N3).
+  if (node.type === "claude.leader") spec.promptCache = "1h";
   const agents = subagentsOf(
     workflow,
     declared,
@@ -258,7 +264,7 @@ export const planNodeSession = (
   return {
     ok: true,
     spec,
-    driver: node.driver ?? defaults.driver ?? "sdk",
+    driver: namedDriver(node, workflow),
     warnings,
     context,
   };

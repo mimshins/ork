@@ -232,6 +232,26 @@ const plannedSpec = (...args: Parameters<typeof planNodeSession>) => {
 };
 
 describe("a planned session", () => {
+  it("asks for the one-hour prompt cache for a leader, not a worker", () => {
+    const f = fixture();
+    const workflow = workflowOf([
+      "nodes:",
+      "  lead: { type: claude.leader }",
+      "  fix: { type: claude.worker }",
+    ]);
+    const planned = (id: string) =>
+      plannedSpec(workflow, id, {
+        cwd: f.root,
+        inputs: {},
+        inPlace: true,
+        workflowDir: f.workflowDir,
+        projectRoot: f.root,
+        home: f.home,
+      });
+    expect(planned("lead").promptCache).toBe("1h");
+    expect(planned("fix")).not.toHaveProperty("promptCache");
+  });
+
   it("gets the context sections in cache order, its plugin, and its settings", () => {
     const f = fixture();
     const spec = plannedSpec(

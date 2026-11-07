@@ -24,6 +24,7 @@ import type {
   SessionUsage,
 } from "@krapht/ork-core";
 
+import { cacheEnv } from "./cache-env.ts";
 import {
   addUsage,
   HOOK_TIMEOUT_S,
@@ -113,7 +114,7 @@ export const buildSdkOptions = (
   });
   const options: Options = {
     cwd: spec.cwd,
-    env: definedEnv(env),
+    env: definedEnv({ ...env, ...cacheEnv(spec) }),
     settingSources: spec.settingSources,
     systemPrompt: {
       type: "preset",
@@ -137,12 +138,16 @@ export const buildSdkOptions = (
     },
   };
   if (spec.tools.only !== undefined) options.tools = spec.tools.only;
+  if (spec.tools.strictMcp === true) options.strictMcpConfig = true;
   if (spec.agents !== undefined) options.agents = spec.agents;
   if (spec.model !== undefined) options.model = spec.model;
   if (spec.effort !== undefined) options.effort = spec.effort;
   if (spec.maxTurns !== undefined) options.maxTurns = spec.maxTurns;
   if (spec.budgetUsd !== undefined) options.maxBudgetUsd = spec.budgetUsd;
   if (spec.resume !== undefined) options.resume = spec.resume;
+  if (spec.resume !== undefined && spec.fork === true) {
+    options.forkSession = true;
+  }
   if (spec.plugins !== undefined) {
     options.plugins = spec.plugins.map(dir => ({ type: "local", path: dir }));
   }
@@ -181,7 +186,9 @@ export const createSdkRuntime = (
       carried: SessionUsage | undefined,
     ): AsyncGenerator<RuntimeEvent, Leg> {
       deferring = false;
-      const legSpec = resume === undefined ? spec : { ...spec, resume };
+      // A fork's later legs continue the fork, not the original.
+      const legSpec =
+        resume === undefined ? spec : { ...spec, resume, fork: false };
       current = query({
         prompt: input,
         options: buildSdkOptions(legSpec, ports, env, held),

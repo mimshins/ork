@@ -34,10 +34,14 @@ export const ownSpend = (
   return own;
 };
 
-/** What a run has spent so far, and each session's last total. */
+/**
+ * What a run has spent so far, each session's last total, and what each
+ * leader's forks spent (ADR-063), which no `node.finished` carries.
+ */
 export type EarlierSpend = {
   total: number;
   reported: ReadonlyMap<string, number>;
+  forks?: ReadonlyMap<string, number>;
 };
 
 /**
@@ -45,11 +49,13 @@ export type EarlierSpend = {
  * nodes recorded. A session's report counts once its node finished, or when
  * `ork chat` made it outside any node: a session cut off before its node
  * finished has recorded nothing, so its next total counts the part that was cut
- * off.
+ * off. A leader's fork is never resumed, so its report counts when it comes,
+ * whether or not its leader finished.
  */
 export const earlierSpend = (events: Iterable<RunEvent>): EarlierSpend => {
   const reported = new Map<string, number>();
   const open = new Map<string, { key: string; cost: number } | null>();
+  const forks = new Map<string, number>();
   let total = 0;
   for (const event of events) {
     if (event.type === "node.started") {
@@ -67,9 +73,14 @@ export const earlierSpend = (events: Iterable<RunEvent>): EarlierSpend => {
     ) {
       const { sessionId, usage } = event.event.outcome;
       const key = `${event.id}/${sessionId}`;
-      if (open.has(event.id)) open.set(event.id, { key, cost: usage.costUsd });
-      else ownSpend(reported, key, usage.costUsd);
+      if (event.event.fork === true) {
+        const own = ownSpend(reported, key, usage.costUsd);
+        total += own;
+        forks.set(event.id, (forks.get(event.id) ?? 0) + own);
+      } else if (open.has(event.id)) {
+        open.set(event.id, { key, cost: usage.costUsd });
+      } else ownSpend(reported, key, usage.costUsd);
     }
   }
-  return { total, reported };
+  return { total, reported, forks };
 };

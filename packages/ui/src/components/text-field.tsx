@@ -21,6 +21,8 @@ export type TextFieldProps = {
   onCommit?: (() => void) | undefined;
   /** More than one line; Enter starts a new one. */
   multiline?: boolean;
+  /** How many lines a multiline field shows. */
+  rows?: number;
   description?: string | undefined;
   required?: boolean;
   /** Numbers get the numeric keyboard and the browser's check. */
@@ -34,6 +36,7 @@ export const TextField = ({
   onChange,
   onCommit,
   multiline = false,
+  rows = 4,
   description,
   required = false,
   type = "text",
@@ -64,7 +67,7 @@ export const TextField = ({
           onValueChange={next => {
             onChange(next);
           }}
-          render={multiline ? <textarea rows={4} /> : undefined}
+          render={multiline ? <textarea rows={rows} /> : undefined}
           required={required}
           type={multiline ? undefined : type}
           value={value}

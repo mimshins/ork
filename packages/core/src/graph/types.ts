@@ -74,7 +74,7 @@ export const OUTPUT_FIELDS: Record<
   "control.split": null,
   "control.join": ["statuses", "results", "count"],
   "control.router": null,
-  "human.gate": ["choice", "answeredBy"],
+  "human.gate": ["choice", "answeredBy", "note"],
   // A called run's outputs, or the report of the node it waits on.
   "workflow.call": null,
   "mcp.call": ["text", "json"],

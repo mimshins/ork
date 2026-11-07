@@ -3,10 +3,10 @@
  *   meets WCAG 2.2 AA in each look (dark and light, standard and more
  *   contrast); no color token escapes the pairings; the layers stay apart
  *   (colors written out only in the primitives, color primitives named only by
- *   the semantic layer); both themes define the same tokens; and text sizes
- *   come from the type scale, none below 11 px; and a popup opens above the
- *   dialog it came from. What a component's own sheet must do is in
- *   component-tokens.test.ts.
+ *   the semantic layer); both themes define the same tokens, and a light system
+ *   has the light ones before any script runs; and text sizes come from the
+ *   type scale, none below 11 px; and a popup opens above the dialog it came
+ *   from. What a component's own sheet must do is in component-tokens.test.ts.
  */
 
 import { readFileSync } from "node:fs";
@@ -80,6 +80,21 @@ const declared = (selector: string): string[] =>
 
 const DARK = ':root, [data-theme="dark"]';
 const LIGHT = '[data-theme="light"]';
+/** The page's look before theme.ts runs, on a light system. */
+const BEFORE_SCRIPT = ":root:not([data-theme])";
+const BEFORE_SCRIPT_MEDIA = "@media (prefers-color-scheme: light)";
+
+/** A rule's tokens with their values, in order. */
+const declarations = (selector: string): string[] =>
+  rulesOf(readToken("themes.css"))
+    .filter(rule => rule.selector === selector)
+    .flatMap(rule => rule.declarations.map(pair => pair.join(": ")));
+
+/** A token file's at-rules, as written. */
+const atRules = (file: string): string[] =>
+  [...withoutComments(readToken(file)).matchAll(/@[^{;]+/gu)].map(
+    ([rule]) => `${file}: ${rule.trim()}`,
+  );
 
 const STYLES = sourceFiles().filter(file => /\.(?:css|tsx?)$/u.test(file));
 const read = (file: string): string =>
@@ -157,15 +172,18 @@ describe("contrast", () => {
 
 describe("the token layers", () => {
   it("keep their files flat: no at-rules and no nesting", () => {
-    expect(
-      TOKEN_FILES.filter(file =>
-        withoutComments(readToken(file)).includes("@"),
-      ),
-    ).toEqual([]);
+    expect(TOKEN_FILES.flatMap(file => atRules(file))).toEqual([
+      `themes.css: ${BEFORE_SCRIPT_MEDIA}`,
+    ]);
   });
 
   it("define the same tokens in both themes", () => {
     expect(declared(LIGHT)).toEqual(declared(DARK));
+  });
+
+  it("give a light system the light tokens before a script sets the theme", () => {
+    expect(declarations(BEFORE_SCRIPT)).toEqual(declarations(LIGHT));
+    expect(declarations(LIGHT)).not.toEqual([]);
   });
 
   it("raise contrast only on tokens their theme defines", () => {

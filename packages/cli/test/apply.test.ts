@@ -35,6 +35,7 @@ import {
   applyItem,
   outcomeOf,
 } from "../src/runs/apply.ts";
+import { sdkReady } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
@@ -108,6 +109,7 @@ const options = (
   item,
   registered: [],
   runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
+  driverChecks: sdkReady,
   human: answering(choice),
   home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
   out: () => {

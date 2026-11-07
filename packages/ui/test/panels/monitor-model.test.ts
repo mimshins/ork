@@ -149,12 +149,24 @@ describe("which controls apply", () => {
     });
   });
 
-  it("for a run that has ended: nothing, and it says so", () => {
+  it("for a run that has ended: only resume, and it says why not the rest", () => {
     const why = "the run has ended (failed)";
     expect(runActions(ended)).toEqual({
       pause: { enabled: false, why },
       proceed: { enabled: false, why },
       stop: { enabled: false, why },
+      resume: { enabled: true },
+    });
+  });
+
+  it("for a run that succeeded: nothing, not even resume", () => {
+    expect(runActions(runView("r", "succeeded"))).not.toHaveProperty("resume");
+  });
+
+  it("for a run of one node: resume, saying why not", () => {
+    expect(runActions(runView("node-r", "failed")).resume).toEqual({
+      enabled: false,
+      why: "it ran one node; run that node again instead",
     });
   });
 

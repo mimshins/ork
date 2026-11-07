@@ -62,4 +62,5 @@ that chose another origin exactly as it is.
   and by Ork once (links are deduplicated by real path).
 - A project that keeps its origin elsewhere, as se-backend does, is left as it
   is; `ork link --check` shows its links pointing at `.ai/`.
-- Symlinks need `core.symlinks` on native Windows ([gaps](../specs/gaps.md)).
+- Symlinks need `core.symlinks` on native Windows
+  ([L13](../specs/projects/limits.md)).

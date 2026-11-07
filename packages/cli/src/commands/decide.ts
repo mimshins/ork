@@ -1,8 +1,9 @@
 /**
  * @file `ork decide`: answer a live run's open decisions from any terminal (it
  *   writes to the store, then wakes the run on its socket; specs/messaging.md).
- *   With `--id` and `--choose`, `--note` and `--rating` also note how the
- *   decision's node went, as the run's feedback (specs/feedback.md).
+ *   `--say` gives the answer a note, which goes to the run with it. With `--id`
+ *   and `--choose`, `--note` and `--rating` instead note how the decision's
+ *   node went, as the run's feedback (specs/feedback.md).
  */
 
 import {
@@ -66,6 +67,12 @@ export const noteProblem = (
   return checked.ok ? undefined : checked.error;
 };
 
+/** What the answer said, as stored (masked), after the answer's line. */
+export const saidLine = (store: EventStore, id: string): string => {
+  const note = store.decision(id)?.note;
+  return note === undefined ? "" : style("dim", ` · said: ${note}`);
+};
+
 /** One line per open decision, for `--list`. */
 export const formatDecisions = (
   decisions: readonly DecisionRecord[],
@@ -74,7 +81,7 @@ export const formatDecisions = (
     ? ["No open decisions."]
     : decisions.map(
         d =>
-          `${style("bold", d.id)}  ${style("cyan", d.node)}  ${d.question} ${style("dim", `[${d.options.map(o => (o.id === d.recommended ? `${o.id}*` : o.id)).join(", ")}]`)}`,
+          `${style("bold", d.id)}  ${style("cyan", d.node)}${d.owner === undefined ? "" : style("dim", ` via ${d.owner}`)}  ${d.question} ${style("dim", `[${d.options.map(o => (o.id === d.recommended ? `${o.id}*` : o.id)).join(", ")}]`)}`,
       );
 
 export const decide = defineCommand({
@@ -101,6 +108,11 @@ export const decide = defineCommand({
     json: { type: "boolean", description: "List them as JSON", default: false },
     id: { type: "string", description: "Answer this decision…" },
     choose: { type: "string", description: "…with this option" },
+    say: {
+      type: "string",
+      description:
+        "…and say this with it: the answer's note, which goes to the run",
+    },
     note: {
       type: "string",
       description:
@@ -136,12 +148,21 @@ export const decide = defineCommand({
           failed(problem);
           return;
         }
-        const answered = await answerDecision(store, args.id, args.choose);
+        const answered = await answerDecision(
+          store,
+          args.id,
+          args.choose,
+          undefined,
+          "decide",
+          args.say,
+        );
         if (!answered.ok) {
           failed(answered.error);
           return;
         }
-        write(`${style("green", "✓")} ${args.id}: ${args.choose}`);
+        write(
+          `${style("green", "✓")} ${args.id}: ${args.choose}${saidLine(store, args.id)}`,
+        );
         const noted = noteDecision(store, args.id, args.note, args.rating);
         if (noted === undefined) return;
         if (noted.ok)
@@ -151,6 +172,12 @@ export const decide = defineCommand({
       }
       if (args.note !== undefined || args.rating !== undefined) {
         failed("--note and --rating go with --id and --choose.");
+        return;
+      }
+      if (args.say !== undefined) {
+        failed(
+          "--say goes with --id and --choose; answering here asks for a note after each choice.",
+        );
         return;
       }
       const filter: { runId?: string; project?: string } = {};
@@ -182,13 +209,24 @@ export const decide = defineCommand({
         };
         if (d.recommended !== undefined) question.recommended = d.recommended;
         if (d.context !== undefined) question.context = d.context;
+        let note: string | undefined;
+        question.onNote = given => {
+          note = given;
+        };
         // oxlint-disable-next-line no-await-in-loop -- one question at a time
         const choice = await human.ask(question);
         // oxlint-disable-next-line no-await-in-loop -- answered in order
-        const answered = await answerDecision(store, d.id, choice);
+        const answered = await answerDecision(
+          store,
+          d.id,
+          choice,
+          undefined,
+          "decide",
+          note,
+        );
         write(
           answered.ok
-            ? `${style("green", "✓")} ${d.id}: ${choice}\n`
+            ? `${style("green", "✓")} ${d.id}: ${choice}${saidLine(store, d.id)}\n`
             : `${style("yellow", "!")} ${answered.error}\n`,
         );
       }

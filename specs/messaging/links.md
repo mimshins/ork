@@ -3,7 +3,7 @@
 _Part of [Messaging, decisions and logs](../messaging.md)._
 
 Status: **Built, proven on real sessions on the CLI driver**; the SDK driver
-only against stand-ins ([C5](../gaps.md#chores))
+only against stand-ins ([C5](../runtime.md#limits))
 ([ADR-044](../../decisions/ADR-044-relay-between-runs.md),
 [links.ts](../../packages/core/src/remote/links.ts),
 [relay.ts](../../packages/core/src/remote/relay.ts),
@@ -62,6 +62,6 @@ names a node, so an agent writes to `client-kit` with no run id
 ([bus-calls.ts](../../packages/core/src/run/bus-calls.ts)). Starting the call
 makes the link, with `maxMessages` from the node. A message sent before then
 waits for it, and its sender is told if it then cannot be sent
-([L57](../gaps/limits-calls.md)). The called workflow needs no change. Two calls
-cannot share a channel, since neither side has a session. A compile error stops
-a channel to a call when the workflow's rules turn links off.
+([L57](../scheduler/calls-limits.md)). The called workflow needs no change. Two
+calls cannot share a channel, since neither side has a session. A compile error
+stops a channel to a call when the workflow's rules turn links off.

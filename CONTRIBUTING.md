@@ -17,7 +17,7 @@ participating, you are expected to uphold it.
   itself.
 - New to the code? [ONBOARDING.md](./ONBOARDING.md) is an ordered path through
   the docs, the interaction map and the packages.
-- Read [docs/design.md](./docs/design.md) for the overview, the
+- Read [specs/design.md](./specs/design.md) for the overview, the
   [specs](./specs/README.md) for what each part must do, the
   [ADRs](./decisions/README.md) for why, and the
   [interaction map](./docs/interaction-map/README.md) for how the parts fit
@@ -125,6 +125,70 @@ through their public entry point. oxlint enforces this.
   ([how](./docs/interaction-map/roadmap.md)).
 - New dependencies must be justified in the pull request, saved at an exact
   version, and at least 7 days old (the workspace refuses newer ones).
+
+## Running Ork's own workflows
+
+This repository is an Ork project: [.ork/project.yaml](./.ork/project.yaml)
+holds its rules, and [.ork/workflows/](./.ork/workflows) two workflows.
+
+- **`feature`** goes from your brief to a change you keep or discard. The
+  spec-writer turns the brief into a task spec, and a gate asks you to approve
+  it. A leader then builds it through the agents it owns: the ui-designer and
+  the a11y-auditor for UI work, the implementer, or the engine agent for engine
+  work, until `pnpm check` passes. A builder's question goes to the leader
+  first, which answers it when the approved spec settles it and passes it to you
+  otherwise. An independent reviewer sends findings back for up to two more
+  rounds, the docs-keeper syncs the knowledge, and a last gate asks you to keep
+  or discard the change.
+- **`qa-pass`** has the qa agent test the package built from `main` as a user
+  would, with a fake `claude` and `gh`, and shows you its findings.
+
+Run them with a released Ork installed globally (`1.0.0-alpha.0` or later), not
+with `pnpm ork` from this checkout. A run starts more `ork` processes as it goes
+(detached and called runs, `ork ui`'s server), and from source each would run
+whatever is on disk at that moment, your half-finished edits included. A release
+stays put while you work, and it's what users run. Keep `pnpm ork` for trying
+unreleased changes on purpose; the builders inside a run still use their own
+worktree's source for `pnpm check`.
+
+```sh
+pnpm add --global @krapht/ork                  # or: npm install --global @krapht/ork
+ork validate                                   # check both and walk every way through them
+ork run feature --input brief="Let ork ps filter by workflow"
+ork run qa-pass --input scope="the quickstart and the worktrees guide"
+```
+
+**Approving the spec.** The first gate shows the spec and asks `approve`,
+`revise` or `stop`. To ask for changes, answer `revise` with a note saying what
+to change: in the Decisions panel's note box, at the run's terminal, or from
+another terminal:
+
+```sh
+ork decide <run> --id <decision> --choose revise --say "Also cover ork ps --json, and drop task 4"
+```
+
+The spec-writer resumes its session with your words and shows you the revised
+spec at the same gate, for as many rounds as it takes (Ork asks you after ten).
+Nothing is built, and the build's cost isn't spent, until you approve.
+
+**Decisions become ADRs.** What you settle in the approval loop goes in the
+spec's Decided section. Each builder reports the choices it made that the spec
+didn't settle (a report without them fails), and the leader gathers them all.
+The docs-keeper writes an ADR in [decisions/](./decisions/README.md) for each
+hard-to-reverse one, and the last gate lists those ADRs, so you check them
+before you keep the change.
+
+- **Runs are paid.** Each session spends on your own account, through the driver
+  that's ready on your machine (your `claude` login or an API key; `ork run`
+  says which). Each session has a budget, each run a cap (`feature` $35,
+  `qa-pass` $8) and the project a daily quota ($50). The first runs are measured
+  for Ork's cost benchmark, so start them only on the maintainer's go and keep
+  their run ids (`ork tree <run>`, `ork usage`).
+- **Ork commits nothing here.** The work stays uncommitted in a worktree beside
+  your clone. When you keep it, the gate's next step applies it to your
+  checkout, uncommitted, and you commit and push it as below.
+- **Commit your instructions first:** `ork run` stops while `CLAUDE.md`,
+  `AGENTS.md` or `.claude/` have uncommitted changes.
 
 ## Commits and pull requests
 

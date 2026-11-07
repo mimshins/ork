@@ -68,7 +68,7 @@ agree on where the change is.
   whole change. `{{nodes.<id>.output.worktree}}` is the shared worktree for
   every node in the chain.
 - Two `continue` nodes that run at once in one worktree can collide; claims are
-  advisory ([gaps](../specs/gaps.md), L10).
+  advisory ([L10](../specs/messaging/limits.md)).
 - A `continue` node cannot own children; a leader that needs its own checkout
   for them keeps `worktree`.
 - Gap L21 is closed.

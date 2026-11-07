@@ -1,8 +1,9 @@
 /**
  * @file The design system's semantic layer: what each color is for, per theme.
  *   The page's root carries `data-theme` (dark or light) and `data-contrast`
- *   (standard or more), set by theme.ts from the system or the user's choice;
- *   dark is also the page's look before that runs. A high-contrast block only
+ *   (standard or more), set by theme.ts from the system or the user's choice.
+ *   Before that runs, the page follows the system's color scheme, dark or
+ *   light, with standard contrast. A high-contrast block only
  *   overrides tokens its theme defines. Values here only name primitives, and a
  *   test checks every pairing in test/pairings.ts against WCAG 2.2 AA.
  */
@@ -122,6 +123,67 @@
   --color-status-queued: var(--ink-700);
   --color-status-skipped: var(--ink-700);
   --color-status-interrupted: var(--ink-700);
+}
+
+/*
+ * Until theme.ts sets `data-theme`, the page has none, and a light system gets
+ * the light tokens from here, with no script: the same as the block above,
+ * which tokens.test.ts checks.
+ */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+
+    --surface-canvas: var(--ink-100);
+    --surface-frame: var(--ink-50);
+    --surface-sunken: var(--ink-25);
+    --surface-panel: var(--ink-0);
+    --surface-raised: var(--ink-0);
+    --surface-hover: var(--ink-100);
+    --surface-selected: var(--amber-50);
+    --surface-attention: var(--amber-50);
+    --surface-current: var(--ink-100);
+    --surface-live: var(--phosphor-50);
+    --surface-danger: var(--red-50);
+    --surface-scrim: var(--scrim-light);
+    --shadow-frame: var(--shadow-faint);
+
+    --color-text: var(--ink-1000);
+    --color-text-muted: var(--ink-700);
+    --color-text-disabled: var(--ink-400);
+    --color-border: var(--ink-200);
+    --color-border-soft: var(--ink-100);
+    --color-border-strong: var(--ink-500);
+    --color-grid-dot: var(--ink-200);
+    --color-focus: var(--amber-700);
+
+    /* The bright fills keep the brand; a deeper edge outlines them on white. */
+    --color-action: var(--amber-500);
+    --color-action-hover: var(--amber-300);
+    --color-action-edge: var(--amber-700);
+    --color-action-text: var(--amber-700);
+    --color-text-on-action: var(--ink-1000);
+
+    --color-live: var(--phosphor-500);
+    --color-live-edge: var(--phosphor-700);
+    --color-live-text: var(--phosphor-700);
+    --color-text-on-live: var(--ink-1000);
+    --color-link: var(--phosphor-700);
+
+    --color-danger: var(--red-700);
+    --color-danger-hover: var(--red-800);
+    --color-danger-text: var(--red-700);
+    --color-text-on-danger: var(--ink-0);
+
+    --color-status-running: var(--phosphor-700);
+    --color-status-succeeded: var(--phosphor-700);
+    --color-status-waiting: var(--amber-700);
+    --color-status-paused: var(--amber-700);
+    --color-status-failed: var(--red-700);
+    --color-status-queued: var(--ink-700);
+    --color-status-skipped: var(--ink-700);
+    --color-status-interrupted: var(--ink-700);
+  }
 }
 
 [data-theme="dark"][data-contrast="more"] {

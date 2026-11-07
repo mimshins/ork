@@ -1,7 +1,8 @@
 /**
  * @file Tests for the dock on real dockview: the default layout, minimize and
  *   restore, closing and reopening, moving by keyboard, floating and docking,
- *   maximizing, and the saved layout coming back after a reload.
+ *   maximizing, the saved layout coming back after a reload, and a heading for
+ *   each panel.
  */
 
 import { act, cleanup, screen, waitFor } from "@testing-library/react";
@@ -70,6 +71,16 @@ describe("the dock", () => {
     expect(tabsBeside("Context")).toEqual(["Context"]);
     expect(workspace.view.getValue().active).toBe("monitor");
     expect(workspace.announcement.getValue()).toBe("");
+  });
+
+  it("heads each panel for a screen reader, so its cards don't skip a level", () => {
+    openShell();
+    const headings = screen
+      .getAllByRole("heading", { level: 2 })
+      .map(heading => heading.textContent);
+    expect(headings).toEqual(
+      expect.arrayContaining(["Runs", "Monitor", "Logs", "Decisions"]),
+    );
   });
 
   it("has no accessibility violations", async () => {

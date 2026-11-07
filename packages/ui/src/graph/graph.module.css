@@ -321,6 +321,41 @@
   right: var(--graph-controls-right);
 }
 
+/* Keys on the graph: each key beside what it does, in the Keys popover. */
+.keyList {
+  --graph-key-list-gap: var(--gap-tight) var(--gap);
+  --graph-key-list-margin: 0;
+  --graph-key-list-columns: auto 1fr;
+
+  display: grid;
+  gap: var(--graph-key-list-gap);
+  grid-template-columns: var(--graph-key-list-columns);
+  margin: var(--graph-key-list-margin);
+}
+
+.keyRow {
+  display: contents;
+}
+
+.keyNames {
+  --graph-key-names-gap: var(--gap-hair);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--graph-key-names-gap);
+}
+
+.keyDoes {
+  --graph-key-does-text: var(--color-text);
+  --graph-key-does-text-size: var(--text-ui);
+  --graph-key-does-margin: 0;
+
+  color: var(--graph-key-does-text);
+  font-size: var(--graph-key-does-text-size);
+  margin: var(--graph-key-does-margin);
+}
+
 /* Forced colors take the fill away, so the chosen card's edge says it. */
 @media (forced-colors: active) {
   .card[data-selected] {

@@ -76,3 +76,25 @@ export const doneCount = (statuses: Iterable<Status>): string => {
   const all = [...statuses];
   return `${String(all.filter(status => DONE.has(status)).length)} / ${String(all.length)}`;
 };
+
+/**
+ * What a finished run left out, for the header: `2 skipped · 1 failure
+ * handled`, or `null` when it skipped nothing and handled no failure.
+ */
+export const leftOut = ({
+  skipped = 0,
+  failuresHandled = 0,
+}: {
+  skipped?: number;
+  failuresHandled?: number;
+}): string | null => {
+  const parts = [
+    ...(skipped === 0 ? [] : [`${String(skipped)} skipped`]),
+    ...(failuresHandled === 0
+      ? []
+      : [
+          `${String(failuresHandled)} ${failuresHandled === 1 ? "failure" : "failures"} handled`,
+        ]),
+  ];
+  return parts.length === 0 ? null : parts.join(" · ");
+};

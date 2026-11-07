@@ -3,6 +3,13 @@
 A tool node can do work that would otherwise take a model turn: read a command's
 result, decide where the run goes, and hand the next step what it needs.
 
+## Contents
+
+- [Steps around a session](./scripts/steps.md): check a session's work, and set
+  a node up
+- [Tell a session what happened](./scripts/messages.md)
+- [Call an MCP tool](./scripts/mcp.md)
+
 ## Return JSON
 
 ```yaml
@@ -27,11 +34,10 @@ doesn't fit fails the node and says why, rather than a condition quietly
 matching nothing. To handle that, or any failure, give an edge `when: "!ok"`.
 
 `ork validate` and `ork run` stop on a condition that compares a field with a
-value it can't have: one outside a declared list, a Claude node's `status`, or a
-gate's `choice`. The message names the values it can have. A Claude node's own
-`status` list can narrow the built-in ones, but can't add others, as a session
-can't report them; declare another field, such as `verdict`. A warning, such as
-a loop only its rounds can end, prints too, and the run goes ahead.
+value it can't have, such as one outside a declared list
+([values a condition can't have](./writing-workflows/checking.md#values-a-condition-cant-have)).
+A Claude node's own `status` list can narrow the built-in ones, but can't add
+others; declare another field, such as `verdict`.
 
 A script that logs to stdout writes its result to the file at `$ORK_OUTPUT`
 instead. That file wins when it is written. Otherwise Ork parses all of stdout.
@@ -64,15 +70,12 @@ check:
   name, it warns instead, as that call may never run, and the call fails if the
   run reaches it.
 - Logs record the names in `env:`, never the values.
-- A value from `{{env.NAME}}` of eight characters or more is replaced by
-  `[masked]` in what every tool node of the workflow prints or returns, in any
-  form a JSON encoder writes it, including JSON keys and numbers. The same goes
-  for workflows it calls by name, and for those calling it. Each line of a
-  multi-line value and each value in a JSON one is masked too, so a program that
-  prints only part of it is covered, and that text is masked wherever it
-  appears. Ork can't catch a secret encoded another way, such as base64 or URL
-  encoding, one read by a workflow called by a computed name, or one a program
-  finds by itself, beyond its usual patterns.
+- A value of eight characters or more from `{{env.NAME}}` shows as `[masked]` in
+  what any tool node prints or returns, including inside JSON, and in workflows
+  this one calls or is called by. Each line of a multi-line value, and each
+  value in a JSON one, is masked on its own too.
+- Ork can't catch a secret encoded another way (base64, URL encoding), one read
+  by a workflow called by a computed name, or one a program finds by itself.
 - `ork validate` warns about a literal value under a name like `API_KEY`, or a
   URL with a password in it, because the workflow file goes to git.
 
@@ -137,23 +140,15 @@ A program also sees:
 | `ORK_STATE`    | With [`watch:`](./watching.md), a file kept between looks |
 | `ORK_MASKED`   | The names of the variables to mask, never values          |
 
-These say who a program is but don't limit what it can do: it runs as you.
-`ork chat`, `ork continue` and answering with `ork decide` refuse inside a run,
-because they act as you, and `ork ui` keeps its sign-in link to itself there.
-`ork decide --list` still works, and so does `ork stop`.
+These say who a program is but don't limit what it can do: it runs as you. A
+program in a run can read and stop, but not answer, chat or continue for you:
+`ork decide --list` and `ork stop` work, `ork chat`, `ork continue` and
+`ork decide --choose` refuse.
 
 Claude sessions don't get these variables. They inherit your own, like any
 program you start, so a session can read the variable behind
 `{{env.STAGING_GH_TOKEN}}`, and masking doesn't apply to its transcript. Their
 Bash also has `ORK_SESSION=1`, so an agent can't use those commands either.
 
-If a refusal reaches you at your own terminal, that shell inherited the variable
-it names from a program in a run, a tmux server started by one for example. Open
-a shell without it.
-
-## Contents
-
-- [Steps around a session](./scripts/steps.md): check a session's work, and set
-  a node up
-- [Tell a session what happened](./scripts/messages.md)
-- [Call an MCP tool](./scripts/mcp.md)
+If your own terminal gets such a refusal, it inherited a run's variables, from a
+tmux server a run started for example. Open a new shell.

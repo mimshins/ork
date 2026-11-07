@@ -74,7 +74,8 @@ From RFC-006, in full there:
 - The root `tsconfig` now sets `skipLibCheck`, as the SDK's HTTP client
   declaration does not pass under `exactOptionalPropertyTypes`
   ([C8](../specs/gaps.md#chores)).
-- Limits: [L93, L94 and L95](../specs/gaps/limits-scripts.md).
+- Limits: [L93, L94 and L95](../specs/messaging/scripts-limits.md) (L94 since
+  closed).
 - `verify:` and `before:` were proven on a real session on the CLI driver,
   through a failing check that the same session then fixed. `mcp.call` was
   proven against real stdio and HTTP servers with no session. The SDK driver

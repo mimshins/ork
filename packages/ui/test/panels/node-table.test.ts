@@ -9,7 +9,12 @@ import { describe, expect, it } from "vitest";
 import type { Status } from "../../src/components/status-badge.tsx";
 import { edgeStateOf } from "../../src/graph/edge-paths.tsx";
 import { formatElapsed } from "../../src/graph/facts.ts";
-import { doneCount, nowLine, timeLine } from "../../src/panels/node-table.ts";
+import {
+  doneCount,
+  leftOut,
+  nowLine,
+  timeLine,
+} from "../../src/panels/node-table.ts";
 import { treeNode } from "./monitor-fixtures.ts";
 
 const NOW = Date.parse("2026-11-05T10:10:00.000Z");
@@ -124,6 +129,15 @@ describe("the nodes done", () => {
     expect(doneCount(["succeeded", "failed", "running", "queued"])).toBe(
       "2 / 4",
     );
+  });
+
+  it("says what a finished run skipped and which failures it handled", () => {
+    expect(leftOut({ skipped: 2, failuresHandled: 1 })).toBe(
+      "2 skipped · 1 failure handled",
+    );
+    expect(leftOut({ failuresHandled: 3 })).toBe("3 failures handled");
+    expect(leftOut({ skipped: 0, failuresHandled: 0 })).toBeNull();
+    expect(leftOut({})).toBeNull();
   });
 });
 

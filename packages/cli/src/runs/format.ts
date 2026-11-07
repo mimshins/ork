@@ -49,7 +49,10 @@ export const duration = (ms: number): string => {
 
 export { cost };
 
-/** The `ork ps` table; `withProject` adds each run's project. */
+/**
+ * The `ork ps` table; `withProject` adds each run's project. A called run's
+ * cost is dimmed and says its caller's, whose cost already counts it.
+ */
 export const formatRuns = (
   runs: readonly RunRecord[],
   withProject: boolean,
@@ -65,7 +68,12 @@ export const formatRuns = (
       workflow: run.workflow,
       status,
       when: `${ago(run.startedAt, now)} · ${duration(end - Date.parse(run.startedAt))}`,
-      cost: cost(run.costUsd),
+      // A called run's spend is in its caller's too (L54): said, not added.
+      cost:
+        run.parent === undefined
+          ? cost(run.costUsd)
+          : `${cost(run.costUsd)} in ${run.parent}`,
+      called: run.parent !== undefined,
       project: run.project,
     };
   });
@@ -94,7 +102,9 @@ export const formatRuns = (
         r.workflow.padEnd(w.workflow),
         style(STATUS_STYLE[r.status] ?? "reset", r.status.padEnd(w.status)),
         style("dim", r.when.padEnd(w.when)),
-        r.cost.padStart(w.cost),
+        r.called
+          ? style("dim", r.cost.padStart(w.cost))
+          : r.cost.padStart(w.cost),
         ...(withProject ? [style("dim", r.project)] : []),
       ].join("  "),
     ),

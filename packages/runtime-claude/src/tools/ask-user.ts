@@ -1,6 +1,8 @@
 /**
  * @file `ask_user`: a session asks the human to decide something only they can
- *   decide, through the run's `HumanChannel`.
+ *   decide, through the run's `HumanChannel`, and gets their choice back with
+ *   the note they gave, if any. When its owner takes its questions first
+ *   (ADR-063) and answers, it says so.
  */
 
 import type { DecisionChoice, HumanChannel } from "@krapht/ork-core";
@@ -34,8 +36,16 @@ export const askUserTool = defineTool({
       .describe("What the user needs to know to decide, in a few sentences."),
   },
   run: async ({ nodeId, ports }, args) => {
+    let note: string | undefined;
+    let owner: string | undefined;
     const question: Parameters<HumanChannel["ask"]>[0] = {
       nodeId,
+      onNote: given => {
+        note = given;
+      },
+      onOwner: given => {
+        owner = given;
+      },
       question: args.question,
       options: args.options.map(o => {
         const choice: DecisionChoice = { id: o.id };
@@ -47,6 +57,11 @@ export const askUserTool = defineTool({
     if (args.recommended !== undefined) question.recommended = args.recommended;
     if (args.context !== undefined) question.context = args.context;
     const answer = await ports.human.ask(question);
-    return text(`The user chose: ${answer}`);
+    const who = owner === undefined ? "The user" : `Your owner, \`${owner}\`,`;
+    return text(
+      note === undefined
+        ? `${who} chose: ${answer}`
+        : `${who} chose: ${answer}\nThey said: ${note}`,
+    );
   },
 });

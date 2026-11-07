@@ -11,11 +11,11 @@ runs, at most once a day for your machine
 **Upgrade…** (or **Upgrade Ork…** in the palette, `⌘K`) does what `ork upgrade`
 does, with its question asked by a button:
 
-1. It asks the npm registry now, then shows both versions, the release notes,
-   how Ork was installed, and the exact command it would run, such as
-   `pnpm add --global @krapht/ork@0.4.0`, with any runs still running. A copy
-   from a clone or through `npx` gets the steps to run yourself instead, each
-   command in a block to copy, and no run button.
+1. It asks the npm registry now, and shows both versions, the release notes, and
+   how Ork was installed. It shows the exact command it would run, such as
+   `pnpm add --global @krapht/ork@0.4.0`, and any runs still going. A copy from
+   a clone or through `npx` gets the steps to run yourself instead, each command
+   in a block to copy, and no run button.
 2. **Upgrade to 0.4.0** runs that command on your machine, as you, and shows its
    output as it comes. The dialog stays open until it ends. Stopping `ork ui`
    meanwhile waits for it to finish, so Ork isn't left half-installed; its
@@ -28,8 +28,12 @@ does, with its question asked by a button:
 If the upgrade fails, the dialog shows the output, the exit code and the command
 to run in a terminal yourself (a global install that needs more rights is the
 usual reason); nothing is restarted. If `ork ui` doesn't come back within a
-minute, the page says so: its terminal says why, and `ork ui --port <n>` starts
-it again.
+minute, the page says so: its terminal says why. Start it again, on another port
+if its own is taken:
+
+```sh
+ork ui --port 4500
+```
 
 **Dismiss for a day** hides the banner for that version, in this browser. A
 newer version shows it again at once.

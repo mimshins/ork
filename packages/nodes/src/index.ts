@@ -12,6 +12,7 @@ export * from "./spawn.ts";
 export * from "./tool-command.ts";
 export * from "./mcp-call.ts";
 export * from "./mcp-servers.ts";
+export * from "./owner-asks.ts";
 export * from "./tool-env.ts";
 export { clearOutputFiles } from "./tool-output.ts";
 export { clearStateFiles } from "./tool-state.ts";

@@ -1,0 +1,437 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: feature
+description: From a brief to a change you keep or discard. The spec-writer drafts a task spec and revises it until you approve it; a leader builds it through the ui-designer, a11y-auditor, implementer or engine agent; an independent reviewer sends findings back in a bounded loop; the docs-keeper syncs the knowledge; then you keep or discard the change before anything is committed.
+inputs:
+  brief:
+    type: string
+    required: true
+    description: The requirements in your own words, short. The spec-writer turns them into a task spec for you to approve.
+layers:
+  project:
+    instructions: inherit
+    skills:
+      allow:
+        - knowledge-drift-sync
+        - resync-map
+        - docs-structure
+defaults:
+  model: sonnet
+  effort: medium
+  budgetUsd: 2
+limits:
+  budgetUsd: 35
+  concurrency: 2
+  timeout: 5h
+nodes:
+  spec:
+    type: claude.worker
+    agent: spec-writer
+    prompt: |-
+      Write the task spec for this brief:
+
+      {{inputs.brief}}
+
+      When you run again, the next message is the maintainer's answer to the approval gate: choice revise, and note, their words on what to change. Revise the spec as they say and report all of it again. If the note is empty, ask with ask_user what to change rather than guessing.
+    model: sonnet
+    effort: high
+    isolation: readonly
+    budgetUsd: 2
+    maxTurns: 40
+    session: resume
+    output:
+      schema:
+        decisions:
+          type: array
+          description: Every choice settled in the approval loop, as in the spec's Decided section; an empty list when none.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - what
+              - why
+              - decidedBy
+              - hardToReverse
+            properties:
+              what:
+                type: string
+              why:
+                type: string
+              decidedBy:
+                type: string
+                description: Who decided it - maintainer, or the node id.
+              hardToReverse:
+                type: boolean
+                description: True when AGENTS.md says it needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency).
+              date:
+                type: string
+                description: YYYY-MM-DD.
+              alternatives:
+                type: array
+                items:
+                  type: string
+        spec: string
+  approve:
+    type: human.gate
+    question: |-
+      Approve this task spec? The build starts on approve, and is paid.
+
+      {{nodes.spec.output.spec}}
+
+      Open questions: {{nodes.spec.output.summary}}
+
+      To request changes, answer revise with a note saying what to change: the
+      note goes to the spec-writer as it is. stop ends the run with nothing built.
+    options:
+      - approve
+      - revise
+      - stop
+    recommended: stop
+  build:
+    type: claude.leader
+    prompt: |-
+      Build this approved task spec through the agents you own. Decide what it needs:
+      - UI work (packages/ui): delegate to design first, then the build, then a11y to audit the result.
+      - Engine work (scheduler, runtime port and drivers, store and events, run control, replay): delegate the build to engine; anything else to implement.
+      Each child already has the spec; your brief says which tasks are theirs. Fix only what integrates their work. Ork runs pnpm check on your checkout before your report counts. When you run again, your input is an independent review's findings: delegate the fixes. When a child asks a question, answer it only when the approved spec or an earlier answer settles it, and say which; otherwise pass it to the maintainer. Never decide for them. Report pass only when every child you used passed, and gather the spec's decisions and every decision your children reported into your own `decisions`, keeping who decided each.
+
+      {{nodes.spec.output.spec}}
+    model: sonnet
+    effort: high
+    isolation: worktree
+    budgetUsd: 4
+    maxTurns: 60
+    timeout: 3h
+    tools:
+      allow:
+        - Edit
+        - Write
+    output:
+      schema:
+        decisions:
+          type: array
+          description: Every decision of the spec and of each child you used, gathered, with its decidedBy kept; an empty list when none.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - what
+              - why
+              - decidedBy
+              - hardToReverse
+            properties:
+              what:
+                type: string
+              why:
+                type: string
+              decidedBy:
+                type: string
+                description: Who decided it - maintainer, or the node id.
+              hardToReverse:
+                type: boolean
+                description: True when AGENTS.md says it needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency).
+              date:
+                type: string
+                description: YYYY-MM-DD.
+              alternatives:
+                type: array
+                items:
+                  type: string
+    before:
+      command: pnpm install --frozen-lockfile --prefer-offline
+      timeout: 10m
+    verify:
+      command: pnpm check
+      timeout: 20m
+      attempts: 1
+    questions: owner
+  design:
+    type: claude.worker
+    parent: build
+    agent: ui-designer
+    prompt: |-
+      Design the UI part of this task before it is coded, as your owner's brief says. Write the design (purpose, states, tokens, keyboard map, accessible names, copy word for word) into specs/ui/ and any new tokens into packages/ui/src/design/, with their pairings in packages/ui/test/pairings.ts. Write no feature code. Report every choice you made that the spec didn't settle in `decisions`. The approved task spec:
+
+      {{nodes.spec.output.spec}}
+    model: sonnet
+    effort: high
+    isolation: worktree
+    budgetUsd: 3
+    maxTurns: 40
+    tools:
+      allow:
+        - Edit
+        - Write
+    output:
+      schema:
+        decisions:
+          type: array
+          description: Every choice you made that the spec didn't settle; an empty list when none.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - what
+              - why
+              - decidedBy
+              - hardToReverse
+            properties:
+              what:
+                type: string
+              why:
+                type: string
+              decidedBy:
+                type: string
+                description: Who decided it - maintainer, or the node id.
+              hardToReverse:
+                type: boolean
+                description: True when AGENTS.md says it needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency).
+              date:
+                type: string
+                description: YYYY-MM-DD.
+              alternatives:
+                type: array
+                items:
+                  type: string
+    before:
+      command: pnpm install --frozen-lockfile --prefer-offline
+      timeout: 10m
+  a11y:
+    type: claude.worker
+    parent: build
+    agent: a11y-auditor
+    prompt: Audit the uncommitted UI change in your owner's checkout (git status, git diff HEAD) against WCAG 2.2 AA. This session has no browser, so audit the changed components' markup, names and roles, focus handling, keyboard map, tokens and their contrast pairings, and run the UI's tests (npx vitest run packages/ui). Report pass, or changes_requested with every finding in `findings` (surface, criterion, how it fails, the fix), and list what needs a browser to check.
+    model: sonnet
+    isolation: readonly
+    budgetUsd: 2
+    maxTurns: 40
+    session: resume
+    output:
+      schema:
+        findings: string
+  implement:
+    type: claude.worker
+    parent: build
+    agent: implementer
+    prompt: |-
+      Build the tasks your owner's brief gives you from this approved task spec. If a design is in your checkout (git status), build to it. Report every choice you made that the spec didn't settle in `decisions`. Ork runs pnpm check before your report counts.
+
+      {{nodes.spec.output.spec}}
+    effort: high
+    isolation: worktree
+    budgetUsd: 6
+    maxTurns: 80
+    timeout: 90m
+    tools:
+      allow:
+        - Edit
+        - Write
+    session: resume
+    output:
+      schema:
+        decisions:
+          type: array
+          description: Every choice you made that the spec didn't settle; an empty list when none.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - what
+              - why
+              - decidedBy
+              - hardToReverse
+            properties:
+              what:
+                type: string
+              why:
+                type: string
+              decidedBy:
+                type: string
+                description: Who decided it - maintainer, or the node id.
+              hardToReverse:
+                type: boolean
+                description: True when AGENTS.md says it needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency).
+              date:
+                type: string
+                description: YYYY-MM-DD.
+              alternatives:
+                type: array
+                items:
+                  type: string
+    before:
+      command: pnpm install --frozen-lockfile --prefer-offline
+      timeout: 10m
+    verify:
+      command: pnpm check
+      timeout: 20m
+      attempts: 2
+  engine:
+    type: claude.worker
+    parent: build
+    agent: engine
+    prompt: |-
+      Build the tasks your owner's brief gives you from this approved task spec. If it leaves the engine's semantics open, report fail and say what is open rather than choosing. If a design is in your checkout (git status), build to it. Report every choice you made that the spec didn't settle in `decisions`. Ork runs pnpm check before your report counts.
+
+      {{nodes.spec.output.spec}}
+    model: opus
+    effort: high
+    isolation: worktree
+    budgetUsd: 8
+    maxTurns: 80
+    timeout: 90m
+    tools:
+      allow:
+        - Edit
+        - Write
+    session: resume
+    output:
+      schema:
+        decisions:
+          type: array
+          description: Every choice you made that the spec didn't settle; an empty list when none.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - what
+              - why
+              - decidedBy
+              - hardToReverse
+            properties:
+              what:
+                type: string
+              why:
+                type: string
+              decidedBy:
+                type: string
+                description: Who decided it - maintainer, or the node id.
+              hardToReverse:
+                type: boolean
+                description: True when AGENTS.md says it needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency).
+              date:
+                type: string
+                description: YYYY-MM-DD.
+              alternatives:
+                type: array
+                items:
+                  type: string
+    before:
+      command: pnpm install --frozen-lockfile --prefer-offline
+      timeout: 10m
+    verify:
+      command: pnpm check
+      timeout: 20m
+      attempts: 2
+  review:
+    type: claude.worker
+    agent: reviewer
+    prompt: |-
+      Review the uncommitted change in this checkout (git status, git diff HEAD) against the approved task spec below. pnpm check already passed here; don't run it again. Report pass, or changes_requested with every finding in `findings` (file:line, what is wrong, the smallest fix), most severe first. When you run again, check that your earlier findings were fixed.
+
+      {{nodes.spec.output.spec}}
+    model: opus
+    effort: high
+    isolation: readonly
+    budgetUsd: 2.5
+    maxTurns: 40
+    session: resume
+    output:
+      schema:
+        findings: string
+  docs:
+    type: claude.worker
+    agent: docs-keeper
+    prompt: |-
+      The change in this checkout (git status, git diff HEAD) passed review. Sync the knowledge with it: run knowledge-drift-sync, resync-map when it changes what the map shows, and docs-structure for any document over 200 lines.
+
+      Then write an ADR in decisions/ for each decision below with hardToReverse true, from .ai/templates/adr.md: the next free number, a row in decisions/README.md's index, and links to the specs under specs/ that carry it (the task spec is gitignored, so don't link it). Related decisions may share one ADR; a decision listed twice is one. List every ADR you wrote in `adrs`, an empty list when none. Ork runs pnpm check before your report counts.
+
+      The spec's decisions: {{nodes.spec.output.decisions}}
+      The build's decisions: {{nodes.build.output.decisions}}
+
+      The approved task spec:
+
+      {{nodes.spec.output.spec}}
+    isolation: continue
+    budgetUsd: 2
+    maxTurns: 60
+    tools:
+      allow:
+        - Edit
+        - Write
+    output:
+      schema:
+        adrs:
+          type: array
+          description: Every ADR you wrote; an empty list when none.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - title
+              - path
+            properties:
+              title:
+                type: string
+              path:
+                type: string
+    verify:
+      command: pnpm check
+      timeout: 20m
+      attempts: 1
+  stage:
+    type: tool.git
+    command: add -A
+    allow:
+      - add
+    cwd: "{{nodes.docs.output.worktree}}"
+  decide:
+    type: human.gate
+    question: |-
+      Keep this change? Nothing is committed.
+      Build: {{nodes.build.output.summary}}
+      Review: {{nodes.review.output.summary}}
+      Docs: {{nodes.docs.output.summary}}
+      ADRs to check before you keep it: {{nodes.docs.output.adrs}}
+      Worktree: {{nodes.docs.output.worktree}}
+      {{nodes.stage.output.staged}}
+      keep applies it to your checkout, uncommitted, for you to commit and push to main. discard leaves it in the worktree (ork worktrees clean --all removes it).
+    options:
+      - keep
+      - discard
+    recommended: keep
+  apply:
+    type: tool.shell
+    script: |-
+      patch="$(mktemp)"
+      git -C "$WORKTREE" diff --cached --binary > "$patch"
+      git apply --check "$patch"
+      git apply "$patch"
+      git apply --stat "$patch"
+      rm -f "$patch"
+    allow:
+      - sh
+    env:
+      WORKTREE: "{{nodes.docs.output.worktree}}"
+edges:
+  - spec -> approve
+  - from: approve
+    to: spec
+    when: choice == 'revise'
+    maxRounds: 10
+  - from: approve
+    to: build
+    when: choice == 'approve'
+  - build -> review
+  - from: review
+    to: build
+    when: status != 'pass'
+    maxRounds: 2
+  - from: review
+    to: docs
+    when: status == 'pass'
+  - docs -> stage
+  - stage -> decide
+  - from: decide
+    to: apply
+    when: choice == 'keep'

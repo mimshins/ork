@@ -1,8 +1,9 @@
 /**
  * @file Tests for Ork's skills in a project (RFC-012): `ork init --skills`
- *   writes them as `ork-<name>`, naming the Ork that wrote them, and links
- *   Claude Code's folder there; it rewrites Ork's own old copies, never a skill
- *   someone else wrote; and `ork doctor` says when a copy is older than Ork.
+ *   writes them as `ork-<name>`, `ork-setup` among them, naming the Ork that
+ *   wrote them, and links Claude Code's folder there; it rewrites Ork's own old
+ *   copies, never a skill someone else wrote; and `ork doctor` says when a copy
+ *   is older than Ork.
  */
 
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -34,6 +35,7 @@ describe("Ork's skills in a project", () => {
     expect(result.created).toEqual([
       ".ork/skills/ork-principles/SKILL.md",
       ".ork/skills/ork-run/SKILL.md",
+      ".ork/skills/ork-setup/SKILL.md",
       ".ork/skills/ork-write/SKILL.md",
     ]);
     const write = read(root, "ork-write");
@@ -41,6 +43,15 @@ describe("Ork's skills in a project", () => {
     expect(stampOf(write)).toBe("1.0.0");
     expect(write).not.toContain("/ork:");
     expect(hasSkills(root)).toBe(true);
+  });
+
+  it("include setup, pointing at the project's copies", () => {
+    const root = project();
+    writeSkills(root, "1.0.0", { link: false });
+    const setup = read(root, "ork-setup");
+    expect(setup).toMatch(/^---\nname: ork-setup\n/u);
+    expect(setup).toContain("/ork-write");
+    expect(setup).not.toContain("/ork:");
   });
 
   it("link Claude Code's skills folder to them", () => {
@@ -59,7 +70,7 @@ describe("Ork's skills in a project", () => {
     writeSkills(root, "1.0.0", { link: false });
     expect(writeSkills(root, "1.0.0", { link: false }).created).toEqual([]);
     const again = writeSkills(root, "1.1.0", { link: false });
-    expect(again.updated).toHaveLength(3);
+    expect(again.updated).toHaveLength(4);
     expect(stampOf(read(root, "ork-run"))).toBe("1.1.0");
   });
 
@@ -91,6 +102,7 @@ describe("Ork's skills in a project", () => {
     expect(skillChecks(root, "1.2.0")).toEqual([
       expect.objectContaining({
         status: "warn",
+        detail: expect.stringContaining("ork-setup (1.0.0)") as unknown,
         hint: "Rewrite them with `ork init --skills`.",
       }),
     ]);

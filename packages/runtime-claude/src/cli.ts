@@ -14,6 +14,7 @@ import type {
   SessionUsage,
 } from "@krapht/ork-core";
 
+import { cacheEnv } from "./cache-env.ts";
 import { runLeg } from "./cli-leg.ts";
 import { addUsage, holdAtTool, hookOutput, withHoldHook } from "./hold.ts";
 import { type OrkMcpEndpoint, startOrkMcpHttp } from "./mcp-http.ts";
@@ -90,6 +91,7 @@ export const buildCliArgs = (
   if (spec.tools.only !== undefined) {
     args.push("--tools", spec.tools.only.join(","));
   }
+  if (spec.tools.strictMcp === true) args.push("--strict-mcp-config");
   if (spec.agents !== undefined) {
     args.push("--agents", JSON.stringify(spec.agents));
   }
@@ -105,6 +107,9 @@ export const buildCliArgs = (
     args.push("--max-budget-usd", String(spec.budgetUsd));
   }
   if (spec.resume !== undefined) args.push("--resume", spec.resume);
+  if (spec.resume !== undefined && spec.fork === true) {
+    args.push("--fork-session");
+  }
   for (const dir of spec.plugins ?? []) args.push("--plugin-dir", dir);
   const settings =
     mcp.holdUrl === undefined
@@ -155,7 +160,7 @@ export const createCliRuntime = (
       const legOf = (args: string[], carried: SessionUsage | undefined) =>
         runLeg({
           bin: options.bin ?? "claude",
-          env: options.env ?? process.env,
+          env: { ...(options.env ?? process.env), ...cacheEnv(spec) },
           cwd: spec.cwd,
           args,
           carried,
@@ -186,7 +191,8 @@ export const createCliRuntime = (
             return;
           }
           args = buildCliArgs(
-            { ...spec, resume: leg.sessionId },
+            // A fork's later legs continue the fork, not the original.
+            { ...spec, resume: leg.sessionId, fork: false },
             endpoint,
             allowed,
           );

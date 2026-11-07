@@ -15,6 +15,9 @@ change to behavior updates its spec in the same pull request.
 Long specs follow the hub and chunk layout
 ([runbook/development/docs.md](../runbook/development/docs.md)).
 
+Start with the [design overview](./design.md): the idea, the milestones, and
+where each part is specified.
+
 ## Index
 
 | Spec                                              | Status    | Milestone |

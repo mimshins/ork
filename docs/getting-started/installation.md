@@ -4,8 +4,11 @@ Ork is a command-line tool, `ork`, that runs on your own machine. This page
 covers what you need, how to install Ork, and how to check that everything
 works.
 
-> **Ork is pre-alpha.** It is published on npm as `@krapht/ork`; expect the
-> workflow format and commands to change between 0.x releases.
+Rather have your coding agent install and set up Ork? See
+[With your agent](./with-your-agent.md).
+
+> **Ork is in alpha.** It is published on npm as `@krapht/ork`; expect the
+> workflow format and commands to change until 1.0.0.
 
 ## What you need
 
@@ -16,6 +19,8 @@ works.
 | **Node.js 24.20 or later** | Ork runs on Node                          | `node --version`            |
 | **git**                    | Each writing node works in a git worktree | `git --version`             |
 | **One Claude driver**      | The agents themselves (below)             | `ork doctor`, after install |
+
+How to get Node and git on your system: [Your platform](#your-platform).
 
 **Optional**, only when a workflow uses them. Ork works without any of these;
 install one only if your workflows have a node of its type. A front-end project
@@ -29,85 +34,33 @@ that never touches AWS never needs `aws`.
 For Claude, pick one way in (Ork uses your own login and never stores it; see
 [Accounts and credentials](../guides/accounts.md)):
 
-- **The Agent SDK driver** (`driver: sdk`, the default): set
-  `ANTHROPIC_API_KEY`, or use Amazon Bedrock or Google Vertex
-  (`CLAUDE_CODE_USE_BEDROCK=1` or `CLAUDE_CODE_USE_VERTEX=1` with that cloud's
-  own credentials).
 - **The CLI driver** (`driver: cli`): your own
   [Claude Code](https://code.claude.com/docs) (`claude`), logged in by you.
   Version **2.1.281 or later**, so it reads `AGENTS.md`; `ork doctor` warns on
   an older one.
+- **The Agent SDK driver** (`driver: sdk`): set `ANTHROPIC_API_KEY`, or use
+  Amazon Bedrock, Google Vertex or Microsoft Foundry
+  (`CLAUDE_CODE_USE_BEDROCK=1`, `CLAUDE_CODE_USE_VERTEX=1` or
+  `CLAUDE_CODE_USE_FOUNDRY=1`, with that cloud's own credentials).
 
-## Install
-
-```sh
-npm install --global @krapht/ork
-ork --version
-```
-
-This works on any platform Node supports (see [Your platform](#your-platform)).
-
-## Updating
-
-```sh
-ork upgrade           # upgrades Ork the way you installed it, after asking
-ork upgrade --check   # only says whether a newer version is out
-```
-
-`ork upgrade` sees whether npm, pnpm, yarn, bun or Volta installed Ork, shows
-the command it will run, and runs it when you say yes. A copy run from a clone
-or through `npx` gets instructions instead.
-
-Once a day, Ork also asks the npm registry, in the background, whether a newer
-version is out, and tells you in one line after a command. This is the only
-request Ork makes on its own, and it sends nothing about you or your projects.
-It is off in CI, without a terminal and with `--json`; turn it off everywhere
-with `ORK_NO_UPDATE_CHECK=1` (or `NO_UPDATE_NOTIFIER=1`), or point it at a
-mirror with `ORK_UPDATE_REGISTRY`. `ork doctor` shows your version against the
-last check.
-
-`ork ui` checks too, while it stays open, by the same once-a-day record, and
-shows a newer version as a banner, with an upgrade and a restart in the page
-([new versions](../guides/browser-view/new-versions.md)). `ORK_NO_UPDATE_CHECK`,
-`NO_UPDATE_NOTIFIER` and `CI` turn it off there too; set them where you start
-`ork ui`.
-
-## Install from source
-
-For working on Ork itself, or trying changes that are not released yet. You need
-[pnpm](https://pnpm.io); Corepack, which comes with Node, installs the exact
-version the repository pins:
-
-```sh
-corepack enable
-git clone https://github.com/mimshins/ork.git
-cd ork
-pnpm install
-pnpm build          # bundles the CLI into packages/cli/dist/bin.mjs
-```
-
-Then make that build your `ork` in other projects, for example with an alias in
-your shell's startup file (`~/.zshrc` or `~/.bashrc`):
-
-```sh
-alias ork="node $HOME/path/to/ork/packages/cli/dist/bin.mjs"
-```
-
-Run `pnpm build` again after you pull new changes. Inside the Ork clone itself,
-`pnpm ork <command>` runs the CLI straight from its TypeScript sources, with no
-build.
+Ork is free. What the agents use is billed to your API key or cloud account, or
+counts against your Claude plan's limits.
 
 ## Your platform
 
 ### macOS
 
-Supported, on Apple silicon and Intel. Ork is developed on macOS.
+Supported, on Apple silicon and Intel. Ork is developed on macOS. Get Node from
+[nodejs.org](https://nodejs.org), a version manager such as `fnm` or `nvm`, or
+Homebrew; git comes with the Xcode command-line tools, or from Homebrew:
 
-- Node: the installer from [nodejs.org](https://nodejs.org), or
-  `brew install node@24`, or a version manager such as `fnm` or `nvm`.
-- git: comes with the Xcode command-line tools (`xcode-select --install`), or
-  `brew install git`.
-- Claude Code: see [its setup guide](https://code.claude.com/docs/en/setup).
+```sh
+brew install node@24     # or the installer from nodejs.org
+xcode-select --install   # git, with the command-line tools
+brew install git         # or git from Homebrew instead
+```
+
+Claude Code: see [its setup guide](https://code.claude.com/docs/en/setup).
 
 ### Linux
 
@@ -130,6 +83,17 @@ Native Windows is **not tested yet**. Ork runs tools and `claude` directly,
 without a shell, and assumes POSIX-style paths in places, so expect rough edges
 there. Reports are welcome as [issues](https://github.com/mimshins/ork/issues).
 
+## Install
+
+```sh
+npm install --global @krapht/ork
+ork --version
+```
+
+With pnpm, `pnpm add --global @krapht/ork`; if pnpm says its global bin
+directory isn't in `PATH`, run `pnpm setup` once and open a new terminal. pnpm
+waits a day before installing a new release; name the version to skip that.
+
 ## Check your setup
 
 ```sh
@@ -143,43 +107,92 @@ token. At least one Claude driver has to be ready; a missing `gh` or `aws` is
 fine unless a workflow has a node that needs it. Example output:
 
 ```
-✓ ork                  0.1.0 (the latest as of 2026-11-02)
+✓ ork                  0.4.0 (the latest as of 2026-11-07)
 ✓ node                 v24.20.0
 ✓ git                  git version 2.39.5
 ✓ git repo             inside a work tree
 ! claude (sdk driver)  no API key or cloud provider
-  Set ANTHROPIC_API_KEY (or CLAUDE_CODE_USE_BEDROCK=1 / CLAUDE_CODE_USE_VERTEX=1) to use the SDK driver.
+  Set ANTHROPIC_API_KEY (or CLAUDE_CODE_USE_BEDROCK=1 / CLAUDE_CODE_USE_VERTEX=1 / CLAUDE_CODE_USE_FOUNDRY=1) to use the SDK driver.
 ✓ claude (cli driver)  2.1.314 (Claude Code), logged in (claude.ai, firstParty)
 - gh                   optional, not installed (needed only for tool.gh nodes)
 - aws                  optional, not installed (needed only for tool.aws nodes)
 ✓ git identity         user.name and user.email are set
+✓ sockets              39 of 103 bytes
 ```
 
 Here only the CLI driver is ready and neither optional tool is installed, which
-is a working setup. Run workflows with `--driver cli` or set
-`defaults.driver: cli` in the workflow.
+is a working setup. When nothing required is missing, that is all it prints.
+Otherwise it ends with:
+
+```
+Not ready: Ork needs Node, git, and at least one Claude driver.
+```
+
+A workflow that names no driver, such as the one `ork init` writes, runs on the
+driver that's ready on the machine running it (the CLI driver when both are),
+and `ork run` says which in one line. A driver named by the node, its agent, the
+workflow's `defaults`, `.ork/project.yaml`'s `defaults`, or `--driver sdk|cli`
+on `ork run` wins. With no driver ready, `ork run` stops before any session
+starts. `ork resume` keeps the driver the run started with.
+
+## Updating
+
+```sh
+ork upgrade           # upgrades Ork the way you installed it, after asking
+ork upgrade --check   # only says whether a newer version is out
+```
+
+`ork upgrade` sees whether npm, pnpm, yarn, bun or Volta installed Ork, shows
+the command it will run, and runs it when you say yes. A copy run from a clone
+or through `npx` gets instructions instead. After an upgrade,
+[What's new](../whats-new.md) says what changed.
+
+- **The daily check.** Once a day, in the background, Ork asks the npm registry
+  whether a newer version is out, and tells you in one line after a command. It
+  sends nothing about you or your projects. `ork doctor` shows your version
+  against the last check.
+- **When it's off:** in CI, without a terminal, and with `--json`.
+- **Turning it off everywhere:** set `ORK_NO_UPDATE_CHECK=1` (or
+  `NO_UPDATE_NOTIFIER=1`). To ask a mirror instead, set `ORK_UPDATE_REGISTRY`.
+- **Staying on a version.** Until 1.0.0 every pre-release is also `latest`. To
+  keep 0.4, install `@krapht/ork@0.4` and set `ORK_NO_UPDATE_CHECK=1`.
+
+- **In `ork ui`:** a banner, with an upgrade and a restart in the page
+  ([new versions](../guides/browser-view/new-versions.md)). The same variables
+  turn it off; set them where you start `ork ui`.
 
 ## The browser view
 
 ```sh
-ork ui              # starts it on http://127.0.0.1:4417 and opens your browser
-ork ui --port 4500  # another port, if 4417 is taken
-ork ui --no-open    # only print the address and the sign-in link
+ork ui
 ```
 
-`ork ui` starts Ork's local server and opens it in your browser, already signed
-in: a workspace of panels for your runs, their graphs and logs, the questions
-they are waiting on, a chat with each node, and notifications. Ctrl-C stops it;
-your runs keep running, and every `ork` command works without it. The designer
-comes in a later release. See [the browser view](../guides/browser-view.md).
+`ork ui` opens your runs in the browser, already signed in; your runs keep going
+without it. See [the browser view](../guides/browser-view.md).
 
-It listens only on `127.0.0.1`, and only your browser gets in: `ork ui` opens it
-with a one-time link that becomes a cookie, and the server refuses any other
-site, any other host name, and any request without it. The link's token is kept
-in `~/.ork/ui.json`, readable only by you, and changes each time you start
-`ork ui` (a restart from the page keeps it, so the tab stays signed in). If
-`ork ui` cannot open a browser (on a server, or without `open` or `xdg-open`),
-it prints the link for you to open.
+## Install from source
+
+For working on Ork itself, or trying changes that are not released yet. You need
+[pnpm](https://pnpm.io); Corepack, which comes with Node, installs the exact
+version the repository pins:
+
+```sh
+corepack enable
+git clone https://github.com/mimshins/ork.git
+cd ork
+pnpm install
+pnpm build          # bundles the CLI into packages/cli/dist/bin.mjs
+# then make that build your ork, in ~/.zshrc or ~/.bashrc:
+alias ork="node $HOME/path/to/ork/packages/cli/dist/bin.mjs"
+```
+
+Run `pnpm build` again after you pull new changes. Inside the Ork clone itself,
+`pnpm ork <command>` runs the CLI straight from its TypeScript sources, with no
+build.
+
+## Removing Ork
+
+See [Where Ork keeps things](../guides/where-ork-keeps-things.md#removing-ork).
 
 ## Next
 

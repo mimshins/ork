@@ -8,22 +8,22 @@ Each lives in [`src/components/`](../../packages/ui/src/components) with a CSS
 module on the tokens, and has a keyboard test and an axe test
 ([tests](../../packages/ui/test/components)).
 
-| Component                 | On      | Notes                                                                          |
-| ------------------------- | ------- | ------------------------------------------------------------------------------ |
-| `Button`, `IconButton`    | Base UI | primary, danger, ghost and default; an icon button needs a `label`             |
-| `Tip`                     | Base UI | opens on hover and focus, Escape closes it, and it can be hovered              |
-| `Menu`                    | Base UI | actions and separators; arrows reach a disabled item, which does nothing       |
-| `Popover`                 | Base UI | a small titled panel, anchored to its trigger                                  |
-| `Dialog`, `ConfirmDialog` | Base UI | modal, with `aria-modal`; a confirm dialog is an alert dialog, focus on Cancel |
-| `Tabs`                    | Base UI | the active tab has a line as well as brighter text                             |
-| `Select`, `Combobox`      | Base UI | a short list, or one long enough to filter                                     |
-| `Checkbox`, `Switch`      | Base UI | inside their label, so the whole row is the target                             |
-| `Toasts`                  | Base UI | `toasts` adds one from outside React; F6 jumps into them                       |
-| `Meter`                   | Base UI | a row of blocks; the value is always in words too                              |
-| `StatusBadge`             | Ork     | a pixel glyph and a word, bare or as a pill; each color has its own shape      |
-| `Kbd`, `EmptyState`       | Ork     | a key hint, and what is missing with the next step and its command (`cli`)     |
-| `CopyCommand`             | Ork     | the code block: full width, a strong edge, its copy button top right           |
-| icons                     | MDI     | one path each, in the text color; named for what they mean here                |
+| Component                 | On      | Notes                                                                                                                  |
+| ------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `Button`, `IconButton`    | Base UI | primary, danger, ghost and default; an icon button needs a `label`                                                     |
+| `Tip`                     | Base UI | opens on hover and focus, Escape closes it, and it can be hovered                                                      |
+| `Menu`                    | Base UI | actions and separators; arrows reach a disabled item, which does nothing                                               |
+| `Popover`                 | Base UI | a small titled panel, anchored to its trigger                                                                          |
+| `Dialog`, `ConfirmDialog` | Base UI | modal, with `aria-modal`; a confirm dialog is an alert dialog, focus on Cancel, and can hold a choice its action takes |
+| `Tabs`                    | Base UI | the active tab has a line as well as brighter text                                                                     |
+| `Select`, `Combobox`      | Base UI | a short list, or one long enough to filter                                                                             |
+| `Checkbox`, `Switch`      | Base UI | inside their label, so the whole row is the target                                                                     |
+| `Toasts`                  | Base UI | `toasts` adds one from outside React; F6 jumps into them                                                               |
+| `Meter`                   | Base UI | a row of blocks; the value is always in words too                                                                      |
+| `StatusBadge`             | Ork     | a pixel glyph and a word, bare or as a pill; each color has its own shape                                              |
+| `Kbd`, `EmptyState`       | Ork     | a key hint, and what is missing with the next step and its command (`cli`)                                             |
+| `CopyCommand`             | Ork     | the code block: full width, a strong edge, its copy button top right                                                   |
+| icons                     | MDI     | one path each, in the text color; named for what they mean here                                                        |
 
 - **Icons come from**
   [Material Design Icons](https://pictogrammers.com/library/mdi/) through
@@ -56,8 +56,8 @@ module on the tokens, and has a keyboard test and an axe test
 **The gallery** shows every component in its states, with a theme switch:
 `pnpm ui:dev`, then `/gallery.html`. It never ships: `vite build --mode gallery`
 builds it alone, for a check under the page's policy. jsdom has no layout, so a
-dialog's Tab trap, real contrast and 200% zoom are checked there in a browser
-([gaps](../gaps.md#chores), C6).
+dialog's Tab trap, real contrast and 200% zoom are checked there in a browser,
+as each UI feature's real-browser audit ([C6](./limits.md)).
 
 ## Copy
 

@@ -5,7 +5,7 @@
  *   `Session.send` down to `code`.
  */
 
-import { BUS, CALLS, DESIGN, LINKS } from "../refs.js";
+import { BUS, CALLS, DESIGN, LINKS, QUESTIONS } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
 
@@ -254,8 +254,9 @@ export const EDGES = [
     kind: "mcp",
     label: "delegate · report",
     detail:
-      "The leader briefs its children through `delegate` and gets their reports back; its own report ends its session.",
+      "The leader briefs its children through `delegate` and gets their reports back; its own report ends its session. With `questions: owner`, a fork of its session gets a child's question first, and reports a choice or `ask-user` with a note.",
     status: "built",
+    docs: [QUESTIONS.spec],
   },
   {
     id: "security-mcp",

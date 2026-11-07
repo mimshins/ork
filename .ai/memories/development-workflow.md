@@ -22,7 +22,7 @@ AI or agent attribution line. Do not bypass it with `--no-verify`.
 
 ## Quality gate
 
-- `pnpm check` (format, lint, typecheck, tests) passes before every push; the
-  `pre-push` hook runs it.
+- `pnpm check` (format, lint, typecheck, tests, the docs check and the map
+  check) passes before every push; the `pre-push` hook runs it.
 - Commit messages: a short imperative subject line, a blank line, then what
   changed and why.

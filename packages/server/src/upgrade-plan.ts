@@ -70,6 +70,7 @@ export const askPlan = async (
     ...(registry === undefined ? {} : { registry }),
     ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
     timeoutMs: ASK_TIMEOUT_MS,
+    current,
   });
   const script = options.script ?? runningScript();
   const plan = planUpgrade({ name: options.name, current, latest, script });

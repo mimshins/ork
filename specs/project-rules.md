@@ -120,7 +120,7 @@ from within the project is always allowed.
 What starts a run with nobody there isn't a rule: it's in `triggers.yaml`,
 beside this file, and [accepted on each machine](./scheduler/watching.md#trust).
 [Quotas](#quotas) hold a trigger until they reset. A change to `project.yaml`
-doesn't turn a trigger off ([L119](./gaps/limits-watching.md)).
+doesn't turn a trigger off ([L119](./scheduler/watching-limits.md)).
 
 ## Safety
 

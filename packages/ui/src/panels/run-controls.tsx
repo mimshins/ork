@@ -1,16 +1,23 @@
 /**
- * @file Pause, Continue and Stop, for a run or a node, and a note on it. Each
- *   is enabled only where it applies and says why when it is not, staying
- *   focusable so that can be heard. Stop asks first and Pause does not. A
- *   failed request is a toast; otherwise the change comes back on the run's
- *   stream. A run's note sits among its controls; a node's comes after them.
+ * @file Pause, Continue and Stop, for a run or a node, Resume for a run that
+ *   ended without succeeding, and a note on it. Each is enabled only where it
+ *   applies and says why when it is not, staying focusable so that can be
+ *   heard. Stop and Resume ask first and Pause does not; Resume starts a paid
+ *   run again, so it says so, and keeps a refusal in its dialog. Another failed
+ *   request is a toast; otherwise the change comes back on the run's stream. A
+ *   run's note sits among its controls; a node's comes after them.
  */
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-import { IconButton } from "../components/button.tsx";
+import { Button, IconButton } from "../components/button.tsx";
 import { ConfirmDialog } from "../components/dialog.tsx";
-import { IconPause, IconPlay, IconStop } from "../components/icons.tsx";
+import {
+  IconPause,
+  IconPlay,
+  IconRestart,
+  IconStop,
+} from "../components/icons.tsx";
 import { toasts } from "../components/toast.tsx";
 import { useAppState } from "../state/context.tsx";
 import type { Action, Actions } from "./monitor-model.ts";
@@ -25,6 +32,68 @@ const ALWAYS: Action = { enabled: true };
 
 const labelFor = (word: string, target: string, action: Action): string =>
   action.enabled ? `${word} ${target}` : `${word} ${target}: ${action.why}`;
+
+const RESUME_WORDS =
+  "It goes on in the background with the inputs and flags it started with. Nodes that finished keep their results and don't run again; the one that failed or was cut off runs again, and so does everything after it. It's a paid run, like any you start.";
+
+/** Resume, for a run that ended without succeeding, with its confirmation. */
+const ResumeRun = ({ runId, action }: { runId: string; action: Action }) => {
+  const state = useAppState();
+  const [asking, setAsking] = useState(false);
+  /**
+   * A resumed run goes live and this button goes, so its heading takes the
+   * focus.
+   */
+  const resumed = useRef(false);
+  const cli = `ork resume ${runId} --detach`;
+  return (
+    <>
+      <Button
+        aria-label={labelFor("Resume", "run", action)}
+        cli={cli}
+        disabled={!action.enabled}
+        focusableWhenDisabled
+        onClick={() => {
+          setAsking(true);
+        }}
+        tip={action.enabled ? undefined : action.why}
+        variant="ghost"
+      >
+        <IconRestart />
+        Resume…
+      </Button>
+      <ConfirmDialog
+        cli={cli}
+        confirm="Resume run"
+        description={RESUME_WORDS}
+        finalFocus={() => {
+          const away = resumed.current;
+          resumed.current = false;
+          return (
+            (away
+              ? document.querySelector<HTMLElement>(
+                  `[data-run-heading="${runId}"]`,
+                )
+              : null) ?? true
+          );
+        }}
+        onConfirm={async () => {
+          const answer = await state.client.call("resume", {
+            params: { id: runId },
+            body: {},
+          });
+          resumed.current = answer.ok;
+          return answer.ok ? null : `Could not resume the run: ${answer.error}`;
+        }}
+        onOpenChange={setAsking}
+        open={asking}
+        pending="Resuming…"
+        title={`Resume run ${runId}?`}
+        variant="primary"
+      />
+    </>
+  );
+};
 
 export const RunControls = ({
   runId,
@@ -119,7 +188,7 @@ export const RunControls = ({
           confirm={node === undefined ? "Stop run" : `Stop ${node}`}
           description={
             node === undefined
-              ? "Running nodes are interrupted, and runs it called stop too. It can be resumed later from a terminal."
+              ? "Running nodes are interrupted, and runs it called stop too. It can be resumed later, from here or a terminal."
               : `Its session is interrupted and \`${node}\` fails with \`stopped by the user\`. The workflow's failure rules then apply.`
           }
           onConfirm={() => {
@@ -130,6 +199,12 @@ export const RunControls = ({
           open={confirming}
           title={node === undefined ? `Stop run ${runId}?` : `Stop ${node}?`}
         />
+        {actions.resume === undefined ? null : (
+          <ResumeRun
+            action={actions.resume}
+            runId={runId}
+          />
+        )}
         {node === undefined ? noteButton : null}
       </div>
       {node === undefined ? null : noteButton}

@@ -95,9 +95,9 @@ the scale when they are. A component sets them for its focus state. Setting
   gallery, in every look, with hover, focus and active forced.
 - A property only a state sets needs a default for its base rule to read. Some
   read `var(--token, revert)`, which falls back to the browser's style, and
-  skips the page's own defaults ([L130](../specs/gaps/limits-tokens.md)).
+  skips the page's own defaults ([L130](../specs/ui/design-tokens-limits.md)).
 - A browser text size below the default makes targets and hairlines smaller too
-  ([L135](../specs/gaps/limits-tokens.md)).
+  ([L135](../specs/ui/design-tokens-limits.md)).
 - A rule from another sheet that sets a component's token is decided by
   specificity and load order, as setting the property was
-  ([L131](../specs/gaps/limits-tokens.md)).
+  ([L131](../specs/ui/design-tokens-limits.md)).

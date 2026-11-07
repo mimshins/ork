@@ -59,9 +59,12 @@ describe("export and import", () => {
     store.setFeedbackStatus(only(store).id, "dismissed");
     expect(store.exportFeedback()).toEqual([]);
     expect(store.exportFeedback({ all: true })).toHaveLength(1);
-    expect(parseLines('{"x":1}\nnot json\n\n').problems).toEqual([
+    expect(
+      parseLines('{"x":1}\nnot json\n\n{"feedbackVersion":2,"y":1}\n').problems,
+    ).toEqual([
       "line 1: feedbackVersion Invalid input: expected 1",
       "line 2: not JSON",
+      "line 4: made by a newer Ork (`feedbackVersion: 2`; this one reads 1). Upgrade with `ork upgrade`.",
     ]);
   });
 

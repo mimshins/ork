@@ -236,3 +236,12 @@
   font-size: var(--decisions-settled-ending-text-size);
   overflow-wrap: anywhere;
 }
+
+/* What the person said with their answer, kept as they wrote it. */
+.settledNote {
+  --decisions-settled-note-text-size: var(--text-small);
+
+  font-size: var(--decisions-settled-note-text-size);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}

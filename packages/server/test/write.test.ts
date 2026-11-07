@@ -77,6 +77,28 @@ describe("answering a decision", () => {
     await expect.poll(() => wakes.length).toBe(1);
   });
 
+  it("records the note given with the answer, masked, and through the route", async () => {
+    const { server } = await withLiveRun();
+    openGate(server, "live1234", "d3");
+    const token = `ghp_${"a".repeat(24)}`;
+    expect(
+      await server.client.call("answer", {
+        params: { id: "d3" },
+        body: { choose: "hold", note: `Wait for ${token}` },
+      }),
+    ).toMatchObject({ ok: true, status: 200 });
+    expect(server.store.decision("d3")).toMatchObject({
+      answer: "hold",
+      answeredBy: "ui",
+      note: "Wait for [masked]",
+    });
+    const read = await server.client.call("decision", { params: { id: "d3" } });
+    expect(read).toMatchObject({
+      ok: true,
+      data: { note: "Wait for [masked]" },
+    });
+  });
+
   it("refuses an unknown decision, an option it does not have, and a second answer", async () => {
     const { server } = await withLiveRun();
     openGate(server, "live1234", "d2");

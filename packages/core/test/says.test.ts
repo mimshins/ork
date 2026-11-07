@@ -109,9 +109,12 @@ describe("nodeSays", () => {
     expect(says["mcp"]?.canDeclare).toBe(true);
   });
 
-  it("gives a gate's options, plain or with ids", () => {
+  it("gives a gate's options, plain or with ids, and its note", () => {
     expect(says["gate"]).toEqual({
-      fields: [{ field: "choice", kind: "values", values: ["yes", "no"] }],
+      fields: [
+        { field: "choice", kind: "values", values: ["yes", "no"] },
+        { field: "note", kind: "text" },
+      ],
       canFail: false,
       canDeclare: false,
     });

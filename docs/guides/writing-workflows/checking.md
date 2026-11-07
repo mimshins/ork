@@ -2,16 +2,6 @@
 
 _Part of [Writing workflows](../writing-workflows.md)._
 
-```sh
-ork validate                    # every workflow in .ork/workflows/
-ork validate path/to/file.ork.yaml
-```
-
-It reports schema errors, an unknown `parent`, cycles without `maxRounds`,
-references to nodes that do not exist or do not run first, and skill or context
-paths that resolve to nothing, each with its line
-([all the checks](../../../specs/graph-compiler.md)).
-
 ## Values a condition can't have
 
 A condition that compares a field with a value its node can't report is an
@@ -57,5 +47,5 @@ it tried, and a run can still do something it didn't:
 - A large workflow can stop it early, at 4,096 ways or a second, and then it
   says so and warns about nothing.
 
-The full rules:
-[Walking every way through](../../../specs/scheduler/walking.md).
+For the full rules: [the graph compiler](../../../specs/graph-compiler.md) and
+[walking every way through](../../../specs/scheduler/walking.md).

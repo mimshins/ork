@@ -1,8 +1,12 @@
 /**
  * @file Tests for the runtime: the normalizer, Ork's MCP server, and both
- *   drivers (the CLI driver against a stand-in `claude`).
+ *   drivers (the CLI driver against a stand-in `claude`), a leader's one-hour
+ *   prompt cache on each.
  */
 
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type {
@@ -51,7 +55,8 @@ const recordingHuman = () => {
   const asked: Asked[] = [];
   const permits: string[] = [];
   const human: HumanChannel = {
-    ask: question => {
+    // What was asked, without the hooks for a note and an owner's answer.
+    ask: ({ onNote: _onNote, onOwner: _onOwner, ...question }) => {
       asked.push(question);
       return Promise.resolve(question.recommended ?? "none");
     },
@@ -405,6 +410,22 @@ describe("the CLI driver", () => {
     });
   });
 
+  it("starts a leader's session with the one-hour prompt cache", async () => {
+    const { human } = recordingHuman();
+    const dir = mkdtempSync(path.join(tmpdir(), "ork-cache-"));
+    const cacheOf = async (given: SessionSpec, name: string) => {
+      const file = path.join(dir, name);
+      const env = { ...process.env, FAKE_CLAUDE_ENV_FILE: file };
+      const session = createCliRuntime({ bin: FAKE_CLAUDE, env }).start(given, {
+        human,
+      });
+      await collect(session.events);
+      return readFileSync(file, "utf8");
+    };
+    expect(await cacheOf({ ...spec, promptCache: "1h" }, "leader")).toBe("1");
+    expect(await cacheOf(spec, "worker")).toBe("");
+  });
+
   it("reports a missing claude binary as a failed session", async () => {
     const { human } = recordingHuman();
     const session = createCliRuntime({ bin: "/nonexistent/claude" }).start(
@@ -456,6 +477,14 @@ describe("the SDK driver", () => {
       outputFormat: { type: "json_schema", schema: { type: "object" } },
     });
     expect(options.mcpServers).toHaveProperty("ork");
+    expect(options.env).not.toHaveProperty("ENABLE_PROMPT_CACHING_1H");
+    expect(
+      buildSdkOptions(
+        { ...spec, promptCache: "1h" },
+        { human },
+        { ANTHROPIC_API_KEY: "k" },
+      ).env,
+    ).toMatchObject({ ENABLE_PROMPT_CACHING_1H: "1", ANTHROPIC_API_KEY: "k" });
     const decision = await options.canUseTool?.(
       "Bash",
       { command: "ls" },

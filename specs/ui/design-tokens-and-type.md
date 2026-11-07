@@ -68,7 +68,13 @@ them there, and every other rule only sets tokens.
 The page's root carries `data-theme` and `data-contrast`
 ([theme.ts](../../packages/ui/src/design/theme.ts)):
 
-- **Dark** is the default, and the page's look before any script runs.
+- **Before any script runs** the page carries no `data-theme`, and follows the
+  system: dark, or light under `prefers-color-scheme: light`, whose block in
+  [themes.css](../../packages/ui/src/design/tokens/themes.css) repeats the light
+  tokens (a test keeps the two the same). So a light system never sees dark
+  first. A theme chosen against the system still shows the system's for that
+  moment ([L32](./limits.md)).
+- **Dark** is the default where the system says nothing.
 - **Light** keeps the bright brand fills, outlined by deeper amber and green
   edges, and uses those deeper tones for text: phosphor is too faint on white.
 - **The theme follows the system** (`prefers-color-scheme`) until the user picks
@@ -96,7 +102,7 @@ The page's root carries `data-theme` and `data-contrast`
 - **Line heights have no unit,** so they follow the text they're on.
 - **Targets are at least 24×24 px** at the default text size (WCAG 2.5.8):
   `--control-height` never goes below `--target-min`
-  ([L135](../gaps/limits-tokens.md)).
+  ([L135](./design-tokens-limits.md)).
 - **Focus** is a `--focus-width` amber outline outside the element, on every
   focusable element (`:focus-visible`), never only a glow.
 - **Forced colors** take fills and shadows away, so what they say moves to what

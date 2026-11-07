@@ -21,6 +21,7 @@ import {
   runDirOf,
   type RunEvent,
   type Session,
+  sessionDriver,
   type SessionOutcome,
   startControl,
   userMessageText,
@@ -37,6 +38,11 @@ import { style } from "../output.ts";
 import { formatEvent, formatRunEvent } from "./format.ts";
 import { limitsRefusal, runLimits } from "./limits.ts";
 import { feedbackOrigin } from "./origin.ts";
+import {
+  checksHere,
+  chooseReadyDriver,
+  type DriverChecks,
+} from "./ready-driver.ts";
 
 export type RunNodeOptions = {
   file: string;
@@ -50,6 +56,8 @@ export type RunNodeOptions = {
   /** Print the runtime events as JSON lines instead of a transcript. */
   json: boolean;
   runtime: (driver: Driver) => Promise<ClaudeRuntime>;
+  /** The drivers' checks, when the node names none (default: the real ones). */
+  driverChecks?: DriverChecks;
   /** The terminal; it races `ork decide`. None: questions wait for `ork decide`. */
   human?: HumanChannel;
   /** `~`, for the run's socket; tests pass a folder. */
@@ -121,6 +129,20 @@ export const runNode = async (
     pluginDir: path.join(runDir, "plugins", options.nodeId),
   });
   if (!plan.ok) return failed([plan.error]);
+  // Before the session starts: the driver ready here, when nothing names one.
+  const named = sessionDriver({ override: options.driver, named: plan.driver });
+  const ready =
+    named === undefined
+      ? chooseReadyDriver(
+          [options.nodeId],
+          true,
+          await (options.driverChecks ?? checksHere)(),
+        )
+      : null;
+  if (ready?.ok === false) return failed(ready.lines);
+  if (ready?.line !== undefined) options.err(ready.line);
+  const driver = named ?? ready?.driver;
+  if (driver === undefined) return failed(["No Claude driver is ready here."]);
   const planned = workflow.nodes[options.nodeId];
   if (planned !== undefined && "notify" in planned && planned.notify) {
     options.err(
@@ -202,7 +224,7 @@ export const runNode = async (
   });
   record({ type: "node.started", id, nodeType, round: 1 });
 
-  const runtime = await options.runtime(options.driver ?? plan.driver);
+  const runtime = await options.runtime(driver);
   const session = runtime.start(plan.spec, {
     human: control.human,
     ...(graph === null
@@ -252,6 +274,8 @@ export const runNode = async (
       ],
       reasons: result.error === undefined ? [] : [`${id}: ${result.error}`],
       worktrees: [],
+      skipped: 0,
+      failuresHandled: 0,
     },
   });
   await control.close();

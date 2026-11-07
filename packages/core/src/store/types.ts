@@ -44,6 +44,13 @@ export type RunRecord = {
   parent?: string;
   /** How many calls deep it is; 0 for a run the user started. */
   depth: number;
+  /**
+   * A finished run's count of skipped nodes and of failures an edge handled,
+   * from its `run.finished` result; absent while it runs, and for runs recorded
+   * before they were counted.
+   */
+  skipped?: number;
+  failuresHandled?: number;
 };
 
 export type NewRun = Pick<RunRecord, "id" | "workflow" | "file" | "project"> & {
@@ -65,8 +72,11 @@ export type StoredEvent = {
  */
 export type DecisionKind = "question" | "permission";
 
-/** Who answered: the run's own terminal, `ork decide`, or the UI (`ork ui`). */
-export type AnsweredBy = "terminal" | "decide" | "ui";
+/**
+ * Who answered: the run's own terminal, `ork decide`, the UI (`ork ui`), or the
+ * asker's owner, a leader that takes its children's questions (ADR-063).
+ */
+export type AnsweredBy = "terminal" | "decide" | "ui" | "owner";
 
 export type DecisionRecord = {
   /** `<run>-<n>`. */
@@ -83,13 +93,24 @@ export type DecisionRecord = {
   answer?: string;
   answeredBy?: AnsweredBy;
   answeredAt?: string;
+  /**
+   * What the person said with their answer, masked; absent when they said
+   * nothing, and on records from before notes. An owner's answer's note is its
+   * reason.
+   */
+  note?: string;
+  /**
+   * The leader that took the question first (ADR-063): it answered
+   * (`answeredBy: owner`), or passed it on, its note in `context`.
+   */
+  owner?: string;
 };
 
 export type NewDecision = Pick<
   DecisionRecord,
   "id" | "runId" | "node" | "kind" | "question" | "options"
 > &
-  Partial<Pick<DecisionRecord, "recommended" | "context">>;
+  Partial<Pick<DecisionRecord, "recommended" | "context" | "owner">>;
 
 /** What another process may ask a live run to do. */
 export type RunCommand =
@@ -135,8 +156,16 @@ export type LinkStore = {
 export type DecisionStore = {
   /** Opens a decision; its text is masked like events. */
   openDecision: (decision: NewDecision) => DecisionRecord;
-  /** Answers an open decision; false when it was already closed (first wins). */
-  answerDecision: (id: string, answer: string, by: AnsweredBy) => boolean;
+  /**
+   * Answers an open decision, with the person's note if they gave one (blank is
+   * none; it is masked); false when it was already closed (first wins).
+   */
+  answerDecision: (
+    id: string,
+    answer: string,
+    by: AnsweredBy,
+    note?: string,
+  ) => boolean;
   /** Closes an open decision unanswered, e.g. when a gate's timeout answers it. */
   withdrawDecision: (id: string) => void;
   decision: (id: string) => DecisionRecord | undefined;

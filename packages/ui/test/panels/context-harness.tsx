@@ -4,7 +4,11 @@
  *   the Builder's ways of choosing one.
  */
 
-import type { NodeContextAnswer, RunView } from "@krapht/ork-server/client";
+import type {
+  BuilderView,
+  NodeContextAnswer,
+  RunView,
+} from "@krapht/ork-server/client";
 import { act, screen } from "@testing-library/react";
 
 import { ContextPanel } from "../../src/panels/context-panel.tsx";
@@ -44,19 +48,35 @@ export const chooseRunNode = async (
   });
 };
 
-/** Selects `node`'s card in the Builder, on its draft or its saved file. */
+/** What the Builder shows of `review`, as far as the Context panel reads it. */
+export const reviewView = (draft: boolean): BuilderView => ({
+  name: "review",
+  file: "/p/.ork/workflows/review.ork.yaml",
+  text: "",
+  document: null,
+  graph: { nodes: [], edges: [], channels: [] },
+  diagnostics: [],
+  walk: null,
+  draft,
+  baseHash: null,
+  changedOnDisk: false,
+});
+
+/**
+ * Selects `node`'s card in the Builder, on its draft or its saved file, opening
+ * `review` there first if it isn't open.
+ */
 export const chooseBuilderNode = async (
   opened: OpenedContext,
   node: string | null,
   draft = true,
 ) => {
   await act(async () => {
-    opened.state.chooseBuilderNode({
-      project: "p",
-      workflow: "review",
-      node,
-      draft,
-    });
+    const { builder } = opened.state;
+    if (builder.opened.getValue()?.name !== "review") {
+      builder.show({ project: "p", name: "review" }, reviewView(draft));
+    }
+    builder.select(node);
     await Promise.resolve();
   });
 };

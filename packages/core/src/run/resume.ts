@@ -96,7 +96,10 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
     if (event.type === "node.event") {
       const inner = event.event;
       const current = open.get(event.id);
-      if (current === undefined) continue;
+      // A fork of a leader's session answered a question; it isn't the node's.
+      if (current === undefined || inner.fork === true) {
+        continue;
+      }
       if (inner.type === "session.started") {
         current.sessionId = inner.sessionId;
       }
@@ -273,6 +276,7 @@ export const replayLoopAnswers = (
   const left = [...answers];
   return {
     permit: request => human.permit(request),
+    ...(human.settled === undefined ? {} : { settled: human.settled }),
     ask: question => {
       const index = left.findIndex(a => a.question === question.question);
       const [given] = index === -1 ? [] : left.splice(index, 1);

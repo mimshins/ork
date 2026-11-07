@@ -11,8 +11,6 @@ agents. That folder is either in your repository or outside it.
   for a project with its own process that should not change for Ork, or one you
   only try Ork on.
 
-The contract is in [projects](../../specs/projects.md).
-
 ## Registering a project from outside
 
 From your clone (or with its path):
@@ -126,12 +124,16 @@ is pushed. Edit it to fit: models, budgets, prompts, or more gates.
 
 ## A worked example: a project with its own process
 
-se-backend keeps its agents in `.ai/agents` (a documenter, an implementer, a
-reviewer), names branches `<type>/<slug>` with a worktree each beside the clone,
-and lets a human commit. Moving that process into Ork, without writing into the
-repository:
+Say a backend project keeps its agents in `.ai/agents` (a documenter, an
+implementer, a reviewer), names branches `<type>/<slug>` with a worktree each
+beside the clone, and lets a human commit. Moving that process into Ork, without
+writing into the repository:
 
-1. `ork register`, then rules in `~/.ork/projects/<id>/project.yaml`:
+1. Register it, then write rules in `~/.ork/projects/<id>/project.yaml`:
+
+   ```sh
+   ork register
+   ```
 
    ```yaml
    schemaVersion: 1
@@ -146,11 +148,23 @@ repository:
    defaults: { model: haiku, driver: cli, budgetUsd: 0.6, maxTurns: 30 }
    ```
 
-2. `ork migrate --from-agents documenter,implementer --reviewer reviewer`, then
-   edit the draft: inputs `type` and `slug` instead of `branch`
+2. Draft a workflow from the agents:
+
+   ```sh
+   ork migrate --from-agents documenter,implementer --reviewer reviewer
+   ```
+
+   Then edit the draft: inputs `type` and `slug` instead of `branch`
    (`switch -c {{inputs.type}}/{{inputs.slug}}`), and a run budget.
-3. `ork run process --input task=… --input type=docs --input slug=… --input message="docs: …" --detach`,
-   and answer its questions with `ork decide`: a permission the rules do not
+
+3. Run it in the background:
+
+   ```sh
+   ork run process --input task="…" --input type=docs --input slug="…" \
+     --input message="docs: …" --detach
+   ```
+
+   Then answer its questions with `ork decide`: a permission the rules do not
    cover, the gate before the reviewer, and the commit.
 
 The run cost a few cents on haiku. The reviewer read the implementer's worktree,
@@ -159,7 +173,7 @@ branch; the clone's own checkout stayed as it was. Two things it taught:
 
 - Permission patterns are Claude Code's: `Bash(git diff*)` does not match
   `git -C <path> diff`, so that call was asked about.
-- The first draft gave each agent its own worktree, and the implementer made the
-  documenter's edit again in a clean one. Drafts now chain the agents in one
-  worktree with `isolation: continue`
-  ([ADR-037](../../decisions/ADR-037-isolation-continue.md)).
+- Drafts chain the agents in one worktree (`isolation: continue`), so each sees
+  the earlier edits.
+
+For the full rules: [projects](../../specs/projects.md).

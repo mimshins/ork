@@ -51,13 +51,24 @@ project chosen cannot replace the answer about this one. `runFilter` and
 Feedback panel; they live here so they outlast a panel when it is minimized or
 closed.
 
+**`builder`**
+([builder-session.ts](../../packages/ui/src/state/builder-session.ts)) is what
+the [Builder](./panels-builder-logs-and-decisions.md#builder) has open: its
+project, the workflow, the server's last answer about it, the selected card, the
+undo steps, and the queue its changes wait in. It lives here, beside the run
+selection, so a panel moved to another group, closed and reopened, or stacked in
+a [narrow window](./workspace-layout-and-narrow-window.md#a-narrow-window) shows
+the same workflow, card and undo; an answer that arrives while no Builder shows
+reaches the next one. The server keeps the draft itself.
+
 **`contextTarget`**
 ([context-target.ts](../../packages/ui/src/state/context-target.ts)) follows
-every choice of a run's node, and the card the person selects in the Builder,
-whose state lives in its own hook: the Builder bumps its `revision` with each
-new answer about the workflow, which is what makes the
+every choice of a run's node, and the card the person selects in the Builder:
+the Builder's session bumps its `revision` with each new answer about the
+workflow, which is what makes the
 [Context panel](./panels-context-and-feedback.md#context) plan again, without a
-timer. A change in the Builder never takes the panel from a run's node.
+timer. A Builder panel mounting again tells it nothing, so it keeps its node. A
+change in the Builder never takes the panel from a run's node.
 
 **The store is the truth** ([ADR-024](../../decisions/ADR-024-event-store.md)).
 A write goes through the typed client and comes back on a stream; nothing here
@@ -98,8 +109,8 @@ and [feeds.ts](../../packages/ui/src/state/feeds.ts) the feeds the page holds.
   read again if a panel still retains it.
 - **Retained, not always open.** `useRunFeed(id)` retains a run while a
   component shows it; the last release closes the stream, because a browser
-  gives an origin few connections ([L36](../gaps/limits-ui.md)). The four feeds
-  used last stay in memory to come back to.
+  gives an origin few connections ([L36](./limits.md)). The four feeds used last
+  stay in memory to come back to.
 
 ## The event window
 
@@ -139,8 +150,9 @@ the density, whether desktop notifications may be sent, and the new version
 whose banner was dismissed and when (`updateDismissed`), per browser
 (`ork.preferences.v1`). Values are checked on load: a missing field takes its
 default, and values that do not fit are dropped. The app applies them before its
-first paint, so a chosen theme flashes only as far as
-[L32](../gaps/limits-ui.md) says.
+first paint. Until its script runs the page follows the system's theme
+([themes](./design-tokens-and-type.md#themes)), so only a theme chosen against
+the system shows the other for that moment ([L32](./limits.md)).
 
 The palette's **View** group sets the theme (follow the system, dark, light) and
 the density (compact, comfortable); the one in use stays listed and says so. The

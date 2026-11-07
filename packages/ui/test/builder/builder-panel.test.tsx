@@ -2,7 +2,8 @@
  * @file Tests for the workflow builder panel, against the real document edits
  *   and the real draft graph behind a fake server: a person can build a
  *   workflow from nothing with no YAML, errors block saving and say where they
- *   are, and a run names what acts outside its worktree first.
+ *   are, a run names what acts outside its worktree first, and a panel mounted
+ *   again shows what the last one had open.
  */
 
 import { parseWorkflow } from "@krapht/ork-server";
@@ -130,6 +131,31 @@ describe("the builder", () => {
       kind: "builder",
       node: "worker",
     });
+  }, 20_000);
+
+  it("keeps the open workflow, its selection and undo for the next panel", async () => {
+    const { user, state, drawn } = await open();
+    await addNode(user, "worker", "worker");
+    await user.click(screen.getByRole("button", { name: /^worker,/u }));
+    const target = state.contextTarget.getValue();
+    drawn.unmount();
+    renderPanel(state, <BuilderPanel />);
+    expect(
+      await screen.findByRole("button", { name: /^worker,/u }),
+    ).toBeDefined();
+    expect(
+      screen.getByRole<HTMLInputElement>("combobox", { name: "Workflow" })
+        .value,
+    ).toContain("fresh");
+    expect(screen.getByLabelText<HTMLInputElement>("Name").value).toBe(
+      "worker",
+    );
+    expect(
+      screen
+        .getByRole("button", { name: "Undo" })
+        .getAttribute("aria-disabled"),
+    ).not.toBe("true");
+    expect(state.contextTarget.getValue()).toBe(target);
   }, 20_000);
 
   it("says what walking it came to, with no problem to list", async () => {

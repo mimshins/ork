@@ -46,7 +46,7 @@ command names) and the project's folder, so another repository doesn't inherit
 it. A hash is only worth what's held to it, so a run starts from the accepted
 file by its whole path, and refuses if its text differs from what `ork watch`
 read. It can't cover everything a run reads, such as a skill or a script, and
-says so ([L119](../specs/gaps/limits-watching.md)). The terminal stops
+says so ([L119](../specs/scheduler/watching-limits.md)). The terminal stops
 accidents, not a determined program on the same machine.
 
 **The lock is a row in the store,** rather than the lock file the RFC implied. A
@@ -73,4 +73,4 @@ were left to set on first use, and are one constant each.
 - The store records changes rather than looks, so the Monitor's count and next
   look are estimates, and say "about".
 - What's limited for now is in
-  [the gaps register](../specs/gaps/limits-watching.md).
+  [the watching spec's limits](../specs/scheduler/watching-limits.md).

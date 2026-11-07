@@ -21,7 +21,11 @@ Status: **Built**: the Zod model, edge shorthand, canonical YAML, diagnostics,
 - Deterministic key order.
 - No absolute paths.
 - Secrets only as `{{env.NAME}}` references in a tool node's `env:`.
-- `schemaVersion` with migrations.
+- `schemaVersion`, checked on every read. A file with a higher version was made
+  by a newer Ork, and gets that one message (`schema.newer_version`, with
+  `ork upgrade` as the fix) instead of `expected 1`; the same goes for
+  `project.yaml`, `triggers.yaml` and settings. There are no migrations yet: the
+  first arrives with the first version 2.
 - A published JSON Schema for editor autocomplete.
 
 The canonical example is
@@ -62,7 +66,9 @@ edges:
   instructions), `instructions` and `prompt`, rendered like a brief, are its
   system prompt, `description` says when the session uses it (the Agent tool,
   added to a `tools.only` list), and `model`, `maxTurns` and `tools.only` and
-  `deny` carry over.
+  `deny` carry over. A `claude.leader` also takes `maxWorkers` and
+  `questions: owner | user` (default `user`), whether its children's questions
+  go to it first ([leader questions](./messaging/leader-questions.md)).
 - **Tools:** `tool.gh`, `tool.aws`, `tool.git`, `tool.shell` (each runs the
   user's own CLI, and a per-node allowlist sets which subcommands are
   permitted). There is one `tool.<id>` type per registered integration

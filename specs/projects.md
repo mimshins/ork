@@ -120,3 +120,7 @@ in the working tree to review and commit
   `rules.git.commit: never`: Ork commits nothing itself, and nothing is pushed.
   Agent names must be known (`ork agents list`) and cannot be the draft's own
   node ids.
+
+## Contents
+
+- [Limits: projects, git and installs](./projects/limits.md)

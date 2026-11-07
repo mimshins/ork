@@ -72,4 +72,10 @@ adds `node.held` and `node.released`
 ([run control](../run-control.md#what-a-run-records)).
 
 The run result lists each node (runs, ok, last output, cost), the total cost,
-the reasons the run did not succeed, and the worktrees it left for the user.
+the reasons the run did not succeed, and the worktrees it left for the user. It
+also counts the nodes skipped (`skipped`: those that never ran) and the failures
+an edge handled (`failuresHandled`: a failed result with an edge or loop taken),
+so a `succeeded` run says what it left out, and names each node that never ran
+with messages nobody read (`unread: [{ node, messages }]`): a branch not taken
+leaves its mail. All three come from the routing a resume replays, so a resumed
+run counts the same; a result recorded before them lacks them.

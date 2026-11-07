@@ -111,6 +111,42 @@ describe("stopping one node", () => {
   });
 });
 
+/** What every route but a whole stop says to a run of one node. */
+const oneNodeRefusal = (cannot: string) => ({
+  status: 409,
+  error: `Run node-1234 runs one node, which it cannot ${cannot}; stop the whole run instead: ork stop node-1234`,
+});
+
+/** A route called on the live run `node-1234`, with a node or without. */
+const callOneNode = (
+  server: TestServer,
+  route: "pause" | "continue" | "stop",
+  body: { node?: string } = {},
+) => server.client.call(route, { params: { id: "node-1234" }, body });
+
+describe("a run of one node", () => {
+  it("refuses pause, continue and a node's stop, and queues nothing", async () => {
+    fixture = await startTestServer();
+    liveRun(fixture, "node-1234");
+    const server = fixture;
+    expect(await callOneNode(server, "pause")).toMatchObject(
+      oneNodeRefusal("pause or continue"),
+    );
+    expect(await callOneNode(server, "pause", { node: "lead" })).toMatchObject(
+      oneNodeRefusal("pause or continue"),
+    );
+    expect(await callOneNode(server, "continue")).toMatchObject(
+      oneNodeRefusal("pause or continue"),
+    );
+    expect(await callOneNode(server, "stop", { node: "lead" })).toMatchObject(
+      oneNodeRefusal("stop by name"),
+    );
+    expect(server.store.takeCommands("node-1234")).toEqual([]);
+    expect(await callOneNode(server, "stop")).toMatchObject({ status: 202 });
+    expect(server.store.takeCommands("node-1234")).toEqual([{ kind: "stop" }]);
+  });
+});
+
 describe("a project's workflows", () => {
   it("lists each with its name and inputs, and one that does not parse with why", async () => {
     fixture = await startTestServer();

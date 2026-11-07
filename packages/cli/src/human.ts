@@ -1,13 +1,14 @@
 /**
  * @file The terminal `HumanChannel`: answers `ask_user` questions, gates and
  *   permission prompts on the terminal, one at a time, and denies or defers
- *   when no one is there. In a run it is the decision queue's local answerer,
- *   racing `ork decide`.
+ *   when no one is there. After a choice it offers one optional line for a
+ *   note, which Enter skips. In a run it is the decision queue's local
+ *   answerer, racing `ork decide`.
  */
 
 import { createInterface, type Interface } from "node:readline/promises";
 
-import type { DecisionChoice, HumanChannel } from "@krapht/ork-core";
+import type { DecisionChoice, HumanChannel, NoteTaker } from "@krapht/ork-core";
 
 import { style } from "./output.ts";
 
@@ -24,6 +25,8 @@ const PREVIEW = 160;
 
 const NO_ONE_TO_PERMIT =
   "No one is at the terminal to approve this tool, so it is not allowed in this run.";
+
+const NOTE_PROMPT = "  Note for the run (optional, Enter to skip): ";
 
 const NO_ONE_TO_ASK =
   "no one (nobody is at the terminal; use your best judgment and say so in your report)";
@@ -92,6 +95,15 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
       ? rl.question(text)
       : rl.question(text, { signal });
   };
+  /** The optional line after a choice, when the asker takes a note. */
+  const takeNote = async (
+    onNote: NoteTaker | undefined,
+    signal: AbortSignal | undefined,
+  ): Promise<void> => {
+    if (onNote === undefined) return;
+    const note = (await prompt(NOTE_PROMPT, signal)).trim();
+    if (note !== "") onNote(note);
+  };
   const choose = async (
     hint: string,
     options: readonly DecisionChoice[],
@@ -115,7 +127,7 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
   };
 
   return {
-    permit: ({ nodeId, toolName, input, signal }) =>
+    permit: ({ nodeId, toolName, input, signal, onNote }) =>
       oneAtATime(async () => {
         if (signal?.aborted === true) {
           throw new Error("the prompt was withdrawn");
@@ -130,16 +142,25 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
         const answer = (await prompt("  Allow? [y/N] ", signal))
           .trim()
           .toLowerCase();
-        return answer === "y" || answer === "yes"
-          ? { allow: true }
-          : { allow: false, message: "The user did not allow this tool." };
+        if (answer === "y" || answer === "yes") return { allow: true };
+        // A denial may say why; an allowal has nothing to tell the session.
+        await takeNote(onNote, signal);
+        return { allow: false, message: "The user did not allow this tool." };
       }),
 
     // A withdrawn question (a gate's timeout) rejects, which frees the turn.
-    ask: ({ nodeId, question, options, recommended, context, signal }) =>
-      oneAtATime(() => {
+    ask: ({
+      nodeId,
+      question,
+      options,
+      recommended,
+      context,
+      signal,
+      onNote,
+    }) =>
+      oneAtATime(async () => {
         if (signal?.aborted === true) {
-          return Promise.reject(new Error("the question was withdrawn"));
+          throw new Error("the question was withdrawn");
         }
         say(
           `${style(["yellow", "bold"], "?")} ${style("bold", nodeId)} asks: ${question}`,
@@ -151,11 +172,13 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
         if (!io.interactive) {
           const answer = recommended ?? NO_ONE_TO_ASK;
           say(style("dim", `  no terminal; answered ${answer}`));
-          return Promise.resolve(answer);
+          return answer;
         }
         const fallback = options.findIndex(o => o.id === recommended);
         const hint = fallback === -1 ? "" : ` [${String(fallback + 1)}]`;
-        return choose(hint, options, recommended, signal);
+        const picked = await choose(hint, options, recommended, signal);
+        await takeNote(onNote, signal);
+        return picked;
       }),
 
     close: () => {

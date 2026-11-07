@@ -1,0 +1,919 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "triggers": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "every": {
+            "type": "string",
+            "pattern": "^\\d+[smh]$",
+            "description": "How long to wait between looks, e.g. 5m. At least 1m."
+          },
+          "check": {
+            "description": "What to look at; it reports { \"events\": [{ \"key\": \"...\", \"inputs\": { ... } }] }. Without one, the trigger starts a run every time.",
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "mcp.call"
+                  },
+                  "parent": {
+                    "description": "Owner of this node in the ownership tree.",
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]*$"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "server": {
+                    "type": "string",
+                    "description": "The server's name in the project's `.mcp.json`."
+                  },
+                  "tool": {
+                    "type": "string",
+                    "description": "The tool to call on it."
+                  },
+                  "arguments": {
+                    "description": "The tool's arguments. Strings are templates; one that is only {{ … }} keeps its value's type.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  },
+                  "output": {
+                    "description": "What the tool's result says.",
+                    "type": "object",
+                    "properties": {
+                      "schema": {
+                        "description": "The fields of the tool's JSON result a later node relies on, e.g. { state: [open, closed] }. A value outside these fails the node.",
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              }
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "string",
+                                "number",
+                                "integer",
+                                "boolean"
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "env": {
+                    "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "plainEnv": {
+                    "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    }
+                  },
+                  "timeout": {
+                    "description": "How long the call may take, e.g. 5m; then the node fails. With watch:, how long one look may take.",
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$"
+                  },
+                  "watch": {
+                    "description": "Call the tool again and again until a condition holds, with no model turn.",
+                    "type": "object",
+                    "properties": {
+                      "every": {
+                        "type": "string",
+                        "pattern": "^\\d+[smh]$",
+                        "description": "How long to wait between looks, e.g. 30s. At least 5s."
+                      },
+                      "until": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Stop looking when this holds. It reads what an edge's when: does."
+                      },
+                      "timeout": {
+                        "type": "string",
+                        "pattern": "^\\d+[smh]$",
+                        "description": "How long to go on looking, e.g. 2h; then the node fails. Time between looks doesn't count against limits.timeout."
+                      },
+                      "misses": {
+                        "description": "How many failed looks in a row end the wait, such as a network error. Default: 3.",
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "every",
+                      "until",
+                      "timeout"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "notify": {
+                    "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "to": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_-]*$",
+                          "description": "The `claude.leader` or `claude.worker` to write to."
+                        },
+                        "when": {
+                          "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                          "type": "string"
+                        },
+                        "body": {
+                          "description": "The message, a template. Default: Ork's one line on the result.",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "to"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "server",
+                  "tool"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "tool.gh"
+                  },
+                  "parent": {
+                    "description": "Owner of this node in the ownership tree.",
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]*$"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "command": {
+                    "type": "string",
+                    "description": "Arguments for the CLI (no shell). Supports templates."
+                  },
+                  "allow": {
+                    "description": "Allowed subcommand prefixes, e.g. `pr view`, `pr merge`.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "cwd": {
+                    "type": "string"
+                  },
+                  "timeout": {
+                    "description": "How long the command may run, e.g. 5m; then it is killed and the node fails. With watch:, how long one look may take.",
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$"
+                  },
+                  "watch": {
+                    "description": "Run the command again and again until a condition holds, with no model turn.",
+                    "type": "object",
+                    "properties": {
+                      "every": {
+                        "type": "string",
+                        "pattern": "^\\d+[smh]$",
+                        "description": "How long to wait between looks, e.g. 30s. At least 5s."
+                      },
+                      "until": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Stop looking when this holds. It reads what an edge's when: does."
+                      },
+                      "timeout": {
+                        "type": "string",
+                        "pattern": "^\\d+[smh]$",
+                        "description": "How long to go on looking, e.g. 2h; then the node fails. Time between looks doesn't count against limits.timeout."
+                      },
+                      "misses": {
+                        "description": "How many failed looks in a row end the wait, such as a network error. Default: 3.",
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "every",
+                      "until",
+                      "timeout"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "env": {
+                    "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "plainEnv": {
+                    "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    }
+                  },
+                  "output": {
+                    "description": "Structured output from the program.",
+                    "type": "object",
+                    "properties": {
+                      "format": {
+                        "type": "string",
+                        "const": "json",
+                        "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                      },
+                      "schema": {
+                        "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              }
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "string",
+                                "number",
+                                "integer",
+                                "boolean"
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "format"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "notify": {
+                    "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "to": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_-]*$",
+                          "description": "The `claude.leader` or `claude.worker` to write to."
+                        },
+                        "when": {
+                          "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                          "type": "string"
+                        },
+                        "body": {
+                          "description": "The message, a template. Default: Ork's one line on the result.",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "to"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "command"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "tool.aws"
+                  },
+                  "parent": {
+                    "description": "Owner of this node in the ownership tree.",
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]*$"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "command": {
+                    "type": "string",
+                    "description": "Arguments for the CLI (no shell). Supports templates."
+                  },
+                  "allow": {
+                    "description": "Allowed subcommand prefixes, e.g. `pr view`, `pr merge`.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "cwd": {
+                    "type": "string"
+                  },
+                  "timeout": {
+                    "description": "How long the command may run, e.g. 5m; then it is killed and the node fails. With watch:, how long one look may take.",
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$"
+                  },
+                  "watch": {
+                    "description": "Run the command again and again until a condition holds, with no model turn.",
+                    "type": "object",
+                    "properties": {
+                      "every": {
+                        "type": "string",
+                        "pattern": "^\\d+[smh]$",
+                        "description": "How long to wait between looks, e.g. 30s. At least 5s."
+                      },
+                      "until": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Stop looking when this holds. It reads what an edge's when: does."
+                      },
+                      "timeout": {
+                        "type": "string",
+                        "pattern": "^\\d+[smh]$",
+                        "description": "How long to go on looking, e.g. 2h; then the node fails. Time between looks doesn't count against limits.timeout."
+                      },
+                      "misses": {
+                        "description": "How many failed looks in a row end the wait, such as a network error. Default: 3.",
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "every",
+                      "until",
+                      "timeout"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "env": {
+                    "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "plainEnv": {
+                    "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    }
+                  },
+                  "output": {
+                    "description": "Structured output from the program.",
+                    "type": "object",
+                    "properties": {
+                      "format": {
+                        "type": "string",
+                        "const": "json",
+                        "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                      },
+                      "schema": {
+                        "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              }
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "string",
+                                "number",
+                                "integer",
+                                "boolean"
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "format"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "notify": {
+                    "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "to": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_-]*$",
+                          "description": "The `claude.leader` or `claude.worker` to write to."
+                        },
+                        "when": {
+                          "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                          "type": "string"
+                        },
+                        "body": {
+                          "description": "The message, a template. Default: Ork's one line on the result.",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "to"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "profile": {
+                    "type": "string"
+                  },
+                  "region": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "command"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "tool.git"
+                  },
+                  "parent": {
+                    "description": "Owner of this node in the ownership tree.",
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]*$"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "command": {
+                    "type": "string",
+                    "description": "Arguments for the CLI (no shell). Supports templates."
+                  },
+                  "allow": {
+                    "description": "Allowed subcommand prefixes, e.g. `pr view`, `pr merge`.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "cwd": {
+                    "type": "string"
+                  },
+                  "timeout": {
+                    "description": "How long the command may run, e.g. 5m; then it is killed and the node fails. With watch:, how long one look may take.",
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$"
+                  },
+                  "watch": {
+                    "description": "Run the command again and again until a condition holds, with no model turn.",
+                    "type": "object",
+                    "properties": {
+                      "every": {
+                        "type": "string",
+                        "pattern": "^\\d+[smh]$",
+                        "description": "How long to wait between looks, e.g. 30s. At least 5s."
+                      },
+                      "until": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Stop looking when this holds. It reads what an edge's when: does."
+                      },
+                      "timeout": {
+                        "type": "string",
+                        "pattern": "^\\d+[smh]$",
+                        "description": "How long to go on looking, e.g. 2h; then the node fails. Time between looks doesn't count against limits.timeout."
+                      },
+                      "misses": {
+                        "description": "How many failed looks in a row end the wait, such as a network error. Default: 3.",
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "every",
+                      "until",
+                      "timeout"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "env": {
+                    "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "plainEnv": {
+                    "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    }
+                  },
+                  "output": {
+                    "description": "Structured output from the program.",
+                    "type": "object",
+                    "properties": {
+                      "format": {
+                        "type": "string",
+                        "const": "json",
+                        "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                      },
+                      "schema": {
+                        "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              }
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "string",
+                                "number",
+                                "integer",
+                                "boolean"
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "format"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "notify": {
+                    "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "to": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_-]*$",
+                          "description": "The `claude.leader` or `claude.worker` to write to."
+                        },
+                        "when": {
+                          "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                          "type": "string"
+                        },
+                        "body": {
+                          "description": "The message, a template. Default: Ork's one line on the result.",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "to"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "type",
+                  "command"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "tool.shell"
+                  },
+                  "parent": {
+                    "description": "Owner of this node in the ownership tree.",
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]*$"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "command": {
+                    "description": "Program and arguments (no shell), or script: instead. Supports templates.",
+                    "type": "string"
+                  },
+                  "script": {
+                    "description": "The text of a short program, instead of command. It takes no templates: values arrive through env:, as $NAME, so a value cannot become code.",
+                    "type": "string"
+                  },
+                  "interpreter": {
+                    "description": "What runs `script:`: a program and arguments. Default: `sh -eu`.",
+                    "type": "string"
+                  },
+                  "allow": {
+                    "description": "Allowed subcommand prefixes, e.g. `pr view`, `pr merge`.",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "cwd": {
+                    "type": "string"
+                  },
+                  "timeout": {
+                    "description": "How long the command may run, e.g. 5m; then it is killed and the node fails. With watch:, how long one look may take.",
+                    "type": "string",
+                    "pattern": "^\\d+[smh]$"
+                  },
+                  "watch": {
+                    "description": "Run the command again and again until a condition holds, with no model turn.",
+                    "type": "object",
+                    "properties": {
+                      "every": {
+                        "type": "string",
+                        "pattern": "^\\d+[smh]$",
+                        "description": "How long to wait between looks, e.g. 30s. At least 5s."
+                      },
+                      "until": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Stop looking when this holds. It reads what an edge's when: does."
+                      },
+                      "timeout": {
+                        "type": "string",
+                        "pattern": "^\\d+[smh]$",
+                        "description": "How long to go on looking, e.g. 2h; then the node fails. Time between looks doesn't count against limits.timeout."
+                      },
+                      "misses": {
+                        "description": "How many failed looks in a row end the wait, such as a network error. Default: 3.",
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "every",
+                      "until",
+                      "timeout"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "env": {
+                    "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "plainEnv": {
+                    "description": "Variables read as {{env.NAME}} that are not secret, such as a region: their values are not masked in what programs print.",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    }
+                  },
+                  "output": {
+                    "description": "Structured output from the program.",
+                    "type": "object",
+                    "properties": {
+                      "format": {
+                        "type": "string",
+                        "const": "json",
+                        "description": "The program's result is JSON, read as output.json: the file at $ORK_OUTPUT if it wrote one, otherwise its stdout."
+                      },
+                      "schema": {
+                        "description": "The fields of that JSON a later node relies on, e.g. { state: [OPEN, CLOSED] }. A value outside these fails the node.",
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "anyOf": [
+                            {
+                              "minItems": 1,
+                              "type": "array",
+                              "items": {
+                                "type": [
+                                  "string",
+                                  "number",
+                                  "boolean"
+                                ]
+                              }
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "string",
+                                "number",
+                                "integer",
+                                "boolean"
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "format"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "notify": {
+                    "description": "Messages to send when this node finishes, with no model turn. Each starts no session.",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "to": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_-]*$",
+                          "description": "The `claude.leader` or `claude.worker` to write to."
+                        },
+                        "when": {
+                          "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
+                          "type": "string"
+                        },
+                        "body": {
+                          "description": "The message, a template. Default: Ork's one line on the result.",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "to"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "run": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+            "description": "The workflow to start, by its name in this project."
+          },
+          "inputs": {
+            "description": "Inputs every run gets. They win over what a check reports, and aren't marked untrusted.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "maxRunsPerDay": {
+            "description": "Most runs to start in a calendar day. Default: 10.",
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "concurrency": {
+            "description": "How many of its runs may be going at once. A new key waits for the next look. Default: 1.",
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "every",
+          "run"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "triggers"
+  ],
+  "additionalProperties": false,
+  "$id": "https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/triggers.schema.json",
+  "title": "Ork triggers"
+}

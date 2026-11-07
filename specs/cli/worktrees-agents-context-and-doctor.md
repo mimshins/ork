@@ -13,6 +13,18 @@ workflow from the project's agents (`--from-agents`); see
 found in the current folder's project: `.ork/workflows/`, or the attached
 project's `workflows/`.
 
+`ork init` writes the starter workflow, `.ork/workflows/hello.ork.yaml`, which
+names no driver: it is committed, and a run takes the driver ready on the
+machine running it ([runtime](../runtime.md#which-driver-a-session-uses)).
+`ork init` says in one line which that is here, from [doctor](#doctor)'s own
+checks (the same checks, not a copy):
+`Runs use the driver that's ready when they start: cli here (…).` With both
+ready it names `cli`, which a run takes first. When `.ork/project.yaml` names a
+`defaults.driver`, it says that one instead, and runs no check. With neither
+ready, it passes on the CLI driver's hint (install Claude Code, or
+`claude auth login`). A starter that is already there is left as it is, and
+nothing is said or checked ([code](../../packages/cli/src/project/init.ts)).
+
 ## Worktrees
 
 `ork worktrees` lists, cleans and removes the worktrees and branches runs
@@ -101,3 +113,9 @@ Once a project has `.ork/`, doctor adds one check per tool the project uses:
 folder or links elsewhere. These checks never fail the doctor. It also warns
 when the project's copies of Ork's skills for Claude Code are older than Ork,
 with `ork init --skills` as the fix ([Ork for Claude Code](../claude-code.md)).
+
+A `sockets` check warns when the longest run socket path under `~`
+(`~/.ork/sockets/node-<8>.sock`) is past what the system allows (103 bytes on
+macOS, 107 on Linux): runs still work, but answers, commands and followers wait
+on the store, up to a second each
+([messaging](../messaging.md#reaching-a-live-run)). It never fails the doctor.

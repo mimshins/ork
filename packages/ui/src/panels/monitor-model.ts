@@ -162,7 +162,13 @@ export const graphInputOf = (
 
 export type Action = { enabled: true } | { enabled: false; why: string };
 
-export type Actions = { pause: Action; proceed: Action; stop: Action };
+export type Actions = {
+  pause: Action;
+  proceed: Action;
+  stop: Action;
+  /** A whole run's, once it has ended without succeeding: `ork resume`. */
+  resume?: Action;
+};
 
 const YES: Action = { enabled: true };
 const no = (why: string): Action => ({ enabled: false, why });
@@ -170,10 +176,23 @@ const no = (why: string): Action => ({ enabled: false, why });
 const isLive = ({ live }: RunView): boolean =>
   live === "running" || live === "paused";
 
+/**
+ * Whether `ork resume` would take an ended run, by its refusals: one that
+ * succeeded has nothing to resume, and one that ran a single node is run
+ * again.
+ */
+const resumeOf = (run: RunView): Action =>
+  run.id.startsWith("node-")
+    ? no("it ran one node; run that node again instead")
+    : YES;
+
 export const runActions = (run: RunView): Actions => {
   if (!isLive(run)) {
     const why = `the run has ended (${run.live})`;
-    return { pause: no(why), proceed: no(why), stop: no(why) };
+    const ended = { pause: no(why), proceed: no(why), stop: no(why) };
+    return run.live === "succeeded"
+      ? ended
+      : { ...ended, resume: resumeOf(run) };
   }
   const paused = run.live === "paused";
   return {

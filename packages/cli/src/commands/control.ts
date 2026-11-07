@@ -84,7 +84,7 @@ export const resume = defineCommand({
   meta: {
     name: "resume",
     description:
-      "Continue a stopped or crashed run: finished nodes keep their results",
+      "Continue a run that didn't succeed (stopped, failed or crashed): finished nodes keep their results",
   },
   args: {
     run: {

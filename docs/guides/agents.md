@@ -2,9 +2,7 @@
 
 An **agent** is who does a Claude node's work: its role, its model, the tools it
 may use, what it reports. A **node** is a place in the flow: its task, its
-owner, its edges. Define an agent once, and any node can take it. The contract
-is in the [workflow format](../../specs/workflow-format.md#agents) and
-[context](../../specs/context.md#agents) specs.
+owner, its edges. Define an agent once, and any node can take it.
 
 ## A node that takes an agent
 
@@ -82,10 +80,9 @@ The settings file takes what a Claude node takes: `model`, `effort`, `driver`,
 and `output`. Paths in `skills` and `context` are relative to the agent's own
 folder. Claude Code's `model:`, `tools:` and `disallowedTools:` in the markdown
 are used too: `tools: Read, Grep` leaves the agent only those built-in tools
-(`tools.only`), and Ork's own tools stay. The settings file's win.
+(`tools.only`), and Ork's own tools stay. The settings file wins.
 
-Ork's settings live in their own file, not in the markdown's frontmatter,
-because OpenCode sends unknown frontmatter keys to the model provider.
+Ork's settings live in their own file, so other tools never see them.
 
 ## Adding and removing agents
 
@@ -117,8 +114,13 @@ kept    .ai/agents is a real folder, left as it is
 
 With no tools named, `ork link` links the ones your project already uses (it has
 a `.claude/`, `.opencode/`, `.agents/` or `.ai/` folder); name them to add
-others: `ork link claude opencode`. `ork init` does this too, unless you pass
-`--no-link`.
+others:
+
+```sh
+ork link claude opencode
+```
+
+`ork init` does this too, unless you pass `--no-link`.
 
 It only ever creates links. A real folder, or a link you made to somewhere else,
 is kept as it is, so a project that keeps its agents in `.ai/` loses nothing.
@@ -147,4 +149,8 @@ agents:
     isolation: readonly
 ```
 
-Both [examples](./examples.md) are written this way.
+The `software-factory` and `pr-review` [examples](./examples.md) are written
+this way.
+
+For the full rules: [the workflow format](../../specs/workflow-format.md#agents)
+and [context](../../specs/context.md#agents).

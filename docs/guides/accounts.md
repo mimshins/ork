@@ -3,22 +3,29 @@
 Ork is free and runs on your machine. It **never stores, proxies or asks for
 credentials**. Each integration uses the tool you already have, logged in by
 you, and Ork only checks whether it is ready. Only Claude is required; the
-others are optional, needed only when a workflow has a node of their type. Why:
-[ADR-004](../../decisions/ADR-004-no-credentials.md).
+others are optional, needed only when a workflow has a node of their type.
 
-| Integration | How Ork reaches it                                                            | You log in with                          |
-| ----------- | ----------------------------------------------------------------------------- | ---------------------------------------- |
-| Claude      | the Agent SDK driver, with an API key or a cloud provider                     | `ANTHROPIC_API_KEY`, or Bedrock / Vertex |
-| Claude      | the CLI driver, running your own `claude`                                     | `claude` (Claude Code's own login)       |
-| GitHub      | optional: your `gh` CLI, for `tool.gh` nodes and `ork feedback publish`       | `gh auth login`                          |
-| AWS         | optional: your `aws` CLI, for `tool.aws` nodes (`profile`, `region` per node) | `aws sso login`, or a profile            |
+What the agents use is billed to your API key or cloud account, or counts
+against your Claude plan's limits; a budget caps each run
+([models and budgets](./models-and-budgets.md)).
+
+| Integration | How Ork reaches it                                                            | You log in with                                    |
+| ----------- | ----------------------------------------------------------------------------- | -------------------------------------------------- |
+| Claude      | the Agent SDK driver, with an API key or a cloud provider                     | `ANTHROPIC_API_KEY`, or Bedrock / Vertex / Foundry |
+| Claude      | the CLI driver, running your own `claude`                                     | `claude` (Claude Code's own login)                 |
+| GitHub      | optional: your `gh` CLI, for `tool.gh` nodes and `ork feedback publish`       | `gh auth login`                                    |
+| AWS         | optional: your `aws` CLI, for `tool.aws` nodes (`profile`, `region` per node) | `aws sso login`, or a profile                      |
 
 `ork doctor` runs each tool's own status check and prints whether it is ready,
 never a token.
 
 ## Claude: pick a driver
 
-### The Agent SDK driver (`driver: sdk`, the default)
+A workflow that names no driver runs on the one that's ready on your machine,
+the CLI driver when both are, and `ork run` says which. A driver the workflow or
+a node names, or `--driver` on `ork run`, wins.
+
+### The Agent SDK driver (`driver: sdk`)
 
 Runs Claude Code through Anthropic's Agent SDK, inside Ork's process. It
 **refuses to start** unless one of these is set in your environment:
@@ -52,5 +59,11 @@ but git ignores, such as `.env`, can be listed in `.worktreeinclude`
 
 ## What Ork keeps
 
-Run state lives in `.ork/runs/` in your project, which `ork init` adds to
-`.gitignore`. Nothing is sent anywhere except to the tools you run.
+Ork keeps your runs, feedback and settings on your machine, in `~/.ork/` and
+each project's `.ork/`. On its own, it sends only a daily version check to the
+npm registry, which you can turn off, and feedback you choose to publish. The
+list, and how to remove Ork:
+[Where Ork keeps things](./where-ork-keeps-things.md).
+
+Why Ork never handles a credential:
+[the decision](../../decisions/ADR-004-no-credentials.md).

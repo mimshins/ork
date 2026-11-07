@@ -24,10 +24,11 @@ _Part of [Feedback and self-improvement](../feedback.md)._
 3. Ork adds a structured header: Ork version, driver, model, node type (from the
    newest record), kind, and how often it was seen, then the newest record's
    words quoted (at most 1,500 characters).
-4. It reads first, with your `gh`: the category, and its 100 most recently
-   updated threads for one carrying the item's marker. Then it shows the exact
-   text it will send, a new thread or a "+1" comment on that thread, and asks
-   `y/N`, with no flag to skip it (or Publish in the Feedback panel).
+4. It reads first, with your `gh`: the category, and its threads, most recently
+   updated first, a page of 100 at a time, for one carrying the item's marker.
+   Then it shows the exact text it will send, a new thread or a "+1" comment on
+   that thread, and asks `y/N`, with no flag to skip it (or Publish in the
+   Feedback panel).
 5. Only after you confirm does it post, with **your own `gh`**, to the "Agent
    feedback" Discussions category of `mimshins/ork` (slug `agent-feedback`,
    found by slug, never by id). The item becomes `published`.
@@ -36,10 +37,11 @@ Deduplication and scale:
 
 - **Fingerprint marker:** every post carries a hidden
   `<!-- ork-fingerprint: … -->` marker.
-- **Existing thread:** Ork looks for it first, among the category's 100 most
-  recently updated threads ([L150](../gaps/limits-feedback.md)). If a matching
-  thread exists, it adds a comment with the new context and a "+1" instead of a
-  new discussion, so maintainers see one thread per real problem, with a count.
+- **Existing thread:** Ork looks for it first, paging through the category
+  (`after:` each page's cursor) until it finds the marker, the threads end, or
+  it has read 1,000 of them. If a matching thread exists, it adds a comment with
+  the new context and a "+1" instead of a new discussion, so maintainers see one
+  thread per real problem, with a count.
 - **No backend:** there is no Ork-run telemetry service. Publishing uses your
   account, like every other integration.
 - **Adapters:** publish targets are adapters.
@@ -49,8 +51,8 @@ Deduplication and scale:
   report, with `feedbackVersion`), dismissed items' left out without `--all`.
   Import checks each line, masks secrets again, skips a record whose run and
   event are here, and names each bad line; records regroup by fingerprint as
-  `new` items ([L151](../gaps/limits-feedback.md)). An adapter for issues in the
-  project's own repository is not part of Ork.
+  `new` items ([L151](./limits.md)). An adapter for issues in the project's own
+  repository is not part of Ork.
 - **Maintainer side (not part of Ork):** triaging the Discussions category, for
   example a scheduled job running the same rules over it and promoting the top
   clusters to issues, is the maintainers' own work.

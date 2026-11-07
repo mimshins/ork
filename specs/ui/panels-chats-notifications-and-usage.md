@@ -22,7 +22,7 @@ One thread per leader or worker of the selected run, built from its events
   the `ork chat` command, ready to copy, since the API does not resume a
   session.
 - **While Logs holds still,** the thread reads the feed's tail, the newest 500
-  events, so replies keep arriving ([L67](../gaps/limits-ui.md)).
+  events, so replies keep arriving ([L67](./limits.md)).
 
 ## Notifications
 
@@ -35,7 +35,7 @@ bar's bell shows how many are unread and goes to the panel.
 - **Items** are an open decision, and a run that has ended (succeeded, failed,
   out of budget, timed out or interrupted), crashed or paused. A decision's item
   goes when it settles, and a paused run's when it continues
-  ([L68](../gaps/limits-ui.md)).
+  ([L68](./limits.md)).
 - **Read state** is kept per browser. An unread item is tinted, with a heavier
   title and the word "unread". An item can be marked read singly, or all
   together. In a new browser what had already ended counts as read, so it does

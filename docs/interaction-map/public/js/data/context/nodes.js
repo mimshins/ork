@@ -177,7 +177,7 @@ export const NODES = [
     zone: "layers",
     x: 40,
     y: 720,
-    status: "partial",
+    status: "built",
     pkg: null,
     summary:
       "What the node is asked to do now: its rendered `prompt`, or its owner's `delegate` brief, plus the artifacts it needs, by path. Never the owner's full transcript.",
@@ -185,7 +185,7 @@ export const NODES = [
       "Templates such as `{{nodes.spec.output.artifacts.spec}}` render to a path, not to the file's content.",
       "Built: a delegated brief follows the node's own prompt as `## Task from <owner>`.",
       "Built: a prompt can read what the node's `before:` step gave, as `{{before.stdout}}` or `{{before.json.*}}`, so a program gathers what a session would spend turns finding. What goes in a prompt, the session pays for.",
-      "Constraints from the owner (scope, files, deadline) travel with it.",
+      "Constraints from the owner travel as the brief's own text: `delegate` takes one `brief` string, which asks for the goal, the files that matter and what done looks like. There is no separate field for scope or a deadline.",
     ],
     docs: [RUNTIME.plan, DESIGN.concepts, DESIGN.context, NODE_TYPES.steps],
   },
@@ -289,14 +289,14 @@ export const NODES = [
     zone: "compiler",
     x: 320,
     y: 720,
-    status: "partial",
+    status: "built",
     pkg: "core",
     summary:
       "Orders everything so the prompt cache works: what is the same for many nodes goes first, the task itself last.",
     facts: [
       "Built, after Claude Code's own prompt: the practices, your context, the workflow's context, Ork's harness text, then the node's context.",
       "Suffix: the brief, as the first user message.",
-      "Specified: leaders, which live long, ask for the 1-hour cache.",
+      "Leaders, which live long and wait on their children, get the 1-hour cache (`ENABLE_PROMPT_CACHING_1H=1`) on both drivers; the benchmark is to confirm the saving.",
     ],
     docs: [CONTEXT.session, RUNTIME.plan, DESIGN.context],
   },
@@ -463,7 +463,7 @@ export const NODES = [
     facts: [
       "Keeps big outputs out of every downstream prompt.",
       "Built for tool nodes: long output is cut, and the full text is kept in the run's folder.",
-      "Not built: a Claude report's big outputs are not moved out yet.",
+      "Not built: a Claude report's fields are not cut (L171); a threshold for them waits on the cost benchmark.",
     ],
     docs: [NODE_TYPES.tools, DESIGN.context],
   },

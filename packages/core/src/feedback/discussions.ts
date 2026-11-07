@@ -1,9 +1,10 @@
 /**
  * @file Posting feedback about Ork to its GitHub Discussions (ADR-059) with the
  *   person's own `gh`, never a token of Ork's: the "Agent feedback" category of
- *   `mimshins/ork`, found by its slug. The category's 100 most recently updated
- *   threads are read first; one whose body carries the item's fingerprint
- *   marker gets a "+1" comment, and otherwise a new thread starts.
+ *   `mimshins/ork`, found by its slug. The category's threads are read first,
+ *   most recently updated first, a page at a time up to `THREADS_SEARCHED`; one
+ *   whose body carries the item's fingerprint marker gets a "+1" comment, and
+ *   otherwise a new thread starts.
  */
 
 import { execFile } from "node:child_process";
@@ -19,8 +20,15 @@ export const DISCUSSIONS = {
   category: "agent-feedback",
 } as const;
 
-/** How many of the category's newest threads are searched for the marker. */
-export const THREADS_SEARCHED = 100;
+/** How many threads one read asks for: GitHub's most. */
+const THREADS_PAGE = 100;
+
+/**
+ * How many of the category's threads are searched for the marker at most, a
+ * page at a time until it is found: a duplicate thread is public, and ten reads
+ * cover the category for a long while.
+ */
+export const THREADS_SEARCHED = 1000;
 
 export type GhResult = { ok: boolean; stdout: string; stderr: string };
 
@@ -88,11 +96,44 @@ const text = (value: unknown): string =>
 
 const PLACE = `query($owner:String!,$name:String!,$slug:String!){repository(owner:$owner,name:$name){id discussionCategory(slug:$slug){id}}}`;
 
-const THREADS = `query($owner:String!,$name:String!,$cat:ID!){repository(owner:$owner,name:$name){discussions(categoryId:$cat,first:${String(THREADS_SEARCHED)},orderBy:{field:UPDATED_AT,direction:DESC}){nodes{id url body}}}}`;
+const THREADS = `query($owner:String!,$name:String!,$cat:ID!,$after:String){repository(owner:$owner,name:$name){discussions(categoryId:$cat,first:${String(THREADS_PAGE)},after:$after,orderBy:{field:UPDATED_AT,direction:DESC}){nodes{id url body} pageInfo{hasNextPage endCursor}}}}`;
 
 const CREATE = `mutation($repo:ID!,$cat:ID!,$title:String!,$body:String!){createDiscussion(input:{repositoryId:$repo,categoryId:$cat,title:$title,body:$body}){discussion{url}}}`;
 
 const COMMENT = `mutation($id:ID!,$body:String!){addDiscussionComment(input:{discussionId:$id,body:$body}){comment{url}}}`;
+
+/**
+ * The category's thread whose body carries `marker`, read a page at a time,
+ * most recently updated first, until it is found, the threads end, or
+ * `THREADS_SEARCHED` have been read.
+ */
+const findThread = async (
+  gh: GhRunner,
+  vars: Vars,
+  marker: string,
+): Promise<{ ok: true; thread?: unknown } | { ok: false; error: string }> => {
+  let after: string | undefined;
+  for (let read = 0; read < THREADS_SEARCHED; read += THREADS_PAGE) {
+    // oxlint-disable-next-line no-await-in-loop -- each page needs the last's cursor
+    const page = await graphql(gh, THREADS, {
+      ...vars,
+      ...(after === undefined ? {} : { after }),
+    });
+    if (!page.ok) return page;
+    const discussions = field(field(page.data, "repository"), "discussions");
+    const nodes = field(discussions, "nodes");
+    const list: readonly unknown[] = Array.isArray(nodes) ? nodes : [];
+    const thread = list.find(node =>
+      text(field(node, "body")).includes(marker),
+    );
+    if (thread !== undefined) return { ok: true, thread };
+    const info = field(discussions, "pageInfo");
+    const cursor = text(field(info, "endCursor"));
+    if (field(info, "hasNextPage") !== true || cursor === "") break;
+    after = cursor;
+  }
+  return { ok: true };
+};
 
 /** Finds where `post` goes, reading only: its thread, or the category. */
 export const planPost = async (
@@ -114,15 +155,13 @@ export const planPost = async (
       error: `No \`${DISCUSSIONS.category}\` category in the Discussions of \`${DISCUSSIONS.owner}/${DISCUSSIONS.name}\`.`,
     };
   }
-  const threads = await graphql(gh, THREADS, { ...where, cat });
-  if (!threads.ok) return threads;
-  const nodes = field(
-    field(field(threads.data, "repository"), "discussions"),
-    "nodes",
+  const found = await findThread(
+    gh,
+    { ...where, cat },
+    fingerprintMarker(post.fingerprint),
   );
-  const marker = fingerprintMarker(post.fingerprint);
-  const list: readonly unknown[] = Array.isArray(nodes) ? nodes : [];
-  const thread = list.find(node => text(field(node, "body")).includes(marker));
+  if (!found.ok) return found;
+  const { thread } = found;
   return thread === undefined
     ? { ok: true, plan: { kind: "create", repo, cat } }
     : {

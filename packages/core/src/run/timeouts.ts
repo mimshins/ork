@@ -119,6 +119,7 @@ export const createClock = (options: {
     human: (channel: HumanChannel): HumanChannel => ({
       permit: request => asking(request.nodeId, () => channel.permit(request)),
       ask: question => asking(question.nodeId, () => channel.ask(question)),
+      ...(channel.settled === undefined ? {} : { settled: channel.settled }),
     }),
     /** Stands still while the node, or a node it owns, waits on the user. */
     forNode: (id: string): Clock => ({

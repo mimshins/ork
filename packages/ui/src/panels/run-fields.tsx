@@ -1,7 +1,8 @@
 /**
  * @file The Run workflow form's fields that depend on the workflow and the CLI:
- *   one per declared input, by its type, the run flags in the CLI's words, and
- *   what it says with no project to run in.
+ *   one per declared input, by its type, the run flags in the CLI's words (the
+ *   driver's field is Propose fix's too), and what it says with no project to
+ *   run in.
  */
 
 import type { WorkflowView } from "@krapht/ork-server/client";
@@ -16,7 +17,7 @@ import type { DriverChoice, InputValues, RunFlags } from "./run-form.ts";
 import styles from "./runs.module.css";
 
 const DRIVERS: readonly { value: DriverChoice; label: string }[] = [
-  { value: "", label: "The workflow's default" },
+  { value: "", label: "The workflow's, else the one ready" },
   { value: "sdk", label: "sdk: API key or cloud provider" },
   { value: "cli", label: "cli: your claude login" },
 ];
@@ -58,6 +59,28 @@ export const InputFields = ({
   </>
 );
 
+/**
+ * Which driver a run takes: `--driver`, or what the workflow names, else the
+ * one ready on this machine when it starts.
+ */
+export const DriverField = ({
+  value,
+  onChange,
+}: {
+  value: DriverChoice;
+  onChange: (driver: DriverChoice) => void;
+}) => (
+  <Select
+    label="Driver"
+    onChange={next => {
+      const driver = DRIVERS.find(option => option.value === next);
+      if (driver !== undefined) onChange(driver.value);
+    }}
+    options={DRIVERS}
+    value={value}
+  />
+);
+
 export const FlagFields = ({
   flags,
   onChange,
@@ -67,13 +90,10 @@ export const FlagFields = ({
 }) => (
   <fieldset className={styles["group"]}>
     <legend className={styles["legend"]}>Flags</legend>
-    <Select
-      label="Driver"
-      onChange={next => {
-        const driver = DRIVERS.find(option => option.value === next);
-        if (driver !== undefined) onChange({ driver: driver.value });
+    <DriverField
+      onChange={driver => {
+        onChange({ driver });
       }}
-      options={DRIVERS}
       value={flags.driver}
     />
     <Checkbox

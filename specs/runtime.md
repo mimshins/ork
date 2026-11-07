@@ -15,15 +15,15 @@ time by [`ork run --node`](./cli/running-and-runs.md#running-one-node). Why:
 ([runtime/types.ts](../packages/core/src/runtime/types.ts));
 `@krapht/ork-runtime-claude` implements it; tests implement it with a fake.
 
-| Type             | What it is                                                                                                                                                                                                                                                                                                                                                          |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ClaudeRuntime`  | `{ driver: "sdk" \| "cli"; start(spec, ports): Session }`                                                                                                                                                                                                                                                                                                           |
-| `SessionPorts`   | what the session reaches besides its spec: the `HumanChannel`, for a leader in a run its `Ownership` (children, worker templates, `delegate`, `spawn`; [scheduler](./scheduler.md#delegation)), for a leader or worker in a run its `Mailbox` on the [message bus](./messaging.md#message-bus), and in a run its `HoldPort` ([run control](./run-control.md#pause)) |
-| `SessionSpec`    | node id, `cwd`, `model`, `effort`, Ork's `plugins` and extra `settings` ([context](./context.md#how-a-nodes-session-is-compiled)), the rendered brief (`prompt`), `systemAppend`, `settingSources` (`project`, `local`; never `user`), tool rules, permission mode, `maxTurns`, `budgetUsd`, the report schema, `resume`                                            |
-| `Session`        | `events` (an async iterable of `RuntimeEvent`), `send(text)` (a user message with `priority: "next"`: Claude Code shows it at the session's next step, mid-turn or not), `interrupt()`                                                                                                                                                                              |
-| `RuntimeEvent`   | `session.started` (with the session's `cwd` and `driver`, so `ork chat` can resume it), `assistant.text`, `tool.called`, `tool.result`, `session.finished` (with the outcome)                                                                                                                                                                                       |
-| `SessionOutcome` | `subtype` (`success` or the driver's error subtype, e.g. `error_max_turns`, `error_driver`), session id, the report or `null`, the final text, usage, errors                                                                                                                                                                                                        |
-| `HumanChannel`   | `permit(tool request)` and `ask(question, options, recommended, context)`; in a run it is the decision queue, where the terminal ([CLI](./cli/running-and-runs.md#questions-and-permissions-on-the-terminal)) races `ork decide` ([messaging](./messaging.md))                                                                                                      |
+| Type             | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ClaudeRuntime`  | `{ driver: "sdk" \| "cli"; start(spec, ports): Session }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `SessionPorts`   | what the session reaches besides its spec: the `HumanChannel`, for a leader in a run its `Ownership` (children, worker templates, `delegate`, `spawn`; [scheduler](./scheduler.md#delegation)), for a leader or worker in a run its `Mailbox` on the [message bus](./messaging.md#message-bus), and in a run its `HoldPort` ([run control](./run-control.md#pause))                                                                                                                                                                                                                                                                                                                            |
+| `SessionSpec`    | node id, `cwd`, `model`, `effort`, Ork's `plugins` and extra `settings` ([context](./context.md#how-a-nodes-session-is-compiled)), the rendered brief (`prompt`), `systemAppend`, `settingSources` (`project`, `local`; never `user`), tool rules (`allow`, `deny`, `only`: the only built-in tools, `strictMcp`: no MCP server but Ork's, `--strict-mcp-config` on the CLI driver, `strictMcpConfig` on the SDK), permission mode, `maxTurns`, `budgetUsd`, the report schema, `resume`, `fork` (with `resume`, a copy of that session: `--fork-session` on the CLI driver, `forkSession` on the SDK; [leader questions](./messaging/leader-questions.md)), `promptCache` (`1h` for a leader) |
+| `Session`        | `events` (an async iterable of `RuntimeEvent`), `send(text)` (a user message with `priority: "next"`: Claude Code shows it at the session's next step, mid-turn or not), `interrupt()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `RuntimeEvent`   | `session.started` (with the session's `cwd` and `driver`, so `ork chat` can resume it), `assistant.text`, `tool.called`, `tool.result`, `session.finished` (with the outcome)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `SessionOutcome` | `subtype` (`success` or the driver's error subtype, e.g. `error_max_turns`, `error_driver`), session id, the report or `null`, the final text, usage, errors                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `HumanChannel`   | `permit(tool request)` and `ask(question, options, recommended, context)`, each with an optional `onNote` that takes the person's [note](./messaging.md#decisions) before the answer resolves; in a run it is the decision queue, where the terminal ([CLI](./cli/running-and-runs.md#questions-and-permissions-on-the-terminal)) races `ork decide` ([messaging](./messaging.md))                                                                                                                                                                                                                                                                                                             |
 
 **Holding a session** ([hold.ts](../packages/runtime-claude/src/hold.ts),
 [tests](../packages/runtime-claude/test/hold.test.ts), ADR-041): with a
@@ -66,7 +66,38 @@ A Claude node ends with **structured output**, not a tool call
 | Ork's skills          | `plugins: [{ type: "local", path }]`                                                                 | `--plugin-dir`                                                                              |
 | Extra settings        | `settings` (e.g. `skillOverrides`)                                                                   | `--settings <json>`                                                                         |
 | Limits and resume     | `maxTurns`, `maxBudgetUsd`, `resume`                                                                 | `--max-turns`, `--max-budget-usd`, `--resume`                                               |
+| A leader's cache      | `env` with `ENABLE_PROMPT_CACHING_1H=1`                                                              | the same variable in the `claude` process's environment                                     |
 | A failure to start    | a `session.finished` event with `subtype: "error_driver"`                                            | the same, with the last stderr line                                                         |
+
+## Which driver a session uses
+
+One rule, for every caller ([driver.ts](../packages/core/src/run/driver.ts)):
+`--driver`, else the node's `driver` (or its agent's), else the workflow's
+`defaults.driver` (the project's `.ork/project.yaml` default included), else the
+driver ready on the machine running it. A workflow is committed, so nothing
+writes one person's driver into it; `ork init`'s starter names none.
+
+- **The one ready** is what `ork doctor`'s own checks find
+  ([ready.ts](../packages/integrations/src/ready.ts)): a `claude` login makes
+  `cli` ready; `ANTHROPIC_API_KEY`, Bedrock, Vertex or Foundry makes `sdk`
+  ready. With both, a run takes `cli`.
+- **`ork run` looks once, before anything starts**, and only when a session node
+  names no driver and `--driver` isn't given
+  ([ready-driver.ts](../packages/cli/src/run/ready-driver.ts)). It says so in
+  one line on stderr:
+  `No driver is named, so the run uses the cli driver: the one ready here (…).`,
+  or `review names no driver, so it uses …` when only some name none. With
+  neither ready the run doesn't start: it names the nodes and gives each
+  driver's hint, as `ork doctor` does.
+- **The run records it** (`settings.readyDriver` on `run.started`), and
+  `ork resume` keeps it, without looking again. A run recorded before this has
+  none, and a resume looks.
+- `--node` looks the same way for its node; `ork chat` resumes a session on the
+  driver it ran with. Detached runs, called runs, the server's Run workflow and
+  Propose fix, and the MCP `start_run` all start `ork run`, so they look the
+  same way, on the machine running it.
+- Tests pass their own checks, so no real `claude` runs
+  ([tests](../packages/cli/test/ready-driver.test.ts)).
 
 ## Ork's MCP server (CLI driver)
 
@@ -95,3 +126,24 @@ sum. The same holds across a resume: a resumed session's cost is the session's
 total so far, when its transcript saved one, while its tokens, turns and
 duration are that process's own; a crash's result may carry zero
 ([usage](./usage.md#what-a-resumed-session-spent)).
+
+## Limits
+
+What the drivers do for now, by choice. The gaps review kept C5, and carried a
+threshold for L171 to the cost benchmark ([register](./gaps.md#limits)).
+
+- **C5 · The SDK driver is covered by unit tests only.** No paid run has used
+  it: the examples ran end to end on the CLI driver (2026-10-31), and pause,
+  links, timeouts, calls and steps have met real sessions on the CLI driver
+  only. On the SDK driver each is checked against the SDK's types and a
+  stand-in, its pause (the hold hook and deferred resume) included. Nor is it
+  measured whether the SDK driver lets a session retry a value outside a Claude
+  schema, as the CLI driver does; Ork checks the value too, so a bad one fails
+  either way. ([examples](../docs/guides/examples.md),
+  [run control](./run-control.md#limits))
+- **L171 · A Claude report's fields are not cut.** A tool's output over 64 KiB
+  is cut, and the whole kept in a run file it names by path
+  ([scheduler](./scheduler.md#built-in-node-types)). A Claude report's `summary`
+  and `output.schema` fields pass through whole, however long, into the run's
+  record and any prompt that reads them. A report names big outputs as files
+  under `artifacts`, by path. ([context](./context.md))

@@ -215,6 +215,13 @@ export const MIGRATIONS: readonly (string | ((db: DatabaseSync) => void))[] = [
    CREATE INDEX feedback_items_merged ON feedback_items (merged_into);`,
   // 14: when a run's process started, to tell it from a later one with its id.
   `ALTER TABLE runs ADD COLUMN process_start TEXT;`,
+  // 15: what a finished run skipped and which failures it handled (G8).
+  `ALTER TABLE runs ADD COLUMN skipped INTEGER;
+   ALTER TABLE runs ADD COLUMN failures_handled INTEGER;`,
+  // 16: what a person said with their answer to a decision (G19).
+  `ALTER TABLE decisions ADD COLUMN note TEXT;`,
+  // 17: the leader that took a child's question first (ADR-063).
+  `ALTER TABLE decisions ADD COLUMN owner TEXT;`,
 ];
 
 const versionOf = (db: DatabaseSync): number =>

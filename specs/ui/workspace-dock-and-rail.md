@@ -17,6 +17,11 @@ a path on one line.
   tab is invalid. **A group's header** carries Minimize and Close, for its
   selected panel, and Maximize and Float, for the whole group. Each has an
   accessible name, and its keys in its tooltip and in `aria-keyshortcuts`.
+- **Each panel** starts with an `<h2>` of its title that only a screen reader
+  sees, since the tab is not a heading, so a panel's `<h3>` cards don't skip a
+  level (WCAG 1.3.1). The narrow window's
+  [stack](./workspace-layout-and-narrow-window.md#a-narrow-window) shows its
+  `<h2>` instead.
 - **A floating group** has no Maximize. Its second button docks it again, beside
   the neighbor it left or on that side of the workspace if the neighbor is gone.
   Where a group came from lasts for the page's life; after a reload it docks at

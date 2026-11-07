@@ -60,6 +60,10 @@ const recordOf = (row: Row): RunRecord => {
   if (parent !== "") record.parent = parent;
   const finished = text(row, "finished_at");
   if (finished !== "") record.finishedAt = finished;
+  const skipped = row?.["skipped"];
+  if (typeof skipped === "number") record.skipped = skipped;
+  const handled = row?.["failures_handled"];
+  if (typeof handled === "number") record.failuresHandled = handled;
   return record;
 };
 
@@ -100,10 +104,10 @@ export const openStore = (
     "INSERT INTO events (run_id, seq, at, type, node, data) VALUES (?, ?, ?, ?, ?, ?)",
   );
   const finishRun = db.prepare(
-    "UPDATE runs SET status = ?, finished_at = ?, cost_usd = ? WHERE id = ?",
+    "UPDATE runs SET status = ?, finished_at = ?, cost_usd = ?, skipped = ?, failures_handled = ? WHERE id = ?",
   );
   const reopenRun = db.prepare(
-    "UPDATE runs SET status = 'running', pid = ?, process_start = ?, finished_at = NULL WHERE id = ?",
+    "UPDATE runs SET status = 'running', pid = ?, process_start = ?, finished_at = NULL, skipped = NULL, failures_handled = NULL WHERE id = ?",
   );
   const addCost = db.prepare(
     "UPDATE runs SET cost_usd = cost_usd + ? WHERE id = ?",
@@ -188,7 +192,15 @@ export const openStore = (
           insertFeedback(runId, seq, at, event.node, event.feedback);
         }
         if (event.type === "run.finished") {
-          finishRun.run(event.result.status, at, event.result.costUsd, runId);
+          const { status, costUsd, skipped, failuresHandled } = event.result;
+          finishRun.run(
+            status,
+            at,
+            costUsd,
+            skipped ?? null,
+            failuresHandled ?? null,
+            runId,
+          );
         }
         return { runId, seq, at, event };
       }),

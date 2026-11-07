@@ -1,7 +1,8 @@
 /**
  * @file Tests for RFC-005 in the engine: who a tool node may write to, the
  *   compile checks on channels and `notify:`, a rule's firing, and a message's
- *   `via`, through the bus and a resumed run.
+ *   `via`, through the bus and a resumed run, and the result naming mail to a
+ *   node that never ran.
  */
 
 import { parseWorkflow } from "@krapht/ork-schema";
@@ -597,12 +598,14 @@ edges:
       },
     });
     live.handle = handle;
-    await handle.done;
+    const result = await handle.done;
     const types = events.map(e => e.type);
     expect(types.indexOf("message.received")).toBeGreaterThan(-1);
     expect(types.indexOf("message.received")).toBeLessThan(
       types.indexOf("run.finished"),
     );
+    // `later` never ran, so the message stays unread, and the result says so.
+    expect(result.unread).toEqual([{ node: "later", messages: 1 }]);
   });
 });
 

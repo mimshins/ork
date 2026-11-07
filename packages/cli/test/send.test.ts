@@ -112,7 +112,7 @@ nodes:
     type: tool.shell
     command: sh -c '"$ORK_BIN" send gone -m hi 2> refused.txt; echo "failed with $T" | "$ORK_BIN" send later --stdin; echo "sent $?"'
     env: { T: "{{env.ORK_TEST_TOKEN}}" }
-  later: { type: claude.worker, prompt: never starts, isolation: readonly }
+  later: { type: claude.worker, prompt: never starts, isolation: readonly, driver: cli }
 edges:
   - { from: check, to: later, when: "exitCode == 99" }
 messages:

@@ -1,7 +1,8 @@
 /**
- * @file The `human.gate` node type: asks the human the rendered question, and
- *   answers with the `default` when the `timeout` passes. The timeout counts
- *   only while the run and the gate are not paused (ADR-041).
+ * @file The `human.gate` node type: asks the human the rendered question,
+ *   outputs their choice with the note they gave, and answers with the
+ *   `default` when the `timeout` passes. The timeout counts only while the run
+ *   and the gate are not paused (ADR-041).
  */
 
 import {
@@ -30,8 +31,8 @@ const choiceOf = (option: DecisionOption): DecisionChoice => {
 };
 
 /**
- * Asks the human and outputs `choice` and `answeredBy`. With `timeout`, the
- * `default` answers when no one has.
+ * Asks the human and outputs `choice`, `answeredBy` and `note` (empty when they
+ * said nothing). With `timeout`, the `default` answers when no one has.
  */
 export const gateExecutor: NodeExecutor = async context => {
   const { node } = context;
@@ -51,16 +52,20 @@ export const gateExecutor: NodeExecutor = async context => {
     withdraw.abort();
   });
 
+  let note = "";
   const asked: Parameters<typeof context.human.ask>[0] = {
     nodeId: context.id,
     question,
     options,
     signal: withdraw.signal,
+    onNote: given => {
+      note = given;
+    },
   };
   if (node.recommended !== undefined) asked.recommended = node.recommended;
   const answer = context.human
     .ask(asked)
-    .then(choice => ({ choice, answeredBy: "user" }));
+    .then(choice => ({ choice, answeredBy: "user", note }));
 
   const ms = timeoutMs(node.timeout);
   // Ends the timer once the gate is answered, so it holds nothing open.
@@ -73,7 +78,11 @@ export const gateExecutor: NodeExecutor = async context => {
             // Answered first: this side of the race is already lost.
             if (!elapsed) return NEVER;
             withdraw.abort();
-            return { choice: node.default ?? "", answeredBy: "timeout" };
+            return {
+              choice: node.default ?? "",
+              answeredBy: "timeout",
+              note: "",
+            };
           }),
         ];
   try {

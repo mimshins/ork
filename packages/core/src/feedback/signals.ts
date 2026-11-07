@@ -226,7 +226,8 @@ export const createSignals = (
     }
     if (event.type !== "node.event") return;
     const inner = event.event;
-    if (inner.type === "session.started") {
+    // A leader's fork is not its own session (ADR-063).
+    if (inner.type === "session.started" && inner.fork !== true) {
       sessions.set(event.id, {
         model: inner.model,
         ...(inner.driver === undefined ? {} : { driver: inner.driver }),

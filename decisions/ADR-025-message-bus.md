@@ -1,6 +1,6 @@
 # ADR-025 — Nodes message each other with a notice, then a pull
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-044](./ADR-044-relay-between-runs.md)
 - **Date:** 2026-10-30
 - **Topic:** engine / message bus
 - **RFC:** waived — the author chose notice-then-pull when the M1d task spec was

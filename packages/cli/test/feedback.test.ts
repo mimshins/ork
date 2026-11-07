@@ -21,6 +21,7 @@ import {
   noteRun,
   runWorkflowFile,
 } from "../src/index.ts";
+import { sdkReady } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
@@ -65,6 +66,7 @@ describe("feedback in a run", () => {
       inPlace: true,
       json: false,
       runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
+      driverChecks: sdkReady,
       human: contrary,
       store,
       home: mkdtempSync(path.join(tmpdir(), "ork-home-")),

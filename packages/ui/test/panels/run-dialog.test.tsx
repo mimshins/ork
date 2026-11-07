@@ -1,7 +1,8 @@
 /**
  * @file Tests for the Run workflow dialog: it picks what has only one choice,
  *   shows a workflow's inputs and its CLI twin, keeps Start disabled with the
- *   reason, starts the run and selects it, and keeps the server's refusal.
+ *   reason, starts the run and selects it, sends the focus to the run where it
+ *   shows, and keeps the server's refusal.
  */
 
 import { act, cleanup, screen, waitFor } from "@testing-library/react";
@@ -10,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MonitorPanel } from "../../src/panels/monitor-panel.tsx";
 import { RunDialog } from "../../src/panels/run-dialog.tsx";
+import { RunsPanel } from "../../src/panels/runs-panel.tsx";
 import { violations } from "../axe.ts";
 import { stubWindow } from "../dom.ts";
 import { runView } from "../state/fixtures.ts";
@@ -42,6 +44,30 @@ const open = async (routes: FakeRoutes = ONE) => {
 };
 
 const startButton = () => screen.getByRole("button", { name: "Start run" });
+
+/** The dialog beside the Runs panel, opened by the palette, not the panel. */
+const openWithRuns = async () => {
+  const opened = openPanelState(ONE);
+  renderPanel(
+    opened.state,
+    <>
+      <RunDialog />
+      <RunsPanel />
+    </>,
+  );
+  await act(async () => {
+    opened.overview.send("runs", []);
+    opened.overview.send("decisions", []);
+    await opened.state.runDialog.setValue(true);
+  });
+  return opened;
+};
+
+/** Fills in what `build` needs, and starts it. */
+const startBuild = async () => {
+  await userEvent.type(await screen.findByLabelText(/^feature/u), "csv");
+  await userEvent.click(startButton());
+};
 
 const isDisabled = (element: HTMLElement): boolean =>
   element.hasAttribute("disabled") ||
@@ -183,6 +209,31 @@ describe("the Run workflow dialog", () => {
     await waitFor(() => {
       expect(document.activeElement).toBe(
         document.querySelector('[data-run-heading="new11111"]'),
+      );
+    });
+  });
+
+  it("goes to the Runs panel with no Monitor showing the new run", async () => {
+    const opened = await openWithRuns();
+    await startBuild();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(
+        screen.getByRole("button", { name: "Run workflow" }),
+      );
+    });
+    expect(opened.state.runDialog.getValue()).toBe(false);
+  });
+
+  it("goes to the new run's row if the Runs panel lists it already", async () => {
+    const opened = await openWithRuns();
+    await act(async () => {
+      opened.overview.send("runs", [runView("new11111")]);
+      await Promise.resolve();
+    });
+    await startBuild();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(
+        document.querySelector('[data-run-row="new11111"]'),
       );
     });
   });

@@ -1,5 +1,6 @@
 /**
- * @file Setting up: `ork init` scaffolds `.ork/` in a project, records it, and
+ * @file Setting up: `ork init` scaffolds `.ork/` in a project, with a starter
+ *   that names no driver (it says which a run takes here), records it, and
  *   links the tool folders it uses; `ork link` points tools' agents and skills
  *   folders at `.ork/` (never in an attached project); `ork agents` lists,
  *   shows, adds and removes the agents nodes can take. `ork doctor` and `ork
@@ -20,7 +21,11 @@ import { defineCommand } from "citty";
 
 import { addAgent, formatAgent, formatAgents } from "../agents/manage.ts";
 import { style, write, writeErr } from "../output.ts";
-import { initRecorded } from "../project/init.ts";
+import {
+  initDriverLineHere,
+  initRecorded,
+  STARTER_FILE,
+} from "../project/init.ts";
 import { formatLinks } from "../project/link.ts";
 import { projectAt } from "../project/place.ts";
 import { skillsStep } from "../project/skills-step.ts";
@@ -46,10 +51,12 @@ export const init = defineCommand({
     },
   },
   run: async ({ args }) => {
+    const cwd = process.cwd();
+    const driverLine = await initDriverLineHere(cwd);
     const store = openStore();
     let result: ReturnType<typeof initRecorded>;
     try {
-      result = initRecorded(store, process.cwd(), { link: args.link });
+      result = initRecorded(store, cwd, { link: args.link });
     } finally {
       store.close();
     }
@@ -61,10 +68,13 @@ export const init = defineCommand({
     const { created, skipped, links } = result;
     for (const item of created) write(`${style("green", "created")} ${item}`);
     for (const item of skipped) write(`${style("dim", "exists")}  ${item}`);
+    if (driverLine !== null && created.includes(STARTER_FILE)) {
+      write(driverLine);
+    }
     for (const line of formatLinks(links.filter(l => l.state !== "linked"))) {
       write(line);
     }
-    await skillsStep(process.cwd(), { skills: args.skills, link: args.link });
+    await skillsStep(cwd, { skills: args.skills, link: args.link });
     write(
       `\nNext: edit ${WORKFLOW_DIR}/, then run ${style("bold", "ork validate")}.`,
     );
@@ -78,6 +88,12 @@ export const link = defineCommand({
       "Point tools' agents and skills folders (.claude/agents, …) at .ork/",
   },
   args: {
+    tools: {
+      type: "positional",
+      description:
+        "The tools to link, e.g. claude opencode (default: the ones the project already uses)",
+      required: false,
+    },
     check: {
       type: "boolean",
       description: "Only show each folder's state; change nothing",

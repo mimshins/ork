@@ -13,6 +13,7 @@ import {
   CORE,
   ENGINE,
   NODE_TYPES,
+  QUESTIONS,
   ROLES,
   RUNTIME,
   STORE,
@@ -102,12 +103,19 @@ export const NODES = [
       "A taken edge hands its source's output to its target as input.",
       "A node runs whenever any incoming edge is taken; only a join waits.",
       "Dead paths: a node whose every way in resolved as not taken is skipped, and so is what only it leads to.",
+      "An edge whose source can't run any more in this round counts as not taken, so a branch a loop didn't go back to never leaves a node waiting.",
       "A node that failed and took no edge fails the run; other branches still finish.",
     ],
     see: [
       { map: "lifecycle", node: "scheduler", label: "The scheduler in a run" },
     ],
-    docs: [ENGINE.scheduler, ENGINE.routing, ENGINE.tests, ROLES.activations],
+    docs: [
+      ENGINE.scheduler,
+      ENGINE.routing,
+      ENGINE.tests,
+      ENGINE.rounds,
+      ROLES.activations,
+    ],
   },
   {
     id: "delegation",
@@ -240,11 +248,11 @@ export const NODES = [
       "The one node that waits. `all` fires once every input resolved, `any` on the first input that ran, `n` once `n` ran; it is skipped when not enough of them ran.",
     facts: [
       "It outputs `statuses`, `results` and `count` for conditions such as `any(statuses, 'changes_requested')`.",
-      "A skipped input resolves the join's wait without running, so a join never hangs on a dead branch.",
+      "A skipped input resolves the join's wait without running, so a join never hangs on a dead branch, in a later round of a loop too, for `all` and `any` alike.",
       "A join with fewer than two inputs is a `join.inputs` warning.",
     ],
     see: [{ map: "lifecycle", node: "reviews", label: "A join in a run" }],
-    docs: [ENGINE.routing, ENGINE.tests, ROLES.control],
+    docs: [ENGINE.routing, ENGINE.tests, ENGINE.rounds, ROLES.control],
   },
   {
     id: "loop",
@@ -278,7 +286,7 @@ export const NODES = [
       "A `human.gate` anywhere in the flow: it asks you a question and outputs your `choice`, which its outgoing edges read in `when:`. With a `timeout` and a `default`, an unattended run carries on.",
     facts: [
       "It works nowhere: a readonly node after it looks back through it to the node before.",
-      "It outputs `choice` and `answeredBy` (`user` or `timeout`).",
+      "It outputs `choice`, `answeredBy` (`user` or `timeout`) and `note`, what you said with your answer: a later node reads `{{nodes.<gate>.output.note}}`.",
       "Answered from the run's terminal or `ork decide`.",
     ],
     see: [{ map: "messaging", label: "How a question reaches you" }],
@@ -401,9 +409,23 @@ export const NODES = [
       "Before its children start, Ork commits its work, so they branch from it.",
       "A re-entered leader resumes its session, keeping its context.",
       "`maxWorkers` caps how many workers it may spawn (default 0).",
+      "`questions: owner` sends the `ask_user` of the leaders and workers it owns to a read-only fork of its session first, which answers or passes it on to you; `user`, the default, sends them to you. Set on a leader with no such child, it is `questions.no-children`.",
     ],
-    see: [{ map: "lifecycle", node: "builder", label: "A leader in a run" }],
-    docs: [ENGINE.delegation, ENGINE.delegationTests, ROLES.delegation],
+    see: [
+      { map: "lifecycle", node: "builder", label: "A leader in a run" },
+      {
+        map: "messaging",
+        journey: "leader-first",
+        label: "A child asks its leader first",
+      },
+    ],
+    docs: [
+      ENGINE.delegation,
+      ENGINE.delegationTests,
+      ROLES.delegation,
+      QUESTIONS.spec,
+      QUESTIONS.owners,
+    ],
   },
   {
     id: "root",
@@ -528,6 +550,8 @@ export const NODES = [
       "What the run says when it ends: its status (`succeeded`, `failed`, `budget_exhausted`, `timed_out`, `interrupted`), each node that ran or was skipped, why it did not succeed, and the worktrees it left.",
     facts: [
       "A run fails when a node failed and took no edge; its reason names the node.",
+      "A run that skipped nodes or handled a failure still reads `succeeded` and counts both: `2 ran, 1 skipped, 1 failure handled`.",
+      "A run left with a node still waiting fails with an `ork engine error:` reason: a bug in Ork, not in the workflow.",
       "Recorded in the event store; `ork ps`, `ork logs` and `ork tree` read it.",
     ],
     see: [

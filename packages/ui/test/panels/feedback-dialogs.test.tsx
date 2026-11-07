@@ -1,9 +1,10 @@
 /**
  * @file Tests for the Feedback panel's dialogs on a fake server: a lesson names
  *   its file and how full it is, follows its words in its CLI twin, and keeps a
- *   refusal; Propose fix names the project, starts the run and goes to the
- *   Monitor; publishing reads a preview, posts only on Post with the digest it
- *   showed, shows a changed text again, and says nothing was sent on Cancel.
+ *   refusal; Propose fix names the project, takes a driver, starts the run and
+ *   goes to the Monitor; publishing reads a preview, posts only on Post with
+ *   the digest it showed, shows a changed text again, and says nothing was sent
+ *   on Cancel.
  */
 
 import { cleanup, screen, within } from "@testing-library/react";
@@ -156,6 +157,30 @@ describe("proposing a fix", () => {
     expect(opened.goTo).toHaveBeenCalledWith("monitor");
     expect(opened.state.selection.getValue().run).toBe("fix11111");
     expect(opened.state.takeArrival("fix11111")).toBe(true);
+  });
+
+  it("takes a driver, in its command and its request", async () => {
+    const opened = await openFeedback();
+    await choose(LOOP_TITLE);
+    await userEvent.click(
+      actions().getByRole("button", { name: "Propose fix…" }),
+    );
+    const confirm = await screen.findByRole("alertdialog");
+    expect(
+      within(confirm).getByRole("combobox", { name: "Driver" }).textContent,
+    ).toContain("The workflow's, else the one ready");
+    await pick("Driver", "cli: your claude login");
+    expect(
+      within(confirm).getByText("ork feedback apply 9fae0c1d2e3f --driver cli"),
+    ).toBeDefined();
+    expect(await violations(confirm)).toEqual([]);
+    await userEvent.click(
+      within(confirm).getByRole("button", { name: "Start run" }),
+    );
+    await screen.findByText("Run fix11111 started");
+    expect(asked(opened, "apply")).toEqual([
+      { route: "apply", id: LOOP, body: { driver: "cli" } },
+    ]);
   });
 
   it("keeps a refusal in the dialog, and starts nothing", async () => {

@@ -14,6 +14,7 @@ import {
   DESIGN,
   LINKS,
   NODE_TYPES,
+  QUESTIONS,
   RUNTIME,
   SCHEMA,
   STORE,
@@ -100,9 +101,11 @@ export const NODES = [
     facts: [
       "`ork decide <run>` limits it to one run, `--all` to every project; `--id … --choose …` answers without a prompt.",
       "The first answer wins, whether from here or the run's own terminal.",
+      "`--say <text>` gives the answer a note, which goes to the run with it.",
       "`--note <text>` and `--rating good|bad` note how the node did, as your feedback, once the answer is taken.",
+      "`--list` shows a question a leader passed on as `<node> via <leader>`.",
     ],
-    docs: [DESIGN.cli, CONTROL.commands, CONTROL.cliTests],
+    docs: [DESIGN.cli, CONTROL.commands, CONTROL.cliTests, CONTROL.say],
   },
   {
     id: "inbox",
@@ -117,8 +120,10 @@ export const NODES = [
       "The browser view of the same decisions, shaped like a question tool: the question, its options with descriptions, the recommended one marked.",
     facts: [
       "Every open decision across runs, answered with a click, a digit, or Enter on the card for the recommended one.",
+      "An optional note box sends your words with the answer; keys typed in it stay in it.",
       "A card stays until the stream says it settled, and a refusal stays in it in the server's words.",
-      "Settled lists who answered: in the run's terminal, with `ork decide` or in `ork ui`.",
+      "Settled lists who answered, in the run's terminal, with `ork decide` or in `ork ui`, and what they said.",
+      'A question a leader passed on says "passed on by" the leader; one it answered is settled "by" the leader, "its owner".',
     ],
     see: [{ map: "architecture", node: "ui", label: "The UI" }],
     docs: [DESIGN.ui, UI.guide, UI.panels, UI.decisions, UI.decisionTests],
@@ -280,6 +285,9 @@ export const NODES = [
       "Question, options (each with an optional description), recommended option, context; stored in `~/.ork/state.db`.",
       "Optional `timeout` and `default` for unattended runs; a withdrawn question is closed unanswered.",
       "Other processes write answers to the store and wake the run on its socket.",
+      "An answer may carry a note, stored masked: a gate outputs it, `ask_user` returns it, a denied tool's message ends with it.",
+      "With `questions: owner` on a leader, a child's `ask_user` goes first to a read-only fork of the leader's session, which answers it or passes it on with a note. Gates and permission prompts always come to you.",
+      "Each answer records who gave it: `terminal`, `decide`, `ui`, or `owner`, with the leader that answered named in `owner`.",
     ],
     see: [
       {
@@ -293,7 +301,15 @@ export const NODES = [
         label: "Proposed fixes: keep or discard",
       },
     ],
-    docs: [DESIGN.messaging, CONTROL.queue, CONTROL.control, CONTROL.tests],
+    docs: [
+      DESIGN.messaging,
+      CONTROL.queue,
+      CONTROL.control,
+      CONTROL.tests,
+      CONTROL.notesAdr,
+      QUESTIONS.spec,
+      QUESTIONS.adr,
+    ],
   },
   {
     id: "events",
@@ -309,6 +325,8 @@ export const NODES = [
       "Messages, owner questions and decisions are events like everything else, stored in the event store, so a run's messages and decisions can be read back with `ork logs`.",
     facts: [
       "`message.sent`, `message.received`, `message.read`, `link.notice`, `owner.asked`, `owner.answered`, `owner.unanswered`, `decision.opened`, `decision.answered`, `decision.withdrawn`.",
+      "`decision.opened` and `decision.answered` carry `owner` when a leader passed a question on or answered it.",
+      "A leader's fork is logged as the leader's own events, with `fork: true` on `session.started` and `session.finished`; its cost counts against the leader.",
       "Chats in the UI are views over these events (milestone 2).",
     ],
     see: [
@@ -425,8 +443,8 @@ export const NODES = [
     summary:
       "How a session reaches the rest of the run: ordinary tool calls that Ork answers.",
     facts: [
-      "Built: `ask_user(question, options, recommended, context)`, a decision answered on the terminal or with `ork decide`.",
-      "Built: `send_message(to, body)`, `read_inbox()` and `wait_for_messages(timeoutSeconds?)` for every leader and worker, since a link can come later (with `links: off`, only those with someone to reach, or that a program or a rule can write to), and `answer(question, choice)` for leaders.",
+      "Built: `ask_user(question, options, recommended, context)`, a decision answered on the terminal or with `ork decide`; it returns the choice and any note. Under a leader with `questions: owner`, the leader's fork may answer it first.",
+      "Built: `send_message(to, body)`, `read_inbox()` and `wait_for_messages(timeoutSeconds?)` for every leader and worker, since a link can come later (with `links: off`, only those with someone to reach, or that a program or a rule can write to), and `answer(question, choice, note?)` for leaders.",
       "Built: `claim(resource)` and `release(resource)` for nodes that may write while another does; an overlapping claim is refused with who holds it, and the claimant hears when it is released. The report is structured output, not a tool.",
       "Built, for leaders: `delegate([{ child, brief }])` and `spawn_worker([{ template, brief }])`, blocking until every child has reported.",
       "Built: `feedback(kind, target, …)` reports what got in the way, capped at 3 per session.",
@@ -486,9 +504,11 @@ export const NODES = [
       "The owner of the reviewers. It can always message them and they it; it delegates, receives their reports and handles their escalations.",
     facts: [
       "While it works, Ork asks it, not you, about a loop of the nodes it owns; it replies with `answer`.",
+      "With `questions: owner`, a read-only fork of its latest session takes its reviewers' `ask_user` first: at most 3 turns, no write tools, the run's budget. Its own session is left as it was, so this works while it waits in `delegate`. `software-factory` leaves it at `user`.",
+      "Checked against stand-in sessions only; a real fork of a leader waiting in `delegate` is unproven (G25).",
       "You can chat with it while it works, or after, by resuming its session.",
     ],
-    docs: [SCHEMA.example],
+    docs: [SCHEMA.example, QUESTIONS.spec, QUESTIONS.asks, QUESTIONS.tests],
   },
   {
     id: "securityS",

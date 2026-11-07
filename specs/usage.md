@@ -74,7 +74,7 @@ cache write.
 | `cache`        | Under 50% of 100,000 or more input tokens came from cache |
 
 Costs are Claude Code's own estimates. On a subscription they are not what the
-user is billed ([L74](./gaps/limits-usage.md)).
+user is billed ([L74](./usage/limits.md)).
 
 ## Limits across runs
 
@@ -119,8 +119,8 @@ another project counts there and against the user's caps.
 - **A called run** reads the quotas for itself, so its `--budget-cap` is only
   its caller's budget.
 
-A cap can be passed ([L99](./gaps/limits-usage.md)) and sees only this store
-([L100](./gaps/limits-usage.md)).
+A cap can be passed ([L99](./usage/limits.md)) and sees only this store
+([L100](./usage/limits.md)).
 
 ## `ork usage`
 
@@ -149,7 +149,7 @@ ended links, including those shared with a run that stays, and the run's folder.
 It lists them and asks first, and looks again after the answer. The store's file
 then shrinks, unless a run is going or the store is busy: its free space is used
 first, and the next prune tries again. Ork never prunes on its own
-([L72](./gaps/limits-ledger.md)).
+([L72](./usage/ledger-limits.md)).
 
 What stays: the ledger, so `ork usage` is unchanged, and feedback records.
 
@@ -160,7 +160,7 @@ A run stays, and says why, if it:
 - has a worktree or branch left, since `ork worktrees` finds those through its
   events. `ork worktrees clean` deals with them first. If git fails, the run
   stays and says so; a project folder that is gone or no longer a repository has
-  nothing left to clean up ([L78](./gaps/limits-ledger.md));
+  nothing left to clean up ([L78](./usage/ledger-limits.md));
 - belongs to a call with a run that must stay, or that is out of scope. A run
   and the runs it called go together or not at all.
 
@@ -169,3 +169,8 @@ that cannot be removed; each is reported and the command exits with an error.
 
 A pruned run reads as an unknown run: `ork logs`, `ork chat` and `ork resume`
 say there is no such run.
+
+## Contents
+
+- [Limits: usage and quotas](./usage/limits.md)
+- [Limits: the usage ledger and pruning](./usage/ledger-limits.md)

@@ -425,6 +425,12 @@ const sessionFinished = (id: string, sessionId: string, cost: number) => {
     : event;
 };
 
+/** The same session event, as a leader's fork's (ADR-063). */
+const forkOf = (event: RunEvent): RunEvent =>
+  event.type === "node.event"
+    ? { ...event, event: { ...event.event, fork: true } }
+    : event;
+
 /** What a run has spent after one session reported these totals. */
 const spentAfter = (totals: readonly number[]): number => {
   const counter = createSpend(100);
@@ -519,6 +525,20 @@ describe("what a resumed run starts from", () => {
     const stored = result("s", 3);
     expect(counter.count("n", stored, true)).toBe(stored);
     expect(counter.total()).toBe(3);
+  });
+
+  it("keeps a fork's spend, whether or not the leader it forked finished", () => {
+    const forked = forkOf(sessionFinished("n", "fork-1", 0.5));
+    const cutOff = earlierSpend([...cut.slice(0, 2), forked]);
+    expect(cutOff.total).toBe(0.5);
+    expect(cutOff.forks).toEqual(new Map([["n", 0.5]]));
+    // The leader's own session, cut off, still counts its whole next total.
+    const counter = createSpend(10, cutOff);
+    expect(counter.count("n", result("s", 5), false).usage?.costUsd).toBe(5);
+    expect(counter.total()).toBe(5.5);
+
+    const after = earlierSpend([...cut.slice(0, 2), forked, ...cut.slice(2)]);
+    expect(after.total).toBe(3.5);
   });
 
   it("is what a run's budget goes on from", () => {

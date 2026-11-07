@@ -31,7 +31,7 @@ const sdk: ClaudeDriver = {
       name,
       status: "warn",
       detail: "no API key or cloud provider",
-      hint: "Set ANTHROPIC_API_KEY (or CLAUDE_CODE_USE_BEDROCK=1 / CLAUDE_CODE_USE_VERTEX=1) to use the SDK driver.",
+      hint: "Set ANTHROPIC_API_KEY (or CLAUDE_CODE_USE_BEDROCK=1 / CLAUDE_CODE_USE_VERTEX=1 / CLAUDE_CODE_USE_FOUNDRY=1) to use the SDK driver.",
     });
   },
 };
@@ -102,7 +102,10 @@ const cli: ClaudeDriver = {
   },
 };
 
-/** The registry of Claude drivers; the first is the default. */
+/**
+ * The registry of Claude drivers, in the order `ork doctor` lists them. None is
+ * a default: a run takes the one ready here (`ready.ts`).
+ */
 export const CLAUDE_DRIVERS = [sdk, cli] as const;
 
 export type DriverId = "sdk" | "cli";

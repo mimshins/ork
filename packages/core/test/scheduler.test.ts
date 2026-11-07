@@ -194,6 +194,32 @@ describe("the scheduler", () => {
       "escalated",
     ]);
     expect(result.nodes.find(n => n.id === "reviews")?.runs).toBe(2);
+    expect(result).toMatchObject({ skipped: 1, failuresHandled: 0 });
+  });
+
+  it("keeps a run that skipped nodes and handled a failure `succeeded`, and counts both", async () => {
+    const graph = workflow(
+      [
+        "a: { type: claude.worker }",
+        "cleanup: { type: claude.worker }",
+        "ship: { type: claude.worker }",
+      ],
+      [
+        "{ from: a, to: cleanup, when: \"status == 'fail'\" }",
+        "{ from: a, to: ship, when: \"status == 'pass'\" }",
+      ],
+    );
+    const { executor } = scripted({
+      a: [{ output: { status: "fail", summary: "red" }, error: "red" }],
+    });
+    const { result, of } = await run(graph, allTypes(executor));
+    expect(ids(of("node.skipped"))).toEqual(["ship"]);
+    expect(result).toMatchObject({
+      status: "succeeded",
+      reasons: [],
+      skipped: 1,
+      failuresHandled: 1,
+    });
   });
 
   it("retries a first node through its own loop edge", async () => {

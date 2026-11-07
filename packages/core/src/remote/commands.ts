@@ -33,6 +33,18 @@ const notRunning = (run: RunRecord): string | null => {
     : `Run ${run.id} is not running (${status}).`;
 };
 
+/**
+ * A run of one node (`ork run <wf> --node n`) has no scheduler to hold or to
+ * fail one node through, so it takes only a stop of the whole run.
+ */
+const oneNode = (
+  run: RunRecord,
+  cannot: "pause or continue" | "stop by name",
+): string | null =>
+  run.id.startsWith("node-")
+    ? `Run ${run.id} runs one node, which it cannot ${cannot}; stop the whole run instead: ork stop ${run.id}`
+    : null;
+
 /** Every node of a run's tree, spawned instances included. */
 export const flattenTree = (nodes: readonly TreeNode[]): TreeNode[] =>
   nodes.flatMap(node => [node, ...flattenTree(node.children)]);
@@ -63,6 +75,8 @@ const stopRefusal = (
 ): string | null => {
   const refused = notRunning(run);
   if (refused !== null || node === undefined) return refused;
+  const single = oneNode(run, "stop by name");
+  if (single !== null) return single;
   const named = stateOf(store, run).nodes.filter(
     n => n.id === node || n.template === node,
   );
@@ -77,7 +91,7 @@ const pauseRefusal = (
   run: RunRecord,
   node: string | undefined,
 ): string | null => {
-  const refused = notRunning(run);
+  const refused = notRunning(run) ?? oneNode(run, "pause or continue");
   if (refused !== null) return refused;
   const { paused, nodes } = stateOf(store, run);
   if (paused.run) return `Run ${run.id} is already paused.`;
@@ -95,7 +109,7 @@ const continueRefusal = (
   run: RunRecord,
   node: string | undefined,
 ): string | null => {
-  const refused = notRunning(run);
+  const refused = notRunning(run) ?? oneNode(run, "pause or continue");
   if (refused !== null) return refused;
   const { paused } = stateOf(store, run);
   if (node === undefined) {

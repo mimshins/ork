@@ -298,8 +298,47 @@ describe("human gates", () => {
     expect(asked).toEqual(["Merge ork/r1/builder? merge/reject reject"]);
     expect(result).toEqual({
       ok: true,
-      output: { choice: "merge", answeredBy: "user" },
+      output: { choice: "merge", answeredBy: "user", note: "" },
     });
+  });
+
+  it("outputs the note given with the answer, for a later node's template", async () => {
+    const noted: HumanChannel = {
+      ask: ({ onNote }) => {
+        onNote?.("Cut the API section");
+        return Promise.resolve("reject");
+      },
+      permit: () => Promise.resolve({ allow: true }),
+    };
+    const answered = await gateExecutor(
+      context("approve", gate, { human: noted }),
+    );
+    expect(answered).toEqual({
+      ok: true,
+      output: {
+        choice: "reject",
+        answeredBy: "user",
+        note: "Cut the API section",
+      },
+    });
+
+    const { runner, calls } = recordingRunner();
+    const next = context(
+      "tell",
+      {
+        type: "tool.gh",
+        command: "issue comment 1 --body {{nodes.approve.output.note}}",
+        allow: ["issue comment"],
+      },
+      { outputs: { approve: answered.output } },
+    );
+    await toolExecutor(runner)(next);
+    expect(calls).toEqual([
+      {
+        program: "gh",
+        args: ["issue", "comment", "1", "--body", "Cut the API section"],
+      },
+    ]);
   });
 
   it("answers with the default when the timeout passes", async () => {
@@ -318,7 +357,7 @@ describe("human gates", () => {
     const result = await gateExecutor(context("g", timed, { human: silent }));
     expect(result).toEqual({
       ok: true,
-      output: { choice: "reject", answeredBy: "timeout" },
+      output: { choice: "reject", answeredBy: "timeout", note: "" },
     });
     expect(withdrawn).toBe(true);
     expect(timeoutMs("15m")).toBe(900_000);
@@ -356,7 +395,7 @@ describe("human gates", () => {
     holds.proceed();
     expect(await result).toEqual({
       ok: true,
-      output: { choice: "reject", answeredBy: "timeout" },
+      output: { choice: "reject", answeredBy: "timeout", note: "" },
     });
   });
 });
@@ -412,6 +451,27 @@ const unreadAfter = (sessions: number): number => Number(sessions === 1);
 const capOf = (cap: number | undefined): { budgetUsd?: number } =>
   cap === undefined ? {} : { budgetUsd: cap };
 
+/** A Claude executor with `options`, and the drivers it started. */
+const executing = (options: { driver?: "cli"; readyDriver?: "sdk" }) => {
+  const drivers: string[] = [];
+  const execute = claudeExecutor({
+    runtimeFor: driver => {
+      drivers.push(driver);
+      return Promise.resolve({
+        driver,
+        start: () => ({
+          events: finishedPassing(),
+          send: () => {},
+          interrupt: () => Promise.resolve(),
+        }),
+      });
+    },
+    inPlace: true,
+    ...options,
+  });
+  return { execute, drivers };
+};
+
 describe("Claude nodes", () => {
   it("keeps the session when a late turn never started one", () => {
     const first = outcome(null);
@@ -450,6 +510,7 @@ describe("Claude nodes", () => {
     };
     const execute = claudeExecutor({
       runtimeFor: () => Promise.resolve(runtime),
+      readyDriver: "sdk",
       inPlace: true,
     });
     const node: Node = { type: "claude.worker", prompt: "Fix" };
@@ -498,6 +559,7 @@ describe("Claude nodes", () => {
       };
       const execute = claudeExecutor({
         runtimeFor: () => Promise.resolve(runtime),
+        readyDriver: "sdk",
         inPlace: true,
       });
       const node: Node = { type: "claude.worker", prompt: "Fix" };
@@ -678,6 +740,32 @@ describe("Claude nodes", () => {
     expect(specs[0]?.prompt).toContain('"changes_requested"');
   });
 
+  describe("the driver", () => {
+    it("is the node's own, over the one ready", async () => {
+      const { execute, drivers } = executing({ readyDriver: "sdk" });
+      const node: Node = { type: "claude.worker", prompt: "x", driver: "cli" };
+      await execute(context("fix", node));
+      expect(drivers).toEqual(["cli"]);
+    });
+
+    it("is the one ready, when nothing names one", async () => {
+      const { execute, drivers } = executing({ readyDriver: "sdk" });
+      await execute(context("fix", { type: "claude.worker", prompt: "x" }));
+      expect(drivers).toEqual(["sdk"]);
+    });
+
+    it("leaves the node not started when there is none", async () => {
+      const { execute, drivers } = executing({});
+      const result = await execute(
+        context("fix", { type: "claude.worker", prompt: "x" }),
+      );
+      expect(drivers).toEqual([]);
+      expect(result.error).toBe(
+        "not started: no Claude driver is ready; see `ork doctor`",
+      );
+    });
+  });
+
   it("gives a leader its children, and resumes it with only the new task", async () => {
     const started: { spec: SessionSpec; ports: SessionPorts }[] = [];
     const runtime: ClaudeRuntime = {
@@ -693,6 +781,7 @@ describe("Claude nodes", () => {
     };
     const execute = claudeExecutor({
       runtimeFor: () => Promise.resolve(runtime),
+      readyDriver: "sdk",
       inPlace: true,
     });
     const ownership: Ownership = {
@@ -743,6 +832,7 @@ describe("Claude nodes", () => {
             };
           },
         }),
+      readyDriver: "sdk",
       inPlace: true,
     });
     const node: Node = { type: "claude.worker", prompt: "You fix bugs." };

@@ -33,7 +33,21 @@ its branch afterwards ([worktrees](./worktrees.md)).
   taken is **skipped**, and its outgoing edges are not taken. So a join never
   waits on a branch that will not run, and a branch can be skipped in one round
   and run in the next.
-- The run ends when nothing runs and nothing waits.
+- **Rounds.** A node's round is the edges into it resolved since every one last
+  did. An edge whose source can't run any more counts as not taken: its source
+  is not queued or running, and neither is any node before it along the non-loop
+  edges ([routing.ts](../packages/core/src/run/routing.ts), `stranded`). A loop
+  edge starts the next round, so it doesn't count. So when a loop goes back to
+  one of two builders, the other's edges count as not taken in that round: a
+  node only it feeds is skipped, and a join behind it fires. This is decided
+  after each node routes, one waiting node at a time in graph order, as each can
+  start something ([tests](../packages/core/test/rounds.test.ts)).
+- The run ends when nothing runs and nothing waits. A node still waiting then,
+  neither run nor skipped with an edge into it resolved, would be a bug in Ork:
+  the run ends `failed`, its reason starting `ork engine error:` and naming the
+  node and what it waited on, never `succeeded`. It is a failure, not a thrown
+  assertion, so the run still ends, records `run.finished` and stays readable
+  and resumable like any failed run.
 
 ## Edges
 
@@ -46,7 +60,9 @@ its branch afterwards ([worktrees](./worktrees.md)).
   one that leaves no field to test, and `when: status == 'fail'` handles a
   failure.
 - A node that failed and took no edge fails the run (its reason is in the run
-  summary); other branches still finish.
+  summary); other branches still finish. One that failed and took an edge (a
+  handled failure), and a skipped node, leave the run `succeeded`, and the
+  result counts both (`failuresHandled`, `skipped`).
 - **What a node declares holds.** A value that doesn't fit an `output.schema` (a
   missing field, the wrong type, a value off the list) fails the node, with a
   reason that names all three, as in
@@ -64,7 +80,9 @@ its branch afterwards ([worktrees](./worktrees.md)).
 | `control.join`   | `all` fires once every input resolved; `any` on the first input that ran (once per round); `n` after `n` ran; skipped when not enough inputs ran |
 
 A join outputs `statuses` (the `status` of each input that ran, in edge order),
-`results` (input id → output) and `count`.
+`results` (input id → output) and `count`. An input that can't run any more in
+the round counts as resolved and not taken ([rounds](#activations)), so a join
+in a later round doesn't wait on a branch the loop didn't go back to.
 
 ## Loops
 
@@ -80,7 +98,10 @@ A join outputs `statuses` (the `status` of each input that ran, in edge order),
   the owner of the loop's nodes (of `from`, else of `to`) while its session is
   live, through the [message bus](./messaging.md#message-bus); the node runs in
   the flow, so its owner is not waiting on it. Otherwise, or when the owner's
-  session ends before it answers, the `HumanChannel` gets it as a decision.
+  session ends before it answers, the `HumanChannel` gets it as a decision. A
+  child's `ask_user` goes to the person too, unless its leader sets
+  `questions: owner`: then a fork of the leader's session answers it or passes
+  it on ([leader questions](./messaging/leader-questions.md)).
 - A re-entered **worker** starts a fresh session whose brief ends with a
   `## Round n` section carrying its input (e.g. the join's `statuses` and
   `results`), so reviews stay unbiased.
@@ -139,19 +160,21 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   too) or the node fails before running. `gh` and `aws` are the user's own, with
   their own logins; `profile` and `region` become `--profile` and `--region`.
   The output is `exitCode`, `stdout`, `stderr`; over 64 KiB, a stream is cut and
-  the full text is written to `.ork/runs/<run>/<node>.<round>.<stream>.txt`.
+  the full text is written to `.ork/runs/<run>/<node>.<round>.<stream>.txt`
+  (`<node>.<round>.<step>-<try>.<stream>.txt` for a `before:` or `verify:` step,
+  so neither a step nor a check's next try overwrites it).
   - **Who it is:** the program inherits Ork's environment, with `ORK_RUN`,
     `ORK_NODE`, `ORK_ROUND`, `ORK_RUN_DIR`, `ORK_PROJECT`, `ORK_WORKFLOW` and,
     when `ork` can be run directly, `ORK_BIN`
     ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)). Then the
     node's `env:`, rendered. A variable that is not set stops `ork run` before
     anything starts; for a workflow it calls by name, it warns, and the call
-    fails if reached ([L86](./gaps/limits-scripts.md)). Events record `env:`
-    names only. Values read from `{{env.*}}` by the workflow, by those it calls
-    by name, or by its callers (told as names in `ORK_MASKED`), except those in
-    `plainEnv`, are scrubbed from every tool node's output, in any form a JSON
-    encoder writes them, including JSON keys and numbers
-    ([L81](./gaps/limits-scripts.md)). A Claude session inherits the user's
+    fails if reached ([L86](./messaging/scripts-limits.md)). Events record
+    `env:` names only. Values read from `{{env.*}}` by the workflow, by those it
+    calls by name, or by its callers (told as names in `ORK_MASKED`), except
+    those in `plainEnv`, are scrubbed from every tool node's output, in any form
+    a JSON encoder writes them, including JSON keys and numbers
+    ([L81](./messaging/scripts-limits.md)). A Claude session inherits the user's
     variables like any program, without these, and also gets `ORK_SESSION=1`. A
     detached run's programs and sessions also see `ORK_DETACHED=1`.
   - **Watching:** with [`watch:`](./scheduler/watching.md) it also gets
@@ -161,7 +184,7 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
     exit 0, invalid or empty JSON or anything but a file there fails the node,
     and a result over 64 KiB fails it and is kept in a run file, never cut. A
     failed program's result is not read. A run clears the folder when it starts,
-    resumes and ends ([L85](./gaps/limits-scripts.md)).
+    resumes and ends ([L85](./messaging/scripts-limits.md)).
 - **`mcp.call`** ([mcp-call.ts](../packages/nodes/src/mcp-call.ts)): calls one
   tool on a server from the project's `.mcp.json`, with no session
   ([steps](./scheduler/steps.md#mcp-calls)). Its output is `text` and `json`.
@@ -170,8 +193,10 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   ([calling workflows](./scheduler/calls.md)).
 - **`human.gate`** ([gate.ts](../packages/nodes/src/gate.ts)): asks the rendered
   `question`; with `timeout` and `default`, the default answers when the time is
-  up and the question is withdrawn. The output is `choice` and `answeredBy`
-  (`user` or `timeout`).
+  up and the question is withdrawn. The output is `choice`, `answeredBy` (`user`
+  or `timeout`) and `note`: what the person said with their answer, an empty
+  string when they said nothing or the timeout answered
+  ([decision notes](./messaging.md#decisions)).
 
 ## Budget and concurrency
 
@@ -179,14 +204,16 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   down to what it added ([usage](./usage.md#what-a-resumed-session-spent)).
   `ork resume` goes on from all the run had spent, failed nodes included.
 - `limits.budgetUsd` caps the run: each session starts with
-  `min(node budget, what is left)` ([L73](./gaps/limits-ledger.md)), and once it
-  is spent no session or [call](./scheduler/calls.md) starts and the run ends
+  `min(node budget, what is left)` ([L73](./usage/ledger-limits.md)), and once
+  it is spent no session or [call](./scheduler/calls.md) starts and the run ends
   `budget_exhausted`.
 - [Quotas](./usage.md#limits-across-runs) cap what runs spend together: a
   session also gets no more than what is left of them, and at one a run ends
   `quota_exhausted`.
 - `limits.concurrency` (default 4) caps the Claude sessions running at once;
-  other nodes are not limited.
+  other nodes are not limited. The cap is per run: runs don't share it, and
+  nothing limits how many runs of one workflow go at once
+  ([L39, L43](./scheduler/limits.md)).
 - `interrupt()` stops starting nodes, aborts the running ones, stops the runs
   its calls started, and ends the run `interrupted`.
 
@@ -224,3 +251,7 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   - [Run events](./scheduler/resuming-and-events.md#run-events)
 - [Watching a source](./scheduler/watching.md)
 - [Walking every way through](./scheduler/walking.md)
+- [Limits: running, resuming and stopping](./scheduler/limits.md)
+- [Limits: workflows calling workflows](./scheduler/calls-limits.md)
+- [Limits: watching a source](./scheduler/watching-limits.md)
+- [Limits: walking a workflow](./scheduler/walking-limits.md)

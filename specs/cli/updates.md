@@ -13,23 +13,40 @@ is a banner and whose upgrade is a dialog with a restart
 [banner](../../packages/ui/src/workspace/update-banner.tsx),
 [dialog](../../packages/ui/src/workspace/upgrade-dialog.tsx),
 [server tests](../../packages/server/test/upgrade.test.ts),
+[daily check tests](../../packages/server/test/updates.test.ts),
 [UI tests](../../packages/ui/test/workspace/upgrade-dialog.test.tsx)). Both
 share the core's check, record, installers and plan
 ([check](../../packages/core/src/update/check.ts),
 [installers](../../packages/core/src/update/installers.ts),
 [plan](../../packages/core/src/update/plan.ts),
 [core tests](../../packages/core/test/update.test.ts)). Decided in
-[ADR-038](../../decisions/ADR-038-update-notice-and-upgrade.md) and, for
-`ork ui`, [ADR-060](../../decisions/ADR-060-ork-ui-supervises-its-server.md).
+[ADR-038](../../decisions/ADR-038-update-notice-and-upgrade.md), amended by
+[ADR-061](../../decisions/ADR-061-release-channels-toward-1-0.md) for which
+version it offers, and, for `ork ui`,
+[ADR-060](../../decisions/ADR-060-ork-ui-supervises-its-server.md).
 
 ## The new-version notice
 
 - **The check.** When a command starts and the last attempt is a day old (or
   there is none), it records the attempt and starts a detached copy of `ork`
   with `ORK_UPDATE_CHECK_CHILD=1`. That copy asks the registry for
-  `/-/package/@krapht/ork/dist-tags`, with a 5-second timeout, and writes
-  `~/.ork/update-check.json`: `checkedAt`, `latest` (kept from before when the
-  request fails), and `notified`. The command itself never waits.
+  `/-/package/@krapht/ork/dist-tags`, with a 5-second timeout, takes the newest
+  across the channel tags, and writes `~/.ork/update-check.json`: `checkedAt`,
+  `latest` (that newest version, kept from before when the request fails), and
+  `notified`. The command itself never waits.
+- **The newest across the channel tags.** The check reads the `latest`, `alpha`,
+  `beta` and `rc` dist-tags and keeps the highest version by semver precedence
+  (`1.0.0-alpha.1` is above `0.4.0`, `1.0.0-rc.0` above `1.0.0-beta.3`, and
+  `1.0.0` above all of them); a tag whose value isn't a version is skipped, and
+  other tags are ignored. The record's field keeps the name `latest`, so an
+  older Ork reads the newest version the same way.
+- **The canary rule.** The `canary` tag (snapshots from `main`,
+  `1.0.0-canary-<datetime>-<sha>`; the channel is planned) counts only when the
+  running version is itself a canary, its pre-release starting with `canary`. A
+  canary is offered whichever is newest, a newer canary or another tag's version
+  above it (an `rc` sorts above a canary). Everyone else skips the tag, since
+  `canary` sorts above `alpha` and `beta` and would otherwise be offered to
+  every alpha and beta.
 - **The notice.** When the command exits and the record's `latest` is newer than
   the running version by semver precedence, it writes one line to stderr:
   `Ork <latest> is out (you have <current>). Upgrade with: ork upgrade`, and
@@ -48,25 +65,28 @@ share the core's check, record, installers and plan
 ork upgrade [--check] [--yes]
 ```
 
-1. Asks the registry now (15-second timeout) and records the answer; when it
-   cannot, it says so and exits 1.
+1. Asks the registry now (15-second timeout) for the newest across the channel
+   tags, by the same rules as the check, and records the answer; when it cannot,
+   it says so and exits 1.
 2. When the latest version is not newer, it says this one is the latest and
    exits 0. Otherwise it prints both versions and the release notes' link; with
    `--check` it stops there, exit 0.
 3. It finds how Ork was installed from the running script's real path, in the
    installer registry, first match wins:
 
-   | Installer | Recognised by                       | Does                                                          |
-   | --------- | ----------------------------------- | ------------------------------------------------------------- |
-   | `source`  | `/packages/cli/`, no `node_modules` | advice: `git pull`, `pnpm install`, `pnpm build` in the clone |
-   | `npx`     | `/_npx/`                            | advice: `npx @krapht/ork@<v>`, or a global install            |
-   | `pnpm`    | `/pnpm/global/`, `/.pnpm-global/`   | `pnpm add --global @krapht/ork@<v>`                           |
-   | `yarn`    | `/yarn/global/`                     | `yarn global add @krapht/ork@<v>`                             |
-   | `bun`     | `/.bun/install/global/`             | `bun add --global @krapht/ork@<v>`                            |
-   | `volta`   | `/.volta/tools/`                    | `volta install @krapht/ork@<v>`                               |
-   | `npm`     | `/node_modules/`                    | `npm install --global @krapht/ork@<v>`                        |
+   | Installer | Recognised by                                                                    | Does                                                          |
+   | --------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+   | `source`  | `/packages/cli/`, no `node_modules`                                              | advice: `git pull`, `pnpm install`, `pnpm build` in the clone |
+   | `npx`     | `/_npx/`                                                                         | advice: `npx @krapht/ork@<v>`, or a global install            |
+   | `pnpm`    | `/pnpm/global/`, `/.pnpm-global/`, `/store/v<n>/links/` (pnpm 11's global store) | `pnpm add --global @krapht/ork@<v>`                           |
+   | `yarn`    | `/yarn/global/`                                                                  | `yarn global add @krapht/ork@<v>`                             |
+   | `bun`     | `/.bun/install/global/`                                                          | `bun add --global @krapht/ork@<v>`                            |
+   | `volta`   | `/.volta/tools/`                                                                 | `volta install @krapht/ork@<v>`                               |
+   | `npm`     | `/node_modules/`                                                                 | `npm install --global @krapht/ork@<v>`                        |
 
    Advice, or no match (advice with the npm command), exits 1 with nothing run.
+   pnpm 11 holds back a release for a day by default (`minimumReleaseAge`);
+   naming the version, as the command does, installs it anyway.
 
 4. It lists runs still running on the machine: their next sessions would start
    from the new install.
@@ -125,4 +145,4 @@ ork upgrade [--check] [--yes]
   Ctrl-C (or SIGTERM) stops `ork ui` at once
   ([ork ui](../server/what-it-is-and-ork-ui.md#ork-ui)). A Ctrl-C from the
   terminal reaches the package manager too, which does what it does with it
-  ([L168](../gaps/limits-upgrade.md)).
+  ([L168](./upgrade-limits.md)).

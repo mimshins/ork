@@ -104,13 +104,16 @@ once. Past a couple of thousand nodes in parallel a walk can still run past its
 limit, by about what compiling the workflow costs. `complete` means it didn't
 stop, not that every value was tried: a node's values are cut at 32 ways, and
 later rounds repeat. A path that doesn't settle within a second is a bug in the
-scheduler, and ends the walk.
+scheduler, and ends the walk; so does one the scheduler ends with a node left
+waiting (an `ork engine error:` reason, see
+[rounds](../scheduler.md#activations)), which is never listed as a way to end,
+let alone a success.
 
 It doesn't cover the order parallel branches finish in, so a `control.join` in
 `any` mode goes one way; running out of budget or time; resuming; or what a
 leader delegates, so an owned node runs only if an edge reaches it. Its
 stand-ins differ from real nodes in places: a failed commit keeps the node's
-`status` ([gaps](../gaps.md)).
+`status` ([L139](./walking-limits.md)).
 
 ## Who walks
 
@@ -149,7 +152,7 @@ try every outcome a run can have, so each says only what the walk tried:
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `walk.never-runs`  | No way the walk tried reaches `x`: it ran on no path.                                                                                                                   |
 | `walk.only-rounds` | Every way the walk tried through the loop ran out of rounds: no path succeeded through its nodes another way. A loop with no condition already has `loop.no-condition`. |
-| `walk.unfinished`  | A path didn't settle. It's a bug in Ork, not the workflow, and says so.                                                                                                 |
+| `walk.unfinished`  | A path didn't settle, or ended with a node left waiting. It's a bug in Ork, not the workflow, and says so.                                                              |
 
 The first two are left out where a walk would most often be wrong, to keep them
 worth reading. There are none when the walk stopped early, and none for what

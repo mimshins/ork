@@ -11,19 +11,19 @@ import type { AgentRef } from "../agents/apply.ts";
 import type { FeedbackPort, FeedbackReport } from "../feedback/types.ts";
 import type {
   Claims,
-  DecisionChoice,
   HoldPoint,
   HoldPort,
   HumanChannel,
   Mailbox,
+  OwnerPort,
   Ownership,
   RuntimeEvent,
   SessionUsage,
 } from "../runtime/types.ts";
-import type { AnsweredBy, DecisionKind } from "../store/types.ts";
 import type { RunLimits } from "../usage/quota.ts";
 import type { BusEvent } from "./bus-events.ts";
 import type { CallPort } from "./calls.ts";
+import type { DecisionEvent } from "./decision-events.ts";
 import type { WatchEvent } from "./watch-events.ts";
 import type { Checkout, KeptWorktree, Workspace } from "./workspace-types.ts";
 
@@ -103,13 +103,20 @@ export type ExecuteContext = {
   /** What a session has spent in this activation, from its reported total. */
   ownSpend?: (sessionId: string, total: number) => number;
   human: HumanChannel;
+  /** The leader a Claude node's questions go to first (ADR-063). */
+  owner?: OwnerPort;
   /** Held while the run or this node is paused; a run always passes one. */
   hold?: HoldPort;
   /** Forwards a session's runtime events into the run's event stream. */
   emit: (event: RuntimeEvent) => void;
   /** Aborted when the run is interrupted, or this node is stopped. */
   signal: AbortSignal;
+  /** A Claude node's `before:` or `verify:` step and try: its own files. */
+  step?: StepRun;
 };
+
+/** A node's `before:` or `verify:` step, and which try of it this is. */
+export type StepRun = { name: "before" | "verify"; try: number };
 
 export type NodeExecutor = (context: ExecuteContext) => Promise<NodeResult>;
 
@@ -146,7 +153,22 @@ export type RunResult = {
   worktrees: KeptWorktree[];
   /** The workflow's `outputs`, rendered when the run ended. */
   outputs?: Record<string, string>;
+  /**
+   * How many nodes were skipped, and how many failed results had an edge to
+   * take, so the run went on: a `succeeded` run says what it left out (G8).
+   * Absent from results recorded before they were counted.
+   */
+  skipped?: number;
+  failuresHandled?: number;
+  /**
+   * Nodes that never ran, with how many messages to them nobody read: a branch
+   * not taken leaves its mail unread (L91). Absent when there are none.
+   */
+  unread?: UnreadMail[];
 };
+
+/** A node that never ran, and the messages to it that stayed unread. */
+export type UnreadMail = { node: string; messages: number };
 
 export type RunNodeInfo = { id: string; type: NodeType; parent?: string };
 
@@ -162,6 +184,8 @@ export type RunEdgeInfo = {
 export type RunSettings = {
   inPlace?: boolean;
   driver?: Driver;
+  /** The driver ready when the run started, for nodes that name none. */
+  readyDriver?: Driver;
   /** The rules turned links off: this run's nodes cannot be linked. */
   links?: "off";
   /** A caller capped this run's budget to what it had left (RFC-004). */
@@ -172,10 +196,7 @@ export type RunSettings = {
   baseRef?: string;
   /** The trigger that started this run (RFC-011). */
   trigger?: string;
-  /**
-   * The inputs it took from what its check reported: anyone may have written
-   * them.
-   */
+  /** Inputs from what its check reported, which anyone may have written. */
   untrusted?: string[];
 };
 
@@ -238,23 +259,7 @@ export type RunEvent =
       snapshot?: string;
       detail?: string;
     }
-  | {
-      type: "decision.opened";
-      node: string;
-      decision: string;
-      kind: DecisionKind;
-      question: string;
-      options: DecisionChoice[];
-      recommended?: string;
-    }
-  | {
-      type: "decision.answered";
-      node: string;
-      decision: string;
-      answer: string;
-      by: AnsweredBy;
-    }
-  | { type: "decision.withdrawn"; node: string; decision: string }
+  | DecisionEvent
   /**
    * Another process asked the run to do something: `ork stop`, `ork pause`,
    * `ork continue`; `node` when it names one node, not the whole run.

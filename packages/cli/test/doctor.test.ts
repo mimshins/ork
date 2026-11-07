@@ -1,6 +1,7 @@
 /**
- * @file Tests for `ork doctor`'s checks, against a fake `exec`, and what it
- *   says of triggers, against a store in a temp `~`.
+ * @file Tests for `ork doctor`'s checks, against a fake `exec`, what it says of
+ *   triggers, against a store in a temp `~`, and whether a run's socket path
+ *   fits under `~`.
  */
 
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -21,6 +22,7 @@ import {
   checkNode,
   formatCheck,
   runChecks,
+  socketCheck,
   triggerChecks,
 } from "../src/index.ts";
 
@@ -151,6 +153,41 @@ const aFolder = (file: string): void => {
   rmSync(file);
   mkdirSync(file);
 };
+
+/** A `~` whose longest socket path is `bytes` long: `/h/.ork/…` is 34. */
+const socketHome = (bytes: number) => `/${"h".repeat(bytes - 33)}`;
+
+describe("ork doctor on sockets", () => {
+  it("passes a home whose longest socket path fits", () => {
+    expect(socketCheck(socketHome(103), "darwin")).toEqual({
+      name: "sockets",
+      status: "ok",
+      detail: "103 of 103 bytes",
+    });
+    expect(socketCheck(socketHome(107), "linux")).toMatchObject({
+      status: "ok",
+    });
+  });
+
+  it("warns of one past the limit, and says what slows down", () => {
+    const past = socketCheck(socketHome(104), "darwin");
+    expect(past).toMatchObject({
+      status: "warn",
+      detail:
+        "a run's socket path is 104 bytes, past the 103 this system allows",
+    });
+    expect(past.hint).toContain("wait up to a second");
+    expect(socketCheck(socketHome(108), "linux")).toMatchObject({
+      status: "warn",
+    });
+  });
+
+  it("says nothing is wrong where sockets are not Unix sockets", () => {
+    expect(socketCheck(socketHome(300), "win32")).toMatchObject({
+      status: "ok",
+    });
+  });
+});
 
 describe("ork doctor on triggers", () => {
   it("warns of a live trigger with nothing watching", () => {

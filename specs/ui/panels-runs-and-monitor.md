@@ -5,7 +5,7 @@ _Part of [The panels](./panels.md)._
 ## Runs
 
 The newest 50 runs from the [overview stream](./state.md#the-containers),
-filtered by project ([L37](../gaps/limits-ui.md)).
+filtered by project ([L37](./limits.md)).
 
 - **A row** has the workflow and its status, as an icon and a word; then the
   run's id, when it started, what it cost, and how many nodes are paused. A
@@ -42,7 +42,10 @@ closed.
   description.
 - **Flags** are `--driver`, `--in-place` and `--allow-dirty`. They are here
   because the server may refuse a run without one, and the dialog must not be a
-  dead end.
+  dead end. The driver's first choice, "The workflow's, else the one ready",
+  passes no `--driver`: the workflow's own driver, else the one ready on the
+  machine when the run starts
+  ([runtime](../runtime.md#which-driver-a-session-uses)).
 - **The CLI twin** is shown as it is filled in, ready to copy. It leaves out
   inputs at their default and quotes what a shell would split.
 - **Start run** is disabled until the form can start, and the reason is shown
@@ -52,8 +55,10 @@ closed.
   The run arrives on the stream like any other, about a second later: nothing is
   added to the list in advance. The focus goes to its heading once the Monitor
   shows it, since what opened the dialog may have gone with the run chosen
-  before ([L69](../gaps/limits-ui.md)). A refusal stays in the dialog, in the
-  server's words.
+  before. With no Monitor showing the run, it goes to the run's row in the Runs
+  panel if the run has arrived, or else to that panel's **Run workflow**, never
+  to the page's body; with no Runs panel either, back where the dialog was
+  opened. A refusal stays in the dialog, in the server's words.
 
 Escape on a combobox with its list closed clears it, as the ARIA pattern allows,
 so a second Escape closes the dialog. Workspace keys wait while a dialog is open
@@ -72,8 +77,9 @@ Its CLI twin is `ork tree <run>`.
   (`GET /api/runs/:id/graph`).
 - **The stat strip** says which run it is, what it has spent against the budget
   it recorded (`run.started`'s `budgetUsd`), as blocks too, how many nodes have
-  come to an end, how long it has taken, and how it stands, as a pill. Its
-  controls are at the end.
+  come to an end (and, once it ends, what it skipped and which failures an edge
+  handled: `5 / 7 · 2 skipped · 1 failure handled`), how long it has taken, and
+  how it stands, as a pill. Its controls are at the end.
 - **Each card** shows its type, id, cost and status, small enough for a long run
   to fit. The rest is in its accessible name, the table and the node's strip.
   The drawing changes only when the run's nodes do, so a busy run does not move
@@ -103,10 +109,20 @@ Its CLI twin is `ork tree <run>`.
 - **Staying live:** the server folds the run's history into its tree, and the
   panel reads it again when the run's stream has news, at most four times a
   second ([run-watch.ts](../../packages/ui/src/state/run-watch.ts),
-  [L63](../gaps/limits-ui.md)). Nothing updates optimistically.
+  [L63](./limits.md)). Nothing updates optimistically.
 - **Controls:** Pause, Continue and Stop for the run, and for the selected node.
   Each is enabled only where it applies, and stays focusable and says why when
   it is not. Stop asks first. A refused request is a toast.
+- **Resume…**
+  ([run-controls.tsx](../../packages/ui/src/panels/run-controls.tsx),
+  [tests](../../packages/ui/test/panels/monitor-resume.test.tsx)) joins the
+  run's controls once it ended without succeeding (failed, interrupted, crashed,
+  or out of budget, quota or time), and is disabled, saying why, on a run of one
+  node, as `ork resume` refuses those. It asks first, saying it's a paid run and
+  what runs again, with `ork resume <run> --detach` as a code block, then sends
+  `POST /api/runs/:id/resume` with no flags, so the run keeps the inputs and
+  flags it started with. A refusal, in the CLI's words, stays in the dialog. The
+  run going live takes the button away, so the focus goes to the run's heading.
 - **A note** ([note dialog](../../packages/ui/src/panels/note-dialog.tsx),
   [tests](../../packages/ui/test/panels/note-dialog.test.tsx)): **Note…** after
   the node's controls, and a note icon among the run's, which takes one after it
@@ -130,11 +146,12 @@ Its CLI twin is `ork tree <run>`.
   what it's waiting for, how often it looks, how many looks and what the last
   said ([watch-facts.ts](../../packages/ui/src/panels/watch-facts.ts)). Looks
   aren't recorded, so the count and the next look are estimates and say "about"
-  ([L118](../gaps/limits-watching.md)). A run that's over shows none of this.
+  ([L118](../scheduler/watching-limits.md)). A run that's over shows none of
+  this.
 - **Across runs:** a `workflow.call` node opens the run it started, a called run
   links back to its caller, and a run's links are listed with their message
-  counts, each opening the run at the other end
-  ([L50](../gaps/limits-messaging.md)). The focus then lands on the opened run's
-  heading, since the button that had it is gone (WCAG 2.4.3).
+  counts, each opening the run at the other end ([L50](../messaging/limits.md)).
+  The focus then lands on the opened run's heading, since the button that had it
+  is gone (WCAG 2.4.3).
 
 Selecting a node is shared with the other panels: Logs and Chats follow it.

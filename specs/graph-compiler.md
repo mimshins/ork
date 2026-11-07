@@ -30,7 +30,7 @@ with parsed conditions), the entry nodes, and the declared message channels.
   `summary`, `artifacts`, `branch`, `usage` plus their `output.schema` fields;
   tool nodes `exitCode`, `stdout`, `stderr`, plus `json` with
   `output: { format: json }`; `control.join` `statuses`, `results`, `count`;
-  `human.gate` `choice`, `answeredBy`; split and router pass their input
+  `human.gate` `choice`, `answeredBy`, `note`; split and router pass their input
   through; a `workflow.call`'s fields are not checked, since they depend on what
   it calls.
 
@@ -55,7 +55,8 @@ with parsed conditions), the entry nodes, and the declared message channels.
 Each diagnostic has a severity, a code, a message and a path into the workflow,
 which `ork validate` maps to `file:line:column`. Errors stop compilation;
 warnings do not. Schema problems come first, from
-[yaml.ts](../packages/schema/src/yaml.ts): `yaml.syntax` and `schema.<code>`.
+[yaml.ts](../packages/schema/src/yaml.ts): `yaml.syntax` and `schema.<code>`,
+and `schema.newer_version` alone for a file a newer Ork made.
 
 | Code                     | Severity | Meaning                                                                    |
 | ------------------------ | -------- | -------------------------------------------------------------------------- |
@@ -64,6 +65,7 @@ warnings do not. Schema problems come first, from
 | `tree.owner-kind`        | error    | the owner's type cannot own this node                                      |
 | `tree.cycle`             | error    | the ownership tree has a cycle                                             |
 | `tree.continue`          | error    | an `isolation: continue` node has a parent or children                     |
+| `questions.no-children`  | error    | a leader sets `questions` but owns no leader or worker that could ask      |
 | `edge.syntax`            | error    | shorthand without exactly one `->`, or an empty side                       |
 | `edge.unknown-node`      | error    | an edge names no node                                                      |
 | `edge.subagent`          | error    | an edge touches a sub-agent                                                |

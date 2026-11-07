@@ -79,7 +79,9 @@ count since the last change, and when the next look is, are worked out from
 ### The file
 
 `triggers.yaml` sits with a project's other files: `.ork/triggers.yaml`, or
-`~/.ork/projects/<id>/triggers.yaml` when attached.
+`~/.ork/projects/<id>/triggers.yaml` when attached. Its JSON Schema,
+[triggers.schema.json](../../packages/schema/triggers.schema.json), is generated
+from the Zod model like the workflow's, and a test fails when it is stale.
 
 ```yaml
 schemaVersion: 1
@@ -173,7 +175,7 @@ run refuses, and the next look finds the trigger changed.
 
 The hash can't cover all a run reads: skills, agents in their own files, scripts
 the workflow calls, workflows it calls and `project.yaml` aren't in it
-([L119](../gaps/limits-watching.md)).
+([L119](./watching-limits.md)).
 
 Accepting takes a terminal: it refuses without one and inside a run, and the UI
 only shows how things stand. The marker for "inside a run" is an environment

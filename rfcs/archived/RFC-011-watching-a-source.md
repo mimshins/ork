@@ -321,7 +321,8 @@ Built as decided, with these differences, each recorded in
   workflow it starts, what its check reads and the project's folder. A run
   starts from the accepted file by its whole path and refuses if its text
   changed, so a branch can't change what runs by editing the workflow. It can't
-  cover everything a run reads ([L119](../../specs/gaps/limits-watching.md)).
+  cover everything a run reads
+  ([L119](../../specs/scheduler/watching-limits.md)).
 - **The lock is a row in the store, not a file,** so taking it is one
   transaction, and a process that was later given a holder's id doesn't hold it.
 - **A key that won't start doesn't hold up the others,** and is given up on
@@ -337,4 +338,4 @@ Built as decided, with these differences, each recorded in
   and `$ORK_STATE`'s folder going when the run succeeds.
 - **The Monitor's count and next look are estimates,** as looks aren't recorded.
 - **The `every` floors** stayed as suggested, unmeasured
-  ([L116](../../specs/gaps/limits-watching.md)).
+  ([L116](../../specs/scheduler/watching-limits.md)).

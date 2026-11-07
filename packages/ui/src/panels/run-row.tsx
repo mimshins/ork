@@ -53,6 +53,7 @@ export const RunRow = memo(
         <button
           aria-current={selected ? "true" : undefined}
           className={styles["row"]}
+          data-run-row={run.id}
           onClick={() => {
             onSelect(run.id);
           }}
@@ -80,6 +81,7 @@ RunRow.displayName = "RunRow";
 export const RunWorkflowButton = ({ onClick }: { onClick: () => void }) => (
   <Button
     cli="ork run <workflow>"
+    data-run-workflow=""
     onClick={onClick}
     variant="primary"
   >

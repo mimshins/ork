@@ -74,6 +74,6 @@ those rules honest, and each case found has its own test.
   success or failure with no work.
 - A clean walk can read as more than it is. The guide says what it can't tell
   ([Checking a workflow](../docs/guides/writing-workflows/checking.md)), and the
-  limits are in the register: [L139–L142](../specs/gaps/limits-walking.md).
-- [G8](../specs/gaps.md#gaps), a run that skipped most of its work saying
-  `succeeded`, stays its own decision.
+  limits are in the register: [L139–L142](../specs/scheduler/walking-limits.md).
+- [G8](../specs/scheduler.md#edges) (since closed), a run that skipped most of
+  its work saying `succeeded`, stays its own decision.

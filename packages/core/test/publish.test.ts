@@ -12,6 +12,7 @@ import {
   type FeedbackRecord,
   type GhRunner,
   planPost,
+  THREADS_SEARCHED,
   publishPost,
   redact,
   sendPost,
@@ -151,6 +152,16 @@ const threads = (...bodies: string[]) => ({
 
 const post = publishPost(ITEM, [RECORD], OPTIONS);
 
+/** One page of threads, with more after it. */
+const page = (cursor: string, ...bodies: string[]) => ({
+  repository: {
+    discussions: {
+      ...threads(...bodies).repository.discussions,
+      pageInfo: { hasNextPage: true, endCursor: cursor },
+    },
+  },
+});
+
 describe("the Discussions client", () => {
   it("plans a new thread by reading only, then creates it", async () => {
     const { gh, calls } = fakeGh([
@@ -205,6 +216,39 @@ describe("the Discussions client", () => {
       await sendPost(post, { kind: "comment", thread: "D1", url: "u" }, gh),
     ).toMatchObject({ ok: true, kind: "commented" });
     expect(calls[2]).toContain(`body=${post.comment}`);
+  });
+
+  it("pages through the category for the marker, after each page's cursor", async () => {
+    const { gh, calls } = fakeGh([
+      PLACE,
+      page("P1", "first"),
+      page("P2", "x <!-- ork-fingerprint: abcdef0123456789 -->"),
+    ]);
+    expect(await planPost(post, gh)).toMatchObject({
+      ok: true,
+      plan: { kind: "comment", thread: "D0" },
+    });
+    expect(calls).toHaveLength(3);
+    expect(calls[1]).not.toContain("after=P1");
+    expect(calls[2]).toContain("after=P1");
+  });
+
+  it("stops at THREADS_SEARCHED and starts a thread", async () => {
+    const pages = THREADS_SEARCHED / 100;
+    const endless = Array.from({ length: pages + 1 }, (_, i) => ({
+      repository: {
+        discussions: {
+          nodes: [{ id: "D", url: "u", body: "other" }],
+          pageInfo: { hasNextPage: true, endCursor: `P${String(i)}` },
+        },
+      },
+    }));
+    const { gh, calls } = fakeGh([PLACE, ...endless]);
+    expect(await planPost(post, gh)).toMatchObject({
+      ok: true,
+      plan: { kind: "create" },
+    });
+    expect(calls).toHaveLength(1 + pages);
   });
 
   it("says why when gh fails or the category isn't there", async () => {

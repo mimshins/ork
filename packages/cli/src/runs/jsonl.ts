@@ -1,8 +1,9 @@
 /**
  * @file `ork feedback export` and `import` (specs/feedback.md): feedback
  *   records as JSON lines, one record a line, so a team can move feedback
- *   between machines without GitHub. A line is checked before it's added, and a
- *   record already here (its run and event) is skipped.
+ *   between machines without GitHub. A line is checked before it's added (one
+ *   from a newer Ork says so), and a record already here (its run and event) is
+ *   skipped.
  */
 
 import {
@@ -58,6 +59,17 @@ export const exportLines = (records: readonly FeedbackRecord[]): string =>
     .map(line => `${line}\n`)
     .join("");
 
+/** Why a line from a newer Ork is left out, or `null` when it isn't one. */
+const newerVersion = (value: unknown): string | null => {
+  const version =
+    value !== null && typeof value === "object"
+      ? (Reflect.get(value, "feedbackVersion") as unknown)
+      : undefined;
+  return typeof version === "number" && version > FEEDBACK_VERSION
+    ? `made by a newer Ork (\`feedbackVersion: ${String(version)}\`; this one reads ${String(FEEDBACK_VERSION)}). Upgrade with \`ork upgrade\`.`
+    : null;
+};
+
 export type ParsedLines = {
   records: Omit<FeedbackRecord, "id">[];
   /** Why a line was left out, by its number. */
@@ -75,6 +87,11 @@ export const parseLines = (text: string): ParsedLines => {
       value = JSON.parse(line);
     } catch {
       problems.push(`line ${String(index + 1)}: not JSON`);
+      continue;
+    }
+    const newer = newerVersion(value);
+    if (newer !== null) {
+      problems.push(`line ${String(index + 1)}: ${newer}`);
       continue;
     }
     const parsed = LineSchema.safeParse(value);

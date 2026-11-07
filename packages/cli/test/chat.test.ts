@@ -22,6 +22,7 @@ import { createCliRuntime } from "@krapht/ork-runtime-claude";
 import { describe, expect, it } from "vitest";
 
 import { resumeChat, runWorkflowFile } from "../src/index.ts";
+import { sdkReady } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
@@ -79,6 +80,7 @@ const start = () => {
     inPlace: true,
     json: false,
     runtime: fake,
+    driverChecks: sdkReady,
     human: gateWaits,
     store,
     home,
@@ -137,6 +139,7 @@ describe("ork chat", () => {
         node,
         body: "Also add a summary",
         runtime: fake,
+        driverChecks: sdkReady,
         human: gateWaits,
         out: line => {
           out.push(line);

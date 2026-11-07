@@ -47,7 +47,7 @@ and is kept in a run file; it is never cut. A parse error does not quote the
 text. The file lives in the run's private `.output` folder and is removed once
 read, and a run clears that folder when it starts, resumes and ends, so after a
 clean run the scrubbed value is the only copy
-([L85](../specs/gaps/limits-scripts.md)).
+([L85](../specs/messaging/scripts-limits.md)).
 
 **`ork chat`, `ork continue` and answering with `ork decide` refuse when
 `ORK_RUN` or `ORK_SESSION` is set,** and `ork ui` withholds its sign-in link,
@@ -83,5 +83,6 @@ decisions and `ork stop` stay open.
   checked at compile time.
 - Identity is attribution. A program runs as the same user with the same store,
   so it can unset these; the guard stops accidents and a prompt-injected "run
-  ork chat", and is not a boundary ([L80](../specs/gaps/limits-scripts.md)).
+  ork chat", and is not a boundary
+  ([L80](../specs/messaging/scripts-limits.md)).
 - `packages/cli/src/bin.ts` is now executable, so `ORK_BIN` works from source.

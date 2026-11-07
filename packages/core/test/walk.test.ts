@@ -13,6 +13,7 @@ import {
   type CompiledGraph,
   compileWorkflow,
   type RunHandle,
+  stuckReason,
   walkChecks,
   walkSummary,
   walkWorkflow,
@@ -712,6 +713,103 @@ describe("what a walk won't claim", () => {
     expect(result.complete).toBe(false);
     expect(found(result)).toEqual(["walk.unfinished "]);
     expect(result.findings[0]?.message).toContain("a bug in Ork");
+  });
+
+  it("counts a path the scheduler left waiting as a bug, not an ending", async () => {
+    const graph = graphOf(stranded, [off]);
+    const reason = stuckReason([{ id: "b", waitingOn: ["a"] }]);
+    const waiting: RunHandle = {
+      runId: "waiting",
+      done: Promise.resolve({
+        runId: "waiting",
+        status: "failed",
+        costUsd: 0,
+        nodes: [],
+        reasons: [reason],
+        worktrees: [],
+      }),
+      interrupt: () => {
+        // Nothing to stop.
+      },
+      pause: () => false,
+      proceed: () => false,
+      stopNode: () => false,
+      tell: () => null,
+      receive: () => {
+        // Nothing to receive.
+      },
+      notice: () => {
+        // Nothing to tell.
+      },
+    };
+    const result = await walkWorkflow(graph, { start: () => waiting });
+    expect(result.complete).toBe(false);
+    expect(result.endings).toEqual([]);
+    expect(found(result)).toEqual(["walk.unfinished "]);
+  });
+});
+
+/** Two builders, one chosen by an input, and a join that loops back. */
+const twoBuilders = () =>
+  graphOf(
+    [
+      "task: { type: tool.shell, command: 'true', allow: ['true'] }",
+      `build: ${CLAUDE}`,
+      `engine: ${CLAUDE}`,
+      `review: ${CLAUDE}`,
+      `a11y: ${CLAUDE}`,
+      "reviews: { type: control.join, mode: all }",
+      `docs: ${CLAUDE}`,
+    ],
+    [
+      "{ from: task, to: build, when: 'ok && !inputs.engine' }",
+      "{ from: task, to: engine, when: 'ok && inputs.engine' }",
+      "build -> review",
+      "engine -> review",
+      "{ from: build, to: a11y, when: 'ok && inputs.ui' }",
+      "{ from: engine, to: a11y, when: 'ok && inputs.ui' }",
+      "review -> reviews",
+      "a11y -> reviews",
+      "{ from: reviews, to: build, when: \"!all(statuses, 'pass') && !inputs.engine\", maxRounds: 2 }",
+      "{ from: reviews, to: engine, when: \"!all(statuses, 'pass') && inputs.engine\", maxRounds: 2 }",
+      "{ from: reviews, to: docs, when: \"all(statuses, 'pass')\" }",
+    ],
+    [
+      "inputs:",
+      "  engine: { type: boolean, default: false }",
+      "  ui: { type: boolean, default: false }",
+    ],
+  );
+
+/** The endings that succeed without running `node`. */
+const succeedingWithout = (result: WalkResult, node: string) =>
+  result.endings.filter(
+    ({ status, notRun }) => status === "succeeded" && notRun.includes(node),
+  );
+
+describe("rounds a branch doesn't run in", () => {
+  it("lists no success that skips the end, but by going onward", async () => {
+    const result = await walkWorkflow(twoBuilders());
+    const skipping = succeedingWithout(result, "docs");
+
+    expect(result.complete).toBe(true);
+    expect(skipping.length).toBeGreaterThan(0);
+    expect(
+      skipping.filter(
+        ({ choices }) => !choices.includes("reviews ran out of rounds: onward"),
+      ),
+    ).toEqual([]);
+    expect(result.endings).toContainEqual(
+      expect.objectContaining({
+        status: "failed",
+        notRun: ["engine", "a11y", "docs"],
+        choices: [
+          "review: status = changes_requested",
+          "review, round 2: status = changes_requested",
+          "reviews ran out of rounds: stop",
+        ],
+      }),
+    );
   });
 });
 

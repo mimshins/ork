@@ -34,8 +34,11 @@ editor and `ork validate`.
   and answers with the new text and what the checks say. Changes go one at a
   time and read what they build on when their turn comes, and an answer about a
   workflow no longer open changes nothing on screen. Undo steps back through
-  this session's changes up to the last save, and Discard asks, then goes back
-  to the file. Choosing another project closes what's open.
+  this page's changes up to the last save, and Discard asks, then goes back to
+  the file. Choosing another project closes what's open.
+- **What's open outlives the panel:** the project, the workflow, the selected
+  card and the undo steps are kept in the page's [state](./state.md), so moving,
+  closing or stacking the panel shows them again.
 - **Save** writes the workflow's file, whole, and never commits. Errors block
   it. If the file changed since the draft began, it asks before replacing it.
 - **Run…** saves, says this is a real run, names the nodes that act outside the
@@ -55,8 +58,8 @@ The selected run's events, live
 - **Filters** are by node, by event type and by text anywhere in the event. The
   node filter is the shared selection, so choosing a node in the Monitor opens
   it here and the other way round. They look through what is loaded
-  ([L65](../gaps/limits-ui.md)). What they leave is said aloud once they stay
-  still for half a second (WCAG 4.1.3).
+  ([L65](./limits.md)). What they leave is said aloud once they stay still for
+  half a second (WCAG 4.1.3).
 - **Following:** it stays on the newest. Scrolling up holds it, so what is being
   read stays still and the Follow button counts what is new; back at the end, or
   pressing it, follows again.
@@ -73,16 +76,25 @@ is `ork decide`, and each option's tooltip gives `ork decide <run> --id <id>
 --choose
 <option>`.
 
-- **A card** has where the question comes from, the question, its context and
-  its options. The question and context show exactly as written, as a person
-  approves that text. The recommended option says so in words, and stands out.
-- **An answer** takes one click. With the focus in the card, `1` to `9` choose
-  an option, and `Enter` on the card itself takes the recommended one.
+- **A card** has where the question comes from, the question, its context, a
+  note box and its options. The question and context show exactly as written, as
+  a person approves that text. The recommended option says so in words, and
+  stands out.
+- **The note box**, labelled "Note for the run (optional)", two lines tall,
+  takes what to send with the answer, the decision's
+  [note](../messaging.md#decisions): a gate passes it on as `note`. Keys typed
+  in it stay in it: `Enter` starts a new line and digits are text, so nothing is
+  answered by accident. Once it has text, a copy-command block under it gives
+  `ork decide <run> --id <id> --choose <option> --say '<note>'`, and each
+  option's tooltip adds the same `--say`. A blank box sends no note.
+- **An answer** takes one click. With the focus in the card (not in the note
+  box), `1` to `9` choose an option, and `Enter` on the card itself takes the
+  recommended one.
 - **Nothing is optimistic:** the card stays until the server says it has settled
   on the stream, and a refusal stays in the card in the server's words. If the
   card had the focus, the focus moves to the next one, or to the panel after the
   last.
 - **Settled** lists what has left the open list while the page watched, with who
   answered: in the run's terminal, with `ork decide` or in `ork ui`
-  (`GET /api/decisions/:id`, [L66](../gaps/limits-ui.md)). Each is also said
-  aloud.
+  (`GET /api/decisions/:id`, [L66](./limits.md)), and "They said: …" under it
+  when the answer had a note. Each is also said aloud.

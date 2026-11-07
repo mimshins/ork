@@ -2,25 +2,26 @@
 
 Claude Code can work with Ork beside you in your project: write a workflow and
 check it until Ork accepts it, read your runs, and start one when you say so.
-Install Ork's plugin once, in Claude Code:
 
-```
-/plugin marketplace add mimshins/ork
-/plugin install ork@ork
-```
+To install Ork's plugin and have Claude Code set up your project, start with
+[With your agent](../getting-started/with-your-agent.md#claude-code). This page
+is what the plugin does once it's there. It needs `ork` on your `PATH`
+([installation](../getting-started/installation.md)), and brings:
 
-It needs `ork` on your `PATH`
-([installation](../getting-started/installation.md)). It brings:
-
-- **Skills:** `/ork:write` (the workflow format, and checking each draft),
-  `/ork:run` (starting and following runs), and `/ork:principles` (how Ork
-  splits work so it costs less). Claude Code uses them when they fit.
+- **Ork's skills for Claude Code:** `/ork:setup` (setting Ork up in a
+  repository, asking before each change), `/ork:write` (the workflow format, and
+  checking each draft), `/ork:run` (starting and following runs), and
+  `/ork:principles` (how Ork splits work so it costs less). Claude Code uses
+  them when they fit.
 - **Ork's tools,** through `ork mcp`: your projects, workflows and runs, what
   they spent, `check` for a workflow, what a node's session loads, and
   `start_run`.
 
 Then ask it things such as:
 
+- "Set up Ork in this repository." It checks your setup, and asks before it
+  installs anything, changes your repository or a config, or starts a run
+  ([With your agent](../getting-started/with-your-agent.md)).
 - "Write a workflow that runs the tests and asks me before it pushes." It checks
   each draft as `ork validate` does, until it's clean.
 - "Which of my runs failed today, and why?"
@@ -35,8 +36,8 @@ can read and check, but not start another run.
 
 ## Without the plugin
 
-Put the skills in your project, so everyone who clones it gets them, as
-`/ork-write`, `/ork-run` and `/ork-principles`:
+Put Ork's skills for Claude Code in your project, so everyone who clones it gets
+them, as `/ork-setup`, `/ork-write`, `/ork-run` and `/ork-principles`:
 
 ```sh
 ork init --skills
@@ -48,5 +49,8 @@ ork init --skills
 claude mcp add ork -- ork mcp
 ```
 
-The tools in full: [ork mcp](../../specs/cli/mcp.md). How it all fits:
+These are not the skills Ork gives a node in a run, such as `ork:review`; those
+are in [skills and context](./skills-and-context.md).
+
+For the full rules: [ork mcp](../../specs/cli/mcp.md) and
 [Ork for Claude Code](../../specs/claude-code.md).

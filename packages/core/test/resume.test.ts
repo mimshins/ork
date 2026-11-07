@@ -1,7 +1,9 @@
 /**
  * @file Tests for `ork resume`'s core: reading a run's events back (results up
- *   to the first failure, delegated runs left out, worktrees, loop answers),
- *   and a resumed run that hands finished results back and runs the rest.
+ *   to the first failure, delegated runs left out, worktrees, loop answers, a
+ *   leader's forks never taken for its session, by a resume or `ork chat`), and
+ *   a resumed run that hands finished results back and runs the rest, keeping
+ *   what a leader's forks spent.
  */
 
 import { parseWorkflow } from "@krapht/ork-schema";
@@ -13,6 +15,7 @@ import {
   createReplay,
   type HumanChannel,
   type NodeExecutor,
+  nodeSession,
   replayLoopAnswers,
   type RunEvent,
   resumeState,
@@ -103,6 +106,108 @@ describe("a resumed run", () => {
       "d",
       "j",
     ]);
+  });
+
+  it("keeps what a fork spent, in the run and against the node it forked", async () => {
+    const first = await runFan(["c"]);
+    // A fork of a's session answered a question before the run failed.
+    const events: RunEvent[] = [
+      ...first.events.slice(0, -1),
+      forkFinished("a", 0.5),
+      ...first.events.slice(-1),
+    ];
+    const state = resumeState(events);
+    expect(state.earlier.total).toBe(0.5);
+
+    const replay = createReplay(
+      state.history,
+      state.cutOff,
+      undefined,
+      state.earlier,
+    );
+    const again = await runFan([], replay);
+    expect(again.result.costUsd).toBe(0.5);
+    expect(again.result.nodes.find(n => n.id === "a")?.costUsd).toBe(0.5);
+    const sum = again.result.nodes.reduce((all, n) => all + n.costUsd, 0);
+    expect(sum).toBe(again.result.costUsd);
+  });
+});
+
+/** A fork of `id`'s session, as recorded under `id`. */
+const forkStarted = (id: string): RunEvent => ({
+  type: "node.event",
+  id,
+  event: {
+    type: "session.started",
+    sessionId: `${id}-fork`,
+    model: "m",
+    cwd: "/fork",
+    fork: true,
+  },
+});
+
+/** The end of a fork of `id`'s session, at `costUsd`. */
+const forkFinished = (id: string, costUsd: number): RunEvent => ({
+  type: "node.event",
+  id,
+  event: {
+    type: "session.finished",
+    fork: true,
+    outcome: {
+      subtype: "success",
+      sessionId: `${id}-fork`,
+      report: null,
+      text: "",
+      usage: {
+        costUsd,
+        inputTokens: 1,
+        outputTokens: 1,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        turns: 1,
+        durationMs: 1,
+      },
+      errors: [],
+    },
+  },
+});
+
+describe("a leader's fork", () => {
+  /** A leader cut off in `delegate`, after its fork answered a question. */
+  const cut: RunEvent[] = [
+    { type: "node.started", id: "lead", nodeType: "claude.leader", round: 1 },
+    {
+      type: "node.event",
+      id: "lead",
+      event: {
+        type: "session.started",
+        sessionId: "lead-s1",
+        model: "m",
+        cwd: "/lead",
+      },
+    },
+    forkStarted("lead"),
+    {
+      type: "node.event",
+      id: "lead",
+      event: { type: "assistant.text", text: "b, as planned.", fork: true },
+    },
+    forkFinished("lead", 0.5),
+  ];
+
+  it("is never the session a resume continues", () => {
+    expect([...resumeState(cut).cutOff]).toEqual([["lead", "lead-s1"]]);
+  });
+
+  it("is never the session `ork chat` takes", () => {
+    const stored = cut.map((event, index) => ({
+      runId: "r1",
+      seq: index + 1,
+      at: "2026-11-08T00:00:00.000Z",
+      event,
+    }));
+    const { session } = nodeSession(stored, "lead");
+    expect(session).toMatchObject({ sessionId: "lead-s1", cwd: "/lead" });
   });
 });
 

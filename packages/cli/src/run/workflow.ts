@@ -113,6 +113,7 @@ export const runWorkflowFile = async (
   const projects = options.store.projects();
   const ready = await preflight(options, {
     workflow,
+    effective: graph.workflow,
     place,
     projects,
     inputs: inputs.inputs,
@@ -202,6 +203,9 @@ export const runWorkflowFile = async (
     maskedNames,
   };
   if (options.driver !== undefined) executorOptions.driver = options.driver;
+  if (ready.readyDriver !== undefined) {
+    executorOptions.readyDriver = ready.readyDriver;
+  }
   if (options.tools !== undefined) executorOptions.tools = options.tools;
   const script = process.argv[1];
   if (script !== undefined && onPath(script)) executorOptions.orkBin = script;
@@ -242,6 +246,9 @@ export const runWorkflowFile = async (
     settings: {
       inPlace: options.inPlace,
       ...(options.driver === undefined ? {} : { driver: options.driver }),
+      ...(ready.readyDriver === undefined
+        ? {}
+        : { readyDriver: ready.readyDriver }),
       ...ports.settings,
     },
     ...(ports.relay === undefined ? {} : { relay: ports.relay }),

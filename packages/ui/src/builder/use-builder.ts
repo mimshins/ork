@@ -1,97 +1,82 @@
 /**
  * @file The builder's state: the workflow open, what's selected, and each
  *   change sent to the server, which holds the draft and answers with the new
- *   text and problems. Changes go one at a time and in order, and read what
- *   they build on when their turn comes, so nothing acts on a stale view. An
- *   answer about a workflow that's no longer open changes nothing on screen.
- *   Undo is this session's history, up to the last save.
+ *   text and problems. What's open lives in the page's state
+ *   (state/builder-session.ts), so a panel moved, closed or stacked shows it
+ *   again. Changes go one at a time and in order, and read what they build on
+ *   when their turn comes, so nothing acts on a stale view. An answer about a
+ *   workflow that's no longer open changes nothing on screen. Undo is this
+ *   page's history, up to the last save.
  */
 
 import type {
-  BuilderEditAnswer,
   BuilderView,
   CallResult,
   WorkflowEdit,
 } from "@krapht/ork-server/client";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
+import { useValue } from "react-containerized-state";
 
 import { toasts } from "../components/toast.tsx";
+import type { Opened, Step } from "../state/builder-session.ts";
 import { useAppState } from "../state/context.tsx";
 import { readAt, sameJson } from "./builder-model.ts";
 import type { FormPath } from "./form-parts.tsx";
-import { useBuilderContext } from "./use-builder-context.ts";
 import { useBuilderLists } from "./use-builder-lists.ts";
-
-export type Opened = { project: string; name: string };
-
-/** One step back: the text, and the file it was based on. */
-type Step = BuilderEditAnswer["previous"];
 
 const paramsOf = ({ project, name }: Opened) => ({ id: project, name });
 
 export const useBuilder = () => {
-  const { client } = useAppState();
-  const [opened, setOpenedState] = useState<Opened | null>(null);
-  const [view, setView] = useState<BuilderView | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
+  const { client, builder: session } = useAppState();
+  // The containers: a turn reads what they hold when it runs, which may be
+  // newer than this render.
+  const { inTurn, history, view: viewNow, opened: openedNow } = session;
+  const opened = useValue(openedNow);
+  const view = useValue(viewNow);
+  const selected = useValue(session.selected);
+  const canUndo = useValue(history).length > 0;
   const [connecting, setConnecting] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
-  const [canUndo, setCanUndo] = useState(false);
   const [replaceAsked, setReplaceAsked] = useState<string | null>(null);
   const lists = useBuilderLists(client);
   const { schema, catalog, drafts, setDrafts, refreshDrafts, forProject } =
     lists;
-  const queue = useRef<Promise<unknown>>(Promise.resolve());
-  // What a turn reads when it runs, which may be newer than this render.
-  const latest = useRef<BuilderView | null>(null);
-  const openedNow = useRef<Opened | null>(null);
-  const history = useRef<readonly Step[]>([]);
-  const tellContext = useBuilderContext(opened, view);
 
-  /** Runs after everything sent before it. */
-  const inTurn = useCallback(<T>(work: () => Promise<T>): Promise<T> => {
-    const next = queue.current.then(work, work);
-    queue.current = next.catch(() => null);
-    return next;
-  }, []);
-
-  const writeHistory = useCallback((steps: readonly Step[]): void => {
-    history.current = steps;
-    setCanUndo(steps.length > 0);
-  }, []);
+  const writeHistory = useCallback(
+    (steps: readonly Step[]): void => {
+      void history.setValue(steps);
+    },
+    [history],
+  );
 
   const isOpen = useCallback(
-    (target: Opened): boolean =>
-      openedNow.current?.project === target.project &&
-      openedNow.current.name === target.name,
-    [],
+    (target: Opened): boolean => {
+      const now = openedNow.getValue();
+      return now?.project === target.project && now.name === target.name;
+    },
+    [openedNow],
   );
 
   /** What's open now, with nothing carried over from what was before. */
   const showOpened = useCallback(
     (target: Opened | null, shown: BuilderView | null): void => {
-      openedNow.current = target;
-      latest.current = shown;
-      setOpenedState(target);
-      setView(shown);
-      setSelected(null);
+      session.show(target, shown);
       setConnecting(false);
       setRefusal(null);
       setReplaceAsked(null);
-      writeHistory([]);
     },
-    [writeHistory],
+    [session],
   );
 
   const chooseProject = useCallback(
     (project: string): void => {
       forProject(project);
-      const current = openedNow.current;
+      const current = openedNow.getValue();
       if (current !== null && current.project !== project) {
         showOpened(null, null);
       }
     },
-    [forProject, showOpened],
+    [forProject, openedNow, showOpened],
   );
 
   /** Shows an answer about `target`, if it's still what's open. */
@@ -99,15 +84,14 @@ export const useBuilder = () => {
     (target: Opened, answer: CallResult<BuilderView>): boolean => {
       if (!isOpen(target)) return answer.ok;
       if (answer.ok) {
-        latest.current = answer.data;
-        setView(answer.data);
+        session.update(answer.data);
         setRefusal(null);
         return true;
       }
       setRefusal(answer.error);
       return false;
     },
-    [isOpen],
+    [isOpen, session],
   );
 
   const open = useCallback(
@@ -153,11 +137,11 @@ export const useBuilder = () => {
         isOpen(target) &&
         answer.data.text !== answer.data.previous.text
       ) {
-        writeHistory([...history.current, answer.data.previous]);
+        writeHistory([...history.getValue(), answer.data.previous]);
       }
       return done;
     },
-    [client, isOpen, take, writeHistory],
+    [client, history, isOpen, take, writeHistory],
   );
 
   const edit = useCallback(
@@ -177,7 +161,7 @@ export const useBuilder = () => {
       if (opened === null) return Promise.resolve(false);
       return inTurn(() => {
         if (!isOpen(opened)) return Promise.resolve(false);
-        const current = readAt(latest.current?.document, path);
+        const current = readAt(viewNow.getValue()?.document, path);
         const value = next(current);
         if (sameJson(current, value)) return Promise.resolve(true);
         const at = [...path];
@@ -188,7 +172,7 @@ export const useBuilder = () => {
         ]);
       });
     },
-    [inTurn, isOpen, opened, send],
+    [inTurn, isOpen, opened, send, viewNow],
   );
 
   const undo = useCallback(
@@ -196,17 +180,17 @@ export const useBuilder = () => {
       opened === null
         ? Promise.resolve()
         : inTurn(async () => {
-            const last = history.current.at(-1);
+            const last = history.getValue().at(-1);
             if (last === undefined || !isOpen(opened)) return;
             const answer = await client.call("builderRestore", {
               params: paramsOf(opened),
               body: last,
             });
             if (take(opened, answer)) {
-              writeHistory(history.current.slice(0, -1));
+              writeHistory(history.getValue().slice(0, -1));
             }
           }),
-    [client, inTurn, isOpen, opened, take, writeHistory],
+    [client, history, inTurn, isOpen, opened, take, writeHistory],
   );
 
   const discard = useCallback(
@@ -284,10 +268,7 @@ export const useBuilder = () => {
     discard,
     save,
     /** The person selects a card, or none: the Context panel follows. */
-    select: (node: string | null) => {
-      setSelected(node);
-      tellContext(node);
-    },
+    select: session.select,
     setConnecting,
     setReplaceAsked,
   };

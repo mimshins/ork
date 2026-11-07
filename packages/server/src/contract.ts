@@ -84,7 +84,11 @@ export const DecisionsQuerySchema = z.strictObject({
   project: z.string().min(1).optional(),
 });
 
-export const AnswerSchema = z.strictObject({ choose: z.string().min(1) });
+/** An answer: the option, and what the person said with it, if anything. */
+export const AnswerSchema = z.strictObject({
+  choose: z.string().min(1),
+  note: z.string().optional(),
+});
 
 const RunFlags = {
   inputs: z.record(z.string(), z.string()).optional(),

@@ -23,10 +23,17 @@ messages:
   - between: [tests, builder]
 ```
 
-Inside `check.sh`, `"${ORK_BIN:-ork}" send builder -m "lint found 3 problems"`
-or `--stdin` sends one. It prints nothing when it works, and exits 1 with the
-reason on stderr when it can't, so a script can act on that. A message can be up
-to 64 KiB; for more, write a file and send its path.
+Inside `check.sh`, a program sends one itself, with `-m` or from its input with
+`--stdin`:
+
+```sh
+"${ORK_BIN:-ork}" send builder -m "lint found 3 problems"
+npm run lint 2>&1 | "${ORK_BIN:-ork}" send builder --stdin
+```
+
+It prints nothing when it works, and exits 1 with the reason on stderr when it
+can't, so a script can act on that. A message can be up to 64 KiB; for more,
+write a file and send its path.
 
 - **Whom a program can write to:** its node's owner and its channels. The
   channel above is one way: a session can't write back to a program.

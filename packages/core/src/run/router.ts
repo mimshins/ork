@@ -1,12 +1,19 @@
 /**
  * @file Routes a finished node's result through the graph: delivers each edge
  *   `routing.ts` decides to its target's inbox, skips dead paths downstream,
- *   and hands loop edges to the loop counters (`escalation.ts`).
+ *   hands loop edges to the loop counters (`escalation.ts`), resolves as not
+ *   taken each edge whose source can't run any more, and counts the failures an
+ *   edge handled.
  */
 
 import type { Scope } from "../expr/evaluate.ts";
 import type { CompiledEdge, CompiledGraph } from "../graph/types.ts";
-import { createInbox, decideEdges, isLoopEdge } from "./routing.ts";
+import {
+  createInbox,
+  decideEdges,
+  isLoopEdge,
+  stuckReason,
+} from "./routing.ts";
 import type { NodeOutput, NodeResult, RunEvent } from "./types.ts";
 
 export type RouterOptions = {
@@ -27,6 +34,11 @@ export type RouterOptions = {
 export const createRouter = (options: RouterOptions) => {
   const { graph, onEvent } = options;
   const inbox = createInbox(graph);
+  /** Failed results with an edge taken: the run went on (G8, L42). */
+  let handled = 0;
+  /** How many activations of each node are queued, running or routing. */
+  const active = new Map<string, number>();
+  const isActive = (id: string) => active.has(id);
 
   const skip = (id: string): void => {
     options.skipped(id);
@@ -74,10 +86,61 @@ export const createRouter = (options: RouterOptions) => {
         if (taken) anyTaken = true;
       }
     }
-    if (!result.ok && !anyTaken) {
-      options.failed(`${id}: ${result.error ?? "failed"}`);
+    if (result.ok) return;
+    if (anyTaken) handled += 1;
+    else options.failed(`${id}: ${result.error ?? "failed"}`);
+  };
+
+  /** An activation of `id` is queued; it is active until `done`. */
+  const queued = (id: string): void => {
+    active.set(id, (active.get(id) ?? 0) + 1);
+  };
+
+  /** An activation of `id` has run and routed, or never will. */
+  const done = (id: string): void => {
+    const count = (active.get(id) ?? 0) - 1;
+    if (count > 0) active.set(id, count);
+    else active.delete(id);
+  };
+
+  /**
+   * Resolves as not taken each edge whose source can't run any more, given what
+   * is active (queued, running or routing), so a node fed only by branches that
+   * didn't run in this round is skipped, and a join waiting on one fires. One
+   * target at a time, in graph order, as each can start something.
+   */
+  const resolveStranded = (): void => {
+    for (
+      let edges = inbox.stranded(isActive);
+      edges.length > 0 && !options.stopped();
+      edges = inbox.stranded(isActive)
+    ) {
+      for (const edge of edges) deliver(edge, false, {});
     }
   };
 
-  return { route };
+  /**
+   * Routes a finished activation unless the run has stopped, then resolves as
+   * not taken what can't run any more in this round.
+   */
+  const finished = async (id: string, result: NodeResult): Promise<void> => {
+    if (!options.stopped()) await route(id, result);
+    done(id);
+    if (!options.stopped()) resolveStranded();
+  };
+
+  /** Why the run fails if a node still waits with nothing left to run. */
+  const stuck = (): string[] => {
+    const waiting = inbox.waiting();
+    return waiting.length === 0 ? [] : [stuckReason(waiting)];
+  };
+
+  return {
+    route,
+    finished,
+    queued,
+    done,
+    stuck,
+    handled: () => handled,
+  };
 };

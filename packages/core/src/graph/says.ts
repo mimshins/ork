@@ -93,7 +93,11 @@ const ownSays = (node: Node): NodeSays => {
   }
   if (node.type === "human.gate") {
     return {
-      fields: [{ field: "choice", kind: "values", values: optionIds(node) }],
+      fields: [
+        { field: "choice", kind: "values", values: optionIds(node) },
+        // What the person said with their answer; empty when nothing.
+        { field: "note", kind: "text" },
+      ],
       canFail: false,
       canDeclare: false,
     };

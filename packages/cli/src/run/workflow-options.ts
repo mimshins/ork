@@ -10,6 +10,8 @@ import type {
 import type { ToolRunner } from "@krapht/ork-nodes";
 import type { Driver } from "@krapht/ork-schema";
 
+import type { DriverChecks } from "./ready-driver.ts";
+
 export type RunWorkflowOptions = {
   file: string;
   cwd: string;
@@ -23,6 +25,11 @@ export type RunWorkflowOptions = {
   /** Print the run's events as JSON lines instead of a transcript. */
   json: boolean;
   runtime: (driver: Driver) => Promise<ClaudeRuntime>;
+  /**
+   * The drivers' checks, for nodes that name no driver (default: the real ones,
+   * as `ork doctor` runs them).
+   */
+  driverChecks?: DriverChecks;
   /**
    * The run's own terminal; it races `ork decide` for every question. None for
    * a detached run, whose questions wait for `ork decide`.

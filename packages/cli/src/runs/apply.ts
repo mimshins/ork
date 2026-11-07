@@ -127,7 +127,15 @@ export const commitsAhead = async (
 
 export type ApplyOptions = Pick<
   RunWorkflowOptions,
-  "runtime" | "human" | "out" | "err" | "driver" | "home" | "onRun" | "runId"
+  | "runtime"
+  | "driverChecks"
+  | "human"
+  | "out"
+  | "err"
+  | "driver"
+  | "home"
+  | "onRun"
+  | "runId"
 > & {
   store: EventStore;
   item: FeedbackItem;

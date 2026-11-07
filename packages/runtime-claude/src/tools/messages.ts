@@ -110,11 +110,19 @@ export const answerTool = defineTool({
   shape: {
     question: z.string().describe("The question's id, e.g. 'q1'."),
     choice: z.string().describe("One of its options."),
+    note: z
+      .string()
+      .optional()
+      .describe("Why, in a sentence or two; it is recorded with your answer."),
   },
   available: ({ ports }) =>
     ports.mailbox !== undefined && ports.ownership !== undefined,
   run: ({ ports }, args) => {
-    const answered = ports.mailbox?.answer(args.question, args.choice);
+    const answered = ports.mailbox?.answer(
+      args.question,
+      args.choice,
+      args.note,
+    );
     if (answered === undefined) return Promise.resolve(text("No questions."));
     return Promise.resolve(
       text(

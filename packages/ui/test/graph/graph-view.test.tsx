@@ -1,7 +1,8 @@
 /**
  * @file Tests for the graph's view: one tab stop among the cards, moving along
  *   edges with the arrow keys, selecting, the node menu key, accessible names,
- *   the view's keys and controls, and what axe finds.
+ *   the view's keys and controls, the Keys popover that shows a card's keys,
+ *   and what axe finds.
  */
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -287,6 +288,27 @@ describe("the graph", () => {
     expect(graph.getAttribute("aria-label")).toBe("Run 4f2a1c");
     expect(graph.getAttribute("aria-roledescription")).toBe("graph");
     expect(hintOf(graph)).toContain("0 fits the graph");
+  });
+
+  it("shows a card's keys with the view's, from the Keys button", async () => {
+    show();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Keys on the graph" }));
+    const keys = await screen.findByRole("dialog", {
+      name: "Keys on the graph",
+    });
+    const rows = [...keys.querySelectorAll("dt")].map(term => [
+      term.textContent,
+      term.nextElementSibling?.textContent,
+    ]);
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        ["EnterSpace", "Select the node"],
+        ["ShiftF10", "The node's controls"],
+        ["Escape", "Back to the view"],
+      ]),
+    );
+    expect(await violations(keys)).toEqual([]);
   });
 
   it("has nothing for axe to find", async () => {

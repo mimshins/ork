@@ -1,8 +1,8 @@
 /**
  * @file The open decisions of live runs, and answering one from another process
- *   (`ork decide`, the local server). An answer goes to the store (the first
- *   one wins), then the run is woken on its socket so it picks the answer up at
- *   once (specs/messaging.md).
+ *   (`ork decide`, the local server), with the person's note if they gave one.
+ *   An answer goes to the store (the first one wins), then the run is woken on
+ *   its socket so it picks the answer up at once (specs/messaging.md).
  */
 
 import { socketPath, wakeRun } from "../control/socket.ts";
@@ -33,7 +33,8 @@ export type Answered =
 
 /**
  * Answers an open decision with one of its options, and wakes its run. `home`
- * is `~`, where the sockets are (tests pass a folder); `by` says who answered.
+ * is `~`, where the sockets are (tests pass a folder); `by` says who answered;
+ * `note` is what they said with it, if anything (blank is nothing).
  */
 export const answerDecision = async (
   store: EventStore,
@@ -41,6 +42,7 @@ export const answerDecision = async (
   choice: string,
   home?: string,
   by: AnsweredBy = "decide",
+  note?: string,
 ): Promise<Answered> => {
   const decision = store.decision(id);
   if (decision === undefined)
@@ -51,7 +53,7 @@ export const answerDecision = async (
       error: `\`${choice}\` is not an option of \`${id}\`: \`${decision.options.map(o => o.id).join("`, `")}\``,
     };
   }
-  if (!store.answerDecision(id, choice, by)) {
+  if (!store.answerDecision(id, choice, by, note)) {
     const now = store.decision(id);
     return {
       ok: false,

@@ -15,8 +15,10 @@ under the runs, with whether each is live. Accepting one takes a terminal.
 **Monitor** draws the run as it goes, beside the same nodes as a tree. Each node
 shows its status, cost, tokens and model. Select a node for its own controls.
 Stopping asks first and says what will happen: a stopped node fails, and the
-workflow's failure rules apply; a stopped run can be resumed. A node that called
-another workflow links to that run, and one that's
+workflow's failure rules apply; a stopped run can be resumed. **Resume…**, on a
+run that stopped, failed or crashed, asks first, shows the `ork resume` command
+it stands for, and picks the run up where it left off, in the background. A node
+that called another workflow links to that run, and one that's
 [watching a source](../watching.md) says what it's waiting for and how often it
 looks. **Note…** on a node, or among the run's controls, adds your
 [feedback](../feedback.md) on how it went.
@@ -28,9 +30,11 @@ row for the whole event.
 
 **Decisions** collects every open question from every run. Answer with one
 click, or with the focus in a card press `1` to `9`, or `Enter` on the card for
-the recommended option. A card stays until the run has taken the answer, and if
-it is refused it says why. Below, **Settled** says who answered what, including
-from a terminal.
+the recommended option. To send words with your answer, type them in the card's
+**Note for the run** box first, then choose; keys typed in the box stay in it,
+so `Enter` there starts a new line rather than answering. A card stays until the
+run has taken the answer, and if it is refused it says why. Below, **Settled**
+says who answered what, including from a terminal, and what they said.
 
 **Chats** keeps one thread per leader or worker, with what it said, what you
 said, and what it did in between. While the run is live, `Enter` sends and
@@ -55,10 +59,16 @@ where it follows your draft as you edit. A run's node is planned from your files
 as they are now, so if one changed after the run started, it names it: what you
 see may not be what the run loaded.
 
-**Feedback** lists what got in your runs' way: read an item's records, then
-dismiss it, accept it, make it a lesson, have Ork propose a fix, or share one
-about Ork ([in the browser](../feedback.md#in-the-browser)). **Worktrees** shows
-what runs left, to tidy up ([in the browser](../worktrees.md#in-the-browser)).
+**Feedback** lists what got in your runs' way, from every project, filtered by
+status and by what it's about. Choose an item to read its records, newest first,
+then dismiss or restore it, accept it, make it a lesson for its workflow, have
+Ork propose a fix, or share one about Ork. Each action shows what it will do
+first ([feedback in the browser](../feedback.md#in-the-browser)).
+
+**Worktrees** lists the worktrees and branches your runs left, for every project
+at once. **Remove…** takes one away and **Clean merged…** tidies what's merged;
+each shows its plan and its command, and asks, twice if work would be lost
+([worktrees in the browser](../worktrees.md#in-the-browser)).
 
 ### Builder
 

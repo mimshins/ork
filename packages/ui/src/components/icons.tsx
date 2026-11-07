@@ -38,6 +38,7 @@ import {
   mdiGithub,
   mdiGraphOutline,
   mdiHelpBoxMultipleOutline,
+  mdiKeyboardOutline,
   mdiLayersOutline,
   mdiMagnify,
   mdiMessageAlertOutline,
@@ -125,5 +126,6 @@ export const IconGit = icon(mdiGit);
 export const IconPlus = icon(mdiPlus);
 export const IconMinus = icon(mdiMinus);
 export const IconFit = icon(mdiFitToScreenOutline);
+export const IconKeyboard = icon(mdiKeyboardOutline);
 export const IconUpgrade = icon(mdiArrowUpCircleOutline);
 export const IconRestart = icon(mdiRestart);

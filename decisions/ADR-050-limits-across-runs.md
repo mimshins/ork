@@ -67,10 +67,10 @@ From RFC-007, in full there:
 - A long unattended run has something above it, on an API key or a plan, with no
   change to any workflow.
 - A cap can be passed by what running sessions were given
-  ([L99](../specs/gaps/limits-usage.md)), and sees only this machine and only
-  Ork ([L100](../specs/gaps/limits-usage.md)).
+  ([L99](../specs/usage/limits.md)), and sees only this machine and only Ork
+  ([L100](../specs/usage/limits.md)).
 - Two accounts on one machine share plan limits
-  ([L101](../specs/gaps/limits-usage.md)).
+  ([L101](../specs/usage/limits.md)).
 - What a session does when a plan really refuses it has not been seen
   ([C11](../specs/gaps.md#chores)). Caps, the session cap, the cut-off and the
   resume were proven on a real session on the CLI driver.

@@ -63,6 +63,15 @@ const project = () => {
   return dir;
 };
 
+/** Only the SDK driver is ready: what these runs took before. */
+const sdkReady: RunWorkflowOptions["driverChecks"] = () =>
+  Promise.resolve([
+    {
+      id: "sdk",
+      result: { name: "sdk", status: "ok", detail: "sdk is ready" },
+    },
+  ]);
+
 const recommending: HumanChannel = {
   ask: ({ recommended }) => Promise.resolve(recommended ?? "none"),
   permit: () => Promise.resolve({ allow: false, message: "no" }),
@@ -84,6 +93,7 @@ const options = (overrides: Partial<RunNodeOptions>) => {
     inPlace: false,
     json: false,
     runtime,
+    driverChecks: sdkReady,
     human: recommending,
     store: openStore(":memory:"),
     home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
@@ -106,7 +116,11 @@ const terminal = (answers: string[], interactive = true) => {
   output.setEncoding("utf8");
   output.on("data", (chunk: string) => {
     said.push(chunk);
-    if (chunk.includes("Allow?") || chunk.includes("Choose")) {
+    if (
+      chunk.includes("Allow?") ||
+      chunk.includes("Choose") ||
+      chunk.includes("Note for the run")
+    ) {
       input.write(`${answers.shift() ?? ""}\n`);
     }
   });
@@ -136,7 +150,9 @@ describe("ork run --node", () => {
       '  verdict: "approve"',
       "  $0.0123 · 100 in / 20 out (80 cached) · 2 turns · 1.5s",
     ]);
-    expect(run.err).toEqual([]);
+    expect(run.err).toEqual([
+      "No driver is named, so the run uses the sdk driver: the one ready here (sdk is ready).",
+    ]);
   });
 
   it("says an inherited before: step does not run", async () => {
@@ -257,6 +273,47 @@ describe("the terminal channel", () => {
     expect(said.join("")).toContain("Type an option's number or id.");
   });
 
+  it("takes an optional note after the choice, and Enter skips it", async () => {
+    const { human, said } = terminal([
+      "2",
+      "Cut the API section",
+      "1",
+      "",
+      "n",
+      "Not in CI",
+    ]);
+    const notes: string[] = [];
+    const onNote = (note: string): void => {
+      notes.push(note);
+    };
+    const noted = await human.ask({
+      nodeId: "n",
+      question: "Which?",
+      options: options3,
+      onNote,
+    });
+    const skipped = await human.ask({
+      nodeId: "n",
+      question: "Which?",
+      options: options3,
+      onNote,
+    });
+    const denied = await human.permit({
+      nodeId: "n",
+      toolName: "Bash",
+      input: { command: "rm -rf build" },
+      onNote,
+    });
+    human.close();
+
+    expect([noted, skipped]).toEqual(["b", "a"]);
+    expect(denied).toMatchObject({ allow: false });
+    expect(notes).toEqual(["Cut the API section", "Not in CI"]);
+    expect(said.join("")).toContain(
+      "Note for the run (optional, Enter to skip)",
+    );
+  });
+
   it("withdraws a question when its signal aborts, and asks the next one", async () => {
     const { human } = terminal([""]);
     const withdraw = new AbortController();
@@ -359,6 +416,7 @@ const pipeline = (overrides: Partial<RunWorkflowOptions>) => {
     inPlace: true,
     json: false,
     runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
+    driverChecks: sdkReady,
     human: recommending,
     store: openStore(":memory:"),
     home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
@@ -440,6 +498,7 @@ describe("ork run (a whole workflow)", () => {
     const run = pipeline({ cwd: dir, inPlace: false });
     expect((await runWorkflowFile(run.value)).exitCode).toBe(1);
     expect(run.err).toEqual([
+      "No driver is named, so the run uses the sdk driver: the one ready here (sdk is ready).",
       "These instructions, skills or agents have uncommitted changes, and the worktrees only get committed files:",
       "  CLAUDE.md",
       "Commit or stash them, or pass --allow-dirty to run with the committed versions.",
@@ -451,7 +510,7 @@ describe("ork run (a whole workflow)", () => {
   it("needs a git repository for worktree nodes, unless --in-place", async () => {
     const run = pipeline({ inPlace: false });
     expect((await runWorkflowFile(run.value)).exitCode).toBe(1);
-    expect(run.err[0]).toMatch(
+    expect(run.err.at(-1)).toMatch(
       /^build need a git worktree, but .+ is not in a git repository/u,
     );
   });

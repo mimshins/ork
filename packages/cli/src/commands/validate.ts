@@ -192,6 +192,12 @@ export const validate = defineCommand({
       "Check workflow files: schema, ownership tree, edges, loops and references, and walk every way through them",
   },
   args: {
+    files: {
+      type: "positional",
+      description:
+        "Workflow files or names in .ork/workflows/ (default: every workflow there, and the project's triggers)",
+      required: false,
+    },
     json: {
       type: "boolean",
       description: "Print the reports as JSON",

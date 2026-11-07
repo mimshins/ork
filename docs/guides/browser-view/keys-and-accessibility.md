@@ -19,9 +19,10 @@ Ctrl, ⌥ is Alt, ⇧ is Shift and ⌃ is Ctrl.
 
 On the graph, the arrow keys move the view, and on a node they follow its edges.
 `Enter` selects a node, `Shift+F10` goes to its controls and `Escape` comes
-back; `+` and `-` zoom, and `0` fits the graph. The node table under it, with
-what each node is doing now, has the same nodes and actions as a list, which is
-often quicker with a screen reader.
+back; `+` and `-` zoom, and `0` fits the graph. The keyboard button beside the
+zoom buttons, **Keys on the graph**, lists them. The node table under the graph,
+with what each node is doing now, has the same nodes and actions as a list,
+which is often quicker with a screen reader.
 
 ## Accessibility
 
@@ -31,13 +32,13 @@ follows your system's reduced-motion, more-contrast and forced-colors settings.
 Changes are announced through one polite live region.
 
 It has been audited with axe and by keyboard in Chrome, but not yet with a real
-screen reader or by touch ([L70](../../../specs/gaps/limits-ui.md)). If
-something does not work for you, please
+screen reader or by touch. If something does not work for you, please
 [open an issue](https://github.com/mimshins/ork/issues).
 
 ## What it does not do yet
 
-- **Resuming a run** has no button ([L71](../../../specs/gaps/limits-ui.md)).
 - **Runs older than the newest 50** are in `ork ps`.
-- **Feedback** merges only with `ork feedback triage`, and fixes with the
-  default driver ([L152, L153](../../../specs/gaps/limits-feedback.md)).
+- **Merging feedback** items is only in the terminal, with
+  `ork feedback triage`.
+
+The known limits in full: [the UI's limits](../../../specs/ui/limits.md).

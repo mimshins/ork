@@ -20,8 +20,8 @@ What the latest chosen node's session loads, layer by layer, as
   of what Ork appends to its system prompt, with **Reload** and its CLI twin. A
   run's node is planned from the project's files as they are now; a line under
   the header, with its icon beside it, names each file behind it changed since
-  the run started ([limits](../gaps/limits-context-inspector.md)). A worker
-  spawned in the run is planned as the node it came from, and says so.
+  the run started ([limits](./panels-context-limits.md)). A worker spawned in
+  the run is planned as the node it came from, and says so.
 - **The stack:** Agent, Project instructions, Skills, Context files, Practices
   and the whole appended system prompt, in the CLI's order, each with its own
   sum (never a total across them, since they don't add up). Each piece is a row
@@ -57,9 +57,9 @@ has no Go to digit; its tab sits after Usage in the bottom group.
 - **The list** is every item, most recently seen first, read when the panel
   shows, after every action, on **Reload**, and when the runs change while it
   shows, at most every 5 s (no stream carries feedback,
-  [L154](../gaps/limits-feedback.md)). A row is its title and status, then its
-  id, how often it was seen, what it's about and its kind, `high` when it is,
-  how many were merged into it, and when it was last seen. It's named by what it
+  [L154](../feedback/limits.md)). A row is its title and status, then its id,
+  how often it was seen, what it's about and its kind, `high` when it is, how
+  many were merged into it, and when it was last seen. It's named by what it
   shows, in order, so every word seen is in its name (WCAG 2.5.3), with the
   words only a screen reader needs ("3 times" for `3×`, "last seen") and a pause
   between the parts. It is one tab stop, which is the chosen row (or the first)
@@ -98,9 +98,12 @@ has no Go to digit; its tab sits after Usage in the bottom group.
   size. Add lesson, like Add note and Post, is described by the reason it waits,
   which is said as it changes.
 - **Propose fix…** confirms first, naming the project and that it's a paid run,
-  then starts `ork:feedback-apply` with the default driver
-  ([L152](../gaps/limits-feedback.md)), goes to the Monitor, and the run's
-  heading takes the focus as for **Open run**; a refusal stays in the dialog.
+  with the Run workflow dialog's **Driver** field (the workflow's, else the one
+  ready; `sdk` or `cli`), which its
+  `ork feedback apply <item> --driver <driver>` follows; then starts
+  `ork:feedback-apply` on that driver (`{ driver }` to the apply route, none for
+  the workflow's own), goes to the Monitor, and the run's heading takes the
+  focus as for **Open run**; a refusal stays in the dialog.
 - **Publish…** reads a preview (only reads) and shows exactly what would be
   sent: where it goes (a new thread, or a +1 on the thread that exists, linked),
   the title and text as characters in a well that scrolls and takes the focus,
@@ -114,7 +117,7 @@ has no Go to digit; its tab sits after Usage in the bottom group.
   nowhere to stay. Cancelled, it says nothing was sent.
 - **When the chosen item goes** from a read, the choice follows it into the item
   it was merged into, and says so, or clears. Merges are made with
-  `ork feedback triage` ([L153](../gaps/limits-feedback.md)).
+  `ork feedback triage` ([L153](../feedback/limits.md)).
 - **Layout:** from 48rem the list sits beside the item, each scrolling on its
   own; narrower, the item takes the list's place with **Back to items**, its
   heading taking the focus, and `Escape` goes back to its row (as it does from

@@ -23,6 +23,7 @@ import { createCliRuntime } from "@krapht/ork-runtime-claude";
 import { describe, expect, it } from "vitest";
 
 import { runWorkflowFile } from "../src/index.ts";
+import { sdkReady } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
@@ -74,6 +75,7 @@ const setup = (workflow = WORKFLOW) => {
       inPlace: true,
       json: false,
       runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
+      driverChecks: sdkReady,
       human: recommending,
       store,
       home,

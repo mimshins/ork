@@ -2,7 +2,7 @@
 description:
   What Ork is, its packages and their dependency direction, and where each kind
   of knowledge lives. Read first.
-last-verified: 2026-11-03 (commit b737814)
+last-verified: 2026-11-08 (commit 2063edb and its working tree)
 ---
 
 # Ork overview
@@ -37,7 +37,7 @@ Status per area: [specs/README.md](../../specs/README.md). Release route:
 | Topic                                        | Location                                                                   |
 | -------------------------------------------- | -------------------------------------------------------------------------- |
 | Contracts for current and specified behavior | [`specs/`](../../specs/README.md)                                          |
-| Overview, milestones                         | [`docs/design.md`](../../docs/design.md)                                   |
+| Overview, milestones                         | [`specs/design.md`](../../specs/design.md)                                 |
 | How the parts interact, with status          | [`docs/interaction-map/`](../../docs/interaction-map/README.md)            |
 | Accepted decisions                           | [`decisions/`](../../decisions/README.md)                                  |
 | Proposals                                    | [`rfcs/`](../../rfcs/README.md)                                            |

@@ -14,7 +14,7 @@
       imported through their public entry point only.
 - [ ] Workflow format changes: `workflow.schema.json` regenerated, examples
       still valid and canonical, docs updated.
-- [ ] `docs/design.md` and the interaction map match the change.
+- [ ] `specs/design.md`, the user docs and the interaction map match the change.
 - [ ] No credential is stored, logged, or written to events, artifacts, or
       workflow files; no new path for a workflow to run a shell or escape its
       directory.

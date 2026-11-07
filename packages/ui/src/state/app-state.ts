@@ -5,7 +5,9 @@
  *   `runs`, `decisions` and `version` follow the overview stream (overview.ts);
  *   each run a panel looks at has its own feed (feeds.ts). What the user chose,
  *   a run and a node, is the shared selection, and the Context panel's target
- *   follows every choice.
+ *   follows every choice. What the Builder has open is kept here too
+ *   (builder-session.ts, made with the Context panel's target it tells), so it
+ *   outlives the panel as the selection does.
  */
 
 import type {
@@ -148,9 +150,8 @@ export const createAppState = ({
     selection,
     /** The node the Context panel shows: the latest chosen, anywhere. */
     contextTarget: context.target,
-    chooseBuilderNode: context.chooseBuilder,
-    builderChanged: context.builderChanged,
-    builderClosed: context.builderClosed,
+    /** The Builder's open workflow, its selection and its undo history. */
+    builder: context.builder,
     preferences,
     runFilter,
     runDialog,
@@ -206,9 +207,15 @@ export const createAppState = ({
     /** Writes to a node of a live run; it comes back on the run's stream. */
     sendMessage: (runId: string, node: string, body: string) =>
       client.call("message", { params: { id: runId }, body: { node, body } }),
-    /** Answers a decision; it then leaves the open list on the stream. */
-    answerDecision: (id: string, choose: string) =>
-      client.call("answer", { params: { id }, body: { choose } }),
+    /**
+     * Answers a decision, with the person's note when they wrote one; it then
+     * leaves the open list on the stream.
+     */
+    answerDecision: (id: string, choose: string, note = "") =>
+      client.call("answer", {
+        params: { id },
+        body: note.trim() === "" ? { choose } : { choose, note },
+      }),
     /** What the Monitor shows of a run, read while it is started. */
     watchRun: feeds.watchRun,
     selectRun: (run: string | null): void => {

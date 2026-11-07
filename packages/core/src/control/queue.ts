@@ -2,8 +2,10 @@
  * @file The decision queue: a `HumanChannel` that records every question and
  *   permission prompt as a decision in the store, then takes the first answer
  *   from the run's own terminal (when it has one) or from `ork decide` in any
- *   other terminal. A withdrawn question (a gate's timeout) is closed
- *   unanswered.
+ *   other terminal. An answer may carry the person's note, which is stored with
+ *   it and handed to whoever asked. A withdrawn question (a gate's timeout) is
+ *   closed unanswered. A child's question its leader answered first is recorded
+ *   as answered by that owner, with its note (ADR-063).
  */
 
 import type { RunEvent } from "../run/types.ts";
@@ -32,6 +34,16 @@ const PERMISSION_OPTIONS = [
 
 const DENIED = "The user did not allow this tool.";
 
+/** What came back: the choice, who gave it, and their note if any. */
+type Settled = { answer: string; by: AnsweredBy; note?: string };
+
+/** The terminal's side of a decision: its choice, and its note if any. */
+type LocalAnswer = { answer: string; note?: string };
+
+/** The deny message a session gets, with the person's words when given. */
+const deniedMessage = (note: string | undefined): string =>
+  note === undefined ? DENIED : `${DENIED} They said: ${note}`;
+
 /** At most `max` characters of a tool's input, for the decision's context. */
 const inputPreview = (input: Record<string, unknown>, max = 400): string => {
   const json = JSON.stringify(input);
@@ -47,9 +59,9 @@ export const createDecisionQueue = (
   /** Opens a decision and settles it with the first answer. */
   const decide = (
     open: Omit<NewDecision, "id" | "runId">,
-    local: ((signal: AbortSignal) => Promise<string>) | undefined,
+    local: ((signal: AbortSignal) => Promise<LocalAnswer>) | undefined,
     withdrawn?: AbortSignal,
-  ): Promise<{ answer: string; by: AnsweredBy }> => {
+  ): Promise<Settled> => {
     count += 1;
     const id = `${runId}-${String(count)}`;
     const record = store.openDecision({ ...open, id, runId });
@@ -64,24 +76,25 @@ export const createDecisionQueue = (
     if (record.recommended !== undefined) {
       event.recommended = record.recommended;
     }
+    if (record.owner !== undefined) event.owner = record.owner;
     emit(event);
 
-    const { promise, resolve, reject } = Promise.withResolvers<{
-      answer: string;
-      by: AnsweredBy;
-    }>();
+    const { promise, resolve, reject } = Promise.withResolvers<Settled>();
     const settled = new AbortController();
-    const finish = (answer: string, by: AnsweredBy): void => {
+    /** `note` is the stored one: masked, and absent when blank. */
+    const finish = (answer: string, by: AnsweredBy, note?: string): void => {
       if (settled.signal.aborted) return;
       settled.abort();
-      emit({
+      const answered: RunEvent = {
         type: "decision.answered",
         node: open.node,
         decision: id,
         answer,
         by,
-      });
-      resolve({ answer, by });
+      };
+      if (note !== undefined) answered.note = note;
+      emit(answered);
+      resolve(note === undefined ? { answer, by } : { answer, by, note });
     };
     const withdraw = (): void => {
       if (settled.signal.aborted) return;
@@ -97,20 +110,20 @@ export const createDecisionQueue = (
       try {
         const closed = await options.waitFor(id, settled.signal);
         if (closed.status === "answered" && closed.answer !== undefined) {
-          finish(closed.answer, closed.answeredBy ?? "decide");
+          finish(closed.answer, closed.answeredBy ?? "decide", closed.note);
         }
       } catch {
         // Settled another way.
       }
     };
     const fromTerminal = async (
-      ask: (signal: AbortSignal) => Promise<string>,
+      ask: (signal: AbortSignal) => Promise<LocalAnswer>,
     ): Promise<void> => {
       try {
-        const answer = await ask(settled.signal);
+        const { answer, note } = await ask(settled.signal);
         // Lost the race: `fromStore` delivers the answer that won.
-        if (store.answerDecision(id, answer, "terminal")) {
-          finish(answer, "terminal");
+        if (store.answerDecision(id, answer, "terminal", note)) {
+          finish(answer, "terminal", store.decision(id)?.note);
         }
       } catch {
         // Withdrawn: answered elsewhere, or the question was.
@@ -133,20 +146,82 @@ export const createDecisionQueue = (
         open.recommended = question.recommended;
       }
       if (question.context !== undefined) open.context = question.context;
+      // A leader passed it on, its note in the context (ADR-063).
+      if (question.owner !== undefined) open.owner = question.owner;
       const { local } = options;
       return decide(
         open,
         local === undefined
           ? undefined
-          : signal => local.ask({ ...question, signal }),
+          : signal => {
+              let note: string | undefined;
+              return local
+                .ask({
+                  ...question,
+                  signal,
+                  onNote: given => {
+                    note = given;
+                  },
+                })
+                .then(answer =>
+                  note === undefined ? { answer } : { answer, note },
+                );
+            },
         question.signal,
-      ).then(({ answer }) => answer);
+      ).then(({ answer, note }) => {
+        if (note !== undefined) question.onNote?.(note);
+        return answer;
+      });
+    },
+
+    settled: question => {
+      count += 1;
+      const id = `${runId}-${String(count)}`;
+      const { owner } = question;
+      const record = store.openDecision({
+        id,
+        runId,
+        node: question.nodeId,
+        kind: "question",
+        question: question.question,
+        options: question.options,
+        owner,
+        ...(question.recommended === undefined
+          ? {}
+          : { recommended: question.recommended }),
+        ...(question.context === undefined
+          ? {}
+          : { context: question.context }),
+      });
+      emit({
+        type: "decision.opened",
+        node: record.node,
+        decision: id,
+        kind: "question",
+        question: record.question,
+        options: record.options,
+        owner,
+        ...(record.recommended === undefined
+          ? {}
+          : { recommended: record.recommended }),
+      });
+      store.answerDecision(id, question.answer, "owner", question.note);
+      const note = store.decision(id)?.note;
+      emit({
+        type: "decision.answered",
+        node: record.node,
+        decision: id,
+        answer: question.answer,
+        by: "owner",
+        owner,
+        ...(note === undefined ? {} : { note }),
+      });
     },
 
     permit: async request => {
       const { local } = options;
       let localMessage = DENIED;
-      const { answer } = await decide(
+      const { answer, note } = await decide(
         {
           node: request.nodeId,
           kind: "permission",
@@ -156,15 +231,32 @@ export const createDecisionQueue = (
         },
         local === undefined
           ? undefined
-          : signal =>
-              local.permit({ ...request, signal }).then(result => {
-                if (!result.allow) localMessage = result.message;
-                return result.allow ? "allow" : "deny";
-              }),
+          : signal => {
+              let said: string | undefined;
+              return local
+                .permit({
+                  ...request,
+                  signal,
+                  onNote: given => {
+                    said = given;
+                  },
+                })
+                .then(result => {
+                  if (!result.allow) localMessage = result.message;
+                  const choice = result.allow ? "allow" : "deny";
+                  return said === undefined
+                    ? { answer: choice }
+                    : { answer: choice, note: said };
+                });
+            },
       );
+      if (note !== undefined) request.onNote?.(note);
       return answer === "allow"
         ? { allow: true }
-        : { allow: false, message: localMessage };
+        : {
+            allow: false,
+            message: note === undefined ? localMessage : deniedMessage(note),
+          };
     },
   };
 };

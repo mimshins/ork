@@ -15,6 +15,7 @@ import type { z } from "zod";
 import { AgentSchema } from "./agents.ts";
 import { formatEdge } from "./edges.ts";
 import { markValue } from "./marks.ts";
+import { newerVersion } from "./newer-version.ts";
 import { NodeSchema, type NodeType } from "./nodes.ts";
 import { type Project, ProjectSchema, UserSettingsSchema } from "./project.ts";
 import { type TriggersFile, TriggersFileSchema } from "./triggers.ts";
@@ -154,6 +155,20 @@ const parseWith = <T>(text: string, schema: z.ZodType<T>): Parsed<T> => {
   }
   const result = schema.safeParse(raw);
   if (!result.success) {
+    const newer = newerVersion(result.error.issues, raw);
+    if (newer !== null) {
+      const diagnostic: Diagnostic = {
+        severity: "error",
+        code: "schema.newer_version",
+        message: newer,
+        path: ["schemaVersion"],
+      };
+      return {
+        ok: false,
+        locate,
+        diagnostics: [withPosition(diagnostic, locate)],
+      };
+    }
     return {
       ok: false,
       locate,

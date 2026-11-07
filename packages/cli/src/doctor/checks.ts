@@ -1,8 +1,9 @@
 /**
  * @file The checks behind `ork doctor`: Ork's own version against the last
- *   update check, and each tool's presence and login status, through an
- *   injectable `exec` so tests need no real tools. Never prints a token or an
- *   account.
+ *   update check, each tool's presence and login status (the drivers' own
+ *   checks, which `ork run` also reads to pick the one ready), and whether a
+ *   run's socket path fits, through an injectable `exec` so tests need no real
+ *   tools. Never prints a token or an account.
  */
 
 import { execFile } from "node:child_process";
@@ -11,13 +12,14 @@ import {
   lateTriggers,
   openStore,
   readUpdateCache,
+  socketRoom,
   storePath,
   triggersReport,
   updateCachePath,
 } from "@krapht/ork-core";
 import {
-  CLAUDE_DRIVERS,
   type CheckResult,
+  driverChecks,
   type Env,
   type Exec,
   firstLine,
@@ -102,19 +104,48 @@ export const runChecks = async (
   env: Env,
   nodeVersion: string,
 ): Promise<{ results: CheckResult[]; ok: boolean }> => {
-  const [git, drivers, tools] = await Promise.all([
+  const [git, checked, tools] = await Promise.all([
     checkGit(run),
-    Promise.all(CLAUDE_DRIVERS.map(d => d.doctor(run, env))),
+    driverChecks(run, env),
     Promise.all(
       INTEGRATIONS.flatMap(i =>
         i.doctor === undefined ? [] : [i.doctor(run, env)],
       ),
     ),
   ]);
+  const drivers = checked.map(({ result }) => result);
   const results = [checkNode(nodeVersion), ...git, ...drivers, ...tools];
   const anyDriver = drivers.some(d => d.status === "ok");
   const ok = anyDriver && !results.some(r => r.status === "fail");
   return { results, ok };
+};
+
+/**
+ * Whether a run's socket fits under `~` (L38). Past the limit a run can't
+ * listen, and nothing else says so: answers, commands and followers fall back
+ * to the store, a second at a time. `home` is the user's `~`.
+ */
+export const socketCheck = (
+  home?: string,
+  platform?: NodeJS.Platform,
+): CheckResult => {
+  const { bytes, max } = socketRoom(home, platform);
+  if (max === undefined || bytes <= max) {
+    return {
+      name: "sockets",
+      status: "ok",
+      detail:
+        max === undefined
+          ? "not Unix sockets here"
+          : `${String(bytes)} of ${String(max)} bytes`,
+    };
+  }
+  return {
+    name: "sockets",
+    status: "warn",
+    detail: `a run's socket path is ${String(bytes)} bytes, past the ${String(max)} this system allows`,
+    hint: "Runs still work, but answers, commands and `ork logs --follow` wait up to a second for each, as they read the store instead. A shorter home folder path fixes it.",
+  };
 };
 
 /**

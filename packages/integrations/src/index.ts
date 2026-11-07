@@ -14,5 +14,6 @@ export * from "./git.ts";
 export * from "./integration.ts";
 export * from "./json.ts";
 export * from "./layouts.ts";
+export * from "./ready.ts";
 export * from "./registry.ts";
 export { shell } from "./shell.ts";

@@ -19,11 +19,13 @@ import {
   type RunRecord,
   runDirOf,
 } from "@krapht/ork-core";
+import { readyDriver } from "@krapht/ork-integrations";
 import type { Driver } from "@krapht/ork-schema";
 
 import { loadWorkflow } from "../commands/validate.ts";
 import { formatEvent } from "../run/format.ts";
 import { chatNotice } from "../run/limits.ts";
+import { checksHere, type DriverChecks } from "../run/ready-driver.ts";
 
 export type ResumeChatOptions = {
   store: EventStore;
@@ -37,6 +39,8 @@ export type ResumeChatOptions = {
   runtime: (driver: Driver) => Promise<ClaudeRuntime>;
   /** Default: the driver the session ran with. */
   driver?: Driver;
+  /** The drivers' checks, when nothing names one (default: the real ones). */
+  driverChecks?: DriverChecks;
   human: HumanChannel;
   out: (line: string) => void;
   /** Interrupts the session (a caller's stop, for a `workflow.call`). */
@@ -101,6 +105,15 @@ export const resumeChat = async (
     ...(template === undefined ? {} : { template }),
   });
   if (!plan.ok) return plan.error;
+  // The session's own driver; one recorded without it takes the one ready.
+  let driver = options.driver ?? session.driver ?? plan.driver;
+  if (driver === undefined) {
+    const ready = readyDriver(await (options.driverChecks ?? checksHere)());
+    if (!ready.ok) {
+      return ["No Claude driver is ready here.", ...ready.hints].join(" ");
+    }
+    driver = ready.driver;
+  }
 
   const record = appendRecorder(store, run.id, runDir);
   record({
@@ -109,9 +122,7 @@ export const resumeChat = async (
     body: options.body,
     delivered: "resumed",
   });
-  const runtime = await options.runtime(
-    options.driver ?? session.driver ?? plan.driver,
-  );
+  const runtime = await options.runtime(driver);
   const started = runtime.start(
     { ...plan.spec, resume: session.sessionId, prompt: options.body },
     { human: options.human },

@@ -57,16 +57,17 @@ echo "$now" > "$ORK_STATE"
 ```
 
 **While it waits:** `ork pause` holds it between looks, `ork stop` ends it, and
-the Monitor shows what it's waiting for. The time between looks doesn't count
-against `limits.timeout` unless something else in the run is working, and it
-uses no session slot.
+the Monitor in [`ork ui`](./browser-view.md) shows what it's waiting for. The
+time between looks doesn't count against `limits.timeout` unless something else
+in the run is working, and it uses no session slot.
 
 ## Starting a run when something happens
 
 Put triggers in `.ork/triggers.yaml`, in a project you've set up with `ork init`
-or `ork register`:
+or `ork register` (the first line gives your editor autocomplete):
 
 ```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/triggers.schema.json
 schemaVersion: 1
 triggers:
   new-issue:
@@ -188,12 +189,11 @@ Restart=on-failure
 WantedBy=default.target
 ```
 
-We haven't yet run either on a real machine
-([L129](../../specs/gaps/limits-watching.md)), so check `ork watch --status`
+We haven't yet tried either on a real machine, so check `ork watch --status`
 after you set one up.
 
 A machine that's asleep isn't looking. On waking it looks again, and anything
 new still on the list starts then, up to the daily cap. `ork doctor` warns when
 a trigger hasn't looked when it should have.
 
-For the details, see the [spec](../../specs/scheduler/watching.md).
+For the full rules: [watching a source](../../specs/scheduler/watching.md).

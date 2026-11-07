@@ -120,11 +120,18 @@ as before: an agent can fill a node and still be a subagent a session calls.
 
 - **Fresh agent per task:** workers start clean; only leaders are long-lived.
 - **Briefs, not transcripts:** owners pass context packets and children return
-  short summaries. Outputs over a threshold go to the run's artifact store and
-  are referenced by path.
+  short summaries. A tool's output over 64 KiB is cut, and the whole kept in a
+  run file referenced by path; a Claude report names big outputs as files under
+  `artifacts`, and its own fields are not cut ([L171](./runtime.md#limits)).
 - **Cache-friendly prompt order:** stable prefix (system preset, skills, project
-  docs, workflow context) first, the per-task brief last. Ork sets
-  `ENABLE_PROMPT_CACHING_1H=1` for leaders.
+  docs, workflow context) first, the per-task brief last. A leader's session
+  asks for the 1-hour cache (`promptCache: "1h"` in its spec), and both drivers
+  start it with `ENABLE_PROMPT_CACHING_1H=1`
+  ([cache-env.ts](../packages/runtime-claude/src/cache-env.ts)): a leader
+  blocked in `delegate` usually waits past the 5-minute cache, and would write
+  its prefix again after each wait. An hour's cache write costs more (about 2×
+  base input against 1.25×), so the saving is to be confirmed in the cost
+  benchmark ([roadmap](../docs/interaction-map/roadmap.md)).
 - **Model tiers and caps:** a model and an effort per node, so a planner can
   think hard on opus while a reviewer runs sonnet at `low`. Reviewers and
   sub-agents default to sonnet or haiku. Each node has `maxTurns` and

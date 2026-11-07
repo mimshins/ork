@@ -11,19 +11,20 @@ project ([init-skills.ts](../packages/cli/src/project/init-skills.ts),
 [RFC-012](../rfcs/archived/RFC-012-teaching-claude-code-ork.md).
 
 Claude Code, working with a person in their project outside any run, learns
-Ork's standards from three skills and reaches Ork through `ork mcp`. It reads,
-checks and starts; it never answers a decision.
+Ork's standards from its skills and reaches Ork through `ork mcp`. It sets Ork
+up when asked, reads, checks and starts; it never answers a decision.
 
 ## The skills
 
 They live in [plugins/ork/skills/](../plugins/ork/skills/), one folder each, and
 load as `/ork:<name>` from the plugin.
 
-| Skill        | Teaches                                                                                                 |
-| ------------ | ------------------------------------------------------------------------------------------------------- |
-| `write`      | The workflow format, node types, edges, conditions and loops, and checking each draft with `check`      |
-| `run`        | Starting with `start_run`, following with `run` and `run_events`, and what only the person does         |
-| `principles` | How Ork splits work: programs before sessions, spending where it pays, prevention, and a person's gates |
+| Skill        | Teaches                                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `write`      | The workflow format, node types, edges, conditions and loops, and checking each draft with `check`               |
+| `run`        | Starting with `start_run`, following with `run` and `run_events`, and what only the person does                  |
+| `principles` | How Ork splits work: programs before sessions, spending where it pays, prevention, and a person's gates          |
+| `setup`      | Setting Ork up when asked: `ork doctor`, `ork init` or `ork register`, the plugin or `ork mcp`, a first workflow |
 
 - **They can't teach what Ork rejects.** Every whole workflow in a skill (a YAML
   block with `schemaVersion`) is checked by a test the way `check` does, walk
@@ -33,7 +34,14 @@ load as `/ork:<name>` from the plugin.
   Claude Code merges the two where both load, so these names must differ. A test
   holds the list.
 - **Each says when to use it**, in a description that starts "Use when", and
-  names Ork's tools, with the CLI command to use without them.
+  names Ork's tools, with the CLI command to use without them. Every
+  `/ork:<name>` a skill points to is one of these, and a test holds that too.
+- **`setup` asks first.** It works with or without Ork's tools, as it may run
+  before `ork` is installed. It asks before it installs Ork, edits an agent's
+  config, or starts a run; it never asks for a credential (the person logs in
+  with each tool's own login) and never answers a decision. A test holds its
+  rule. The person's side of it:
+  [With your agent](../docs/getting-started/with-your-agent.md).
 
 ## The plugins
 
@@ -60,7 +68,7 @@ plugins:
   `pnpm ork`) and whatever else is on the line. Without a terminal, which Claude
   Code's shell doesn't give it, `ork decide` answers only with those, so listing
   goes ahead. It tells Claude Code where the person answers. It stops accidents;
-  it isn't a boundary ([gaps](./gaps/limits-claude-code.md)).
+  it isn't a boundary ([L143](./claude-code/limits.md)).
 - **`ork-dev`** is [.ai/](../.ai/README.md) itself, as its folders already have
   a plugin's layout: the repository's own skills and agents.
 - **Versions** are the CLI's: the release binds them into both `plugin.json`
@@ -80,9 +88,9 @@ ork init --skills
 ```
 
 - **Where:** `.ork/skills/ork-<name>/SKILL.md`, which Claude Code sees as
-  `/ork-write`, `/ork-run` and `/ork-principles` through `.claude/skills`, which
-  `ork init` links to `.ork/skills` unless `--no-link`. Their references to
-  `/ork:<name>` read `/ork-<name>`.
+  `/ork-write`, `/ork-run`, `/ork-principles` and `/ork-setup` through
+  `.claude/skills`, which `ork init` links to `.ork/skills` unless `--no-link`.
+  Their references to `/ork:<name>` read `/ork-<name>`.
 - **Asked once.** `--skills` writes them and `--no-skills` doesn't. Otherwise
   `ork init` asks on a terminal, saying the plugin has them too, and only when
   the project has none; without a terminal it says how to add them.
@@ -96,3 +104,7 @@ ork init --skills
   as the fix.
 - **Inside a run,** a session loads them as it loads any project skill; the
   `run` skill's `start_run` isn't offered there.
+
+## Contents
+
+- [Limits: Ork for Claude Code](./claude-code/limits.md)

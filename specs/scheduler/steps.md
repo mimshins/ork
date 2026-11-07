@@ -3,7 +3,7 @@
 _Part of [Scheduler: running a workflow](../scheduler.md)._
 
 Status: **Built, proven on a real session on the CLI driver**; the SDK driver
-only against stand-ins ([C5](../gaps.md#chores)).
+only against stand-ins ([C5](../runtime.md#limits)).
 
 A leader or worker can run a program in its own checkout, which a tool node
 can't reach, and which a delegated child gets too, as it follows no edges.
@@ -28,14 +28,15 @@ show in the node's events.
   counts, so a session cannot report its way past a check.
 - **On a failure:** the same session resumes with the reason, cut to 1 KiB, and
   the last 8 KiB of what it printed, past the 64 KiB a node's output keeps, with
-  all of it in `<run>/<node>.<round>.verify.txt` when there is more. It gives a
+  all of it in `<run>/<node>.<round>.verify-<try>.txt` when there is more (each
+  try its own file, so a path a session was given keeps its text). It gives a
   new report, up to `attempts` times. A resume may use only what is left of the
   node's cap, the run's budget and `maxTurns`, counting from this activation,
   and does not start with nothing left, or while the node is paused. Then the
   node fails with `its check failed: <reason>`.
 - **A message during a check that passes** gets one turn, and the check runs
   again, with its failures sent back as above. Later messages wait for the
-  node's next session ([L96](../gaps/limits-scripts.md)).
+  node's next session ([L96](../messaging/scripts-limits.md)).
 - **A failed check stays failed:** a resume that reports `fail` or
   `changes_requested`, or nothing, ends it with no more checks, and the node
   fails. Only a report on which the check then passes is accepted.
@@ -60,9 +61,9 @@ spawned instance. It runs as `verify:` does.
   started with.
 - **`defaults:` may set it,** in a workflow or `.ork/project.yaml`, for every
   leader and worker with none of its own. It can't read a node's output, since
-  it belongs to none ([L93](../gaps/limits-scripts.md)).
+  it belongs to none ([L93](../messaging/scripts-limits.md)).
 - **It isn't held to `isolation`,** on a `readonly` or `shared` node too
-  ([L97](../gaps/limits-scripts.md)).
+  ([L97](../messaging/scripts-limits.md)).
 - **`ork run --node`** does not run it, and says so.
 
 ## MCP calls
@@ -84,7 +85,7 @@ author named it.
   `env` or `headers` is refused too, rather than dropped.
 - **Masking:** a run masks each value its workflow's servers read, in all it
   records, from any node; `plainEnv` excuses one. What the file holds as
-  written, a default included, is not ([L81](../gaps/limits-scripts.md)).
+  written, a default included, is not ([L81](../messaging/scripts-limits.md)).
   `arguments:` can't read `{{env.*}}`.
 - **Output:** `text`, and `json` from `structuredContent` or text that parses,
   its numbers masked too. A result marked `isError` fails the node, and `json`

@@ -260,14 +260,18 @@ export const runIdOf = (
 ): string => (answer.ok ? answer.data.runId : "");
 
 /** A registry that answers `latest` (or fails), and lists what it was asked. */
-export const fakeRegistry = (latest: string | null) => {
+export const fakeRegistry = (
+  latest: string | null,
+  /** Other dist-tags it answers with, such as `canary`. */
+  tags: Readonly<Record<string, string>> = {},
+) => {
   const asked: string[] = [];
   const fetch = (input: string | URL | Request): Promise<Response> => {
     asked.push(input instanceof Request ? input.url : input.toString());
     return Promise.resolve(
       latest === null
         ? Response.json({}, { status: 503 })
-        : Response.json({ latest }),
+        : Response.json({ ...tags, latest }),
     );
   };
   return { fetch, asked };

@@ -19,6 +19,7 @@ import {
   RESUME,
   TIMEOUTS,
   WATCH,
+  RUNTIME,
 } from "../refs.js";
 
 /** @typedef {import("../types.js").MapNode} MapNode */
@@ -103,7 +104,7 @@ export const NODES = [
       "Built: `--detach` returns at once; `ork logs --follow`, `ork tree`, `ork decide`, `ork pause`, `ork continue` and `ork stop` reach it later.",
       "Built: before anything starts, it checks that the programs a workflow runs are installed, the variables it reads are set, and its MCP servers are in `.mcp.json`; integrations a workflow does not use are never needed.",
       "Built: nor does it start with a quota spent, if the workflow has a session or a call to spend it on.",
-      "`--driver sdk|cli` overrides every node's driver for this run.",
+      "`--driver sdk|cli` overrides every node's driver for this run. `software-factory` names none, so without it the run takes the driver `ork doctor` finds ready here, and says which in one line.",
       "`ork watch` can start a run too, as `ork run --expect-workflow`, which refuses a file whose text has changed since it was accepted.",
     ],
     see: [
@@ -118,7 +119,15 @@ export const NODES = [
         label: "`ork watch` starts runs",
       },
     ],
-    docs: [CLI.run, CLI.runWorkflow, CLI.runTests, DESIGN.cli, NODE_TYPES.mcp],
+    docs: [
+      CLI.run,
+      CLI.runWorkflow,
+      CLI.runTests,
+      RUNTIME.ready,
+      RUNTIME.driverRule,
+      DESIGN.cli,
+      NODE_TYPES.mcp,
+    ],
   },
   {
     id: "compiler",
@@ -162,6 +171,7 @@ export const NODES = [
       "Stops the run when spend reaches `limits.budgetUsd` ($20 here).",
       "A `timeout` on a node or `limits.timeout` on the run, where set, fails the node with `timedOut` or ends the run `timed_out`; the clock stands still while waiting on you. None is set here.",
       "An edge without `when:` fires only on success; a skipped branch skips everything that only it feeds, so the join never waits on it.",
+      "In a later round, an edge from a node that can't run again in that round counts as not taken, so the join still fires. A run left with a node waiting fails with an `ork engine error:` reason; it never ends `succeeded` past its gate.",
       "When a loop edge has used its `maxRounds`, you are asked: stop, one more round, or go on. A live leader that owns the loop's nodes is asked first; here the builder's session has ended, so it is you.",
       "Runs the children a leader delegates to, on the slot the waiting leader lends them.",
       "A finished node's `notify:` rules go out after `node.finished` and before its edges are routed, so a node an edge starts already has the message. A stopping run fires none for what it cuts off.",
@@ -183,6 +193,7 @@ export const NODES = [
       ENGINE.scheduler,
       ENGINE.routing,
       ENGINE.tests,
+      ENGINE.rounds,
       RESUME.resume,
       RESUME.tests,
       TIMEOUTS.code,
@@ -459,7 +470,7 @@ export const NODES = [
     facts: [
       "`open` goes on to the push and the pull request, like `ship`; `keep` ends the run.",
       "A `timeout` and `default` would let it answer itself.",
-      "Answered on the run's terminal or with `ork decide`.",
+      "Answered on the run's terminal or with `ork decide`; a note given with the answer (`--say`) is its `note` output.",
     ],
     docs: [EXAMPLE, NODE_TYPES.gate],
   },

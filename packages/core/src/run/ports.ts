@@ -1,7 +1,8 @@
 /**
  * @file What a run shares between its nodes' sessions, reached through each
- *   session's ports: the message bus (`bus.ts`), claims (`claims.ts`) and the
- *   agents' feedback (`feedback/agent.ts`).
+ *   session's ports: the message bus (`bus.ts`), claims (`claims.ts`), the
+ *   agents' feedback (`feedback/agent.ts`), and whose questions go to their
+ *   leader first (`owners.ts`).
  */
 
 import type { Scope } from "../expr/evaluate.ts";
@@ -9,6 +10,7 @@ import { createFeedback } from "../feedback/agent.ts";
 import { createBus } from "./bus.ts";
 import { createClaims } from "./claims.ts";
 import type { RunOptions } from "./handle.ts";
+import { createOwners } from "./owners.ts";
 import { createRules } from "./rules.ts";
 import type { Slots } from "./slots.ts";
 import type { ExecuteContext } from "./types.ts";
@@ -35,6 +37,8 @@ export const createRunPorts = ({
   const rules = createRules({ graph, send, scope, stopping, scrub });
   return {
     bus,
+    /** Each node's latest session, and whose questions go to a leader first. */
+    owners: createOwners(graph),
     /** One activation's ports; `template` is a spawned worker's node. */
     forNode: (
       id: string,

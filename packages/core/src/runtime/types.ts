@@ -9,6 +9,13 @@ import type { Driver, Effort } from "@krapht/ork-schema";
 import type { FeedbackPort } from "../feedback/types.ts";
 import type { REPORT_STATUSES } from "../graph/types.ts";
 import type {
+  DecisionChoice,
+  HumanChannel,
+  HumanQuestion,
+  NoteTaker,
+  OwnerPort,
+} from "./human.ts";
+import type {
   InboxMessage,
   Mailbox,
   MessageVia,
@@ -17,6 +24,13 @@ import type {
 } from "./mailbox.ts";
 
 export type { InboxMessage, Mailbox, MessageVia, RelayPort, SendResult };
+export type {
+  DecisionChoice,
+  HumanChannel,
+  HumanQuestion,
+  NoteTaker,
+  OwnerPort,
+};
 
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
@@ -31,8 +45,17 @@ export type NodeReport = {
   fields: Record<string, unknown>;
 };
 
-/** `only`: the built-in tools the session has at all; Ork's own tools stay. */
-export type ToolRules = { allow: string[]; deny: string[]; only?: string[] };
+/**
+ * `only`: the built-in tools the session has at all; Ork's own tools stay.
+ * `strictMcp`: no MCP server but Ork's, none from the project's settings or
+ * plugins (`--strict-mcp-config`; the SDK's `strictMcpConfig`).
+ */
+export type ToolRules = {
+  allow: string[];
+  deny: string[];
+  only?: string[];
+  strictMcp?: boolean;
+};
 
 /** A Claude Code subagent the session can hand work to (`claude.subagent`). */
 export type SubagentSpec = {
@@ -72,36 +95,17 @@ export type SessionSpec = {
   settings?: Record<string, unknown>;
   /** A session id to resume. */
   resume?: string;
-};
-
-export type DecisionChoice = {
-  id: string;
-  label?: string;
-  description?: string;
-};
-
-/**
- * How a session reaches the human: a permission prompt or a question. In a run
- * it is the decision queue, which records each one and takes the first answer
- * from the terminal or `ork decide`.
- */
-export type HumanChannel = {
-  permit: (request: {
-    nodeId: string;
-    toolName: string;
-    input: Record<string, unknown>;
-    /** Withdraws the prompt, e.g. when another terminal answered it. */
-    signal?: AbortSignal;
-  }) => Promise<{ allow: true } | { allow: false; message: string }>;
-  ask: (question: {
-    nodeId: string;
-    question: string;
-    options: DecisionChoice[];
-    recommended?: string;
-    context?: string;
-    /** Withdraws the question, e.g. when a gate's timeout answers it. */
-    signal?: AbortSignal;
-  }) => Promise<string>;
+  /**
+   * With `resume`: start a new session from a copy of that one, leaving it as
+   * it was (`--fork-session`; the SDK's `forkSession`).
+   */
+  fork?: boolean;
+  /**
+   * The prompt cache's lifetime, when longer than Claude Code's 5 minutes: a
+   * leader waits on its children longer than that, and would write its prefix
+   * again after each wait (specs/context.md).
+   */
+  promptCache?: "1h";
 };
 
 export type SessionUsage = {
@@ -137,8 +141,12 @@ export type PlanReport = {
 /** The latest report of one of a plan's limits, as a store keeps it. */
 export type PlanLimit = PlanReport & { at: string };
 
-/** Normalized events, the same for every driver. */
-export type RuntimeEvent =
+/**
+ * Normalized events, the same for every driver. `fork` marks every event of a
+ * fork (`SessionSpec.fork`) Ork records under the node it copied: it is not
+ * that node's own session, nor its words (ADR-063).
+ */
+export type RuntimeEvent = (
   | {
       type: "session.started";
       sessionId: string;
@@ -157,7 +165,11 @@ export type RuntimeEvent =
     }
   | { type: "tool.result"; id: string; isError: boolean }
   | ({ type: "plan.limit" } & PlanReport)
-  | { type: "session.finished"; outcome: SessionOutcome };
+  | {
+      type: "session.finished";
+      outcome: SessionOutcome;
+    }
+) & { fork?: boolean };
 
 export type Session = {
   events: AsyncIterable<RuntimeEvent>;

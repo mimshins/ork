@@ -1,9 +1,13 @@
 /**
  * @file A minimal `git` runner for the worktree manager: arguments without a
- *   shell, results that never throw.
+ *   shell, results that never throw, and none of git's local variables (a
+ *   hook's `GIT_DIR` or `GIT_INDEX_FILE`), so it acts on the repository at
+ *   `cwd` (specs/worktrees.md).
  */
 
 import { execFile } from "node:child_process";
+
+import { withoutGitLocalEnv } from "./git-env.ts";
 
 export type GitResult = { code: number; stdout: string; stderr: string };
 
@@ -13,7 +17,12 @@ export const git = (cwd: string, args: readonly string[]): Promise<GitResult> =>
     execFile(
       "git",
       args,
-      { cwd, maxBuffer: 32 * 1024 * 1024, encoding: "utf8" },
+      {
+        cwd,
+        env: withoutGitLocalEnv(process.env),
+        maxBuffer: 32 * 1024 * 1024,
+        encoding: "utf8",
+      },
       (error, stdout, stderr) => {
         const code =
           error === null ? 0 : typeof error.code === "number" ? error.code : -1;

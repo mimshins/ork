@@ -33,7 +33,7 @@ To read a change: `git log -p <synced>..HEAD -- <path>`, or `git show <commit>`.
 | layers, precedence, `AGENTS.md`, the prompt order, limits           | `context`                                 |
 | the bus, addressing, decisions, permissions, chat, Ork's MCP tools  | `messaging`                               |
 | feedback capture, triage, fixes, lessons, publishing                | `feedback` (and `messaging`, `context`)   |
-| `docs/design.md` headings                                           | every map (anchors; the check finds them) |
+| `specs/design.md` headings                                          | every map (anchors; the check finds them) |
 
 ## 3. Update the data
 

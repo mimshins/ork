@@ -21,7 +21,7 @@ const oneLine = (text: string): string => text.replaceAll(/\s+/gu, " ").trim();
 const viaOf = (via: string | undefined): string =>
   via === undefined ? "" : ` (${via})`;
 
-const innerLine = ({ event }: Of<"node.event">): string => {
+const sessionLine = ({ event }: Of<"node.event">): string => {
   switch (event.type) {
     case "session.started": {
       return `session on ${event.model}`;
@@ -47,6 +47,12 @@ const innerLine = ({ event }: Of<"node.event">): string => {
       return "";
     }
   }
+};
+
+/** A fork answering a child's question (ADR-063) says it is one. */
+const innerLine = (event: Of<"node.event">): string => {
+  const line = sessionLine(event);
+  return event.event.fork === true && line !== "" ? `fork: ${line}` : line;
 };
 
 const finishedLine = ({
@@ -113,7 +119,9 @@ export const lineOf = (event: Event): string => {
       return oneLine(event.question);
     }
     case "decision.answered": {
-      return `${event.answer}, by ${event.by}`;
+      const said =
+        event.note === undefined ? "" : `; said: ${oneLine(event.note)}`;
+      return `${event.answer}, by ${event.by}${said}`;
     }
     case "message.sent": {
       return `to ${event.to}${viaOf(event.via)}: ${oneLine(event.body)}`;

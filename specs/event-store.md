@@ -32,7 +32,10 @@ all views over the same events.
   workflow name, workflow file and project root (absolute), the process id and
   that process's start, status, start and finish times, and the cost so far. A
   run a [`workflow.call`](./scheduler/calls.md) started also has its `parent`
-  run, and its `depth` below the run that started it all.
+  run, and its `depth` below the run that started it all. A finished run also
+  has `skipped` and `failuresHandled`, copied from its `run.finished` result;
+  they are absent while it runs (a resume clears them) and for runs recorded
+  before they were counted.
 - **Status:** `running` until `run.finished` is written, then that event's
   status (`succeeded`, `failed`, `budget_exhausted`, `quota_exhausted`,
   `timed_out`, `interrupted`). A `running` run whose process is gone reads as
@@ -77,13 +80,17 @@ all views over the same events.
   ([messaging](./messaging/links.md)); `relay` and `notice` commands carry what
   crosses them.
 - **Decisions and commands** have tables of their own: a decision's question,
-  options, recommended option, status (`open`, `answered`, `withdrawn`), answer
-  and who answered; a command's kind (`stop`, `pause` and `continue`, each with
-  an optional node; `message` from `ork chat` with its node and masked body; or
-  `relay`, `script` from `ork send`, and `notice`, likewise, the first two with
-  their sender) and when the run handled it. The run events `decision.opened`,
-  `decision.answered`, `decision.withdrawn` and `run.command` record the same in
-  the run's stream ([messaging](./messaging.md)).
+  options, recommended option, status (`open`, `answered`, `withdrawn`), answer,
+  who answered, and the masked [note](./messaging.md#decisions) they gave with
+  it (migration 16 adds the column, empty for older answers), and the leader
+  that took a child's question first, as `owner`
+  ([migration 17](./messaging/leader-questions.md#who-answered)); a command's
+  kind (`stop`, `pause` and `continue`, each with an optional node; `message`
+  from `ork chat` with its node and masked body; or `relay`, `script` from
+  `ork send`, and `notice`, likewise, the first two with their sender) and when
+  the run handled it. The run events `decision.opened`, `decision.answered`,
+  `decision.withdrawn` and `run.command` record the same in the run's stream
+  ([messaging](./messaging.md)).
 - **A resumed run** (`ork resume`) is the same run: its record is `running`
   again in the new process, with that process's id and start, and its events go
   on from the last sequence number, starting with `run.resumed`.
@@ -103,8 +110,11 @@ records use the same patterns.
 ## Reading runs
 
 - **`ork ps`** lists this project's runs, newest first: id, workflow, status,
-  when it started and for how long, and cost. `--all` lists every project's,
-  with the project; `--limit n` (default 20); `--json`.
+  when it started and for how long, and cost. A called run's cost is dimmed and
+  says `in <caller>`: the caller's cost already counts it, so the column adds up
+  to what was spent. `--all` lists every project's, with the project;
+  `--limit n` (default 20); `--json` prints the run records, `skipped`,
+  `failuresHandled` and `parent` included.
 - **`ork logs [<run>]`** prints the run's transcript, line for line what
   `ork run` printed. `--node <id>` keeps one node's events; `--follow` (`-f`)
   keeps printing a live run's events, pushed over the run's socket (or polled

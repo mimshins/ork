@@ -1,6 +1,6 @@
 /** @file The messaging map's journeys. */
 
-import { DESIGN, LINKS, SCHEMA, BUS } from "../refs.js";
+import { DESIGN, LINKS, QUESTIONS, SCHEMA, BUS } from "../refs.js";
 
 /** @typedef {import("../types.js").Journey} Journey */
 
@@ -106,6 +106,60 @@ export const JOURNEYS = [
         to: "mcpTools",
         title: "The tool call returns your answer",
         detail: "`code` carries on with its review knowing what you meant.",
+      },
+    ],
+  },
+  {
+    id: "leader-first",
+    title: "A reviewer asks its leader first",
+    who: "code · builder · you",
+    summary:
+      "With `questions: owner` on `builder`, `code`'s question goes to a fork of `builder`'s session before you; here the fork can't settle it and passes it on.",
+    steps: [
+      {
+        from: "codeS",
+        to: "mcpTools",
+        title: "`code` calls `ask_user`",
+        detail:
+          "The same call as when it asks you: a question, options, the recommended one, the context.",
+        docs: [QUESTIONS.spec],
+      },
+      {
+        from: "mcpTools",
+        to: "builderS",
+        title: "A fork of `builder`'s session gets it",
+        detail:
+          "Ork resumes a copy of `builder`'s latest session, in its checkout, with no write tools and at most 3 turns. `builder`'s own session is left as it was, whether it has ended, as here, or waits in `delegate`.",
+        docs: [QUESTIONS.asks, QUESTIONS.forkTests],
+      },
+      {
+        from: "builderS",
+        to: "mcpTools",
+        title: "The fork reports `ask-user`, with a note",
+        detail:
+          'Had its brief settled the question, it would report an option instead, and `ask_user` would return "Your owner, `builder`, chose: …" with its note, and nobody would ask you.',
+      },
+      {
+        from: "mcpTools",
+        to: "decisions",
+        title: "A decision opens, owned by `builder`",
+        detail:
+          "Its context ends `builder passed this on: <note>`, and `decision.opened` names `builder` as its `owner`.",
+        docs: [QUESTIONS.tests],
+      },
+      {
+        from: "you",
+        to: "decideCmd",
+        title: "You see `code via builder`",
+        detail:
+          'In `ork decide --list`; the Decisions panel says "passed on by builder".',
+      },
+      {
+        from: "decisions",
+        to: "mcpTools",
+        title: "Your answer goes back to `code`",
+        detail:
+          "As when it asks you directly. With no session for `builder` yet, or a fork that fails, you'd have been asked from the start.",
       },
     ],
   },

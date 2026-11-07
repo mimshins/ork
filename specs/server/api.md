@@ -29,8 +29,8 @@ are named by id or a unique prefix: no match is 404, several are 400.
 | GET    | `/api/usage`                                          | the [usage report](../usage.md#reports); `?project`, `?workflow`, `?since`, `?until`                                 |
 | GET    | `/api/triggers`                                       | how [triggers](../scheduler/watching.md#the-process) stand, and whether `ork watch` is running                       |
 | GET    | `/api/decisions`                                      | open decisions of live runs; `?run`, `?project`                                                                      | `ork decide --list`       |
-| GET    | `/api/decisions/:id`                                  | one decision, open or not, with its answer and who gave it                                                           | `ork logs <run>`          |
-| POST   | `/api/decisions/:id`                                  | `{ choose }`: answers it as `ui`, wakes the run                                                                      | `ork decide --id`         |
+| GET    | `/api/decisions/:id`                                  | one decision, open or not, with its answer, who gave it, and their note                                              | `ork logs <run>`          |
+| POST   | `/api/decisions/:id`                                  | `{ choose, note? }`: answers it as `ui` with the note, if any, and wakes the run                                     | `ork decide --id --say`   |
 | POST   | `/api/runs`                                           | `{ project, workflow, inputs?, driver?, inPlace?, allowDirty? }`                                                     | `ork run --detach`        |
 | POST   | `/api/runs/:id/resume`                                | `{ inputs?, driver?, inPlace?, allowDirty? }`                                                                        | `ork resume --detach`     |
 | POST   | `/api/runs/:id/stop`                                  | `{ node? }`: asks a live run, or one running node, to stop                                                           | `ork stop`                |
@@ -118,4 +118,4 @@ are named by id or a unique prefix: no match is 404, several are 400.
   text) is served, anything else is 404. Without a built UI the placeholder page
   lists the runs and open decisions live.
 - **Messaging a finished run** (resuming its node's session) is not in the API
-  yet; it answers 409 and names `ork chat` ([gaps](../gaps.md)).
+  yet; it answers 409 and names `ork chat` ([L26](../ui/limits.md)).

@@ -117,6 +117,7 @@ export const writeRoutes = (context: ServerContext): WriteRoutes => {
         body.choose,
         context.home,
         "ui",
+        body.note,
       );
       return answered.ok
         ? ok({ decision: params.id, answer: body.choose })

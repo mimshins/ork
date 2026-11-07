@@ -29,7 +29,9 @@
       "additionalProperties": false
     }
   },
-  "required": ["schemaVersion"],
+  "required": [
+    "schemaVersion"
+  ],
   "additionalProperties": false,
   "$id": "https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/settings.schema.json",
   "title": "Ork user settings"

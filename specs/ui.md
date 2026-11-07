@@ -21,6 +21,7 @@ through its typed client.
   - [The language](./ui/design-language.md)
   - [Tokens, themes and type](./ui/design-tokens-and-type.md)
   - [Components and copy](./ui/design-components-and-copy.md)
+  - [Limits: design tokens](./ui/design-tokens-limits.md)
 - [Workspace](./ui/workspace.md)
   - [The frame and the new-version banner](./ui/workspace-frame-and-banner.md)
   - [The dock and the rail](./ui/workspace-dock-and-rail.md)
@@ -32,10 +33,13 @@ through its typed client.
   - [Chats, Notifications and Usage](./ui/panels-chats-notifications-and-usage.md)
   - [Context and Feedback](./ui/panels-context-and-feedback.md)
   - [Worktrees](./ui/panels-worktrees.md)
+  - [Limits: the context inspector](./ui/panels-context-limits.md)
 - [Graph](./ui/graph.md): the layout, its edges in the interaction map's style,
   pan and zoom, and the keys and names that make it accessible.
 - [State](./ui/state.md): the containers, streams that stay connected, a run's
   feed and event window, what re-renders, and the preferences.
+- [Limits: the browser view](./ui/limits.md)
+- [Limits: the workflow builder](./ui/builder-limits.md)
 
 ## Panels
 

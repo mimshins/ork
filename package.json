@@ -22,7 +22,7 @@
     "changesets:empty": "changeset add --empty",
     "changesets:status": "node tools/release/check-changeset.ts",
     "changesets:version": "changeset version && node tools/release/build-info.ts",
-    "release": "pnpm run build && changeset publish"
+    "release": "pnpm run build && changeset publish && node tools/release/latest-tag.ts"
   },
   "engines": {
     "node": ">=24.20.0"

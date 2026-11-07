@@ -57,7 +57,9 @@ limits:
 - A `workflow.call` shares this budget with the run it starts
   ([calling a workflow](./working-across-projects.md#calling-a-workflow)).
 - `concurrency` limits only Claude sessions; tools and gates are not limited. A
-  leader waiting on its children lends them its slot.
+  leader waiting on its children lends them its slot. It counts this run's
+  sessions only: two runs at the default can hold 8. To cap spending across
+  runs, use [quotas](#limits-across-runs).
 
 Costs come from Claude Code's own estimate in each session's final result. The
 run summary shows the total, and `--json` gives each node's usage: cost, tokens
@@ -97,7 +99,8 @@ quotas:
 - **On a subscription** these are a yardstick, as costs are estimates and not a
   bill. What stops you there is your plan's rate limit: when Claude Code says
   the plan has refused a session, every run here stops starting sessions until
-  the time it gives, and `ork resume` goes on.
+  the time it gives, and `ork resume` goes on. If the limit lifts sooner, make
+  Ork forget it with `ork usage --clear-plan-limits`.
 
 `ork usage` and the Usage panel show each cap, what it has left and when it
 resets.
@@ -132,12 +135,17 @@ nodes:
 
 ```yaml
 defaults:
-  driver: cli # or sdk (the default)
+  driver: cli # or sdk
 ```
 
 `driver` picks how Ork reaches Claude, per workflow or per node, and
-`ork run --driver` overrides both. The two drivers behave the same; they differ
-in whose login they use ([Accounts and credentials](./accounts.md)).
+`ork run --driver` overrides both. With none named, a run uses the driver that's
+ready on the machine running it, the CLI driver when both are. The two drivers
+behave the same; they differ in whose login they use
+([Accounts and credentials](./accounts.md)).
+
+The SDK driver is covered by Ork's unit tests only: Ork's own end-to-end runs,
+the examples among them, have all used the CLI driver.
 
 ## What you spent
 
@@ -150,7 +158,8 @@ ork usage --by node           # one table, in full
 ork usage --json
 ```
 
-The **Usage** panel in
+`--since` and `--until` set the period; `--by` is `day`, `week`, `month`,
+`workflow`, `node`, `model`, `driver` or `project`. The **Usage** panel in
 [the browser view](./browser-view/panels-and-workspace.md#the-panels) shows the
 same, with a chart. Both point at what is worth a look: spend on loop rounds, on
 failed sessions, on one costly node, or a cold prompt cache.
@@ -185,3 +194,6 @@ Ork is built to keep sessions small:
 A good start: `opus` with `high` effort for the node that plans, `sonnet` for
 the ones that build, and `haiku` or `low` effort for checks and reviews. Use
 `ork context explain` to see how big each node's prompt is.
+
+For the full rules: [usage](../../specs/usage.md) and
+[the drivers](../../specs/runtime.md#the-drivers).

@@ -410,6 +410,19 @@ edges:
     ).toEqual(["error:tree.continue", "error:tree.continue"]);
   });
 
+  it("refuses questions: on a leader with no child that could ask", () => {
+    expect(
+      codes(
+        workflow(`nodes:
+  lead: { type: claude.leader, questions: owner }
+  helper: { type: claude.subagent, parent: lead, description: helper }
+  boss: { type: claude.leader, questions: user }
+  w: { type: claude.worker, parent: boss }
+`),
+      ),
+    ).toEqual(["error:questions.no-children"]);
+  });
+
   it("checks edges", () => {
     expect(
       codes(

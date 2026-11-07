@@ -16,6 +16,7 @@ import type { RunHandle } from "./handle.ts";
 import { startRun } from "./scheduler.ts";
 import type { Inputs, RunResult, RunStatus } from "./types.ts";
 import {
+  leftWaiting,
   newTally,
   unfinished,
   walkFindings,
@@ -253,6 +254,9 @@ export const walkWorkflow = async (
     const result = await settled(handle, settleMs);
     if (result === null) {
       handle.interrupt();
+      stuck = path.said;
+    } else if (leftWaiting(result)) {
+      // The scheduler left a node waiting: a bug, never a way to end.
       stuck = path.said;
     } else if (path.overran()) {
       overran = true;

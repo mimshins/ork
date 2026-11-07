@@ -1,6 +1,7 @@
 # ADR-038 — A daily new-version notice, and `ork upgrade` that asks first
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by
+  [ADR-061](./ADR-061-release-channels-toward-1-0.md)
 - **Date:** 2026-11-02
 - **Topic:** CLI / distribution / network
 - **RFC:** waived — the author chose these options over the others below
@@ -77,6 +78,6 @@ first keeps Ork from changing the user's machine on its own.
   day, unless turned off. The installation guide says so and how to turn it off.
 - The record's file is shared by the CLI and, later, the UI.
 - An install the path does not reveal gets the npm command as advice; a mirror
-  set only in `.npmrc` is not read ([gaps](../specs/gaps.md), L23, L24).
+  set only in `.npmrc` is not read ([L23, L24](../specs/projects/limits.md)).
 - On native Windows, package managers are `.cmd` files that Ork's shell-less
   spawn cannot start; Windows is supported through WSL (L9).

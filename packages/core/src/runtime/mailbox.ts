@@ -42,10 +42,11 @@ export type Mailbox = {
    * session (a link was made), or when the session ends.
    */
   wait: (ms: number) => Promise<void>;
-  /** Answers a question Ork asked this node as an owner. */
+  /** Answers a question Ork asked this node as an owner, with its note. */
   answer: (
     question: string,
     choice: string,
+    note?: string,
   ) => { ok: true } | { ok: false; error: string };
   /**
    * Connects the node's live session: notices go to `deliver` until the

@@ -4,11 +4,12 @@
  *   thought, such as stopping a run. Each traps focus, closes on Escape and
  *   gives focus back. A confirm dialog is an alert dialog: a click outside does
  *   not dismiss it, its description says what the action will do, and focus
- *   starts on Cancel. One whose action waits for the server stays open until it
- *   answers, and keeps a refusal in it. Each carries `data-modal`, by which the
- *   workspace's keys know to wait (a floating panel is a `dialog` to dockview,
- *   but not modal), and `aria-modal`, since Base UI leaves the page's live
- *   regions, and what holds them, unhidden behind it.
+ *   starts on Cancel. It can hold a choice the action takes, such as a driver.
+ *   One whose action waits for the server stays open until it answers, and
+ *   keeps a refusal in it. Each carries `data-modal`, by which the workspace's
+ *   keys know to wait (a floating panel is a `dialog` to dockview, but not
+ *   modal), and `aria-modal`, since Base UI leaves the page's live regions, and
+ *   what holds them, unhidden behind it.
  */
 
 import { AlertDialog } from "@base-ui/react/alert-dialog";
@@ -113,6 +114,8 @@ export type ConfirmDialogProps = Controlled & {
    */
   cli?: string | undefined;
   finalFocus?: FinalFocus;
+  /** A choice the action takes, such as a driver, above its command. */
+  children?: ReactNode;
 };
 
 export const ConfirmDialog = ({
@@ -126,6 +129,7 @@ export const ConfirmDialog = ({
   variant = "danger",
   cli,
   finalFocus = backWhereItCameFrom,
+  children,
 }: ConfirmDialogProps) => {
   const [waiting, setWaiting] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -170,6 +174,7 @@ export const ConfirmDialog = ({
           <AlertDialog.Description className={styles["description"]}>
             <CodeText text={description} />
           </AlertDialog.Description>
+          {children}
           {cli === undefined ? null : <CopyCommand command={cli} />}
           {refusal === null ? null : (
             <p

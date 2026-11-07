@@ -67,10 +67,14 @@ export type Updates = {
 
 const NOT_HERE = "This server was not started by `ork ui`.";
 
-/** Asks the registry when the daily check is due; never throws. */
+/**
+ * Asks the registry when the daily check is due; never throws. `current` is the
+ * running version, which says whether the `canary` tag counts.
+ */
 const checkIfDue = async (
   file: string,
   options: UpdateOptions,
+  current: string,
 ): Promise<boolean> => {
   try {
     const now = new Date();
@@ -82,6 +86,7 @@ const checkIfDue = async (
     await refreshUpdateCache(file, options.name, now, {
       ...(registry === undefined ? {} : { registry }),
       ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
+      current,
     });
     return true;
   } catch {
@@ -120,7 +125,7 @@ export const createUpdates = (input: {
   let timer: ReturnType<typeof setInterval> | undefined;
   if (options !== undefined && reason === null) {
     const due = (): void => {
-      void checkIfDue(file, options).then(asked => {
+      void checkIfDue(file, options, version).then(asked => {
         if (asked) record = null;
         return asked;
       });

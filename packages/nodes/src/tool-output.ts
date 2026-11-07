@@ -4,7 +4,8 @@
  *   result that cannot be read fails the node rather than turning into an empty
  *   value, and one too large to keep in an event is never cut. What a program
  *   wrote is not yet scrubbed, so these files live in a private folder that a
- *   run clears when it starts and ends.
+ *   run clears when it starts and ends. A long field is kept in the run's
+ *   files, named for the node, its round, and its step and try.
  */
 
 import {
@@ -15,6 +16,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
+
+import type { ExecuteContext } from "@krapht/ork-core";
 
 export type JsonResult =
   | { ok: true; json: unknown }
@@ -68,14 +71,19 @@ export const prepareOutputFile = (
   return file;
 };
 
-type KeptWhere = { runDir: string; id: string; round: number };
+type KeptWhere = Pick<ExecuteContext, "runDir" | "id" | "round" | "step">;
+
+/**
+ * A node's activation, and the step and its try when it is one, as a file
+ * name's start: `review.1`, `review.1.before-1`, `review.1.verify-2`. Two
+ * steps, or two tries of a check, never share a file.
+ */
+export const keptStem = ({ id, round, step }: KeptWhere): string =>
+  `${id}.${String(round)}${step === undefined ? "" : `.${step.name}-${String(step.try)}`}`;
 
 /** Where a long field of a node's output is kept. */
 export const keptFile = (context: KeptWhere, field: string): string =>
-  path.join(
-    context.runDir,
-    `${context.id}.${String(context.round)}.${field}.txt`,
-  );
+  path.join(context.runDir, `${keptStem(context)}.${field}.txt`);
 
 /** A way to write a field of a node's output to the run's files, when it's long. */
 export const keepFile =

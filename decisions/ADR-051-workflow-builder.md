@@ -79,4 +79,4 @@ positions would have cost more than it gave.
   next run, the same trust as starting one.
 - A new store migration holds drafts; `ork prune` leaves them.
 - L62 is gone, as edges always take the routed path.
-- Limits: [L103 to L111](../specs/gaps/limits-builder.md).
+- Limits: [L103 to L111](../specs/ui/builder-limits.md).

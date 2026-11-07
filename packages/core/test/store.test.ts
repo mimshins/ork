@@ -137,6 +137,27 @@ describe("the event store", () => {
     expect(store.events("abc11111")[0]?.event).toEqual(EVENTS[0]);
   });
 
+  it("keeps what a finished run skipped and handled on its record, until it reopens", () => {
+    const store = seeded();
+    const counted = {
+      ...result("abc11111", 0),
+      skipped: 3,
+      failuresHandled: 1,
+    };
+    store.append("abc11111", { type: "run.finished", result: counted });
+    expect(store.lookup("abc11111")[0]).toMatchObject({
+      skipped: 3,
+      failuresHandled: 1,
+    });
+    store.reopen("abc11111");
+    expect(store.lookup("abc11111")[0]).not.toHaveProperty("skipped");
+    store.append("abc22222", {
+      type: "run.finished",
+      result: result("abc22222", 0),
+    });
+    expect(store.lookup("abc22222")[0]).not.toHaveProperty("failuresHandled");
+  });
+
   it("finds runs by prefix and lists them by project, newest first", () => {
     const store = seeded();
     expect(

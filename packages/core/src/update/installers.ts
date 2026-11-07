@@ -35,6 +35,9 @@ export type Installer = {
 
 const SOURCE = "/packages/cli/";
 
+/** Pnpm's global virtual store, where pnpm 11 keeps global packages. */
+const PNPM_STORE_LINKS = /\/store\/v\d+\/links\//u;
+
 const has =
   (...parts: readonly string[]) =>
   (script: string): boolean =>
@@ -69,7 +72,11 @@ export const INSTALLERS: readonly Installer[] = [
   {
     id: "pnpm",
     label: "pnpm (global)",
-    owns: has("/pnpm/global/", "/.pnpm-global/"),
+    // pnpm 11 links a global package from its store's global virtual store
+    // (`<store>/v11/links/…`), which is where the real path leads.
+    owns: script =>
+      has("/pnpm/global/", "/.pnpm-global/")(script) ||
+      PNPM_STORE_LINKS.test(script),
     command: spec => ["pnpm", "add", "--global", spec],
   },
   {

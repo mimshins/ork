@@ -3,7 +3,7 @@
 _Part of [Messaging, decisions and logs](../messaging.md)._
 
 Status: **Built, proven on a real session on the CLI driver**; the SDK driver
-only against stand-ins ([C5](../gaps.md#chores))
+only against stand-ins ([C5](../runtime.md#limits))
 ([ADR-048](../../decisions/ADR-048-scripts-and-rules-on-the-bus.md),
 [send.ts](../../packages/core/src/remote/send.ts),
 [rules.ts](../../packages/core/src/run/rules.ts),
@@ -49,7 +49,7 @@ It runs inside a tool node, and reads `ORK_RUN` and `ORK_NODE`.
   sending at once cannot pass it.
 - **The body is masked before the store,** with the names in `ORK_MASKED`, which
   a tool node's program gets, as well as by the store's own patterns
-  ([L81](../gaps/limits-scripts.md)).
+  ([L81](./scripts-limits.md)).
 
 A script reads nothing: a tool node is one shot, and nothing can write to it.
 
@@ -104,7 +104,7 @@ tests:
   next starts.
 - **Spawned workers:** a rule on a template fires per instance, with the
   instance as sender. A rule to a template reaches the declared node's inbox
-  only ([L88](../gaps/limits-scripts.md)).
+  only ([L88](./scripts-limits.md)).
 - **`ork run --node`** has no bus: a rule does nothing, and the command says so
   once.
 
@@ -134,9 +134,9 @@ must not read as an instruction from the user. A short line in the system
 prompt, only for a node that can receive these, says so.
 
 `ORK_RUN` and `ORK_NODE` are attribution, not proof: a program runs as the same
-user with the same store, so it can forge them
-([L80](../gaps/limits-scripts.md)). The contact check stops mistakes and a
-prompt-injected send to the wrong session; it is not a security boundary.
+user with the same store, so it can forge them ([L80](./scripts-limits.md)). The
+contact check stops mistakes and a prompt-injected send to the wrong session; it
+is not a security boundary.
 
 ## On resume, and what can be lost
 
@@ -145,5 +145,6 @@ run's inboxes hold them unread, with their `via`
 ([mail.ts](../../packages/core/src/run/mail.ts)). A message that reaches a
 session as it ends triggers the one-time resume for
 [late messages](../messaging.md#message-bus), which spends a turn no agent asked
-for. What can be lost is in [L87](../gaps/limits-scripts.md), and what can stay
-unread in [L91](../gaps/limits-scripts.md).
+for. What can be lost is in [L87](./scripts-limits.md). A message to a node that
+never ran stays unread, and `ork run` warns of each such node at the end
+([running](../cli/running-and-runs.md#running-a-workflow)).

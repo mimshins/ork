@@ -27,15 +27,24 @@ with the built-in node types
   (`builder │ …`): each start (with its round), session text and tool calls,
   each result (`✓ pass: …`, `✓ exit 0`, `✓ merge (user)`), skips and exhausted
   loops, and worktree changes (`⎇ created …`, `merged`, `removed`); then the run
-  summary: status, total cost, how many nodes ran and were skipped, the
-  worktrees left for you (branch, path, why), and the reasons it did not
-  succeed. `--json` prints the
-  [run events](../scheduler/resuming-and-events.md#run-events) as JSON lines.
+  summary: status, total cost, how many nodes ran and were skipped, how many
+  failures an edge handled (`2 ran, 1 skipped, 1 failure handled`), the
+  worktrees left for you (branch, path, why), the reasons it did not succeed,
+  and a warning for each node that never ran with messages nobody read. `--json`
+  prints the [run events](../scheduler/resuming-and-events.md#run-events) as
+  JSON lines.
 - Integrations are optional: before anything starts, Ork checks only the
   programs the workflow's tool nodes run (`gh` for `tool.gh`, `aws` for
   `tool.aws`, `git` for `tool.git`, a `tool.shell` command's first word unless
   it is a template) and refuses to start, naming the nodes, when one is not
-  installed. A relative path isn't checked ([L98](../gaps/limits-scripts.md)).
+  installed. A relative path isn't checked
+  ([L98](../messaging/scripts-limits.md)).
+- **The driver:** a session node that names no driver, when `--driver` isn't
+  given, takes the one ready on this machine, from `ork doctor`'s own checks
+  (`cli` when both are). The run says so in one line on stderr before it starts,
+  records it for `ork resume`, and doesn't start when none is ready, with
+  `ork doctor`'s hints
+  ([which driver](../runtime.md#which-driver-a-session-uses)).
 - Every event is recorded in the [event store](../event-store.md) before it is
   printed; `ork ps`, `ork logs` and `ork tree` read it back.
 - Tool nodes run as declared (their `allow` list is checked first); gates and
@@ -64,7 +73,10 @@ with the built-in node types
   `{{nodes.*}}` renders empty and prints a warning. A run of one node sets up no
   worktree, so a `worktree` node needs `--in-place`; `readonly` denies the write
   tools.
-- `--driver` overrides the node's and the workflow's driver. The drivers load
+- `--driver` overrides the node's and the workflow's driver. A node that names
+  none takes the one ready here, said in one line, and none ready stops it
+  before the session starts
+  ([which driver](../runtime.md#which-driver-a-session-uses)). The drivers load
   only when a run starts.
 - stdout gets the transcript (session start, assistant text, one line per tool
   call, failed tool results) and then the report: status, summary, branch,
@@ -83,9 +95,12 @@ first (then the prompt is withdrawn and the transcript shows
 
 - `ask_user` lists the options with the recommended one marked; Enter takes the
   recommended option, and a number or an option id picks one. An invalid answer
-  asks again.
+  asks again. Then `Note for the run (optional, Enter to skip):` takes one line,
+  the answer's [note](../messaging.md#decisions); while it waits the decision is
+  still open, so `ork decide`, the UI or a gate's timeout can still answer it.
 - A permission prompt shows the tool and a one-line preview of its input and
-  asks `Allow? [y/N]`; anything but `y` denies it.
+  asks `Allow? [y/N]`; anything but `y` denies it, and a denial takes the same
+  optional note line, which the session reads with the denial.
 - Without a terminal (stdin is not a TTY), tools are denied and a question gets
   the recommended option, or tells the node to use its judgment and say so in
   its report.
@@ -106,20 +121,24 @@ first (then the prompt is withdrawn and the transcript shows
   with the same picker as the terminal; the recommended option is the default.
   The answer goes to the store, first one wins, and the run is woken on its
   socket. `--list` (or no terminal) only lists them, `--json` prints them, and
-  `--id <decision> --choose <option>` answers one without a prompt. An option
-  that is not one of the decision's, or a decision already answered or
-  withdrawn, is refused with the reason. Decisions of crashed runs are not
-  listed. A program or an agent in a run (`ORK_RUN` or `ORK_SESSION` is set) may
-  list them but not answer, since an answer speaks as the user, and
-  `ork continue` refuses there too, and `ork ui` withholds its sign-in link
-  ([L80](../gaps/limits-scripts.md)).
+  `--id <decision> --choose <option>` answers one without a prompt;
+  `--say <text>` gives that answer its [note](../messaging.md#decisions), which
+  goes to the run, and asking in turn offers the note line after each choice.
+  `--note` and `--rating` keep their meaning: feedback on the decision's node
+  ([feedback](../feedback/capture.md)), not words for the run. An option that is
+  not one of the decision's, or a decision already answered or withdrawn, is
+  refused with the reason. Decisions of crashed runs are not listed. A program
+  or an agent in a run (`ORK_RUN` or `ORK_SESSION` is set) may list them but not
+  answer, since an answer speaks as the user, and `ork continue` refuses there
+  too, and `ork ui` withholds its sign-in link
+  ([L80](../messaging/scripts-limits.md)).
 - **`ork chat <run> <node>`**
   ([chat.ts](../../packages/cli/src/commands/chat.ts),
   [tests](../../packages/cli/test/chat.test.ts)) talks to a leader or worker;
   any other node is refused, and so is a program or an agent in a run (`ORK_RUN`
   or `ORK_SESSION` is set), since it speaks as the user
-  ([L80](../gaps/limits-scripts.md)). Each line typed is a message (`-m <text>`
-  sends one and exits; Ctrl-D leaves):
+  ([L80](../messaging/scripts-limits.md)). Each line typed is a message
+  (`-m <text>` sends one and exits; Ctrl-D leaves):
   - **In a live run**, the message goes to the store and the run is woken; the
     run's bus pushes it in full into the node's session at its next step, or
     keeps it for the node's next session if it is not running

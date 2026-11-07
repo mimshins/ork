@@ -11,7 +11,7 @@ use Ork, start at the [documentation center](./docs/README.md) instead.
 ### The idea and the words
 
 **Read** the [README](./README.md), the top of
-[docs/design.md](./docs/design.md), and
+[specs/design.md](./specs/design.md), and
 [specs/concepts.md](./specs/concepts.md). **Why now:** every other document uses
 these words.
 

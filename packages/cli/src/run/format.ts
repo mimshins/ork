@@ -1,12 +1,11 @@
 /**
- * @file How runs read on the terminal: session events, node results, usage, run
- *   events with node prefixes, and the run summary.
+ * @file How runs read on the terminal: session events, node results, usage, and
+ *   run events with node prefixes; the run summary is `format-result.ts`'s.
  */
 
 import type {
   AnsweredBy,
   RunEvent,
-  RunResult,
   RuntimeEvent,
   SessionOutcome,
 } from "@krapht/ork-core";
@@ -14,12 +13,14 @@ import type {
 import { previewInput } from "../human.ts";
 import { cost, style } from "../output.ts";
 import { firstLine, formatBusEvent } from "./format-bus.ts";
+import { formatRunResult } from "./format-result.ts";
 
 /** Who answered a decision, as the log says it. */
 const ANSWERED_BY: Record<AnsweredBy, string> = {
   terminal: "terminal",
   decide: "ork decide",
   ui: "ork ui",
+  owner: "its owner",
 };
 
 export const STATUS_MARK: Record<string, string> = {
@@ -83,8 +84,12 @@ export const formatEvent = (
   tools: Map<string, string>,
 ): string[] => {
   if (event.type === "session.started") {
+    const fork = event.fork === true ? ", a fork to answer a question" : "";
     return [
-      style("dim", `▸ ${nodeId} (${event.model}, session ${event.sessionId})`),
+      style(
+        "dim",
+        `▸ ${nodeId} (${event.model}, session ${event.sessionId}${fork})`,
+      ),
     ];
   }
   if (event.type === "assistant.text") return indent(event.text);
@@ -157,13 +162,16 @@ export const formatRunEvent = (
   if (event.type === "node.event") {
     const inner = event.event;
     if (inner.type === "session.finished") return [];
+    // A fork answering a child's question (ADR-063): not the node's own words.
+    const fork = inner.fork === true ? style("dim", "fork · ") : "";
     if (inner.type === "session.started") {
+      const why = inner.fork === true ? ", to answer a question" : "";
       return [
-        `${tag(event.id)} ${style("dim", `${inner.model}, session ${inner.sessionId}`)}`,
+        `${tag(event.id)} ${fork}${style("dim", `${inner.model}, session ${inner.sessionId}${why}`)}`,
       ];
     }
     return formatEvent(event.id, event.event, tools).map(
-      line => `${tag(event.id)} ${line.replace(/^ {2}/u, "")}`,
+      line => `${tag(event.id)} ${fork}${line.replace(/^ {2}/u, "")}`,
     );
   }
   if (event.type === "node.finished") {
@@ -211,13 +219,27 @@ export const formatRunEvent = (
       event.kind === "permission"
         ? event.question.replace(/^Allow /u, "run ").replace(/\?$/u, "")
         : event.question;
+    // A question its owner answered at once has no one to wait on.
+    const where =
+      event.owner === undefined
+        ? `decision ${event.decision}; ork decide`
+        : `decision ${event.decision}, via ${event.owner}`;
     return [
-      `${tag(event.node)} ${style(["yellow", "bold"], "?")} ${what} ${question} ${style("dim", `(decision ${event.decision}; ork decide)`)}`,
+      `${tag(event.node)} ${style(["yellow", "bold"], "?")} ${what} ${question} ${style("dim", `(${where})`)}`,
     ];
   }
   if (event.type === "decision.answered") {
-    const by = ANSWERED_BY[event.by];
-    return [`${tag(event.node)} ${style("dim", `→ ${event.answer} (${by})`)}`];
+    const by =
+      event.by === "owner" && event.owner !== undefined
+        ? event.owner
+        : ANSWERED_BY[event.by];
+    const said =
+      event.note === undefined
+        ? ""
+        : ` · said: ${event.note.replaceAll(/\s+/gu, " ")}`;
+    return [
+      `${tag(event.node)} ${style("dim", `→ ${event.answer} (${by})${said}`)}`,
+    ];
   }
   if (event.type === "decision.withdrawn") {
     return [`${tag(event.node)} ${style("dim", "→ question withdrawn")}`];
@@ -261,33 +283,4 @@ export const formatRunEvent = (
     ];
   }
   return formatBusEvent(event).map(line => `${tag(event.node)} ${line}`);
-};
-
-const RUN_MARK: Record<RunResult["status"], string> = {
-  succeeded: style("green", "✓"),
-  failed: style("red", "✗"),
-  budget_exhausted: style("yellow", "!"),
-  quota_exhausted: style("yellow", "!"),
-  timed_out: style("yellow", "!"),
-  interrupted: style("yellow", "!"),
-};
-
-/** The run summary: status, cost, what ran, branches to look at, and why. */
-export const formatRunResult = (result: RunResult): string[] => {
-  const ran = result.nodes.filter(n => n.runs > 0).length;
-  const skipped = result.nodes.length - ran;
-  const lines = [
-    "",
-    `${RUN_MARK[result.status]} run ${result.runId} ${result.status.replace("_", " ")} ${style(
-      "dim",
-      `· ${cost(result.costUsd)} · ${String(ran)} ran, ${String(skipped)} skipped`,
-    )}`,
-  ];
-  for (const kept of result.worktrees) {
-    lines.push(
-      `  ${kept.id}: ${kept.branch ?? "detached"} ${style("dim", `at ${kept.path} (${kept.reason})`)}`,
-    );
-  }
-  for (const reason of result.reasons) lines.push(`  ${style("red", reason)}`);
-  return lines;
 };

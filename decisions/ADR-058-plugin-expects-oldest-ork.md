@@ -51,4 +51,4 @@ releasing, not for anything missing.
   Ork is published ([release](../runbook/development/release.md)).
 - The plugin and its skills still follow `main`, so a skill edited before a
   release reaches plugin users at once
-  ([limit L145](../specs/gaps/limits-claude-code.md)).
+  ([limit L145](../specs/claude-code/limits.md)).

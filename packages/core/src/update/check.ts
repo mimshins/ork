@@ -1,27 +1,44 @@
 /**
  * @file The update check (ADR-038): asks the npm registry for the package's
- *   `latest` dist-tag (an 18-byte answer; Ork sends nothing but the request),
- *   keeps the answer in `~/.ork/update-check.json`, and says when to look again
- *   and when to tell the user. The CLI runs it at most once a day in the
- *   background; `ork upgrade` and, in M2, the UI read the same cache.
+ *   dist-tags (a few dozen bytes; Ork sends nothing but the request), takes the
+ *   newest version across the release channels (`latest`, `alpha`, `beta`,
+ *   `rc`, and `canary` only for a canary), keeps it in
+ *   `~/.ork/update-check.json`, and says when to look again and when to tell
+ *   the user. The CLI runs it at most once a day in the background; `ork
+ *   upgrade` and `ork ui` read the same cache.
  */
 
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 
-import { isNewer } from "./version.ts";
+import {
+  compareVersions,
+  isNewer,
+  parseVersion,
+  type Version,
+} from "./version.ts";
 
 /** How often the background check asks the registry, and repeats a notice. */
 export const UPDATE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 export const NPM_REGISTRY = "https://registry.npmjs.org";
 
+/** The dist-tags every install follows, toward and after 1.0.0. */
+export const CHANNEL_TAGS = ["latest", "alpha", "beta", "rc"] as const;
+
+/** The dist-tag of snapshots from `main`, followed only by a canary. */
+export const CANARY_TAG = "canary";
+
 /** What the last check found, and when the user was last told. */
 export type UpdateCache = {
   /** ISO time of the last attempt, successful or not. */
   checkedAt: string;
-  /** The registry's `latest` version, when the last success found one. */
+  /**
+   * The newest version across the channel tags, when the last success found
+   * one. Named for the `latest` tag it held before the channels, so older Orks
+   * read it the same way.
+   */
   latest?: string;
   /** The version the user was last told about, and when. */
   notified?: { version: string; at: string };
@@ -88,9 +105,51 @@ export type FetchLatestOptions = {
   registry?: string;
   fetch?: typeof globalThis.fetch;
   timeoutMs?: number;
+  /**
+   * The running version: a canary (`1.0.0-canary-…`) also follows the `canary`
+   * tag. Without it, only the channel tags are read.
+   */
+  current?: string;
 };
 
-/** The package's `latest` version on the registry, or `null` on any failure. */
+/** Whether `version` is a canary snapshot: its pre-release starts `canary`. */
+export const isCanary = (version: string): boolean =>
+  parseVersion(version)?.pre[0]?.startsWith(CANARY_TAG) === true;
+
+/**
+ * The newest version, by semver precedence, among the dist-tags `current`
+ * follows: the channel tags, and `canary` too when `current` is a canary. A tag
+ * whose value doesn't parse is skipped; `null` when none does.
+ */
+export const newestTagged = (
+  tags: Readonly<Record<string, unknown>>,
+  current?: string,
+): string | null => {
+  const followed: readonly string[] =
+    current !== undefined && isCanary(current)
+      ? [...CHANNEL_TAGS, CANARY_TAG]
+      : CHANNEL_TAGS;
+  const candidates = followed.flatMap(tag => {
+    const value = tags[tag];
+    const version = typeof value === "string" ? parseVersion(value) : null;
+    return typeof value === "string" && version !== null
+      ? [{ value, version }]
+      : [];
+  });
+  const newest = candidates.reduce<{ value: string; version: Version } | null>(
+    (best, candidate) =>
+      best === null || compareVersions(candidate.version, best.version) > 0
+        ? candidate
+        : best,
+    null,
+  );
+  return newest?.value ?? null;
+};
+
+/**
+ * The newest version on the registry that the running version follows ({@link
+ * newestTagged}), or `null` on any failure.
+ */
 export const fetchLatest = async (
   name: string,
   options: FetchLatestOptions = {},
@@ -104,7 +163,7 @@ export const fetchLatest = async (
     });
     if (!response.ok) return null;
     const tags: unknown = await response.json();
-    return (isRecord(tags) ? text(tags, "latest") : undefined) ?? null;
+    return isRecord(tags) ? newestTagged(tags, options.current) : null;
   } catch {
     return null;
   }
@@ -113,7 +172,7 @@ export const fetchLatest = async (
 /**
  * Asks the registry and records the answer. A failed check is recorded too, so
  * an offline machine is not asked again until the interval passes; the last
- * known `latest` is kept.
+ * known version is kept. `options.current` is the running version.
  */
 export const refreshUpdateCache = async (
   file: string,

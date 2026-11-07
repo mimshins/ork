@@ -2,8 +2,9 @@
  * @file The dock: dockview with Ork's theme, tabs and panel buttons. A tab
  *   shows an icon and a title and holds no button of its own, since a control
  *   inside a tab is invalid; the group's header carries Minimize, Maximize,
- *   Float and Close, each with its name and keys. dockview's announcements go
- *   to the workspace's one live region.
+ *   Float and Close, each with its name and keys, and each panel has a heading
+ *   for screen readers. dockview's announcements go to the workspace's one live
+ *   region.
  */
 
 import {
@@ -42,11 +43,17 @@ const NoPanels = () => (
   </div>
 );
 
+/**
+ * Each panel under a heading only a screen reader sees, as the stack's visible
+ * one is, so the cards' `<h3>`s don't skip a level: the tab names the panel but
+ * isn't a heading.
+ */
 const COMPONENTS = Object.fromEntries(
-  PANELS.map(({ id, Body }) => [
+  PANELS.map(({ id, title, Body }) => [
     id,
     () => (
       <div className={styles["body"]}>
+        <h2 className={styles["heading"]}>{title}</h2>
         <Body />
       </div>
     ),

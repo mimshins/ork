@@ -2,9 +2,9 @@
 
 Agents that write code each get their own **git worktree**: a second checkout of
 your repository, on its own branch. Parallel agents never edit the same files,
-your own checkout is never touched, and every result is a branch you can review,
-merge or throw away. The contract is the
-[worktrees spec](../../specs/worktrees.md).
+your own checkout stays as it was unless a node works there (`shared`, or a run
+with `--in-place`), and every result is a branch you can review, merge or throw
+away.
 
 This page describes Ork's defaults. Your project can rename the branches and
 worktrees, start from another base, or never commit at all (detached worktrees,
@@ -102,20 +102,27 @@ ork worktrees remove <branch>     # one worktree (or a detached one's path)
 ork worktrees remove <branch> --branch   # and its branch
 ```
 
-The list shows each branch's worktree path, uncommitted changes, and commits not
-yet merged into your current branch. Cleaning keeps anything with uncommitted
-changes unless you add `--force`, and never removes a branch you have checked
-out (in your main checkout or in a worktree of your own) or the worktree of a
-run that's still going: stop the run first. A worktree of your own whose folder
-you deleted keeps git's record of it; Ork drops only its own.
-`ork worktrees remove` takes one item by the same rule; when removing it would
-lose work it prints what (the changes and commits, as git prints them) and needs
-`--force`. Without a terminal, `--yes` is required. It lists what your runs
-recorded creating, whatever your rules named it, plus any `ork/` branch, and
+**What the list shows:** every worktree and branch your runs recorded creating,
+whatever your rules named it, plus any `ork/` branch, each with its path, its
+uncommitted changes, and the commits not yet merged into your current branch. It
 reads their state from git, so it works for any run, even one from a crashed
-process. A detached worktree (`commit: never`) is cleaned only with `--all`, and
-one holding a commit no branch has (a `tool.git` commit) only with `--force`
-too.
+process.
+
+**What `clean` never removes:**
+
+- uncommitted changes, unless you add `--force`;
+- a branch you have checked out, in your main checkout or a worktree of your
+  own;
+- the worktree of a run that's still going: stop the run first;
+- git's record of a worktree of your own whose folder you deleted; Ork drops
+  only its own.
+
+A detached worktree (`commit: never`) is cleaned only with `--all`, and one
+holding a commit no branch has (a `tool.git` commit) only with `--force` too.
+
+**`remove`** takes one item by the same rules. When removing it would lose work,
+it prints what (the changes and commits, as git prints them) and needs
+`--force`. Without a terminal, add `--yes`.
 
 ### In the browser
 
@@ -130,7 +137,23 @@ shown.
 
 ## Running without worktrees
 
-`ork run <wf> --in-place` runs every node in your checkout instead. It is handy
-for a quick try, but parallel writers share the same files; they claim what they
-edit ([claims](./leaders-and-delegation.md#claims-parallel-writers-stay-apart)),
+`--in-place` runs every node in your checkout instead:
+
+```sh
+ork run <workflow> --in-place
+```
+
+It is handy for a quick try, but parallel writers share the same files; they
+claim what they edit
+([claims](./leaders-and-delegation.md#claims-parallel-writers-stay-apart)),
 which keeps them apart only as far as they follow it.
+
+## Running Ork from a git hook
+
+A git hook sets `GIT_DIR`, `GIT_INDEX_FILE` and other variables for the
+repository it runs in. `ork` clears them as it starts, so a run started from a
+hook, its sessions and its tool nodes work in their own worktrees, not the
+hook's repository. An outer `git -c key=value` doesn't reach Ork's git either;
+put such settings in the repository's config instead.
+
+For the full rules: [worktrees](../../specs/worktrees.md).

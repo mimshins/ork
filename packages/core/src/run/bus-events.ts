@@ -74,7 +74,14 @@ export type BusEvent =
       options: DecisionChoice[];
       recommended?: string;
     }
-  | { type: "owner.answered"; node: string; question: string; answer: string }
+  | {
+      type: "owner.answered";
+      node: string;
+      question: string;
+      answer: string;
+      /** Why, in the owner's words, when it gave a note. */
+      note?: string;
+    }
   /** The owner's session ended first; the question goes to the human. */
   | { type: "owner.unanswered"; node: string; question: string }
   /**

@@ -26,6 +26,9 @@ import {
 
 const NAME = "@krapht/ork";
 
+const CANARY_OLD = "1.0.0-canary-20261101090000-1a2b3c4";
+const CANARY_NEW = "1.0.0-canary-20261107090000-5d6e7f8";
+
 const opened: Updates[] = [];
 let fixture: TestServer | undefined;
 const stops: AbortController[] = [];
@@ -120,6 +123,24 @@ describe("the daily check in a long-running server", () => {
       `https://registry.npmjs.org/-/package/${NAME}/dist-tags`,
     ]);
     expect(updates.info().newer).toBe("9.9.10");
+  });
+
+  it.each([
+    ["a canary follows the canary tag", CANARY_OLD, CANARY_NEW],
+    ["an alpha never does", "1.0.0-alpha.0", "1.0.0-alpha.1"],
+  ])("%s", async (_case, version, newest) => {
+    const home = temp("ork-srv-up-");
+    const registry = fakeRegistry("1.0.0-alpha.1", { canary: CANARY_NEW });
+    opened.push(
+      createUpdates({
+        version,
+        home,
+        options: { name: NAME, env: {}, fetch: registry.fetch },
+      }),
+    );
+    await expect
+      .poll(() => readUpdateCache(updateCachePath(home))?.latest)
+      .toBe(newest);
   });
 
   it("doesn't ask when the record is less than a day old", async () => {

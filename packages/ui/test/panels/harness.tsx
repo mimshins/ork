@@ -114,7 +114,7 @@ export const openPanelState = (routes: FakeRoutes = {}) => {
     }
     if (path === "/api/links") return json(monitor?.links ?? []);
     const [, run = "", kind = ""] =
-      /^\/api\/runs\/([^/]+)\/(tree|graph|pause|continue|stop|message)s?$/u.exec(
+      /^\/api\/runs\/([^/]+)\/(tree|graph|pause|continue|stop|resume|message)s?$/u.exec(
         path,
       ) ?? [];
     if (kind === "tree") return json(monitor?.tree ?? []);

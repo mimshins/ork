@@ -23,7 +23,7 @@ export const DESIGN = {
   worktrees: d("specs/worktrees.md", "Spec: worktrees, where nodes work"),
   ui: d("specs/ui.md", "Spec: the UI panels"),
   server: d("specs/server.md", "Spec: the local server and `ork ui`"),
-  milestones: d("docs/design.md#milestones", "Design: milestones"),
+  milestones: d("specs/design.md#milestones", "Design: milestones"),
 };
 
 /** User docs; the group keeps its old name, from when they were in the README. */
@@ -344,10 +344,7 @@ export const FEEDBACK = {
     "ADR-059: built-in workflows, triage by rules, previewed publishing",
   ),
   guide: d("docs/guides/feedback.md", "Guide: feedback from your runs"),
-  limits: d(
-    "specs/gaps/limits-feedback.md",
-    "Limits: the feedback loop, for now",
-  ),
+  limits: d("specs/feedback/limits.md", "Limits: the feedback loop, for now"),
   human: d(
     "packages/core/src/feedback/human.ts",
     "Code: a person's note, from the CLI, `ork decide` or the UI",
@@ -483,6 +480,46 @@ export const CONTROL = {
   spec: d("specs/run-control.md", "Spec: pause, continue and stop"),
   detach: d("packages/core/src/remote/detach.ts", "Code: `ork run --detach`"),
   cliTests: d("packages/cli/test/control.test.ts", "Tests: decide and stop"),
+  say: d(
+    "packages/cli/test/decide-say.test.ts",
+    "Tests: `ork decide --say`, a note with the answer",
+  ),
+  notesAdr: d(
+    "decisions/ADR-062-notes-on-decision-answers.md",
+    "ADR-062: an answer may carry a note",
+  ),
+};
+
+/** A child's question to its leader first (`questions: owner`). */
+export const QUESTIONS = {
+  spec: d(
+    "specs/messaging/leader-questions.md",
+    "Spec: a child's question to its leader first",
+  ),
+  asks: d(
+    "packages/nodes/src/owner-asks.ts",
+    "Code: asking a fork of the leader's session",
+  ),
+  owners: d(
+    "packages/core/src/run/owners.ts",
+    "Code: who takes a node's questions first",
+  ),
+  tests: d(
+    "packages/cli/test/owner-questions.test.ts",
+    "Tests: leader questions, against a stand-in claude",
+  ),
+  unitTests: d(
+    "packages/nodes/test/owner-asks.test.ts",
+    "Tests: no session, no budget, a failed or late fork, a stop, a pause, a read-only fork",
+  ),
+  forkTests: d(
+    "packages/runtime-claude/test/fork.test.ts",
+    "Tests: both drivers fork a session",
+  ),
+  adr: d(
+    "decisions/ADR-063-leader-questions.md",
+    "ADR-063: a fork of the leader's session answers first",
+  ),
 };
 
 export const BUS = {
@@ -741,7 +778,7 @@ export const WATCH = {
     "Code: the builder's until picker",
   ),
   spec: d("specs/scheduler/watching.md", "Spec: watching a source"),
-  limits: d("specs/gaps/limits-watching.md", "Limits: watching a source"),
+  limits: d("specs/scheduler/watching-limits.md", "Limits: watching a source"),
   adr: d(
     "decisions/ADR-053-watching-a-source.md",
     "ADR-053: watching a source",
@@ -771,6 +808,10 @@ export const ENGINE = {
   delegationTests: d(
     "packages/core/test/delegation.test.ts",
     "Tests: delegation, spawned workers and leader resume",
+  ),
+  rounds: d(
+    "packages/core/test/rounds.test.ts",
+    "Tests: rounds, and a join behind a branch that can't run",
   ),
 };
 
@@ -1018,6 +1059,22 @@ export const RUNTIME = {
   tests: d(
     "packages/runtime-claude/test/runtime.test.ts",
     "Tests: both drivers, against a stand-in claude",
+  ),
+  driver: d(
+    "packages/core/src/run/driver.ts",
+    "Code: which driver a session uses",
+  ),
+  ready: d(
+    "packages/cli/src/run/ready-driver.ts",
+    "Code: the driver ready on this machine, for a run",
+  ),
+  readyTests: d(
+    "packages/cli/test/ready-driver.test.ts",
+    "Tests: the ready driver, and a resume keeping its own",
+  ),
+  driverRule: d(
+    "specs/runtime.md#which-driver-a-session-uses",
+    "Spec: which driver a session uses",
   ),
 };
 

@@ -57,6 +57,7 @@ export const createOwnerQuestions = ({
       id: string,
       question: string,
       choice: string,
+      note?: string,
     ): { ok: true } | { ok: false; error: string } => {
       const asked = open.get(question);
       if (asked?.owner !== id) {
@@ -69,7 +70,14 @@ export const createOwnerQuestions = ({
         };
       }
       open.delete(question);
-      onEvent({ type: "owner.answered", node: id, question, answer: choice });
+      const said = note?.trim() ?? "";
+      onEvent({
+        type: "owner.answered",
+        node: id,
+        question,
+        answer: choice,
+        ...(said === "" ? {} : { note: said }),
+      });
       asked.resolve(choice);
       return { ok: true };
     },

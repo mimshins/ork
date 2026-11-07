@@ -1,0 +1,87 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: qa-pass
+description: The qa agent tests the package built from main as a user would, in a throwaway HOME and prefix with a fake claude and gh, so nothing is paid; you read its findings and decide what happens next.
+inputs:
+  scope:
+    type: string
+    required: true
+    description: What to test, e.g. "the quickstart and the worktrees guide", or "everything a 1.0.0-alpha.0 user meets".
+layers:
+  project:
+    instructions: inherit
+    skills: ignore
+defaults:
+  model: sonnet
+  effort: medium
+  budgetUsd: 2
+limits:
+  budgetUsd: 8
+  timeout: 2h
+nodes:
+  qa:
+    type: claude.worker
+    agent: qa
+    prompt: |-
+      Test this, as your role says: {{inputs.scope}}
+
+      The package is already built from main and packed in this checkout; install this tarball, don't build again:
+      {{before.stdout}}
+      Report status done, with every finding in `findings` (markdown: most severe first, each with its steps, severity and suspected place, then the doc drift, what passed and what you couldn't test), the counts in `blockers` and `majors`, and `verdict` clean only when you found nothing.
+    model: haiku
+    effort: high
+    isolation: worktree
+    budgetUsd: 5
+    maxTurns: 150
+    timeout: 90m
+    tools:
+      allow:
+        - Bash
+        - Write
+        - Edit
+    output:
+      schema:
+        verdict:
+          - clean
+          - findings
+        blockers: integer
+        majors: integer
+        findings: string
+    before:
+      script: |-
+        pnpm install --frozen-lockfile --prefer-offline >&2
+        pnpm build >&2
+        out="$(mktemp -d)"
+        (cd packages/cli && npm pack --pack-destination "$out" >&2)
+        ls "$out"/*.tgz
+      timeout: 15m
+  decide:
+    type: human.gate
+    question: |-
+      QA of {{inputs.scope}}: {{nodes.qa.output.verdict}}, {{nodes.qa.output.blockers}} blockers, {{nodes.qa.output.majors}} majors.
+
+      {{nodes.qa.output.findings}}
+
+      save writes these findings to .ai/specs/qa-{{run.id}}.md (local, never committed), to turn into task specs for ork run feature or into issues. drop keeps them only in this run's record (ork logs {{run.id}}).
+    options:
+      - save
+      - drop
+    recommended: save
+  save:
+    type: tool.shell
+    script: |-
+      mkdir -p .ai/specs
+      out=".ai/specs/qa-$RUN.md"
+      printf '# QA findings: %s\n\nFrom run %s.\n\n%s\n' "$SCOPE" "$RUN" "$FINDINGS" > "$out"
+      echo "$out"
+    allow:
+      - sh
+    env:
+      RUN: "{{run.id}}"
+      SCOPE: "{{inputs.scope}}"
+      FINDINGS: "{{nodes.qa.output.findings}}"
+edges:
+  - qa -> decide
+  - from: decide
+    to: save
+    when: choice == 'save'

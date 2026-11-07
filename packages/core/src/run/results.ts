@@ -1,11 +1,12 @@
 /**
  * @file Small helpers for the scheduler's results: pass-through and failure
  *   results, run-summary entries, what a run has spent, `node.finished` events,
- *   the declared nodes `run.started` lists, which session a re-run node
- *   resumes, and closing the workspace at the end.
+ *   the declared nodes `run.started` lists, the run's result (with what a
+ *   `succeeded` run left out: skipped nodes, handled failures, unread mail),
+ *   and closing the workspace at the end.
  */
 
-import { isClaudeNode, type Node, type NodeType } from "@krapht/ork-schema";
+import type { NodeType } from "@krapht/ork-schema";
 
 import type { AgentRef } from "../agents/apply.ts";
 import { parseTemplate, renderTemplate, type Scope } from "../expr/evaluate.ts";
@@ -23,6 +24,7 @@ import type {
   Workspace,
   RunResult,
   RunStatus,
+  UnreadMail,
 } from "./types.ts";
 
 /** Control nodes pass their input through; a join's input is its output. */
@@ -184,6 +186,16 @@ export const summaryOf = (
   return created;
 };
 
+/** A run's summary; a resumed run's leaders keep their forks' spend (ADR-063). */
+export const createSummaries = (earlier: EarlierSpend | undefined) => {
+  const summaries = new Map<string, NodeSummary>();
+  const summary = (id: string): NodeSummary => summaryOf(summaries, id);
+  for (const [id, costUsd] of earlier?.forks ?? []) {
+    summary(id).costUsd += costUsd;
+  }
+  return { summaries, summary };
+};
+
 /** The tighter of the workflow's budget and what a caller left it, if any. */
 const runBudget = (
   graph: CompiledGraph,
@@ -218,7 +230,22 @@ export const runStartedEvent = (
   ...runBudget(graph, options.settings),
 });
 
-/** The run's result: failed when any reason was given, unless it stopped. */
+/** The unread mail of nodes that never ran; a node that ran saw its notice. */
+const unreadOf = (
+  nodes: readonly NodeSummary[],
+  unread: ReadonlyMap<string, number> | undefined,
+): { unread?: UnreadMail[] } => {
+  const ran = new Set(nodes.filter(node => node.runs > 0).map(node => node.id));
+  const left = [...(unread ?? [])]
+    .filter(([node]) => !ran.has(node))
+    .map(([node, messages]) => ({ node, messages }));
+  return left.length === 0 ? {} : { unread: left };
+};
+
+/**
+ * The run's result: failed when any reason was given, unless it stopped. A
+ * skipped node or a handled failure leaves it `succeeded`, and is counted.
+ */
 export const runResult = (run: {
   runId: string;
   stopped: RunStatus | null;
@@ -227,6 +254,9 @@ export const runResult = (run: {
   reasons: string[];
   worktrees: KeptWorktree[];
   outputs?: Record<string, string> | undefined;
+  failuresHandled: number;
+  /** Each node's unread messages, from the bus. */
+  unread?: ReadonlyMap<string, number>;
 }): RunResult => ({
   runId: run.runId,
   status: run.stopped ?? (run.reasons.length > 0 ? "failed" : "succeeded"),
@@ -235,6 +265,9 @@ export const runResult = (run: {
   reasons: run.reasons,
   worktrees: run.worktrees,
   ...(run.outputs === undefined ? {} : { outputs: run.outputs }),
+  skipped: run.nodes.filter(node => node.runs === 0).length,
+  failuresHandled: run.failuresHandled,
+  ...unreadOf(run.nodes, run.unread),
 });
 
 /** A workflow's `outputs`, rendered as the run ends. */
@@ -263,19 +296,3 @@ export const closeWorkspace = (
     reasons.push(`cleaning up worktrees: ${String(error)}`);
     return [];
   });
-
-/**
- * The session a node that runs again continues, when it resumes (ADR-033): by
- * `session: resume`, the default for a leader; a worker starts fresh unless it
- * says `resume`.
- */
-export const resumeOf = (
-  node: Node | undefined,
-  sessionId: string | undefined,
-): string | undefined => {
-  if (node === undefined || !isClaudeNode(node)) return undefined;
-  if (node.type === "claude.subagent") return undefined;
-  const session =
-    node.session ?? (node.type === "claude.leader" ? "resume" : "fresh");
-  return session === "resume" ? sessionId : undefined;
-};

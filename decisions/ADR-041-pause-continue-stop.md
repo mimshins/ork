@@ -131,7 +131,8 @@ The SDK path follows the SDK's own types (`HookCallbackMatcher.timeout`,
   by then; a short pause costs nothing.
 - **Managed settings can forbid HTTP hooks** (`allowManagedHooksOnly`,
   `allowedHttpHookUrls`). The CLI driver's hold then never fires, and a
-  CLI-driven node pauses only at its next activation ([gaps](../specs/gaps.md)).
+  CLI-driven node pauses only at its next activation
+  ([L29](../specs/scheduler/limits.md)).
 - **A stopped leader's delegated children** follow the existing owner-failure
   path; they are not stopped with it.
 - **Pause and stop work in a full `ork run`.** A single-node run

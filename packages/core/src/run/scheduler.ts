@@ -12,7 +12,6 @@ import type {
   Activation,
   NodeOutput,
   NodeResult,
-  NodeSummary,
   RunHandle,
   RunOptions,
   RunResult,
@@ -22,6 +21,7 @@ import { createHolds, createStops } from "./holds.ts";
 import { createRunPorts } from "./ports.ts";
 import {
   closeWorkspace,
+  createSummaries,
   failure,
   finishedEvent,
   renderOutputs,
@@ -30,7 +30,6 @@ import {
   runResult,
   runStartedEvent,
   startedEvent,
-  summaryOf,
 } from "./results.ts";
 import { createRouter } from "./router.ts";
 import { runPlace, runScope } from "./scope.ts";
@@ -50,7 +49,7 @@ export const startRun = (options: RunOptions): RunHandle => {
   const sessionIds = new Map<string, string>();
   const spend = spendOf(limits.budgetUsd, options);
   const running = new Set<string>();
-  const summaries = new Map<string, NodeSummary>();
+  const { summaries, summary } = createSummaries(options.replay?.earlier);
   const queue: Activation[] = [];
   const reasons: string[] = [];
   const stops = createStops(abort.signal);
@@ -64,7 +63,6 @@ export const startRun = (options: RunOptions): RunHandle => {
     pump();
   });
   const scope = () => runScope(options.inputs, outputs, runId);
-  const summary = (id: string): NodeSummary => summaryOf(summaries, id);
   const nodeOf = (activation: Pick<Activation, "id" | "template">) =>
     graph.nodes.get(activation.template ?? activation.id)?.node;
 
@@ -76,8 +74,10 @@ export const startRun = (options: RunOptions): RunHandle => {
   };
 
   // A route still going when the run stops can't queue what nothing would run.
-  const enqueue = (id: string, input: NodeOutput | undefined): void => {
-    if (stopped === null) queue.push({ id, input });
+  const enqueue = (id: string, input?: NodeOutput): void => {
+    if (stopped !== null) return;
+    router.queued(id);
+    queue.push({ id, input });
   };
 
   const stopping = abort.signal;
@@ -107,12 +107,8 @@ export const startRun = (options: RunOptions): RunHandle => {
     activate: enqueue,
     takeLoop: loops.take,
     stopped: () => stopped !== null,
-    skipped: id => {
-      summary(id);
-    },
-    failed: reason => {
-      reasons.push(reason);
-    },
+    skipped: id => void summary(id),
+    failed: reason => void reasons.push(reason),
   });
 
   const cancelTimeout = watchRunTimeout({
@@ -135,15 +131,16 @@ export const startRun = (options: RunOptions): RunHandle => {
     cancelTimeout();
     const worktrees = await closeWorkspace(options.workspace, reasons);
     await options.beforeFinish?.();
-    const nodes = [...summaries.values()];
     const result = runResult({
       runId,
       stopped,
       costUsd: spend.total(),
-      nodes,
+      nodes: [...summaries.values()],
       reasons,
       worktrees,
       outputs: renderOutputs(graph.workflow.outputs, scope()),
+      failuresHandled: router.handled(),
+      unread: ports.bus.unread(),
     });
     onEvent({ type: "run.finished", result });
     finish(result);
@@ -151,6 +148,7 @@ export const startRun = (options: RunOptions): RunHandle => {
 
   const settle = (): void => {
     if (settled || busy > 0 || queue.length > 0) return;
+    if (stopped === null) reasons.push(...router.stuck());
     settled = true;
     void close();
   };
@@ -193,6 +191,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     nodeOf,
     runChild,
     spend,
+    summary,
   };
 
   const execute = createExecute({
@@ -240,7 +239,7 @@ export const startRun = (options: RunOptions): RunHandle => {
   const run = async (activation: Activation, isSession: boolean) => {
     const result = await perform(activation);
     if (isSession) slots.release();
-    if (stopped === null) await router.route(activation.id, result);
+    await router.finished(activation.id, result);
     busy -= 1;
     pump();
   };
@@ -274,7 +273,7 @@ export const startRun = (options: RunOptions): RunHandle => {
   };
 
   onEvent(runStartedEvent(graph, runId, options));
-  for (const id of graph.entries) queue.push({ id, input: undefined });
+  for (const id of graph.entries) enqueue(id);
   queueMicrotask(pump);
 
   return {

@@ -27,7 +27,13 @@ import type { CheckResult } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
 import { ORK_NAME, ORK_VERSION } from "../__build_info__.ts";
-import { exec, orkCheck, runChecks, triggerChecks } from "../doctor/checks.ts";
+import {
+  exec,
+  orkCheck,
+  runChecks,
+  socketCheck,
+  triggerChecks,
+} from "../doctor/checks.ts";
 import { projectChecks } from "../doctor/project-checks.ts";
 import { confirm, style, write, writeErr } from "../output.ts";
 import { projectAt } from "../project/place.ts";
@@ -70,6 +76,7 @@ export const doctor = defineCommand({
       orkCheck(),
       ...results,
       ...(place.mode === "attached" ? [] : projectChecks(place.root)),
+      socketCheck(),
       ...triggerChecks(),
     ]) {
       for (const line of formatCheck(result)) write(line);
@@ -142,6 +149,7 @@ export const upgrade = defineCommand({
     const latest = await fetchLatest(ORK_NAME, {
       ...(registry === undefined ? {} : { registry }),
       timeoutMs: 15_000,
+      current: ORK_VERSION,
     });
     const plan = planUpgrade({
       name: ORK_NAME,

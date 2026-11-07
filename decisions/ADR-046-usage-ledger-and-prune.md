@@ -31,8 +31,8 @@ store migrates. Reports are pure functions over its rows. The contract is
 
 - **Sessions, not nodes,** are the source. A `workflow.call` node's usage is its
   called run's, which has rows of its own, so a called run counts once
-  ([L54](../specs/gaps/limits-calls.md)). `ork chat` spends outside any node and
-  is counted too.
+  ([L54](../specs/event-store.md#reading-runs), since closed). `ork chat` spends
+  outside any node and is counted too.
 - **Rows carry their project and workflow,** so they outlive the run.
 
 **A session's own spend.** A resumed activation's cost is what the session
@@ -48,7 +48,7 @@ and its ledger row, cost and status in one transaction.
 **Pruning is a command.** `ork prune --older-than <age>` removes a run's record,
 events, decisions, commands, ended links and folder, after asking. Nothing is
 deleted on its own, and there is no retention setting yet
-([L72](../specs/gaps/limits-ledger.md)). The ledger and feedback records stay,
+([L72](../specs/usage/ledger-limits.md)). The ledger and feedback records stay,
 so `feedback` loses its foreign key to `runs`. A run stays while it is live, has
 a live link, or has a worktree or branch left, since `ork worktrees` finds those
 through its events, and a run's age is that of its last event. A run's calls go
@@ -84,7 +84,7 @@ with it or not at all.
 - A resumed run counts its failed nodes' spend, so one that ran out of budget
   ends again at once unless the workflow's budget is raised.
 - A session's own `budgetUsd` cap is per process, as Claude Code's schema says,
-  so it is passed as it was ([L73](../specs/gaps/limits-ledger.md)).
+  so it is passed as it was ([L73](../specs/usage/ledger-limits.md)).
 - The cumulative cost was seen on the CLI driver. The SDK driver runs the same
-  Claude Code and is treated alike, unseen until [C5](../specs/gaps.md#chores)
-  is done.
+  Claude Code and is treated alike, unseen for now
+  ([C5](../specs/runtime.md#limits)).

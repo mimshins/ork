@@ -3,8 +3,7 @@
 A workflow is one YAML file, `.ork/workflows/<name>.ork.yaml`, that you commit
 with your project. It names the agents and tools (the **nodes**), who owns whom,
 and how work flows between them (the **edges**). This guide walks through the
-parts; the exact contract is the
-[workflow format spec](../../specs/workflow-format.md).
+parts.
 
 ## Contents
 
@@ -53,23 +52,27 @@ inputs:
     default: 2
 ```
 
-Pass them as `ork run <wf> --input feature="dark mode" --input rounds=3`. A
-missing required input stops the run before anything starts.
+Pass them to `ork run`; a missing required input stops the run before anything
+starts:
+
+```sh
+ork run <workflow> --input feature="dark mode" --input rounds=3
+```
 
 ## Node types
 
-| Type                              | What it does                                                                                                 |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `claude.leader`                   | A Claude session that can plan and delegate to the nodes it owns                                             |
-| `claude.worker`                   | A Claude session that does one task and reports                                                              |
-| `claude.subagent`                 | A Claude Code subagent inside its parent's session (see below)                                               |
-| `tool.gh`, `tool.aws`, `tool.git` | Your own `gh`, `aws` or `git`, with an allow list ([`git` commits](./project-rules.md#committing-as-a-step)) |
-| `tool.shell`                      | Any program, run without a shell                                                                             |
-| `control.join`                    | Waits for its inputs: `all` (default), `any`, or `n` of them                                                 |
-| `control.router`, `control.split` | Pass their input on; a router takes its first matching edge, or all                                          |
-| `human.gate`                      | Asks you a question with options, and a recommended one                                                      |
-| `workflow.call`                   | Starts a workflow as a separate run ([calling a workflow](./working-across-projects.md#calling-a-workflow))  |
-| `mcp.call`                        | Calls one tool on an MCP server, with no session ([MCP calls](./scripts/mcp.md))                             |
+| Type                              | What it does                                                                                                          |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `claude.leader`                   | A Claude session that can plan and delegate to the nodes it owns                                                      |
+| `claude.worker`                   | A Claude session that does one task and reports                                                                       |
+| `claude.subagent`                 | A Claude Code subagent inside its parent's session (see below)                                                        |
+| `tool.gh`, `tool.aws`, `tool.git` | Your own `gh`, `aws` or `git`, with an allow list ([`git` commits](./project-rules.md#committing-as-a-step))          |
+| `tool.shell`                      | Any program, run without a shell, or a short `script:` ([scripts](./scripts.md#write-a-short-script-in-the-workflow)) |
+| `control.join`                    | Waits for its inputs: `all` (default), `any`, or `n` of them                                                          |
+| `control.router`, `control.split` | Pass their input on; a router takes its first matching edge, or all                                                   |
+| `human.gate`                      | Asks you a question with options, and a recommended one                                                               |
+| `workflow.call`                   | Starts a workflow as a separate run ([calling a workflow](./working-across-projects.md#calling-a-workflow))           |
+| `mcp.call`                        | Calls one tool on an MCP server, with no session ([MCP calls](./scripts/mcp.md))                                      |
 
 ### Claude nodes
 
@@ -100,6 +103,8 @@ read the report through templates and conditions.
 - `model`, `effort` and the budgets are in
   [Models, effort and budgets](./models-and-budgets.md).
 - `skills` and `context` are in [Skills and context](./skills-and-context.md).
+- `verify:` and `before:` run a program after or before the session
+  ([steps around a session](./scripts/steps.md)).
 
 `claude.subagent` runs inside its parent's session as a Claude Code subagent (no
 edges): its `prompt` is its role, and `description` says when to use it.
@@ -139,7 +144,10 @@ human:
   default: reject
 ```
 
-A gate outputs `choice` and `answeredBy` (`user` or `timeout`).
+A gate outputs `choice`, `answeredBy` (`user` or `timeout`) and `note`: what the
+person said with their answer, empty when they said nothing. A later node reads
+it as `{{nodes.human.output.note}}`, so a `revise` answer can carry what to
+change, and an edge can test it, as in `when: "note != ''"`.
 
 ## Edges
 
@@ -193,8 +201,7 @@ reviews as its new input; a leader resumes its own session.
 
 Conditions use the same small language, with `==`, `!=`, `<`, `>`, `&&`, `||`,
 `!`, and the functions `any`, `all`, `count`, `len` and `contains`. It cannot
-call code, so a workflow file is safe to run. All of it:
-[Expressions](../../specs/expressions.md).
+call code, so a workflow file is safe to run.
 
 ## Check it
 
@@ -203,8 +210,14 @@ ork validate                    # every workflow in .ork/workflows/
 ork validate path/to/file.ork.yaml
 ```
 
-It reports what's wrong, with the line, then tries every way through the
-workflow without running anything.
+It reports schema errors, an unknown `parent`, cycles without `maxRounds`,
+references to nodes that do not exist or do not run first, and skill or context
+paths that resolve to nothing, each with its line. Then it tries every way
+through the workflow without running anything
+([checking a workflow](./writing-workflows/checking.md)).
 
 A full example with every piece above:
 [examples/software-factory.ork.yaml](../../examples/software-factory.ork.yaml).
+
+For the full rules: [the workflow format](../../specs/workflow-format.md) and
+[expressions](../../specs/expressions.md).

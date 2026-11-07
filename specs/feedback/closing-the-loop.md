@@ -59,7 +59,7 @@ _Part of [Feedback and self-improvement](../feedback.md)._
     on discard, and the item stays `accepted`. (ADR-059's "keeping marks the
     item resolved" assumes the worker committed a change.) Discarding removes
     the run's worktree and branch and leaves the item `accepted`; no fix leaves
-    it `accepted` too, saying why ([L149](../gaps/limits-feedback.md)).
+    it `accepted` too, saying why ([L149](./limits.md)).
 - **Lessons** (built: [lessons.ts](../../packages/core/src/feedback/lessons.ts),
   [accept.ts](../../packages/core/src/feedback/accept.ts),
   [tests](../../packages/core/test/lessons.test.ts),

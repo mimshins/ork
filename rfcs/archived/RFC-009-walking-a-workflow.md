@@ -336,9 +336,10 @@ incomplete walk, so `walk.never-runs` and `walk.only-rounds` are dropped when:
 - Write the ADR, and record the limits above in the
   [gaps register](../../specs/gaps.md).
 
-**Decided separately:** [G8](../../specs/gaps.md#gaps) records that a run which
-skipped most of its nodes still says `succeeded`. That changes what a finished
-run reports, not what's checked before it starts, so it needs its own decision.
+**Decided separately:** [G8](../../specs/scheduler.md#edges) (since closed)
+records that a run which skipped most of its nodes still says `succeeded`. That
+changes what a finished run reports, not what's checked before it starts, so it
+needs its own decision.
 
 ## Open questions
 

@@ -19,7 +19,8 @@ export const Chooser = ({ builder }: { builder: Builder }) => {
   const projectsRead = useValue(state.projects.state);
   const workflowsRead = useValue(state.workflows.state);
   const projects = projectsRead.status === "ready" ? projectsRead.data : [];
-  const [project, setProject] = useState<string | null>(null);
+  // Kept with what's open, so a panel mounted again is on the same project.
+  const project = useValue(state.builder.project);
   const [naming, setNaming] = useState("");
   const here =
     project ?? (projects.length === 1 ? projects[0]?.id : null) ?? null;
@@ -47,7 +48,9 @@ export const Chooser = ({ builder }: { builder: Builder }) => {
       <Combobox
         empty="No project matches."
         label="Project"
-        onChange={setProject}
+        onChange={next => {
+          void state.builder.project.setValue(next);
+        }}
         options={projects.map(({ id }) => ({ value: id, label: id }))}
         placeholder="Type to find a project"
         value={here}

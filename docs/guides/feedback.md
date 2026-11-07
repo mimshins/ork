@@ -5,8 +5,6 @@ kept denying, a brief that left an agent guessing. Ork notes these as it goes,
 on your machine only, and groups them so you can see what keeps happening and
 fix it at the source.
 
-Contract details: [Feedback and self-improvement](../../specs/feedback.md).
-
 ## Where it comes from
 
 - **Ork itself**, from the run's own events, with no model call: a loop out of
@@ -23,9 +21,10 @@ reviews │ ✎ feedback (workflow, workflow): The loop reviews -> lead ran out 
 build   │ ✎ feedback (project, context-gap): AGENTS.md has no test command
 ```
 
-and in `ork logs` beside what caused it. What it is about decides who should act
-on it: `ork` (the harness), `workflow` (its briefs, models, budgets and loops)
-or `project` (`AGENTS.md`, `CLAUDE.md`, skills, docs).
+and in `ork logs` beside what caused it. The pair in brackets is what it's
+about, then what kind it is. What it is about decides who should act on it:
+`ork` (the harness), `workflow` (its briefs, models, budgets and loops) or
+`project` (`AGENTS.md`, `CLAUDE.md`, skills, docs).
 
 ## Reading it
 
@@ -37,11 +36,17 @@ ork feedback restore 9fae0   # bring it back
 ork feedback note 3f2a check -m "Missed the failing test" --rating bad
 ```
 
-When you answer a question, you can note how that node did in the same breath:
+`ork feedback note` also takes `--kind` (`friction` by default, `bug`, …) and
+`--severity` (`low`, `medium` or `high`). When you answer a question, you can
+note how that node did in the same breath:
 
 ```sh
 ork decide --id d1 --choose hold --note "The summary hid the failing test" --rating bad
 ```
+
+That note is feedback: it joins the feedback loop, and the run never reads it.
+To tell the run something with your answer, use `--say` instead
+([answering questions](./running-workflows/running-and-answering.md#answering-questions)).
 
 Records about the same thing, from any run of any project, form one **item**, so
 `list` stays short: each line has the item's id, how many times it was seen,
@@ -88,9 +93,13 @@ one workflow, say which with `--workflow`. Without `--lesson`, `accept` only
 marks the item accepted.
 
 What you can do with an item depends on where it stands, the same in a terminal
-and in the browser: a dismissed item takes nothing until you `restore` it, an
-item you've accepted, resolved or published isn't accepted again (a lesson can
-still be added to it), and an item is published once.
+and in the browser:
+
+- A dismissed item takes nothing until you `restore` it.
+- `accept` works only on a new or triaged item; a lesson can still be added to
+  one already accepted, resolved or published.
+- An item is published once.
+- One `apply` at a time per item.
 
 Lessons cost tokens in every session, so a workflow's file is held to 1,500
 tokens: accepting one that would pass that is refused, and a file you made
@@ -108,15 +117,19 @@ ork feedback apply 9fae0
 
 This runs Ork's own workflow, `ork:feedback-apply`, in the project the item came
 from (Ork names it before it starts), like any run you start: you see its
-transcript, and it shows in `ork ps`, the Monitor and the Decisions panel. A
-worker reads the item and that project's records of it, makes the smallest
+transcript, and it shows in `ork ps`, the Monitor and the Decisions panel.
+
+A worker reads the item and that project's records of it, makes the smallest
 change that would stop it happening, and Ork commits it on its own branch in a
 worktree. Feedback is model output, and what a repository's sessions wrote can
-try to steer the worker, so Ork limits what the worker can do: it reads and
-edits files, and runs no commands. Then you're asked: **keep** or **discard**.
-The question shows what the branch changes (`git diff --stat`) and the command
-to read the whole of it. **Read the diff before you keep it**: the worker's own
-account of it comes last, and is only its claim.
+try to steer the worker, so the worker can only read and edit files; it runs no
+commands.
+
+Then you're asked: **keep** or **discard**. The question shows what the branch
+changes (`git diff --stat`) and the command to read the whole of it.
+
+**Read the diff before you keep it**: the worker's own account of it comes last,
+and is only its claim.
 
 - **Keep:** the branch stays, and the item is resolved. Review and merge it like
   any other change: Ork never merges it. If the branch holds no new commits,
@@ -166,8 +179,9 @@ apply says why, by the same rule `ork feedback` keeps.
 
 - **Add lesson…** shows the lessons file and how full it is before anything is
   written, and asks which workflow when there's more than one.
-- **Propose fix…** names the project and asks before it starts the run, then
-  takes you to it in the Monitor; keep or discard it in Decisions.
+- **Propose fix…** names the project and asks before it starts the run, with a
+  choice of driver as `--driver` gives, then takes you to it in the Monitor;
+  keep or discard it in Decisions.
 - **Publish…** shows exactly what would be posted, as text, and posts only when
   you press **Post**. If what it would send changed since you read it, it shows
   you the new text instead.
@@ -179,4 +193,7 @@ Merging items stays `ork feedback triage`'s.
 
 Feedback lives in `~/.ork/state.db` with your runs, with secrets masked before
 anything is written. Nothing is sent anywhere unless you publish an item, and
-then only what you read and confirmed.
+then only what you read and confirmed
+([where Ork keeps things](./where-ork-keeps-things.md)).
+
+For the full rules: [feedback and self-improvement](../../specs/feedback.md).

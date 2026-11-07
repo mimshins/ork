@@ -74,7 +74,7 @@ Ork's token economy at the engine: the format's schema comes a part at a time,
   names stay apart from the built-in ones.
 - The hook stops accidents, not a determined agent, and needs a `node` that runs
   TypeScript; the plugin needs `ork` on `PATH`
-  ([limits L143–L144](../specs/gaps/limits-claude-code.md)).
+  ([limits L143–L144](../specs/claude-code/limits.md)).
 - Until a release ships `ork mcp`, the plugin's server can't start against the
   published `ork`.
 - Other agents (Codex, Cursor) can use `ork mcp` by hand; skills for them are

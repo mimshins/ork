@@ -1,6 +1,7 @@
 # ADR-005 — One runtime port, two Claude drivers
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by
+  [ADR-064](./ADR-064-driver-chosen-at-run-time.md)
 - **Date:** 2026-10-30
 - **Topic:** runtime
 - **RFC:** waived — decided in design review on 2026-10-30

@@ -65,6 +65,8 @@ export const nodeSession = (
     }
     if (event.type !== "node.event") continue;
     const inner = event.event;
+    // A fork of a leader's session answered a question; it isn't the node's.
+    if (inner.fork === true) continue;
     if (inner.type === "session.started") {
       session.sessionId = inner.sessionId;
       if (inner.cwd !== undefined) session.cwd = inner.cwd;

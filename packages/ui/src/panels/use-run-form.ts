@@ -43,10 +43,28 @@ const useWorkflows = (project: string | null) => {
   };
 };
 
+/** The first element carrying `attribute` (a `data-` name) set to `run`. */
+const markedFor = (attribute: string, run: string): HTMLElement | null =>
+  [...document.querySelectorAll<HTMLElement>(`[${attribute}]`)].find(
+    element => element.getAttribute(attribute) === run,
+  ) ?? null;
+
 /**
- * Where the dialog sends the focus: to a started run's heading if it is shown
- * already, since it could not take the focus behind the dialog. One that comes
- * later takes it then.
+ * Where the focus goes once a run has started: its heading in the Monitor, or
+ * with no Monitor showing it, its row in the Runs panel, or that panel's Run
+ * workflow button, since what opened the dialog may have gone with the run
+ * chosen before. Back where it came from (true) when no panel is there.
+ */
+export const startedFocus = (run: string): HTMLElement | true =>
+  markedFor("data-run-heading", run) ??
+  markedFor("data-run-row", run) ??
+  document.querySelector<HTMLElement>("[data-run-workflow]") ??
+  true;
+
+/**
+ * Where the dialog sends the focus: after a start, as `startedFocus` says,
+ * since the heading could not take the focus behind the dialog; a heading that
+ * shows later takes it then. Otherwise back where it came from.
  */
 export const useStartFocus = () => {
   const started = useRef<string | null>(null);
@@ -57,10 +75,7 @@ export const useStartFocus = () => {
     finalFocus: (): HTMLElement | true => {
       const run = started.current;
       started.current = null;
-      const heading = document.querySelector<HTMLElement>("[data-run-heading]");
-      return run !== null && heading?.dataset["runHeading"] === run
-        ? heading
-        : true;
+      return run === null ? true : startedFocus(run);
     },
   };
 };

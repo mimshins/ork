@@ -3,19 +3,18 @@
 Each Claude node's session is put together from **layers**: your own skills and
 notes, your project's, the workflow's, and the node's. The more local layer
 wins, and nothing is loaded twice. This guide shows where each layer lives and
-how to check what a node gets; the contract is the
-[context spec](../../specs/context.md).
+how to check what a node gets.
 
 ## The layers
 
 From lowest to highest precedence:
 
-| Layer        | Where it comes from                                                                                        |
-| ------------ | ---------------------------------------------------------------------------------------------------------- |
-| **You**      | skills in `~/.ork/skills/`, notes (`.md` files) in `~/.ork/context/`                                       |
-| **Project**  | your repository's `CLAUDE.md` or `AGENTS.md`, `.claude/skills`, `.claude/agents`                           |
-| **Workflow** | the workflow's `layers.skills` and `layers.context`, and `.ork/lessons/<workflow>.md` (up to 1,500 tokens) |
-| **Node**     | the node's own `skills`, `context` and `instructions`                                                      |
+| Layer        | Where it comes from                                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **You**      | skills in `~/.ork/skills/`, notes (`.md` files) in `~/.ork/context/`                                                                 |
+| **Project**  | your repository's `CLAUDE.md` or `AGENTS.md`, `.claude/skills`, `.claude/agents`                                                     |
+| **Workflow** | the workflow's `layers.skills` and `layers.context`, and its [lessons](./feedback.md#turning-one-into-a-lesson) (up to 1,500 tokens) |
+| **Node**     | the node's own `skills`, `context` and `instructions`                                                                                |
 
 When two layers have a skill with the same name, only the higher one loads. A
 node's own skill beats the workflow's, the workflow's beats the project's, and
@@ -66,12 +65,13 @@ nodes:
   workflow and its skills move together. They must stay inside the project.
 - A skill is a folder with a `SKILL.md`. Its name is the `name` in that file's
   front matter, or else the folder's name.
-- Ork's own skills are named `ork:<name>`: `ork:review` for reviewers,
-  `ork:brief` for leaders that delegate, `ork:report` for any node.
 - Project skills load on their own; you never list them here.
 
-The session sees the skills Ork adds as `ork:<name>`, so they never clash with
-the project's. A skill's full text loads only when the session uses it.
+Every skill Ork adds to a session, its own (`ork:review` for reviewers,
+`ork:brief` for leaders that delegate, `ork:report` for any node) or one your
+workflow lists, is named `ork:<name>`, so it never clashes with your project's.
+A skill's full text loads only when the session uses it. These are not Ork's
+skills for Claude Code, from [the Claude Code guide](./claude-code.md).
 
 `ork validate` reports a path that resolves to nothing, with its line, and
 `ork run` will not start until it is fixed.
@@ -133,6 +133,10 @@ It plans the session without running anything: which instructions load, every
 skill with its layer and whether it is on, the context files, the practices, and
 estimated tokens (about four characters each). Add `--json` for a script.
 
+In `ork ui`, the **Context** panel shows the same for the node you choose, and
+follows the Builder as you edit
+([panels](./browser-view/panels-and-workspace.md#the-panels)).
+
 ## Order, and why it saves tokens
 
 What Ork adds goes at the end of Claude Code's system prompt, shared parts
@@ -140,3 +144,5 @@ first: practices, your context, the workflow's context and lessons, Ork's own
 notes on the node's role, then the node's context. The brief comes last, as the
 first message. Nodes that share a workflow share the start of their prompt, so
 the prompt cache covers it.
+
+For the full rules: [context, skills and precedence](../../specs/context.md).

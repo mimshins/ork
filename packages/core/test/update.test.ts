@@ -14,6 +14,7 @@ import {
   checkDue,
   detectInstaller,
   fetchLatest,
+  isCanary,
   isNewer,
   pendingNotice,
   readUpdateCache,
@@ -44,6 +45,16 @@ const failingFetch = (): Promise<Response> =>
   Promise.reject(new Error("offline"));
 
 const installerOf = (script: string) => detectInstaller(script)?.id;
+
+const CANARY_OLD = "1.0.0-canary-20261101090000-1a2b3c4";
+const CANARY_NEW = "1.0.0-canary-20261107090000-5d6e7f8";
+
+/** What the check takes from these dist-tags, for the running `current`. */
+const newestFor = (tags: unknown, current?: string) =>
+  fetchLatest("x", {
+    fetch: fakeFetch(tags).fetch,
+    ...(current === undefined ? {} : { current }),
+  });
 
 describe("version precedence", () => {
   it.each([
@@ -101,6 +112,90 @@ describe("asking the registry", () => {
     expect(urls).toEqual([
       "https://mirror.test/-/package/@krapht/ork/dist-tags",
     ]);
+  });
+
+  it.each([
+    [
+      "only latest, as before the channels",
+      { latest: "0.4.0" },
+      undefined,
+      "0.4.0",
+    ],
+    [
+      "an alpha above latest",
+      { latest: "0.4.0", alpha: "1.0.0-alpha.1" },
+      "0.4.0",
+      "1.0.0-alpha.1",
+    ],
+    [
+      "the newest of every channel",
+      {
+        latest: "1.0.0-beta.0",
+        alpha: "1.0.0-alpha.3",
+        beta: "1.0.0-beta.0",
+        rc: "1.0.0-rc.1",
+      },
+      "1.0.0-alpha.3",
+      "1.0.0-rc.1",
+    ],
+    [
+      "a tag that doesn't parse, or isn't text, skipped",
+      { latest: "0.4.0", alpha: "soon", beta: 7, rc: null },
+      undefined,
+      "0.4.0",
+    ],
+    [
+      "a tag outside the channels, skipped",
+      { latest: "0.4.0", next: "9.0.0" },
+      undefined,
+      "0.4.0",
+    ],
+    [
+      "no canary for an alpha",
+      { latest: "1.0.0-alpha.1", alpha: "1.0.0-alpha.1", canary: CANARY_NEW },
+      "1.0.0-alpha.0",
+      "1.0.0-alpha.1",
+    ],
+    [
+      "no canary when the running version is unknown",
+      { latest: "0.4.0", canary: CANARY_NEW },
+      undefined,
+      "0.4.0",
+    ],
+    [
+      "a newer canary for a canary",
+      { latest: "1.0.0-alpha.1", alpha: "1.0.0-alpha.1", canary: CANARY_NEW },
+      CANARY_OLD,
+      CANARY_NEW,
+    ],
+    [
+      "a newer rc for a canary, when that's higher",
+      { latest: "1.0.0-rc.0", rc: "1.0.0-rc.0", canary: CANARY_NEW },
+      CANARY_OLD,
+      "1.0.0-rc.0",
+    ],
+    ["nothing when no tag parses", { latest: "soon" }, undefined, null],
+  ])("takes %s", async (_case, tags, current, newest) => {
+    await expect(newestFor(tags, current)).resolves.toBe(newest);
+  });
+
+  it.each([
+    [CANARY_NEW, true],
+    ["1.0.0-canary.3", true],
+    ["1.0.0-alpha.1", false],
+    ["1.0.0", false],
+    ["canary", false],
+  ])("%s is a canary: %s", (version, canary) => {
+    expect(isCanary(version)).toBe(canary);
+  });
+
+  it("records the newest a canary follows", async () => {
+    const file = tempCache();
+    await refreshUpdateCache(file, "x", NOW, {
+      fetch: fakeFetch({ latest: "1.0.0-alpha.1", canary: CANARY_NEW }).fetch,
+      current: CANARY_OLD,
+    });
+    expect(readUpdateCache(file)?.latest).toBe(CANARY_NEW);
   });
 
   it("gives null for an error, a strange answer, or no network", async () => {
@@ -176,6 +271,14 @@ describe("how Ork was installed", () => {
     ],
     [
       "/home/me/.local/share/pnpm/global/5/node_modules/@krapht/ork/dist/bin.mjs",
+      "pnpm",
+    ],
+    [
+      "/Users/me/Library/pnpm/store/v11/links/@krapht/ork/0.3.0/4774/node_modules/@krapht/ork/dist/bin.mjs",
+      "pnpm",
+    ],
+    [
+      String.raw`C:\Users\me\AppData\Local\pnpm\store\v11\links\@krapht\ork\0.3.0\4774\node_modules\@krapht\ork\dist\bin.mjs`,
       "pnpm",
     ],
     [

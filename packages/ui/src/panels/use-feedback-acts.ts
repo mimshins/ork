@@ -22,6 +22,7 @@ import {
 } from "./feedback-model.ts";
 import { tokensWords } from "./lesson-model.ts";
 import { openRunIn } from "./open-run.ts";
+import type { DriverChoice } from "./run-form.ts";
 
 /** Where the focus goes next: a row, the item's heading, or the list. */
 export type FocusTarget = { row: string } | "heading" | "list";
@@ -126,11 +127,17 @@ export const useFeedbackActs = (options: ActsOptions) => {
     return null;
   };
 
-  /** Starts a run proposing a fix; resolves to its refusal, or null. */
-  const apply = async (item: FeedbackItem): Promise<string | null> => {
+  /**
+   * Starts a run proposing a fix, on `driver` or the workflow's own; resolves
+   * to its refusal, or null.
+   */
+  const apply = async (
+    item: FeedbackItem,
+    driver: DriverChoice = "",
+  ): Promise<string | null> => {
     const answer = await state.client.call("apply", {
       params: { id: item.id },
-      body: {},
+      body: driver === "" ? {} : { driver },
     });
     if (!answer.ok) return `Could not start the run: ${answer.error}`;
     const { runId } = answer.data;

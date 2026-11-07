@@ -64,11 +64,11 @@ loops, reports and resume need nothing new.
 
 ## Consequences
 
-- A resumed run's clocks start again ([L45](../specs/gaps/limits-running.md)).
+- A resumed run's clocks start again ([L45](../specs/scheduler/limits.md)).
 - A session left behind after the grace may still spend, and its cost is unknown
-  to the run ([L46](../specs/gaps/limits-running.md)).
+  to the run ([L46](../specs/scheduler/limits.md)).
 - A tool in its own group does not get a terminal's Ctrl-C directly, so Ork
   passes the stop on. A second Ctrl-C during the 2 seconds, or a crash of Ork
-  itself, leaves the tool running ([L47](../specs/gaps/limits-running.md)).
+  itself, leaves the tool running ([L47](../specs/scheduler/limits.md)).
 - Timeouts are checked by tests and on real tools. On a real Claude session they
   use the same interrupt as `ork stop`, and have not been run on one.

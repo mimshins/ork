@@ -1,0 +1,108 @@
+# Ork design (v1)
+
+Ork is a local "n8n for agents": you design workflows of agent and tool nodes,
+serialize them to git-friendly files, and run them on your own machine from a
+CLI (`ork`) or a localhost web UI (`ork ui`).
+
+Nodes form an **ownership hierarchy**. A node owns its descendants, gives them
+only the context they need, and gets summaries back. The goal is a harness that
+builds in good practice: token saving, context engineering, bounded loops,
+quality gates, a human in the loop, and full observability.
+
+**Credentials.** Ork never stores, proxies, or asks for credentials: every
+integration uses the user's own login, and the Agent SDK driver runs only with
+an API key or a cloud provider
+([ADR-004](../decisions/ADR-004-no-credentials.md)).
+
+This page is the overview for contributors; the plain-words version for people
+who use Ork is [How Ork works](../docs/how-ork-works.md). The contracts are the
+[specs](./README.md); the decisions and their reasons are the
+[ADRs](../decisions/README.md); how the parts fit together is the
+[interaction map](../docs/interaction-map/README.md).
+
+## Where to read
+
+| Topic                                    | Spec                                         |
+| ---------------------------------------- | -------------------------------------------- |
+| Vocabulary: nodes, owners, edges, runs   | [Core concepts](./concepts.md)               |
+| Packages and dependency direction        | [Architecture](./architecture.md)            |
+| The `.ork.yaml` format                   | [Workflow file format](./workflow-format.md) |
+| `when:` and `{{ }}` templates            | [Expressions](./expressions.md)              |
+| What `ork validate` checks               | [Graph compiler](./graph-compiler.md)        |
+| How a Claude node runs                   | [Runtime](./runtime.md)                      |
+| Layers, skills, precedence, token saving | [Context](./context.md)                      |
+| Messages, decisions, the event store     | [Messaging](./messaging.md)                  |
+| Learning from runs                       | [Feedback](./feedback.md)                    |
+| Commands                                 | [CLI](./cli.md)                              |
+| Panels                                   | [UI](./ui.md)                                |
+
+## Milestones
+
+- **M0: bootstrap.**
+  - `git init`, the monorepo skeleton, CI, README with premise and auth notes,
+    licence.
+  - Create the public repo with `gh repo create mimshins/ork --public` and push.
+- **M1a: schema.** `packages/schema` with the Zod model, YAML round-trip, JSON
+  Schema export, and the graph compiler and validator. `ork init` and
+  `ork validate`.
+- **M1b: runtime.**
+  - `runtime-claude` with the SDK and CLI drivers behind `ClaudeRuntime`, plus
+    the Ork MCP tools.
+  - `ork doctor`.
+  - Run a single node end-to-end (`ork run <wf> --node <id>`).
+- **M1c: engine** (built: [scheduler](./scheduler.md),
+  [worktrees](./worktrees.md), delegation and the
+  [context compiler](./context.md)).
+  - Scheduler: flow edges, join and router, loops with `maxRounds`.
+  - Ownership: delegation, reports, `spawn_worker`.
+  - Worktree manager.
+  - Context compiler and layer precedence; `ork context explain`.
+- **M1d: human loop** (built: the [event store](./event-store.md) with `ps`,
+  `logs`, `tree`; the decision queue with `decide`, `stop` and `run --detach`;
+  the message bus with `send_message`, `read_inbox` and loops asking a live
+  owner; `chat` and `resume`; `claim` and `release`; feedback capture; the
+  `software-factory` and `pr-review` examples, run end to end on the CLI
+  driver). The SDK driver is covered by unit tests only, with no paid run
+  ([C5](./runtime.md#limits)).
+  - Feedback capture: the `feedback` tool, system signals, the local table and
+    fingerprints, `ork feedback list | show | dismiss`.
+- **M2: UI.**
+  - The local server: a JSON API and SSE streams on `node:http`, a client of the
+    store (ADR-039).
+  - UI panels in this order: monitor, logs, decisions, chats, the workflow
+    builder, then the context inspector (all built).
+  - The feedback loop (built, [feedback](./feedback.md)): triage by rules,
+    `ork feedback apply` (on Ork's own `ork:feedback-apply` workflow), lessons,
+    publishing to Discussions, export and import, and the Feedback panel.
+  - The Worktrees panel and `ork worktrees remove` (built,
+    [worktrees](./worktrees.md#ork-worktrees)).
+  - The new-version banner and upgrading from the page, with `ork ui`
+    supervising its server so it can restart onto the new install (built,
+    [updates](./cli/updates.md#in-ork-ui), ADR-060).
+
+## Verification
+
+- **Unit tests (vitest):**
+  - YAML round-trip is byte-stable.
+  - Graph compiler error cases.
+  - Precedence resolution fixtures: a repo with AGENTS.md only, one with
+    CLAUDE.md + AGENTS.md, and a shadowed skill.
+  - Expression evaluator.
+  - Scheduler on a fake runtime, covering join, loop cap and escalation.
+- **Integration:** the fake `ClaudeRuntime` driver replays recorded stream-json,
+  so CI needs no API key.
+- **End-to-end by hand:**
+  - `ork doctor` passes.
+  - `ork run examples/pr-review.ork.yaml` on a scratch repo completes on both
+    drivers.
+  - `ork tree` and `ork logs --follow` show live progress.
+  - A reviewer's `ask_user` shows up in `ork decide`, and answering it resumes
+    the run.
+  - Worktrees are created and cleaned up.
+  - A tool error and an agent's `feedback` call both appear in
+    `ork feedback list`, grouped under one fingerprint across two runs, with no
+    secret in the stored record.
+- **M2:** drive `ork ui` in a browser:
+  - Build a workflow on the canvas, save it, and `git diff` shows clean YAML.
+  - Run it and watch the monitor.
+  - Answer a decision and chat with a node.

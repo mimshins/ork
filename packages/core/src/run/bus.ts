@@ -41,6 +41,8 @@ export type Bus = {
   receive: (node: string, from: string, body: string, via?: MessageVia) => void;
   /** A `notify:` of `from`'s: a message no session wrote. */
   rule: (from: string, to: string, body: string) => void;
+  /** How many messages, the user's queued ones too, each node has not read. */
+  unread: () => Map<string, number>;
 };
 
 const SESSION_TYPES = new Set(["claude.leader", "claude.worker"]);
@@ -212,7 +214,8 @@ export const createBus = ({
         }
         return unread;
       },
-      answer: (question, choice) => questions.answer(id, question, choice),
+      answer: (question, choice, note) =>
+        questions.answer(id, question, choice, note),
       connect: deliver => {
         live.set(id, deliver);
         for (const body of waiting.get(id) ?? []) {
@@ -268,6 +271,13 @@ export const createBus = ({
       const id = recordSent(from, to, body, "rule");
       inbox(to).push({ id, from, body, via: "rule" });
       land(to);
+    },
+    unread: () => {
+      const counts = new Map<string, number>();
+      for (const [id, unread] of [...inboxes, ...waiting]) {
+        counts.set(id, (counts.get(id) ?? 0) + unread.length);
+      }
+      return new Map([...counts].filter(([, count]) => count > 0));
     },
   };
 };

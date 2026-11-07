@@ -29,6 +29,7 @@ import {
   runWorkflowFile,
   type RunWorkflowOptions,
 } from "../src/index.ts";
+import { sdkReady } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
@@ -83,6 +84,7 @@ const setup = (overrides: Partial<RunWorkflowOptions> = {}) => {
     inPlace: true,
     json: false,
     runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
+    driverChecks: sdkReady,
     human: recommending,
     store,
     home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
@@ -183,6 +185,25 @@ describe("run lookup and formatting", () => {
     });
   });
 
+  it("shows a called run's cost as its caller's, not as more spend", () => {
+    const store = openStore(":memory:");
+    store.begin({ id: "caller11", workflow: "w", file: "/w", project: "/p" });
+    store.begin({
+      id: "called22",
+      workflow: "fix",
+      file: "/fix",
+      project: "/p",
+      parent: "caller11",
+    });
+    const [, ...rows] = formatRuns(store.runs(), false);
+    expect(rows.find(line => line.startsWith("called22"))).toMatch(
+      /\$0\.00 in caller11$/u,
+    );
+    expect(rows.find(line => line.startsWith("caller11"))).not.toContain(
+      " in ",
+    );
+  });
+
   it("says how long ago and for how long", () => {
     const now = Date.parse("2026-10-30T12:00:00Z");
     expect(
@@ -198,6 +219,37 @@ describe("run lookup and formatting", () => {
       "3m12s",
       "1h05m",
     ]);
+  });
+
+  it("ends a run's output with what it skipped, which failures it handled, and unread mail", () => {
+    const [, last, warning] = formatRunEvent(
+      {
+        type: "run.finished",
+        result: {
+          runId: "r1",
+          status: "succeeded",
+          costUsd: 0,
+          nodes: [
+            { id: "a", runs: 1, ok: false, output: null, costUsd: 0 },
+            { id: "cleanup", runs: 1, ok: true, output: null, costUsd: 0 },
+            { id: "ship", runs: 0, ok: null, output: null, costUsd: 0 },
+          ],
+          reasons: [],
+          worktrees: [],
+          skipped: 1,
+          failuresHandled: 1,
+          unread: [{ node: "ship", messages: 2 }],
+        },
+      },
+      4,
+      new Map(),
+    );
+    expect(last).toContain(
+      "run r1 succeeded · $0.00 · 2 ran, 1 skipped, 1 failure handled",
+    );
+    expect(warning).toContain(
+      "warning ship never ran, so 2 messages to it went unread",
+    );
   });
 
   it("says how a message came when no session wrote it", () => {
@@ -282,6 +334,38 @@ describe("run lookup and formatting", () => {
       "api  │ ⚑ claimed src",
       "ui   │ ⚑ src/a.ts is api's (it holds src)",
       "api  │ ⚑ released src",
+    ]);
+  });
+
+  it("marks a leader's fork's lines as the fork's", () => {
+    const lines = (
+      [
+        {
+          type: "node.event",
+          id: "lead",
+          event: {
+            type: "session.started",
+            sessionId: "f1",
+            model: "opus",
+            fork: true,
+          },
+        },
+        {
+          type: "node.event",
+          id: "lead",
+          event: { type: "assistant.text", text: "b.", fork: true },
+        },
+        {
+          type: "node.event",
+          id: "lead",
+          event: { type: "assistant.text", text: "Delegating." },
+        },
+      ] satisfies RunEvent[]
+    ).flatMap(event => formatRunEvent(event, 4, new Map()));
+    expect(lines).toEqual([
+      "lead │ fork · opus, session f1, to answer a question",
+      "lead │ fork · b.",
+      "lead │ Delegating.",
     ]);
   });
 });

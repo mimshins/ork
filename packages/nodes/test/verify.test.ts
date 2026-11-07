@@ -94,6 +94,7 @@ const runVerified = async (given: {
   };
   const execute = claudeExecutor({
     runtimeFor: () => Promise.resolve(runtime),
+    readyDriver: "sdk",
     inPlace: true,
     steps:
       given.steps ??
@@ -334,7 +335,7 @@ describe("verify:", () => {
     const prompt = String(specs[1]?.prompt);
     expect(prompt.length).toBeLessThan(9000);
     expect(prompt).toContain("the last line");
-    const file = path.join(runDir, "fix.1.verify.txt");
+    const file = path.join(runDir, "fix.1.verify-1.txt");
     expect(prompt).toContain(file);
     expect(existsSync(file)).toBe(true);
     expect(readFileSync(file, "utf8")).toBe(long);
@@ -357,9 +358,37 @@ describe("verify:", () => {
     expect(prompt).toContain("3 tests failed at the end");
     expect(prompt).not.toContain("truncated");
     expect(
-      readFileSync(path.join(runDir, "fix.1.verify.txt"), "utf8"),
+      readFileSync(path.join(runDir, "fix.1.verify-1.txt"), "utf8"),
     ).toContain("3 tests failed at the end");
     expect(String(result.error).length).toBeLessThan(2000);
+  });
+
+  it("keeps each try of a check, and a before: step, in files of their own", async () => {
+    const { specs, runDir } = await runVerified({
+      reports: [PASS, PASS, PASS],
+      checks: [],
+      steps: realSteps,
+      fields: {
+        before: {
+          script:
+            'i=0; while [ $i -lt 20000 ]; do echo "setup line $i"; i=$((i+1)); done',
+        },
+      },
+      program: {
+        attempts: 2,
+        script:
+          'n=$(cat tries 2>/dev/null || echo 0); n=$((n+1)); echo $n > tries; i=0; while [ $i -lt 20000 ]; do echo "try $n line $i"; i=$((i+1)); done; exit 1',
+      },
+    });
+    const kept = (name: string) =>
+      readFileSync(path.join(runDir, name), "utf8");
+    expect(kept("fix.1.verify-1.txt")).toContain("try 1 line 19999");
+    expect(kept("fix.1.verify-2.txt")).toContain("try 2 line 19999");
+    expect(kept("fix.1.verify-1.stdout.txt")).toContain("try 1 line 0");
+    expect(kept("fix.1.verify-2.stdout.txt")).toContain("try 2 line 0");
+    expect(kept("fix.1.before-1.stdout.txt")).toContain("setup line 0");
+    expect(String(specs[1]?.prompt)).toContain("fix.1.verify-1.txt");
+    expect(String(specs[2]?.prompt)).toContain("fix.1.verify-2.txt");
   });
 
   it("does not send a session a huge line as its reason", async () => {

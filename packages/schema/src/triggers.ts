@@ -62,6 +62,10 @@ export const TriggerSchema = z.strictObject({
 });
 export type Trigger = z.infer<typeof TriggerSchema>;
 
+/** Where `triggers.schema.json` is published, for editors' autocomplete. */
+export const TRIGGERS_SCHEMA_URL =
+  "https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/triggers.schema.json";
+
 export const TriggersFileSchema = z.strictObject({
   schemaVersion: z.literal(1),
   triggers: z.record(NodeIdSchema, TriggerSchema),

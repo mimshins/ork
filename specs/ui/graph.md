@@ -2,10 +2,11 @@
 
 _Part of [The UI](../ui.md)._
 
-Status: **Built:** the layout, the view, its keys and its accessible names
-([graph](../../packages/ui/src/graph/), [tests](../../packages/ui/test/graph/)),
-shown live in the [Monitor](./panels-runs-and-monitor.md#monitor) and in the
-design system's gallery. It is Ork's own, not React Flow, so the state stays in
+Status: **Built:** the layout, the view, its keys (listed by its Keys button)
+and its accessible names ([graph](../../packages/ui/src/graph/),
+[tests](../../packages/ui/test/graph/)), shown live in the
+[Monitor](./panels-runs-and-monitor.md#monitor) and in the design system's
+gallery. It is Ork's own, not React Flow, so the state stays in
 containerized-state ([ADR-040](../../decisions/ADR-040-ui-stack.md)).
 
 ## Layout
@@ -77,6 +78,10 @@ The canvas is one tab stop and the cards are another, with a roving tabindex.
   card's description says them instead: "after a; leads to b if exitCode == 0".
   The Monitor's node table says the same, and is the screen-reader-first twin of
   the graph, with the same data and actions.
+- **Keys**, beside the view's buttons, opens a popover that lists every key the
+  graph takes, on the view and on a card, since a card's keys have no button
+  whose tooltip could show them, and the canvas's description reaches only a
+  screen reader.
 - Zoom, fit and pan are buttons too, so none of it needs a drag (WCAG 2.5.7),
   and a node selected elsewhere comes into view. A node brought into view is
   never left under those buttons, and the focus ring keeps its thickness at any

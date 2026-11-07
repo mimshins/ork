@@ -17,9 +17,8 @@ what an item allows, the server's feedback routes and the UI's Feedback panel
 [panel](./ui/panels-context-and-feedback.md#feedback), [server](./server.md)).
 Not part of Ork: the maintainers' scheduled triage of the Discussions category,
 an issues adapter, any model call in triage, and lessons or fixes made without a
-person accepting them. How it works for now:
-[limits](./gaps/limits-feedback.md). Why:
-[ADR-013](../decisions/ADR-013-feedback-loop.md),
+person accepting them. How it works for now: [limits](./feedback/limits.md).
+Why: [ADR-013](../decisions/ADR-013-feedback-loop.md),
 [ADR-028](../decisions/ADR-028-feedback-capture.md), amended by
 [ADR-059](../decisions/ADR-059-closing-the-feedback-loop.md).
 
@@ -38,3 +37,4 @@ feedback about Ork itself to its GitHub Discussions.
   each.
 - [Sharing feedback](./feedback/sharing.md): publishing an item about Ork to its
   Discussions, deduplication, and export and import as JSON lines.
+- [Limits: the feedback loop](./feedback/limits.md)

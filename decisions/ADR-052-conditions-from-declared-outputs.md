@@ -77,4 +77,5 @@ because edges didn't have `ok`. That's why it's part of this decision.
   matches.
 - The checks in [RFC-009](../rfcs/archived/RFC-009-walking-a-workflow.md) become
   the fallback for hand-written files, and read this list.
-- Limits: [L112 to L115](../specs/gaps/limits-builder.md).
+- Limits: [L112 to L115](../specs/ui/builder-limits.md) (L115 since merged into
+  [C5](../specs/runtime.md#limits)).

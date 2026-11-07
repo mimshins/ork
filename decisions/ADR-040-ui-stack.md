@@ -134,4 +134,4 @@ package, the UI has to reach users inside it.
   CSP. A library that needs inline `<style>` or `eval` is ruled out or
   configured around.
 - Browser end-to-end tests (Playwright) are not in CI yet. Until then, a UI
-  slice is checked by hand in a browser ([gaps](../specs/gaps.md)).
+  slice is checked by hand in a browser ([C6](../specs/ui/limits.md)).

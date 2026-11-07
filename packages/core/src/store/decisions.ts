@@ -1,7 +1,8 @@
 /**
  * @file The store's decisions and commands: what a run waits on, answered by
- *   whichever comes first (its terminal or `ork decide`), and what other
- *   processes ask a live run to do (`ork stop`).
+ *   whichever comes first (its terminal or `ork decide`) with the person's note
+ *   if they gave one, and what other processes ask a live run to do (`ork
+ *   stop`).
  */
 
 import type { DatabaseSync } from "node:sqlite";
@@ -35,6 +36,12 @@ const choicesOf = (json: string): DecisionChoice[] => {
   });
 };
 
+/** A note as stored: masked, or null when blank. */
+const noteOf = (note: string | undefined): string | null => {
+  const trimmed = note?.trim() ?? "";
+  return trimmed === "" ? null : maskSecrets(trimmed);
+};
+
 const kindOf = (value: string): DecisionKind =>
   value === "permission" ? "permission" : "question";
 
@@ -57,12 +64,14 @@ const decisionOf = (row: Row): DecisionRecord => {
     context: text(row, "context"),
     answer: text(row, "answer"),
     answeredAt: text(row, "answered_at"),
+    note: text(row, "note"),
+    owner: text(row, "owner"),
   };
   for (const [key, value] of Object.entries(optional)) {
     if (value !== "") Object.assign(record, { [key]: value });
   }
   const by = text(row, "answered_by");
-  if (by === "terminal" || by === "decide" || by === "ui") {
+  if (by === "terminal" || by === "decide" || by === "ui" || by === "owner") {
     record.answeredBy = by;
   }
   return record;
@@ -70,11 +79,11 @@ const decisionOf = (row: Row): DecisionRecord => {
 
 export const decisionQueries = (db: DatabaseSync): DecisionStore => {
   const insert = db.prepare(
-    `INSERT INTO decisions (id, run_id, node, kind, question, options, recommended, context, opened_at, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')`,
+    `INSERT INTO decisions (id, run_id, node, kind, question, options, recommended, context, owner, opened_at, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')`,
   );
   const answer = db.prepare(
-    `UPDATE decisions SET status = 'answered', answer = ?, answered_by = ?, answered_at = ?
+    `UPDATE decisions SET status = 'answered', answer = ?, answered_by = ?, answered_at = ?, note = ?
      WHERE id = ? AND status = 'open'`,
   );
   const withdraw = db.prepare(
@@ -118,13 +127,16 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
         JSON.stringify(masked.options),
         masked.recommended ?? null,
         masked.context ?? null,
+        masked.owner ?? null,
         openedAt,
       );
       return { ...masked, openedAt, status: "open" };
     },
-    answerDecision: (id, choice, by: AnsweredBy) =>
-      Number(answer.run(choice, by, new Date().toISOString(), id).changes) ===
-      1,
+    answerDecision: (id, choice, by: AnsweredBy, note?: string) =>
+      Number(
+        answer.run(choice, by, new Date().toISOString(), noteOf(note), id)
+          .changes,
+      ) === 1,
     withdrawDecision: id => {
       withdraw.run(new Date().toISOString(), id);
     },

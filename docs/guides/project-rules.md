@@ -5,8 +5,7 @@ work, merges a passing child into its owner, and names branches and worktrees.
 Each of these is your project's choice. Write the rules once in
 `.ork/project.yaml`, commit it, and every workflow in the project follows them.
 A project [registered from outside](./projects.md) keeps them in
-`~/.ork/projects/<id>/project.yaml` instead. The contract is in
-[project rules](../../specs/project-rules.md).
+`~/.ork/projects/<id>/project.yaml` instead.
 
 ## The rules file
 
@@ -34,10 +33,14 @@ context: [docs/process.md]
 - **`context`** files, from the project root, are read by every node, before the
   workflow's own.
 
-Add
-`# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/project.schema.json`
-at the top for autocomplete. `ork validate` checks the file with every workflow
-and points at the line of a mistake.
+For autocomplete, add this line at the top:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/project.schema.json
+```
+
+`ork validate` checks the file with every workflow and points at the line of a
+mistake.
 
 ## Never committing
 
@@ -140,15 +143,4 @@ create, and records every branch and worktree it makes.
 [`ork worktrees`](./worktrees.md) lists and cleans exactly those, whatever they
 are called.
 
-## Sessions across rounds
-
-Separately from git, a node can keep its session when it runs again in a loop:
-
-```yaml
-reviewer:
-  type: claude.worker
-  agent: reviewer
-  session: resume # check its own earlier findings in each round
-```
-
-Leaders resume by default and workers start fresh; `session` changes either.
+For the full rules: [project rules](../../specs/project-rules.md).

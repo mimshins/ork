@@ -191,8 +191,9 @@ prompt, only for a node that can receive these, says so.
 
 `ORK_RUN` and `ORK_NODE` are attribution, not proof. A program runs as the same
 user with the same store, so it can forge them
-([L80](../../specs/gaps/limits-scripts.md)). The contact check stops mistakes
-and a prompt-injected send to the wrong session; it is not a security boundary.
+([L80](../../specs/messaging/scripts-limits.md)). The contact check stops
+mistakes and a prompt-injected send to the wrong session; it is not a security
+boundary.
 
 **A cap on scripts.** 100 per sending node, matching `DEFAULT_LINK_MESSAGES`,
 which is equally a first guess. At the cap it refuses and asks nobody. Rules
@@ -223,7 +224,7 @@ user makes them), and `ork inbox` (send-only for now).
 - **Surfaces:** `via` shows in `ork logs` and the Logs and Chats panels. Rules
   appear in the graph only if the design review finds it clear.
 - **`ork chat`'s refusal text** then names a command that exists, closing
-  [L84](../../specs/gaps/limits-scripts.md).
+  [L84](../../specs/messaging/scripts-limits.md).
 - **Follow-up:** update `specs/messaging.md`, `specs/graph-compiler.md`,
   `specs/workflow-format.md` and `specs/cli/running-and-runs.md`, the scripts
   guide and the map, then write the ADR and archive this RFC. A real session on

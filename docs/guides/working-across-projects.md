@@ -41,8 +41,8 @@ ork logs a1b2 -f          # each run's logs show both sides of its conversation
 
 A link has a limit of 100 messages, both ways together, to stop two agents
 answering each other for ever. Set another with `--max-messages`. At the limit
-Ork asks you, in `ork decide` or the UI's inbox, whether to go on or end the
-link.
+Ork asks you, in `ork decide` or the Decisions panel of `ork ui`, whether to go
+on or end the link.
 
 A link ends when either run does, and the other session is told. Messages to a
 finished run are refused rather than resuming it; you can bring a session back
@@ -128,7 +128,8 @@ finished. A called run that failed gets a retry the same way. Pause does not
 spread.
 
 **Its questions wait.** A called run has no terminal, so what it asks waits in
-`ork decide` or the UI's inbox, even when the caller is in your terminal.
+`ork decide` or the Decisions panel of `ork ui`, even when the caller is in your
+terminal.
 
 Calls nest up to 5 deep.
 
@@ -136,8 +137,15 @@ Calls nest up to 5 deep.
 
 Every leader and worker gets the message tools, so it can be linked later. That
 can add a little to each session's prompt. To leave them out, and refuse links,
-set this in `.ork/project.yaml` or a workflow's `rules`:
+set `links: off` for the whole project, or for one workflow:
 
 ```yaml
+# .ork/project.yaml
 links: off
+```
+
+```yaml
+# a workflow
+rules:
+  links: off
 ```

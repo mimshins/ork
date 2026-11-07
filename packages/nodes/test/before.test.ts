@@ -65,6 +65,7 @@ const runNode = async (
   };
   const execute = claudeExecutor({
     runtimeFor: () => Promise.resolve(runtime),
+    readyDriver: "sdk",
     inPlace: true,
     steps: toolExecutor(spawnTool, { environ: {} }),
   });

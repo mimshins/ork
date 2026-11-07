@@ -5,7 +5,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 /** Source files the check reads; generated and vendored files are skipped. */
@@ -23,14 +23,22 @@ export const hasFileOverview = (text: string): boolean => {
   return end !== -1 && /@file\s+\S/u.test(body.slice(0, end));
 };
 
-/** The tracked and untracked (not ignored) source files under `root`. */
+/**
+ * The tracked and untracked (not ignored) source files under `root`, less any
+ * deleted in the working tree and not yet staged.
+ */
 export const sourceFiles = (root: string): string[] =>
   execFileSync("git", ["ls-files", "-co", "--exclude-standard"], {
     cwd: root,
     encoding: "utf8",
   })
     .split("\n")
-    .filter(f => SOURCE.test(f) && !SKIPPED.some(s => s.test(f)));
+    .filter(
+      f =>
+        SOURCE.test(f) &&
+        !SKIPPED.some(s => s.test(f)) &&
+        existsSync(path.join(root, f)),
+    );
 
 export const checkFileOverviews = (root: string): string[] =>
   sourceFiles(root).filter(

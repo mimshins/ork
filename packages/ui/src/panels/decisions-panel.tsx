@@ -1,8 +1,8 @@
 /**
  * @file The Decisions panel: every open decision across runs, and below them
- *   the ones that have settled while it watched, with who answered. When the
- *   card holding the focus goes, the focus moves to the next one rather than
- *   out of the panel, and how it ended is said aloud.
+ *   the ones that have settled while it watched, with who answered and what
+ *   they said. When the card holding the focus goes, the focus moves to the
+ *   next one rather than out of the panel, and how it ended is said aloud.
  */
 
 import { use, useEffect, useRef } from "react";
@@ -13,7 +13,7 @@ import { CodeText } from "../components/code-text.tsx";
 import { useAppState } from "../state/context.tsx";
 import { WorkspaceContext } from "../workspace/context.ts";
 import { DecisionCard } from "./decision-card.tsx";
-import { endingOf } from "./decisions-model.ts";
+import { endingOf, saidOf } from "./decisions-model.ts";
 import { useKeptFocus } from "./use-kept-focus.ts";
 
 import styles from "./decisions.module.css";
@@ -88,6 +88,11 @@ export const DecisionsPanel = () => {
                   <code>{decision.runId}</code> · <code>{decision.node}</code>.{" "}
                   <CodeText text={endingOf(decision)} />
                 </span>
+                {saidOf(decision) === undefined ? null : (
+                  <span className={styles["settledNote"]}>
+                    {saidOf(decision)}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

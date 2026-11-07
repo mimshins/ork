@@ -4,7 +4,8 @@
  *   semver precedence. Build metadata is ignored.
  */
 
-type Version = { core: readonly number[]; pre: readonly string[] };
+/** A parsed version: `x.y.z` and its pre-release identifiers. */
+export type Version = { core: readonly number[]; pre: readonly string[] };
 
 const VERSION =
   /^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/u;

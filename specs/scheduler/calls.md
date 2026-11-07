@@ -3,7 +3,7 @@
 _Part of [Scheduler: running a workflow](../scheduler.md)._
 
 Status: **Built, proven on real sessions on the CLI driver**; the SDK driver
-only against stand-ins ([C5](../gaps.md#chores))
+only against stand-ins ([C5](../runtime.md#limits))
 ([ADR-045](../../decisions/ADR-045-workflows-calling-workflows.md),
 [node](../../packages/nodes/src/call.ts),
 [port](../../packages/core/src/remote/calls.ts),
@@ -51,18 +51,18 @@ holds no session and no worktree.
   a message if its session is live, and `wait` applies as for the first. If the
   node has reported, its session is resumed with the input once its run has
   ended, in the caller's process, and the report comes back
-  ([L60](../gaps/limits-calls.md)).
+  ([L60](./calls-limits.md)).
 - **Talking.** A [`messages` channel](../messaging/links.md#calls) may name a
   call that names a node.
 - **One budget.** No call starts once the caller's budget is spent. The called
   run gets the lesser of its own `limits.budgetUsd` and what the caller had left
   when it started, as `--budget-cap`. What it spent comes back as the call's
   usage when the call finishes, and counts against the caller. See
-  [L53](../gaps/limits-calls.md).
+  [L53](./calls-limits.md).
 - **Stopping.** A stop or an expired run timeout on the caller stops every run
   it called and is still running, as does a stop or timeout on the node. Links
   are ended, but runs joined only with `ork relay` are left alone. Pause does
-  not spread ([L56](../gaps/limits-calls.md)).
+  not spread ([L56](./calls-limits.md)).
 - **Resuming.** A node's result names its run, and `call.started` records each
   run a call started. `ork resume` keeps a node's successful results up to its
   first failure, so those runs are closed and the rest are open. An activation

@@ -18,6 +18,40 @@ import type { StoredEvent } from "../store/types.ts";
 export const socketPath = (runId: string, home: string = homedir()): string =>
   path.join(home, ".ork", "sockets", `${runId}.sock`);
 
+/** The longest run id Ork makes: a run of one node's, `node-` and 8 more. */
+const LONGEST_RUN_ID = "node-00000000";
+
+/**
+ * The bytes a Unix socket's path may take, its ending zero left out: 104 on
+ * macOS and the BSDs, 108 on Linux. `undefined` where Ork's sockets are not
+ * Unix sockets.
+ */
+const SOCKET_PATH_MAX: Partial<Record<NodeJS.Platform, number>> = {
+  darwin: 103,
+  freebsd: 103,
+  openbsd: 103,
+  linux: 107,
+};
+
+export type SocketRoom = {
+  /** The longest socket path a run can have under this `~`, in bytes. */
+  bytes: number;
+  /** What a socket path may take here, if Ork knows it. */
+  max: number | undefined;
+};
+
+/**
+ * Whether every run's socket fits under this `~`. One that doesn't can't
+ * listen, and the run looks at the store every second instead (L38).
+ */
+export const socketRoom = (
+  home: string = homedir(),
+  platform: NodeJS.Platform = process.platform,
+): SocketRoom => ({
+  bytes: Buffer.byteLength(socketPath(LONGEST_RUN_ID, home)),
+  max: SOCKET_PATH_MAX[platform],
+});
+
 /** For errors another handler already settles. */
 const ignore = (): void => {
   // Handled by the socket's own `error` listener.

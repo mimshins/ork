@@ -77,6 +77,8 @@ Load only what the task needs.
 Subagents for working on Ork itself; each links to `AGENTS.md` and never copies
 it. None commits or pushes.
 
+- [`spec-writer`](./agents/spec-writer.md) — turns a brief into a task spec from
+  the template, and revises it until the maintainer approves it.
 - [`implementer`](./agents/implementer.md) — builds one confirmed task of a task
   spec, with its tests and knowledge updates, until `pnpm check` passes.
 - [`engine`](./agents/engine.md) — the scheduler, runtime drivers, store, run
@@ -87,6 +89,8 @@ it. None commits or pushes.
   repo's rules.
 - [`a11y-auditor`](./agents/a11y-auditor.md) — read-only WCAG 2.2 AA audit in a
   real browser.
+- [`qa`](./agents/qa.md) — tests the built package as a user would: follows the
+  docs literally and exercises Ork end to end, with nothing paid.
 - [`docs-keeper`](./agents/docs-keeper.md) — runs the drift sync and map resync
   on documentation only.
 

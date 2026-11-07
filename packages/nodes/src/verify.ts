@@ -14,11 +14,12 @@ import {
   type NodeExecutor,
   type NodeResult,
   type SessionOutcome,
+  type StepRun,
 } from "@krapht/ork-core";
 import { type Step, timeoutMs, type Verify } from "@krapht/ork-schema";
 
 import { afterLateTurn, withUsageOf } from "./session-turns.ts";
-import { keptFile } from "./tool-output.ts";
+import { keptFile, keptStem } from "./tool-output.ts";
 import { OUTPUT_LIMIT } from "./tools.ts";
 
 /** A setup that failed: no session started, so nothing was spent on it. */
@@ -54,10 +55,12 @@ export const isAcceptance = (outcome: SessionOutcome): boolean =>
 /** Runs a step as a one-off tool node, in the node's checkout, as the node. */
 export const runStep = async (
   tool: NodeExecutor,
-  context: ExecuteContext,
+  given: ExecuteContext,
   { timeout, ...fields }: Step,
+  step: StepRun,
 ): Promise<NodeResult> => {
   const node = { type: "tool.shell" as const, ...fields };
+  const context = { ...given, step };
   const ms = timeoutMs(timeout);
   if (ms === undefined) return tool({ ...context, node });
   const limit = new AbortController();
@@ -89,7 +92,7 @@ export const runStep = async (
 const textOf = (value: unknown): string =>
   typeof value === "string" ? value.trim() : "";
 
-type Where = Pick<ExecuteContext, "runDir" | "id" | "round">;
+type Where = Pick<ExecuteContext, "runDir" | "id" | "round" | "step">;
 
 /**
  * All a check printed on one stream. A node's output holds only the first 64
@@ -117,10 +120,7 @@ const tailOf = (check: NodeResult, context: Where): string => {
   if (said === "") return "It printed nothing.";
   if (said.length <= TAIL_LIMIT) return `\`\`\`\n${said}\n\`\`\``;
   mkdirSync(context.runDir, { recursive: true });
-  const file = path.join(
-    context.runDir,
-    `${context.id}.${String(context.round)}.verify.txt`,
-  );
+  const file = path.join(context.runDir, `${keptStem(context)}.txt`);
   writeFileSync(file, said);
   return `The end of what it printed, with all of it in ${file}:\n\n\`\`\`\n${said.slice(-TAIL_LIMIT)}\n\`\`\``;
 };

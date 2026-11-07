@@ -16,6 +16,8 @@ import { error } from "./diagnostics.ts";
  * - The tree has no cycles;
  * - A node that sets `isolation: continue` neither owns nor is owned: it works in
  *   the worktree its input came from, outside the tree's merges.
+ * - A leader's `questions:` is about its children's questions, so a leader with
+ *   no `claude.leader` or `claude.worker` child can't set it.
  */
 export const checkOwnership = (workflow: Workflow): Diagnostic[] => {
   const diagnostics: Diagnostic[] = [];
@@ -61,6 +63,24 @@ export const checkOwnership = (workflow: Workflow): Diagnostic[] => {
           "tree.continue",
           `\`${id}\` continues in its input's worktree, so it can neither own nodes nor have a parent`,
           ["nodes", id, "isolation"],
+        ),
+      );
+    }
+  }
+
+  for (const [id, node] of Object.entries(nodes)) {
+    if (node.type !== "claude.leader" || node.questions === undefined) continue;
+    const asks = Object.values(nodes).some(
+      other =>
+        other.parent === id &&
+        (other.type === "claude.leader" || other.type === "claude.worker"),
+    );
+    if (!asks) {
+      diagnostics.push(
+        error(
+          "questions.no-children",
+          `\`${id}\` sets \`questions\`, but owns no \`claude.leader\` or \`claude.worker\` whose questions it could take`,
+          ["nodes", id, "questions"],
         ),
       );
     }

@@ -17,6 +17,7 @@ import {
   chooseBuilderNode,
   chooseRunNode,
   open,
+  reviewView,
   row,
   rowNamed,
 } from "./context-harness.tsx";
@@ -155,7 +156,7 @@ describe("the Context panel", () => {
     ).toBeDefined();
     tokens = 99;
     await act(async () => {
-      opened.state.builderChanged("p", "review", true);
+      opened.state.builder.update(reviewView(true));
       await Promise.resolve();
     });
     expect(await appended("99")).toBeDefined();

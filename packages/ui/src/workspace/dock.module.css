@@ -191,6 +191,19 @@
   overflow: auto;
 }
 
+/* The panel's name for a screen reader's list of headings; the tab shows it. */
+.heading {
+  --dock-heading-block-size: var(--hairline);
+  --dock-heading-inline-size: var(--hairline);
+
+  block-size: var(--dock-heading-block-size);
+  clip-path: inset(50%);
+  inline-size: var(--dock-heading-inline-size);
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
 .none {
   align-items: center;
   display: flex;

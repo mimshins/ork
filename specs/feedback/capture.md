@@ -58,7 +58,10 @@ signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
   and the UI show it in context.
 - Secrets are masked when a record is written, with the same patterns the
   publish redaction uses. The local database never holds a token either.
-- Records carry a `feedbackVersion` so the format can evolve with migrations.
+- Records carry a `feedbackVersion` so the format can evolve. An imported line
+  with a higher one was made by a newer Ork, and is left out with that reason
+  and `ork upgrade` as the fix. There are no migrations yet: the first arrives
+  with the first version 2.
 
 **Grouping into items:**
 
@@ -83,7 +86,9 @@ signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
   `--note <text>` and `--rating good|bad`, and after a good answer notes the
   decision's node the same way (a rating alone is noted as "Rated good at
   <question>"). The note is checked before the answer, which can't be taken
-  back. The server's `POST /api/runs/:id/notes` takes the same note for the UI's
-  Note dialog in the Monitor ([server](../server/api.md),
+  back. It is feedback about the node, kept apart from `--say`, the answer's own
+  note that goes to the run ([decisions](../messaging.md#decisions)). The
+  server's `POST /api/runs/:id/notes` takes the same note for the UI's Note
+  dialog in the Monitor ([server](../server/api.md),
   [panels](../ui/panels-runs-and-monitor.md#monitor)); all three check it with
   [`recordNote`](../../packages/core/src/feedback/human.ts).

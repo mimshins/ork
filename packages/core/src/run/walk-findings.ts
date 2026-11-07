@@ -15,6 +15,7 @@ import { warning } from "../graph/diagnostics.ts";
 import { checkLoops } from "../graph/loops.ts";
 import { nodeSays } from "../graph/says.ts";
 import type { CompiledEdge, CompiledGraph } from "../graph/types.ts";
+import { STUCK_REASON } from "./routing.ts";
 
 /** What a walk saw across all its paths. */
 export type WalkTally = {
@@ -265,6 +266,10 @@ export const walkFindings = (
     );
   return [...neverRuns, ...onlyRounds];
 };
+
+/** Whether a run ended with a node still waiting, which only a bug causes. */
+export const leftWaiting = (result: { reasons: readonly string[] }): boolean =>
+  result.reasons.some(reason => reason.startsWith(STUCK_REASON));
 
 /** A path that never settled, which only a bug in the scheduler can cause. */
 export const unfinished = (choices: readonly string[]): Diagnostic =>

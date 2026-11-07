@@ -4,7 +4,7 @@ Ork is a local, open-source orchestration harness for Claude agents: a workflow
 of hierarchical agent and tool nodes, designed in a CLI or a localhost UI,
 serialized to git-friendly YAML, and run on the user's own machine with the
 user's own accounts. See [README.md](./README.md), the overview in
-[docs/design.md](./docs/design.md), and the contracts in
+[specs/design.md](./specs/design.md), and the contracts in
 [specs/](./specs/README.md).
 
 AI knowledge layer: [.ai/README.md](./.ai/README.md).
@@ -82,7 +82,7 @@ bug fixes need no spec unless they are architectural.
 | User docs: install, quickstart, guides       | [docs/](./docs/README.md)                                 |
 | Contributor guide                            | [CONTRIBUTING.md](./CONTRIBUTING.md)                      |
 | How to read the project, in order            | [ONBOARDING.md](./ONBOARDING.md)                          |
-| Overview, milestones                         | [docs/design.md](./docs/design.md)                        |
+| Overview, milestones                         | [specs/design.md](./specs/design.md)                      |
 | Contracts: what each part does               | [specs/](./specs/README.md)                               |
 | Accepted decisions and why (ADRs)            | [decisions/](./decisions/README.md)                       |
 | Proposals (RFCs)                             | [rfcs/](./rfcs/README.md)                                 |

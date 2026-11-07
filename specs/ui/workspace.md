@@ -5,8 +5,10 @@ _Part of [The UI](../ui.md)._
 Status: **Built**: the frame, the new-version banner, the dock and its theme,
 the rail, the narrow stack, the Window menu, the command palette and the saved
 layout ([workspace](../../packages/ui/src/workspace/),
-[tests](../../packages/ui/test/workspace/)). A browser pass checks what jsdom
-cannot: sizes, drawn positions, focus rings and contrast (gap [C6](../gaps.md)).
+[tests](../../packages/ui/test/workspace/)). As for every UI feature, its tests
+run in jsdom with axe, and a real-browser audit checks what jsdom cannot: sizes,
+drawn positions, focus rings and contrast. That is the policy; no browser tests
+run in CI ([C6](./limits.md)).
 
 ## Contents
 

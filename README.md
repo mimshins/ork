@@ -10,63 +10,61 @@ for agents and engineering tasks:
 
 - **Hierarchical.** A leader hands each child only the brief it needs, gets a
   short report back, and has the child's branch merged into its own.
-- **Isolated.** Every writing agent works in its own git worktree and branch;
-  your checkout is never touched, and Ork never pushes.
+- **Isolated.** Every writing agent works in its own git worktree and branch, so
+  your checkout stays as it was unless you ask a step to work there. Ork never
+  pushes on its own.
 - **Context-engineered.** Fresh sessions per task, briefs instead of
   transcripts, cache-friendly prompts, a model and effort per node, budgets, and
   bounded loops.
 - **Yours.** Your repository's `CLAUDE.md`, `AGENTS.md` and skills load as they
   do in Claude Code, and Ork never stores a credential.
 
-> **Status: pre-alpha.** The workflow format, `ork run` with delegation and
-> worktrees, the context compiler, `ork doctor`, run logs, decisions from any
-> terminal, messages between nodes, chat, resume, claims and local feedback work
-> today, with example workflows, and `ork ui` watches, controls and answers runs
-> in your browser, where you can also build workflows. See the
-> [roadmap](./docs/interaction-map/roadmap.md).
+> **Pre-alpha.** Ork works today, from the terminal and in the browser
+> (`ork ui`), but the workflow format and commands can still change between 0.x
+> releases. What changed lately: [What's new](./docs/whats-new.md).
 
-## Quickstart
+## Get started
+
+Two ways in:
+
+- **Set it up yourself:**
+  [Installation](./docs/getting-started/installation.md), then the
+  [Quickstart](./docs/getting-started/quickstart.md). The short version is
+  below.
+- **Have your agent do it:**
+  [With your agent](./docs/getting-started/with-your-agent.md): Claude Code (or
+  any MCP client) installs Ork, sets up your project and writes a first
+  workflow, asking you before each change.
 
 You need Node 24.20+, git, and one Claude driver: your own `claude` login, or an
-API key, Bedrock or Vertex. `gh` and `aws` are optional, needed only by
-workflows that use them
-([Installation](./docs/getting-started/installation.md)).
+API key, Bedrock, Vertex or Foundry. `gh` and `aws` are optional, needed only by
+workflows that use them. Run Ork inside a git repository with at least one
+commit:
 
 ```sh
 npm install --global @krapht/ork
 ork doctor                                   # checks Node, git, your Claude login
 ork init                                     # a starter workflow in .ork/workflows/
-ork validate                                 # schema, ownership, edges, loops, references
+ork validate                                 # checks the workflow
 ork run hello --input task="add a README"    # leader, worker, then your approval
-ork worktrees                                # the branches it left; `clean` tidies up
+ork worktrees                                # the branches it left
+ork worktrees clean                          # removes the merged ones; asks first
+ork ui                                       # your runs in the browser
 ```
 
 ## Documentation
 
-Everything is in the [documentation center](./docs/README.md):
-
-- **Get started:** [Installation](./docs/getting-started/installation.md)
-  (macOS, Linux, Windows via WSL) and the
-  [Quickstart](./docs/getting-started/quickstart.md).
-- **Guides:** [writing workflows](./docs/guides/writing-workflows.md),
-  [running them](./docs/guides/running-workflows.md),
-  [leaders and delegation](./docs/guides/leaders-and-delegation.md),
-  [skills and context](./docs/guides/skills-and-context.md),
-  [worktrees](./docs/guides/worktrees.md),
-  [models and budgets](./docs/guides/models-and-budgets.md),
-  [the examples](./docs/guides/examples.md),
-  [feedback from your runs](./docs/guides/feedback.md),
-  [accounts and credentials](./docs/guides/accounts.md),
-  [troubleshooting](./docs/guides/troubleshooting.md).
-- **How it works:** the [design overview](./docs/design.md), the
-  [interaction map](./docs/interaction-map/README.md) and the
-  [roadmap](./docs/interaction-map/roadmap.md).
+- **Guides:** everything else, from writing workflows to the browser view, is in
+  the [documentation center](./docs/README.md). New to the ideas? Start with
+  [How Ork works](./docs/how-ork-works.md).
 - **Reference:** the [specs](./specs/README.md) and the
   [JSON Schema](./packages/schema/workflow.schema.json).
-- **Why:** [decisions (ADRs)](./decisions/README.md) and
-  [proposals (RFCs)](./rfcs/README.md).
-- **Contribute:** [ONBOARDING.md](./ONBOARDING.md) for how to read the project,
-  [CONTRIBUTING.md](./CONTRIBUTING.md), the
+- **Contributors:** the [design overview](./specs/design.md), the
+  [interaction map](./docs/interaction-map/README.md) and its
+  [roadmap](./docs/interaction-map/roadmap.md);
+  [decisions (ADRs)](./decisions/README.md) and
+  [proposals (RFCs)](./rfcs/README.md); [ONBOARDING.md](./ONBOARDING.md) for how
+  to read the project, [CONTRIBUTING.md](./CONTRIBUTING.md), the
   [Code of Conduct](./CODE_OF_CONDUCT.md), and the
   [runbook](./runbook/development/release.md). Report vulnerabilities as
   [SECURITY.md](./SECURITY.md) describes.

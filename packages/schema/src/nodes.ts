@@ -113,6 +113,12 @@ export const ClaudeLeaderNodeSchema = z.strictObject({
     .nonnegative()
     .optional()
     .describe("Cap on dynamically spawned workers."),
+  questions: z
+    .enum(["owner", "user"])
+    .optional()
+    .describe(
+      "Who a child's ask_user goes to first: `owner` asks a fork of this leader's session, which answers when what it was given settles it or passes it on; `user` (the default) asks the person.",
+    ),
 });
 
 export const ClaudeWorkerNodeSchema = z.strictObject({
