@@ -820,6 +820,7 @@ export const MILESTONES = [
           "6421a50",
           "38ea1dc",
           "a2b41c3",
+          "9532e22",
         ],
         detail:
           "Feedback now changes something. An item becomes a lesson its workflow reads under a 1,500-token cap, or `ork feedback apply` runs Ork's own `ork:feedback-apply` to propose a fix on a branch, behind a keep-or-discard gate, never merged. Triage merges near-duplicates by rules, asking each time, and `split` undoes it; notes come from `ork decide` and the Monitor too. An item about Ork is published to its Discussions after a preview, with your own `gh`, and feedback moves as JSON lines with `export` and `import`. The Feedback panel does all but merging, and one rule says what an item allows, in a terminal or the browser (ADR-059).",
