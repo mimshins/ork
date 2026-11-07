@@ -12,6 +12,9 @@ import type { VersionInfo } from "@krapht/ork-server/client";
 import type { Connection } from "../state/app-state.ts";
 import type { Preferences } from "../state/preferences.ts";
 
+/** The banner's one button, where the Upgrade dialog hands the focus back. */
+export const BANNER_ACTION_ID = "ork-new-version-action";
+
 /** How long Dismiss hides it: the CLI's interval between notices. */
 export const DISMISS_FOR_MS = 24 * 60 * 60 * 1000;
 

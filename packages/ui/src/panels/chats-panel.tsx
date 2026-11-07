@@ -94,9 +94,11 @@ export const ChatsPanel = () => {
   const runs = useValue(state.runs);
   const run = runs?.find(({ id }) => id === runId);
   return run === undefined ? (
-    <EmptyState title="No run chosen.">
-      Choose one in the Runs panel, or use{" "}
-      <code>ork chat &lt;run&gt; &lt;node&gt;</code>.
+    <EmptyState
+      cli="ork chat <run> <node>"
+      title="No run chosen."
+    >
+      Choose one in the Runs panel, or in a terminal:
     </EmptyState>
   ) : (
     <RunChats

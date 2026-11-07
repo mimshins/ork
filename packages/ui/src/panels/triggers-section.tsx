@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { useValue } from "react-containerized-state";
 
 import { CodeText } from "../components/code-text.tsx";
+import { CopyCommand } from "../components/copy-command.tsx";
 import { useAppState } from "../state/context.tsx";
 import { shownOf } from "../state/read.ts";
 
@@ -88,9 +89,9 @@ export const TriggersSection = () => {
               </span>
             ))}
             {NEXT[status.standing] === undefined ? null : (
-              <code className={styles["triggerCommand"]}>
-                {NEXT[status.standing]}
-              </code>
+              <span className={styles["triggerCommand"]}>
+                <CopyCommand command={NEXT[status.standing] ?? ""} />
+              </span>
             )}
           </li>
         ))}

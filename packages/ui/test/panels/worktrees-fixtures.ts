@@ -81,6 +81,9 @@ export const plan = (
   text: string,
   over: Partial<RemovePlanAnswer> = {},
 ): RemovePlanAnswer => ({
+  parts: [],
+  merged: true,
+  ahead: 0,
   line: { text },
   removeWorktree: true,
   deleteBranch: false,
@@ -97,6 +100,12 @@ export const plan = (
 });
 
 export const FORCED = plan("ork/9b1e07/lead: remove worktree", {
+  parts: [
+    { text: "uncommitted changes", risk: true },
+    { text: "3 commits not merged into main", risk: false },
+  ],
+  merged: false,
+  ahead: 3,
   force: true,
   losing: {
     changes: [" M src/login.ts", "?? notes.md"],
@@ -170,6 +179,22 @@ const deleteBranchIn = (body: unknown): boolean =>
   "deleteBranch" in body &&
   body.deleteBranch === true;
 
+const keyIn = (body: unknown): string =>
+  typeof body === "object" &&
+  body !== null &&
+  "key" in body &&
+  typeof body.key === "string"
+    ? body.key
+    : "";
+
+const withoutItem = (
+  from: WorktreesProject,
+  key: string,
+): WorktreesProject => ({
+  ...from,
+  items: from.items.filter(item => item.key !== key),
+});
+
 const ROUTES: Record<string, string> = {
   "/api/worktrees": "list",
   "/api/worktrees/remove/plan": "removePlan",
@@ -185,7 +210,12 @@ const answerTo = (
 ): Response => {
   if (route === "list") return json({ projects: server.projects });
   if (route === "removePlan") return json(server.plans(deleteBranchIn(body)));
-  if (route === "remove") return json({ done: ["removed"] });
+  if (route === "remove") {
+    // Gone from the next list, as git would have it.
+    const key = keyIn(body);
+    server.projects = server.projects.map(p => withoutItem(p, key));
+    return json({ done: ["removed"] });
+  }
   if (route === "cleanPlan") {
     return json({ projects: server.clean, digest: "clean digest" });
   }

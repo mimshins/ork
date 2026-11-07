@@ -1,7 +1,8 @@
 /**
  * @file A program's output in a sunken well: monospace, wrapped, scrolling
  *   inside a height that is a share of the window, so what is around it stays
- *   on screen.
+ *   on screen. Its edge is the strong border, 3:1 on any surface, since the
+ *   sunken fill alone barely differs from a light dialog's (WCAG 1.4.11).
  */
 
 .well {
@@ -11,7 +12,7 @@
   --output-well-text-size: var(--text-mono);
   --output-well-padding: var(--inset-control);
   --output-well-radius: var(--radius-control);
-  --output-well-border-color: transparent;
+  --output-well-border-color: var(--color-border-strong);
   --output-well-border-width: var(--hairline);
   --output-well-border-style: solid;
   --output-well-max-height: min(20rem, 40vh);
@@ -37,12 +38,6 @@
 
 .well:focus-visible {
   --focus-ring-offset: calc(var(--focus-width) * -1);
-}
-
-@media (prefers-contrast: more) {
-  .well {
-    --output-well-border-color: var(--color-border);
-  }
 }
 
 @media (forced-colors: active) {

@@ -135,6 +135,8 @@ describe("the upgrade's plan", () => {
       kind: "advice",
       installer: { id: "source", label: "a clone of the repository" },
       text: "In /home/me/ork: git pull, then pnpm install and pnpm build.",
+      words: "In `/home/me/ork`, run:",
+      commands: ["git pull", "pnpm install", "pnpm build"],
     });
   });
 

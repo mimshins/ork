@@ -467,6 +467,16 @@ button.row[aria-expanded="true"] {
   overflow-wrap: anywhere;
 }
 
+/* The result, then the button, at the bar's end even when it wraps. */
+.wellCopy {
+  --context-well-copy-gap: var(--gap-tight);
+
+  align-items: center;
+  display: inline-flex;
+  gap: var(--context-well-copy-gap);
+  margin-inline-start: auto;
+}
+
 .copied {
   --context-copied-text: var(--color-text-muted);
 

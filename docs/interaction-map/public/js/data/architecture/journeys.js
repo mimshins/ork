@@ -1,6 +1,17 @@
 /** @file The architecture map's journeys. */
 
-import { CALLS, CLI, CORE, DESIGN, RUNTIME, SCHEMA, WATCH } from "../refs.js";
+import {
+  CALLS,
+  CLI,
+  CORE,
+  DESIGN,
+  RUNTIME,
+  SCHEMA,
+  SERVER,
+  UI,
+  WATCH,
+  WORKTREES,
+} from "../refs.js";
 
 /** @typedef {import("../types.js").Journey} Journey */
 
@@ -299,6 +310,140 @@ export const JOURNEYS = [
         detail:
           "`GET /api/triggers` feeds the Runs panel's Triggers section: what's live, when each last looked, and what's holding it. It can't accept one.",
         docs: [WATCH.route, WATCH.section],
+      },
+    ],
+  },
+  {
+    id: "upgrade",
+    title: "Upgrade Ork from the page",
+    who: "You · `ork ui`",
+    summary:
+      "From a banner saying a newer Ork is out to the page reloaded on the new install, still signed in. Every step is built.",
+    steps: [
+      {
+        from: "server",
+        title: "The server keeps the record fresh",
+        detail:
+          "While `ork ui` stays open, the server runs the CLI's daily check itself, by the same record in `~/.ork`, so the machine still asks the registry at most once a day. `ORK_NO_UPDATE_CHECK`, `NO_UPDATE_NOTIFIER` and `CI` turn it off.",
+        docs: [SERVER.updates, SERVER.updatesTests],
+      },
+      {
+        from: "server",
+        to: "ui",
+        title: "A banner says a newer Ork is out",
+        detail:
+          "The overview stream carries `version`, and the banner takes its own row between the top bar and the panels, so it never covers work. It is said once when it appears; the focus never moves to it.",
+        docs: [UI.banner, UI.bannerSpec, UI.bannerTests],
+      },
+      {
+        from: "user",
+        to: "ui",
+        title: "You choose Upgrade…",
+        detail:
+          "Or Upgrade Ork… in the palette. One dialog walks every step of `ork upgrade`, starting with the focus on Cancel.",
+        docs: [UI.upgradeDialog, UI.newVersions],
+      },
+      {
+        from: "ui",
+        to: "server",
+        title: "The plan is asked of the registry now",
+        detail:
+          "Both versions, the release notes, how Ork was installed, its exact command and the runs still running. A clone or an `npx` copy gets the steps to run instead, each command as a block, and no run button.",
+        docs: [SERVER.updateRoutes, SERVER.updatesSpec],
+      },
+      {
+        from: "server",
+        title: "It runs the server's own command",
+        detail:
+          "Only for the plan the page showed, by its id, and one at a time; never a command the page sends. The package manager's output streams to the dialog, and the server keeps its last 2,000 lines for a reload.",
+        docs: [SERVER.upgradeTests],
+      },
+      {
+        from: "server",
+        to: "cli",
+        title: "Restart hands over to `ork ui`",
+        detail:
+          "The page asks for a restart; the server tells `ork ui`, its parent, over their IPC channel, then closes.",
+        docs: [SERVER.serve, SERVER.superviseAdr],
+      },
+      {
+        from: "cli",
+        to: "server",
+        title: "`ork ui` starts the new install",
+        detail:
+          "It starts the launcher it was run as, now the new install's, with `ui --serve`, on the same port with the same token, so the open tab stays signed in.",
+        docs: [SERVER.supervise, SERVER.superviseTests],
+      },
+      {
+        from: "ui",
+        title: "The page waits, then reloads",
+        detail:
+          "It asks `/api/health` every second until the new version answers, then reloads. After a minute, or back on another version, or signed out, it says why and what to run.",
+        docs: [UI.upgradeTests],
+      },
+    ],
+  },
+  {
+    id: "tidy-worktrees",
+    title: "Tidy worktrees from the browser",
+    who: "You · the Worktrees panel",
+    summary:
+      "What runs left, removed from the Worktrees panel by the same plan `ork worktrees` uses, and only once you confirm it. Every step is built.",
+    steps: [
+      {
+        from: "user",
+        to: "ui",
+        title: "You open Worktrees",
+        detail:
+          "What `ork worktrees` lists, for every project Ork knows, in the same words: each item's merge state, its run and node, and what removing it would lose.",
+        docs: [WORKTREES.panel, WORKTREES.panelSpec, WORKTREES.guide],
+      },
+      {
+        from: "ui",
+        to: "server",
+        title: "Every project is read",
+        detail:
+          "In parallel; a project git can't read keeps its card, with its words in place of the list. Each row comes with what Remove… allows, and why not.",
+        docs: [WORKTREES.routes, WORKTREES.panelTests],
+      },
+      {
+        from: "server",
+        to: "worktreeMgr",
+        title: "Core plans it, as the CLI does",
+        detail:
+          "What goes, what's kept and why, by one rule for `ork worktrees` and the panel. A worktree whose run is still going is always kept, and the plan comes with a digest.",
+        docs: [WORKTREES.clean, WORKTREES.remove, WORKTREES.removeTests],
+      },
+      {
+        from: "user",
+        to: "ui",
+        title: "You confirm what you read",
+        detail:
+          "Remove… shows the plan and its twin, `ork worktrees remove`, and opens on Cancel. Work it would lose takes a second step that lists it, then Remove and lose this work. Clean merged… takes only what's merged, never forced.",
+        docs: [WORKTREES.dialogTests],
+      },
+      {
+        from: "ui",
+        to: "server",
+        title: "The removal carries the plan's digest",
+        detail:
+          "The server plans again and goes ahead only when the digest is the one you saw; otherwise it refuses, and the new plan is shown. It forces only a plan that needed it, and a project takes one write at a time.",
+        docs: [WORKTREES.routeTests],
+      },
+      {
+        from: "worktreeMgr",
+        to: "worktrees",
+        title: "Git removes only that item",
+        detail:
+          "`git worktree remove`, and the branch deleted if you asked. A worktree whose folder is gone is dropped by its own path, never by pruning every missing one.",
+        docs: [WORKTREES.remove],
+      },
+      {
+        from: "ui",
+        title: "The row leaves, and it's said",
+        detail:
+          "The removal is said aloud, and the focus goes to the same button in the row now in its place, or to the empty state's title when none is left.",
+        docs: [WORKTREES.dialogTests],
       },
     ],
   },

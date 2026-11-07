@@ -72,6 +72,11 @@ parts fit together is the [interaction map](./interaction-map/README.md).
     rules, `ork feedback apply` (on Ork's own `ork:feedback-apply` workflow),
     lessons, publishing to Discussions, export and import, and the Feedback
     panel.
+  - The Worktrees panel and `ork worktrees remove` (built,
+    [worktrees](../specs/worktrees.md#ork-worktrees)).
+  - The new-version banner and upgrading from the page, with `ork ui`
+    supervising its server so it can restart onto the new install (built,
+    [updates](../specs/cli/updates.md#in-ork-ui), ADR-060).
 
 ## Verification
 

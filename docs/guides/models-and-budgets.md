@@ -150,9 +150,10 @@ ork usage --by node           # one table, in full
 ork usage --json
 ```
 
-The **Usage** panel in [the browser view](./browser-view.md#the-panels) shows
-the same, with a chart. Both point at what is worth a look: spend on loop
-rounds, on failed sessions, on one costly node, or a cold prompt cache.
+The **Usage** panel in
+[the browser view](./browser-view/panels-and-workspace.md#the-panels) shows the
+same, with a chart. Both point at what is worth a look: spend on loop rounds, on
+failed sessions, on one costly node, or a cold prompt cache.
 
 These are Claude Code's estimates, so on a subscription they are not your bill.
 They can differ from adding up `ork ps`: usage counts `ork chat` sessions, and

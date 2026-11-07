@@ -1,5 +1,5 @@
 /**
- * @file The API's write routes (specs/server.md#api): answer a decision; stop,
+ * @file The API's write routes (specs/server/api.md): answer a decision; stop,
  *   pause or continue a run or one of its nodes (ADR-041); message a live run's
  *   node; and start or resume a run in the background. Each does what its CLI
  *   command does (`ork decide --id`, `stop`, `pause`, `continue`, `chat -m`,

@@ -200,7 +200,7 @@ describe("the dock", () => {
 
   // Which group is the neighbor depends on drawn positions, which jsdom lacks:
   // here the panel takes the workspace's edge, and the tab case is a browser check.
-  it("moves a panel by keyboard and says so", () => {
+  it("moves a panel by keyboard and says so", async () => {
     const { workspace } = openShell();
     act(() => {
       workspace.goTo("logs");
@@ -208,7 +208,9 @@ describe("the dock", () => {
     });
     expect(tabNames()).toEqual(ALL);
     expect(tabsBeside("Logs")).toEqual(["Logs"]);
-    expect(workspace.announcement.getValue()).toBe("Logs moved right.");
+    await vi.waitFor(() => {
+      expect(workspace.announcement.getValue()).toBe("Logs moved right.");
+    });
   });
 
   it("floats a group and docks it back beside its neighbor", () => {

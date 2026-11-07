@@ -243,7 +243,7 @@ const orkCommands = (state: AppState): Command[] => [
     id: "upgrade-ork",
     title: "Upgrade Ork…",
     group: "Ork",
-    detail: "Asks the registry now, as ork upgrade.",
+    detail: "Asks the registry for a new version now.",
     run: () => {
       state.version.openDialog("ask");
     },

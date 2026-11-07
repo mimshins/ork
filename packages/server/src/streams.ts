@@ -1,10 +1,11 @@
 /**
- * @file The API's two Server-Sent Event streams (specs/server.md#streams). A
- *   run's stream sends its stored events after `Last-Event-ID`, then each new
- *   one as the run stores it, over the run's socket or by polling the store
- *   (core's `followEvents`, as `ork logs -f`), and ends with `end`. The
- *   overview stream sends the runs, the open decisions and what is known of
- *   versions whenever they change, comparing every second.
+ * @file The API's two Server-Sent Event streams
+ *   (specs/server/streams-contract-and-security.md#streams). A run's stream
+ *   sends its stored events after `Last-Event-ID`, then each new one as the run
+ *   stores it, over the run's socket or by polling the store (core's
+ *   `followEvents`, as `ork logs -f`), and ends with `end`. The overview stream
+ *   sends the runs, the open decisions and what is known of versions whenever
+ *   they change, comparing every second.
  */
 
 import type { IncomingMessage, ServerResponse } from "node:http";

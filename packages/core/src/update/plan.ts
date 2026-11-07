@@ -11,7 +11,7 @@ import { realpathSync } from "node:fs";
 
 import type { EventStore } from "../store/types.ts";
 import { liveStatus } from "../store/view.ts";
-import { detectInstaller, type Installer } from "./installers.ts";
+import { type Advice, detectInstaller, type Installer } from "./installers.ts";
 import { isNewer } from "./version.ts";
 
 const REPOSITORY = "https://github.com/mimshins/ork";
@@ -29,7 +29,7 @@ export type UpgradePlan =
       installer: Installer;
       argv: readonly string[];
     }
-  | { kind: "advice"; latest: string; text: string };
+  | ({ kind: "advice"; latest: string } & Advice);
 
 /** The running script's real path, which tells how Ork was installed. */
 export const runningScript = (): string => {
@@ -62,10 +62,15 @@ export const planUpgrade = (options: {
       argv: installer.command(spec),
     };
   }
-  const text =
-    installer?.advice?.(spec, options.script.replaceAll("\\", "/")) ??
-    `Ork could not tell how it was installed. With npm: npm install --global ${spec}`;
-  return { kind: "advice", latest, text };
+  const advice = installer?.advice?.(
+    spec,
+    options.script.replaceAll("\\", "/"),
+  ) ?? {
+    text: `Ork could not tell how it was installed. With npm: npm install --global ${spec}`,
+    words: "Ork could not tell how it was installed. With npm:",
+    commands: [`npm install --global ${spec}`],
+  };
+  return { kind: "advice", latest, ...advice };
 };
 
 /** How many runs are looked at for the ones still running. */

@@ -84,6 +84,6 @@ signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
   decision's node the same way (a rating alone is noted as "Rated good at
   <question>"). The note is checked before the answer, which can't be taken
   back. The server's `POST /api/runs/:id/notes` takes the same note for the UI's
-  Note dialog in the Monitor ([server](../server.md#api),
-  [panels](../ui/panels.md#monitor)); all three check it with
+  Note dialog in the Monitor ([server](../server/api.md),
+  [panels](../ui/panels-runs-and-monitor.md#monitor)); all three check it with
   [`recordNote`](../../packages/core/src/feedback/human.ts).

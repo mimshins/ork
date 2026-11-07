@@ -41,6 +41,9 @@ const failureOf = (step: RemoveStep, label: string): string | null => {
 
 const blockedOf = (step: RemoveStep): string | null => {
   if (step.step === "reading") return "Reading its state…";
+  if (step.step === "readFailed") {
+    return "Its state couldn't be read; Try again reads it.";
+  }
   return step.step === "choice" ? forceReason(step.plan) : null;
 };
 

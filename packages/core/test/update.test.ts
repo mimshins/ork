@@ -190,8 +190,21 @@ describe("how Ork was installed", () => {
     const npm = detectInstaller("/x/node_modules/@krapht/ork/dist/bin.mjs");
     expect(npm?.command?.(spec)).toEqual(["npm", "install", "--global", spec]);
     const script = "/home/me/code/ork/packages/cli/dist/bin.mjs";
-    expect(detectInstaller(script)?.advice?.(spec, script)).toBe(
-      "In /home/me/code/ork: git pull, then pnpm install and pnpm build.",
-    );
+    expect(detectInstaller(script)?.advice?.(spec, script)).toEqual({
+      text: "In /home/me/code/ork: git pull, then pnpm install and pnpm build.",
+      words: "In `/home/me/code/ork`, run:",
+      commands: ["git pull", "pnpm install", "pnpm build"],
+    });
+  });
+
+  it("gives npx its commands apart from its words", () => {
+    const spec = "@krapht/ork@0.2.0";
+    const script = "/home/me/.npm/_npx/1a2b/node_modules/@krapht/ork/bin.mjs";
+    expect(detectInstaller(script)?.advice?.(spec, script)).toEqual({
+      text: `npx keeps its own copy: run npx ${spec} …, or install it with npm install --global ${spec}.`,
+      words:
+        "npx keeps its own copy: run the new version through npx, or install it with npm:",
+      commands: [`npx ${spec} <command>`, `npm install --global ${spec}`],
+    });
   });
 });

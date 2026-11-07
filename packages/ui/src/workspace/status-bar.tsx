@@ -1,6 +1,8 @@
 /**
  * @file The workspace's status bar: what the page knows of the server, how much
- *   is going on, and the live region that speaks the workspace's changes.
+ *   is going on, and the live region that speaks the workspace's changes. The
+ *   server's line is quiet while the Upgrade dialog waits for a restart, since
+ *   losing it then is expected and the dialog says what's happening.
  */
 
 import { useComputedValue, useValue } from "react-containerized-state";
@@ -31,11 +33,15 @@ const Counts = () => {
 
 export const StatusBar = ({ workspace }: { workspace: Workspace }) => {
   const message = useValue(workspace.announcement);
-  const { connection } = useAppState();
+  const { connection, version } = useAppState();
   const status = useComputedValue(connection, describeConnection);
+  const restarting = useValue(version.restarting);
   return (
     <footer className={styles["bar"]}>
-      <output className={styles["status"]}>
+      <output
+        aria-live={restarting ? "off" : undefined}
+        className={styles["status"]}
+      >
         <CodeText text={status} />
       </output>
       <Counts />

@@ -2,7 +2,7 @@
  * @file The new-version banner and the Upgrade dialog's parts: the banner is a
  *   frame in the shell's own row, never over the panels, with the amber icon
  *   and one primary button for attention instead of a tint; the dialog's
- *   versions, facts, command well, notes and clocks.
+ *   versions, facts, notes and clocks.
  */
 
 .slot {
@@ -110,39 +110,22 @@
   text-transform: var(--update-fact-name-case);
 }
 
+/* A fact's value; advice's words and its command blocks stack in it. */
 .factValue {
   --update-fact-value-margin: 0;
+  --update-fact-value-gap: var(--gap-tight);
 
+  display: grid;
+  gap: var(--update-fact-value-gap);
   margin: var(--update-fact-value-margin);
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.well {
-  --update-well-bg: var(--surface-sunken);
-  --update-well-font: var(--font-mono);
-  --update-well-text-size: var(--text-mono);
-  --update-well-padding: var(--inset-control);
-  --update-well-radius: var(--radius-control);
-  --update-well-border-color: transparent;
-  --update-well-border-width: var(--hairline);
-  --update-well-border-style: solid;
-  --update-well-gap: var(--gap);
+.adviceWords {
+  --update-advice-words-margin: 0;
 
-  align-items: flex-start;
-  background: var(--update-well-bg);
-  border-color: var(--update-well-border-color);
-  border-radius: var(--update-well-radius);
-  border-style: var(--update-well-border-style);
-  border-width: var(--update-well-border-width);
-  display: flex;
-  font-family: var(--update-well-font);
-  font-size: var(--update-well-text-size);
-  gap: var(--update-well-gap);
-  justify-content: space-between;
-  overflow-wrap: anywhere;
-  padding: var(--update-well-padding);
-  white-space: pre-wrap;
+  margin: var(--update-advice-words-margin);
 }
 
 .note {
@@ -244,18 +227,8 @@
   margin-inline-start: auto;
 }
 
-@media (prefers-contrast: more) {
-  .well {
-    --update-well-border-color: var(--color-border);
-  }
-}
-
 @media (forced-colors: active) {
   .banner {
     --update-banner-border: var(--hairline) solid CanvasText;
-  }
-
-  .well {
-    --update-well-border-color: CanvasText;
   }
 }

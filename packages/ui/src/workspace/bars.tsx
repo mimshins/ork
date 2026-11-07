@@ -3,9 +3,9 @@
  *   button.
  */
 
-import { Kbd } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
 import { IconSearch } from "../components/icons.tsx";
+import { Kbd } from "../components/kbd.tsx";
 import { platformIsMac } from "./keys.ts";
 import { NotificationBell } from "./notification-bell.tsx";
 import { keysOf, SHORTCUTS } from "./shortcuts.ts";

@@ -94,7 +94,9 @@ export const ItemRecords = ({
             className={styles["alert"]}
             role="alert"
           >
-            <CodeText text={`Could not read the records: ${read.error}`} />
+            <span>
+              <CodeText text={`Could not read the records: ${read.error}`} />
+            </span>
           </p>
           <Button
             onClick={read.reload}

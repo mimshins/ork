@@ -54,8 +54,12 @@ export const countSaid = (
 export const cleanBlocked = (
   projects: readonly WorktreesProject[] | null,
   one: boolean,
+  /** The list's read failed, with nothing read before it. */
+  failed: boolean,
 ): string | null => {
-  if (projects === null) return "reading worktrees";
+  if (projects === null) {
+    return failed ? "the worktrees couldn't be read" : "reading worktrees";
+  }
   if (projects.some(p => p.items.some(item => item.state === "merged"))) {
     return null;
   }
@@ -67,7 +71,14 @@ export const cleanBlocked = (
 /** A card's line under its name: where, against what, how many. */
 export const headMeta = (project: WorktreesProject): string[] => [
   project.root,
-  project.head === null ? "detached HEAD" : `current branch ${project.head}`,
+  // A project git couldn't read has no branch to say.
+  ...(project.error === undefined
+    ? [
+        project.head === null
+          ? "detached HEAD"
+          : `current branch ${project.head}`,
+      ]
+    : []),
   ...(project.items.length === 0 ? [] : [countWords(project.items)]),
 ];
 
@@ -129,7 +140,7 @@ export const removeDescription = (row: WorktreeRow, root: string): string => {
       : kind === "detached"
         ? "Removes the detached worktree. It has no branch of Ork's."
         : row.missing
-          ? "Its folder is gone. Removing it drops git's record of the worktree (`git worktree prune`). The branch stays unless you delete it too."
+          ? "Its folder is gone. Removing it drops git's record of the worktree. The branch stays unless you delete it too."
           : "Removes its worktree. The branch stays unless you delete it too.";
   return row.checkedOut === undefined
     ? base
@@ -137,10 +148,13 @@ export const removeDescription = (row: WorktreeRow, root: string): string => {
 };
 
 /** The "Also delete the branch" box's words under it. */
-export const branchHint = (row: WorktreeRow, head: string): string =>
-  row.merged
+export const branchHint = (
+  state: { merged: boolean; ahead: number },
+  head: string,
+): string =>
+  state.merged
     ? `It's merged into \`${head}\`.`
-    : `It has ${counted(row.ahead, "commit")} not merged into \`${head}\`; deleting it loses them.`;
+    : `It has ${counted(state.ahead, "commit")} not merged into \`${head}\`; deleting it loses them.`;
 
 export const removeAction = (plan: RemovePlanAnswer): string => {
   if (plan.force) return "Continue…";

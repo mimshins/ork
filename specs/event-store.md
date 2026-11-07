@@ -45,10 +45,11 @@ all views over the same events.
 - **Before the terminal:** each event is stored, then printed (and sent to the
   run's socket followers), so a crash loses at most the event in flight.
 - **Workflow drafts:** `workflow_drafts` holds what the
-  [builder](./ui/panels.md#builder) hasn't saved: a project, a workflow's name,
-  its text, and the hash of the file it began from. It's kept here, not in the
-  workflows folder, as a running workflow's call must never read an unfinished
-  file. A draft goes when it's saved or discarded; `ork prune` leaves it.
+  [builder](./ui/panels-builder-logs-and-decisions.md#builder) hasn't saved: a
+  project, a workflow's name, its text, and the hash of the file it began from.
+  It's kept here, not in the workflows folder, as a running workflow's call must
+  never read an unfinished file. A draft goes when it's saved or discarded;
+  `ork prune` leaves it.
 - **Triggers:** `triggers` holds what was accepted on this machine, when each
   last looked and what's holding it; `trigger_seen` the keys it has seen, and
   the run each started; and `watch_lock` the one

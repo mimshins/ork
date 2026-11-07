@@ -39,24 +39,25 @@ through `useAppState()`:
 The workspace's own state (the view, the saved layout, the palette) stays in the
 [workspace](./workspace.md). Notifications are worked out from `runs` and
 `decisions`, with what this browser has read
-([panels](./panels.md#notifications)).
+([panels](./panels-chats-notifications-and-usage.md#notifications)).
 
 What no stream sends is a one-off read in a container
 ([read.ts](../../packages/ui/src/state/read.ts)): `projects`, a project's
 `workflows`, and `feedback`, every feedback item, which the
-[Feedback panel](./panels.md#feedback) reads again as the runs change. When
-reads overlap the newest wins, so a slow answer about the last project chosen
-cannot replace the answer about this one. `runFilter` and `runDialog` belong to
-the [Runs panel](./panels.md), and `feedbackFilter` to the Feedback panel; they
-live here so they outlast a panel when it is minimized or closed.
+[Feedback panel](./panels-context-and-feedback.md#feedback) reads again as the
+runs change. When reads overlap the newest wins, so a slow answer about the last
+project chosen cannot replace the answer about this one. `runFilter` and
+`runDialog` belong to the [Runs panel](./panels.md), and `feedbackFilter` to the
+Feedback panel; they live here so they outlast a panel when it is minimized or
+closed.
 
 **`contextTarget`**
 ([context-target.ts](../../packages/ui/src/state/context-target.ts)) follows
 every choice of a run's node, and the card the person selects in the Builder,
 whose state lives in its own hook: the Builder bumps its `revision` with each
 new answer about the workflow, which is what makes the
-[Context panel](./panels.md#context) plan again, without a timer. A change in
-the Builder never takes the panel from a run's node.
+[Context panel](./panels-context-and-feedback.md#context) plan again, without a
+timer. A change in the Builder never takes the panel from a run's node.
 
 **The store is the truth** ([ADR-024](../../decisions/ADR-024-event-store.md)).
 A write goes through the typed client and comes back on a stream; nothing here
@@ -97,7 +98,7 @@ and [feeds.ts](../../packages/ui/src/state/feeds.ts) the feeds the page holds.
   read again if a panel still retains it.
 - **Retained, not always open.** `useRunFeed(id)` retains a run while a
   component shows it; the last release closes the stream, because a browser
-  gives an origin few connections ([L36](../gaps/limits.md)). The four feeds
+  gives an origin few connections ([L36](../gaps/limits-ui.md)). The four feeds
   used last stay in memory to come back to.
 
 ## The event window
@@ -138,8 +139,8 @@ the density, whether desktop notifications may be sent, and the new version
 whose banner was dismissed and when (`updateDismissed`), per browser
 (`ork.preferences.v1`). Values are checked on load: a missing field takes its
 default, and values that do not fit are dropped. The app applies them before its
-first paint, so a chosen theme flashes only as far as [L32](../gaps/limits.md)
-says.
+first paint, so a chosen theme flashes only as far as
+[L32](../gaps/limits-ui.md) says.
 
 The palette's **View** group sets the theme (follow the system, dark, light) and
 the density (compact, comfortable); the one in use stays listed and says so. The

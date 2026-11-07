@@ -5,7 +5,7 @@
  */
 
 import { createClient } from "@krapht/ork-server/client";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createAppState } from "../../src/state/app-state.ts";
 import { DEFAULT_PREFERENCES } from "../../src/state/preferences.ts";
@@ -150,7 +150,7 @@ describe("the commands", () => {
     );
   });
 
-  it("changes a preference and says so", () => {
+  it("changes a preference and says so", async () => {
     const workspace = openWorkspace();
     const state = openState();
     const light = commandsFor(workspace, VIEW, state, DEFAULT_PREFERENCES).find(
@@ -158,6 +158,8 @@ describe("the commands", () => {
     );
     light?.run();
     expect(state.preferences.value.getValue().theme).toBe("light");
-    expect(workspace.announcement.getValue()).toBe("Theme: Light.");
+    await vi.waitFor(() => {
+      expect(workspace.announcement.getValue()).toBe("Theme: Light.");
+    });
   });
 });

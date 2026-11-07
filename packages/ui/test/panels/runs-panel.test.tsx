@@ -257,6 +257,7 @@ describe("the triggers under the runs", () => {
     });
     renderPanel(state, <RunsPanel />);
     await screen.findByText("new-issue");
-    expect(screen.queryByRole("button", { name: /accept/iu })).toBeNull();
+    // The command block's copy button names `ork watch --accept`; none accepts.
+    expect(screen.queryByRole("button", { name: /^accept/iu })).toBeNull();
   });
 });

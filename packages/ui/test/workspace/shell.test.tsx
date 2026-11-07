@@ -206,12 +206,12 @@ describe("the keyboard", () => {
     expect(workspace.announcement.getValue()).toBe("Needs a wider window.");
   });
 
-  it("speaks changes through one polite live region", () => {
+  it("speaks changes through one polite live region", async () => {
     const { workspace } = openShell();
     act(() => {
       workspace.minimize("logs");
     });
-    const region = screen.getByText("Logs minimized.");
+    const region = await screen.findByText("Logs minimized.");
     expect(region.getAttribute("aria-live")).toBe("polite");
   });
 });

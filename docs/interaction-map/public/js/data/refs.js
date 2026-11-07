@@ -125,6 +125,38 @@ export const UI = {
     "packages/ui/test/state/render-count.test.tsx",
     "Tests: a component re-renders only for its own slice",
   ),
+  banner: d(
+    "packages/ui/src/workspace/update-banner.tsx",
+    "Code: the new-version banner",
+  ),
+  upgradeDialog: d(
+    "packages/ui/src/workspace/upgrade-dialog.tsx",
+    "Code: the Upgrade dialog, from the plan to the restart",
+  ),
+  bannerTests: d(
+    "packages/ui/test/workspace/update-banner.test.tsx",
+    "Tests: the banner's states, dismissal and axe",
+  ),
+  upgradeTests: d(
+    "packages/ui/test/workspace/upgrade-dialog.test.tsx",
+    "Tests: the Upgrade dialog's steps",
+  ),
+  bannerSpec: d(
+    "specs/ui/workspace-frame-and-banner.md#the-new-version-banner",
+    "Spec: the new-version banner and the Upgrade dialog",
+  ),
+  newVersions: d(
+    "docs/guides/browser-view/new-versions.md",
+    "Guide: new versions in the browser",
+  ),
+  copyRule: d(
+    "specs/ui/design-components-and-copy.md#copy",
+    "Spec: the copy rules, commands as code blocks",
+  ),
+  copyTests: d(
+    "packages/ui/test/inline-commands.test.ts",
+    "Tests: no command shown as inline code",
+  ),
 };
 
 export const SERVER = {
@@ -153,6 +185,42 @@ export const SERVER = {
   ),
   tests: d("packages/server/test/write.test.ts", "Tests: the write routes"),
   e2e: d("packages/cli/test/ui.test.ts", "Tests: `ork ui` end to end"),
+  supervise: d(
+    "packages/cli/src/browser/supervise.ts",
+    "Code: `ork ui` supervising its server, and restarting it",
+  ),
+  serve: d(
+    "packages/cli/src/browser/serve.ts",
+    "Code: `ork ui --serve`, the server's side",
+  ),
+  superviseTests: d(
+    "packages/cli/test/supervise.test.ts",
+    "Tests: the supervisor, with fake children",
+  ),
+  superviseAdr: d(
+    "decisions/ADR-060-ork-ui-supervises-its-server.md",
+    "ADR-060: `ork ui` supervises its server",
+  ),
+  updates: d(
+    "packages/server/src/updates.ts",
+    "Code: the server's record of versions, and its own daily check",
+  ),
+  updateRoutes: d(
+    "packages/server/src/update-routes.ts",
+    "Code: the version, upgrade and restart routes",
+  ),
+  updatesTests: d(
+    "packages/server/test/updates.test.ts",
+    "Tests: the record, the daily check and the stream's `version`",
+  ),
+  upgradeTests: d(
+    "packages/server/test/upgrade.test.ts",
+    "Tests: the upgrade's plan, its run and the restart hook",
+  ),
+  updatesSpec: d(
+    "specs/cli/updates.md#in-ork-ui",
+    "Spec: new versions in `ork ui`",
+  ),
 };
 
 export const CLI = {
@@ -352,7 +420,10 @@ export const FEEDBACK = {
     "packages/ui/test/panels/note-dialog.test.tsx",
     "Tests: the Note dialog",
   ),
-  panelSpec: d("specs/ui/panels.md#feedback", "Spec: the Feedback panel"),
+  panelSpec: d(
+    "specs/ui/panels-context-and-feedback.md#feedback",
+    "Spec: the Feedback panel",
+  ),
 };
 
 export const STORE = {
@@ -816,11 +887,64 @@ export const WORKTREES = {
   ),
   list: d(
     "packages/core/src/worktree/list.ts",
-    "Code: `ork worktrees` list and clean",
+    "Code: what `ork worktrees` lists, with git's state",
+  ),
+  clean: d(
+    "packages/core/src/worktree/clean.ts",
+    "Code: the clean plan, one rule for the CLI and the panel",
+  ),
+  remove: d(
+    "packages/core/src/worktree/remove.ts",
+    "Code: removing one item, and the work it would lose",
+  ),
+  words: d(
+    "packages/core/src/worktree/words.ts",
+    "Code: the words the CLI and the panel share",
+  ),
+  removeTests: d(
+    "packages/core/test/worktree-remove.test.ts",
+    "Tests: one item's plan, what it loses, and removing it",
   ),
   command: d(
     "packages/cli/src/commands/projects.ts",
-    "Code: `ork register`, `ork projects`, `ork migrate` and `ork worktrees`",
+    "Code: `ork register`, `ork projects` and `ork migrate`",
+  ),
+  worktreesCommand: d(
+    "packages/cli/src/commands/worktrees.ts",
+    "Code: `ork worktrees`: list, clean and remove",
+  ),
+  worktreesTests: d(
+    "packages/cli/test/worktrees.test.ts",
+    "Tests: `ork worktrees remove`, and a live run's worktree kept",
+  ),
+  commandSpec: d(
+    "specs/worktrees.md#ork-worktrees",
+    "Spec: `ork worktrees` list, clean and remove",
+  ),
+  panel: d(
+    "packages/ui/src/panels/worktrees-panel.tsx",
+    "Code: the Worktrees panel",
+  ),
+  panelTests: d(
+    "packages/ui/test/panels/worktrees-panel.test.tsx",
+    "Tests: the Worktrees panel's list, keys and axe",
+  ),
+  dialogTests: d(
+    "packages/ui/test/panels/worktrees-dialogs.test.tsx",
+    "Tests: Remove… and Clean merged…, read then confirmed",
+  ),
+  panelSpec: d("specs/ui/panels-worktrees.md", "Spec: the Worktrees panel"),
+  routes: d(
+    "packages/server/src/worktrees-routes.ts",
+    "Code: the Worktrees panel's routes",
+  ),
+  routeTests: d(
+    "packages/server/test/worktrees.test.ts",
+    "Tests: the worktrees routes, against the plan's digest",
+  ),
+  guide: d(
+    "docs/guides/worktrees.md#in-the-browser",
+    "Guide: worktrees in the browser",
   ),
   places: d(
     "packages/core/src/project/place.ts",

@@ -3,7 +3,7 @@
  *   the only file where a color is written out. The scales are named for what
  *   they are (ink 0 is white, ink 1000 is the logo's screen), never for what
  *   they do; the semantic layer (themes.css) gives them roles. Components never
- *   read these directly (specs/ui/design-system.md#tokens).
+ *   read these directly (specs/ui/design-tokens-and-type.md#tokens).
  */
 
 :root {

@@ -131,9 +131,11 @@ export const NoNode = ({ target }: { target: ContextTarget | null }) => {
     );
   }
   return (
-    <EmptyState title="No node chosen.">
-      Choose one in the Monitor or the Builder, or use{" "}
-      <code>ork context explain &lt;workflow&gt; &lt;node&gt;</code>.
+    <EmptyState
+      cli="ork context explain <workflow> <node>"
+      title="No node chosen."
+    >
+      Choose one in the Monitor or the Builder, or in a terminal:
     </EmptyState>
   );
 };

@@ -144,6 +144,12 @@ describe("Remove…", () => {
     });
     expect(document.activeElement?.textContent).toBe("Continue…");
     expect(asked(opened, "remove")).toHaveLength(1);
+    // The state is the fresh plan's, not the list's.
+    expect(
+      dialog().getByText(
+        "uncommitted changes · 3 commits not merged into main",
+      ),
+    ).toBeDefined();
   });
 
   it("deletes a branch with no worktree", async () => {

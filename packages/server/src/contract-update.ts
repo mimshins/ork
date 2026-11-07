@@ -69,7 +69,12 @@ export type UpgradePlanView =
       releaseNotes: string;
       /** Null when Ork couldn't tell how it was installed. */
       installer: InstallerRef | null;
+      /** `ork upgrade`'s line. */
       text: string;
+      /** The same, as words ending in a colon, values in backticks... */
+      words: string;
+      /** ...then each command to run, apart from them. */
+      commands: string[];
       running: string[];
     };
 

@@ -94,6 +94,7 @@
   --worktrees-head-meta-font: var(--font-mono);
   --worktrees-head-meta-text-size: var(--text-mono);
 
+  overflow-wrap: anywhere;
   color: var(--worktrees-head-meta-text);
   font-family: var(--worktrees-head-meta-font);
   font-size: var(--worktrees-head-meta-text-size);
@@ -113,10 +114,11 @@
   --worktrees-row-columns: minmax(0, 1fr) auto;
   --worktrees-row-areas: "name badge" "meta meta" "actions actions";
   --worktrees-row-gap: var(--gap-hair);
+  --worktrees-row-column-gap: var(--gap);
 
   align-items: center;
   border-block-start: var(--worktrees-row-border-block-start);
-  column-gap: var(--worktrees-row-gap);
+  column-gap: var(--worktrees-row-column-gap);
   display: grid;
   grid-template-areas: var(--worktrees-row-areas);
   grid-template-columns: var(--worktrees-row-columns);
@@ -223,6 +225,8 @@
   --worktrees-facts-row-gap: var(--gap-tight);
   --worktrees-facts-columns: auto minmax(0, 1fr);
 
+  min-width: 0;
+  overflow-wrap: anywhere;
   column-gap: var(--worktrees-facts-column-gap);
   display: grid;
   grid-template-columns: var(--worktrees-facts-columns);
@@ -248,11 +252,17 @@
   text-transform: var(--worktrees-fact-name-case);
 }
 
+.caption code {
+  text-transform: none;
+}
+
 .factValue {
   --worktrees-fact-value-font: var(--font-mono);
   --worktrees-fact-value-text-size: var(--text-ui);
   --worktrees-fact-value-gap: var(--gap-tight);
 
+  min-width: 0;
+  overflow-wrap: anywhere;
   align-items: center;
   display: flex;
   flex-wrap: wrap;
@@ -265,6 +275,8 @@
 .step {
   --worktrees-step-gap: var(--gap);
 
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   gap: var(--worktrees-step-gap);
@@ -279,6 +291,8 @@
 .section {
   --worktrees-section-gap: var(--gap-tight);
 
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   gap: var(--worktrees-section-gap);

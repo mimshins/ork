@@ -30,15 +30,17 @@ const LOST =
 /** The package manager's name: the command's first word. */
 const programOf = (job: UpgradeJob): string => job.command[0] ?? "it";
 
-/** Why it failed, in `ork upgrade`'s words, or the spawn error it printed. */
+/**
+ * Why it failed, in `ork upgrade`'s words, or the spawn error it printed. The
+ * command itself is the block below it.
+ */
 const failure = (job: UpgradeJob, text: string): string => {
-  const command = job.command.join(" ");
   const said = text
     .split("\n")
     .findLast(line => line.startsWith("Could not run"));
   return job.code === 127 && said !== undefined
     ? said
-    : `\`${command}\` failed (exit ${String(job.code ?? 1)}); the upgrade did not finish.`;
+    : `\`${programOf(job)}\` failed (exit ${String(job.code ?? 1)}); the upgrade did not finish.`;
 };
 
 const Running = ({
@@ -58,9 +60,10 @@ const Running = ({
   return (
     <>
       <p className={styles["message"]}>
-        <CodeText text={`Running \`${job.command.join(" ")}\`…`} />{" "}
+        <CodeText text={`Running \`${program}\`…`} />{" "}
         <Elapsed since={Date.parse(job.startedAt)} />
       </p>
+      <CopyCommand command={job.command.join(" ")} />
       {lost ? <Alert text={LOST} /> : null}
       <Reason
         id={reasonId}

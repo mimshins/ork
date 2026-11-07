@@ -38,7 +38,7 @@ export const cleanTitle = (projects: readonly { name: string }[]): string => {
 };
 
 export const cleanDescription = (one: boolean): string =>
-  `What \`ork worktrees clean\` does: removes the worktrees of branches merged into ${one ? "the project's current branch" : "each project's current branch"}. One with uncommitted changes, or checked out in the main checkout, is kept. Nothing is forced.`;
+  `Removes the worktrees of branches merged into ${one ? "the project's current branch" : "each project's current branch"}, as the command below does. One with uncommitted changes, or checked out in the main checkout, is kept. Nothing is forced.`;
 
 /** `Removes 2 worktrees. Keeps 2: uncommitted changes (1); …` */
 export const cleanSummary = (steps: readonly CleanPlanStep[]): string => {

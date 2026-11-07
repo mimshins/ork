@@ -1,5 +1,5 @@
 /**
- * @file The API's read routes (specs/server.md#api): health, projects and a
+ * @file The API's read routes (specs/server/api.md): health, projects and a
  *   project's workflows, runs, a run, its tree and its events, the open
  *   decisions, and usage. Each reads the store as the matching CLI command does
  *   (`ork projects`, `ps`, `tree`, `logs`, `decide --list`, `usage`).

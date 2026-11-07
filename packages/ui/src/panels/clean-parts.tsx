@@ -18,21 +18,27 @@ import { cleanTwin } from "./worktrees-model.ts";
 
 import styles from "./worktrees.module.css";
 
-/** Before the plan is read, or when no project has anything merged. */
+const READING = "Reading the plan…";
+
+const UNREAD = "Nothing to show: the plan couldn't be read.";
+
+/** When no project has anything merged. */
 export const NoPlan = ({
   reading,
+  failed,
   well,
 }: {
   reading: boolean;
+  failed: boolean;
   well: Ref<HTMLElement>;
 }) => (
   <TextWell
     label="Plan"
-    reading={reading ? "Reading the plan…" : undefined}
+    reading={reading ? READING : undefined}
     ref={well}
     steady
   >
-    Nothing to clean.
+    {failed ? UNREAD : "Nothing to clean."}
   </TextWell>
 );
 
@@ -60,7 +66,8 @@ export const BranchesBox = ({
         className={styles["note"]}
         id={hintId}
       >
-        <CodeText text="`git branch -d`: only branches merged into the current branch." />
+        Only branches merged into the current branch, which git deletes without
+        losing a commit.
       </p>
     </>
   );
@@ -70,11 +77,14 @@ export const ProjectPlan = ({
   project,
   branches,
   reading,
+  failed,
   well,
 }: {
   project: CleanPlanProject;
   branches: boolean;
   reading: boolean;
+  /** The plan couldn't be read, and none was read before. */
+  failed: boolean;
   /** The first project's well, where the focus starts. */
   well?: Ref<HTMLElement> | undefined;
 }) => {
@@ -93,16 +103,17 @@ export const ProjectPlan = ({
         className={styles["message"]}
         id={summaryId}
       >
-        {reading ? "" : cleanSummary(project.steps)}
+        {reading || failed ? "" : cleanSummary(project.steps)}
       </p>
       <p className={styles["caption"]}>Plan</p>
       <TextWell
         describedBy={summaryId}
         label={`Plan for ${project.name}`}
-        reading={reading ? "Reading the plan…" : undefined}
+        reading={reading ? READING : undefined}
         ref={well}
         steady
       >
+        {failed ? UNREAD : null}
         {project.steps.map(step => (
           <span key={step.key}>
             {step.line.text}

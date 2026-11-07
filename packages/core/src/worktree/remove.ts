@@ -7,13 +7,14 @@
 
 import type { EventStore } from "../store/types.ts";
 import { liveStatus } from "../store/view.ts";
-import { applyClean, type CleanStep, cleanStep, keyOf } from "./clean.ts";
-import { git, lines } from "./git.ts";
+import { type CleanStep, cleanStep, keyOf, stepPrunes } from "./clean.ts";
+import { git, gitOk, lines } from "./git.ts";
 import {
   createdWorktrees,
   listOrkWorktrees,
   type OrkWorktree,
 } from "./list.ts";
+import { removeWorktree } from "./manager.ts";
 import { labelOf, removeRefusal } from "./words.ts";
 
 export type ProjectWorktrees = {
@@ -151,10 +152,27 @@ export const lostWork = async (
 
 /**
  * Carries out a remove plan; what it did goes into `done` as it goes. The
- * caller has checked that a plan needing `force` was asked to force.
+ * caller has checked that a plan needing `force` was asked to force. It touches
+ * only its own item: a missing worktree is dropped by its own path, never by
+ * `git worktree prune`, which would drop every missing one.
  */
-export const applyRemove = (
+export const applyRemove = async (
   root: string,
-  plan: RemovePlan,
+  { step, force }: RemovePlan,
   done: string[] = [],
-): Promise<string[]> => applyClean(root, [plan.step], plan.force, done);
+): Promise<string[]> => {
+  const { item } = step;
+  if (stepPrunes(step) && !step.removeWorktree && item.path !== null) {
+    await gitOk(root, ["worktree", "remove", item.path]);
+    done.push(`pruned ${item.path}`);
+  }
+  if (step.removeWorktree && item.path !== null) {
+    await removeWorktree(root, item.path, force);
+    done.push(`removed ${item.path}`);
+  }
+  if (step.deleteBranch && item.branch !== undefined) {
+    await gitOk(root, ["branch", force ? "-D" : "-d", item.branch]);
+    done.push(`deleted ${item.branch}`);
+  }
+  return done;
+};

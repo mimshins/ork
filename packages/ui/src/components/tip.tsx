@@ -1,16 +1,17 @@
 /**
  * @file A tooltip: the hover and focus hint on a control, with the CLI command
- *   that does the same thing. A tooltip is visual only, so the control keeps
- *   its own accessible name; `cliDescription` gives screen readers the command.
- *   It opens on hover and on keyboard focus, closes on Escape, and stays open
- *   while the pointer is over it (WCAG 1.4.13).
+ *   that does the same thing on its own line under the words, as a code block
+ *   with no copy button, since a tip can't be clicked into. A tooltip is visual
+ *   only, so the control keeps its own accessible name; `cliDescription` gives
+ *   screen readers the command. It opens on hover and on keyboard focus, closes
+ *   on Escape, and stays open while the pointer is over it (WCAG 1.4.13).
  */
 
 import { Tooltip } from "@base-ui/react/tooltip";
 import type { ReactElement, ReactNode } from "react";
 
-import { Kbd } from "./bits.tsx";
 import { CodeText } from "./code-text.tsx";
+import { Kbd } from "./kbd.tsx";
 
 import styles from "./popup.module.css";
 

@@ -12,6 +12,7 @@ import {
   planLine,
   planRemove,
   type RemovePlan,
+  stateParts,
   stepPrunes,
 } from "@krapht/ork-core";
 
@@ -82,6 +83,9 @@ export const removePlanOf = async (
     known,
     plan,
     answer: {
+      parts: stateParts(step.item, read.head ?? undefined),
+      merged: step.item.merged,
+      ahead: step.item.ahead,
       line: planLine(step),
       removeWorktree: step.removeWorktree,
       deleteBranch: step.deleteBranch,

@@ -12,6 +12,7 @@ import type { RefObject } from "react";
 import { EmptyState } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
 import { CodeText } from "../components/code-text.tsx";
+import { CopyCommand } from "../components/copy-command.tsx";
 import { IconAlert } from "../components/icons.tsx";
 import { type Option, Select } from "../components/select.tsx";
 import { countWords } from "./worktrees-model.ts";
@@ -24,7 +25,6 @@ export type ToolsProps = {
   /** What the filter leaves; null before the first answer. */
   items: readonly WorktreeRow[] | null;
   updating: boolean;
-  failed: boolean;
   /** Why Clean merged… can't be pressed, if it can't. */
   cleanBlocked: string | null;
   cleanButton: RefObject<HTMLButtonElement | null>;
@@ -38,7 +38,6 @@ export const WorktreesTools = ({
   options,
   items,
   updating,
-  failed,
   cleanBlocked,
   cleanButton,
   onFilter,
@@ -57,7 +56,10 @@ export const WorktreesTools = ({
         {items === null ? null : (
           <span className={styles["count"]}>{countWords(items)}</span>
         )}
-        {updating ? <span className={styles["count"]}>Updating…</span> : null}
+        {/* A polite status, always there, so the change is heard. */}
+        <output className={styles["count"]}>
+          {updating ? "Updating…" : ""}
+        </output>
         <Button
           aria-label={
             cleanBlocked === null ? undefined : `Clean merged…: ${cleanBlocked}`
@@ -79,7 +81,7 @@ export const WorktreesTools = ({
           tip="In the project's folder."
           variant="ghost"
         >
-          {failed ? "Try again" : "Reload"}
+          Reload
         </Button>
       </div>
     </div>
@@ -113,21 +115,34 @@ export const NoWorktrees = ({
 }) => {
   if (projects === 0) {
     return (
-      <EmptyState title="No projects registered yet.">
-        <CodeText text="`ork init` in a repository, or `ork register <path>` from outside it." />
+      <EmptyState
+        cli="ork register <path>"
+        focusable
+        title="No projects registered yet."
+      >
+        <p>In a repository:</p>
+        <CopyCommand command="ork init" />
+        <p>Or from outside it:</p>
       </EmptyState>
     );
   }
   if (one !== null) {
     return (
-      <EmptyState title={`No Ork worktrees or branches in ${one}.`}>
+      <EmptyState
+        focusable
+        title={`No Ork worktrees or branches in ${one}.`}
+      >
         Project: All projects shows every project&apos;s.
       </EmptyState>
     );
   }
   return (
-    <EmptyState title="No Ork worktrees or branches.">
-      <CodeText text="A run with `worktree` nodes leaves a worktree and an `ork/` branch for each; they wait here until you remove them. In a terminal, in a project's folder: `ork worktrees`" />
+    <EmptyState
+      cli="ork worktrees"
+      focusable
+      title="No Ork worktrees or branches."
+    >
+      <CodeText text="A run with `worktree` nodes leaves a worktree and an `ork/` branch for each; they wait here until you remove them. In a terminal, in a project's folder:" />
     </EmptyState>
   );
 };

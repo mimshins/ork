@@ -13,6 +13,7 @@ import { type KeyboardEvent, memo, useId } from "react";
 
 import { Button } from "../components/button.tsx";
 import { CodeText } from "../components/code-text.tsx";
+import { CopyCommand } from "../components/copy-command.tsx";
 import { WorktreeBadge } from "../components/status-badge.tsx";
 import { GlyphFailed } from "../components/status-glyphs.tsx";
 import { Unseen } from "../components/unseen.tsx";
@@ -65,6 +66,8 @@ type RowProps = { row: WorktreeRow; project: WorktreesProject; acts: RowActs };
 
 const Row = ({ row, project, acts }: RowProps) => {
   const metaId = useId();
+  const cliId = useId();
+  const twin = removeTwin(row.key, row.path === null, false);
   const parts = rowParts(row);
   const { refusal } = row.remove;
   return (
@@ -95,6 +98,13 @@ const Row = ({ row, project, acts }: RowProps) => {
           </span>
         ))}
       </p>
+      {/* A description set here takes the place of the one `cli` gives. */}
+      <span
+        hidden
+        id={cliId}
+      >
+        {`CLI: ${twin}`}
+      </span>
       <div className={styles["actions"]}>
         <Button
           aria-label={openRunName(row)}
@@ -110,9 +120,9 @@ const Row = ({ row, project, acts }: RowProps) => {
           Open run
         </Button>
         <Button
-          aria-describedby={metaId}
+          aria-describedby={`${metaId} ${cliId}`}
           aria-label={removeName(row)}
-          cli={removeTwin(row.key, row.path === null, false)}
+          cli={twin}
           data-act="remove"
           disabled={refusal !== undefined}
           focusableWhenDisabled
@@ -189,6 +199,14 @@ export const ProjectCard = ({
             />
           </span>
         </p>
+      )}
+      {project.fix === undefined ? null : (
+        <>
+          <p className={styles["note"]}>
+            If it moved, this points Ork at its new place:
+          </p>
+          <CopyCommand command={project.fix} />
+        </>
       )}
     </section>
   );

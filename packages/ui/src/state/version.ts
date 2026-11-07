@@ -3,7 +3,8 @@
  *   ui` reports, from the CLI's record and its one upgrade, fed by the overview
  *   stream's `version` (so a version found while the page is open shows without
  *   a reload); the page's own version, to tell a tab left open across a
- *   restart; and whether the Upgrade dialog is open, and on what.
+ *   restart; whether the Upgrade dialog is open, and on what; and whether it
+ *   waits for the restart it asked for, while the lost connection is expected.
  */
 
 import type { Client, VersionInfo } from "@krapht/ork-server/client";
@@ -26,12 +27,15 @@ export const createVersion = ({
 }) => {
   const info = Container.create<VersionInfo | null>(null);
   const dialog = Container.create<UpgradeOpening | null>(null);
+  const restarting = Container.create(false);
   return {
     info,
     open,
     /** The Ork version this page was built for; null when unknown. */
     pageVersion,
     dialog,
+    /** The dialog waits for `ork ui` to come back from its restart. */
+    restarting,
     receive: (next: VersionInfo): void => {
       void info.setValue(next);
     },

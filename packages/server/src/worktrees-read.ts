@@ -71,13 +71,16 @@ export const projectsFor = (
 export type ReadProject = Known & {
   head: string | null;
   error?: string;
+  /** The command that would fix `error`, when there is one. */
+  fix?: string;
   worktrees?: ProjectWorktrees;
 };
 
-const failed = (known: Known, error: string): ReadProject => ({
+const failed = (known: Known, error: string, fix?: string): ReadProject => ({
   ...known,
   head: null,
   error,
+  ...(fix === undefined ? {} : { fix }),
 });
 
 /** A project's items and runs still going, or why git couldn't read them. */
@@ -86,9 +89,16 @@ export const readProject = async (
   known: Known,
 ): Promise<ReadProject> => {
   if (!existsSync(known.root)) {
+    // Only a registered project can be pointed at its new place.
+    const registered = context.store
+      .projects()
+      .find(p => p.root === known.root);
     return failed(
       known,
-      `its folder ${known.root} is gone. If it moved, \`ork projects move\` points Ork at its new place.`,
+      `its folder ${known.root} is gone.`,
+      registered === undefined
+        ? undefined
+        : `ork projects move ${registered.id} <new path>`,
     );
   }
   const head = await projectHead(known.root);

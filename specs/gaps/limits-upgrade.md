@@ -16,8 +16,6 @@ What the new-version banner and the Upgrade dialog do for now, by choice
 - **L161 · The upgrade is remembered for the server's life.** A reload or a
   second tab finds the running or ended upgrade and its last 2,000 lines of
   output; a restart, or Ctrl-C, forgets them.
-- **L162 · Advice is the CLI's sentence.** The plan's advice is `ork upgrade`'s
-  text as it is, so the commands in it aren't set apart as code in the dialog.
 - **L163 · Dismiss's tooltip is its name.** An icon button's tooltip is its
   label, so it reads "Dismiss for a day" rather than also saying that a newer
   version shows the banner again.

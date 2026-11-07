@@ -47,7 +47,7 @@ export const EDGES = [
     kind: "human",
     label: "designs · watches · answers",
     detail:
-      "You watch and control a run live, chat with its nodes and answer decisions in the browser, and build a workflow there with no YAML to write.",
+      "You watch and control a run live, chat with its nodes and answer decisions in the browser, build a workflow there with no YAML to write, tidy what runs left in their worktrees, and upgrade Ork.",
     status: "partial",
     docs: [DESIGN.ui, UI.guide],
   },
@@ -58,20 +58,25 @@ export const EDGES = [
     kind: "net",
     label: "JSON + SSE",
     detail:
-      "The UI calls the API through the typed client, signed in with the session cookie. Its panels follow the overview and each run over the event streams, and a write comes back on a stream; nothing updates in advance.",
+      "The UI calls the API through the typed client, signed in with the session cookie. Its panels follow the overview and each run over the event streams, and a write comes back on a stream; nothing updates in advance. The overview stream also carries what the server knows of new versions, and the Upgrade dialog follows the package manager's output on a stream of its own.",
     status: "built",
-    docs: [DESIGN.server, SERVER.contract],
+    docs: [DESIGN.server, SERVER.contract, SERVER.updateRoutes],
   },
   {
     id: "cli-server",
     from: "cli",
     to: "server",
     kind: "net",
-    label: "`ork ui` starts it",
+    label: "`ork ui` runs it as a child",
     detail:
-      "`ork ui` starts the server and opens it, signed in, or opens the one `~/.ork/ui.json` names. Every other command works without it: both read and write the same store.",
+      "`ork ui` starts the server as a child (`ork ui --serve`), hands it the port and the token over IPC, and opens it, signed in, or opens the one `~/.ork/ui.json` names. On the page's Restart it starts the launcher again on the same port with the same token, so an upgraded install serves the same tab (ADR-060). Every other command works without it: both read and write the same store.",
     status: "built",
-    docs: [SERVER.command, DESIGN.server],
+    docs: [
+      SERVER.command,
+      SERVER.supervise,
+      SERVER.superviseAdr,
+      DESIGN.server,
+    ],
   },
 
   // ── Surfaces into the engine ─────────────────────────────────────────────
@@ -135,6 +140,22 @@ export const EDGES = [
       "An answer through the API goes to the store as the UI's (the first answer wins) and wakes the run on its socket, as `ork decide` does; the inbox panel is next.",
     status: "built",
     docs: [SERVER.writes, DESIGN.messaging],
+  },
+  {
+    id: "server-worktrees",
+    from: "server",
+    to: "worktreeMgr",
+    kind: "local",
+    label: "Remove… · Clean merged…",
+    detail:
+      "The Worktrees panel's routes read and plan through the same core functions as `ork worktrees`, then remove only what the person confirmed, against the digest of the plan shown. A worktree whose run is still going is always kept.",
+    status: "built",
+    docs: [
+      WORKTREES.routes,
+      WORKTREES.clean,
+      WORKTREES.remove,
+      WORKTREES.routeTests,
+    ],
   },
   {
     id: "events-server",

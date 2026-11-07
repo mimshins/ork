@@ -11,3 +11,5 @@ second, explicit confirm. A plan that changed after you read it removes nothing.
 
 `ork worktrees remove <branch|path> [--branch] [--force] [--yes]` removes one,
 the panel's twin: it prints the plan, and what's lost when it needs `--force`.
+It changes only that item: a worktree whose folder is gone is dropped by its own
+path, never by pruning every missing one.

@@ -156,7 +156,7 @@ describe("the palette", () => {
     expect(upgrade).toMatchObject({
       title: "Upgrade Ork…",
       group: "Ork",
-      detail: "Asks the registry now, as ork upgrade.",
+      detail: "Asks the registry for a new version now.",
     });
     upgrade.run();
     expect(state.version.dialog.getValue()).toBe("ask");

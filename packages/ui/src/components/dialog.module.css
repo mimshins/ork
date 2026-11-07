@@ -49,6 +49,7 @@
   left: var(--dialog-left);
   max-height: var(--dialog-max-height);
   max-width: var(--dialog-max-width);
+  overflow-wrap: anywhere;
   overflow-y: auto;
   padding: var(--dialog-padding);
   position: fixed;
@@ -58,6 +59,15 @@
   width: var(--dialog-width);
   z-index: var(--dialog-z-index);
   opacity: var(--dialog-opacity, revert);
+}
+
+/*
+ * The dialog is the scroller: what's in it keeps its height, so a line kept
+ * for a reason or a failure never shrinks under the buttons (WCAG 1.4.10).
+ */
+.dialog > * {
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .dialog[data-starting-style],
@@ -81,13 +91,6 @@
 
   color: var(--dialog-description-text);
   margin: 0;
-}
-
-.command {
-  --dialog-command-text: var(--color-text-muted);
-
-  color: var(--dialog-command-text);
-  overflow-wrap: anywhere;
 }
 
 .actions {

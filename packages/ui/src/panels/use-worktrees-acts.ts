@@ -80,12 +80,16 @@ export const useWorktreesActs = (
     [state, workspace, panel],
   );
 
-  /** The same button in the row now at `index`, or the panel when none. */
+  /**
+   * The same button in the row now at `index`; with no rows left, the empty
+   * state's title, or the panel.
+   */
   const focusAfterRemoval = (index: number): HTMLElement | boolean => {
     const rows = panel.current?.querySelectorAll<HTMLElement>(ROW) ?? [];
     const row = rows[Math.min(index, rows.length - 1)];
     return (
       row?.querySelector<HTMLElement>('[data-act="remove"]') ??
+      panel.current?.querySelector<HTMLElement>("[data-empty-title]") ??
       panel.current ??
       false
     );

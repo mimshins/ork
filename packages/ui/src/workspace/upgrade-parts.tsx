@@ -5,7 +5,13 @@
  *   and the foot with its note and buttons.
  */
 
-import { type ReactNode, type RefObject, useEffect, useRef } from "react";
+import {
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+} from "react";
 
 import { CodeText } from "../components/code-text.tsx";
 import { IconAlert, IconExternal } from "../components/icons.tsx";
@@ -79,14 +85,31 @@ export const RunningNow = ({ ids }: { ids: readonly string[] }) => {
       <span className={styles["alertIcon"]}>
         <IconAlert />
       </span>
-      <CodeText
-        text={`Running now: ${list}. Their next sessions would start from the new install; upgrading after they finish is safer.`}
-      />
+      <span>
+        <CodeText
+          text={`Running now: ${list}. Their next sessions would start from the new install; upgrading after they finish is safer.`}
+        />
+      </span>
     </p>
   );
 };
 
-/** A step's heading, which takes the focus when it appears. */
+/** Whether the focus went with what had it, to the page or the dialog itself. */
+export const focusLost = (): boolean => {
+  const active = document.activeElement;
+  return (
+    active === null ||
+    active === document.body ||
+    active.getAttribute("role") === "dialog"
+  );
+};
+
+/**
+ * A step's heading, which takes the focus when it appears. It takes it as the
+ * step changes, in the same commit that removed what had it, so the dialog
+ * never sees the focus lost; and again two frames on if the dialog moved it to
+ * itself anyway, as Base UI does when a focused element goes.
+ */
 export const StepHeading = ({
   tone,
   text,
@@ -99,8 +122,18 @@ export const StepHeading = ({
 }) => {
   const own = useRef<HTMLHeadingElement>(null);
   const heading = ref ?? own;
-  useEffect(() => {
+  useLayoutEffect(() => {
     heading.current?.focus();
+  }, [heading]);
+  useEffect(() => {
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        if (focusLost()) heading.current?.focus();
+      });
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+    };
   }, [heading]);
   return (
     <h3
@@ -116,7 +149,9 @@ export const StepHeading = ({
           {tone === "succeeded" ? <GlyphSucceeded /> : <GlyphFailed />}
         </span>
       )}
-      <CodeText text={text} />
+      <span>
+        <CodeText text={text} />
+      </span>
     </h3>
   );
 };
@@ -149,7 +184,10 @@ export const Alert = ({
       role="alert"
     >
       {icon ? <IconAlert /> : null}
-      <CodeText text={text} />
+      {/* One flex item: the words and their code wrap as one sentence. */}
+      <span>
+        <CodeText text={text} />
+      </span>
     </p>
   );
 

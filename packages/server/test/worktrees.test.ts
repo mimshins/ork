@@ -7,7 +7,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -94,6 +94,19 @@ describe("the worktrees list", () => {
     ]);
     expect(demo).toMatchObject({
       error: "Not in a git repository with a commit.",
+      items: [],
+    });
+  });
+
+  it("says a registered project's folder is gone, with the command that fixes it", async () => {
+    const { server, root } = await withRepo();
+    rmSync(root, { recursive: true });
+    const { projects } = dataOf(
+      await server.client.call("worktrees", { query: { project: root } }),
+    );
+    expect(projects[0]).toMatchObject({
+      error: `its folder ${root} is gone.`,
+      fix: "ork projects move app <new path>",
       items: [],
     });
   });

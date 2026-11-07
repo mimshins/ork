@@ -50,9 +50,11 @@ export const DecisionsPanel = () => {
       tabIndex={-1}
     >
       {open.length === 0 ? (
-        <EmptyState title="No decisions waiting.">
-          Questions from your runs land here. In a terminal:{" "}
-          <code>ork decide</code>
+        <EmptyState
+          cli="ork decide"
+          title="No decisions waiting."
+        >
+          Questions from your runs land here. In a terminal:
         </EmptyState>
       ) : (
         <div className={styles["list"]}>

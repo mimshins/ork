@@ -1,6 +1,7 @@
 /**
- * @file What the server lets in (ADR-039, specs/server.md#security): only its
- *   own loopback `Host` (against DNS rebinding); only with its token, from the
+ * @file What the server lets in (ADR-039,
+ *   specs/server/streams-contract-and-security.md#security): only its own
+ *   loopback `Host` (against DNS rebinding); only with its token, from the
  *   session cookie or an `Authorization: Bearer` header; and, for a write sent
  *   with the cookie, only from its own `Origin` (against CSRF). The token in
  *   `?token=` is swapped once for the cookie, with a redirect that takes it out

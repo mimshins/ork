@@ -164,6 +164,22 @@ describe("removing one worktree", () => {
     expect(await applyRemove(root, plan)).toEqual([`pruned ${place}`]);
   });
 
+  it("changes only its own item, leaving another missing worktree as it was", async () => {
+    const root = repo();
+    const lead = worktree(root, "lead");
+    const docs = worktree(root, "docs");
+    rmSync(docs, { recursive: true });
+    expect(
+      await applyRemove(root, planned(await read(root), "ork/r1/lead")),
+    ).toEqual([`removed ${lead}`]);
+    expect(
+      (await read(root)).items.map(i => [i.branch, i.path, i.missing]),
+    ).toEqual([
+      ["ork/r1/docs", docs, true],
+      ["ork/r1/lead", null, false],
+    ]);
+  });
+
   it("names nothing it doesn't have", async () => {
     const root = repo();
     expect(planRemove(await read(root), "ork/r9/none", false)).toEqual({

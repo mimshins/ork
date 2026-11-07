@@ -16,6 +16,7 @@ import { IconClose, IconUpgrade } from "../components/icons.tsx";
 import { useAppState } from "../state/context.tsx";
 import {
   arrivalWords,
+  BANNER_ACTION_ID,
   type Banner,
   bannerKey,
   bannerOf,
@@ -119,6 +120,7 @@ const Content = ({
       <span className={styles["spacer"]} />
       <Button
         cli={banner.kind === "newer" ? "ork upgrade" : undefined}
+        id={BANNER_ACTION_ID}
         onClick={() => {
           if (action.opens === null) reloadPage();
           else onOpen(action.opens);

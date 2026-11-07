@@ -147,6 +147,7 @@ export const NothingSpent = ({
   <>
     <UsageLimits limits={limits} />
     <EmptyState
+      cli="ork run <workflow>"
       title={
         isAllTime(period)
           ? "Nothing spent yet."
@@ -154,7 +155,7 @@ export const NothingSpent = ({
       }
     >
       Claude sessions show here once they finish. Start one with Run workflow,
-      or <code>ork run &lt;workflow&gt;</code>.
+      or in a terminal:
     </EmptyState>
   </>
 );

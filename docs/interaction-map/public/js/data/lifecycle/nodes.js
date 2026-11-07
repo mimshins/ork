@@ -479,7 +479,7 @@ export const NODES = [
     facts: [
       "Its branch is the builder's `output.branch`, which the push and the pull request use; the approver, readonly with no owner, reads it here too.",
       "The spec the `spec` node wrote in the project root is carried in and committed.",
-      "Kept after the run as its result; `ork worktrees clean` removes it when you are done.",
+      "Kept after the run as its result; `ork worktrees clean`, `ork worktrees remove` or the Worktrees panel removes it when you are done, never while its run is still going.",
       "A node's `before:` and `verify:` run here, which a tool node can't reach: tool nodes run in the shared checkout. Work is committed after its check.",
       "With `commit: never` in the project's rules it is detached and nothing is committed; its path is `output.worktree`.",
     ],
@@ -490,7 +490,13 @@ export const NODES = [
         label: "Worktrees in the architecture",
       },
     ],
-    docs: [WORKTREES.workspace, DESIGN.worktrees, NODE_TYPES.verify],
+    docs: [
+      WORKTREES.workspace,
+      WORKTREES.commandSpec,
+      WORKTREES.panelSpec,
+      DESIGN.worktrees,
+      NODE_TYPES.verify,
+    ],
   },
   {
     id: "github",

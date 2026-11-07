@@ -17,15 +17,21 @@ through its typed client.
 
 ## Contents
 
-- [Design system](./ui/design-system.md): the language, the three token layers
-  and their tests, the themes, type, size and motion, the components and the
-  gallery, and the copy style.
-- [Workspace](./ui/workspace.md): the frame, the dock and its theme, minimizing
-  to the rail, the keys and why they are Ork's own, the command palette, focus,
-  the saved layout, and the stack on a narrow window.
-- [Panels](./ui/panels.md): the Runs panel, the Run workflow dialog, the
-  Monitor, the Builder, Logs, Decisions, Chats, Notifications, Usage, Context
-  and Feedback.
+- [Design system](./ui/design-system.md)
+  - [The language](./ui/design-language.md)
+  - [Tokens, themes and type](./ui/design-tokens-and-type.md)
+  - [Components and copy](./ui/design-components-and-copy.md)
+- [Workspace](./ui/workspace.md)
+  - [The frame and the new-version banner](./ui/workspace-frame-and-banner.md)
+  - [The dock and the rail](./ui/workspace-dock-and-rail.md)
+  - [Keys, the command palette and focus](./ui/workspace-keys-palette-and-focus.md)
+  - [The saved layout, a narrow window, and limits](./ui/workspace-layout-and-narrow-window.md)
+- [Panels](./ui/panels.md)
+  - [Runs, Run workflow and the Monitor](./ui/panels-runs-and-monitor.md)
+  - [The Builder, Logs and Decisions](./ui/panels-builder-logs-and-decisions.md)
+  - [Chats, Notifications and Usage](./ui/panels-chats-notifications-and-usage.md)
+  - [Context and Feedback](./ui/panels-context-and-feedback.md)
+  - [Worktrees](./ui/panels-worktrees.md)
 - [Graph](./ui/graph.md): the layout, its edges in the interaction map's style,
   pan and zoom, and the keys and names that make it accessible.
 - [State](./ui/state.md): the containers, streams that stay connected, a run's
@@ -41,27 +47,30 @@ through its typed client.
 - **Decisions inbox:** shaped like the Question tool, with the question, the
   options, the recommended option and one-click answers.
 - **Logs:** a filterable event stream.
-- **Context inspector** (built, [Context](./ui/panels.md#context)): a read-only
-  panel with the resolved layer stack for each node: what it is told, and where
-  each piece comes from.
-- **Worktrees** (built, [Worktrees](./ui/panels.md#worktrees)): what
+- **Context inspector** (built,
+  [Context](./ui/panels-context-and-feedback.md#context)): a read-only panel
+  with the resolved layer stack for each node: what it is told, and where each
+  piece comes from.
+- **Worktrees** (built, [Worktrees](./ui/panels-worktrees.md)): what
   `ork worktrees` lists, for every project, with Remove… one at a time (an
   explicit confirm for what loses work) and Clean merged…, each read then
   confirmed.
-- **Feedback** (built, [Feedback](./ui/panels.md#feedback)): items grouped by
+- **Feedback** (built,
+  [Feedback](./ui/panels-context-and-feedback.md#feedback)): items grouped by
   fingerprint and target, filtered by status and target, with dismiss and
   restore, accept, accept as a lesson, apply (going to the Monitor), split, and
   publish after a preview; a note on a run or a node is written in the Monitor.
   Merging stays `ork feedback triage`'s.
 - **New version** (built,
-  [the banner](./ui/workspace.md#the-new-version-banner)): the CLI's notice as a
-  banner, read from the same record, with an upgrade that runs `ork upgrade`'s
-  plan after the user confirms, and a restart onto the new install
-  ([updates](./cli/updates.md#in-ork-ui)).
+  [the banner](./ui/workspace-frame-and-banner.md#the-new-version-banner)): the
+  CLI's notice as a banner, read from the same record, with an upgrade that runs
+  `ork upgrade`'s plan after the user confirms, and a restart onto the new
+  install ([updates](./cli/updates.md#in-ork-ui)).
 
 ## Workflow builder
 
-Status: **Built**, in [the Builder panel](./ui/panels.md#builder)
+Status: **Built**, in
+[the Builder panel](./ui/panels-builder-logs-and-decisions.md#builder)
 ([ADR-051](../decisions/ADR-051-workflow-builder.md)).
 
 A user can create a workflow from scratch in the UI, and edit an existing one,

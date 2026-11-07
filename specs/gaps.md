@@ -35,11 +35,18 @@ G1–G7 were built on 2026-11-02.
   opening it again brings that back; the Context panel loses the Builder's node
   meanwhile. Keeping the open workflow in the app's state, as the run selection
   is, would carry it across. Found in the Context panel's design review.
-  ([workspace](./ui/workspace.md#a-narrow-window))
+  ([workspace](./ui/workspace-layout-and-narrow-window.md#a-narrow-window))
+- **G10 · The panels' headings skip a level.** Worktrees', Usage's and
+  Decisions' cards are `<h3>` with no `<h2>` above them in the panel: the dock's
+  tab names the panel but isn't a heading. A screen reader's list of headings
+  still reads in order, but the outline starts at level 3. A visually hidden
+  `<h2>` with the panel's title in each panel, or the cards at `<h2>`, would
+  close it. Found in the Worktrees panel's accessibility audit.
+  ([panels](./ui/panels.md))
 
 ## Limits
 
-Each is in [Limits](./gaps/limits.md), from L2 on.
+Each is in one of the limits chunks under [Contents](#contents), from L2 on.
 
 ## Chores
 
@@ -60,7 +67,7 @@ Each is in [Limits](./gaps/limits.md), from L2 on.
   `packages/ui` and the root config don't check any library's declarations, and
   [mcp-sdk.d.ts](../packages/nodes/src/mcp-sdk.d.ts) retypes that client. Remove
   both when those libraries fix them.
-  ([workspace](./ui/workspace.md#the-saved-layout))
+  ([workspace](./ui/workspace-layout-and-narrow-window.md#the-saved-layout))
 - **C9 · An age exclusion waits to be removed.** `pnpm-workspace.yaml` exempts
   containerized-state 3.4.0, its React package 3.4.0 and its persistence plugin
   1.4.0 from the 7-day rule, by exact version, at their author's choice. Remove
@@ -77,6 +84,7 @@ Each is in [Limits](./gaps/limits.md), from L2 on.
 ## Contents
 
 - [Limits](./gaps/limits.md)
+- [Limits: the browser view](./gaps/limits-ui.md)
 - [Limits: scripts](./gaps/limits-scripts.md)
 - [Limits: usage and quotas](./gaps/limits-usage.md)
 - [Limits: the workflow builder](./gaps/limits-builder.md)

@@ -104,6 +104,8 @@ export const askPlan = async (
         ? null
         : { id: installer.id, label: installer.label },
     text: plan.text,
+    words: plan.words,
+    commands: [...plan.commands],
   };
 };
 

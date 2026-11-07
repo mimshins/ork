@@ -10,9 +10,9 @@
 import type { DecisionRecord } from "@krapht/ork-server/client";
 import { type KeyboardEvent, useId, useState } from "react";
 
-import { Kbd } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
 import { CodeText } from "../components/code-text.tsx";
+import { Kbd } from "../components/kbd.tsx";
 import { cliDescription, Tip } from "../components/tip.tsx";
 import {
   answerCommand,

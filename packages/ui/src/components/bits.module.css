@@ -1,5 +1,6 @@
 /**
- * @file The look of the key hint and the empty state.
+ * @file The look of the key hint and the empty state, whose command block sits
+ *   under its words.
  */
 
 .keys {
@@ -57,4 +58,10 @@
   --empty-body-text: var(--color-text-muted);
 
   color: var(--empty-body-text);
+}
+
+.emptyCommand {
+  --empty-command-margin-top: var(--gap-tight);
+
+  margin-top: var(--empty-command-margin-top);
 }

@@ -5,7 +5,9 @@
  *   when the person presses Upgrade, with the server's own command, its output
  *   read from the upgrade's stream; how it ended; and the restart, whose wait
  *   is use-restart-wait.ts's. A refusal because the plan changed shows the new
- *   plan; one because another tab's upgrade runs shows that one.
+ *   plan; one because another tab's upgrade runs shows that one. A plan that
+ *   arrives, and an upgrade that finished, are said in the live region too, as
+ *   a backstop for the heading or the button that changed.
  */
 
 import {
@@ -55,17 +57,29 @@ export type UpgradeStep =
   | { step: "oldVersion"; job: UpgradeJob; version: string }
   | { step: "signedOut" };
 
-export const UNREACHABLE =
-  "Could not reach the npm registry to look for a new version.";
+/** Why the registry wasn't asked, naming the one it tried, as Asking does. */
+export const unreachableWords = (registry: string | null): string =>
+  registry === null
+    ? "Could not reach the npm registry to look for a new version."
+    : `Could not reach the registry at \`${registry}\` to look for a new version.`;
 
 /** What a plan's answer shows. */
-const planStep = (plan: UpgradePlanView): UpgradeStep => {
+const planStep = (
+  plan: UpgradePlanView,
+  registry: string | null,
+): UpgradeStep => {
   if (plan.kind === "unreachable") {
-    return { step: "unreachable", words: UNREACHABLE };
+    return { step: "unreachable", words: unreachableWords(registry) };
   }
   if (plan.kind === "latest") return { step: "latest", current: plan.current };
   return { step: "plan", plan, refusal: null, starting: false };
 };
+
+/** What is said when a plan arrives: the button below changed with it. */
+export const arrivedWords = (plan: ActionPlan): string =>
+  plan.kind === "command"
+    ? `Ork ${plan.latest} is out. The plan is below.`
+    : `Ork ${plan.latest} is out. Ork can't run this upgrade from here; what to do is below.`;
 
 /** The step a job is at: running, or how it ended. */
 export const jobStep = (job: UpgradeJob): UpgradeStep => {
@@ -80,6 +94,8 @@ export type UpgradeOptions = {
   open: OpenSource;
   /** The server's upgrade, when the dialog opens on it; else it asks anew. */
   job: UpgradeJob | null;
+  /** `ORK_UPDATE_REGISTRY`'s registry, or null for npm's. */
+  registry: string | null;
   announce: (words: string) => void;
   /** The plan recorded what the registry said: read the versions again. */
   onAsked: () => void;
@@ -89,6 +105,7 @@ export const useUpgrade = ({
   client,
   open,
   job,
+  registry,
   announce,
   onAsked,
 }: UpgradeOptions) => {
@@ -100,9 +117,9 @@ export const useUpgrade = ({
   const link = useRef<StreamLink | null>(null);
   const last = useRef(0);
   // Read when called, so new callbacks never start the dialog over.
-  const told = useRef({ announce, onAsked });
+  const told = useRef({ announce, onAsked, registry });
   useEffect(() => {
-    told.current = { announce, onAsked };
+    told.current = { announce, onAsked, registry };
   });
 
   /** Reads a job's output, kept and then live, until it ends. */
@@ -124,6 +141,9 @@ export const useUpgrade = ({
             opened.close();
             setLost(false);
             setStep(jobStep({ ...followed, state: end.state, code: end.code }));
+            if (end.state === "succeeded") {
+              told.current.announce(`Upgraded to ${followed.latest}.`);
+            }
           },
         },
         onStatus: status => {
@@ -139,11 +159,11 @@ export const useUpgrade = ({
     setStep({ step: "checking" });
     const answer = await client.call("upgradePlan");
     told.current.onAsked();
-    setStep(
-      answer.ok
-        ? planStep(answer.data)
-        : { step: "unreachable", words: answer.error },
-    );
+    const next: UpgradeStep = answer.ok
+      ? planStep(answer.data, told.current.registry)
+      : { step: "unreachable", words: answer.error };
+    setStep(next);
+    if (next.step === "plan") told.current.announce(arrivedWords(next.plan));
   }, [client]);
 
   // Opening asks, or reads the job it opened on; closing stops reading.
@@ -176,7 +196,7 @@ export const useUpgrade = ({
       setStep({ step: "plan", plan, refusal: error, starting: false });
       return;
     }
-    const next = planStep(again.data);
+    const next = planStep(again.data, told.current.registry);
     setStep(next.step === "plan" ? { ...next, refusal: error } : next);
   };
 

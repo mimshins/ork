@@ -6,6 +6,20 @@
  *   instead. Adding a package manager is one more entry.
  */
 
+/**
+ * What to do when there is no command to run: the CLI's sentence, and the same
+ * as words that lead to commands, for a page that shows each command apart (as
+ * a code block) from the words around it.
+ */
+export type Advice = {
+  /** `ork upgrade`'s line, as it prints it. */
+  text: string;
+  /** The words before the commands, ending in a colon; values in backticks. */
+  words: string;
+  /** Each command to run, in order. */
+  commands: readonly string[];
+};
+
 /** One way Ork can be installed. */
 export type Installer = {
   id: string;
@@ -16,7 +30,7 @@ export type Installer = {
   /** The command that installs `spec` (`@krapht/ork@1.2.0`) this way. */
   command?: (spec: string) => readonly string[];
   /** What to do instead, when there is no command to run. */
-  advice?: (spec: string, script: string) => string;
+  advice?: (spec: string, script: string) => Advice;
 };
 
 const SOURCE = "/packages/cli/";
@@ -32,15 +46,25 @@ export const INSTALLERS: readonly Installer[] = [
     label: "a clone of the repository",
     owns: script =>
       script.includes(SOURCE) && !script.includes("/node_modules/"),
-    advice: (_spec, script) =>
-      `In ${script.slice(0, script.indexOf(SOURCE))}: git pull, then pnpm install and pnpm build.`,
+    advice: (_spec, script) => {
+      const root = script.slice(0, script.indexOf(SOURCE));
+      return {
+        text: `In ${root}: git pull, then pnpm install and pnpm build.`,
+        words: `In \`${root}\`, run:`,
+        commands: ["git pull", "pnpm install", "pnpm build"],
+      };
+    },
   },
   {
     id: "npx",
     label: "npx",
     owns: has("/_npx/"),
-    advice: spec =>
-      `npx keeps its own copy: run npx ${spec} …, or install it with npm install --global ${spec}.`,
+    advice: spec => ({
+      text: `npx keeps its own copy: run npx ${spec} …, or install it with npm install --global ${spec}.`,
+      words:
+        "npx keeps its own copy: run the new version through npx, or install it with npm:",
+      commands: [`npx ${spec} <command>`, `npm install --global ${spec}`],
+    }),
   },
   {
     id: "pnpm",

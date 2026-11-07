@@ -125,11 +125,13 @@ const Words = ({ piece, id }: { piece: Piece; id: string }) => {
             text={`${lines.toLocaleString("en")} ${lines === 1 ? "line" : "lines"}${piece.tokens === undefined ? "" : ` · ${approx(piece.tokens)} tokens`}`}
           />
         </span>
-        <CopyButton
-          label={`Copy the text of ${piece.name}`}
-          resultClass={styles["copied"]}
-          text={text}
-        />
+        <span className={styles["wellCopy"]}>
+          <CopyButton
+            label={`Copy the text of ${piece.name}`}
+            resultClass={styles["copied"]}
+            text={text}
+          />
+        </span>
       </div>
       {text === "" ? (
         <p className={styles["emptyText"]}>

@@ -70,7 +70,7 @@ export const Overlays = () => {
             onClick={() => {
               toasts.add({
                 title: "build failed",
-                description: "exit 1. See ork logs 4f2a1c --node build.",
+                description: "exit 1. Its logs say why.",
               });
             }}
           >
@@ -125,7 +125,7 @@ export const Overlays = () => {
       <ConfirmDialog
         cli="ork stop 4f2a1c"
         confirm="Stop run"
-        description="Running nodes are interrupted. ork resume can replay the run."
+        description="Running nodes are interrupted. It can be resumed later from a terminal."
         onConfirm={noop}
         onOpenChange={setConfirm}
         open={confirm}

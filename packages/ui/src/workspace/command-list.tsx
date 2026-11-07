@@ -6,7 +6,7 @@
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { useMemo } from "react";
 
-import { Kbd } from "../components/bits.tsx";
+import { Kbd } from "../components/kbd.tsx";
 import { type Command, COMMAND_GROUPS, type CommandGroup } from "./commands.ts";
 import { platformIsMac } from "./keys.ts";
 import { keysOf } from "./shortcuts.ts";

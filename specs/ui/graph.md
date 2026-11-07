@@ -4,8 +4,8 @@ _Part of [The UI](../ui.md)._
 
 Status: **Built:** the layout, the view, its keys and its accessible names
 ([graph](../../packages/ui/src/graph/), [tests](../../packages/ui/test/graph/)),
-shown live in the [Monitor](./panels.md#monitor) and in the design system's
-gallery. It is Ork's own, not React Flow, so the state stays in
+shown live in the [Monitor](./panels-runs-and-monitor.md#monitor) and in the
+design system's gallery. It is Ork's own, not React Flow, so the state stays in
 containerized-state ([ADR-040](../../decisions/ADR-040-ui-stack.md)).
 
 ## Layout

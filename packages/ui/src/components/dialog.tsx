@@ -7,15 +7,17 @@
  *   starts on Cancel. One whose action waits for the server stays open until it
  *   answers, and keeps a refusal in it. Each carries `data-modal`, by which the
  *   workspace's keys know to wait (a floating panel is a `dialog` to dockview,
- *   but not modal).
+ *   but not modal), and `aria-modal`, since Base UI leaves the page's live
+ *   regions, and what holds them, unhidden behind it.
  */
 
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
-import { type ReactNode, type RefObject, useState } from "react";
+import { type ReactNode, type RefObject, useRef, useState } from "react";
 
 import { Button } from "./button.tsx";
 import { CodeText } from "./code-text.tsx";
+import { CopyCommand } from "./copy-command.tsx";
 
 import styles from "./dialog.module.css";
 
@@ -60,6 +62,7 @@ export const Dialog = ({
     <BaseDialog.Portal>
       <BaseDialog.Backdrop className={styles["backdrop"]} />
       <BaseDialog.Popup
+        aria-modal="true"
         className={styles["dialog"]}
         data-modal=""
         data-size={size}
@@ -104,8 +107,9 @@ export type ConfirmDialogProps = Controlled & {
   /** Danger for what can't be undone; primary for a cost, such as a run. */
   variant?: "danger" | "primary";
   /**
-   * The CLI command that does the same, shown in the dialog: a tooltip here
-   * would cover the description, and Escape would close it, not the dialog.
+   * The CLI command that does the same, shown in the dialog as a code block: a
+   * tooltip here would cover the description, and Escape would close it, not
+   * the dialog.
    */
   cli?: string | undefined;
   finalFocus?: FinalFocus;
@@ -125,6 +129,9 @@ export const ConfirmDialog = ({
 }: ConfirmDialogProps) => {
   const [waiting, setWaiting] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
+  // Named, since the command block's copy button comes first: Escape there
+  // would close its tooltip, not the dialog.
+  const cancel = useRef<HTMLButtonElement>(null);
   const run = async (): Promise<void> => {
     const done = onConfirm();
     if (done === undefined) {
@@ -151,9 +158,11 @@ export const ConfirmDialog = ({
       <AlertDialog.Portal>
         <AlertDialog.Backdrop className={styles["backdrop"]} />
         <AlertDialog.Popup
+          aria-modal="true"
           className={styles["dialog"]}
           data-modal=""
           finalFocus={finalFocus}
+          initialFocus={cancel}
         >
           <AlertDialog.Title className={styles["title"]}>
             <CodeText text={title} />
@@ -161,9 +170,7 @@ export const ConfirmDialog = ({
           <AlertDialog.Description className={styles["description"]}>
             <CodeText text={description} />
           </AlertDialog.Description>
-          {cli === undefined ? null : (
-            <code className={styles["command"]}>{cli}</code>
-          )}
+          {cli === undefined ? null : <CopyCommand command={cli} />}
           {refusal === null ? null : (
             <p
               className={styles["refusal"]}
@@ -175,6 +182,7 @@ export const ConfirmDialog = ({
           <div className={styles["actions"]}>
             <AlertDialog.Close
               disabled={waiting}
+              ref={cancel}
               render={<Button focusableWhenDisabled>Cancel</Button>}
             />
             <Button

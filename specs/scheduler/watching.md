@@ -215,7 +215,7 @@ restart. A machine that's asleep isn't looking; on waking it looks again, and
 anything new still on the list starts then, up to the daily cap. A run it starts
 is an ordinary run.
 
-`ork watch --status`, [`GET /api/triggers`](../server.md#api) and the Runs panel
+`ork watch --status`, [`GET /api/triggers`](../server/api.md) and the Runs panel
 say what's live and when each last looked. `ork doctor` warns of a live trigger
 that hasn't looked for twice its `every`, when nothing is watching, and of a
 file it can't read.

@@ -7,7 +7,7 @@ Status: **Built** ([manager.ts](../packages/core/src/worktree/manager.ts),
 [remove.ts](../packages/core/src/worktree/remove.ts),
 [words.ts](../packages/core/src/worktree/words.ts),
 [`ork worktrees`](../packages/cli/src/commands/worktrees.ts), the
-[Worktrees panel](./ui/panels.md#worktrees),
+[Worktrees panel](./ui/panels-worktrees.md),
 [tests](../packages/core/test/worktree.test.ts),
 [remove tests](../packages/core/test/worktree-remove.test.ts)). Why:
 [ADR-020](../decisions/ADR-020-worktrees-beside-the-clone.md),
@@ -165,14 +165,16 @@ with their state read from git (`git worktree list --porcelain`):
   worktree is deleted. When that loses work (uncommitted changes, an unmerged
   branch's commits, a detached worktree's unreachable commits) it prints what's
   lost, as `git status --porcelain` and `git log --oneline` print it, and needs
-  `--force`. It asks first, as clean does.
+  `--force`. It asks first, as clean does. It changes only its own item: a
+  worktree whose folder is gone is dropped by its own path
+  (`git worktree remove`), never by a prune of every missing one.
 
 The plain words (an item's name, its merge state, its state's parts, a plan's
 line, why an item can't be removed) are core's
 ([words.ts](../packages/core/src/worktree/words.ts)), so the CLI and the panel
 say the same thing; the CLI colors them.
 
-The [Worktrees panel](./ui/panels.md#worktrees) shows the same list for every
+The [Worktrees panel](./ui/panels-worktrees.md) shows the same list for every
 project Ork knows, with **Remove…** (the twin of `ork worktrees remove`) and
 **Clean merged…** (the twin of `ork worktrees clean`, never forced), through the
-[worktrees routes](./server.md#api).
+[worktrees routes](./server/api.md).

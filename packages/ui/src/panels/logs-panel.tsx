@@ -15,8 +15,11 @@ export const LogsPanel = () => {
   const state = useAppState();
   const { run, node } = useValue(state.selection);
   return run === null ? (
-    <EmptyState title="No run chosen.">
-      Choose one in the Runs panel, or use <code>ork logs &lt;run&gt;</code>.
+    <EmptyState
+      cli="ork logs <run>"
+      title="No run chosen."
+    >
+      Choose one in the Runs panel, or in a terminal:
     </EmptyState>
   ) : (
     <RunLogs

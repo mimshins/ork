@@ -16,18 +16,37 @@ import { type ReactNode, useEffect, useId, useRef } from "react";
 import { Button } from "../components/button.tsx";
 import { Checkbox } from "../components/checkbox.tsx";
 import { CodeText } from "../components/code-text.tsx";
-import { CopyButton } from "../components/copy-button.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
 import { TextWell } from "../components/text-well.tsx";
-import { branchHint, kindOf, lostNote, removeTwin } from "./worktrees-model.ts";
+import {
+  branchHint,
+  kindOf,
+  lostNote,
+  openRunName,
+  removeTwin,
+} from "./worktrees-model.ts";
 
 import styles from "./worktrees.module.css";
 
-/** The row's state, saying what "not merged" is measured against. */
-const stateWords = (row: WorktreeRow, head: string): string =>
-  row.parts
-    .map(part => part.text.replace(/ not merged$/u, ` not merged into ${head}`))
-    .join(" · ") || (row.merged ? `merged into ${head}` : "");
+/**
+ * The item's state, saying what "not merged" is measured against: as the plan
+ * read it, or as the list did until the plan is read.
+ */
+const stateWords = (
+  row: WorktreeRow,
+  plan: RemovePlanAnswer | undefined,
+  head: string,
+): string => {
+  const parts =
+    plan?.parts.map(part => part.text) ??
+    row.parts.map(part =>
+      part.text.replace(/ not merged$/u, ` not merged into ${head}`),
+    );
+  const merged = plan?.merged ?? row.merged;
+  return parts.join(" · ") || (merged ? `merged into ${head}` : "");
+};
+
+const UNREAD = "Nothing to show: its state couldn't be read.";
 
 const Fact = ({ name, children }: { name: string; children: ReactNode }) => (
   <>
@@ -50,7 +69,9 @@ export const PlanWell = ({
     reading={reading}
     steady
   >
-    {plan === undefined ? null : (
+    {plan === undefined ? (
+      UNREAD
+    ) : (
       <>
         {plan.line.text}
         {plan.line.reason === undefined ? null : (
@@ -83,25 +104,18 @@ export const Choice = (props: ChoiceProps) => {
         <Fact name="Run">
           {`${row.runId} · ${row.nodeId}`}
           <Button
-            aria-label={`Open run ${row.runId} at ${row.nodeId}`}
+            aria-label={openRunName(row)}
             disabled={!row.run.known || props.busy}
             focusableWhenDisabled
             onClick={props.onOpenRun}
+            tip={row.run.known ? undefined : "It isn't in Ork's records."}
             variant="ghost"
           >
             Open run
           </Button>
         </Fact>
-        {row.path === null ? null : (
-          <Fact name="Path">
-            {row.path}
-            <CopyButton
-              label={`Copy ${row.path}`}
-              text={row.path}
-            />
-          </Fact>
-        )}
-        <Fact name="State">{stateWords(row, head)}</Fact>
+        {row.path === null ? null : <Fact name="Path">{row.path}</Fact>}
+        <Fact name="State">{stateWords(row, plan, head)}</Fact>
       </dl>
       {kindOf(row) === "worktree" && row.branch !== undefined ? (
         <>
@@ -116,7 +130,7 @@ export const Choice = (props: ChoiceProps) => {
             className={styles["note"]}
             id={hintId}
           >
-            <CodeText text={branchHint(row, head)} />
+            <CodeText text={branchHint(plan ?? row, head)} />
           </p>
         </>
       ) : null}

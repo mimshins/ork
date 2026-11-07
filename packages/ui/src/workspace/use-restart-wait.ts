@@ -4,7 +4,8 @@
  *   isn't back yet; a new pid on the upgraded version means it is, and the page
  *   says so and reloads; a new pid on another version means the `ork` that
  *   started isn't the upgraded one; 401 means this page isn't signed in to it.
- *   After a minute it gives up and says how to start it by hand.
+ *   After a minute it gives up and says how to start it by hand, in the live
+ *   region too. "Reloading…" stays long enough to be heard before the reload.
  */
 
 import type { Client } from "@krapht/ork-server/client";
@@ -24,7 +25,7 @@ export type RestartTiming = {
 export const RESTART_TIMING: RestartTiming = {
   pollMs: 1000,
   waitMs: 60_000,
-  reloadMs: 500,
+  reloadMs: 1500,
 };
 
 type Restarting = Extract<UpgradeStep, { step: "restarting" }>;
@@ -76,6 +77,9 @@ export const useRestartWait = ({
       if (stopped || next === null) return;
       stopped = true;
       setStep(next);
+      if (next.step === "gaveUp") {
+        told.current.announce("`ork ui` didn't come back.");
+      }
       if (next.step !== "back") return;
       told.current.announce(`Ork ${next.version} is up. Reloading…`);
       setTimeout(() => {

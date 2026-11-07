@@ -1,5 +1,5 @@
 /**
- * @file The HTTP API's contract (ADR-039, specs/server.md#api): each route's
+ * @file The HTTP API's contract (ADR-039, specs/server/api.md): each route's
  *   method and path, the Zod schemas of its query and body, and the type of its
  *   answer. The server's handlers are checked against it, and the typed client
  *   is built from it, so the UI and the server cannot drift apart. It imports

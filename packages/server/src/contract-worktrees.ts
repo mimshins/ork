@@ -105,6 +105,8 @@ export type WorktreesProject = {
   /** The current branch, which "merged" is measured against; null detached. */
   head: string | null;
   error?: string;
+  /** The command that would fix `error`, if it moved: `ork projects move …`. */
+  fix?: string;
   items: WorktreeRow[];
 };
 
@@ -118,6 +120,10 @@ export type Losing = {
 };
 
 export type RemovePlanAnswer = {
+  /** The item's state as read for this plan, "not merged" saying into what. */
+  parts: StatePart[];
+  merged: boolean;
+  ahead: number;
   line: PlanLine;
   removeWorktree: boolean;
   deleteBranch: boolean;

@@ -2,6 +2,9 @@
  * @file The copy button: an icon button that copies some text, and a status
  *   that says whether it did. The status is an `<output>`, so a screen reader
  *   hears it too, and its words are new each time, so copying again is heard.
+ *   The status comes first, so the button ends the row: in a block's top-right
+ *   corner, wherever the words "Copied." would push it. It belongs to a code
+ *   block or a well, never to inline code.
  */
 
 import { useState } from "react";
@@ -38,6 +41,9 @@ export const CopyButton = ({ text, label, resultClass }: CopyButtonProps) => {
   };
   return (
     <>
+      <output className={resultClass}>
+        <span key={result.count}>{result.words}</span>
+      </output>
       <IconButton
         label={label}
         onClick={() => {
@@ -46,9 +52,6 @@ export const CopyButton = ({ text, label, resultClass }: CopyButtonProps) => {
       >
         <IconCopy />
       </IconButton>
-      <output className={resultClass}>
-        <span key={result.count}>{result.words}</span>
-      </output>
     </>
   );
 };

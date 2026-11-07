@@ -275,12 +275,10 @@
   overflow-wrap: anywhere;
 }
 
+/* What to run about it, as a code block under its lines. */
 .triggerCommand {
-  --runs-trigger-command-font: var(--font-mono);
-  --runs-trigger-command-text-size: var(--text-mono);
+  --runs-trigger-command-margin-top: var(--gap-hair);
 
   display: block;
-  font-family: var(--runs-trigger-command-font);
-  font-size: var(--runs-trigger-command-text-size);
-  white-space: nowrap;
+  margin-top: var(--runs-trigger-command-margin-top);
 }

@@ -14,8 +14,8 @@ does, with its question asked by a button:
 1. It asks the npm registry now, then shows both versions, the release notes,
    how Ork was installed, and the exact command it would run, such as
    `pnpm add --global @krapht/ork@0.4.0`, with any runs still running. A copy
-   from a clone or through `npx` gets the steps to run yourself instead, and no
-   run button.
+   from a clone or through `npx` gets the steps to run yourself instead, each
+   command in a block to copy, and no run button.
 2. **Upgrade to 0.4.0** runs that command on your machine, as you, and shows its
    output as it comes. The dialog stays open until it ends.
 3. Once it's installed, **Restart** stops `ork ui` and starts the new one in the

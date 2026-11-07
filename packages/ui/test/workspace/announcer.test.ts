@@ -1,7 +1,8 @@
 /**
- * @file Tests for what feeds the live region: a message is said at once and
- *   stays long enough to be heard, and what comes meanwhile is said together
- *   after it, without loss.
+ * @file Tests for what feeds the live region: a message is said on the next
+ *   tick, after the region empties, and stays long enough to be heard; what
+ *   comes meanwhile is said together after it, without loss; and the same words
+ *   again are a change the screen reader hears.
  */
 
 import { Container } from "react-containerized-state";
@@ -23,10 +24,26 @@ afterEach(() => {
 });
 
 describe("the announcer", () => {
-  it("says the first message at once", () => {
+  it("says the first message on the next tick, the region emptied first", () => {
     const { region, announce } = open();
+    void region.setValue("Before.");
     announce("Run failed.");
+    expect(region.getValue()).toBe("");
+    vi.advanceTimersByTime(0);
     expect(region.getValue()).toBe("Run failed.");
+  });
+
+  it("says the same words again as a change", () => {
+    const { region, announce } = open();
+    const seen: string[] = [];
+    announce("Nothing was changed.");
+    vi.advanceTimersByTime(1000);
+    seen.push(region.getValue());
+    announce("Nothing was changed.");
+    seen.push(region.getValue());
+    vi.advanceTimersByTime(0);
+    seen.push(region.getValue());
+    expect(seen).toEqual(["Nothing was changed.", "", "Nothing was changed."]);
   });
 
   it("does not replace a message before it can be heard", () => {
@@ -42,7 +59,7 @@ describe("the announcer", () => {
     announce("Run failed.");
     announce("last failed.");
     announce("Theme: Light.");
-    vi.advanceTimersByTime(1000);
+    vi.advanceTimersByTime(1001);
     expect(region.getValue()).toBe("last failed. Theme: Light.");
   });
 
@@ -51,6 +68,7 @@ describe("the announcer", () => {
     announce("One.");
     vi.advanceTimersByTime(1000);
     announce("Two.");
+    vi.advanceTimersByTime(0);
     expect(region.getValue()).toBe("Two.");
   });
 });

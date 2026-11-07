@@ -14,10 +14,11 @@ what an item allows, the server's feedback routes and the UI's Feedback panel
 [tests](../packages/core/test/feedback.test.ts),
 [built-in tests](../packages/core/test/builtin-workflows.test.ts),
 [routes](../packages/server/src/feedback-routes.ts),
-[panel](./ui/panels.md#feedback), [server](./server.md)). Not part of Ork: the
-maintainers' scheduled triage of the Discussions category, an issues adapter,
-any model call in triage, and lessons or fixes made without a person accepting
-them. How it works for now: [limits](./gaps/limits-feedback.md). Why:
+[panel](./ui/panels-context-and-feedback.md#feedback), [server](./server.md)).
+Not part of Ork: the maintainers' scheduled triage of the Discussions category,
+an issues adapter, any model call in triage, and lessons or fixes made without a
+person accepting them. How it works for now:
+[limits](./gaps/limits-feedback.md). Why:
 [ADR-013](../decisions/ADR-013-feedback-loop.md),
 [ADR-028](../decisions/ADR-028-feedback-capture.md), amended by
 [ADR-059](../decisions/ADR-059-closing-the-feedback-loop.md).

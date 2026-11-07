@@ -2,18 +2,20 @@
  * @file The Upgrade dialog's first steps: asking the registry, which only
  *   reads, then what it found. A plan with the installer's command shows that
  *   exact command, which the server runs as it is, behind Upgrade, never the
- *   default; advice has nothing to run, so no run button. Cancel stays the same
- *   button from the asking to the plan, so the focus never jumps.
+ *   default; advice has nothing to run, so no run button, and shows each of its
+ *   commands as a block under its words. Cancel stays the same button from the
+ *   asking to the plan, so the focus never jumps, and Try again hands the focus
+ *   to it before it goes.
  */
 
 import { type RefObject, useEffect, useId } from "react";
 
 import { Button } from "../components/button.tsx";
 import { CodeText } from "../components/code-text.tsx";
-import { CopyButton } from "../components/copy-button.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
 import {
   Alert,
+  focusLost,
   Foot,
   Reason,
   ReleaseLink,
@@ -30,16 +32,6 @@ export type AskStep = Extract<
   { step: "checking" | "unreachable" | "latest" | "plan" }
 >;
 
-/** Whether the focus went with what had it. */
-export const focusLost = (): boolean => {
-  const active = document.activeElement;
-  return (
-    active === null ||
-    active === document.body ||
-    active.getAttribute("role") === "dialog"
-  );
-};
-
 const asking = (registry: string | null): string =>
   registry === null
     ? "Asking the npm registry for the latest version…"
@@ -55,22 +47,25 @@ const PlanFacts = ({ plan }: { plan: ActionPlan }) => (
       <>
         <dt className={styles["factName"]}>Command</dt>
         <dd className={styles["factValue"]}>
-          <section
-            aria-label="Command to run"
-            className={styles["well"]}
-          >
-            <span>{plan.command.join(" ")}</span>
-            <CopyButton
-              label="Copy the command"
-              text={plan.command.join(" ")}
-            />
+          <section aria-label="Command to run">
+            <CopyCommand command={plan.command.join(" ")} />
           </section>
         </dd>
       </>
     ) : (
       <>
         <dt className={styles["factName"]}>What to do</dt>
-        <dd className={styles["factValue"]}>{plan.text}</dd>
+        <dd className={styles["factValue"]}>
+          <p className={styles["adviceWords"]}>
+            <CodeText text={plan.words} />
+          </p>
+          {plan.commands.map(command => (
+            <CopyCommand
+              command={command}
+              key={command}
+            />
+          ))}
+        </dd>
       </>
     )}
   </dl>
@@ -94,6 +89,7 @@ const PlanBody = ({ plan }: { plan: ActionPlan }) => (
       </p>
     ) : null}
     <RunningNow ids={plan.running} />
+    <p className={styles["note"]}>The same, in a terminal:</p>
     <CopyCommand command="ork upgrade" />
   </>
 );
@@ -172,7 +168,12 @@ export const AskBody = ({
         {step.step === "unreachable" ? (
           <Button
             key="again"
-            onClick={onAsk}
+            onClick={() => {
+              // It goes while the registry is asked: the focus waits on Cancel,
+              // which stays through every step.
+              first.current?.focus();
+              onAsk();
+            }}
             variant="ghost"
           >
             Try again

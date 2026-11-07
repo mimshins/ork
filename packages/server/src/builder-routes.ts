@@ -1,5 +1,5 @@
 /**
- * @file The workflow builder's routes (RFC-008, specs/server.md#api). Each
+ * @file The workflow builder's routes (RFC-008, specs/server/api.md). Each
  *   finds the project, then does its work in `builder.ts`, and a refusal has
  *   the words the user will see.
  */

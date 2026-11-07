@@ -100,10 +100,14 @@ describe("planning an upgrade", () => {
       kind: "advice",
       latest: "0.2.0",
       text: "In /home/me/ork: git pull, then pnpm install and pnpm build.",
+      words: "In `/home/me/ork`, run:",
+      commands: ["git pull", "pnpm install", "pnpm build"],
     });
     expect(plan("0.2.0", "/opt/ork/bin.mjs")).toMatchObject({
       kind: "advice",
       text: "Ork could not tell how it was installed. With npm: npm install --global @krapht/ork@0.2.0",
+      words: "Ork could not tell how it was installed. With npm:",
+      commands: ["npm install --global @krapht/ork@0.2.0"],
     });
   });
 

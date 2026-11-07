@@ -107,11 +107,13 @@ export const NoItems = ({
 }) => {
   if (!anything) {
     return (
-      <EmptyState title="No feedback yet.">
+      <EmptyState
+        cli="ork feedback list"
+        title="No feedback yet."
+      >
         {
-          "What gets in your runs' way lands here: Ork's own signals, the agents' reports and your notes. In a terminal: "
+          "What gets in your runs' way lands here: Ork's own signals, the agents' reports and your notes. In a terminal:"
         }
-        <code>ork feedback list</code>
       </EmptyState>
     );
   }

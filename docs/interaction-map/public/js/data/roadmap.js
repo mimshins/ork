@@ -693,7 +693,7 @@ export const MILESTONES = [
           "decisions/ADR-051-workflow-builder.md",
           "rfcs/archived/RFC-008-workflow-builder.md",
           "specs/ui.md#workflow-builder",
-          "docs/guides/browser-view.md#builder",
+          "docs/guides/browser-view/panels-and-workspace.md#builder",
         ],
       },
       {
@@ -755,20 +755,29 @@ export const MILESTONES = [
       {
         id: "worktrees-panel",
         title: "Worktrees panel",
-        status: "planned",
-        detail: "What `ork worktrees` shows, with cleanup a click away.",
-        docs: ["specs/worktrees.md"],
+        status: "done",
+        date: "2026-11-07",
+        detail:
+          "What `ork worktrees` lists, in the browser, for every project Ork knows, with cleanup a click away: Remove… for one item, with a second, explicit confirm listing what's lost when it needs force, and Clean merged…, merged only and never forced, each read, then confirmed against a digest of the plan shown. `ork worktrees remove` is its twin in a terminal, and both plan in core, so neither removes what the other would keep. Building it found that a clean could take a live run's worktree, which it now always keeps. Its accessibility review set the focus, the names and the failures right, and found the panels' headings skip a level (G10).",
+        docs: [
+          "specs/worktrees.md",
+          "specs/ui/panels-worktrees.md",
+          "docs/guides/worktrees.md",
+          "specs/gaps/limits-worktrees.md",
+        ],
+        commits: ["9b568c9"],
       },
       {
         id: "console-language",
         title: "A new look for the console",
         status: "done",
         detail:
-          "Nested surfaces, two type voices, block meters and a pixel touch, at console density, from a prototype the maintainer approved. Each component now owns its tokens, and a state only sets tokens, so the look changes by changing values. Frames, status glyphs, block meters, tighter panels, the rebuilt Monitor, shorter Notifications rows and the Builder's cards are all in, with new screenshots in the browser guide.",
+          "Nested surfaces, two type voices, block meters and a pixel touch, at console density, from a prototype the maintainer approved. Each component now owns its tokens, and a state only sets tokens, so the look changes by changing values. Frames, status glyphs, block meters, tighter panels, the rebuilt Monitor, shorter Notifications rows and the Builder's cards are all in, with new screenshots in the browser guide. Since then, every command the page shows is a code block with its copy button in the corner, never inline code, and a copy button sits only on a block; a test reads the UI's source for a command in backticks.",
         docs: [
           "decisions/ADR-054-component-tokens.md",
           "decisions/ADR-055-console-language.md",
           "specs/ui/design-system.md",
+          "specs/ui/design-components-and-copy.md#copy",
         ],
         commits: [
           "b296577",
@@ -789,10 +798,17 @@ export const MILESTONES = [
       {
         id: "ui-upgrade",
         title: "New-version banner and upgrade",
-        status: "planned",
+        status: "done",
+        date: "2026-11-07",
         detail:
-          "The CLI's new-version notice as a banner, from the same record, with an upgrade button that runs `ork upgrade`'s plan after the user confirms.",
-        docs: ["specs/cli/updates.md", "specs/ui.md"],
+          "The CLI's new-version notice as a banner in `ork ui`, from the same record, which the server keeps fresh itself while it stays open. Upgrade… runs `ork upgrade`'s plan once you confirm and streams the package manager's output, and Restart brings `ork ui` back on the new install, on the same port and still signed in: `ork ui` now supervises its server as a child to do it (ADR-060). A clone or an `npx` copy gets the steps instead, each command as a block. Its accessibility review gave each step's heading the focus as it opens, and the banner's button the focus on close.",
+        docs: [
+          "decisions/ADR-060-ork-ui-supervises-its-server.md",
+          "specs/cli/updates.md",
+          "docs/guides/browser-view/new-versions.md",
+          "specs/gaps/limits-upgrade.md",
+        ],
+        commits: ["0cb18a2"],
       },
       {
         id: "context-inspector",
@@ -802,7 +818,7 @@ export const MILESTONES = [
         detail:
           "A read-only Context panel with the latest chosen node's layer stack, as `ork context explain` prints it: what it is told, where each piece comes from, its size, and its words a click away. It follows the Monitor's node and the Builder's draft, and names the files that changed after a run started. Its review dropped side stripes from the whole UI.",
         docs: [
-          "specs/ui/panels.md#context",
+          "specs/ui/panels-context-and-feedback.md#context",
           "docs/guides/browser-view.md",
           "specs/gaps/limits-context-inspector.md",
         ],
@@ -821,6 +837,7 @@ export const MILESTONES = [
           "38ea1dc",
           "a2b41c3",
           "9532e22",
+          "32add24",
         ],
         detail:
           "Feedback now changes something. An item becomes a lesson its workflow reads under a 1,500-token cap, or `ork feedback apply` runs Ork's own `ork:feedback-apply` to propose a fix on a branch, behind a keep-or-discard gate, never merged. Triage merges near-duplicates by rules, asking each time, and `split` undoes it; notes come from `ork decide` and the Monitor too. An item about Ork is published to its Discussions after a preview, with your own `gh`, and feedback moves as JSON lines with `export` and `import`. The Feedback panel does all but merging, and one rule says what an item allows, in a terminal or the browser (ADR-059).",

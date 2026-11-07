@@ -82,8 +82,10 @@ ork upgrade [--check] [--yes]
   the running version, the record's `latest`, a `newer` version when one is
   known, its release notes, whether the check is off and why, the registry when
   `ORK_UPDATE_REGISTRY` names one, and the server's upgrade, if any. The banner
-  reads it ([the banner](../ui/workspace.md#the-new-version-banner)); it writes
-  nothing to the record, so it and the terminal's notice don't quiet each other.
+  reads it
+  ([the banner](../ui/workspace-frame-and-banner.md#the-new-version-banner)); it
+  writes nothing to the record, so it and the terminal's notice don't quiet each
+  other.
 - **The daily check, in the server.** `ork ui` can run for days, so its server
   runs the same check when it starts and asks hourly whether one is due, by the
   same record: the machine still asks the registry at most once a day, whoever
@@ -96,8 +98,9 @@ ork upgrade [--check] [--yes]
   `planUpgrade`: it asks the registry now (15 s, even with the check off) and
   records the answer as `ork upgrade` does, then answers `unreachable`,
   `latest`, a `command` (the installer's id and label, its exact argv, the
-  release notes, the runs still running) or `advice` (its text, the installer
-  when one matched), each with a `planId`.
+  release notes, the runs still running) or `advice` (`ork upgrade`'s text; the
+  same as `words` ending in a colon and the `commands` apart, for a page that
+  shows each as a block; the installer when one matched), each with a `planId`.
 - **The upgrade** (`POST /api/upgrade`, `{ planId }`) asks again and runs the
   server's own command, never one the page sends, only when the plan's id still
   matches: 409 "The plan changed since you read it: …" otherwise, 409 while one
@@ -109,7 +112,8 @@ ork upgrade [--check] [--yes]
   another tab reads from `Last-Event-ID` or `?after=`. The job is kept for the
   server's life.
 - **The restart** (`POST /api/restart`) is `ork ui`'s
-  ([ui](../server.md#ork-ui)): 202 with the port and the old pid, then the
-  server closes and `ork ui` starts the launcher again on the same port with the
-  same token. 409 while an upgrade runs; 400 "This server can't restart itself;
-  stop it and run `ork ui`." for a server `ork ui` didn't start.
+  ([ui](../server/what-it-is-and-ork-ui.md#ork-ui)): 202 with the port and the
+  old pid, then the server closes and `ork ui` starts the launcher again on the
+  same port with the same token. 409 while an upgrade runs; 400 "This server
+  can't restart itself; stop it and run `ork ui`." for a server `ork ui` didn't
+  start.

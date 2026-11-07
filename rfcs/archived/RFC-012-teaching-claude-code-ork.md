@@ -48,7 +48,7 @@ Asked on 2026-11-06:
   checks a draft, starts and follows runs, and reads decisions through core
   functions the CLI also uses (`packages/core/src/remote/`,
   [check.ts](../../packages/core/src/project/check.ts),
-  [server](../../specs/server.md#api)).
+  [server](../../specs/server/api.md)).
 - **The MCP SDK is already a dependency** of the CLI, at 1.32.1, for `mcp.call`
   nodes. A stdio server adds no dependency.
 - **A run's sessions load project and local settings only**

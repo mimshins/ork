@@ -1,14 +1,12 @@
 /**
  * @file The gallery's section of what sits on the page: buttons, statuses,
- *   toggles, meters and the small pieces of copy.
+ *   toggles and meters. The pieces of copy are in copy.tsx.
  */
 
 import { useState } from "react";
 
-import { EmptyState, Kbd } from "../components/bits.tsx";
 import { Button, IconButton } from "../components/button.tsx";
 import { Checkbox, Switch } from "../components/checkbox.tsx";
-import { CopyCommand } from "../components/copy-command.tsx";
 import { IconPause, IconPlay, IconStop } from "../components/icons.tsx";
 import { Meter } from "../components/meter.tsx";
 import {
@@ -151,18 +149,6 @@ export const Controls = () => {
             value={2}
           />
         </div>
-      </Section>
-      <Section title="Copy">
-        <Kbd keys={["⌘", "K"]} />
-        <CopyCommand command="ork logs 4f2a1c --follow" />
-        <p>
-          A <a href="#link">link</a> and <code>4f2a1c</code>.
-        </p>
-      </Section>
-      <Section title="Empty state">
-        <EmptyState title="No runs yet.">
-          Start one with Run workflow or <code>ork run &lt;workflow&gt;</code>.
-        </EmptyState>
       </Section>
     </>
   );

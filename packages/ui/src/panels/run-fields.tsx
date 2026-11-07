@@ -95,8 +95,11 @@ export const FlagFields = ({
 
 /** The form has nothing to run without a project; this says how to get one. */
 export const NoProjects = () => (
-  <EmptyState title="No projects yet.">
-    Run <code>ork init</code> in a repository.
+  <EmptyState
+    cli="ork init"
+    title="No projects yet."
+  >
+    Run this in a repository:
   </EmptyState>
 );
 

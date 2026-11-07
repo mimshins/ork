@@ -174,12 +174,25 @@
   --popup-tip-opacity: 0;
 }
 
+/* The command on its own line, as a code block with no copy button: a tip
+   can't be clicked into. */
 .tipCommand {
-  --popup-tip-command-text: var(--color-text-muted);
+  --popup-tip-command-bg: var(--surface-sunken);
+  --popup-tip-command-border: var(--hairline) solid var(--color-border);
+  --popup-tip-command-radius: var(--radius-control);
+  --popup-tip-command-text: var(--color-text);
   --popup-tip-command-text-size: var(--text-small);
+  --popup-tip-command-padding: var(--gap-hair) var(--inset-control);
 
+  background: var(--popup-tip-command-bg);
+  border: var(--popup-tip-command-border);
+  border-radius: var(--popup-tip-command-radius);
   color: var(--popup-tip-command-text);
+  display: block;
   font-size: var(--popup-tip-command-text-size);
+  overflow-wrap: anywhere;
+  padding: var(--popup-tip-command-padding);
+  white-space: pre-wrap;
 }
 
 /* Forced colors take the fills away, and the fill says which item is chosen. */

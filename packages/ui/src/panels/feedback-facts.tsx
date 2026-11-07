@@ -1,17 +1,15 @@
 /**
  * @file An item's facts in the Feedback panel, as `ork feedback show` gives
- *   them: its id (copying the whole fingerprint), what it's about, its kind and
- *   severity, how often and when it was seen, the workflows, models and sources
- *   it came from, and the items triage merged into it, with the way to split
- *   them back out; a fix being proposed for it; and, in a narrow panel, the way
- *   back to the list.
+ *   them: its id, what it's about, its kind and severity, how often and when it
+ *   was seen, the workflows, models and sources it came from, and the items
+ *   triage merged into it, with the way to split them back out; a fix being
+ *   proposed for it; and, in a narrow panel, the way back to the list.
  */
 
 import type { FeedbackItem } from "@krapht/ork-server/client";
 import type { ReactNode } from "react";
 
 import { Button } from "../components/button.tsx";
-import { CopyButton } from "../components/copy-button.tsx";
 import { IconArrowLeft, IconPlay } from "../components/icons.tsx";
 import { Unseen } from "../components/unseen.tsx";
 import { runsWords, short, timesWords } from "./feedback-model.ts";
@@ -46,13 +44,7 @@ export const ItemFacts = ({
   const id = short(item.id);
   return (
     <dl className={styles["facts"]}>
-      <Fact name="Item">
-        {id}
-        <CopyButton
-          label={`Copy the id of ${id}`}
-          text={item.id}
-        />
-      </Fact>
+      <Fact name="Item">{id}</Fact>
       <Fact name="About">{item.target}</Fact>
       <Fact name="Kind">{item.kind}</Fact>
       <Fact name="Severity">{item.severity}</Fact>

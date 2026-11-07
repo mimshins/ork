@@ -3,7 +3,7 @@
 _Part of [Known gaps and limits](../gaps.md)._
 
 What the UI's Context panel says for now, by choice ([ui](../ui.md#panels),
-[server](../server.md#api)).
+[server](../server/api.md)).
 
 - **L146 · A run's node is planned from the project as it is now, in place.**
   Nothing records what a session loaded when it started, so the panel plans the

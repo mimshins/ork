@@ -60,9 +60,9 @@ export const WorktreesPanel = () => {
         cleanBlocked={cleanBlocked(
           shown === null ? null : projects,
           one !== null,
+          read.status === "failed",
         )}
         cleanButton={acts.cleanButton}
-        failed={read.status === "failed"}
         filter={filter}
         items={shown === null ? null : projects.flatMap(p => p.items)}
         onClean={acts.openClean}

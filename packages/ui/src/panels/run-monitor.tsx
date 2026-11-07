@@ -48,8 +48,11 @@ export const RunMonitor = ({ run }: { run: RunView }) => {
       {error === null ? null : <MonitorError error={error} />}
       <div className={styles["canvas"]}>
         {layout === null ? (
-          <EmptyState title="Reading the run…">
-            For now: <code>ork tree {run.id}</code>
+          <EmptyState
+            cli={`ork tree ${run.id}`}
+            title="Reading the run…"
+          >
+            For now:
           </EmptyState>
         ) : (
           <GraphView

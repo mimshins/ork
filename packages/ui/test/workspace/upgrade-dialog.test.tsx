@@ -105,6 +105,8 @@ describe("the plan", () => {
           releaseNotes: NOTES,
           installer: { id: "source", label: "a clone of the repository" },
           text: "In /home/me/ork: git pull, then pnpm install and pnpm build.",
+          words: "In `/home/me/ork`, run:",
+          commands: ["git pull", "pnpm install", "pnpm build"],
           running: [],
         },
       ],
@@ -112,7 +114,15 @@ describe("the plan", () => {
     await openPlan(opened);
     const text = screen.getByRole("dialog").textContent;
     expect(text).toContain("a clone of the repository");
-    expect(text).toContain("git pull, then pnpm install and pnpm build.");
+    expect(text).toContain("In /home/me/ork, run:");
+    expect(
+      ["git pull", "pnpm install", "pnpm build"].map(command =>
+        dialog().getByRole("button", { name: `Copy ${command}` }),
+      ),
+    ).toHaveLength(3);
+    expect(announced(opened)).toContain(
+      "Ork 0.4.0 is out. Ork can't run this upgrade from here; what to do is below.",
+    );
     expect(text).toContain(
       "Ork runs only a package manager's own command from here; this one is yours to run.",
     );
@@ -226,7 +236,7 @@ describe("running the upgrade", () => {
       expect(focused()).toBe(heading);
     });
     expect(dialog().getByRole("alert").textContent).toBe(
-      `${COMMAND.join(" ")} failed (exit 1); the upgrade did not finish. Nothing was restarted; ork ui still runs 0.3.0.`,
+      `pnpm failed (exit 1); the upgrade did not finish. Nothing was restarted; ork ui still runs 0.3.0.`,
     );
     expect(
       dialog().getByRole("button", { name: `Copy ${COMMAND.join(" ")}` }),
@@ -309,6 +319,7 @@ describe("the restart", () => {
     expect((await dialog().findByRole("alert")).textContent).toContain(
       "ork ui is back, but it runs 0.3.0: the ork it started is not the one that was upgraded.",
     );
+    expect(await violations(document.body)).toEqual([]);
     cleanup();
     const signedOut = openUpgrade();
     const again = await upgraded(signedOut);
@@ -317,6 +328,7 @@ describe("the restart", () => {
     expect((await dialog().findByRole("alert")).textContent).toContain(
       "this page isn't signed in to it",
     );
+    expect(await violations(document.body)).toEqual([]);
     expect(opened.reload).not.toHaveBeenCalled();
   });
 

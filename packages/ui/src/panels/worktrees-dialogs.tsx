@@ -55,7 +55,12 @@ export const WorktreesDialogs = ({
       onClose={acts.cleanClosed}
       open={open}
       project={project}
-      scope={merged}
+      scope={merged.map(({ root, name, head }) => ({
+        root,
+        name,
+        head,
+        steps: [],
+      }))}
     />
   ) : null;
 };

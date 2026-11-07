@@ -63,6 +63,8 @@ export type FakeUpgradeServer = {
   version: VersionInfo;
   /** What each ask for the plan answers, in turn; the last one stays. */
   plans: (UpgradePlanView | Answer)[];
+  /** Holds every plan's answer until it settles, to see the asking. */
+  planHold: Promise<void> | null;
   upgrade: Answer;
   restart: Answer;
   /**
@@ -109,9 +111,8 @@ const answerOf = (
   }
   if (route === "POST /api/upgrade/plan") {
     const plan = next(server.plans);
-    return Promise.resolve(
-      json(isAnswer(plan) ? plan : { status: 200, body: plan }),
-    );
+    const answer = json(isAnswer(plan) ? plan : { status: 200, body: plan });
+    return (server.planHold ?? Promise.resolve()).then(() => answer);
   }
   if (route === "POST /api/upgrade") {
     return Promise.resolve(json(server.upgrade));
@@ -127,6 +128,7 @@ export const openFakeUpgrade = (over: FakeOptions = {}) => {
   const server: FakeUpgradeServer = {
     version: VERSION,
     plans: [PLAN],
+    planHold: null,
     upgrade: { status: 202, body: { job: JOB } },
     restart: { status: 202, body: { port: 4417, pid: 1 } },
     health: [HEALTH],
