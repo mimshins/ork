@@ -1,0 +1,15 @@
+/**
+ * @file The look of what the panels' dialogs share: the reason an action
+ *   waits, always there, so a reason is heard as it changes and the dialog
+ *   doesn't jump.
+ */
+
+.reason {
+  --dialog-form-reason-text: var(--color-text-muted);
+  --dialog-form-reason-min-height: 1lh;
+
+  color: var(--dialog-form-reason-text);
+  display: block;
+  min-height: var(--dialog-form-reason-min-height);
+  overflow-wrap: anywhere;
+}

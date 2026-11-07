@@ -6,6 +6,7 @@ import type { ServerContext } from "./context.ts";
 import { feedbackRoutes } from "./feedback-routes.ts";
 import { readRoutes } from "./read-routes.ts";
 import type { Handlers } from "./router.ts";
+import { worktreesRoutes } from "./worktrees-routes.ts";
 import { writeRoutes } from "./write-routes.ts";
 
 export const apiRoutes = (context: ServerContext): Handlers => ({
@@ -14,4 +15,5 @@ export const apiRoutes = (context: ServerContext): Handlers => ({
   ...builderRoutes(context),
   ...contextRoutes(context),
   ...feedbackRoutes(context),
+  ...worktreesRoutes(context),
 });

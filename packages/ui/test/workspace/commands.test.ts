@@ -94,6 +94,7 @@ describe("the commands", () => {
       "8",
       "9",
       undefined,
+      undefined,
     ]);
   });
 

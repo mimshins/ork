@@ -44,6 +44,10 @@ through its typed client.
 - **Context inspector** (built, [Context](./ui/panels.md#context)): a read-only
   panel with the resolved layer stack for each node: what it is told, and where
   each piece comes from.
+- **Worktrees** (built, [Worktrees](./ui/panels.md#worktrees)): what
+  `ork worktrees` lists, for every project, with Remove… one at a time (an
+  explicit confirm for what loses work) and Clean merged…, each read then
+  confirmed.
 - **Feedback** (built, [Feedback](./ui/panels.md#feedback)): items grouped by
   fingerprint and target, filtered by status and target, with dismiss and
   restore, accept, accept as a lesson, apply (going to the Monitor), split, and

@@ -1,14 +1,15 @@
 /**
- * @file What `ork worktrees` shows and cleans: every worktree and branch Ork's
- *   runs recorded creating, whatever the project's git rules named them, and
- *   any `ork/*` branch besides, with their state read from git itself.
+ * @file What `ork worktrees` shows: every worktree and branch Ork's runs
+ *   recorded creating, whatever the project's git rules named them, and any
+ *   `ork/*` branch besides, with their state read from git itself. What clean
+ *   and remove do with them is clean.ts.
  */
 
 import { existsSync } from "node:fs";
 
 import type { EventStore } from "../store/types.ts";
 import { git, gitOk, lines } from "./git.ts";
-import { BRANCH_PREFIX, removeWorktree } from "./manager.ts";
+import { BRANCH_PREFIX } from "./manager.ts";
 
 export type OrkWorktree = {
   /** `undefined` for a detached worktree (`commit: never`). */
@@ -26,6 +27,8 @@ export type OrkWorktree = {
   missing: boolean;
   /** Uncommitted changes in the worktree. */
   dirty: boolean;
+  /** How many: the worktree's `git status --porcelain` lines. */
+  changes: number;
   /**
    * Commits on the branch (or `checkedOut`) that the current branch does not
    * have; for a detached worktree, commits on no branch at all (a `tool.git`
@@ -136,6 +139,7 @@ const stateOf = async (
       ? await onNoBranch(entry === undefined || missing ? undefined : entry)
       : (await git(root, ["rev-list", "--count", `HEAD..${on}`])).stdout;
   const ahead = Number(counted);
+  const changes = lines(status).length;
   return {
     ...(branch === undefined ? {} : { branch }),
     ...(checkedOut === undefined ? {} : { checkedOut }),
@@ -143,7 +147,8 @@ const stateOf = async (
     nodeId: item.nodeId,
     path: entry?.path ?? null,
     missing,
-    dirty: lines(status).length > 0,
+    dirty: changes > 0,
+    changes,
     ahead: Number.isNaN(ahead) ? 0 : ahead,
     merged: on !== undefined && ahead === 0,
     inMainCheckout: entry?.path === root,
@@ -182,113 +187,4 @@ export const listOrkWorktrees = async (
       .map(b => prefixed(b)),
   ];
   return Promise.all(items.map(item => stateOf(root, entries, item)));
-};
-
-export type CleanFilter = {
-  runId?: string;
-  /** Only branches merged into the current branch. */
-  merged: boolean;
-};
-
-export type CleanStep = {
-  item: OrkWorktree;
-  removeWorktree: boolean;
-  deleteBranch: boolean;
-  /** Why the item is left alone, when it is. */
-  skip?: string;
-};
-
-const cleanStep = (
-  item: OrkWorktree,
-  options: { branches: boolean; force: boolean },
-): CleanStep => {
-  if (item.inMainCheckout) {
-    return {
-      item,
-      removeWorktree: false,
-      deleteBranch: false,
-      skip: "checked out in the main checkout",
-    };
-  }
-  if (item.dirty && !options.force) {
-    return {
-      item,
-      removeWorktree: false,
-      deleteBranch: false,
-      skip: "uncommitted changes",
-    };
-  }
-  if (
-    item.branch === undefined &&
-    item.checkedOut === undefined &&
-    item.ahead > 0 &&
-    !options.force
-  ) {
-    return {
-      item,
-      removeWorktree: false,
-      deleteBranch: false,
-      skip: "commits on no branch",
-    };
-  }
-  const removable = item.path !== null && !item.missing;
-  if (
-    options.branches &&
-    item.branch !== undefined &&
-    !item.merged &&
-    !options.force
-  ) {
-    return {
-      item,
-      removeWorktree: removable,
-      deleteBranch: false,
-      skip: "branch not merged",
-    };
-  }
-  return {
-    item,
-    removeWorktree: removable,
-    deleteBranch: options.branches && item.branch !== undefined,
-  };
-};
-
-/**
- * What `ork worktrees clean` would do. A worktree with uncommitted changes, an
- * unmerged branch, or a detached worktree holding commits no branch has, is
- * kept unless `force`.
- */
-export const planClean = (
-  items: readonly OrkWorktree[],
-  filter: CleanFilter,
-  options: { branches: boolean; force: boolean },
-): CleanStep[] =>
-  items
-    .filter(item => filter.runId === undefined || item.runId === filter.runId)
-    .filter(item => !filter.merged || item.merged)
-    .map(item => cleanStep(item, options));
-
-/** Carries out a clean plan, then prunes stale worktree entries. */
-export const applyClean = async (
-  root: string,
-  steps: readonly CleanStep[],
-  force: boolean,
-): Promise<string[]> => {
-  const done: string[] = [];
-  // A worktree whose directory is gone still holds its branch until pruned.
-  await gitOk(root, ["worktree", "prune"]);
-  for (const step of steps) {
-    const { item } = step;
-    if (step.removeWorktree && item.path !== null) {
-      // oxlint-disable-next-line no-await-in-loop -- git takes one lock at a time
-      await removeWorktree(root, item.path, force);
-      done.push(`removed ${item.path}`);
-    }
-    if (step.deleteBranch && item.branch !== undefined) {
-      // oxlint-disable-next-line no-await-in-loop -- git takes one lock at a time
-      await gitOk(root, ["branch", force ? "-D" : "-d", item.branch]);
-      done.push(`deleted ${item.branch}`);
-    }
-  }
-  await gitOk(root, ["worktree", "prune"]);
-  return done;
 };

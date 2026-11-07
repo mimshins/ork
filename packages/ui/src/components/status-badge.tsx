@@ -4,7 +4,8 @@
  *   nouns; a running one blinks, unless the user asks for less motion. It sits
  *   bare among other facts; a pill tints it, for the one that heads a view.
  *   `ItemStatusBadge` does the same for a feedback item's status, on the same
- *   tones, so `Status` stays the run and node states.
+ *   tones, so `Status` stays the run and node states, and `WorktreeBadge` for a
+ *   worktree's merge state.
  */
 
 import type { ComponentType } from "react";
@@ -143,5 +144,22 @@ export const ItemStatusBadge = ({
   <Badge
     look={ITEM_LOOKS[status]}
     pill={pill}
+  />
+);
+
+/** A worktree's branch against the current branch, as `ork worktrees` says. */
+export type WorktreeState = "merged" | "unmerged" | "detached";
+
+/** Merged work is done (phosphor); the rest waits on no one (neutral). */
+const WORKTREE_LOOKS: Record<WorktreeState, Look> = {
+  merged: { Icon: GlyphSucceeded, word: "merged", tone: "succeeded" },
+  unmerged: { Icon: GlyphAccepted, word: "not merged", tone: "queued" },
+  detached: { Icon: GlyphSkipped, word: "detached", tone: "skipped" },
+};
+
+export const WorktreeBadge = ({ state }: { state: WorktreeState }) => (
+  <Badge
+    look={WORKTREE_LOOKS[state]}
+    pill={false}
   />
 );

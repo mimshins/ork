@@ -14,6 +14,7 @@ export * from "./commands/runs.ts";
 export * from "./commands/setup.ts";
 export * from "./commands/ui.ts";
 export * from "./commands/validate.ts";
+export * from "./commands/worktrees.ts";
 export { main } from "./main.ts";
 export * from "./workflows.ts";
 export * from "./doctor/checks.ts";

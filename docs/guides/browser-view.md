@@ -44,9 +44,8 @@ Hover or focus a control to see its command, and copy it where one is shown.
 | Read, dismiss or accept feedback      | `ork feedback list`, `dismiss`, `accept`    |
 | Make an item a lesson, or a fix       | `ork feedback accept --lesson`, `apply`     |
 | Share an item about Ork itself        | `ork feedback publish <item>`               |
-
-Notifications, the theme and the layout belong to the browser and have no
-command.
+| Remove or clean up worktrees          | `ork worktrees remove`, `clean`             |
+| Notifications, the theme, the layout  | none: they belong to the browser            |
 
 ## The panels
 
@@ -103,7 +102,8 @@ see may not be what the run loaded.
 
 **Feedback** lists what got in your runs' way: read an item's records, then
 dismiss it, accept it, make it a lesson, have Ork propose a fix, or share one
-about Ork ([in the browser](./feedback.md#in-the-browser)).
+about Ork ([in the browser](./feedback.md#in-the-browser)). **Worktrees** shows
+what runs left, to tidy up ([in the browser](./worktrees.md#in-the-browser)).
 
 ### Builder
 

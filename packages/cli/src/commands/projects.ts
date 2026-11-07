@@ -4,24 +4,12 @@
  *   follows its moved clone (ADR-035); none writes into a repository. `ork
  *   migrate` moves an attached project into its repository, brings its agents
  *   and skills under `.ork/`, or drafts a workflow from its agents (ADR-036),
- *   and commits nothing. `ork worktrees` lists the worktrees and branches runs
- *   left behind (those the runs recorded creating, whatever the project's git
- *   rules named them, and any `ork/` branch), with their state read from git,
- *   and cleans them up safely after showing the plan and asking.
+ *   and commits nothing. `ork worktrees` is worktrees.ts.
  */
 
-import {
-  applyClean,
-  createdWorktrees,
-  inspectProject,
-  listOrkWorktrees,
-  openStore,
-  type OrkWorktree,
-  planClean,
-} from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
-import { confirm, style, write, writeErr } from "../output.ts";
+import { write, writeErr } from "../output.ts";
 import { draftHere } from "../project/draft.ts";
 import { migrateHere } from "../project/migrate.ts";
 import {
@@ -29,122 +17,8 @@ import {
   formatRegistered,
   registerProject,
 } from "../project/register.ts";
-import { formatPlan, formatWorktrees } from "../project/worktrees.ts";
 import { forget, move, withStore } from "./project-records.ts";
 import { formatReport, validateFile } from "./validate.ts";
-
-const projectRoot = async (): Promise<string | null> =>
-  (await inspectProject(process.cwd()))?.root ?? null;
-
-/** What Ork created in the repo at `root`, from its runs' records and git. */
-const itemsIn = async (root: string): Promise<OrkWorktree[]> => {
-  const store = openStore();
-  try {
-    return await listOrkWorktrees(root, createdWorktrees(store, root));
-  } finally {
-    store.close();
-  }
-};
-
-const notGit = () => {
-  process.stderr.write("Not in a git repository with a commit.\n");
-  process.exitCode = 1;
-};
-
-const show = async (json: boolean): Promise<void> => {
-  const root = await projectRoot();
-  if (root === null) {
-    notGit();
-    return;
-  }
-  const items = await itemsIn(root);
-  if (json) write(JSON.stringify(items, undefined, 2));
-  else for (const line of formatWorktrees(items)) write(line);
-};
-
-const list = defineCommand({
-  meta: {
-    name: "list",
-    description: "List Ork's worktrees and branches (the default)",
-  },
-  args: {
-    json: { type: "boolean", description: "Print JSON", default: false },
-  },
-  run: ({ args }) => show(args.json),
-});
-
-const clean = defineCommand({
-  meta: {
-    name: "clean",
-    description:
-      "Remove Ork's worktrees (merged ones by default); never one with uncommitted changes unless --force",
-  },
-  args: {
-    run: { type: "string", description: "Only this run's worktrees" },
-    all: {
-      type: "boolean",
-      description: "Include worktrees whose branch is not merged",
-      default: false,
-    },
-    branches: {
-      type: "boolean",
-      description: "Also delete the branches",
-      default: false,
-    },
-    force: {
-      type: "boolean",
-      description: "Remove uncommitted changes and unmerged branches too",
-      default: false,
-    },
-    yes: { type: "boolean", description: "Do not ask", default: false },
-  },
-  run: async ({ args }) => {
-    const root = await projectRoot();
-    if (root === null) {
-      notGit();
-      return;
-    }
-    const filter: Parameters<typeof planClean>[1] = { merged: !args.all };
-    if (args.run !== undefined) filter.runId = args.run;
-    const steps = planClean(await itemsIn(root), filter, {
-      branches: args.branches,
-      force: args.force,
-    });
-    const acting = steps.filter(s => s.removeWorktree || s.deleteBranch);
-    if (steps.length === 0 || acting.length === 0) {
-      for (const line of formatPlan(steps)) write(line);
-      write("Nothing to clean.");
-      return;
-    }
-    write("Plan:");
-    for (const line of formatPlan(steps)) write(line);
-    if (!args.yes) {
-      if (!process.stdin.isTTY) {
-        process.stderr.write("Pass --yes to clean without a terminal.\n");
-        process.exitCode = 1;
-        return;
-      }
-      if (!(await confirm("Go ahead? [y/N] "))) return;
-    }
-    for (const line of await applyClean(root, acting, args.force)) {
-      write(`${style("green", "✓")} ${line}`);
-    }
-  },
-});
-
-export const worktrees = defineCommand({
-  meta: {
-    name: "worktrees",
-    description: "Track and clean up the git worktrees Ork creates for runs",
-  },
-  subCommands: { list, clean },
-  run: async ({ rawArgs }) => {
-    // citty runs this after a subcommand too; only list on a bare call.
-    const [first] = rawArgs;
-    if (first === "list" || first === "clean") return;
-    await show(rawArgs.includes("--json"));
-  },
-});
 
 const json = {
   type: "boolean",

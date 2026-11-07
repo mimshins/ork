@@ -49,6 +49,7 @@ import {
   mdiRobotHappyOutline,
   mdiRobotOutline,
   mdiSourceBranch,
+  mdiSourceRepositoryMultiple,
   mdiStop,
   mdiTextBoxOutline,
   mdiWindowMaximize,
@@ -106,6 +107,7 @@ export const IconAlert = icon(mdiAlertOutline);
 export const IconFeedback = icon(mdiMessageAlertOutline);
 export const IconNote = icon(mdiNoteEditOutline);
 export const IconExternal = icon(mdiOpenInNew);
+export const IconWorktrees = icon(mdiSourceRepositoryMultiple);
 
 export const IconLeader = icon(mdiAccountStarOutline);
 export const IconWorker = icon(mdiRobotOutline);

@@ -3,8 +3,13 @@
 Status: **Built** ([manager.ts](../packages/core/src/worktree/manager.ts),
 [workspace.ts](../packages/core/src/worktree/workspace.ts),
 [list.ts](../packages/core/src/worktree/list.ts),
-[`ork worktrees`](../packages/cli/src/commands/projects.ts),
-[tests](../packages/core/test/worktree.test.ts)). Why:
+[clean.ts](../packages/core/src/worktree/clean.ts),
+[remove.ts](../packages/core/src/worktree/remove.ts),
+[words.ts](../packages/core/src/worktree/words.ts),
+[`ork worktrees`](../packages/cli/src/commands/worktrees.ts), the
+[Worktrees panel](./ui/panels.md#worktrees),
+[tests](../packages/core/test/worktree.test.ts),
+[remove tests](../packages/core/test/worktree-remove.test.ts)). Why:
 [ADR-020](../decisions/ADR-020-worktrees-beside-the-clone.md),
 [ADR-018](../decisions/ADR-018-ork-merges-children.md),
 [ADR-032](../decisions/ADR-032-project-rules.md).
@@ -147,9 +152,27 @@ with their state read from git (`git worktree list --porcelain`):
 - `ork worktrees clean`: by default only branches merged into the current
   branch; `--run <id>` limits it to one run; `--all` includes unmerged ones;
   `--branches` also deletes the branches. A worktree with uncommitted changes,
-  an unmerged branch (with `--branches`), or a branch checked out in the main
-  checkout is kept unless `--force`. It prints the plan and asks first; `--yes`
-  skips the question, and without a terminal it is required. Stale entries are
-  pruned.
+  an unmerged branch (with `--branches`), or a detached worktree holding
+  unreachable commits is kept unless `--force`. A branch checked out in the main
+  checkout, and the worktree of a run still going ("its run is still going": its
+  process is alive), are kept even with `--force`; stop the run first. It prints
+  the plan and asks first; `--yes` skips the question, and without a terminal it
+  is required. Stale entries are pruned, and a worktree whose folder is gone
+  shows as `prune worktree` in the plan and `pruned <path>` once done.
+- `ork worktrees remove <branch|path> [--branch] [--force] [--yes]`: one item,
+  by its branch or (detached) its worktree's path, by the same rule as clean. It
+  removes the worktree; `--branch` also deletes the branch, and a branch with no
+  worktree is deleted. When that loses work (uncommitted changes, an unmerged
+  branch's commits, a detached worktree's unreachable commits) it prints what's
+  lost, as `git status --porcelain` and `git log --oneline` print it, and needs
+  `--force`. It asks first, as clean does.
 
-The UI (M2) shows the same list as a panel.
+The plain words (an item's name, its merge state, its state's parts, a plan's
+line, why an item can't be removed) are core's
+([words.ts](../packages/core/src/worktree/words.ts)), so the CLI and the panel
+say the same thing; the CLI colors them.
+
+The [Worktrees panel](./ui/panels.md#worktrees) shows the same list for every
+project Ork knows, with **Remove…** (the twin of `ork worktrees remove`) and
+**Clean merged…** (the twin of `ork worktrees clean`, never forced), through the
+[worktrees routes](./server.md#api).

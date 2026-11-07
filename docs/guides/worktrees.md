@@ -98,16 +98,33 @@ ork worktrees clean               # merged branches' worktrees; asks first
 ork worktrees clean --run <id>    # one run only
 ork worktrees clean --all         # unmerged ones too
 ork worktrees clean --branches    # delete the branches as well
+ork worktrees remove <branch>     # one worktree (or a detached one's path)
+ork worktrees remove <branch> --branch   # and its branch
 ```
 
 The list shows each branch's worktree path, uncommitted changes, and commits not
 yet merged into your current branch. Cleaning keeps anything with uncommitted
-changes, or a branch you have checked out, unless you add `--force`. Without a
-terminal, `--yes` is required. It lists what your runs recorded creating,
-whatever your rules named it, plus any `ork/` branch, and reads their state from
-git, so it works for any run, even one from a crashed process. A detached
-worktree (`commit: never`) is cleaned only with `--all`, and one holding a
-commit no branch has (a `tool.git` commit) only with `--force` too.
+changes unless you add `--force`, and never removes a branch you have checked
+out or the worktree of a run that's still going: stop the run first.
+`ork worktrees remove` takes one item by the same rule; when removing it would
+lose work it prints what (the changes and commits, as git prints them) and needs
+`--force`. Without a terminal, `--yes` is required. It lists what your runs
+recorded creating, whatever your rules named it, plus any `ork/` branch, and
+reads their state from git, so it works for any run, even one from a crashed
+process. A detached worktree (`commit: never`) is cleaned only with `--all`, and
+one holding a commit no branch has (a `tool.git` commit) only with `--force`
+too.
+
+### In the browser
+
+The **Worktrees** panel in [`ork ui`](./browser-view.md) shows the same list for
+every project at once, with a project filter. **Remove…** on a row shows its
+plan and the matching `ork worktrees remove` command, and asks; if removing it
+would lose work, a second step lists exactly what, and only **Remove and lose
+this work** goes ahead. **Clean merged…** shows each project's
+`ork worktrees clean` plan, merged branches only and never forced, then asks. If
+anything changed after you read a plan, nothing is removed and the new plan is
+shown.
 
 ## Running without worktrees
 

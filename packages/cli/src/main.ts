@@ -6,7 +6,7 @@ import { chat } from "./commands/chat.ts";
 import { context } from "./commands/context.ts";
 import { decide, resume, stop } from "./commands/control.ts";
 import { doctor, ORK_META, upgrade } from "./commands/install.ts";
-import { migrate, projects, register, worktrees } from "./commands/projects.ts";
+import { migrate, projects, register } from "./commands/projects.ts";
 import { run } from "./commands/run.ts";
 import { feedback, logs, ps, tree } from "./commands/runs.ts";
 import { agents, init, link } from "./commands/setup.ts";
@@ -42,8 +42,11 @@ export const main = defineCommand({
     resume,
     feedback,
     context,
-    worktrees,
-    wt: worktrees,
+    // Loaded on use, like `ork ui`.
+    worktrees: () =>
+      import("./commands/worktrees.ts").then(module => module.worktrees),
+    wt: () =>
+      import("./commands/worktrees.ts").then(module => module.worktrees),
     // Loaded on use: most commands never need it.
     watch: () => import("./commands/watch.ts").then(module => module.watch),
     // Loaded on use: it loads the server and the MCP SDK.

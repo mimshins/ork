@@ -418,17 +418,6 @@
   gap: var(--feedback-pair-gap);
 }
 
-/* Always there, so a reason is heard as it changes and the form doesn't jump. */
-.reason {
-  --feedback-reason-text: var(--color-text-muted);
-  --feedback-reason-min-height: 1lh;
-
-  color: var(--feedback-reason-text);
-  display: block;
-  min-height: var(--feedback-reason-min-height);
-  overflow-wrap: anywhere;
-}
-
 .place {
   --feedback-place-font: var(--font-mono);
   --feedback-place-text-size: var(--text-small);
@@ -499,17 +488,6 @@
 
 .preview:focus-visible {
   --focus-ring-offset: calc(var(--focus-width) * -1);
-}
-
-.failureSlot {
-  --feedback-failure-slot-min-height: var(--control-height);
-  --feedback-failure-slot-gap: var(--gap);
-
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--feedback-failure-slot-gap);
-  min-height: var(--feedback-failure-slot-min-height);
 }
 
 .link {

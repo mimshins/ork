@@ -15,9 +15,9 @@ project's `workflows/`.
 
 ## Worktrees
 
-`ork worktrees` lists and cleans the worktrees and branches runs recorded
-creating, whatever the project's [rules](../project-rules.md) named them, and
-any `ork/` branch; see
+`ork worktrees` lists, cleans and removes the worktrees and branches runs
+recorded creating, whatever the project's [rules](../project-rules.md) named
+them, and any `ork/` branch; see
 [Worktrees: ork worktrees](../worktrees.md#ork-worktrees).
 
 ## Agents

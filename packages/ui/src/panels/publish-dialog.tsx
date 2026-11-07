@@ -14,9 +14,9 @@ import { Button } from "../components/button.tsx";
 import { Checkbox } from "../components/checkbox.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
 import { Dialog } from "../components/dialog.tsx";
+import { FailureSlot } from "../components/failure-slot.tsx";
 import { Reason } from "./dialog-form.tsx";
 import {
-  FailureSlot,
   HideNamesHint,
   Posted,
   PreviewWells,

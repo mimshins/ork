@@ -11,3 +11,4 @@ export * from "./contract-graph.ts";
 export * from "./contract-builder.ts";
 export * from "./contract-context.ts";
 export * from "./contract-feedback.ts";
+export * from "./contract-worktrees.ts";

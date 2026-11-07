@@ -74,8 +74,8 @@ const add = (
   });
 
 /**
- * Runs on the left, Monitor over Logs, Chats, Usage and Feedback, and Decisions
- * and Notifications over Context on the right.
+ * Runs on the left, Monitor over Logs, Chats, Usage, Feedback and Worktrees,
+ * and Decisions and Notifications over Context on the right.
  */
 export const addDefaultLayout = (api: DockviewApi): void => {
   const monitor = add(api, "monitor", {});
@@ -118,6 +118,11 @@ export const addDefaultLayout = (api: DockviewApi): void => {
   // Wide enough for its list beside an item, and never hiding a decision.
   add(api, "feedback", {
     position: { referencePanel: "usage", direction: "within" },
+    inactive: true,
+  });
+  // Wide enough for a path on one line, and never hiding a decision.
+  add(api, "worktrees", {
+    position: { referencePanel: "feedback", direction: "within" },
     inactive: true,
   });
   monitor.api.setActive();

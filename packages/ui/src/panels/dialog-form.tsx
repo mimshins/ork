@@ -1,14 +1,16 @@
 /**
- * @file The pieces the Feedback panel's dialogs share: a form that also sends
- *   on ⌘Enter or Ctrl+Enter (Enter in a text field is a new line), the reason
- *   it can't be sent yet, said as it changes and tied to the control it
- *   explains, and a refusal that stays in the dialog.
+ * @file The pieces the panels' dialogs share: a form that also sends on ⌘Enter
+ *   or Ctrl+Enter (Enter in a text field is a new line), the reason it can't be
+ *   sent yet, said as it changes and tied to the control it explains (the
+ *   Worktrees panel's dialogs use it too, with its own look), and a refusal
+ *   that stays in the dialog.
  */
 
 import type { ReactNode } from "react";
 
 import { CodeText } from "../components/code-text.tsx";
 
+import own from "./dialog-form.module.css";
 import styles from "./feedback.module.css";
 
 /** What the send button takes as its keys. */
@@ -45,7 +47,7 @@ export const DialogForm = ({
  */
 export const Reason = ({ why, id }: { why: string | null; id?: string }) => (
   <output
-    className={styles["reason"]}
+    className={own["reason"]}
     id={id}
   >
     <CodeText text={why ?? ""} />

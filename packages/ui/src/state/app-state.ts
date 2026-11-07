@@ -111,6 +111,10 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
   const feedbackFilter = Container.create({ status: "open", about: "all" });
   /** Every feedback item, dismissed ones too: no stream sends them. */
   const feedback = createRead(() => client.call("feedbackItems"));
+  /** The Worktrees panel's project, its own, for the page's life. */
+  const worktreesFilter = Container.create(ALL_PROJECTS);
+  /** What `ork worktrees` lists, every project's: no stream sends it. */
+  const worktrees = createRead(() => client.call("worktrees"));
   const feeds = createFeeds({ client, open });
   const decisionHistory = createDecisionHistory(client);
   const notifications = createNotifications({ runs, decisions, storage });
@@ -146,6 +150,8 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     usageFilter,
     feedback,
     feedbackFilter,
+    worktrees,
+    worktreesFilter,
     triggers,
     /** Asks for a run; it then arrives on the stream like any other. */
     startRun: (body: BodyOf<"start">) => client.call("start", { body }),

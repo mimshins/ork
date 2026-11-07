@@ -1,60 +1,71 @@
 /**
  * @file What `ork worktrees` prints: each worktree or branch a run left, with
- *   its state read from git, and the plan `ork worktrees clean` would carry
- *   out.
+ *   its state read from git, the plan `ork worktrees clean` or `remove` would
+ *   carry out, and what a forced remove would lose. The words are core's
+ *   (worktree/words.ts), which the Worktrees panel says too; this only colors
+ *   them.
  */
 
-import type { CleanStep, OrkWorktree } from "@krapht/ork-core";
+import {
+  type CleanStep,
+  type LostWork,
+  labelOf,
+  mergeStateOf,
+  type OrkWorktree,
+  planLine,
+  stateParts,
+} from "@krapht/ork-core";
 
 import { style } from "../output.ts";
 
-/** One line of state: where it is and what clean would care about. */
+/** One line of state: its merge state, then what clean would care about. */
 export const worktreeState = (item: OrkWorktree): string => {
-  const parts: string[] = [];
-  if (item.path === null) parts.push("no worktree");
-  else if (item.missing) parts.push("missing (prunable)");
-  if (item.dirty) parts.push(style("yellow", "uncommitted changes"));
-  const commits = item.merged
-    ? style("green", "merged")
-    : `${String(item.ahead)} commit(s) not merged`;
-  if (item.checkedOut !== undefined) {
-    parts.push(`on the workflow's branch ${item.checkedOut}`, commits);
-  } else if (item.branch === undefined) {
-    parts.push(
-      item.ahead > 0
-        ? style(
-            "yellow",
-            `detached, ${String(item.ahead)} commit(s) on no branch`,
-          )
-        : "detached, nothing committed",
-    );
-  } else {
-    parts.push(commits);
-  }
-  if (item.inMainCheckout) parts.push("checked out here");
-  return parts.join(" · ");
+  const merge = mergeStateOf(item);
+  const head =
+    merge === "merged"
+      ? [style("green", "merged")]
+      : merge === "detached"
+        ? ["detached"]
+        : [];
+  const parts = stateParts(item).map(part =>
+    part.risk ? style("yellow", part.text) : part.text,
+  );
+  return [...head, ...parts].join(" · ");
 };
 
-/** A worktree's name: its branch, or its run and node when created detached. */
-const labelOf = (item: OrkWorktree): string =>
-  item.branch ?? `${item.runId}/${item.nodeId} (detached)`;
+/** A name as the list shows it, saying when it's detached. */
+const nameOf = (item: OrkWorktree): string =>
+  mergeStateOf(item) === "detached"
+    ? `${labelOf(item)} (detached)`
+    : labelOf(item);
 
 export const formatWorktrees = (items: readonly OrkWorktree[]): string[] => {
   if (items.length === 0) return ["No Ork worktrees or branches."];
-  const width = Math.max(...items.map(i => labelOf(i).length));
+  const width = Math.max(...items.map(i => nameOf(i).length));
   return items.flatMap(item => [
-    `${style("bold", labelOf(item).padEnd(width))}  ${worktreeState(item)}`,
+    `${style("bold", nameOf(item).padEnd(width))}  ${worktreeState(item)}`,
     ...(item.path === null ? [] : [`  ${style("dim", item.path)}`]),
   ]);
 };
 
 export const formatPlan = (steps: readonly CleanStep[]): string[] =>
   steps.map(step => {
-    const actions = [
-      ...(step.removeWorktree ? ["remove worktree"] : []),
-      ...(step.deleteBranch ? ["delete branch"] : []),
-    ];
-    const what = actions.length > 0 ? actions.join(" + ") : "keep";
-    const why = step.skip === undefined ? "" : style("dim", ` (${step.skip})`);
-    return `  ${labelOf(step.item)}: ${what}${why}`;
+    const { text, reason } = planLine(step);
+    const why = reason === undefined ? "" : style("dim", ` (${reason})`);
+    return `  ${text}${why}`;
   });
+
+/** What a forced remove loses, as git prints it, under a heading each. */
+export const formatLost = (lost: LostWork): string[] => [
+  ...(lost.changes.length === 0
+    ? []
+    : ["Uncommitted changes:", ...lost.changes.map(line => `  ${line}`)]),
+  ...(lost.commits.length === 0
+    ? []
+    : [
+        lost.commitsOn === "no branch"
+          ? "Commits on no branch:"
+          : "Commits not merged:",
+        ...lost.commits.map(line => `  ${line}`),
+      ]),
+];

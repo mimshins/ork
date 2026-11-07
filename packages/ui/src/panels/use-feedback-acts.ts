@@ -21,6 +21,7 @@ import {
   shownItems,
 } from "./feedback-model.ts";
 import { tokensWords } from "./lesson-model.ts";
+import { openRunIn } from "./open-run.ts";
 
 /** Where the focus goes next: a row, the item's heading, or the list. */
 export type FocusTarget = { row: string } | "heading" | "list";
@@ -41,24 +42,9 @@ export const useFeedbackActs = (options: ActsOptions) => {
   const moving = useRef(false);
   const itemsNow = (): FeedbackItem[] =>
     shownOf(state.feedback.state.getValue())?.data ?? [];
-  /**
-   * Shows a run in the Monitor, its heading taking the focus. The dock focuses
-   * the Monitor's tab on its next frame, so the heading is focused after that,
-   * if it's drawn, and the wait for it ends there; a run not shown yet takes
-   * the focus when its header first draws.
-   */
+  /** Shows a run in the Monitor, its heading taking the focus. */
   const arrive = (run: string, node?: string): void => {
-    state.arriveAt(run);
-    if (node !== undefined) state.selectNode(node);
-    workspace?.goTo("monitor");
-    requestAnimationFrame(() => {
-      const heading = document.querySelector<HTMLElement>(
-        `[data-run-heading="${run}"]`,
-      );
-      if (heading === null) return;
-      state.takeArrival(run);
-      heading.focus();
-    });
+    openRunIn(state, workspace, run, node);
   };
   const reloadAll = async (): Promise<void> => {
     await state.feedback.load();

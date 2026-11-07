@@ -316,6 +316,7 @@ describe("ork worktrees", () => {
     path: "/w/ork-r1-lead",
     missing: false,
     dirty: true,
+    changes: 1,
     ahead: 2,
     merged: false,
     inMainCheckout: false,
@@ -330,14 +331,28 @@ describe("ork worktrees", () => {
           branch: "ork/r1/fix",
           path: null,
           dirty: false,
+          changes: 0,
           ahead: 0,
           merged: true,
         },
+        {
+          runId: "r1",
+          nodeId: "check",
+          path: "/w/ork-r1-check",
+          missing: false,
+          dirty: false,
+          changes: 0,
+          ahead: 1,
+          merged: false,
+          inMainCheckout: false,
+        },
       ]),
     ).toEqual([
-      "ork/r1/lead  uncommitted changes · 2 commit(s) not merged",
+      "ork/r1/lead          uncommitted changes · 2 commits not merged",
       "  /w/ork-r1-lead",
-      "ork/r1/fix   no worktree · merged",
+      "ork/r1/fix           merged · no worktree",
+      "r1/check (detached)  detached · 1 commit on no branch",
+      "  /w/ork-r1-check",
     ]);
     expect(
       formatPlan([

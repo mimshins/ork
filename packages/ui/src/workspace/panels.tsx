@@ -32,7 +32,8 @@ export type PanelId =
   | "usage"
   | "builder"
   | "context"
-  | "feedback";
+  | "feedback"
+  | "worktrees";
 
 export type PanelSpec = {
   id: PanelId;
@@ -84,6 +85,8 @@ const SPECS: Record<PanelId, PanelSpec> = {
   context: { id: "context", ...REVIEW_PANELS.context },
   // Last, so the others keep their Go to digits: it has none of its own.
   feedback: { id: "feedback", ...REVIEW_PANELS.feedback },
+  // After Feedback, so no Go to digit moves; it has none either.
+  worktrees: { id: "worktrees", ...REVIEW_PANELS.worktrees },
 };
 
 export const PANELS: readonly PanelSpec[] = Object.values(SPECS);

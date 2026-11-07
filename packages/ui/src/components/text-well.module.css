@@ -1,0 +1,61 @@
+/**
+ * @file The text well's look: a sunken, wrapped block of monospace that
+ *   scrolls past its height, with an edge where more contrast is asked for
+ *   and in forced colors.
+ */
+
+.well {
+  --text-well-bg: var(--surface-sunken);
+  --text-well-text: var(--color-text);
+  --text-well-font: var(--font-mono);
+  --text-well-text-size: var(--text-mono);
+  --text-well-padding: var(--inset-control);
+  --text-well-radius: var(--radius-control);
+  --text-well-max-height: 16rem;
+  --text-well-min-height: 0;
+  --text-well-border-color: transparent;
+  --text-well-border-width: var(--hairline);
+  --text-well-border-style: solid;
+
+  background: var(--text-well-bg);
+  border-color: var(--text-well-border-color);
+  border-radius: var(--text-well-radius);
+  border-style: var(--text-well-border-style);
+  border-width: var(--text-well-border-width);
+  color: var(--text-well-text);
+  font-family: var(--text-well-font);
+  font-size: var(--text-well-text-size);
+  margin: 0;
+  max-height: var(--text-well-max-height);
+  min-height: var(--text-well-min-height);
+  overflow-wrap: anywhere;
+  overflow-y: auto;
+  padding: var(--text-well-padding);
+  white-space: pre-wrap;
+}
+
+/* Room kept for a line or two, so reading then read doesn't jump. */
+.well[data-steady] {
+  --text-well-min-height: 2.5rem;
+}
+
+/* A well among others, such as git's lines of what's lost. */
+.well[data-short] {
+  --text-well-max-height: 12rem;
+}
+
+.well:focus-visible {
+  --focus-ring-offset: calc(var(--focus-width) * -1);
+}
+
+@media (prefers-contrast: more) {
+  .well {
+    --text-well-border-color: var(--color-border);
+  }
+}
+
+@media (forced-colors: active) {
+  .well {
+    --text-well-border-color: CanvasText;
+  }
+}

@@ -1,0 +1,25 @@
+/**
+ * @file The failure slot's look: a line kept for a failure, its words in the
+ *   danger text, with Try again beside them.
+ */
+
+.slot {
+  --failure-slot-min-height: var(--control-height);
+  --failure-slot-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--failure-slot-gap);
+  min-height: var(--failure-slot-min-height);
+}
+
+.alert {
+  --failure-slot-text: var(--color-danger-text);
+  --failure-slot-text-size: var(--text-small);
+
+  color: var(--failure-slot-text);
+  font-size: var(--failure-slot-text-size);
+  margin: 0;
+  overflow-wrap: anywhere;
+}

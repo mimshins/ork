@@ -1,0 +1,327 @@
+/**
+ * @file The look of the Worktrees panel and its dialogs: a frame of cards (the
+ *   tools, then one per project), each a list of rows, a row's name, merge
+ *   badge and actions over its state; from 40rem the actions sit on the
+ *   name's line, narrower on a line of their own. Work a removal would lose is
+ *   a heavier word, never a color. The column scrolls as one, so nothing is
+ *   cut at 200% zoom.
+ */
+
+.panel {
+  --worktrees-panel-bg: var(--surface-frame);
+  --worktrees-panel-gap: var(--space-3);
+
+  background: var(--worktrees-panel-bg);
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--worktrees-panel-gap);
+  height: 100%;
+  min-height: 0;
+  overflow-wrap: anywhere;
+  overflow-y: auto;
+}
+
+.panel:focus-visible {
+  --focus-ring-offset: calc(var(--focus-width) * -1);
+}
+
+.tools,
+.card {
+  --worktrees-card-bg: var(--surface-panel);
+  --worktrees-card-radius: var(--radius-panel);
+  --worktrees-card-padding: var(--inset-tools);
+  --worktrees-card-gap: var(--gap);
+
+  background: var(--worktrees-card-bg);
+  border-radius: var(--worktrees-card-radius);
+  display: flex;
+  flex: none;
+  gap: var(--worktrees-card-gap);
+  padding: var(--worktrees-card-padding);
+}
+
+.tools {
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.card {
+  flex-direction: column;
+  min-width: 0;
+}
+
+.toolsEnd {
+  --worktrees-tools-end-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--worktrees-tools-end-gap);
+  margin-inline-start: auto;
+}
+
+.count {
+  --worktrees-count-text: var(--color-text-muted);
+  --worktrees-count-font: var(--font-mono);
+  --worktrees-count-text-size: var(--text-small);
+
+  color: var(--worktrees-count-text);
+  font-family: var(--worktrees-count-font);
+  font-size: var(--worktrees-count-text-size);
+}
+
+.head {
+  --worktrees-head-gap: var(--gap);
+
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--worktrees-head-gap);
+}
+
+.name {
+  --worktrees-head-text-size: var(--text-ui);
+  --worktrees-head-weight: var(--weight-strong);
+
+  font-size: var(--worktrees-head-text-size);
+  font-weight: var(--worktrees-head-weight);
+  margin: 0;
+}
+
+.headMeta {
+  --worktrees-head-meta-text: var(--color-text-muted);
+  --worktrees-head-meta-font: var(--font-mono);
+  --worktrees-head-meta-text-size: var(--text-mono);
+
+  color: var(--worktrees-head-meta-text);
+  font-family: var(--worktrees-head-meta-font);
+  font-size: var(--worktrees-head-meta-text-size);
+  margin: 0;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  --worktrees-row-min-height: 2.75rem;
+  --worktrees-row-padding: var(--space-4) var(--space-6);
+  --worktrees-row-border-block-start: var(--hairline) solid var(--color-border);
+  --worktrees-row-columns: minmax(0, 1fr) auto;
+  --worktrees-row-areas: "name badge" "meta meta" "actions actions";
+  --worktrees-row-gap: var(--gap-hair);
+
+  align-items: center;
+  border-block-start: var(--worktrees-row-border-block-start);
+  column-gap: var(--worktrees-row-gap);
+  display: grid;
+  grid-template-areas: var(--worktrees-row-areas);
+  grid-template-columns: var(--worktrees-row-columns);
+  min-height: var(--worktrees-row-min-height);
+  padding: var(--worktrees-row-padding);
+  row-gap: var(--worktrees-row-gap);
+}
+
+.row:first-child {
+  --worktrees-row-border-block-start: 0;
+}
+
+@container (width >= 40rem) {
+  .row {
+    --worktrees-row-columns: minmax(0, 1fr) auto auto;
+    --worktrees-row-areas: "name badge actions" "meta meta meta";
+  }
+}
+
+.rowName {
+  --worktrees-name-font: var(--font-mono);
+  --worktrees-name-text-size: var(--text-mono);
+  --worktrees-name-weight: var(--weight-medium);
+
+  font-family: var(--worktrees-name-font);
+  font-size: var(--worktrees-name-text-size);
+  font-weight: var(--worktrees-name-weight);
+  grid-area: name;
+  margin: 0;
+}
+
+.badge {
+  grid-area: badge;
+}
+
+.meta {
+  --worktrees-meta-text: var(--color-text-muted);
+  --worktrees-meta-font: var(--font-mono);
+  --worktrees-meta-text-size: var(--text-mono);
+  --worktrees-meta-leading: var(--leading-tight);
+  --worktrees-meta-column-gap: var(--gap);
+
+  color: var(--worktrees-meta-text);
+  column-gap: var(--worktrees-meta-column-gap);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--worktrees-meta-font);
+  font-size: var(--worktrees-meta-text-size);
+  grid-area: meta;
+  line-height: var(--worktrees-meta-leading);
+  margin: 0;
+}
+
+.risk {
+  --worktrees-risk-text: var(--color-text);
+  --worktrees-risk-weight: var(--weight-strong);
+
+  color: var(--worktrees-risk-text);
+  font-weight: var(--worktrees-risk-weight);
+}
+
+.actions {
+  --worktrees-actions-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--worktrees-actions-gap);
+  grid-area: actions;
+}
+
+.note,
+.message {
+  --worktrees-note-text: var(--color-text-muted);
+  --worktrees-note-text-size: var(--text-small);
+
+  color: var(--worktrees-note-text);
+  font-size: var(--worktrees-note-text-size);
+  margin: 0;
+}
+
+.alert {
+  --worktrees-alert-text: var(--color-danger-text);
+  --worktrees-alert-text-size: var(--text-small);
+  --worktrees-alert-gap: var(--gap-tight);
+
+  align-items: flex-start;
+  color: var(--worktrees-alert-text);
+  display: flex;
+  font-size: var(--worktrees-alert-text-size);
+  gap: var(--worktrees-alert-gap);
+  margin: 0;
+}
+
+.alertIcon {
+  --worktrees-alert-icon-size: var(--icon-size-small);
+
+  display: inline-flex;
+  font-size: var(--worktrees-alert-icon-size);
+}
+
+.facts {
+  --worktrees-facts-column-gap: var(--gap-loose);
+  --worktrees-facts-row-gap: var(--gap-tight);
+  --worktrees-facts-columns: auto minmax(0, 1fr);
+
+  column-gap: var(--worktrees-facts-column-gap);
+  display: grid;
+  grid-template-columns: var(--worktrees-facts-columns);
+  margin: 0;
+  row-gap: var(--worktrees-facts-row-gap);
+}
+
+.factName,
+.caption {
+  --worktrees-fact-name-text: var(--color-text-muted);
+  --worktrees-fact-name-font: var(--font-caption);
+  --worktrees-fact-name-text-size: var(--text-caption);
+  --worktrees-fact-name-tracking: var(--tracking-caption);
+  --worktrees-fact-name-case: var(--case-caption);
+  --worktrees-fact-name-weight: var(--weight-regular);
+
+  color: var(--worktrees-fact-name-text);
+  font-family: var(--worktrees-fact-name-font);
+  font-size: var(--worktrees-fact-name-text-size);
+  font-weight: var(--worktrees-fact-name-weight);
+  letter-spacing: var(--worktrees-fact-name-tracking);
+  margin: 0;
+  text-transform: var(--worktrees-fact-name-case);
+}
+
+.factValue {
+  --worktrees-fact-value-font: var(--font-mono);
+  --worktrees-fact-value-text-size: var(--text-ui);
+  --worktrees-fact-value-gap: var(--gap-tight);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--worktrees-fact-value-font);
+  font-size: var(--worktrees-fact-value-text-size);
+  gap: var(--worktrees-fact-value-gap);
+  margin: 0;
+}
+
+.step {
+  --worktrees-step-gap: var(--gap);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--worktrees-step-gap);
+}
+
+.reason {
+  --worktrees-plan-reason-text: var(--color-text-muted);
+
+  color: var(--worktrees-plan-reason-text);
+}
+
+.section {
+  --worktrees-section-gap: var(--gap-tight);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--worktrees-section-gap);
+}
+
+.title {
+  --worktrees-title-text-size: var(--text-title);
+  --worktrees-title-weight: var(--weight-strong);
+
+  font-size: var(--worktrees-title-text-size);
+  font-weight: var(--worktrees-title-weight);
+  margin: 0;
+}
+
+.result {
+  --worktrees-result-gap: var(--gap-tight);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--worktrees-result-gap);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.resultLine {
+  --worktrees-result-line-gap: var(--gap-tight);
+  --worktrees-result-line-font: var(--font-mono);
+  --worktrees-result-line-text-size: var(--text-mono);
+
+  align-items: center;
+  display: flex;
+  font-family: var(--worktrees-result-line-font);
+  font-size: var(--worktrees-result-line-text-size);
+  gap: var(--worktrees-result-line-gap);
+}
+
+.foot {
+  --worktrees-foot-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--worktrees-foot-gap);
+  justify-content: flex-end;
+}

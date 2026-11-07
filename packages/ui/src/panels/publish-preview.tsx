@@ -145,59 +145,6 @@ export const PreviewWells = ({
   );
 };
 
-/**
- * Where a read or a post that failed says so, with the way to try it again.
- * It's always there, so a failure fills its line rather than moving the dialog,
- * and its alert is heard. A failed post takes the focus to Try again, since
- * Post can't be pressed; a failed read does only if the focus was lost.
- */
-export const FailureSlot = ({
-  id,
-  words,
-  takeFocus,
-  onTryAgain,
-}: {
-  id: string;
-  words: string | null;
-  takeFocus: "always" | "ifLost";
-  onTryAgain: () => void;
-}) => {
-  const slot = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (words === null) return;
-    const active = document.activeElement;
-    const lost =
-      active === null ||
-      active === document.body ||
-      active.getAttribute("aria-disabled") === "true";
-    if (takeFocus === "always" || lost) {
-      slot.current?.querySelector("button")?.focus();
-    }
-  }, [words, takeFocus]);
-  return (
-    <div
-      className={styles["failureSlot"]}
-      ref={slot}
-    >
-      <p
-        className={styles["alert"]}
-        id={id}
-        role="alert"
-      >
-        {words === null ? null : <CodeText text={words} />}
-      </p>
-      {words === null ? null : (
-        <Button
-          onClick={onTryAgain}
-          variant="ghost"
-        >
-          Try again
-        </Button>
-      )}
-    </div>
-  );
-};
-
 export const PublishFoot = ({ children }: { children: ReactNode }) => (
   <div className={styles["dialogFoot"]}>
     <p className={styles["note"]}>
