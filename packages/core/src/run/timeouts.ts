@@ -38,10 +38,7 @@ const ignore = (): void => {
 };
 
 /** The timeout that applies to a node; a gate's own means something else. */
-export const timeoutOf = (
-  node: Node,
-  workflow: Workflow,
-): string | undefined =>
+export const timeoutOf = (node: Node, workflow: Workflow): string | undefined =>
   (isToolNode(node) ||
     isClaudeNode(node) ||
     node.type === "workflow.call" ||

@@ -19,9 +19,7 @@ export type ReadState<T, A> =
 export type Shown<T, A> = { data: T; arg: A };
 
 /** The last answer a read has, whatever it is doing now. */
-export const shownOf = <T, A>(
-  read: ReadState<T, A>,
-): Shown<T, A> | undefined =>
+export const shownOf = <T, A>(read: ReadState<T, A>): Shown<T, A> | undefined =>
   read.status === "ready"
     ? { data: read.data, arg: read.arg }
     : read.status === "idle"

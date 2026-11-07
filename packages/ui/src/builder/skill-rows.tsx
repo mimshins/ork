@@ -97,10 +97,7 @@ export const SkillRows = ({
 };
 
 /** Only a plain list: `layers.project.skills` says something else entirely. */
-export const skillsControl = (
-  builder: Builder,
-  field: FieldProps,
-): ReactNode =>
+export const skillsControl = (builder: Builder, field: FieldProps): ReactNode =>
   kindOf(field.schema).kind === "list" ? (
     <SkillRows
       catalog={builder.catalog}

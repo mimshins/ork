@@ -149,10 +149,7 @@ export const normalize = (message: unknown): RuntimeEvent[] => {
 };
 
 /** Marks a session's start with the driver that runs it. */
-export const withDriver = (
-  event: RuntimeEvent,
-  driver: Driver,
-): RuntimeEvent =>
+export const withDriver = (event: RuntimeEvent, driver: Driver): RuntimeEvent =>
   event.type === "session.started" ? { ...event, driver } : event;
 
 /** A finished event for a session the driver could not run. */

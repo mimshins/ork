@@ -25,13 +25,7 @@ const Fact = ({ name, children }: { name: string; children: ReactNode }) => (
 );
 
 /** A list of names as one fact, or nothing when there are none. */
-const Names = ({
-  name,
-  values,
-}: {
-  name: string;
-  values: readonly string[];
-}) =>
+const Names = ({ name, values }: { name: string; values: readonly string[] }) =>
   values.length === 0 ? null : <Fact name={name}>{values.join(", ")}</Fact>;
 
 export const ItemFacts = ({
