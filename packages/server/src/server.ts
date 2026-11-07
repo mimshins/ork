@@ -63,6 +63,11 @@ export type RunningServer = {
   /** `http://127.0.0.1:<port>`. */
   url: string;
   token: string;
+  /**
+   * The end of the upgrade running now, or `null` when none is: a server that
+   * exits mid-install can leave `ork` half-installed, so `ork ui` waits on it.
+   */
+  upgrading: () => Promise<void> | null;
   /** Stops the streams and the server, and removes `ui.json`. */
   close: () => Promise<void>;
 };
@@ -150,6 +155,10 @@ export const startServer = async (
     port,
     url: `http://127.0.0.1:${String(port)}`,
     token,
+    upgrading: () => {
+      const job = updates.job();
+      return job === null || job.end() !== null ? null : job.done;
+    },
     close: () => {
       closed ??= new Promise<void>(resolve => {
         shutdown.abort();

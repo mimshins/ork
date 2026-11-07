@@ -15,6 +15,7 @@ import {
   readUpdateCache,
   refreshUpdateCache,
   registryOf,
+  registryShown,
   releaseNotes,
   type UpdateCache,
   updateCachePath,
@@ -147,7 +148,7 @@ export const createUpdates = (input: {
             ? null
             : releaseNotes(options.name, newer),
         check: reason === null ? { on: true } : { on: false, reason },
-        registry: registry ?? null,
+        registry: registry === undefined ? null : registryShown(registry),
         job: job?.view() ?? null,
       };
     },

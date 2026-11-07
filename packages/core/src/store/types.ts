@@ -31,6 +31,12 @@ export type RunRecord = {
   status: StoredRunStatus;
   /** The process that runs it; a `running` run whose process is gone crashed. */
   pid: number;
+  /**
+   * When that process started, as the system tells it (`linux:<boot>:<ticks>`
+   * or `ps:<seconds>`): a live process with the id but another start is not the
+   * run's. Absent for runs recorded before it was, and where it can't be read.
+   */
+  processStart?: string;
   startedAt: string;
   finishedAt?: string;
   costUsd: number;

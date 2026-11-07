@@ -100,6 +100,13 @@ describe("what the server knows of versions", () => {
     });
     expect(updates.info().registry).toBe("https://registry.example");
   });
+
+  it("never shows the user name and password a mirror's URL carries", () => {
+    const { updates } = open(temp("ork-srv-up-"), {
+      env: { ORK_UPDATE_REGISTRY: "https://jo:s3cret@mirror.example/npm/" },
+    });
+    expect(updates.info().registry).toBe("https://mirror.example/npm/");
+  });
 });
 
 describe("the daily check in a long-running server", () => {

@@ -6,6 +6,8 @@
  *   installer and the restart are fakes; nothing is installed or restarted.
  */
 
+import { setTimeout as sleep } from "node:timers/promises";
+
 import { type InstallOutput, readUpdateCache } from "@krapht/ork-core";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -215,6 +217,25 @@ describe("running the upgrade", () => {
       await clone.server.client.call("upgrade", { body: { planId } }),
     ).toMatchObject({ ok: false, status: 400 });
     expect(clone.installer.runs).toEqual([]);
+  });
+
+  it("says the upgrade running now, until its installer exits", async () => {
+    const { server, installer } = await serve();
+    expect(server.server.upgrading()).toBeNull();
+    const planId = planIdOf(await planOf(server));
+    await server.client.call("upgrade", { body: { planId } });
+    const running = server.server.upgrading();
+    let ended = false;
+    void running?.then(() => {
+      ended = true;
+      return ended;
+    });
+    installer.say("stdout", "reifying\n");
+    await sleep(20);
+    expect(ended).toBe(false);
+    installer.finish(0);
+    await expect.poll(() => ended).toBe(true);
+    expect(server.server.upgrading()).toBeNull();
   });
 
   it("keeps a failure's exit code", async () => {

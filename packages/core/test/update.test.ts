@@ -18,6 +18,7 @@ import {
   pendingNotice,
   readUpdateCache,
   refreshUpdateCache,
+  registryShown,
   updateCachePath,
   writeUpdateCache,
 } from "../src/index.ts";
@@ -127,6 +128,22 @@ describe("asking the registry", () => {
       checkedAt: later.toISOString(),
       latest: "0.2.0",
     });
+  });
+
+  it("shows a registry without the user name and password it carries", () => {
+    expect(registryShown("https://mirror.test/npm")).toBe(
+      "https://mirror.test/npm",
+    );
+    expect(registryShown("https://jo:s3cret@mirror.test/npm")).toBe(
+      "https://mirror.test/npm",
+    );
+    expect(registryShown("https://jo@mirror.test")).toBe(
+      "https://mirror.test/",
+    );
+    expect(registryShown("jo:s3cret@mirror.test/npm")).toBe("mirror.test");
+    expect(registryShown("ftp://jo:s3cret@mirror.test/npm")).toBe(
+      "mirror.test",
+    );
   });
 });
 

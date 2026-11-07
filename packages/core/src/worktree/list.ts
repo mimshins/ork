@@ -23,7 +23,7 @@ export type OrkWorktree = {
   nodeId: string;
   /** `null` for a branch without a worktree. */
   path: string | null;
-  /** The worktree's directory is gone; `git worktree prune` drops it. */
+  /** The worktree's directory is gone; clean and remove drop it by its path. */
   missing: boolean;
   /** Uncommitted changes in the worktree. */
   dirty: boolean;
@@ -39,6 +39,11 @@ export type OrkWorktree = {
   merged: boolean;
   /** Checked out in the main checkout itself, which clean never removes. */
   inMainCheckout: boolean;
+  /**
+   * The path of a worktree Ork didn't create that has the branch checked out;
+   * nothing removes the item while it does.
+   */
+  heldBy?: string;
 };
 
 /** A worktree a run recorded creating (its `worktree` `created` event). */
@@ -89,7 +94,10 @@ const parsePorcelain = (text: string): Entry[] =>
     })
     .filter(entry => entry.path !== "");
 
-/** The `ork/<run>/<node>` branches of runs that recorded nothing. */
+/**
+ * The `ork/<run>/<node>` branches of runs that recorded nothing; with no path
+ * recorded, the worktree is whichever has the branch checked out.
+ */
 const prefixed = (branch: string): CreatedWorktree => {
   const [, runId = "", ...rest] = branch.split("/");
   return { runId, nodeId: rest.join("/"), path: "", branch };
@@ -118,10 +126,18 @@ const stateOf = async (
   item: CreatedWorktree,
 ): Promise<OrkWorktree> => {
   const { branch } = item;
+  // A recorded worktree is the one at its recorded path, whatever branch it
+  // is on now: a user's own worktree of the same branch is not Ork's.
   const entry =
-    branch === undefined
+    branch === undefined || item.path !== ""
       ? entries.find(e => e.path === item.path)
       : entries.find(e => e.branch === branch);
+  // Who else has the branch checked out: the main checkout, or a worktree of
+  // the user's own, which git won't let the branch be deleted from under.
+  const holder =
+    branch === undefined
+      ? undefined
+      : entries.find(e => e.branch === branch && e.path !== entry?.path);
   const missing =
     entry !== undefined && (entry.prunable || !existsSync(entry.path));
   const status =
@@ -151,7 +167,10 @@ const stateOf = async (
     changes,
     ahead: Number.isNaN(ahead) ? 0 : ahead,
     merged: on !== undefined && ahead === 0,
-    inMainCheckout: entry?.path === root,
+    inMainCheckout: entry?.path === root || holder?.path === root,
+    ...(holder === undefined || holder.path === root
+      ? {}
+      : { heldBy: holder.path }),
   };
 };
 

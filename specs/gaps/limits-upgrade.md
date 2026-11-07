@@ -25,3 +25,14 @@ What the new-version banner and the Upgrade dialog do for now, by choice
   terminal says so with `ork ui --port <n>`, and the page that it didn't come
   back. Windows' `.cmd` package managers still can't be started
   ([L9](./limits.md)).
+- **L167 · A registry URL with a user name and password can't be asked.** Node's
+  `fetch` refuses a URL that carries credentials, so an `ORK_UPDATE_REGISTRY` of
+  `https://user:token@mirror…` reads as unreachable; the page shows it without
+  them. A mirror that needs signing in would take a header from the user's own
+  npm config, which Ork doesn't read.
+- **L168 · Ctrl-C reaches the package manager too.** It runs in the terminal's
+  process group, so a Ctrl-C that stops `ork ui` mid-upgrade reaches it as well,
+  and what it does then is its own; `ork ui` reads its output until it exits,
+  then stops. SIGTERM, or the supervisor going, leaves it to finish. A second
+  Ctrl-C stops `ork ui` at once and may leave the install half-done;
+  `ork upgrade` in a terminal finishes it.

@@ -4,8 +4,11 @@
  *   token from the supervisor, serves, and says it's ready. A restart asked by
  *   the page tells the supervisor, then closes and exits, so the supervisor
  *   starts the installed `ork` in its place. Ctrl-C, SIGTERM, or losing the
- *   supervisor closes it too, so no server is left behind.
+ *   supervisor closes it too, so no server is left behind; an upgrade still
+ *   running is waited for first.
  */
+
+import { constants } from "node:os";
 
 import { type RunningServer, startServer } from "@krapht/ork-server";
 
@@ -48,18 +51,60 @@ const started = (): Promise<StartMessage> =>
     void send({ type: "ork-ui-hello" });
   });
 
-/** Ends on Ctrl-C, SIGTERM, the supervisor's channel closing, or `end`. */
 const ignore = (): void => {};
 
+/** What the terminal says while an upgrade holds the stop up. */
+export const WAITING_FOR_UPGRADE =
+  "Waiting for the upgrade to finish… Press Ctrl-C again to stop now.";
+
+/**
+ * Ends on Ctrl-C, SIGTERM, the supervisor's channel closing, or `end`. Each
+ * Ctrl-C reaches the child twice (from the terminal, and passed on by the
+ * supervisor), so while the supervisor is there, forcing a stop is its job: it
+ * kills the child on the second. Without it, a signal after the first stop
+ * exits at once.
+ */
 const stopper = () => {
   let end: () => void = ignore;
+  let stopped = false;
   const promise = new Promise<void>(resolve => {
-    end = resolve;
+    end = () => {
+      stopped = true;
+      resolve();
+    };
   });
-  process.on("SIGINT", end);
-  process.on("SIGTERM", end);
-  process.once("disconnect", end);
-  return { promise, end };
+  const onSignal = (signal: NodeJS.Signals): void => {
+    if (stopped && !process.connected) {
+      process.exit(128 + constants.signals[signal]);
+    }
+    end();
+  };
+  process.on("SIGINT", onSignal);
+  process.on("SIGTERM", onSignal);
+  process.once("disconnect", () => {
+    end();
+  });
+  return {
+    promise,
+    end: () => {
+      end();
+    },
+  };
+};
+
+/**
+ * Waits for an upgrade still running before the server closes, saying so on the
+ * terminal: exiting mid-install could leave `ork` half-installed. The
+ * installer's output is read to its end meanwhile.
+ */
+export const upgradeFinished = async (
+  server: Pick<RunningServer, "upgrading">,
+  say: (line: string) => void,
+): Promise<void> => {
+  const running = server.upgrading();
+  if (running === null) return;
+  say(WAITING_FOR_UPGRADE);
+  await running.catch(ignore);
 };
 
 const serve = async (
@@ -103,6 +148,7 @@ export const serveForSupervisor = async (): Promise<void> => {
       version: ORK_VERSION,
     });
     await stop.promise;
+    await upgradeFinished(server, writeErr);
     await server.close();
   }
   // A check still asking the registry must not hold the restart up.

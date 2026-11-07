@@ -4,7 +4,8 @@ Status: **Built**: the store, the recorder, decisions and commands, `ork ps`,
 `ork logs` and `ork tree` ([store/](../packages/core/src/store/sqlite.ts),
 [tests](../packages/core/test/store.test.ts),
 [CLI tests](../packages/cli/test/runs.test.ts)), with messages, `ork chat`'s
-exchanges, resumed runs, claims and feedback records. Why:
+exchanges, resumed runs, claims, feedback records and each run's process start
+([tests](../packages/core/test/process-start.test.ts)). Why:
 [ADR-024](../decisions/ADR-024-event-store.md).
 
 Every run, a whole workflow or one node (`ork run --node`), is recorded as it
@@ -28,14 +29,28 @@ all views over the same events.
 ## Runs and events
 
 - **A run record:** id (8 hex characters; `node-…` for a run of one node),
-  workflow name, workflow file and project root (absolute), the process id,
-  status, start and finish times, and the cost so far. A run a
-  [`workflow.call`](./scheduler/calls.md) started also has its `parent` run, and
-  its `depth` below the run that started it all.
+  workflow name, workflow file and project root (absolute), the process id and
+  that process's start, status, start and finish times, and the cost so far. A
+  run a [`workflow.call`](./scheduler/calls.md) started also has its `parent`
+  run, and its `depth` below the run that started it all.
 - **Status:** `running` until `run.finished` is written, then that event's
   status (`succeeded`, `failed`, `budget_exhausted`, `quota_exhausted`,
   `timed_out`, `interrupted`). A `running` run whose process is gone reads as
-  **`crashed`**.
+  **`crashed`**, wherever liveness is checked (`ork ps`, `ork stop`, the panels,
+  `ork worktrees`, `ork prune`, an upgrade).
+- **Whose process:** a process id comes round again (after a reboot, or to
+  another user's process), so the run records its process's start with its id
+  when it begins and when it is resumed, and a live process with the id but
+  another start is not the run's: the run reads as `crashed`. On Linux the start
+  is `/proc/<pid>/stat`'s clock ticks since boot, with the boot's id (exact, and
+  not moved by the clock); elsewhere, macOS included, it is `ps -o lstart=` read
+  in UTC, to the second, so two starts a second apart are one process. A check
+  reuses a start read in the last second only when it matched; a mismatch is
+  read again. An id of 0 or below, or not a whole number, names no process.
+  Where the start can't be read, and for a run recorded before starts were
+  (migration 14 adds the column, empty for them), a live process with the id
+  counts, as before
+  ([store/process-age.ts](../packages/core/src/store/process-age.ts)).
 - **Plan limits:** `plan_limits` keeps what Claude Code last said of each of a
   plan's limits, written with its event, across runs
   ([usage](./usage.md#limits-across-runs)).
@@ -70,8 +85,8 @@ all views over the same events.
   `decision.answered`, `decision.withdrawn` and `run.command` record the same in
   the run's stream ([messaging](./messaging.md)).
 - **A resumed run** (`ork resume`) is the same run: its record is `running`
-  again in the new process, and its events go on from the last sequence number,
-  starting with `run.resumed`.
+  again in the new process, with that process's id and start, and its events go
+  on from the last sequence number, starting with `run.resumed`.
 - **After `run.finished`**, only `ork chat` adds events: the exchange with a
   resumed session. The run's status and cost stay as they were.
 - **A run that never starts** (an invalid workflow, a missing input or program,

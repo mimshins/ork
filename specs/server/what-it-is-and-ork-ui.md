@@ -37,7 +37,9 @@ ork ui [--port <n>] [--no-open]
   second `ork ui` finds the running server there (a record whose pid is gone
   counts as none), opens it, and exits 0.
 - Ctrl-C (or SIGTERM) ends the streams, closes the server, removes `ui.json`,
-  and exits 0. Runs keep running.
+  and exits 0. Runs keep running. An upgrade still running is waited for first
+  ([updates](../cli/updates.md#in-ork-ui)); a second Ctrl-C (or SIGTERM) kills
+  the server and exits at once, with 130 (143).
 - **It supervises the server in a child**
   ([ADR-060](../../decisions/ADR-060-ork-ui-supervises-its-server.md)): the
   launcher it was run as (`process.argv[1]` as given) with `ui --serve`, on the
@@ -45,7 +47,11 @@ ork ui [--port <n>] [--no-open]
   argv or the environment; the child writes `ui.json` with its own pid. When the
   page asks for a restart after an upgrade, the child closes and exits, and
   `ork ui` starts the launcher again, now the new install, on the bound port
-  with the same token, so the open tab stays signed in. One child at a time;
-  Ctrl-C stops it and then `ork ui`, with its exit code. A child whose `ork ui`
-  is gone closes too. A new server that doesn't start is reported on the
-  terminal with `ork ui --port <n>`. `ork ui --serve` run by hand refuses.
+  with the same token, so the open tab stays signed in; whether the child asked
+  for a restart is decided once its channel has closed, so a message that comes
+  after its exit still counts. One child at a time; Ctrl-C stops it and then
+  `ork ui`, with its exit code. Each Ctrl-C reaches the child twice (from the
+  terminal, and passed on), so forcing is `ork ui`'s job: it kills the child on
+  the second. A child whose `ork ui` is gone closes too, and a signal after that
+  stops it at once. A new server that doesn't start is reported on the terminal
+  with `ork ui --port <n>`. `ork ui --serve` run by hand refuses.

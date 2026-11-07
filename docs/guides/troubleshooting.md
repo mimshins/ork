@@ -68,8 +68,9 @@ workflow.
 ## During a run
 
 **A run shows as `crashed`.** Its process ended without finishing (a closed
-terminal, a reboot). `ork resume <run>` continues it: what finished keeps its
-result, the rest runs again.
+terminal, a reboot), even if another process has since been given its id.
+`ork resume <run>` continues it: what finished keeps its result, the rest runs
+again.
 
 **A run seems stuck.** It may be waiting on a question: `ork decide --list`
 shows the open ones, and `ork logs <run>` shows `? asks: …` where it stopped. A

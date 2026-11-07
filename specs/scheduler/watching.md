@@ -203,8 +203,9 @@ by a row in the store, taken in one transaction
 ([triggers/lock.ts](../../packages/core/src/triggers/lock.ts)). A holder whose
 process has gone doesn't hold it, nor does one whose id another process has
 since been given, told by the process having started after the row was written,
-so `--stop` doesn't signal a stranger. The same test keeps a recycled id from
-holding a trigger's `concurrency`.
+so `--stop` doesn't signal a stranger. The same test, beside the start a run
+records ([event store](../event-store.md#runs-and-events)), keeps a recycled id
+from holding a trigger's `concurrency`.
 
 It sees what's due every 10 seconds, re-reading each project's files, and each
 look runs apart from the others, so a stuck one can't delay the rest. A file

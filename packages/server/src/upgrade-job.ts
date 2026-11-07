@@ -54,6 +54,8 @@ export type RunningJob = {
     dropped: boolean;
   };
   end: () => UpgradeEnd | null;
+  /** Settles once the installer has exited and its end is told. */
+  done: Promise<void>;
   /** Listens until the returned function is called. */
   listen: (listener: JobListener) => () => void;
 };
@@ -99,7 +101,8 @@ export const startJob = (
     keep("stderr", error instanceof Error ? error.message : String(error));
     return 1;
   });
-  void finished.then(code => {
+  const finish = async (): Promise<void> => {
+    const code = await finished;
     for (const stream of ["stdout", "stderr"] as const) {
       if (partial[stream] !== "") keep(stream, partial[stream]);
       partial[stream] = "";
@@ -109,8 +112,8 @@ export const startJob = (
     ended = { state, code, version: latest };
     onChange();
     tell({ kind: "end", end: ended });
-    return code;
-  });
+  };
+  const done = finish();
 
   return {
     view: () => ({ ...job, command: [...job.command] }),
@@ -119,6 +122,7 @@ export const startJob = (
       dropped: (lines[0]?.seq ?? 1) > after + 1,
     }),
     end: () => ended,
+    done,
     listen: listener => {
       listeners.add(listener);
       return () => {

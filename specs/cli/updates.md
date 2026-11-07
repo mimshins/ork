@@ -81,8 +81,9 @@ ork upgrade [--check] [--yes]
   a minute. `GET /api/version` and the overview stream's `version` event give
   the running version, the record's `latest`, a `newer` version when one is
   known, its release notes, whether the check is off and why, the registry when
-  `ORK_UPDATE_REGISTRY` names one, and the server's upgrade, if any. The banner
-  reads it
+  `ORK_UPDATE_REGISTRY` names one (an http(s) URL without any user name and
+  password it carries, anything else only as its host), and the server's
+  upgrade, if any. The banner reads it
   ([the banner](../ui/workspace-frame-and-banner.md#the-new-version-banner)); it
   writes nothing to the record, so it and the terminal's notice don't quiet each
   other.
@@ -117,3 +118,11 @@ ork upgrade [--check] [--yes]
   same port with the same token. 409 while an upgrade runs; 400 "This server
   can't restart itself; stop it and run `ork ui`." for a server `ork ui` didn't
   start.
+- **Stopping mid-upgrade.** Ctrl-C, SIGTERM or the supervisor going while an
+  upgrade runs doesn't cut the package manager off: the server keeps serving and
+  reading its output until it exits, saying on the terminal "Waiting for the
+  upgrade to finish… Press Ctrl-C again to stop now.", then closes. A second
+  Ctrl-C (or SIGTERM) stops `ork ui` at once
+  ([ork ui](../server/what-it-is-and-ork-ui.md#ork-ui)). A Ctrl-C from the
+  terminal reaches the package manager too, which does what it does with it
+  ([L168](../gaps/limits-upgrade.md)).

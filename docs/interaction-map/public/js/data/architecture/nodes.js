@@ -630,7 +630,7 @@ export const NODES = [
       "Every change in a run, appended in order: nodes starting and finishing, tool calls, usage, worktrees, messages, chats and decisions. Logs, the monitor, chats and replay are all views over it.",
     facts: [
       "Built: each run event gets a sequence number and a time, with secrets masked, before the terminal prints it.",
-      "Built: `ork ps`, `ork logs [--follow]` and `ork tree` read it from any terminal; a run whose process died reads as `crashed`.",
+      "Built: `ork ps`, `ork logs [--follow]` and `ork tree` read it from any terminal; a run whose process died reads as `crashed`, even once its process id is reused, as the run records its process's start beside the id.",
       "Built: a usage ledger beside the events, one row per finished Claude session, written with its event; `ork prune` forgets old runs and keeps it.",
       "Built: registered projects (in-repo or attached) are a table beside the runs.",
       "Built: decisions, messages and commands from other processes (`ork decide`, `ork stop`, `ork pause`, `ork continue`, `ork chat`, `ork relay`).",

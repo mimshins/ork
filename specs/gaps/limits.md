@@ -192,3 +192,7 @@ How something built works for now, by choice.
 - **L79 · Prune cannot see a chat in progress.** A chat that outlasts
   `--older-than` can lose its run and that turn's ledger row, and shrinking the
   store can fail a long chat's next write. ([usage](../usage.md#ork-prune))
+- **L166 · A process id reused within a second can pass for a run's.** Off Linux
+  the start is read to the second, so a same-user process given a crashed run's
+  id that second still reads as the run's. A start that can't be read falls back
+  to the id alone. ([event store](../event-store.md#runs-and-events))

@@ -113,7 +113,7 @@ describe("the Worktrees panel's names and focus", () => {
   it("keeps the row's CLI twin in Remove…'s description", async () => {
     await openWorktrees();
     expect(describedBy(removeOf(LEAD.key))).toContain(
-      "CLI: ork worktrees remove ork/9b1e07/lead",
+      "CLI: cd /code/app && ork worktrees remove ork/9b1e07/lead",
     );
   });
 

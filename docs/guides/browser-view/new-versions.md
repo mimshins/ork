@@ -17,7 +17,9 @@ does, with its question asked by a button:
    from a clone or through `npx` gets the steps to run yourself instead, each
    command in a block to copy, and no run button.
 2. **Upgrade to 0.4.0** runs that command on your machine, as you, and shows its
-   output as it comes. The dialog stays open until it ends.
+   output as it comes. The dialog stays open until it ends. Stopping `ork ui`
+   meanwhile waits for it to finish, so Ork isn't left half-installed; its
+   terminal says so, and a second Ctrl-C stops it at once.
 3. Once it's installed, **Restart** stops `ork ui` and starts the new one in the
    same terminal, on the same port; the page waits, then reloads itself onto the
    new version, still signed in. Your runs keep running. **Later** leaves it for

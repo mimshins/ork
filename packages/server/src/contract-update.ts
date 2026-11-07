@@ -37,7 +37,10 @@ export type VersionInfo = {
   releaseNotes: string | null;
   /** Off by `ORK_NO_UPDATE_CHECK`, `NO_UPDATE_NOTIFIER` or `CI`. */
   check: { on: true } | { on: false; reason: string };
-  /** `ORK_UPDATE_REGISTRY`, when it names a registry other than npm's. */
+  /**
+   * `ORK_UPDATE_REGISTRY`, when it names a registry other than npm's, without
+   * any user name or password its URL carries.
+   */
   registry: string | null;
   job: UpgradeJob | null;
 };

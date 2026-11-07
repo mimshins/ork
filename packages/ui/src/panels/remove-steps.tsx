@@ -142,6 +142,7 @@ export const Choice = (props: ChoiceProps) => {
       />
       <CopyCommand
         command={removeTwin(
+          project.root,
           row.key,
           plan?.deleteBranch ?? props.deleteBranch,
           plan?.force ?? false,
@@ -182,10 +183,13 @@ export const Lost = ({
   row,
   plan,
   head,
+  root,
 }: {
   row: WorktreeRow;
   plan: RemovePlanAnswer;
   head: string;
+  /** The project's root, where the CLI twin runs. */
+  root: string;
 }) => {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -225,7 +229,9 @@ export const Lost = ({
         />
       )}
       <p className={styles["note"]}>{lostNote(plan)}</p>
-      <CopyCommand command={removeTwin(row.key, plan.deleteBranch, true)} />
+      <CopyCommand
+        command={removeTwin(root, row.key, plan.deleteBranch, true)}
+      />
     </div>
   );
 };

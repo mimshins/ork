@@ -13,4 +13,7 @@ version on the same port, still signed in, and reloads the page. A clone or an
 works by keyboard and screen reader: each step's heading takes the focus and is
 heard, the plan and the outcome are said aloud, and closing it returns the focus
 to the banner's button, or to the panels. `ork ui` now runs its server as a
-child process it supervises; Ctrl-C still stops both.
+child process it supervises; Ctrl-C still stops both. Stopped while an upgrade
+runs, it waits for the package manager to finish, so Ork isn't left
+half-installed, and says so; a second Ctrl-C stops it at once. A mirror's URL in
+`ORK_UPDATE_REGISTRY` shows on the page without its user name and password.

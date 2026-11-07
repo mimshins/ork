@@ -96,6 +96,7 @@ const RemoveBody = ({
         <Lost
           head={project.head ?? "the current branch"}
           plan={plan}
+          root={project.root}
           row={row}
         />
       ) : (

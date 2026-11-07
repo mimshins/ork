@@ -67,7 +67,7 @@ type RowProps = { row: WorktreeRow; project: WorktreesProject; acts: RowActs };
 const Row = ({ row, project, acts }: RowProps) => {
   const metaId = useId();
   const cliId = useId();
-  const twin = removeTwin(row.key, row.path === null, false);
+  const twin = removeTwin(project.root, row.key, row.path === null, false);
   const parts = rowParts(row);
   const { refusal } = row.remove;
   return (

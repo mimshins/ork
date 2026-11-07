@@ -39,3 +39,30 @@ export const registryOf = (env: Env): string | undefined => {
   const registry = env[UPDATE_REGISTRY_ENV];
   return registry === undefined || registry === "" ? undefined : registry;
 };
+
+/** The host of a registry that isn't an http(s) URL, past any `user:pass@`. */
+const hostOf = (registry: string): string =>
+  registry
+    .replace(/^[a-z][\w+.-]*:\/\//iu, "")
+    .replace(/^[^/?#]*@/u, "")
+    .split(/[/?#]/u)[0] ?? "";
+
+/**
+ * The registry as it may be shown (on a page, in a message): an http(s) URL
+ * without its user name and password, which a mirror's URL may carry; anything
+ * else only as its host.
+ */
+export const registryShown = (registry: string): string => {
+  try {
+    const url = new URL(registry);
+    if (url.protocol === "http:" || url.protocol === "https:") {
+      if (url.username === "" && url.password === "") return registry;
+      url.username = "";
+      url.password = "";
+      return url.href;
+    }
+  } catch {
+    // Not a URL: only its host is shown.
+  }
+  return hostOf(registry);
+};

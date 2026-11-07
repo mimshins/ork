@@ -10,9 +10,10 @@ import type { DatabaseSync } from "node:sqlite";
 
 import type { RunEvent } from "../run/types.ts";
 import { ownSpend } from "../usage/spend.ts";
+import { runProcessAlive } from "./process-age.ts";
 import { eventOf, inTransaction, type Row, text } from "./rows.ts";
 import type { RunRecord, UsageFilter, UsageRow, UsageStore } from "./types.ts";
-import { processAlive, templateOf } from "./view.ts";
+import { templateOf } from "./view.ts";
 
 type RunOf = Pick<RunRecord, "id" | "project" | "workflow">;
 type SeenEvent = { seq: number; at: string; event: RunEvent };
@@ -189,7 +190,13 @@ const whereOf = (filter: UsageFilter): { sql: string; values: string[] } => {
   };
 };
 
-const alive = (row: Row): boolean => processAlive(Number(row?.["pid"]));
+const alive = (row: Row): boolean => {
+  const start = text(row, "process_start");
+  return runProcessAlive({
+    pid: Number(row?.["pid"]),
+    ...(start === "" ? {} : { processStart: start }),
+  });
+};
 
 /** The ledger's queries; `recordUsage` is the store's own, called on append. */
 export const usageQueries = (
@@ -211,9 +218,11 @@ export const usageQueries = (
     "SELECT at FROM events WHERE run_id = ? ORDER BY seq DESC LIMIT 1",
   );
   const liveOne = db.prepare(
-    "SELECT pid FROM runs WHERE id = ? AND status = 'running'",
+    "SELECT pid, process_start FROM runs WHERE id = ? AND status = 'running'",
   );
-  const liveAny = db.prepare("SELECT pid FROM runs WHERE status = 'running'");
+  const liveAny = db.prepare(
+    "SELECT pid, process_start FROM runs WHERE status = 'running'",
+  );
   const deletes = [
     "DELETE FROM events WHERE run_id = ?",
     "DELETE FROM decisions WHERE run_id = ?",

@@ -138,7 +138,12 @@ owner's branch; new worktrees of root nodes branch from the project's current
 `ork worktrees` (or `ork wt`) tracks and cleans what runs leave behind: the
 branches and worktrees the project's runs recorded creating (`worktree`
 `created` events, whatever the rules named them), and any `ork/` branch besides,
-with their state read from git (`git worktree list --porcelain`):
+with their state read from git (`git worktree list --porcelain`). A recorded
+item's worktree is the one at its recorded path, whatever branch it is on now;
+another worktree with its branch checked out (the main checkout, or one of the
+user's own, say `git worktree add ../review ork/r1/lead`) is not Ork's, and the
+item has no worktree. An `ork/` branch no run recorded has the worktree that has
+it checked out.
 
 - `ork worktrees [list] [--json]`: each branch (or, for a detached worktree, its
   run and node), its worktree path (or none, or missing), uncommitted changes,
@@ -154,11 +159,14 @@ with their state read from git (`git worktree list --porcelain`):
   `--branches` also deletes the branches. A worktree with uncommitted changes,
   an unmerged branch (with `--branches`), or a detached worktree holding
   unreachable commits is kept unless `--force`. A branch checked out in the main
-  checkout, and the worktree of a run still going ("its run is still going": its
-  process is alive), are kept even with `--force`; stop the run first. It prints
-  the plan and asks first; `--yes` skips the question, and without a terminal it
-  is required. Stale entries are pruned, and a worktree whose folder is gone
-  shows as `prune worktree` in the plan and `pruned <path>` once done.
+  checkout or in a worktree Ork didn't create ("checked out in <path>"), and the
+  worktree of a run still going ("its run is still going": its process is
+  alive), are kept even with `--force`; stop the run first. It prints the plan
+  and asks first; `--yes` skips the question, and without a terminal it is
+  required. A worktree whose folder is gone shows as `prune worktree` in the
+  plan and `pruned <path>` once done; it is dropped by its own path
+  (`git worktree remove`), never by `git worktree prune`, so a missing worktree
+  that isn't Ork's keeps its entry.
 - `ork worktrees remove <branch|path> [--branch] [--force] [--yes]`: one item,
   by its branch or (detached) its worktree's path, by the same rule as clean. It
   removes the worktree; `--branch` also deletes the branch, and a branch with no

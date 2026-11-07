@@ -98,3 +98,11 @@ the same switches.
   the installation guide says so, and how to turn it off.
 - What a restart can't fix (another `ork` first on the PATH, a token that didn't
   carry over) the page says in words, with the command to run.
+- `process.argv[1]` is the path Node was given, not the real path. It stays the
+  same across an upgrade for npm (its bin link), pnpm (whose shim runs the
+  package through `global/5/node_modules`, or from pnpm 11 through a
+  `global/v11/<hash>` link swapped onto each new install, the hash being the
+  package names and registries) and Volta 1.1 or later
+  (`tools/image/packages/<name>`, replaced in place). A pnpm global install
+  whose registry settings changed in between gets a new hash and path; the
+  restart then fails as above and says to run `ork ui`.

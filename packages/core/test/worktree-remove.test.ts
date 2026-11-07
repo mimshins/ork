@@ -3,17 +3,21 @@
  *   with clean: a run still going keeps its worktree even forced; removing one
  *   item needs `force` exactly when it loses work, which is read from git as
  *   git prints it; a branch with no worktree is deleted; a missing worktree is
- *   pruned; and the plain words both say.
+ *   dropped by its own path, the user's own missing worktrees kept; a recorded
+ *   branch checked out in a worktree Ork didn't create is left alone; and the
+ *   plain words both say.
  */
 
-import { rmSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 import {
+  applyClean,
   applyRemove,
   type CleanStep,
+  listOrkWorktrees,
   liveRunIds,
   lostWork,
   openStore,
@@ -187,6 +191,84 @@ describe("removing one worktree", () => {
       error: "No Ork worktree or branch ork/r9/none.",
       gone: true,
     });
+  });
+});
+
+/** `git worktree list --porcelain`'s paths, as git still records them. */
+const gitWorktrees = (root: string): string[] =>
+  sh(root, "worktree", "list", "--porcelain")
+    .split("\n")
+    .filter(line => line.startsWith("worktree "))
+    .map(line => line.slice("worktree ".length));
+
+describe("cleaning beside the user's own worktrees", () => {
+  it("drops only its own missing worktree, never one of the user's", async () => {
+    const root = repo();
+    const lead = worktree(root, "lead");
+    const mine = path.join(path.dirname(root), "mine");
+    sh(root, "worktree", "add", "--quiet", "-b", "mine", mine);
+    rmSync(lead, { recursive: true });
+    rmSync(mine, { recursive: true });
+    const steps = planClean(
+      (await read(root)).items,
+      { merged: false },
+      { branches: true, force: false },
+    );
+    expect(await applyClean(root, steps, false)).toEqual([
+      `pruned ${lead}`,
+      "deleted ork/r1/lead",
+    ]);
+    expect(gitWorktrees(root)).toEqual([root, mine]);
+  });
+
+  it("leaves a recorded branch alone in a worktree Ork didn't create", async () => {
+    const root = repo();
+    const lead = worktree(root, "lead");
+    sh(root, "worktree", "remove", lead);
+    const review = path.join(path.dirname(root), "review");
+    sh(root, "worktree", "add", "--quiet", review, "ork/r1/lead");
+    const items = await listOrkWorktrees(root, [
+      { runId: "r1", nodeId: "lead", path: lead, branch: "ork/r1/lead" },
+    ]);
+    expect(items.map(i => [i.path, i.heldBy, stateParts(i)])).toEqual([
+      [
+        null,
+        review,
+        [
+          { text: "no worktree", risk: false },
+          { text: `checked out in ${review}`, risk: false },
+        ],
+      ],
+    ]);
+    const steps = planClean(
+      items,
+      { merged: false },
+      { branches: true, force: true },
+    );
+    expect(steps.map(s => [s.removeWorktree, s.deleteBranch, s.skip])).toEqual([
+      [false, false, `checked out in ${review}`],
+    ]);
+    expect(await applyClean(root, steps, true)).toEqual([]);
+    expect(existsSync(review)).toBe(true);
+    expect(
+      planRemove({ items, live: new Set() }, "ork/r1/lead", true),
+    ).toMatchObject({
+      ok: false,
+      error: `Can't remove ork/r1/lead: checked out in ${review}, a worktree Ork didn't create; switch it to another branch first.`,
+    });
+  });
+
+  it("still finds a recorded branch checked out in the main checkout", async () => {
+    const root = repo();
+    const lead = worktree(root, "lead");
+    sh(root, "worktree", "remove", lead);
+    sh(root, "switch", "--quiet", "ork/r1/lead");
+    const items = await listOrkWorktrees(root, [
+      { runId: "r1", nodeId: "lead", path: lead, branch: "ork/r1/lead" },
+    ]);
+    expect(items.map(i => [i.path, i.inMainCheckout, i.heldBy])).toEqual([
+      [null, true, undefined],
+    ]);
   });
 });
 

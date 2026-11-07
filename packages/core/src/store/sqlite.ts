@@ -11,12 +11,19 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-import type { RunEvent } from "../run/types.ts";
 import { maskReplacer } from "./mask.ts";
+import { ownProcessStart } from "./process-age.ts";
 import { storeQueries } from "./queries.ts";
 import { eventOf, inTransaction, type Row, text } from "./rows.ts";
 import { migrate } from "./schema.ts";
-import type { EventStore, RunRecord, StoredRunStatus } from "./types.ts";
+import type {
+  EventStore,
+  RunRecord,
+  StoredEvent,
+  StoredRunStatus,
+} from "./types.ts";
+
+type RunEvent = StoredEvent["event"];
 
 /** `~/.ork/state.db`; `home` is `~` (tests pass a folder). */
 export const storePath = (home: string = homedir()): string =>
@@ -47,6 +54,8 @@ const recordOf = (row: Row): RunRecord => {
     costUsd: Number(row?.["cost_usd"]),
     depth: Number(row?.["depth"] ?? 0),
   };
+  const processStart = text(row, "process_start");
+  if (processStart !== "") record.processStart = processStart;
   const parent = text(row, "parent");
   if (parent !== "") record.parent = parent;
   const finished = text(row, "finished_at");
@@ -61,8 +70,17 @@ export const nodeOf = (event: RunEvent): string | null => {
   return null;
 };
 
+export type StoreOptions = {
+  /** This process's start, recorded with a run it begins or reopens. */
+  processStart?: () => string | undefined;
+};
+
 /** Opens (and creates) the store at `file`; `:memory:` for tests. */
-export const openStore = (file: string = storePath()): EventStore => {
+export const openStore = (
+  file: string = storePath(),
+  options: StoreOptions = {},
+): EventStore => {
+  const ownStart = options.processStart ?? ownProcessStart;
   if (file !== ":memory:") mkdirSync(path.dirname(file), { recursive: true });
   const db = new DatabaseSync(file);
   db.exec("PRAGMA busy_timeout = 5000");
@@ -72,8 +90,8 @@ export const openStore = (file: string = storePath()): EventStore => {
   migrate(db);
 
   const insertRun = db.prepare(
-    `INSERT INTO runs (id, workflow, file, project, status, pid, started_at, parent, depth)
-     VALUES (?, ?, ?, ?, 'running', ?, ?, ?, ?)`,
+    `INSERT INTO runs (id, workflow, file, project, status, pid, process_start, started_at, parent, depth)
+     VALUES (?, ?, ?, ?, 'running', ?, ?, ?, ?, ?)`,
   );
   const lastSeq = db.prepare(
     "SELECT COALESCE(MAX(seq), 0) AS seq FROM events WHERE run_id = ?",
@@ -85,7 +103,7 @@ export const openStore = (file: string = storePath()): EventStore => {
     "UPDATE runs SET status = ?, finished_at = ?, cost_usd = ? WHERE id = ?",
   );
   const reopenRun = db.prepare(
-    "UPDATE runs SET status = 'running', pid = ?, finished_at = NULL WHERE id = ?",
+    "UPDATE runs SET status = 'running', pid = ?, process_start = ?, finished_at = NULL WHERE id = ?",
   );
   const addCost = db.prepare(
     "UPDATE runs SET cost_usd = cost_usd + ? WHERE id = ?",
@@ -115,12 +133,14 @@ export const openStore = (file: string = storePath()): EventStore => {
         run.parent === undefined
           ? 0
           : Number(byId.get(run.parent)?.["depth"] ?? 0) + 1;
+      const processStart = ownStart();
       insertRun.run(
         run.id,
         run.workflow,
         run.file,
         run.project,
         process.pid,
+        processStart ?? null,
         startedAt,
         run.parent ?? null,
         depth,
@@ -130,12 +150,14 @@ export const openStore = (file: string = storePath()): EventStore => {
         depth,
         status: "running",
         pid: process.pid,
+        ...(processStart === undefined ? {} : { processStart }),
         startedAt,
         costUsd: 0,
       };
     },
     reopen: runId => {
-      reopenRun.run(process.pid, runId);
+      // A new process: the run is its now.
+      reopenRun.run(process.pid, ownStart() ?? null, runId);
     },
     // An event and what is derived from it are written together, or not at all.
     append: (runId, event) =>

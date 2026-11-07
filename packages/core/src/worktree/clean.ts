@@ -53,6 +53,9 @@ export const cleanStep = (
   options: CleanOptions,
 ): CleanStep => {
   if (item.inMainCheckout) return kept(item, MAIN_CHECKOUT);
+  if (item.heldBy !== undefined) {
+    return kept(item, `checked out in ${item.heldBy}`);
+  }
   if (options.live?.has(item.runId) === true) return kept(item, RUN_GOING);
   if (item.dirty && !options.force) return kept(item, "uncommitted changes");
   if (
@@ -84,7 +87,7 @@ export const cleanStep = (
   };
 };
 
-/** Whether a step drops a worktree whose folder is gone (`git worktree prune`). */
+/** Whether a step drops a worktree whose folder is gone, by its own path. */
 export const stepPrunes = (step: CleanStep): boolean =>
   step.item.missing && step.item.path !== null && step.skip === undefined;
 
@@ -95,8 +98,8 @@ export const stepActs = (step: CleanStep): boolean =>
 /**
  * What `ork worktrees clean` would do. A worktree with uncommitted changes, an
  * unmerged branch, or a detached worktree holding commits no branch has, is
- * kept unless `force`; one checked out in the main checkout, or whose run is
- * still going, is kept even then.
+ * kept unless `force`; one checked out in the main checkout or in a worktree
+ * Ork didn't create, or whose run is still going, is kept even then.
  */
 export const planClean = (
   items: readonly OrkWorktree[],
@@ -110,9 +113,36 @@ export const planClean = (
     .map(item => cleanStep(item, options));
 
 /**
- * Carries out a clean plan, then prunes stale worktree entries. What it did
- * goes into `done` as it goes, so a caller still has it when git fails
- * halfway.
+ * Carries out one step; what it did goes into `done` as it goes. It touches
+ * only its own item: a missing worktree is dropped by its own path (`git
+ * worktree remove`), never by `git worktree prune`, which would drop every
+ * missing worktree in the repository, the user's own included.
+ */
+export const applyStep = async (
+  root: string,
+  step: CleanStep,
+  force: boolean,
+  done: string[],
+): Promise<void> => {
+  const { item } = step;
+  // A worktree whose folder is gone still holds its branch until dropped.
+  if (stepPrunes(step) && !step.removeWorktree && item.path !== null) {
+    await gitOk(root, ["worktree", "remove", item.path]);
+    done.push(`pruned ${item.path}`);
+  }
+  if (step.removeWorktree && item.path !== null) {
+    await removeWorktree(root, item.path, force);
+    done.push(`removed ${item.path}`);
+  }
+  if (step.deleteBranch && item.branch !== undefined) {
+    await gitOk(root, ["branch", force ? "-D" : "-d", item.branch]);
+    done.push(`deleted ${item.branch}`);
+  }
+};
+
+/**
+ * Carries out a clean plan, step by step. What it did goes into `done` as it
+ * goes, so a caller still has it when git fails halfway.
  */
 export const applyClean = async (
   root: string,
@@ -120,24 +150,9 @@ export const applyClean = async (
   force: boolean,
   done: string[] = [],
 ): Promise<string[]> => {
-  // A worktree whose directory is gone still holds its branch until pruned.
-  await gitOk(root, ["worktree", "prune"]);
   for (const step of steps) {
-    const { item } = step;
-    if (stepPrunes(step) && !step.removeWorktree) {
-      done.push(`pruned ${String(item.path)}`);
-    }
-    if (step.removeWorktree && item.path !== null) {
-      // oxlint-disable-next-line no-await-in-loop -- git takes one lock at a time
-      await removeWorktree(root, item.path, force);
-      done.push(`removed ${item.path}`);
-    }
-    if (step.deleteBranch && item.branch !== undefined) {
-      // oxlint-disable-next-line no-await-in-loop -- git takes one lock at a time
-      await gitOk(root, ["branch", force ? "-D" : "-d", item.branch]);
-      done.push(`deleted ${item.branch}`);
-    }
+    // oxlint-disable-next-line no-await-in-loop -- git takes one lock at a time
+    await applyStep(root, step, force, done);
   }
-  await gitOk(root, ["worktree", "prune"]);
   return done;
 };

@@ -39,8 +39,8 @@ export const counted = (count: number, noun: string): string =>
 /**
  * An item's state, in order: where its worktree is when it isn't plain, the
  * workflow's own branch, uncommitted changes, unmerged or unreachable commits,
- * and the main checkout. `into` names the branch "not merged" is measured
- * against, when the words should say it.
+ * and the main checkout or another worktree holding the branch. `into` names
+ * the branch "not merged" is measured against, when the words should say it.
  */
 export const stateParts = (item: OrkWorktree, into?: string): StatePart[] => {
   const parts: StatePart[] = [];
@@ -64,6 +64,7 @@ export const stateParts = (item: OrkWorktree, into?: string): StatePart[] => {
     else if (item.path !== null && !item.missing) part("nothing committed");
   }
   if (item.inMainCheckout) part("checked out in the main checkout");
+  if (item.heldBy !== undefined) part(`checked out in ${item.heldBy}`);
   return parts;
 };
 
@@ -95,7 +96,8 @@ export const planLine = (step: CleanStep): PlanLine => {
 
 /**
  * Why an item can't be removed at all, even forced, if it can't: the main
- * checkout holds it, or its run is still going.
+ * checkout or a worktree Ork didn't create holds it, or its run is still
+ * going.
  */
 export const removeRefusal = (
   item: OrkWorktree,
@@ -103,6 +105,9 @@ export const removeRefusal = (
 ): string | undefined => {
   if (item.inMainCheckout) {
     return "checked out in the main checkout; switch it to another branch first";
+  }
+  if (item.heldBy !== undefined) {
+    return `checked out in ${item.heldBy}, a worktree Ork didn't create; switch it to another branch first`;
   }
   return live ? `run ${item.runId} is still going; stop it first` : undefined;
 };

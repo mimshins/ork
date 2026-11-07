@@ -1,12 +1,13 @@
 /**
  * @file Views over a run's stored events: the ownership tree with each node's
  *   state, runs, tokens and cost (`ork tree`), what is paused (ADR-041), and
- *   whether a `running` run's process is still alive (`ork ps`).
+ *   whether a `running` run's process is still its own (`ork ps`).
  */
 
 import type { NodeType } from "@krapht/ork-schema";
 
 import type { RunEvent } from "../run/types.ts";
+import { type ProcessStartReader, runProcessAlive } from "./process-age.ts";
 import type { RunRecord, StoredRunStatus } from "./types.ts";
 
 export type NodeState = "waiting" | "running" | "ok" | "failed" | "skipped";
@@ -191,26 +192,25 @@ export const pausedOf = (events: readonly RunEvent[]): Paused => {
   return { run, nodes: [...nodes] };
 };
 
-/** Whether a process is running: ours, or another user's (alive, not ours). */
-export const processAlive = (pid: number): boolean => {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    // Another user's process: alive, but not ours to signal.
-    return error instanceof Error && "code" in error && error.code === "EPERM";
-  }
-};
-
-/** A run's status, with `crashed` for a `running` run whose process is gone. */
-export const liveStatus = (run: RunRecord): StoredRunStatus | "crashed" =>
-  run.status === "running" && !processAlive(run.pid) ? "crashed" : run.status;
+/**
+ * A run's status, with `crashed` for a `running` run whose process is gone, or
+ * is another process that got its id (`startOf` reads a process's start; the
+ * default reads the system's).
+ */
+export const liveStatus = (
+  run: RunRecord,
+  startOf?: ProcessStartReader,
+): StoredRunStatus | "crashed" =>
+  run.status === "running" && !runProcessAlive(run, startOf)
+    ? "crashed"
+    : run.status;
 
 /** `liveStatus`, with `paused` for a running run paused as a whole. */
 export const runStatus = (
   run: RunRecord,
   events: readonly RunEvent[],
+  startOf?: ProcessStartReader,
 ): StoredRunStatus | "crashed" | "paused" => {
-  const status = liveStatus(run);
+  const status = liveStatus(run, startOf);
   return status === "running" && pausedOf(events).run ? "paused" : status;
 };

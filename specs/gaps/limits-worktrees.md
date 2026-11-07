@@ -19,3 +19,7 @@ How the [Worktrees panel](../ui/panels-worktrees.md) and
   `ork worktrees clean` in a terminal at the same time isn't kept out. Git's own
   lock still takes one command at a time, and the digest refuses a plan that
   changed.
+- **L169 · An `ork/` branch no run recorded is matched by branch.** Older runs
+  recorded no path, so such a branch's worktree is whichever has it checked out,
+  a user's own `git worktree add ../review ork/r1/lead` included, and clean can
+  remove it. Recorded items are matched by their path.

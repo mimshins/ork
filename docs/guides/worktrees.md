@@ -105,7 +105,9 @@ ork worktrees remove <branch> --branch   # and its branch
 The list shows each branch's worktree path, uncommitted changes, and commits not
 yet merged into your current branch. Cleaning keeps anything with uncommitted
 changes unless you add `--force`, and never removes a branch you have checked
-out or the worktree of a run that's still going: stop the run first.
+out (in your main checkout or in a worktree of your own) or the worktree of a
+run that's still going: stop the run first. A worktree of your own whose folder
+you deleted keeps git's record of it; Ork drops only its own.
 `ork worktrees remove` takes one item by the same rule; when removing it would
 lose work it prints what (the changes and commits, as git prints them) and needs
 `--force`. Without a terminal, `--yes` is required. It lists what your runs

@@ -60,7 +60,9 @@ describe("Remove…", () => {
     ).toBeDefined();
     expect(document.activeElement?.textContent).toBe("Cancel");
     expect(
-      dialog().getByText("ork worktrees remove ork/4f2a1c/build"),
+      dialog().getByText(
+        "cd /code/app && ork worktrees remove ork/4f2a1c/build",
+      ),
     ).toBeDefined();
     expect(await violations(document.body)).toEqual([]);
     await userEvent.click(
@@ -93,7 +95,9 @@ describe("Remove…", () => {
     await readDone("ork/4f2a1c/build: remove worktree + delete branch");
     expect(asked(opened, "removePlan")).toHaveLength(2);
     expect(
-      dialog().getByText("ork worktrees remove ork/4f2a1c/build --branch"),
+      dialog().getByText(
+        "cd /code/app && ork worktrees remove ork/4f2a1c/build --branch",
+      ),
     ).toBeDefined();
     expect(
       dialog().getByRole("button", { name: "Remove worktree and branch" }),

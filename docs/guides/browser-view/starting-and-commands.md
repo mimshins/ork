@@ -10,9 +10,10 @@ ork ui --port 4500  # another port, if 4417 is taken
 ork ui --no-open    # only print the address and the sign-in link
 ```
 
-Running `ork ui` again opens the one that is running. Ctrl-C stops it; your runs
-keep running. It uses your own accounts and asks for none of them. How it keeps
-other sites and programs out is in
+Running `ork ui` again opens the one that is running. Ctrl-C stops it (a second
+Ctrl-C at once, if it's waiting for an upgrade to finish); your runs keep
+running. It uses your own accounts and asks for none of them. How it keeps other
+sites and programs out is in
 [the browser view's setup](../../getting-started/installation.md#the-browser-view).
 
 ## What you can do, and the command for it

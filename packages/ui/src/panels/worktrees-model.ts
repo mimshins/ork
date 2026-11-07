@@ -11,6 +11,8 @@ import type {
   WorktreesProject,
 } from "@krapht/ork-server/client";
 
+import { quoted } from "./run-form.ts";
+
 /** `3 worktrees`, `1 branch`. */
 export const counted = (count: number, noun: string): string =>
   `${String(count)} ${noun}${count === 1 ? "" : noun.endsWith("h") ? "es" : "s"}`;
@@ -109,12 +111,14 @@ export const removeName = (row: WorktreeRow): string => {
     : `${name}: ${row.remove.refusal}`;
 };
 
+/** Remove…'s CLI twin, from the project's root, where `remove` resolves. */
 export const removeTwin = (
+  root: string,
   key: string,
   deleteBranch: boolean,
   force: boolean,
 ): string =>
-  `ork worktrees remove ${key}${deleteBranch ? " --branch" : ""}${force ? " --force" : ""}`;
+  `cd ${quoted(root)} && ork worktrees remove ${quoted(key)}${deleteBranch ? " --branch" : ""}${force ? " --force" : ""}`;
 
 type Kind = "branch" | "detached" | "worktree";
 
@@ -206,5 +210,6 @@ export const lostNote = (plan: RemovePlanAnswer): string =>
       : []),
   ].join(" ");
 
+/** Clean merged…'s CLI twin, from the project's root. */
 export const cleanTwin = (root: string, branches: boolean): string =>
-  `cd ${root} && ork worktrees clean${branches ? " --branches" : ""}`;
+  `cd ${quoted(root)} && ork worktrees clean${branches ? " --branches" : ""}`;

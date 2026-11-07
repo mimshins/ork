@@ -86,6 +86,28 @@ describe("running an installer's command", () => {
     expect(out).toContain("stderr:warn\n");
   });
 
+  it("reads an installer's output to its end through its own Ctrl-C", async () => {
+    // As a terminal's Ctrl-C reaches a package manager: it tidies up, saying
+    // so, then exits; every line it wrote on the way out is still read.
+    const { code, out } = await collect([
+      process.execPath,
+      "-e",
+      [
+        "process.on('SIGINT', () => {",
+        "  process.stdout.write('rolling back\\n');",
+        "  setTimeout(() => { process.stdout.write('rolled back\\n'); process.exit(130); }, 50);",
+        "});",
+        "process.stdout.write('reifying\\n');",
+        "setTimeout(() => process.kill(process.pid, 'SIGINT'), 20);",
+        "setTimeout(() => {}, 5000);",
+      ].join("\n"),
+    ]);
+    expect(code).toBe(130);
+    expect(out.replaceAll("stdout:", "")).toBe(
+      "reifying\nrolling back\nrolled back\n",
+    );
+  });
+
   it("ends with 127 and says why when the program can't start", async () => {
     const { code, out } = await collect(["ork-test-no-such-program"]);
     expect(code).toBe(INSTALL_NOT_STARTED);
