@@ -1,6 +1,6 @@
 {
   "name": "ork",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Write, check and run Ork workflows from Claude Code, the way Ork is built to save. Needs the ork command on your PATH.",
   "author": { "name": "Ork", "url": "https://github.com/mimshins/ork" },
   "homepage": "https://github.com/mimshins/ork",
