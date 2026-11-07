@@ -1,5 +1,136 @@
 # @krapht/ork
 
+## 0.4.0
+
+### Minor Changes
+
+- [`2a0882a`](https://github.com/mimshins/ork/commit/2a0882ae36fbcc045934d6c73cf8d5d3da04dfa1) Thanks [@mimshins](https://github.com/mimshins)! - `ork run`, `ork validate` and `ork context explain` take Ork's own workflows by
+  an `ork:` name. The first is `ork:feedback-apply`, which proposes a fix for a
+  feedback item on a branch and asks whether to keep it. Ork writes a built-in
+  into the project's run folder (`.ork/runs/.builtin/`), so its runs belong to the
+  project and resume from the text they started with.
+
+- [`2a0882a`](https://github.com/mimshins/ork/commit/2a0882ae36fbcc045934d6c73cf8d5d3da04dfa1) Thanks [@mimshins](https://github.com/mimshins)! - `ork feedback apply <item>` has Ork propose a fix for a feedback item: it runs
+  Ork's own `ork:feedback-apply` workflow in the project the item came from, whose
+  worker can read and edit files but run no command, and Ork commits its change on
+  its own branch. Before you keep or discard it, you see what the branch changes
+  (`git diff --stat`) and how to read the whole of it. Ork never merges it.
+
+- [`2a0882a`](https://github.com/mimshins/ork/commit/2a0882ae36fbcc045934d6c73cf8d5d3da04dfa1) Thanks [@mimshins](https://github.com/mimshins)! - `ork feedback accept <item> --lesson` turns a feedback item into a lesson: one
+  line in `.ork/lessons/<workflow>.md` of the project it came from, which every
+  later session of that workflow reads. `-m` gives its words. A workflow's lessons
+  are held to 1,500 tokens: accepting past that is refused, and a longer file is
+  cut, which `ork context explain` and the Context panel say.
+
+- [`2a0882a`](https://github.com/mimshins/ork/commit/2a0882ae36fbcc045934d6c73cf8d5d3da04dfa1) Thanks [@mimshins](https://github.com/mimshins)! - `ork decide --id <d> --choose <option>` takes `--note <text>` and
+  `--rating good|bad`, and notes how the decision's node went, as the run's
+  feedback. The `ork ui` server takes the same note at `POST /api/runs/:id/notes`.
+
+- [`e1e2814`](https://github.com/mimshins/ork/commit/e1e281496edeed583fed82b73e874039d51fa0cd) Thanks [@mimshins](https://github.com/mimshins)! - `ork feedback publish <item>` shares feedback about Ork itself with its
+  maintainers, in the "Agent feedback" category of its GitHub Discussions, with
+  your own `gh`. Ork redacts it (secrets, your projects' paths, home folder,
+  emails, hosts and IPs; `--hide-names` for names), shows exactly what it will
+  post, a new thread or a "+1" on the one there, and sends nothing unless you say
+  yes. `ork feedback export` and `import` move feedback as JSON lines.
+
+- [`2a0882a`](https://github.com/mimshins/ork/commit/2a0882ae36fbcc045934d6c73cf8d5d3da04dfa1) Thanks [@mimshins](https://github.com/mimshins)! - `ork feedback triage` merges feedback items about the same problem, with the
+  same target and kind and titles that share at least 80% of their words, after
+  asking about each merge. No model runs. A merged item lists under the one seen
+  first, and `ork feedback split <item>` takes a merge apart.
+
+- [`284a23b`](https://github.com/mimshins/ork/commit/284a23ba430b504324e636ceda521541dd5027c3) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` has a Context panel: what the node you chose last is told, and where
+  each piece comes from, as `ork context explain` prints it, with each piece's
+  words a click away. It follows a node chosen in the Monitor, Logs or Chats, and
+  the card selected in the Builder, whose draft it plans again after each edit. A
+  run's node is planned from the project's files as they are now, naming each one
+  that changed after the run started. `ork context explain` says when it plans a
+  spawned worker as the node it came from, and names each practice by its own
+  words when one is switched off.
+
+- [`0cb18a2`](https://github.com/mimshins/ork/commit/0cb18a2b6f1fdc97209a68f121b6172bcd35ee73) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` tells you when a newer Ork is out, with a banner above the panels from
+  the same record as the CLI's notice; it keeps that record fresh itself while it
+  stays open, at most once a day, and `ORK_NO_UPDATE_CHECK`, `NO_UPDATE_NOTIFIER`
+  and `CI` turn it off. **Upgrade…** (or **Upgrade Ork…** in the palette) does
+  what `ork upgrade` does once you confirm: it shows the exact command, streams
+  its output, and offers **Restart**, which brings `ork ui` back on the new
+  version on the same port, still signed in, and reloads the page. A clone or an
+  `npx` copy gets the steps to run instead, each command as a block. The dialog
+  works by keyboard and screen reader: each step's heading takes the focus and is
+  heard, the plan and the outcome are said aloud, and closing it returns the focus
+  to the banner's button, or to the panels. `ork ui` now runs its server as a
+  child process it supervises; Ctrl-C still stops both. Stopped while an upgrade
+  runs, it waits for the package manager to finish, so Ork isn't left
+  half-installed, and says so; a second Ctrl-C stops it at once. A mirror's URL in
+  `ORK_UPDATE_REGISTRY` shows on the page without its user name and password.
+
+- [`9b568c9`](https://github.com/mimshins/ork/commit/9b568c992ba78ad8a94ccee1b0d649c8f56aafbe) Thanks [@mimshins](https://github.com/mimshins)! - The browser view has a **Worktrees** panel: what `ork worktrees` lists, for
+  every project at once, with **Remove…** for one worktree or branch and **Clean
+  merged…** for what's merged into each project's current branch. Each shows its
+  plan and its command (run from the project's folder, quoted to paste as is), and
+  asks; removing work that would be lost (uncommitted changes, unmerged or
+  unreachable commits) shows exactly what first and needs a second, explicit
+  confirm. A plan that changed after you read it removes nothing.
+  
+  `ork worktrees remove <branch|path> [--branch] [--force] [--yes]` removes one,
+  the panel's twin: it prints the plan, and what's lost when it needs `--force`.
+  It changes only that item: a worktree whose folder is gone is dropped by its own
+  path, never by pruning every missing one.
+
+### Patch Changes
+
+- [`71c09e7`](https://github.com/mimshins/ork/commit/71c09e78f9ea5177aabe7a635af9e3317d6ae767) Thanks [@mimshins](https://github.com/mimshins)! - Ork uses `@anthropic-ai/sdk` 1.3.0, and builds with `tsdown` 0.23.4.
+
+- [`38ea1dc`](https://github.com/mimshins/ork/commit/38ea1dc1804da4cdf960a35e618a56bc8a8b0277) Thanks [@mimshins](https://github.com/mimshins)! - `ork feedback` and the browser view now follow one rule for what an item allows:
+  nothing on a dismissed item until you restore it, `accept` only on a new or
+  triaged one, `publish` only once, and no second `apply` while one is proposing a
+  fix for the item. A lesson added to an item that's resolved already leaves it
+  resolved.
+
+- [`4be0fe3`](https://github.com/mimshins/ork/commit/4be0fe3fd359597c417daaf37200bd56790c79a7) Thanks [@mimshins](https://github.com/mimshins)! - A run that crashed is no longer shown as running after its process id is reused,
+  by a process started after a reboot or by another user. Ork now records when a
+  run's process started, beside its id, and a live process with that id but
+  another start reads as `crashed`, so `ork ps`, `ork stop`, `ork prune`,
+  `ork worktrees` and the browser view see it as crashed, and an upgrade no longer
+  waits on it. Runs recorded before this change are judged as they were.
+
+- [`52dc034`](https://github.com/mimshins/ork/commit/52dc0348569f5a63973b6f3b1672adcd62b54c11) Thanks [@mimshins](https://github.com/mimshins)! - The browser view shows every command as a code block, never as inline code: a
+  full-width block with its copy button in the top-right corner, under a sentence
+  that ends in a colon. Empty states, a confirm dialog's command, the triggers'
+  next step and the Upgrade dialog's command all take one, and a control's tooltip
+  shows its command as a block line under its words. A copy button now sits only
+  in a block or a well, always in its corner, so "Copied." no longer pushes it
+  aside, and a feedback item's id is no longer copied from beside it.
+
+- [`38ea1dc`](https://github.com/mimshins/ork/commit/38ea1dc1804da4cdf960a35e618a56bc8a8b0277) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` has a Feedback panel: every item from your runs, filtered by status and
+  by what it's about, with its records newest first. Dismiss or restore an item,
+  accept it, add it as a lesson for its workflow, have Ork propose a fix
+  (confirmed first, then followed in the Monitor), split what triage merged, or
+  preview exactly what would be shared about Ork and post it. In the Monitor,
+  **Note…** on a node, or the note button among a run's controls, adds your own
+  feedback on how it went.
+
+- [`52dc034`](https://github.com/mimshins/ork/commit/52dc0348569f5a63973b6f3b1672adcd62b54c11) Thanks [@mimshins](https://github.com/mimshins)! - The browser view keeps the focus and the announcements where a keyboard or
+  screen reader user expects them. A dialog opened from the command palette keeps
+  the focus, rather than the palette taking it back behind the dialog. Dialogs are
+  marked modal. The same message twice in a row is now heard twice. Output wells
+  and command blocks have a visible edge in the light theme.
+
+- [`37090bb`](https://github.com/mimshins/ork/commit/37090bb761b20bf48d54c70b0be4897c777e2454) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` no longer marks anything with a colored stripe down one side. An unread
+  notification is tinted, with a heavier title and the word "unread"; a chat
+  message is its speaker's line, then the words; and a Builder field with a
+  problem shows the failed glyph beside the problem's words.
+
+- [`9b568c9`](https://github.com/mimshins/ork/commit/9b568c992ba78ad8a94ccee1b0d649c8f56aafbe) Thanks [@mimshins](https://github.com/mimshins)! - `ork worktrees clean` no longer removes the worktree of a run that's still
+  going, even with `--force`: a node that hadn't committed yet looked merged, so a
+  plain clean could take its worktree from under it. The plan says "its run is
+  still going"; stop the run first. A worktree whose folder is gone now shows as
+  `prune worktree` in the plan, and is dropped by its own path: clean no longer
+  runs `git worktree prune`, which dropped git's record of every missing worktree
+  in the repository, your own included. A branch a run created that you've since
+  checked out in a worktree of your own is left alone ("checked out in <path>"),
+  and that worktree is no longer taken for Ork's. The list's words read "2 commits
+  not merged" and "checked out in the main checkout".
+
 ## 0.3.0
 
 ### Minor Changes
