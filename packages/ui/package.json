@@ -19,7 +19,7 @@
     "@mdi/js": "7.4.47",
     "containerized-state": "3.4.0",
     "containerized-state-plugin-persistence": "1.4.0",
-    "dockview-react": "8.8.2",
+    "dockview-react": "8.8.3",
     "react": "19.3.1",
     "react-containerized-state": "3.4.0",
     "react-dom": "19.3.1",
