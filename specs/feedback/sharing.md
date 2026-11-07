@@ -49,7 +49,8 @@ Deduplication and scale:
   report, with `feedbackVersion`), dismissed items' left out without `--all`.
   Import checks each line, masks secrets again, skips a record whose run and
   event are here, and names each bad line; records regroup by fingerprint as
-  `new` items ([L151](../gaps/limits-feedback.md)). Issues in the project's own
-  repository can be a later adapter.
-- **Maintainer side (later):** a scheduled job runs the same triage rules over
-  the Discussions category and promotes the top clusters to issues.
+  `new` items ([L151](../gaps/limits-feedback.md)). An adapter for issues in the
+  project's own repository is not part of Ork.
+- **Maintainer side (not part of Ork):** triaging the Discussions category, for
+  example a scheduled job running the same rules over it and promoting the top
+  clusters to issues, is the maintainers' own work.

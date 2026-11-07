@@ -96,6 +96,9 @@ export const feedbackActions = (
   return { accept, lesson, apply, publish };
 };
 
+/** What a run of `ork:feedback-apply` is named: its file's `name:`. */
+export const FIX_WORKFLOW = "ork-feedback-apply";
+
 /** The running `ork:feedback-apply` run proposing a fix for `item`, if any. */
 export const openFixRun = (
   store: EventStore,
@@ -104,9 +107,7 @@ export const openFixRun = (
   const short = item.id.slice(0, 12);
   return store
     .runs()
-    .filter(
-      run => run.workflow === "feedback-apply" && run.status === "running",
-    )
+    .filter(run => run.workflow === FIX_WORKFLOW && run.status === "running")
     .find(run => {
       const [first] = store.events(run.id);
       const event = first?.event;

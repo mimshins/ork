@@ -3,8 +3,9 @@
  *   apply and publish feedback from; the engine's three ways in (system
  *   signals, the agent's `feedback` tool, your notes), the recorder and the
  *   local table; triage, fixes, lessons and the publish preview; the files they
- *   write; your `gh` and Ork's Discussions. Nothing here is built yet.
- *   Coordinates are in map units; the map is {@link SIZE} wide and tall.
+ *   write; your `gh` and Ork's Discussions. Ork's maintainers' own triage of
+ *   the Discussions category is not part of Ork. Coordinates are in map units;
+ *   the map is {@link SIZE} wide and tall.
  */
 
 import { CONTEXT, CONTROL, DESIGN, FEEDBACK, STORE } from "../refs.js";
@@ -73,10 +74,20 @@ export const NODES = [
       "Reads the local feedback items: what was reported, how often, in which runs, workflows and models. It is also one of the places you rate or annotate a node's result.",
     facts: [
       "Built: `list` (newest first; `--all` adds dismissed items), `show <item>` with every record, `dismiss <item>` and `restore <item>`; an item is a prefix of its fingerprint.",
-      "Built: `note <run> [<node>] -m <text>` records your note on a run or a node, with `--rating good|bad`; `ork decide --note` notes the node you just answered, and the server takes the same note for the UI (`POST /api/runs/:id/notes`).",
-      "Planned: the Feedback panel's note (M2).",
+      "Built: `note <run> [<node>] -m <text>` records your note on a run or a node, with `--rating good|bad`; `ork decide --note` notes the node you just answered.",
+      "In the browser, **Note…** in the Monitor writes the same note (`POST /api/runs/:id/notes`); all three are checked by one function.",
     ],
-    docs: [DESIGN.cli, DESIGN.feedback, FEEDBACK.cli, FEEDBACK.cliTests],
+    docs: [
+      DESIGN.cli,
+      DESIGN.feedback,
+      FEEDBACK.cli,
+      FEEDBACK.cliTests,
+      FEEDBACK.human,
+      FEEDBACK.noteTests,
+      FEEDBACK.noteDialog,
+      FEEDBACK.noteDialogTests,
+      FEEDBACK.guide,
+    ],
   },
   {
     id: "panel",
@@ -85,13 +96,34 @@ export const NODES = [
     zone: "surfaces",
     x: 320,
     y: 360,
-    status: "planned",
+    status: "built",
     pkg: "ui",
+    src: "packages/ui/src/panels/feedback-panel.tsx",
     summary:
-      "The browser view of the same items, grouped by fingerprint and target, with triage, apply, accept as a lesson, and the publish preview.",
-    facts: ["Milestone 2, with the rest of the UI."],
-    see: [{ map: "architecture", node: "ui", label: "The UI" }],
-    docs: [DESIGN.ui],
+      "The browser twin of `ork feedback`: every item, filtered by status and by what it's about; an item's facts and records, with the way to each run; and what you can do with it.",
+    facts: [
+      "Built: Dismiss, Restore, Accept, Add lesson…, Propose fix…, Publish… and Split. Which ones an item allows, and why not, is the server's answer by the same rule `ork feedback` keeps.",
+      "Add lesson… names the lessons file and how full it is before anything is written. Propose fix… names the project and asks, starts `ork feedback apply` in the background, and goes to the run in the Monitor.",
+      "Publish… shows exactly what would be posted, and posts only on **Post**, and only if it's still what you read.",
+      "Not here: merging, which stays `ork feedback triage`'s; a driver for Propose fix; a stream of new feedback, so it reads again when the runs change (L152 to L154).",
+      "A note on a run or a node is written in the Monitor.",
+    ],
+    see: [
+      { map: "architecture", node: "ui", label: "The UI" },
+      { map: "architecture", node: "server", label: "The local server" },
+    ],
+    docs: [
+      FEEDBACK.panelSpec,
+      FEEDBACK.guide,
+      FEEDBACK.panel,
+      FEEDBACK.panelTests,
+      FEEDBACK.dialogTests,
+      FEEDBACK.axeTests,
+      FEEDBACK.routes,
+      FEEDBACK.routeTests,
+      FEEDBACK.limits,
+      DESIGN.ui,
+    ],
   },
   {
     id: "actions",
@@ -106,8 +138,18 @@ export const NODES = [
       "The subcommands that close the loop: triage new items, apply one as a fix or a lesson, publish an `ork` item, and move feedback as JSONL.",
     facts: [
       "`triage`, `split`, `accept <item> [--lesson]`, `apply <item>`, `publish <item>`, `export` and `import`, beside `list`, `show`, `note`, `dismiss` and `restore`.",
+      "What an item allows is one rule in the engine, shared with the Feedback panel: nothing on a dismissed item, no lesson or fix for an `ork` one, publishing only an `ork` one, once.",
     ],
-    docs: [DESIGN.cli, DESIGN.milestones, FEEDBACK.accept],
+    docs: [
+      DESIGN.cli,
+      FEEDBACK.guide,
+      FEEDBACK.actions,
+      FEEDBACK.actionTests,
+      FEEDBACK.triageCommand,
+      FEEDBACK.apply,
+      FEEDBACK.share,
+      DESIGN.milestones,
+    ],
   },
 
   // ── Engine ───────────────────────────────────────────────────────────────
@@ -186,7 +228,7 @@ export const NODES = [
     facts: [
       "A record: origin (run, workflow and its hash, node, model, driver, Ork version), content and fingerprint.",
       "An item: its status, count, first and last seen, and the runs, workflows and models it was seen in.",
-      "Status, kept per item: `new`, `triaged`, `accepted`, `resolved`, `dismissed`; `published` comes with publishing. An item triage merged into another lists under it.",
+      "Status, kept per item: `new`, `triaged`, `accepted`, `resolved`, `dismissed`, and `published` once it's shared. An item triage merged into another lists under it.",
       "Records carry a `feedbackVersion`; nothing holds a token.",
     ],
     docs: [DESIGN.feedback, FEEDBACK.store, FEEDBACK.tests],
@@ -207,7 +249,13 @@ export const NODES = [
       "A summary and a proposed fix come from `apply`, one item at a time, when you ask (ADR-059).",
       "A merged item lists under the one seen first; `ork feedback split` takes it apart.",
     ],
-    docs: [DESIGN.feedback, FEEDBACK.triage, FEEDBACK.triageTests],
+    docs: [
+      DESIGN.feedback,
+      FEEDBACK.triage,
+      FEEDBACK.triageTests,
+      FEEDBACK.triageCommand,
+      FEEDBACK.loopAdr,
+    ],
   },
   {
     id: "compiler",
@@ -267,6 +315,7 @@ export const NODES = [
       FEEDBACK.applyWorkflow,
       FEEDBACK.builtins,
       FEEDBACK.builtinTests,
+      FEEDBACK.loopAdr,
     ],
   },
   {
@@ -281,7 +330,7 @@ export const NODES = [
     summary:
       "The same queue every question goes through. A proposed fix waits here as the gate of its run: keep the branch, or discard it.",
     facts: [
-      "Built: the queue itself (milestone 1d), and the gate of `ork:feedback-apply`.",
+      "Built: the queue itself (milestone 1d), and the gate of `ork:feedback-apply`, answered in the terminal that runs `ork feedback apply`, with `ork decide`, or in the Decisions panel.",
       "A publish is not a decision: its preview is confirmed in the terminal or the Feedback panel (ADR-059).",
     ],
     see: [
@@ -309,14 +358,19 @@ export const NODES = [
       "Redacts secrets, emails, hosts and IPs; your projects' paths become `<project>/…` and your home `~`; `--hide-names` takes out workflow and folder names.",
       "Header: Ork version, driver, model, node type, kind, count.",
       "Every post carries a hidden `<!-- ork-fingerprint: … -->` marker; the newest 100 threads are read for it first.",
-      "`ork feedback publish` asks `y/N` with no flag to skip it.",
+      "`ork feedback publish` asks `y/N` with no flag to skip it. The Feedback panel's preview carries a digest of the text; **Post** makes the preview again and sends nothing if it changed.",
     ],
     docs: [
       DESIGN.feedback,
       FEEDBACK.redact,
+      FEEDBACK.preview,
       FEEDBACK.discussions,
       FEEDBACK.share,
       FEEDBACK.publishTests,
+      FEEDBACK.publishRoute,
+      FEEDBACK.publishDialog,
+      FEEDBACK.publishDialogTests,
+      FEEDBACK.loopAdr,
     ],
   },
 
@@ -440,6 +494,7 @@ export const NODES = [
     facts: [
       "Found by its slug, `agent-feedback`, never by id.",
       'A matching fingerprint marker gets a comment and a "+1", not a new discussion.',
+      "Triaging the category and promoting threads to issues is the maintainers' own job, outside Ork.",
     ],
     hosts: [
       {

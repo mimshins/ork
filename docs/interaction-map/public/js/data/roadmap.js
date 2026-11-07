@@ -811,11 +811,24 @@ export const MILESTONES = [
       {
         id: "feedback-loop",
         title: "Feedback loop",
-        status: "active",
-        commits: ["2a0882a", "74cb402", "e1e2814", "6421a50", "38ea1dc"],
+        status: "done",
+        date: "2026-11-07",
+        commits: [
+          "2a0882a",
+          "74cb402",
+          "e1e2814",
+          "6421a50",
+          "38ea1dc",
+          "a2b41c3",
+        ],
         detail:
-          "Triage, `ork feedback apply`, lessons, sharing to Discussions, and the Feedback panel.",
-        docs: ["specs/feedback.md"],
+          "Feedback now changes something. An item becomes a lesson its workflow reads under a 1,500-token cap, or `ork feedback apply` runs Ork's own `ork:feedback-apply` to propose a fix on a branch, behind a keep-or-discard gate, never merged. Triage merges near-duplicates by rules, asking each time, and `split` undoes it; notes come from `ork decide` and the Monitor too. An item about Ork is published to its Discussions after a preview, with your own `gh`, and feedback moves as JSON lines with `export` and `import`. The Feedback panel does all but merging, and one rule says what an item allows, in a terminal or the browser (ADR-059).",
+        docs: [
+          "specs/feedback.md",
+          "docs/guides/feedback.md",
+          "decisions/ADR-059-closing-the-feedback-loop.md",
+          "specs/gaps/limits-feedback.md",
+        ],
       },
       {
         id: "for-each",
@@ -966,4 +979,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-06";
+export const ROADMAP_UPDATED = "2026-11-07";

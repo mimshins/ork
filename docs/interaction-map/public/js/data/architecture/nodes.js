@@ -13,6 +13,7 @@ import {
   CORE,
   DESIGN,
   ENGINE,
+  FEEDBACK,
   INTEGRATIONS,
   LINKS,
   NODE_TYPES,
@@ -166,7 +167,9 @@ export const NODES = [
       "Built: `GET` and `POST /api/links` and `POST /api/links/end` do what `ork relay` does.",
       "Closing it stops no run, and the CLI never goes through it.",
       "`GET /api/triggers`, what `ork watch --status` says. It only reads: no route accepts a trigger.",
+      "Built: the feedback routes, on the same core functions as `ork feedback`: items and their records, dismiss and restore, accept and a lesson, split, a note on a run, a fix started as `ork feedback apply` in the background, and a publish sent only when it's still what its preview showed.",
     ],
+    see: [{ map: "feedback", node: "panel", label: "The Feedback panel" }],
     docs: [
       DESIGN.server,
       SERVER.adr,
@@ -179,6 +182,8 @@ export const NODES = [
       SERVER.tests,
       SERVER.e2e,
       WATCH.route,
+      FEEDBACK.routes,
+      FEEDBACK.routeTests,
     ],
   },
   {
@@ -215,10 +220,11 @@ export const NODES = [
       "The Monitor shows what a `watch:` node is waiting for. Looks aren't recorded, so its count and next look are worked out from `every`, and say about.",
       "The Runs panel's Triggers section says what's live and when each last looked. It only shows: accepting takes a terminal.",
       "The Builder's until picker chooses what a `watch:` waits for from what the node declares, so it can't wait for a value that never comes.",
+      "Built: Feedback, the items runs reported, with an item's records and its actions: dismiss, accept, a lesson, a fix proposed in a run, and a publish previewed before it's posted. The Monitor's Note… adds your own note on a run or a node.",
     ],
     see: [
       { map: "messaging", node: "inbox", label: "The decisions inbox" },
-      { map: "feedback", node: "panel", label: "The feedback panel" },
+      { map: "feedback", node: "panel", label: "The Feedback panel" },
     ],
     docs: [
       WATCH.section,
@@ -239,6 +245,9 @@ export const NODES = [
       UI.workspaceTests,
       UI.stateTests,
       UI.panelTests,
+      FEEDBACK.panel,
+      FEEDBACK.panelTests,
+      FEEDBACK.noteDialog,
     ],
   },
 
@@ -489,7 +498,7 @@ export const NODES = [
       {
         map: "feedback",
         node: "decisions",
-        label: "Proposed fixes and publish previews",
+        label: "Proposed fixes: keep or discard",
       },
     ],
     docs: [DESIGN.messaging, CONTROL.queue, CONTROL.control, CONTROL.tests],

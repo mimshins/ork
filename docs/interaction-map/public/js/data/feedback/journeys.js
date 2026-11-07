@@ -1,6 +1,6 @@
 /** @file The feedback map's journeys. */
 
-import { DESIGN } from "../refs.js";
+import { DESIGN, FEEDBACK } from "../refs.js";
 
 /** @typedef {import("../types.js").Journey} Journey */
 
@@ -249,6 +249,127 @@ export const JOURNEYS = [
         from: "table",
         title: "The item is `published`",
         detail: "Its status becomes `published`.",
+      },
+    ],
+  },
+  {
+    id: "panel-fix",
+    title: "A fix from the browser",
+    who: "You · `ork ui`",
+    summary:
+      "The Feedback panel asks for the same fix as `ork feedback apply`, and you keep or discard it in Decisions, while the Monitor shows the run.",
+    steps: [
+      {
+        from: "you",
+        to: "panel",
+        title: "You choose an item and Propose fix…",
+        detail:
+          "On a `workflow` or `project` item. The panel names the project it would run in and that it's a paid run, and asks first.",
+        docs: [FEEDBACK.panelSpec],
+      },
+      {
+        from: "panel",
+        to: "actions",
+        title: "The server starts `ork feedback apply`",
+        detail:
+          "In the background, in the item's project, with a run id it picked, so the panel can go to the run in the Monitor. A settled or dismissed item is refused, by the same rule as in a terminal.",
+        docs: [FEEDBACK.applyRoute, FEEDBACK.actions],
+      },
+      {
+        from: "actions",
+        to: "apply",
+        title: "`ork:feedback-apply` proposes the fix",
+        detail:
+          "Its worker reads and edits files, runs no command, and Ork commits the change on a branch in a worktree.",
+      },
+      {
+        from: "apply",
+        to: "decisions",
+        title: "A gate asks: keep or discard",
+        detail:
+          "With the branch's `git diff --stat` and the command to read the whole change. It shows in the Decisions panel like any question.",
+      },
+      {
+        from: "decisions",
+        title: "You keep it in Decisions",
+        detail: "Or with `ork decide`. Nothing is merged, whatever you answer.",
+      },
+      {
+        from: "decisions",
+        to: "actions",
+        title: "`ork feedback apply` reads your answer",
+        detail:
+          "Kept, the item is `resolved`; discarded, its branch and worktree are removed and the item stays `accepted`. The panel shows it when it reads again.",
+      },
+      {
+        from: "apply",
+        to: "repoFiles",
+        title: "It stays on its branch",
+        detail: "For you to review and merge like any other change.",
+      },
+    ],
+  },
+  {
+    id: "panel-publish",
+    title: "Publish from the browser",
+    who: "You · `ork ui` · your gh",
+    summary:
+      "The Feedback panel previews an `ork` item exactly as it would be posted, and posts it only when you press Post and it's still what you read.",
+    steps: [
+      {
+        from: "you",
+        to: "panel",
+        title: "You choose an `ork` item and Publish…",
+        detail:
+          "Only an `ork` item has the button; one published already says why it's off.",
+        docs: [FEEDBACK.panelSpec],
+      },
+      {
+        from: "panel",
+        to: "publish",
+        title: "A preview that only reads",
+        detail:
+          "The server redacts the item and adds its header and marker, as `ork feedback publish` does.",
+        docs: [FEEDBACK.preview, FEEDBACK.publishRoute],
+      },
+      {
+        from: "publish",
+        to: "gh",
+        title: "Your `gh` looks, and sends nothing",
+        detail:
+          'It reads the "Agent feedback" category and its 100 newest threads for the item\'s marker, to say whether this is a new thread or a "+1".',
+      },
+      {
+        from: "publish",
+        to: "panel",
+        title: "The exact text, and its digest",
+        detail:
+          "Shown as characters, never as Markdown, with where it goes. Hide repository and workflow names reads it again.",
+      },
+      {
+        from: "panel",
+        title: "You press Post",
+        detail:
+          "It's never the dialog's default, so Enter elsewhere doesn't press it. Cancel, and nothing was sent.",
+      },
+      {
+        from: "panel",
+        to: "publish",
+        title: "Sent only if it's still what you read",
+        detail:
+          "The server makes the preview again; if its digest isn't the one you saw, nothing is sent and the panel shows the new text.",
+      },
+      {
+        from: "gh",
+        to: "discussions",
+        title: "Posted with your own `gh`",
+        detail:
+          'A "+1" with the new context on the thread with the same marker, or a new discussion.',
+      },
+      {
+        from: "table",
+        title: "The item is `published`",
+        detail: "And Publish is off for it from then on.",
       },
     ],
   },

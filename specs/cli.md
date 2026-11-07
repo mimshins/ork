@@ -6,7 +6,7 @@ node with `--node`), `ork ps`, `ork logs`, `ork tree`, `ork decide`, `ork stop`,
 `ork pause`, `ork continue` ([run control](./run-control.md)), `ork chat`,
 `ork resume`, `ork worktrees`, `ork context explain`,
 `ork agents list | show | add | rm`,
-`ork feedback list | show | note | dismiss | restore`
+`ork feedback list | show | note | dismiss | restore | accept | apply | triage | split | publish | export | import`
 ([feedback](./feedback.md)), `ork upgrade` and the new-version notice
 ([updates](./cli/updates.md)), `ork ui` ([server](./server.md)), and `ork mcp`
 ([mcp](./cli/mcp.md)) are built ([code](../packages/cli/src/main.ts),

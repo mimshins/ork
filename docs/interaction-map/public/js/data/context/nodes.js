@@ -8,6 +8,7 @@
 import {
   CONTEXT,
   DESIGN,
+  FEEDBACK,
   LINKS,
   NODE_TYPES,
   PRACTICES,
@@ -136,7 +137,7 @@ export const NODES = [
     facts: [
       "`layers.skills`: `./path` to a skill folder or `ork:<name>`; `layers.context`: files appended under `# Workflow context`.",
       "References stay inside the project; one that resolves to nothing is a `ref.skill` or `ref.context` error in `ork validate`.",
-      "Also the workflow's accepted lessons, `.ork/lessons/<workflow>.md`, when the file exists; their token cap comes with the feedback loop.",
+      "Also the workflow's accepted lessons, `.ork/lessons/<workflow>.md`, when the file exists, up to 1,500 tokens: a longer file is cut on a line's end, and `ork context explain` says so.",
       "Committed with the workflow, so everyone who runs it gets the same process.",
     ],
     see: [
@@ -147,6 +148,7 @@ export const NODES = [
       CONTEXT.files,
       SCHEMA.workflow,
       SCHEMA.example,
+      FEEDBACK.lessonCap,
       DESIGN.feedback,
     ],
   },

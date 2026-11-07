@@ -271,6 +271,88 @@ export const FEEDBACK = {
     "decisions/ADR-028-feedback-capture.md",
     "Decision: how feedback is captured",
   ),
+  loopAdr: d(
+    "decisions/ADR-059-closing-the-feedback-loop.md",
+    "ADR-059: built-in workflows, triage by rules, previewed publishing",
+  ),
+  guide: d("docs/guides/feedback.md", "Guide: feedback from your runs"),
+  limits: d(
+    "specs/gaps/limits-feedback.md",
+    "Limits: the feedback loop, for now",
+  ),
+  human: d(
+    "packages/core/src/feedback/human.ts",
+    "Code: a person's note, from the CLI, `ork decide` or the UI",
+  ),
+  noteTests: d(
+    "packages/cli/test/decide-note.test.ts",
+    "Tests: `ork decide --note`",
+  ),
+  triageCommand: d(
+    "packages/cli/src/runs/triage.ts",
+    "Code: `ork feedback triage`, asking before each merge",
+  ),
+  actions: d(
+    "packages/core/src/feedback/actions.ts",
+    "Code: which actions an item allows, for the CLI and the panel",
+  ),
+  actionTests: d(
+    "packages/core/test/feedback-actions.test.ts",
+    "Tests: what an item allows, and why not",
+  ),
+  preview: d(
+    "packages/core/src/feedback/preview.ts",
+    "Code: an `ork` item as the post it would be",
+  ),
+  routes: d(
+    "packages/server/src/feedback-routes.ts",
+    "Code: the feedback routes, on the same core functions",
+  ),
+  publishRoute: d(
+    "packages/server/src/feedback-publish.ts",
+    "Code: the panel's preview, its digest, and the post",
+  ),
+  applyRoute: d(
+    "packages/server/src/feedback-apply.ts",
+    "Code: the panel's Propose fix, started in the background",
+  ),
+  routeTests: d(
+    "packages/server/test/feedback-items.test.ts",
+    "Tests: the feedback routes",
+  ),
+  panel: d(
+    "packages/ui/src/panels/feedback-panel.tsx",
+    "Code: the Feedback panel",
+  ),
+  panelTests: d(
+    "packages/ui/test/panels/feedback-panel.test.tsx",
+    "Tests: the Feedback panel's list, item and keys",
+  ),
+  dialogTests: d(
+    "packages/ui/test/panels/feedback-dialogs.test.tsx",
+    "Tests: Add lesson, Propose fix and Publish",
+  ),
+  axeTests: d(
+    "packages/ui/test/panels/feedback-axe.test.tsx",
+    "Tests: the Feedback panel under axe",
+  ),
+  publishDialog: d(
+    "packages/ui/src/panels/publish-dialog.tsx",
+    "Code: the publish dialog, previewed then confirmed",
+  ),
+  publishDialogTests: d(
+    "packages/ui/test/panels/feedback-publish.test.tsx",
+    "Tests: publishing from the panel",
+  ),
+  noteDialog: d(
+    "packages/ui/src/panels/note-dialog.tsx",
+    "Code: the Monitor's Note dialog",
+  ),
+  noteDialogTests: d(
+    "packages/ui/test/panels/note-dialog.test.tsx",
+    "Tests: the Note dialog",
+  ),
+  panelSpec: d("specs/ui/panels.md#feedback", "Spec: the Feedback panel"),
 };
 
 export const STORE = {
@@ -304,8 +386,8 @@ export const CONTROL = {
     "Tests: decisions and the socket",
   ),
   commands: d(
-    "packages/cli/src/commands/control.ts",
-    "Code: `ork decide` and `ork stop`",
+    "packages/cli/src/commands/decide.ts",
+    "Code: `ork decide`, and its `--note`",
   ),
   pause: d(
     "packages/cli/src/commands/pause.ts",

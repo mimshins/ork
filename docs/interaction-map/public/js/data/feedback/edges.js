@@ -3,10 +3,11 @@
  *   left column and of "Your machine" (`y` 276, into the recorder); the
  *   engine's right column below the compiler (`y` 396, 636, 756, 876); the
  *   runtime column's bottom row (`y` 876, to GitHub). Lane `x` 566 runs from
- *   the actions down to the publish preview.
+ *   the actions down to the publish preview, and lane `x` 576 from the panel
+ *   down to it.
  */
 
-import { DESIGN } from "../refs.js";
+import { DESIGN, FEEDBACK } from "../refs.js";
 
 /** @typedef {import("../types.js").MapEdge} MapEdge */
 
@@ -21,7 +22,7 @@ export const EDGES = [
     label: "read · rate · annotate",
     detail:
       "List and inspect items, dismiss one, or rate or annotate a node's result.",
-    status: "partial",
+    status: "built",
   },
   {
     id: "you-panel",
@@ -29,8 +30,9 @@ export const EDGES = [
     to: "panel",
     kind: "human",
     label: "the same, in the browser",
-    detail: "Items grouped by fingerprint and target, with every action.",
-    status: "planned",
+    detail:
+      "Items by fingerprint, filtered by status and target, with every action but merging.",
+    status: "built",
   },
   {
     id: "you-actions",
@@ -39,7 +41,7 @@ export const EDGES = [
     kind: "human",
     label: "triage · apply · publish",
     detail: "Each one is explicit and per item; nothing runs on its own.",
-    status: "planned",
+    status: "built",
   },
 
   // ── CLI and UI ───────────────────────────────────────────────────────────
@@ -50,9 +52,9 @@ export const EDGES = [
     kind: "local",
     label: "human note",
     detail:
-      "Your rating or note on a node's result, the best signal for whether it was useful. Recorded like any other source.",
-    status: "specified",
-    docs: [DESIGN.feedback],
+      "Your rating or note on a node's result, the best signal for whether it was useful. Recorded like any other source; `ork decide --note` and the Monitor's Note… do the same.",
+    status: "built",
+    docs: [DESIGN.feedback, FEEDBACK.human],
   },
   {
     id: "feedbackCmd-table",
@@ -70,9 +72,37 @@ export const EDGES = [
     to: "table",
     kind: "net",
     label: "items over REST",
-    detail: "Through the local server, over the same table.",
-    status: "planned",
-    docs: [DESIGN.ui],
+    detail:
+      "Through the local server, over the same table: list, show, dismiss, restore, accept, a lesson, and split.",
+    status: "built",
+    docs: [DESIGN.server, FEEDBACK.routes],
+  },
+  {
+    id: "panel-actions",
+    from: "panel",
+    to: "actions",
+    kind: "process",
+    label: "Propose fix… · `ork feedback apply`",
+    detail:
+      "The server starts `ork feedback apply <item> --run-id <id>` in the item's project, in the background, so its gate settles the item as in a terminal; the panel goes to the run in the Monitor.",
+    status: "built",
+    docs: [FEEDBACK.applyRoute],
+  },
+  {
+    id: "panel-publish",
+    from: "panel",
+    to: "publish",
+    kind: "net",
+    label: "Publish… ⇄ the exact text, Post",
+    detail:
+      "The preview only reads, and carries a digest of what it shows; Post sends only when the preview made again has the same digest.",
+    both: true,
+    status: "built",
+    via: [
+      [576, 420],
+      [576, 860],
+    ],
+    docs: [FEEDBACK.publishRoute],
   },
   {
     id: "actions-triage",

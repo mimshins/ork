@@ -3,6 +3,9 @@
  *   which actions an item allows by its target and status, and why not.
  */
 
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -10,6 +13,9 @@ import {
   type FeedbackStatus,
   type FeedbackTarget,
   feedbackActions,
+  FIX_WORKFLOW,
+  openFixRun,
+  openStore,
 } from "../src/index.ts";
 
 const item = (
@@ -88,5 +94,39 @@ describe("which actions an item allows", () => {
       error:
         "Run fix123 is proposing a fix for abcdef123456 already: answer its question in `ork decide` or the UI, or stop it first.",
     });
+  });
+});
+
+/** A store with a run of `workflow` for the item, started with its input. */
+const fixing = (workflow: string, short: string) => {
+  const store = openStore(":memory:");
+  store.begin({ id: "fix1", workflow, file: "/p/f.ork.yaml", project: "/p" });
+  store.append("fix1", {
+    type: "run.started",
+    runId: "fix1",
+    workflow,
+    entries: [],
+    nodes: [],
+    inputs: { item: short },
+  });
+  return store;
+};
+
+describe("a fix already running", () => {
+  it("is found by the built-in's own name and the item's id", () => {
+    const of = item("workflow", "accepted");
+    expect(openFixRun(fixing(FIX_WORKFLOW, "abcdef123456"), of)).toBe("fix1");
+    expect(
+      openFixRun(fixing(FIX_WORKFLOW, "999999999999"), of),
+    ).toBeUndefined();
+    expect(openFixRun(fixing("other", "abcdef123456"), of)).toBeUndefined();
+  });
+
+  it("names the workflow as its file does", () => {
+    const file = path.resolve(
+      import.meta.dirname,
+      "../workflows/feedback-apply.ork.yaml",
+    );
+    expect(readFileSync(file, "utf8")).toContain(`name: ${FIX_WORKFLOW}\n`);
   });
 });

@@ -94,12 +94,13 @@ export const NODES = [
     y: 600,
     status: "built",
     pkg: "cli",
-    src: "packages/cli/src/commands/control.ts",
+    src: "packages/cli/src/commands/decide.ts",
     summary:
       "Lists every open decision of this project's live runs and lets you answer each with its options; the recommended one is preselected.",
     facts: [
       "`ork decide <run>` limits it to one run, `--all` to every project; `--id … --choose …` answers without a prompt.",
       "The first answer wins, whether from here or the run's own terminal.",
+      "`--note <text>` and `--rating good|bad` note how the node did, as your feedback, once the answer is taken.",
     ],
     docs: [DESIGN.cli, CONTROL.commands, CONTROL.cliTests],
   },
@@ -289,7 +290,7 @@ export const NODES = [
       {
         map: "feedback",
         node: "decisions",
-        label: "Proposed fixes and publish previews",
+        label: "Proposed fixes: keep or discard",
       },
     ],
     docs: [DESIGN.messaging, CONTROL.queue, CONTROL.control, CONTROL.tests],
