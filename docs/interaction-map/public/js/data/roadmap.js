@@ -765,7 +765,7 @@ export const MILESTONES = [
           "docs/guides/worktrees.md",
           "specs/gaps/limits-worktrees.md",
         ],
-        commits: ["9b568c9", "52dc034"],
+        commits: ["9b568c9", "52dc034", "4be0fe3"],
       },
       {
         id: "console-language",
@@ -809,7 +809,7 @@ export const MILESTONES = [
           "docs/guides/browser-view/new-versions.md",
           "specs/gaps/limits-upgrade.md",
         ],
-        commits: ["0cb18a2", "52dc034"],
+        commits: ["0cb18a2", "52dc034", "4be0fe3"],
       },
       {
         id: "context-inspector",
