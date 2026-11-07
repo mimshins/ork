@@ -765,7 +765,7 @@ export const MILESTONES = [
           "docs/guides/worktrees.md",
           "specs/gaps/limits-worktrees.md",
         ],
-        commits: ["9b568c9"],
+        commits: ["9b568c9", "52dc034"],
       },
       {
         id: "console-language",
@@ -792,8 +792,9 @@ export const MILESTONES = [
           "9d49d01",
           "db5c52c",
           "06a6627",
+          "52dc034",
         ],
-        date: "2026-11-05",
+        date: "2026-11-07",
       },
       {
         id: "ui-upgrade",
@@ -808,7 +809,7 @@ export const MILESTONES = [
           "docs/guides/browser-view/new-versions.md",
           "specs/gaps/limits-upgrade.md",
         ],
-        commits: ["0cb18a2"],
+        commits: ["0cb18a2", "52dc034"],
       },
       {
         id: "context-inspector",
