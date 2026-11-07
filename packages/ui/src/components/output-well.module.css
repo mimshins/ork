@@ -1,0 +1,52 @@
+/**
+ * @file A program's output in a sunken well: monospace, wrapped, scrolling
+ *   inside a height that is a share of the window, so what is around it stays
+ *   on screen.
+ */
+
+.well {
+  --output-well-bg: var(--surface-sunken);
+  --output-well-text: var(--color-text);
+  --output-well-font: var(--font-mono);
+  --output-well-text-size: var(--text-mono);
+  --output-well-padding: var(--inset-control);
+  --output-well-radius: var(--radius-control);
+  --output-well-border-color: transparent;
+  --output-well-border-width: var(--hairline);
+  --output-well-border-style: solid;
+  --output-well-max-height: min(20rem, 40vh);
+  --output-well-min-height: 4lh;
+  --output-well-margin: 0;
+
+  background: var(--output-well-bg);
+  border-color: var(--output-well-border-color);
+  border-radius: var(--output-well-radius);
+  border-style: var(--output-well-border-style);
+  border-width: var(--output-well-border-width);
+  color: var(--output-well-text);
+  font-family: var(--output-well-font);
+  font-size: var(--output-well-text-size);
+  margin: var(--output-well-margin);
+  max-height: var(--output-well-max-height);
+  min-height: var(--output-well-min-height);
+  overflow: auto;
+  overflow-wrap: anywhere;
+  padding: var(--output-well-padding);
+  white-space: pre-wrap;
+}
+
+.well:focus-visible {
+  --focus-ring-offset: calc(var(--focus-width) * -1);
+}
+
+@media (prefers-contrast: more) {
+  .well {
+    --output-well-border-color: var(--color-border);
+  }
+}
+
+@media (forced-colors: active) {
+  .well {
+    --output-well-border-color: CanvasText;
+  }
+}

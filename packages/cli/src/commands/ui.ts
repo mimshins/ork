@@ -1,21 +1,28 @@
 /**
  * @file `ork ui`: starts the local server (ADR-039) on loopback and opens it in
  *   the browser, signed in with the server's token; or, when one is already
- *   running (`~/.ork/ui.json`), opens that one. The server runs nothing: runs
- *   it starts keep running when it stops, and the CLI works without it.
+ *   running (`~/.ork/ui.json`), opens that one. The command supervises the
+ *   server in a child process, so the page can restart it onto a newly
+ *   installed `ork` (ADR-060). The server runs nothing: runs it starts keep
+ *   running when it stops, and the CLI works without it.
  */
 
 import {
   DEFAULT_PORT,
+  newToken,
   runningServer,
-  startServer,
   uiFilePath,
 } from "@krapht/ork-server";
 import { defineCommand } from "citty";
 
-import { ORK_VERSION } from "../__build_info__.ts";
-import { uiFolders } from "../browser/folder.ts";
 import { openInBrowser } from "../browser/open.ts";
+import { serveForSupervisor } from "../browser/serve.ts";
+import {
+  onStopSignals,
+  type Ready,
+  spawnServerFrom,
+  supervise,
+} from "../browser/supervise.ts";
 import { style, write, writeErr } from "../output.ts";
 import { mayShowSignIn } from "./in-a-run.ts";
 
@@ -43,15 +50,26 @@ const show = async (link: string, open: boolean): Promise<void> => {
   if (!opened) write(`Open it with this link, which signs you in: ${link}`);
 };
 
-const stopped = (): Promise<void> =>
-  new Promise(resolve => {
-    process.once("SIGINT", () => {
-      resolve();
-    });
-    process.once("SIGTERM", () => {
-      resolve();
-    });
-  });
+/** What `ork ui` says once its server serves, the first time or again. */
+const ready = async (
+  { port, version, restarted }: Ready,
+  token: string,
+  open: boolean,
+): Promise<void> => {
+  const url = `http://127.0.0.1:${String(port)}`;
+  if (restarted) {
+    write(`Ork's UI restarted: Ork ${version} at ${url}`);
+    return;
+  }
+  write(`Ork's UI is at ${url}`);
+  write(
+    style(
+      "dim",
+      "Runs keep running when it stops, and every ork command works without it. Ctrl-C stops it.",
+    ),
+  );
+  await show(signInLink(port, token), open);
+};
 
 export const ui = defineCommand({
   meta: {
@@ -68,6 +86,11 @@ export const ui = defineCommand({
       description: "Open the browser (--no-open only prints the address)",
       default: true,
     },
+    serve: {
+      type: "boolean",
+      description: "Only for `ork ui` itself: be the server it supervises",
+      default: false,
+    },
   },
   run: async ({ args }) => {
     const port = portArg(args.port);
@@ -78,6 +101,10 @@ export const ui = defineCommand({
       process.exitCode = 1;
       return;
     }
+    if (args.serve) {
+      await serveForSupervisor();
+      return;
+    }
     const running = runningServer(uiFilePath());
     if (running !== null) {
       write(
@@ -86,28 +113,17 @@ export const ui = defineCommand({
       await show(signInLink(running.port, running.token), args.open);
       return;
     }
-    let server: Awaited<ReturnType<typeof startServer>>;
-    try {
-      server = await startServer({
-        version: ORK_VERSION,
-        port,
-        ui: uiFolders(),
-      });
-    } catch (error) {
-      writeErr(error instanceof Error ? error.message : String(error));
-      process.exitCode = 1;
-      return;
-    }
-    write(`Ork's UI is at ${server.url}`);
-    write(
-      style(
-        "dim",
-        "Runs keep running when it stops, and every ork command works without it. Ctrl-C stops it.",
-      ),
-    );
-    await show(signInLink(server.port, server.token), args.open);
-    await stopped();
-    await server.close();
-    write(style("dim", "Ork's UI stopped."));
+    const token = newToken();
+    process.exitCode = await supervise({
+      port,
+      token,
+      spawnServer: spawnServerFrom(process.argv[1] ?? ""),
+      onReady: answer => ready(answer, token, args.open),
+      onStop: onStopSignals,
+      say: line => {
+        write(style("dim", line));
+      },
+      sayErr: writeErr,
+    });
   },
 });

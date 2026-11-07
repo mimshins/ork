@@ -81,3 +81,4 @@ ork mcp [--expects <version>]    # Ork's tools for Claude Code over stdio (MCP):
 - [Updates](./cli/updates.md)
   - [The new-version notice](./cli/updates.md#the-new-version-notice)
   - [ork upgrade](./cli/updates.md#ork-upgrade)
+  - [In ork ui](./cli/updates.md#in-ork-ui)

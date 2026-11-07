@@ -15,6 +15,7 @@ import {
   mdiArrowLeft,
   mdiArrowRight,
   mdiArrowUp,
+  mdiArrowUpCircleOutline,
   mdiAws,
   mdiBellOutline,
   mdiCallMerge,
@@ -46,6 +47,7 @@ import {
   mdiPause,
   mdiPlay,
   mdiPlus,
+  mdiRestart,
   mdiRobotHappyOutline,
   mdiRobotOutline,
   mdiSourceBranch,
@@ -123,3 +125,5 @@ export const IconGit = icon(mdiGit);
 export const IconPlus = icon(mdiPlus);
 export const IconMinus = icon(mdiMinus);
 export const IconFit = icon(mdiFitToScreenOutline);
+export const IconUpgrade = icon(mdiArrowUpCircleOutline);
+export const IconRestart = icon(mdiRestart);

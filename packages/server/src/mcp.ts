@@ -12,6 +12,7 @@ import { actingTools } from "./mcp-act.ts";
 import { answer, type McpAnswer, refused } from "./mcp-answers.ts";
 import { type McpTool, tool } from "./mcp-tool.ts";
 import { mcpTools } from "./mcp-tools.ts";
+import { createUpdates } from "./updates.ts";
 import { workflowFile } from "./write-routes.ts";
 
 export {
@@ -48,6 +49,8 @@ export const openMcp = (options: {
     startedAt: new Date().toISOString(),
     ...(options.home === undefined ? {} : { home: options.home }),
     ...(options.script === undefined ? {} : { script: options.script }),
+    // No check and no upgrade: those are `ork ui`'s.
+    updates: createUpdates({ version: options.version }),
   };
   return {
     tools: [

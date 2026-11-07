@@ -13,10 +13,13 @@ import { styleText } from "node:util";
 import {
   checkDue,
   DETACHED_ENV,
+  isSwitchedOn,
   pendingNotice,
   readUpdateCache,
   refreshUpdateCache,
+  registryOf,
   updateCachePath,
+  updateSwitchOff,
   writeUpdateCache,
 } from "@krapht/ork-core";
 
@@ -25,39 +28,27 @@ import { ORK_NAME, ORK_VERSION } from "../__build_info__.ts";
 /** Set in the background copy of `ork` that only runs the check. */
 export const UPDATE_CHILD_ENV = "ORK_UPDATE_CHECK_CHILD";
 
-/** Turns the automatic check and its notice off. */
-export const NO_UPDATE_ENV = "ORK_NO_UPDATE_CHECK";
-
-/** A registry to ask instead of npm's, e.g. a company mirror. */
-export const UPDATE_REGISTRY_ENV = "ORK_UPDATE_REGISTRY";
-
 type Env = Readonly<Record<string, string | undefined>>;
 
-const on = (value: string | undefined): boolean =>
-  value !== undefined &&
-  value !== "" &&
-  value !== "0" &&
-  value.toLowerCase() !== "false";
-
-/** Why the automatic check is off for this command, or `null` when it is on. */
+/**
+ * Why the automatic check is off for this command, or `null` when it is on: the
+ * environment's switches (core's, which `ork ui` reads too), then where a
+ * notice on stderr would go.
+ */
 export const updateCheckOff = (
   env: Env,
   argv: readonly string[],
   terminal: boolean,
 ): string | null => {
-  if (on(env[NO_UPDATE_ENV]) || on(env["NO_UPDATE_NOTIFIER"])) {
-    return "turned off";
-  }
-  if (on(env["CI"])) return "in CI";
-  if (on(env[DETACHED_ENV]) || !terminal) return "no terminal";
+  const switched = updateSwitchOff(env);
+  if (switched !== null) return switched === "CI" ? "in CI" : "turned off";
+  if (isSwitchedOn(env[DETACHED_ENV]) || !terminal) return "no terminal";
   if (argv.includes("--json")) return "JSON output";
   if (argv[0] === "upgrade") return "ork upgrade checks for itself";
+  if (argv[0] === "ui" && argv.includes("--serve")) {
+    return "ork ui's server checks for itself";
+  }
   return null;
-};
-
-export const registryOf = (env: Env): string | undefined => {
-  const registry = env[UPDATE_REGISTRY_ENV];
-  return registry === undefined || registry === "" ? undefined : registry;
 };
 
 /** The notice's text. */

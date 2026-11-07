@@ -4,9 +4,13 @@
  *   dev server, which proxies `/api` to the running `ork ui`. The proxy signs
  *   each request with the token from `~/.ork/ui.json` and drops the dev
  *   server's Origin, so the token never reaches the browser and the server's
- *   guards stay as they are. In `gallery` mode it builds the design system's
- *   gallery instead, for looking at the components under the page's policy.
+ *   guards stay as they are. The page learns its own Ork version (the CLI
+ *   package's) as `ORK_UI_VERSION`, to tell when `ork ui` runs a newer one. In
+ *   `gallery` mode it builds the design system's gallery instead, for looking
+ *   at the components under the page's policy.
  */
+
+import { readFileSync } from "node:fs";
 
 import { readUiFile, uiFilePath } from "@krapht/ork-server";
 import react from "@vitejs/plugin-react";
@@ -33,8 +37,22 @@ const apiProxy = (): Record<string, ProxyOptions> => {
   };
 };
 
+/** The version of the `ork` this page ships in: the CLI package's. */
+const orkVersion = (): string => {
+  const manifest: unknown = JSON.parse(
+    readFileSync(new URL("../cli/package.json", import.meta.url), "utf8"),
+  );
+  return typeof manifest === "object" &&
+    manifest !== null &&
+    "version" in manifest &&
+    typeof manifest.version === "string"
+    ? manifest.version
+    : "0.0.0";
+};
+
 export default defineConfig(({ mode }) => ({
   plugins: [react(), licenses()],
+  define: { ORK_UI_VERSION: JSON.stringify(orkVersion()) },
   build: {
     outDir: mode === "gallery" ? "dist-gallery" : "dist",
     ...(mode === "gallery"

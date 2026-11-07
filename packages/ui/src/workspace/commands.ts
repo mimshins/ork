@@ -23,6 +23,7 @@ export const COMMAND_GROUPS = [
   "Window",
   "Layout",
   "View",
+  "Ork",
 ] as const;
 
 export type CommandGroup = (typeof COMMAND_GROUPS)[number];
@@ -35,6 +36,8 @@ export type Command = {
   shortcut?: Shortcut;
   /** Why it cannot run now; absent when it can. */
   disabled?: string | undefined;
+  /** What it does, when its title doesn't say enough. */
+  detail?: string;
 };
 
 const NEEDS_DOCK = "Needs a wider window.";
@@ -235,6 +238,18 @@ const viewCommands = (
   })),
 ];
 
+const orkCommands = (state: AppState): Command[] => [
+  {
+    id: "upgrade-ork",
+    title: "Upgrade Ork…",
+    group: "Ork",
+    detail: "Asks the registry now, as ork upgrade.",
+    run: () => {
+      state.version.openDialog("ask");
+    },
+  },
+];
+
 export const commandsFor = (
   workspace: Workspace,
   view: WorkspaceView,
@@ -246,4 +261,5 @@ export const commandsFor = (
   ...windowCommands(workspace, view),
   ...layoutCommands(workspace, view),
   ...viewCommands(workspace, state.preferences, chosen),
+  ...orkCommands(state),
 ];

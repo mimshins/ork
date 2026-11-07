@@ -3,8 +3,8 @@
  *   run's stream sends its stored events after `Last-Event-ID`, then each new
  *   one as the run stores it, over the run's socket or by polling the store
  *   (core's `followEvents`, as `ork logs -f`), and ends with `end`. The
- *   overview stream sends the runs and the open decisions whenever they change,
- *   comparing the store every second.
+ *   overview stream sends the runs, the open decisions and what is known of
+ *   versions whenever they change, comparing every second.
  */
 
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -21,7 +21,7 @@ export const OVERVIEW_INTERVAL_MS = 1000;
 const OVERVIEW_RUNS = 50;
 
 /** The seq to start after: `Last-Event-ID`, else `?after=`, else 0. */
-const startAfter = (req: IncomingMessage, url: URL): number | null => {
+export const startAfter = (req: IncomingMessage, url: URL): number | null => {
   const header = req.headers["last-event-id"];
   const raw =
     (Array.isArray(header) ? header[0] : header) ??
@@ -79,7 +79,7 @@ export const overviewStream = (
   const root =
     key === null ? undefined : (projectOf(context, key)?.root ?? key);
   const stream = openEventStream(res);
-  const last = { runs: "", decisions: "" };
+  const last = { runs: "", decisions: "", version: "" };
   const tick = (): void => {
     const filter = root === undefined ? {} : { project: root };
     const runs = context.store
@@ -89,6 +89,7 @@ export const overviewStream = (
     for (const [name, value] of [
       ["runs", runs],
       ["decisions", decisions],
+      ["version", context.updates.info()],
     ] as const) {
       const text = JSON.stringify(value);
       if (text === last[name]) continue;

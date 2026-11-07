@@ -26,6 +26,12 @@ import { BUILDER_API, type BuilderResponses } from "./contract-builder.ts";
 import { CONTEXT_API, type ContextResponses } from "./contract-context.ts";
 import { FEEDBACK_API, type FeedbackResponses } from "./contract-feedback.ts";
 import type { WorkflowGraph } from "./contract-graph.ts";
+import { LINKS_API } from "./contract-links.ts";
+import {
+  UPDATE_API,
+  type UpdateResponses,
+  type VersionInfo,
+} from "./contract-update.ts";
 import {
   WORKTREES_API,
   type WorktreesResponses,
@@ -102,22 +108,6 @@ export const MessageSchema = z.strictObject({
   body: z.string().min(1),
 });
 
-/** Two nodes of live runs, each `<run>/<node>` (RFC-003). */
-export const LinkSchema = z.strictObject({
-  a: z.string().min(3),
-  b: z.string().min(3),
-  maxMessages: z.number().int().positive().optional(),
-});
-
-export const UnlinkSchema = z.strictObject({
-  a: z.string().min(3),
-  b: z.string().min(3),
-});
-
-export const LinksQuerySchema = z.strictObject({
-  run: z.string().min(1).optional(),
-});
-
 /** Pause, continue or stop: the whole run, or `node` alone (ADR-041). */
 export const ControlSchema = z.strictObject({
   node: z.string().min(1).optional(),
@@ -164,6 +154,7 @@ export const API = {
   ...CONTEXT_API,
   ...FEEDBACK_API,
   ...WORKTREES_API,
+  ...UPDATE_API,
   projects: { method: "GET", path: "/api/projects" },
   workflows: { method: "GET", path: "/api/projects/:id/workflows" },
   runs: { method: "GET", path: "/api/runs", query: RunsQuerySchema },
@@ -202,16 +193,15 @@ export const API = {
   },
   usage: { method: "GET", path: "/api/usage", query: UsageQuerySchema },
   triggers: { method: "GET", path: "/api/triggers" },
-  links: { method: "GET", path: "/api/links", query: LinksQuerySchema },
-  link: { method: "POST", path: "/api/links", body: LinkSchema },
-  unlink: { method: "POST", path: "/api/links/end", body: UnlinkSchema },
+  ...LINKS_API,
 } as const satisfies Record<string, Route>;
 
 /** What each route answers with, on success. */
 export type Responses = BuilderResponses &
   ContextResponses &
   FeedbackResponses &
-  WorktreesResponses & {
+  WorktreesResponses &
+  UpdateResponses & {
     health: Health;
     triggers: TriggersReport;
     projects: ProjectRecord[];
@@ -245,8 +235,12 @@ export const STREAMS = {
    * `Last-Event-ID`, or `?after=`.
    */
   run: "/api/runs/:id/stream",
-  /** `runs` and `decisions`, each when it changes; `?project=` keeps one. */
+  /**
+   * `runs`, `decisions`, `version`, each when it changes; `?project=` keeps
+   * one. `upgrade`: the upgrade's output, then `end` (contract-update.ts).
+   */
   overview: "/api/stream",
+  upgrade: "/api/upgrade/stream",
 } as const;
 
 export type RunStreamEvents = {
@@ -262,6 +256,7 @@ export type RunStreamEvents = {
 export type OverviewEvents = {
   runs: RunView[];
   decisions: DecisionRecord[];
+  version: VersionInfo;
 };
 
 /** The `{ "error": … }` body of every refusal. */

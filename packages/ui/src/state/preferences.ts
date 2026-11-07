@@ -1,9 +1,10 @@
 /**
- * @file What a browser keeps of the user's choices: the theme, the density, and
+ * @file What a browser keeps of the user's choices: the theme, the density,
  *   whether desktop notifications may be sent, which the notification center
- *   reads. Saved values are checked before use, since they may come from an
- *   older Ork; a field that is missing takes its default, and values that do
- *   not fit are dropped. `followPreferences` keeps the page's look on them.
+ *   reads, and which new version's banner was dismissed, and when. Saved values
+ *   are checked before use, since they may come from an older Ork; a field that
+ *   is missing takes its default, and values that do not fit are dropped.
+ *   `followPreferences` keeps the page's look on them.
  */
 
 import { PersistentContainer } from "containerized-state-plugin-persistence";
@@ -24,6 +25,8 @@ export const PreferencesSchema = z.object({
   theme: z.enum(["system", "dark", "light"]).default("system"),
   density: z.enum(["compact", "comfortable"]).default("compact"),
   desktopNotifications: z.boolean().default(false),
+  /** The new-version banner, hidden for a day for this version. */
+  updateDismissed: z.object({ version: z.string(), at: z.string() }).optional(),
 });
 
 export type Preferences = z.infer<typeof PreferencesSchema>;

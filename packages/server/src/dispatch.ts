@@ -14,6 +14,7 @@ import { BASE_HEADERS, sendError } from "./http.ts";
 import { sendNotice, sendPage } from "./page.ts";
 import { compilePath, route } from "./router.ts";
 import { overviewStream, runStream } from "./streams.ts";
+import { upgradeStream } from "./upgrade-stream.ts";
 
 export type Dispatch = (
   req: IncomingMessage,
@@ -26,7 +27,7 @@ export const createDispatch = (
   context: ServerContext,
   access: { port: () => number; token: string; shutdown: AbortSignal },
 ): Dispatch => {
-  const handlers = apiRoutes(context);
+  const handlers = apiRoutes(context, access.port);
   return async (req, res) => {
     const method = req.method ?? "GET";
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
@@ -58,6 +59,10 @@ export const createDispatch = (
     }
     if (method === "GET" && url.pathname === STREAMS.overview) {
       overviewStream(context, res, url, access.shutdown);
+      return;
+    }
+    if (method === "GET" && url.pathname === STREAMS.upgrade) {
+      upgradeStream(context, req, res, url, access.shutdown);
       return;
     }
     if (await route(handlers, req, res, url)) return;

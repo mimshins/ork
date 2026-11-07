@@ -1,8 +1,8 @@
 /**
  * @file Tests for the event streams: a run's events from the store and then as
  *   they are stored (polling without a socket, pushed with one), resumed after
- *   `Last-Event-ID`, ended with `end`; and the overview stream's runs and
- *   decisions as they change.
+ *   `Last-Event-ID`, ended with `end`; and the overview stream's runs,
+ *   decisions and versions as they change.
  */
 
 import { setTimeout as sleep } from "node:timers/promises";
@@ -125,14 +125,14 @@ describe("the overview stream", () => {
     const stream = await open(server, "/api/stream");
     await expect
       .poll(() => stream.seen.map(e => e.event))
-      .toEqual(["runs", "decisions"]);
+      .toEqual(["runs", "decisions", "version"]);
     expect(stream.seen[0]?.data).toMatchObject([{ id: "r4", live: "running" }]);
     expect(stream.seen[1]?.data).toEqual([]);
     openGate(server, "r4", "d1");
     await expect
       .poll(() => stream.seen.map(e => e.event), { timeout: 3000 })
-      .toEqual(["runs", "decisions", "decisions"]);
-    expect(stream.seen[2]?.data).toMatchObject([
+      .toEqual(["runs", "decisions", "version", "decisions"]);
+    expect(stream.seen[3]?.data).toMatchObject([
       { id: "d1", question: "Ship it?" },
     ]);
   });

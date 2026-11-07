@@ -2,20 +2,19 @@
  * @file The page's state, one container per concern, fed by the server's
  *   streams (ADR-024: the store is the truth, so a write goes through the
  *   client and comes back on a stream; nothing here updates optimistically).
- *   `runs` and `decisions` follow the overview stream; each run a panel looks
- *   at has its own feed (feeds.ts). What the user chose, a run and a node, is
- *   the shared selection, and the Context panel's target follows every choice.
+ *   `runs`, `decisions` and `version` follow the overview stream (overview.ts);
+ *   each run a panel looks at has its own feed (feeds.ts). What the user chose,
+ *   a run and a node, is the shared selection, and the Context panel's target
+ *   follows every choice.
  */
 
-import {
-  type BodyOf,
-  type Client,
-  type DecisionRecord,
-  type Health,
-  type OverviewEvents,
-  type QueryOf,
-  type RunView,
-  STREAMS,
+import type {
+  BodyOf,
+  Client,
+  DecisionRecord,
+  Health,
+  QueryOf,
+  RunView,
 } from "@krapht/ork-server/client";
 import { Container } from "react-containerized-state";
 
@@ -23,14 +22,14 @@ import { createContextTarget } from "./context-target.ts";
 import { createDecisionHistory } from "./decision-history.ts";
 import { createFeeds, isLive } from "./feeds.ts";
 import { createNotifications } from "./notifications.ts";
+import { createOverview } from "./overview.ts";
 import {
   ALL_PROJECTS,
   createPreferences,
   DEFAULT_PERIOD,
 } from "./preferences.ts";
 import { createRead } from "./read.ts";
-import { reconcile } from "./reconcile.ts";
-import { type LinkStatus, type OpenSource, openLink } from "./stream-link.ts";
+import type { LinkStatus, OpenSource } from "./stream-link.ts";
 
 export type Connection = {
   link: LinkStatus;
@@ -44,6 +43,8 @@ export type AppStateOptions = {
   client: Client;
   open: OpenSource;
   storage: Storage;
+  /** The Ork version the page was built for, when known. */
+  pageVersion?: string | null;
 };
 
 export type AppState = ReturnType<typeof createAppState>;
@@ -62,7 +63,12 @@ export const describeConnection = ({ link, server }: Connection): string => {
 export const liveRuns = (runs: readonly RunView[] | null): number | null =>
   runs === null ? null : runs.filter(run => isLive(run)).length;
 
-export const createAppState = ({ client, open, storage }: AppStateOptions) => {
+export const createAppState = ({
+  client,
+  open,
+  storage,
+  pageVersion = null,
+}: AppStateOptions) => {
   const runs = Container.create<readonly RunView[] | null>(null);
   const decisions = Container.create<readonly DecisionRecord[] | null>(null);
   const connection = Container.create<Connection>({
@@ -118,6 +124,14 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
   const feeds = createFeeds({ client, open });
   const decisionHistory = createDecisionHistory(client);
   const notifications = createNotifications({ runs, decisions, storage });
+  const overview = createOverview({
+    client,
+    open,
+    pageVersion,
+    runs,
+    decisions,
+  });
+  const { version } = overview;
 
   const askServer = async (): Promise<void> => {
     const answer = await client.call("health");
@@ -153,6 +167,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
     worktrees,
     worktreesFilter,
     triggers,
+    version,
     /** Asks for a run; it then arrives on the stream like any other. */
     startRun: (body: BodyOf<"start">) => client.call("start", { body }),
     /** Follows the server until the returned function is called. */
@@ -160,17 +175,7 @@ export const createAppState = ({ client, open, storage }: AppStateOptions) => {
       const stopWatching = runs.subscribe(feeds.reopenResumed);
       const stopSettling = decisions.subscribe(decisionHistory.saw);
       const stopNotifying = notifications.start();
-      const link = openLink<OverviewEvents>({
-        url: () => STREAMS.overview,
-        open,
-        on: {
-          runs: next => {
-            void runs.setValue(reconcile(runs.getValue(), next));
-          },
-          decisions: next => {
-            void decisions.setValue(reconcile(decisions.getValue(), next));
-          },
-        },
+      const link = overview.follow({
         onStatus: status => {
           void connection.setValue({ ...connection.getValue(), link: status });
           if (status !== "lost") void askServer();

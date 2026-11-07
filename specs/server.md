@@ -5,6 +5,7 @@ Status: **Built** ([server](../packages/server/src/server.ts),
 [client](../packages/server/src/client.ts),
 [guards](../packages/server/src/guards.ts),
 [`ork ui`](../packages/cli/src/commands/ui.ts),
+[its supervisor](../packages/cli/src/browser/supervise.ts),
 [tests](../packages/server/test/),
 [end-to-end](../packages/cli/test/ui.test.ts)). It serves the built UI
 ([assets](../packages/server/src/assets.ts)), or a placeholder page when there
@@ -60,64 +61,80 @@ ork ui [--port <n>] [--no-open]
   counts as none), opens it, and exits 0.
 - Ctrl-C (or SIGTERM) ends the streams, closes the server, removes `ui.json`,
   and exits 0. Runs keep running.
+- **It supervises the server in a child**
+  ([ADR-060](../decisions/ADR-060-ork-ui-supervises-its-server.md)): the
+  launcher it was run as (`process.argv[1]` as given) with `ui --serve`, on the
+  same terminal. The port and the token go over the child's IPC channel, never
+  argv or the environment; the child writes `ui.json` with its own pid. When the
+  page asks for a restart after an upgrade, the child closes and exits, and
+  `ork ui` starts the launcher again, now the new install, on the bound port
+  with the same token, so the open tab stays signed in. One child at a time;
+  Ctrl-C stops it and then `ork ui`, with its exit code. A child whose `ork ui`
+  is gone closes too. A new server that doesn't start is reported on the
+  terminal with `ork ui --port <n>`. `ork ui --serve` run by hand refuses.
 
 ## API
 
 JSON under `/api`. A refusal is `{ "error": "…" }` with the CLI's words. Runs
 are named by id or a unique prefix: no match is 404, several are 400.
 
-| Method | Path                                                  | Does                                                                                                              | As                        |
-| ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| GET    | `/api/health`                                         | `{ version, pid, startedAt }`                                                                                     | —                         |
-| GET    | `/api/projects`                                       | the registered projects                                                                                           | `ork projects --json`     |
-| GET    | `/api/projects/:id/workflows`                         | its workflows folder: each `name`, `file`, `title`, `description`, `inputs`, or `error`                           | —                         |
-| GET    | `/api/workflow-schema`                                | the format's JSON Schema, which the builder's forms are generated from                                            |
-| GET    | `/api/projects/:id/catalog`                           | the agents and skills a project offers, each with where it comes from                                             |
-| GET    | `/api/projects/:id/builder`                           | the names of its drafts                                                                                           |
-| POST   | `/api/projects/:id/builder`                           | `{ name }`: starts a draft of a new workflow                                                                      |
-| GET    | `/api/projects/:id/builder/:name`                     | its draft, or else its file: text, what it says, graph, what the checks say                                       |
-| POST   | `/api/projects/:id/builder/:name/edits`               | `{ edits }`: applies [document edits](../packages/schema/src/workflow-edit.ts) to its draft, all or none          |
-| POST   | `/api/projects/:id/builder/:name/text`                | `{ text, baseHash }`: puts its draft back to earlier text, for undo, remembering the file that text began from    |
-| POST   | `/api/projects/:id/builder/:name/discard`             | drops its draft                                                                                                   |
-| GET    | `/api/projects/:id/builder/:name/nodes/:node/context` | what the node's session loads, planned from its draft, else its file (below)                                      | `ork context explain`     |
-| POST   | `/api/projects/:id/builder/:name/save`                | `{ force? }`: writes the file; answers `saved: false` on errors, or a file that changed                           |
-| GET    | `/api/runs`                                           | runs newest first, each with `live`; `?project`, `?limit` (20)                                                    | `ork ps --json`           |
-| GET    | `/api/runs/:id`                                       | one run, with `live` (`crashed` when its process is gone, `paused` when it is paused) and `paused`                | —                         |
-| GET    | `/api/runs/:id/tree`                                  | the ownership tree                                                                                                | `ork tree --json`         |
-| GET    | `/api/runs/:id/graph`                                 | what its graph is drawn from: nodes, edges, channels                                                              |
-| GET    | `/api/runs/:id/nodes/:node/context`                   | the same for a run's node, from its workflow file as it is now                                                    | `ork context explain`     |
-| GET    | `/api/runs/:id/events`                                | stored events; `?after`, `?node`, `?limit`, `?last` (the newest N)                                                | `ork logs --json`         |
-| GET    | `/api/usage`                                          | the [usage report](./usage.md#reports); `?project`, `?workflow`, `?since`, `?until`                               |
-| GET    | `/api/triggers`                                       | how [triggers](./scheduler/watching.md#the-process) stand, and whether `ork watch` is running                     |
-| GET    | `/api/decisions`                                      | open decisions of live runs; `?run`, `?project`                                                                   | `ork decide --list`       |
-| GET    | `/api/decisions/:id`                                  | one decision, open or not, with its answer and who gave it                                                        | `ork logs <run>`          |
-| POST   | `/api/decisions/:id`                                  | `{ choose }`: answers it as `ui`, wakes the run                                                                   | `ork decide --id`         |
-| POST   | `/api/runs`                                           | `{ project, workflow, inputs?, driver?, inPlace?, allowDirty? }`                                                  | `ork run --detach`        |
-| POST   | `/api/runs/:id/resume`                                | `{ inputs?, driver?, inPlace?, allowDirty? }`                                                                     | `ork resume --detach`     |
-| POST   | `/api/runs/:id/stop`                                  | `{ node? }`: asks a live run, or one running node, to stop                                                        | `ork stop`                |
-| POST   | `/api/runs/:id/pause`                                 | `{ node? }`: pauses a live run, or one node                                                                       | `ork pause`               |
-| POST   | `/api/runs/:id/continue`                              | `{ node? }`: lets it go on                                                                                        | `ork continue`            |
-| POST   | `/api/runs/:id/messages`                              | `{ node, body }` to a live run's leader or worker                                                                 | `ork chat -m` (live)      |
-| POST   | `/api/runs/:id/notes`                                 | `{ text, node?, kind?, severity?, rating? }`: a person's note, as the run's [feedback](./feedback.md)             | `ork feedback note`       |
-| GET    | `/api/feedback`                                       | every [feedback](./feedback.md) item, dismissed ones too, most recently seen first                                | `ork feedback list --all` |
-| GET    | `/api/feedback/:id`                                   | an item, its records, which actions it allows and why not, where a lesson would go (below)                        | `ork feedback show`       |
-| POST   | `/api/feedback/:id/status`                            | `{ status }`: `dismissed`, or `new` to restore a dismissed one                                                    | `ork feedback dismiss`    |
-| POST   | `/api/feedback/:id/accept`                            | `{ lesson, text?, workflow? }`: accepts it, as a lesson with `lesson: true`                                       | `ork feedback accept`     |
-| POST   | `/api/feedback/:id/apply`                             | `{ driver? }`: starts `ork feedback apply` in the background; 202 with `{ runId, root }`                          | `ork feedback apply`      |
-| POST   | `/api/feedback/:id/publish/preview`                   | `{ hideNames }`: exactly what a publish would send, where, and its `digest`; reads only                           | `ork feedback publish`    |
-| POST   | `/api/feedback/:id/publish`                           | `{ hideNames, digest }`: posts it with your `gh`, only when it is still what was previewed                        | `ork feedback publish`    |
-| POST   | `/api/feedback/:id/split`                             | takes apart what triage merged into it                                                                            | `ork feedback split`      |
-| GET    | `/api/worktrees`                                      | each project Ork knows, its [worktrees](./worktrees.md#ork-worktrees) in core's words, or its `error`; `?project` | `ork worktrees --json`    |
-| POST   | `/api/worktrees/remove/plan`                          | `{ project, key, deleteBranch }`: one item's plan, whether it needs force, what it loses, and its `digest`        | `ork worktrees remove`    |
-| POST   | `/api/worktrees/remove`                               | `{ project, key, deleteBranch, force, digest }`: removes it, only when the plan is still the one shown            | `ork worktrees remove`    |
-| POST   | `/api/worktrees/clean/plan`                           | `{ project?, branches }`: each project's merged-only, unforced clean plan, and its `digest`                       | `ork worktrees clean`     |
-| POST   | `/api/worktrees/clean`                                | `{ project?, branches, digest }`: cleans it, only when the plan is still the one shown                            | `ork worktrees clean`     |
-| GET    | `/api/links`                                          | links; `?run=` keeps one run's                                                                                    |
-| POST   | `/api/links`                                          | `{ a, b, maxMessages? }`, as `<run>/<node>`: [links](./messaging/links.md)                                        |
-| POST   | `/api/links/end`                                      | `{ a, b }`: ends the link                                                                                         |
-| GET    | `/api/runs/:id/stream`                                | Server-Sent Events, below                                                                                         | `ork logs -f`             |
-| GET    | `/api/stream`                                         | Server-Sent Events, below                                                                                         | —                         |
-| GET    | `/`, `/assets/…`                                      | the built UI (below), or the placeholder page without one                                                         | —                         |
+| Method | Path                                                  | Does                                                                                                                | As                        |
+| ------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| GET    | `/api/health`                                         | `{ version, pid, startedAt }`                                                                                       | —                         |
+| GET    | `/api/projects`                                       | the registered projects                                                                                             | `ork projects --json`     |
+| GET    | `/api/projects/:id/workflows`                         | its workflows folder: each `name`, `file`, `title`, `description`, `inputs`, or `error`                             | —                         |
+| GET    | `/api/workflow-schema`                                | the format's JSON Schema, which the builder's forms are generated from                                              |
+| GET    | `/api/projects/:id/catalog`                           | the agents and skills a project offers, each with where it comes from                                               |
+| GET    | `/api/projects/:id/builder`                           | the names of its drafts                                                                                             |
+| POST   | `/api/projects/:id/builder`                           | `{ name }`: starts a draft of a new workflow                                                                        |
+| GET    | `/api/projects/:id/builder/:name`                     | its draft, or else its file: text, what it says, graph, what the checks say                                         |
+| POST   | `/api/projects/:id/builder/:name/edits`               | `{ edits }`: applies [document edits](../packages/schema/src/workflow-edit.ts) to its draft, all or none            |
+| POST   | `/api/projects/:id/builder/:name/text`                | `{ text, baseHash }`: puts its draft back to earlier text, for undo, remembering the file that text began from      |
+| POST   | `/api/projects/:id/builder/:name/discard`             | drops its draft                                                                                                     |
+| GET    | `/api/projects/:id/builder/:name/nodes/:node/context` | what the node's session loads, planned from its draft, else its file (below)                                        | `ork context explain`     |
+| POST   | `/api/projects/:id/builder/:name/save`                | `{ force? }`: writes the file; answers `saved: false` on errors, or a file that changed                             |
+| GET    | `/api/runs`                                           | runs newest first, each with `live`; `?project`, `?limit` (20)                                                      | `ork ps --json`           |
+| GET    | `/api/runs/:id`                                       | one run, with `live` (`crashed` when its process is gone, `paused` when it is paused) and `paused`                  | —                         |
+| GET    | `/api/runs/:id/tree`                                  | the ownership tree                                                                                                  | `ork tree --json`         |
+| GET    | `/api/runs/:id/graph`                                 | what its graph is drawn from: nodes, edges, channels                                                                |
+| GET    | `/api/runs/:id/nodes/:node/context`                   | the same for a run's node, from its workflow file as it is now                                                      | `ork context explain`     |
+| GET    | `/api/runs/:id/events`                                | stored events; `?after`, `?node`, `?limit`, `?last` (the newest N)                                                  | `ork logs --json`         |
+| GET    | `/api/usage`                                          | the [usage report](./usage.md#reports); `?project`, `?workflow`, `?since`, `?until`                                 |
+| GET    | `/api/triggers`                                       | how [triggers](./scheduler/watching.md#the-process) stand, and whether `ork watch` is running                       |
+| GET    | `/api/decisions`                                      | open decisions of live runs; `?run`, `?project`                                                                     | `ork decide --list`       |
+| GET    | `/api/decisions/:id`                                  | one decision, open or not, with its answer and who gave it                                                          | `ork logs <run>`          |
+| POST   | `/api/decisions/:id`                                  | `{ choose }`: answers it as `ui`, wakes the run                                                                     | `ork decide --id`         |
+| POST   | `/api/runs`                                           | `{ project, workflow, inputs?, driver?, inPlace?, allowDirty? }`                                                    | `ork run --detach`        |
+| POST   | `/api/runs/:id/resume`                                | `{ inputs?, driver?, inPlace?, allowDirty? }`                                                                       | `ork resume --detach`     |
+| POST   | `/api/runs/:id/stop`                                  | `{ node? }`: asks a live run, or one running node, to stop                                                          | `ork stop`                |
+| POST   | `/api/runs/:id/pause`                                 | `{ node? }`: pauses a live run, or one node                                                                         | `ork pause`               |
+| POST   | `/api/runs/:id/continue`                              | `{ node? }`: lets it go on                                                                                          | `ork continue`            |
+| POST   | `/api/runs/:id/messages`                              | `{ node, body }` to a live run's leader or worker                                                                   | `ork chat -m` (live)      |
+| POST   | `/api/runs/:id/notes`                                 | `{ text, node?, kind?, severity?, rating? }`: a person's note, as the run's [feedback](./feedback.md)               | `ork feedback note`       |
+| GET    | `/api/feedback`                                       | every [feedback](./feedback.md) item, dismissed ones too, most recently seen first                                  | `ork feedback list --all` |
+| GET    | `/api/feedback/:id`                                   | an item, its records, which actions it allows and why not, where a lesson would go (below)                          | `ork feedback show`       |
+| POST   | `/api/feedback/:id/status`                            | `{ status }`: `dismissed`, or `new` to restore a dismissed one                                                      | `ork feedback dismiss`    |
+| POST   | `/api/feedback/:id/accept`                            | `{ lesson, text?, workflow? }`: accepts it, as a lesson with `lesson: true`                                         | `ork feedback accept`     |
+| POST   | `/api/feedback/:id/apply`                             | `{ driver? }`: starts `ork feedback apply` in the background; 202 with `{ runId, root }`                            | `ork feedback apply`      |
+| POST   | `/api/feedback/:id/publish/preview`                   | `{ hideNames }`: exactly what a publish would send, where, and its `digest`; reads only                             | `ork feedback publish`    |
+| POST   | `/api/feedback/:id/publish`                           | `{ hideNames, digest }`: posts it with your `gh`, only when it is still what was previewed                          | `ork feedback publish`    |
+| POST   | `/api/feedback/:id/split`                             | takes apart what triage merged into it                                                                              | `ork feedback split`      |
+| GET    | `/api/worktrees`                                      | each project Ork knows, its [worktrees](./worktrees.md#ork-worktrees) in core's words, or its `error`; `?project`   | `ork worktrees --json`    |
+| POST   | `/api/worktrees/remove/plan`                          | `{ project, key, deleteBranch }`: one item's plan, whether it needs force, what it loses, and its `digest`          | `ork worktrees remove`    |
+| POST   | `/api/worktrees/remove`                               | `{ project, key, deleteBranch, force, digest }`: removes it, only when the plan is still the one shown              | `ork worktrees remove`    |
+| POST   | `/api/worktrees/clean/plan`                           | `{ project?, branches }`: each project's merged-only, unforced clean plan, and its `digest`                         | `ork worktrees clean`     |
+| POST   | `/api/worktrees/clean`                                | `{ project?, branches, digest }`: cleans it, only when the plan is still the one shown                              | `ork worktrees clean`     |
+| GET    | `/api/links`                                          | links; `?run=` keeps one run's                                                                                      |
+| POST   | `/api/links`                                          | `{ a, b, maxMessages? }`, as `<run>/<node>`: [links](./messaging/links.md)                                          |
+| POST   | `/api/links/end`                                      | `{ a, b }`: ends the link                                                                                           |
+| GET    | `/api/version`                                        | what is known of versions, from the update record, and the server's upgrade ([updates](./cli/updates.md#in-ork-ui)) | `ork doctor`              |
+| POST   | `/api/upgrade/plan`                                   | asks the registry now; what an upgrade would do, with a `planId`                                                    | `ork upgrade --check`     |
+| POST   | `/api/upgrade`                                        | `{ planId }`: runs the plan's own command when it is still the plan; 202 with the job                               | `ork upgrade --yes`       |
+| GET    | `/api/upgrade/stream`                                 | Server-Sent Events: the upgrade's output, then `end`                                                                | —                         |
+| POST   | `/api/restart`                                        | 202 `{ port, pid }`, then `ork ui` restarts it onto the installed `ork`                                             | —                         |
+| GET    | `/api/runs/:id/stream`                                | Server-Sent Events, below                                                                                           | `ork logs -f`             |
+| GET    | `/api/stream`                                         | Server-Sent Events, below                                                                                           | —                         |
+| GET    | `/`, `/assets/…`                                      | the built UI (below), or the placeholder page without one                                                           | —                         |
 
 - **Status codes.** A write that was taken is 202 (start, resume, stop, pause,
   continue, message) or 200 (an answer), with `{ runId }` or
@@ -186,9 +203,14 @@ are named by id or a unique prefix: no match is 404, several are 400.
   closes its `EventSource` on `end`; otherwise the browser reconnects, and gets
   `end` again.
 - **The overview stream** (`/api/stream`): `event: runs` (the newest 50, with
-  `live`) and `event: decisions` (open, of live runs), each sent first and then
-  whenever it changes; the store is compared every second. `?project=` narrows
-  both.
+  `live`), `event: decisions` (open, of live runs) and `event: version` (as
+  `/api/version`), each sent first and then whenever it changes; they are
+  compared every second, the update record read at most once a minute.
+  `?project=` narrows the runs and decisions.
+- **The upgrade's stream** (`/api/upgrade/stream`): `event: output` per line of
+  the package manager's output (`id:` its seq) after `Last-Event-ID` (or
+  `?after=`), then each new line, then `event: end`
+  ([updates](./cli/updates.md#in-ork-ui)); 404 before any upgrade ran.
 - Every stream gets a keep-alive comment every 15 s and `retry: 1000`.
 
 ## The contract and the typed client
@@ -211,8 +233,9 @@ passed.
 ## Security
 
 - **Loopback only:** it binds `127.0.0.1`, with no option for another address.
-- **Token:** 32 random bytes per start, kept in `ui.json` (0600), never logged
-  or stored in events. The link's `?token=` is swapped for an
+- **Token:** 32 random bytes per `ork ui`, kept across its restarts, in
+  `ui.json` (0600), never logged, stored in events, or put in a process's argv
+  or environment. The link's `?token=` is swapped for an
   `ork_ui_<port>=<token>; HttpOnly; SameSite=Strict; Path=/` cookie with a 302
   that drops it from the address; scripts send `Authorization: Bearer <token>`.
   It is compared in constant time. Without it: 401.
@@ -230,6 +253,7 @@ passed.
   UI's panels, popups and graph position themselves with
   ([page.ts](../packages/server/src/page.ts), ADR-040).
 - **What it can do** is what the user's own `ork` can do on the machine: start,
-  resume, stop and message runs, and answer decisions. It reads no file outside
-  the store and the projects' workflows. Ork still stores, proxies and asks for
-  no credentials ([accounts](../docs/guides/accounts.md)).
+  resume, stop and message runs, answer decisions, and run `ork upgrade`'s
+  package-manager command after the person confirms it in the page. It reads no
+  file outside the store and the projects' workflows. Ork still stores, proxies
+  and asks for no credentials ([accounts](../docs/guides/accounts.md)).

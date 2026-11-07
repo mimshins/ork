@@ -1,10 +1,11 @@
 /**
- * @file The workspace's frame: the two bars around the middle, the rail beside
- *   the dock, and the single column the panels stack in on a narrow window.
+ * @file The workspace's frame: the two bars around the middle, the new-version
+ *   row under the top bar, the rail beside the dock, and the single column the
+ *   panels stack in on a narrow window.
  */
 
 .shell {
-  --workspace-shell-grid-template-rows: auto minmax(0, 1fr) auto;
+  --workspace-shell-grid-template-rows: auto auto minmax(0, 1fr) auto;
 
   display: grid;
   grid-template-rows: var(--workspace-shell-grid-template-rows);

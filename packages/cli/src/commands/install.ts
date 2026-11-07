@@ -12,9 +12,14 @@
 
 import {
   fetchLatest,
-  liveStatus,
   openStore,
+  planUpgrade,
   readUpdateCache,
+  registryOf,
+  releaseNotes,
+  runInstall,
+  runningRunIds,
+  runningScript,
   updateCachePath,
   writeUpdateCache,
 } from "@krapht/ork-core";
@@ -26,13 +31,6 @@ import { exec, orkCheck, runChecks, triggerChecks } from "../doctor/checks.ts";
 import { projectChecks } from "../doctor/project-checks.ts";
 import { confirm, style, write, writeErr } from "../output.ts";
 import { projectAt } from "../project/place.ts";
-import { registryOf } from "../update/notify.ts";
-import {
-  planUpgrade,
-  releaseNotes,
-  runInstall,
-  runningScript,
-} from "../update/upgrade.ts";
 
 /** The root command's name, version and description. */
 export const ORK_META = {
@@ -89,10 +87,7 @@ export const doctor = defineCommand({
 const runningRuns = (): string[] => {
   const store = openStore();
   try {
-    return store
-      .runs({ limit: 500 })
-      .filter(run => liveStatus(run) === "running")
-      .map(run => run.id.slice(0, 8));
+    return runningRunIds(store).map(id => id.slice(0, 8));
   } finally {
     store.close();
   }

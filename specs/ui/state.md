@@ -29,10 +29,11 @@ through `useAppState()`:
 | --------------- | ----------------------------------------------------------------------------- | -------------------------- |
 | `runs`          | the newest 50 runs, or null before the first                                  | the overview stream        |
 | `decisions`     | the open decisions, or null before the first                                  | the overview stream        |
+| `version`       | what `ork ui` knows of versions and its upgrade; the Upgrade dialog's opening | the overview stream        |
 | `connection`    | the stream's state and what `/api/health` said                                | the stream and `health`    |
 | `selection`     | the run and the node in view                                                  | the user                   |
 | `contextTarget` | the node the Context panel shows: the latest chosen, a run's or the Builder's | the selection, the Builder |
-| `preferences`   | theme, density, desktop notifications                                         | the user, saved            |
+| `preferences`   | theme, density, desktop notifications, a dismissed new version                | the user, saved            |
 | a run's feed    | its events, in a window                                                       | that run's stream          |
 
 The workspace's own state (the view, the saved layout, the palette) stays in the
@@ -133,7 +134,8 @@ render, and a slice of a feed ignores changes outside it.
 ## Preferences
 
 [preferences.ts](../../packages/ui/src/state/preferences.ts) saves the theme,
-the density and whether desktop notifications may be sent, per browser
+the density, whether desktop notifications may be sent, and the new version
+whose banner was dismissed and when (`updateDismissed`), per browser
 (`ork.preferences.v1`). Values are checked on load: a missing field takes its
 default, and values that do not fit are dropped. The app applies them before its
 first paint, so a chosen theme flashes only as far as [L32](../gaps/limits.md)

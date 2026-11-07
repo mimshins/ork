@@ -87,3 +87,4 @@ Each is in [Limits](./gaps/limits.md), from L2 on.
 - [Limits: Ork for Claude Code](./gaps/limits-claude-code.md)
 - [Limits: the context inspector](./gaps/limits-context-inspector.md)
 - [Limits: the Worktrees panel](./gaps/limits-worktrees.md)
+- [Limits: upgrading from the browser view](./gaps/limits-upgrade.md)
