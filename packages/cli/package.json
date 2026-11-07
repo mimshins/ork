@@ -41,7 +41,7 @@
     "build": "pnpm --filter @krapht/ork-ui build && node ../../tools/release/build-info.ts && node ../../tools/release/plugin-skills.ts && node ../../tools/release/builtin-workflows.ts && tsdown && cp ../../LICENSE ../../THIRD_PARTY_NOTICES.md . && cp -R ../ui/dist dist/ui"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "0.3.314",
+    "@anthropic-ai/claude-agent-sdk": "0.3.316",
     "@anthropic-ai/sdk": "1.3.0",
     "@modelcontextprotocol/sdk": "1.32.2",
     "citty": "0.2.2",
