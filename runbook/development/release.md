@@ -86,12 +86,15 @@ In pre mode `changeset publish` tags only the channel (`alpha`, …), yet a plai
 `npm install --global @krapht/ork` should get the newest pre-release. So after
 it, `pnpm run release` runs [latest-tag.ts](../../tools/release/latest-tag.ts):
 when `packages/cli/package.json`'s version is an `alpha`, `beta` or `rc`
-pre-release that npm has (it asks a few times, as a new version takes a moment
-to show), it runs `npm dist-tag add @krapht/ork@<version> latest`. It never
-moves `latest` to a canary or a plain release (Changesets tags that one itself),
-never to a version npm doesn't have, and does nothing when `latest` is already
-there, so a rerun is safe. It uses the publish job's own `NODE_AUTH_TOKEN`; no
-other secret. To see what it would do:
+pre-release that npm has (it asks every 10 seconds for up to about five minutes,
+past npm's cache, as a new version can take that long to show), it runs
+`npm dist-tag add @krapht/ork@<version> latest`. It never moves `latest` to a
+canary or a plain release (Changesets tags that one itself), never to a version
+npm doesn't have, and does nothing when `latest` is already there, so a rerun is
+safe. When npm still doesn't list the version, it fails the release run: rerun
+the job (`changeset publish` skips what's already out), or run
+`npm dist-tag add @krapht/ork@<version> latest` yourself. It uses the publish
+job's own `NODE_AUTH_TOKEN`; no other secret. To see what it would do:
 
 ```sh
 node tools/release/latest-tag.ts --dry-run

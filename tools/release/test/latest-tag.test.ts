@@ -102,7 +102,7 @@ describe("the release's latest tag", () => {
     expect(calls).toEqual([]);
   });
 
-  it("never moves it to a version npm doesn't have, after asking a few times", async () => {
+  it("fails, without moving it, when npm doesn't list the version after asking a few times", async () => {
     const { npm, calls } = fakeNpm(["0.4.0"], { latest: "0.4.0" });
     let waits = 0;
     const outcome = await moveLatest("1.0.0-beta.0", {
@@ -114,14 +114,16 @@ describe("the release's latest tag", () => {
       },
     });
     expect(outcome).toEqual({
-      kind: "skipped",
-      reason: "npm doesn't have @krapht/ork@1.0.0-beta.0",
+      kind: "failed",
+      reason:
+        "npm doesn't list @krapht/ork@1.0.0-beta.0 yet; rerun the release job, or run npm dist-tag add @krapht/ork@1.0.0-beta.0 latest",
     });
-    expect(calls).toEqual([
-      "view @krapht/ork@1.0.0-beta.0 version",
-      "view @krapht/ork@1.0.0-beta.0 version",
-      "view @krapht/ork@1.0.0-beta.0 version",
-    ]);
+    expect(calls).toEqual(
+      Array.from(
+        { length: 3 },
+        () => "view @krapht/ork@1.0.0-beta.0 version --prefer-online",
+      ),
+    );
     expect(waits).toBe(2);
   });
 

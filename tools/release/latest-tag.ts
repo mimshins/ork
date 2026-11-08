@@ -5,7 +5,9 @@
  *   from `pnpm run release`, after `changeset publish`, with the publish job's
  *   own npm login (`NODE_AUTH_TOKEN`). It never moves `latest` to a canary or a
  *   plain release (Changesets tags that one itself), never to a version npm
- *   doesn't have, and does nothing when `latest` is already there. Usage: `node
+ *   doesn't have, and does nothing when `latest` is already there. A
+ *   pre-release npm still doesn't list after about five minutes fails the
+ *   release run, so a `latest` left behind is seen. Usage: `node
  *   tools/release/latest-tag.ts [--dry-run]`.
  */
 
@@ -60,7 +62,10 @@ export type MoveOptions = {
   npm: Npm;
   /** Say what it would do, and do nothing. */
   dryRun?: boolean;
-  /** How often to ask npm for the version, as a new one takes a moment. */
+  /**
+   * How often to ask npm for the version, as a new one can take minutes to
+   * show.
+   */
   attempts?: number;
   /** Waits between attempts. */
   wait?: () => Promise<void>;
@@ -68,10 +73,16 @@ export type MoveOptions = {
 
 const published = async (
   version: string,
-  { npm, attempts = 6, wait = () => Promise.resolve() }: MoveOptions,
+  { npm, attempts = 30, wait = () => Promise.resolve() }: MoveOptions,
 ): Promise<boolean> => {
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    const view = npm(["view", `${PACKAGE}@${version}`, "version"]);
+    // Past npm's cache, which may still hold the "not found" from before.
+    const view = npm([
+      "view",
+      `${PACKAGE}@${version}`,
+      "version",
+      "--prefer-online",
+    ]);
     if (view.ok && view.stdout.trim() === version) return true;
     // oxlint-disable-next-line eslint/no-await-in-loop -- one after another, by design
     if (attempt < attempts) await wait();
@@ -92,8 +103,8 @@ export const moveLatest = async (
   }
   if (!(await published(version, options))) {
     return {
-      kind: "skipped",
-      reason: `npm doesn't have ${PACKAGE}@${version}`,
+      kind: "failed",
+      reason: `npm doesn't list ${PACKAGE}@${version} yet; rerun the release job, or run npm dist-tag add ${PACKAGE}@${version} latest`,
     };
   }
   const { npm } = options;
