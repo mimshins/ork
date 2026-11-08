@@ -32,3 +32,8 @@ work for now, by choice. Those the gaps review carried are open work in the
   session that is writing its report then takes one more turn to acknowledge it.
   Seen on a real run. Telling only a session that is waiting would avoid it.
   ([messaging](./links.md))
+- **L183 · A leader's claims can deadlock its children.** A leader that claims
+  paths and then waits in `delegate` keeps them, so children doing that work are
+  refused the same paths and nothing moves until the run is stopped. Seen on a
+  real run; `tools.deny: [mcp__ork__claim]` on the leader avoids it. A leader's
+  claims could pass to its children while it waits.

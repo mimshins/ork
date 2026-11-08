@@ -36,3 +36,7 @@ Those the gaps review carried are open work in the
   even once `keep` has applied it to the checkout;
   `ork worktrees remove <run>/<node> --force` removes it. Ork could remove it
   after a clean apply.
+- **L185 · `ork worktrees clean` ignores a name it is given.**
+  `clean <run>/<node> --force` says "Nothing to clean" when that worktree exists
+  but isn't merged. It could reject the name, or point to
+  `ork worktrees remove`.

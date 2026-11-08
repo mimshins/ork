@@ -3,15 +3,16 @@
 # Ork's own process, as far as project rules express it (AGENTS.md and
 # CONTRIBUTING.md are the source; every node reads AGENTS.md through CLAUDE.md):
 #
-# - The maintainer commits and pushes straight to main, with no pull requests.
-#   Ork never commits here (commit: never): a run's work stays uncommitted in a
-#   detached worktree started from main, and a workflow's last step is a gate
-#   where the maintainer keeps or discards it. Sessions can't commit, push or
-#   open a pull request (the deny rules).
-# - The commit message (a short imperative subject, a blank line, what changed
-#   and why, no AI or agent attribution) is the maintainer's to write: with no
-#   Ork commits there is no Ork commit message. The commit-msg hook enforces
-#   the no-attribution rule on the maintainer's commit.
+# - The maintainer commits and pushes straight to main, with no pull requests;
+#   contributors push to a branch and open one. A run's nodes never commit
+#   (commit: never): its work stays uncommitted in a detached worktree started
+#   from main, and a workflow's last step is a gate where the person chooses
+#   where it goes. Sessions can't commit, push or open a pull request (the deny
+#   rules); only the script behind that gate does.
+# - The commit message is a short imperative subject, a blank line, what changed
+#   and why, and no AI or agent attribution. feature's docs node drafts it and
+#   the last gate shows it. The commit-msg hook enforces the no-attribution rule
+#   on every commit.
 # - `pnpm check` is the gate. Project rules have no `verify:` default, so each
 #   workflow puts it on its writing nodes.
 # - The driver is left to each contributor: a run takes the one ready on the

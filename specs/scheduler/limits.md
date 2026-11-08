@@ -65,3 +65,8 @@ are open work in the [register](../gaps.md#limits).
   that branch as not taken and fires. If the person then picks "again", the
   branch runs, reaches the join, and it fires a second time.
   ([scheduler](../scheduler.md#activations))
+- **L184 · `delegate`'s error doesn't name the field it wanted.** Given
+  `{ node: "code" }` instead of `{ child: "code" }`, the error doesn't name the
+  expected key, and a Haiku leader reported an Ork bug instead of retrying. The
+  error could name the key and the leader's children, or the tool's schema could
+  make `child` an enum of them.

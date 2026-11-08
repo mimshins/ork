@@ -131,15 +131,19 @@ through their public entry point. oxlint enforces this.
 This repository is an Ork project: [.ork/project.yaml](./.ork/project.yaml)
 holds its rules, and [.ork/workflows/](./.ork/workflows) two workflows.
 
-- **`feature`** goes from your brief to a change you keep or discard. The
+- **`feature`** goes from your brief to a pushed change or a pull request. The
   spec-writer turns the brief into a task spec, and a gate asks you to approve
   it. A leader then builds it through the agents it owns: the ui-designer and
   the a11y-auditor for UI work, the implementer, or the engine agent for engine
   work, until `pnpm check` passes. A builder's question goes to the leader
   first, which answers it when the approved spec settles it and passes it to you
   otherwise. An independent reviewer sends findings back for up to two more
-  rounds, the docs-keeper syncs the knowledge, and a last gate asks you to keep
-  or discard the change.
+  rounds, the docs-keeper syncs the knowledge, adds any missing changeset and
+  drafts the commit message, and a last gate asks where the change goes. Answer
+  `branch` with a note naming your branch to push there and open a pull request
+  (no note: `ork/<run>`). `main` is the maintainer's; `keep-uncommitted` applies
+  it to your checkout, and `discard` leaves it in the worktree. The commit
+  refuses a change with no changeset.
 - **`qa-pass`** has the qa agent test the package built from `main` as a user
   would, with a fake `claude` and `gh`, and shows you its findings.
 
