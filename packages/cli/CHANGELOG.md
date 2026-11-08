@@ -1,5 +1,27 @@
 # @krapht/ork
 
+## 1.0.0-alpha.6
+
+### Patch Changes
+
+- [`6332204`](https://github.com/mimshins/ork/commit/6332204050b2ee2af131f77f73833c0eb83bf0bc) Thanks [@mimshins](https://github.com/mimshins)! - `delegate` and `spawn_worker` now offer a leader's own child ids as an enum, and
+  a wrong field or id is an error that names the field and the valid ids.
+
+- [`c517c25`](https://github.com/mimshins/ork/commit/c517c25ac07c22a59122a6401a512613cf415de7) Thanks [@mimshins](https://github.com/mimshins)! - The Feedback panel no longer shows an empty card instead of its list when the
+  item you had open left the list and the panel then became narrow.
+
+- [`6332204`](https://github.com/mimshins/ork/commit/6332204050b2ee2af131f77f73833c0eb83bf0bc) Thanks [@mimshins](https://github.com/mimshins)! - A leader's claims no longer block its own children. When `delegate` or
+  `spawn_worker` starts work, Ork releases what the leader holds, so a child can
+  claim those paths, and the result tells the leader to claim again before it
+  edits. Children still contend with each other and with nodes outside the team.
+
+- [`c517c25`](https://github.com/mimshins/ork/commit/c517c25ac07c22a59122a6401a512613cf415de7) Thanks [@mimshins](https://github.com/mimshins)! - An expanded event in the Logs panel shows in full and scrolls with the list,
+  instead of trapping the wheel in a box of its own.
+
+- [`6332204`](https://github.com/mimshins/ork/commit/6332204050b2ee2af131f77f73833c0eb83bf0bc) Thanks [@mimshins](https://github.com/mimshins)! - `ork worktrees clean <name>` now stops with an error that points to
+  `ork worktrees remove <name>`, instead of ignoring the name and saying "Nothing
+  to clean."
+
 ## 1.0.0-alpha.5
 
 ### Minor Changes
