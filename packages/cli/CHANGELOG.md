@@ -1,5 +1,29 @@
 # @krapht/ork
 
+## 1.0.0-alpha.7
+
+### Patch Changes
+
+- [`5eff7cd`](https://github.com/mimshins/ork/commit/5eff7cd1b8505e3936f0bf53efd18ca829f2d828) Thanks [@mimshins](https://github.com/mimshins)! - A `forEach` item whose work can't be merged into its owner now fails the node
+  instead of passing, and `ork validate` refuses fanned nodes that would share one
+  worktree at once, could never run, or merge into an owner yet to run. Under
+  `commit: auto` with `merge: patch`, a child that runs again hands over only what
+  is new.
+
+- [`d7a2b97`](https://github.com/mimshins/ork/commit/d7a2b97e8251cd8d5628a8489b43abc37fb56318) Thanks [@mimshins](https://github.com/mimshins)! - A `watch` on a `forEach` node tests what each item says, a walk stops claiming a
+  condition on `statuses` can never hold, and `ork validate` refuses a `from` list
+  that is not there on the first activation, `{{item}}` in `outputs`, and a
+  `notify` rule to a fanned node.
+
+- [`ed453d6`](https://github.com/mimshins/ork/commit/ed453d6f568f11b6d843cf6e122451413c58fdf8) Thanks [@mimshins](https://github.com/mimshins)! - A node can now run once per item of a list with `forEach`: a `claude.worker`, a
+  tool node, an `mcp.call` or a `workflow.call` takes a list written in the file
+  (`items`) or one an earlier node reports (`from`, with `maxItems`), runs each
+  item in its own session and worktree, up to `maxParallel` at a time, and
+  finishes once with the results in order. `{{item}}`, `{{index}}`, `ORK_ITEM` and
+  `ORK_INDEX` read the item, a run resumes per item, a list over `maxItems` asks
+  whether to stop or go on, and `ork tree`, `ork logs --node` and `ork validate`
+  show and check items. The Monitor and the workflow builder don't draw them yet.
+
 ## 1.0.0-alpha.6
 
 ### Patch Changes
