@@ -37,8 +37,9 @@ way out to the people who want it without reaching everyone else.
    the `canary` tag, never `latest`. The `canary` tag is considered only by a
    running canary, which is offered whichever version is newest. Everyone else
    never sees it: `canary` sorts above `alpha` and `beta` by semver, so taking
-   the newest of every tag would push canaries on everyone. (The opt-in and the
-   canary workflow are built later; the check's rule is in place now.)
+   the newest of every tag would push canaries on everyone. (The check's rule,
+   the opt-in ([ADR-066](./ADR-066-experiments-registry.md)) and the canary
+   workflow are built.)
 
 The detail is in [updates](../specs/cli/updates.md) and the
 [release runbook](../runbook/development/release.md).
@@ -74,6 +75,7 @@ that may be broken on purpose, reach only the people who installed one.
   this machine may be offered", so older Orks still read it.
 - Changesets numbers pre-releases across a switch of channel (after
   `1.0.0-alpha.4` comes `1.0.0-beta.5`), as the runbook notes.
-- Still to build, before the first canary: the experiments registry and opt-in
-  (listed by `ork doctor`), and the manual canary workflow, with Changesets'
-  snapshot settings so a canary is `1.0.0-canary-<datetime>-<sha>`.
+- Built since: the experiments registry and opt-in, listed by `ork doctor`
+  ([ADR-066](./ADR-066-experiments-registry.md)), and the manual canary
+  workflow, with Changesets' snapshot settings so a canary is
+  `1.0.0-canary-<datetime>-<sha>`.

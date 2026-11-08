@@ -102,9 +102,9 @@ review:
   [Sessions](./runtime.md#what-a-session-loads) load only Ork's, or all of the
   machine's with `--machine-claude`; an `mcp:` on a node or the project could
   load just those it names (a browser, for G15).
-- **G27 · A permission is answered one call at a time.** A node asking for Bash
-  asks again for each command (six in run 0427fb01); a choice to allow that tool
-  for the rest of the node's session would answer them all at once.
+- **G27 · A permission is answered one call at a time.** Each Bash command asks
+  again (six in run 0427fb01); nothing allows a tool for the rest of a node.
+- **G28 · An experiment has no way out.** Nothing promotes or removes one.
 
 ## Limits
 

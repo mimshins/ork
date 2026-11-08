@@ -3,6 +3,14 @@
 Each release in a few lines, newest first, with how to upgrade. Every change, in
 full: the [changelog](../packages/cli/CHANGELOG.md).
 
+## 1.0.0-alpha.2
+
+- **Experiments, off by default.** Features that aren't ready for everyone can
+  ship turned off: `experimental: [<name>]` in `project.yaml`, or
+  `ORK_EXPERIMENTAL=<name>`, turns one on, and `ork doctor` lists what is on. No
+  experiment ships yet
+  ([project rules](./guides/project-rules.md#trying-an-experiment)).
+
 ## 1.0.0-alpha.1
 
 - **Clean Claude sessions.** A run's sessions no longer load your machine's MCP

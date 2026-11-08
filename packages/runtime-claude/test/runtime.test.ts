@@ -415,7 +415,11 @@ describe("the CLI driver", () => {
     const dir = mkdtempSync(path.join(tmpdir(), "ork-cache-"));
     const cacheOf = async (given: SessionSpec, name: string) => {
       const file = path.join(dir, name);
-      const env = { ...process.env, FAKE_CLAUDE_ENV_FILE: file };
+      const env = {
+        ...process.env,
+        ENABLE_PROMPT_CACHING_1H: undefined,
+        FAKE_CLAUDE_ENV_FILE: file,
+      };
       const session = createCliRuntime({ bin: FAKE_CLAUDE, env }).start(given, {
         human,
       });

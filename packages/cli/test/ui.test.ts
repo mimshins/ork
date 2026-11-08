@@ -61,7 +61,15 @@ const setUp = () => {
 };
 
 const { home, root } = setUp();
-const env = { ...process.env, HOME: home, ORK_NO_UPDATE_CHECK: "1" };
+// Without the run markers: `ork ui` withholds its sign-in link from a run (ADR-047),
+// and these tests may themselves run inside one.
+const env = {
+  ...process.env,
+  HOME: home,
+  ORK_NO_UPDATE_CHECK: "1",
+  ORK_RUN: undefined,
+  ORK_SESSION: undefined,
+};
 const children: ChildProcess[] = [];
 
 afterAll(() => {

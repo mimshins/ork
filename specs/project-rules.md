@@ -6,9 +6,9 @@ in the workspace ([project.ts](../packages/schema/src/project.ts),
 [names.ts](../packages/core/src/worktree/names.ts),
 [patch.ts](../packages/core/src/worktree/patch.ts),
 [handoff.ts](../packages/core/src/worktree/handoff.ts),
-[tests](../packages/core/test/rules.test.ts)). A project registered from outside
-its repository keeps them in `~/.ork/projects/<id>/project.yaml`
-([projects](./projects.md)). Why:
+[tests](../packages/core/test/rules.test.ts)), and [experiments](#experiments).
+A project registered from outside its repository keeps them in
+`~/.ork/projects/<id>/project.yaml` ([projects](./projects.md)). Why:
 [ADR-032](../decisions/ADR-032-project-rules.md).
 
 What Ork does on its own in a project (commit, merge, name branches and
@@ -30,6 +30,7 @@ permissions: # tool rules every Claude node gets
 defaults: # as a workflow's defaults
   model: sonnet
 context: [docs/process.md] # context files every node reads, from the project root
+experimental: [] # experiments this project turns on
 ```
 
 The JSON Schema is
@@ -114,6 +115,42 @@ calls:
 Without it, any registered project may [call a workflow](./scheduler/calls.md)
 here. With it, only those named may, and others fail with the reason. A call
 from within the project is always allowed.
+
+## Experiments
+
+Status: **Built** ([experiments.ts](../packages/core/src/experiments.ts),
+[tests](../packages/core/test/experiments.test.ts)). No experiment ships yet.
+Why: [ADR-066](../decisions/ADR-066-experiments-registry.md).
+
+Work not ready for everyone sits on `main`, off until asked for:
+
+```yaml
+experimental: [some-feature]
+```
+
+or `ORK_EXPERIMENTAL=some-feature,other-feature` (spaces around names and empty
+items are ignored). Both at once give the union. Outside a project only the
+environment counts; the project file is `.ork/project.yaml` or an attached
+project's own ([projects](./projects.md)).
+
+- **One registry.** A name works only if `EXPERIMENTS` has it. An entry (name,
+  summary, spec) comes with the change that adds its experiment.
+- **One question.** A consumer calls `experimentOn(name, …)`, which reads the
+  environment and takes the project's rules; nothing else reads
+  `ORK_EXPERIMENTAL`. With any unknown name, every gate is off.
+- **A gate that refuses** says so with `experimentOffMessage(name)`:
+  `some-feature is experimental; turn it on with "experimental: [some-feature]" in .ork/project.yaml or ORK_EXPERIMENTAL=some-feature`.
+- **An unknown name is an error** (`experiment.unknown`) on every workflow:
+  `ork validate`, `ork run`, the builder, the MCP tools and triggers refuse it,
+  with its source and the known names:
+  ``.ork/project.yaml:3:5: names an unknown experiment `x`; known: …``, or
+  ``ORK_EXPERIMENTAL names an unknown experiment `x`; known: …``.
+  [`ork doctor`](./cli/worktrees-agents-context-and-doctor.md#doctor) reports it
+  as a failed check.
+
+The opt-in adds no event and isn't stored with a run: it is read each time a
+workflow is checked, a resume included, on either driver alike. Nothing promotes
+or removes an experiment yet ([G28](./gaps.md#gaps)).
 
 ## Triggers
 

@@ -13,6 +13,7 @@ import {
   DEFAULT_BRANCH_TEMPLATE,
   DEFAULT_WORKTREES_TEMPLATE,
   type Diagnostic,
+  type DiagnosticPath,
   type ResolvedGitRules,
   isClaudeNode,
   parseProject,
@@ -35,6 +36,8 @@ export type LoadedProject = {
   project?: Project;
   /** Problems in the file, located in it (`.ork/project.yaml:3:5: …`). */
   diagnostics: Diagnostic[];
+  /** Says where a key of a valid file is (`.ork/project.yaml:3:5`). */
+  where?: (path: DiagnosticPath) => string;
 };
 
 /**
@@ -47,8 +50,19 @@ export const loadProject = (
 ): LoadedProject => {
   if (!existsSync(file)) return { diagnostics: [] };
   const parsed = parseProject(readFileSync(file, "utf8"));
-  if (parsed.ok) return { project: parsed.project, diagnostics: [] };
   const label = shownPath(file, projectRoot);
+  if (parsed.ok) {
+    return {
+      project: parsed.project,
+      diagnostics: [],
+      where: at => {
+        const position = parsed.locate(at);
+        return position === null
+          ? label
+          : `${label}:${position.line}:${position.column}`;
+      },
+    };
+  }
   return {
     diagnostics: parsed.diagnostics.map(d => {
       const at = d.line === undefined ? "" : `:${d.line}:${d.column ?? 1}`;

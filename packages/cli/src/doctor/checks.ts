@@ -2,15 +2,23 @@
  * @file The checks behind `ork doctor`: Ork's own version against the last
  *   update check, each tool's presence and login status (the drivers' own
  *   checks, which `ork run` also reads to pick the one ready), and whether a
- *   run's socket path fits, through an injectable `exec` so tests need no real
- *   tools. Never prints a token or an account.
+ *   run's socket path fits, and which experiments are on, through an injectable
+ *   `exec` so tests need no real tools. Never prints a token or an account.
  */
 
 import { execFile } from "node:child_process";
 
 import {
+  type Experiment,
+  EXPERIMENTS,
+  type ExperimentSource,
+  experimentsOn,
+  knownExperiments,
   lateTriggers,
+  loadProject,
   openStore,
+  placeFiles,
+  type ProjectPlace,
   readUpdateCache,
   socketRoom,
   storePath,
@@ -191,4 +199,44 @@ export const triggerChecks = (home?: string): CheckResult[] => {
   } finally {
     store.close();
   }
+};
+
+const SOURCE_NAMES: Record<ExperimentSource, string> = {
+  project: "project file",
+  environment: "environment",
+};
+
+/**
+ * Which experiments are on and who turned them on; an unknown name fails this
+ * check alone. Prints names only. Outside a project, only the environment
+ * counts.
+ */
+export const experimentsCheck = (
+  place: ProjectPlace,
+  env: Env = process.env,
+  registry: readonly Experiment[] = EXPERIMENTS,
+): CheckResult => {
+  const { project, where } = loadProject(place.root, placeFiles(place).rules);
+  const state = experimentsOn({ env, project, where, registry });
+  if (!state.ok) {
+    return {
+      name: "experiments",
+      status: "fail",
+      detail: `unknown: ${state.unknown.map(u => `\`${u.name}\` (${u.where})`).join(", ")}`,
+      hint: `Fix or remove the name. Known experiments: ${knownExperiments(registry)}.`,
+    };
+  }
+  return {
+    name: "experiments",
+    status: "ok",
+    detail:
+      state.on.length === 0
+        ? "none on"
+        : state.on
+            .map(
+              ({ name, sources }) =>
+                `${name} (${sources.map(s => SOURCE_NAMES[s]).join(" and ")})`,
+            )
+            .join(", "),
+  };
 };

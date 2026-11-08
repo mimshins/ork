@@ -119,3 +119,10 @@ A `sockets` check warns when the longest run socket path under `~`
 macOS, 107 on Linux): runs still work, but answers, commands and followers wait
 on the store, up to a second each
 ([messaging](../messaging.md#reaching-a-live-run)). It never fails the doctor.
+
+An `experiments` line lists each [experiment](../project-rules.md#experiments)
+that is on and where it was turned on (`one (project file)`,
+`two (environment)`, or both), or `none on`, in every project and outside one.
+It prints names only. An unknown name, from either source, fails that check,
+named with its source and the known names, and `ork doctor` exits non-zero; the
+other checks still run.

@@ -227,6 +227,15 @@ export const CLI = {
   validate: d("packages/cli/src/commands/validate.ts", "Code: `ork validate`"),
   init: d("packages/cli/src/commands/setup.ts", "Code: `ork init`"),
   doctor: d("packages/cli/src/doctor/checks.ts", "Code: `ork doctor`'s checks"),
+  experiments: d(
+    "packages/core/src/experiments.ts",
+    "Code: the experiments registry and opt-in",
+  ),
+  experimentsSpec: d("specs/project-rules.md#experiments", "Spec: experiments"),
+  experimentsAdr: d(
+    "decisions/ADR-066-experiments-registry.md",
+    "ADR-066: experiments, off by default",
+  ),
   upgrade: d("packages/cli/src/commands/install.ts", "Code: `ork upgrade`"),
   updates: d(
     "specs/cli/updates.md",

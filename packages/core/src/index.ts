@@ -4,6 +4,7 @@
  *   practices.
  */
 
+export * from "./experiments.ts";
 export * from "./agents/apply.ts";
 export * from "./agents/builtins.ts";
 export * from "./agents/catalog.ts";

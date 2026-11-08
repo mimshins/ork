@@ -16,6 +16,7 @@ import {
 
 import { loadAgents } from "../agents/catalog.ts";
 import { contextDiagnostics } from "../context/resolve.ts";
+import { experimentDiagnostics } from "../experiments.ts";
 import { compileWorkflow } from "../graph/compile.ts";
 import type { CompiledGraph } from "../graph/types.ts";
 import { walkWorkflow, type WalkResult } from "../run/walk.ts";
@@ -79,6 +80,10 @@ export const checkWorkflowText = (
   const diagnostics: Diagnostic[] = [];
   for (const diagnostic of [
     ...loaded.diagnostics,
+    ...experimentDiagnostics({
+      project: loaded.project,
+      where: loaded.where,
+    }),
     ...compiled.diagnostics,
     ...checkCallTargets(parsed.workflow, place, registered),
     ...(graph === null

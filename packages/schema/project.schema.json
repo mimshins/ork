@@ -290,6 +290,13 @@
       "items": {
         "type": "string"
       }
+    },
+    "experimental": {
+      "description": "Experimental features this project turns on.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "required": [

@@ -336,10 +336,16 @@ export const MILESTONES = [
       {
         id: "canary",
         title: "Canary snapshots",
-        status: "planned",
+        status: "active",
         detail:
-          "Experimental features on `main` behind an opt-in (`experimental: [...]` in the project, or `ORK_EXPERIMENTAL`), off by default and listed by `ork doctor`, from one registry of names. A manual workflow publishes a snapshot from `main` as `1.0.0-canary-<date>-<sha>` under the `canary` tag, never `latest`; the update check already offers it only to someone running a canary.",
-        docs: ["runbook/development/release.md", "specs/cli/updates.md"],
+          "Built, waiting on the first dispatch after merge. Experimental features on `main` behind an opt-in (`experimental: [...]` in the project, or `ORK_EXPERIMENTAL`), off by default and listed by `ork doctor`, from one registry of names, empty until the first experiment. A manual workflow (dry run by default) publishes a snapshot from `main` as `1.0.0-canary-<date>-<sha>` under the `canary` tag, never `latest`; the update check offers it only to someone running a canary.",
+        docs: [
+          "decisions/ADR-066-experiments-registry.md",
+          "specs/project-rules.md#experiments",
+          "runbook/development/release.md",
+          "specs/cli/updates.md",
+          ".github/workflows/canary.yml",
+        ],
       },
       {
         id: "beta-rc",
@@ -1028,6 +1034,8 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "bac127c",
+  "d1457d6",
   "c465552",
   "f07f12f",
   "74ccac4",

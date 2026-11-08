@@ -1,0 +1,75 @@
+name: Canary
+
+# A maintainer runs this by hand to publish a snapshot of main under the
+# `canary` dist-tag (runbook/development/release.md). Never `latest`, never a
+# GitHub release, nothing pushed back.
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Stop after computing the version; publish nothing.
+        type: boolean
+        default: true
+
+# No job gets a token unless it asks for one below.
+permissions: {}
+
+# Shares the release workflow's group, so a canary never races a release.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    name: canary
+    # Only the main repository, only from main; a fork or another branch never publishes.
+    if: github.repository == 'mimshins/ork' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          registry-url: https://registry.npmjs.org
+      # The same gates as CI, so nothing unchecked is ever published.
+      - run: pnpm run check
+      # Changesets refuses a snapshot in pre mode. This checkout is thrown away
+      # and nothing is committed, so main stays in pre mode.
+      - name: Leave pre mode in this checkout
+        run: |
+          if [ -z "$(find .changeset -maxdepth 1 -name '*.md' ! -name README.md)" ]; then
+            echo "::error::No changesets to snapshot. Add a changeset that releases @krapht/ork on main and run again."
+            exit 1
+          fi
+          rm -f .changeset/pre.json
+      - name: Version the snapshot
+        run: pnpm exec changeset version --snapshot canary
+        env:
+          # The changelog generator reads commit authors; the job's own token is enough.
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Bind the version
+        run: node tools/release/build-info.ts
+      # With no changesets to version, the package keeps its alpha version.
+      - name: Check the version is a canary
+        run: |
+          version=$(node -p 'require("./packages/cli/package.json").version')
+          echo "Canary version: $version"
+          if ! echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-canary-'; then
+            echo "::error::Not a canary version (\"$version\"): no changesets to snapshot. Add a changeset on main and run again."
+            exit 1
+          fi
+      - name: Build
+        if: ${{ !inputs.dry-run }}
+        run: pnpm run build
+      - name: Publish under the canary tag
+        if: ${{ !inputs.dry-run }}
+        run: pnpm exec changeset publish --tag canary --no-git-tag
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"

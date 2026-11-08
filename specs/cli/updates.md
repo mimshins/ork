@@ -41,12 +41,12 @@ version it offers, and, for `ork ui`,
   other tags are ignored. The record's field keeps the name `latest`, so an
   older Ork reads the newest version the same way.
 - **The canary rule.** The `canary` tag (snapshots from `main`,
-  `1.0.0-canary-<datetime>-<sha>`; the channel is planned) counts only when the
-  running version is itself a canary, its pre-release starting with `canary`. A
-  canary is offered whichever is newest, a newer canary or another tag's version
-  above it (an `rc` sorts above a canary). Everyone else skips the tag, since
-  `canary` sorts above `alpha` and `beta` and would otherwise be offered to
-  every alpha and beta.
+  `1.0.0-canary-<datetime>-<sha>`, published by hand with the Canary workflow)
+  counts only when the running version is itself a canary, its pre-release
+  starting with `canary`. A canary is offered whichever is newest, a newer
+  canary or another tag's version above it (an `rc` sorts above a canary).
+  Everyone else skips the tag, since `canary` sorts above `alpha` and `beta` and
+  would otherwise be offered to every alpha and beta.
 - **The notice.** When the command exits and the record's `latest` is newer than
   the running version by semver precedence, it writes one line to stderr:
   `Ork <latest> is out (you have <current>). Upgrade with: ork upgrade`, and

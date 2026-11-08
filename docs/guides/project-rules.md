@@ -135,6 +135,26 @@ rules:
 
 Its `git` keys win; permissions add up.
 
+## Trying an experiment
+
+Features that aren't ready for everyone ship turned off. To try one, name it in
+the project, for everyone working in it:
+
+```yaml
+experimental: [some-feature]
+```
+
+or in your environment, for you alone (several, separated by commas):
+
+```sh
+export ORK_EXPERIMENTAL=some-feature
+```
+
+`some-feature` stands for a real name: none has shipped yet. `ork doctor` lists
+what is on and who turned it on. A name Ork doesn't know is a mistake, not a
+no-op: `ork validate`, `ork run` and that `ork doctor` check fail, and say which
+names exist.
+
 ## What never changes
 
 Whatever the rules say, Ork never pushes on its own (a `tool.git` node pushes

@@ -100,13 +100,47 @@ job's own `NODE_AUTH_TOKEN`; no other secret. To see what it would do:
 node tools/release/latest-tag.ts --dry-run
 ```
 
-### Canary snapshots (planned)
+### Canary snapshots
 
-Not built yet. Experimental features will live on `main` behind an opt-in, and a
-manual (`workflow_dispatch`) workflow will publish a Changesets snapshot from
-`main` (`changeset version --snapshot canary`, `1.0.0-canary-<datetime>-<sha>`)
-under the `canary` dist-tag: never `latest`, and never a GitHub release. The
-update check already offers a canary only to someone running a canary.
+A canary is a snapshot of `main` for people who want experimental work before a
+release. A maintainer runs the
+[Canary workflow](../../.github/workflows/canary.yml) by hand (Actions → Canary
+→ Run workflow, on `main`). It publishes
+`@krapht/ork@1.0.0-canary-<datetime>-<sha>` under the `canary` dist-tag: never
+`latest`, never a GitHub release or git tag, and nothing is pushed back. Install
+one with:
+
+```sh
+npm install --global @krapht/ork@canary
+```
+
+The update check offers a canary only to someone already running one
+([updates](../../specs/cli/updates.md#the-new-version-notice)).
+
+The workflow's steps, in order:
+
+1. Run only for `mimshins/ork` and only from `main`, in the `release`
+   concurrency group, so it never races a release.
+2. `pnpm run check`, the same gates as CI.
+3. Delete `.changeset/pre.json` in the throwaway checkout: Changesets refuses a
+   snapshot in pre mode. Nothing is committed, so `main` stays in pre mode.
+4. `changeset version --snapshot canary`. The `snapshot` block in
+   [.changeset/config.json](../../.changeset/config.json) takes the version from
+   the pending changesets (`useCalculatedVersion`) and names it
+   `{tag}-{datetime}-{commit}`.
+5. `node tools/release/build-info.ts` binds the version into `ork --version` and
+   the plugins, as a release does.
+6. Fail unless `packages/cli/package.json`'s version matches
+   `^\d+\.\d+\.\d+-canary-`.
+7. Unless **dry-run** is on, `pnpm run build` and
+   `changeset publish --tag canary --no-git-tag`, with provenance and the
+   `NPM_AUTH_TOKEN` secret. No new secret; the job has only `contents: read` and
+   `id-token: write`.
+
+**dry-run** is on by default: the run stops after step 6 and prints the version.
+Untick it to publish. After a publish, check that
+`npm view @krapht/ork dist-tags` shows `latest` unchanged and that
+`ork --version` of the installed canary prints its own version.
 
 ## One-time setup
 
@@ -140,3 +174,17 @@ node packages/cli/dist/bin.mjs --help
 - **A pre-release was published but `latest` didn't move:** the job's log has
   `latest unchanged: …` with the reason. Rerunning the job is safe; or, with
   publish rights, run `npm dist-tag add @krapht/ork@<version> latest`.
+- **The Canary run fails with "no changesets to snapshot":** `main` has no
+  pending changeset, so Changesets versioned nothing. Add a changeset that
+  releases `@krapht/ork` on `main` (an empty one does not count) and run again.
+- **Changesets says "Snapshot release is not allowed in pre mode":** step 3
+  didn't run or `.changeset/pre.json` moved. The workflow removes that file
+  before `changeset version --snapshot`; don't commit that removal.
+- **A release is queued behind a Canary run:** the workflow shares the `release`
+  concurrency group, and GitHub keeps one pending run per group, so a canary
+  queued while a release runs can evict a release already pending behind it.
+  Don't dispatch a canary while a release is queued; the next push to `main`
+  recovers.
+- **The first dry run fails at the changelog:** `@changesets/changelog-github`
+  uses the job token, and the job has only `contents: read`. Check the first
+  dry-run dispatch before any publish.

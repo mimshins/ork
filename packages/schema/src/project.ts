@@ -133,6 +133,10 @@ export const ProjectSchema = z.strictObject({
     .describe(
       "Context files every node reads, relative to the project root; they come before the workflow's.",
     ),
+  experimental: z
+    .array(z.string())
+    .optional()
+    .describe("Experimental features this project turns on."),
 });
 export type Project = z.infer<typeof ProjectSchema>;
 

@@ -29,6 +29,7 @@ import { defineCommand } from "citty";
 import { ORK_NAME, ORK_VERSION } from "../__build_info__.ts";
 import {
   exec,
+  experimentsCheck,
   orkCheck,
   runChecks,
   socketCheck,
@@ -72,12 +73,14 @@ export const doctor = defineCommand({
       process.versions.node,
     );
     const place = projectAt(process.cwd());
+    const experiments = experimentsCheck(place);
     for (const result of [
       orkCheck(),
       ...results,
       ...(place.mode === "attached" ? [] : projectChecks(place.root)),
       socketCheck(),
       ...triggerChecks(),
+      experiments,
     ]) {
       for (const line of formatCheck(result)) write(line);
     }
@@ -87,6 +90,7 @@ export const doctor = defineCommand({
       );
       process.exitCode = 1;
     }
+    if (experiments.status === "fail") process.exitCode = 1;
   },
 });
 
