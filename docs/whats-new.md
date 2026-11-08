@@ -26,6 +26,9 @@ changing until 1.0.0.
   every teammate's; `ork run` says which.
 - **A run never ends `succeeded` without reaching its end.** A run whose join
   waited on a branch that couldn't run used to finish early as succeeded.
+- **Tab completion.** `ork completion zsh` (or `bash`, `fish`) prints a script
+  that completes commands, flags, workflows, run ids and node ids; `ork --help`
+  lists the commands in groups ([tab completion](./guides/tab-completion.md)).
 - **Every channel in the update check.** The daily check, `ork upgrade` and the
   banner in `ork ui` offer the newest version across `latest`, `alpha`, `beta`
   and `rc`.

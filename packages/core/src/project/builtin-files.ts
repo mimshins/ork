@@ -31,6 +31,10 @@ export const builtinWorkflowNames = (): string[] =>
     .toSorted()
     .map(name => `${BUILTIN_PREFIX}${name}`);
 
+/** The text of the built-in `arg` names (`ork:<name>`), without writing it. */
+export const builtinWorkflowText = (arg: string): string | undefined =>
+  isBuiltinArg(arg) ? textOf(arg.slice(BUILTIN_PREFIX.length)) : undefined;
+
 /** Why an `ork:` argument names no built-in, or `undefined` when it does. */
 export const unknownBuiltin = (arg: string): string | undefined =>
   isBuiltinArg(arg) && textOf(arg.slice(BUILTIN_PREFIX.length)) === undefined

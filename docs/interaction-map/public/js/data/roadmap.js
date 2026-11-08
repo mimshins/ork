@@ -955,6 +955,18 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "tab-completion",
+        title: "Tab completion",
+        status: "active",
+        detail:
+          "`ork completion zsh|bash|fish` prints a script that asks the hidden `ork __complete` for candidates: commands and flags read from the command tree (so a new one shows up with no change), and live values read-only from the project and the store: workflows, run ids newest first, a run's or a workflow's nodes, open decisions, drivers. `ork --help` lists the commands in groups, kubectl-style, from the same tree; zsh labels its menu with them. What it leaves out is in the register (L176–L179).",
+        docs: [
+          "specs/cli/completion.md",
+          "docs/guides/tab-completion.md",
+          "specs/gaps.md#limits",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",

@@ -233,6 +233,18 @@ export const CLI = {
     "Spec: the new-version notice and upgrade",
   ),
   tests: d("packages/cli/test/cli.test.ts", "Tests: init and validate"),
+  completion: d(
+    "packages/cli/src/commands/completion.ts",
+    "Code: `ork completion` and the hidden `ork __complete`",
+  ),
+  completionSpec: d(
+    "specs/cli/completion.md",
+    "Spec: tab completion and the grouped `ork --help`",
+  ),
+  completionTests: d(
+    "packages/cli/test/completion-values.test.ts",
+    "Tests: completion's live values, read-only",
+  ),
   run: d("packages/cli/src/commands/run.ts", "Code: the `ork run` command"),
   human: d(
     "packages/cli/src/human.ts",

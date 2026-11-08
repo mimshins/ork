@@ -3,7 +3,9 @@
  *   project, `~/.ork/state.db`, in WAL mode so other `ork` processes read while
  *   a run writes. Events are stored with secrets masked, feedback records
  *   beside them, and the registered projects; the schema is versioned with
- *   `user_version`.
+ *   `user_version`. Tab completion opens it read-only: no store created, no
+ *   migration, a store at another version refused, and the database never
+ *   changed (SQLite may still add the `-wal` and `-shm` files beside it).
  */
 
 import { mkdirSync } from "node:fs";
@@ -15,7 +17,7 @@ import { maskReplacer } from "./mask.ts";
 import { ownProcessStart } from "./process-age.ts";
 import { storeQueries } from "./queries.ts";
 import { eventOf, inTransaction, type Row, text } from "./rows.ts";
-import { migrate } from "./schema.ts";
+import { migrate, requireCurrent } from "./schema.ts";
 import type {
   EventStore,
   RunRecord,
@@ -77,14 +79,28 @@ export const nodeOf = (event: RunEvent): string | null => {
 export type StoreOptions = {
   /** This process's start, recorded with a run it begins or reopens. */
   processStart?: () => string | undefined;
+  /**
+   * Only read: the file must exist and be at this Ork's schema version (no
+   * migration), and SQLite refuses every write (tab completion).
+   */
+  readOnly?: boolean;
 };
 
-/** Opens (and creates) the store at `file`; `:memory:` for tests. */
-export const openStore = (
-  file: string = storePath(),
-  options: StoreOptions = {},
-): EventStore => {
-  const ownStart = options.processStart ?? ownProcessStart;
+/** A database opened for reading only, refused unless it is current. */
+const openReadOnly = (file: string): DatabaseSync => {
+  const db = new DatabaseSync(file, { readOnly: true });
+  try {
+    db.exec("PRAGMA busy_timeout = 5000");
+    requireCurrent(db);
+    return db;
+  } catch (error) {
+    db.close();
+    throw error;
+  }
+};
+
+/** A database opened for writing: created, in WAL mode, migrated. */
+const openWritable = (file: string): DatabaseSync => {
   if (file !== ":memory:") mkdirSync(path.dirname(file), { recursive: true });
   const db = new DatabaseSync(file);
   db.exec("PRAGMA busy_timeout = 5000");
@@ -92,6 +108,20 @@ export const openStore = (
   db.exec("PRAGMA synchronous = NORMAL");
   db.exec("PRAGMA foreign_keys = ON");
   migrate(db);
+  return db;
+};
+
+/**
+ * Opens (and creates) the store at `file`; `:memory:` for tests. With
+ * `readOnly`, it neither creates nor migrates, and throws when it can't read.
+ */
+export const openStore = (
+  file: string = storePath(),
+  options: StoreOptions = {},
+): EventStore => {
+  const ownStart = options.processStart ?? ownProcessStart;
+  const db =
+    options.readOnly === true ? openReadOnly(file) : openWritable(file);
 
   const insertRun = db.prepare(
     `INSERT INTO runs (id, workflow, file, project, status, pid, process_start, started_at, parent, depth)
@@ -124,6 +154,9 @@ export const openStore = (
   );
   const eventsAfter = db.prepare(
     "SELECT seq, at, data FROM events WHERE run_id = ? AND seq > ? ORDER BY seq",
+  );
+  const runNodes = db.prepare(
+    "SELECT node FROM events WHERE run_id = ? AND node IS NOT NULL GROUP BY node ORDER BY MIN(seq)",
   );
 
   const { insertFeedback, recordUsage, recordPlanLimit, ...queries } =
@@ -224,6 +257,7 @@ export const openStore = (
         at: text(r, "at"),
         event: eventOf(text(r, "data")),
       })),
+    nodes: runId => runNodes.all(runId).map(r => text(r, "node")),
     close: () => {
       db.close();
     },

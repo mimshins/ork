@@ -227,6 +227,22 @@ export const MIGRATIONS: readonly (string | ((db: DatabaseSync) => void))[] = [
 const versionOf = (db: DatabaseSync): number =>
   Number(db.prepare("PRAGMA user_version").get()?.["user_version"] ?? 0);
 
+/**
+ * Refuses a database that is not at this Ork's schema version, newer or older,
+ * for a reader that may not migrate it (a read-only open).
+ */
+export const requireCurrent = (
+  db: DatabaseSync,
+  migrations: typeof MIGRATIONS = MIGRATIONS,
+): void => {
+  const version = versionOf(db);
+  if (version !== migrations.length) {
+    throw new Error(
+      `The store is at schema version ${String(version)}; this Ork reads ${String(migrations.length)}.`,
+    );
+  }
+};
+
 /** Applies the migrations the database has not had yet. */
 export const migrate = (
   db: DatabaseSync,

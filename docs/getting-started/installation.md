@@ -197,4 +197,4 @@ See [Where Ork keeps things](../guides/where-ork-keeps-things.md#removing-ork).
 ## Next
 
 [Quickstart](./quickstart.md): your first workflow, from `ork init` to a
-finished run.
+finished run. And [tab completion](../guides/tab-completion.md) for your shell.

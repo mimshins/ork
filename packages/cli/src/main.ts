@@ -1,6 +1,9 @@
-/** @file The root `ork` command and its subcommands. */
+/**
+ * @file The root `ork` command and its subcommands. `ork --help` lists them in
+ *   the groups of `help-groups.ts`.
+ */
 
-import { defineCommand } from "citty";
+import { type CommandDef, defineCommand } from "citty";
 
 import { chat } from "./commands/chat.ts";
 import { context } from "./commands/context.ts";
@@ -12,7 +15,7 @@ import { feedback, logs, ps, tree } from "./commands/runs.ts";
 import { agents, init, link } from "./commands/setup.ts";
 import { validate } from "./commands/validate.ts";
 
-export const main = defineCommand({
+export const main: CommandDef = defineCommand({
   meta: ORK_META,
   subCommands: {
     init,
@@ -55,5 +58,13 @@ export const main = defineCommand({
     ui: () => import("./commands/ui.ts").then(module => module.ui),
     doctor,
     upgrade,
+    // Loaded on use: only a shell's setup asks for it.
+    completion: () =>
+      import("./commands/completion.ts").then(module => module.completion),
+    // Hidden: what the completion scripts run; `bin.ts` runs it first.
+    __complete: (): Promise<CommandDef> =>
+      import("./commands/completion.ts").then(module =>
+        module.completeCommand(main),
+      ),
   },
 });

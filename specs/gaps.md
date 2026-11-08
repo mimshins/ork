@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L172. At a review, each open
+closes it. Ids are never reused: the next limit is L180. At a review, each open
 entry is closed (built or fixed, then removed), kept (moved into its area's
 spec, then removed here), or carried to a roadmap item, or to none yet
 (unplanned).
@@ -141,6 +141,26 @@ Carried at the 2026-11-07 review. Each links to its words in its area's spec.
 
 L116 waits for first real use, and L129 for a hand check across a restart.
 
+Found building [tab completion](./cli/completion.md) (2026-11-08), to decide at
+the next review:
+
+- **L176 · Completion takes `--flag value`, not `--flag=value`.** A value
+  written after `=` is read when it comes before the cursor, but not completed
+  under it.
+- **L177 · Only some values complete.** Feedback item ids, project ids
+  (`ork projects forget|move`), agent names, `ork link`'s tools and
+  `ork relay`'s `<run>/<node>` get none, and only the first of several files to
+  `ork validate` gets workflow names.
+- **L178 · The bash script is plain.** bash shows no descriptions, and the
+  script splits the line at spaces itself, so a quoted word with a space in it
+  is split.
+- **L179 · The fish script hasn't been run in fish.** zsh and bash (3.2, in a
+  test) were run; fish was not installed where it was built. Checked against
+  fish's changelog instead: `$tokens[2..-1]` on a one-token line is empty since
+  fish 3.0 (a range clamps without changing direction), and fish 4.0 deprecates
+  `commandline -o` for `-x`, which fish 3 lacks, so the script tries
+  `commandline -xpc` and falls back to `-opc`.
+
 ## Chores
 
 - **C2 · Release pull requests run no CI.** Pull requests opened with the
@@ -167,3 +187,8 @@ L116 waits for first real use, and L129 for a hand check across a restart.
   session ends, and that `ork resume` goes on. Carried, unplanned: it waits on
   the world. ([usage](./usage.md#limits-across-runs))
   ([ADR-002](../decisions/ADR-002-typescript-from-source.md))
+- **C12 · A Monitor test is flaky under a full run.** "the Monitor's Resume ›
+  works from the keyboard" sometimes finds the dialog before the focus is in it
+  when the whole suite runs (seen on 2026-11-08, with and without the completion
+  change); alone it passes. Its focus check wants a `vi.waitFor`.
+  ([test](../packages/ui/test/panels/monitor-resume.test.tsx))

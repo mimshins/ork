@@ -12,8 +12,9 @@ Status: **Built**: every command below. `ork init`, `ork register`,
 `ork feedback list | show | note | dismiss | restore | accept | apply | triage | split | publish | export | import`
 ([feedback](./feedback.md)), `ork upgrade` and the new-version notice
 ([updates](./cli/updates.md)), `ork ui` ([server](./server.md)), `ork mcp`
-([mcp](./cli/mcp.md)), and `ork send`, which a tool node's program runs
-([scripts](./messaging/scripts.md#ork-send))
+([mcp](./cli/mcp.md)), `ork completion zsh|bash|fish` and the hidden
+`ork __complete` ([completion](./cli/completion.md)), and `ork send`, which a
+tool node's program runs ([scripts](./messaging/scripts.md#ork-send))
 ([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts),
 [agents tests](../packages/cli/test/agents.test.ts),
@@ -28,7 +29,9 @@ Status: **Built**: every command below. `ork init`, `ork register`,
 [init driver tests](../packages/cli/test/init-driver.test.ts),
 [ready driver tests](../packages/cli/test/ready-driver.test.ts),
 [help tests](../packages/cli/test/help.test.ts)). `--help` leaves out the flags
-only Ork passes to itself (their descriptions start `Internal:`). Published as
+only Ork passes to itself (their descriptions start `Internal:`), and
+`ork --help` lists the commands in groups
+([completion and help](./cli/completion.md#ork---help)). Published as
 `@krapht/ork` ([release](../runbook/development/release.md),
 [ADR-015](../decisions/ADR-015-changesets-and-one-bundled-cli.md)).
 
@@ -70,6 +73,7 @@ ork feedback export [--all] [-o <file>] | import <file>  # move feedback records
 ork upgrade [--check] [--yes]    # a newer version? upgrade the way Ork was installed, after asking
 ork ui [--port <n>] [--no-open]  # the local server (127.0.0.1:4417) and its page; opens the running one
 ork mcp [--expects <version>]    # Ork's tools for Claude Code over stdio (MCP): read, check, start; never decide
+ork completion zsh|bash|fish     # print a tab-completion script; the script runs the hidden `ork __complete -- <words…>`
 ```
 
 ## Contents
@@ -95,3 +99,10 @@ ork mcp [--expects <version>]    # Ork's tools for Claude Code over stdio (MCP):
   - [ork upgrade](./cli/updates.md#ork-upgrade)
   - [In ork ui](./cli/updates.md#in-ork-ui)
 - [Limits: upgrading from the browser view](./cli/upgrade-limits.md)
+- [Completion and help](./cli/completion.md)
+  - [The command tree](./cli/completion.md#the-command-tree)
+  - [ork completion](./cli/completion.md#ork-completion)
+  - [Answering the shell](./cli/completion.md#answering-the-shell)
+    - [Values](./cli/completion.md#values)
+    - [What it reads](./cli/completion.md#what-it-reads)
+  - [ork --help](./cli/completion.md#ork---help)

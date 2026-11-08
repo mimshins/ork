@@ -6,12 +6,15 @@
  *   background copy it starts only runs the check. It first clears git's local
  *   variables (a hook's `GIT_DIR`, `GIT_INDEX_FILE`, …), so nothing Ork starts
  *   acts on the hook's repository (specs/worktrees.md). `--help` leaves out the
- *   flags only Ork passes to itself.
+ *   flags only Ork passes to itself. `ork __complete`, which tab completion
+ *   runs on every Tab, goes first: no update check, and no citty, so a typed
+ *   `--help` is a word to complete.
  */
 
 import { clearGitLocalEnv } from "@krapht/ork-core";
 import { runMain } from "citty";
 
+import { COMPLETE_COMMAND } from "./completion/scripts.ts";
 import { showHelp } from "./help.ts";
 import { main } from "./main.ts";
 import {
@@ -24,10 +27,14 @@ import {
 
 clearGitLocalEnv();
 
-if (process.env[UPDATE_CHILD_ENV] === "1") {
+const argv = process.argv.slice(2);
+
+if (argv[0] === COMPLETE_COMMAND) {
+  const { printCompletions } = await import("./commands/completion.ts");
+  await printCompletions(main, argv.slice(1));
+} else if (process.env[UPDATE_CHILD_ENV] === "1") {
   await runUpdateChild();
 } else {
-  const argv = process.argv.slice(2);
   if (updateCheckOff(process.env, argv, process.stderr.isTTY) === null) {
     startUpdateCheck();
     process.once("exit", () => {

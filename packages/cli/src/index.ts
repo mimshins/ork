@@ -4,6 +4,8 @@
  */
 
 export * from "./agents/manage.ts";
+export * from "./command-tree.ts";
+export * from "./commands/completion.ts";
 export * from "./commands/control.ts";
 export * from "./commands/install.ts";
 export * from "./commands/pause.ts";
@@ -19,6 +21,8 @@ export { main } from "./main.ts";
 export * from "./workflows.ts";
 export * from "./doctor/checks.ts";
 export * from "./help.ts";
+export * from "./help-groups.ts";
+export * from "./help-root.ts";
 export * from "./human.ts";
 export * from "./project/draft.ts";
 export * from "./project/init.ts";

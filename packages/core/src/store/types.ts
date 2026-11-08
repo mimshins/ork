@@ -281,5 +281,7 @@ export type EventStore = DecisionStore &
     lookup: (prefix: string) => RunRecord[];
     /** A run's events in order, after `seq` when given. */
     events: (runId: string, after?: number) => StoredEvent[];
+    /** The nodes a run's events are about, in the order they first appear. */
+    nodes: (runId: string) => string[];
     close: () => void;
   };

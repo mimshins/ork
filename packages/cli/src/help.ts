@@ -1,41 +1,20 @@
 /**
  * @file `ork <command> --help`: citty's usage, without the flags Ork passes to
- *   itself. A flag whose description starts with `Internal:` (the run id
- *   `--detach` picked, the caller of a `workflow.call`, …) still works, but is
- *   not shown to people.
+ *   itself (the command tree's filter), and with `<command> [flags]` in place
+ *   of citty's `a|b|c` list for a command with subcommands. The root command's
+ *   help is grouped (`help-root.ts`).
  */
 
-import {
-  type ArgsDef,
-  type CommandDef,
-  renderUsage,
-  type Resolvable,
-} from "citty";
+import { type ArgsDef, type CommandDef, renderUsage } from "citty";
 
-/** How a flag that only Ork passes to itself starts its description. */
-export const INTERNAL = "Internal:";
+import { argsOf, publicArgs, subcommandsOf } from "./command-tree.ts";
+import { renderRootHelp } from "./help-root.ts";
 
-/** Whether citty was given a function that gives the value. */
-const isThunk = <T>(
-  value: Resolvable<T>,
-): value is (() => T) | (() => Promise<T>) => typeof value === "function";
-
-/** A command's flags, which citty lets be given as a function. */
-const argsOf = <T extends ArgsDef>(
-  cmd: CommandDef<T>,
-): ArgsDef | Promise<ArgsDef> => {
-  const { args } = cmd;
-  if (args === undefined) return {};
-  return isThunk(args) ? args() : args;
-};
-
-/** `args` without the flags only Ork passes to itself. */
-export const publicArgs = (args: ArgsDef): ArgsDef =>
-  Object.fromEntries(
-    Object.entries(args).filter(
-      ([, def]) => !(def.description ?? "").startsWith(INTERNAL),
-    ),
-  );
+/** Citty's `a|b|c` usage list of a command's shown subcommands. */
+const choicesOf = async (cmd: CommandDef): Promise<string> =>
+  (await subcommandsOf(cmd))
+    .flatMap(entry => (entry.hidden ? [] : [entry.name].concat(entry.aliases)))
+    .join("|");
 
 /** The usage of `cmd` (under `parent`), as people see it. */
 export const renderHelp = async <T extends ArgsDef, P extends ArgsDef>(
@@ -47,9 +26,17 @@ export const renderHelp = async <T extends ArgsDef, P extends ArgsDef>(
     ...(cmd.meta === undefined ? {} : { meta: cmd.meta }),
     ...(cmd.subCommands === undefined ? {} : { subCommands: cmd.subCommands }),
   };
+  if (cmd.subCommands !== undefined && parent === undefined) {
+    return renderRootHelp(shown);
+  }
   const above: CommandDef | undefined =
     parent?.meta === undefined ? undefined : { meta: parent.meta };
-  return renderUsage(shown, above);
+  const usage = await renderUsage(shown, above);
+  if (cmd.subCommands === undefined) return usage;
+  const choices = await choicesOf(shown);
+  return usage
+    .replace(` [OPTIONS] ${choices}`, ` <command> [flags]`)
+    .replace(` ${choices}`, ` <command> [flags]`);
 };
 
 /** Prints {@link renderHelp}'s usage, as citty prints its own. */
