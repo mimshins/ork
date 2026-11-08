@@ -10,7 +10,7 @@ import { collectPaths, type Expr } from "../expr/parse.ts";
 import type { CompiledRule } from "./notify.ts";
 import { checkAbsolute, type Context } from "./ref-paths.ts";
 import { checkOwn, checkTemplate } from "./templates.ts";
-import type { CompiledEdge } from "./types.ts";
+import { type CompiledEdge, itemNodeOf } from "./types.ts";
 import { compileWatches } from "./watch.ts";
 
 export type NotifyRules = ReadonlyMap<string, readonly CompiledRule[]>;
@@ -30,6 +30,20 @@ const checkCondition = (
     }
     return checkOwn(from, path, segments, context, extra);
   });
+};
+
+/** The context for `until:`: each item of a fanned node waits on its own look. */
+const asItems = (context: Context, id: string): Context => {
+  const node = context.workflow.nodes[id];
+  return node === undefined
+    ? context
+    : {
+        ...context,
+        workflow: {
+          ...context.workflow,
+          nodes: { ...context.workflow.nodes, [id]: itemNodeOf(node) },
+        },
+      };
 };
 
 /** Checks every condition and every `notify:` rule against the workflow. */
@@ -74,9 +88,13 @@ export const checkConditionRefs = (
   );
   const fromWatches = compileWatches(workflow.nodes);
   const fromUntil = fromWatches.conditions.flatMap(({ id, condition }) =>
-    checkCondition(id, ["nodes", id, "watch", "until"], condition, context, [
-      "ok",
-    ]),
+    checkCondition(
+      id,
+      ["nodes", id, "watch", "until"],
+      condition,
+      asItems(context, id),
+      ["ok"],
+    ),
   );
   return [
     ...fromConditions,

@@ -18,6 +18,7 @@ import {
   type RunEvent,
   startRun,
 } from "../src/index.ts";
+import { unmasked } from "../src/run/declared.ts";
 import { eachQuestion } from "../src/run/escalation.ts";
 
 const LINES = [
@@ -343,6 +344,22 @@ describe("the question about a list over its cap", () => {
     expect(state.loopAnswers).toEqual([
       { question: "a?", answer: "all" },
       { question: "b?", answer: "first" },
+    ]);
+  });
+});
+
+describe("a list handed back on resume", () => {
+  const SECRET = `Bearer ${"a".repeat(24)}`;
+
+  it("is the file's when the record is its masked form", () => {
+    expect(unmasked({ items: [SECRET] }, ["Bearer [masked]"])).toEqual([
+      SECRET,
+    ]);
+  });
+
+  it("stays as recorded when the file's list changed", () => {
+    expect(unmasked({ items: ["other"] }, ["Bearer [masked]"])).toEqual([
+      "Bearer [masked]",
     ]);
   });
 });

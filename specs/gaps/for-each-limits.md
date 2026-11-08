@@ -59,3 +59,7 @@ for the second run (the Monitor and the Builder).
   and its fanned child start together, an item that finishes before the owner's
   worktree exists is not merged, and the node still succeeds. `ork validate`
   refuses only an owner that can't start until the child has finished.
+- **L212 · A `from:` list resumes masked.** Events are stored with secrets
+  masked, so a list read from an earlier node comes back on a resume with
+  `[masked]` in place of a secret, as any handed-back output does. A static
+  `items:` list uses the file's values.

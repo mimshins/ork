@@ -67,6 +67,14 @@ const neverRuns = async (graph: CompiledGraph): Promise<boolean> => {
   );
 };
 
+/** Every status a walk tries for `build`. */
+const skipped = (forEach: string): unknown[] =>
+  (
+    outcomesOf(graphWith(forEach, "any(statuses, 'skipped')")).outcomes.get(
+      "build",
+    ) ?? []
+  ).flatMap(({ output }) => output["statuses"]);
+
 describe("walking a fanned node", () => {
   it("tries success and one failed item for a static list", () => {
     expect(saidBy(graphWith("items: [a, b]", "ok"))).toEqual([
@@ -76,7 +84,7 @@ describe("walking a fanned node", () => {
   });
 
   it("tries an empty list and each answer for a from list", () => {
-    expect(saidBy(graphWith(FROM, "ok"))).toEqual([
+    expect(saidBy(graphWith(FROM, "count > 0")).slice(0, 6)).toEqual([
       "succeeded",
       "one item failed",
       "the list is empty",
@@ -107,12 +115,46 @@ describe("walking a fanned node", () => {
     expect(countsOf(graphWith("items: [a, b]", "count == 0"))).toEqual([2, 2]);
   });
 
-  it("marks the rest skipped only for onFailure: stop", async () => {
-    const reading = "any(statuses, 'skipped')";
+  it("tries only how a from list can end when nothing reads the list", () => {
+    expect(saidBy(graphWith(FROM, "ok"))).toEqual([
+      "succeeded",
+      "one item failed",
+      "over maxItems, stopped",
+    ]);
+  });
+
+  it("marks the rest skipped only for onFailure: stop", () => {
+    expect(skipped("items: [a, b], onFailure: stop")).toContain("skipped");
+    expect(skipped("items: [a, b]")).not.toContain("skipped");
+  });
+
+  it.each([
+    "all(statuses, 'done')",
+    "len(statuses) == 3",
+    "count(statuses, 'fail') == 3",
+  ])("makes no claim that %s can never hold", async when => {
+    await expect(
+      neverRuns(graphWith(FROM, when, "claude.worker")),
+    ).resolves.toBe(false);
+  });
+
+  it("doesn't try every item failing when they run one by one and stop", () => {
     expect(
-      await neverRuns(graphWith("items: [a, b], onFailure: stop", reading)),
-    ).toBe(false);
-    expect(await neverRuns(graphWith("items: [a, b]", reading))).toBe(true);
+      saidBy(
+        graphWith(
+          "items: [a, b], onFailure: stop, maxParallel: 1",
+          "any(statuses, 'pass')",
+        ),
+      ),
+    ).not.toContain("all failed");
+  });
+
+  it("keeps the true count of a list too long to hold", () => {
+    const huge = "from: '{{nodes.plan.output.tasks}}', maxItems: 5000000000";
+    expect(countsOf(graphWith(huge, "count > 0"))).toContain(5_000_000_001);
+    expect(
+      countsOf(graphWith(FROM, "count > 4294967296")).length,
+    ).toBeGreaterThan(0);
   });
 
   it("varies count over a cap only with the answer all", () => {

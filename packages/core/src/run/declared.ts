@@ -4,12 +4,14 @@
  *   node on, so a condition never quietly matches nothing. A declared list
  *   (RFC-013) is held to being a list, and each item to its shape. It reads the
  *   format's own shape; a field written out as JSON Schema stays the driver's
- *   to enforce.
+ *   to enforce. A list a resume hands back keeps the file's real values when it
+ *   only differs by masking.
  */
 
-import { markValue } from "@krapht/ork-schema";
+import { type ForEach, markValue } from "@krapht/ork-schema";
 
 import { listShape } from "../graph/says.ts";
+import { maskReplacer } from "../store/mask.ts";
 
 const TYPE_NAMES: Readonly<Record<string, string>> = {
   string: "text",
@@ -120,3 +122,13 @@ export const declaredProblem = (
   const problems = fieldProblems(declared, value, "");
   return problems.length === 0 ? null : problems.join("; ");
 };
+
+/**
+ * The list a resume hands back. Events are stored masked, so a static list that
+ * still masks to the record is the file's, with its real values.
+ */
+export const unmasked = (forEach: ForEach, recorded: unknown[]): unknown[] =>
+  "items" in forEach &&
+  JSON.stringify(forEach.items, maskReplacer) === JSON.stringify(recorded)
+    ? [...forEach.items]
+    : recorded;

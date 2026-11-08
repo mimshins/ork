@@ -122,6 +122,14 @@ export const itemCountOf = (node: Node): number => {
   return "items" in each ? each.items.length : each.maxItems;
 };
 
+/** The node as each of its items runs: no `forEach`. */
+export const itemNodeOf = (node: Node): Node => {
+  if (!("forEach" in node)) return node;
+  const { forEach, ...item } = node;
+  void forEach;
+  return item;
+};
+
 export const outputFieldsOf = (node: Node): readonly string[] | null => {
   if (forEachOf(node) !== undefined) return GATHERED_FIELDS;
   if (isToolNode(node)) {

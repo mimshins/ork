@@ -11,7 +11,7 @@ import type { ForEach, Node } from "@krapht/ork-schema";
 
 import { type Scope, templatePath, templateValue } from "../expr/evaluate.ts";
 import { declaredOutputOf } from "../graph/types.ts";
-import { declaredProblem } from "./declared.ts";
+import { declaredProblem, unmasked } from "./declared.ts";
 import type { StartHooks } from "./delegation.ts";
 import type { Activation, RunOptions } from "./handle.ts";
 import type { Holds, Stops } from "./holds.ts";
@@ -149,7 +149,9 @@ export const createFanOut = (deps: FanOutDeps) => {
     const recorded =
       options.replay?.listed?.(id, round, sourceOf(forEach, scope)) ?? null;
     const listed: ReturnType<typeof listOf> =
-      recorded === null ? listOf(forEach, scope) : { ok: true, list: recorded };
+      recorded === null
+        ? listOf(forEach, scope)
+        : { ok: true, list: unmasked(forEach, recorded) };
     if (!listed.ok) return failure(listed.error);
     let { list } = listed;
     options.onEvent({

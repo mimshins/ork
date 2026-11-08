@@ -14,7 +14,11 @@ import { fieldRead } from "../graph/condition-checks.ts";
 import { warning } from "../graph/diagnostics.ts";
 import { checkLoops } from "../graph/loops.ts";
 import { nodeSays } from "../graph/says.ts";
-import type { CompiledEdge, CompiledGraph } from "../graph/types.ts";
+import {
+  type CompiledEdge,
+  type CompiledGraph,
+  forEachOf,
+} from "../graph/types.ts";
 import { STUCK_REASON } from "./routing.ts";
 
 /** What a walk saw across all its paths. */
@@ -111,6 +115,11 @@ const settled = (
   if (only === undefined || fields.length > 1) return false;
   // A gate someone stops has no `choice`, and a walk doesn't try that.
   if (fromGate(graph, from)) return false;
+  // A walk tries a few of a fanned node's mixes, not all of them.
+  const node = graph.nodes.get(from)?.node;
+  if (only !== "ok" && node !== undefined && forEachOf(node) !== undefined) {
+    return false;
+  }
   const said = says[from]?.fields.find(({ field }) => field === only);
   // A node can declare a field called `ok` of its own, which it then reports.
   if (only === "ok") return said === undefined;

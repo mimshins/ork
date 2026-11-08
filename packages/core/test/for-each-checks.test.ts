@@ -421,3 +421,60 @@ describe("where a fanned node sits", () => {
     expect(codesOf(none)).not.toContain("error:forEach.owner-order");
   });
 });
+
+const watched = (until: string) => `nodes:
+  build:
+    type: tool.shell
+    command: x
+    forEach: { items: [a, b] }
+    watch: { every: 30s, until: "${until}", timeout: 1h }
+`;
+
+const fromAfter = (edges: string) => `nodes:
+  setup: { type: claude.worker, prompt: s }
+  lead:
+    type: tool.shell
+    command: x
+    output: { format: json, schema: { tasks: { list: {} } } }
+  build:
+    type: claude.worker
+    prompt: Go
+    forEach: { from: "{{nodes.lead.output.json.tasks}}", maxItems: 4 }
+${edges}`;
+
+describe("a fanned node's other checks", () => {
+  it("waits on what an item says, not on what it gathers", () => {
+    expect(codesOf(watched("exitCode == 0"))).toEqual([]);
+    expect(codesOf(watched("count > 0")).join()).toContain("ref.");
+  });
+
+  it("needs a from source that ran before its first activation", () => {
+    const looped =
+      "edges:\n  - setup -> build\n  - build -> lead\n  - { from: lead, to: build, maxRounds: 2 }\n";
+    expect(codesOf(fromAfter(looped))).toContain("error:forEach.order");
+    const first = "edges:\n  - lead -> build\n  - setup -> lead\n";
+    expect(codesOf(fromAfter(first))).not.toContain("error:forEach.order");
+  });
+
+  it("refuses {{item}} in the workflow's outputs", () => {
+    const body = `nodes:
+  build: { type: claude.worker, prompt: Go, forEach: { items: [a] } }
+outputs:
+  one: "{{item}}"
+`;
+    expect(codesOf(body)).toContain("error:item.outside");
+  });
+
+  it("refuses a notify rule to a fanned node", () => {
+    const body = `nodes:
+  first:
+    type: claude.worker
+    prompt: Go
+    notify: [{ to: build, body: done }]
+  build: { type: claude.worker, prompt: Go, forEach: { items: [a] } }
+edges:
+  - first -> build
+`;
+    expect(codesOf(body)).toContain("error:forEach.notify");
+  });
+});

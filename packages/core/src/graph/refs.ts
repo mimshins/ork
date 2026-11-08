@@ -16,7 +16,7 @@ import { collectPaths } from "../expr/parse.ts";
 import { checkConditionRefs, type NotifyRules } from "./condition-refs.ts";
 import { error } from "./diagnostics.ts";
 import { checkToolEnv } from "./env.ts";
-import { itemScopes } from "./for-each.ts";
+import { checkItemRead, isItemRoot, itemScopes } from "./for-each.ts";
 import { checkAbsolute, type Context, envOutsideEnv } from "./ref-paths.ts";
 import {
   beforeFields,
@@ -125,7 +125,9 @@ export const checkReferences = (
           : collectPaths(part.expr).flatMap(segments =>
               segments[0] === "env"
                 ? [envOutsideEnv(segments, path)]
-                : checkAbsolute(segments, context, path),
+                : isItemRoot(segments[0])
+                  ? checkItemRead(segments, undefined, path)
+                  : checkAbsolute(segments, context, path),
             ),
       );
     },

@@ -138,6 +138,7 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `forEach.order`          | error    | `from` reads a node that can't have run before this one                    |
 | `forEach.undeclared`     | warning  | `from` reads a list nothing declares, so a run can't check it              |
 | `forEach.channel`        | error    | a `messages` channel names a node with `forEach`                           |
+| `forEach.notify`         | error    | a `notify:` rule goes to a node with `forEach`                             |
 | `forEach.continue`       | error    | a node with `forEach` continues one worktree without `maxParallel: 1`      |
 | `forEach.unreached`      | error    | a child with `forEach` has no edge into it, so nothing can run it          |
 | `forEach.owner-order`    | error    | a child with `forEach` merges into an owner that starts only after it      |

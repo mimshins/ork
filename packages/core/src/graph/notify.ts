@@ -11,7 +11,7 @@ import type { Diagnostic, Workflow } from "@krapht/ork-schema";
 import { parseTemplate, type TemplatePart } from "../expr/evaluate.ts";
 import { type Expr, parseExpr } from "../expr/parse.ts";
 import { error, warning } from "./diagnostics.ts";
-import { outputFieldsOf } from "./types.ts";
+import { forEachOf, outputFieldsOf } from "./types.ts";
 
 export type CompiledRule = {
   to: string;
@@ -60,6 +60,15 @@ export const compileRules = (
           error(
             "notify.target",
             `\`${rule.to}\`: a rule goes to a \`claude.leader\` or \`claude.worker\`, which has a session to read it`,
+            [...path, "to"],
+          ),
+        );
+      }
+      if (target !== undefined && forEachOf(target) !== undefined) {
+        diagnostics.push(
+          error(
+            "forEach.notify",
+            `\`${rule.to}\` has \`forEach\`: a rule goes to one session, and its items don't exist until its list is resolved.`,
             [...path, "to"],
           ),
         );

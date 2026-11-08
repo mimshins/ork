@@ -17,6 +17,9 @@ const MOST_OUTCOMES = 32;
 /** A longer list has mixes of failures a walk doesn't try. */
 const TRIED_COMPLETELY = 2;
 
+/** Longer lists are walked as this many entries, with their true `count`. */
+const MOST_ENTRIES = 64;
+
 const CONSTANT = new Set(["pass", "fail", "skipped"]);
 
 type Read = ReadonlyMap<string, readonly unknown[]> | undefined;
@@ -26,19 +29,22 @@ const filled = (
   first: string,
   rest: string,
 ): readonly string[] =>
-  Array.from({ length: count }, (_, at) => (at === 0 ? first : rest));
+  Array.from({ length: Math.min(count, MOST_ENTRIES) }, (_, at) =>
+    at === 0 ? first : rest,
+  );
 
 const ended = (
   ok: boolean,
   statuses: readonly string[],
   said: string,
+  count = statuses.length,
 ): Outcome => ({
   ok,
   output: {
     items: statuses.map(() => ""),
     results: statuses.map(() => ({})),
     statuses: [...statuses],
-    count: statuses.length,
+    count,
   },
   said,
 });
@@ -79,37 +85,63 @@ const atCount = (
       false,
       filled(count, "fail", stops ? "skipped" : "pass"),
       named("one item failed"),
+      count,
     ),
   ];
-  if (readsStatuses && count > 1) {
+  // One lane at a time stops at the first failure.
+  const oneByOne = stops && forEach.maxParallel === 1;
+  if (readsStatuses && count > 1 && !oneByOne) {
     fails.push(
-      ended(false, filled(count, "fail", "fail"), named("all failed")),
+      ended(false, filled(count, "fail", "fail"), named("all failed"), count),
     );
-    if (stops && forEach.maxParallel !== 1) {
+    if (stops) {
       // Those already running when it failed finish their turn.
       fails.push(
         ended(
           false,
           filled(count, "fail", "pass"),
           named("one of a lane failed"),
+          count,
         ),
       );
     }
   }
   return [
-    ended(true, filled(count, "pass", "pass"), named("succeeded")),
+    ended(true, filled(count, "pass", "pass"), named("succeeded"), count),
     ...extras.map(status =>
-      ended(true, filled(count, status, "pass"), named(`one said ${status}`)),
+      ended(
+        true,
+        filled(count, status, "pass"),
+        named(`one said ${status}`),
+        count,
+      ),
     ),
     ...fails,
   ];
 };
 
-/** A `from:` list can also be empty, or over its cap, with each answer. */
-const onlyFromALaterList = (maxItems: number): Outcome[] => [
-  ended(true, [], "the list is empty"),
-  ended(true, filled(maxItems, "pass", "pass"), "over maxItems, ran the first"),
-  ended(true, filled(maxItems + 1, "pass", "pass"), "over maxItems, ran all"),
+/**
+ * A `from:` list can also be empty, or over its cap, with each answer. Those
+ * that succeed route alike unless something reads what they gathered.
+ */
+const onlyFromALaterList = (maxItems: number, gathered: boolean): Outcome[] => [
+  ...(gathered
+    ? [
+        ended(true, [], "the list is empty"),
+        ended(
+          true,
+          filled(maxItems, "pass", "pass"),
+          "over maxItems, ran the first",
+          maxItems,
+        ),
+        ended(
+          true,
+          filled(maxItems + 1, "pass", "pass"),
+          "over maxItems, ran all",
+          maxItems + 1,
+        ),
+      ]
+    : []),
   {
     ok: false,
     output: { status: "fail", summary: "" },
@@ -133,7 +165,9 @@ export const gatheredOutcomes = (
     : [];
   const all = [
     ...atCount(usual, forEach, extras, readsStatuses, ""),
-    ...(fromList ? onlyFromALaterList(forEach.maxItems) : []),
+    ...(fromList
+      ? onlyFromALaterList(forEach.maxItems, (read?.size ?? 0) > 0)
+      : []),
     ...also.flatMap(count =>
       typeof count === "number"
         ? atCount(

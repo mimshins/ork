@@ -13,7 +13,7 @@ import { evaluate, truthy } from "../expr/evaluate.ts";
 import { collectPaths, type Expr, parseExpr } from "../expr/parse.ts";
 import { error } from "./diagnostics.ts";
 import { nodeSays } from "./says.ts";
-import { declaredOutputOf } from "./types.ts";
+import { declaredOutputOf, itemNodeOf } from "./types.ts";
 
 /** What every look that gets tested says: a failed one isn't tested. */
 const ALWAYS_SAID: ReadonlySet<string | number | undefined> = new Set([
@@ -73,7 +73,10 @@ const valueProblems = (id: string, node: Node, when: string): Diagnostic[] => {
     ];
   }
   if (condition.mode !== "test") return [];
-  const { fields } = nodeSays({ [id]: node }, [])[id] ?? { fields: [] };
+  // A fanned node's items each wait, and test what an item says.
+  const { fields } = nodeSays({ [id]: itemNodeOf(node) }, [])[id] ?? {
+    fields: [],
+  };
   return condition.rows.flatMap(({ field, test, value }) => {
     const said = fields.find(item => item.field === field);
     if (

@@ -169,7 +169,10 @@ const checkSource = (
       ),
     ];
   }
-  if (source === id || !upstreamOf(workflow, edges, id).has(String(source))) {
+  // The first activation needs it, so a loop back or an owner still running
+  // doesn't count.
+  const first = edges.filter(edge => edge.maxRounds === undefined);
+  if (source === id || !ancestorsOf(id, first).has(String(source))) {
     return [
       error(
         "forEach.order",
