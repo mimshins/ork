@@ -84,7 +84,6 @@ nodes:
       - approve
       - revise
       - stop
-    recommended: stop
   build:
     type: claude.leader
     prompt: |-
@@ -92,7 +91,7 @@ nodes:
       - UI work (packages/ui): delegate to design first, then the build, then a11y to audit the result.
       - Engine work (scheduler, runtime port and drivers, store and events, run control, replay): delegate the build to engine; anything else to implement.
 
-      Build in waves, following each task's dependencies and files in the spec. Shared contracts (schema, types) go first, as their own wave. Then send each wave as one call, so its tasks run at once: `delegate` for different builders, and `spawn_worker` for more than one task of the same builder, since a child that is already running refuses another task. Tasks in one wave must not touch the same files, and each must pass pnpm check without another task of its wave. Files everyone appends to (index.ts exports, generated schemas, specs, gaps ids, roadmap data) belong to one task or a last wave. Run tasks together in one builder when they are small or share files: every builder is a new session and a full pnpm check, so split only substantial work. A merge conflict in a child's report is yours to resolve.
+      Build in waves, following each task's dependencies and files in the spec. Shared contracts (schema, types) go first, as their own wave. Then send each wave as exactly one tool call, so its tasks run at once: your calls run one after another, so a `delegate` and a `spawn_worker` sent together do not overlap. Use `delegate` when each builder in the wave has one task, and otherwise one `spawn_worker` call for the whole wave, naming each task's builder as its template, since a child that is already running refuses another task. Tasks in one wave must not touch the same files, and each must pass pnpm check without another task of its wave. Files everyone appends to (index.ts exports, generated schemas, specs, gaps ids, roadmap data) belong to one task or a last wave. Run tasks together in one builder when they are small or share files: every builder is a new session and a full pnpm check, so split only substantial work. A merge conflict in a child's report is yours to resolve.
 
       Each child already has the spec; your brief says which tasks are theirs. Fix only what integrates their work. Ork runs pnpm check on your checkout before your report counts. When you run again, your input is an independent review's findings: delegate the fixes. When a child asks a question, answer it only when the approved spec or an earlier answer settles it, and say which; otherwise pass it to the maintainer. Never decide for them. Say in `unchecked` what no child and no check covered (an empty string when nothing). Report pass only when every child you used passed, and gather the spec's decisions and every decision your children reported into your own `decisions`, keeping who decided each.
 

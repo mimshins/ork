@@ -31,3 +31,9 @@ review carried are open work in the [register](../gaps.md#limits).
   change while it shows, at most every 5 s, and after each action. A run's
   `feedback.recorded` on the overview stream, or a count of records, would let
   it follow feedback itself.
+- **L195 · A tool error's record doesn't say what the error was.** `tool.error`
+  feedback points at the node's events, but they keep only that the call failed.
+  A short, scrubbed copy of the message would make it possible to diagnose.
+- **L196 · An expected refusal is filed as an Ork bug.** A refused claim is a
+  tool error, so it becomes medium-severity `ork/bug` feedback even though a
+  refusal is claims working. It shouldn't count as a tool error.

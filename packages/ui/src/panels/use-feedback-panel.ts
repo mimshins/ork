@@ -26,6 +26,7 @@ import {
   type FeedbackFilter,
   itemsWords,
   mergedInto,
+  panelShows,
   short,
   shownItems,
 } from "./feedback-model.ts";
@@ -166,7 +167,7 @@ export const useFeedbackPanel = () => {
     detail,
     acts,
     focusWatch,
-    showing: narrow ? showing : "both",
+    showing: panelShows(narrow, showing, chosen),
     back,
     choose: (id: string): void => {
       choose(id);

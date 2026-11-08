@@ -46,6 +46,20 @@ export const statusOptions = (items: readonly FeedbackItem[]) =>
     label: `${label} · ${String(items.filter(i => hasStatus(i, value)).length)}`,
   }));
 
+/**
+ * What the panel shows: both side by side when it's wide. When it's narrow, the
+ * detail only of a chosen item, so a choice cleared while it was wide can't
+ * leave an empty card in the list's place.
+ */
+export const panelShows = (
+  narrow: boolean,
+  showing: "list" | "detail",
+  chosen: string | null,
+): "list" | "detail" | "both" => {
+  if (!narrow) return "both";
+  return chosen === null ? "list" : showing;
+};
+
 /** What the filters leave, most recently seen first as the server sends. */
 export const shownItems = (
   items: readonly FeedbackItem[],

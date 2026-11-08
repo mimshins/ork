@@ -14,6 +14,7 @@ import {
   labelOf,
   mergedInto,
   nextAfter,
+  panelShows,
   shownItems,
   statusOptions,
 } from "../../src/panels/feedback-model.ts";
@@ -88,6 +89,21 @@ describe("where the choice goes", () => {
     const root = item(LOOP, { merged: [whole(AGENTS)] });
     expect(mergedInto([root], whole(AGENTS))?.id).toBe(whole(LOOP));
   });
+});
+
+describe("what the panel shows", () => {
+  it.each([
+    [false, "detail", null, "both"],
+    [false, "list", "a", "both"],
+    [true, "list", "a", "list"],
+    [true, "detail", "a", "detail"],
+    [true, "detail", null, "list"],
+  ] as const)(
+    "narrow %s, asked for %s, chosen %s: %s",
+    (narrow, showing, chosen, shows) => {
+      expect(panelShows(narrow, showing, chosen)).toBe(shows);
+    },
+  );
 });
 
 describe("an item's buttons", () => {

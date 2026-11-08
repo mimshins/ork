@@ -189,7 +189,6 @@
   --logs-detail-text: var(--color-text);
   --logs-detail-font: var(--font-mono);
   --logs-detail-text-size: var(--text-small);
-  --logs-detail-max-height: 20rem;
   --logs-detail-padding: var(--gap-tight) var(--gap);
 
   background: var(--logs-detail-bg);
@@ -198,9 +197,6 @@
   font-family: var(--logs-detail-font);
   font-size: var(--logs-detail-text-size);
   margin: 0;
-  max-height: var(--logs-detail-max-height);
-  overflow: auto;
-  overscroll-behavior: contain;
   position: relative;
   padding: var(--logs-detail-padding);
   white-space: pre-wrap;
