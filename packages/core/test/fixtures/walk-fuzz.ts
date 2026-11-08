@@ -44,6 +44,8 @@ const KINDS = [
   "join",
   "join",
   "declaring",
+  "fanned",
+  "fanned",
 ] as const;
 
 type Kind = (typeof KINDS)[number];
@@ -55,6 +57,12 @@ const nodeOf = (kind: Kind, random: Random): string => {
       "{ type: claude.worker, prompt: x, output: { schema: { status: [pass, fail], verdict: [a, b] } } }",
     ],
     tool: ['{ type: tool.shell, command: "true", allow: ["true"] }'],
+    fanned: [
+      "{ type: claude.worker, prompt: x, forEach: { items: [a, b] } }",
+      "{ type: claude.worker, prompt: x, forEach: { items: [a, b], onFailure: stop } }",
+      "{ type: claude.worker, prompt: x, forEach: { items: [a, b], maxParallel: 1, onFailure: stop } }",
+      '{ type: tool.shell, command: "true", allow: ["true"], forEach: { items: [a] } }',
+    ],
     gate: ["{ type: human.gate, question: q, options: [a, b] }"],
     router: ["{ type: control.router }", "{ type: control.router, mode: all }"],
     split: ["{ type: control.split }"],
@@ -96,6 +104,16 @@ const CONDITIONS: Record<Kind, readonly (string | null)[]> = {
     "!ok",
   ],
   gate: [null, "choice == 'a'", "choice == 'b'", "choice != 'a'"],
+  fanned: [
+    null,
+    "any(statuses, 'pass')",
+    "all(statuses, 'pass')",
+    "any(statuses, 'fail')",
+    "any(statuses, 'skipped')",
+    "count == 2",
+    "count == 3",
+    "!ok",
+  ],
   router: [
     null,
     "true",
@@ -125,6 +143,7 @@ const LOOP_CONDITIONS: Record<Kind, readonly string[]> = {
   declaring: ["status == 'pass'", "verdict == 'a'", "ok"],
   tool: ["exitCode == 0", "exitCode != 0", "contains(stdout, 'x')", "ok"],
   gate: ["choice == 'a'", "choice != 'a'"],
+  fanned: ["any(statuses, 'fail')", "ok"],
   router: ["status == 'pass'", "status != 'done'", "choice == 'a'"],
   split: ["status == 'pass'", "choice == 'a'"],
   join: ["any(statuses, 'pass')", "count == 1"],
@@ -202,6 +221,11 @@ export type Reached = {
   left: Set<string>;
 };
 
+const ITEM_ENDS = [
+  { ok: true, output: { status: "pass", summary: "" } },
+  { ok: false, output: { status: "fail", summary: "" } },
+];
+
 /** One way through: every activation its own choice, on the real scheduler. */
 const onePath = async (
   graph: CompiledGraph,
@@ -217,14 +241,15 @@ const onePath = async (
     if (count > 1) made.push({ key, index, count });
     return index;
   };
-  const executor: NodeExecutor = async ({ id, round }) => {
+  const executor: NodeExecutor = async ({ id, round, item }) => {
     // Enough turns of the event loop to change what finishes first.
     const turns = order * ((id.codePointAt(1) ?? 0) * 7 + round * 3) % 20;
     for (let turn = 0; turn < turns; turn += 1) {
       // oxlint-disable-next-line eslint/no-await-in-loop -- it only passes turns
       await Promise.resolve();
     }
-    const all = outcomes.get(id) ?? [];
+    // A fanned node's items are the real scheduler's; each ends its own way.
+    const all = item === undefined ? (outcomes.get(id) ?? []) : ITEM_ENDS;
     const outcome = all[choose(`node:${id}:${String(round)}`, all.length)];
     return outcome === undefined
       ? { ok: false, output: {}, error: "no outcome" }

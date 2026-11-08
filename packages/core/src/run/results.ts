@@ -142,6 +142,8 @@ export const startedEvent = (
   };
   if (activation.brief !== undefined) event.owner = activation.brief.from;
   if (agent !== undefined) event.agent = agent;
+  const { item } = activation;
+  if (item !== undefined) event.item = { of: item.of, index: item.index };
   return event;
 };
 

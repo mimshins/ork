@@ -7,7 +7,7 @@
 import { collectPaths, type Expr, parseExpr } from "../expr/parse.ts";
 import { fieldRead } from "../graph/condition-checks.ts";
 import { stronglyConnected } from "../graph/flow.ts";
-import type { CompiledGraph } from "../graph/types.ts";
+import { type CompiledGraph, forEachOf } from "../graph/types.ts";
 import type { Inputs } from "./types.ts";
 import { linkOf, type WalkTally } from "./walk-findings.ts";
 import type { Outcome } from "./walk-outcomes.ts";
@@ -35,7 +35,9 @@ export type WalkPlan = {
 export const untilsOf = (graph: CompiledGraph): ReadonlyMap<string, Expr> =>
   new Map(
     [...graph.nodes].flatMap(([id, { node }]) => {
-      const until = "watch" in node ? node.watch?.until : undefined;
+      // Each item of a fanned node waits on its own; the walk has one node.
+      const watched = "watch" in node && forEachOf(node) === undefined;
+      const until = watched ? node.watch?.until : undefined;
       const parsed = until === undefined ? null : parseExpr(until);
       return parsed?.ok === true ? [[id, parsed.expr] as const] : [];
     }),

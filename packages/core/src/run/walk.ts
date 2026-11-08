@@ -96,6 +96,13 @@ const withoutWatch = (node: Node): Node => {
   return rest;
 };
 
+/** A fanned node walks as one node, with its gathered outcomes. */
+const withoutForEach = (node: Node): Node => {
+  if (!("forEach" in node)) return node;
+  const { forEach: _forEach, ...rest } = node;
+  return rest;
+};
+
 const cutRounds = (edge: CompiledEdge): CompiledEdge =>
   edge.maxRounds === undefined
     ? edge
@@ -108,7 +115,7 @@ const walkedNode = (
   compiled: NonNullable<ReturnType<CompiledGraph["nodes"]["get"]>>,
 ) => ({
   ...compiled,
-  node: withoutWatch(compiled.node),
+  node: withoutForEach(withoutWatch(compiled.node)),
   incoming: compiled.incoming.map(edge => cutRounds(edge)),
   outgoing: compiled.outgoing.map(edge => cutRounds(edge)),
 });

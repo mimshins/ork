@@ -17,6 +17,7 @@ import { error, warning } from "./diagnostics.ts";
 import { checkScripts } from "./script.ts";
 import {
   declaredOutputOf,
+  forEachOf,
   REPORT_STATUSES,
   type CompiledEdge,
 } from "./types.ts";
@@ -176,6 +177,20 @@ export const checkChannels = (
     if (a === b) {
       diagnostics.push(
         error("message.self", "a node cannot message itself", path),
+      );
+      continue;
+    }
+    const fanned = [a, b].filter(id => {
+      const node = workflow.nodes[id];
+      return node !== undefined && forEachOf(node) !== undefined;
+    });
+    if (fanned.length > 0) {
+      diagnostics.push(
+        error(
+          "forEach.channel",
+          `${fanned.map(id => `\`${id}\``).join(", ")}: a channel joins one node, and a node with \`forEach\` is one per item, which don't exist until the list is resolved`,
+          path,
+        ),
       );
       continue;
     }

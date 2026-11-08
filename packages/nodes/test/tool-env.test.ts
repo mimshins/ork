@@ -887,3 +887,80 @@ describe("variables a run needs", () => {
     ).toEqual(["CHILD_TOKEN", "UP"]);
   });
 });
+
+const itemOf = (value: unknown, index = 3) => ({
+  item: { of: "n", index, value },
+});
+
+/** A runner that writes down the arguments and env of its one run. */
+const argsRunner = () => {
+  const seen: { args: readonly string[]; env: Record<string, string> }[] = [];
+  const runner: ToolRunner = (_program, args, options) => {
+    seen.push({ args, env: { ...options.env } });
+    return Promise.resolve({ exitCode: 0, stdout: "", stderr: "" });
+  };
+  return { runner, seen };
+};
+
+describe("a tool node's item", () => {
+  it("sets ORK_ITEM plainly for a string, and ORK_INDEX", async () => {
+    const { runner, seen } = argsRunner();
+    await toolExecutor(runner)(context(shell(), itemOf("a b")));
+    expect(seen[0]?.env).toMatchObject({ ORK_ITEM: "a b", ORK_INDEX: "3" });
+  });
+
+  it.each([
+    [{ title: "x", n: 1 }, '{"title":"x","n":1}'],
+    [["a"], '["a"]'],
+    [2, "2"],
+    [false, "false"],
+    [null, "null"],
+  ])("sets ORK_ITEM to JSON for %j", async (value, expected) => {
+    const { runner, seen } = argsRunner();
+    await toolExecutor(runner)(context(shell(), itemOf(value, 0)));
+    expect(seen[0]?.env).toMatchObject({ ORK_ITEM: expected, ORK_INDEX: "0" });
+  });
+
+  it("sets neither without an item", async () => {
+    const { runner, seen } = argsRunner();
+    await toolExecutor(runner)(context(shell()));
+    expect(seen[0]?.env).not.toHaveProperty("ORK_ITEM");
+    expect(seen[0]?.env).not.toHaveProperty("ORK_INDEX");
+  });
+
+  it("keeps {{item}} one argument, whatever it holds", async () => {
+    const { runner, seen } = argsRunner();
+    await toolExecutor(runner)(
+      context(
+        shell({ command: "prog --name {{item}} {{index}}" }),
+        itemOf("a b; rm -rf / --flag", 1),
+      ),
+    );
+    expect(seen[0]?.args).toEqual(["--name", "a b; rm -rf / --flag", "1"]);
+  });
+
+  it("reads the item in `env:` and `cwd`", async () => {
+    const { runner, seen } = argsRunner();
+    const run = context(
+      shell({ env: { TITLE: "{{item.title}}" }, cwd: "." }),
+      itemOf({ title: "docs" }),
+    );
+    await toolExecutor(runner)(run);
+    expect(seen[0]?.env).toMatchObject({ TITLE: "docs" });
+  });
+
+  it("reaches a real program", async () => {
+    const run = context(
+      shell({ command: `sh -c 'echo "$ORK_INDEX $ORK_ITEM"'` }),
+      itemOf("api", 4),
+    );
+    const result = await toolExecutor(spawnTool)(run);
+    expect(result.output["stdout"]).toBe("4 api\n");
+  });
+
+  it("is not passed on to a run its program starts", () => {
+    expect(
+      withoutIdentity({ ORK_ITEM: "x", ORK_INDEX: "1", KEEP: "1" }),
+    ).toEqual({ KEEP: "1" });
+  });
+});

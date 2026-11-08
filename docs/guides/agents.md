@@ -152,5 +152,5 @@ agents:
 The `software-factory` and `pr-review` [examples](./examples.md) are written
 this way.
 
-For the full rules: [the workflow format](../../specs/workflow-format.md#agents)
+For the full rules: [the workflow format](../../specs/workflow-format/agents.md)
 and [context](../../specs/context.md#agents).

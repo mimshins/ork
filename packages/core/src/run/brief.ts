@@ -13,7 +13,7 @@ import { isClaudeNode, type Workflow } from "@krapht/ork-schema";
 import { renderTemplate, parseTemplate } from "../expr/evaluate.ts";
 import type { SubagentSpec } from "../runtime/types.ts";
 import { runScope } from "./scope.ts";
-import type { NodeOutput } from "./types.ts";
+import type { NodeItem, NodeOutput } from "./types.ts";
 
 /** The tool a session hands a subagent work with. */
 export const AGENT_TOOL = "Agent";
@@ -33,6 +33,7 @@ export const renderBrief = (
   inputs: Values,
   outputs?: Record<string, NodeOutput>,
   before?: NodeOutput,
+  item?: NodeItem,
 ): RenderedBrief => {
   const template = parseTemplate(text ?? "");
   if (!template.ok) return { ok: false, error: template.message };
@@ -45,7 +46,10 @@ export const renderBrief = (
         ]
       : [];
   });
-  const scope = { ...runScope(inputs, outputs ?? {}), before };
+  const scope = {
+    ...runScope(inputs, outputs ?? {}, undefined, item),
+    before,
+  };
   return {
     ok: true,
     text: renderTemplate(template.parts, scope).trim(),

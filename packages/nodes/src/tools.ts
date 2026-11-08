@@ -83,7 +83,7 @@ const render = (
     ok: true,
     value: renderTemplate(
       template.parts,
-      runScope(context.inputs, context.outputs, context.runId),
+      runScope(context.inputs, context.outputs, context.runId, context.item),
     ),
   };
 };

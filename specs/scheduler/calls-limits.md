@@ -36,7 +36,9 @@ gaps review carried are open work in the [register](../gaps.md#limits).
   `wait`, a call whose node has reported blocks until the resumed session ends,
   since it runs in the caller's process. Its log shows the input as `you:`,
   though the message itself says it is from the workflow. ([calls](./calls.md))
-- **L61 · Parallel activations come back by position.** A resume hands a node's
-  kept results and open runs back in order, as it always has for any node, so
-  with parallel activations a result or a run can return to a different
-  activation than made it, with other inputs. ([calls](./calls.md))
+- **L61 · Parallel activations of one id come back by position.** A resume hands
+  a node's kept results and open runs back in order, as it always has for any
+  node, so when branches activate one node id at the same time, a result or a
+  run can return to a different activation than made it, with other inputs.
+  Items of a fanned node have ids of their own and come back by id and round.
+  ([calls](./calls.md))

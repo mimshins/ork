@@ -33,7 +33,7 @@ import type {
 import { AGENT_TOOL, renderBrief, subagentsOf } from "./brief.ts";
 import { namedDriver } from "./driver.ts";
 import { harnessInstructions } from "./harness.ts";
-import type { Brief, Checkout, NodeOutput } from "./types.ts";
+import type { Brief, Checkout, NodeItem, NodeOutput } from "./types.ts";
 
 /** Claude Code tools that change files or run commands. */
 export const WRITE_TOOLS = ["Write", "Edit", "NotebookEdit"] as const;
@@ -66,6 +66,8 @@ export type PlanOptions = {
   brief?: Brief;
   /** For a spawned worker, the declared node it is an instance of. */
   template?: string;
+  /** For an item of a fanned node, what its prompt reads as `{{item}}`. */
+  item?: NodeItem;
   /** A leader's children, when the run lets it delegate. */
   ownership?: Ownership;
   /** The node's place on the run's message bus. */
@@ -183,6 +185,7 @@ export const planNodeSession = (
     options.inputs,
     options.outputs,
     options.before,
+    options.item,
   );
   if (!brief.ok) return { ok: false, error: `prompt: ${brief.error}` };
   warnings.push(...brief.warnings);

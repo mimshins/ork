@@ -9,7 +9,8 @@ import type { Scope } from "../expr/evaluate.ts";
 import { createFeedback } from "../feedback/agent.ts";
 import { createBus } from "./bus.ts";
 import { createClaims } from "./claims.ts";
-import type { RunOptions } from "./handle.ts";
+import type { RunHandle, RunOptions } from "./handle.ts";
+import type { Holds, Stops } from "./holds.ts";
 import { createOwners } from "./owners.ts";
 import { createRules } from "./rules.ts";
 import type { Slots } from "./slots.ts";
@@ -57,3 +58,24 @@ export const createRunPorts = ({
     },
   };
 };
+
+/** What a run's handle does to its nodes, once the run has its ports. */
+export const runControls = (
+  ports: ReturnType<typeof createRunPorts>,
+  holds: Holds,
+  stops: Stops,
+  onEvent: RunOptions["onEvent"],
+): Pick<
+  RunHandle,
+  "pause" | "proceed" | "stopNode" | "tell" | "receive" | "notice"
+> => ({
+  pause: node => holds.pause(node),
+  proceed: node => holds.proceed(node),
+  stopNode: node => stops.stop(node),
+  tell: ports.bus.tell,
+  receive: ports.bus.receive,
+  notice: (node, text) => {
+    ports.bus.notify(node, text);
+    onEvent({ type: "link.notice", node, text });
+  },
+});

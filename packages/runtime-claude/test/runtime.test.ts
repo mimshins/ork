@@ -9,12 +9,14 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type {
-  HumanChannel,
-  Ownership,
-  RuntimeEvent,
-  SessionSpec,
+import {
+  type HumanChannel,
+  type Ownership,
+  reportSchemaFor,
+  type RuntimeEvent,
+  type SessionSpec,
 } from "@krapht/ork-core";
+import { isClaudeNode, NodeSchema } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -286,6 +288,40 @@ describe("Ork's tool registry", () => {
         ],
       },
     });
+  });
+});
+
+/** The report a planner declaring a list must end with. */
+const listReportSchema = (): Record<string, unknown> => {
+  const node = NodeSchema.parse({
+    type: "claude.worker",
+    output: { schema: { tasks: { list: { title: "string" } } } },
+  });
+  if (!isClaudeNode(node)) throw new Error("not a Claude node");
+  return reportSchemaFor(node);
+};
+
+describe("a declared list in the report schema", () => {
+  const reportSchema = listReportSchema();
+  const withList = { ...spec, reportSchema };
+
+  it("reaches the CLI driver", () => {
+    const args = buildCliArgs(
+      withList,
+      { url: "http://127.0.0.1:1/mcp", token: "t" },
+      [],
+    );
+    expect(args).toContain(JSON.stringify(reportSchema));
+  });
+
+  it("reaches the SDK driver", () => {
+    expect(
+      buildSdkOptions(
+        withList,
+        { human: recordingHuman().human },
+        { ANTHROPIC_API_KEY: "k" },
+      ).outputFormat,
+    ).toEqual({ type: "json_schema", schema: reportSchema });
   });
 });
 

@@ -19,6 +19,7 @@ import {
   planNodeSession,
   type RunRecord,
   runDirOf,
+  templateOf,
 } from "@krapht/ork-core";
 import { readyDriver } from "@krapht/ork-integrations";
 import { namedMcpEntries } from "@krapht/ork-nodes";
@@ -49,15 +50,15 @@ export type ResumeChatOptions = {
   signal?: AbortSignal | undefined;
 };
 
-/** The declared node a spawned worker (`<template>-<n>`) is an instance of. */
-const templateOf = (
+/**
+ * The declared node a spawned worker or an item of a fanned node is an instance
+ * of.
+ */
+const instanceOf = (
   nodes: Record<string, unknown>,
   id: string,
-): string | undefined => {
-  if (id in nodes) return undefined;
-  const template = id.replace(/-\d+$/u, "");
-  return template in nodes ? template : undefined;
-};
+): string | undefined =>
+  id in nodes ? undefined : templateOf(id, new Set(Object.keys(nodes)));
 
 /** The run's sessions loaded the machine's Claude setup, so this one does. */
 const machineClaudeOf = (
@@ -102,7 +103,7 @@ export const resumeChat = async (
   const notice = chatNotice(store, place, options.home);
   if (notice !== null) options.out(notice);
   const runDir = runDirOf(place, run.id);
-  const template = templateOf(workflow.nodes, node);
+  const template = instanceOf(workflow.nodes, node);
   const plan = planNodeSession(workflow, node, {
     cwd,
     inputs: {},

@@ -11,6 +11,7 @@ import {
 } from "@krapht/ork-integrations";
 import { z } from "zod";
 
+import { forEachFields } from "./for-each.ts";
 import {
   nodeBaseFields,
   notifyFields,
@@ -36,6 +37,7 @@ const toolFields = {
   ),
   ...toolProgramFields,
   ...notifyFields,
+  ...forEachFields,
 };
 
 /** What every tool node has: `tool.<id>`, its command, allow list and cwd. */

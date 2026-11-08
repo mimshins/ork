@@ -943,6 +943,39 @@ describe("Claude nodes", () => {
     ).toBe(true);
   });
 
+  it("reads an item in a Claude node's prompt", async () => {
+    const specs: SessionSpec[] = [];
+    const runtime: ClaudeRuntime = {
+      driver: "sdk",
+      start: spec => {
+        specs.push(spec);
+        return {
+          events: finishedPassing(),
+          send: () => {},
+          interrupt: () => Promise.resolve(),
+        };
+      },
+    };
+    const drivers: string[] = [];
+    const execute = claudeExecutor({
+      runtimeFor: driver => {
+        drivers.push(driver);
+        return Promise.resolve(runtime);
+      },
+      driver: "cli",
+      inPlace: true,
+    });
+    const node: Node = { type: "claude.worker", prompt: "Do {{item.title}}" };
+    await execute(
+      context("build.1", node, {
+        template: "build",
+        workflow: { schemaVersion: 1, name: "t", nodes: { build: node } },
+        item: { of: "build", index: 1, value: { title: "docs" } },
+      }),
+    );
+    expect(specs[0]?.prompt).toContain("Do docs");
+  });
+
   it("runs a session with the run's outputs, its budget, and the re-entry input", async () => {
     const specs: SessionSpec[] = [];
     const runtime: ClaudeRuntime = {
@@ -1163,6 +1196,26 @@ describe("workflow.call", () => {
       }),
     );
     expect(asked[0]).toMatchObject({ wait: "node", channels: ["writer"] });
+  });
+
+  it("reads the item in a fanned call's inputs and ref", async () => {
+    const { asked, calls } = recording();
+    const node: Node = {
+      type: "workflow.call",
+      workflow: "feature",
+      ref: "{{item.ref}}",
+      inputs: { title: "{{item.title}} {{index}}" },
+    };
+    await callExecutor(
+      context("kit", node, {
+        calls,
+        item: { of: "kit", index: 1, value: { ref: "main", title: "docs" } },
+      }),
+    );
+    expect(asked[0]).toMatchObject({
+      ref: "main",
+      inputs: { title: "docs 1" },
+    });
   });
 
   it("passes on the run's budget, not a quota the called run reads itself", async () => {

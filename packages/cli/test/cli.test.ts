@@ -230,6 +230,27 @@ describe("ork validate", () => {
     ]);
   });
 
+  it("locates a forEach diagnostic at its key", () => {
+    const dir = tempProject();
+    writeFileSync(
+      path.join(dir, "x.ork.yaml"),
+      [
+        "schemaVersion: 1",
+        "name: x",
+        "nodes:",
+        "  a:",
+        "    type: claude.worker",
+        "    prompt: Go",
+        '    forEach: { from: "{{nodes.b.output.json.x}}", maxItems: 2 }',
+        "  b: { type: tool.shell, command: x, output: { format: json } }",
+      ].join("\n"),
+    );
+    expect(formatReport(validateFile("x.ork.yaml", dir))).toEqual([
+      "x.ork.yaml:7:22 error `nodes.b.output.json.x`: `b` does not run before `a`, so its list can't exist when `a` starts (forEach.order)",
+      "✗ x.ork.yaml (1 error, 0 warnings)",
+    ]);
+  });
+
   it("reports a missing file", () => {
     expect(validateFile("nope.ork.yaml", tempProject()).diagnostics).toEqual([
       {

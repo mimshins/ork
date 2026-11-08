@@ -6,7 +6,8 @@
 
 import { isToolNode, type Node } from "@krapht/ork-schema";
 
-import { declaredOutputOf, REPORT_STATUSES } from "./types.ts";
+import { gatheredSays } from "./gathered.ts";
+import { declaredOutputOf, forEachOf, REPORT_STATUSES } from "./types.ts";
 
 export type SaidValue = string | number | boolean;
 
@@ -18,6 +19,8 @@ export type SaidField = {
   values?: readonly SaidValue[];
   /** Others can occur too, so these suggest and nothing checks against them. */
   open?: true;
+  /** Set on a declared list (RFC-013): what each item has, none for no shape. */
+  items?: readonly SaidField[];
 };
 
 export type NodeSays = {
@@ -37,8 +40,37 @@ const isScalar = (value: unknown): value is SaidValue =>
   typeof value === "number" ||
   typeof value === "boolean";
 
+/**
+ * The item shape of a declared `{ list: { … } }` field, or `undefined` for any
+ * other rule. One reading, for the run's check, the report and what's said.
+ */
+export const listShape = (
+  rule: unknown,
+): Readonly<Record<string, unknown>> | undefined => {
+  if (typeof rule !== "object" || rule === null || !("list" in rule)) {
+    return undefined;
+  }
+  const { list } = rule;
+  return Object.keys(rule).length === 1 &&
+    typeof list === "object" &&
+    list !== null &&
+    !Array.isArray(list)
+    ? Object.fromEntries(Object.entries(list))
+    : undefined;
+};
+
 /** One declared field: a list, a type, or JSON Schema with an `enum`. */
 const declaredField = (field: string, rule: unknown): SaidField => {
+  const shape = listShape(rule);
+  if (shape !== undefined) {
+    return {
+      field,
+      kind: "text",
+      items: Object.entries(shape).map(([name, itemRule]) =>
+        declaredField(name, itemRule),
+      ),
+    };
+  }
   const list =
     typeof rule === "object" && rule !== null && "enum" in rule
       ? rule.enum
@@ -78,7 +110,11 @@ const withFail = (said: SaidField): SaidField =>
     : said;
 
 /** What a node says on its own; a router or split says nothing of its own. */
-const ownSays = (node: Node): NodeSays => {
+const ownSays = (node: Node): NodeSays =>
+  forEachOf(node) === undefined ? itemSays(node) : gatheredSays(itemSays(node));
+
+/** What one activation of a node says; a fanned node's item, as its type. */
+export const itemSays = (node: Node): NodeSays => {
   if (isToolNode(node)) {
     return {
       fields: [

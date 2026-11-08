@@ -17,6 +17,10 @@ export type Scope = {
   run?: Record<string, unknown>;
   /** What the node's `before:` step gave; only its prompt reads it. */
   before?: unknown;
+  /** The item of a fanned node's list, while one of its items runs. */
+  item?: unknown;
+  /** That item's place in the list, counted from 0. */
+  index?: number;
 };
 
 export const SCOPE_ROOTS = [
@@ -27,8 +31,16 @@ export const SCOPE_ROOTS = [
   "before",
 ] as const;
 
-const isRoot = (name: string | number): boolean =>
-  (SCOPE_ROOTS as readonly (string | number)[]).includes(name);
+/**
+ * Roots only where a scope has them, for an item of a fanned node: anywhere
+ * else a bare `item` or `index` in a `when:` stays a field of `output`.
+ */
+export const ITEM_ROOTS = ["item", "index"] as const;
+
+const isRoot = (name: string | number, scope: Scope): boolean =>
+  (SCOPE_ROOTS as readonly (string | number)[]).includes(name) ||
+  ((ITEM_ROOTS as readonly (string | number)[]).includes(name) &&
+    Object.hasOwn(scope, name));
 
 const read = (value: unknown, segment: string | number): unknown => {
   if (value === null || typeof value !== "object") return undefined;
@@ -41,7 +53,7 @@ export const resolvePath = (
   scope: Scope,
 ): unknown => {
   const [first] = segments;
-  const absolute = first !== undefined && isRoot(first);
+  const absolute = first !== undefined && isRoot(first, scope);
   const path = absolute ? segments : ["output", ...segments];
   return path.reduce<unknown>((value, segment) => read(value, segment), scope);
 };
@@ -176,6 +188,30 @@ export const parseTemplate = (source: string): TemplateParseResult => {
     cursor = close + CLOSE.length;
   }
   return { ok: true, parts };
+};
+
+/** The path a template that is exactly one `{{ path }}` reads, or `null`. */
+export const templatePath = (source: string): (string | number)[] | null => {
+  const template = parseTemplate(source);
+  if (!template.ok || template.parts.length !== 1) return null;
+  const [part] = template.parts;
+  return typeof part === "object" && part.expr.kind === "path"
+    ? part.expr.segments
+    : null;
+};
+
+/**
+ * What a template that is exactly one path reads, as the value itself and not
+ * as text (a `forEach.from`, which must stay a list).
+ */
+export const templateValue = (
+  source: string,
+  scope: Scope,
+): { ok: true; value: unknown } | { ok: false; error: string } => {
+  const path = templatePath(source);
+  return path === null
+    ? { ok: false, error: `${source} is not exactly one {{ path }}` }
+    : { ok: true, value: resolvePath(path, scope) };
 };
 
 const stringify = (value: unknown): string => {

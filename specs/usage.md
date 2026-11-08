@@ -7,7 +7,8 @@ Status: **Built**: the ledger, reports, `ork usage`, `ork prune`,
 [prune](../packages/core/src/store/prune.ts),
 [commands](../packages/cli/src/commands/usage.ts),
 [panel](../packages/ui/src/panels/usage-panel.tsx),
-[tests](../packages/core/test/usage.test.ts)). Why:
+[tests](../packages/core/test/usage.test.ts)), with the items of a fanned node
+grouped under their node (built; the Monitor doesn't show them yet). Why:
 [ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md) and
 [ADR-050](../decisions/ADR-050-limits-across-runs.md).
 
@@ -19,8 +20,9 @@ the ledger is folded from a run's events, and a report is a pure function of it.
 `usage` in `~/.ork/state.db` has one row per finished Claude session, written as
 its `session.finished` event is appended
 ([event store](./event-store.md#runs-and-events)). A row has its run, event
-number and time; its project and workflow; the node and, for a spawned worker,
-its template; the model and driver; and its cost, tokens, turns and duration.
+number and time; its project and workflow; the node and, for a spawned worker or
+an item of a fanned node (`build.2`), its template; the model and driver; and
+its cost, tokens, turns and duration.
 
 - **`kind`:** `node`, or `chat` when `ork chat` resumed the session after its
   node finished.
@@ -58,8 +60,8 @@ A report has the **totals**: cost, tokens, cache hit rate, turns, duration,
 sessions and runs, and the cost of failed sessions, of rounds after the first
 and of chats. It has the same totals **grouped** by day, week, month, workflow,
 node, model, driver and project. Times are oldest first in the machine's time
-zone, and the rest costliest first. A spawned worker's sessions group under its
-template.
+zone, and the rest costliest first. A spawned worker's and an item's sessions
+group under their template.
 
 The **cache hit rate** is cache reads over all input: fresh, cache read and
 cache write.

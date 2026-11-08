@@ -42,7 +42,12 @@ export const callExecutor: NodeExecutor = context => {
       error: "This run cannot call workflows.",
     });
   }
-  const scope = runScope(context.inputs, context.outputs, context.runId);
+  const scope = runScope(
+    context.inputs,
+    context.outputs,
+    context.runId,
+    context.item,
+  );
   const render = (text: string): string => {
     const template = parseTemplate(text);
     return template.ok ? renderTemplate(template.parts, scope) : text;

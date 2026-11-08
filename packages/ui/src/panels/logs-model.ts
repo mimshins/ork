@@ -97,6 +97,12 @@ export const lineOf = (event: Event): string => {
     case "node.finished": {
       return finishedLine(event);
     }
+    case "each.listed": {
+      return `${String(event.count)} items`;
+    }
+    case "each.exceeded": {
+      return `${String(event.count)} items, over ${String(event.maxItems)}`;
+    }
     case "edge.taken": {
       return `${event.from} -> ${event.to}`;
     }

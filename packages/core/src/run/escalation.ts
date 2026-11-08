@@ -18,6 +18,32 @@ export const LOOP_CHOICES = {
   onward: "onward",
 } as const;
 
+/** What a list over its `maxItems` can be answered with (RFC-013). */
+export const EACH_CHOICES = {
+  stop: "stop",
+  first: "first",
+  all: "all",
+} as const;
+
+/** The question about a list over its cap; the recommended choice stops. */
+export const eachQuestion = (
+  node: string,
+  count: number,
+  maxItems: number,
+): OwnerQuestion => ({
+  question: `The list of ${node} has ${String(count)} items, more than its maxItems of ${String(maxItems)}. What now?`,
+  options: [
+    { id: EACH_CHOICES.stop, description: "Stop the run" },
+    {
+      id: EACH_CHOICES.first,
+      description: `Run the first ${String(maxItems)}`,
+    },
+    { id: EACH_CHOICES.all, description: `Run all ${String(count)}` },
+  ],
+  recommended: EACH_CHOICES.stop,
+  context: `${node} runs at most ${String(maxItems)} items unless someone says otherwise.`,
+});
+
 /** The question about a loop out of rounds; the recommended choice stops. */
 export const loopQuestion = (edge: CompiledEdge): OwnerQuestion => ({
   question: `The loop ${edge.from} -> ${edge.to} used all ${String(edge.maxRounds ?? 0)} of its rounds. What now?`,
@@ -92,5 +118,22 @@ export const createLoops = (options: LoopOptions) => {
     return false;
   };
 
-  return { take };
+  /**
+   * What a list over its cap runs: asked of a live owner, then the human. All
+   * of it, the first `maxItems`, or `null` to stop.
+   */
+  const overList = async (
+    node: string,
+    list: unknown[],
+    maxItems: number,
+  ): Promise<unknown[] | null> => {
+    const question = eachQuestion(node, list.length, maxItems);
+    const choice =
+      (await options.bus?.askOwner(node, question)) ??
+      (await options.human.ask({ nodeId: node, ...question }));
+    if (choice === EACH_CHOICES.first) return list.slice(0, maxItems);
+    return choice === EACH_CHOICES.all ? list : null;
+  };
+
+  return { take, overList };
 };

@@ -21,13 +21,27 @@ under the same run id, with a `Replay` built from the run's events:
   told that the run was stopped and to carry on from what it finished
   ([resume.ts](../../packages/core/src/run/resume.ts), `cutOff`). A node that
   failed in a failed run starts fresh.
+- **A fanned node** ([RFC-013](../../rfcs/active/RFC-013-for-each.md)) that
+  succeeded is handed back whole; its items neither run nor replay. Otherwise it
+  fans out again:
+  - The list is the recorded `each.listed` of that round when its source was
+    handed back, or it has none (`items:`), so an edited file can't move results
+    between items. A source that ran anew gives a new list, and then every item
+    runs anew and no cut session continues, since it was another item's. A
+    handed-back list is what the store kept, masked like a handed-back output.
+  - Each item is handed back by its id and its node's round, so items finishing
+    in any order get their own result back. An unfinished item runs again, and
+    one cut off mid-session continues it. `session: resume` finds the session of
+    a round handed back whole.
+  - Runs from before have none of these events or fields, and resume unchanged
+    ([replay.ts](../../packages/core/src/run/replay.ts)).
 - `run.started` records `budgetUsd`, the tighter of the workflow's budget and
   what a caller left it, for showing a run's spend against.
 - `run.started` carries the run's `inputs` and `settings` (`inPlace`, `driver`),
   which the resumed run starts with; the CLI records `run.resumed` with the
   nodes that keep results first.
-- Questions about loops out of rounds that were answered last time get the same
-  answers again, in order.
+- Questions about loops out of rounds, and about lists over their `maxItems`,
+  that were answered last time get the same answers again, in order.
 - The bus starts with the run's unread and queued messages
   ([messaging](../messaging.md#message-bus)).
 - The run's budget counts what it spent before.
@@ -37,34 +51,36 @@ under the same run id, with a `Replay` built from the run's events:
 `onEvent` receives every change; `ork run` stores each one in the
 [event store](../event-store.md) before printing it:
 
-| Event               | When                                                                                                                    |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `run.started`       | the run starts: id, workflow, entries, every declared node and owner, its edges and channels                            |
-| `node.started`      | an activation starts: id, type, round, `owner` when delegated, and the `agent` that fills it (name, source, file, hash) |
-| `node.event`        | a runtime event from the node's session or tool                                                                         |
-| `node.finished`     | an activation ends: ok, output, usage, error                                                                            |
-| `node.skipped`      | a dead path skips the node                                                                                              |
-| `edge.taken`        | an edge is taken                                                                                                        |
-| `loop.exhausted`    | a loop edge is out of rounds                                                                                            |
-| `watch.started`     | a [`watch:`](./watching.md) begins: until, every, timeout                                                               |
-| `watch.changed`     | a look said something the last one didn't: looks so far, ok, what it said                                               |
-| `watch.ended`       | how the wait ended, and how many looks it took                                                                          |
-| `worktree`          | a worktree is created, committed to, merged, conflicts, or removed                                                      |
-| `message.sent`      | a node wrote to another on the message bus: number, recipient, body; `via: rule` for a `notify:`                        |
-| `message.read`      | a node read its inbox: the message numbers                                                                              |
-| `owner.asked`       | the run asked a live owner about a loop of a node it owns                                                               |
-| `owner.answered`    | the owner answered with `answer`                                                                                        |
-| `owner.unanswered`  | the owner's session ended first; the human is asked instead                                                             |
-| `user.message`      | `ork chat` wrote to a node: delivered now, queued, or by resuming                                                       |
-| `claim.taken`       | a node claimed a resource                                                                                               |
-| `claim.refused`     | a claim overlapped another node's: who holds what                                                                       |
-| `claim.released`    | a node released a claim, itself or by finishing                                                                         |
-| `feedback.recorded` | an agent's report, or a signal Ork derived ([feedback](../feedback.md))                                                 |
-| `run.resumed`       | `ork resume` continues the run: the nodes that keep their results                                                       |
-| `call.started`      | a `workflow.call` started a run: its node, the run, the workflow and the project ([calls](./calls.md))                  |
-| `message.received`  | a linked node of another run, or `via: script` a program, wrote to it ([messaging](../messaging/scripts.md))            |
-| `link.notice`       | Ork told a node that a link was made or ended                                                                           |
-| `run.finished`      | the run ends: `succeeded`, `failed`, `budget_exhausted`, `quota_exhausted`, `timed_out`, `interrupted`                  |
+| Event               | When                                                                                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `run.started`       | the run starts: id, workflow, entries, every declared node and owner, its edges and channels                                                                             |
+| `node.started`      | an activation starts: id, type, round, `owner` when delegated, `item` (of, index) for an item of a fanned node, and the `agent` that fills it (name, source, file, hash) |
+| `each.listed`       | a fanned node resolved its list: node, round, count, list                                                                                                                |
+| `each.exceeded`     | a fanned node's list is over `maxItems`: node, round, count, maxItems                                                                                                    |
+| `node.event`        | a runtime event from the node's session or tool                                                                                                                          |
+| `node.finished`     | an activation ends: ok, output, usage, error                                                                                                                             |
+| `node.skipped`      | a dead path skips the node                                                                                                                                               |
+| `edge.taken`        | an edge is taken                                                                                                                                                         |
+| `loop.exhausted`    | a loop edge is out of rounds                                                                                                                                             |
+| `watch.started`     | a [`watch:`](./watching.md) begins: until, every, timeout                                                                                                                |
+| `watch.changed`     | a look said something the last one didn't: looks so far, ok, what it said                                                                                                |
+| `watch.ended`       | how the wait ended, and how many looks it took                                                                                                                           |
+| `worktree`          | a worktree is created, committed to, merged, conflicts, or removed                                                                                                       |
+| `message.sent`      | a node wrote to another on the message bus: number, recipient, body; `via: rule` for a `notify:`                                                                         |
+| `message.read`      | a node read its inbox: the message numbers                                                                                                                               |
+| `owner.asked`       | the run asked a live owner about a loop of a node it owns                                                                                                                |
+| `owner.answered`    | the owner answered with `answer`                                                                                                                                         |
+| `owner.unanswered`  | the owner's session ended first; the human is asked instead                                                                                                              |
+| `user.message`      | `ork chat` wrote to a node: delivered now, queued, or by resuming                                                                                                        |
+| `claim.taken`       | a node claimed a resource                                                                                                                                                |
+| `claim.refused`     | a claim overlapped another node's: who holds what                                                                                                                        |
+| `claim.released`    | a node released a claim, itself or by finishing                                                                                                                          |
+| `feedback.recorded` | an agent's report, or a signal Ork derived ([feedback](../feedback.md))                                                                                                  |
+| `run.resumed`       | `ork resume` continues the run: the nodes that keep their results                                                                                                        |
+| `call.started`      | a `workflow.call` started a run: its node, the run, the workflow and the project ([calls](./calls.md))                                                                   |
+| `message.received`  | a linked node of another run, or `via: script` a program, wrote to it ([messaging](../messaging/scripts.md))                                                             |
+| `link.notice`       | Ork told a node that a link was made or ended                                                                                                                            |
+| `run.finished`      | the run ends: `succeeded`, `failed`, `budget_exhausted`, `quota_exhausted`, `timed_out`, `interrupted`                                                                   |
 
 The decision queue adds `decision.opened`, `decision.answered`,
 `decision.withdrawn` and `run.command` ([messaging](../messaging.md)); a pause

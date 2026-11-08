@@ -162,4 +162,51 @@ describe("ork chat", () => {
       `nobody is not a node of run ${record.id}.`,
     );
   });
+
+  it("resumes an item of a fanned node as the node it is of", async () => {
+    const run = start();
+    await ship(run);
+    await run.done;
+    const record = runOf(run.store);
+    run.store.append(record.id, {
+      type: "node.started",
+      id: "ship.2",
+      nodeType: "claude.worker",
+      round: 1,
+    });
+    run.store.append(record.id, {
+      type: "node.event",
+      id: "ship.2",
+      event: {
+        type: "session.started",
+        sessionId: "fake-1",
+        model: "sonnet",
+        cwd: run.dir,
+        driver: "cli",
+      },
+    });
+    run.store.append(record.id, {
+      type: "node.finished",
+      id: "ship.2",
+      round: 1,
+      ok: true,
+      output: {},
+    });
+    const out: string[] = [];
+    expect(
+      await resumeChat({
+        store: run.store,
+        run: record,
+        node: "ship.2",
+        body: "Again",
+        runtime: fake,
+        driverChecks: sdkReady,
+        human: gateWaits,
+        out: line => {
+          out.push(line);
+        },
+      }),
+    ).toBeNull();
+    expect(out).toContain("  Working on: Again (resuming fake-1)");
+  });
 });

@@ -7,8 +7,12 @@ in the workspace ([project.ts](../packages/schema/src/project.ts),
 [patch.ts](../packages/core/src/worktree/patch.ts),
 [handoff.ts](../packages/core/src/worktree/handoff.ts),
 [tests](../packages/core/test/rules.test.ts)), and [experiments](#experiments).
-A project registered from outside its repository keeps them in
-`~/.ork/projects/<id>/project.yaml` ([projects](./projects.md)). Why:
+The rules reach the items of a `forEach` node too, with the item's id as
+`{node}`, including `commit: never` and the patch merge
+([worktrees](./worktrees.md#a-node-run-once-per-item),
+[tests](../packages/core/test/worktree-for-each.test.ts)). A project registered
+from outside its repository keeps them in `~/.ork/projects/<id>/project.yaml`
+([projects](./projects.md)). Why:
 [ADR-032](../decisions/ADR-032-project-rules.md).
 
 What Ork does on its own in a project (commit, merge, name branches and
@@ -71,7 +75,7 @@ project, located in the file (`.ork/project.yaml:3:11: …`).
 | `merge: patch`        | A passing child's changes (new files too) are applied to its owner's worktree, uncommitted, all or nothing; a part that does not apply is reported as a conflict, and the child's worktree is kept.                   |
 | `merge: never`        | Nothing is handed over; each child's worktree is kept, for its owner or the user.                                                                                                                                     |
 | `base`                | A ref (`origin/main`) or template; it must name a commit when the run starts. Ork never fetches.                                                                                                                      |
-| `branch`, `worktrees` | Templates over `{run}`, `{node}`, `{clone}` (the clone's folder name) and `{inputs.<name>}`. `worktrees` is relative to the clone.                                                                                    |
+| `branch`, `worktrees` | Templates over `{run}`, `{node}` (an item of a `forEach` node is `build.2`), `{clone}` (the clone's folder name) and `{inputs.<name>}`. `worktrees` is relative to the clone.                                         |
 
 Under `commit: never`, a child that ran and was handed over is brought up to its
 owner's state before it runs again (a `synced` worktree event); one whose patch
@@ -82,12 +86,12 @@ workflow declares: a [`tool.git`](./workflow-format.md) node after its gates
 
 **Checks** (`ork validate`): every placeholder is known and every
 `{inputs.<name>}` is a workflow input; `branch` and `worktrees` need `{node}`
-when a run can have more than one worktree (two worktree nodes, or a leader that
-spawns workers); without `{run}` a warning says a second run stops while the
-first one's branch or worktree exists; `worktrees` is relative; `merge: auto`
-with `commit: never` is an error. When a node's worktree is made: the folder
-must be beside the clone (inside its parent, outside the clone), and the branch
-a name git accepts.
+when a run can have more than one worktree (two worktree nodes, a worktree node
+with `forEach`, which has one per item, or a leader that spawns workers);
+without `{run}` a warning says a second run stops while the first one's branch
+or worktree exists; `worktrees` is relative; `merge: auto` with `commit: never`
+is an error. When a node's worktree is made: the folder must be beside the clone
+(inside its parent, outside the clone), and the branch a name git accepts.
 
 ## Links
 

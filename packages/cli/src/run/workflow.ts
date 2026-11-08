@@ -218,6 +218,7 @@ export const runWorkflowFile = async (
           options.resume.cutOff,
           options.resume.mail,
           options.resume.earlier,
+          options.resume.fanOuts,
         );
   if (replay !== undefined)
     onEvent({ type: "run.resumed", kept: replay.kept() });

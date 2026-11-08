@@ -5,6 +5,7 @@
 
 import type { ClaudeNode } from "@krapht/ork-schema";
 
+import { listShape } from "../graph/says.ts";
 import { REPORT_STATUSES } from "../graph/types.ts";
 import type { NodeReport, ReportStatus } from "./types.ts";
 
@@ -14,11 +15,30 @@ const entries = (value: object): [string, unknown][] => Object.entries(value);
 
 const PRIMITIVES = new Set(["string", "number", "integer", "boolean"]);
 
+/** The items of a declared list: any value with no shape, else closed. */
+const itemSchema = (shape: Readonly<Record<string, unknown>>): JsonSchema =>
+  Object.keys(shape).length === 0
+    ? {}
+    : {
+        type: "object",
+        properties: Object.fromEntries(
+          Object.entries(shape).map(([name, rule]) => [
+            name,
+            fieldSchema(rule),
+          ]),
+        ),
+        required: Object.keys(shape),
+        additionalProperties: false,
+      };
+
 /**
- * One `output.schema` field as JSON Schema: a list is an enum, a primitive name
- * is that type, an object is taken as JSON Schema already.
+ * One `output.schema` field as JSON Schema: a list of values is an enum, a
+ * primitive name is that type, `{ list: … }` is an array of its item shape, an
+ * object is taken as JSON Schema already.
  */
 const fieldSchema = (value: unknown): JsonSchema => {
+  const shape = listShape(value);
+  if (shape !== undefined) return { type: "array", items: itemSchema(shape) };
   if (Array.isArray(value)) return { enum: value };
   if (typeof value === "string" && PRIMITIVES.has(value))
     return { type: value };

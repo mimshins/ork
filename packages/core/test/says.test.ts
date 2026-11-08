@@ -194,6 +194,38 @@ describe("nodeSays", () => {
     expect(fieldsOfR({ a, j, r })).toEqual(fieldsOfR({ a, r, j }));
   });
 
+  it("knows a declared list and its item fields", () => {
+    const said = nodeSays(
+      {
+        plan: node({
+          type: "tool.shell",
+          command: "x",
+          output: {
+            format: "json",
+            schema: {
+              tasks: { list: { title: "string", size: ["s", "l"] } },
+              any: { list: {} },
+            },
+          },
+        }),
+      },
+      [],
+    );
+    expect(said["plan"]?.fields).toContainEqual({
+      field: "json.tasks",
+      kind: "text",
+      items: [
+        { field: "title", kind: "text" },
+        { field: "size", kind: "values", values: ["s", "l"] },
+      ],
+    });
+    expect(said["plan"]?.fields).toContainEqual({
+      field: "json.any",
+      kind: "text",
+      items: [],
+    });
+  });
+
   it("gives up on a loop of pass-throughs", () => {
     const loop = nodeSays(
       {

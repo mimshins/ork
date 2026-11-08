@@ -76,9 +76,13 @@ export const nodeContext = (
   if (owner !== undefined) context.owner = owner;
   if (template !== undefined) context.template = template;
   if (activation.brief !== undefined) context.brief = activation.brief;
+  if (activation.item !== undefined) context.item = activation.item;
   const resume =
     options.replay?.cutOff?.(activation) ??
-    resumeOf(deps.nodeOf(activation), deps.sessionIds.get(id));
+    resumeOf(
+      deps.nodeOf(activation),
+      deps.sessionIds.get(id) ?? options.replay?.previousSession?.(activation),
+    );
   if (resume !== undefined) context.resume = resume;
   if (deps.nodeOf(activation)?.type === "claude.leader") {
     context.ownership = createOwnership({

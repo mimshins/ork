@@ -3,7 +3,10 @@
 Status: **Built** ([parse.ts](../packages/core/src/expr/parse.ts),
 [evaluate.ts](../packages/core/src/expr/evaluate.ts),
 [tests](../packages/core/test/expr.test.ts)). Why:
-[ADR-007](../decisions/ADR-007-safe-expression-language.md).
+[ADR-007](../decisions/ADR-007-safe-expression-language.md). `item` and `index`
+are built in the evaluator and the node types' templates, and the scheduler
+gives them a value in each item of a `forEach` node
+([RFC-013](../rfcs/active/RFC-013-for-each.md)).
 
 A small, safe language for an edge's `when:` and for `{{ }}` templates in a
 node's `prompt`, `instructions`, `command`, `cwd`, and a gate's `question` and
@@ -29,21 +32,30 @@ path       := name ( "." name | "[" ( number | string ) "]" )*
 
 ## Scope
 
-| Root      | Reads                                                                |
-| --------- | -------------------------------------------------------------------- |
-| `inputs`  | the run's inputs                                                     |
-| `nodes`   | `nodes.<id>.output.<field>`: another node's report                   |
-| `before`  | `before.<field>`: what a node's `before:` gave; only in its `prompt` |
-| `output`  | the source node's report (in a `when:`)                              |
-| `ok`      | in an edge's `when:`, how its source ended, unless it reports `ok`   |
-| `run`     | run metadata                                                         |
-| bare name | in a `when:`, a field of `output`: `verdict` means `output.verdict`  |
+| Root      | Reads                                                                 |
+| --------- | --------------------------------------------------------------------- |
+| `inputs`  | the run's inputs                                                      |
+| `nodes`   | `nodes.<id>.output.<field>`: another node's report                    |
+| `before`  | `before.<field>`: what a node's `before:` gave; only in its `prompt`  |
+| `output`  | the source node's report (in a `when:`)                               |
+| `ok`      | in an edge's `when:`, how its source ended, unless it reports `ok`    |
+| `run`     | run metadata                                                          |
+| `item`    | an item of a `forEach` node: its entry of the list, or `item.<field>` |
+| `index`   | an item of a `forEach` node: its place in the list, counted from 0    |
+| bare name | in a `when:`, a field of `output`: `verdict` means `output.verdict`   |
 
 - A missing path reads as `undefined`; only own properties are read, so
   `x.constructor` or `__proto__` is `undefined`.
 - A template reads only `inputs.*`, `nodes.<id>.output.*` and `run.*`; a tool
   node's `env:` also reads `env.*`, and nothing else may
   ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)).
+- `item` and `index` are roots only while an item runs, in that node's own
+  `prompt`, `command`, `arguments`, `inputs`, `env`, `cwd` and `ref`. Everywhere
+  else, as in an edge's `when:`, a bare `item` or `index` stays a field of
+  `output`, so existing conditions read what they read before.
+- A `forEach.from` is a template that is exactly one path, and evaluates to the
+  value itself, not to text, so a list stays a list
+  ([evaluate.ts](../packages/core/src/expr/evaluate.ts), `templateValue`).
 
 ## Semantics
 

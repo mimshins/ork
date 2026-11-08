@@ -128,6 +128,13 @@ const called = async (name: string, tasks: unknown): Promise<string> =>
     }),
   );
 
+const described = (fanned: string[]) =>
+  orkTools({
+    nodeId: "lead",
+    driver: "cli",
+    ports: { human, ownership: ownership({ fanned }) },
+  }).find(tool => tool.name === "delegate")?.description;
+
 describe("delegate's and spawn_worker's arguments", () => {
   it("list the leader's ids as an enum on the headless driver", async () => {
     expect(await listedIds("delegate", "child")).toEqual(["code", "tests"]);
@@ -182,6 +189,13 @@ describe("delegate's and spawn_worker's arguments", () => {
     expect(reply).toContain(
       String.raw`expected one of \\\"code\\\"|\\\"tests\\\"`,
     );
+  });
+
+  it("say why a fanned child isn't listed, and only when there is one", () => {
+    expect(described(["build"])).toContain(
+      "Not listed: build; such a node runs once per item of a list",
+    );
+    expect(described([])).not.toContain("Not listed");
   });
 
   it("are still not offered to a leader with no children", () => {

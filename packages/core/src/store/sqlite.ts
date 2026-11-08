@@ -76,6 +76,16 @@ export const nodeOf = (event: RunEvent): string | null => {
   return null;
 };
 
+/**
+ * Whether an event is about `node`, or about one of its items when it has
+ * `forEach` (`build` matches `build.2`; an item's id has a `.`, a declared
+ * node's never does).
+ */
+export const isNodeEvent = (event: RunEvent, node: string): boolean => {
+  const id = nodeOf(event);
+  return id === node || (id !== null && id.startsWith(`${node}.`));
+};
+
 export type StoreOptions = {
   /** This process's start, recorded with a run it begins or reopens. */
   processStart?: () => string | undefined;

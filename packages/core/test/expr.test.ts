@@ -10,8 +10,13 @@ import {
   evaluate,
   parseExpr,
   parseTemplate,
+  renderBrief,
   renderTemplate,
+  resolvePath,
+  runScope,
   type Scope,
+  templatePath,
+  templateValue,
 } from "../src/index.ts";
 
 const scope: Scope = {
@@ -111,5 +116,80 @@ describe("templates", () => {
       message: "unclosed `{{`",
       offset: 3,
     });
+  });
+});
+
+/** A template rendered over `over`, the one that must parse. */
+const render = (source: string, over: Scope): string => {
+  const template = parseTemplate(source);
+  return template.ok ? renderTemplate(template.parts, over) : "(not parsed)";
+};
+
+describe("an item of a fanned node", () => {
+  const item = { of: "build", index: 2, value: { title: "docs", n: 1 } };
+  const itemScope = runScope({}, { plan: { tasks: ["a", "b"] } }, "r1", item);
+  it("reads the item, its fields and its index", () => {
+    expect(render("{{item.title}} #{{index}}", itemScope)).toBe("docs #2");
+    expect(evaluate(parseOk("index == 2"), itemScope)).toBe(true);
+    expect(evaluate(parseOk("item.n == 1"), itemScope)).toBe(true);
+  });
+
+  it("renders an object item as JSON, and a string item as itself", () => {
+    expect(render("do {{item}}", itemScope)).toBe('do {"title":"docs","n":1}');
+    const text = runScope({}, {}, "r1", { of: "b", index: 0, value: "api" });
+    expect(render("pnpm --filter {{item}} lint", text)).toBe(
+      "pnpm --filter api lint",
+    );
+  });
+
+  it("reads index 0 and a falsy item", () => {
+    const first = runScope({}, {}, "r1", { of: "b", index: 0, value: 0 });
+    expect(render("{{index}}:{{item}}", first)).toBe("0:0");
+  });
+
+  it("leaves a bare item or index in a `when:` reading the output", () => {
+    const output = { ...scope, output: { item: "from output", index: 7 } };
+    expect(evaluate(parseOk("item"), output)).toBe("from output");
+    expect(evaluate(parseOk("index"), output)).toBe(7);
+  });
+
+  it("reads nothing that is not the item's own", () => {
+    expect(resolvePath(["item", "constructor"], itemScope)).toBeUndefined();
+    expect(resolvePath(["item", "__proto__"], itemScope)).toBeUndefined();
+  });
+
+  it("reaches a prompt", () => {
+    expect(
+      renderBrief("Do {{item.title}}", {}, {}, undefined, item),
+    ).toMatchObject({ ok: true, text: "Do docs" });
+  });
+});
+
+describe("a template that is one path", () => {
+  const listScope = runScope({}, { plan: { tasks: ["a", "b"] } });
+
+  it("gives the value itself, not text", () => {
+    expect(templateValue("{{nodes.plan.output.tasks}}", listScope)).toEqual({
+      ok: true,
+      value: ["a", "b"],
+    });
+    expect(templateValue("{{ nodes.plan.output.none }}", listScope)).toEqual({
+      ok: true,
+      value: undefined,
+    });
+  });
+
+  it.each([
+    "a {{nodes.plan.output.tasks}}",
+    "{{nodes.plan.output.tasks}} ",
+    "{{nodes.a.output.x}}{{nodes.b.output.y}}",
+    "{{len(nodes.plan.output.tasks)}}",
+    "{{true}}",
+    "plain",
+    "",
+    "{{nodes.plan",
+  ])("refuses %j", source => {
+    expect(templatePath(source)).toBeNull();
+    expect(templateValue(source, listScope).ok).toBe(false);
   });
 });

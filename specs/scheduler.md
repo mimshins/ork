@@ -13,7 +13,11 @@ Status: **Built**: the scheduler, delegation, the built-in node types and
 [Worktrees](./worktrees.md). Why:
 [ADR-016](../decisions/ADR-016-scheduler-semantics.md),
 [ADR-017](../decisions/ADR-017-blocking-delegate.md),
-[ADR-019](../decisions/ADR-019-leaders-resume-on-reentry.md).
+[ADR-019](../decisions/ADR-019-leaders-resume-on-reentry.md). Of `forEach`
+([RFC-013](../rfcs/active/RFC-013-for-each.md)), holding a node to a declared
+list, [the fan-out](./scheduler/for-each.md), resuming per item, item worktrees,
+the question about a list over `maxItems` and the walk are built. The Monitor
+and the Builder don't show fanned nodes yet.
 
 `startRun({ graph, inputs, cwd, executors, human, onEvent, workspace })` runs a
 compiled workflow ([graph compiler](./graph-compiler.md)) and returns
@@ -29,6 +33,8 @@ its branch afterwards ([worktrees](./worktrees.md)).
   (below). A taken edge activates its target, with the source's output as the
   target's input. A node with several incoming edges runs whenever any of them
   is taken; only `control.join` waits.
+- A node with `forEach` [runs each item](./scheduler/for-each.md) as its own
+  activation inside its one activation, and finishes once.
 - **Dead paths.** A node all of whose incoming non-loop edges resolved as not
   taken is **skipped**, and its outgoing edges are not taken. So a join never
   waits on a branch that will not run, and a branch can be skipped in one round
@@ -69,7 +75,16 @@ its branch afterwards ([worktrees](./worktrees.md)).
   `state is "DRAFT", expected OPEN or CLOSED`. For a tool it's the JSON's
   fields, for an `mcp.call` the result's, and for a Claude node its report's; a
   Claude field written as JSON Schema stays the driver's to enforce
-  ([ADR-052](../decisions/ADR-052-conditions-from-declared-outputs.md)).
+  ([ADR-052](../decisions/ADR-052-conditions-from-declared-outputs.md)). A
+  declared list, `{ list: { <field>: <rule> } }`, is held to being a list
+  (`tasks is "fix it", expected a list`), and when it has an item shape each
+  item is too; the reason names the first bad item by its index
+  (`tasks[1].title is missing, expected text`). Ork checks this itself on both
+  drivers, and a Claude node's report schema carries it as `type: array` with
+  `items`. An item's extra fields are refused by the report schema and ignored
+  by a tool's or MCP call's check, as a result's extra fields are
+  ([declared.ts](../packages/core/src/run/declared.ts),
+  [RFC-013](../rfcs/active/RFC-013-for-each.md)).
 
 ## Control nodes
 
@@ -179,7 +194,10 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   - **Who it is:** the program inherits Ork's environment, with `ORK_RUN`,
     `ORK_NODE`, `ORK_ROUND`, `ORK_RUN_DIR`, `ORK_PROJECT`, `ORK_WORKFLOW` and,
     when `ork` can be run directly, `ORK_BIN`
-    ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)). Then the
+    ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)). An item of a
+    `forEach` node also gets `ORK_ITEM` (a string as it is, anything else as
+    JSON) and `ORK_INDEX`; the variables are built, and the scheduler does not
+    start items yet ([RFC-013](../rfcs/active/RFC-013-for-each.md)). Then the
     node's `env:`, rendered. A variable that is not set stops `ork run` before
     anything starts; for a workflow it calls by name, it warns, and the call
     fails if reached ([L86](./messaging/scripts-limits.md)). Events record
@@ -225,9 +243,10 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   session also gets no more than what is left of them, and at one a run ends
   `quota_exhausted`.
 - `limits.concurrency` (default 4) caps the Claude sessions running at once;
-  other nodes are not limited. The cap is per run: runs don't share it, and
-  nothing limits how many runs of one workflow go at once
-  ([L39, L43](./scheduler/limits.md)).
+  other nodes are not limited, except
+  [a fan-out's](./scheduler/for-each.md#pacing-and-failure) items by
+  `maxParallel`. The cap is per run: runs don't share it, and nothing limits how
+  many runs of one workflow go at once ([L39, L43](./scheduler/limits.md)).
 - `interrupt()` stops starting nodes, aborts the running ones, stops the runs
   its calls started, and ends the run `interrupted`.
 
@@ -259,6 +278,7 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 ## Contents
 
 - [Calling workflows](./scheduler/calls.md)
+- [Running a node once per item](./scheduler/for-each.md)
 - [Steps around a session](./scheduler/steps.md)
 - [Resuming a run, and run events](./scheduler/resuming-and-events.md)
   - [Resuming a run](./scheduler/resuming-and-events.md#resuming-a-run)

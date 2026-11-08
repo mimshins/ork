@@ -7,7 +7,7 @@
 import {
   type EventStore,
   followEvents,
-  nodeOf,
+  isNodeEvent,
   type RunRecord,
   type StoredEvent,
 } from "@krapht/ork-core";
@@ -31,7 +31,8 @@ export const createLogPrinter = (options: LogOptions) => {
     if (event.type === "run.started") {
       width = Math.max(...event.nodes.map(n => n.id.length), 1);
     }
-    if (options.node !== undefined && nodeOf(event) !== options.node) return [];
+    if (options.node !== undefined && !isNodeEvent(event, options.node))
+      return [];
     if (options.json) return [JSON.stringify(stored)];
     return formatRunEvent(event, width, tools);
   };

@@ -4,21 +4,15 @@
  *   failed or never finished, are handed back by the replay, so the scheduler
  *   rebuilds outputs, rounds, joins and loop counts without running them; the
  *   rest run again, and so does everything a new result feeds. Also: the run's
- *   inputs and settings, its worktrees, and the answers to its loops.
+ *   inputs and settings, its worktrees, the answers to its loops, and a fanned
+ *   node's lists and its items' results by round (RFC-013). `replay.ts` hands
+ *   them back.
  */
 
-import type { HumanChannel } from "../runtime/types.ts";
 import { type EarlierSpend, earlierSpend } from "../usage/spend.ts";
 import type { Mail } from "./bus-events.ts";
-import type { Replay } from "./handle.ts";
 import { mailOf } from "./mail.ts";
-import type {
-  Inputs,
-  NodeOutput,
-  NodeResult,
-  RunEvent,
-  RunSettings,
-} from "./types.ts";
+import type { Inputs, NodeResult, RunEvent, RunSettings } from "./types.ts";
 
 /** A worktree a run left: adopted when its folder is still there. */
 export type RecordedWorktree = {
@@ -31,9 +25,21 @@ export type RecordedWorktree = {
   merged: boolean;
 };
 
+/** What a fanned node's activations recorded (RFC-013). */
+export type RecordedFanOuts = {
+  /** Each `each.listed` list, by node and round; the latest wins. */
+  lists: Map<string, unknown[]>;
+  /** Each item's results, by item id and its node's round. */
+  items: Map<string, Map<number, NodeResult>>;
+};
+
+export const listKey = (node: string, round: number): string =>
+  `${node}/${String(round)}`;
+
 export type ResumeState = {
-  /** Each node's results that can be handed back, in order. */
+  /** Each node's results that can be handed back, in order; not items'. */
   history: Map<string, NodeResult[]>;
+  fanOuts: RecordedFanOuts;
   inputs: Inputs;
   settings: RunSettings;
   worktrees: RecordedWorktree[];
@@ -62,11 +68,12 @@ const CUTTING = new Set([
   "timed_out",
 ]);
 
-type Open = { sessionId?: string };
+type Open = { sessionId?: string; item?: true };
 
 /** Reads a run's events back into what `ork resume` needs. */
 export const resumeState = (events: readonly RunEvent[]): ResumeState => {
   const history = new Map<string, NodeResult[]>();
+  const fanOuts: RecordedFanOuts = { lists: new Map(), items: new Map() };
   const closed = new Set<string>();
   const open = new Map<string, Open>();
   const worktrees = new Map<string, RecordedWorktree & { removed: boolean }>();
@@ -90,7 +97,13 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
     }
     if (event.type === "node.started") {
       // A delegated run belongs to its leader's session: never handed back.
-      if (event.owner === undefined) open.set(event.id, {});
+      if (event.owner === undefined) {
+        open.set(event.id, event.item === undefined ? {} : { item: true });
+      }
+      continue;
+    }
+    if (event.type === "each.listed") {
+      fanOuts.lists.set(listKey(event.node, event.round), event.list);
       continue;
     }
     if (event.type === "node.event") {
@@ -124,7 +137,13 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
       if (current.sessionId !== undefined) {
         result.sessionId = current.sessionId;
       }
-      history.set(event.id, [...(history.get(event.id) ?? []), result]);
+      if (current.item === true) {
+        const rounds =
+          fanOuts.items.get(event.id) ?? new Map<number, NodeResult>();
+        fanOuts.items.set(event.id, rounds.set(event.round, result));
+      } else {
+        history.set(event.id, [...(history.get(event.id) ?? []), result]);
+      }
       continue;
     }
     if (event.type === "worktree") {
@@ -149,7 +168,7 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
       if (event.action === "removed") entry.removed = true;
       continue;
     }
-    if (event.type === "loop.exhausted") {
+    if (event.type === "loop.exhausted" || event.type === "each.exceeded") {
       loopPending = true;
       continue;
     }
@@ -192,6 +211,7 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
 
   return {
     history,
+    fanOuts,
     inputs,
     settings,
     worktrees: [...worktrees.values()]
@@ -203,86 +223,5 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
     cutOff: cut ? unfinished : new Map<string, string>(),
     mail: mailOf(events),
     earlier: earlierSpend(events),
-  };
-};
-
-/** Whether an activation's input carries a result this run made anew. */
-const carries = (fresh: WeakSet<object>, input: NodeOutput | undefined) => {
-  if (input === undefined) return false;
-  if (fresh.has(input)) return true;
-  // A join's input holds each of its inputs' outputs.
-  const results = input["results"];
-  if (results === null || typeof results !== "object") return false;
-  const values: unknown[] = Object.values(results);
-  return values.some(
-    value => value !== null && typeof value === "object" && fresh.has(value),
-  );
-};
-
-/**
- * Hands each node's recorded results back in order, until the node runs anew
- * once (it failed or never finished last time, or its input is new); from then
- * on it always runs. A node cut off mid-session continues that session, once.
- */
-export const createReplay = (
-  history: ReadonlyMap<string, readonly NodeResult[]>,
-  cutOff: ReadonlyMap<string, string> = new Map(),
-  mail?: Mail,
-  earlier?: EarlierSpend,
-): Replay & { kept: () => string[] } => {
-  const sessions = new Map(cutOff);
-  const used = new Map<string, number>();
-  const anew = new Set<string>();
-  const fresh = new WeakSet<object>();
-  return {
-    take: activation => {
-      const { id } = activation;
-      if (activation.brief !== undefined || anew.has(id)) return null;
-      const index = used.get(id) ?? 0;
-      const recorded = history.get(id)?.[index];
-      if (recorded === undefined || carries(fresh, activation.input)) {
-        anew.add(id);
-        return null;
-      }
-      used.set(id, index + 1);
-      return recorded;
-    },
-    ran: result => {
-      fresh.add(result.output);
-    },
-    cutOff: activation => {
-      // A delegated run is its leader's: it never continues a cut session.
-      const session =
-        activation.brief === undefined
-          ? sessions.get(activation.id)
-          : undefined;
-      sessions.delete(activation.id);
-      return session;
-    },
-    kept: () => [...history.keys()],
-    ...(mail === undefined ? {} : { mail }),
-    ...(earlier === undefined ? {} : { earlier }),
-  };
-};
-
-/**
- * The run's `HumanChannel`, answering questions about loops out of rounds as
- * they were answered last time, in order; anything else goes to `human`.
- */
-export const replayLoopAnswers = (
-  human: HumanChannel,
-  answers: readonly { question: string; answer: string }[],
-): HumanChannel => {
-  const left = [...answers];
-  return {
-    permit: request => human.permit(request),
-    ...(human.settled === undefined ? {} : { settled: human.settled }),
-    ask: question => {
-      const index = left.findIndex(a => a.question === question.question);
-      const [given] = index === -1 ? [] : left.splice(index, 1);
-      return given === undefined
-        ? human.ask(question)
-        : Promise.resolve(given.answer);
-    },
   };
 };

@@ -1,13 +1,21 @@
 /**
  * @file The scheduler: runs a compiled workflow to the end: entries, executors,
  *   routing (`routing.ts`), loops (`escalation.ts`), delegated children
- *   (`delegation.ts`), the bus, claims and feedback (`ports.ts`), the budget
- *   and concurrency (`slots.ts`), pause, continue and a node's stop
- *   (`holds.ts`, ADR-041), and timeouts (`timeouts.ts`, ADR-043).
+ *   (`delegation.ts`), fan-outs (`fan-out.ts`), the bus, claims and feedback
+ *   (`ports.ts`), the budget and concurrency (`slots.ts`), pause, continue and
+ *   a node's stop (`holds.ts`, ADR-041), and timeouts (`timeouts.ts`,
+ *   ADR-043).
  */
 
 import { createLoops } from "./escalation.ts";
-import { type ContextDeps, createExecute } from "./execute.ts";
+import {
+  type ContextDeps,
+  createExecute,
+  createFanOut,
+  createRunChild,
+  forEachOf,
+  type StartHooks,
+} from "./execute.ts";
 import type {
   Activation,
   NodeOutput,
@@ -18,11 +26,10 @@ import type {
   RunStatus,
 } from "./handle.ts";
 import { createHolds, createStops } from "./holds.ts";
-import { createRunPorts } from "./ports.ts";
+import { createRunPorts, runControls } from "./ports.ts";
 import {
   closeWorkspace,
   createSummaries,
-  failure,
   finishedEvent,
   renderOutputs,
   spendOf,
@@ -33,7 +40,7 @@ import {
 } from "./results.ts";
 import { createRouter } from "./router.ts";
 import { runPlace, runScope } from "./scope.ts";
-import { createSlots, needsSlot } from "./slots.ts";
+import { createSlots, needsSlot, spendsBudget } from "./slots.ts";
 import { createClock, TIMEOUT_GRACE_MS, watchRunTimeout } from "./timeouts.ts";
 
 export const DEFAULT_CONCURRENCY = 4;
@@ -161,19 +168,14 @@ export const startRun = (options: RunOptions): RunHandle => {
     return true;
   };
 
-  /** A child a leader delegated to: waits for a slot, runs, reports back. */
-  const runChild: ContextDeps["runChild"] = async (child, brief) => {
-    await slots.take();
-    try {
-      // A paused run or child starts its delegated work once it continues.
-      await holds.forNode(child.id, child.template).wait("start", abort.signal);
-      if (stopped !== null || budgetSpent()) {
-        return failure(`not started: ${reasons[0] ?? "the run stopped"}`);
-      }
-      return await perform({ ...child, input: undefined, brief });
-    } finally {
-      slots.release();
-    }
+  const starts: StartHooks = {
+    slots,
+    holds,
+    signal: abort.signal,
+    reasons,
+    isStopped: () => stopped !== null,
+    budgetSpent,
+    perform: activation => perform(activation),
   };
 
   const contextDeps: ContextDeps = {
@@ -189,7 +191,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     ports,
     slots,
     nodeOf,
-    runChild,
+    runChild: createRunChild(starts),
     spend,
     summary,
   };
@@ -200,12 +202,13 @@ export const startRun = (options: RunOptions): RunHandle => {
     clock,
     graceMs,
     nodeOf,
+    fanOut: createFanOut({ ...starts, options, stops, scope, nodeOf, loops }),
   });
 
   /** Runs one activation and records it; routing is the caller's. */
   const perform = async (activation: Activation): Promise<NodeResult> => {
     const { id } = activation;
-    const round = (rounds.get(id) ?? 0) + 1;
+    const round = activation.round ?? (rounds.get(id) ?? 0) + 1;
     rounds.set(id, round);
     clock.enter(id);
     // A resumed run hands back what an activation did last time.
@@ -221,7 +224,9 @@ export const startRun = (options: RunOptions): RunHandle => {
       recorded !== null,
     );
     // A limit cut it off: no edge acts on its failure, and a resume goes on.
-    if (result.limited !== undefined) stop("quota_exhausted", result.limited);
+    if (result.limited !== undefined) {
+      stop(result.stopsAs ?? "quota_exhausted", result.limited);
+    }
     holds.finished(id);
     ports.finished(id);
     clock.leave(id);
@@ -257,10 +262,9 @@ export const startRun = (options: RunOptions): RunHandle => {
         index += 1;
         continue;
       }
-      const isSession = needsSlot(node);
-      // A call spends through its run, so it needs budget as a session does.
-      const spends = isSession || node.type === "workflow.call";
-      if (spends && budgetSpent()) break;
+      // A fanned node runs no session itself; its items each take a slot.
+      const isSession = needsSlot(node) && forEachOf(node) === undefined;
+      if (spendsBudget(node) && budgetSpent()) break;
       if (isSession && !slots.tryTake()) {
         index += 1;
         continue;
@@ -285,14 +289,6 @@ export const startRun = (options: RunOptions): RunHandle => {
       abort.abort();
       settle();
     },
-    pause: node => holds.pause(node),
-    proceed: node => holds.proceed(node),
-    stopNode: node => stops.stop(node),
-    tell: ports.bus.tell,
-    receive: ports.bus.receive,
-    notice: (node, text) => {
-      ports.bus.notify(node, text);
-      onEvent({ type: "link.notice", node, text });
-    },
+    ...runControls(ports, holds, stops, onEvent),
   };
 };

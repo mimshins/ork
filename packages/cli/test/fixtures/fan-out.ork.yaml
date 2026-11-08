@@ -1,0 +1,11 @@
+schemaVersion: 1
+name: fan-out
+nodes:
+  build:
+    type: tool.shell
+    script: |
+      echo ran >> "marks-$ORK_INDEX"
+      if [ "$ORK_INDEX" = 1 ] && [ ! -f go ]; then sleep 2; fi
+    forEach:
+      items: [a, b, c]
+      maxParallel: 1

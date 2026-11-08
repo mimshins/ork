@@ -45,10 +45,16 @@ export const delegationText = (delegation: Delegation): ToolText =>
     }),
   );
 
+/** Why a child the leader owns isn't offered, so it doesn't go looking. */
+const fannedNote = (fanned: readonly string[]): string =>
+  fanned.length === 0
+    ? ""
+    : ` Not listed: ${fanned.join(", ")}; such a node runs once per item of a list, from its edges, so it can't be delegated to.`;
+
 export const delegateTool = defineTool({
   name: "delegate",
-  description:
-    "Hand tasks to nodes you own. Tasks in one call run in parallel; the call returns every child's report when all are done. Ork merges a passing child's branch into yours.",
+  description: ({ ports }) =>
+    `Hand tasks to nodes you own. Tasks in one call run in parallel; the call returns every child's report when all are done. Ork merges a passing child's branch into yours.${fannedNote(ports.ownership?.fanned ?? [])}`,
   shape: ({ ports }) => {
     const ids = ports.ownership?.children.map(child => child.id) ?? [];
     return {

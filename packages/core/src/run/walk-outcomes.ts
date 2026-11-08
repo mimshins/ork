@@ -9,8 +9,9 @@
 import { isClaudeNode, isToolNode, type Node } from "@krapht/ork-schema";
 
 import { nodeSays, type NodeSays } from "../graph/says.ts";
-import type { CompiledGraph } from "../graph/types.ts";
+import { type CompiledGraph, forEachOf } from "../graph/types.ts";
 import type { NodeOutput } from "./types.ts";
+import { gatheredOutcomes } from "./walk-gathered.ts";
 import { type Reads, readsOf, withValues } from "./walk-reads.ts";
 
 export type Outcome = {
@@ -20,6 +21,8 @@ export type Outcome = {
   said: string;
   /** A wait that ran out, which keeps its last look. */
   timedOut?: true;
+  /** A fanned node's list over its cap, answered `stop`: the run ends. */
+  stopsRun?: true;
 };
 
 /** Enough to try every pair of two fields of five values, and a few more. */
@@ -211,19 +214,33 @@ export const outcomesOf = (
 } => {
   const reads: Reads = readsOf(graph);
   const says = nodeSays(graph.workflow.nodes, graph.edges);
-  const entries = [...graph.nodes].map(([id, { node }]) => ({
-    id,
-    fields: fieldsOf(node, says[id], reads.get(id)),
-    outcomes: withWaits(node, outcomesOfNode(node, says[id], reads.get(id))),
-  }));
+  const fanned = [...graph.nodes].flatMap(([id, { node }]) => {
+    const forEach = forEachOf(node);
+    return forEach === undefined
+      ? []
+      : [{ id, ...gatheredOutcomes(node, forEach, reads.get(id)) }];
+  });
+  const fannedIds = new Set(fanned.map(({ id }) => id));
+  const entries = [...graph.nodes]
+    .filter(([id]) => !fannedIds.has(id))
+    .map(([id, { node }]) => ({
+      id,
+      fields: fieldsOf(node, says[id], reads.get(id)),
+      outcomes: withWaits(node, outcomesOfNode(node, says[id], reads.get(id))),
+    }));
   return {
-    outcomes: new Map(entries.map(({ id, outcomes }) => [id, outcomes])),
-    cutShort: entries
-      .filter(
-        ({ fields }) =>
-          fields.reduce((all, [, values]) => all * values.length, 1) >
-          MOST_PER_NODE,
-      )
-      .map(({ id }) => id),
+    outcomes: new Map(
+      [...entries, ...fanned].map(({ id, outcomes }) => [id, outcomes]),
+    ),
+    cutShort: [
+      ...entries
+        .filter(
+          ({ fields }) =>
+            fields.reduce((all, [, values]) => all * values.length, 1) >
+            MOST_PER_NODE,
+        )
+        .map(({ id }) => id),
+      ...fanned.filter(({ cutShort }) => cutShort).map(({ id }) => id),
+    ],
   };
 };

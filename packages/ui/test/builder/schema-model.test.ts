@@ -97,28 +97,97 @@ describe("the whole format", () => {
   it("types only the values the format leaves free", () => {
     const paths = new Set(nodeTypesOf(ROOT).flatMap(type => nodeFree(type)));
     expect([...paths].toSorted()).toEqual([
+      "claude.leader.before.output.schema.*.list.*[]",
       "claude.leader.before.output.schema.*[]",
       "claude.leader.output.schema.*",
+      "claude.leader.verify.output.schema.*.list.*[]",
       "claude.leader.verify.output.schema.*[]",
       "claude.subagent.output.schema.*",
+      "claude.worker.before.output.schema.*.list.*[]",
       "claude.worker.before.output.schema.*[]",
+      "claude.worker.forEach.items[]",
       "claude.worker.output.schema.*",
+      "claude.worker.verify.output.schema.*.list.*[]",
       "claude.worker.verify.output.schema.*[]",
       "mcp.call.arguments.*",
+      "mcp.call.forEach.items[]",
+      "mcp.call.output.schema.*.list.*[]",
       "mcp.call.output.schema.*[]",
+      "tool.aws.forEach.items[]",
+      "tool.aws.output.schema.*.list.*[]",
       "tool.aws.output.schema.*[]",
+      "tool.gh.forEach.items[]",
+      "tool.gh.output.schema.*.list.*[]",
       "tool.gh.output.schema.*[]",
+      "tool.git.forEach.items[]",
+      "tool.git.output.schema.*.list.*[]",
       "tool.git.output.schema.*[]",
+      "tool.shell.forEach.items[]",
+      "tool.shell.output.schema.*.list.*[]",
       "tool.shell.output.schema.*[]",
+      "workflow.call.forEach.items[]",
     ]);
   });
 
   it("has a control for every top-level setting, agents included", () => {
     expect(freeTopLevel().toSorted()).toEqual([
       "workflow.agents.*.output.schema.*",
+      "workflow.defaults.before.output.schema.*.list.*[]",
       "workflow.defaults.before.output.schema.*[]",
       "workflow.inputs.*.default",
     ]);
+  });
+});
+
+/** A named field of an object schema. */
+const fieldOf = (schema: JsonSchema | undefined, key: string) => {
+  const kind = schema === undefined ? undefined : kindOf(schema);
+  return kind?.kind === "object"
+    ? kind.fields.find(field => field.key === key)?.schema
+    : undefined;
+};
+
+/** The names of an object schema's fields. */
+const keysOf = (schema: JsonSchema): string[] => {
+  const kind = kindOf(schema);
+  return kind.kind === "object" ? kind.fields.map(field => field.key) : [];
+};
+
+/** What a schema is, as the builder reads it; a missing schema is `none`. */
+const kindName = (schema: JsonSchema | undefined): string =>
+  schema === undefined ? "none" : kindOf(schema).kind;
+
+/** The schema every value of a record has. */
+const recordValue = (
+  schema: JsonSchema | undefined,
+): JsonSchema | undefined => {
+  const kind = schema === undefined ? undefined : kindOf(schema);
+  return kind?.kind === "record" ? kind.value : undefined;
+};
+
+/** The schemas a field chooses between. */
+const variantsOf = (schema: JsonSchema | undefined): readonly JsonSchema[] => {
+  const kind = schema === undefined ? undefined : kindOf(schema);
+  return kind?.kind === "variants" ? kind.variants : [];
+};
+
+describe("forEach (RFC-013)", () => {
+  const node = nodeSchemaOf(ROOT, "tool.shell");
+
+  it("is a group with a choice between a list and a source", () => {
+    const forEach = fieldOf(node, "forEach");
+    expect(kindName(forEach)).toBe("variants");
+    expect(variantsOf(forEach).map(variant => keysOf(variant))).toEqual([
+      ["items", "maxParallel", "onFailure"],
+      ["from", "maxItems", "maxParallel", "onFailure"],
+    ]);
+  });
+
+  it("reads a declared list's item shape as named values", () => {
+    const declared = fieldOf(fieldOf(node, "output"), "schema");
+    const rules = variantsOf(recordValue(declared));
+    const list = rules.find(rule => keysOf(rule).includes("list"));
+    expect(kindName(fieldOf(list, "list"))).toBe("record");
   });
 });
 

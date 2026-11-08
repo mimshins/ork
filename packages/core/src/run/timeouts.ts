@@ -19,6 +19,7 @@ import {
 
 import type { CompiledGraph } from "../graph/types.ts";
 import type { HoldPort, HumanChannel } from "../runtime/types.ts";
+import { templateOf } from "../store/view.ts";
 import { heldTimeout, type Holds } from "./holds.ts";
 import type { NodeResult } from "./types.ts";
 
@@ -76,9 +77,12 @@ export const createClock = (options: {
     }
   };
 
-  /** The declared node behind an id; a spawned worker is `<template>-<n>`. */
+  /**
+   * The declared node behind an id; a worker is `<template>-<n>`, an item
+   * `<node>.<n>`.
+   */
   const declared = (id: string): string =>
-    graph.nodes.has(id) ? id : id.replace(/-\d+$/u, "");
+    graph.nodes.has(id) ? id : (templateOf(id, graph.nodes) ?? id);
 
   const isOwnedBy = (owner: string, id: string): boolean => {
     const parent = graph.nodes.get(declared(id))?.node.parent;

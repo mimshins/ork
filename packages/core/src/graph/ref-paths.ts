@@ -15,6 +15,7 @@ import { error, warning } from "./diagnostics.ts";
 import {
   type CompiledEdge,
   declaredOutputOf,
+  forEachOf,
   outputFieldsOf,
 } from "./types.ts";
 
@@ -81,6 +82,15 @@ export const checkField = (
 ): Diagnostic[] => {
   const known = outputFieldsOf(target);
   if (field === undefined || known === null) return [];
+  if (forEachOf(target) !== undefined && !known.includes(String(field))) {
+    return [
+      error(
+        "ref.field",
+        `\`${describePath(segments)}\`: \`forEach\` makes this node report \`${known.join("`, `")}\`, not its type's fields; read one item's under \`results\``,
+        path,
+      ),
+    ];
+  }
   if (field === "json" && isToolNode(target) && !known.includes("json")) {
     return [
       error(

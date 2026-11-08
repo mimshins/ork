@@ -70,24 +70,69 @@
                         "additionalProperties": {
                           "anyOf": [
                             {
-                              "minItems": 1,
-                              "type": "array",
-                              "items": {
-                                "type": [
-                                  "string",
-                                  "number",
-                                  "boolean"
-                                ]
-                              }
+                              "anyOf": [
+                                {
+                                  "minItems": 1,
+                                  "type": "array",
+                                  "items": {
+                                    "type": [
+                                      "string",
+                                      "number",
+                                      "boolean"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "string",
+                                    "number",
+                                    "integer",
+                                    "boolean"
+                                  ]
+                                }
+                              ]
                             },
                             {
-                              "type": "string",
-                              "enum": [
-                                "string",
-                                "number",
-                                "integer",
-                                "boolean"
-                              ]
+                              "type": "object",
+                              "properties": {
+                                "list": {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "anyOf": [
+                                      {
+                                        "minItems": 1,
+                                        "type": "array",
+                                        "items": {
+                                          "type": [
+                                            "string",
+                                            "number",
+                                            "boolean"
+                                          ]
+                                        }
+                                      },
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "string",
+                                          "number",
+                                          "integer",
+                                          "boolean"
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  "description": "The fields each item has, e.g. { title: string }; { } for no shape."
+                                }
+                              },
+                              "required": [
+                                "list"
+                              ],
+                              "additionalProperties": false,
+                              "description": "A list of items, such as a plan's tasks."
                             }
                           ]
                         }
@@ -177,6 +222,74 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "forEach": {
+                    "description": "Run this node once per item of a list, with no model turn to fan out or gather. Items are `<id>.0`, `<id>.1`, ….",
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "items": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {},
+                            "description": "The list, written here. Each entry is one item."
+                          },
+                          "maxParallel": {
+                            "description": "Most items running at once. Default: limits.concurrency.",
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "onFailure": {
+                            "description": "When an item fails: `finish` runs every item (default), `stop` starts no more.",
+                            "type": "string",
+                            "enum": [
+                              "finish",
+                              "stop"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "items"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "string",
+                            "description": "Where the list comes from: one path, e.g. {{nodes.plan.output.tasks}}."
+                          },
+                          "maxItems": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Most items allowed. A longer list asks whether to stop, run this many, or run all."
+                          },
+                          "maxParallel": {
+                            "description": "Most items running at once. Default: limits.concurrency.",
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "onFailure": {
+                            "description": "When an item fails: `finish` runs every item (default), `stop` starts no more.",
+                            "type": "string",
+                            "enum": [
+                              "finish",
+                              "stop"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "maxItems"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
                   }
                 },
                 "required": [
@@ -293,24 +406,69 @@
                         "additionalProperties": {
                           "anyOf": [
                             {
-                              "minItems": 1,
-                              "type": "array",
-                              "items": {
-                                "type": [
-                                  "string",
-                                  "number",
-                                  "boolean"
-                                ]
-                              }
+                              "anyOf": [
+                                {
+                                  "minItems": 1,
+                                  "type": "array",
+                                  "items": {
+                                    "type": [
+                                      "string",
+                                      "number",
+                                      "boolean"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "string",
+                                    "number",
+                                    "integer",
+                                    "boolean"
+                                  ]
+                                }
+                              ]
                             },
                             {
-                              "type": "string",
-                              "enum": [
-                                "string",
-                                "number",
-                                "integer",
-                                "boolean"
-                              ]
+                              "type": "object",
+                              "properties": {
+                                "list": {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "anyOf": [
+                                      {
+                                        "minItems": 1,
+                                        "type": "array",
+                                        "items": {
+                                          "type": [
+                                            "string",
+                                            "number",
+                                            "boolean"
+                                          ]
+                                        }
+                                      },
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "string",
+                                          "number",
+                                          "integer",
+                                          "boolean"
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  "description": "The fields each item has, e.g. { title: string }; { } for no shape."
+                                }
+                              },
+                              "required": [
+                                "list"
+                              ],
+                              "additionalProperties": false,
+                              "description": "A list of items, such as a plan's tasks."
                             }
                           ]
                         }
@@ -346,6 +504,74 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "forEach": {
+                    "description": "Run this node once per item of a list, with no model turn to fan out or gather. Items are `<id>.0`, `<id>.1`, ….",
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "items": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {},
+                            "description": "The list, written here. Each entry is one item."
+                          },
+                          "maxParallel": {
+                            "description": "Most items running at once. Default: limits.concurrency.",
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "onFailure": {
+                            "description": "When an item fails: `finish` runs every item (default), `stop` starts no more.",
+                            "type": "string",
+                            "enum": [
+                              "finish",
+                              "stop"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "items"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "string",
+                            "description": "Where the list comes from: one path, e.g. {{nodes.plan.output.tasks}}."
+                          },
+                          "maxItems": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Most items allowed. A longer list asks whether to stop, run this many, or run all."
+                          },
+                          "maxParallel": {
+                            "description": "Most items running at once. Default: limits.concurrency.",
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "onFailure": {
+                            "description": "When an item fails: `finish` runs every item (default), `stop` starts no more.",
+                            "type": "string",
+                            "enum": [
+                              "finish",
+                              "stop"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "maxItems"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
                   }
                 },
                 "required": [
@@ -461,24 +687,69 @@
                         "additionalProperties": {
                           "anyOf": [
                             {
-                              "minItems": 1,
-                              "type": "array",
-                              "items": {
-                                "type": [
-                                  "string",
-                                  "number",
-                                  "boolean"
-                                ]
-                              }
+                              "anyOf": [
+                                {
+                                  "minItems": 1,
+                                  "type": "array",
+                                  "items": {
+                                    "type": [
+                                      "string",
+                                      "number",
+                                      "boolean"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "string",
+                                    "number",
+                                    "integer",
+                                    "boolean"
+                                  ]
+                                }
+                              ]
                             },
                             {
-                              "type": "string",
-                              "enum": [
-                                "string",
-                                "number",
-                                "integer",
-                                "boolean"
-                              ]
+                              "type": "object",
+                              "properties": {
+                                "list": {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "anyOf": [
+                                      {
+                                        "minItems": 1,
+                                        "type": "array",
+                                        "items": {
+                                          "type": [
+                                            "string",
+                                            "number",
+                                            "boolean"
+                                          ]
+                                        }
+                                      },
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "string",
+                                          "number",
+                                          "integer",
+                                          "boolean"
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  "description": "The fields each item has, e.g. { title: string }; { } for no shape."
+                                }
+                              },
+                              "required": [
+                                "list"
+                              ],
+                              "additionalProperties": false,
+                              "description": "A list of items, such as a plan's tasks."
                             }
                           ]
                         }
@@ -514,6 +785,74 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "forEach": {
+                    "description": "Run this node once per item of a list, with no model turn to fan out or gather. Items are `<id>.0`, `<id>.1`, ….",
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "items": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {},
+                            "description": "The list, written here. Each entry is one item."
+                          },
+                          "maxParallel": {
+                            "description": "Most items running at once. Default: limits.concurrency.",
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "onFailure": {
+                            "description": "When an item fails: `finish` runs every item (default), `stop` starts no more.",
+                            "type": "string",
+                            "enum": [
+                              "finish",
+                              "stop"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "items"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "string",
+                            "description": "Where the list comes from: one path, e.g. {{nodes.plan.output.tasks}}."
+                          },
+                          "maxItems": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Most items allowed. A longer list asks whether to stop, run this many, or run all."
+                          },
+                          "maxParallel": {
+                            "description": "Most items running at once. Default: limits.concurrency.",
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "onFailure": {
+                            "description": "When an item fails: `finish` runs every item (default), `stop` starts no more.",
+                            "type": "string",
+                            "enum": [
+                              "finish",
+                              "stop"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "maxItems"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
                   },
                   "profile": {
                     "type": "string"
@@ -635,24 +974,69 @@
                         "additionalProperties": {
                           "anyOf": [
                             {
-                              "minItems": 1,
-                              "type": "array",
-                              "items": {
-                                "type": [
-                                  "string",
-                                  "number",
-                                  "boolean"
-                                ]
-                              }
+                              "anyOf": [
+                                {
+                                  "minItems": 1,
+                                  "type": "array",
+                                  "items": {
+                                    "type": [
+                                      "string",
+                                      "number",
+                                      "boolean"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "string",
+                                    "number",
+                                    "integer",
+                                    "boolean"
+                                  ]
+                                }
+                              ]
                             },
                             {
-                              "type": "string",
-                              "enum": [
-                                "string",
-                                "number",
-                                "integer",
-                                "boolean"
-                              ]
+                              "type": "object",
+                              "properties": {
+                                "list": {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "anyOf": [
+                                      {
+                                        "minItems": 1,
+                                        "type": "array",
+                                        "items": {
+                                          "type": [
+                                            "string",
+                                            "number",
+                                            "boolean"
+                                          ]
+                                        }
+                                      },
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "string",
+                                          "number",
+                                          "integer",
+                                          "boolean"
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  "description": "The fields each item has, e.g. { title: string }; { } for no shape."
+                                }
+                              },
+                              "required": [
+                                "list"
+                              ],
+                              "additionalProperties": false,
+                              "description": "A list of items, such as a plan's tasks."
                             }
                           ]
                         }
@@ -688,6 +1072,74 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "forEach": {
+                    "description": "Run this node once per item of a list, with no model turn to fan out or gather. Items are `<id>.0`, `<id>.1`, ….",
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "items": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {},
+                            "description": "The list, written here. Each entry is one item."
+                          },
+                          "maxParallel": {
+                            "description": "Most items running at once. Default: limits.concurrency.",
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "onFailure": {
+                            "description": "When an item fails: `finish` runs every item (default), `stop` starts no more.",
+                            "type": "string",
+                            "enum": [
+                              "finish",
+                              "stop"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "items"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "string",
+                            "description": "Where the list comes from: one path, e.g. {{nodes.plan.output.tasks}}."
+                          },
+                          "maxItems": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Most items allowed. A longer list asks whether to stop, run this many, or run all."
+                          },
+                          "maxParallel": {
+                            "description": "Most items running at once. Default: limits.concurrency.",
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "onFailure": {
+                            "description": "When an item fails: `finish` runs every item (default), `stop` starts no more.",
+                            "type": "string",
+                            "enum": [
+                              "finish",
+                              "stop"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "maxItems"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
                   }
                 },
                 "required": [
@@ -811,24 +1263,69 @@
                         "additionalProperties": {
                           "anyOf": [
                             {
-                              "minItems": 1,
-                              "type": "array",
-                              "items": {
-                                "type": [
-                                  "string",
-                                  "number",
-                                  "boolean"
-                                ]
-                              }
+                              "anyOf": [
+                                {
+                                  "minItems": 1,
+                                  "type": "array",
+                                  "items": {
+                                    "type": [
+                                      "string",
+                                      "number",
+                                      "boolean"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "type": "string",
+                                  "enum": [
+                                    "string",
+                                    "number",
+                                    "integer",
+                                    "boolean"
+                                  ]
+                                }
+                              ]
                             },
                             {
-                              "type": "string",
-                              "enum": [
-                                "string",
-                                "number",
-                                "integer",
-                                "boolean"
-                              ]
+                              "type": "object",
+                              "properties": {
+                                "list": {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "anyOf": [
+                                      {
+                                        "minItems": 1,
+                                        "type": "array",
+                                        "items": {
+                                          "type": [
+                                            "string",
+                                            "number",
+                                            "boolean"
+                                          ]
+                                        }
+                                      },
+                                      {
+                                        "type": "string",
+                                        "enum": [
+                                          "string",
+                                          "number",
+                                          "integer",
+                                          "boolean"
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  "description": "The fields each item has, e.g. { title: string }; { } for no shape."
+                                }
+                              },
+                              "required": [
+                                "list"
+                              ],
+                              "additionalProperties": false,
+                              "description": "A list of items, such as a plan's tasks."
                             }
                           ]
                         }
@@ -864,6 +1361,74 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "forEach": {
+                    "description": "Run this node once per item of a list, with no model turn to fan out or gather. Items are `<id>.0`, `<id>.1`, ….",
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "items": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {},
+                            "description": "The list, written here. Each entry is one item."
+                          },
+                          "maxParallel": {
+                            "description": "Most items running at once. Default: limits.concurrency.",
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "onFailure": {
+                            "description": "When an item fails: `finish` runs every item (default), `stop` starts no more.",
+                            "type": "string",
+                            "enum": [
+                              "finish",
+                              "stop"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "items"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "from": {
+                            "type": "string",
+                            "description": "Where the list comes from: one path, e.g. {{nodes.plan.output.tasks}}."
+                          },
+                          "maxItems": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991,
+                            "description": "Most items allowed. A longer list asks whether to stop, run this many, or run all."
+                          },
+                          "maxParallel": {
+                            "description": "Most items running at once. Default: limits.concurrency.",
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "onFailure": {
+                            "description": "When an item fails: `finish` runs every item (default), `stop` starts no more.",
+                            "type": "string",
+                            "enum": [
+                              "finish",
+                              "stop"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "maxItems"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
                   }
                 },
                 "required": [

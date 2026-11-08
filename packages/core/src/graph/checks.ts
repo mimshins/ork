@@ -8,6 +8,7 @@ import type { Diagnostic, Workflow } from "@krapht/ork-schema";
 import { checkCalls } from "./calls.ts";
 import { checkConditions } from "./condition-checks.ts";
 import { checkCycles } from "./flow.ts";
+import { checkForEach } from "./for-each.ts";
 import { checkLoops } from "./loops.ts";
 import { checkNodes } from "./nodes.ts";
 import type { CompiledRule } from "./notify.ts";
@@ -23,6 +24,7 @@ export const checkFlow = (
   ...checkLoops(workflow, edges),
   ...checkNodes(workflow, edges),
   ...checkCalls(workflow),
+  ...checkForEach(workflow, edges),
   ...checkReferences(workflow, edges, rules),
   ...checkConditions(workflow, edges, rules),
 ];

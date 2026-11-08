@@ -220,6 +220,29 @@ describe("the usage ledger", () => {
     ]);
   });
 
+  it("marks a fanned node's item with its node as the template", () => {
+    const events: RunEvent[] = [
+      RUN_STARTED,
+      {
+        type: "node.started",
+        id: "build.2",
+        nodeType: "claude.worker",
+        round: 1,
+      },
+      started("build.2"),
+      finished("build.2", spend(1)),
+    ];
+    const rows = usageRowsOf(
+      { id: "r1", project: "/p", workflow: "w" },
+      events.map((event, index) => ({
+        seq: index + 1,
+        at: "2026-11-03T00:00:00.000Z",
+        event,
+      })),
+    );
+    expect(rows).toMatchObject([{ node: "build.2", template: "build" }]);
+  });
+
   it("filters by project, workflow and time, `until` excluded", () => {
     const store = begun();
     store.begin({
@@ -350,13 +373,14 @@ describe("usage reports", () => {
     ]);
   });
 
-  it("groups a spawned worker's sessions under its template", () => {
+  it("groups a spawned worker's and an item's sessions under its template", () => {
     const report = usageReport([
       row({ node: "build-1", template: "build" }),
       row({ node: "build-2", template: "build", seq: 2 }),
+      row({ node: "build.0", template: "build", seq: 3 }),
     ]);
     expect(report.groups.node.map(g => [g.key, g.sessions])).toEqual([
-      ["w/build", 2],
+      ["w/build", 3],
     ]);
   });
 

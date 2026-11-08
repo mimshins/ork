@@ -6,7 +6,7 @@
  */
 
 import {
-  nodeOf,
+  isNodeEvent,
   pendingDecisions,
   activeTree,
   capsHere,
@@ -131,7 +131,9 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
     if (!found.ok) return found.refusal;
     const events = context.store
       .events(found.run.id, query.after ?? 0)
-      .filter(s => query.node === undefined || nodeOf(s.event) === query.node);
+      .filter(
+        s => query.node === undefined || isNodeEvent(s.event, query.node),
+      );
     const newest =
       query.last === undefined ? events : events.slice(-query.last);
     return ok(

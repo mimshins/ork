@@ -57,6 +57,26 @@ const WORKFLOW = [
   "",
 ].join("\n");
 
+/** `approver` fanned out by the `forEach` that replaces `ITEMS`. */
+const FANNED = [
+  "schemaVersion: 1",
+  "name: review",
+  "nodes:",
+  "  plan:",
+  "    type: tool.shell",
+  "    command: plan",
+  "    output: { format: json, schema: { tasks: { list: {} } } }",
+  "  approver:",
+  "    type: claude.worker",
+  "    model: haiku",
+  "    isolation: readonly",
+  "    forEach: ITEMS",
+  '    prompt: "Review"',
+  "edges:",
+  "  - plan -> approver",
+  "",
+].join("\n");
+
 const project = () => {
   const dir = mkdtempSync(path.join(tmpdir(), "ork-run-"));
   writeFileSync(path.join(dir, "review.ork.yaml"), WORKFLOW);
@@ -196,6 +216,36 @@ describe("ork run --node", () => {
     await runNode(tool.value);
     expect(tool.err).toEqual(["`merge` is a `tool.gh`, not a Claude node"]);
     expect([...missing.drivers, ...tool.drivers]).toEqual([]);
+  });
+
+  it("refuses a node that fans out over another node's list, naming it", async () => {
+    const run = options({ inputs: [] });
+    writeFileSync(
+      path.join(run.value.cwd, "review.ork.yaml"),
+      FANNED.replace(
+        "ITEMS",
+        '{ from: "{{nodes.plan.output.json.tasks}}", maxItems: 3 }',
+      ),
+    );
+    const result = await runNode(run.value);
+    expect(result.exitCode).toBe(1);
+    expect(run.err).toEqual([
+      "`approver` runs once for each item of {{nodes.plan.output.json.tasks}}, a list another node reports, and a run of one node does not run that node; run the whole workflow, or give it `items` of its own",
+    ]);
+    expect(run.drivers).toEqual([]);
+  });
+
+  it("runs a node with a static list once, and says it does not fan out", async () => {
+    const run = options({ inputs: [] });
+    writeFileSync(
+      path.join(run.value.cwd, "review.ork.yaml"),
+      FANNED.replace("ITEMS", "{ items: [a, b] }"),
+    );
+    const result = await runNode(run.value);
+    expect(result.exitCode).toBe(0);
+    expect(run.err.join("\n")).toContain(
+      "approver's forEach: does not fan out in a run of one node: it runs once, with no item.",
+    );
   });
 
   it("reports workflow errors as validate does", async () => {

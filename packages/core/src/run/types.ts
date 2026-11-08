@@ -23,7 +23,7 @@ import type {
 import type { RunLimits } from "../usage/quota.ts";
 import type { BusEvent } from "./bus-events.ts";
 import type { CallPort } from "./calls.ts";
-import type { DecisionEvent } from "./decision-events.ts";
+import type { DecisionEvent, EachEvent } from "./decision-events.ts";
 import type { WatchEvent } from "./watch-events.ts";
 import type { Checkout, KeptWorktree, Workspace } from "./workspace-types.ts";
 
@@ -48,12 +48,17 @@ export type NodeResult = {
    * then stops, no edge acts on the failure, and a resume goes on.
    */
   limited?: string;
+  /** How the run ends with `limited`; `quota_exhausted` when unset. */
+  stopsAs?: RunStatus;
   /** Another try might not fail, so a `watch:` looks again (RFC-011). */
   transient?: true;
 };
 
 /** The task an owner handed a node through `delegate` or `spawn_worker`. */
 export type Brief = { from: string; text: string };
+
+/** One entry of a fanned node's list, for the activation that runs it. */
+export type NodeItem = { of: string; index: number; value: unknown };
 
 export type ExecuteContext = {
   runId: string;
@@ -67,6 +72,8 @@ export type ExecuteContext = {
   outputs: Readonly<Record<string, NodeOutput>>;
   /** The output of the node whose edge activated this one. */
   input: NodeOutput | undefined;
+  /** For an item of a fanned node, which entry of the list it runs. */
+  item?: NodeItem;
   /** 1 on the node's first activation, then 2, 3, … on loop re-entries. */
   round: number;
   /** Set when the node's owner delegated this run. */
@@ -232,6 +239,8 @@ export type RunEvent =
       owner?: string;
       /** The agent that fills the node, if one does. */
       agent?: AgentRef;
+      /** For an item of a fanned node, which node and which entry. */
+      item?: { of: string; index: number };
     }
   | { type: "node.event"; id: string; event: RuntimeEvent }
   | {
@@ -247,6 +256,7 @@ export type RunEvent =
   | { type: "edge.taken"; from: string; to: string }
   | { type: "loop.exhausted"; from: string; to: string; maxRounds: number }
   | WatchEvent
+  | EachEvent
   | {
       type: "worktree";
       id: string;

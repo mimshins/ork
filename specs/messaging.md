@@ -10,7 +10,9 @@ socket ([control/](../packages/core/src/control/control.ts),
 [tests](../packages/core/test/bus.test.ts)) with the user's messages
 (`ork chat`), claims ([claims.ts](../packages/core/src/run/claims.ts),
 [tests](../packages/core/test/claims.test.ts)) and the `feedback` tool
-([feedback](./feedback.md)). The UI's inbox and chat panel are [M2](./ui.md).
+([feedback](./feedback.md)). The UI's inbox and chat panel are [M2](./ui.md). A
+list over a `forEach` node's `maxItems` asks the owner or the person like a loop
+out of rounds (built; the Monitor doesn't show it yet).
 
 ## Ork MCP tools
 
@@ -80,8 +82,9 @@ ports. It reaches other runs through [links](./messaging/links.md).
   ([resume.ts](../packages/core/src/run/resume.ts), `mail`). A message to a node
   that never runs again stays unread; `ork logs` shows it.
 - **Owner questions:** a loop out of rounds asks the owner of its nodes while
-  the owner's session is live ([scheduler](./scheduler.md#loops)). The owner
-  gets the whole question pushed
+  the owner's session is live ([scheduler](./scheduler.md#loops)), and so does
+  [a list over its `maxItems`](./scheduler/for-each.md#a-list-over-maxitems) ask
+  the owner of its fanned node. The owner gets the whole question pushed
   (`[ork] Question q1 for you, as the owner of fix: …`, with the options and the
   recommended one) and replies with `answer`. A wrong option or someone else's
   question is refused. When the owner's session ends first, the question goes to

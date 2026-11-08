@@ -14,7 +14,7 @@ import {
 import { alwaysHolds } from "./condition-checks.ts";
 import { warning } from "./diagnostics.ts";
 import { stronglyConnected } from "./flow.ts";
-import type { CompiledEdge } from "./types.ts";
+import { type CompiledEdge, itemCountOf } from "./types.ts";
 
 /** The sessions one pass through these nodes can start, with owned ones. */
 const sessionsIn = (
@@ -27,12 +27,14 @@ const sessionsIn = (
       parent !== undefined && (members.has(parent) || ownedByMember(parent))
     );
   };
-  return Object.entries(workflow.nodes).filter(
-    ([id, node]) =>
-      isClaudeNode(node) &&
-      node.type !== "claude.subagent" &&
-      (members.has(id) || ownedByMember(id)),
-  ).length;
+  return Object.entries(workflow.nodes)
+    .filter(
+      ([id, node]) =>
+        isClaudeNode(node) &&
+        node.type !== "claude.subagent" &&
+        (members.has(id) || ownedByMember(id)),
+    )
+    .reduce((sum, [, node]) => sum + itemCountOf(node), 0);
 };
 
 /** Plain edges beside a loop edge. A first-match router's is its fallback. */

@@ -14,6 +14,11 @@ import type {
   Ownership,
   SpawnTask,
 } from "../runtime/types.ts";
+import { forEachOf } from "./fan-out.ts";
+import type { Activation } from "./handle.ts";
+import type { Holds } from "./holds.ts";
+import { failure } from "./results.ts";
+import type { Slots } from "./slots.ts";
 import type { Brief, NodeResult } from "./types.ts";
 
 /** Node types a leader can hand work to. */
@@ -38,6 +43,40 @@ export type DelegationHooks = {
   reclaim: () => Promise<void>;
 };
 
+/** What starts work outside the queue: a leader's children, a list's items. */
+export type StartHooks = {
+  slots: Slots;
+  holds: Holds;
+  /** Aborted when the whole run stops. */
+  signal: AbortSignal;
+  /** Why the run stopped, first reason first. */
+  reasons: readonly string[];
+  isStopped: () => boolean;
+  /** True, and the run stops, once its budget or a quota is spent. */
+  budgetSpent: () => boolean;
+  /** Runs one activation and records it; routing is the caller's. */
+  perform: (activation: Activation) => Promise<NodeResult>;
+};
+
+/** A child a leader delegated to: waits for a slot, runs, reports back. */
+export const createRunChild =
+  (hooks: StartHooks): DelegationHooks["runChild"] =>
+  async (child, brief) => {
+    await hooks.slots.take();
+    try {
+      // A paused run or child starts its delegated work once it continues.
+      await hooks.holds
+        .forNode(child.id, child.template)
+        .wait("start", hooks.signal);
+      if (hooks.isStopped() || hooks.budgetSpent()) {
+        return failure(`not started: ${hooks.reasons[0] ?? "the run stopped"}`);
+      }
+      return await hooks.perform({ ...child, input: undefined, brief });
+    } finally {
+      hooks.slots.release();
+    }
+  };
+
 const rejected = (child: string, error: string): ChildReport => ({
   child,
   ok: false,
@@ -56,9 +95,14 @@ type Job = { id: string; template?: string; brief: string };
 export const createOwnership = (hooks: DelegationHooks): Ownership => {
   const { graph, leader } = hooks;
   const owner = graph.nodes.get(leader);
+  // A fanned child runs from its edges; an enum that named it would fail the call.
+  const isFanned = (id: string) =>
+    forEachOf(graph.nodes.get(id)?.node) !== undefined;
   const children: OwnedChild[] = (owner?.children ?? []).flatMap(id => {
     const node = graph.nodes.get(id)?.node;
-    if (node === undefined || !DELEGABLE.has(node.type)) return [];
+    if (node === undefined || !DELEGABLE.has(node.type) || isFanned(id)) {
+      return [];
+    }
     const child: OwnedChild = { id, type: node.type };
     if (node.description !== undefined) child.description = node.description;
     return [child];
@@ -164,6 +208,7 @@ export const createOwnership = (hooks: DelegationHooks): Ownership => {
 
   return {
     children,
+    fanned: (owner?.children ?? []).filter(id => isFanned(id)),
     templates,
     workersLeft: () => Math.max(0, maxWorkers - spawned.length),
     delegate,

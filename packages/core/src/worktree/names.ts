@@ -3,7 +3,8 @@
  *   git rules (`ork/{run}/{node}` and `../{clone}-worktrees/ork-{run}-{node}`
  *   by default). A worktree always lands beside the clone, never inside it
  *   (Claude Code would load the clone's instructions too) or anywhere else; a
- *   branch name must be one git accepts.
+ *   branch name must be one git accepts. An item of a `forEach` node is named
+ *   by its id, `build.2`, as `{node}` (RFC-013).
  */
 
 import path from "node:path";

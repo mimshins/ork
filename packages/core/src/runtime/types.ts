@@ -222,6 +222,8 @@ export type OwnedChild = { id: string; type: string; description?: string };
  */
 export type Ownership = {
   children: OwnedChild[];
+  /** Children left out of `children` as they run per item, from their edges. */
+  fanned?: readonly string[];
   /** Declared child workers `spawn` can start more instances of. */
   templates: string[];
   /** How many more workers `spawn` may start. */

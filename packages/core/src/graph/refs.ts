@@ -6,26 +6,24 @@
 import {
   beforeOf,
   type Diagnostic,
-  type DiagnosticPath,
   isToolNode,
   programsOf,
   type Workflow,
 } from "@krapht/ork-schema";
 
 import { parseTemplate } from "../expr/evaluate.ts";
-import { collectPaths, type Expr } from "../expr/parse.ts";
+import { collectPaths } from "../expr/parse.ts";
+import { checkConditionRefs, type NotifyRules } from "./condition-refs.ts";
 import { error } from "./diagnostics.ts";
 import { checkToolEnv } from "./env.ts";
-import type { CompiledRule } from "./notify.ts";
+import { itemScopes } from "./for-each.ts";
 import { checkAbsolute, type Context, envOutsideEnv } from "./ref-paths.ts";
 import {
   beforeFields,
   checkDefaultsBefore,
-  checkOwn,
   checkTemplate,
 } from "./templates.ts";
 import type { CompiledEdge } from "./types.ts";
-import { compileWatches } from "./watch.ts";
 
 const TEMPLATE_FIELDS = [
   "prompt",
@@ -39,22 +37,11 @@ const TEMPLATE_FIELDS = [
   "ref",
 ] as const;
 
-const checkCondition = (
-  from: string,
-  path: DiagnosticPath,
-  condition: Expr,
-  context: Context,
-  extra: readonly string[] = [],
-): Diagnostic[] => {
-  return collectPaths(condition).flatMap(segments => {
-    const [root] = segments;
-    if (root === "run") return [];
-    if (root === "inputs" || root === "nodes") {
-      return checkAbsolute(segments, context, path);
-    }
-    return checkOwn(from, path, segments, context, extra);
-  });
-};
+/**
+ * The templates of a node that may read `{{item}}`, beside `inputs`,
+ * `arguments` and `env`.
+ */
+const ITEM_FIELDS = new Set(["prompt", "command", "ref"]);
 
 /** Every string under a value, and where it is: an MCP call's templates. */
 const stringsIn = (
@@ -72,39 +59,20 @@ const stringsIn = (
 export const checkReferences = (
   workflow: Workflow,
   edges: readonly CompiledEdge[],
-  rules: ReadonlyMap<string, readonly CompiledRule[]> = new Map(),
+  rules: NotifyRules = new Map(),
 ): Diagnostic[] => {
   const context: Context = { workflow, edges };
-  const fromRules = [...rules].flatMap(([id, compiled]) =>
-    compiled.flatMap((rule, index) => [
-      ...(rule.bodySource === undefined
-        ? []
-        : checkTemplate(
-            id,
-            ["notify", index, "body"],
-            rule.bodySource,
-            context,
-            { own: ["ok", "error"] },
-          )),
-      ...(rule.condition === undefined
-        ? []
-        : checkCondition(
-            id,
-            ["nodes", id, "notify", index, "when"],
-            rule.condition,
-            context,
-            ["ok", "error"],
-          )),
-    ]),
-  );
+  const itemOf = itemScopes(workflow, edges);
   const fromTemplates = Object.entries(workflow.nodes).flatMap(([id, node]) =>
     TEMPLATE_FIELDS.flatMap(field => {
       const value: unknown = Reflect.get(node, field);
       const before = beforeOf(node, workflow.defaults);
-      const reads =
-        field === "prompt" && before !== undefined
+      const reads = {
+        ...(field === "prompt" && before !== undefined
           ? { before: beforeFields(before) }
-          : {};
+          : {}),
+        ...itemOf(id, ITEM_FIELDS.has(field)),
+      };
       return typeof value === "string"
         ? checkTemplate(id, field, value, context, reads)
         : [];
@@ -113,21 +81,25 @@ export const checkReferences = (
   const fromCalls = Object.entries(workflow.nodes).flatMap(([id, node]) =>
     node.type === "workflow.call"
       ? Object.entries(node.inputs ?? {}).flatMap(([name, value]) =>
-          checkTemplate(id, `inputs.${name}`, value, context),
+          checkTemplate(id, `inputs.${name}`, value, context, itemOf(id)),
         )
       : [],
   );
   const fromEnv = Object.entries(workflow.nodes).flatMap(([id, node]) =>
     programsOf(node).flatMap(({ at, program }) =>
       Object.entries(program.env ?? {}).flatMap(([name, value]) =>
-        checkTemplate(id, [...at, "env", name], value, context, { env: true }),
+        checkTemplate(id, [...at, "env", name], value, context, {
+          env: true,
+          // Only the node's own `env:`, not that of its `before:` or `verify:`.
+          ...itemOf(id, at.length === 0),
+        }),
       ),
     ),
   );
   const fromMcp = Object.entries(workflow.nodes).flatMap(([id, node]) =>
     node.type === "mcp.call"
       ? stringsIn(node.arguments ?? {}, ["arguments"]).flatMap(({ at, text }) =>
-          checkTemplate(id, at, text, context),
+          checkTemplate(id, at, text, context, itemOf(id)),
         )
       : [],
   );
@@ -158,23 +130,6 @@ export const checkReferences = (
       );
     },
   );
-  const fromConditions = edges.flatMap(edge =>
-    edge.condition === undefined
-      ? []
-      : checkCondition(
-          edge.from,
-          ["edges", edge.source, "when"],
-          edge.condition,
-          context,
-          ["ok"],
-        ),
-  );
-  const fromWatches = compileWatches(workflow.nodes);
-  const fromUntil = fromWatches.conditions.flatMap(({ id, condition }) =>
-    checkCondition(id, ["nodes", id, "watch", "until"], condition, context, [
-      "ok",
-    ]),
-  );
   const fromDefaults = checkDefaultsBefore(workflow, context);
   return [
     ...fromDefaults,
@@ -185,9 +140,6 @@ export const checkReferences = (
     ...fromMcp,
     ...checkToolEnv(workflow),
     ...fromOutputs,
-    ...fromConditions,
-    ...fromRules,
-    ...fromWatches.diagnostics,
-    ...fromUntil,
+    ...checkConditionRefs(workflow, edges, rules, context),
   ];
 };

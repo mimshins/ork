@@ -84,7 +84,11 @@ export const createRules = ({
 }) => ({
   /** `activation` finished with this fresh result; its output is recorded. */
   fire: (activation: Activation, result: NodeResult): void => {
-    if (stopping.aborted && !result.ok) return;
+    if (result.limited !== undefined || (stopping.aborted && !result.ok)) {
+      return;
+    }
+    // A fanned node's items fire none; the node fires once, for all of them.
+    if (activation.item !== undefined) return;
     const declared = activation.template ?? activation.id;
     for (const rule of graph.rules.get(declared) ?? []) {
       const base = scope();

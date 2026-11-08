@@ -2,6 +2,12 @@
 
 _Part of [The ork CLI](../cli.md)._
 
+Status: **Built.** For nodes with `forEach`
+([RFC-013](../../rfcs/active/RFC-013-for-each.md)) the transcript, `ork logs`
+and `ork tree` show items
+([tests](../../packages/cli/test/for-each-runs.test.ts)); `ork run --node` on a
+node with `from:` is refused ([below](#running-one-node)).
+
 ## Running a workflow
 
 `ork run <wf>` runs the whole workflow through the [scheduler](../scheduler.md)
@@ -26,9 +32,11 @@ with the built-in node types
 - stdout gets one transcript line per event, prefixed with the node id
   (`builder │ …`): each start (with its round), session text and tool calls,
   each result (`✓ pass: …`, `✓ exit 0`, `✓ merge (user)`), skips and exhausted
-  loops, and worktree changes (`⎇ created …`, `merged`, `removed`); then the run
-  summary: status, total cost, how many nodes ran and were skipped, how many
-  failures an edge handled (`2 ran, 1 skipped, 1 failure handled`), the
+  loops, worktree changes (`⎇ created …`, `merged`, `removed`), and a fanned
+  node's list in plain words (`build │ 5 items`, or
+  `! 12 items, over maxItems 10`; an item's lines carry its id, `build.2`); then
+  the run summary: status, total cost, how many nodes ran and were skipped, how
+  many failures an edge handled (`2 ran, 1 skipped, 1 failure handled`), the
   worktrees left for you (branch, path, why), the reasons it did not succeed,
   and a warning for each node that never ran with messages nobody read. `--json`
   prints the [run events](../scheduler/resuming-and-events.md#run-events) as
@@ -78,6 +86,10 @@ with the built-in node types
   `{{nodes.*}}` renders empty and prints a warning. A run of one node sets up no
   worktree, so a `worktree` node needs `--in-place`; `readonly` denies the write
   tools.
+- A node with `forEach` runs once, with no item, and says so on stderr: a run of
+  one node does not fan out. With `forEach.from` it fails instead, naming the
+  list's source, since the node that reports the list is not run; give the node
+  `items` of its own, or run the whole workflow.
 - `--driver` overrides the node's and the workflow's driver. A node that names
   none takes the one ready here, said in one line, and none ready stops it
   before the session starts
@@ -115,6 +127,12 @@ first (then the prompt is withdrawn and the transcript shows
 `ork ps`, `ork logs` and `ork tree` read the runs every project recorded; see
 [Event store: reading runs](../event-store.md#reading-runs). A run of one node
 (`--node`) is recorded too, as a run with that one node.
+
+For a node with `forEach`, `ork tree` lists its items under it, in list order,
+each with its state, time and cost, and `--json` carries them as the node's
+children (with `template` and `startedAt`). `ork logs --node build` keeps the
+node's events and its items'; `--node build.2` keeps one item's. The same filter
+serves `GET /api/runs/<id>/events?node=` in `ork ui`.
 
 ## Decisions and stopping
 

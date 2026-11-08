@@ -209,6 +209,14 @@ describe("what a node's session loads", () => {
     });
   });
 
+  it("plans an item of a fanned node as the node it is of", () => {
+    expect(explained(WORKFLOW, "fix.2")).toMatchObject({
+      node: "fix.2",
+      template: "fix",
+      type: "claude.worker",
+    });
+  });
+
   it("says why a node can't be planned", () => {
     expect(refusal(WORKFLOW, "nope")).toBe("unknown node `nope`");
     expect(refusal(WORKFLOW, "run")).toBe(

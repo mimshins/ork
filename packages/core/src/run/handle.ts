@@ -16,6 +16,7 @@ import type {
   ExecuteContext,
   Inputs,
   NodeExecutors,
+  NodeItem,
   NodeOutput,
   NodeResult,
   NodeSummary,
@@ -78,12 +79,18 @@ export type RunOptions = {
  * A resumed run's record (ADR-026). `take` gives an activation its result from
  * last time, or `null` when it must run anew; `ran` marks a new result;
  * `cutOff` gives, once, the session a node was cut off in; `mail`, the bus's;
- * `earlier`, what the run spent before it was resumed.
+ * `earlier`, what the run spent before it was resumed; `listed`, a fanned
+ * node's recorded list for a round, or `null` when it resolves one anew (its
+ * `source` output ran anew, or there is none), and then its items run anew too;
+ * `previousSession`, an item's session from an earlier round whose node was
+ * handed back whole.
  */
 export type Replay = {
   take: (activation: Activation) => NodeResult | null;
   ran: (result: NodeResult) => void;
   cutOff?: (activation: Activation) => string | undefined;
+  listed?: (id: string, round: number, source: unknown) => unknown[] | null;
+  previousSession?: (activation: Activation) => string | undefined;
   mail?: Mail;
   earlier?: EarlierSpend;
 };
@@ -126,4 +133,8 @@ export type Activation = {
   brief?: Brief;
   /** For a spawned worker, the declared node it is an instance of. */
   template?: string;
+  /** For an item of a fanned node, which entry of the list it runs. */
+  item?: NodeItem;
+  /** For an item: its node's round, which is the item's too. */
+  round?: number;
 };

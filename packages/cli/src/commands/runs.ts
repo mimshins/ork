@@ -3,11 +3,11 @@
  *   recorded in `~/.ork/state.db` (specs/event-store.md).
  */
 
-import { findRun, placeFor, runStatus, runTree } from "@krapht/ork-core";
+import { activeTree, findRun, placeFor, runStatus } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import { style, write, writeErr } from "../output.ts";
-import { cost, formatRuns, formatTree } from "../runs/format.ts";
+import { cost, formatRuns, formatTree, nestItems } from "../runs/format.ts";
 import { followRun } from "../runs/logs.ts";
 import { withStore } from "../store.ts";
 
@@ -111,8 +111,9 @@ export const tree = defineCommand({
         return;
       }
       const { run } = found;
-      const events = store.events(run.id).map(s => s.event);
-      const roots = runTree(events);
+      const stored = store.events(run.id);
+      const events = stored.map(s => s.event);
+      const roots = nestItems(activeTree(stored));
       if (args.json) {
         write(JSON.stringify(roots, undefined, 2));
         return;

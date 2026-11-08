@@ -119,6 +119,53 @@ describe("a detached worktree", () => {
   });
 });
 
+describe("a fanned node's item worktrees", () => {
+  it("are listed by item id, and one is removed by its listed name", () => {
+    const where = place();
+    const items = [1, 2].map(at => {
+      const folder = path.join(
+        path.dirname(where.root),
+        `ork-r4-build.${String(at)}`,
+      );
+      git(where.root, "worktree", "add", "--quiet", "--detach", folder);
+      return folder;
+    });
+    const store = openStore(storePath(where.home));
+    store.begin({
+      id: "r4",
+      workflow: "w",
+      file: "/w.ork.yaml",
+      project: where.root,
+    });
+    for (const [at, folder] of items.entries()) {
+      store.append("r4", {
+        type: "worktree",
+        id: `build.${String(at + 1)}`,
+        action: "created",
+        path: folder,
+      });
+    }
+    store.append("r4", {
+      type: "run.finished",
+      result: {
+        runId: "r4",
+        status: "succeeded",
+        costUsd: 0,
+        nodes: [],
+        reasons: [],
+        worktrees: [],
+      },
+    });
+    store.close();
+    const listed = ork(where, "list").stdout;
+    expect(listed).toContain("r4/build.1 (detached)");
+    expect(listed).toContain("r4/build.2 (detached)");
+    const removed = ork(where, "remove", "r4/build.2", "--force", "--yes");
+    expect(removed.status).toBe(0);
+    expect(items.map(folder => existsSync(folder))).toEqual([true, false]);
+  });
+});
+
 describe("ork worktrees clean", () => {
   it("rejects a name and points to remove, planning nothing", () => {
     const where = place();

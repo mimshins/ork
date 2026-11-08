@@ -5,7 +5,9 @@ Status: **Built**: the store, the recorder, decisions and commands, `ork ps`,
 [tests](../packages/core/test/store.test.ts),
 [CLI tests](../packages/cli/test/runs.test.ts)), with messages, `ork chat`'s
 exchanges, resumed runs, claims, feedback records and each run's process start
-([tests](../packages/core/test/process-start.test.ts)). Why:
+([tests](../packages/core/test/process-start.test.ts)), and item ids (`build.2`)
+read as instances of their node
+([tests](../packages/core/test/item-ids.test.ts)). Why:
 [ADR-024](../decisions/ADR-024-event-store.md).
 
 Every run, a whole workflow or one node (`ork run --node`), is recorded as it
@@ -126,7 +128,9 @@ Feedback records use the same patterns.
   prints the stored events.
 - **`ork tree [<run>]`** draws the ownership tree from `run.started`'s declared
   nodes, with spawned workers (`<template>-<n>`) under the leader that spawned
-  them: each node's state (waiting, running, ok, failed, skipped), its verdict,
+  them, and the items of a fanned node (`<node>.<n>`, RFC-013) as nodes of their
+  own with `template` set to the node (the Monitor draws them properly in Run
+  2): each node's state (waiting, running, ok, failed, skipped), its verdict,
   how many times it ran, tokens and cost. `--json` prints the tree.
 - `<run>` is an id or a unique prefix of one; without it, this project's newest
   run. An ambiguous prefix lists the matches.

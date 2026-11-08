@@ -10,7 +10,10 @@ Status: **Built** ([manager.ts](../packages/core/src/worktree/manager.ts),
 [Worktrees panel](./ui/panels-worktrees.md),
 [tests](../packages/core/test/worktree.test.ts),
 [remove tests](../packages/core/test/worktree-remove.test.ts),
-[git variable tests](../packages/core/test/git-env.test.ts)). Why:
+[git variable tests](../packages/core/test/git-env.test.ts),
+[for-each tests](../packages/core/test/worktree-for-each.test.ts)). Items of a
+node with `forEach` ([RFC-013](../rfcs/active/RFC-013-for-each.md)) work in
+worktrees as [below](#a-node-run-once-per-item); that is built. Why:
 [ADR-020](../decisions/ADR-020-worktrees-beside-the-clone.md),
 [ADR-018](../decisions/ADR-018-ork-merges-children.md),
 [ADR-032](../decisions/ADR-032-project-rules.md).
@@ -126,6 +129,29 @@ When a leader delegates ([scheduler](./scheduler.md#delegation)):
   owner's branch: its worktree is fast-forwarded when it has nothing unmerged. A
   run counts as merged only once its own work is merged. A worktree removed
   outside Ork in between is opened again, from its owner's work.
+
+## A node run once per item
+
+Each item of a node with `forEach` ([scheduler](./scheduler/for-each.md)) is a
+node of its own here, with its id `<node>.<n>` as `{node}`: the default is the
+branch `ork/<run>/build.2` and the folder `ork-<run>-build.2`, and a custom
+`git.branch` or `git.worktrees` is rendered the same way. Items follow the rules
+a node of that declared kind does:
+
+- A fanned **root** node's passing items keep their branches and worktrees, as
+  the run's result. Combining them is a later node's job.
+- A fanned node with a **`parent`** has each passing item merged (or patched)
+  into the owner's worktree, one item at a time however many ran together, and
+  the item's worktree is then removed. A conflict keeps that item's worktree and
+  merges the others; the item's output has `merge: { ok: false, … }`.
+- Under **`commit: never`** there are no item branches: each item has a detached
+  worktree, its `results` entry has `worktree` and no `branch`, and with a
+  `parent` the default `merge: patch` applies each passing item to the owner,
+  uncommitted, one at a time (`merge: never` keeps every item's worktree).
+- A resumed run adopts the item worktrees whose folders are still there.
+- `ork worktrees` lists items under their ids, and
+  `ork worktrees remove <run>/build.2` removes one by its listed name, as for a
+  detached worktree.
 
 ## After the run
 

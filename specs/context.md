@@ -85,7 +85,7 @@ so nothing is loaded twice.
 
 ## Agents
 
-A node that names an `agent` ([workflow format](./workflow-format.md#agents))
+A node that names an `agent` ([workflow format](./workflow-format/agents.md))
 takes the agent's settings where it sets none, and the agent's role as a section
 of its system prompt. Agents come from, lowest to highest precedence for a name
 ([catalog.ts](../packages/core/src/agents/catalog.ts),

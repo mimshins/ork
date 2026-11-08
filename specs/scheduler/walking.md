@@ -5,7 +5,8 @@ _Part of [The scheduler](../scheduler.md)._
 Status: **Built** ([walk.ts](../../packages/core/src/run/walk.ts),
 [tests](../../packages/core/test/walk.test.ts),
 [fuzz](../../packages/core/test/walk-fuzz.test.ts)). `ork validate`, `ork run`
-and the builder walk a workflow. Why:
+and the builder walk a workflow, fanned nodes included (built; the Monitor and
+Builder don't draw fanned nodes yet). Why:
 [ADR-056](../../decisions/ADR-056-walking-a-workflow.md),
 [RFC-009](../../rfcs/archived/RFC-009-walking-a-workflow.md).
 
@@ -37,14 +38,15 @@ own code.
 
 ## What's tried
 
-| Node            | How it can end                                  |
-| --------------- | ----------------------------------------------- |
-| `human.gate`    | Each option                                     |
-| Claude nodes    | Success or failure                              |
-| Tools           | Exit 0, or a failure with any other exit code¹  |
-| `mcp.call`      | Success or failure                              |
-| `workflow.call` | Success or failure; the called file walks alone |
-| Any other type  | Success or failure                              |
+| Node                | How it can end                                          |
+| ------------------- | ------------------------------------------------------- |
+| `human.gate`        | Each option                                             |
+| Claude nodes        | Success or failure                                      |
+| Tools               | Exit 0, or a failure with any other exit code¹          |
+| `mcp.call`          | Success or failure                                      |
+| `workflow.call`     | Success or failure; the called file walks alone         |
+| Any other type      | Success or failure                                      |
+| Node with `forEach` | One node with gathered outcomes, [below](#fanned-nodes) |
 
 ¹ A tool with `output: { format: json }` can also fail on exit 0, when its JSON
 says it failed or holds what it didn't declare.
@@ -69,6 +71,31 @@ reads can't change where a run goes:
 Inputs take their default, or an empty value of their type. A condition on an
 input isn't varied, so it usually goes one way (see
 [what it reports](#what-it-reports)).
+
+## Fanned nodes
+
+A node with `forEach` walks as one node, never one per item, so the length of
+its list costs a walk nothing. It succeeds, or one item fails: the rest succeed
+under `onFailure: finish` and are `skipped` under `stop`. A `from:` list can
+also be empty, or over `maxItems` with each answer: stopped, the first
+`maxItems` run, or all of them.
+
+`statuses` and `count` then vary by what conditions read:
+
+- A status an item's type can report and a condition asks about makes one item
+  say it. A tool's item has only `pass` and `fail`, so anything else is refused
+  ([`when.value`](../graph-compiler.md)).
+- When `statuses` is read, a list of two or more also tries every item failing,
+  and `onFailure: stop` with parallel items also the others finishing.
+- A `from:` list tries each length a condition on `count` asks about.
+
+A walk that reads `statuses` of a list longer than two makes no claim about it,
+as it doesn't try every mix of failures. Nor about a fanned node's `items` or
+`results`, whose values it doesn't vary.
+
+**Measured** (2026-11-08): `examples/` take 7, 6, 14, 573 and 12 paths in 1 to
+70 ms. A static list of 20,000 items takes the same 6 paths as a list of 50, in
+5 ms against 0.4 ms, and eight fanned nodes in a chain 9 paths.
 
 ## Loops
 
@@ -95,19 +122,19 @@ vary, nothing is said of what comes after the node.
 ## Limits
 
 A walk stops at 4,096 paths (twelve parallel nodes just fit) or after one
-second, whichever comes first, and says it stopped: `complete` is false. The
-time matters because a path costs more the more nodes it runs: 300 parallel
-nodes reach about 100 paths in that second. The clock is checked inside a path
-too, as splits that feed each other twice, with no join, multiply activations on
-one path, and when nodes finish, as each finish costs more the more nodes run at
-once. Past a couple of thousand nodes in parallel a walk can still run past its
-limit, by about what compiling the workflow costs. `complete` means it didn't
-stop, not that every value was tried: a node's values are cut at 32 ways, and
-later rounds repeat. A path that doesn't settle within a second is a bug in the
-scheduler, and ends the walk; so does one the scheduler ends with a node left
-waiting (an `ork engine error:` reason, see
-[rounds](../scheduler.md#activations)), which is never listed as a way to end,
-let alone a success.
+second, whichever comes first, and says it stopped: `complete` is false. A
+fanned node is one node, so a long list counts against neither. The time matters
+because a path costs more the more nodes it runs: 300 parallel nodes reach about
+100 paths in that second. The clock is checked inside a path too, as splits that
+feed each other twice, with no join, multiply activations on one path, and when
+nodes finish, as each finish costs more the more nodes run at once. Past a
+couple of thousand nodes in parallel a walk can still run past its limit, by
+about what compiling the workflow costs. `complete` means it didn't stop, not
+that every value was tried: a node's values are cut at 32 ways, and later rounds
+repeat. A path that doesn't settle within a second is a bug in the scheduler,
+and ends the walk; so does one the scheduler ends with a node left waiting (an
+`ork engine error:` reason, see [rounds](../scheduler.md#activations)), which is
+never listed as a way to end, let alone a success.
 
 It doesn't cover the order parallel branches finish in, so a `control.join` in
 `any` mode goes one way; running out of budget or time; resuming; or what a

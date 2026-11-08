@@ -2,7 +2,12 @@
 
 Status: **Built** ([graph/](../packages/core/src/graph/compile.ts),
 [tests](../packages/core/test/compile.test.ts)); `ork validate` runs it, and
-`ork run` prints its warnings before it starts. Why:
+`ork run` prints its warnings before it starts. The checks on `forEach` and
+`{{item}}` ([RFC-013](../rfcs/active/RFC-013-for-each.md), in
+[for-each.ts](../packages/core/src/graph/for-each.ts),
+[tests](../packages/core/test/for-each-checks.test.ts)) are built, as are the
+scheduler that fans out, the walk and the CLI; the Monitor and Builder don't
+show fanned nodes yet. Why:
 [ADR-006](../decisions/ADR-006-workflow-file-format.md),
 [ADR-008](../decisions/ADR-008-ownership-hierarchy.md).
 
@@ -34,6 +39,21 @@ with parsed conditions), the entry nodes, and the declared message channels.
   through; a `workflow.call`'s fields are not checked, since they depend on what
   it calls.
 
+- **For each:** a node with `forEach` (RFC-013) reports `items`, `results`,
+  `statuses` and `count`, which replace its type's fields for references and
+  conditions, so `nodes.build.output.summary` on one is an error (`ref.field`);
+  its edges' `when:` can read `statuses` and `count`. `from` must be exactly one
+  path (`forEach.from-path`) to a list the source declares as `{ list: … }`
+  (`forEach.not-list` when it declares something else, `forEach.undeclared` as a
+  warning when nothing declares it) and to a node that runs before
+  (`forEach.order`). `{{item}}` and `{{index}}` are read only in a fanned node's
+  `prompt`, `command`, `arguments`, `inputs`, `env` and `ref` (`item.outside`,
+  also for `instructions`, `context`, `skills`, `before:`, `verify:` and
+  `notify:`), and `{{item.<field>}}` must name a field the declared item shape
+  or every static entry has (`item.field`; nothing is checked when the shape is
+  `{ list: {} }`). A `messages` channel can't name a fanned node
+  (`forEach.channel`). Elsewhere, such as a `when:`, a bare `item` is still a
+  field of the node's output.
 - **Values in conditions:** an edge's or a `notify:` rule's `when:` that
   compares a field with `==`, `!=`, or `any`, `all`, `count` or `contains` on a
   join's `statuses`, is checked against
@@ -47,8 +67,9 @@ with parsed conditions), the entry nodes, and the declared message channels.
   no list. A `watch.until` has its own check, `watch.value`.
 - **Loops:** a first-match router's plain edge is its fallback, so
   `loop.beside-edge` leaves it alone. `loop.uncapped` counts the leaders and
-  workers in the loop and those they own, times its rounds; a leader can spawn
-  more, and a person can allow another round, so the number is a guide.
+  workers in the loop and those they own (a fanned one counts `maxItems`, or the
+  length of its static list), times its rounds; a leader can spawn more, and a
+  person can allow another round, so the number is a guide.
 
 ## Diagnostics
 
@@ -111,7 +132,14 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `timeout.subagent`       | warning  | a `timeout` on a sub-agent, which runs inside its parent's session         |
 | `ref.input`              | error    | a reference to an undeclared input                                         |
 | `ref.node`               | error    | a reference to an unknown node, or not through `.output`                   |
-| `ref.field`              | warning  | a field the node type does not report                                      |
+| `ref.field`              | warning  | a field the node type does not report (an error on a node with `forEach`)  |
+| `forEach.from-path`      | error    | `forEach.from` is not exactly one `{{ path }}`                             |
+| `forEach.not-list`       | error    | `from` reads a field its source declares as something other than a list    |
+| `forEach.order`          | error    | `from` reads a node that can't have run before this one                    |
+| `forEach.undeclared`     | warning  | `from` reads a list nothing declares, so a run can't check it              |
+| `forEach.channel`        | error    | a `messages` channel names a node with `forEach`                           |
+| `item.outside`           | error    | `{{item}}` or `{{index}}` outside the templates of a node with `forEach`   |
+| `item.field`             | error    | `{{item.<field>}}` names a field the item shape or static entries lack     |
 | `ref.undeclared`         | warning  | a field of a tool's or MCP call's JSON that no `output.schema` declares    |
 | `ref.json`               | error    | `output.json` of a tool node without `output: { format: json }`            |
 | `env.reserved`           | error    | an `env:` key starting `ORK_`                                              |

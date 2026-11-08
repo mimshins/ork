@@ -79,6 +79,7 @@ export * from "./run/inputs.ts";
 export * from "./run/explain.ts";
 export * from "./run/plan.ts";
 export * from "./run/ports.ts";
+export * from "./run/replay.ts";
 export * from "./run/resume.ts";
 export * from "./run/routing.ts";
 export * from "./run/scheduler.ts";

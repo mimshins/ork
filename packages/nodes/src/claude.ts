@@ -6,8 +6,6 @@
  *   (ADR-019).
  */
 
-import path from "node:path";
-
 import {
   type ClaudeRuntime,
   declaredOutputOf,
@@ -22,6 +20,7 @@ import {
 } from "@krapht/ork-core";
 import { beforeOf, type Driver } from "@krapht/ork-schema";
 
+import { planOptionsOf } from "./claude-plan.ts";
 import { resultOf } from "./claude-result.ts";
 import { namedMcpEntries } from "./mcp-servers.ts";
 import { ownerFirst } from "./owner-asks.ts";
@@ -117,24 +116,7 @@ const specFor = (spec: SessionSpec, context: ExecuteContext): SessionSpec => {
 export const claudeExecutor =
   (options: ClaudeExecutorOptions): NodeExecutor =>
   async context => {
-    const planOptions: Parameters<typeof planNodeSession>[2] = {
-      cwd: context.cwd,
-      inputs: context.inputs,
-      outputs: context.outputs,
-      inPlace: options.inPlace,
-      workflowDir: context.workflowDir,
-      projectRoot: context.projectRoot,
-      ...(context.orkDir === undefined ? {} : { orkDir: context.orkDir }),
-      pluginDir: path.join(context.runDir, "plugins", context.id),
-    };
-    if (context.checkout !== undefined) planOptions.checkout = context.checkout;
-    if (context.brief !== undefined) planOptions.brief = context.brief;
-    if (context.template !== undefined) planOptions.template = context.template;
-    if (context.ownership !== undefined) {
-      planOptions.ownership = context.ownership;
-    }
-    if (context.mailbox !== undefined) planOptions.mailbox = context.mailbox;
-    if (context.claims !== undefined) planOptions.claims = context.claims;
+    const planOptions = planOptionsOf(context, options.inPlace);
     const before = beforeOf(context.node, context.workflow.defaults);
     if (before !== undefined) {
       const ran = await runStep(options.steps ?? noSteps, context, before, {

@@ -1,12 +1,15 @@
 /**
  * @file Holding a node to what it declares of its output (RFC-010): a missing
  *   field, the wrong type or a value outside the list is a problem to fail the
- *   node on, so a condition never quietly matches nothing. It reads the
+ *   node on, so a condition never quietly matches nothing. A declared list
+ *   (RFC-013) is held to being a list, and each item to its shape. It reads the
  *   format's own shape; a field written out as JSON Schema stays the driver's
  *   to enforce.
  */
 
 import { markValue } from "@krapht/ork-schema";
+
+import { listShape } from "../graph/says.ts";
 
 const TYPE_NAMES: Readonly<Record<string, string>> = {
   string: "text",
@@ -47,6 +50,8 @@ const fieldProblem = (
   rule: unknown,
   value: unknown,
 ): string | null => {
+  const shape = listShape(rule);
+  if (shape !== undefined) return listProblem(name, shape, value);
   const expected = Array.isArray(rule)
     ? listed(rule)
     : typeof rule === "string"
@@ -62,6 +67,46 @@ const fieldProblem = (
     : `${name} is ${shown(value)}, expected ${expected}`;
 };
 
+const fieldProblems = (
+  declared: Readonly<Record<string, unknown>>,
+  value: Readonly<Record<string, unknown>>,
+  prefix: string,
+): string[] =>
+  Object.entries(declared).flatMap(([name, rule]) => {
+    const problem = fieldProblem(`${prefix}${name}`, rule, value[name]);
+    return problem === null ? [] : [problem];
+  });
+
+/** What's wrong with one item; `name` says which, as `tasks[2]`. */
+const itemProblems = (
+  name: string,
+  shape: Readonly<Record<string, unknown>>,
+  item: unknown,
+): string[] => {
+  if (Object.keys(shape).length === 0) return [];
+  return isRecord(item)
+    ? fieldProblems(shape, item, `${name}.`)
+    : [`${name} is ${shown(item)}, expected an object`];
+};
+
+/** Only the first bad item is named, so a long list can't flood the reason. */
+const listProblem = (
+  name: string,
+  shape: Readonly<Record<string, unknown>>,
+  value: unknown,
+): string | null => {
+  if (value === undefined) return `${name} is missing, expected a list`;
+  if (!Array.isArray(value)) {
+    return `${name} is ${shown(value)}, expected a list`;
+  }
+  const bad = value
+    .map((item: unknown, index) =>
+      itemProblems(`${name}[${index}]`, shape, item),
+    )
+    .find(problems => problems.length > 0);
+  return bad === undefined ? null : bad.join("; ");
+};
+
 /**
  * What's wrong with `value` by this declaration, or `null`. With nothing
  * declared, nothing can be.
@@ -72,9 +117,6 @@ export const declaredProblem = (
 ): string | null => {
   if (declared === undefined || Object.keys(declared).length === 0) return null;
   if (!isRecord(value)) return `the result isn't a JSON object`;
-  const problems = Object.entries(declared).flatMap(([name, rule]) => {
-    const problem = fieldProblem(name, rule, value[name]);
-    return problem === null ? [] : [problem];
-  });
+  const problems = fieldProblems(declared, value, "");
   return problems.length === 0 ? null : problems.join("; ");
 };

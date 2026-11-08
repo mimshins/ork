@@ -73,12 +73,16 @@ const blank = (id: string, type: NodeType, parent?: string): TreeNode => {
   return node;
 };
 
-/** The declared node a spawned worker's id (`<template>-<n>`) is an instance of. */
+/**
+ * The declared node an instance's id is of: a spawned worker (`<template>-<n>`)
+ * or an item of a fanned node (`<node>.<n>`). A declared id has no `.`, so an
+ * item's id never collides with one.
+ */
 export const templateOf = (
   id: string,
   declared: { has: (id: string) => boolean },
 ): string | undefined => {
-  const match = /^(?<base>.+)-\d+$/u.exec(id);
+  const match = /^(?<base>.+)[-.]\d+$/u.exec(id);
   const base = match?.groups?.["base"];
   return base !== undefined && declared.has(base) ? base : undefined;
 };

@@ -14,10 +14,10 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L197. At a review, each open
-entry is closed (built or fixed, then removed), kept (moved into its area's
-spec, then removed here), or carried to a roadmap item, or to none yet
-(unplanned).
+closes it. Ids are never reused: the next limit is L211, and the next chore is
+C13. At a review, each open entry is closed (built or fixed, then removed), kept
+(moved into its area's spec, then removed here), or carried to a roadmap item,
+or to none yet (unplanned).
 
 **Kept limits live with their area's spec,** each in a "Limits" chunk under its
 id: [running, resuming and stopping](./scheduler/limits.md),
@@ -42,6 +42,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 ## Contents
 
 - [Limits found building readable gates](./gaps/readable-gates-limits.md)
+- [Limits found building for each](./gaps/for-each-limits.md)
 
 ## Gaps
 
@@ -125,7 +126,7 @@ Carried at the 2026-11-07 review. Each links to its words in its area's spec.
 | L51  | [A link's limit of 100 is a guess](./messaging/limits.md)                                     | `benchmark` |
 | L52  | [A link ending can cost a session a turn](./messaging/limits.md)                              | `benchmark` |
 | L57  | [A message to a call that never starts is lost](./scheduler/calls-limits.md)                  | unplanned   |
-| L61  | [Parallel activations come back by position](./scheduler/calls-limits.md)                     | `for-each`  |
+| L61  | [Parallel activations of one id come back by position](./scheduler/calls-limits.md)           | unplanned   |
 | L65  | [Logs filters only what is loaded](./ui/limits.md)                                            | unplanned   |
 | L67  | [A thread shows what is loaded](./ui/limits.md)                                               | unplanned   |
 | L89  | [`ork send`'s cap and size are first guesses](./messaging/scripts-limits.md)                  | `benchmark` |
@@ -200,3 +201,9 @@ Found building [clean sessions](./runtime.md#what-a-session-loads) (ADR-065):
   session ends, and that `ork resume` goes on. Carried, unplanned: it waits on
   the world. ([usage](./usage.md#limits-across-runs))
   ([ADR-002](../decisions/ADR-002-typescript-from-source.md))
+- **C12 · A fan-out hasn't run on a real driver.** One run on each driver of a
+  `from:` fan-out of Claude workers into worktrees (paid) is left to the
+  maintainer, after the second run lands. Check that items start together under
+  `maxParallel`, that each takes its own session and worktree, and that a
+  resumed run goes on with the unfinished ones. Carried, unplanned: it waits on
+  the world. ([running a node once per item](./scheduler/for-each.md))

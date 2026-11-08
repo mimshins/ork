@@ -9,16 +9,31 @@ import { z } from "zod";
 
 const VariableNameSchema = z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/u);
 
+/** What one field of a JSON result can be: one of some values, or a type. */
+const DeclaredFieldRuleSchema = z.union([
+  z.array(z.union([z.string(), z.number(), z.boolean()])).min(1),
+  z.enum(["string", "number", "integer", "boolean"]),
+]);
+
 /**
  * What a program's or a tool's JSON result says, field by field: the values a
- * field can have, or its type. A run holds the node to it (RFC-010), and the
- * builder offers the values as choices.
+ * field can have, its type, or a list (RFC-013) with an optional item shape. A
+ * run holds the node to it (RFC-010), and the builder offers the values as
+ * choices.
  */
 export const DeclaredOutputSchema = z.record(
   z.string(),
   z.union([
-    z.array(z.union([z.string(), z.number(), z.boolean()])).min(1),
-    z.enum(["string", "number", "integer", "boolean"]),
+    DeclaredFieldRuleSchema,
+    z
+      .strictObject({
+        list: z
+          .record(z.string(), DeclaredFieldRuleSchema)
+          .describe(
+            "The fields each item has, e.g. { title: string }; { } for no shape.",
+          ),
+      })
+      .describe("A list of items, such as a plan's tasks."),
   ]),
 );
 

@@ -509,7 +509,7 @@ export const MILESTONES = [
         commits: ["9a5e215"],
         date: "2026-10-31",
         docs: [
-          "specs/workflow-format.md#agents",
+          "specs/workflow-format/agents.md",
           "specs/context.md#agents",
           "decisions/ADR-030-agents-fill-nodes.md",
           "docs/guides/agents.md",

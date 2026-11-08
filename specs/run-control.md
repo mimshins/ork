@@ -8,8 +8,12 @@ Status: **Built** ([holds.ts](../packages/core/src/run/holds.ts),
 [driver tests](../packages/runtime-claude/test/hold.test.ts),
 [end to end](../packages/cli/test/control.test.ts),
 [API tests](../packages/server/test/control.test.ts)). The UI's buttons are M2
-([ui](./ui.md)). Decided in
+([ui](./ui.md)). Stop, pause and continue reach the items of a `forEach` node
+(built; the Monitor doesn't show them yet). Decided in
 [ADR-041](../decisions/ADR-041-pause-continue-stop.md).
+
+An item of a fanned node (`build.2`) is a node to these commands; see
+[running a node once per item](./scheduler/for-each.md#limits-stop-and-pause).
 
 A live run can be paused and continued, as a whole or one node at a time, and
 one of its nodes can be stopped while the rest goes on. Pausing never cuts work
@@ -76,8 +80,8 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 - **The run's process stays alive.** A crash while paused leaves a run that
   `ork resume` replays as usual. The resumed run isn't paused.
 - **Pausing one node** applies the same rules to that node alone: its session
-  and its next activations, a spawned worker's instances included. The rest of
-  the run goes on.
+  and its next activations, a spawned worker's instances and a fanned node's
+  items included. The rest of the run goes on.
 
 ## Continue
 
@@ -103,6 +107,9 @@ Nothing is cut short. What happens depends on what the paused part is doing:
   its whole run ([calling workflows](./scheduler/calls.md)).
 - **A leader's delegated children** that are still running follow the existing
   owner-failure path; they are not stopped with it.
+- **A fanned node** has its running items stopped and starts no more; one item
+  named alone (`--node build.2`) stops only it, and `onFailure` decides the
+  rest.
 - **Only a running node can be stopped:** `N is not running in run X.`
 
 ## What a run records

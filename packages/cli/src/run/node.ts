@@ -27,16 +27,16 @@ import {
   userMessageText,
 } from "@krapht/ork-core";
 import { namedMcpEntries, resultOf } from "@krapht/ork-nodes";
-import { beforeOf, type Driver } from "@krapht/ork-schema";
+import type { Driver } from "@krapht/ork-schema";
 
 import {
   formatReport,
   loadWorkflow,
   warningLines,
 } from "../commands/validate.ts";
-import { style } from "../output.ts";
 import { formatEvent, formatRunEvent } from "./format.ts";
 import { limitsRefusal, runLimits } from "./limits.ts";
+import { noteLines, oneNodeNotes } from "./node-notes.ts";
 import { feedbackOrigin } from "./origin.ts";
 import {
   checksHere,
@@ -109,6 +109,8 @@ export const runNode = async (
   const inputs = resolveInputs(workflow, pairs.raw);
   if (!inputs.ok) return failed(inputs.errors);
 
+  const notes = oneNodeNotes(workflow, options.nodeId);
+  if (notes.error !== undefined) return failed([notes.error]);
   const limits = runLimits(options.store, place, options.home);
   const refused = limitsRefusal(limits, workflow);
   if (refused.length > 0) return failed(refused);
@@ -147,30 +149,8 @@ export const runNode = async (
   if (ready?.line !== undefined) options.err(ready.line);
   const driver = named ?? ready?.driver;
   if (driver === undefined) return failed(["No Claude driver is ready here."]);
-  const planned = workflow.nodes[options.nodeId];
-  if (planned !== undefined && "notify" in planned && planned.notify) {
-    options.err(
-      `${style(["yellow", "bold"], "warning")} ${options.nodeId}'s notify: does nothing here: a run of one node has no message bus.`,
-    );
-  }
-  const skipped =
-    planned === undefined
-      ? []
-      : [
-          ...(beforeOf(planned, workflow.defaults) === undefined
-            ? []
-            : ["before"]),
-          ...("verify" in planned && planned.verify !== undefined
-            ? ["verify"]
-            : []),
-        ];
-  for (const step of skipped) {
-    options.err(
-      `${style(["yellow", "bold"], "warning")} ${options.nodeId}'s ${step}: does not run in a run of one node.`,
-    );
-  }
-  for (const warning of plan.warnings) {
-    options.err(`${style(["yellow", "bold"], "warning")} ${warning}`);
+  for (const line of noteLines([...notes.warnings, ...plan.warnings])) {
+    options.err(line);
   }
 
   const id = options.nodeId;

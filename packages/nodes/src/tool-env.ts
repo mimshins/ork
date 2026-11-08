@@ -55,6 +55,8 @@ const IDENTITY_KEYS = new Set([
   "ORK_BIN",
   OUTPUT_ENV,
   STATE_ENV,
+  "ORK_ITEM",
+  "ORK_INDEX",
 ]);
 
 /**
@@ -90,7 +92,7 @@ export const runMarkerIn = (env: Environ): string | null =>
 export const identityOf = (
   context: Pick<
     ExecuteContext,
-    "runId" | "id" | "round" | "runDir" | "projectRoot" | "workflow"
+    "runId" | "id" | "round" | "runDir" | "projectRoot" | "workflow" | "item"
   >,
   orkBin: string | undefined,
 ): Record<string, string> => ({
@@ -101,6 +103,15 @@ export const identityOf = (
   ORK_PROJECT: context.projectRoot,
   ORK_WORKFLOW: context.workflow.name,
   ...(orkBin === undefined ? {} : { ORK_BIN: orkBin }),
+  ...(context.item === undefined
+    ? {}
+    : {
+        ORK_ITEM:
+          typeof context.item.value === "string"
+            ? context.item.value
+            : JSON.stringify(context.item.value),
+        ORK_INDEX: String(context.item.index),
+      }),
 });
 
 /** The variables a workflow's nodes read that no `plainEnv` excuses. */
@@ -181,14 +192,14 @@ export const secretsOf = (
 /** A node's `env:`, rendered. */
 export const renderEnv = (
   node: Pick<ToolNode, "env">,
-  context: Pick<ExecuteContext, "inputs" | "outputs" | "runId">,
+  context: Pick<ExecuteContext, "inputs" | "outputs" | "runId" | "item">,
   environ: Environ,
 ):
   | { ok: true; values: Record<string, string> }
   | { ok: false; error: string } => {
   const values: Record<string, string> = {};
   const scope = {
-    ...runScope(context.inputs, context.outputs, context.runId),
+    ...runScope(context.inputs, context.outputs, context.runId, context.item),
     // A bare name reads inside `output`: nothing else here can read `env`.
     output: { env: environ },
   };

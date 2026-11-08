@@ -8,7 +8,7 @@ import path from "node:path";
 
 import type { Scope } from "../expr/evaluate.ts";
 import type { RunOptions } from "./handle.ts";
-import type { ExecuteContext, Inputs, NodeOutput } from "./types.ts";
+import type { ExecuteContext, Inputs, NodeItem, NodeOutput } from "./types.ts";
 
 /** The run's id (given, or a new one) and its `.ork/runs/<run>` folder. */
 export const runPlace = (
@@ -38,6 +38,7 @@ export const runScope = (
   inputs: Inputs,
   outputs: Readonly<Record<string, NodeOutput>>,
   runId?: string,
+  item?: NodeItem,
 ): Scope => {
   const scope: Scope = {
     inputs,
@@ -46,5 +47,9 @@ export const runScope = (
     ),
   };
   if (runId !== undefined) scope.run = { id: runId };
+  if (item !== undefined) {
+    scope.item = item.value;
+    scope.index = item.index;
+  }
   return scope;
 };

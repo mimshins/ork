@@ -158,6 +158,9 @@ const standIn =
             ok: outcome.ok,
             output: outcome.output,
             ...(outcome.ok ? {} : { error: outcome.said }),
+            ...(outcome.stopsRun === true
+              ? { limited: outcome.said, stopsAs: "failed" as const }
+              : {}),
           },
     );
   };

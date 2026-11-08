@@ -150,7 +150,12 @@ export const mcpCallExecutor =
       ...secretsOf(context.workflow, environ, options.maskedNames),
       ...expanded.value.values,
     ]);
-    const scope = runScope(context.inputs, context.outputs, context.runId);
+    const scope = runScope(
+      context.inputs,
+      context.outputs,
+      context.runId,
+      context.item,
+    );
     const args = Object.fromEntries(
       Object.entries(node.arguments ?? {}).map(([key, value]) => [
         key,

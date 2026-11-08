@@ -211,7 +211,11 @@ const manyWorktrees = (workflow: Workflow): boolean => {
       return true;
     const isolation =
       node.isolation ?? workflow.defaults?.isolation ?? "worktree";
-    if (node.type !== "claude.subagent" && isolation === "worktree") count += 1;
+    // A fanned node has a worktree for each item (RFC-013).
+    const fanned = "forEach" in node && node.forEach !== undefined;
+    if (node.type !== "claude.subagent" && isolation === "worktree") {
+      count += fanned ? 2 : 1;
+    }
   }
   return count > 1;
 };

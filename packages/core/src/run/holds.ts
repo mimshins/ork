@@ -188,7 +188,7 @@ export const heldTimeout = (
 
 export type Stops = {
   /** The signal of one activation: the run's, or its own stop. */
-  signalFor: (id: string, template: string | undefined) => AbortSignal;
+  signalFor: (id: string, template?: string) => AbortSignal;
   /** Stops every running activation of `node` (or instance of it). */
   stop: (node: string) => boolean;
   /** An activation ended: its result, failed if the user stopped it. */

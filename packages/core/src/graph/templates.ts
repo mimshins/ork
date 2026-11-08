@@ -15,7 +15,12 @@ import type {
 import { parseTemplate, SCOPE_ROOTS } from "../expr/evaluate.ts";
 import { collectPaths } from "../expr/parse.ts";
 import { error, warning } from "./diagnostics.ts";
-import { ancestorsOf } from "./flow.ts";
+import {
+  checkItemRead,
+  isItemRoot,
+  type ItemScope,
+  upstreamOf,
+} from "./for-each.ts";
 import {
   checkAbsolute,
   checkField,
@@ -23,7 +28,6 @@ import {
   describePath,
   envOutsideEnv,
 } from "./ref-paths.ts";
-import { ownersOf } from "./tree.ts";
 import { outputFieldsOf, TOOL_OUTPUT_FIELDS } from "./types.ts";
 
 /** A bare name or `output.*`, read from the node's own output. */
@@ -68,6 +72,8 @@ export const checkTemplate = (
     own?: readonly string[];
     /** What this node's `before:` reports; only its prompt reads it. */
     before?: readonly string[];
+    /** Set where `{{item}}` and `{{index}}` may be read, in a fanned node. */
+    item?: ItemScope;
     /** For `defaults:`, which belongs to no node and sees no other's output. */
     path?: DiagnosticPath;
   } = {},
@@ -84,18 +90,21 @@ export const checkTemplate = (
     ];
   }
   // A node can read its own ancestors and those of every owner above it.
-  const upstream = ancestorsOf(id, context.edges);
-  for (const owner of ownersOf(context.workflow, id)) {
-    upstream.add(owner);
-    for (const ancestor of ancestorsOf(owner, context.edges)) {
-      upstream.add(ancestor);
-    }
-  }
+  const upstream = upstreamOf(context.workflow, context.edges, id);
   return parsed.parts.flatMap(part => {
     if (typeof part === "string") return [];
     return collectPaths(part.expr).flatMap(segments => {
       const [root, name] = segments;
       if (root === "run") return [];
+      // A node's own field of that name is still read as a field, in a body.
+      const owner = context.workflow.nodes[id];
+      const ownField =
+        reads.own !== undefined &&
+        owner !== undefined &&
+        outputFieldsOf(owner)?.includes(String(root)) === true;
+      if (isItemRoot(root) && !ownField) {
+        return checkItemRead(segments, reads.item, path);
+      }
       if (root === "env" && reads.env === true) {
         return name === undefined
           ? [error("template.env", "name a variable: `env.NAME`", path)]

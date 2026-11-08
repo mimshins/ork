@@ -90,7 +90,8 @@ const readableIssues = (issues: readonly z.core.$ZodIssue[]): string => {
 
 export const defineTool = <S extends z.ZodRawShape>(definition: {
   name: string;
-  description: string;
+  /** A function when what it says depends on the session binding the tool. */
+  description: string | ((context: ToolContext) => string);
   /** A function when the arguments depend on the session binding the tool. */
   shape: S | ((context: ToolContext) => S);
   /** Default: preapproved. */
@@ -112,7 +113,10 @@ export const defineTool = <S extends z.ZodRawShape>(definition: {
     const schema = z.object(shape);
     return {
       name: definition.name,
-      description: definition.description,
+      description:
+        typeof definition.description === "function"
+          ? definition.description(context)
+          : definition.description,
       shape,
       schema,
       preapproved: definition.preapproved ?? true,

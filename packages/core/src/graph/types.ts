@@ -100,7 +100,30 @@ export const declaredOutputOf = (
 ): Readonly<Record<string, unknown>> | undefined =>
   "output" in node ? node.output?.schema : undefined;
 
+/** What a node with `forEach` reports instead of its type's fields (RFC-013). */
+export const GATHERED_FIELDS = [
+  "items",
+  "results",
+  "statuses",
+  "count",
+] as const;
+
+/** The `forEach` a node declares, if it fans out. */
+export const forEachOf = (node: Node) =>
+  "forEach" in node ? node.forEach : undefined;
+
+/**
+ * How many items a node can run: its list's length or `maxItems`; 1 if not
+ * fanned.
+ */
+export const itemCountOf = (node: Node): number => {
+  const each = forEachOf(node);
+  if (each === undefined) return 1;
+  return "items" in each ? each.items.length : each.maxItems;
+};
+
 export const outputFieldsOf = (node: Node): readonly string[] | null => {
+  if (forEachOf(node) !== undefined) return GATHERED_FIELDS;
   if (isToolNode(node)) {
     return [
       ...TOOL_OUTPUT_FIELDS,

@@ -6,6 +6,8 @@
 import type { Node } from "@krapht/ork-schema";
 
 import { type ContextDeps, nodeContext } from "./context.ts";
+import { createRunChild, type StartHooks } from "./delegation.ts";
+import { createFanOut, type FanOut, forEachOf } from "./fan-out.ts";
 import type { Activation, NodeResult, RunOptions } from "./handle.ts";
 import { failure, passThrough } from "./results.ts";
 import { runScope } from "./scope.ts";
@@ -13,7 +15,9 @@ import { type createClock, timeoutOf, withTimeout } from "./timeouts.ts";
 import type { ExecuteContext } from "./types.ts";
 import { repeatsCall, runWatch } from "./watch.ts";
 
-export type { ContextDeps };
+export type { ContextDeps, StartHooks };
+// The scheduler's fan-out and delegation pieces, so it imports them once.
+export { createFanOut, createRunChild, forEachOf };
 
 /** Runs an activation; control nodes pass their input through. */
 export const createExecute =
@@ -23,6 +27,7 @@ export const createExecute =
     clock: ReturnType<typeof createClock>;
     graceMs: number;
     nodeOf: (activation: Activation) => Node | undefined;
+    fanOut: FanOut;
   }) =>
   async (activation: Activation, round: number): Promise<NodeResult> => {
     const { options, contextDeps, clock, graceMs, nodeOf } = deps;
@@ -32,6 +37,11 @@ export const createExecute =
     const executor = options.executors[node.type];
     if (executor === undefined) return failure(`no executor for ${node.type}`);
     try {
+      const forEach =
+        activation.item === undefined ? forEachOf(node) : undefined;
+      if (forEach !== undefined) {
+        return await deps.fanOut(activation, forEach, round);
+      }
       const { workspace } = options;
       const place = (await workspace?.prepare(
         activation.id,
