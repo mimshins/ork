@@ -1,5 +1,17 @@
 # @krapht/ork
 
+## 1.0.0-alpha.5
+
+### Minor Changes
+
+- [`aa3b231`](https://github.com/mimshins/ork/commit/aa3b231f3da4b87d81f508ea5e5bcbb4892ae703) Thanks [@mimshins](https://github.com/mimshins)! - A `human.gate` can give a `document` to read beside a short `question`. The
+  Decisions panel renders decision text as Markdown, folds long text, opens the
+  document in a dialog, filters by workflow and run, and a run in the Monitor with
+  open decisions opens them. `ork decide` takes `--workflow` and `--document`, and
+  prints or offers a gate's document in the terminal. A gate's text shows lists
+  and objects as readable lines, never raw JSON, and a permission's command shows
+  as written.
+
 ## 1.0.0-alpha.4
 
 ### Minor Changes
