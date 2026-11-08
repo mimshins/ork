@@ -957,7 +957,9 @@ export const MILESTONES = [
       {
         id: "tab-completion",
         title: "Tab completion",
-        status: "active",
+        status: "done",
+        date: "2026-11-08",
+        commits: ["8308e0e"],
         detail:
           "`ork completion zsh|bash|fish` prints a script that asks the hidden `ork __complete` for candidates: commands and flags read from the command tree (so a new one shows up with no change), and live values read-only from the project and the store: workflows, run ids newest first, a run's or a workflow's nodes, open decisions, drivers. `ork --help` lists the commands in groups, kubectl-style, from the same tree; zsh labels its menu with them. What it leaves out is in the register (L176–L179).",
         docs: [
@@ -995,6 +997,7 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "dc3a004",
   "87f9e47",
   "aaf80c6",
   "f2457c7",
