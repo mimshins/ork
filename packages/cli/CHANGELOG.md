@@ -1,5 +1,161 @@
 # @krapht/ork
 
+## 1.0.0-alpha.0
+
+### Major Changes
+
+- [`68129b3`](https://github.com/mimshins/ork/commit/68129b383d5509a6f3ff71c2bfc3f56402c33253) Thanks [@mimshins](https://github.com/mimshins)! - Ork 1.0.0 begins with this alpha. From here every release is `1.0.0-alpha.N`
+  until the beta, and a plain `npm install --global @krapht/ork` or
+  `pnpm add --global @krapht/ork` installs it. Workflow files need no changes. One
+  behavior to know: a Claude node that names no driver takes the one ready on your
+  machine (the `claude` CLI when both are) instead of the Agent SDK, and `ork run`
+  says which; name `driver: sdk` or pass `ork run --driver sdk` to keep the old
+  behavior. To stay on 0.4, install `@krapht/ork@0.4` and set
+  `ORK_NO_UPDATE_CHECK=1`.
+
+### Minor Changes
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - Answer any decision with an optional note. A `human.gate` outputs it as `note`
+  (`{{nodes.<gate>.output.note}}`, empty when none), so a `revise` answer can say
+  what to change; `ask_user` returns it with the choice; a denied tool's message
+  ends with it. Give it with `ork decide --id … --choose … --say "…"`, in the
+  Decisions panel's "Note for the run" box, or on the run's terminal as an
+  optional line after the choice (Enter skips it). It is stored masked with the
+  decision and shows in `ork logs` and the panel's Settled list. `--note` and
+  `--rating` keep recording feedback about the node, as before.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - A leader can answer its children's questions: with `questions: owner` on a
+  `claude.leader`, a child's `ask_user` goes first to a read-only fork of the
+  leader's session, which answers when its task already settles the question, or
+  passes it on to you with a note. The fork can only read files, and has 3 turns
+  and 5 minutes. You're asked as before when the leader has no session yet or the
+  fork fails or runs out. The fork's cost is the run's, against the leader, and
+  its lines in the logs say `fork`. Every answer records who gave it:
+  `ork decide --list`, the transcript and the Decisions panel show the leader that
+  answered or passed a question on. The default, `questions: user`, changes
+  nothing. The `answer` tool takes an optional note.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - Ask your agent to set Ork up for you. A new skill, `/ork:setup` in Ork's Claude
+  Code plugin and `/ork-setup` through `ork init --skills`, checks `ork` and
+  `ork doctor`, sets the project up with `ork init` or `ork register`, makes Ork's
+  tools available to the agent, and offers a first workflow, asking before it
+  installs anything, edits a config or starts a run. It never asks for a
+  credential and never answers a decision. `ork doctor` says when a project's copy
+  is older than Ork, as for the other skills. A new getting-started page, With
+  your agent, shows how with Claude Code, any MCP client through `ork mcp`, and an
+  agent that only has a shell.
+
+- [`8308e0e`](https://github.com/mimshins/ork/commit/8308e0e05f098660526269df76344e62a1876dd7) Thanks [@mimshins](https://github.com/mimshins)! - Tab completion for zsh, bash and fish: `ork completion <shell>` prints a script
+  that completes commands, flags, workflow names (with `ork:` ones), run ids
+  newest first with their workflow and status, node ids after `--node`, open
+  decision ids after `ork decide --id`, and `--driver` values. The script asks the
+  hidden `ork __complete`, which reads the project and the store read-only and
+  prints nothing when it can't. `ork --help` now lists the commands in groups (Get
+  started, Workflows, Runs, Steer a running run, After runs, Projects, Ork itself)
+  with a short line each, `wt` shown as `worktrees`' alias, and a command with
+  subcommands shows `<command> [flags]` in its usage line.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - `triggers.yaml` has a JSON Schema, `triggers.schema.json`, for autocomplete in
+  your editor: add
+  `# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/triggers.schema.json`
+  at the top.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - Resume a run from the browser view. A run that stopped, failed or crashed has a
+  **Resume…** button among its controls in the Monitor: it asks first, says it's a
+  paid run and what runs again, shows the `ork resume <run> --detach` command it
+  stands for, and picks the run up in the background with the inputs and flags it
+  started with. The Feedback panel's **Propose fix…** now offers a choice of
+  driver, as `ork feedback apply --driver` does, and its command follows it.
+
+### Patch Changes
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - `ork feedback publish` pages through the Agent feedback category (up to 1,000
+  threads) for the item's thread, instead of reading only the 100 most recently
+  updated, so a quiet thread gets a "+1" rather than a duplicate.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - The npm page no longer says the web UI is coming: it shows `ork ui`, how to have
+  your agent set Ork up, and where to read what's new. The documentation was
+  rewritten for people who use Ork: a choice of setting it up yourself or with
+  your agent, a Quickstart that names no driver, downloadable examples, and new
+  pages on how Ork works, where it keeps things and what's new.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - `ork doctor` warns when your home folder's path is too long for a run's socket
+  (103 bytes on macOS, 107 on Linux), which made answers and commands wait up to a
+  second without a word.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - Ork run from a git hook acts on its own repositories, not the hook's: `ork`
+  clears git's local variables (`GIT_DIR`, `GIT_INDEX_FILE`, `GIT_WORK_TREE` and
+  the rest of `git rev-parse --local-env-vars`) as it starts, so its sessions,
+  tool nodes and detached runs start clean, and its own git runner leaves them out
+  too. An outer `git -c key=value` no longer reaches Ork's git.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - Clearer `--help`: `ork validate` shows it takes files, `ork link` the tools to
+  link, `ork resume` that it takes any run that didn't succeed, and `ork feedback`
+  names all its subcommands. `ork run` no longer lists the flags only Ork passes
+  to itself, and `ork doctor`'s SDK hint names Foundry.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - A workflow no longer needs to name a Claude driver, and `ork init`'s starter
+  names none, since `.ork/workflows/` is committed and one person's login doesn't
+  belong in it. When nothing names a driver (the node, its agent, the workflow,
+  `.ork/project.yaml`'s `defaults.driver`, or `--driver`), `ork run` uses the one
+  `ork doctor` finds ready on the machine running it, `cli` when both are, and
+  says so in one line; with neither ready it stops before any session starts, with
+  `ork doctor`'s hints. The run records the driver, and `ork resume` keeps it.
+  `ork init` says which driver runs would use here. Before, such a workflow ran on
+  the SDK driver.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - A run no longer ends succeeded when a join waited on a node that could never
+  run. In a later round of a loop, an edge whose source can't run any more (a
+  second builder the loop didn't go back to) counts as not taken, so the node it
+  fed is skipped and the join behind it fires, for `all` and `any` joins alike;
+  the run reaches its gate, or asks when the loop is out of rounds. A run that
+  still ends with a node waiting fails with an `ork engine error:` reason instead
+  of succeeding, and `ork validate` reports such a path as a bug in Ork rather
+  than as a way to succeed.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - A `before:` or `verify:` step's long output is kept in a file named for the step
+  and its try (`review.1.verify-2.stdout.txt`, `review.1.verify-2.txt`), so a
+  later try no longer overwrites the file a session was pointed at.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - Leaders run with the one-hour prompt cache (`ENABLE_PROMPT_CACHING_1H=1`) on
+  both drivers, as the context spec says, so a leader waiting on its children
+  keeps its cached prefix.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - A workflow, `project.yaml`, `triggers.yaml` or settings file written by a newer
+  Ork now says so, with `ork upgrade` as the fix, instead of
+  `Invalid input: expected 1` and a list of unknown keys. `ork feedback import`
+  says the same of a line with a newer `feedbackVersion`.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - `ork upgrade` and the browser view's Upgrade recognise a global install by pnpm
+  11, which keeps global packages in its store, instead of offering the npm
+  command.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - A run that skipped nodes or handled a failure still reads `succeeded`, and now
+  says so: the run result, `ork run`'s last line
+  (`2 ran, 1 skipped, 1 failure handled`), `ork ps --json` (`skipped`,
+  `failuresHandled`) and the Monitor's stat strip count both. `ork run` also warns
+  about each node that never ran but had messages nobody read. `ork ps` shows a
+  called run's cost dimmed as `in <caller>`, since its caller's cost already
+  counts it.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - `ork pause`, `ork continue` and `ork stop --node` (and the same routes of
+  `ork ui`) refuse a run of one node (`node-…`) with "stop the whole run instead",
+  where they used to say they had worked and do nothing. `ork stop` still stops
+  it.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - The browser view keeps more of what you were doing, and reads better. The
+  Builder keeps its open workflow, selected card and undo when its panel is moved,
+  closed and reopened, or stacked in a narrow window. On a light system the page
+  is light from its first paint, with no dark flash. Each docked panel has a
+  heading for screen readers, so its cards no longer skip a level. The graph's
+  **Keys on the graph** button lists every key it takes, a card's too. Starting a
+  run with no Monitor showing puts the focus on the Runs panel, not the page.
+
+- [`2388727`](https://github.com/mimshins/ork/commit/2388727ffcfbb815d05debee3377b41b2d38df71) Thanks [@mimshins](https://github.com/mimshins)! - The new-version check, `ork upgrade` and `ork ui`'s banner now offer the newest
+  version across npm's `latest`, `alpha`, `beta` and `rc` tags, so a pre-release
+  of 1.0.0 reaches you as soon as it's out. A `canary` build is offered only to
+  someone already running one.
+
 ## 0.4.0
 
 ### Minor Changes
