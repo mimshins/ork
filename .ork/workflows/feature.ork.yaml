@@ -146,7 +146,7 @@ nodes:
       command: pnpm check
       timeout: 20m
       attempts: 1
-    maxWorkers: 3
+    maxWorkers: 8
     questions: owner
   design:
     type: claude.worker
