@@ -44,6 +44,15 @@ const workflowOf = (): Workflow => {
   return parsed.workflow;
 };
 
+/** The workflow with a leader that names an MCP server. */
+const namingServers = (): Workflow => {
+  const parsed = parseWorkflow(
+    WORKFLOW.replace("lead: {", "lead: { mcp: [x],"),
+  );
+  if (!parsed.ok) throw new Error(JSON.stringify(parsed.diagnostics));
+  return parsed.workflow;
+};
+
 /** A person who picks the first option, and what they were asked. */
 const person = () => {
   const asked: HumanQuestion[] = [];
@@ -350,6 +359,20 @@ describe("a child's question to its owner", () => {
 
     expect(await answer).toBe("b");
     expect(specs).toHaveLength(1);
+  });
+
+  it("loads no named server, though its leader names some", async () => {
+    const { runtime, specs } = forking({ choice: "b" });
+    const channel = ownerFirst(
+      { ...contextOf(person().human), workflow: namingServers() },
+      ownerPort("lead-1").port,
+      { runtimeFor: () => Promise.resolve(runtime), inPlace: true },
+    );
+
+    await channel.ask(QUESTION);
+    expect(specs[0]?.mcpServers).toBeUndefined();
+    expect(specs[0]?.tools.allow).not.toContain("mcp__x");
+    expect(specs[0]?.tools.strictMcp).toBe(true);
   });
 
   it("forks the leader's session read-only, and takes its answer", async () => {

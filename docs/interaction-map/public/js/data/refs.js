@@ -1117,6 +1117,10 @@ export const RUNTIME = {
     "decisions/ADR-065-clean-claude-sessions.md",
     "ADR-065: Claude sessions start clean of the machine's setup",
   ),
+  namedMcpAdr: d(
+    "decisions/ADR-067-nodes-name-mcp-servers.md",
+    "ADR-067: a node names the MCP servers it needs",
+  ),
 };
 
 /** Where a node sits in a workflow, and what that means for its run. */

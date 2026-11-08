@@ -7,6 +7,7 @@
 import type { Diagnostic, Workflow } from "@krapht/ork-schema";
 
 import { type ApplyOptions, applyAgents } from "../agents/apply.ts";
+import { checkMcpServers, type McpOptions } from "../project/mcp-file.ts";
 import {
   applyProject,
   checkRules,
@@ -18,6 +19,8 @@ import { checkChannels } from "./nodes.ts";
 import { compileRules } from "./notify.ts";
 import { checkOwnership } from "./tree.ts";
 import type { CompiledGraph, CompiledNode, CompileResult } from "./types.ts";
+
+export type { CompiledGraph };
 
 const SEVERITY_ORDER = { error: 0, warning: 1 } as const;
 
@@ -32,7 +35,7 @@ const SEVERITY_ORDER = { error: 0, warning: 1 } as const;
  */
 export const compileWorkflow = (
   authored: Workflow,
-  options: ApplyOptions & ProjectOptions = {},
+  options: ApplyOptions & ProjectOptions & McpOptions = {},
 ): CompileResult => {
   const applied = applyAgents(applyProject(authored, options), options);
   const { workflow } = applied;
@@ -50,6 +53,7 @@ export const compileWorkflow = (
     ...rules.diagnostics,
     ...channels.diagnostics,
     ...checkRules(workflow),
+    ...checkMcpServers(workflow, options),
     ...checkReach(workflow, edges, entries),
   ];
 

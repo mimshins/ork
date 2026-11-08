@@ -37,11 +37,26 @@ skills and context. It starts clean of the rest of your machine's Claude setup:
   in `~/.claude/projects/<folder>/memory/`) stays out of the run.
 - Your user-level `~/.claude` settings never load.
 
-When a run needs one of your MCP servers (a browser, say), start it with
-`--machine-claude`: its sessions load your MCP servers and Claude's memory as
-`claude` would. The run remembers it: `ork resume`, `ork chat` and the runs it
-calls with `workflow.call` load them too, and `ork resume` has no flag for it.
-In the browser view it is the "Use this machine's Claude setup" box.
+When an agent needs an MCP server (a browser, say), define it in your project's
+`.mcp.json` and name it on the node, or on `defaults`, with no credential in the
+file (use `${VAR}`):
+
+```yaml
+design:
+  type: claude.worker
+  prompt: Check the page in a browser.
+  mcp: [chrome-devtools]
+```
+
+Only the servers a node names load, beside Ork's, and their tools need no
+approval (a `deny` rule still wins). `mcp: []` turns the defaults off for a
+node. `ork validate` reports a name `.mcp.json` doesn't have.
+
+When a run needs all of your machine's setup, start it with `--machine-claude`:
+its sessions load your MCP servers and Claude's memory as `claude` would. The
+run remembers it: `ork resume`, `ork chat` and the runs it calls with
+`workflow.call` load them too, and `ork resume` has no flag for it. In the
+browser view it is the "Use this machine's Claude setup" box.
 
 ## Reading the transcript
 

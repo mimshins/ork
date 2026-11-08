@@ -3,6 +3,14 @@
 Each release in a few lines, newest first, with how to upgrade. Every change, in
 full: the [changelog](../packages/cli/CHANGELOG.md).
 
+## 1.0.0-alpha.4
+
+- **A node names the MCP servers it needs.** `mcp: [chrome-devtools]` on a node,
+  or on `defaults`, loads those servers from your project's `.mcp.json` beside
+  Ork's, and every other node stays clean. No `--machine-claude` needed for a
+  browser
+  ([running workflows](./guides/running-workflows/running-and-answering.md#what-a-session-loads)).
+
 ## 1.0.0-alpha.2
 
 - **Experiments, off by default.** Features that aren't ready for everyone can

@@ -90,6 +90,8 @@ export type PlanResult =
       spec: SessionSpec;
       /** What the workflow names (`driver.ts`); else the one ready here. */
       driver: Driver | undefined;
+      /** The MCP servers the session loads beside Ork's, by name. */
+      mcp: string[];
       warnings: string[];
       context: ContextStack;
     }
@@ -111,11 +113,15 @@ const toolRules = (
   node: ClaudeNode,
   readonly: boolean,
   rules: Workflow["rules"],
+  mcp: readonly string[],
 ): ToolRules => ({
   allow: [
     ...new Set([
       ...(rules?.permissions?.allow ?? []),
       ...(node.tools?.allow ?? []),
+      // A headless node can't answer per call; the node's author chose the server.
+      // Claude Code writes other characters in a server's name as `_` in tool names.
+      ...mcp.map(server => `mcp__${server.replaceAll(/[^\w-]/gu, "_")}`),
       ...(readonly ? READ_ONLY_COMMANDS : []),
     ]),
   ],
@@ -157,6 +163,7 @@ export const planNodeSession = (
   }
 
   const defaults = workflow.defaults ?? {};
+  const mcp = node.mcp ?? defaults.mcp ?? [];
   const isolation = node.isolation ?? defaults.isolation ?? "worktree";
   const ownWorktree = options.checkout?.own === true;
   // A `continue` node needs a worktree too: its input's, or its own.
@@ -220,7 +227,7 @@ export const planNodeSession = (
       ...contextSections(context.files, "node"),
     ].join("\n\n"),
     settingSources: ["project", "local"],
-    tools: toolRules(node, isolation === "readonly", workflow.rules),
+    tools: toolRules(node, isolation === "readonly", workflow.rules, mcp),
     permissionMode: "default",
     reportSchema: reportSchemaFor(node),
   };
@@ -265,6 +272,7 @@ export const planNodeSession = (
     ok: true,
     spec,
     driver: namedDriver(node, workflow),
+    mcp,
     warnings,
     context,
   };

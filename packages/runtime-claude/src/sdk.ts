@@ -10,6 +10,7 @@
 import {
   createSdkMcpServer,
   type HookCallbackMatcher,
+  type McpServerConfig,
   type Options,
   query,
   type SDKUserMessage,
@@ -97,6 +98,16 @@ const holdHook = (
   ],
 });
 
+/** The compiler has checked each entry has a command or a url. */
+const namedServers = (spec: SessionSpec): Record<string, McpServerConfig> =>
+  Object.fromEntries(
+    Object.entries(spec.mcpServers ?? {}).filter(
+      (entry): entry is [string, Record<string, unknown> & McpServerConfig] =>
+        typeof entry[1]["command"] === "string" ||
+        typeof entry[1]["url"] === "string",
+    ),
+  );
+
 /** The Agent SDK options for a session spec. */
 export const buildSdkOptions = (
   spec: SessionSpec,
@@ -126,7 +137,8 @@ export const buildSdkOptions = (
     permissionMode: spec.permissionMode,
     allowedTools: [...spec.tools.allow, ...preapprovedTools(tools)],
     disallowedTools: spec.tools.deny,
-    mcpServers: { [ORK_SERVER]: ork },
+    // `.mcp.json` entries as written: `claude` expands their `${VAR}`.
+    mcpServers: { ...namedServers(spec), [ORK_SERVER]: ork },
     outputFormat: { type: "json_schema", schema: spec.reportSchema },
     canUseTool: async (toolName, input) => {
       const decision = await human.permit({

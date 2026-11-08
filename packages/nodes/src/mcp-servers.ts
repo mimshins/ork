@@ -7,14 +7,15 @@
  *   so it is refused.
  */
 
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
-
+import {
+  MCP_FILE,
+  mcpNotText,
+  serversIn,
+  type SessionSpec,
+} from "@krapht/ork-core";
 import type { Workflow } from "@krapht/ork-schema";
 
 import { type Environ, readEnv } from "./environ.ts";
-
-const MCP_FILE = ".mcp.json";
 
 const VARIABLE = /\$\{([A-Za-z_]\w*)(?::-([^}]*))?\}/gu;
 
@@ -32,26 +33,6 @@ type Read<T> = { ok: true; value: T } | { ok: false; error: string };
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-/** The file's `mcpServers`; `{}` when there is no file. */
-const serversIn = (root: string): Read<Record<string, unknown>> => {
-  const file = path.join(root, MCP_FILE);
-  if (!existsSync(file)) return { ok: true, value: {} };
-  try {
-    const parsed: unknown = JSON.parse(readFileSync(file, "utf8"));
-    const servers = isRecord(parsed) ? parsed["mcpServers"] : undefined;
-    return { ok: true, value: isRecord(servers) ? servers : {} };
-  } catch (error) {
-    // The parser's own message quotes the text, which may hold a secret.
-    const reason =
-      error instanceof SyntaxError
-        ? "it is not valid JSON"
-        : error instanceof Error
-          ? error.message
-          : String(error);
-    return { ok: false, error: `${MCP_FILE} can't be read: ${reason}` };
-  }
-};
-
 const stringsOf = (value: unknown): Record<string, string> =>
   isRecord(value)
     ? Object.fromEntries(
@@ -65,18 +46,6 @@ const listOf = (value: unknown): string[] =>
   Array.isArray(value)
     ? value.flatMap(item => (typeof item === "string" ? [item] : []))
     : [];
-
-/** A server's field that holds something other than text: it would be dropped. */
-const notTextIn = (server: Record<string, unknown>): string | undefined =>
-  ["args", "env", "headers"].find(field => {
-    const value = server[field];
-    const items = Array.isArray(value)
-      ? value
-      : isRecord(value)
-        ? Object.values(value)
-        : [];
-    return items.some(item => typeof item !== "string");
-  });
 
 /** The server as written, or why Ork can't call it. */
 export const readMcpServer = (root: string, name: string): Read<McpServer> => {
@@ -98,7 +67,7 @@ export const readMcpServer = (root: string, name: string): Read<McpServer> => {
       error: `MCP server \`${name}\` signs in with OAuth, whose tokens are Claude Code's: give it a token through headers and \`env:\`, or call it from a session`,
     };
   }
-  const notText = notTextIn(server);
+  const notText = mcpNotText(server);
   if (notText !== undefined) {
     return {
       ok: false,
@@ -127,6 +96,30 @@ export const readMcpServer = (root: string, name: string): Read<McpServer> => {
     ok: false,
     error: `MCP server \`${name}\` is not one Ork can call: it takes stdio and http servers`,
   };
+};
+
+/**
+ * The named servers' entries as written, for a session: `${VAR}` stays text for
+ * the `claude` that loads them to expand. The compiler has checked the names.
+ */
+export const namedMcpEntries = (
+  root: string,
+  names: readonly string[],
+): Read<Pick<SessionSpec, "mcpServers">> => {
+  if (names.length === 0) return { ok: true, value: {} };
+  const servers = serversIn(root);
+  if (!servers.ok) return servers;
+  const mcpServers: Record<string, Record<string, unknown>> = {};
+  for (const name of names) {
+    const server = Object.hasOwn(servers.value, name)
+      ? servers.value[name]
+      : undefined;
+    if (!isRecord(server)) {
+      return { ok: false, error: `no MCP server \`${name}\` in ${MCP_FILE}` };
+    }
+    mcpServers[name] = server;
+  }
+  return { ok: true, value: { mcpServers } };
 };
 
 /** Each variable a server reads, and whether it has a default. */

@@ -113,6 +113,12 @@ export type SessionSpec = {
    * only Ork's MCP server, and no memory.
    */
   machineClaude?: boolean;
+  /**
+   * The named servers' `.mcp.json` entries as written, by name, that load
+   * beside Ork's (`mcp:` on a node or `defaults`). Unset means none. Passed to
+   * the driver untouched; never put in an event.
+   */
+  mcpServers?: Record<string, Record<string, unknown>>;
 };
 
 export type SessionUsage = {

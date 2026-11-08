@@ -135,6 +135,13 @@ Claude nodes and `defaults` also take `practices` (caveman, ponytail), on unless
 turned off and inherited down the ownership tree; see
 [built-in practices](./context.md#built-in-practices).
 
+Leaders, workers and `defaults` take `mcp: [name]`: the MCP servers from the
+project's `.mcp.json` the node's sessions load, beside Ork's own (none by
+default). A node's list wins over `defaults` as a whole, so `mcp: []` turns the
+defaults off; a spawned worker takes its template's; agents and sub-agents take
+none ([what a session loads](./runtime.md#what-a-session-loads),
+[ADR-067](../decisions/ADR-067-nodes-name-mcp-servers.md)).
+
 Leaders and workers (and agents) take `session: fresh | resume`: whether a node
 that runs again continues its last session; by default a leader resumes and a
 worker starts fresh ([scheduler](./scheduler.md#loops),

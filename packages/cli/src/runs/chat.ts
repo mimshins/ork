@@ -21,6 +21,7 @@ import {
   runDirOf,
 } from "@krapht/ork-core";
 import { readyDriver } from "@krapht/ork-integrations";
+import { namedMcpEntries } from "@krapht/ork-nodes";
 import type { Driver } from "@krapht/ork-schema";
 
 import { loadWorkflow } from "../commands/validate.ts";
@@ -118,6 +119,8 @@ export const resumeChat = async (
     ...(template === undefined ? {} : { template }),
   });
   if (!plan.ok) return plan.error;
+  const servers = namedMcpEntries(run.project, plan.mcp);
+  if (!servers.ok) return servers.error;
   // The session's own driver; one recorded without it takes the one ready.
   let driver = options.driver ?? session.driver ?? plan.driver;
   if (driver === undefined) {
@@ -139,6 +142,7 @@ export const resumeChat = async (
   const started = runtime.start(
     {
       ...plan.spec,
+      ...servers.value,
       resume: session.sessionId,
       prompt: options.body,
       ...machineClaudeOf(events),

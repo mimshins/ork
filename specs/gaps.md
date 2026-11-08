@@ -55,9 +55,11 @@ review:
 - **G14 · A session's permissions are broad.** Sessions run in Claude Code's
   default mode; a bare `Edit` or `Write` allow isn't held to the node's
   worktree, and a deny rule matches by prefix, so `HOME=… ork …` gets past it.
-- **G15 · A run has no browser.** Ork doesn't load the user's Claude Code
-  settings, so a node can't use browser tools: an audit or QA node is held to
-  static checks and tests.
+- **G15 · A session server's program isn't checked before the run.** A node gets
+  a browser by naming it (`mcp:`,
+  [ADR-067](../decisions/ADR-067-nodes-name-mcp-servers.md)), but the pre-flight
+  "program not installed" check (`mcpProblems`) covers `mcp.call` servers only,
+  so a missing `npx` shows when the session starts, as Claude reports it.
 - **G16 · `ork context explain` shows only the system prompt.** Not the brief's
   size, nor the node's model, budget or permissions.
 - **G17 · A project can't set `verify:` as a default.** Project defaults take a
@@ -98,10 +100,6 @@ review:
   the leader's last total; (3) the fork's tools and system prompt differ from
   the leader's, so each question reads the leader's session uncached; (4) that
   the structured report still comes back with `--tools Read,Grep,Glob`.
-- **G26 · A node or project can't name the MCP servers it needs.**
-  [Sessions](./runtime.md#what-a-session-loads) load only Ork's, or all of the
-  machine's with `--machine-claude`; an `mcp:` on a node or the project could
-  load just those it names (a browser, for G15).
 - **G27 · A permission is answered one call at a time.** Each Bash command asks
   again (six in run 0427fb01); nothing allows a tool for the rest of a node.
 - **G28 · An experiment has no way out.** Nothing promotes or removes one.

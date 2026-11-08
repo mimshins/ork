@@ -184,6 +184,13 @@ export const PracticesSchema = z.strictObject({
 export type Practices = z.infer<typeof PracticesSchema>;
 export const TurnsSchema = z.number().int().positive();
 
+export const McpNamesSchema = z
+  .array(z.string().min(1))
+  .optional()
+  .describe(
+    "MCP servers from the project's `.mcp.json` this node's sessions load, beside Ork's own. Default: none.",
+  );
+
 export const ToolRulesSchema = z.strictObject({
   allow: z.array(z.string()).optional(),
   deny: z.array(z.string()).optional(),

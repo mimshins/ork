@@ -153,6 +153,14 @@
           },
           "additionalProperties": false
         },
+        "mcp": {
+          "description": "MCP servers from the project's `.mcp.json` this node's sessions load, beside Ork's own. Default: none.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
         "before": {
           "description": "A program to run in the node's checkout before its session starts: if it fails, the node fails and no model turn is spent. Its prompt can read {{before.stdout}}, {{before.json.*}}.",
           "type": "object",

@@ -496,6 +496,76 @@ const machineOfSpecs = async (machine: { machineClaude?: boolean }) => {
   return specs.map(spec => spec.machineClaude);
 };
 
+/** The specs an executor started for `node` in a project with `file`. */
+const specsWithMcp = async (node: Node, file: string | undefined) => {
+  const specs: SessionSpec[] = [];
+  const execute = claudeExecutor({
+    runtimeFor: driver =>
+      Promise.resolve({
+        driver,
+        start: spec => {
+          specs.push(spec);
+          return {
+            events: finishedPassing(),
+            send: () => {},
+            interrupt: () => Promise.resolve(),
+          };
+        },
+      }),
+    readyDriver: "sdk",
+    inPlace: true,
+  });
+  const ctx = context("design", node);
+  writeMcpFile(ctx.projectRoot, file);
+  const result = await execute(ctx);
+  return { specs, result, events: ctx.events };
+};
+
+const writeMcpFile = (root: string, file: string | undefined): void => {
+  if (file !== undefined) writeFileSync(path.join(root, ".mcp.json"), file);
+};
+
+describe("a Claude node's MCP servers", () => {
+  const entry = { command: "npx", env: { TOKEN: "${SECRET_TOKEN}" } };
+  const file = JSON.stringify({ mcpServers: { browser: entry, other: {} } });
+
+  it("are the named entries, as written, and none of the file's others", async () => {
+    const { specs } = await specsWithMcp(
+      { type: "claude.worker", prompt: "Go", mcp: ["browser"] },
+      file,
+    );
+    expect(specs[0]?.mcpServers).toEqual({ browser: entry });
+  });
+
+  it("are unset for a node that names none", async () => {
+    const { specs } = await specsWithMcp(
+      { type: "claude.worker", prompt: "Go" },
+      file,
+    );
+    expect(specs[0]?.mcpServers).toBeUndefined();
+  });
+
+  it("keep their definitions out of the events", async () => {
+    const { events } = await specsWithMcp(
+      { type: "claude.worker", prompt: "Go", mcp: ["browser"] },
+      file,
+    );
+    expect(JSON.stringify(events)).not.toContain("SECRET_TOKEN");
+  });
+
+  it("fail the node when the file lost the server after the checks", async () => {
+    const { result, specs } = await specsWithMcp(
+      { type: "claude.worker", prompt: "Go", mcp: ["gone"] },
+      file,
+    );
+    expect(result).toMatchObject({
+      ok: false,
+      error: "not started: no MCP server `gone` in .mcp.json",
+    });
+    expect(specs).toEqual([]);
+  });
+});
+
 describe("Claude nodes", () => {
   it("keeps the session when a late turn never started one", () => {
     const first = outcome(null);

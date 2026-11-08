@@ -47,6 +47,8 @@ nodes:
         blockers: integer
         majors: integer
         findings: string
+    mcp:
+      - chrome-devtools
     before:
       script: |-
         pnpm install --frozen-lockfile --prefer-offline >&2

@@ -14,6 +14,7 @@ import {
   DurationSchema,
   EffortSchema,
   IsolationSchema,
+  McpNamesSchema,
   ModelSchema,
   NodeIdSchema,
   nodeBaseFields,
@@ -105,6 +106,7 @@ const claudeFields = {
 export const ClaudeLeaderNodeSchema = z.strictObject({
   type: z.literal("claude.leader"),
   ...claudeFields,
+  mcp: McpNamesSchema,
   ...notifyFields,
   ...stepFields,
   maxWorkers: z
@@ -124,6 +126,7 @@ export const ClaudeLeaderNodeSchema = z.strictObject({
 export const ClaudeWorkerNodeSchema = z.strictObject({
   type: z.literal("claude.worker"),
   ...claudeFields,
+  mcp: McpNamesSchema,
   ...notifyFields,
   ...stepFields,
 });

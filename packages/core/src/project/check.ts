@@ -17,10 +17,10 @@ import {
 import { loadAgents } from "../agents/catalog.ts";
 import { contextDiagnostics } from "../context/resolve.ts";
 import { experimentDiagnostics } from "../experiments.ts";
-import { compileWorkflow } from "../graph/compile.ts";
-import type { CompiledGraph } from "../graph/types.ts";
+import { type CompiledGraph, compileWorkflow } from "../graph/compile.ts";
 import { walkWorkflow, type WalkResult } from "../run/walk.ts";
 import { checkCallTargets } from "./calls.ts";
+import { mcpFileOptions } from "./mcp-file.ts";
 import { placeFiles, type ProjectPlace } from "./place.ts";
 import { loadProject } from "./rules.ts";
 
@@ -75,6 +75,7 @@ export const checkWorkflowText = (
     workflowDir,
     projectRoot,
     ...(loaded.project === undefined ? {} : { project: loaded.project }),
+    ...mcpFileOptions(projectRoot),
   });
   const { graph } = compiled;
   const diagnostics: Diagnostic[] = [];

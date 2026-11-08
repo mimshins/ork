@@ -985,6 +985,7 @@ export const NODES = [
       "A session's driver: `--driver`, else the node's or its agent's, else the workflow's or project's `defaults.driver`, else the one ready on this machine when the run started (`cli` when both are). A committed workflow needn't name one.",
       "`SessionSpec.fork` with `resume` starts a copy of a session and leaves the original as it was; a leader's fork answers its children's questions.",
       "Every session starts clean of the machine's Claude setup: no MCP server but Ork's, no auto-memory, the per-machine prompt sections out of the cached prefix. `ork run --machine-claude` loads the machine's MCP servers and memory for a run; the run records it, and resumes, chats and called runs keep it.",
+      "A leader or worker, or `defaults`, names the MCP servers it needs (`mcp: [name]`) from the project's `.mcp.json`: only those load beside Ork's, still strict, and their tools are allowed; a question fork loads none.",
     ],
     docs: [
       RUNTIME.port,
@@ -993,6 +994,7 @@ export const NODES = [
       RUNTIME.driverRule,
       RUNTIME.loads,
       RUNTIME.cleanAdr,
+      RUNTIME.namedMcpAdr,
       RUNTIME.tests,
       QUESTIONS.forkTests,
       DESIGN.runtime,

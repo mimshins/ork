@@ -334,6 +334,17 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "named-mcp-servers",
+        title: "A node names its MCP servers",
+        status: "active",
+        detail:
+          "A leader, a worker or `defaults` takes `mcp: [name]`: those servers from the project's `.mcp.json` load beside Ork's, still under strict MCP, on both drivers, and every other node stays clean. A name the file lacks is a validate error. `feature`'s design and a11y and `qa-pass`'s qa get `chrome-devtools` (ADR-067).",
+        docs: [
+          "decisions/ADR-067-nodes-name-mcp-servers.md",
+          "specs/runtime.md#what-a-session-loads",
+        ],
+      },
+      {
         id: "canary",
         title: "Canary snapshots",
         status: "active",

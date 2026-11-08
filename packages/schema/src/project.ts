@@ -13,6 +13,7 @@ import {
   DriverSchema,
   EffortSchema,
   IsolationSchema,
+  McpNamesSchema,
   ModelSchema,
   PracticesSchema,
   QuotasSchema,
@@ -36,6 +37,7 @@ export const DefaultsSchema = z.strictObject({
     "For tool and Claude nodes that set none; a gate's own timeout is separate.",
   ),
   practices: PracticesSchema.optional(),
+  mcp: McpNamesSchema,
   before: stepFields.before,
 });
 export type Defaults = z.infer<typeof DefaultsSchema>;

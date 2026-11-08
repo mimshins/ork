@@ -119,6 +119,9 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `env.code`               | warning  | a run's data sets a name that changes which code runs (`PATH`)             |
 | `env.plain`              | warning  | `plainEnv` names what `env:` doesn't read, or looks like a secret          |
 | `template.env`           | error    | `{{env.*}}` outside a tool node's `env:`, or an edge's `when:`             |
+| `mcp.unknown`            | error    | a Claude node's `mcp:` names a server `.mcp.json` doesn't have             |
+| `mcp.reserved`           | error    | a Claude node's `mcp:` names `ork`, Ork's own server                       |
+| `mcp.malformed`          | error    | a Claude node's `mcp:` names a `.mcp.json` entry that can't load           |
 | `ref.skill`              | error    | a skill reference that resolves to nothing (context compiler)              |
 | `ref.context`            | error    | a context file that does not exist (context compiler)                      |
 | `template.syntax`        | error    | a template does not parse                                                  |

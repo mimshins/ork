@@ -195,6 +195,8 @@ nodes:
                 type: array
                 items:
                   type: string
+    mcp:
+      - chrome-devtools
     before:
       command: pnpm install --frozen-lockfile --prefer-offline
       timeout: 10m
@@ -202,7 +204,7 @@ nodes:
     type: claude.worker
     parent: build
     agent: a11y-auditor
-    prompt: Audit the uncommitted UI change in your owner's checkout (git status, git diff HEAD) against WCAG 2.2 AA. This session has no browser, so audit the changed components' markup, names and roles, focus handling, keyboard map, tokens and their contrast pairings, and run the UI's tests (npx vitest run packages/ui). Report pass, or changes_requested with every finding in `findings` (surface, criterion, how it fails, the fix), and list what needs a browser to check.
+    prompt: Audit the uncommitted UI change in your owner's checkout (git status, git diff HEAD) against WCAG 2.2 AA. Open the changed surfaces in the browser tools for axe, a keyboard pass, zoom and contrast, and audit the changed components' markup, names and roles, focus handling, keyboard map, tokens and their contrast pairings, and run the UI's tests (npx vitest run packages/ui). Report pass, or changes_requested with every finding in `findings` (surface, criterion, how it fails, the fix), and list anything you couldn't check.
     model: sonnet
     isolation: readonly
     budgetUsd: 2
@@ -211,6 +213,8 @@ nodes:
     output:
       schema:
         findings: string
+    mcp:
+      - chrome-devtools
   implement:
     type: claude.worker
     parent: build

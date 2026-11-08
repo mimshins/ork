@@ -59,6 +59,7 @@ export const buildCliArgs = (
 ): string[] => {
   const mcpConfig = {
     mcpServers: {
+      ...spec.mcpServers,
       [ORK_SERVER]: {
         type: "http",
         url: mcp.url,

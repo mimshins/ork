@@ -45,6 +45,7 @@ export * from "./practices/practices.ts";
 export * from "./project/builtin-files.ts";
 export * from "./project/plain-files.ts";
 export * from "./project/move.ts";
+export * from "./project/mcp-file.ts";
 export * from "./project/place.ts";
 export * from "./project/rules.ts";
 export * from "./project/templates.ts";

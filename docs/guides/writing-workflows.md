@@ -102,6 +102,8 @@ read the report through templates and conditions.
   ([Worktrees and isolation](./worktrees.md)).
 - `model`, `effort` and the budgets are in
   [Models, effort and budgets](./models-and-budgets.md).
+- `mcp` names the MCP servers from `.mcp.json` a node's sessions load
+  ([what a session loads](./running-workflows/running-and-answering.md#what-a-session-loads)).
 - `skills` and `context` are in [Skills and context](./skills-and-context.md).
 - `verify:` and `before:` run a program after or before the session
   ([steps around a session](./scripts/steps.md)).

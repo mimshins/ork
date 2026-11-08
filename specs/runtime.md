@@ -116,7 +116,8 @@ either driver) starts **clean of the machine's Claude setup**
   `strictMcpConfig`), so neither `~/.claude.json`'s servers, nor those
   registered for the folder, nor a project's `.mcp.json` or plugins' servers
   load. Their set changing mid-session rewrote the prompt cache: the same 4-turn
-  task on `claude` 2.1.319 cost $0.113 loose and $0.032 strict.
+  task on `claude` 2.1.319 cost $0.113 loose and $0.032 strict. The servers a
+  node names load too (below).
 - **No auto-memory**: `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` in the session's
   environment, so the machine user's notes under
   `~/.claude/projects/<folder>/memory/` stay out.
@@ -135,6 +136,17 @@ run recorded before it resumes clean. `--node` takes it too. The Run workflow
 form's "Use this machine's Claude setup" box adds it ([server](./server.md)). A
 leader's question fork stays strict either way: it sets `strictMcp` itself
 ([leader questions](./messaging/leader-questions.md)).
+
+**A node names the servers it needs** (`mcp:` on a leader, a worker or
+`defaults`, [ADR-067](../decisions/ADR-067-nodes-name-mcp-servers.md),
+[tests](../packages/runtime-claude/test/mcp-servers.test.ts)). `SessionSpec`'s
+`mcpServers` holds those entries of the project's `.mcp.json`, as written, and
+both drivers add them beside Ork's: the CLI's `--mcp-config`, the SDK's
+`mcpServers`. Strict stays on, so nothing else loads. Naming a server adds
+`mcp__<name>` to the node's allow list (deny rules win). `${VAR}` stays text:
+`claude` expands it on either driver, because the SDK passes these entries to it
+as `--mcp-config`. The sessions the CLI starts itself (`ork run --node`,
+`ork chat`) load them too. A leader's question fork loads none.
 
 ## Ork's MCP server (CLI driver)
 

@@ -23,6 +23,7 @@ import {
 import { beforeOf, type Driver } from "@krapht/ork-schema";
 
 import { resultOf } from "./claude-result.ts";
+import { namedMcpEntries } from "./mcp-servers.ts";
 import { ownerFirst } from "./owner-asks.ts";
 import {
   afterLateTurn,
@@ -164,7 +165,9 @@ export const claudeExecutor =
         error: plan.error,
       };
     }
-    const spec = specFor(plan.spec, context);
+    const servers = namedMcpEntries(context.projectRoot, plan.mcp);
+    if (!servers.ok) return notStarted(servers.error);
+    const spec = { ...specFor(plan.spec, context), ...servers.value };
     if (options.machineClaude === true) spec.machineClaude = true;
     const driver = sessionDriver({
       override: options.driver,

@@ -26,7 +26,7 @@ import {
   startControl,
   userMessageText,
 } from "@krapht/ork-core";
-import { resultOf } from "@krapht/ork-nodes";
+import { namedMcpEntries, resultOf } from "@krapht/ork-nodes";
 import { beforeOf, type Driver } from "@krapht/ork-schema";
 
 import {
@@ -131,6 +131,8 @@ export const runNode = async (
     pluginDir: path.join(runDir, "plugins", options.nodeId),
   });
   if (!plan.ok) return failed([plan.error]);
+  const servers = namedMcpEntries(projectRoot, plan.mcp);
+  if (!servers.ok) return failed([servers.error]);
   // Before the session starts: the driver ready here, when nothing names one.
   const named = sessionDriver({ override: options.driver, named: plan.driver });
   const ready =
@@ -231,12 +233,15 @@ export const runNode = async (
 
   const runtime = await options.runtime(driver);
   if (options.machineClaude === true) plan.spec.machineClaude = true;
-  const session = runtime.start(plan.spec, {
-    human: control.human,
-    ...(graph === null
-      ? {}
-      : { feedback: createFeedback({ graph, onEvent: record }).port(id) }),
-  });
+  const session = runtime.start(
+    { ...plan.spec, ...servers.value },
+    {
+      human: control.human,
+      ...(graph === null
+        ? {}
+        : { feedback: createFeedback({ graph, onEvent: record }).port(id) }),
+    },
+  );
   started.resolve(session);
   options.onSession?.(session);
 
