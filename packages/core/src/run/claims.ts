@@ -88,7 +88,14 @@ export const createClaims = ({
   notify: (node: string, text: string) => void;
 }): ClaimRegistry => {
   const writers = writersOf(graph);
-  const contended = writers.size + spawnable(graph, writers) > 1;
+  // A fanned writer's items run beside each other.
+  const fanned = [...writers].filter(id => {
+    const node = graph.nodes.get(id)?.node;
+    return (
+      node !== undefined && "forEach" in node && node.forEach !== undefined
+    );
+  }).length;
+  const contended = writers.size + fanned + spawnable(graph, writers) > 1;
   /** Resource -> the node holding it. */
   const holders = new Map<string, string>();
   /** Held resource -> the nodes refused because of it. */

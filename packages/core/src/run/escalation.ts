@@ -30,8 +30,10 @@ export const eachQuestion = (
   node: string,
   count: number,
   maxItems: number,
+  round = 1,
 ): OwnerQuestion => ({
-  question: `The list of ${node} has ${String(count)} items, more than its maxItems of ${String(maxItems)}. What now?`,
+  // A later round says so: a resume replays answers by this text.
+  question: `The list of ${node}${round > 1 ? ` (round ${String(round)})` : ""} has ${String(count)} items, more than its maxItems of ${String(maxItems)}. What now?`,
   options: [
     { id: EACH_CHOICES.stop, description: "Stop the run" },
     {
@@ -126,8 +128,9 @@ export const createLoops = (options: LoopOptions) => {
     node: string,
     list: unknown[],
     maxItems: number,
+    round: number,
   ): Promise<unknown[] | null> => {
-    const question = eachQuestion(node, list.length, maxItems);
+    const question = eachQuestion(node, list.length, maxItems, round);
     const choice =
       (await options.bus?.askOwner(node, question)) ??
       (await options.human.ask({ nodeId: node, ...question }));

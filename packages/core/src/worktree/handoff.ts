@@ -138,7 +138,8 @@ export const stillThere = async (
  * A later run (a loop, another delegation) starts from the owner's work. With
  * commits, the branch fast-forwards when it has nothing of its own; under
  * `commit: never`, a child whose work reached its owner takes the owner's
- * state. Returns whether it was synced that way.
+ * state. With `merge: patch` the next patch starts from what was handed over.
+ * Returns whether the worktree's starting point moved.
  */
 export const refreshWorktree = async (
   rules: ResolvedGitRules,
@@ -149,7 +150,9 @@ export const refreshWorktree = async (
   if (rules.commit !== "never") {
     if (host.branch !== undefined)
       await fastForward(worktree.path, host.branch);
-    return false;
+    if (rules.merge !== "patch" || !handedOver) return false;
+    worktree.snapshot = await headTree(worktree.path);
+    return true;
   }
   if (!handedOver) return false;
   worktree.snapshot = await syncFrom(worktree.path, host.path);

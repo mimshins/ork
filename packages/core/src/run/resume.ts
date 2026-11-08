@@ -81,7 +81,8 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
   const loopAnswers: ResumeState["loopAnswers"] = [];
   /** Decision or owner-question id -> its question, when it is about a loop. */
   const loopQuestions = new Map<string, string>();
-  let loopPending = false;
+  /** Loops and lists out of bounds whose question hasn't been opened yet. */
+  let loopPending = 0;
   let inputs: Inputs = {};
   let settings: RunSettings = {};
   let succeeded = false;
@@ -169,22 +170,22 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
       continue;
     }
     if (event.type === "loop.exhausted" || event.type === "each.exceeded") {
-      loopPending = true;
+      loopPending += 1;
       continue;
     }
     if (event.type === "decision.opened") {
-      if (loopPending) loopQuestions.set(event.decision, event.question);
-      loopPending = false;
+      if (loopPending > 0) loopQuestions.set(event.decision, event.question);
+      loopPending = Math.max(0, loopPending - 1);
       continue;
     }
     if (event.type === "owner.asked") {
-      if (loopPending) loopQuestions.set(event.question, event.text);
-      loopPending = false;
+      if (loopPending > 0) loopQuestions.set(event.question, event.text);
+      loopPending = Math.max(0, loopPending - 1);
       continue;
     }
     if (event.type === "owner.unanswered") {
       // The same loop's question goes to the human next.
-      loopPending = true;
+      loopPending += 1;
       continue;
     }
     if (event.type === "decision.answered" || event.type === "owner.answered") {

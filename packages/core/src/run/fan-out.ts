@@ -34,6 +34,7 @@ type FanOutDeps = StartHooks & {
       node: string,
       list: unknown[],
       maxItems: number,
+      round: number,
     ) => Promise<unknown[] | null>;
   };
 };
@@ -82,7 +83,7 @@ const entryOf = (
     field,
     Object.hasOwn(json, field) ? json[field] : output[field],
   ]);
-  const own = ["summary", "branch", "worktree"].map(
+  const own = ["summary", "branch", "worktree", "merge"].map(
     (field): [string, unknown] => [field, output[field]],
   );
   return Object.fromEntries(
@@ -90,7 +91,13 @@ const entryOf = (
   );
 };
 
-const statusOf = ({ ok, output }: NodeResult): string => {
+/** Whether an item passed but its work could not reach its owner. */
+const mergeFailed = ({ output }: NodeResult): boolean =>
+  isRecord(output["merge"]) && output["merge"]["ok"] === false;
+
+const statusOf = (result: NodeResult): string => {
+  if (mergeFailed(result)) return "fail";
+  const { ok, output } = result;
   const status = output["status"];
   if (typeof status === "string") return status;
   return ok ? "pass" : "fail";
@@ -160,7 +167,12 @@ export const createFanOut = (deps: FanOutDeps) => {
         count: list.length,
         maxItems: forEach.maxItems,
       });
-      const chosen = await deps.loops.overList(id, list, forEach.maxItems);
+      const chosen = await deps.loops.overList(
+        id,
+        list,
+        forEach.maxItems,
+        round,
+      );
       if (chosen === null) {
         const reason = `the list of ${id} has ${String(list.length)} items, over maxItems ${String(forEach.maxItems)}`;
         return { ...failure(reason), limited: reason, stopsAs: "failed" };
@@ -198,6 +210,8 @@ export const createFanOut = (deps: FanOutDeps) => {
         statuses[index] = statusOf(result);
         if (!result.ok) {
           failures.push(`${itemId}: ${result.error ?? "failed"}`);
+        } else if (mergeFailed(result)) {
+          failures.push(`${itemId}: its work could not be merged`);
         }
       } finally {
         if (session) slots.release();

@@ -21,6 +21,7 @@ import {
   type RunEvent,
   worktreePath,
 } from "../src/index.ts";
+import { refreshWorktree } from "../src/worktree/handoff.ts";
 import {
   compile,
   repo,
@@ -31,6 +32,12 @@ import {
 } from "./fixtures/git.ts";
 
 const ITEMS = "[a, b, c]";
+
+/** Each time the fanned node `build` finished. */
+const buildFinished = (events: readonly RunEvent[]): RunEvent[] =>
+  events.filter(
+    event => event.type === "node.finished" && event.id === "build",
+  );
 
 /** A worker with `forEach`, alone or owned by a leader, under these rules. */
 const fanned = (options: {
@@ -264,6 +271,11 @@ describe("a fanned node with an owner", () => {
       readFileSync(path.join(lead, "src/app.ts"), "utf8"),
     );
     expect(resultsOf(events)).toHaveLength(1);
+    // The owner is missing that item's work, so the node did not succeed.
+    const finished = buildFinished(events);
+    expect(finished).toMatchObject([{ ok: false }]);
+    expect(JSON.stringify(finished)).toContain('"merge":{"ok":false');
+    expect(JSON.stringify(finished)).toContain('"fail"');
   });
 
   it("applies each item as a patch under commit: never, one at a time", async () => {
@@ -383,5 +395,34 @@ describe("resuming a fanned node", () => {
     expect(again.cwd).toBe(one.cwd);
     expect(again.cwd).toBe(worktreePath(root, "r1", "build.1"));
     expect(second).toEqual([]);
+  });
+});
+
+describe("a worktree that runs again under merge: patch", () => {
+  type Rules = Parameters<typeof refreshWorktree>[0];
+  const PATCH: Rules = {
+    commit: "auto",
+    merge: "patch",
+    base: "HEAD",
+    branch: "b",
+    worktrees: "w",
+  };
+
+  it("starts its next patch from what it handed over", async () => {
+    const root = repo();
+    const worktree = { path: root, snapshot: "before" };
+    await expect(
+      refreshWorktree(PATCH, worktree, { path: root }, true),
+    ).resolves.toBe(true);
+    expect(worktree.snapshot).toBe(sh(root, "rev-parse", "HEAD^{tree}").trim());
+  });
+
+  it("keeps its starting point when nothing was handed over", async () => {
+    const root = repo();
+    const worktree = { path: root, snapshot: "before" };
+    await expect(
+      refreshWorktree(PATCH, worktree, { path: root }, false),
+    ).resolves.toBe(false);
+    expect(worktree.snapshot).toBe("before");
   });
 });

@@ -368,3 +368,56 @@ describe("git names", () => {
     ]);
   });
 });
+
+const owned = (isolation: string, edges: string) => `nodes:
+  lead: { type: claude.leader, prompt: l, isolation: ${isolation} }
+  build:
+    type: claude.worker
+    parent: lead
+    prompt: Go
+    forEach: { items: [a, b] }
+${edges}`;
+
+const continued = (limit: string) => `nodes:
+  plan: { type: claude.worker, prompt: p }
+  build:
+    type: claude.worker
+    prompt: Go
+    isolation: continue
+    forEach: { items: [a, b]${limit} }
+edges:
+  - plan -> build
+`;
+
+describe("where a fanned node sits", () => {
+  it("refuses items that would share one worktree at once", () => {
+    expect(codesOf(continued(""))).toContain("error:forEach.continue");
+    expect(codesOf(continued(", maxParallel: 1"))).not.toContain(
+      "error:forEach.continue",
+    );
+  });
+
+  it("refuses a fanned child nothing can run", () => {
+    expect(codesOf(owned("worktree", ""))).toContain("error:forEach.unreached");
+  });
+
+  it("refuses items whose owner only starts after them", () => {
+    const body = owned(
+      "worktree",
+      "  plan: { type: claude.worker, prompt: p }\nedges:\n  - plan -> build\n  - build -> lead\n",
+    );
+    expect(codesOf(body)).toContain("error:forEach.owner-order");
+  });
+
+  it("takes an owner that runs first, or has no worktree to merge into", () => {
+    const first = "edges:\n  - lead -> build\n";
+    expect(codesOf(owned("worktree", first))).not.toContain(
+      "error:forEach.owner-order",
+    );
+    const none = owned(
+      "readonly",
+      "  plan: { type: claude.worker, prompt: p }\nedges:\n  - plan -> build\n",
+    );
+    expect(codesOf(none)).not.toContain("error:forEach.owner-order");
+  });
+});

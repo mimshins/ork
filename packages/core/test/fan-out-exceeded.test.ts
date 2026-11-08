@@ -18,6 +18,7 @@ import {
   type RunEvent,
   startRun,
 } from "../src/index.ts";
+import { eachQuestion } from "../src/run/escalation.ts";
 
 const LINES = [
   "nodes:",
@@ -294,5 +295,54 @@ describe("a list over its maxItems", () => {
     expect(asked).toEqual([]);
     expect(ran).toEqual(["build.0", "build.1"]);
     expect(result.status).toBe("succeeded");
+  });
+});
+
+const opened = (decision: string, question: string): RunEvent => ({
+  type: "decision.opened",
+  decision,
+  kind: "question",
+  node: "build",
+  question,
+  options: [],
+});
+const over = (node: string): RunEvent => ({
+  type: "each.exceeded",
+  node,
+  round: 1,
+  count: 4,
+  maxItems: 2,
+});
+const answered = (decision: string, answer: string): RunEvent => ({
+  type: "decision.answered",
+  node: "build",
+  decision,
+  answer,
+  by: "terminal",
+});
+
+describe("the question about a list over its cap", () => {
+  it("names a later round, so a resume can't reuse another's answer", () => {
+    expect(eachQuestion("build", 4, 2).question).toBe(
+      "The list of build has 4 items, more than its maxItems of 2. What now?",
+    );
+    expect(eachQuestion("build", 4, 2, 2).question).toContain(
+      "The list of build (round 2) has",
+    );
+  });
+
+  it("keeps both answers of two lists over their caps at once", () => {
+    const state = resumeState([
+      over("a"),
+      over("b"),
+      opened("d1", "a?"),
+      opened("d2", "b?"),
+      answered("d1", "all"),
+      answered("d2", "first"),
+    ]);
+    expect(state.loopAnswers).toEqual([
+      { question: "a?", answer: "all" },
+      { question: "b?", answer: "first" },
+    ]);
   });
 });

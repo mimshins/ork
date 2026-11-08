@@ -97,6 +97,16 @@ describe("who gets the tools", () => {
     expect(claims.port("fix-2", "fix", "/r").contended()).toBe(true);
     expect(claims.port("lead", undefined, "/r").contended()).toBe(false);
   });
+
+  it("counts a fanned writer's items as writers beside each other", () => {
+    const { claims } = setup(
+      compile([
+        "nodes:",
+        "  build: { type: claude.worker, prompt: b, isolation: shared, forEach: { items: [a, b] } }",
+      ]),
+    );
+    expect(claims.port("build.0", "build", "/r").contended()).toBe(true);
+  });
 });
 
 /** The harness instructions of a node of PAIR, given its claims. */

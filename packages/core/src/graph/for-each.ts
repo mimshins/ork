@@ -15,6 +15,7 @@ import { ITEM_ROOTS, parseTemplate, templatePath } from "../expr/evaluate.ts";
 import { collectPaths } from "../expr/parse.ts";
 import { error, warning } from "./diagnostics.ts";
 import { ancestorsOf } from "./flow.ts";
+import { checkPlace } from "./for-each-place.ts";
 import { checkAbsolute, describePath } from "./ref-paths.ts";
 import { type NodeSays, nodeSays } from "./says.ts";
 import { ownersOf } from "./tree.ts";
@@ -214,7 +215,11 @@ export const checkForEach = (
       "skills" in node ? checkFiles(id, "skills", node.skills ?? []) : [],
     );
     const each = forEachOf(node);
-    if (each === undefined || "items" in each) return files;
+    if (each === undefined) return files;
+    const placed = files.concat(
+      checkPlace(workflow, edges, id, node, each.maxParallel),
+    );
+    if ("items" in each) return placed;
     const path = ["nodes", id, "forEach", "from"];
     const segments = templatePath(each.from);
     const found =
@@ -227,7 +232,7 @@ export const checkForEach = (
             ),
           ]
         : checkSource(workflow, edges, says, id, segments, path);
-    return files.concat(found);
+    return placed.concat(found);
   });
 };
 

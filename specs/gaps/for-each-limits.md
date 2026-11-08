@@ -55,3 +55,7 @@ for the second run (the Monitor and the Builder).
 - **L210 · A cut-off Claude item is tested at core level only.** The kill and
   resume of an item mid-session is covered on stand-ins; no CLI-level test
   restarts a real process.
+- **L211 · An item can finish before its owner has a worktree.** When an owner
+  and its fanned child start together, an item that finishes before the owner's
+  worktree exists is not merged, and the node still succeeds. `ork validate`
+  refuses only an owner that can't start until the child has finished.
