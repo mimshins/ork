@@ -30,6 +30,8 @@
   min-height: var(--text-well-min-height);
   overflow-wrap: anywhere;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
   padding: var(--text-well-padding);
   white-space: pre-wrap;
 }

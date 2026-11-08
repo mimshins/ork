@@ -31,6 +31,8 @@
   max-height: var(--output-well-max-height);
   min-height: var(--output-well-min-height);
   overflow: auto;
+  overscroll-behavior: contain;
+  position: relative;
   overflow-wrap: anywhere;
   padding: var(--output-well-padding);
   white-space: pre-wrap;

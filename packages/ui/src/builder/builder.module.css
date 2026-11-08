@@ -111,6 +111,8 @@
   min-height: 0;
   flex-direction: var(--builder-body-flex-direction, revert);
   overflow-y: var(--builder-body-overflow-y, revert);
+  overscroll-behavior: contain;
+  position: relative;
 }
 
 .palette,
@@ -124,7 +126,9 @@
   border-radius: var(--builder-palette-radius);
   min-height: 0;
   overflow-y: var(--builder-palette-overflow-y);
+  overscroll-behavior: contain;
   padding: var(--builder-palette-padding);
+  position: relative;
 }
 
 .palette,
@@ -192,6 +196,8 @@
 
   max-height: var(--builder-problems-max-height);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
 }
 
 .problemsHead {

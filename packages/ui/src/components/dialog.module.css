@@ -51,6 +51,7 @@
   max-width: var(--dialog-max-width);
   overflow-wrap: anywhere;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--dialog-padding);
   position: fixed;
   top: var(--dialog-top);

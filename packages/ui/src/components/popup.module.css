@@ -30,6 +30,8 @@
   min-width: var(--popup-min-width);
   outline: none;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
   padding: var(--popup-padding);
   transition: var(--popup-transition);
   opacity: var(--popup-opacity, revert);

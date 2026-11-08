@@ -28,6 +28,8 @@
   gap: var(--context-panel-gap);
   height: 100%;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
   scroll-padding-block-start: var(--context-panel-scroll-padding-block-start);
 }
 

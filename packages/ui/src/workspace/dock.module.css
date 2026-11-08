@@ -189,6 +189,8 @@
 .body {
   height: 100%;
   overflow: auto;
+  overscroll-behavior: contain;
+  position: relative;
 }
 
 /* The panel's name for a screen reader's list of headings; the tab shows it. */

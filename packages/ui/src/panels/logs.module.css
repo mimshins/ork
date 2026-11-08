@@ -17,6 +17,8 @@
   height: 100%;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
 }
 
 .tools {
@@ -96,6 +98,8 @@
   min-height: var(--logs-list-min-height);
   overflow-anchor: none;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
   padding: var(--logs-list-padding);
 }
 
@@ -196,6 +200,8 @@
   margin: 0;
   max-height: var(--logs-detail-max-height);
   overflow: auto;
+  overscroll-behavior: contain;
+  position: relative;
   padding: var(--logs-detail-padding);
   white-space: pre-wrap;
   word-break: break-word;

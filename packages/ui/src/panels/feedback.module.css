@@ -17,6 +17,8 @@
   height: 100%;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
 }
 
 .panel:focus-visible {
@@ -48,6 +50,8 @@
   min-height: 0;
   min-width: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
 }
 
 /* Below the list's least height the whole panel scrolls, as one column. */
@@ -471,6 +475,8 @@
   min-height: var(--feedback-preview-min-height);
   overflow-wrap: anywhere;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
   padding: var(--feedback-preview-padding);
   white-space: pre-wrap;
 }

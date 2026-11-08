@@ -123,6 +123,8 @@ footer.bar {
   gap: var(--workspace-stack-gap);
   min-width: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
 }
 
 .stacked {
