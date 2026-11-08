@@ -312,11 +312,29 @@ export const MILESTONES = [
       },
       {
         id: "alpha-channel",
-        title: "Toward 1.0.0: alpha, beta, rc",
-        status: "active",
+        title: "1.0.0-alpha.0",
+        status: "done",
+        date: "2026-11-08",
+        commits: ["68129b3", "6e2d9fc", "7d8c09b", "36dc0e4"],
         detail:
-          "1.0.0 comes through pre-release channels, `alpha`, then `beta`, then `rc`, each Changesets pre mode, and every pre-release is `latest` too. Built: the update check offers the newest version across the `latest`, `alpha`, `beta` and `rc` tags, and a `canary` only to someone running a canary; the release moves `latest` to a just-published pre-release; a workflow needn't name a Claude driver, so `ork init`'s starter names none, and a run takes the one ready on the machine running it. Next, when the maintainer says: pre mode and a major changeset, for `1.0.0-alpha.0`. Later: canary snapshots from `main`, with features behind an opt-in.",
+          "1.0.0 comes through pre-release channels, `alpha`, then `beta`, then `rc`, each Changesets pre mode, and every pre-release is `latest` too. `main` is in pre mode with `alpha`, and 1.0.0-alpha.0 is out: the update check offers the newest version across the `latest`, `alpha`, `beta` and `rc` tags, and a `canary` only to someone running a canary; the release moves `latest` to a just-published pre-release, and fails the run when npm is too slow to list it; a run takes the Claude driver ready on its machine when the workflow names none.",
         docs: ["runbook/development/release.md", "specs/cli/updates.md"],
+      },
+      {
+        id: "canary",
+        title: "Canary snapshots",
+        status: "planned",
+        detail:
+          "Experimental features on `main` behind an opt-in (`experimental: [...]` in the project, or `ORK_EXPERIMENTAL`), off by default and listed by `ork doctor`, from one registry of names. A manual workflow publishes a snapshot from `main` as `1.0.0-canary-<date>-<sha>` under the `canary` tag, never `latest`; the update check already offers it only to someone running a canary.",
+        docs: ["runbook/development/release.md", "specs/cli/updates.md"],
+      },
+      {
+        id: "beta-rc",
+        title: "Beta, rc, then 1.0.0",
+        status: "planned",
+        detail:
+          "When the maintainer says: `changeset pre enter beta`, then `rc`, each release staying `latest` too; `changeset pre exit` gives 1.0.0.",
+        docs: ["runbook/development/release.md"],
       },
     ],
   },
