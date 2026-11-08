@@ -4,6 +4,8 @@
 
 **An orchestration harness for Claude agents that runs on your machine.**
 
+<p align="center"><img src="./assets/demo/ork-demo.gif" alt="An Ork run: the Monitor's live graph above, ork logs -f below" width="800"></p>
+
 Ork lets you design workflows of agent and tool nodes, save them as plain YAML
 next to your code, and run them locally with your own accounts. Think n8n, but
 for agents and engineering tasks:

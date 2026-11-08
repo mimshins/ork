@@ -336,7 +336,9 @@ export const MILESTONES = [
       {
         id: "named-mcp-servers",
         title: "A node names its MCP servers",
-        status: "active",
+        status: "done",
+        date: "2026-11-08",
+        commits: ["0485790"],
         detail:
           "A leader, a worker or `defaults` takes `mcp: [name]`: those servers from the project's `.mcp.json` load beside Ork's, still under strict MCP, on both drivers, and every other node stays clean. A name the file lacks is a validate error. `feature`'s design and a11y and `qa-pass`'s qa get `chrome-devtools` (ADR-067).",
         docs: [
@@ -1045,6 +1047,7 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "a5264d7",
   "bac127c",
   "d1457d6",
   "c465552",
