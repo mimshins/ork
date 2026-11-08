@@ -359,6 +359,8 @@ nodes:
     isolation: continue
     budgetUsd: 2
     maxTurns: 60
+    practices:
+      caveman: false
     tools:
       allow:
         - Edit
