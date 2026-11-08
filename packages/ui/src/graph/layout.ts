@@ -17,6 +17,9 @@ import {
   type GraphLayout,
   LABEL_CHAR,
   LABEL_PADDING,
+  labelHeight,
+  labelLines,
+  loopRoom,
   MARGIN,
   NODE_HEIGHT,
   NODE_WIDTH,
@@ -25,7 +28,6 @@ import {
   type Point,
   RANK_GAP,
   ROW_GAP,
-  shortLabel,
 } from "./types.ts";
 
 /** The space between a stop and what is next to it on a rank. */
@@ -37,11 +39,24 @@ const stopId = (edge: LaidEdge, rank: number): string =>
 
 const isStop = (id: string): boolean => id.startsWith("\0");
 
-/** How far apart two neighbors on a rank must be. */
-const space = (a: string, b: string): number => {
-  const half = (id: string): number => (isStop(id) ? 0 : NODE_HEIGHT / 2);
-  const gap = isStop(a) || isStop(b) ? STOP_GAP : ROW_GAP;
-  return half(a) + half(b) + gap;
+/** How far apart two neighbors on a rank must be, `b` being the lower one. */
+const spaceBetween =
+  (looping: ReadonlyMap<string, number>) =>
+  (a: string, b: string): number => {
+    const half = (id: string): number => (isStop(id) ? 0 : NODE_HEIGHT / 2);
+    const gap = isStop(a) || isStop(b) ? STOP_GAP : ROW_GAP;
+    return half(a) + half(b) + Math.max(gap, looping.get(b) ?? 0);
+  };
+
+/** The room above each node that loops to itself, for its tallest label. */
+const loopRooms = (edges: readonly LaidEdge[]): Map<string, number> => {
+  const rooms = new Map<string, number>();
+  for (const { from, to, label } of edges) {
+    if (from === to) {
+      rooms.set(from, Math.max(rooms.get(from) ?? 0, loopRoom(label)));
+    }
+  }
+  return rooms;
 };
 
 /** Each edge's stops, from its source to its target. */
@@ -85,6 +100,11 @@ const boundsOf = (
   const ys = [
     ...nodes.flatMap(node => [node.y, node.y + node.height]),
     ...edges.flatMap(edge => edge.points.map(point => point.y)),
+    ...edges.flatMap(({ label, labelAt, labelLimit }) => {
+      if (label === undefined || labelAt === undefined) return [];
+      const half = labelHeight(labelLines(label, labelLimit).length) / 2;
+      return [labelAt.y - half, labelAt.y + half];
+    }),
   ];
   return {
     minX: Math.min(...xs),
@@ -136,6 +156,7 @@ export const layoutGraph = (input: GraphInput): GraphLayout => {
     layers[rankOf(id)]?.push(id);
   }
   const links = linksOf(chains, rankOf);
+  const space = spaceBetween(loopRooms(edges));
   const ordered = orderLayers(layers, links);
   const centers = placeLayers(ordered, links, space);
   straighten({
@@ -157,8 +178,10 @@ export const layoutGraph = (input: GraphInput): GraphLayout => {
       rankOf(edge.from) !== rankOf(edge.to)
     ) {
       const gap = Math.min(rankOf(edge.from), rankOf(edge.to));
-      const wanted =
-        shortLabel(edge.label).length * LABEL_CHAR + LABEL_PADDING * 2;
+      const longest = Math.max(
+        ...labelLines(edge.label).map(line => line.length),
+      );
+      const wanted = longest * LABEL_CHAR + LABEL_PADDING * 2;
       gaps.set(gap, Math.max(gaps.get(gap) ?? RANK_GAP, wanted));
     }
   }

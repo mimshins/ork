@@ -15,6 +15,8 @@ import {
   type GraphInput,
   type GraphLayout,
   LABEL_CHAR,
+  labelHeight,
+  labelLines,
   MARGIN,
   type PlacedNode,
   type Point,
@@ -171,6 +173,19 @@ const everyEdgeLevelOrApart = (
     return shared < 16 || new Set(edge.points.map(({ y }) => y)).size === 1;
   });
 
+/** A self-loop's whole label, its longest line's width, and where its top is. */
+const selfLoopLabel = (
+  layout: GraphLayout,
+): { text: string; shownWidth: number; top: number } => {
+  const edge = layout.edges.find(({ from, to }) => from === to);
+  const lines = labelLines(edge?.label ?? "", edge?.labelLimit);
+  return {
+    text: lines.join(" "),
+    shownWidth: Math.max(...lines.map(({ length }) => length)) * LABEL_CHAR,
+    top: (edge?.labelAt?.y ?? 0) - labelHeight(lines.length) / 2,
+  };
+};
+
 describe("the layout", () => {
   it("leaves loops out of the ranking, and draws them going back", () => {
     const layout = layoutGraph({
@@ -202,6 +217,33 @@ describe("the layout", () => {
     expect(layout.edges.map(edge => edge.kind)).toEqual(["back"]);
     expect(topOfFirstEdge(layout)).toBeLessThan(nodeOf(layout, "kit").y);
     expect(topOfFirstEdge(layout)).toBeGreaterThanOrEqual(0);
+  });
+
+  it("keeps a self-loop's label over its card and clear of the card above", () => {
+    const layout = layoutGraph({
+      nodes: [
+        { id: "start", type: "tool.shell" },
+        { id: "above", type: "tool.shell" },
+        { id: "kit", type: "tool.shell" },
+      ],
+      edges: [
+        { from: "start", to: "above" },
+        { from: "start", to: "kit" },
+        {
+          from: "kit",
+          to: "kit",
+          maxRounds: 2,
+          when: "status == 'pass' && coverage == 'partial'",
+        },
+      ],
+    });
+    const kit = nodeOf(layout, "kit");
+    const above = nodeOf(layout, "above");
+    const { text, shownWidth, top } = selfLoopLabel(layout);
+    expect(text).toBe("status == 'pass' && coverage == 'partial'");
+    expect(shownWidth).toBeGreaterThan(0);
+    expect(shownWidth).toBeLessThanOrEqual(kit.width);
+    expect(top).toBeGreaterThan(above.y + above.height);
   });
 
   it("does not hang on a cycle with no maxRounds", () => {

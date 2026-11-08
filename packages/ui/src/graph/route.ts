@@ -9,7 +9,14 @@
 
 import { lanesFor } from "./lanes.ts";
 import type { LaidEdge } from "./ranks.ts";
-import type { EdgeKind, PlacedEdge, PlacedNode, Point } from "./types.ts";
+import {
+  type EdgeKind,
+  LOOP_HEIGHT,
+  LOOP_LABEL_LIMIT,
+  type PlacedEdge,
+  type PlacedNode,
+  type Point,
+} from "./types.ts";
 
 /** An edge's way through the ranks: its two nodes, and a stop on each between. */
 export type Chain = { edge: LaidEdge; stops: string[] };
@@ -27,7 +34,6 @@ export type RouteInput = {
   gapWidth: (rank: number) => number;
 };
 
-const LOOP_HEIGHT = 30;
 const BULGE = 48;
 const MIN_CURVE = 36;
 /** How much of their height two cards must share for a straight edge. */
@@ -91,12 +97,16 @@ const selfLoop = (edge: LaidEdge, node: PlacedNode): PlacedEdge => {
   const left = node.x + node.width * 0.3;
   const right = node.x + node.width * 0.7;
   const top = node.y - LOOP_HEIGHT;
-  return curved(edge, [
+  const arc = curved(edge, [
     { x: right, y: node.y },
     { x: right, y: top },
     { x: left, y: top },
     { x: left, y: node.y },
   ]);
+  // Its label stays over the card, clear of what crosses the gaps beside it.
+  return edge.label === undefined
+    ? arc
+    : { ...arc, labelLimit: LOOP_LABEL_LIMIT };
 };
 
 /** Two nodes on one rank: out of one's right side and into the other's. */

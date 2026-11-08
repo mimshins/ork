@@ -31,7 +31,8 @@ workflow, and tested on the example workflows.
   - A longer edge runs level along one lane through the ranks it crosses, clear
     of their cards, with at most four rounded corners.
   - A loop goes right to left, a channel between two nodes of a rank bulges out
-    to the right, and a node looping to itself gets an arc above it.
+    to the right, and a node looping to itself gets an arc above it, with extra
+    room above the card and its condition wrapped to the card's width.
   - Loops and channels attach just off the middle of a side, apart from the
     flow.
 - **Each kind has its own line,** so it reads without color: flow is solid, a
@@ -40,8 +41,8 @@ workflow, and tested on the example workflows.
   node they lead to has started, finely dotted where it hasn't, and with square
   packets moving in steps while it's running. That's all the motion means. With
   less motion the packets rest on the line.
-- **Conditions** show on their edge, cut to 28 characters, with the whole of one
-  in a hover title. A gap widens to fit the condition of a curve crossing it.
+- **Conditions** show whole on their edge, wrapped at spaces to lines of 28
+  characters. A gap widens to fit the condition of a curve crossing it.
 - **Nothing about it is stored.** A workflow is always drawn from its nodes and
   edges, so it looks the same in the Monitor and the Builder, and however it was
   written ([ADR-051](../../decisions/ADR-051-workflow-builder.md)).

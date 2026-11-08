@@ -13,16 +13,17 @@ import type { NodeFacts } from "./facts.ts";
 import { pathOf } from "./path.ts";
 import {
   LABEL_CHAR,
+  LABEL_LINE_HEIGHT,
   LABEL_PADDING,
+  labelHeight,
+  labelLines,
   type PlacedEdge,
   type Point,
-  shortLabel,
 } from "./types.ts";
 
 import styles from "./graph.module.css";
 
 const HEAD = 6;
-const LABEL_HEIGHT = 16;
 /** A packet's side, the same as the width of its line in the style sheet. */
 const PACKET = 3;
 
@@ -86,26 +87,40 @@ const arrowhead = (points: readonly Point[]): string => {
 };
 
 /** A condition on a plain background, which the lines behind it stop at. */
-const EdgeLabel = ({ label, at }: { label: string; at: Point }) => {
-  const shown = shortLabel(label);
-  const width = shown.length * LABEL_CHAR + LABEL_PADDING / 2;
+const EdgeLabel = ({
+  label,
+  at,
+  limit,
+}: {
+  label: string;
+  at: Point;
+  limit?: number | undefined;
+}) => {
+  const lines = labelLines(label, limit);
+  const longest = Math.max(...lines.map(line => line.length));
+  const width = longest * LABEL_CHAR + LABEL_PADDING / 2;
+  const height = labelHeight(lines.length);
+  const firstY = at.y - ((lines.length - 1) * LABEL_LINE_HEIGHT) / 2;
   return (
     <g>
       <rect
         className={styles["edgeLabelBack"]}
-        height={LABEL_HEIGHT}
+        height={height}
         rx={2}
         width={width}
         x={at.x - width / 2}
-        y={at.y - LABEL_HEIGHT / 2}
+        y={at.y - height / 2}
       />
-      <text
-        className={styles["edgeLabel"]}
-        x={at.x}
-        y={at.y}
-      >
-        <title>{label}</title>
-        {shown}
+      <text className={styles["edgeLabel"]}>
+        {lines.map((line, index) => (
+          <tspan
+            key={`${String(index)}:${line}`}
+            x={at.x}
+            y={firstY + index * LABEL_LINE_HEIGHT}
+          >
+            {line}
+          </tspan>
+        ))}
       </text>
     </g>
   );
@@ -164,6 +179,7 @@ export const EdgePaths = memo(
               <EdgeLabel
                 at={edge.labelAt}
                 label={edge.label}
+                limit={edge.labelLimit}
               />
             )}
           </g>
