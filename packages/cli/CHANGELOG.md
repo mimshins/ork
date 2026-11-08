@@ -1,5 +1,13 @@
 # @krapht/ork
 
+## 1.0.0-alpha.4
+
+### Minor Changes
+
+- [`0485790`](https://github.com/mimshins/ork/commit/04857904cc3edf50f13be53d4474ffd2bdb10a04) Thanks [@mimshins](https://github.com/mimshins)! - A Claude node, or `defaults`, can name the MCP servers its sessions load with
+  `mcp: [name]`, from the project's `.mcp.json`, beside Ork's own and still under
+  strict MCP. `ork validate` reports a name the file doesn't have.
+
 ## 1.0.0-alpha.3
 
 ### Minor Changes
