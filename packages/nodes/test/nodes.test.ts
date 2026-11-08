@@ -472,6 +472,30 @@ const executing = (options: { driver?: "cli"; readyDriver?: "sdk" }) => {
   return { execute, drivers };
 };
 
+/** Each session's `machineClaude`, from an executor with `machine`. */
+const machineOfSpecs = async (machine: { machineClaude?: boolean }) => {
+  const specs: SessionSpec[] = [];
+  const execute = claudeExecutor({
+    runtimeFor: driver =>
+      Promise.resolve({
+        driver,
+        start: spec => {
+          specs.push(spec);
+          return {
+            events: finishedPassing(),
+            send: () => {},
+            interrupt: () => Promise.resolve(),
+          };
+        },
+      }),
+    readyDriver: "sdk",
+    inPlace: true,
+    ...machine,
+  });
+  await execute(context("fix", { type: "claude.worker", prompt: "Fix" }));
+  return specs.map(spec => spec.machineClaude);
+};
+
 describe("Claude nodes", () => {
   it("keeps the session when a late turn never started one", () => {
     const first = outcome(null);
@@ -527,6 +551,11 @@ describe("Claude nodes", () => {
     specs.length = 0;
     await execute(context("fix", node, { mailbox: mailboxWith(() => 0) }));
     expect(specs).toHaveLength(1);
+  });
+
+  it("starts its sessions with the machine's Claude setup only when the run asks", async () => {
+    expect(await machineOfSpecs({})).toEqual([undefined]);
+    expect(await machineOfSpecs({ machineClaude: true })).toEqual([true]);
   });
 
   describe("a late turn", () => {

@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L180. At a review, each open
+closes it. Ids are never reused: the next limit is L181. At a review, each open
 entry is closed (built or fixed, then removed), kept (moved into its area's
 spec, then removed here), or carried to a roadmap item, or to none yet
 (unplanned).
@@ -100,6 +100,10 @@ review:
   leader's whole session uncached (it asks for no 1-hour cache); whether a fork
   that kept the leader's prefix is worth it; (4) that the structured report
   still comes back with `--tools Read,Grep,Glob`.
+- **G26 · A node or project can't name the MCP servers it needs.**
+  [Sessions](./runtime.md#what-a-session-loads) load only Ork's, or all of the
+  machine's with `--machine-claude`; an `mcp:` on a node or the project could
+  load just those it names (a browser, for G15).
 
 ## Limits
 
@@ -160,6 +164,12 @@ the next review:
   fish 3.0 (a range clamps without changing direction), and fish 4.0 deprecates
   `commandline -o` for `-x`, which fish 3 lacks, so the script tries
   `commandline -xpc` and falls back to `-opc`.
+
+Found building [clean sessions](./runtime.md#what-a-session-loads) (ADR-065):
+
+- **L180 · Only strict MCP is measured.** The $0.113 to $0.032 probe (CLI
+  driver) measured `--strict-mcp-config`; the other two switches, and the SDK
+  driver (checked against its types only), are unmeasured until the rerun.
 
 ## Chores
 

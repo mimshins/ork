@@ -253,6 +253,23 @@ describe("calling a workflow", () => {
     ]);
   });
 
+  it("starts the called run with the machine's Claude setup when the caller has it", async () => {
+    const port = portFor(
+      id => {
+        store.append(id, finishedWith(id));
+      },
+      placeAt("own"),
+      { machineClaude: true },
+    );
+    await port.invoke(request(), signal());
+    expect(seen[0]?.args.at(-1)).toBe("--machine-claude");
+    const clean = portFor(id => {
+      store.append(id, finishedWith(id));
+    });
+    await clean.invoke(request(), signal());
+    expect(seen[1]?.args).not.toContain("--machine-claude");
+  });
+
   it("counts what the called run spent, once", async () => {
     const port = portFor(id => {
       store.append(id, {

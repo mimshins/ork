@@ -3,7 +3,8 @@
  *   the store and the run's socket, and the run's bus pushes it into the node's
  *   session (specs/messaging.md#chat; `tellLiveRun` and `nodeSession` are in
  *   core). A node of a finished run gets it by resuming its last Claude session
- *   where it ran, and the exchange is added to the run's record.
+ *   where it ran, as the run's sessions were set up (ADR-065), and the exchange
+ *   is added to the run's record.
  */
 
 import { existsSync } from "node:fs";
@@ -57,6 +58,17 @@ const templateOf = (
   return template in nodes ? template : undefined;
 };
 
+/** The run's sessions loaded the machine's Claude setup, so this one does. */
+const machineClaudeOf = (
+  events: ReturnType<EventStore["events"]>,
+): { machineClaude?: true } =>
+  events.some(
+    ({ event }) =>
+      event.type === "run.started" && event.settings?.machineClaude === true,
+  )
+    ? { machineClaude: true }
+    : {};
+
 /**
  * Resumes a finished node's last session with the user's message, prints the
  * session, and adds it to the run's record. Returns why it could not.
@@ -65,7 +77,8 @@ export const resumeChat = async (
   options: ResumeChatOptions,
 ): Promise<string | null> => {
   const { store, run, node } = options;
-  const { session, outputs } = nodeSession(store.events(run.id, 0), node);
+  const events = store.events(run.id, 0);
+  const { session, outputs } = nodeSession(events, node);
   if (!session.known) return `${node} is not a node of run ${run.id}.`;
   if (!session.chattable)
     return `${node} is not a leader or worker; only they have sessions to talk to.`;
@@ -124,7 +137,12 @@ export const resumeChat = async (
   });
   const runtime = await options.runtime(driver);
   const started = runtime.start(
-    { ...plan.spec, resume: session.sessionId, prompt: options.body },
+    {
+      ...plan.spec,
+      resume: session.sessionId,
+      prompt: options.body,
+      ...machineClaudeOf(events),
+    },
     { human: options.human },
   );
   // Stopped while the runtime was loading: no event will come for this.

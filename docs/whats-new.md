@@ -3,6 +3,16 @@
 Each release in a few lines, newest first, with how to upgrade. Every change, in
 full: the [changelog](../packages/cli/CHANGELOG.md).
 
+## 1.0.0-alpha.1
+
+- **Clean Claude sessions.** A run's sessions no longer load your machine's MCP
+  servers or Claude's memory, only your repository's setup and Ork's own: a
+  server reconnecting mid-session made Claude rewrite its prompt cache, which
+  cost the first measured run several times its work. `ork run --machine-claude`
+  (or "Use this machine's Claude setup" in `ork ui`) brings them back for a run
+  that needs them, and the run keeps it on resume
+  ([what a session loads](./guides/running-workflows/running-and-answering.md#what-a-session-loads)).
+
 ## 1.0.0-alpha.0
 
 The first step toward 1.0.0. Alphas come first, then betas and release

@@ -13,12 +13,15 @@ export type RunFlags = {
   driver: DriverChoice;
   inPlace: boolean;
   allowDirty: boolean;
+  /** The run's sessions load this machine's Claude setup (ADR-065). */
+  machineClaude: boolean;
 };
 
 export const NO_FLAGS: RunFlags = {
   driver: "",
   inPlace: false,
   allowDirty: false,
+  machineClaude: false,
 };
 
 export type InputValues = Record<string, string>;
@@ -116,4 +119,5 @@ export const commandOf = (
     ...(flags.driver === "" ? [] : [`--driver ${flags.driver}`]),
     ...(flags.inPlace ? ["--in-place"] : []),
     ...(flags.allowDirty ? ["--allow-dirty"] : []),
+    ...(flags.machineClaude ? ["--machine-claude"] : []),
   ].join(" ");

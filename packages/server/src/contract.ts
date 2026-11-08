@@ -103,6 +103,8 @@ export const StartRunSchema = z.strictObject({
   /** A workflow's name in the project, or a path inside the project. */
   workflow: z.string().min(1),
   ...RunFlags,
+  /** Its sessions load the machine's Claude setup (`--machine-claude`). */
+  machineClaude: z.boolean().optional(),
 });
 
 export const ResumeRunSchema = z.strictObject(RunFlags);

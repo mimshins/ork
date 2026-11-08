@@ -46,6 +46,10 @@ closed.
   passes no `--driver`: the workflow's own driver, else the one ready on the
   machine when the run starts
   ([runtime](../runtime.md#which-driver-a-session-uses)).
+- **Use this machine's Claude setup** is a checkbox, off by default, described
+  as "Your MCP servers and Claude's memory". Checked, it adds `--machine-claude`
+  to the CLI twin and `machineClaude: true` to the request; unchecked, the run's
+  sessions start clean ([runtime](../runtime.md#what-a-session-loads)).
 - **The CLI twin** is shown as it is filled in, ready to copy. It leaves out
   inputs at their default and quotes what a shell would split.
 - **Start run** is disabled until the form can start, and the reason is shown

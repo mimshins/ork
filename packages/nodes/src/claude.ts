@@ -50,6 +50,8 @@ export type ClaudeExecutorOptions = {
   driver?: Driver;
   /** The driver ready here when the run started, for nodes that name none. */
   readyDriver?: Driver;
+  /** Sessions load the machine's Claude setup (`--machine-claude`, ADR-065). */
+  machineClaude?: boolean;
   /** Runs `worktree` nodes in the project checkout instead of worktrees. */
   inPlace: boolean;
   /** What runs a node's `verify:`: the tool nodes' executor. */
@@ -163,6 +165,7 @@ export const claudeExecutor =
       };
     }
     const spec = specFor(plan.spec, context);
+    if (options.machineClaude === true) spec.machineClaude = true;
     const driver = sessionDriver({
       override: options.driver,
       named: plan.driver,

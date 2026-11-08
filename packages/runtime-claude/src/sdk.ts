@@ -1,6 +1,7 @@
 /**
  * @file The SDK driver: runs a session in-process with the Claude Agent SDK,
- *   only with an API key or a cloud provider, never a claude.ai login. A node
+ *   only with an API key or a cloud provider, never a claude.ai login, clean of
+ *   the machine's Claude setup unless the run asks for it (ADR-065). A node
  *   that can be paused gets a `PreToolUse` callback hook: a short pause holds
  *   the call, a long one defers it and resumes the session when the node
  *   continues (ADR-041).
@@ -24,7 +25,7 @@ import type {
   SessionUsage,
 } from "@krapht/ork-core";
 
-import { cacheEnv } from "./cache-env.ts";
+import { driverEnv, strictMcpOf } from "./clean.ts";
 import {
   addUsage,
   HOOK_TIMEOUT_S,
@@ -114,12 +115,13 @@ export const buildSdkOptions = (
   });
   const options: Options = {
     cwd: spec.cwd,
-    env: definedEnv({ ...env, ...cacheEnv(spec) }),
+    env: definedEnv({ ...env, ...driverEnv(spec) }),
     settingSources: spec.settingSources,
     systemPrompt: {
       type: "preset",
       preset: "claude_code",
       append: spec.systemAppend,
+      excludeDynamicSections: true,
     },
     permissionMode: spec.permissionMode,
     allowedTools: [...spec.tools.allow, ...preapprovedTools(tools)],
@@ -138,7 +140,7 @@ export const buildSdkOptions = (
     },
   };
   if (spec.tools.only !== undefined) options.tools = spec.tools.only;
-  if (spec.tools.strictMcp === true) options.strictMcpConfig = true;
+  if (strictMcpOf(spec)) options.strictMcpConfig = true;
   if (spec.agents !== undefined) options.agents = spec.agents;
   if (spec.model !== undefined) options.model = spec.model;
   if (spec.effort !== undefined) options.effort = spec.effort;

@@ -48,7 +48,8 @@ export type NodeReport = {
 /**
  * `only`: the built-in tools the session has at all; Ork's own tools stay.
  * `strictMcp`: no MCP server but Ork's, none from the project's settings or
- * plugins (`--strict-mcp-config`; the SDK's `strictMcpConfig`).
+ * plugins (`--strict-mcp-config`; the SDK's `strictMcpConfig`), even when the
+ * run loads the machine's Claude setup (`machineClaude`).
  */
 export type ToolRules = {
   allow: string[];
@@ -106,6 +107,12 @@ export type SessionSpec = {
    * again after each wait (specs/context.md).
    */
   promptCache?: "1h";
+  /**
+   * Load the machine's own Claude setup: its MCP servers and Claude Code's
+   * auto-memory (`ork run --machine-claude`, ADR-065). Unset, a session loads
+   * only Ork's MCP server, and no memory.
+   */
+  machineClaude?: boolean;
 };
 
 export type SessionUsage = {

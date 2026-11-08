@@ -66,9 +66,10 @@ describe("the Run workflow form", () => {
         driver: "cli",
         inPlace: true,
         allowDirty: true,
+        machineClaude: true,
       }),
     ).toBe(
-      "ork run build --detach --input feature=csv --driver cli --in-place --allow-dirty",
+      "ork run build --detach --input feature=csv --driver cli --in-place --allow-dirty --machine-claude",
     );
   });
 

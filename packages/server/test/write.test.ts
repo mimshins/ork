@@ -181,6 +181,7 @@ describe("starting and resuming a run", () => {
         driver: "cli",
         inPlace: true,
         allowDirty: true,
+        machineClaude: true,
       },
     });
     expect(started).toMatchObject({ ok: true, status: 202 });
@@ -195,6 +196,7 @@ describe("starting and resuming a run", () => {
         "cli",
         "--in-place",
         "--allow-dirty",
+        "--machine-claude",
         "--run-id",
         runId,
       ],

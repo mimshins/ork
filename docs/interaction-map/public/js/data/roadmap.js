@@ -321,6 +321,17 @@ export const MILESTONES = [
         docs: ["runbook/development/release.md", "specs/cli/updates.md"],
       },
       {
+        id: "clean-sessions",
+        title: "Clean Claude sessions",
+        status: "active",
+        detail:
+          "For 1.0.0-alpha.1: a run's sessions load no MCP server but Ork's and no auto-memory, and keep the per-machine prompt sections out of the cached prefix, on both drivers; `ork run --machine-claude` (or the Run workflow box) loads the machine's setup for a run, recorded for its resumes and called runs. Then the canary `feature` run is rerun.",
+        docs: [
+          "decisions/ADR-065-clean-claude-sessions.md",
+          "specs/runtime.md#what-a-session-loads",
+        ],
+      },
+      {
         id: "canary",
         title: "Canary snapshots",
         status: "planned",

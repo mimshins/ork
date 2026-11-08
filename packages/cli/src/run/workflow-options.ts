@@ -20,6 +20,11 @@ export type RunWorkflowOptions = {
   /** Overrides every node's driver. */
   driver?: Driver;
   inPlace: boolean;
+  /**
+   * Sessions load the machine's MCP servers and auto-memory (ADR-065); a resume
+   * reads it from the run's settings.
+   */
+  machineClaude?: boolean;
   /** Run even when agent files have uncommitted changes (ADR-020). */
   allowDirty?: boolean;
   /** Print the run's events as JSON lines instead of a transcript. */

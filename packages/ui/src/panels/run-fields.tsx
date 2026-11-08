@@ -1,11 +1,12 @@
 /**
  * @file The Run workflow form's fields that depend on the workflow and the CLI:
  *   one per declared input, by its type, the run flags in the CLI's words (the
- *   driver's field is Propose fix's too), and what it says with no project to
- *   run in.
+ *   driver's field is Propose fix's too), the switch to this machine's Claude
+ *   setup, and what it says with no project to run in.
  */
 
 import type { WorkflowView } from "@krapht/ork-server/client";
+import { useId } from "react";
 
 import { EmptyState } from "../components/bits.tsx";
 import { Checkbox } from "../components/checkbox.tsx";
@@ -14,6 +15,7 @@ import { Select } from "../components/select.tsx";
 import { TextField } from "../components/text-field.tsx";
 import type { DriverChoice, InputValues, RunFlags } from "./run-form.ts";
 
+import fields from "../components/field.module.css";
 import styles from "./runs.module.css";
 
 const DRIVERS: readonly { value: DriverChoice; label: string }[] = [
@@ -110,8 +112,46 @@ export const FlagFields = ({
         onChange({ allowDirty });
       }}
     />
+    <MachineClaudeBox
+      checked={flags.machineClaude}
+      onChange={machineClaude => {
+        onChange({ machineClaude });
+      }}
+    />
   </fieldset>
 );
+
+const MACHINE_CLAUDE_HINT = "Your MCP servers and Claude's memory";
+
+/**
+ * `--machine-claude`: off by default, so the run's sessions start clean of this
+ * machine's MCP servers and Claude's memory (ADR-065).
+ */
+const MachineClaudeBox = ({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) => {
+  const hintId = useId();
+  return (
+    <>
+      <Checkbox
+        checked={checked}
+        describedBy={hintId}
+        label="Use this machine's Claude setup"
+        onChange={onChange}
+      />
+      <p
+        className={fields["hint"]}
+        id={hintId}
+      >
+        {MACHINE_CLAUDE_HINT}
+      </p>
+    </>
+  );
+};
 
 /** The form has nothing to run without a project; this says how to get one. */
 export const NoProjects = () => (

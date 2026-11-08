@@ -1092,6 +1092,22 @@ export const RUNTIME = {
     "specs/runtime.md#which-driver-a-session-uses",
     "Spec: which driver a session uses",
   ),
+  clean: d(
+    "packages/runtime-claude/src/clean.ts",
+    "Code: a session clean of the machine's Claude setup",
+  ),
+  cleanTests: d(
+    "packages/runtime-claude/test/clean.test.ts",
+    "Tests: clean sessions, and `--machine-claude`, on both drivers",
+  ),
+  loads: d(
+    "specs/runtime.md#what-a-session-loads",
+    "Spec: what a session loads",
+  ),
+  cleanAdr: d(
+    "decisions/ADR-065-clean-claude-sessions.md",
+    "ADR-065: Claude sessions start clean of the machine's setup",
+  ),
 };
 
 /** Where a node sits in a workflow, and what that means for its run. */

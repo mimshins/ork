@@ -333,11 +333,18 @@ export const NODES = [
       "Which of Claude Code's own setting sources load, and extra settings for the session, so the project layer works natively and shadowed skills stay off.",
     facts: [
       "`settingSources: ['project', 'local']`, never `user`.",
+      "No MCP server but Ork's and no auto-memory unless the run is started with `--machine-claude`.",
       '`skillOverrides: { <name>: "off" }` hides each shadowed or left-out project skill; a plugin\'s `ork:<name>` is untouched.',
       "`project.instructions: ignore` adds `claudeMdExcludes` for the checkout and stops Claude Code reading `AGENTS.md`.",
       "SDK: `settings`; CLI: `--settings`.",
     ],
-    docs: [CONTEXT.session, RUNTIME.sdk, RUNTIME.cli, DESIGN.context],
+    docs: [
+      CONTEXT.session,
+      RUNTIME.sdk,
+      RUNTIME.cli,
+      RUNTIME.loads,
+      DESIGN.context,
+    ],
   },
   {
     id: "plugin",

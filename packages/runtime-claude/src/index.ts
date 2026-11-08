@@ -4,6 +4,7 @@
  */
 
 export * from "./cache-env.ts";
+export * from "./clean.ts";
 export * from "./cli.ts";
 export * from "./hold.ts";
 export * from "./mcp-http.ts";

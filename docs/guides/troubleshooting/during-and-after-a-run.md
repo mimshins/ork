@@ -68,6 +68,12 @@ or let the owner redo the work.
 recommended option. Pre-approve tools with the node's `tools.allow`, or run in a
 terminal.
 
+**An agent can't use an MCP server you use with `claude`, or doesn't know what
+Claude remembers about the project.** A run's sessions start clean of your
+machine's MCP servers and Claude's memory. Start the run with
+`ork run --machine-claude` to load them
+([what a session loads](../running-workflows/running-and-answering.md#what-a-session-loads)).
+
 ## After a run
 
 **Lots of `ork/` branches and worktrees.** List them, then remove the merged

@@ -9,8 +9,9 @@
  *   does: a `defer` ends the turn with the call pending (a marker file in its
  *   folder), and a `--resume` with that marker fires the hook again without
  *   reading a new message. With `FAKE_CLAUDE_ENV_FILE` set it writes there
- *   the `ENABLE_PROMPT_CACHING_1H` it was started with. With `--resume <id>
- *   --fork-session` it is a fork: a new session (`fork-of-<id>`) that asks
+ *   the `ENABLE_PROMPT_CACHING_1H` it was started with, and with
+ *   `FAKE_CLAUDE_MEMORY_FILE` the `CLAUDE_CODE_DISABLE_AUTO_MEMORY`. With
+ *   `--resume <id> --fork-session` it is a fork: a new session (`fork-of-<id>`) that asks
  *   nothing and reports the first value its `--json-schema` allows for
  *   `choice` (or `FAKE_CLAUDE_FORK_CHOICE`), with a `note`;
  *   `FAKE_CLAUDE_FORK_FAIL=1` makes a fork fail.
@@ -62,6 +63,12 @@ const readBrief = async () => {
 
 if (process.env.FAKE_CLAUDE_ENV_FILE !== undefined) {
   writeFileSync(process.env.FAKE_CLAUDE_ENV_FILE, process.env.ENABLE_PROMPT_CACHING_1H ?? "");
+}
+if (process.env.FAKE_CLAUDE_MEMORY_FILE !== undefined) {
+  writeFileSync(
+    process.env.FAKE_CLAUDE_MEMORY_FILE,
+    process.env.CLAUDE_CODE_DISABLE_AUTO_MEMORY ?? "",
+  );
 }
 
 if (args.includes("--fork-session")) {

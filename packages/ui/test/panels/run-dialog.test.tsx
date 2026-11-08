@@ -2,7 +2,8 @@
  * @file Tests for the Run workflow dialog: it picks what has only one choice,
  *   shows a workflow's inputs and its CLI twin, keeps Start disabled with the
  *   reason, starts the run and selects it, sends the focus to the run where it
- *   shows, and keeps the server's refusal.
+ *   shows, keeps the server's refusal, and starts clean sessions unless the
+ *   machine's Claude setup is asked for.
  */
 
 import { act, cleanup, screen, waitFor } from "@testing-library/react";
@@ -68,6 +69,12 @@ const startBuild = async () => {
   await userEvent.type(await screen.findByLabelText(/^feature/u), "csv");
   await userEvent.click(startButton());
 };
+
+/** What an element's `aria-describedby` points at says. */
+const describedBy = (element: HTMLElement): string | undefined =>
+  document.querySelector(
+    `[id="${element.getAttribute("aria-describedby") ?? ""}"]`,
+  )?.textContent ?? undefined;
 
 const isDisabled = (element: HTMLElement): boolean =>
   element.hasAttribute("disabled") ||
@@ -277,6 +284,38 @@ describe("the Run workflow dialog", () => {
       expect(started).toHaveLength(1);
     });
     expect(started[0]).toMatchObject({ inPlace: true, allowDirty: true });
+  });
+
+  it("starts clean sessions unless asked for this machine's Claude setup", async () => {
+    await open();
+    await userEvent.type(await screen.findByLabelText(/^feature/u), "csv");
+    const box = screen.getByRole("checkbox", {
+      name: "Use this machine's Claude setup",
+    });
+    expect(box.getAttribute("aria-checked")).toBe("false");
+    expect(
+      screen.getByText("ork run build --detach --input feature=csv"),
+    ).toBeDefined();
+    expect(describedBy(box)).toBe("Your MCP servers and Claude's memory");
+  });
+
+  it("sends --machine-claude when the box is checked from the keyboard", async () => {
+    const { started } = await open();
+    await userEvent.type(await screen.findByLabelText(/^feature/u), "csv");
+    screen
+      .getByRole("checkbox", { name: "Use this machine's Claude setup" })
+      .focus();
+    await userEvent.keyboard(" ");
+    expect(
+      screen.getByText(
+        "ork run build --detach --input feature=csv --machine-claude",
+      ),
+    ).toBeDefined();
+    await userEvent.click(startButton());
+    await waitFor(() => {
+      expect(started).toHaveLength(1);
+    });
+    expect(started[0]).toMatchObject({ machineClaude: true });
   });
 
   it("keeps the server's refusal, in its words, and stays open", async () => {

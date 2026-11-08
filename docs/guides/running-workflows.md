@@ -12,6 +12,7 @@ For the full rules: [the CLI spec](../../specs/cli/running-and-runs.md),
 
 - [Running a workflow and answering it](./running-workflows/running-and-answering.md)
   - [A whole workflow](./running-workflows/running-and-answering.md#a-whole-workflow)
+  - [What a session loads](./running-workflows/running-and-answering.md#what-a-session-loads)
   - [Reading the transcript](./running-workflows/running-and-answering.md#reading-the-transcript)
   - [Answering questions](./running-workflows/running-and-answering.md#answering-questions)
   - [In the background](./running-workflows/running-and-answering.md#in-the-background)

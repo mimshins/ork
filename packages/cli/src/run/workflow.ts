@@ -229,6 +229,10 @@ export const runWorkflowFile = async (
     human: control.human,
     emit: onEvent,
   });
+  // Recorded with the run, so a resume and its called runs load it too.
+  if (ports.settings.machineClaude === true) {
+    executorOptions.machineClaude = true;
+  }
   clearOutputFiles(runDir, options.err);
   const handle = startRun({
     graph: ports.graph,

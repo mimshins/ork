@@ -62,6 +62,8 @@ type RunFlags = {
   driver?: "sdk" | "cli" | undefined;
   inPlace?: boolean | undefined;
   allowDirty?: boolean | undefined;
+  /** `ork run` only: a resume reads it from the run's settings. */
+  machineClaude?: boolean | undefined;
 };
 
 /** The `ork run` / `ork resume` flags a request's options stand for. */
@@ -75,6 +77,7 @@ export const flagsOf = (options: RunFlags): string[] => [
     ? []
     : [options.inPlace ? "--in-place" : "--no-in-place"]),
   ...(options.allowDirty === true ? ["--allow-dirty"] : []),
+  ...(options.machineClaude === true ? ["--machine-claude"] : []),
 ];
 
 const WORKFLOW_SUFFIX = ".ork.yaml";

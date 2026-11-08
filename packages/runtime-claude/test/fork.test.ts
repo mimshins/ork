@@ -1,8 +1,9 @@
 /**
  * @file Tests for forking a session (`SessionSpec.fork`, ADR-063): both drivers
  *   resume a copy of the session, never the session itself, take only the
- *   built-in tools it is given and no MCP server but Ork's, and the stand-in
- *   `claude` answers as a fork, under a session of its own.
+ *   built-in tools it is given and no MCP server but Ork's (even in a run that
+ *   loads the machine's Claude setup), and the stand-in `claude` answers as a
+ *   fork, under a session of its own.
  */
 
 import { fileURLToPath } from "node:url";
@@ -72,21 +73,24 @@ describe("a fork", () => {
   });
 
   it("has only the tools it is given, and no MCP server but Ork's, on both drivers", () => {
+    // Strict even in a run that loads the machine's Claude setup (ADR-065).
     const readOnly: SessionSpec = {
       ...spec,
+      machineClaude: true,
       tools: { allow: [], deny: [], only: ["Read", "Grep"], strictMcp: true },
     };
     const mcp = { url: "http://127.0.0.1:1/mcp", token: "tok" };
     const args = buildCliArgs(readOnly, mcp, []);
     expect(args).toContain("--strict-mcp-config");
     expect(args[args.indexOf("--tools") + 1]).toBe("Read,Grep");
-    expect(buildCliArgs(spec, mcp, [])).not.toContain("--strict-mcp-config");
+    const machine = { ...spec, machineClaude: true };
+    expect(buildCliArgs(machine, mcp, [])).not.toContain("--strict-mcp-config");
 
     expect(buildSdkOptions(readOnly, { human }, {})).toMatchObject({
       tools: ["Read", "Grep"],
       strictMcpConfig: true,
     });
-    expect(buildSdkOptions(spec, { human }, {})).not.toHaveProperty(
+    expect(buildSdkOptions(machine, { human }, {})).not.toHaveProperty(
       "strictMcpConfig",
     );
   });

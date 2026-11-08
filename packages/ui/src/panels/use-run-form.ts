@@ -135,6 +135,7 @@ export const useRunForm = (
       ...(flags.driver === "" ? {} : { driver: flags.driver }),
       ...(flags.inPlace ? { inPlace: true } : {}),
       ...(flags.allowDirty ? { allowDirty: true } : {}),
+      ...(flags.machineClaude ? { machineClaude: true } : {}),
     });
     setStarting(false);
     if (answer.ok) {

@@ -109,6 +109,12 @@ export const run = defineCommand({
         "Run although instructions or skills have uncommitted changes (worktrees get the committed versions)",
       default: false,
     },
+    "machine-claude": {
+      type: "boolean",
+      description:
+        "Sessions load this machine's Claude setup: its MCP servers and Claude's memory (default: clean sessions)",
+      default: false,
+    },
     json: {
       type: "boolean",
       description: "Print the events as JSON lines",
@@ -201,6 +207,7 @@ export const run = defineCommand({
       cwd,
       inputs: flagValues(rawArgs, "--input"),
       inPlace: args["in-place"],
+      ...(args["machine-claude"] ? { machineClaude: true } : {}),
       json: args.json,
       runtime: loadRuntime,
       store,

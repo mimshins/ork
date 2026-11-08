@@ -53,6 +53,8 @@ export type RunNodeOptions = {
   /** Overrides the node's and the workflow's driver. */
   driver?: Driver;
   inPlace: boolean;
+  /** The session loads the machine's Claude setup (ADR-065). */
+  machineClaude?: boolean;
   /** Print the runtime events as JSON lines instead of a transcript. */
   json: boolean;
   runtime: (driver: Driver) => Promise<ClaudeRuntime>;
@@ -221,10 +223,14 @@ export const runNode = async (
     workflow: workflow.name,
     entries: [id],
     nodes: [{ id, type: nodeType }],
+    ...(options.machineClaude === true
+      ? { settings: { machineClaude: true } }
+      : {}),
   });
   record({ type: "node.started", id, nodeType, round: 1 });
 
   const runtime = await options.runtime(driver);
+  if (options.machineClaude === true) plan.spec.machineClaude = true;
   const session = runtime.start(plan.spec, {
     human: control.human,
     ...(graph === null

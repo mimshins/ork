@@ -20,7 +20,28 @@ Before anything starts, Ork checks the workflow, its inputs, and (when it has
 | `--driver sdk\|cli` | overrides the workflow's and each node's driver                 |
 | `--in-place`        | runs every node in your checkout, without worktrees             |
 | `--allow-dirty`     | runs although instructions or skills have uncommitted changes   |
+| `--machine-claude`  | sessions load your MCP servers and Claude's memory (see below)  |
 | `--json`            | prints every run event as a JSON line instead of the transcript |
+
+### What a session loads
+
+Each agent's Claude session loads your repository's setup: `CLAUDE.md`,
+`AGENTS.md`, and the agents, skills and settings in `.claude/`, with Ork's own
+skills and context. It starts clean of the rest of your machine's Claude setup:
+
+- **No MCP servers but Ork's.** The servers in your `~/.claude.json`, those you
+  added for the folder, and a project's `.mcp.json` don't load. A server that
+  fails or reconnects mid-session makes Claude write its prompt cache again,
+  which can cost several times the work itself.
+- **No Claude memory.** Claude Code's auto-memory for the folder (your own notes
+  in `~/.claude/projects/<folder>/memory/`) stays out of the run.
+- Your user-level `~/.claude` settings never load.
+
+When a run needs one of your MCP servers (a browser, say), start it with
+`--machine-claude`: its sessions load your MCP servers and Claude's memory as
+`claude` would. The run remembers it: `ork resume`, `ork chat` and the runs it
+calls with `workflow.call` load them too, and `ork resume` has no flag for it.
+In the browser view it is the "Use this machine's Claude setup" box.
 
 ## Reading the transcript
 

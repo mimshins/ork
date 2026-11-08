@@ -31,6 +31,8 @@ export type StartOptions = {
   resume?: ((run: RunRecord) => Promise<Detached>) | undefined;
   /** Set for a called run's process, over what it inherits. */
   env?: Readonly<Record<string, string>> | undefined;
+  /** The caller's sessions load the machine's Claude setup, so its calls' do. */
+  machineClaude?: boolean | undefined;
 };
 
 export type Started =
@@ -93,6 +95,7 @@ const argsOf = (
   id: string,
   caller: string,
   request: CallRequest,
+  machineClaude: boolean,
 ): string[] => [
   "run",
   file,
@@ -108,6 +111,7 @@ const argsOf = (
     ? []
     : ["--budget-cap", String(request.budgetLeftUsd)]),
   ...(request.ref === undefined ? [] : ["--base-ref", request.ref]),
+  ...(machineClaude ? ["--machine-claude"] : []),
 ];
 
 /** Why the target's `calls.accept` shuts this project out, or `null`. */
@@ -179,7 +183,13 @@ export const startCall = async (
   const detached = await (options.detach ?? detachRun)({
     store,
     runId: id,
-    args: argsOf(file, id, `${runId}/${request.callId}`, request),
+    args: argsOf(
+      file,
+      id,
+      `${runId}/${request.callId}`,
+      request,
+      options.machineClaude === true,
+    ),
     cwd: target.root,
     runDir: runDirOf(target, id),
     env: options.env,

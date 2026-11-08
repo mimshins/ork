@@ -2,7 +2,8 @@
  * @file What a run needs to reach other runs: its port for `workflow.call`
  *   nodes (RFC-004), its relay when links are on (RFC-003), and the budget a
  *   caller has capped it to. A called run being resumed keeps its caller and
- *   its cap, which the run recorded.
+ *   its cap, which the run recorded, and a run's called runs load the machine's
+ *   Claude setup when it does (ADR-065).
  */
 
 import {
@@ -43,6 +44,7 @@ export type CallPortsOptions = {
   untrusted?: string[] | undefined;
   budgetCap?: number | undefined;
   baseRef?: string | undefined;
+  machineClaude?: boolean | undefined;
   resume?: ResumeState | undefined;
 };
 
@@ -54,7 +56,13 @@ export type CallPorts = {
   /** What the run records, for its own resume. */
   settings: Pick<
     RunSettings,
-    "links" | "budgetCap" | "calledBy" | "baseRef" | "trigger" | "untrusted"
+    | "links"
+    | "budgetCap"
+    | "calledBy"
+    | "baseRef"
+    | "trigger"
+    | "untrusted"
+    | "machineClaude"
   >;
 };
 
@@ -66,6 +74,8 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
   const baseRef = options.baseRef ?? options.resume?.settings.baseRef;
   const trigger = options.trigger ?? options.resume?.settings.trigger;
   const untrusted = options.untrusted ?? options.resume?.settings.untrusted;
+  const machineClaude =
+    options.machineClaude ?? options.resume?.settings.machineClaude ?? false;
   const own = graph.workflow.limits?.budgetUsd;
   const budgetUsd =
     cap === undefined ? own : Math.min(cap, own ?? Number.POSITIVE_INFINITY);
@@ -88,6 +98,7 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
       home,
       adopt: adoptedCalls(store, runId),
       newId: () => newRunId(store),
+      machineClaude,
       env: maskedEnv(
         maskedNamesOfRun(graph.workflow, options.place, store.projects()),
       ),
@@ -122,6 +133,7 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
       ...(baseRef === undefined ? {} : { baseRef }),
       ...(trigger === undefined ? {} : { trigger }),
       ...(untrusted === undefined ? {} : { untrusted }),
+      ...(machineClaude ? { machineClaude } : {}),
     },
   };
 };

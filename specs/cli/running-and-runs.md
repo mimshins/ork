@@ -45,6 +45,10 @@ with the built-in node types
   records it for `ork resume`, and doesn't start when none is ready, with
   `ork doctor`'s hints
   ([which driver](../runtime.md#which-driver-a-session-uses)).
+- **The machine's Claude setup:** sessions start clean of the machine's MCP
+  servers and Claude Code's auto-memory; `--machine-claude` loads them for this
+  run, which records it for `ork resume`, `ork chat` and the runs it calls
+  ([what a session loads](../runtime.md#what-a-session-loads)).
 - Every event is recorded in the [event store](../event-store.md) before it is
   printed; `ork ps`, `ork logs` and `ork tree` read it back.
 - Tool nodes run as declared (their `allow` list is checked first); gates and
@@ -55,8 +59,9 @@ with the built-in node types
   and its questions wait for `ork decide`. Follow it with `ork logs <run> -f`.
   Works with `--node` too.
 - A [`workflow.call`](../scheduler/calls.md) starts its run this way, with three
-  internal flags: `--called-by`, `--budget-cap` and `--base-ref`. The caller's
-  transcript shows `↳ started <workflow> as run <id>`.
+  internal flags: `--called-by`, `--budget-cap` and `--base-ref`, and
+  `--machine-claude` when the caller has it. The caller's transcript shows
+  `↳ started <workflow> as run <id>`.
 
 ## Running one node
 
@@ -180,7 +185,8 @@ the same id and in its own project, from wherever it is called:
 - A `workflow.call` takes back the runs it started rather than starting them
   again ([calling workflows](../scheduler/calls.md)).
 - It starts with the run's inputs and flags; `--input`, `--driver` and
-  `--in-place` change them. The project checks of `ork run` apply
+  `--in-place` change them. `--machine-claude` is kept as the run recorded it,
+  with no flag to change it. The project checks of `ork run` apply
   (`--allow-dirty`).
 - A running run, a succeeded one, and a run of one node (`ork run --node`) are
   refused with the reason.

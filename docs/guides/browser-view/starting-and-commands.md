@@ -55,3 +55,9 @@ its top-right corner.
 
 Notifications, the theme and the layout belong to the browser and have no
 command.
+
+**Run workflow** shows the command it stands for as you fill it in, flags
+included. Its **Use this machine's Claude setup** box (your MCP servers and
+Claude's memory) is off by default, so the run's sessions start clean; checking
+it adds `--machine-claude`
+([what a session loads](../running-workflows/running-and-answering.md#what-a-session-loads)).

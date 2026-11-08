@@ -1,6 +1,7 @@
 /**
  * @file The CLI driver: runs a session through the user's own `claude -p` in
- *   stream-json mode, with Ork's tools served by a local MCP server. A node
+ *   stream-json mode, with Ork's tools served by a local MCP server, clean of
+ *   the machine's Claude setup unless the run asks for it (ADR-065). A node
  *   that can be paused gets a `PreToolUse` HTTP hook on the same server: a
  *   short pause holds the call, a long one defers it and resumes the session
  *   when the node continues (ADR-041).
@@ -14,7 +15,7 @@ import type {
   SessionUsage,
 } from "@krapht/ork-core";
 
-import { cacheEnv } from "./cache-env.ts";
+import { driverEnv, EXCLUDE_DYNAMIC_SECTIONS, strictMcpOf } from "./clean.ts";
 import { runLeg } from "./cli-leg.ts";
 import { addUsage, holdAtTool, hookOutput, withHoldHook } from "./hold.ts";
 import { type OrkMcpEndpoint, startOrkMcpHttp } from "./mcp-http.ts";
@@ -77,6 +78,7 @@ export const buildCliArgs = (
     spec.settingSources.join(","),
     "--append-system-prompt",
     spec.systemAppend,
+    EXCLUDE_DYNAMIC_SECTIONS,
     "--permission-mode",
     spec.permissionMode,
     "--json-schema",
@@ -91,7 +93,7 @@ export const buildCliArgs = (
   if (spec.tools.only !== undefined) {
     args.push("--tools", spec.tools.only.join(","));
   }
-  if (spec.tools.strictMcp === true) args.push("--strict-mcp-config");
+  if (strictMcpOf(spec)) args.push("--strict-mcp-config");
   if (spec.agents !== undefined) {
     args.push("--agents", JSON.stringify(spec.agents));
   }
@@ -160,7 +162,7 @@ export const createCliRuntime = (
       const legOf = (args: string[], carried: SessionUsage | undefined) =>
         runLeg({
           bin: options.bin ?? "claude",
-          env: { ...(options.env ?? process.env), ...cacheEnv(spec) },
+          env: { ...(options.env ?? process.env), ...driverEnv(spec) },
           cwd: spec.cwd,
           args,
           carried,
