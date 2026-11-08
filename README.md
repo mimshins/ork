@@ -19,9 +19,9 @@ for agents and engineering tasks:
 - **Yours.** Your repository's `CLAUDE.md`, `AGENTS.md` and skills load as they
   do in Claude Code, and Ork never stores a credential.
 
-> **Pre-alpha.** Ork works today, from the terminal and in the browser
-> (`ork ui`), but the workflow format and commands can still change between 0.x
-> releases. What changed lately: [What's new](./docs/whats-new.md).
+> **Alpha.** Ork works today, from the terminal and in the browser (`ork ui`),
+> but the workflow format and commands can still change until 1.0.0. What
+> changed lately: [What's new](./docs/whats-new.md).
 
 ## Get started
 

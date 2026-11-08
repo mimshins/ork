@@ -3,8 +3,8 @@
 The `ork` command: orchestrate Claude agents on your machine with hierarchical,
 serializable workflows.
 
-> **Pre-alpha.** Workflows of Claude agents and tools, run from the terminal or
-> the browser (`ork ui`). Expect changes between 0.x releases. See the
+> **Alpha.** Workflows of Claude agents and tools, run from the terminal or the
+> browser (`ork ui`). Expect changes until 1.0.0. See the
 > [project README](https://github.com/mimshins/ork#readme), the
 > [guides](https://github.com/mimshins/ork/tree/main/docs#readme) and
 > [what's new](https://github.com/mimshins/ork/blob/main/docs/whats-new.md).

@@ -200,8 +200,9 @@ before you keep the change.
   pull request descriptions, issues, or comments. You are welcome to use AI
   tools, but you are the author and you are responsible for the change.
 - Add a changeset when you change shipped code: `pnpm changesets:create` (patch
-  or minor on `0.x`), or `pnpm changesets:empty` for docs, tests and tooling. CI
-  checks it. Releases are automated
+  or minor; while Ork is in alpha every release is the next `1.0.0-alpha.N`), or
+  `pnpm changesets:empty` for docs, tests and tooling. CI checks it. Releases
+  are automated
   ([runbook/development/release.md](./runbook/development/release.md)).
 - Fill in the pull request template; `pnpm check` must pass.
 
