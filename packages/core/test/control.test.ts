@@ -200,7 +200,7 @@ describe("the decision queue", () => {
     expect(store.decision("r1-1")).toMatchObject({
       kind: "permission",
       question: "Allow Bash?",
-      context: '{"command":"rm -rf build"}',
+      context: "rm -rf build",
     });
     store.answerDecision("r1-1", "deny", "decide");
     control.check();

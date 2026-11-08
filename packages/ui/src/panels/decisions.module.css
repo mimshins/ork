@@ -40,6 +40,13 @@
   --focus-ring-offset: calc(var(--focus-width) * -1);
 }
 
+.fromText {
+  font: inherit;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .from {
   --decisions-from-text: var(--color-text-muted);
   --decisions-from-font: var(--font-mono);
@@ -55,26 +62,93 @@
   gap: var(--decisions-from-gap);
   justify-content: space-between;
   margin: 0;
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.question {
-  --decisions-question-text-size: var(--text-ui);
-  --decisions-question-weight: var(--weight-strong);
+.read {
+  --decisions-read-gap: var(--gap);
 
-  font-size: var(--decisions-question-text-size);
-  font-weight: var(--decisions-question-weight);
-  margin: 0;
-  overflow-wrap: anywhere;
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--decisions-read-gap);
+  min-width: 0;
 }
 
-.context {
-  --decisions-context-text: var(--color-text-muted);
+.length {
+  --decisions-length-text: var(--color-text-muted);
+  --decisions-length-font: var(--font-mono);
+  --decisions-length-text-size: var(--text-small);
 
-  color: var(--decisions-context-text);
-  margin: 0;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
+  color: var(--decisions-length-text);
+  font-family: var(--decisions-length-font);
+  font-size: var(--decisions-length-text-size);
+}
+
+/* The document's one scroll region: the keys scroll it, so it takes the focus. */
+.document {
+  --decisions-document-bg: var(--surface-sunken);
+  --decisions-document-border: var(--hairline) solid var(--color-border-strong);
+  --decisions-document-max-height: 60vh;
+  --decisions-document-min-height: 8lh;
+  --decisions-document-padding: var(--gap);
+
+  background: var(--decisions-document-bg);
+  border: var(--decisions-document-border);
+  border-radius: var(--radius-control);
+  box-sizing: border-box;
+  line-height: var(--leading-ui);
+  max-height: var(--decisions-document-max-height);
+  min-height: var(--decisions-document-min-height);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--decisions-document-padding);
+  position: relative;
+}
+
+.document:focus-visible {
+  --focus-ring-offset: calc(var(--focus-width) * -1);
+}
+
+@media (forced-colors: active) {
+  .document {
+    --decisions-document-border: var(--hairline) solid CanvasText;
+  }
+}
+
+.filter {
+  --decisions-filter-gap: var(--gap);
+  --decisions-filter-field-min-width: 10rem;
+  --decisions-filter-border: var(--hairline) solid var(--color-border);
+  --decisions-filter-text: var(--color-text-muted);
+  --decisions-filter-text-size: var(--text-small);
+
+  border-block-end: var(--decisions-filter-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--decisions-filter-gap);
+  padding: var(--gap);
+}
+
+.filterFields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--decisions-filter-gap);
+}
+
+.filterFields > * {
+  flex: 1 1 var(--decisions-filter-field-min-width);
+  min-width: 0;
+}
+
+.counts {
+  align-items: center;
+  color: var(--decisions-filter-text);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--decisions-filter-text-size);
+  gap: var(--decisions-filter-gap);
 }
 
 .options {

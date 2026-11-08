@@ -118,6 +118,13 @@ describe("ork mcp's tools", () => {
     });
   });
 
+  it("filters the open decisions by workflow", async () => {
+    await withRuns();
+    expect(await parsed("decisions", { workflow: "gone" })).toMatchObject({
+      open: [],
+    });
+  });
+
   it("gives the format a part at a time", async () => {
     await withRuns();
     const whole = await parsed("workflow_format");

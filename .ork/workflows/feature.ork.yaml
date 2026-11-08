@@ -76,12 +76,10 @@ nodes:
     question: |-
       Approve this task spec? The build starts on approve, and is paid.
 
-      {{nodes.spec.output.spec}}
-
       Open questions: {{nodes.spec.output.summary}}
 
-      To request changes, answer revise with a note saying what to change: the
-      note goes to the spec-writer as it is. stop ends the run with nothing built.
+      Read the spec with Read document. To request changes, answer revise with a note saying what to change: the note goes to the spec-writer as it is. stop ends the run with nothing built.
+    document: "{{nodes.spec.output.spec}}"
     options:
       - approve
       - revise
@@ -96,7 +94,7 @@ nodes:
 
       Build in waves, following each task's dependencies and files in the spec. Shared contracts (schema, types) go first, as their own wave. Then send each wave as one call, so its tasks run at once: `delegate` for different builders, and `spawn_worker` for more than one task of the same builder, since a child that is already running refuses another task. Tasks in one wave must not touch the same files, and each must pass pnpm check without another task of its wave. Files everyone appends to (index.ts exports, generated schemas, specs, gaps ids, roadmap data) belong to one task or a last wave. Run tasks together in one builder when they are small or share files: every builder is a new session and a full pnpm check, so split only substantial work. A merge conflict in a child's report is yours to resolve.
 
-      Each child already has the spec; your brief says which tasks are theirs. Fix only what integrates their work. Ork runs pnpm check on your checkout before your report counts. When you run again, your input is an independent review's findings: delegate the fixes. When a child asks a question, answer it only when the approved spec or an earlier answer settles it, and say which; otherwise pass it to the maintainer. Never decide for them. Report pass only when every child you used passed, and gather the spec's decisions and every decision your children reported into your own `decisions`, keeping who decided each.
+      Each child already has the spec; your brief says which tasks are theirs. Fix only what integrates their work. Ork runs pnpm check on your checkout before your report counts. When you run again, your input is an independent review's findings: delegate the fixes. When a child asks a question, answer it only when the approved spec or an earlier answer settles it, and say which; otherwise pass it to the maintainer. Never decide for them. Say in `unchecked` what no child and no check covered (an empty string when nothing). Report pass only when every child you used passed, and gather the spec's decisions and every decision your children reported into your own `decisions`, keeping who decided each.
 
       {{nodes.spec.output.spec}}
     model: sonnet
@@ -104,7 +102,6 @@ nodes:
     isolation: worktree
     budgetUsd: 4
     maxTurns: 60
-    maxWorkers: 3
     timeout: 3h
     tools:
       allow:
@@ -142,6 +139,7 @@ nodes:
                 type: array
                 items:
                   type: string
+        unchecked: string
     before:
       command: pnpm install --frozen-lockfile --prefer-offline
       timeout: 10m
@@ -149,6 +147,7 @@ nodes:
       command: pnpm check
       timeout: 20m
       attempts: 1
+    maxWorkers: 3
     questions: owner
   design:
     type: claude.worker
@@ -213,10 +212,10 @@ nodes:
     isolation: readonly
     budgetUsd: 2
     maxTurns: 40
-    session: resume
     tools:
       allow:
         - Bash(pnpm install --offline *)
+    session: resume
     output:
       schema:
         findings: string
@@ -341,7 +340,7 @@ nodes:
     type: claude.worker
     agent: reviewer
     prompt: |-
-      Review the uncommitted change in this checkout (git status, git diff HEAD) against the approved task spec below. pnpm check already passed here; don't run it again. Report pass, or changes_requested with every finding in `findings` (file:line, what is wrong, the smallest fix), most severe first. When you run again, check that your earlier findings were fixed.
+      Review the uncommitted change in this checkout (git status, git diff HEAD) against the approved task spec below. pnpm check already passed here; don't run it again. Report pass, or changes_requested with every finding in `findings` (file:line, what is wrong, the smallest fix), most severe first. Say in `unchecked` what you could not check or chose not to (an empty string when nothing). When you run again, check that your earlier findings were fixed.
 
       Read files with Read and search with Grep. When you do use Bash, keep to cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo, npm view and read-only git, with no awk, no find, no shell variables, no brace expansion and no paths outside this checkout: anything else stops the run to ask the maintainer.
 
@@ -355,6 +354,7 @@ nodes:
     output:
       schema:
         findings: string
+        unchecked: string
   docs:
     type: claude.worker
     agent: docs-keeper
@@ -415,15 +415,51 @@ nodes:
     type: human.gate
     question: |-
       Where does this change go? Nothing is committed yet.
-      Build: {{nodes.build.output.summary}}
-      Review: {{nodes.review.output.summary}}
+
+      - main: commit it and push to main.
+      - branch: commit it, push to the branch your note names (no note: ork/<run>) and open a pull request to main.
+      - keep-uncommitted: apply it to your checkout for you to commit.
+      - discard: leave it in the worktree (ork worktrees remove <run>/<node> --force removes it).
+
+      Read the document for what was built, the review, and the commit message.
+    document: |-
+      ## What was built
+
+      {{nodes.build.output.summary}}
+
       Docs: {{nodes.docs.output.summary}}
-      ADRs to check before you keep it: {{nodes.docs.output.adrs}}
+
       Worktree: {{nodes.docs.output.worktree}}
-      Commit message: {{nodes.docs.output.commitSubject}}
+
+      ## Review
+
+      Verdict: {{nodes.review.output.status}}
+
+      {{nodes.review.output.summary}}
+
+      Left open: {{nodes.review.output.findings}}
+
+      ## What wasn't checked
+
+      Build: {{nodes.build.output.unchecked}}
+
+      Review: {{nodes.review.output.unchecked}}
+
+      ## ADRs
+
+      Check these before you keep the change:
+
+      {{nodes.docs.output.adrs}}
+
+      ## Commit message
+
+      {{nodes.docs.output.commitSubject}}
+
       {{nodes.docs.output.commitBody}}
+
+      ## Files changed
+
       {{nodes.stage.output.staged}}
-      main commits it and pushes to main. branch commits it, pushes to the branch your note names (no note: ork/<run>) and opens a pull request to main. keep-uncommitted applies it to your checkout for you to commit. discard leaves it in the worktree (ork worktrees remove <run>/<node> --force removes it).
     options:
       - main
       - branch

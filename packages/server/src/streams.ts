@@ -79,6 +79,7 @@ export const overviewStream = (
   const key = url.searchParams.get("project");
   const root =
     key === null ? undefined : (projectOf(context, key)?.root ?? key);
+  const workflow = url.searchParams.get("workflow");
   const stream = openEventStream(res);
   const last = { runs: "", decisions: "", version: "" };
   const tick = (): void => {
@@ -86,7 +87,10 @@ export const overviewStream = (
     const runs = context.store
       .runs({ ...filter, limit: OVERVIEW_RUNS })
       .map(run => viewOf(context, run));
-    const decisions = pendingDecisions(context.store, filter);
+    const decisions = pendingDecisions(context.store, {
+      ...filter,
+      ...(workflow === null ? {} : { workflow }),
+    });
     for (const [name, value] of [
       ["runs", runs],
       ["decisions", decisions],

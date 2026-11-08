@@ -27,6 +27,8 @@ import {
 import {
   type Node,
   NodeSchema,
+  parseWorkflow,
+  serializeWorkflow,
   type Workflow,
   timeoutMs,
 } from "@krapht/ork-schema";
@@ -275,6 +277,99 @@ describe("git nodes", () => {
   });
 });
 
+const FEATURE_FILE = new URL(
+  "../../../.ork/workflows/feature.ork.yaml",
+  import.meta.url,
+);
+
+/** This repository's own `feature` workflow, as written and as parsed. */
+const featureWorkflow = () => {
+  const text = readFileSync(FEATURE_FILE, "utf8");
+  const parsed = parseWorkflow(text);
+  if (!parsed.ok) throw new Error(JSON.stringify(parsed.diagnostics));
+  return { text, workflow: parsed.workflow };
+};
+
+/** What the people at `feature`'s gate `id` would read, from a fixture. */
+const featureGateText = async (id: string) => {
+  const node = featureWorkflow().workflow.nodes[id];
+  if (node === undefined) throw new Error(`No node ${id}.`);
+  const seen: { question?: string; document?: string | undefined } = {};
+  await gateExecutor(
+    context(id, node, {
+      human: {
+        ask: ({ question, document }) => {
+          seen.question = question;
+          seen.document = document;
+          return Promise.resolve("stop");
+        },
+        permit: () => Promise.resolve({ allow: true }),
+      },
+      outputs: {
+        spec: { spec: "# The spec\n\nThe whole of it.", summary: "None." },
+        build: { summary: "Built it.", unchecked: "A real browser." },
+        review: {
+          status: "pass",
+          summary: "Looks right.",
+          findings: "One nit left.",
+          unchecked: "",
+        },
+        docs: {
+          summary: "Specs synced.",
+          worktree: "/tmp/w",
+          adrs: [{ title: "ADR-1", path: "decisions/ADR-1.md" }],
+          commitSubject: "Add the thing",
+          commitBody: "Because it was needed.",
+        },
+        stage: { staged: " a.ts | 2 +-\n b.ts | 1 +" },
+      },
+    }),
+  );
+  return { question: seen.question ?? "", document: seen.document ?? "" };
+};
+
+describe("this repository's feature workflow", () => {
+  it("is in canonical form", () => {
+    const { text, workflow } = featureWorkflow();
+    expect(serializeWorkflow(workflow)).toBe(text);
+  });
+
+  it.each(["approve", "decide"])("shows no raw JSON at %s", async id => {
+    const { question, document } = await featureGateText(id);
+    expect(`${question}\n${document}`).not.toMatch(/\{"|\[\{/u);
+  });
+
+  it("keeps the spec out of approve's question, in its document", async () => {
+    const { question, document } = await featureGateText("approve");
+    expect(question).not.toContain("The whole of it.");
+    expect(question).toContain("revise");
+    expect(document).toBe("# The spec\n\nThe whole of it.");
+  });
+
+  it("gives decide a short question and a sectioned document", async () => {
+    const { question, document } = await featureGateText("decide");
+    expect(question.startsWith("Where does this change go?")).toBe(true);
+    expect(question).not.toContain("Add the thing");
+    expect(document.match(/^## .+$/gmu)).toEqual([
+      "## What was built",
+      "## Review",
+      "## What wasn't checked",
+      "## ADRs",
+      "## Commit message",
+      "## Files changed",
+    ]);
+    expect(document).toContain("- title: ADR-1\n  path: decisions/ADR-1.md");
+    expect(document).toContain("Verdict: pass");
+    expect(document).toContain("Build: A real browser.");
+  });
+
+  it("keeps decide's choices", () => {
+    expect(featureWorkflow().workflow.nodes["decide"]).toMatchObject({
+      options: ["main", "branch", "keep-uncommitted", "discard"],
+    });
+  });
+});
+
 describe("human gates", () => {
   const gate: Node = {
     type: "human.gate",
@@ -300,6 +395,58 @@ describe("human gates", () => {
       ok: true,
       output: { choice: "merge", answeredBy: "user", note: "" },
     });
+  });
+
+  it("renders the question and document readably, and passes the document", async () => {
+    const seen: { question: string; document?: string | undefined }[] = [];
+    const channel: HumanChannel = {
+      ask: ({ question, document }) => {
+        seen.push({ question, document });
+        return Promise.resolve("merge");
+      },
+      permit: () => Promise.resolve({ allow: true }),
+    };
+    await gateExecutor(
+      context(
+        "g",
+        {
+          ...gate,
+          question: "Files:\n{{nodes.a.output.files}}",
+          document: "{{nodes.a.output.notes}}",
+        },
+        {
+          human: channel,
+          outputs: {
+            a: {
+              files: ["x", "y"],
+              notes: [{ file: "x", why: "new" }],
+            },
+          },
+        },
+      ),
+    );
+    expect(seen).toEqual([
+      {
+        question: "Files:\n- x\n- y",
+        document: "- file: x\n  why: new",
+      },
+    ]);
+  });
+
+  it.each([
+    ["none", {}],
+    ["one that renders empty", { document: " {{nodes.a.output.gone}}\n" }],
+  ])("has no document with %s", async (_name, extra) => {
+    const documents: (string | undefined)[] = [];
+    const channel: HumanChannel = {
+      ask: ({ document }) => {
+        documents.push(document);
+        return Promise.resolve("merge");
+      },
+      permit: () => Promise.resolve({ allow: true }),
+    };
+    await gateExecutor(context("g", { ...gate, ...extra }, { human: channel }));
+    expect(documents).toEqual([undefined]);
   });
 
   it("outputs the note given with the answer, for a later node's template", async () => {

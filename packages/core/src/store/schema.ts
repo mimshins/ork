@@ -222,6 +222,8 @@ export const MIGRATIONS: readonly (string | ((db: DatabaseSync) => void))[] = [
   `ALTER TABLE decisions ADD COLUMN note TEXT;`,
   // 17: the leader that took a child's question first (ADR-063).
   `ALTER TABLE decisions ADD COLUMN owner TEXT;`,
+  // 18: what a gate gives to read beside its question (ADR-068).
+  `ALTER TABLE decisions ADD COLUMN document TEXT;`,
 ];
 
 const versionOf = (db: DatabaseSync): number =>

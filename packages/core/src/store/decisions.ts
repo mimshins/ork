@@ -62,6 +62,7 @@ const decisionOf = (row: Row): DecisionRecord => {
   const optional = {
     recommended: text(row, "recommended"),
     context: text(row, "context"),
+    document: text(row, "document"),
     answer: text(row, "answer"),
     answeredAt: text(row, "answered_at"),
     note: text(row, "note"),
@@ -79,8 +80,8 @@ const decisionOf = (row: Row): DecisionRecord => {
 
 export const decisionQueries = (db: DatabaseSync): DecisionStore => {
   const insert = db.prepare(
-    `INSERT INTO decisions (id, run_id, node, kind, question, options, recommended, context, owner, opened_at, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')`,
+    `INSERT INTO decisions (id, run_id, node, kind, question, options, recommended, context, document, owner, opened_at, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')`,
   );
   const answer = db.prepare(
     `UPDATE decisions SET status = 'answered', answer = ?, answered_by = ?, answered_at = ?, note = ?
@@ -117,6 +118,9 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
         ...(decision.context === undefined
           ? {}
           : { context: maskSecrets(decision.context) }),
+        ...(decision.document === undefined
+          ? {}
+          : { document: maskSecrets(decision.document) }),
       };
       insert.run(
         masked.id,
@@ -127,6 +131,7 @@ export const decisionQueries = (db: DatabaseSync): DecisionStore => {
         JSON.stringify(masked.options),
         masked.recommended ?? null,
         masked.context ?? null,
+        masked.document ?? null,
         masked.owner ?? null,
         openedAt,
       );

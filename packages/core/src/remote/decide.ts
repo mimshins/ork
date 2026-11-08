@@ -9,10 +9,10 @@ import { socketPath, wakeRun } from "../control/socket.ts";
 import type { AnsweredBy, DecisionRecord, EventStore } from "../store/types.ts";
 import { liveStatus } from "../store/view.ts";
 
-/** Open decisions whose run is still live, oldest first. */
+/** Open decisions whose run is still live, oldest first, ANDing the filter. */
 export const pendingDecisions = (
   store: EventStore,
-  filter: { runId?: string; project?: string },
+  filter: { runId?: string; project?: string; workflow?: string },
 ): DecisionRecord[] => {
   const live = new Map<string, boolean>();
   return store.decisions({ ...filter, status: "open" }).filter(decision => {
@@ -20,7 +20,9 @@ export const pendingDecisions = (
       const [run] = store.lookup(decision.runId);
       live.set(
         decision.runId,
-        run !== undefined && liveStatus(run) === "running",
+        run !== undefined &&
+          liveStatus(run) === "running" &&
+          (filter.workflow === undefined || run.workflow === filter.workflow),
       );
     }
     return live.get(decision.runId) === true;

@@ -80,10 +80,13 @@ all views over the same events.
   ([messaging](./messaging/links.md)); `relay` and `notice` commands carry what
   crosses them.
 - **Decisions and commands** have tables of their own: a decision's question,
-  options, recommended option, status (`open`, `answered`, `withdrawn`), answer,
-  who answered, and the masked [note](./messaging.md#decisions) they gave with
-  it (migration 16 adds the column, empty for older answers), and the leader
-  that took a child's question first, as `owner`
+  options, recommended option, masked `document`, when a gate gave one
+  ([migration 18](./messaging.md#decisions); empty for older decisions, which
+  read without the key, and never in `decision.opened`), status (`open`,
+  `answered`, `withdrawn`), answer, who answered, and the masked
+  [note](./messaging.md#decisions) they gave with it (migration 16 adds the
+  column, empty for older answers), and the leader that took a child's question
+  first, as `owner`
   ([migration 17](./messaging/leader-questions.md#who-answered)); a command's
   kind (`stop`, `pause` and `continue`, each with an optional node; `message`
   from `ork chat` with its node and masked body; or `relay`, `script` from
@@ -104,8 +107,9 @@ all views over the same events.
 Strings in every stored event, and in the JSONL copy, are masked before they are
 written ([mask.ts](../packages/core/src/store/mask.ts)): Anthropic, GitHub, AWS
 and Slack tokens, private keys, bearer tokens, and `aws_secret_access_key = …`.
-The terminal shows the unmasked transcript, which is the user's own. Feedback
-records use the same patterns.
+The terminal shows the unmasked transcript, which is the user's own; a gate's
+`question`, `context` and `document` reach the terminal masked, as stored.
+Feedback records use the same patterns.
 
 ## Reading runs
 

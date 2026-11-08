@@ -68,4 +68,15 @@ describe("the preferences", () => {
     preferences.update({ theme: "dark" });
     expect(root.dataset["theme"]).toBe("light");
   });
+
+  it("keep the Decisions filter, and drop one that does not fit", () => {
+    save({ decisionFilter: { workflow: "feature", run: "aaa11111" } });
+    expect(
+      createPreferences(localStorage).value.getValue().decisionFilter,
+    ).toEqual({ workflow: "feature", run: "aaa11111" });
+    save({ decisionFilter: { workflow: 3 } });
+    expect(
+      createPreferences(localStorage).value.getValue().decisionFilter,
+    ).toEqual({});
+  });
 });

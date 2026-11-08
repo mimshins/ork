@@ -36,6 +36,15 @@ so `Enter` there starts a new line rather than answering. A card stays until the
 run has taken the answer, and if it is refused it says why. Below, **Settled**
 says who answered what, including from a terminal, and what they said.
 
+A decision reads as Markdown, never as raw HTML. A code block has a copy button,
+and text past about 20 lines folds behind **Show all**. **Read document** opens
+what a gate gave to read in a dialog of its own; `Escape` closes it and you are
+back on the same card. When decisions come from more than one run, **Workflow**
+and **Run** filters appear, each choice with its count, and a line says how many
+the filter hides; only the panel is filtered, and the filters stay as you left
+them in this browser. In the Monitor, a run with open decisions shows **N
+decisions waiting**, which opens them filtered to that run.
+
 **Chats** keeps one thread per leader or worker, with what it said, what you
 said, and what it did in between. While the run is live, `Enter` sends and
 `Shift+Enter` starts a new line. Once the run has ended, it gives you the

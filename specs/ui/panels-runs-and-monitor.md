@@ -114,6 +114,9 @@ Its CLI twin is `ork tree <run>`.
   panel reads it again when the run's stream has news, at most four times a
   second ([run-watch.ts](../../packages/ui/src/state/run-watch.ts),
   [L63](./limits.md)). Nothing updates optimistically.
+- **Open decisions:** a run with some shows **2 decisions waiting** in its
+  header, which goes to Decisions with the run filter set to it
+  ([built](./panels-decisions-filters-and-keys.md#monitor-control)).
 - **Controls:** Pause, Continue and Stop for the run, and for the selected node.
   Each is enabled only where it applies, and stays focusable and says why when
   it is not. Stop asks first. A refused request is a toast.

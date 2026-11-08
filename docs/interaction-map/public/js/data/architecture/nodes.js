@@ -535,7 +535,7 @@ export const NODES = [
     summary:
       "Every question for you, from every node: `ask_user` calls, permission prompts, `human.gate` nodes and exhausted loops. Each is a record in the store; the asking node waits until it is answered or withdrawn.",
     facts: [
-      "A decision has a question, options, a recommended option and context; an answer may carry a note, which a gate outputs and `ask_user` returns (`ork decide --say`).",
+      "A decision has a question, options, a recommended option, context, and a gate's optional document; an answer may carry a note, which a gate outputs and `ask_user` returns (`ork decide --say`).",
       "A leader with `questions: owner` takes its children's `ask_user` first, through a read-only fork of its session; what it passes on comes here with the leader as its `owner`.",
       "First answer wins: the run's terminal races `ork decide` in any other terminal; the loser's prompt is withdrawn.",
       "An optional `timeout` and `default` let unattended runs continue; a detached run waits for `ork decide`.",

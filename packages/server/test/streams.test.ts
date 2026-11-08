@@ -136,4 +136,16 @@ describe("the overview stream", () => {
       { id: "d1", question: "Ship it?" },
     ]);
   });
+
+  it("narrows the decisions, not the runs, to ?workflow=", async () => {
+    const server = await serve();
+    liveRun(server, "r5");
+    openGate(server, "r5", "d2");
+    const stream = await open(server, "/api/stream?workflow=gone");
+    await expect
+      .poll(() => stream.seen.map(e => e.event))
+      .toEqual(["runs", "decisions", "version"]);
+    expect(stream.seen[0]?.data).toMatchObject([{ id: "r5" }]);
+    expect(stream.seen[1]?.data).toEqual([]);
+  });
 });

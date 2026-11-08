@@ -119,7 +119,8 @@ first (then the prompt is withdrawn and the transcript shows
 ## Decisions and stopping
 
 ([control.ts](../../packages/cli/src/commands/control.ts),
-[tests](../../packages/cli/test/control.test.ts))
+[tests](../../packages/cli/test/control.test.ts),
+[documents](../../packages/cli/test/decide-document.test.ts))
 
 - **`ork decide`** lists the open decisions of this project's live runs (`<run>`
   for one run, `--all` for every project), oldest first, and asks each in turn
@@ -136,7 +137,17 @@ first (then the prompt is withdrawn and the transcript shows
   or an agent in a run (`ORK_RUN` or `ORK_SESSION` is set) may list them but not
   answer, since an answer speaks as the user, and `ork continue` refuses there
   too, and `ork ui` withholds its sign-in link
-  ([L80](../messaging/scripts-limits.md)).
+  ([L80](../messaging/scripts-limits.md)). `--workflow <name>` keeps only the
+  decisions of that workflow's live runs, ANDed with `<run>` (or the project, or
+  `--all`), for `--list`, `--json` and asking in turn; a workflow with none
+  lists none and says so. `--list` marks a decision with a document `+document`.
+  Asking in turn (and the run's own terminal) prints a
+  [document](../messaging.md#decisions) of 40 lines or fewer before the question
+  and otherwise says `Document: N lines. Type d to read it.`; `d` at the choose
+  prompt prints it and asks again, and an option whose id is `d` wins. Output is
+  plain text, the Markdown source. `--id <decision> --document` prints that
+  decision's document, open or settled, and exits 0, or says it has none and
+  exits 1; it only reads, so a process in a run may use it.
 - **`ork chat <run> <node>`**
   ([chat.ts](../../packages/cli/src/commands/chat.ts),
   [tests](../../packages/cli/test/chat.test.ts)) talks to a leader or worker;

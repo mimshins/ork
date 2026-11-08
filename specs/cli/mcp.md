@@ -24,20 +24,20 @@ opens no port, holds no token, and writes nothing but the protocol to stdout.
 
 ## Tools
 
-| Tool              | Answers with                                                                       | As                    |
-| ----------------- | ---------------------------------------------------------------------------------- | --------------------- |
-| `projects`        | The registered projects                                                            | the API's `projects`  |
-| `workflows`       | A project's workflows: name, description, inputs, or why one doesn't parse         | `workflows`           |
-| `workflow_format` | The format's JSON Schema: the workflow's fields and its node types, or one type's  | `builderSchema`       |
-| `agents`          | The agents and skills a project offers                                             | `builderCatalog`      |
-| `runs`            | Runs newest first, with live status and cost; 10 unless `limit` says               | `runs`                |
-| `run`             | One run, by id or a unique start of it, with each node's state                     | `run`, `tree`         |
-| `run_events`      | A run's events, oldest first; the newest 30 unless `after`, `limit` or `last` says | `events`              |
-| `usage`           | What runs spent, and how close the limits are                                      | `usage`               |
-| `decisions`       | The open decisions, and that only a person answers them                            | `decisions`           |
-| `check`           | A draft's `text` or a `workflow`'s problems with their lines, then the walk        | `ork validate`        |
-| `explain_context` | What one node's session loads, layer by layer, with tokens                         | `ork context explain` |
-| `start_run`       | Starts a workflow in the background and gives its run id                           | `ork run --detach`    |
+| Tool              | Answers with                                                                           | As                    |
+| ----------------- | -------------------------------------------------------------------------------------- | --------------------- |
+| `projects`        | The registered projects                                                                | the API's `projects`  |
+| `workflows`       | A project's workflows: name, description, inputs, or why one doesn't parse             | `workflows`           |
+| `workflow_format` | The format's JSON Schema: the workflow's fields and its node types, or one type's      | `builderSchema`       |
+| `agents`          | The agents and skills a project offers                                                 | `builderCatalog`      |
+| `runs`            | Runs newest first, with live status and cost; 10 unless `limit` says                   | `runs`                |
+| `run`             | One run, by id or a unique start of it, with each node's state                         | `run`, `tree`         |
+| `run_events`      | A run's events, oldest first; the newest 30 unless `after`, `limit` or `last` says     | `events`              |
+| `usage`           | What runs spent, and how close the limits are                                          | `usage`               |
+| `decisions`       | The open decisions (`run`, `project`, `workflow`), and that only a person answers them | `decisions`           |
+| `check`           | A draft's `text` or a `workflow`'s problems with their lines, then the walk            | `ork validate`        |
+| `explain_context` | What one node's session loads, layer by layer, with tokens                             | `ork context explain` |
+| `start_run`       | Starts a workflow in the background and gives its run id                               | `ork run --detach`    |
 
 - **Nothing acts for a person.** No tool answers a decision, or stops, pauses,
   continues, resumes or messages a run. The reading tools are built from the

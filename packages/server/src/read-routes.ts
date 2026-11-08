@@ -140,19 +140,23 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
   },
 
   decisions: ({ query }) => {
+    const workflow =
+      query.workflow === undefined ? {} : { workflow: query.workflow };
     if (query.run === undefined) {
       return ok(
-        pendingDecisions(
-          context.store,
-          query.project === undefined
+        pendingDecisions(context.store, {
+          ...workflow,
+          ...(query.project === undefined
             ? {}
-            : { project: projectRoot(context, query.project) },
-        ),
+            : { project: projectRoot(context, query.project) }),
+        }),
       );
     }
     const found = runOf(context, query.run);
     if (!found.ok) return found.refusal;
-    return ok(pendingDecisions(context.store, { runId: found.run.id }));
+    return ok(
+      pendingDecisions(context.store, { ...workflow, runId: found.run.id }),
+    );
   },
 
   decision: ({ params }) => {

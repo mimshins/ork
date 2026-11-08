@@ -347,6 +347,20 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "readable-gates",
+        title: "Readable gates",
+        status: "active",
+        detail:
+          "Built, waiting to land. A gate takes a `document` beside a short question, stored on the decision and kept out of events. The Decisions panel renders Markdown (no raw HTML), folds long text, opens the document in a dialog and filters by workflow and run; `ork decide` prints or offers it and takes `--workflow` and `--document`. `feature`'s two gates use all of it, and a gate's text never shows raw JSON (ADR-068, ADR-069).",
+        docs: [
+          "decisions/ADR-068-gate-document-and-readable-text.md",
+          "decisions/ADR-069-markdown-view-parser.md",
+          "specs/messaging.md#decisions",
+          "specs/ui/panels-decisions-readable.md",
+          "specs/gaps/readable-gates-limits.md",
+        ],
+      },
+      {
         id: "canary",
         title: "Canary snapshots",
         status: "active",

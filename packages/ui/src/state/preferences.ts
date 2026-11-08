@@ -1,10 +1,11 @@
 /**
  * @file What a browser keeps of the user's choices: the theme, the density,
  *   whether desktop notifications may be sent, which the notification center
- *   reads, and which new version's banner was dismissed, and when. Saved values
- *   are checked before use, since they may come from an older Ork; a field that
- *   is missing takes its default, and values that do not fit are dropped.
- *   `followPreferences` keeps the page's look on them.
+ *   reads, which new version's banner was dismissed, and when, and the
+ *   Decisions panel's filter. Saved values are checked before use, since they
+ *   may come from an older Ork; a field that is missing takes its default, and
+ *   values that do not fit are dropped. `followPreferences` keeps the page's
+ *   look on them.
  */
 
 import { PersistentContainer } from "containerized-state-plugin-persistence";
@@ -27,6 +28,10 @@ export const PreferencesSchema = z.object({
   desktopNotifications: z.boolean().default(false),
   /** The new-version banner, hidden for a day for this version. */
   updateDismissed: z.object({ version: z.string(), at: z.string() }).optional(),
+  /** What the Decisions panel is narrowed to; both missing is All. */
+  decisionFilter: z
+    .object({ workflow: z.string().optional(), run: z.string().optional() })
+    .default({}),
 });
 
 export type Preferences = z.infer<typeof PreferencesSchema>;
@@ -35,6 +40,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   theme: "system",
   density: "compact",
   desktopNotifications: false,
+  decisionFilter: {},
 };
 
 export type PreferenceStore = {

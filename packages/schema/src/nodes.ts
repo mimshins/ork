@@ -178,6 +178,7 @@ export const HumanGateNodeSchema = z.strictObject({
   ...base,
   ...notifyFields,
   question: z.string(),
+  document: z.string().optional(),
   options: z.array(DecisionOptionSchema).min(2),
   recommended: z.string().optional(),
   timeout: DurationSchema.optional(),

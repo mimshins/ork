@@ -27,6 +27,8 @@ export type HumanQuestion = {
   options: DecisionChoice[];
   recommended?: string;
   context?: string;
+  /** What to read to answer, apart from the short question; only gates set it. */
+  document?: string;
   /** Withdraws the question, e.g. when a gate's timeout answers it. */
   signal?: AbortSignal;
   onNote?: NoteTaker;

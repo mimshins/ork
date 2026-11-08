@@ -491,6 +491,24 @@ edges:
     ]);
   });
 
+  it("checks a gate's document like its question", () => {
+    const diagnostics = compile(
+      workflow(`nodes:
+  stage: { type: tool.git, command: add -A }
+  gate:
+    type: human.gate
+    question: Commit?
+    document: "{{nodes.stage.output.diff}} {{nodes.stage.output.nope}}"
+    options: [commit, stop]
+edges:
+  - stage -> gate
+`),
+    ).diagnostics;
+    expect(diagnostics.map(d => `${d.code} ${d.path.join(".")}`)).toEqual([
+      "ref.field nodes.gate.document",
+    ]);
+  });
+
   it("reads a tool node's JSON only when it says it has some", () => {
     expect(
       codesOf(`nodes:

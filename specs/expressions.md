@@ -6,8 +6,9 @@ Status: **Built** ([parse.ts](../packages/core/src/expr/parse.ts),
 [ADR-007](../decisions/ADR-007-safe-expression-language.md).
 
 A small, safe language for an edge's `when:` and for `{{ }}` templates in a
-node's `prompt`, `instructions`, `command`, `cwd` and `question`. It has no
-assignment, no method calls, no property calls, and no way to reach JavaScript.
+node's `prompt`, `instructions`, `command`, `cwd`, and a gate's `question` and
+`document`. It has no assignment, no method calls, no property calls, and no way
+to reach JavaScript.
 
 ## Grammar
 
@@ -51,6 +52,17 @@ path       := name ( "." name | "[" ( number | string ) "]" )*
 - `&&`, `||` and `!` use truthiness: an empty list is false.
 - Templates render `undefined` and `null` as empty, numbers and booleans as
   text, and objects as JSON.
+- **Readable mode** is for text a person reads: a gate's `question` and
+  `document` only
+  ([ADR-068](../decisions/ADR-068-gate-document-and-readable-text.md)). Strings
+  stay as they are; a list is `- item` lines; a list of objects is one `- ` item
+  per object with its `key: value` lines indented; an object is `key: value`
+  lines; `null` and `undefined` stay empty. A list or object that follows text
+  on the same line starts after a blank line, so it is not glued to the label. A
+  value nested deeper than two levels is an indented code block of pretty JSON,
+  after a blank line unless it opens the text, never one line of raw JSON. A
+  prompt, a tool node's `env:` and every other template keep JSON
+  ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)).
 
 ## Functions
 

@@ -82,6 +82,8 @@ export const EventsQuerySchema = z.strictObject({
 export const DecisionsQuerySchema = z.strictObject({
   run: z.string().min(1).optional(),
   project: z.string().min(1).optional(),
+  /** Only runs of this workflow, by name; ANDed with `run` or `project`. */
+  workflow: z.string().min(1).optional(),
 });
 
 /** An answer: the option, and what the person said with it, if anything. */
@@ -243,7 +245,8 @@ export const STREAMS = {
   run: "/api/runs/:id/stream",
   /**
    * `runs`, `decisions`, `version`, each when it changes; `?project=` keeps
-   * one. `upgrade`: the upgrade's output, then `end` (contract-update.ts).
+   * one, `?workflow=` narrows `decisions` to that workflow's. `upgrade`: the
+   * upgrade's output, then `end` (contract-update.ts).
    */
   overview: "/api/stream",
   upgrade: "/api/upgrade/stream",

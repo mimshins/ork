@@ -1,8 +1,9 @@
 /**
- * @file The `human.gate` node type: asks the human the rendered question,
- *   outputs their choice with the note they gave, and answers with the
- *   `default` when the `timeout` passes. The timeout counts only while the run
- *   and the gate are not paused (ADR-041).
+ * @file The `human.gate` node type: asks the human the rendered question, with
+ *   its document if it has one, both in readable text (no raw JSON), outputs
+ *   their choice with the note they gave, and answers with the `default` when
+ *   the `timeout` passes. The timeout counts only while the run and the gate
+ *   are not paused (ADR-041).
  */
 
 import {
@@ -39,13 +40,15 @@ export const gateExecutor: NodeExecutor = async context => {
   if (node.type !== "human.gate") {
     return { ok: false, output: {}, error: `${context.id} is not a gate` };
   }
-  const template = parseTemplate(node.question);
-  const question = template.ok
-    ? renderTemplate(
-        template.parts,
-        runScope(context.inputs, context.outputs, context.runId),
-      )
-    : node.question;
+  const scope = runScope(context.inputs, context.outputs, context.runId);
+  const render = (text: string): string => {
+    const template = parseTemplate(text);
+    return template.ok
+      ? renderTemplate(template.parts, scope, { readable: true })
+      : text;
+  };
+  const question = render(node.question);
+  const document = render(node.document ?? "");
   const options = node.options.map(o => choiceOf(o));
   const withdraw = new AbortController();
   context.signal.addEventListener("abort", () => {
@@ -63,6 +66,7 @@ export const gateExecutor: NodeExecutor = async context => {
     },
   };
   if (node.recommended !== undefined) asked.recommended = node.recommended;
+  if (document.trim() !== "") asked.document = document;
   const answer = context.human
     .ask(asked)
     .then(choice => ({ choice, answeredBy: "user", note }));

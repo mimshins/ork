@@ -1,21 +1,21 @@
 /**
  * @file The Monitor's stat strip: which run this is, what it has spent against
  *   its budget, how many nodes are done and how long it has taken, how it
- *   stands, its caller if a `workflow.call` started it, and the run's controls.
- *   The button that opened a run goes with the run it was on, so focus lands on
- *   this heading instead of falling out of the panel, as it does after the Run
- *   workflow dialog starts one.
+ *   stands (and how many decisions wait on it), its caller if a `workflow.call`
+ *   started it, and the run's controls. The button that opened a run goes with
+ *   the run it was on, so focus lands on this heading instead of falling out of
+ *   the panel, as it does after the Run workflow dialog starts one.
  */
 
 import { useEffect, useRef } from "react";
 
 import { Button } from "../components/button.tsx";
-import { StatusBadge } from "../components/status-badge.tsx";
 import type { NodeFacts } from "../graph/facts.ts";
 import { useAppState } from "../state/context.tsx";
-import { runActions, runStatusOf } from "./monitor-model.ts";
+import { runActions } from "./monitor-model.ts";
 import { RunControls } from "./run-controls.tsx";
 import { RunStats } from "./run-stats.tsx";
+import { RunStatus } from "./run-status.tsx";
 import type { RunView } from "./use-run-monitor.ts";
 
 import styles from "./monitor.module.css";
@@ -63,9 +63,9 @@ export const RunHeader = ({
         now={now}
         run={run}
       />
-      <StatusBadge
-        pill
-        status={runStatusOf(run, waiting)}
+      <RunStatus
+        run={run}
+        waiting={waiting}
       />
       {parent === undefined ? null : (
         <Button

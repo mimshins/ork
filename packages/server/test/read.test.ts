@@ -276,6 +276,44 @@ describe("the read routes", () => {
     ).toMatchObject({ data: { length: 1 } });
   });
 
+  it("filter the open decisions by workflow, ANDed with the run", async () => {
+    const { client } = await withRuns();
+    expect(
+      await client.call("decisions", { query: { workflow: "demo" } }),
+    ).toMatchObject({ data: [{ id: "d-live" }] });
+    expect(
+      await client.call("decisions", { query: { workflow: "gone" } }),
+    ).toMatchObject({ data: [] });
+    expect(
+      await client.call("decisions", {
+        query: { run: "bbb", workflow: "gone" },
+      }),
+    ).toMatchObject({ data: [] });
+  });
+
+  it("return a decision's document, and no key when it has none", async () => {
+    const server = await withRuns();
+    server.store.openDecision({
+      id: "d-doc",
+      runId: "bbb22222",
+      node: "lead",
+      kind: "question",
+      question: "Ship it?",
+      options: [{ id: "ship" }],
+      document: "# The spec",
+    });
+    const { client } = server;
+    expect(
+      await client.call("decision", { params: { id: "d-doc" } }),
+    ).toMatchObject({ data: { document: "# The spec" } });
+    expect(await client.call("decisions")).toMatchObject({
+      data: [{ id: "d-live" }, { document: "# The spec" }],
+    });
+    const plain = await client.call("decision", { params: { id: "d-live" } });
+    expect(plain).toMatchObject({ ok: true });
+    expect(JSON.stringify(plain)).not.toContain('"document"');
+  });
+
   it("read one decision, open or not, and refuse an unknown one", async () => {
     const { client } = await withRuns();
     expect(

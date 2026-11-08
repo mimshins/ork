@@ -154,6 +154,21 @@ describe("a tool node's environment", () => {
     });
   });
 
+  it("keeps a list or object as JSON in `env:` (ADR-047), not gate text", async () => {
+    const run = context(
+      shell({
+        env: {
+          LIST: "{{nodes.a.output.list}}",
+          OBJECT: "{{nodes.a.output.object}}",
+        },
+      }),
+      { outputs: { a: { list: ["x", "y"], object: { k: 1 } } } },
+    );
+    const { runner, seen } = runnerOf({});
+    await toolExecutor(runner, { environ })(run);
+    expect(seen[0]).toMatchObject({ LIST: '["x","y"]', OBJECT: '{"k":1}' });
+  });
+
   it("fails a node whose variable is not set, rather than run with nothing", async () => {
     const run = context(shell({ env: { TOKEN: "{{env.GONE}}" } }));
     const { runner, seen } = runnerOf({});

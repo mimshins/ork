@@ -1,0 +1,25 @@
+/**
+ * @file The look of folded text: a folded region is clipped at 20 lines with no
+ *   scroll bar and no fade, so nothing but the button's "(62 lines)" says text
+ *   is hidden, and no color carries it.
+ */
+
+.region {
+  --folded-text-lines: 20;
+  --folded-text-max-height: none;
+  --folded-text-overflow: visible;
+
+  line-height: var(--leading-ui);
+  max-height: var(--folded-text-max-height);
+  min-width: 0;
+  overflow: var(--folded-text-overflow);
+}
+
+.region[data-folded] {
+  --folded-text-max-height: calc(var(--folded-text-lines) * 1lh);
+  --folded-text-overflow: hidden;
+}
+
+.more {
+  display: flex;
+}

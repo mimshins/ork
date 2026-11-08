@@ -88,6 +88,11 @@ export type DecisionRecord = {
   options: DecisionChoice[];
   recommended?: string;
   context?: string;
+  /**
+   * What to read to answer, masked; absent when the gate has none, and on
+   * records from before documents. Never in `decision.opened`.
+   */
+  document?: string;
   openedAt: string;
   status: "open" | "answered" | "withdrawn";
   answer?: string;
@@ -110,7 +115,9 @@ export type NewDecision = Pick<
   DecisionRecord,
   "id" | "runId" | "node" | "kind" | "question" | "options"
 > &
-  Partial<Pick<DecisionRecord, "recommended" | "context" | "owner">>;
+  Partial<
+    Pick<DecisionRecord, "recommended" | "context" | "document" | "owner">
+  >;
 
 /** What another process may ask a live run to do. */
 export type RunCommand =

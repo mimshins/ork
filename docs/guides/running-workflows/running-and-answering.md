@@ -122,6 +122,8 @@ answered.
 ```sh
 ork decide                          # answer them one by one
 ork decide --list                   # just look
+ork decide --list --workflow feature  # only that workflow's runs
+ork decide --id 3f2a91c0-1 --document # read the document of a gate
 ork decide --id 3f2a91c0-1 --choose ship
 ork decide --id 3f2a91c0-1 --choose revise --say "Split the API section in two"
 ork decide --id 3f2a91c0-1 --choose ship --note "Missed a test" --rating bad
@@ -130,6 +132,25 @@ ork decide --id 3f2a91c0-1 --choose ship --note "Missed a test" --rating bad
 `--say` gives the answer its note, which goes to the run. `--note` is different:
 with `--rating`, it notes how that node went, as [feedback](../feedback.md), and
 the run never sees it.
+
+A gate can give a **document** to read beside its question, such as a whole
+spec. A document of 40 lines or fewer is printed before the question. A longer
+one is offered instead: `Document: 120 lines. Type d to read it.` Type `d` at
+the prompt to read it, then answer. It stays plain text in a terminal, and
+`--list` marks these decisions `+document`.
+
+`--workflow <name>` keeps only that workflow's decisions, with a run id too if
+you give one. A permission's command shows as you would run it, up to 4,000
+characters.
+
+In the **Decisions panel** of `ork ui`, a decision reads as Markdown: headings,
+lists, code blocks with a copy button, and links. Text past about 20 lines folds
+behind **Show all**, with your choices and the note box still in view. A gate's
+document opens from **Read document** in its own dialog; `Escape` closes it. The
+panel can filter by workflow and by run, with a count on each choice, and
+remembers your choice in this browser. A run in the Monitor with open decisions
+has a control that opens them, filtered to that run. See
+[the browser view](../browser-view/panels-and-workspace.md).
 
 When nobody is at the terminal (stdin is not a TTY, as in CI), tools are denied,
 questions take their recommended option, and a gate with a `timeout` takes its

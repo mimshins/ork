@@ -244,6 +244,46 @@ describe("the terminal channel", () => {
     );
   });
 
+  const LONG = Array.from({ length: 41 }, (_, i) => `line ${String(i)}`).join(
+    "\n",
+  );
+  const gate = { nodeId: "n", question: "Which?", options: options3 };
+
+  it("prints a short document before the question", async () => {
+    const { human, said } = terminal(["2"]);
+    const short = LONG.split("\n").slice(0, 40).join("\n");
+    await human.ask({ ...gate, document: `${short}\n` });
+    const out = said.join("");
+    expect(out.indexOf("line 39")).toBeLessThan(out.indexOf("asks: Which?"));
+    expect(out).not.toContain("Type d");
+  });
+
+  it("offers a long document, prints it on d, and asks again", async () => {
+    const { human, said } = terminal(["d", "2"]);
+    expect(await human.ask({ ...gate, document: LONG })).toBe("b");
+    const out = said.join("");
+    expect(out).toContain("Document: 41 lines. Type d to read it.");
+    expect(out.indexOf("Type d")).toBeLessThan(out.indexOf("line 40"));
+    expect(out).toContain("line 40");
+  });
+
+  it("lets an option named d win over reading the document", async () => {
+    const { human, said } = terminal(["d"]);
+    const answer = await human.ask({
+      ...gate,
+      options: [{ id: "c" }, { id: "d" }],
+      document: LONG,
+    });
+    expect(answer).toBe("d");
+    expect(said.join("")).not.toContain("line 40");
+  });
+
+  it("takes d as a wrong answer when there is no document", async () => {
+    const { human, said } = terminal(["d", "2"]);
+    expect(await human.ask(gate)).toBe("b");
+    expect(said.join("")).toContain("Type an option's number or id.");
+  });
+
   it("asks until it gets a valid answer, and asks before allowing a tool", async () => {
     const { human, said } = terminal(["nine", "2", "y", ""]);
     const answer = await human.ask({

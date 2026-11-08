@@ -137,7 +137,17 @@ The decision queue ([queue.ts](../packages/core/src/control/queue.ts)):
   the server's `{ choose, note? }`. Why:
   [ADR-062](../decisions/ADR-062-notes-on-decision-answers.md).
 - A permission prompt is a decision with the options `allow` and `deny`; its
-  context is the tool's input (at most 400 characters).
+  context is the tool's `command`, `file_path`, `path`, `url` or `pattern`, the
+  first one present, as written with its newlines; any other input is pretty
+  JSON. Either way it stops at 4,000 characters, the last being `…`.
+- **A gate may give a document** beside its short question: what to read to
+  answer ([ADR-068](../decisions/ADR-068-gate-document-and-readable-text.md)).
+  It is masked and kept on the record (`document`; blank is none, and older
+  records have none), and the run's own terminal gets the question, context and
+  document masked as well. `decision.opened` does not carry it, so `ork logs`
+  shows the question only and a settled decision's document is read from the
+  store. Only `human.gate` sets it for now, not `ask_user`. On a terminal it
+  follows [the picker's rule](./cli/running-and-runs.md#decisions-and-stopping).
 - A gate's `timeout` + `default` withdraws the question (`decision.withdrawn`)
   and answers it by itself; so does a stopped run.
 - A run with no terminal (`ork run --detach`) waits for `ork decide`. A run

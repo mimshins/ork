@@ -10,6 +10,7 @@
 
 import type { RunEvent } from "../run/types.ts";
 import type { HumanChannel } from "../runtime/types.ts";
+import { maskSecrets } from "../store/mask.ts";
 import type {
   AnsweredBy,
   DecisionRecord,
@@ -44,10 +45,23 @@ type LocalAnswer = { answer: string; note?: string };
 const deniedMessage = (note: string | undefined): string =>
   note === undefined ? DENIED : `${DENIED} They said: ${note}`;
 
-/** At most `max` characters of a tool's input, for the decision's context. */
-const inputPreview = (input: Record<string, unknown>, max = 400): string => {
-  const json = JSON.stringify(input);
-  return json.length > max ? `${json.slice(0, max - 1)}…` : json;
+/** The input fields that say what a tool will do, the first one present. */
+export const TOOL_INPUT_KEYS = [
+  "command",
+  "file_path",
+  "path",
+  "url",
+  "pattern",
+] as const;
+
+/** A tool's input for the decision's context: as written, cut at `max`. */
+const inputContext = (input: Record<string, unknown>, max = 4000): string => {
+  const key = TOOL_INPUT_KEYS.find(k => typeof input[k] === "string");
+  const text =
+    key === undefined
+      ? JSON.stringify(input, undefined, 2)
+      : String(input[key]);
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 };
 
 export const createDecisionQueue = (
@@ -146,6 +160,7 @@ export const createDecisionQueue = (
         open.recommended = question.recommended;
       }
       if (question.context !== undefined) open.context = question.context;
+      if (question.document !== undefined) open.document = question.document;
       // A leader passed it on, its note in the context (ADR-063).
       if (question.owner !== undefined) open.owner = question.owner;
       const { local } = options;
@@ -158,6 +173,14 @@ export const createDecisionQueue = (
               return local
                 .ask({
                   ...question,
+                  // The terminal shows what the store holds, masked.
+                  question: maskSecrets(question.question),
+                  ...(question.context === undefined
+                    ? {}
+                    : { context: maskSecrets(question.context) }),
+                  ...(question.document === undefined
+                    ? {}
+                    : { document: maskSecrets(question.document) }),
                   signal,
                   onNote: given => {
                     note = given;
@@ -227,7 +250,7 @@ export const createDecisionQueue = (
           kind: "permission",
           question: `Allow ${request.toolName}?`,
           options: PERMISSION_OPTIONS,
-          context: inputPreview(request.input),
+          context: inputContext(request.input),
         },
         local === undefined
           ? undefined

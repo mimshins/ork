@@ -16,7 +16,8 @@ _Part of [The local server](../server.md)._
   `live`), `event: decisions` (open, of live runs) and `event: version` (as
   `/api/version`), each sent first and then whenever it changes; they are
   compared every second, the update record read at most once a minute.
-  `?project=` narrows the runs and decisions.
+  `?project=` narrows the runs and decisions; `?workflow=` narrows the decisions
+  only.
 - **The upgrade's stream** (`/api/upgrade/stream`): `event: output` per line of
   the package manager's output (`id:` its seq) after `Last-Event-ID` (or
   `?after=`), then each new line, then `event: end`

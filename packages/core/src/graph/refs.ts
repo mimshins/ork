@@ -33,6 +33,7 @@ const TEMPLATE_FIELDS = [
   "command",
   "cwd",
   "question",
+  "document",
   "workflow",
   "project",
   "ref",

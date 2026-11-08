@@ -28,8 +28,8 @@ are named by id or a unique prefix: no match is 404, several are 400.
 | GET    | `/api/runs/:id/events`                                | stored events; `?after`, `?node`, `?limit`, `?last` (the newest N)                                                   | `ork logs --json`         |
 | GET    | `/api/usage`                                          | the [usage report](../usage.md#reports); `?project`, `?workflow`, `?since`, `?until`                                 |
 | GET    | `/api/triggers`                                       | how [triggers](../scheduler/watching.md#the-process) stand, and whether `ork watch` is running                       |
-| GET    | `/api/decisions`                                      | open decisions of live runs; `?run`, `?project`                                                                      | `ork decide --list`       |
-| GET    | `/api/decisions/:id`                                  | one decision, open or not, with its answer, who gave it, and their note                                              | `ork logs <run>`          |
+| GET    | `/api/decisions`                                      | open decisions of live runs; `?run`, `?project`, `?workflow` (ANDed)                                                 | `ork decide --list`       |
+| GET    | `/api/decisions/:id`                                  | one decision, open or not, with its document, answer, who gave it, and their note                                    | `ork logs <run>`          |
 | POST   | `/api/decisions/:id`                                  | `{ choose, note? }`: answers it as `ui` with the note, if any, and wakes the run                                     | `ork decide --id --say`   |
 | POST   | `/api/runs`                                           | `{ project, workflow, inputs?, driver?, inPlace?, allowDirty?, machineClaude? }`                                     | `ork run --detach`        |
 | POST   | `/api/runs/:id/resume`                                | `{ inputs?, driver?, inPlace?, allowDirty? }`                                                                        | `ork resume --detach`     |

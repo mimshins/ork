@@ -151,6 +151,24 @@ person said with their answer, empty when they said nothing. A later node reads
 it as `{{nodes.human.output.note}}`, so a `revise` answer can carry what to
 change, and an edge can test it, as in `when: "note != ''"`.
 
+Keep the `question` short, and put what someone needs to read in `document`,
+beside it:
+
+```yaml
+approve:
+  type: human.gate
+  question: Approve this spec? revise takes a note.
+  document: "{{nodes.spec.output.spec}}"
+  options: [approve, revise, stop]
+```
+
+`document` is a template like `question`, and is optional. Both are rendered for
+a person: a list becomes `- item` lines, a list of objects one item per object
+with its `key: value` lines, and an object `key: value` lines, never raw JSON.
+The Decisions panel of `ork ui` shows them as Markdown (no raw HTML, tables or
+images) and folds long text; a terminal shows the Markdown source. See
+[Running and answering](./running-workflows/running-and-answering.md#answering-questions).
+
 ## Edges
 
 ```yaml
@@ -195,7 +213,8 @@ reviews as its new input; a leader resumes its own session.
 
 ## Templates and conditions
 
-`{{ }}` works in `prompt`, `instructions`, `command`, `cwd` and `question`:
+`{{ }}` works in `prompt`, `instructions`, `command`, `cwd`, and a gate's
+`question` and `document`:
 
 - `{{inputs.feature}}`: a run input.
 - `{{nodes.spec.output.artifacts.spec}}`: a field of another node's report.

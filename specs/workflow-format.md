@@ -25,7 +25,8 @@ Status: **Built**: the Zod model, edge shorthand, canonical YAML, diagnostics,
   by a newer Ork, and gets that one message (`schema.newer_version`, with
   `ork upgrade` as the fix) instead of `expected 1`; the same goes for
   `project.yaml`, `triggers.yaml` and settings. There are no migrations yet: the
-  first arrives with the first version 2.
+  first arrives with the first version 2. An additive optional field, such as a
+  gate's `document`, needs no version bump.
 - A published JSON Schema for editor autocomplete.
 
 The canonical example is
@@ -123,7 +124,9 @@ edges:
   templates.
 - **Control:** `control.split`, `control.join` (all, any or n),
   `control.router`. Loops are edges with `maxRounds`, not a node.
-- **Human:** `human.gate`.
+- **Human:** `human.gate`: a `question`, its `options`, and an optional
+  `document` (a template, like `question`) for the long material to read before
+  answering; it is shown apart from the question.
 - **Edges:** `input`/`output` artifacts.
 
 Claude nodes and `defaults` take a `model` (`opus`, `sonnet`, `haiku` or a full

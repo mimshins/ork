@@ -3,7 +3,8 @@
  *   writes to the store, then wakes the run on its socket; specs/messaging.md).
  *   `--say` gives the answer a note, which goes to the run with it. With `--id`
  *   and `--choose`, `--note` and `--rating` instead note how the decision's
- *   node went, as the run's feedback (specs/feedback.md).
+ *   node went, as the run's feedback (specs/feedback.md). `--document` prints
+ *   what a gate gave to read beside its question.
  */
 
 import {
@@ -76,12 +77,17 @@ export const saidLine = (store: EventStore, id: string): string => {
 /** One line per open decision, for `--list`. */
 export const formatDecisions = (
   decisions: readonly DecisionRecord[],
+  workflow?: string,
 ): string[] =>
   decisions.length === 0
-    ? ["No open decisions."]
+    ? [
+        workflow === undefined
+          ? "No open decisions."
+          : `No open decisions in workflow ${workflow}.`,
+      ]
     : decisions.map(
         d =>
-          `${style("bold", d.id)}  ${style("cyan", d.node)}${d.owner === undefined ? "" : style("dim", ` via ${d.owner}`)}  ${d.question} ${style("dim", `[${d.options.map(o => (o.id === d.recommended ? `${o.id}*` : o.id)).join(", ")}]`)}`,
+          `${style("bold", d.id)}  ${style("cyan", d.node)}${d.owner === undefined ? "" : style("dim", ` via ${d.owner}`)}  ${d.question} ${d.document === undefined ? "" : `${style("dim", "+document")} `}${style("dim", `[${d.options.map(o => (o.id === d.recommended ? `${o.id}*` : o.id)).join(", ")}]`)}`,
       );
 
 export const decide = defineCommand({
@@ -106,6 +112,15 @@ export const decide = defineCommand({
       default: false,
     },
     json: { type: "boolean", description: "List them as JSON", default: false },
+    workflow: {
+      type: "string",
+      description: "Only the decisions of this workflow's runs",
+    },
+    document: {
+      type: "boolean",
+      description: "Print the document of the decision --id names",
+      default: false,
+    },
     id: { type: "string", description: "Answer this decision…" },
     choose: { type: "string", description: "…with this option" },
     say: {
@@ -122,9 +137,10 @@ export const decide = defineCommand({
   },
   run: async ({ args }) => {
     const answers =
-      args.id !== undefined ||
-      args.choose !== undefined ||
-      (process.stdin.isTTY && !args.list && !args.json);
+      !args.document &&
+      (args.id !== undefined ||
+        args.choose !== undefined ||
+        (process.stdin.isTTY && !args.list && !args.json));
     const refusal = answers ? decideRefusal() : null;
     if (refusal !== null) {
       failed(refusal);
@@ -137,6 +153,16 @@ export const decide = defineCommand({
       interactive: process.stdin.isTTY,
     });
     try {
+      if (args.document) {
+        if (args.id === undefined || args.choose !== undefined) {
+          failed("--document goes with --id, without --choose.");
+          return;
+        }
+        const { document } = store.decision(args.id) ?? {};
+        if (document === undefined) failed(`${args.id} has no document.`);
+        else write(document);
+        return;
+      }
       if (args.id !== undefined || args.choose !== undefined) {
         if (args.id === undefined || args.choose === undefined) {
           failed("--id and --choose go together.");
@@ -180,7 +206,9 @@ export const decide = defineCommand({
         );
         return;
       }
-      const filter: { runId?: string; project?: string } = {};
+      const filter: { runId?: string; project?: string; workflow?: string } =
+        {};
+      if (args.workflow !== undefined) filter.workflow = args.workflow;
       if (args.run !== undefined && args.run !== "") {
         const found = findRun(store, args.run, process.cwd());
         if (!found.ok) {
@@ -197,7 +225,7 @@ export const decide = defineCommand({
         return;
       }
       if (args.list || !process.stdin.isTTY || open.length === 0) {
-        for (const line of formatDecisions(open)) write(line);
+        for (const line of formatDecisions(open, args.workflow)) write(line);
         return;
       }
       for (const d of open) {
@@ -209,6 +237,7 @@ export const decide = defineCommand({
         };
         if (d.recommended !== undefined) question.recommended = d.recommended;
         if (d.context !== undefined) question.context = d.context;
+        if (d.document !== undefined) question.document = d.document;
         let note: string | undefined;
         question.onNote = given => {
           note = given;

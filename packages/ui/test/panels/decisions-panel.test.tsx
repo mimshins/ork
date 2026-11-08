@@ -37,6 +37,12 @@ const decision = (
   ...over,
 });
 
+/** The text of each `code` element in a decision's card. */
+const codesIn = (id: string): (string | null)[] =>
+  [
+    ...document.querySelectorAll<HTMLElement>(`[data-decision="${id}"] code`),
+  ].map(code => code.textContent);
+
 const open = async (
   list: DecisionRecord[] = [decision("d1")],
   routes: FakeRoutes = {},
@@ -52,7 +58,7 @@ const open = async (
 };
 
 const card = (id: string): HTMLElement =>
-  screen.getByRole("region", { name: new RegExp(`^Merge ${id}\\?`, "u") });
+  screen.getByRole("region", { name: new RegExp(`gate Merge ${id}\\?$`, "u") });
 
 beforeEach(() => {
   localStorage.clear();
@@ -67,12 +73,12 @@ afterEach(() => {
 describe("the Decisions panel", () => {
   const WRITTEN = "Run `rm -rf build` and ``deploy``?";
 
-  it("shows a question exactly as written, marks and all", async () => {
+  it("shows a question as Markdown: its marks become code, not stray backticks", async () => {
     await open([decision("d1", { question: WRITTEN, context: "See `a`." })]);
-    const heading = screen.getByRole("heading", { name: WRITTEN });
-    expect(heading.textContent).toBe(WRITTEN);
-    expect(heading.querySelector("code")).toBeNull();
-    expect(screen.getByText("See `a`.")).toBeDefined();
+    expect(document.querySelector("[data-decision=d1] p")?.textContent).toBe(
+      "Run rm -rf build and deploy?",
+    );
+    expect(codesIn("d1")).toEqual(["rm -rf build", "deploy", "a"]);
   });
 
   it("shows a settled question as written too", async () => {
@@ -211,10 +217,10 @@ describe("the Decisions panel", () => {
       decision("d2", { question: "Merge?", runId: "bbb22222" }),
     ]);
     expect(
-      screen.getByRole("region", { name: /^Merge\? .*aaa11111 · gate$/u }),
+      screen.getByRole("region", { name: /aaa11111 · gate Merge\?$/u }),
     ).toBeDefined();
     expect(
-      screen.getByRole("region", { name: /^Merge\? .*bbb22222 · gate$/u }),
+      screen.getByRole("region", { name: /bbb22222 · gate Merge\?$/u }),
     ).toBeDefined();
   });
 

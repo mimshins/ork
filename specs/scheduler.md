@@ -192,11 +192,12 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   workflow as a separate run and waits as it says
   ([calling workflows](./scheduler/calls.md)).
 - **`human.gate`** ([gate.ts](../packages/nodes/src/gate.ts)): asks the rendered
-  `question`; with `timeout` and `default`, the default answers when the time is
-  up and the question is withdrawn. The output is `choice`, `answeredBy` (`user`
-  or `timeout`) and `note`: what the person said with their answer, an empty
-  string when they said nothing or the timeout answered
-  ([decision notes](./messaging.md#decisions)).
+  `question`, with its rendered `document` if not blank, both in
+  [readable mode](./expressions.md#semantics); with `timeout` and `default`, the
+  default answers when the time is up and the question is withdrawn. The output
+  is `choice`, `answeredBy` (`user` or `timeout`) and `note`: what the person
+  said with their answer, an empty string when they said nothing or the timeout
+  answered ([decision notes](./messaging.md#decisions)).
 
 ## Budget and concurrency
 

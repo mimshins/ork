@@ -187,9 +187,61 @@ const stringify = (value: unknown): string => {
   return JSON.stringify(value);
 };
 
-export const renderTemplate = (parts: TemplatePart[], scope: Scope): string =>
-  parts
-    .map(part =>
-      typeof part === "string" ? part : stringify(evaluate(part.expr, scope)),
+const isContainer = (value: unknown): value is object =>
+  value !== null && typeof value === "object";
+
+const depthOf = (value: unknown): number =>
+  isContainer(value)
+    ? 1 + Math.max(0, ...Object.values(value).map(item => depthOf(item)))
+    : 0;
+
+/** Keeps a multi-line value inside its list item or `key:` line. */
+const hang = (text: string): string => text.replaceAll("\n", "\n  ");
+
+/** A value at most two levels deep as Markdown list items and `key: value`. */
+const listed = (value: unknown): string => {
+  if (!isContainer(value)) return stringify(value);
+  if (Array.isArray(value)) {
+    return value.map(item => `- ${hang(listed(item))}`).join("\n");
+  }
+  return Object.entries(value)
+    .map(([key, item]) =>
+      isContainer(item)
+        ? `${key}:\n  ${hang(listed(item))}`
+        : `${key}: ${hang(stringify(item))}`,
     )
-    .join("");
+    .join("\n");
+};
+
+/**
+ * A value as a person reads it: Markdown, never a line of raw JSON. `before` is
+ * the text so far: a list or object starts on its own line, after a blank one
+ * when text shares its line.
+ */
+const readableText = (value: unknown, before: string): string => {
+  if (!isContainer(value)) return stringify(value);
+  if (depthOf(value) <= 2) {
+    const list = listed(value);
+    return list === "" || before === "" || before.endsWith("\n")
+      ? list
+      : `\n\n${list}`;
+  }
+  const code = JSON.stringify(value, undefined, 2).replaceAll(/^/gmu, "    ");
+  // Unlike a list, an indented code block needs a blank line above it.
+  return before === "" || before.endsWith("\n\n") ? code : `\n\n${code}`;
+};
+
+/**
+ * Fills a parsed template. `readable` is for text a person reads (a gate's
+ * `question` and `document`); scripts and prompts keep JSON (ADR-047).
+ */
+export const renderTemplate = (
+  parts: TemplatePart[],
+  scope: Scope,
+  { readable = false }: { readable?: boolean } = {},
+): string =>
+  parts.reduce<string>((text, part) => {
+    if (typeof part === "string") return text + part;
+    const value = evaluate(part.expr, scope);
+    return text + (readable ? readableText(value, text) : stringify(value));
+  }, "");

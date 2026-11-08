@@ -77,9 +77,11 @@ is `ork decide`, and each option's tooltip gives `ork decide <run> --id <id>
 <option>`.
 
 - **A card** has where the question comes from, the question, its context, a
-  note box and its options. The question and context show exactly as written, as
-  a person approves that text. The recommended option says so in words, and
-  stands out.
+  note box and its options. The question, context and a gate's `document` are
+  read as Markdown, folded past 20 lines, with filters and a Monitor shortcut
+  ([built](./panels-decisions-readable.md), ADR-068, ADR-069); the settled list
+  still shows plain text ([gaps](../gaps.md)). The recommended option says so in
+  words, and stands out.
 - **The note box**, labelled "Note for the run (optional)", two lines tall,
   takes what to send with the answer, the decision's
   [note](../messaging.md#decisions): a gate passes it on as `note`. Keys typed

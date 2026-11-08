@@ -8,7 +8,12 @@
 
 import { createInterface, type Interface } from "node:readline/promises";
 
-import type { DecisionChoice, HumanChannel, NoteTaker } from "@krapht/ork-core";
+import {
+  type DecisionChoice,
+  type HumanChannel,
+  type NoteTaker,
+  TOOL_INPUT_KEYS,
+} from "@krapht/ork-core";
 
 import { style } from "./output.ts";
 
@@ -23,6 +28,9 @@ export type TerminalHuman = HumanChannel & { close: () => void };
 
 const PREVIEW = 160;
 
+/** A document longer than this is offered (`d`) rather than printed. */
+const SHORT_DOCUMENT_LINES = 40;
+
 const NO_ONE_TO_PERMIT =
   "No one is at the terminal to approve this tool, so it is not allowed in this run.";
 
@@ -36,9 +44,7 @@ export const previewInput = (
   toolName: string,
   input: Record<string, unknown>,
 ): string => {
-  const key = ["command", "file_path", "path", "url", "pattern"].find(
-    k => typeof input[k] === "string",
-  );
+  const key = TOOL_INPUT_KEYS.find(k => typeof input[k] === "string");
   const value =
     key === undefined ? JSON.stringify(input) : `${key}: ${String(input[key])}`;
   const line = value.replaceAll(/\s+/gu, " ").trim();
@@ -109,15 +115,15 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
     options: readonly DecisionChoice[],
     recommended: string | undefined,
     signal: AbortSignal | undefined,
+    document: string | undefined,
   ): Promise<string> => {
-    const picked = pickOption(
-      await prompt(`  Choose${hint}: `, signal),
-      options,
-      recommended,
-    );
+    const answer = await prompt(`  Choose${hint}: `, signal);
+    // Picked first, so an option named `d` wins over reading the document.
+    const picked = pickOption(answer, options, recommended);
     if (picked !== undefined) return picked;
-    say(style("dim", "  Type an option's number or id."));
-    return choose(hint, options, recommended, signal);
+    if (document !== undefined && answer.trim() === "d") say(document);
+    else say(style("dim", "  Type an option's number or id."));
+    return choose(hint, options, recommended, signal, document);
   };
   // Prompts from parallel tool calls wait for each other.
   const oneAtATime = <T>(work: () => Promise<T>): Promise<T> => {
@@ -155,6 +161,7 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
       options,
       recommended,
       context,
+      document,
       signal,
       onNote,
     }) =>
@@ -162,10 +169,16 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
         if (signal?.aborted === true) {
           throw new Error("the question was withdrawn");
         }
+        const documentLines = document?.trimEnd().split("\n").length ?? 0;
+        if (document !== undefined && documentLines <= SHORT_DOCUMENT_LINES) {
+          say(document);
+        }
         say(
           `${style(["yellow", "bold"], "?")} ${style("bold", nodeId)} asks: ${question}`,
         );
-        if (context !== undefined) say(style("dim", `  ${context}`));
+        if (context !== undefined) {
+          say(style("dim", `  ${context.replaceAll("\n", "\n  ")}`));
+        }
         for (const [index, option] of options.entries()) {
           say(optionLine(option, index, recommended));
         }
@@ -176,7 +189,16 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
         }
         const fallback = options.findIndex(o => o.id === recommended);
         const hint = fallback === -1 ? "" : ` [${String(fallback + 1)}]`;
-        const picked = await choose(hint, options, recommended, signal);
+        if (documentLines > SHORT_DOCUMENT_LINES) {
+          say(`  Document: ${String(documentLines)} lines. Type d to read it.`);
+        }
+        const picked = await choose(
+          hint,
+          options,
+          recommended,
+          signal,
+          document,
+        );
         await takeNote(onNote, signal);
         return picked;
       }),

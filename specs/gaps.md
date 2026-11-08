@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L187. At a review, each open
+closes it. Ids are never reused: the next limit is L195. At a review, each open
 entry is closed (built or fixed, then removed), kept (moved into its area's
 spec, then removed here), or carried to a roadmap item, or to none yet
 (unplanned).
@@ -38,6 +38,10 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 [the Worktrees panel](./worktrees/limits.md),
 [upgrading from the browser view](./cli/upgrade-limits.md), and
 [the drivers](./runtime.md#limits). A carried limit's words stay there too.
+
+## Contents
+
+- [Limits found building readable gates](./gaps/readable-gates-limits.md)
 
 ## Gaps
 

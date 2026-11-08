@@ -53,7 +53,7 @@ ork logs [<run>] [--node n] [--follow] [--json]   # a run's transcript, replayed
 ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node
 ork usage [--all] [--since 30d] [--until day] [--by day|workflow|model|…] [--workflow w] [--json]  # what runs spent over time
 ork prune --older-than 90d [--all] [--dry-run] [--yes]  # forget old runs' logs; what they spent stays
-ork decide [<run>] [--all] [--list] [--json] [--id <d> --choose <option> [--say <text>] [--note <text>] [--rating good|bad]]  # answer open decisions; --say gives the answer a note for the run, --note notes the decision's node as feedback
+ork decide [<run>] [--all] [--list] [--json] [--workflow <name>] [--id <d> --document] [--id <d> --choose <option> [--say <text>] [--note <text>] [--rating good|bad]]  # answer open decisions; --say gives the answer a note for the run, --note notes the decision's node as feedback
 ork chat <run> <node> [-m <text>] [--driver sdk|cli]  # talk to a node, live or by resuming its session
 ork relay <run>/<node> <run>/<node> [--max-messages n]  # let two running nodes of different runs message each other
 ork relay end <a> <b> | ork relay list [run] [--all] [--json]

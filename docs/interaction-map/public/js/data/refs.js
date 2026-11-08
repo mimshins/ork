@@ -109,6 +109,14 @@ export const UI = {
     "packages/ui/src/panels/decisions-panel.tsx",
     "Code: the Decisions panel",
   ),
+  decisionReading: d(
+    "specs/ui/panels-decisions-readable.md",
+    "Spec: reading a decision (Markdown, folding, the document dialog)",
+  ),
+  decisionFilters: d(
+    "specs/ui/panels-decisions-filters-and-keys.md",
+    "Spec: the Decisions panel's filters and Monitor control",
+  ),
   decisionTests: d(
     "packages/ui/test/panels/decisions-panel.test.tsx",
     "Tests: the Decisions panel's answers, keys and focus",
@@ -469,6 +477,14 @@ export const STORE = {
 
 export const CONTROL = {
   queue: d("packages/core/src/control/queue.ts", "Code: the decision queue"),
+  document: d(
+    "decisions/ADR-068-gate-document-and-readable-text.md",
+    "ADR-068: a gate's document, and readable decision text",
+  ),
+  documentCli: d(
+    "packages/cli/test/decide-document.test.ts",
+    "Tests: `ork decide --workflow` and `--document`",
+  ),
   control: d(
     "packages/core/src/control/control.ts",
     "Code: a live run's watcher and control",

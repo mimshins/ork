@@ -20,6 +20,7 @@
     "containerized-state": "3.4.0",
     "containerized-state-plugin-persistence": "1.4.0",
     "dockview-react": "8.8.3",
+    "mdast-util-from-markdown": "2.1.0",
     "react": "19.3.1",
     "react-containerized-state": "3.4.0",
     "react-dom": "19.3.1",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@testing-library/react": "16.3.3",
     "@testing-library/user-event": "14.6.8",
+    "@types/mdast": "4.0.4",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",

@@ -1,0 +1,127 @@
+/**
+ * @file The look of rendered Markdown: dense and in the panel's own type, so a
+ *   heading's level is structure and not size. Everything wraps inside its
+ *   place (a long path or URL has no break to give), a quote keeps a bar and a
+ *   list its marker at their own width, and a link is underlined as well as
+ *   colored.
+ */
+
+.markdown {
+  --markdown-text: var(--color-text);
+  --markdown-muted: var(--color-text-muted);
+  --markdown-gap: var(--gap);
+  --markdown-list-indent: var(--space-16);
+  --markdown-border-inline-start: var(--hairline) solid var(--color-border);
+  --markdown-rule: var(--hairline) solid var(--color-border);
+  --markdown-paragraph-weight: inherit;
+  --markdown-link-text: var(--color-link);
+  --markdown-inline-code-bg: var(--surface-sunken);
+  --markdown-heading-weight: var(--weight-strong);
+  --markdown-leading: var(--leading-ui);
+
+  color: var(--markdown-text);
+  display: flex;
+  flex-direction: column;
+  gap: var(--markdown-gap);
+  line-height: var(--markdown-leading);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.markdown[data-muted] {
+  --markdown-text: var(--markdown-muted);
+}
+
+.markdown > :is(p, ul, ol, blockquote, h4, h5, h6, hr, pre),
+.markdown li > :is(p, ul, ol, blockquote, pre) {
+  margin: 0;
+}
+
+.markdown :is(h3, h4, h5, h6) {
+  font-size: inherit;
+  font-weight: var(--markdown-heading-weight);
+  margin: 0;
+}
+
+.markdown[data-lead] {
+  --markdown-paragraph-weight: var(--weight-strong);
+}
+
+.markdown > p {
+  font-weight: var(--markdown-paragraph-weight);
+}
+
+.markdown :is(ul, ol) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-hair);
+  margin: 0;
+  min-width: 0;
+  padding-inline-start: var(--markdown-list-indent);
+}
+
+.markdown li {
+  display: list-item;
+  min-width: 0;
+}
+
+.markdown li > :is(ul, ol) {
+  margin-block-start: var(--gap-hair);
+}
+
+.markdown li > p {
+  margin: 0;
+}
+
+.markdown blockquote {
+  border-inline-start: var(--markdown-border-inline-start);
+  color: var(--markdown-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--markdown-gap);
+  margin: 0;
+  min-width: 0;
+  padding-inline-start: var(--gap);
+}
+
+.markdown hr {
+  border: 0;
+  border-block-start: var(--markdown-rule);
+  margin: 0;
+  width: 100%;
+}
+
+.inline {
+  --markdown-inline-code-padding: 0 var(--gap-hair);
+
+  background: var(--markdown-inline-code-bg);
+  border-radius: var(--radius-control);
+  font-family: var(--font-mono);
+  padding: var(--markdown-inline-code-padding);
+}
+
+.target {
+  color: var(--markdown-muted);
+  font-family: var(--font-mono);
+}
+
+.link {
+  color: var(--markdown-link-text);
+  text-decoration: underline;
+}
+
+.image {
+  color: var(--markdown-muted);
+}
+
+.note {
+  color: var(--markdown-muted);
+  margin: 0;
+}
+
+.written {
+  font-family: var(--font-mono);
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
