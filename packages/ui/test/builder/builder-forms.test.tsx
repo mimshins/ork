@@ -119,8 +119,11 @@ describe("a row changed right after typing in another", () => {
     holdEdits(opened, 30);
     await user.click(addButton(/Add to notify/iu));
     await settle(120);
+    // A slow runner can draw the new row after the held edit lands.
+    await waitFor(() => {
+      expect(screen.getAllByLabelText(/^Body/iu)).toHaveLength(2);
+    });
     expect(opened.text()).toContain("body: AAA");
-    expect(screen.getAllByLabelText(/^Body/iu)).toHaveLength(2);
   });
 
   it("keeps a row's typed text when an earlier row is removed", async () => {
@@ -138,8 +141,10 @@ describe("a row changed right after typing in another", () => {
     holdEdits(opened, 30);
     await user.click(addButton(/Remove notify 1/iu));
     await settle(120);
+    await waitFor(() => {
+      expect(screen.getAllByLabelText(/^Body/iu)).toHaveLength(1);
+    });
     expect(opened.text()).toContain("body: KEEP");
-    expect(screen.getAllByLabelText(/^Body/iu)).toHaveLength(1);
   });
 });
 
