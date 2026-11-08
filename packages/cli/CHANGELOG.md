@@ -1,5 +1,14 @@
 # @krapht/ork
 
+## 1.0.0-alpha.2
+
+### Patch Changes
+
+- [`d1457d6`](https://github.com/mimshins/ork/commit/d1457d679e25f85db447f1b508bc05a3315769a3) Thanks [@mimshins](https://github.com/mimshins)! - Two children a leader starts at once no longer fail with "git add failed: remove
+  the file manually to continue". Ork runs its git commands in one worktree one at
+  a time, so their hand-offs from the leader's worktree don't collide on its
+  index.
+
 ## 1.0.0-alpha.1
 
 ### Minor Changes
