@@ -40,6 +40,8 @@ permissions:
   deny:
     - Bash(git commit *)
     - Bash(git push *)
+    - Bash(git worktree *)
+    - Bash(git -C * worktree *)
     - Bash(gh *)
     - Bash(npm publish *)
     - Bash(pnpm publish *)

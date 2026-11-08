@@ -32,7 +32,7 @@ import {
   openWorktree,
   oneAtATime,
   placed,
-  refreshWorktree,
+  reenter,
   type Tracked,
   worktreeEvent,
   type WorktreeEvent,
@@ -127,15 +127,14 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     const host = hostOf(id);
     const hosted = host === undefined ? undefined : worktrees.get(host);
     const existing = worktrees.get(id);
-    if (existing !== undefined) {
-      if (
-        hosted !== undefined &&
-        (await refreshWorktree(rules, existing, hosted, merged.has(id)))
-      ) {
-        event(id, "synced", existing, `from ${nameOf(hosted)}`);
-      }
-      return existing;
+    const again =
+      existing === undefined
+        ? "new"
+        : await reenter(root, rules, existing, hosted, merged.has(id));
+    if (again === "synced" && existing !== undefined && hosted !== undefined) {
+      event(id, "synced", existing, `from ${nameOf(hosted)}`);
     }
+    if (existing !== undefined && again !== "gone") return existing;
     const { worktree, copied } = await openWorktree({
       rules,
       root,

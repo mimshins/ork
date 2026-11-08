@@ -8,6 +8,7 @@
  */
 
 import { execFile } from "node:child_process";
+import { existsSync } from "node:fs";
 import path from "node:path";
 
 import { withoutGitLocalEnv } from "./git-env.ts";
@@ -42,7 +43,14 @@ const runGit = (cwd: string, args: readonly string[]): Promise<GitResult> =>
       (error, stdout, stderr) => {
         const code =
           error === null ? 0 : typeof error.code === "number" ? error.code : -1;
-        resolve({ code, stdout, stderr: stderr || (error?.message ?? "") });
+        const missing = error !== null && !existsSync(cwd);
+        resolve({
+          code,
+          stdout,
+          stderr: missing
+            ? `the folder ${cwd} doesn't exist`
+            : stderr || (error?.message ?? ""),
+        });
       },
     );
   });

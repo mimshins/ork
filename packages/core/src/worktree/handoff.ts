@@ -7,6 +7,8 @@
  *   artifacts carried into a new worktree.
  */
 
+import { existsSync } from "node:fs";
+
 import type { ResolvedGitRules } from "@krapht/ork-schema";
 
 import type {
@@ -119,6 +121,20 @@ export const openWorktree = async (options: {
 };
 
 /**
+ * Whether a node's worktree is still on disk. One removed outside Ork (an agent
+ * ran `git worktree remove`) is forgotten by git too, so it can be opened again
+ * from its owner's work rather than failing the node's next run.
+ */
+export const stillThere = async (
+  root: string,
+  worktree: Tracked,
+): Promise<boolean> => {
+  if (existsSync(worktree.path)) return true;
+  await gitOk(root, ["worktree", "prune"]);
+  return false;
+};
+
+/**
  * A later run (a loop, another delegation) starts from the owner's work. With
  * commits, the branch fast-forwards when it has nothing of its own; under
  * `commit: never`, a child whose work reached its owner takes the owner's
@@ -138,6 +154,25 @@ export const refreshWorktree = async (
   if (!handedOver) return false;
   worktree.snapshot = await syncFrom(worktree.path, host.path);
   return true;
+};
+
+/**
+ * A node's worktree when it runs again: `gone` when its folder was removed
+ * outside Ork (it is opened anew), `synced` when it took its owner's work, or
+ * `same`.
+ */
+export const reenter = async (
+  root: string,
+  rules: ResolvedGitRules,
+  worktree: Tracked,
+  host: Tracked | undefined,
+  handedOver: boolean,
+): Promise<"gone" | "synced" | "same"> => {
+  if (!(await stillThere(root, worktree))) return "gone";
+  return host !== undefined &&
+    (await refreshWorktree(rules, worktree, host, handedOver))
+    ? "synced"
+    : "same";
 };
 
 /** Hands a passing child's work to its owner's worktree: merged or patched. */

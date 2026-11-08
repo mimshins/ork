@@ -124,7 +124,8 @@ When a leader delegates ([scheduler](./scheduler.md#delegation)):
   checkout.
 - A child that runs again (another delegation, or a loop) starts from its
   owner's branch: its worktree is fast-forwarded when it has nothing unmerged. A
-  run counts as merged only once its own work is merged.
+  run counts as merged only once its own work is merged. A worktree removed
+  outside Ork in between is opened again, from its owner's work.
 
 ## After the run
 
