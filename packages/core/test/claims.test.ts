@@ -13,11 +13,13 @@ import {
   compileWorkflow,
   createClaims,
   type CompiledGraph,
+  type Delegation,
   harnessInstructions,
   type HumanChannel,
   type NodeExecutor,
   normalizeResource,
   overlaps,
+  type Ownership,
   type RunEvent,
   startRun,
 } from "../src/index.ts";
@@ -234,5 +236,280 @@ describe("claims in a run", () => {
         reason: "finished",
       },
     ]);
+  });
+});
+
+/**
+ * A leader with three children (`busy` also runs in the flow), and a worker
+ * beside it outside its team.
+ */
+const OWNED = compile([
+  "limits: { concurrency: 4 }",
+  "nodes:",
+  "  start: { type: tool.shell, command: s }",
+  "  lead: { type: claude.leader, maxWorkers: 1 }",
+  "  fix: { type: claude.worker, parent: lead }",
+  "  check: { type: claude.worker, parent: lead }",
+  "  busy: { type: claude.worker, parent: lead }",
+  "  other: { type: claude.worker }",
+  "edges:",
+  "  - start -> lead, other, busy",
+]);
+
+type Behavior = (context: Parameters<NodeExecutor>[0]) => Promise<unknown>;
+
+/** Runs OWNED; each node, or spawned instance by template, does its behavior. */
+const runOwned = async (behaviors: Record<string, Behavior>) => {
+  const events: RunEvent[] = [];
+  const executor: NodeExecutor = async context => {
+    await behaviors[context.template ?? context.id]?.(context);
+    return { ok: true, output: { status: "pass" } };
+  };
+  const result = await startRun({
+    graph: OWNED,
+    inputs: {},
+    cwd: import.meta.dirname,
+    executors: {
+      "tool.shell": () => Promise.resolve({ ok: true, output: {} }),
+      "claude.leader": executor,
+      "claude.worker": executor,
+    },
+    human,
+    onEvent: event => {
+      events.push(event);
+    },
+  }).done;
+  return { result, events };
+};
+
+type Start = (own: Ownership | undefined) => Promise<Delegation | undefined>;
+
+const viaDelegate: Start = own =>
+  Promise.resolve(own?.delegate([{ child: "fix", brief: "go" }]));
+const viaSpawn: Start = own =>
+  Promise.resolve(own?.spawn([{ template: "fix", brief: "go" }]));
+
+const claimEvents = (events: RunEvent[]) =>
+  events.filter(e => e.type.startsWith("claim."));
+
+/** Claims given up by hand, not because their node finished. */
+const releasedEarly = (events: RunEvent[]) =>
+  events.filter(e => e.type === "claim.released" && e.reason === "released");
+
+/** What `fix` gets claiming `wanted`, once its leader holding `held` starts it. */
+const childClaim = async (start: Start, held: string, wanted: string) => {
+  let tried: ClaimResult | undefined;
+  await runOwned({
+    lead: async ({ claims, ownership }) => {
+      claims?.claim(held);
+      await start(ownership);
+    },
+    fix: ({ claims }) => {
+      tried = claims?.claim(wanted);
+      return Promise.resolve();
+    },
+  });
+  return tried;
+};
+
+/** What the leader sees of a call that rejects every task it gives. */
+const rejectedByAll = async () => {
+  const { promise: running, resolve: isRunning } =
+    Promise.withResolvers<void>();
+  const { promise: done, resolve: finish } = Promise.withResolvers<void>();
+  let delegation: Delegation | undefined;
+  let held: string[] | undefined;
+  const { events } = await runOwned({
+    busy: async () => {
+      isRunning();
+      await done;
+    },
+    lead: async ({ claims, ownership }) => {
+      await running;
+      claims?.claim("src");
+      delegation = await ownership?.delegate([
+        { child: "other", brief: "not mine" },
+        { child: "busy", brief: "already running" },
+      ]);
+      held = claims?.held();
+      finish();
+    },
+  });
+  return { delegation, held, events };
+};
+
+/** Two children of a leader holding `src` both go for `src`. */
+const siblingsContend = async () => {
+  const { promise: holding, resolve: holds } = Promise.withResolvers<void>();
+  const { promise: tried, resolve: triedIt } = Promise.withResolvers<void>();
+  const { promise: notice, resolve: told } = Promise.withResolvers<string>();
+  let first: ClaimResult | undefined;
+  let second: ClaimResult | undefined;
+  await runOwned({
+    lead: async ({ claims, ownership }) => {
+      claims?.claim("src");
+      await ownership?.delegate([
+        { child: "fix", brief: "a" },
+        { child: "check", brief: "b" },
+      ]);
+    },
+    fix: async ({ claims }) => {
+      first = claims?.claim("src");
+      holds();
+      await tried;
+      claims?.release("src");
+    },
+    check: async ({ claims, mailbox }) => {
+      mailbox?.connect(told);
+      await holding;
+      second = claims?.claim("src");
+      triedIt();
+      await notice;
+    },
+  });
+  return { first, second, notice: await notice };
+};
+
+/** `fix` asks for a path that `other`, outside the leader's team, holds. */
+const outsiderHolds = async () => {
+  const { promise: holding, resolve: holds } = Promise.withResolvers<void>();
+  const { promise: tried, resolve: triedIt } = Promise.withResolvers<
+    ClaimResult | undefined
+  >();
+  const { events } = await runOwned({
+    other: async ({ claims }) => {
+      claims?.claim("lib");
+      holds();
+      await tried;
+    },
+    lead: async ({ ownership }) => {
+      await holding;
+      await viaDelegate(ownership);
+    },
+    fix: ({ claims }) => {
+      triedIt(claims?.claim("lib/a.ts"));
+      return Promise.resolve();
+    },
+  });
+  return { tried: await tried, events };
+};
+
+/** The leader holds two paths, waits for `fix`, then claims one back. */
+const leaderClaimsAgain = async (start: Start) => {
+  let delegation: Delegation | undefined;
+  let again: ClaimResult | undefined;
+  const { events } = await runOwned({
+    lead: async ({ claims, ownership }) => {
+      claims?.claim("src");
+      claims?.claim("README.md");
+      delegation = await start(ownership);
+      again = claims?.claim("src");
+    },
+  });
+  return { delegation, again, events };
+};
+
+const BOTH_TOOLS = [
+  { tool: "delegate", start: viaDelegate },
+  { tool: "spawn_worker", start: viaSpawn },
+];
+
+describe("a leader's claims and its children", () => {
+  it.each(
+    BOTH_TOOLS.flatMap(via => [
+      { ...via, held: "src", wanted: "src" },
+      { ...via, held: "src", wanted: "src/x" },
+      { ...via, held: ".", wanted: "src" },
+    ]),
+  )(
+    "$tool: a leader holding $held does not refuse its child $wanted",
+    async ({ start, held, wanted }) => {
+      expect(await childClaim(start, held, wanted)).toMatchObject({
+        ok: true,
+        resource: wanted,
+      });
+    },
+  );
+
+  it("still refuses a child a path held outside the leader's team", async () => {
+    const { tried, events } = await outsiderHolds();
+    expect(tried).toEqual({
+      ok: false,
+      error:
+        "other holds lib, which overlaps lib/a.ts. Work on something else, or ask other if you can reach it; Ork tells you when it is released",
+    });
+    expect(events).toContainEqual({
+      type: "claim.refused",
+      node: "fix",
+      resource: "lib/a.ts",
+      holder: "other",
+      held: "lib",
+    });
+  });
+
+  it("keeps two children of one leader contending", async () => {
+    const { first, second, notice } = await siblingsContend();
+    expect(first).toMatchObject({ ok: true });
+    expect(second).toEqual({
+      ok: false,
+      error:
+        "fix holds src. Work on something else, or ask fix if you can reach it; Ork tells you when it is released",
+    });
+    expect(notice).toBe(
+      "[ork] src was released by fix. Claim what you need again before you change it.",
+    );
+  });
+
+  it.each(BOTH_TOOLS)(
+    "$tool: tells the leader what it released, and it can claim again",
+    async ({ start }) => {
+      const { delegation, again, events } = await leaderClaimsAgain(start);
+      expect(delegation?.notes).toEqual([
+        "Your claims on `src`, `README.md` were released while your children worked; claim again before you edit.",
+      ]);
+      expect(again).toEqual({ ok: true, resource: "src", already: false });
+      expect(claimEvents(events)).toEqual([
+        { type: "claim.taken", node: "lead", resource: "src" },
+        { type: "claim.taken", node: "lead", resource: "README.md" },
+        {
+          type: "claim.released",
+          node: "lead",
+          resource: "src",
+          reason: "released",
+        },
+        {
+          type: "claim.released",
+          node: "lead",
+          resource: "README.md",
+          reason: "released",
+        },
+        { type: "claim.taken", node: "lead", resource: "src" },
+        {
+          type: "claim.released",
+          node: "lead",
+          resource: "src",
+          reason: "finished",
+        },
+      ]);
+    },
+  );
+
+  it("leaves the claims alone when every task is rejected", async () => {
+    const { delegation, held, events } = await rejectedByAll();
+    expect(delegation?.reports.map(r => r.ok)).toEqual([false, false]);
+    expect(delegation?.notes).toEqual([]);
+    expect(held).toEqual(["src"]);
+    expect(releasedEarly(events)).toEqual([]);
+  });
+
+  it("adds no note for a leader that holds nothing", async () => {
+    let delegation: Delegation | undefined;
+    const { events } = await runOwned({
+      lead: async ({ ownership }) => {
+        delegation = await viaDelegate(ownership);
+      },
+    });
+    expect(delegation?.notes).toEqual([]);
+    expect(claimEvents(events)).toEqual([]);
   });
 });

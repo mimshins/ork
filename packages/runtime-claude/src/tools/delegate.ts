@@ -49,15 +49,20 @@ export const delegateTool = defineTool({
   name: "delegate",
   description:
     "Hand tasks to nodes you own. Tasks in one call run in parallel; the call returns every child's report when all are done. Ork merges a passing child's branch into yours.",
-  shape: {
-    tasks: z
-      .array(
-        z.object({
-          child: z.string().describe("The id of a node you own."),
-          brief: BRIEF,
-        }),
-      )
-      .min(1),
+  shape: ({ ports }) => {
+    const ids = ports.ownership?.children.map(child => child.id) ?? [];
+    return {
+      tasks: z
+        .array(
+          z.strictObject({
+            child: z
+              .enum(ids)
+              .describe(`The id of a node you own: ${ids.join(", ")}.`),
+            brief: BRIEF,
+          }),
+        )
+        .min(1),
+    };
   },
   available: ({ ports }) => (ports.ownership?.children.length ?? 0) > 0,
   run: async ({ ports }, args) => {
@@ -70,15 +75,20 @@ export const spawnWorkerTool = defineTool({
   name: "spawn_worker",
   description:
     "Start new instances of a child worker for work that splits into independent parts. Each runs in its own worktree; the call returns their reports when all are done.",
-  shape: {
-    tasks: z
-      .array(
-        z.object({
-          template: z.string().describe("The id of a child worker you own."),
-          brief: BRIEF,
-        }),
-      )
-      .min(1),
+  shape: ({ ports }) => {
+    const ids = ports.ownership?.templates ?? [];
+    return {
+      tasks: z
+        .array(
+          z.strictObject({
+            template: z
+              .enum(ids)
+              .describe(`The id of a child worker you own: ${ids.join(", ")}.`),
+            brief: BRIEF,
+          }),
+        )
+        .min(1),
+    };
   },
   available: ({ ports }) =>
     ports.ownership !== undefined &&

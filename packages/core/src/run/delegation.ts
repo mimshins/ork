@@ -31,6 +31,8 @@ export type DelegationHooks = {
   isRunning: (id: string) => boolean;
   /** Commits the leader's work so children branch from it. */
   checkpoint: () => Promise<string | null>;
+  /** Releases everything the leader holds, so its children can claim it. */
+  releaseClaims: () => string[];
   /** Lends the leader's session slot to its children while it waits. */
   lend: () => void;
   reclaim: () => Promise<void>;
@@ -78,6 +80,12 @@ export const createOwnership = (hooks: DelegationHooks): Ownership => {
       if (problem !== null) {
         notes.push(
           `Your uncommitted work could not be committed (${problem}); the children started from your branch's last commit.`,
+        );
+      }
+      const released = hooks.releaseClaims().map(r => `\`${r}\``);
+      if (released.length > 0) {
+        notes.push(
+          `Your claims on ${released.join(", ")} were released while your children worked; claim again before you edit.`,
         );
       }
     }

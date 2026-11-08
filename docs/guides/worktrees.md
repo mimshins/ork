@@ -120,6 +120,9 @@ process.
 A detached worktree (`commit: never`) is cleaned only with `--all`, and one
 holding a commit no branch has (a `tool.git` commit) only with `--force` too.
 
+`clean` takes no name: to remove one worktree, use `remove`. Given a name,
+`clean` stops with an error that says so.
+
 **`remove`** takes one item by the same rules. When removing it would lose work,
 it prints what (the changes and commits, as git prints them) and needs
 `--force`. Without a terminal, add `--yes`.

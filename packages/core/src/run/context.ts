@@ -88,6 +88,11 @@ export const nodeContext = (
       isRunning: other => deps.running.has(other),
       checkpoint: () =>
         options.workspace?.checkpoint(id) ?? Promise.resolve(null),
+      releaseClaims: () => {
+        const held = context.claims?.held() ?? [];
+        for (const resource of held) context.claims?.release(resource);
+        return held;
+      },
       lend: deps.slots.release,
       reclaim: deps.slots.take,
     });

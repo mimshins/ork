@@ -465,7 +465,7 @@ export const NODES = [
     facts: [
       "Built: `ask_user(question, options, recommended, context)`, a decision answered on the terminal or with `ork decide`; it returns the choice and any note. Under a leader with `questions: owner`, the leader's fork may answer it first.",
       "Built: `send_message(to, body)`, `read_inbox()` and `wait_for_messages(timeoutSeconds?)` for every leader and worker, since a link can come later (with `links: off`, only those with someone to reach, or that a program or a rule can write to), and `answer(question, choice, note?)` for leaders.",
-      "Built: `claim(resource)` and `release(resource)` for nodes that may write while another does; an overlapping claim is refused with who holds it, and the claimant hears when it is released. The report is structured output, not a tool.",
+      "Built: `claim(resource)` and `release(resource)` for nodes that may write while another does; an overlapping claim is refused with who holds it, and the claimant hears when it is released. A leader's claims are released when `delegate` or `spawn_worker` starts its children, and it claims again before it edits. The report is structured output, not a tool.",
       "Built, for leaders: `delegate([{ child, brief }])` and `spawn_worker([{ template, brief }])`, blocking until every child has reported.",
       "Built: `feedback(kind, target, …)` reports what got in the way, capped at 3 per session.",
     ],

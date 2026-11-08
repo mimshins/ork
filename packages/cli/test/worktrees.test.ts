@@ -2,8 +2,9 @@
  * @file Tests for `ork worktrees remove` and the live-run rule, for real, in a
  *   temp repository with its own `~`: removing one worktree that loses work
  *   shows what's lost and needs `--force`; a branch with no worktree is
- *   deleted; a detached one goes by the run/node name `list` shows; and neither
- *   clean nor remove touches a worktree whose run is still going.
+ *   deleted; `clean` refuses a name; a detached one goes by the run/node name
+ *   `list` shows; and neither clean nor remove touches a worktree whose run is
+ *   still going.
  */
 
 import { execFileSync, spawnSync } from "node:child_process";
@@ -115,6 +116,27 @@ describe("a detached worktree", () => {
     const removed = ork(where, "remove", "r3/build", "--force", "--yes");
     expect(removed.status).toBe(0);
     expect(existsSync(build)).toBe(false);
+  });
+});
+
+describe("ork worktrees clean", () => {
+  it("rejects a name and points to remove, planning nothing", () => {
+    const where = place();
+    const out = ork(where, "clean", "r1/lead", "--force", "--yes");
+    expect(out.status).toBe(1);
+    expect(out.stderr).toContain(
+      "`clean` takes no name (got r1/lead); to remove one worktree: ork worktrees remove r1/lead",
+    );
+    expect(out.stdout).toBe("");
+    expect(existsSync(where.lead)).toBe(true);
+  });
+
+  it("does not read the value of --run as a name", () => {
+    const where = place();
+    const out = ork(where, "clean", "--run", "r1", "--all", "--yes");
+    expect(out.status).toBe(0);
+    expect(out.stderr).not.toContain("takes no name");
+    expect(existsSync(where.lead)).toBe(false);
   });
 });
 

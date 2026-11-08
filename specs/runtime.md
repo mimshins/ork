@@ -160,7 +160,9 @@ as `--mcp-config`. The sessions the CLI starts itself (`ork run --node`,
 - tools: what the registry binds for the session ([messaging](./messaging.md)):
   `ask_user`, `permission` (the CLI's permission-prompt contract, answering
   `{"behavior":"allow"|"deny", …}`), and for leaders `delegate` and
-  `spawn_worker`; arguments are validated with Zod;
+  `spawn_worker`; a tool's arguments may depend on its session; they are
+  validated with Zod, and a failure is an error result naming the field
+  ([delegation](./scheduler.md#delegation));
 - a per-server `timeout` of 24 hours in `--mcp-config`: the CLI otherwise ends
   an HTTP request after 60 seconds and drops a call silent for 5 minutes, and
   `delegate` waits for whole child sessions. `MCP_TOOL_TIMEOUT` (about 28 hours

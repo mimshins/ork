@@ -125,9 +125,19 @@ list of tasks, run them in parallel, and return when every child has reported:
   worker, `<template>-2`, `-3`, …, up to the leader's `maxWorkers` (default 0,
   and then the tool is not offered). An instance works like its template: same
   settings, its own worktree, owned by the leader.
-- A task is refused, with the reason in its report, when the child is not the
-  leader's, is already running (in the flow or for another call), or no workers
-  are left.
+- The tools' arguments are bound to the leader: `child` is an enum of its child
+  leaders and workers, `template` of its child workers, on both drivers, and a
+  task object takes no other key. A wrong argument is an error and no task runs:
+  `path: message` per issue, and a stray key as
+  ``tasks[0]: unknown field `node`; the field is `child`, one of: code, tests``,
+  field and ids read from the schema. On the SDK driver the Agent SDK's
+  in-process server validates first, so the leader reads its
+  `Input validation error` and raw issue list, which name the same key, field
+  and ids.
+- A task is refused, with the reason in its report, when its child is already
+  running (in the flow or for another call), or no workers are left. A child the
+  leader does not own is not a refused task: it is a wrong argument, so the
+  whole call fails at its arguments, with the valid ids, and no task runs.
 - A delegated run reports only to its leader: it follows none of the child's
   edges. A child with incoming edges still runs when they are taken (ADR-008).
 - **Reports.** Each is the child's output (`status`, `summary`, `artifacts`,
@@ -139,6 +149,9 @@ list of tasks, run them in parallel, and return when every child has reported:
   leader never deadlocks at `concurrency: 1`; children and returning leaders are
   served before queued activations. Children count against the run's budget, and
   none starts once it is spent.
+- **Claims.** Once a call accepts a task, the leader's claims are released so
+  its children can take them, and the result's notes name them; the leader
+  claims again before it edits ([messaging](./messaging.md#claims)).
 - `node.started` carries `owner` for a delegated run; the run summary lists
   spawned workers by their instance id.
 

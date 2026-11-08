@@ -110,6 +110,16 @@ leader and worker its `Claims` through the session's ports.
   `[ork] src/auth was released by api. Claim what you need again before you change it.`
 - **Released:** with `release`, or all at once when the node's activation ends,
   however it ends (`claim.released`, with `reason`).
+- **A leader that waits on its children:** when `delegate` or `spawn_worker`
+  accepts at least one task, the leader's claims are released before its
+  children start (`claim.released`, `reason: released`), so a child is not
+  refused what its leader held. A leader blocked on its children cannot edit, so
+  those claims protect nothing while it waits. The call's result carries a note
+  naming them, and the leader claims again before it edits; a call whose every
+  task is rejected leaves them alone. Children still contend with each other and
+  with anyone outside the team. A node refused the leader's path is told it is
+  free and may take it, and the leader's children are then refused like any
+  other claimant.
 - **Advisory:** claims steer agents; they do not lock files. A node that edits
   without claiming is not stopped, and a resumed run starts with none.
 

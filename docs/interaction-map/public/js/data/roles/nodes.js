@@ -132,7 +132,7 @@ export const NODES = [
     facts: [
       "`delegate([{ child, brief }])` runs declared children; `spawn_worker([{ template, brief }])` runs new instances of a child worker.",
       "A delegated child follows no edges, but its own `before:` and `verify:` still run, for each spawned instance too.",
-      "A task is refused, with the reason in its report, when the child is not the leader's or is already running.",
+      "A task is refused, with the reason in its report, when its child is already running. A child the leader does not own fails the whole call at its arguments, and no task runs.",
       "While a leader waits, its session slot goes to its children, so it never deadlocks at `concurrency: 1`.",
     ],
     docs: [

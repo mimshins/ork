@@ -46,8 +46,11 @@ parallel, and return once every child has reported:
   template's settings and its own worktree. `maxWorkers` defaults to 0, and then
   the leader is not offered the tool at all.
 
-A task is refused, with the reason in its report, when the child is not the
-leader's, is already running, or no workers are left.
+In `delegate`, `child` is one of the leader's own children, and in
+`spawn_worker`, `template` is one of its child workers. A name that is not
+theirs fails the whole call with an error that lists the valid ids, and no task
+runs. A task is refused, with the reason in its report, when its child is
+already running or no workers are left.
 
 ## What comes back
 
@@ -112,6 +115,11 @@ released. Claims are released when a node finishes, and `ork logs` shows them
 (`⚑ claimed src/auth`). They steer agents rather than lock files, so they matter
 most with `isolation: shared` or `--in-place`, where writers share one checkout,
 and they head off merge conflicts between worktrees.
+
+A leader's claims never get in its children's way. When it hands out work with
+`delegate` or `spawn_worker`, Ork releases what it holds, so its children can
+claim those paths, and tells it so in the result. It claims again before it
+edits. Children still contend with each other and with nodes outside the team.
 
 ## A leader decides about its own loops
 

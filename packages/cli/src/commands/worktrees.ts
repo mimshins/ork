@@ -115,6 +115,14 @@ const clean = defineCommand({
     yes,
   },
   run: async ({ args }) => {
+    const [name] = args._;
+    if (name !== undefined) {
+      writeErr(
+        `\`clean\` takes no name (got ${name}); to remove one worktree: ork worktrees remove ${name}`,
+      );
+      process.exitCode = 1;
+      return;
+    }
     const found = await here();
     if (found === null) return;
     const filter: Parameters<typeof planClean>[1] = { merged: !args.all };

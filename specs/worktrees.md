@@ -177,7 +177,9 @@ it checked out.
   required. A worktree whose folder is gone shows as `prune worktree` in the
   plan and `pruned <path>` once done; it is dropped by its own path
   (`git worktree remove`), never by `git worktree prune`, so a missing worktree
-  that isn't Ork's keeps its entry.
+  that isn't Ork's keeps its entry. `clean` takes no name: given one, it prints
+  that to stderr, points to `ork worktrees remove <name>`, exits 1 and plans
+  nothing (before it opens the store or asks).
 - `ork worktrees remove <branch|run/node|path> [--branch] [--force] [--yes]`:
   one item, by its branch or (detached) the `run/node` name `list` shows or its
   worktree's path, by the same rule as clean. It removes the worktree;
