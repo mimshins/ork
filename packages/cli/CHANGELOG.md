@@ -1,5 +1,27 @@
 # @krapht/ork
 
+## 1.0.0-alpha.1
+
+### Minor Changes
+
+- [`953d990`](https://github.com/mimshins/ork/commit/953d990a65b2294e476faa52744c05f4a1a0a756) Thanks [@mimshins](https://github.com/mimshins)! - A run's Claude sessions start clean of the machine's Claude setup, on both
+  drivers: no MCP server but Ork's (`--strict-mcp-config`), Claude Code's
+  auto-memory off (`CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`), and the per-machine
+  system prompt sections out of the cached prefix
+  (`--exclude-dynamic-system-prompt-sections`). The repository's `CLAUDE.md`,
+  `AGENTS.md` and `.claude/` still load. A machine's MCP servers changing
+  mid-session made Claude rewrite its prompt cache: a measured 4-turn task cost
+  $0.113 before and $0.032 after. `ork run --machine-claude`, or "Use this
+  machine's Claude setup" in the Run workflow form, loads the machine's MCP
+  servers and memory for a run; the run records it, and `ork resume`, `ork chat`
+  and the runs it calls keep it.
+
+### Patch Changes
+
+- [`c465552`](https://github.com/mimshins/ork/commit/c4655520654afcef196ff28fa2a1215a4cd9e968) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui`: scrolling a panel past its end no longer carries the whole panel, its
+  header included, up the window. Every scroll area keeps its scrolling, and the
+  text only a screen reader reads, to itself.
+
 ## 1.0.0-alpha.0
 
 ### Major Changes
