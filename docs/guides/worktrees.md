@@ -98,7 +98,7 @@ ork worktrees clean               # merged branches' worktrees; asks first
 ork worktrees clean --run <id>    # one run only
 ork worktrees clean --all         # unmerged ones too
 ork worktrees clean --branches    # delete the branches as well
-ork worktrees remove <branch>     # one worktree (or a detached one's path)
+ork worktrees remove <branch>     # one worktree (a detached one by run/node, as listed)
 ork worktrees remove <branch> --branch   # and its branch
 ```
 

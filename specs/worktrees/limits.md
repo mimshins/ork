@@ -31,3 +31,8 @@ Those the gaps review carried are open work in the
   their owner's work at once no longer collide on its index's lock. Two Ork
   processes in one worktree (a detached child and its caller) aren't kept apart;
   git's lock refuses the second.
+- **L182 · A kept run's worktree stays after its change is applied.** Under
+  `commit: never` the run's result is uncommitted, so `clean --all` keeps it
+  even once `keep` has applied it to the checkout;
+  `ork worktrees remove <run>/<node> --force` removes it. Ork could remove it
+  after a clean apply.

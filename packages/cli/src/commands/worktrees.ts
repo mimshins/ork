@@ -14,6 +14,7 @@ import {
   applyRemove,
   inspectProject,
   keyOf,
+  labelOf,
   lostWork,
   openStore,
   planClean,
@@ -165,7 +166,10 @@ const remove = defineCommand({
     if (found === null) return;
     const byPath = path.resolve(args.target);
     const item = found.items.find(
-      i => keyOf(i) === args.target || i.path === byPath,
+      i =>
+        keyOf(i) === args.target ||
+        labelOf(i) === args.target ||
+        i.path === byPath,
     );
     const planned = planRemove(
       found,

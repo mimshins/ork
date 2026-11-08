@@ -2,8 +2,8 @@
  * @file Tests for `ork worktrees remove` and the live-run rule, for real, in a
  *   temp repository with its own `~`: removing one worktree that loses work
  *   shows what's lost and needs `--force`; a branch with no worktree is
- *   deleted; and neither clean nor remove touches a worktree whose run is still
- *   going.
+ *   deleted; a detached one goes by the run/node name `list` shows; and neither
+ *   clean nor remove touches a worktree whose run is still going.
  */
 
 import { execFileSync, spawnSync } from "node:child_process";
@@ -77,6 +77,44 @@ describe("ork worktrees remove", () => {
     const removed = ork(where, "remove", "ork/r2/docs", "--yes");
     expect(removed.stdout).toContain("deleted ork/r2/docs");
     expect(git(where.root, "branch", "--list", "ork/r2/docs")).toBe("");
+  });
+});
+
+describe("a detached worktree", () => {
+  it("is removed by the run/node name list shows", () => {
+    const where = place();
+    const build = path.join(path.dirname(where.root), "ork-r3-build");
+    git(where.root, "worktree", "add", "--quiet", "--detach", build);
+    writeFileSync(path.join(build, "kept.ts"), "kept\n");
+    const store = openStore(storePath(where.home));
+    store.begin({
+      id: "r3",
+      workflow: "w",
+      file: "/w.ork.yaml",
+      project: where.root,
+    });
+    store.append("r3", {
+      type: "worktree",
+      id: "build",
+      action: "created",
+      path: build,
+    });
+    store.append("r3", {
+      type: "run.finished",
+      result: {
+        runId: "r3",
+        status: "succeeded",
+        costUsd: 0,
+        nodes: [],
+        reasons: [],
+        worktrees: [],
+      },
+    });
+    store.close();
+    expect(ork(where, "list").stdout).toContain("r3/build (detached)");
+    const removed = ork(where, "remove", "r3/build", "--force", "--yes");
+    expect(removed.status).toBe(0);
+    expect(existsSync(build)).toBe(false);
   });
 });
 

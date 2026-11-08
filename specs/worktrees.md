@@ -178,12 +178,13 @@ it checked out.
   plan and `pruned <path>` once done; it is dropped by its own path
   (`git worktree remove`), never by `git worktree prune`, so a missing worktree
   that isn't Ork's keeps its entry.
-- `ork worktrees remove <branch|path> [--branch] [--force] [--yes]`: one item,
-  by its branch or (detached) its worktree's path, by the same rule as clean. It
-  removes the worktree; `--branch` also deletes the branch, and a branch with no
-  worktree is deleted. When that loses work (uncommitted changes, an unmerged
-  branch's commits, a detached worktree's unreachable commits) it prints what's
-  lost, as `git status --porcelain` and `git log --oneline` print it, and needs
+- `ork worktrees remove <branch|run/node|path> [--branch] [--force] [--yes]`:
+  one item, by its branch or (detached) the `run/node` name `list` shows or its
+  worktree's path, by the same rule as clean. It removes the worktree;
+  `--branch` also deletes the branch, and a branch with no worktree is deleted.
+  When that loses work (uncommitted changes, an unmerged branch's commits, a
+  detached worktree's unreachable commits) it prints what's lost, as
+  `git status --porcelain` and `git log --oneline` print it, and needs
   `--force`. It asks first, as clean does. It changes only its own item: a
   worktree whose folder is gone is dropped by its own path
   (`git worktree remove`), never by a prune of every missing one.
