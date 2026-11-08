@@ -446,6 +446,10 @@ export const STORE = {
   ),
   view: d("packages/core/src/store/view.ts", "Code: the ownership tree view"),
   tests: d("packages/core/test/store.test.ts", "Tests: the event store"),
+  readOnlyTests: d(
+    "packages/core/test/store-read-only.test.ts",
+    "Tests: the store opened read-only",
+  ),
   commands: d(
     "packages/cli/src/commands/runs.ts",
     "Code: `ork ps`, `ork logs`, `ork tree`",

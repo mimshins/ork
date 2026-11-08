@@ -919,8 +919,9 @@ export const NODES = [
       "One database for every project; only a run's own process writes its events.",
       "`.ork/runs/` is git-ignored.",
       "Long tool output is kept in run files and passed by path, not inlined.",
+      "Tab completion opens it read-only: no migration, every write refused, and nothing read from a store newer than this Ork.",
     ],
-    docs: [DESIGN.eventStore, STORE.store, STORE.adr],
+    docs: [DESIGN.eventStore, STORE.store, STORE.readOnlyTests, STORE.adr],
   },
   {
     id: "toolClis",
