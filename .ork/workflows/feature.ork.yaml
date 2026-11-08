@@ -339,7 +339,7 @@ nodes:
     type: claude.worker
     agent: reviewer
     prompt: |-
-      Review the uncommitted change in this checkout (git status, git diff HEAD) against the approved task spec below. pnpm check already passed here; don't run it again. Report pass, or changes_requested with every finding in `findings` (file:line, what is wrong, the smallest fix), most severe first. Say in `unchecked` what you could not check or chose not to (an empty string when nothing). When you run again, check that your earlier findings were fixed.
+      Review the uncommitted change in this checkout (git status, git diff HEAD) against the approved task spec below. pnpm check already passed here; don't run it again. Report pass, or changes_requested with every finding in `findings` (file:line, what is wrong, the smallest fix), most severe first. Read every changed source file and test body in full; your limits allow it, so don't stop to economise. Report `coverage` complete only when you have, and partial otherwise, with the rest listed in `unchecked` (an empty string when nothing). Pass with partial coverage means no defect in what you read so far, and you will be run again to finish. When you run again, check that your earlier findings were fixed, and read what your last `unchecked` listed.
 
       Read files with Read and search with Grep. When you do use Bash, keep to cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo, npm view and read-only git, with no awk, no find, no shell variables, no brace expansion and no paths outside this checkout: anything else stops the run to ask the maintainer.
 
@@ -347,13 +347,16 @@ nodes:
     model: opus
     effort: high
     isolation: readonly
-    budgetUsd: 2.5
+    budgetUsd: 4
     maxTurns: 40
     session: resume
     output:
       schema:
         findings: string
         unchecked: string
+        coverage:
+          - complete
+          - partial
   docs:
     type: claude.worker
     agent: docs-keeper
@@ -551,7 +554,11 @@ edges:
     maxRounds: 2
   - from: review
     to: docs
-    when: status == 'pass'
+    when: status == 'pass' && coverage == 'complete'
+  - from: review
+    to: review
+    when: status == 'pass' && coverage == 'partial'
+    maxRounds: 2
   - docs -> stage
   - stage -> decide
   - from: decide
