@@ -135,7 +135,11 @@ describe("the Monitor's Resume", () => {
     resumeButton().focus();
     await user.keyboard("{Enter}");
     const dialog = await screen.findByRole("alertdialog");
-    expect(dialog.contains(document.activeElement)).toBe(true);
+    // The dialog takes the focus a tick after it shows; a busy suite can see
+    // it in between.
+    await vi.waitFor(() => {
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    });
     await user.keyboard("{Escape}");
     await vi.waitFor(() => {
       expect(screen.queryByRole("alertdialog")).toBeNull();

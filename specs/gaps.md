@@ -187,8 +187,3 @@ the next review:
   session ends, and that `ork resume` goes on. Carried, unplanned: it waits on
   the world. ([usage](./usage.md#limits-across-runs))
   ([ADR-002](../decisions/ADR-002-typescript-from-source.md))
-- **C12 · A Monitor test is flaky under a full run.** "the Monitor's Resume ›
-  works from the keyboard" sometimes finds the dialog before the focus is in it
-  when the whole suite runs (seen on 2026-11-08, with and without the completion
-  change); alone it passes. Its focus check wants a `vi.waitFor`.
-  ([test](../packages/ui/test/panels/monitor-resume.test.tsx))
