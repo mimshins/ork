@@ -21,7 +21,7 @@ defaults:
   budgetUsd: 2
 limits:
   budgetUsd: 35
-  concurrency: 2
+  concurrency: 4
   timeout: 5h
 nodes:
   spec:
@@ -93,6 +93,9 @@ nodes:
       Build this approved task spec through the agents you own. Decide what it needs:
       - UI work (packages/ui): delegate to design first, then the build, then a11y to audit the result.
       - Engine work (scheduler, runtime port and drivers, store and events, run control, replay): delegate the build to engine; anything else to implement.
+
+      Build in waves, following each task's dependencies and files in the spec. Shared contracts (schema, types) go first, as their own wave. Then send each wave as one call, so its tasks run at once: `delegate` for different builders, and `spawn_worker` for more than one task of the same builder, since a child that is already running refuses another task. Tasks in one wave must not touch the same files, and each must pass pnpm check without another task of its wave. Files everyone appends to (index.ts exports, generated schemas, specs, gaps ids, roadmap data) belong to one task or a last wave. Run tasks together in one builder when they are small or share files: every builder is a new session and a full pnpm check, so split only substantial work. A merge conflict in a child's report is yours to resolve.
+
       Each child already has the spec; your brief says which tasks are theirs. Fix only what integrates their work. Ork runs pnpm check on your checkout before your report counts. When you run again, your input is an independent review's findings: delegate the fixes. When a child asks a question, answer it only when the approved spec or an earlier answer settles it, and say which; otherwise pass it to the maintainer. Never decide for them. Report pass only when every child you used passed, and gather the spec's decisions and every decision your children reported into your own `decisions`, keeping who decided each.
 
       {{nodes.spec.output.spec}}
@@ -101,6 +104,7 @@ nodes:
     isolation: worktree
     budgetUsd: 4
     maxTurns: 60
+    maxWorkers: 3
     timeout: 3h
     tools:
       allow:
@@ -204,12 +208,15 @@ nodes:
     type: claude.worker
     parent: build
     agent: a11y-auditor
-    prompt: Audit the uncommitted UI change in your owner's checkout (git status, git diff HEAD) against WCAG 2.2 AA. Open the changed surfaces in the browser tools for axe, a keyboard pass, zoom and contrast, and audit the changed components' markup, names and roles, focus handling, keyboard map, tokens and their contrast pairings, and run the UI's tests (npx vitest run packages/ui). Report pass, or changes_requested with every finding in `findings` (surface, criterion, how it fails, the fix), and list anything you couldn't check.
+    prompt: Audit the uncommitted UI change in your owner's checkout (git status, git diff HEAD) against WCAG 2.2 AA. Open the changed surfaces in the browser tools for axe, a keyboard pass, zoom and contrast, and audit the changed components' markup, names and roles, focus handling, keyboard map, tokens and their contrast pairings, and run the UI's tests (npx vitest run packages/ui). Report pass, or changes_requested with every finding in `findings` (surface, criterion, how it fails, the fix), and list anything you couldn't check. In Bash keep to plain read commands (cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo, read-only git), the tests and pnpm install --offline, with no awk, find, python, shell variables, brace expansion or paths outside this checkout, and write no files, not even a temporary test. Anything else stops the run to ask the maintainer. What needs more than that goes in the list of what you couldn't check.
     model: sonnet
     isolation: readonly
     budgetUsd: 2
     maxTurns: 40
     session: resume
+    tools:
+      allow:
+        - Bash(pnpm install --offline *)
     output:
       schema:
         findings: string
@@ -336,7 +343,7 @@ nodes:
     prompt: |-
       Review the uncommitted change in this checkout (git status, git diff HEAD) against the approved task spec below. pnpm check already passed here; don't run it again. Report pass, or changes_requested with every finding in `findings` (file:line, what is wrong, the smallest fix), most severe first. When you run again, check that your earlier findings were fixed.
 
-      Read files with Read and search with Grep. When you do use Bash, keep to cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo, npm view and read-only git, with no awk, no find and no shell variables: anything else stops the run to ask the maintainer.
+      Read files with Read and search with Grep. When you do use Bash, keep to cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo, npm view and read-only git, with no awk, no find, no shell variables, no brace expansion and no paths outside this checkout: anything else stops the run to ask the maintainer.
 
       {{nodes.spec.output.spec}}
     model: opus
@@ -345,21 +352,6 @@ nodes:
     budgetUsd: 2.5
     maxTurns: 40
     session: resume
-    tools:
-      allow:
-        - Bash(cat *)
-        - Bash(head *)
-        - Bash(tail *)
-        - Bash(wc *)
-        - Bash(ls *)
-        - Bash(grep *)
-        - Bash(rg *)
-        - Bash(sed -n *)
-        - Bash(cut *)
-        - Bash(sort *)
-        - Bash(uniq *)
-        - Bash(echo *)
-        - Bash(npm view *)
     output:
       schema:
         findings: string

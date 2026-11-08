@@ -38,6 +38,22 @@ permissions:
     - Bash(git status)
     - Bash(git diff *)
     - Bash(git log *)
+    # Reading, for every node: awk, find and python are left out, as they can
+    # write files and run commands.
+    - Bash(cd *)
+    - Bash(cat *)
+    - Bash(head *)
+    - Bash(tail *)
+    - Bash(wc *)
+    - Bash(ls *)
+    - Bash(grep *)
+    - Bash(rg *)
+    - Bash(sed -n *)
+    - Bash(cut *)
+    - Bash(sort *)
+    - Bash(uniq *)
+    - Bash(echo *)
+    - Bash(npm view *)
   deny:
     - Bash(git commit *)
     - Bash(git push *)

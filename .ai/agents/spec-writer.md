@@ -34,7 +34,9 @@ applicable" that don't apply:
 - **Tasks:** ordered, each small enough to review on its own, naming the
   package. Say which ones are UI work (`packages/ui`, needs the ui-designer
   first) and which are engine work (scheduler, runtime port and drivers, store
-  and events, run control, replay).
+  and events, run control, replay). Give each task the files or folders it
+  changes and the tasks it depends on, so the leader can run independent ones
+  at once. Put shared contracts (schema, types) in tasks of their own, first.
 
 Name what the brief leaves open as questions in the spec, rather than
 guessing. Respect the rules the spec will be built under: the dependency
