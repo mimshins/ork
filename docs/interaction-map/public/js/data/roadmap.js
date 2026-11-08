@@ -323,9 +323,11 @@ export const MILESTONES = [
       {
         id: "clean-sessions",
         title: "Clean Claude sessions",
-        status: "active",
+        status: "done",
+        date: "2026-11-08",
+        commits: ["953d990", "9c0ee69"],
         detail:
-          "For 1.0.0-alpha.1: a run's sessions load no MCP server but Ork's and no auto-memory, and keep the per-machine prompt sections out of the cached prefix, on both drivers; `ork run --machine-claude` (or the Run workflow box) loads the machine's setup for a run, recorded for its resumes and called runs. Then the canary `feature` run is rerun.",
+          "In 1.0.0-alpha.1: a run's sessions load no MCP server but Ork's and no auto-memory, and keep the per-machine prompt sections out of the cached prefix, on both drivers; `ork run --machine-claude` (or the Run workflow box) loads the machine's setup for a run, recorded for its resumes and called runs. A probe measured $0.113 loose against $0.032 strict for the same task (ADR-065).",
         docs: [
           "decisions/ADR-065-clean-claude-sessions.md",
           "specs/runtime.md#what-a-session-loads",
@@ -1026,6 +1028,9 @@ export const MILESTONES = [
  * @type {string[]}
  */
 export const OFF_ROADMAP = [
+  "c465552",
+  "f07f12f",
+  "74ccac4",
   "26c354c",
   "dc3a004",
   "87f9e47",

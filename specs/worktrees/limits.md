@@ -25,3 +25,9 @@ Those the gaps review carried are open work in the
   recorded no path, so such a branch's worktree is whichever has it checked out,
   a user's own `git worktree add ../review ork/r1/lead` included, and clean can
   remove it. Recorded items are matched by their path.
+- **L181 · Git in one worktree takes turns only within a process.** Ork runs one
+  command at a time per folder
+  ([git.ts](../../packages/core/src/worktree/git.ts)), so two children handed
+  their owner's work at once no longer collide on its index's lock. Two Ork
+  processes in one worktree (a detached child and its caller) aren't kept apart;
+  git's lock refuses the second.

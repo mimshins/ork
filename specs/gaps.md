@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L181. At a review, each open
+closes it. Ids are never reused: the next limit is L182. At a review, each open
 entry is closed (built or fixed, then removed), kept (moved into its area's
 spec, then removed here), or carried to a roadmap item, or to none yet
 (unplanned).
@@ -95,15 +95,16 @@ review:
   total plus its own; Ork counts the fork's whole report (as
   `<leader>/<fork session>`), which would overcount the run's spend and might
   trip the fork's `--max-budget-usd` at once; if it does, charge the report less
-  the leader's last total; (3) the prompt cache: the fork's tools, MCP servers
-  and system prompt differ from the leader's, so each question reads the
-  leader's whole session uncached (it asks for no 1-hour cache); whether a fork
-  that kept the leader's prefix is worth it; (4) that the structured report
-  still comes back with `--tools Read,Grep,Glob`.
+  the leader's last total; (3) the fork's tools and system prompt differ from
+  the leader's, so each question reads the leader's session uncached; (4) that
+  the structured report still comes back with `--tools Read,Grep,Glob`.
 - **G26 · A node or project can't name the MCP servers it needs.**
   [Sessions](./runtime.md#what-a-session-loads) load only Ork's, or all of the
   machine's with `--machine-claude`; an `mcp:` on a node or the project could
   load just those it names (a browser, for G15).
+- **G27 · A permission is answered one call at a time.** A node asking for Bash
+  asks again for each command (six in run 0427fb01); a choice to allow that tool
+  for the rest of the node's session would answer them all at once.
 
 ## Limits
 

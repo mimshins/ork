@@ -40,9 +40,12 @@ permissions:
   deny:
     - Bash(git commit *)
     - Bash(git push *)
-    - Bash(gh pr *)
+    - Bash(gh *)
     - Bash(npm publish *)
     - Bash(pnpm publish *)
+    - Bash(changeset publish *)
+    - Bash(pnpm changeset publish *)
+    - Bash(npx changeset publish *)
     - Bash(ork feedback publish *)
     - Bash(pnpm ork feedback publish *)
 defaults:

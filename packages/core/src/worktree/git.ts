@@ -2,17 +2,33 @@
  * @file A minimal `git` runner for the worktree manager: arguments without a
  *   shell, results that never throw, and none of git's local variables (a
  *   hook's `GIT_DIR` or `GIT_INDEX_FILE`), so it acts on the repository at
- *   `cwd` (specs/worktrees.md).
+ *   `cwd` (specs/worktrees.md). Commands in one folder run one at a time: two
+ *   children handed their owner's work at once both stage it (`git add -A`),
+ *   and git refuses the second while the first holds the index's lock.
  */
 
 import { execFile } from "node:child_process";
+import path from "node:path";
 
 import { withoutGitLocalEnv } from "./git-env.ts";
 
 export type GitResult = { code: number; stdout: string; stderr: string };
 
-/** Runs `git` with arguments (no shell) in `cwd`. Never throws. */
-export const git = (cwd: string, args: readonly string[]): Promise<GitResult> =>
+/** The last command queued in each folder, so the next one waits for it. */
+const queues = new Map<string, Promise<unknown>>();
+
+/** Runs `task` after every command queued earlier in the same folder. */
+const inTurn = <T>(cwd: string, task: () => Promise<T>): Promise<T> => {
+  const key = path.resolve(cwd);
+  const next = (queues.get(key) ?? Promise.resolve()).then(task, task);
+  queues.set(key, next);
+  void next.finally(() => {
+    if (queues.get(key) === next) queues.delete(key);
+  });
+  return next;
+};
+
+const runGit = (cwd: string, args: readonly string[]): Promise<GitResult> =>
   new Promise(resolve => {
     execFile(
       "git",
@@ -30,6 +46,10 @@ export const git = (cwd: string, args: readonly string[]): Promise<GitResult> =>
       },
     );
   });
+
+/** Runs `git` with arguments (no shell) in `cwd`. Never throws. */
+export const git = (cwd: string, args: readonly string[]): Promise<GitResult> =>
+  inTurn(cwd, () => runGit(cwd, args));
 
 /** Like `git`, but rejects with git's message when the command fails. */
 export const gitOk = async (

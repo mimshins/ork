@@ -106,6 +106,7 @@ nodes:
       allow:
         - Edit
         - Write
+        - Bash
     output:
       schema:
         decisions:
@@ -162,6 +163,7 @@ nodes:
       allow:
         - Edit
         - Write
+        - Bash
     output:
       schema:
         decisions:
@@ -226,6 +228,7 @@ nodes:
       allow:
         - Edit
         - Write
+        - Bash
     session: resume
     output:
       schema:
@@ -283,6 +286,7 @@ nodes:
       allow:
         - Edit
         - Write
+        - Bash
     session: resume
     output:
       schema:
@@ -359,6 +363,7 @@ nodes:
       allow:
         - Edit
         - Write
+        - Bash
     output:
       schema:
         adrs:
