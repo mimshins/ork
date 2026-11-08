@@ -1,5 +1,24 @@
 # @krapht/ork
 
+## 1.0.0-alpha.3
+
+### Minor Changes
+
+- [`742efac`](https://github.com/mimshins/ork/commit/742efacfe7e7d8d51af3739480b9479d1f7123ac) Thanks [@mimshins](https://github.com/mimshins)! - Experimental features can ship on `main` turned off. `experimental: [<name>]` in
+  `project.yaml` or `ORK_EXPERIMENTAL=<name>[,<name>…]` turns one on, `ork doctor`
+  lists what is on and who turned it on, and a name Ork doesn't know fails
+  `ork validate`, `ork run` and that doctor check. No experiment ships yet.
+
+### Patch Changes
+
+- [`a995575`](https://github.com/mimshins/ork/commit/a995575b437c4207e913ef85f69b1520ec794dc0) Thanks [@mimshins](https://github.com/mimshins)! - `ork worktrees remove` takes a detached worktree by the `<run>/<node>` name
+  `ork worktrees list` shows, not only by its path.
+
+- [`e55448a`](https://github.com/mimshins/ork/commit/e55448a3a0648a8c3932a5b78ae61897b1de1cfe) Thanks [@mimshins](https://github.com/mimshins)! - A child whose worktree was removed outside Ork while the run went on (an agent
+  ran `git worktree remove`) gets it opened again from its owner's work the next
+  time it runs, instead of failing with "spawn git ENOENT"; git run in a missing
+  folder now says which folder.
+
 ## 1.0.0-alpha.2
 
 ### Patch Changes
