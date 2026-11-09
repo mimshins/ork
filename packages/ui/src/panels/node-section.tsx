@@ -10,7 +10,7 @@ import { type Ref, useEffect, useState } from "react";
 import { Button } from "../components/button.tsx";
 import { CodeText } from "../components/code-text.tsx";
 import { formatTokens, typeWord } from "../graph/facts.ts";
-import { nodeActions, noteAction } from "./monitor-model.ts";
+import { itemIndex, nodeActions, noteAction } from "./monitor-model.ts";
 import { RunControls } from "./run-controls.tsx";
 import type { RunView } from "./use-run-monitor.ts";
 import { stillGoing, watchFacts } from "./watch-facts.ts";
@@ -68,18 +68,22 @@ const WatchingFacts = ({
 export const NodeSection = ({
   run,
   node,
+  progress,
   sectionRef,
   onLeave,
   onOpenRun,
 }: {
   run: RunView;
   node: TreeNode;
+  /** A node with `forEach`: how far its items have got. */
+  progress?: string | undefined;
   sectionRef: Ref<HTMLElement>;
   /** Escape: go back to where the controls were asked for. */
   onLeave: () => void;
   onOpenRun: (run: string) => void;
 }) => {
   const { calledRun } = node;
+  const index = itemIndex(node);
   return (
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Escape from the buttons inside
     <section
@@ -98,6 +102,28 @@ export const NodeSection = ({
           <dt>Type</dt>
           <dd>{typeWord(node.type)}</dd>
         </div>
+        {progress === undefined ? null : (
+          <div>
+            <dt>Items</dt>
+            <dd>{progress}</dd>
+          </div>
+        )}
+        {index === undefined || node.template === undefined ? null : (
+          <div>
+            <dt>Item</dt>
+            <dd>
+              of <code>{node.template}</code>, index {index}
+            </dd>
+          </div>
+        )}
+        {index === undefined ? null : (
+          <div>
+            <dt>Logs</dt>
+            <dd>
+              <code>{`ork logs ${run.id} --node ${node.id}`}</code>
+            </dd>
+          </div>
+        )}
         {node.model === undefined ? null : (
           <div>
             <dt>Model</dt>

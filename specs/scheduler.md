@@ -14,10 +14,10 @@ Status: **Built**: the scheduler, delegation, the built-in node types and
 [ADR-016](../decisions/ADR-016-scheduler-semantics.md),
 [ADR-017](../decisions/ADR-017-blocking-delegate.md),
 [ADR-019](../decisions/ADR-019-leaders-resume-on-reentry.md). Of `forEach`
-([RFC-013](../rfcs/active/RFC-013-for-each.md)), holding a node to a declared
+([RFC-013](../rfcs/archived/RFC-013-for-each.md)), holding a node to a declared
 list, [the fan-out](./scheduler/for-each.md), resuming per item, item worktrees,
-the question about a list over `maxItems` and the walk are built. The Monitor
-and the Builder don't show fanned nodes yet.
+the question about a list over `maxItems` and the walk are built, as are the
+Monitor's and the Builder's views of it: `forEach` is built end to end.
 
 `startRun({ graph, inputs, cwd, executors, human, onEvent, workspace })` runs a
 compiled workflow ([graph compiler](./graph-compiler.md)) and returns
@@ -84,7 +84,7 @@ its branch afterwards ([worktrees](./worktrees.md)).
   `items`. An item's extra fields are refused by the report schema and ignored
   by a tool's or MCP call's check, as a result's extra fields are
   ([declared.ts](../packages/core/src/run/declared.ts),
-  [RFC-013](../rfcs/active/RFC-013-for-each.md)).
+  [RFC-013](../rfcs/archived/RFC-013-for-each.md)).
 
 ## Control nodes
 
@@ -196,15 +196,15 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
     when `ork` can be run directly, `ORK_BIN`
     ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)). An item of a
     `forEach` node also gets `ORK_ITEM` (a string as it is, anything else as
-    JSON) and `ORK_INDEX`; the variables are built, and the scheduler does not
-    start items yet ([RFC-013](../rfcs/active/RFC-013-for-each.md)). Then the
-    node's `env:`, rendered. A variable that is not set stops `ork run` before
-    anything starts; for a workflow it calls by name, it warns, and the call
-    fails if reached ([L86](./messaging/scripts-limits.md)). Events record
-    `env:` names only. Values read from `{{env.*}}` by the workflow, by those it
-    calls by name, or by its callers (told as names in `ORK_MASKED`), except
-    those in `plainEnv`, are scrubbed from every tool node's output, in any form
-    a JSON encoder writes them, including JSON keys and numbers
+    JSON) and `ORK_INDEX`; the scheduler starts items with them
+    ([RFC-013](../rfcs/archived/RFC-013-for-each.md)). Then the node's `env:`,
+    rendered. A variable that is not set stops `ork run` before anything starts;
+    for a workflow it calls by name, it warns, and the call fails if reached
+    ([L86](./messaging/scripts-limits.md)). Events record `env:` names only.
+    Values read from `{{env.*}}` by the workflow, by those it calls by name, or
+    by its callers (told as names in `ORK_MASKED`), except those in `plainEnv`,
+    are scrubbed from every tool node's output, in any form a JSON encoder
+    writes them, including JSON keys and numbers
     ([L81](./messaging/scripts-limits.md)). A Claude session inherits the user's
     variables like any program, without these, and also gets `ORK_SESSION=1`. A
     detached run's programs and sessions also see `ORK_DETACHED=1`.

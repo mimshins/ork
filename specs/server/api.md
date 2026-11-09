@@ -22,7 +22,7 @@ are named by id or a unique prefix: no match is 404, several are 400.
 | POST   | `/api/projects/:id/builder/:name/save`                | `{ force? }`: writes the file; answers `saved: false` on errors, or a file that changed                              |
 | GET    | `/api/runs`                                           | runs newest first, each with `live`; `?project`, `?limit` (20)                                                       | `ork ps --json`           |
 | GET    | `/api/runs/:id`                                       | one run, with `live` (`crashed` when its process is gone, `paused` when it is paused) and `paused`                   | —                         |
-| GET    | `/api/runs/:id/tree`                                  | the ownership tree                                                                                                   | `ork tree --json`         |
+| GET    | `/api/runs/:id/tree`                                  | the ownership tree; a fanned node has its items as children, and its list's count as `listed`                        | `ork tree --json`         |
 | GET    | `/api/runs/:id/graph`                                 | what its graph is drawn from: nodes, edges, channels                                                                 |
 | GET    | `/api/runs/:id/nodes/:node/context`                   | the same for a run's node, from its workflow file as it is now                                                       | `ork context explain`     |
 | GET    | `/api/runs/:id/events`                                | stored events; `?after`, `?node`, `?limit`, `?last` (the newest N)                                                   | `ork logs --json`         |

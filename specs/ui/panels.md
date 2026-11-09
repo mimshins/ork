@@ -18,6 +18,7 @@ Notifications, Usage, Context, Feedback and Worktrees
   - [Builder](./panels-builder-logs-and-decisions.md#builder)
   - [Logs](./panels-builder-logs-and-decisions.md#logs)
   - [Decisions](./panels-builder-logs-and-decisions.md#decisions)
+- [The Builder: running a node once per item](./panels-builder-for-each.md)
 - [Decisions: reading and filtering](./panels-decisions-readable.md)
 - [Decisions: filters, keys and tokens](./panels-decisions-filters-and-keys.md)
 - [Chats, Notifications and Usage](./panels-chats-notifications-and-usage.md)

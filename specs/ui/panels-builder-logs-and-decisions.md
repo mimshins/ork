@@ -25,6 +25,9 @@ editor and `ork validate`.
   its kinds. A text field commits when it's left. A value the format leaves free
   (`mcp.call`'s `arguments`, `output.schema`, an input's `default`) is typed as
   text, or as JSON for a number or a list. There is no YAML to read or write.
+- **A node that takes `forEach`** has a For each group: a choice of items
+  written here or a list from an earlier node, a dropdown of those lists, and a
+  way to declare one ([built](./panels-builder-for-each.md)).
 - **A `watch:`'s `until`** is the same choice as an edge's condition, from what
   the node declares, except that waiting for it to fail isn't offered
   ([until-picker.tsx](../../packages/ui/src/builder/until-picker.tsx)).
@@ -60,6 +63,14 @@ The selected run's events, live
   it here and the other way round. They look through what is loaded
   ([L65](./limits.md)). What they leave is said aloud once they stay still for
   half a second (WCAG 4.1.3).
+- **A node with `forEach`** keeps its items with it: the filter `build` leaves
+  the events of `build` and of `build.0`, `build.1`, … (the id plus `.` and
+  digits, nothing else that merely starts with it), and `build.2` leaves that
+  item's alone. The node's option reads "build and its items", an item's reads
+  `build.2`, and the options sort numerically (`build.2` before `build.10`). The
+  CLI twin is `ork logs <run> --node build`, which keeps the same. The node's
+  own events are not available without its items. Built
+  ([for-each](../scheduler/for-each.md)).
 - **Following:** it stays on the newest. Scrolling up holds it, so what is being
   read stays still and the Follow button counts what is new; back at the end, or
   pressing it, follows again.

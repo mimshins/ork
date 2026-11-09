@@ -2,9 +2,9 @@
 
 _Part of [Scheduler](../scheduler.md)._
 
-Status: **Built**, engine and CLI: the fan-out, the gather, how limits, stop and
-pause reach items, [resuming per item](./resuming-and-events.md#resuming-a-run),
-item [worktrees](../worktrees.md), the question about a list over `maxItems` and
+Status: **Built**: the fan-out, the gather, how limits, stop and pause reach
+items, [resuming per item](./resuming-and-events.md#resuming-a-run), item
+[worktrees](../worktrees.md), the question about a list over `maxItems` and
 [the walk](./walking.md#fanned-nodes) are built
 ([fan-out.ts](../../packages/core/src/run/fan-out.ts),
 [replay.ts](../../packages/core/src/run/replay.ts),
@@ -13,8 +13,10 @@ item [worktrees](../worktrees.md), the question about a list over `maxItems` and
 [list over its cap](../../packages/core/test/fan-out-exceeded.test.ts),
 [walk](../../packages/core/test/walk-fanned.test.ts)), and `ork tree`,
 `ork logs` and the `ork run` transcript show items
-([CLI](../cli/running-and-runs.md)). The Monitor and the Builder don't show
-fanned nodes yet. Contract: [RFC-013](../../rfcs/active/RFC-013-for-each.md).
+([CLI](../cli/running-and-runs.md)), and the Monitor and the Builder show fanned
+nodes ([graph](../ui/graph.md), [Monitor](../ui/panels-runs-and-monitor.md),
+[Builder](../ui/panels-builder-for-each.md)). Contract:
+[RFC-013](../../rfcs/archived/RFC-013-for-each.md).
 
 A node with `forEach` runs once per item of a list, with no model turn spent on
 fanning out or gathering.
@@ -59,7 +61,8 @@ otherwise, through the same path as
 - `stop`, the recommended answer and the one with no terminal: the node fails
   and the run ends `failed`, with no edge acted on and no `notify:` fired.
 - `first`: only the first `maxItems` items run, and `items`, `results`,
-  `statuses` and `count` hold those.
+  `statuses` and `count` hold those. A second `each.listed` of the same round
+  records the shorter list, which is what a card counts and a resume hands back.
 - `all`: every item runs.
 
 On resume, the answer given last time is given again, in order, as a loop's is,

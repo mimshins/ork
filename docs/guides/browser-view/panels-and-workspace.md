@@ -13,20 +13,25 @@ to the new run in the Monitor. If your projects have
 under the runs, with whether each is live. Accepting one takes a terminal.
 
 **Monitor** draws the run as it goes, beside the same nodes as a tree. Each node
-shows its status, cost, tokens and model. Select a node for its own controls.
-Stopping asks first and says what will happen: a stopped node fails, and the
-workflow's failure rules apply; a stopped run can be resumed. **Resume…**, on a
-run that stopped, failed or crashed, asks first, shows the `ork resume` command
-it stands for, and picks the run up where it left off, in the background. A node
-that called another workflow links to that run, and one that's
-[watching a source](../watching.md) says what it's waiting for and how often it
-looks. **Note…** on a node, or among the run's controls, adds your
+shows its status, cost, tokens and model. A node that
+[runs once per item](../writing-workflows/running-per-item.md) is one card, and
+its status line says how far it is, such as `3 of 8, 1 failed`; its items are
+rows under it in the tree, `build.0` to `build.7`, and open and close with the
+node. Select an item for its own controls and logs. Select a node for its own
+controls. Stopping asks first and says what will happen: a stopped node fails,
+and the workflow's failure rules apply; a stopped run can be resumed.
+**Resume…**, on a run that stopped, failed or crashed, asks first, shows the
+`ork resume` command it stands for, and picks the run up where it left off, in
+the background. A node that called another workflow links to that run, and one
+that's [watching a source](../watching.md) says what it's waiting for and how
+often it looks. **Note…** on a node, or among the run's controls, adds your
 [feedback](../feedback.md) on how it went.
 
 **Logs** shows a run's events. It stays on the newest; scroll up and it holds
-still, and **Follow** counts what is new. Filter by node, by event type or by
-text. Filters look through what is loaded, and **Load older** reads more. Open a
-row for the whole event.
+still, and **Follow** counts what is new. Filter by node (`build` keeps `build`
+and its items; `build.2` keeps one), by event type or by text. Filters look
+through what is loaded, and **Load older** reads more. Open a row for the whole
+event.
 
 **Decisions** collects every open question from every run. Answer with one
 click, or with the focus in a card press `1` to `9`, or `Enter` on the card for
@@ -95,6 +100,11 @@ workflow, or type a new name and choose **Create**.
   A tool's JSON has choices once it declares them, and **Add a field** does that
   from the condition. A condition these can't show stays as you wrote it, under
   **Written by hand**.
+- A node that can run once per item has a **For each** group. **Run this node**
+  chooses once, once per item you list, or once per item of a list from an
+  earlier node. **List from** offers only the lists earlier nodes declare,
+  **Most items** caps it, and **Add a list** declares one on an earlier node
+  ([running a node once per item](../writing-workflows/running-per-item.md)).
 - A `watch:`'s **until** is chosen the same way, from what the node declares.
 - A new edge starts valid. Closing a loop fills in a condition and a limit on
   rounds, and a gate's edge takes its next answer. Under a gate, it says which

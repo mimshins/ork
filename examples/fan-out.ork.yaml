@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: fan-out
+description: A planner lists independent tasks, a worker builds each one in its own worktree at the same time, and you decide what to do with the branches. Every task costs a session, so maxItems caps the list.
+inputs:
+  goal:
+    type: string
+    required: true
+    description: What to split into independent tasks.
+defaults:
+  model: sonnet
+  budgetUsd: 1
+limits:
+  budgetUsd: 10
+nodes:
+  plan:
+    type: claude.worker
+    prompt: "Split this goal into at most 6 independent tasks, each one a change that can be made without the others: {{inputs.goal}}"
+    isolation: readonly
+    output:
+      schema:
+        tasks:
+          list:
+            title: string
+            detail: string
+  build:
+    type: claude.worker
+    prompt: |-
+      Do this one task, and only this one. Others are doing the rest.
+      Task {{index}}: {{item.title}}
+      {{item.detail}}
+    isolation: worktree
+    forEach:
+      from: "{{nodes.plan.output.tasks}}"
+      maxItems: 6
+      maxParallel: 3
+  review:
+    type: human.gate
+    question: Which branches do you keep? Nothing is merged for you.
+    document: "{{nodes.build.output.results}}"
+    options:
+      - keep
+      - discard
+    recommended: keep
+edges:
+  - plan -> build
+  - build -> review

@@ -44,6 +44,8 @@ export type GraphViewProps = {
   /** What each node's card says; a node with none reads as queued. */
   facts?: ReadonlyMap<string, NodeFacts> | undefined;
   selected?: string | undefined;
+  /** The node whose item is selected in the table, marked and brought in. */
+  holding?: string | undefined;
   onSelect?: ((id: string) => void) | undefined;
   /** The context-menu key or a right click on a node. */
   onNodeMenu?: ((id: string) => void) | undefined;
@@ -64,6 +66,7 @@ export const GraphView = memo(
     label,
     facts,
     selected,
+    holding,
     onSelect = noSelect,
     onNodeMenu,
     live = false,
@@ -101,13 +104,14 @@ export const GraphView = memo(
     const roving = byId.has(current ?? "") ? current : layout.nodes[0]?.id;
 
     // Only a new selection moves the view: not the drawing changing under it.
-    const revealed = useRef(selected);
+    const revealing = holding ?? selected;
+    const revealed = useRef(revealing);
     useEffect(() => {
-      if (selected === revealed.current) return;
-      revealed.current = selected;
-      const node = byId.get(selected ?? "");
+      if (revealing === revealed.current) return;
+      revealed.current = revealing;
+      const node = byId.get(revealing ?? "");
       if (node !== undefined) show(node);
-    }, [byId, selected, show]);
+    }, [byId, revealing, show]);
 
     useEffect(() => {
       const id = toFocus.current;
@@ -252,6 +256,7 @@ export const GraphView = memo(
                 connections={connections.get(node.id)}
                 dimmed={hovered !== null && hovered !== node.id}
                 facts={facts?.get(node.id) ?? NO_FACTS}
+                holding={node.id === holding}
                 key={node.id}
                 node={node}
                 onFocused={onFocused}

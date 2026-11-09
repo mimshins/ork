@@ -917,10 +917,18 @@ export const MILESTONES = [
       {
         id: "for-each",
         title: "A node once per item",
-        status: "planned",
+        status: "done",
         detail:
-          "Running a node for each item of a list from the workflow file, as `matrix` does elsewhere, rather than leaving it to a leader's `spawn_worker`. Needs its own RFC, after workflow calls. It also settles L61, carried here by the gaps review: a resume hands parallel activations their results by position.",
-        docs: ["specs/scheduler.md", "specs/scheduler/calls-limits.md"],
+          "Running a node for each item of a list from the workflow file (`forEach`, RFC-013, ADR-070), rather than leaving it to a leader's `spawn_worker`. Built: the fan-out and gather in the engine, resume per item, `ork tree` and `ork logs`, a fanned card with its progress and item rows in the Monitor, the Builder's `forEach` group, the guides and `examples/fan-out.ork.yaml`. Left: one real run on each driver (C12). It also settles L61: a resume hands parallel activations their results by position.",
+        docs: [
+          "specs/scheduler/for-each.md",
+          "decisions/ADR-070-for-each-field-group.md",
+          "rfcs/archived/RFC-013-for-each.md",
+          "docs/guides/writing-workflows/running-per-item.md",
+          "specs/gaps/for-each-limits.md",
+        ],
+        commits: ["3edad59"],
+        date: "2026-11-09",
       },
       {
         id: "triggers",
@@ -1139,4 +1147,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-08";
+export const ROADMAP_UPDATED = "2026-11-09";

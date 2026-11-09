@@ -12,10 +12,13 @@ parts.
 - [Node types](#node-types)
 - [Edges](#edges)
 - [Loops](#loops)
+- [Once per item](#once-per-item)
 - [Templates and conditions](#templates-and-conditions)
 - [Check it](#check-it)
 - [Checking a workflow](./writing-workflows/checking.md): what `ork validate`
   tells you
+- [Running a node once per item](./writing-workflows/running-per-item.md):
+  lists, `{{item}}`, pace, results and resuming
 
 ## The shape of a file
 
@@ -211,6 +214,27 @@ if working, else you): stop the run (recommended), allow one more round, or
 carry on along the other edges. A worker sent round again starts fresh with the
 reviews as its new input; a leader resumes its own session.
 
+## Once per item
+
+`forEach` runs a worker, a tool node, an MCP call or a workflow call once for
+each entry of a list, in parallel, and gathers the results for the next node:
+
+```yaml
+build:
+  type: claude.worker
+  prompt: "Do this task: {{item.title}}"
+  isolation: worktree
+  forEach:
+    from: "{{nodes.plan.output.tasks}}" # a list `plan` declared
+    maxItems: 6 # required beside `from`
+```
+
+It is one node in the file and on the canvas; its items are rows in the
+Monitor's node table. Read
+[Running a node once per item](./writing-workflows/running-per-item.md) for the
+rest, and [examples/fan-out.ork.yaml](../../examples/fan-out.ork.yaml) for a
+whole workflow.
+
 ## Templates and conditions
 
 `{{ }}` works in `prompt`, `instructions`, `command`, `cwd`, and a gate's
@@ -219,6 +243,8 @@ reviews as its new input; a leader resumes its own session.
 - `{{inputs.feature}}`: a run input.
 - `{{nodes.spec.output.artifacts.spec}}`: a field of another node's report.
 - `{{run.id}}`: run metadata.
+- `{{item}}` and `{{index}}`: the entry and its place, in a node with
+  [`forEach`](./writing-workflows/running-per-item.md#reading-the-item).
 
 Conditions use the same small language, with `==`, `!=`, `<`, `>`, `&&`, `||`,
 `!`, and the functions `any`, `all`, `count`, `len` and `contains`. It cannot

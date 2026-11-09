@@ -7,6 +7,7 @@
 import type { NodeType } from "@krapht/ork-schema";
 
 import type { RunEvent } from "../run/types.ts";
+import { isItem } from "./nest-items.ts";
 import { type ProcessStartReader, runProcessAlive } from "./process-age.ts";
 import type { RunRecord, StoredRunStatus } from "./types.ts";
 
@@ -33,6 +34,8 @@ export type TreeNode = {
   calledRun?: string;
   /** What its `watch:` is waiting for, while it's waiting (RFC-011). */
   watching?: Watching;
+  /** For a node with `forEach`, how long its latest list was (RFC-013). */
+  listed?: number;
   /** What it's doing, in a line, and when it ran; see activity.ts. */
   now?: string;
   startedAt?: string;
@@ -87,10 +90,17 @@ export const templateOf = (
   return base !== undefined && declared.has(base) ? base : undefined;
 };
 
+const setItemsWaiting = (nodes: Iterable<TreeNode>, of: string): void => {
+  for (const node of nodes) {
+    if (node.template === of && isItem(node)) node.state = "waiting";
+  }
+};
+
 /** Folds a run's events into its ownership tree; roots in declared order. */
 export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
   const nodes = new Map<string, TreeNode>();
   const declared = new Map<string, TreeNode>();
+  const listedRounds = new Map<string, number>();
   for (const event of events) {
     if (event.type === "run.started") {
       for (const info of event.nodes) {
@@ -148,6 +158,14 @@ export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
     } else if (event.type === "node.skipped") {
       const node = nodes.get(event.id);
       if (node !== undefined) node.state = "skipped";
+    } else if (event.type === "each.listed") {
+      const node = nodes.get(event.node);
+      if (node !== undefined) node.listed = event.count;
+      // A new round's items haven't run yet; a resume repeats the same round.
+      if (event.round > (listedRounds.get(event.node) ?? 0)) {
+        listedRounds.set(event.node, event.round);
+        setItemsWaiting(nodes.values(), event.node);
+      }
     } else if (event.type === "call.started") {
       const node = nodes.get(event.node);
       if (node !== undefined) node.calledRun = event.run;

@@ -105,6 +105,7 @@ export const NODES = [
       "Dead paths: a node whose every way in resolved as not taken is skipped, and so is what only it leads to.",
       "An edge whose source can't run any more in this round counts as not taken, so a branch a loop didn't go back to never leaves a node waiting.",
       "A node that failed and took no edge fails the run; other branches still finish.",
+      "A node with `forEach` (built, RFC-013) runs once per item of a list, as `build.0`, `build.1`…, and gathers their results; the Monitor shows one card with its progress and the items as rows.",
     ],
     see: [
       { map: "lifecycle", node: "scheduler", label: "The scheduler in a run" },
@@ -134,6 +135,7 @@ export const NODES = [
       "A delegated child follows no edges, but its own `before:` and `verify:` still run, for each spawned instance too.",
       "A task is refused, with the reason in its report, when its child is already running. A child the leader does not own fails the whole call at its arguments, and no task runs.",
       "While a leader waits, its session slot goes to its children, so it never deadlocks at `concurrency: 1`.",
+      "A child that has `forEach` is left out of both tools' lists and runs from its edges only; to let the leader decide how many, it uses `spawn_worker` on a plain worker.",
     ],
     docs: [
       ENGINE.delegation,

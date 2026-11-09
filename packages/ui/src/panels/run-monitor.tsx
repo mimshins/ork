@@ -29,6 +29,7 @@ export const RunMonitor = ({ run }: { run: RunView }) => {
     links,
     error,
     selected,
+    holding,
     chosen,
     nodeControls,
     openControls,
@@ -57,6 +58,7 @@ export const RunMonitor = ({ run }: { run: RunView }) => {
         ) : (
           <GraphView
             facts={facts}
+            holding={holding}
             hovered={hovered}
             label={`Graph of run ${run.id}, ${run.workflow}`}
             layout={layout}
@@ -84,6 +86,7 @@ export const RunMonitor = ({ run }: { run: RunView }) => {
       {chosen === undefined ? null : (
         <NodeSection
           node={chosen}
+          progress={facts.get(chosen.id)?.progress}
           onLeave={closeControls}
           onOpenRun={state.arriveAt}
           run={run}

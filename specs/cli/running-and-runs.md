@@ -3,7 +3,7 @@
 _Part of [The ork CLI](../cli.md)._
 
 Status: **Built.** For nodes with `forEach`
-([RFC-013](../../rfcs/active/RFC-013-for-each.md)) the transcript, `ork logs`
+([RFC-013](../../rfcs/archived/RFC-013-for-each.md)) the transcript, `ork logs`
 and `ork tree` show items
 ([tests](../../packages/cli/test/for-each-runs.test.ts)); `ork run --node` on a
 node with `from:` is refused ([below](#running-one-node)).
@@ -130,9 +130,10 @@ first (then the prompt is withdrawn and the transcript shows
 
 For a node with `forEach`, `ork tree` lists its items under it, in list order,
 each with its state, time and cost, and `--json` carries them as the node's
-children (with `template` and `startedAt`). `ork logs --node build` keeps the
-node's events and its items'; `--node build.2` keeps one item's. The same filter
-serves `GET /api/runs/<id>/events?node=` in `ork ui`.
+children (with `template` and `startedAt`), and the node's `listed`.
+`ork logs --node build` keeps the node's events and its items'; `--node build.2`
+keeps one item's. The same filter serves `GET /api/runs/<id>/events?node=` in
+`ork ui`, and `GET /api/runs/<id>/tree` is this same nested tree.
 
 ## Decisions and stopping
 

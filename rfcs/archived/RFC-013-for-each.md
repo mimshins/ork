@@ -1,6 +1,6 @@
 # RFC-013 — Running a node once per item of a list
 
-- **Status:** Accepted (2026-11-07)
+- **Status:** Implemented
 - **Date:** 2026-11-07
 - **Decided:** by the maintainer on 2026-11-07, and accepted the same day
   ([Decisions](#decisions))

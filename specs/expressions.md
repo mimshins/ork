@@ -6,7 +6,7 @@ Status: **Built** ([parse.ts](../packages/core/src/expr/parse.ts),
 [ADR-007](../decisions/ADR-007-safe-expression-language.md). `item` and `index`
 are built in the evaluator and the node types' templates, and the scheduler
 gives them a value in each item of a `forEach` node
-([RFC-013](../rfcs/active/RFC-013-for-each.md)).
+([RFC-013](../rfcs/archived/RFC-013-for-each.md)).
 
 A small, safe language for an edge's `when:` and for `{{ }}` templates in a
 node's `prompt`, `instructions`, `command`, `cwd`, and a gate's `question` and

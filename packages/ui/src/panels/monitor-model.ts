@@ -23,6 +23,21 @@ export type TreeRow = {
   parent: string | undefined;
 };
 
+/** Which item of a fanned node this is (`build.2` is 2), if it is one. */
+export const itemIndex = (node: TreeNode): number | undefined => {
+  const digits =
+    node.template === undefined ? undefined : /\.(\d+)$/u.exec(node.id)?.[1];
+  return digits === undefined ? undefined : Number(digits);
+};
+
+/** Its children: the items of a fanned node by their index, after the rest. */
+export const childrenOf = (node: TreeNode): TreeNode[] => {
+  const items = node.children
+    .filter(child => itemIndex(child) !== undefined)
+    .toSorted((a, b) => (itemIndex(a) ?? 0) - (itemIndex(b) ?? 0));
+  return [...node.children.filter(child => !items.includes(child)), ...items];
+};
+
 /** The tree as rows, top to bottom, without what `collapsed` hides. */
 export const rowsOf = (
   roots: readonly TreeNode[],
@@ -37,7 +52,7 @@ export const rowsOf = (
       { node, depth, parent },
       ...(collapsed.has(node.id)
         ? []
-        : walk(node.children, depth + 1, node.id)),
+        : walk(childrenOf(node), depth + 1, node.id)),
     ]);
   return walk(roots, 1);
 };
@@ -78,6 +93,42 @@ export const askingNodes = (
       .map(decision => decision.node),
   );
 
+/** Past this, "3 of 8, 1 failed" gives up its "of" for a slash. */
+const LONGEST_PROGRESS = 18;
+
+/** How far a node with `forEach` has got: `3 of 8`, `3 of 8, 1 failed`. */
+export const progressText = (
+  done: number,
+  listed: number,
+  failed: number,
+): string => {
+  const tail = failed === 0 ? "" : `, ${String(failed)} failed`;
+  const text = `${String(done)} of ${String(listed)}${tail}`;
+  return text.length > LONGEST_PROGRESS
+    ? `${String(done)}/${String(listed)}${tail}`
+    : text;
+};
+
+/**
+ * A fanned node's progress, once it has listed its items. Items stay from an
+ * earlier, longer list, so only those inside the latest one are counted.
+ */
+export const progressOf = (node: TreeNode): string | undefined => {
+  const { listed } = node;
+  if (listed === undefined) return undefined;
+  const items = node.children.filter(
+    child => (itemIndex(child) ?? Infinity) < listed,
+  );
+  const ended = items.filter(child =>
+    ["ok", "failed", "skipped"].includes(child.state),
+  );
+  return progressText(
+    ended.length,
+    listed,
+    items.filter(child => child.state === "failed").length,
+  );
+};
+
 export const factsOf = (
   roots: readonly TreeNode[],
   asking: ReadonlySet<string>,
@@ -94,6 +145,7 @@ export const factsOf = (
           model: node.model,
           tokens: tokens === 0 ? undefined : tokens,
           costUsd: node.costUsd === 0 ? undefined : node.costUsd,
+          progress: progressOf(node),
           cli: `ork logs ${runId} --node ${node.id}`,
         },
       ];
@@ -147,7 +199,10 @@ export const runStatusOf = (
   waitingOnYou: boolean,
 ): Status => (live === "running" && waitingOnYou ? "waiting" : live);
 
-/** The declared graph, and the workers the run has spawned so far. */
+/**
+ * The declared graph, and the workers the run has spawned so far. A fanned
+ * node's items are rows in the table, not cards.
+ */
 export const graphInputOf = (
   graph: WorkflowGraph,
   roots: readonly TreeNode[],
@@ -155,7 +210,7 @@ export const graphInputOf = (
   const known = new Set(graph.nodes.map(node => node.id));
   const spawned = rowsOf(roots)
     .map(({ node }) => node)
-    .filter(node => !known.has(node.id))
+    .filter(node => !known.has(node.id) && itemIndex(node) === undefined)
     .map(({ id, type, parent }) => ({ id, type, parent }));
   return { ...graph, nodes: [...graph.nodes, ...spawned] };
 };

@@ -7,6 +7,8 @@ import type { Diagnostic } from "@krapht/ork-server/client";
 
 import { problemsAt, problemWords } from "./builder-model.ts";
 import { customControl } from "./custom-controls.tsx";
+import { forEachControl } from "./for-each-control.tsx";
+import { itemHint } from "./for-each-model.ts";
 import { type FormContext, type FormPath, isRecord } from "./form-parts.tsx";
 import { Field } from "./schema-form.tsx";
 import { type JsonSchema, kindOf } from "./schema-model.ts";
@@ -17,7 +19,17 @@ export const contextFor = (
   id: string | null,
   problems: readonly Diagnostic[],
 ): FormContext => ({
-  custom: field => customControl(builder, id, field),
+  custom: field =>
+    forEachControl(builder, id, field) ?? customControl(builder, id, field),
+  hint: (path, description) => {
+    const graph = builder.view?.graph;
+    const document = builder.view?.document;
+    const nodes = isRecord(document) ? document["nodes"] : undefined;
+    const node = isRecord(nodes) ? nodes[String(path[1])] : undefined;
+    return graph === undefined || !isRecord(node)
+      ? description
+      : itemHint(graph, path, node["forEach"], description);
+  },
   change: (path, next) => {
     void builder.change(path, next);
   },

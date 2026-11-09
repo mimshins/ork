@@ -255,6 +255,12 @@
   --graph-card-border-color: var(--color-text);
 }
 
+/* An item of this node is selected in the table: the selected look, dashed. */
+.card[data-holding] {
+  --graph-card-border-color: var(--color-text);
+  --graph-card-border-style: dashed;
+}
+
 .cardHead {
   --graph-card-head-gap: var(--gap-tight);
 
@@ -358,8 +364,12 @@
 
 /* Forced colors take the fill away, so the chosen card's edge says it. */
 @media (forced-colors: active) {
-  .card[data-selected] {
+  .card[data-selected],
+  .card[data-holding] {
     --graph-card-border-color: Highlight;
+  }
+
+  .card[data-selected] {
     --graph-card-outline: var(--hairline) solid Highlight;
   }
 }

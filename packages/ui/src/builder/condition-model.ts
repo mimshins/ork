@@ -54,9 +54,13 @@ export const testsFor = (field: SaidField): readonly ConditionTest[] =>
 export const needsValue = (test: ConditionTest): boolean =>
   test !== "isTrue" && test !== "isFalse";
 
+/** A list can't be compared, so no condition's choices offer one (L208). */
+export const comparable = (fields: readonly SaidField[]): SaidField[] =>
+  fields.filter(({ items }) => items === undefined);
+
 /** Whether the choices can say this: a field, test and value they offer. */
 const rowFits = (row: ConditionRow, fields: readonly SaidField[]): boolean => {
-  const said = fields.find(({ field }) => field === row.field);
+  const said = comparable(fields).find(({ field }) => field === row.field);
   if (said === undefined || !testsFor(said).includes(row.test)) return false;
   if (said.values === undefined || row.value === undefined) return true;
   return said.values.includes(row.value);
@@ -94,8 +98,9 @@ export const firstRow = (
   says: NodeSays,
   prefer?: string,
 ): ConditionRow | undefined => {
-  const listed = says.fields.find(({ values }) => (values ?? []).length > 0);
-  const field = listed ?? says.fields[0];
+  const fields = comparable(says.fields);
+  const listed = fields.find(({ values }) => (values ?? []).length > 0);
+  const field = listed ?? fields[0];
   if (field === undefined) return undefined;
   const value =
     field.values?.includes(prefer ?? "") === true ? prefer : undefined;

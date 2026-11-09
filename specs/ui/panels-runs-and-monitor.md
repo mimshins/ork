@@ -162,3 +162,40 @@ Its CLI twin is `ork tree <run>`.
   is gone (WCAG 2.4.3).
 
 Selecting a node is shared with the other panels: Logs and Chats follow it.
+
+### Items of a fanned node
+
+Status: **built** for [for-each](../scheduler/for-each.md)
+([monitor-model.ts](../../packages/ui/src/panels/monitor-model.ts),
+[node-table.ts](../../packages/ui/src/panels/node-table.ts)).
+
+A node with `forEach` is one card ([graph](./graph.md#a-node-with-foreach)) and
+a row with its items under it, as a leader has its workers. The server nests
+them, in list order, under their node (`build.0`, `build.1`, …), so the table
+only walks the tree.
+
+- **Item rows** are the same columns as any node: id (`build.2`), the node's
+  type, status as a glyph and a word, now, time and cost. They open and close
+  with the node's chevron, start open, and take the tree's keys unchanged: right
+  on `build` goes to `build.0`, left on an item goes back to `build`, and a
+  selected item under a closed node leaves `build` as the row Tab reaches. Down
+  and `End` pass over the items of an open node like any child.
+- **The fanned node's row** has its own status glyph and word (`running`), and
+  its _now_ cell is the progress, `3 of 8, 1 failed`, followed by `· <reason>`
+  when the node failed with one. Before `each.listed` it reads as any node's.
+- **Failed items** show the failed glyph and the word `failed` in their row and
+  name, so color is never the only signal.
+- **Selecting an item** is the shared selection: Logs filters to it, and Chats
+  and Usage follow as for any node, and the graph
+  [holds its node's card](./graph.md#a-node-with-foreach).
+- **The item's strip** replaces the node's strip, with the item's type, model,
+  tokens and controls as for any node, and one line saying what it is: "Item of
+  `build`, index 2". Pause, Continue and Stop and **Note…** act on the item. Its
+  row's accessible description gives `ork logs <run> --node build.2`, and its
+  strip has a _Logs_ line with the same command. The fanned node's strip adds
+  _Items_: `3 of 8, 1 failed`.
+- **Said aloud:** an item that fails is a node that fails: "build.2 failed."
+  Items finishing well are not news.
+- **Empty and old runs:** a node that listed nothing has no chevron and reads
+  `0 of 0`. The server moves items that arrive as roots or under a leader under
+  their node; an item of an unknown node stays put.

@@ -37,8 +37,15 @@ export const ListField = ({
   context,
   item,
   fixed,
+  minRows = 0,
   draw,
-}: FieldProps & Draws & { item: JsonSchema; fixed?: number | undefined }) => {
+}: FieldProps &
+  Draws & {
+    item: JsonSchema;
+    fixed?: number | undefined;
+    /** Rows that can't be removed: a list the format needs at least this long. */
+    minRows?: number;
+  }) => {
   const rows: readonly unknown[] = Array.isArray(value) ? value : [];
   return (
     <Group
@@ -61,7 +68,7 @@ export const ListField = ({
             schema: item,
             value: row,
           })}
-          {fixed === undefined ? (
+          {fixed === undefined && rows.length > minRows ? (
             <Button
               onClick={() => {
                 context.change(path, current => {

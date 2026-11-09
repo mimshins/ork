@@ -128,10 +128,14 @@ Feedback records use the same patterns.
   prints the stored events.
 - **`ork tree [<run>]`** draws the ownership tree from `run.started`'s declared
   nodes, with spawned workers (`<template>-<n>`) under the leader that spawned
-  them, and the items of a fanned node (`<node>.<n>`, RFC-013) as nodes of their
-  own with `template` set to the node (the Monitor draws them properly in Run
-  2): each node's state (waiting, running, ok, failed, skipped), its verdict,
-  how many times it ran, tokens and cost. `--json` prints the tree.
+  them, and the items of a fanned node (`<node>.<n>`, RFC-013) under that node
+  with `template` set to it (`nestItems`, which the server's run tree uses too;
+  `runTree` keeps the shape the events give): each node's state (waiting,
+  running, ok, failed, skipped), its verdict, how many times it ran, tokens and
+  cost, and for a fanned node `listed`, the count of its latest `each.listed`.
+  An `each.listed` of a higher round than the node's last sets its items back to
+  `waiting` until each starts again; one of the same round (a resume, or a list
+  cut to `maxItems`) leaves them. `--json` prints the tree.
 - `<run>` is an id or a unique prefix of one; without it, this project's newest
   run. An ambiguous prefix lists the matches.
 - **`ork usage`** adds up what sessions spent over time, and **`ork prune`**

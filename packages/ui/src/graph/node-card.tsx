@@ -7,7 +7,11 @@
 
 import { memo } from "react";
 
-import { StatusBadge, statusTone } from "../components/status-badge.tsx";
+import {
+  StatusBadge,
+  statusTone,
+  statusWord,
+} from "../components/status-badge.tsx";
 import { cliDescription, Tip } from "../components/tip.tsx";
 import { formatCost, type NodeFacts, nodeName } from "./facts.ts";
 import { TypeIcon } from "./type-icon.tsx";
@@ -21,6 +25,8 @@ export type NodeCardProps = {
   /** Its edges in words, which the drawing only shows. */
   connections?: string | undefined;
   selected: boolean;
+  /** An item of this node is the selection, in the node table. */
+  holding?: boolean;
   /** Another node is being pointed at, so this one steps back. */
   dimmed: boolean;
   /** The one card of the graph that Tab reaches. */
@@ -39,6 +45,7 @@ export const NodeCard = memo(
     facts,
     connections,
     selected,
+    holding = false,
     dimmed,
     tabbable,
     bind,
@@ -57,6 +64,7 @@ export const NodeCard = memo(
         className={styles["card"]}
         data-graph-node=""
         data-dim={dimmed ? "" : undefined}
+        data-holding={holding ? "" : undefined}
         data-selected={selected ? "" : undefined}
         data-tone={statusTone(facts.status)}
         onMouseEnter={() => onHover?.(id)}
@@ -98,11 +106,25 @@ export const NodeCard = memo(
         </span>
         <StatusBadge
           status={facts.status}
-          word={facts.word}
+          word={facts.word ?? facts.progress}
         />
       </button>
     );
-    return facts.cli === undefined ? card : <Tip cli={facts.cli}>{card}</Tip>;
+    return facts.cli === undefined ? (
+      card
+    ) : (
+      <Tip
+        cli={facts.cli}
+        // The card shows the progress in place of the status word.
+        label={
+          facts.progress === undefined
+            ? undefined
+            : `${facts.word ?? statusWord(facts.status)} · ${facts.progress}`
+        }
+      >
+        {card}
+      </Tip>
+    );
   },
 );
 NodeCard.displayName = "NodeCard";

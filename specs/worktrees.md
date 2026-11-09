@@ -12,7 +12,7 @@ Status: **Built** ([manager.ts](../packages/core/src/worktree/manager.ts),
 [remove tests](../packages/core/test/worktree-remove.test.ts),
 [git variable tests](../packages/core/test/git-env.test.ts),
 [for-each tests](../packages/core/test/worktree-for-each.test.ts)). Items of a
-node with `forEach` ([RFC-013](../rfcs/active/RFC-013-for-each.md)) work in
+node with `forEach` ([RFC-013](../rfcs/archived/RFC-013-for-each.md)) work in
 worktrees as [below](#a-node-run-once-per-item); that is built. Why:
 [ADR-020](../decisions/ADR-020-worktrees-beside-the-clone.md),
 [ADR-018](../decisions/ADR-018-ork-merges-children.md),

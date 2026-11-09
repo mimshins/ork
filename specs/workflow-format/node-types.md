@@ -66,7 +66,7 @@ _Part of [Workflow file format](../workflow-format.md)._
   `limits.concurrency`) and `onFailure` (`finish`, the default, or `stop`). The
   schema refuses `from` without `maxItems`, and `forEach` on a leader, a gate, a
   sub-agent or a control node
-  ([RFC-013](../../rfcs/active/RFC-013-for-each.md)). In its `prompt`,
+  ([RFC-013](../../rfcs/archived/RFC-013-for-each.md)). In its `prompt`,
   `command`, `arguments`, `inputs`, `env` and `ref`, `{{item}}` and `{{index}}`
   read the item and its place; a later node reads what it gathers (`items`,
   `results`, `statuses`, `count`). What `ork validate` checks is in the

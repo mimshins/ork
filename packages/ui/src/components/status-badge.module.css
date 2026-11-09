@@ -29,8 +29,16 @@
   letter-spacing: var(--status-badge-badge-tracking);
   min-height: var(--status-badge-badge-min-height);
   padding: var(--status-badge-badge-padding);
+  max-width: 100%;
   white-space: nowrap;
   color: var(--status-badge-badge-text, revert);
+}
+
+/* A long word, such as a fanned node's progress, is cut at its end. */
+.word {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .badge[data-look="pill"] {

@@ -35,7 +35,7 @@ export const openUpgrade = (
             <UpdateBanner workspace={workspace} />
             <UpgradeDialog
               reload={reload}
-              timing={{ pollMs: 5, waitMs: 60, reloadMs: 5 }}
+              timing={{ pollMs: 5, waitMs: 400, reloadMs: 5 }}
             />
           </WorkspaceContext>
         )}

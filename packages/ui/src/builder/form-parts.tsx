@@ -8,6 +8,7 @@ import { type ReactNode, useState } from "react";
 
 import { CodeText } from "../components/code-text.tsx";
 import { Select } from "../components/select.tsx";
+import { GlyphFailed } from "../components/status-glyphs.tsx";
 import { TextField } from "../components/text-field.tsx";
 import {
   type Choice,
@@ -24,6 +25,10 @@ export type FormPath = readonly (string | number)[];
 export type FormContext = {
   /** A control of the builder's own for this field, if it has one. */
   custom?: ((field: FieldProps) => ReactNode) | undefined;
+  /** A field's hint, as this node adds to it (RFC-013's `{{item}}`). */
+  hint?:
+    | ((path: FormPath, description: string | undefined) => string | undefined)
+    | undefined;
   /** What the checks say of this path. */
   problems: (path: FormPath) => readonly string[];
   /**
@@ -49,6 +54,22 @@ export const setField = (field: FieldProps, value: unknown): void => {
 
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** What the checks say of a field, each with its icon and its words. */
+export const Problems = ({ lines }: { lines: readonly string[] }) =>
+  lines.map(line => (
+    <p
+      className={styles["problem"]}
+      key={line}
+    >
+      <span className={styles["problemIcon"]}>
+        <GlyphFailed />
+      </span>
+      <span className={styles["problemWords"]}>
+        <CodeText text={line} />
+      </span>
+    </p>
+  ));
 
 /** A text box that holds what's typed until it's left. */
 export const CommitText = ({

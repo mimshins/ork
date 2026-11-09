@@ -19,6 +19,7 @@ import { Button } from "../components/button.tsx";
 import { Select } from "../components/select.tsx";
 import { Unseen } from "../components/unseen.tsx";
 import {
+  comparable,
   firstRow,
   needsValue,
   rowFor,
@@ -183,7 +184,7 @@ export const TestRows = ({
           key={rowKey(index)}
         >
           <RowControls
-            fields={says.fields}
+            fields={comparable(says.fields)}
             index={index}
             onChange={next => {
               withRows(rows.map((old, at) => (at === index ? next : old)));

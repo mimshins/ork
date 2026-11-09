@@ -8,8 +8,6 @@
 
 import type { ReactNode } from "react";
 
-import { CodeText } from "../components/code-text.tsx";
-import { GlyphFailed } from "../components/status-glyphs.tsx";
 import {
   ChoiceField,
   CommitText,
@@ -18,6 +16,7 @@ import {
   type FormPath,
   Group,
   isRecord,
+  Problems,
   setField,
 } from "./form-parts.tsx";
 import { ListField, RecordField, VariantField } from "./form-rows.tsx";
@@ -126,6 +125,9 @@ export const controlOf = (props: FieldProps): ReactNode => {
           draw={draw}
           fixed={kind.fixed}
           item={kind.item}
+          minRows={
+            typeof schema["minItems"] === "number" ? schema["minItems"] : 0
+          }
         />
       );
     case "record":
@@ -166,27 +168,22 @@ export const controlOf = (props: FieldProps): ReactNode => {
 
 /** One value of any shape, with what the checks say of it. */
 export const Field = (props: FieldProps) => {
-  const { path, context } = props;
+  const { path, context, schema } = props;
   const problems = context.problems(path);
+  // Only a node's own fields take a hint, not each row of a list in one.
+  const hint =
+    path.length === 3 ? context.hint?.(path, descriptionOf(schema)) : undefined;
+  const shown =
+    hint === undefined
+      ? props
+      : { ...props, schema: { ...schema, description: hint } };
   return (
     <div
       className={styles["field"]}
       data-problem={problems.length > 0 ? "" : undefined}
     >
-      {context.custom?.(props) ?? controlOf(props)}
-      {problems.map(problem => (
-        <p
-          className={styles["problem"]}
-          key={problem}
-        >
-          <span className={styles["problemIcon"]}>
-            <GlyphFailed />
-          </span>
-          <span className={styles["problemWords"]}>
-            <CodeText text={problem} />
-          </span>
-        </p>
-      ))}
+      {context.custom?.(props) ?? controlOf(shown)}
+      <Problems lines={problems} />
     </div>
   );
 };

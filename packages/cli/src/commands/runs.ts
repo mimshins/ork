@@ -3,11 +3,17 @@
  *   recorded in `~/.ork/state.db` (specs/event-store.md).
  */
 
-import { activeTree, findRun, placeFor, runStatus } from "@krapht/ork-core";
+import {
+  activeTree,
+  findRun,
+  nestItems,
+  placeFor,
+  runStatus,
+} from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import { style, write, writeErr } from "../output.ts";
-import { cost, formatRuns, formatTree, nestItems } from "../runs/format.ts";
+import { cost, formatRuns, formatTree } from "../runs/format.ts";
 import { followRun } from "../runs/logs.ts";
 import { withStore } from "../store.ts";
 

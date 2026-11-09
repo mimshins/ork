@@ -63,6 +63,49 @@ so they are real controls and share the status badge.
   frame, so moving the view renders nothing in React. React hears only when what
   is on screen changes, and draws just that, plus the card that Tab reaches.
 
+## A node with `forEach`
+
+Status: **built** for [for-each](../scheduler/for-each.md)
+([facts.ts](../../packages/ui/src/graph/facts.ts),
+[node-card.tsx](../../packages/ui/src/graph/node-card.tsx),
+[monitor-model.ts](../../packages/ui/src/panels/monitor-model.ts)).
+
+A fanned node is **one card**, as in the file. Its items (`build.0` to
+`build.7`) are tree rows in the
+[node table](./panels-runs-and-monitor.md#items-of-a-fanned-node), never cards,
+so `graphInputOf` skips them, and the drawing does not change as items start.
+
+- **The status line** is the card's glyph and, in place of the status's word,
+  the progress: `3 of 8`, or `3 of 8, 1 failed`. The glyph is the node's own
+  status, so it still reads without color. Before the node has listed its items
+  (`each.listed`), the card is an ordinary one, and a run from before that event
+  draws as before.
+- **The count:** the first number is the items that ended (succeeded, failed or
+  skipped), the second is the list's length, and the last is how many of the
+  ended ones failed. A stopped or finished node keeps its final counts, and an
+  empty list reads `0 of 0`.
+- **It fits the line:** one string, `progressText`, feeds the card, the name and
+  the tip. Past 18 characters its "of" becomes a slash (`120/400, 11 failed`),
+  and past what the line holds it is cut with an ellipsis at the end.
+- **Failures stay quiet:** an item that failed does not light the card. Its tone
+  is the node's status, so a running node with one failed item keeps the running
+  look and says `1 failed` in words; the card turns failed only when the node
+  fails. Amber stays for what needs the user.
+- **Name:** `build, running, 3 of 8, 1 failed, $0.4100, 12.0k tokens, worker`.
+  The status word stays in the name, after the id, and the progress holds what
+  is on screen word for word (WCAG 2.5.3). The card shows the progress in place
+  of the word, so the word lives in the tip as well
+  (`running · 3 of 8, 1 failed`), and a paused or waiting card is not left with
+  only its icon.
+- **An item selected elsewhere** (in the table) marks its node's card as holding
+  it: the selected look's border color with a dashed border, on `.card`'s tokens
+  (`--graph-card-border-color: var(--color-text)`,
+  `--graph-card-border-style: dashed`), and no new color. The card is not
+  `aria-selected`; the table row is, since it is what the selection names. The
+  card is brought into view, as for any node selected elsewhere. The dashed
+  border is a visual cue only: the table row's `aria-selected` is the signal for
+  assistive technology. In forced colors the border is `Highlight`.
+
 ## Keys and names
 
 The canvas is one tab stop and the cards are another, with a roving tabindex.

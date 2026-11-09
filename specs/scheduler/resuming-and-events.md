@@ -21,7 +21,7 @@ under the same run id, with a `Replay` built from the run's events:
   told that the run was stopped and to carry on from what it finished
   ([resume.ts](../../packages/core/src/run/resume.ts), `cutOff`). A node that
   failed in a failed run starts fresh.
-- **A fanned node** ([RFC-013](../../rfcs/active/RFC-013-for-each.md)) that
+- **A fanned node** ([RFC-013](../../rfcs/archived/RFC-013-for-each.md)) that
   succeeded is handed back whole; its items neither run nor replay. Otherwise it
   fans out again:
   - The list is the recorded `each.listed` of that round when its source was
@@ -55,7 +55,7 @@ under the same run id, with a `Replay` built from the run's events:
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `run.started`       | the run starts: id, workflow, entries, every declared node and owner, its edges and channels                                                                             |
 | `node.started`      | an activation starts: id, type, round, `owner` when delegated, `item` (of, index) for an item of a fanned node, and the `agent` that fills it (name, source, file, hash) |
-| `each.listed`       | a fanned node resolved its list: node, round, count, list                                                                                                                |
+| `each.listed`       | a fanned node resolved its list (again if cut to `maxItems`): node, round, count, list                                                                                   |
 | `each.exceeded`     | a fanned node's list is over `maxItems`: node, round, count, maxItems                                                                                                    |
 | `node.event`        | a runtime event from the node's session or tool                                                                                                                          |
 | `node.finished`     | an activation ends: ok, output, usage, error                                                                                                                             |

@@ -198,6 +198,13 @@ export type LogFilters = {
 
 export const NO_FILTERS: LogFilters = { node: null, type: null, text: "" };
 
+/** An item of a fanned node: `build.2`, but not `build.x` or `builder`. */
+const itemOf = (id: string): string | undefined => /^(.+)\.\d+$/u.exec(id)?.[1];
+
+/** Whether an event's node is the filter's: a node's items go with it. */
+const isOfNode = (id: string | undefined, filter: string): boolean =>
+  id !== undefined && (id === filter || itemOf(id) === filter);
+
 export const filterEvents = (
   events: readonly StoredEvent[],
   { node, type, text }: LogFilters,
@@ -206,14 +213,26 @@ export const filterEvents = (
   if (node === null && type === null && words === "") return events;
   return events.filter(
     stored =>
-      (node === null || nodeOf(stored.event) === node) &&
+      (node === null || isOfNode(nodeOf(stored.event), node)) &&
       (type === null || stored.event.type === type) &&
       (words === "" || searchTextOf(stored).includes(words)),
   );
 };
 
+/** Sorted so that `build.2` comes before `build.10`. */
 const sortedUnique = (values: Iterable<string>): string[] =>
-  [...new Set(values)].toSorted((a, b) => a.localeCompare(b));
+  [...new Set(values)].toSorted((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true }),
+  );
+
+/** What the node filter's option for a node reads. */
+export const nodeOption = (
+  id: string,
+  ids: readonly string[],
+): { value: string; label: string } => ({
+  value: id,
+  label: ids.some(other => itemOf(other) === id) ? `${id} and its items` : id,
+});
 
 /** The nodes to filter by: those in view, and the one selected if it is not. */
 export const nodesIn = (

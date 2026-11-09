@@ -49,8 +49,12 @@ parallel, and return once every child has reported:
 In `delegate`, `child` is one of the leader's own children, and in
 `spawn_worker`, `template` is one of its child workers. A name that is not
 theirs fails the whole call with an error that lists the valid ids, and no task
-runs. A task is refused, with the reason in its report, when its child is
-already running or no workers are left.
+runs. A child with [`forEach`](./writing-workflows/running-per-item.md) is left
+out of both lists, since a wrong name fails the whole call: it runs from its
+edges only, and `delegate` says so. To have the leader decide how many to run,
+let it use `spawn_worker` on a plain worker, up to `maxWorkers`. A task is
+refused, with the reason in its report, when its child is already running or no
+workers are left.
 
 ## What comes back
 
@@ -120,6 +124,8 @@ A leader's claims never get in its children's way. When it hands out work with
 `delegate` or `spawn_worker`, Ork releases what it holds, so its children can
 claim those paths, and tells it so in the result. It claims again before it
 edits. Children still contend with each other and with nodes outside the team.
+The items of a fanned child are not in that wait, so they contend with the
+leader's claims like any node outside its team.
 
 ## A leader decides about its own loops
 

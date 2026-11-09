@@ -13,6 +13,8 @@ export type NodeFacts = {
   costUsd?: number | undefined;
   /** Says this in place of the status's word: the builder's problems. */
   word?: string | undefined;
+  /** A node with `forEach`: how far its items have got, `3 of 8, 1 failed`. */
+  progress?: string | undefined;
   /** The `ork` command that shows this node, for its tooltip. */
   cli?: string | undefined;
 };
@@ -76,6 +78,7 @@ export const nodeName = (id: string, type: string, facts: NodeFacts): string =>
   [
     id,
     facts.word ?? statusWord(facts.status),
+    ...(facts.progress === undefined ? [] : [facts.progress]),
     ...(facts.costUsd === undefined ? [] : [formatCost(facts.costUsd)]),
     ...(facts.tokens === undefined
       ? []

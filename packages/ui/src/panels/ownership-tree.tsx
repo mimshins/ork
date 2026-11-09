@@ -16,7 +16,7 @@ import { IconChevronDown, IconChevronRight } from "../components/icons.tsx";
 import { StatusBadge } from "../components/status-badge.tsx";
 import { cliDescription } from "../components/tip.tsx";
 import { formatCost, type NodeFacts, nodeName } from "../graph/facts.ts";
-import { rowsOf } from "./monitor-model.ts";
+import { childrenOf, itemIndex, rowsOf } from "./monitor-model.ts";
 import { nowLine, timeLine } from "./node-table.ts";
 
 import styles from "./monitor.module.css";
@@ -95,7 +95,7 @@ export const OwnershipTree = ({
       },
       ArrowRight: () => {
         if (!hasChildren) return;
-        if (isOpen) moveTo(event, node.children[0]?.id ?? node.id);
+        if (isOpen) moveTo(event, childrenOf(node)[0]?.id ?? node.id);
         else setOpen(node.id, true);
       },
       ArrowLeft: () => {
@@ -152,13 +152,23 @@ export const OwnershipTree = ({
           const fact = facts.get(node.id) ?? QUEUED;
           const canOpen = node.children.length > 0;
           const isOpen = canOpen && !collapsed.has(node.id);
-          const doing = nowLine(node, fact.status, edges, statusOf, now);
+          const doing = nowLine(
+            node,
+            fact.status,
+            edges,
+            statusOf,
+            now,
+            fact.progress,
+          );
           return (
             <div
-              {...cliDescription(undefined, connections.get(node.id))}
+              {...cliDescription(
+                itemIndex(node) === undefined ? undefined : fact.cli,
+                connections.get(node.id),
+              )}
               aria-expanded={canOpen ? isOpen : undefined}
               aria-label={[
-                nodeName(node.id, node.type, fact),
+                nodeName(node.id, node.type, { ...fact, progress: undefined }),
                 ...(doing === "" ? [] : [doing]),
               ].join(", ")}
               aria-level={depth}

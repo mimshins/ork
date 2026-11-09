@@ -154,13 +154,16 @@ export const createFanOut = (deps: FanOutDeps) => {
         : { ok: true, list: unmasked(forEach, recorded) };
     if (!listed.ok) return failure(listed.error);
     let { list } = listed;
-    options.onEvent({
-      type: "each.listed",
-      node: id,
-      round,
-      count: list.length,
-      list,
-    });
+    const recordList = (): void => {
+      options.onEvent({
+        type: "each.listed",
+        node: id,
+        round,
+        count: list.length,
+        list,
+      });
+    };
+    recordList();
     if ("maxItems" in forEach && list.length > forEach.maxItems) {
       options.onEvent({
         type: "each.exceeded",
@@ -179,7 +182,10 @@ export const createFanOut = (deps: FanOutDeps) => {
         const reason = `the list of ${id} has ${String(list.length)} items, over maxItems ${String(forEach.maxItems)}`;
         return { ...failure(reason), limited: reason, stopsAs: "failed" };
       }
+      const narrowed = chosen.length !== list.length;
       list = chosen;
+      // What runs is what's counted, and what a resume hands back.
+      if (narrowed) recordList();
     }
     const node = nodeOf(activation);
     const session = node !== undefined && needsSlot(node);

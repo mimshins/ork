@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L214, and the next chore is
+closes it. Ids are never reused: the next limit is L216, and the next chore is
 C14. At a review, each open entry is closed (built or fixed, then removed), kept
 (moved into its area's spec, then removed here), or carried to a roadmap item,
 or to none yet (unplanned).
@@ -208,12 +208,13 @@ Found building [clean sessions](./runtime.md#what-a-session-loads) (ADR-065):
   session ends, and that `ork resume` goes on. Carried, unplanned: it waits on
   the world. ([usage](./usage.md#limits-across-runs))
   ([ADR-002](../decisions/ADR-002-typescript-from-source.md))
-- **C12 · A fan-out hasn't run on a real driver.** One run on each driver of a
-  `from:` fan-out of Claude workers into worktrees (paid) is left to the
-  maintainer, after the second run lands. Check that items start together under
-  `maxParallel`, that each takes its own session and worktree, and that a
-  resumed run goes on with the unfinished ones. Carried, unplanned: it waits on
-  the world. ([running a node once per item](./scheduler/for-each.md))
+- **C12 · A fan-out hasn't run on a real driver.** One run on each driver (the
+  Agent SDK and the `claude` CLI) of a `from:` fan-out of Claude workers into
+  worktrees (paid) is left to the maintainer, after the second run has landed.
+  Check that items start together under `maxParallel`, that each takes its own
+  session and worktree, and that a resumed run goes on with the unfinished ones.
+  Carried, unplanned: it waits on the world.
+  ([running a node once per item](./scheduler/for-each.md))
 
 - **C13 · No `fix` workflow.** A bug has to go through `plan`'s gate. A shorter
   path would reproduce it, write a failing test, fix it and review it.

@@ -3,11 +3,11 @@
 Status: **Built** ([graph/](../packages/core/src/graph/compile.ts),
 [tests](../packages/core/test/compile.test.ts)); `ork validate` runs it, and
 `ork run` prints its warnings before it starts. The checks on `forEach` and
-`{{item}}` ([RFC-013](../rfcs/active/RFC-013-for-each.md), in
+`{{item}}` ([RFC-013](../rfcs/archived/RFC-013-for-each.md), in
 [for-each.ts](../packages/core/src/graph/for-each.ts),
 [tests](../packages/core/test/for-each-checks.test.ts)) are built, as are the
-scheduler that fans out, the walk and the CLI; the Monitor and Builder don't
-show fanned nodes yet. Why:
+scheduler that fans out, the walk, the CLI, the Monitor and the Builder, so
+`forEach` is built end to end. Why:
 [ADR-006](../decisions/ADR-006-workflow-file-format.md),
 [ADR-008](../decisions/ADR-008-ownership-hierarchy.md).
 

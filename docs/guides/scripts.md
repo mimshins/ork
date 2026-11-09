@@ -127,18 +127,20 @@ test.
 
 A program also sees:
 
-| Variable       | What it holds                                             |
-| -------------- | --------------------------------------------------------- |
-| `ORK_RUN`      | The run's id                                              |
-| `ORK_NODE`     | This node's id                                            |
-| `ORK_ROUND`    | Which activation this is, from 1; a resume can repeat one |
-| `ORK_RUN_DIR`  | The run's folder, for files of its own                    |
-| `ORK_PROJECT`  | The project's root                                        |
-| `ORK_WORKFLOW` | The workflow's name                                       |
-| `ORK_BIN`      | The `ork` to call; use `"${ORK_BIN:-ork}"`                |
-| `ORK_OUTPUT`   | With `output: { format: json }`, the file above           |
-| `ORK_STATE`    | With [`watch:`](./watching.md), a file kept between looks |
-| `ORK_MASKED`   | The names of the variables to mask, never values          |
+| Variable       | What it holds                                                                |
+| -------------- | ---------------------------------------------------------------------------- |
+| `ORK_RUN`      | The run's id                                                                 |
+| `ORK_NODE`     | This node's id                                                               |
+| `ORK_ROUND`    | Which activation this is, from 1; a resume can repeat one                    |
+| `ORK_RUN_DIR`  | The run's folder, for files of its own                                       |
+| `ORK_PROJECT`  | The project's root                                                           |
+| `ORK_WORKFLOW` | The workflow's name                                                          |
+| `ORK_BIN`      | The `ork` to call; use `"${ORK_BIN:-ork}"`                                   |
+| `ORK_ITEM`     | In a node with `forEach`, the item: a string as it is, anything else as JSON |
+| `ORK_INDEX`    | In a node with `forEach`, the item's place, from 0                           |
+| `ORK_OUTPUT`   | With `output: { format: json }`, the file above                              |
+| `ORK_STATE`    | With [`watch:`](./watching.md), a file kept between looks                    |
+| `ORK_MASKED`   | The names of the variables to mask, never values                             |
 
 These say who a program is but don't limit what it can do: it runs as you. A
 program in a run can read and stop, but not answer, chat or continue for you:

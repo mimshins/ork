@@ -11,7 +11,13 @@ import { useValue } from "react-containerized-state";
 import { connectionsOf } from "../graph/connections.ts";
 import { layoutGraph } from "../graph/layout.ts";
 import { useAppState } from "../state/context.tsx";
-import { askingNodes, factsOf, graphInputOf, rowsOf } from "./monitor-model.ts";
+import {
+  askingNodes,
+  factsOf,
+  graphInputOf,
+  itemIndex,
+  rowsOf,
+} from "./monitor-model.ts";
 import { useRunAnnouncer } from "./use-run-announcer.ts";
 
 export type { RunView };
@@ -58,6 +64,11 @@ export const useRunMonitor = (run: RunView) => {
     [layout],
   );
   const chosen = rowsOf(roots).find(({ node }) => node.id === selected)?.node;
+  /** The node whose item is the selection: its card is marked. */
+  const holding =
+    chosen !== undefined && itemIndex(chosen) !== undefined
+      ? chosen.template
+      : undefined;
   useRunAnnouncer(run, facts);
 
   /** The menu keys: selects the node and goes to its controls. */
@@ -91,6 +102,7 @@ export const useRunMonitor = (run: RunView) => {
     links,
     error,
     selected,
+    holding,
     chosen,
     nodeControls,
     openControls,

@@ -8,17 +8,13 @@
 import {
   activeTree,
   isNodeEvent,
+  nestItems,
   type RunEvent,
   type StoredEvent,
 } from "@krapht/ork-core";
 import { describe, expect, it } from "vitest";
 
-import {
-  createLogPrinter,
-  formatRunEvent,
-  formatTree,
-  nestItems,
-} from "../src/index.ts";
+import { createLogPrinter, formatRunEvent, formatTree } from "../src/index.ts";
 
 /** Colors off: lines compare as plain text. */
 const plain = (line: string): string =>
@@ -179,18 +175,5 @@ describe("ork tree", () => {
       "├─ build.1  claude.worker  ✓ pass: did 4  2s  100 in / 20 out · $2.0000",
       "└─ build.2  claude.worker  ✓ pass: did 6  2s  100 in / 20 out · $3.0000",
     ]);
-  });
-
-  it("carries the items in --json", () => {
-    const [, build] = nestItems(activeTree(STORED));
-    expect(
-      build?.children.map(child => [child.id, child.template, child.costUsd]),
-    ).toEqual([
-      ["build.0", "build", 1],
-      ["build.1", "build", 2],
-      ["build.2", "build", 3],
-    ]);
-    expect(build?.children[0]?.startedAt).toBe("2026-11-08T12:00:08.000Z");
-    expect(JSON.stringify(build)).toContain('"id":"build.2"');
   });
 });

@@ -3,8 +3,8 @@
 - **Status:** Accepted
 - **Date:** 2026-11-08
 - **Topic:** workflow format, scheduler
-- **RFC:** [RFC-013](../rfcs/active/RFC-013-for-each.md) (accepted 2026-11-07;
-  moves to `rfcs/archived/` when the Monitor and Builder ship)
+- **RFC:** [RFC-013](../rfcs/archived/RFC-013-for-each.md) (accepted 2026-11-07;
+  shipped 2026-11-09, archived)
 
 ## Context
 
@@ -43,5 +43,6 @@ needs no new node type. The other options add a node kind or cover fewer nodes.
 ## Consequences
 
 Item ids with a `.` reach the store, CLI, worktree names and the UI. Removing or
-renaming `forEach` later breaks files. The Monitor and Builder don't draw fanned
-nodes yet (recorded in [gaps](../specs/gaps/for-each-limits.md)).
+renaming `forEach` later breaks files. The Monitor draws a fanned node as one
+card with its items as rows, and the Builder has a `forEach` group; limits that
+remain are in [gaps](../specs/gaps/for-each-limits.md).

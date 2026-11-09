@@ -5,13 +5,14 @@ Status: **Built**: the Zod model, edge shorthand, canonical YAML, diagnostics,
 ([code](../packages/schema/src/index.ts),
 [tests](../packages/schema/test/yaml.test.ts)); node types execute in the
 [scheduler](./scheduler.md). `forEach:` and the `list` output shape
-([RFC-013](../rfcs/active/RFC-013-for-each.md)): the **schema**, the
+([RFC-013](../rfcs/archived/RFC-013-for-each.md)): the **schema**, the
 [compiler's checks](./graph-compiler.md#rules), the
 [scheduler](./scheduler/for-each.md), the walk and the CLI are built
 ([tests](../packages/schema/test/for-each.test.ts),
 [checks](../packages/core/test/for-each-checks.test.ts)); the Monitor and the
-Builder don't show fanned nodes yet. Why:
-[ADR-006](../decisions/ADR-006-workflow-file-format.md),
+Builder show and edit it ([Monitor](./ui/panels-runs-and-monitor.md),
+[Builder](./ui/panels-builder-for-each.md)), so `forEach` is built end to end.
+Why: [ADR-006](../decisions/ADR-006-workflow-file-format.md),
 [ADR-030](../decisions/ADR-030-agents-fill-nodes.md).
 
 The format has one file per workflow, plus agent files; this document is the

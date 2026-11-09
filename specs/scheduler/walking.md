@@ -5,8 +5,8 @@ _Part of [The scheduler](../scheduler.md)._
 Status: **Built** ([walk.ts](../../packages/core/src/run/walk.ts),
 [tests](../../packages/core/test/walk.test.ts),
 [fuzz](../../packages/core/test/walk-fuzz.test.ts)). `ork validate`, `ork run`
-and the builder walk a workflow, fanned nodes included (built; the Monitor and
-Builder don't draw fanned nodes yet). Why:
+and the builder walk a workflow, fanned nodes included; the Monitor and Builder
+show them too (`forEach` is built end to end). Why:
 [ADR-056](../../decisions/ADR-056-walking-a-workflow.md),
 [RFC-009](../../rfcs/archived/RFC-009-walking-a-workflow.md).
 

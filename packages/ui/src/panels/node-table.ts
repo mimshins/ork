@@ -48,7 +48,12 @@ export const nowLine = (
   edges: WorkflowGraph["edges"],
   statusOf: (id: string) => Status | undefined,
   now: number,
+  progress?: string,
 ): string => {
+  if (progress !== undefined) {
+    const why = status === "failed" ? (node.now ?? "") : "";
+    return why === "" ? progress : `${progress} · ${why}`;
+  }
   if (status === "queued") return afterLine(node.id, edges, statusOf);
   if (node.watching !== undefined && !DONE.has(status)) {
     const { looks, next } = watchFacts(node.watching, now);

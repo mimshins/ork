@@ -90,6 +90,9 @@ file: a tool reads one with `env:` and `{{env.NAME}}`.
 | `control.router`, `control.split` | Pass their input on; a router takes its first matching edge         |
 | `workflow.call`                   | Starts another workflow as its own run                              |
 
+A worker, tool node, `mcp.call` or `workflow.call` can run once per entry of a
+list: see [One node per item](#one-node-per-item).
+
 - **A Claude node reports** `status` (`pass`, `changes_requested`, `done` or
   `fail`), `summary`, `artifacts`, `branch`, and any field its `output.schema`
   declares, such as `verdict: [approve, escalate]`. For another verdict, declare
@@ -115,6 +118,44 @@ file: a tool reads one with `env:` and `{{env.NAME}}`.
 - Templates, `{{inputs.x}}`, `{{nodes.a.output.field}}`, `{{run.id}}`, go in
   `prompt`, `instructions`, `command`, `cwd` and `question`. Each value stays
   one argument of a command, so it can't inject one.
+
+## One node per item
+
+`forEach` runs a worker, a tool node, an `mcp.call` or a `workflow.call` once
+per entry of a list, with no model turn to fan out or gather. Not a leader, a
+gate, a subagent or a control node.
+
+```yaml
+plan:
+  type: claude.worker
+  prompt: "Split this into at most 6 independent tasks: {{inputs.goal}}"
+  isolation: readonly
+  output:
+    schema:
+      tasks:
+        list: { title: string, detail: string } # declare the list and its shape
+build:
+  type: claude.worker
+  prompt: "Task {{index}}: {{item.title}}. {{item.detail}}"
+  isolation: worktree
+  forEach:
+    from: "{{nodes.plan.output.tasks}}" # exactly one path to a declared list
+    maxItems: 6 # required with `from`: the cap on sessions started
+    maxParallel: 3
+```
+
+- `forEach: { items: [a, b] }` takes a list written in the file instead.
+- `{{item}}` and `{{index}}` work only in a node with `forEach`, in `prompt`,
+  `command`, `arguments`, `inputs`, `env` and `ref`. A program also gets
+  `ORK_ITEM` and `ORK_INDEX`.
+- The next node reads `items`, `results` (each item's output, `summary`,
+  `branch`), `statuses` and `count`: `{{nodes.build.output.results}}`,
+  `when: "all(statuses, 'pass')"`. Items follow no edges; the node does.
+- `onFailure: finish` (default) runs every item; `stop` starts no more after a
+  failure. A list over `maxItems` makes Ork ask a person.
+- Declare the source's `list`, or `check` warns `forEach.undeclared`. Fix
+  `forEach.not-list`, `forEach.order` and `item.field` errors; they name the
+  field or node.
 
 ## Loops
 

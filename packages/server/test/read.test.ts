@@ -262,8 +262,15 @@ describe("the read routes", () => {
     expect(newest).toMatchObject({ data: [{ seq: 2 }, { seq: 3 }] });
   });
 
-  it("show an item of a fanned node as a node of its own, with its template", async () => {
+  it("nest an item under its fanned node, which carries its list's count", async () => {
     const { client, store } = await withRuns();
+    store.append("aaa11111", {
+      type: "each.listed",
+      node: "lead",
+      round: 1,
+      count: 3,
+      list: ["a", "b", "c"],
+    });
     store.append("aaa11111", {
       type: "node.started",
       id: "lead.2",
@@ -277,10 +284,17 @@ describe("the read routes", () => {
     expect(tree).toMatchObject({
       ok: true,
       data: [
-        { id: "lead" },
-        { id: "lead.2", template: "lead", state: "running" },
+        {
+          id: "lead",
+          listed: 3,
+          children: [
+            { id: "check" },
+            { id: "lead.2", template: "lead", state: "running" },
+          ],
+        },
       ],
     });
+    expect(tree).toMatchObject({ data: { length: 1 } });
     expect(
       await client.call("events", {
         params: { id: "aaa11111" },
@@ -295,7 +309,7 @@ describe("the read routes", () => {
         params: { id: "aaa11111" },
         query: { node: "lead" },
       }),
-    ).toMatchObject({ data: { length: 2 } });
+    ).toMatchObject({ data: { length: 3 } });
   });
 
   it("list only the open decisions of live runs", async () => {

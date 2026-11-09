@@ -137,3 +137,25 @@ the tests, asks you first.
 Every example runs on either driver: `--driver cli` uses your logged-in
 `claude`; `--driver sdk` needs `ANTHROPIC_API_KEY` (or Bedrock, Vertex or
 Foundry) ([accounts](./accounts.md)).
+
+## fan-out
+
+[`fan-out.ork.yaml`](../../examples/fan-out.ork.yaml) splits a goal into
+independent tasks and builds them at the same time:
+
+1. `plan` (readonly) reports a list of tasks, up to six, with a title and a
+   detail each.
+2. `build` runs once per task, three at a time, each in its own worktree
+   ([once per item](./writing-workflows/running-per-item.md)).
+3. A gate shows you every task's result, with its branch, and asks which you
+   keep. Nothing is merged for you.
+
+```sh
+v=$(ork --version)
+curl -fsSL --create-dirs -o .ork/workflows/fan-out.ork.yaml \
+  "https://raw.githubusercontent.com/mimshins/ork/@krapht/ork@$v/examples/fan-out.ork.yaml"
+ork run fan-out --input goal="Add a farewell(name) function and a test for it"
+```
+
+Sonnet, within a run budget of $10. Each task is a session, so lower `maxItems`
+for a first try.

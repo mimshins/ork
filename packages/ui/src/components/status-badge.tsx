@@ -90,7 +90,7 @@ const Badge = ({ look, pill }: { look: Look; pill: boolean }) => {
       <span className={styles["icon"]}>
         <Icon />
       </span>
-      {word}
+      <span className={styles["word"]}>{word}</span>
     </span>
   );
 };

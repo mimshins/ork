@@ -11,6 +11,7 @@ import {
   activeTree,
   capsHere,
   limitsReport,
+  nestItems,
   placeFor,
   triggersReport,
   usageReport,
@@ -112,7 +113,7 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
   tree: ({ params }) => {
     const found = runOf(context, params.id);
     if (!found.ok) return found.refusal;
-    return ok(activeTree(context.store.events(found.run.id)));
+    return ok(nestItems(activeTree(context.store.events(found.run.id))));
   },
 
   graph: ({ params }) => {
