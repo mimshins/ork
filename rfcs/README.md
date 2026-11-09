@@ -77,3 +77,5 @@ and carries an RFC through this lifecycle. `ork run rfc` drafts one with you and
 | [011](./archived/RFC-011-watching-a-source.md)                 | Watching a source, and acting on what it says                      | Implemented |
 | [012](./archived/RFC-012-teaching-claude-code-ork.md)          | Teaching Claude Code Ork's standards: an MCP server and skills     | Implemented |
 | [013](./archived/RFC-013-for-each.md)                          | Running a node once per item of a list                             | Implemented |
+| [014](./active/RFC-014-cli-drivers-only.md)                    | CLI drivers only: claude, OpenCode and Command Code                | Proposed    |
+| [015](./active/RFC-015-format-for-several-drivers.md)          | A workflow format for several drivers                              | Proposed    |
