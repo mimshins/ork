@@ -130,18 +130,20 @@ through their public entry point. oxlint enforces this.
 This repository is an Ork project: [.ork/project.yaml](./.ork/project.yaml)
 holds its rules, and [.ork/workflows/](./.ork/workflows) its workflows. Each of
 `rfc`, `plan` and `build` also runs alone
-([ADR-071](./decisions/ADR-071-workflows-by-stage.md)).
+([ADR-072](./decisions/ADR-072-start-gateway.md)).
 
-- **`feature`** goes from your brief to a pushed change or a pull request, by
-  calling the others. It reads the code and recommends a route, and you choose
-  whether the brief needs an RFC first. Questions from the called runs wait in
-  `ork decide` or the Decisions panel of `ork ui`, not in the terminal that
-  started `feature`.
+- **`start`** is the way in. It reads your brief, the saved plans and the active
+  RFCs, recommends a route, and you choose: a new plan, a new RFC first, a plan
+  from an Accepted RFC, or building a saved plan. It then calls the workflows
+  that route needs. Questions from the called runs wait in `ork decide` or the
+  Decisions panel of `ork ui`, not in the terminal that started `start`.
 - **`rfc`** weighs real options against the code, asks you to pick each outcome,
   and ends at a gate that publishes the RFC. Only an RFC on `main` goes on to a
   plan.
 - **`plan`** asks you each open design decision, one at a time, and the
-  spec-writer drafts the plan for you to approve.
+  spec-writer drafts the plan for you to approve. An approved plan is saved in
+  `.ai/plans/`, named by the `name` input or the run's id, and never replaces
+  one already there.
 - **`build`** takes an approved plan. A leader builds it through the agents it
   owns: the ui-designer and the a11y-auditor for UI work, the implementer, or
   the engine agent for engine work, until `pnpm check` passes. A design decision
@@ -167,7 +169,7 @@ worktree's source for `pnpm check`.
 ```sh
 pnpm add --global @krapht/ork                  # or: npm install --global @krapht/ork
 ork validate                                   # check them and walk every way through them
-ork run feature --input brief="Let ork ps filter by workflow"
+ork run start --input brief="Let ork ps filter by workflow"
 ork run qa-pass --input scope="the quickstart and the worktrees guide"
 ```
 
@@ -193,7 +195,7 @@ gate lists those ADRs, so you check them before you keep the change.
 
 - **Runs are paid.** Each session spends on your own account, through the driver
   that's ready on your machine (your `claude` login or an API key; `ork run`
-  says which). Each session has a budget, each run a cap (`feature` $55, `build`
+  says which). Each session has a budget, each run a cap (`start` $55, `build`
   $35, `qa-pass` $8) and the project a daily quota ($50). The first runs are
   measured for Ork's cost benchmark, so start them only on the maintainer's go
   and keep their run ids (`ork tree <run>`, `ork usage`).

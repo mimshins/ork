@@ -1,6 +1,6 @@
 # ADR-071 — Ork's own process as staged workflows that ask the maintainer
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-072](./ADR-072-start-gateway.md)
 - **Date:** 2026-11-09
 - **Topic:** process
 - **RFC:** waived — the maintainer decided this directly in a design review

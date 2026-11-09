@@ -304,7 +304,13 @@ const ownGateText = async (name: string, id: string) => {
         permit: () => Promise.resolve({ allow: true }),
       },
       outputs: {
-        frame: { recommendation: "plan", analysis: "No open decisions." },
+        frame: {
+          recommendation: "plan",
+          target: "",
+          name: "x",
+          analysis: "No open decisions.",
+        },
+        plan: { outputs: { plan: "# Saved", path: ".ai/plans/x.md" } },
         spec: { plan: "# The plan\n\nThe whole of it.", summary: "None." },
         build: {
           summary: "Built it.",
@@ -339,7 +345,7 @@ const ownGateText = async (name: string, id: string) => {
 };
 
 describe("this repository's own workflows", () => {
-  it.each(["feature", "rfc", "plan", "build", "qa-pass"])(
+  it.each(["start", "rfc", "plan", "build", "qa-pass"])(
     "keeps %s in canonical form",
     name => {
       const { text, workflow } = ownWorkflow(name);
@@ -348,7 +354,8 @@ describe("this repository's own workflows", () => {
   );
 
   it.each([
-    ["feature", "route"],
+    ["start", "route"],
+    ["start", "next"],
     ["plan", "approve"],
     ["build", "ratify"],
     ["build", "decide"],
@@ -385,6 +392,13 @@ describe("this repository's own workflows", () => {
     expect(ownWorkflow("build").workflow.nodes["decide"]).toMatchObject({
       options: ["main", "branch", "keep-uncommitted", "discard"],
     });
+  });
+});
+
+describe("this repository's start gate", () => {
+  it("says where the approved plan was saved", async () => {
+    const { question } = await ownGateText("start", "next");
+    expect(question).toContain(".ai/plans/x.md");
   });
 });
 

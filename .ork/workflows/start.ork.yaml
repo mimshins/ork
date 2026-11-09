@@ -1,0 +1,183 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: start
+description: The way in. It reads your brief, the saved plans and the active RFCs, recommends a route, and you choose; then it calls the rfc, plan and build workflows that route needs. Each called workflow asks you its decisions in ork decide or the Decisions panel of ork ui, and each also runs alone.
+inputs:
+  brief:
+    type: string
+    required: true
+    description: What you want, in your own words, short.
+layers:
+  project:
+    instructions: inherit
+defaults:
+  model: sonnet
+  effort: medium
+  budgetUsd: 1
+limits:
+  budgetUsd: 55
+  concurrency: 1
+  timeout: 72h
+nodes:
+  frame:
+    type: claude.worker
+    prompt: |-
+      Find the right way in for this brief. Change nothing.
+
+      Read the brief, the title and first lines of every file in .ai/plans/ and rfcs/active/ (plans may be named by a run id, so a name says little), then any that look related, and what the brief touches: the specs under specs/ that govern it, the ADRs they cite, and the code. List the design decisions it leaves open: anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or that changes what users see.
+
+      Recommend one route in `recommendation`:
+      - build-plan: a saved plan in .ai/plans/ already covers this brief and still matches the code.
+      - from-rfc: an Accepted RFC in rfcs/active/ already decides this, and it needs a plan.
+      - rfc: a design decision has real alternatives worth weighing in a durable document.
+      - plan: anything else.
+
+      Put the file's path, relative to the repository, in `target` for build-plan or from-rfc, and an empty string otherwise. Put a short kebab-case name for this work, such as for-each-monitor, in `name`: a new plan is saved under it. Put the open decisions and your reason, citing files, in `analysis`, as markdown. The maintainer chooses the route; don't start on any of them.
+
+      {{inputs.brief}}
+    effort: high
+    isolation: readonly
+    budgetUsd: 2
+    maxTurns: 30
+    output:
+      schema:
+        recommendation:
+          - plan
+          - rfc
+          - from-rfc
+          - build-plan
+        target: string
+        name: string
+        analysis: string
+  route:
+    type: human.gate
+    question: |-
+      {{nodes.load_rfc.output.stderr}}{{nodes.load_plan.output.stderr}}
+
+      Which route for this brief? Recommended: {{nodes.frame.output.recommendation}} {{nodes.frame.output.target}}
+
+      - plan: go straight to a plan; its open decisions are asked one at a time.
+      - rfc: weigh the options in a new RFC and publish it. Publishing to main goes on to the plan; a branch ends here, for its pull request.
+      - from-rfc: plan from an Accepted RFC in rfcs/active/.
+      - build-plan: build a saved plan from .ai/plans/.
+      - stop: end the run.
+
+      For from-rfc or build-plan, a note naming another file's path uses that file instead. Read the document for the open decisions and the reason.
+    document: "{{nodes.frame.output.analysis}}"
+    options:
+      - plan
+      - rfc
+      - from-rfc
+      - build-plan
+      - stop
+  load_rfc:
+    type: tool.shell
+    script: |-
+      set -eu
+      note="$(printf %s "$NOTE" | tr -d '[:space:]')"
+      target="${note:-$TARGET}"
+      target="${target#./}"
+      case "$target" in
+        *..*) echo "'$target' is not a path inside rfcs/active/." >&2; exit 1 ;;
+        rfcs/active/RFC-*.md) ;;
+        *) echo "'$target' is not an RFC in rfcs/active/." >&2; exit 1 ;;
+      esac
+      if [ ! -f "$target" ]; then echo "$target does not exist." >&2; exit 1; fi
+      # A program's output is cut at 64 KiB; refuse rather than pass half a file.
+      if [ "$(wc -c < "$target")" -gt 60000 ]; then echo "$target is over 60000 bytes, too long to pass on." >&2; exit 1; fi
+      if ! grep -q '^- \*\*Status:\*\* Accepted' "$target"; then echo "$target is not Accepted." >&2; exit 1; fi
+      cat "$target"
+    allow:
+      - sh
+    env:
+      NOTE: "{{nodes.route.output.note}}"
+      TARGET: "{{nodes.frame.output.target}}"
+  load_plan:
+    type: tool.shell
+    script: |-
+      set -eu
+      note="$(printf %s "$NOTE" | tr -d '[:space:]')"
+      target="${note:-$TARGET}"
+      target="${target#./}"
+      case "$target" in
+        *..*) echo "'$target' is not a path inside .ai/plans/." >&2; exit 1 ;;
+        .ai/plans/*.md) ;;
+        *) echo "'$target' is not a plan in .ai/plans/." >&2; exit 1 ;;
+      esac
+      if [ ! -f "$target" ]; then echo "$target does not exist." >&2; exit 1; fi
+      # A program's output is cut at 64 KiB; refuse rather than pass half a file.
+      if [ "$(wc -c < "$target")" -gt 60000 ]; then echo "$target is over 60000 bytes, too long to pass on." >&2; exit 1; fi
+      cat "$target"
+    allow:
+      - sh
+    env:
+      NOTE: "{{nodes.route.output.note}}"
+      TARGET: "{{nodes.frame.output.target}}"
+  rfc:
+    type: workflow.call
+    workflow: rfc
+    inputs:
+      brief: "{{inputs.brief}}"
+    timeout: 24h
+  plan:
+    type: workflow.call
+    workflow: plan
+    inputs:
+      brief: "{{inputs.brief}}"
+      rfc: "{{nodes.rfc.output.outputs.rfc}}{{nodes.load_rfc.output.stdout}}"
+      name: "{{nodes.frame.output.name}}"
+    timeout: 24h
+  next:
+    type: human.gate
+    question: |-
+      The plan is approved and saved in {{nodes.plan.output.outputs.path}}. What now?
+
+      - build-now: start the build, which is paid.
+      - stop: end the run. Run start again with the same brief to build it later, or ork run build --input plan="$(cat <that file>)".
+    document: "{{nodes.plan.output.outputs.plan}}"
+    options:
+      - build-now
+      - stop
+  build:
+    type: workflow.call
+    workflow: build
+    inputs:
+      plan: "{{nodes.plan.output.outputs.plan}}{{nodes.load_plan.output.stdout}}"
+    timeout: 24h
+edges:
+  - frame -> route
+  - from: route
+    to: plan
+    when: choice == 'plan'
+  - from: route
+    to: rfc
+    when: choice == 'rfc'
+  - from: route
+    to: load_rfc
+    when: choice == 'from-rfc'
+  - from: route
+    to: load_plan
+    when: choice == 'build-plan'
+  - from: rfc
+    to: plan
+    when: outputs.choice == 'main'
+  - from: load_rfc
+    to: plan
+    when: ok
+  - from: load_plan
+    to: build
+    when: ok
+  - from: load_rfc
+    to: route
+    when: "!ok"
+    maxRounds: 3
+  - from: load_plan
+    to: route
+    when: "!ok"
+    maxRounds: 3
+  - from: plan
+    to: next
+    when: outputs.choice == 'approve'
+  - from: next
+    to: build
+    when: choice == 'build-now'

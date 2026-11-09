@@ -56,7 +56,9 @@ review:
   `Invalid input (schema.invalid_union)` instead of what the input expects.
 - **G13 · A gitignored plan is invisible in a worktree.** A node in its own
   worktree sees only committed files and `.worktreeinclude`; passing a plan
-  through a program's output is cut at 64 KiB.
+  through a program's output is cut at 64 KiB. `start` refuses a file over
+  60,000 bytes for that reason, and a plan also travels as one environment value
+  and one `--input` argument, which Linux limits to 128 KiB each.
 - **G14 · A session's permissions are broad.** Sessions run in Claude Code's
   default mode; a bare `Edit` or `Write` allow isn't held to the node's
   worktree, and a deny rule matches by prefix, so `HOME=… ork …` gets past it.
@@ -76,8 +78,8 @@ review:
   loop after two rounds whatever its `maxRounds`, and labels the path as if the
   rounds ran out.
 - **G21 · Ork doesn't check a report field written as JSON Schema.** A list of
-  objects such as `feature`'s `decisions` is required in the report's schema,
-  but only the driver's structured output enforces it: Ork's own declared-output
+  objects such as `build`'s `decisions` is required in the report's schema, but
+  only the driver's structured output enforces it: Ork's own declared-output
   check skips such a field, and the SDK driver's enforcement is unmeasured.
 - **G22 · Some answers' notes are only recorded.** A
   [note](./messaging.md#decisions) given to a loop out of rounds or a link at

@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
 schemaVersion: 1
 name: plan
-description: From a brief or an Accepted RFC to a plan you approved. The spec-writer asks you each open design decision, one at a time, drafts the plan and revises it until you approve it. Nothing is built.
+description: From a brief or an Accepted RFC to a plan you approved, saved in .ai/plans/. The spec-writer asks you each open design decision, one at a time, drafts the plan and revises it until you approve it. Nothing is built.
 inputs:
   brief:
     type: string
@@ -11,6 +11,10 @@ inputs:
     type: string
     default: ""
     description: The text of an Accepted RFC, when there is one. Its Decision section is settled.
+  name:
+    type: string
+    default: ""
+    description: The file name for the plan in .ai/plans/, without .md. The run's id when empty.
 layers:
   project:
     instructions: inherit
@@ -87,13 +91,37 @@ nodes:
       - approve
       - revise
       - stop
+  save:
+    type: tool.shell
+    script: |-
+      set -eu
+      name="$(printf %s "$NAME" | tr -c 'A-Za-z0-9._-' '-')"
+      name="${name:-$RUN}"
+      mkdir -p .ai/plans
+      out=".ai/plans/$name.md"
+      # Never replace a plan already there.
+      if [ -e "$out" ]; then
+        out=".ai/plans/$name-$RUN.md"
+      fi
+      printf '%s\n' "$PLAN" > "$out"
+      printf '%s' "$out"
+    allow:
+      - sh
+    env:
+      NAME: "{{inputs.name}}"
+      RUN: "{{run.id}}"
+      PLAN: "{{nodes.spec.output.plan}}"
 edges:
   - spec -> approve
   - from: approve
     to: spec
     when: choice == 'revise'
     maxRounds: 10
+  - from: approve
+    to: save
+    when: choice == 'approve'
 outputs:
   plan: "{{nodes.spec.output.plan}}"
+  path: "{{nodes.save.output.stdout}}"
   decisions: "{{nodes.spec.output.decisions}}"
   choice: "{{nodes.approve.output.choice}}"

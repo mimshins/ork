@@ -64,7 +64,7 @@ nodes:
 
       {{nodes.qa.output.findings}}
 
-      save writes these findings to .ai/plans/qa-{{run.id}}.md (local, never committed), to turn into plans for ork run feature or into issues. drop keeps them only in this run's record (ork logs {{run.id}}).
+      save writes these findings to .ai/plans/qa-{{run.id}}.md (local, never committed), to turn into plans for ork run start or into issues. drop keeps them only in this run's record (ork logs {{run.id}}).
     options:
       - save
       - drop

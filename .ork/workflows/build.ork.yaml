@@ -6,7 +6,7 @@ inputs:
   plan:
     type: string
     required: true
-    description: The approved plan, as markdown. ork run plan or ork run feature produces one.
+    description: The approved plan, as markdown. ork run plan or ork run start produces one.
 layers:
   project:
     instructions: inherit
