@@ -99,7 +99,10 @@ builder:
 Every Claude node ends with a **report**: `status` (`pass`, `changes_requested`,
 `fail` or `done`), a short `summary`, `artifacts` (name → path in the
 repository), its `branch`, and the fields of its `output.schema`. Other nodes
-read the report through templates and conditions.
+read the report through templates and conditions. When a node runs again in a
+loop, its report replaces the last one, except for list fields named in
+`output.gather` (for example `gather: [decisions]`), which keep every round's
+entries.
 
 - `isolation` decides where it works
   ([Worktrees and isolation](./worktrees.md)).

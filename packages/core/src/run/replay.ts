@@ -105,6 +105,7 @@ export const createReplay = (
         : [...(fanOuts.items.get(id) ?? [])].findLast(
             ([before]) => before < round,
           )?.[1].sessionId,
+    lastOutput: id => history.get(id)?.at(-1)?.output,
     kept: () => [...history.keys(), ...fanOuts.items.keys()],
     ...(mail === undefined ? {} : { mail }),
     ...(earlier === undefined ? {} : { earlier }),

@@ -12,7 +12,14 @@ _Part of [Workflow file format](../workflow-format.md)._
   added to a `tools.only` list), and `model`, `maxTurns` and `tools.only` and
   `deny` carry over. A `claude.leader` also takes `maxWorkers` and
   `questions: owner | user` (default `user`), whether its children's questions
-  go to it first ([leader questions](../messaging/leader-questions.md)).
+  go to it first ([leader questions](../messaging/leader-questions.md)). A
+  leader or worker's `output.gather` names fields of its `output.schema`,
+  declared as lists, that are kept across its rounds: each round's entries are
+  added to the earlier ones, in order, leaving out exact repeats, while every
+  other field holds the latest round
+  ([gather.ts](../../packages/core/src/run/gather.ts)). `ork validate` refuses a
+  field that isn't declared or isn't a list, and `gather` on a node with
+  `forEach`.
 - **Tools:** `tool.gh`, `tool.aws`, `tool.git`, `tool.shell` (each runs the
   user's own CLI, and a per-node allowlist sets which subcommands are
   permitted). There is one `tool.<id>` type per registered integration

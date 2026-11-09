@@ -14,6 +14,7 @@ import {
 } from "@krapht/ork-schema";
 
 import { error, warning } from "./diagnostics.ts";
+import { gatherProblems } from "./gather.ts";
 import { checkScripts } from "./script.ts";
 import {
   declaredOutputOf,
@@ -71,7 +72,7 @@ export const checkNodes = (
       );
     }
 
-    diagnostics.push(...statusProblems(id, node));
+    diagnostics.push(...statusProblems(id, node), ...gatherProblems(id, node));
 
     if (node.type === "control.join") {
       const sources = new Set(incoming.map(e => e.from)).size;

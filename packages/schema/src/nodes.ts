@@ -65,6 +65,13 @@ export const agentSettings = {
         .describe(
           "Extra structured fields the node must report, e.g. { verdict: [approve, escalate] }.",
         ),
+      gather: z
+        .array(z.string().min(1))
+        .min(1)
+        .optional()
+        .describe(
+          "List fields kept across rounds: each round's entries are added to the earlier rounds' instead of replacing them, e.g. [decisions].",
+        ),
     })
     .optional(),
 };

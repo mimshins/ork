@@ -550,6 +550,15 @@
                   "type": "string"
                 },
                 "additionalProperties": {}
+              },
+              "gather": {
+                "description": "List fields kept across rounds: each round's entries are added to the earlier rounds' instead of replacing them, e.g. [decisions].",
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
               }
             },
             "additionalProperties": false
@@ -747,6 +756,15 @@
                       "type": "string"
                     },
                     "additionalProperties": {}
+                  },
+                  "gather": {
+                    "description": "List fields kept across rounds: each round's entries are added to the earlier rounds' instead of replacing them, e.g. [decisions].",
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
                   }
                 },
                 "additionalProperties": false
@@ -1238,6 +1256,15 @@
                       "type": "string"
                     },
                     "additionalProperties": {}
+                  },
+                  "gather": {
+                    "description": "List fields kept across rounds: each round's entries are added to the earlier rounds' instead of replacing them, e.g. [decisions].",
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
                   }
                 },
                 "additionalProperties": false
@@ -1784,6 +1811,15 @@
                       "type": "string"
                     },
                     "additionalProperties": {}
+                  },
+                  "gather": {
+                    "description": "List fields kept across rounds: each round's entries are added to the earlier rounds' instead of replacing them, e.g. [decisions].",
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
                   }
                 },
                 "additionalProperties": false

@@ -31,6 +31,7 @@ import {
   closeWorkspace,
   createSummaries,
   finishedEvent,
+  createGatherer,
   renderOutputs,
   spendOf,
   recordRun,
@@ -205,6 +206,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     fanOut: createFanOut({ ...starts, options, stops, scope, nodeOf, loops }),
   });
 
+  const gather = createGatherer(outputs, options.replay, nodeOf);
   /** Runs one activation and records it; routing is the caller's. */
   const perform = async (activation: Activation): Promise<NodeResult> => {
     const { id } = activation;
@@ -218,10 +220,13 @@ export const startRun = (options: RunOptions): RunHandle => {
       const agent = graph.agents.get(activation.template ?? id);
       onEvent(startedEvent(activation, type, round, agent));
     }
-    const result = spend.count(
-      id,
-      stops.ended(id, recorded ?? (await execute(activation, round))),
-      recorded !== null,
+    const result = gather(
+      activation,
+      spend.count(
+        id,
+        stops.ended(id, recorded ?? (await execute(activation, round))),
+        recorded !== null,
+      ),
     );
     // A limit cut it off: no edge acts on its failure, and a resume goes on.
     if (result.limited !== undefined) {

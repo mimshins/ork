@@ -4,6 +4,7 @@ import { integrationFor } from "@krapht/ork-integrations";
 import {
   type Diagnostic,
   type Edge,
+  isClaudeNode,
   isToolNode,
   type Node,
   type NodeType,
@@ -99,6 +100,10 @@ export const declaredOutputOf = (
   node: Node,
 ): Readonly<Record<string, unknown>> | undefined =>
   "output" in node ? node.output?.schema : undefined;
+
+/** The report fields a node keeps across its rounds (ADR-073), if any. */
+export const gatheredFieldsOf = (node: Node | undefined): readonly string[] =>
+  node !== undefined && isClaudeNode(node) ? (node.output?.gather ?? []) : [];
 
 /** What a node with `forEach` reports instead of its type's fields (RFC-013). */
 export const GATHERED_FIELDS = [

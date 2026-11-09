@@ -945,6 +945,18 @@ export const MILESTONES = [
         date: "2026-11-09",
       },
       {
+        id: "output-gather",
+        title: "Report lists kept across rounds",
+        status: "active",
+        detail:
+          "A Claude node's `output.gather: [field]` keeps a declared list field across its rounds, each round's entries added to the earlier ones, so a gate after a fix loop sees every decision a leader reported. Joined by the engine, idempotent on resume; `build`'s leader gathers `decisions`. Found when `ratify` in run c1a569ed showed none of the leader's 22.",
+        docs: [
+          "decisions/ADR-073-output-gather.md",
+          "specs/workflow-format/node-types.md",
+        ],
+        commits: [],
+      },
+      {
         id: "triggers",
         title: "Schedules and webhooks",
         status: "done",

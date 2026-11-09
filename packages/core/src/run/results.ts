@@ -27,6 +27,7 @@ import type {
 } from "./types.ts";
 
 export { spendOf } from "./spending.ts";
+export { createGatherer } from "./gather.ts";
 
 /** Control nodes pass their input through; a join's input is its output. */
 export const passThrough = (input: NodeOutput | undefined): NodeResult => ({

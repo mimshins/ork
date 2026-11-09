@@ -47,7 +47,13 @@ its branch afterwards ([worktrees](./worktrees.md)).
   one of two builders, the other's edges count as not taken in that round: a
   node only it feeds is skipped, and a join behind it fires. This is decided
   after each node routes, one waiting node at a time in graph order, as each can
-  start something ([tests](../packages/core/test/rounds.test.ts)).
+  start something ([tests](../packages/core/test/rounds.test.ts)). A node's
+  output after a round is that round's report, except the fields its
+  `output.gather` names, which hold every round's entries, a failed round's
+  included. A child a leader delegates to gathers across its delegations, from
+  its last report before a resume too; a spawned instance gathers only its own
+  run, since the leader's next round reuses its id for another worker
+  ([tests](../packages/core/test/gather.test.ts)).
 - The run ends when nothing runs and nothing waits. A node still waiting then,
   neither run nor skipped with an edge into it resolved, would be a bug in Ork:
   the run ends `failed`, its reason starting `ork engine error:` and naming the

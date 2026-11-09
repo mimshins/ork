@@ -91,6 +91,8 @@ export type Replay = {
   cutOff?: (activation: Activation) => string | undefined;
   listed?: (id: string, round: number, source: unknown) => unknown[] | null;
   previousSession?: (activation: Activation) => string | undefined;
+  /** The output a node reported last in the run being resumed. */
+  lastOutput?: (id: string) => NodeOutput | undefined;
   mail?: Mail;
   earlier?: EarlierSpend;
 };
