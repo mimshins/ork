@@ -1,7 +1,7 @@
 /**
  * @file Runs the programs in this repository's own `start` and `plan`
- *   workflows: which files they will load, and that saving never replaces a
- *   plan.
+ *   workflows: which files they will load, that saving never replaces a plan,
+ *   and what QA's findings look like on disk.
  */
 
 import { spawnSync } from "node:child_process";
@@ -66,6 +66,28 @@ const run = (script: string, cwd: string, env: Record<string, string>) =>
 /** The result of `load_rfc` or `load_plan` on a target and a note. */
 const load = (id: string, TARGET: string, NOTE = "") =>
   run(scriptOf("start", id), checkout(), { TARGET, NOTE });
+
+describe("qa-pass's save", () => {
+  it("writes each surface as markdown, naming one that did not finish", () => {
+    const root = checkout();
+    const FINDINGS = JSON.stringify([
+      { summary: "Fine", findings: "Step 2 is\nwrong." },
+      { summary: "claude exited with code 1" },
+    ]);
+    const result = run(scriptOf("qa-pass", "save"), root, {
+      FINDINGS,
+      ITEMS: JSON.stringify([{ name: "Quickstart" }, { name: "Worktrees" }]),
+      RUN: "r1",
+      SCOPE: "the guides",
+    });
+    expect(result.status).toBe(0);
+    expect(
+      readFileSync(path.join(root, ".ai", "plans", "qa-r1.md"), "utf8"),
+    ).toBe(
+      "# QA findings: the guides\n\nFrom run r1.\n\n## Quickstart\n\nStep 2 is\nwrong.\n\n## Worktrees\n\nNo report: claude exited with code 1.\n\n",
+    );
+  });
+});
 
 afterEach(() => {
   for (const root of made.splice(0)) {

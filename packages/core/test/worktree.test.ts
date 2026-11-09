@@ -249,6 +249,31 @@ describe("worktrees", () => {
     expect(upstreamPlace(graph, "review", places, "/repo")).toBe("/wt/build");
   });
 
+  it.each([
+    ["all in the same worktree", "/wt/build", "/wt/build"],
+    ["in different worktrees", "/wt/a", undefined],
+  ])("reads a fanned node's items %s", (_name, second, expected) => {
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: t",
+        "nodes:",
+        "  review: { type: claude.worker, isolation: readonly }",
+        "  ready: { type: human.gate, question: Go?, options: [go, stop] }",
+        "  docs: { type: claude.worker, isolation: continue }",
+        "edges:",
+        "  - review -> ready",
+        "  - ready -> docs",
+      ].join("\n"),
+    );
+    const places = new Map([
+      ["review.0", "/wt/build"],
+      ["review.1", second],
+      ["ready", "/repo"],
+    ]);
+    expect(upstreamPlace(graph, "docs", places, "/repo")).toBe(expected);
+  });
+
   it("resumes in the worktrees a run left, and reuses a removed one's branch", async () => {
     const root = repo();
     const lead = worktreePath(root, "r1", "lead");

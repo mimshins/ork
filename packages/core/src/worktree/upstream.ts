@@ -4,10 +4,23 @@
  *   node's incoming edges are followed back through control nodes (joins,
  *   splits, routers) and human gates, which work nowhere, to the nodes that
  *   ran; when they all worked in one worktree, that is the place, and otherwise
- *   the project root.
+ *   the project root. A node with `forEach` worked where its items did.
  */
 
 import type { CompiledGraph } from "../graph/types.ts";
+
+/** Where `id` worked: its own place, or for a fanned node each item's. */
+const placesOf = (
+  id: string,
+  placeOf: ReadonlyMap<string, string>,
+): string[] => {
+  const own = placeOf.get(id);
+  if (own !== undefined) return [own];
+  const item = `${id}.`;
+  return [...placeOf]
+    .filter(([other]) => other.startsWith(item))
+    .map(([, place]) => place);
+};
 
 /**
  * The one place `id`'s upstream nodes worked in other than `root`, or
@@ -32,8 +45,9 @@ export const upstreamPlace = (
       queue.push(...(node?.incoming ?? []).map(e => e.from));
       continue;
     }
-    const place = placeOf.get(from);
-    if (place !== undefined && place !== root) places.add(place);
+    for (const place of placesOf(from, placeOf)) {
+      if (place !== root) places.add(place);
+    }
   }
   const [only, other] = places;
   return other === undefined ? only : undefined;

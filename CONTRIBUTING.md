@@ -155,8 +155,9 @@ holds its rules, and [.ork/workflows/](./.ork/workflows) its workflows. Each of
   `main` is the maintainer's; `keep-uncommitted` applies it to your checkout,
   and `discard` leaves it in the worktree. The commit refuses a change with no
   changeset.
-- **`qa-pass`** has the qa agent test the package built from `main` as a user
-  would, with a fake `claude` and `gh`, and shows you its findings.
+- **`qa-pass`** splits the scope into up to 8 surfaces and has one qa agent test
+  each, on the package built from `main`, as a user would, with a fake `claude`
+  and `gh`. It shows you what every surface found, and says which failed.
 
 Run them with a released Ork installed globally (`1.0.0-alpha.0` or later), not
 with `pnpm ork` from this checkout. A run starts more `ork` processes as it goes
@@ -196,7 +197,7 @@ gate lists those ADRs, so you check them before you keep the change.
 - **Runs are paid.** Each session spends on your own account, through the driver
   that's ready on your machine (your `claude` login or an API key; `ork run`
   says which). Each session has a budget, each run a cap (`start` $55, `build`
-  $35, `qa-pass` $8) and the project a daily quota ($100). The first runs are
+  $35, `qa-pass` $14) and the project a daily quota ($100). The first runs are
   measured for Ork's cost benchmark, so start them only on the maintainer's go
   and keep their run ids (`ork tree <run>`, `ork usage`).
 - **Ork commits nothing here.** The work stays uncommitted in a worktree beside

@@ -52,8 +52,9 @@ reaches Ork's git either.
   edges are followed back through control nodes and human gates
   ([ADR-036](../decisions/ADR-036-ork-migrate.md)) to the nodes that ran, and
   when they all worked in one worktree, it works there too. So a reviewer or
-  approver after a leader sees the leader's branch. Upstream nodes in different
-  worktrees, or none, leave it in the project root.
+  approver after a leader sees the leader's branch. A node with `forEach` counts
+  as where its items worked. Upstream nodes in different worktrees, or none,
+  leave it in the project root.
 
 - **A `continue` node writes where its input was**
   ([ADR-037](../decisions/ADR-037-isolation-continue.md)): found as for a
