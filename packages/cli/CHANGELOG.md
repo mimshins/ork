@@ -1,5 +1,63 @@
 # @krapht/ork
 
+## 1.0.0-alpha.9
+
+### Patch Changes
+
+- [`2a563a4`](https://github.com/mimshins/ork/commit/2a563a40199e3a229aa747d0ee2154cafea79564) Thanks [@mimshins](https://github.com/mimshins)! - Turn the Decisions panel's answer buttons off when `ork ui` cannot be reached,
+  say so once, and show each option's `ork decide` command.
+
+- [`2a563a4`](https://github.com/mimshins/ork/commit/2a563a40199e3a229aa747d0ee2154cafea79564) Thanks [@mimshins](https://github.com/mimshins)! - `ork doctor` warns when the repository has no commit (worktree runs branch from
+  `HEAD`), and `ork init` says so after writing the starter, still exiting 0. The
+  update line says why the daily check is off here, `ork validate` in a folder
+  with no `.ork/` says to run `ork init`, and its walk line points to
+  `ork validate --paths`. A wrong `forEach` (a string, `from` without `maxItems`,
+  an empty `items`, `maxItems: 0`) or a tool's `list: string` rule now says what
+  to write. The `fan-out` example's gate still runs when some tasks passed and
+  others failed.
+
+- [`51af341`](https://github.com/mimshins/ork/commit/51af3410da28316a81bed81b4740d3ffb1f5553a) Thanks [@mimshins](https://github.com/mimshins)! - Fix a `continue` or `readonly` node after a `forEach` node losing the worktree
+  its items worked in.
+
+- [`1c20f2a`](https://github.com/mimshins/ork/commit/1c20f2a17ba8ed30c68985d64c3d205633a8819d) Thanks [@mimshins](https://github.com/mimshins)! - Add `output.gather` to keep a report's list fields across a node's rounds
+  instead of replacing them, so a gate reading a leader's decisions after a fix
+  loop sees every round's.
+
+- [`2a563a4`](https://github.com/mimshins/ork/commit/2a563a40199e3a229aa747d0ee2154cafea79564) Thanks [@mimshins](https://github.com/mimshins)! - Show why `claude` really died instead of the `Node.js v24` banner, say
+  `interrupted` after a signal or a stop, keep a failed program item's `exitCode`
+  and `error` in `results`, name `output.json.<field>` when a `forEach` reads a
+  tool's list elsewhere, count only started items as ran, refuse `ork logs --node`
+  for a node the run never had, and start a new paragraph after a list in a gate's
+  text.
+
+- [`2a563a4`](https://github.com/mimshins/ork/commit/2a563a40199e3a229aa747d0ee2154cafea79564) Thanks [@mimshins](https://github.com/mimshins)! - Fix three resume and budget faults. A resumed run no longer reuses a stored
+  decision id, which handed the store's error to a session instead of its
+  question; what the last process left open is withdrawn and asked again. Results
+  kept across more than one resume now hold: a source that finished in an earlier
+  resume is not rerun, and items are never given results from an older list. The
+  run's budget now also counts what running sessions last reported, so nothing new
+  starts once that reaches the cap.
+
+- [`2a563a4`](https://github.com/mimshins/ork/commit/2a563a40199e3a229aa747d0ee2154cafea79564) Thanks [@mimshins](https://github.com/mimshins)! - Keep the worktree of a fanned item that failed (reason
+  `item failed; kept for inspection`), label a node that failed or did not merge
+  `✗ fail` or `! pass, merge conflict` instead of `pass`, say
+  `removed worktree of <branch> (branch kept)`, say a terminal answers a question,
+  and say why a detached run has none.
+
+- [`2a563a4`](https://github.com/mimshins/ork/commit/2a563a40199e3a229aa747d0ee2154cafea79564) Thanks [@mimshins](https://github.com/mimshins)! - Make a stop reach what waits for an answer. `ork stop`, `ork stop --node`,
+  Ctrl-C and SIGTERM now end the wait on a list over `maxItems`, in a detached run
+  too. Stopping a node or one item withdraws the question or permission prompt it
+  left open, instead of leaving it in `ork decide`. Ctrl-C at a question's prompt
+  now interrupts the run; readline used to swallow it.
+
+- [`2a563a4`](https://github.com/mimshins/ork/commit/2a563a40199e3a229aa747d0ee2154cafea79564) Thanks [@mimshins](https://github.com/mimshins)! - `ork worktrees clean` and `remove` no longer delete an `ork/` branch no run
+  recorded creating; it is listed as "not created by Ork" and kept.
+  `clean --force` now lists the uncommitted files and unmerged commits it would
+  lose before asking. An unknown `--run` is an error, "Nothing to clean." is not
+  printed after kept items, declining prints `Cancelled.`, `remove` resolves a
+  symlinked path, and `ork worktrees` in a repository with no commit prints an
+  empty list.
+
 ## 1.0.0-alpha.8
 
 ### Minor Changes
