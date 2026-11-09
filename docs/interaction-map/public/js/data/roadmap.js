@@ -927,7 +927,21 @@ export const MILESTONES = [
           "docs/guides/writing-workflows/running-per-item.md",
           "specs/gaps/for-each-limits.md",
         ],
-        commits: ["3edad59"],
+        commits: ["ed453d6", "5eff7cd", "d7a2b97", "fc36cec"],
+        date: "2026-11-09",
+      },
+      {
+        id: "staged-workflows",
+        title: "Staged workflows that ask",
+        status: "done",
+        detail:
+          "Ork's own process as workflows joined by `workflow.call`: `ork run start` recommends a route and calls `rfc`, `plan` and `build`, which also run alone. Agents put design decisions to `ask_user`, a `ratify` gate shows what was decided, and `plan` saves every approved plan. Replaces `feature`. Left: a real run to show a builder's question reaching the maintainer through its leader.",
+        docs: [
+          "decisions/ADR-071-workflows-by-stage.md",
+          "decisions/ADR-072-start-gateway.md",
+          "CONTRIBUTING.md",
+        ],
+        commits: ["2719616", "fe63ae1", "3edad59", "a581c7e"],
         date: "2026-11-09",
       },
       {
