@@ -325,10 +325,14 @@ const ownGateText = async (name: string, id: string) => {
           ],
         },
         review: {
-          status: "pass",
-          summary: "Looks right.",
-          findings: "One nit left.",
-          unchecked: "",
+          statuses: ["pass", "pass", "pass"],
+          results: [
+            {
+              summary: "Looks right.",
+              findings: "One nit left.",
+              unchecked: "",
+            },
+          ],
         },
         docs: {
           summary: "Specs synced.",
@@ -384,7 +388,7 @@ describe("this repository's own workflows", () => {
       "## Files changed",
     ]);
     expect(document).toContain("- title: ADR-1\n  path: decisions/ADR-1.md");
-    expect(document).toContain("Verdict: pass");
+    expect(document).toContain("One nit left.");
     expect(document).toContain("Build: A real browser.");
   });
 

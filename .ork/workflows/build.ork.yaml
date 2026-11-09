@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
 schemaVersion: 1
 name: build
-description: From an approved plan to a change you keep or discard. A leader builds it through the ui-designer, a11y-auditor, implementer or engine agent, and design decisions the plan doesn't settle come to you; an independent reviewer sends findings back in a bounded loop; you ratify the decisions made; the docs-keeper syncs the knowledge; then you choose to commit and push to main, commit and push to a branch with a pull request, keep it uncommitted, or discard it. Nothing is committed before that.
+description: From an approved plan to a change you keep or discard. A leader builds it through the ui-designer, a11y-auditor, implementer or engine agent, and design decisions the plan doesn't settle come to you; three independent reviewers, one per concern, send findings back in a bounded loop; you ratify the decisions made; the docs-keeper syncs the knowledge; then you choose to commit and push to main, commit and push to a branch with a pull request, keep it uncommitted, or discard it. Nothing is committed before that.
 inputs:
   plan:
     type: string
@@ -33,7 +33,7 @@ nodes:
 
       Build in waves, following each task's dependencies and files in the plan. Shared contracts (schema, types) go first, as their own wave. Then send each wave as exactly one tool call, so its tasks run at once: your calls run one after another, so a `delegate` and a `spawn_worker` sent together do not overlap. Use `delegate` when each builder in the wave has one task, and otherwise one `spawn_worker` call for the whole wave, naming each task's builder as its template, since a child that is already running refuses another task. Tasks in one wave must not touch the same files, and each must pass pnpm check without another task of its wave. Files everyone appends to (index.ts exports, generated schemas, specs, gaps ids, roadmap data) belong to one task or a last wave. Run tasks together in one builder when they are small or share files: every builder is a new session and a full pnpm check, so split only substantial work. A merge conflict in a child's report is yours to resolve.
 
-      Each child already has the plan; your brief says which tasks are theirs. Fix only what integrates their work. Ork runs pnpm check on your checkout before your report counts. When you run again, your input is either an independent review's findings, or the maintainer's answer at the ratify gate (choice revise, and note, their words on what to change): delegate the fixes. If that note is empty, ask with ask_user what to change rather than guessing. When a child asks a question, answer it only when the approved plan or an earlier answer settles it, and say which. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One the plan doesn't settle always takes the pass-on option, so it reaches the maintainer. Never decide one for them. Say in `unchecked` what no child and no check covered (an empty string when nothing). Report pass only when every child you used passed, and gather the entries of the plan's Decided section, copying each one's hardToReverse as written, and every decision your children reported into your own `decisions`, keeping who decided each.
+      Each child already has the plan; your brief says which tasks are theirs. Fix only what integrates their work. Ork runs pnpm check on your checkout before your report counts. When you run again, your input is either the independent reviews (`results` holds each concern's `findings`, and `statuses` its verdict, in the order of `items`; a `fail` is a reviewer that didn't finish, with nothing for you to fix), or the maintainer's answer at the ratify gate (choice revise, and note, their words on what to change): delegate the fixes. If that note is empty, ask with ask_user what to change rather than guessing. When a child asks a question, answer it only when the approved plan or an earlier answer settles it, and say which. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One the plan doesn't settle always takes the pass-on option, so it reaches the maintainer. Never decide one for them. Say in `unchecked` what no child and no check covered (an empty string when nothing). Report pass only when every child you used passed, and gather the entries of the plan's Decided section, copying each one's hardToReverse as written, and every decision your children reported into your own `decisions`, keeping who decided each. Ork keeps the decisions of your earlier rounds, so when you run again, report the ones made in this round.
 
       {{inputs.plan}}
     model: sonnet
@@ -51,7 +51,7 @@ nodes:
       schema:
         decisions:
           type: array
-          description: Every entry of the plan's Decided section and every decision of each child you used, gathered, with its decidedBy kept; an empty list when none.
+          description: Every entry of the plan's Decided section and every decision of each child you used, gathered, with its decidedBy kept; in a later round, only that round's. Ork keeps every round's. An empty list when none.
           items:
             type: object
             additionalProperties: false
@@ -79,6 +79,8 @@ nodes:
                 items:
                   type: string
         unchecked: string
+      gather:
+        - decisions
     before:
       command: pnpm install --frozen-lockfile --prefer-offline
       timeout: 10m
@@ -279,7 +281,11 @@ nodes:
     type: claude.worker
     agent: reviewer
     prompt: |-
-      Review the uncommitted change in this checkout (git status, git diff HEAD) against the approved plan below. pnpm check already passed here; don't run it again. Report pass, or changes_requested with every finding in `findings` (file:line, what is wrong, the smallest fix), most severe first. Read every changed source file and test body in full; your limits allow it, so don't stop to economise. Report `coverage` complete only when you have, and partial otherwise, with the rest listed in `unchecked` (an empty string when nothing). Pass with partial coverage means no defect in what you read so far, and you will be run again to finish. When you run again, check that your earlier findings were fixed, and read what your last `unchecked` listed.
+      Review the uncommitted change in this checkout (git status, git diff HEAD) against the approved plan below, for one concern only; two other reviewers cover the rest. pnpm check already passed here; don't run it again.
+
+      Your concern, {{item.concern}}: {{item.look}}
+
+      Start `summary` with your concern's name. Report pass, or changes_requested with every finding of this concern in `findings` (file:line, what is wrong, the smallest fix), most severe first. Read every changed source file and test body your concern touches, in full; your limits allow it, so don't stop to economise. List in `unchecked` what your concern touches that you didn't read or couldn't check (an empty string when nothing). When you run again, check that your earlier findings were fixed, and read what your last `unchecked` listed.
 
       Read files with Read and search with Grep. When you do use Bash, keep to cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo, npm view and read-only git, with no awk, no find, no shell variables, no brace expansion and no paths outside this checkout: anything else stops the run to ask the maintainer.
 
@@ -287,16 +293,22 @@ nodes:
     model: opus
     effort: high
     isolation: readonly
-    budgetUsd: 4
+    budgetUsd: 2
     maxTurns: 40
     session: resume
     output:
       schema:
         findings: string
         unchecked: string
-        coverage:
-          - complete
-          - partial
+    forEach:
+      items:
+        - concern: correctness
+          look: "bugs and behaviour: does the code do what the plan says, including failure paths, races, resume and edge cases."
+        - concern: tests
+          look: does each acceptance criterion have a test that would fail without the change, and do the tests assert behaviour rather than the implementation.
+        - concern: repository rules
+          look: "the rules in AGENTS.md: dependency direction, entry points, @file blocks, stale specs and user docs, the interaction map and roadmap, gaps, changesets, secrets, and AI attribution."
+      maxParallel: 3
   ratify:
     type: human.gate
     question: |-
@@ -314,7 +326,7 @@ nodes:
 
       ## Review
 
-      {{nodes.review.output.summary}}
+      {{nodes.review.output.results}}
     options:
       - continue
       - revise
@@ -398,17 +410,15 @@ nodes:
 
       ## Review
 
-      Verdict: {{nodes.review.output.status}}
+      Verdicts of correctness, tests and repository rules, in that order: {{nodes.review.output.statuses}}
 
-      {{nodes.review.output.summary}}
+      Each concern's summary, findings left open and what it didn't check:
 
-      Left open: {{nodes.review.output.findings}}
+      {{nodes.review.output.results}}
 
       ## What wasn't checked
 
       Build: {{nodes.build.output.unchecked}}
-
-      Review: {{nodes.review.output.unchecked}}
 
       ## ADRs
 
@@ -508,15 +518,11 @@ edges:
   - build -> review
   - from: review
     to: build
-    when: status != 'pass'
+    when: "!all(statuses, 'pass')"
     maxRounds: 2
   - from: review
     to: ratify
-    when: status == 'pass' && coverage == 'complete'
-  - from: review
-    to: review
-    when: status == 'pass' && coverage == 'partial'
-    maxRounds: 2
+    when: all(statuses, 'pass')
   - from: ratify
     to: docs
     when: choice == 'continue'

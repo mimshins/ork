@@ -147,13 +147,14 @@ holds its rules, and [.ork/workflows/](./.ork/workflows) its workflows. Each of
 - **`build`** takes an approved plan. A leader builds it through the agents it
   owns: the ui-designer and the a11y-auditor for UI work, the implementer, or
   the engine agent for engine work, until `pnpm check` passes. A design decision
-  the plan doesn't settle comes to you. An independent reviewer sends findings
-  back for up to two more rounds, you ratify the decisions made, the docs-keeper
-  syncs the knowledge, adds any missing changeset and drafts the commit message,
-  and a last gate asks where the change goes. Answer `branch` with a note naming
-  your branch to push there and open a pull request (no note: `ork/<run>`).
-  `main` is the maintainer's; `keep-uncommitted` applies it to your checkout,
-  and `discard` leaves it in the worktree. The commit refuses a change with no
+  the plan doesn't settle comes to you. Three independent reviewers, one each
+  for correctness, tests and repository rules, send findings back for up to two
+  more rounds, you ratify the decisions made, the docs-keeper syncs the
+  knowledge, adds any missing changeset and drafts the commit message, and a
+  last gate asks where the change goes. Answer `branch` with a note naming your
+  branch to push there and open a pull request (no note: `ork/<run>`). `main` is
+  the maintainer's; `keep-uncommitted` applies it to your checkout, and
+  `discard` leaves it in the worktree. The commit refuses a change with no
   changeset.
 - **`qa-pass`** splits the scope into up to 8 surfaces and has one qa agent test
   each, on the package built from `main`, as a user would, with a fake `claude`

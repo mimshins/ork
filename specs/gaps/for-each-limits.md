@@ -60,3 +60,7 @@ what was left simpler. The one real run on each driver is [C12](../gaps.md).
   `waiting` for that round, then `skipped` when the run ends, and keep the
   earlier round's cost and output. The progress count is right; only those rows
   mislead.
+- **L231 · A fanned reviewer has no way back to finish reading.** A self-loop
+  reruns every item, so `build`'s three reviewers dropped the
+  `coverage: partial` round. What a reviewer didn't read is in its `unchecked`,
+  at the `ratify` and `decide` gates, and doesn't hold the run back.
