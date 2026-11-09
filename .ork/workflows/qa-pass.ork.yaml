@@ -64,7 +64,7 @@ nodes:
 
       {{nodes.qa.output.findings}}
 
-      save writes these findings to .ai/specs/qa-{{run.id}}.md (local, never committed), to turn into task specs for ork run feature or into issues. drop keeps them only in this run's record (ork logs {{run.id}}).
+      save writes these findings to .ai/plans/qa-{{run.id}}.md (local, never committed), to turn into plans for ork run feature or into issues. drop keeps them only in this run's record (ork logs {{run.id}}).
     options:
       - save
       - drop
@@ -72,8 +72,8 @@ nodes:
   save:
     type: tool.shell
     script: |-
-      mkdir -p .ai/specs
-      out=".ai/specs/qa-$RUN.md"
+      mkdir -p .ai/plans
+      out=".ai/plans/qa-$RUN.md"
       printf '# QA findings: %s\n\nFrom run %s.\n\n%s\n' "$SCOPE" "$RUN" "$FINDINGS" > "$out"
       echo "$out"
     allow:

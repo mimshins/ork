@@ -90,7 +90,7 @@ readable text in a gate's `question` or `document`
 - **Claims.** A leader's claims are released only while it waits in `delegate`
   or `spawn_worker`. A fanned child's items are not in that wait, so they
   contend with the leader's claims like any node outside its team: they get the
-  usual refusal and are told on release. Decided in the for-each task spec
+  usual refusal and are told on release. Decided in the for-each plan
   (2026-11-08).
 
 ## Limits, stop and pause

@@ -31,10 +31,10 @@ source of truth; a socket per run is the fast path).
 
 ## Working
 
-Design first when the task spec leaves semantics open: write the rule, its
-events, and how replay and both drivers handle it, and stop for the
-maintainer's decision if there are real alternatives. Then build it like the
-implementer does: tests on the fake runtime for each rule, the spec updated,
+Design first when the plan leaves semantics open: write the rule, its
+events, and how replay and both drivers handle it, and put it to the
+maintainer with `ask_user` if there are real alternatives. Then build it like
+the implementer does: tests on the fake runtime for each rule, the spec updated,
 `pnpm check` passing. Never commit or push.
 
 ## Report

@@ -14,8 +14,8 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L213, and the next chore is
-C13. At a review, each open entry is closed (built or fixed, then removed), kept
+closes it. Ids are never reused: the next limit is L214, and the next chore is
+C14. At a review, each open entry is closed (built or fixed, then removed), kept
 (moved into its area's spec, then removed here), or carried to a roadmap item,
 or to none yet (unplanned).
 
@@ -54,8 +54,8 @@ review:
   and says nothing about the branches other values would take.
 - **G12 · A wrongly typed input default names no type.** It reports
   `Invalid input (schema.invalid_union)` instead of what the input expects.
-- **G13 · A gitignored task spec is invisible in a worktree.** A node in its own
-  worktree sees only committed files and `.worktreeinclude`; passing a spec
+- **G13 · A gitignored plan is invisible in a worktree.** A node in its own
+  worktree sees only committed files and `.worktreeinclude`; passing a plan
   through a program's output is cut at 64 KiB.
 - **G14 · A session's permissions are broad.** Sessions run in Claude Code's
   default mode; a bare `Edit` or `Write` allow isn't held to the node's
@@ -175,6 +175,11 @@ Found building [clean sessions](./runtime.md#what-a-session-loads) (ADR-065):
   driver) measured `--strict-mcp-config`; the other two switches, and the SDK
   driver (checked against its types only), are unmeasured until the rerun.
 
+- **L213 · A `continue` node can't follow a tool node.** Its worktree is found
+  through gates and control nodes only, so a program can't decide whether a gate
+  before it opens. `build`'s `ratify` gate therefore runs on every build
+  ([ADR-071](../decisions/ADR-071-workflows-by-stage.md)).
+
 ## Chores
 
 - **C2 · Release pull requests run no CI.** Pull requests opened with the
@@ -207,3 +212,6 @@ Found building [clean sessions](./runtime.md#what-a-session-loads) (ADR-065):
   `maxParallel`, that each takes its own session and worktree, and that a
   resumed run goes on with the unfinished ones. Carried, unplanned: it waits on
   the world. ([running a node once per item](./scheduler/for-each.md))
+
+- **C13 · No `fix` workflow.** A bug has to go through `plan`'s gate. A shorter
+  path would reproduce it, write a failing test, fix it and review it.

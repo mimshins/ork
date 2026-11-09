@@ -1,0 +1,151 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: rfc
+description: From a brief to an Accepted RFC in the repository. The rfc-writer weighs real options against the code and you pick the outcome of each decision; then you choose to commit and push it to main, push it to a branch with a pull request, revise it, or discard it.
+inputs:
+  brief:
+    type: string
+    required: true
+    description: The problem to decide, in your own words.
+layers:
+  project:
+    instructions: inherit
+    skills:
+      allow:
+        - write-an-rfc
+defaults:
+  model: sonnet
+  effort: high
+  budgetUsd: 4
+limits:
+  budgetUsd: 12
+  concurrency: 1
+  timeout: 12h
+nodes:
+  draft:
+    type: claude.worker
+    agent: rfc-writer
+    prompt: |-
+      Write the RFC for this brief, as your instructions say. Put each decision to the maintainer with ask_user before you write its outcome.
+
+      {{inputs.brief}}
+
+      When you run again, the next message is the maintainer's answer to the publish gate: choice revise, and note, their words on what to change. Revise the RFC as they say and report all of it again.
+    isolation: worktree
+    budgetUsd: 4
+    maxTurns: 50
+    tools:
+      allow:
+        - Edit
+        - Write
+        - Bash
+    session: resume
+    output:
+      schema:
+        rfc: string
+        path: string
+        commitSubject: string
+        commitBody: string
+    before:
+      command: pnpm install --frozen-lockfile --prefer-offline
+      timeout: 10m
+    verify:
+      command: pnpm docs:check
+      timeout: 5m
+      attempts: 2
+  stage:
+    type: tool.git
+    command: add -A
+    allow:
+      - add
+    cwd: "{{nodes.draft.output.worktree}}"
+  decide:
+    type: human.gate
+    question: |-
+      Where does this RFC go? Nothing is committed yet.
+
+      - main: commit it and push to main, so it is on main before anything is planned.
+      - branch: commit it, push to the branch your note names (no note: ork/<run>), open a pull request to main, and end here.
+      - revise: send your note to the rfc-writer.
+      - discard: leave it in the worktree, and end here.
+
+      Read the document for the RFC.
+    document: "{{nodes.draft.output.rfc}}"
+    options:
+      - main
+      - branch
+      - revise
+      - discard
+  publish:
+    type: tool.shell
+    script: |-
+      set -eu
+      if [ "$CHOICE" = main ]; then
+        branch=main
+      else
+        branch="$(printf %s "$NOTE" | tr -d '[:space:]')"
+        branch="${branch:-ork/$RUN}"
+      fi
+      if ! git check-ref-format --branch "$branch" > /dev/null 2>&1; then
+        echo "'$branch' is not a valid branch name. The RFC is still in $WORKTREE." >&2
+        exit 1
+      fi
+      if [ "$CHOICE" = branch ] && [ "$branch" = main ]; then
+        echo "Choose main to push to main; branch opens a pull request from another branch." >&2
+        exit 1
+      fi
+      # Already committed when an earlier try stopped at the rebase or the push.
+      if ! git -C "$WORKTREE" diff --cached --quiet; then
+        printf '%s\n\n%s\n' "$SUBJECT" "$BODY" | git -C "$WORKTREE" commit -F -
+      fi
+      base=main
+      if git -C "$WORKTREE" ls-remote --exit-code --heads origin "$branch" > /dev/null 2>&1; then
+        base="$branch"
+      fi
+      git -C "$WORKTREE" fetch origin "$base"
+      if ! git -C "$WORKTREE" rebase FETCH_HEAD; then
+        git -C "$WORKTREE" rebase --abort
+        echo "The RFC conflicts with origin/$base. It is committed in $WORKTREE; rebase it there and push." >&2
+        exit 1
+      fi
+      git -C "$WORKTREE" push origin "HEAD:refs/heads/$branch"
+      if [ "$CHOICE" = branch ]; then
+        if gh pr view "$branch" > /dev/null 2>&1; then
+          echo "$branch already has a pull request; it is updated."
+        else
+          gh pr create --base main --head "$branch" --title "$SUBJECT" --body "$BODY"
+        fi
+      elif [ "$(git branch --show-current)" = main ]; then
+        # Later runs start from local main, so it must have the RFC.
+        git fetch origin main
+        if ! git merge --ff-only FETCH_HEAD; then
+          echo "Pushed to main, but your main can't fast-forward to it. Bring it up to date, and resume." >&2
+          exit 1
+        fi
+      elif ! git fetch origin main:main; then
+        echo "Pushed to main, but your local main can't fast-forward to it. Bring it up to date, and resume." >&2
+        exit 1
+      fi
+    allow:
+      - sh
+    env:
+      CHOICE: "{{nodes.decide.output.choice}}"
+      NOTE: "{{nodes.decide.output.note}}"
+      RUN: "{{run.id}}"
+      SUBJECT: "{{nodes.draft.output.commitSubject}}"
+      BODY: "{{nodes.draft.output.commitBody}}"
+      WORKTREE: "{{nodes.draft.output.worktree}}"
+edges:
+  - draft -> stage
+  - stage -> decide
+  - from: decide
+    to: draft
+    when: choice == 'revise'
+    maxRounds: 10
+  - from: decide
+    to: publish
+    when: choice == 'main' || choice == 'branch'
+outputs:
+  rfc: "{{nodes.draft.output.rfc}}"
+  path: "{{nodes.draft.output.path}}"
+  choice: "{{nodes.decide.output.choice}}"

@@ -67,5 +67,5 @@ tests in [tools/docs/test](../../tools/docs/test/check.test.ts)) and verifies:
   280 lines.
 
 It runs in `pnpm check`, the `pre-push` hook, and the CI `docs` job. It skips
-`node_modules`, symlinks (checked at their target), local task specs
-(`.ai/specs/`), and the map's `public/` app, and it never fetches URLs.
+`node_modules`, symlinks (checked at their target), local plans (`.ai/plans/`),
+and the map's `public/` app, and it never fetches URLs.

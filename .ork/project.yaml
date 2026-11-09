@@ -10,7 +10,7 @@
 #   where it goes. Sessions can't commit, push or open a pull request (the deny
 #   rules); only the script behind that gate does.
 # - The commit message is a short imperative subject, a blank line, what changed
-#   and why, and no AI or agent attribution. feature's docs node drafts it and
+#   and why, and no AI or agent attribution. build's docs node drafts it and
 #   the last gate shows it. The commit-msg hook enforces the no-attribution rule
 #   on every commit.
 # - `pnpm check` is the gate. Project rules have no `verify:` default, so each

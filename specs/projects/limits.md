@@ -53,6 +53,7 @@ the [register](../gaps.md#limits).
 - **L24 · `ork upgrade` knows an install by its path.** An install in a place it
   does not recognise gets the npm command as advice, and nothing is run.
   ([updates](../cli/updates.md#ork-upgrade))
-- **L186 · This repository's `feature` workflow can't push from a fork.** Its
-  `branch` choice pushes to `origin`, so a contributor without write access to
-  it gets a failed push; the commit stays in the run's worktree to push by hand.
+- **L186 · This repository's `build` and `rfc` workflows can't push from a
+  fork.** Their `branch` choice pushes to `origin`, so a contributor without
+  write access to it gets a failed push; the commit stays in the run's worktree
+  to push by hand.

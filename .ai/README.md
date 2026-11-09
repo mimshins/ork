@@ -33,10 +33,10 @@ internal hostnames, dashboard links, or personal data, in memories included.
 | `docs/`                 | user guides, the overview and the interaction map         | Does it teach a user, or explain how the whole fits together?        |
 | `.ai/memories/`         | short, present-state orientation for agents               | Does it help an agent decide, without being a contract or procedure? |
 | `.ai/memories/working/` | committed in-flight context                               | Is it still unresolved?                                              |
-| `.ai/specs/`            | local task specs (**gitignored**, never committed)        | Is it one piece of work's working spec?                              |
+| `.ai/plans/`            | local plans (**gitignored**, never committed)             | Is it one piece of work's working plan?                              |
 | `.ai/skills/`           | how to perform a reusable class of task                   | Is it a repeatable workflow?                                         |
 | `.ai/agents/`           | subagent roles for building Ork (not shipped with it)     | Is it a role an agent takes on to work on this repository?           |
-| `.ai/templates/`        | templates for task specs, RFCs, ADRs, and memories        | —                                                                    |
+| `.ai/templates/`        | templates for plans, RFCs, ADRs, and memories             | —                                                                    |
 
 Rules: one source of truth — link, don't copy. Memories describe the present,
 not history (history is ADRs, RFCs, and git). Runtime code never reads from
@@ -63,8 +63,8 @@ Load only what the task needs.
 
 ### Skills (`skills/`)
 
-- [`write-an-rfc`](./skills/write-an-rfc/SKILL.md) — route RFC vs. ADR vs. task
-  spec; carry an RFC to an ADR and the archive.
+- [`write-an-rfc`](./skills/write-an-rfc/SKILL.md) — route RFC vs. ADR vs. plan;
+  carry an RFC to an ADR and the archive.
 - [`knowledge-drift-sync`](./skills/knowledge-drift-sync/SKILL.md) — reconcile
   code and knowledge before handing off; holds the knowledge-maintenance table.
 - [`docs-structure`](./skills/docs-structure/SKILL.md) — the hub and chunk
@@ -77,10 +77,12 @@ Load only what the task needs.
 Subagents for working on Ork itself; each links to `AGENTS.md` and never copies
 it. None commits or pushes.
 
-- [`spec-writer`](./agents/spec-writer.md) — turns a brief into a task spec from
-  the template, and revises it until the maintainer approves it.
-- [`implementer`](./agents/implementer.md) — builds one confirmed task of a task
-  spec, with its tests and knowledge updates, until `pnpm check` passes.
+- [`spec-writer`](./agents/spec-writer.md) — turns a brief into a plan from the
+  template, and revises it until the maintainer approves it.
+- [`rfc-writer`](./agents/rfc-writer.md) — weighs real options against the code,
+  asks the maintainer to pick, and writes the RFC.
+- [`implementer`](./agents/implementer.md) — builds one confirmed task of a
+  plan, with its tests and knowledge updates, until `pnpm check` passes.
 - [`engine`](./agents/engine.md) — the scheduler, runtime drivers, store, run
   control and replay; designs and builds run semantics.
 - [`ui-designer`](./agents/ui-designer.md) — the design system, copy and
@@ -96,7 +98,7 @@ it. None commits or pushes.
 
 ### Templates (`templates/`)
 
-- [`spec.md`](./templates/spec.md) — a local task spec in `.ai/specs/`.
+- [`plan.md`](./templates/plan.md) — a local plan in `.ai/plans/`.
 - [`rfc.md`](./templates/rfc.md) — an RFC in `rfcs/active/`.
 - [`adr.md`](./templates/adr.md) — an ADR in `decisions/`.
 - [`memory.md`](./templates/memory.md) and

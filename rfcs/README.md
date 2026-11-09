@@ -41,19 +41,24 @@ an accepted ADR.
 3. Set the RFC's status to `Implemented` and move it to `archived/`; update both
    indexes.
 
-## RFC, ADR, or spec
+## Which document
 
-- An **RFC** weighs viable options before a decision. Durable, numbered.
-- An **ADR** records the accepted decision and why, in a self-contained page.
-  Every implemented RFC has one; a hard-to-reverse choice without real
-  alternatives gets an ADR directly.
-- A **spec** in [`specs/`](../specs/README.md) is the contract for what an area
-  of Ork does. A **task spec** in `.ai/specs/` (local, gitignored) defines one
-  piece of work and is deleted once its outcome lands in a spec, an RFC, or an
-  ADR.
+Each answers a different question and lasts a different time.
+
+| Document                                   | The question it answers                 | Lifetime                       |
+| ------------------------------------------ | --------------------------------------- | ------------------------------ |
+| Brief                                      | What do we want, and why?               | Until it is built              |
+| **RFC**                                    | Which approach, and why not the others? | Permanent, archived            |
+| [**ADR**](../decisions/README.md)          | What did we decide?                     | Permanent                      |
+| [**Spec**](../specs/README.md)             | What does Ork do?                       | Living, always current         |
+| **Plan** (`.ai/plans/`, local, gitignored) | How does this one change get built?     | Deleted once its outcome lands |
+
+Every implemented RFC has an ADR; a hard-to-reverse choice without real
+alternatives gets an ADR directly.
 
 The [write-an-rfc](../.ai/skills/write-an-rfc/SKILL.md) skill routes a change
-and carries an RFC through this lifecycle.
+and carries an RFC through this lifecycle. `ork run rfc` drafts one with you and
+`pnpm rfc:close RFC-NNN` does the move, the index and the links when it ships.
 
 ## Index
 

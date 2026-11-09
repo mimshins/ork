@@ -1,6 +1,6 @@
-# Task spec template
+# Plan template
 
-Copy to `.ai/specs/<kebab-name>.md` (local, gitignored) and fill it out before
+Copy to `.ai/plans/<kebab-name>.md` (local, gitignored) and fill it out before
 an architectural or otherwise significant change. Delete it once the work lands:
 its durable outcome belongs in a spec under `specs/`, an RFC, or an ADR.
 

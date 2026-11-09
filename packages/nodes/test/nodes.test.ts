@@ -277,22 +277,20 @@ describe("git nodes", () => {
   });
 });
 
-const FEATURE_FILE = new URL(
-  "../../../.ork/workflows/feature.ork.yaml",
-  import.meta.url,
-);
-
-/** This repository's own `feature` workflow, as written and as parsed. */
-const featureWorkflow = () => {
-  const text = readFileSync(FEATURE_FILE, "utf8");
+/** One of this repository's own workflows, as written and as parsed. */
+const ownWorkflow = (name: string) => {
+  const text = readFileSync(
+    new URL(`../../../.ork/workflows/${name}.ork.yaml`, import.meta.url),
+    "utf8",
+  );
   const parsed = parseWorkflow(text);
   if (!parsed.ok) throw new Error(JSON.stringify(parsed.diagnostics));
   return { text, workflow: parsed.workflow };
 };
 
-/** What the people at `feature`'s gate `id` would read, from a fixture. */
-const featureGateText = async (id: string) => {
-  const node = featureWorkflow().workflow.nodes[id];
+/** What people at gate `id` of workflow `name` would read, from a fixture. */
+const ownGateText = async (name: string, id: string) => {
+  const node = ownWorkflow(name).workflow.nodes[id];
   if (node === undefined) throw new Error(`No node ${id}.`);
   const seen: { question?: string; document?: string | undefined } = {};
   await gateExecutor(
@@ -306,8 +304,20 @@ const featureGateText = async (id: string) => {
         permit: () => Promise.resolve({ allow: true }),
       },
       outputs: {
-        spec: { spec: "# The spec\n\nThe whole of it.", summary: "None." },
-        build: { summary: "Built it.", unchecked: "A real browser." },
+        frame: { recommendation: "plan", analysis: "No open decisions." },
+        spec: { plan: "# The plan\n\nThe whole of it.", summary: "None." },
+        build: {
+          summary: "Built it.",
+          unchecked: "A real browser.",
+          decisions: [
+            {
+              what: "Use X",
+              why: "Y",
+              decidedBy: "implement",
+              hardToReverse: true,
+            },
+          ],
+        },
         review: {
           status: "pass",
           summary: "Looks right.",
@@ -328,26 +338,34 @@ const featureGateText = async (id: string) => {
   return { question: seen.question ?? "", document: seen.document ?? "" };
 };
 
-describe("this repository's feature workflow", () => {
-  it("is in canonical form", () => {
-    const { text, workflow } = featureWorkflow();
-    expect(serializeWorkflow(workflow)).toBe(text);
-  });
+describe("this repository's own workflows", () => {
+  it.each(["feature", "rfc", "plan", "build", "qa-pass"])(
+    "keeps %s in canonical form",
+    name => {
+      const { text, workflow } = ownWorkflow(name);
+      expect(serializeWorkflow(workflow)).toBe(text);
+    },
+  );
 
-  it.each(["approve", "decide"])("shows no raw JSON at %s", async id => {
-    const { question, document } = await featureGateText(id);
+  it.each([
+    ["feature", "route"],
+    ["plan", "approve"],
+    ["build", "ratify"],
+    ["build", "decide"],
+  ])("shows no raw JSON at %s's %s", async (name, id) => {
+    const { question, document } = await ownGateText(name, id);
     expect(`${question}\n${document}`).not.toMatch(/\{"|\[\{/u);
   });
 
-  it("keeps the spec out of approve's question, in its document", async () => {
-    const { question, document } = await featureGateText("approve");
+  it("keeps the plan out of approve's question, in its document", async () => {
+    const { question, document } = await ownGateText("plan", "approve");
     expect(question).not.toContain("The whole of it.");
     expect(question).toContain("revise");
-    expect(document).toBe("# The spec\n\nThe whole of it.");
+    expect(document).toBe("# The plan\n\nThe whole of it.");
   });
 
   it("gives decide a short question and a sectioned document", async () => {
-    const { question, document } = await featureGateText("decide");
+    const { question, document } = await ownGateText("build", "decide");
     expect(question.startsWith("Where does this change go?")).toBe(true);
     expect(question).not.toContain("Add the thing");
     expect(document.match(/^## .+$/gmu)).toEqual([
@@ -364,9 +382,16 @@ describe("this repository's feature workflow", () => {
   });
 
   it("keeps decide's choices", () => {
-    expect(featureWorkflow().workflow.nodes["decide"]).toMatchObject({
+    expect(ownWorkflow("build").workflow.nodes["decide"]).toMatchObject({
       options: ["main", "branch", "keep-uncommitted", "discard"],
     });
+  });
+});
+
+describe("this repository's ratify gate", () => {
+  it("shows who made each decision", async () => {
+    const { document } = await ownGateText("build", "ratify");
+    expect(document).toContain("decidedBy: implement");
   });
 });
 

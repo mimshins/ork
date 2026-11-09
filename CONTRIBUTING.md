@@ -30,9 +30,8 @@ A change that alters a package boundary, the workflow file format, the runtime
 port, a cross-cutting pattern or a major dependency follows the spec-driven
 process ([AGENTS.md](./AGENTS.md#spec-driven-development)):
 
-1. **Task spec.** Draft it from [.ai/templates/spec.md](./.ai/templates/spec.md)
-   in `.ai/specs/` (local, gitignored), and clarify it until nothing is
-   ambiguous.
+1. **Plan.** Draft it from [.ai/templates/plan.md](./.ai/templates/plan.md) in
+   `.ai/plans/` (local, gitignored), and clarify it until nothing is ambiguous.
 2. **RFC** when there are real alternatives, in [rfcs/](./rfcs/README.md)
    ([how](./.ai/skills/write-an-rfc/SKILL.md)).
 3. **Tasks.** Break it into ordered, checkable tasks, and agree on them before
@@ -129,21 +128,31 @@ through their public entry point. oxlint enforces this.
 ## Running Ork's own workflows
 
 This repository is an Ork project: [.ork/project.yaml](./.ork/project.yaml)
-holds its rules, and [.ork/workflows/](./.ork/workflows) two workflows.
+holds its rules, and [.ork/workflows/](./.ork/workflows) its workflows. Each of
+`rfc`, `plan` and `build` also runs alone
+([ADR-071](./decisions/ADR-071-workflows-by-stage.md)).
 
-- **`feature`** goes from your brief to a pushed change or a pull request. The
-  spec-writer turns the brief into a task spec, and a gate asks you to approve
-  it. A leader then builds it through the agents it owns: the ui-designer and
-  the a11y-auditor for UI work, the implementer, or the engine agent for engine
-  work, until `pnpm check` passes. A builder's question goes to the leader
-  first, which answers it when the approved spec settles it and passes it to you
-  otherwise. An independent reviewer sends findings back for up to two more
-  rounds, the docs-keeper syncs the knowledge, adds any missing changeset and
-  drafts the commit message, and a last gate asks where the change goes. Answer
-  `branch` with a note naming your branch to push there and open a pull request
-  (no note: `ork/<run>`). `main` is the maintainer's; `keep-uncommitted` applies
-  it to your checkout, and `discard` leaves it in the worktree. The commit
-  refuses a change with no changeset.
+- **`feature`** goes from your brief to a pushed change or a pull request, by
+  calling the others. It reads the code and recommends a route, and you choose
+  whether the brief needs an RFC first. Questions from the called runs wait in
+  `ork decide` or the Decisions panel of `ork ui`, not in the terminal that
+  started `feature`.
+- **`rfc`** weighs real options against the code, asks you to pick each outcome,
+  and ends at a gate that publishes the RFC. Only an RFC on `main` goes on to a
+  plan.
+- **`plan`** asks you each open design decision, one at a time, and the
+  spec-writer drafts the plan for you to approve.
+- **`build`** takes an approved plan. A leader builds it through the agents it
+  owns: the ui-designer and the a11y-auditor for UI work, the implementer, or
+  the engine agent for engine work, until `pnpm check` passes. A design decision
+  the plan doesn't settle comes to you. An independent reviewer sends findings
+  back for up to two more rounds, you ratify the decisions made, the docs-keeper
+  syncs the knowledge, adds any missing changeset and drafts the commit message,
+  and a last gate asks where the change goes. Answer `branch` with a note naming
+  your branch to push there and open a pull request (no note: `ork/<run>`).
+  `main` is the maintainer's; `keep-uncommitted` applies it to your checkout,
+  and `discard` leaves it in the worktree. The commit refuses a change with no
+  changeset.
 - **`qa-pass`** has the qa agent test the package built from `main` as a user
   would, with a fake `claude` and `gh`, and shows you its findings.
 
@@ -157,12 +166,12 @@ worktree's source for `pnpm check`.
 
 ```sh
 pnpm add --global @krapht/ork                  # or: npm install --global @krapht/ork
-ork validate                                   # check both and walk every way through them
+ork validate                                   # check them and walk every way through them
 ork run feature --input brief="Let ork ps filter by workflow"
 ork run qa-pass --input scope="the quickstart and the worktrees guide"
 ```
 
-**Approving the spec.** The first gate shows the spec and asks `approve`,
+**Approving the plan.** `plan`'s gate shows the plan and asks `approve`,
 `revise` or `stop`. To ask for changes, answer `revise` with a note saying what
 to change: in the Decisions panel's note box, at the run's terminal, or from
 another terminal:
@@ -172,22 +181,22 @@ ork decide <run> --id <decision> --choose revise --say "Also cover ork ps --json
 ```
 
 The spec-writer resumes its session with your words and shows you the revised
-spec at the same gate, for as many rounds as it takes (Ork asks you after ten).
+plan at the same gate, for as many rounds as it takes (Ork asks you after ten).
 Nothing is built, and the build's cost isn't spent, until you approve.
 
-**Decisions become ADRs.** What you settle in the approval loop goes in the
-spec's Decided section. Each builder reports the choices it made that the spec
-didn't settle (a report without them fails), and the leader gathers them all.
-The docs-keeper writes an ADR in [decisions/](./decisions/README.md) for each
-hard-to-reverse one, and the last gate lists those ADRs, so you check them
-before you keep the change.
+**Decisions become ADRs.** What you settle while planning goes in the plan's
+Decided section. Each builder reports the choices it made that the plan didn't
+settle (a report without them fails), the leader gathers them all, and the
+`ratify` gate shows them to you. The docs-keeper writes an ADR in
+[decisions/](./decisions/README.md) for each hard-to-reverse one, and the last
+gate lists those ADRs, so you check them before you keep the change.
 
 - **Runs are paid.** Each session spends on your own account, through the driver
   that's ready on your machine (your `claude` login or an API key; `ork run`
-  says which). Each session has a budget, each run a cap (`feature` $35,
-  `qa-pass` $8) and the project a daily quota ($50). The first runs are measured
-  for Ork's cost benchmark, so start them only on the maintainer's go and keep
-  their run ids (`ork tree <run>`, `ork usage`).
+  says which). Each session has a budget, each run a cap (`feature` $55, `build`
+  $35, `qa-pass` $8) and the project a daily quota ($50). The first runs are
+  measured for Ork's cost benchmark, so start them only on the maintainer's go
+  and keep their run ids (`ork tree <run>`, `ork usage`).
 - **Ork commits nothing here.** The work stays uncommitted in a worktree beside
   your clone. When you keep it, the gate's next step applies it to your
   checkout, uncommitted, and you commit and push it as below.

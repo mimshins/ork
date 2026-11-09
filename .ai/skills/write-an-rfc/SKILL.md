@@ -1,6 +1,6 @@
 ---
 name: write-an-rfc
-description: Use when a change to Ork is architectural, structural, cross-cutting, or has real alternatives. Decides whether an RFC, an ADR, or only a task spec is needed, and carries an RFC from draft to ADR to archive.
+description: Use when a change to Ork is architectural, structural, cross-cutting, or has real alternatives. Decides whether an RFC, an ADR, or only a plan is needed, and carries an RFC from draft to ADR to archive.
 ---
 
 # write-an-rfc
@@ -19,8 +19,8 @@ description: Use when a change to Ork is architectural, structural, cross-cuttin
      credentials or publishes) → an **RFC** in `rfcs/active/`;
    - a hard-to-reverse choice with no alternative worth an RFC (a new runtime
      dependency, a layer-rule change) → an **ADR** directly;
-   - otherwise → a **task spec** in `.ai/specs/` (local, gitignored) from
-     [`.ai/templates/spec.md`](../../templates/spec.md) is enough.
+   - otherwise → a **plan** in `.ai/plans/` (local, gitignored) from
+     [`.ai/templates/plan.md`](../../templates/plan.md) is enough.
 2. **Draft** `rfcs/active/RFC-NNN-<kebab>.md` from
    [`.ai/templates/rfc.md`](../../templates/rfc.md) with the next free number.
    Ground the Context in file references, issues, and measurements, not
@@ -32,8 +32,9 @@ description: Use when a change to Ork is architectural, structural, cross-cuttin
    - fold the current behavior into the affected specs;
    - write `decisions/ADR-NNN-<kebab>.md` from
      [`.ai/templates/adr.md`](../../templates/adr.md) and cross-link RFC ↔ ADR;
-   - set the RFC to `Implemented`, move it to `rfcs/archived/`, and update
-     both indexes;
+   - run `pnpm rfc:close RFC-NNN`, which sets the RFC to `Implemented`, moves
+     it to `rfcs/archived/` and updates its index and every link to it, and add the ADR's row to
+     `decisions/README.md`;
    - run `pnpm docs:check`.
 
 ## Constraints

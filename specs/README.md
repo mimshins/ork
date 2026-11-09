@@ -8,8 +8,8 @@ change to behavior updates its spec in the same pull request.
   alternatives, before it is decided.
 - An **ADR** ([decisions/](../decisions/README.md)) records an accepted decision
   and why.
-- A **task spec** (`.ai/specs/`, local and gitignored, from
-  [the template](../.ai/templates/spec.md)) plans one piece of work and is
+- A **plan** (`.ai/plans/`, local and gitignored, from
+  [the template](../.ai/templates/plan.md)) sets out one piece of work and is
   thrown away once its outcome lands here or in an ADR.
 
 Long specs follow the hub and chunk layout

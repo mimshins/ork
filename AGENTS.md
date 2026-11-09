@@ -37,8 +37,8 @@ For an **architectural or design change** (one that alters a package boundary,
 the workflow file format, the runtime port, a cross-cutting pattern, a major
 dependency, or otherwise involves real trade-offs):
 
-1. **Require a task spec.** Draft it from
-   [.ai/templates/spec.md](./.ai/templates/spec.md) in `.ai/specs/` (local,
+1. **Require a plan.** Draft it from
+   [.ai/templates/plan.md](./.ai/templates/plan.md) in `.ai/plans/` (local,
    gitignored) for the author to edit.
 2. **Clarify** until no ambiguity is left.
 3. **RFC** when there are real alternatives
@@ -46,9 +46,14 @@ dependency, or otherwise involves real trade-offs):
 4. **Task breakdown** into ordered, checkable tasks.
 5. **Confirm** with the author before writing code.
 
+In this repository these steps are workflows in `.ork/workflows/`:
+`ork run feature` asks for the route and calls `rfc`, `plan` and `build`, and
+each also runs alone ([ADR-071](./decisions/ADR-071-workflows-by-stage.md)).
+Their questions wait in `ork decide` or the Decisions panel of `ork ui`.
+
 The author may waive the RFC for a decision they make directly; the ADR then
 records the waiver and the options considered. Routine work, small changes and
-bug fixes need no spec unless they are architectural.
+bug fixes need no plan unless they are architectural.
 
 ## Mandatory actions
 
@@ -89,13 +94,15 @@ bug fixes need no spec unless they are architectural.
 | Procedures: docs, releases                   | [runbook/](./runbook/development/release.md)              |
 | How the parts fit together                   | [docs/interaction-map/](./docs/interaction-map/README.md) |
 | Agent orientation, skills, agents, templates | [.ai/](./.ai/README.md)                                   |
-| Local-only task specs (gitignored)           | `.ai/specs/`                                              |
+| Local-only plans (gitignored)                | `.ai/plans/`                                              |
 
 ## Commands
 
 - `pnpm check` runs format check, lint, typecheck, tests, the docs check and the
   map check; it must pass before a push (the `pre-push` hook runs it).
 - `pnpm docs:check` checks links, anchors and the hub/chunk layout.
+- `pnpm rfc:close RFC-NNN` marks a shipped RFC Implemented, archives it and
+  updates the index and the links to it.
 - `pnpm build` bundles the CLI into `packages/cli/dist/bin.mjs`.
 - `pnpm format` fixes formatting (oxfmt); `pnpm lint:fix` fixes lint (oxlint).
 - `pnpm ork <args>` runs the CLI from source.

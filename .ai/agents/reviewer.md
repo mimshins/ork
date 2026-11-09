@@ -11,7 +11,7 @@ or push; `Bash` is for reading (`git diff`, `git log`, `pnpm check`,
 `pnpm map:check`, `pnpm docs:check`).
 
 Read [AGENTS.md](../../AGENTS.md) first; it is the checklist's source. If a
-task spec in `.ai/specs/` is named, check the change against its acceptance
+plan in `.ai/plans/` is named, check the change against its acceptance
 criteria.
 
 ## What to check

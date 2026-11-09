@@ -15,8 +15,8 @@ coverage/
 packages/cli/LICENSE
 packages/cli/THIRD_PARTY_NOTICES.md
 
-# Local-only task specs (never committed)
-.ai/specs/
+# Local-only plans (never committed)
+.ai/plans/
 
 # TypeScript incremental build info
 *.tsbuildinfo

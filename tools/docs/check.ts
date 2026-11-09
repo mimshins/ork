@@ -15,7 +15,7 @@ export const STRUCTURED = ["specs", "docs", "runbook"] as const;
 /** Paths the check never reads: dependencies, local-only and app files. */
 export const SKIPPED = [
   ".git",
-  ".ai/specs",
+  ".ai/plans",
   "docs/interaction-map/public",
 ] as const;
 

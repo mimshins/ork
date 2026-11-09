@@ -30,7 +30,7 @@ se-backend's rule for splitting long documents.
    - `.ai/` — the agent layer: memories, skills, templates, and local,
      gitignored task specs in `.ai/specs/` ([.ai/README.md](../.ai/README.md)).
 2. **Workflow.** An architectural change starts from a task spec
-   ([template](../.ai/templates/spec.md)), is clarified, goes through an RFC
+   ([template](../.ai/templates/plan.md)), is clarified, goes through an RFC
    when there are real alternatives, is broken into tasks, and is confirmed with
    the maintainer before code. It lands with its spec updated and, when hard to
    reverse, an ADR. Routine changes and bug fixes need no spec.
