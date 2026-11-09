@@ -108,6 +108,16 @@ describe("start's load programs", () => {
   );
 });
 
+describe("publishing", () => {
+  it.each(["build", "rfc"])("checks %s before it connects to push", name => {
+    const script = scriptOf(name, "publish");
+    expect(script.indexOf("run check")).toBeGreaterThan(-1);
+    expect(script.indexOf("run check")).toBeLessThan(
+      script.indexOf("push --no-verify"),
+    );
+  });
+});
+
 describe("plan's save program", () => {
   it("saves under a cleaned name", () => {
     expect(save(checkout(), "my/odd plan", "x")).toBe(

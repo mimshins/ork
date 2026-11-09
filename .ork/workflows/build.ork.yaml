@@ -466,7 +466,10 @@ nodes:
         echo "The change conflicts with origin/$base. It is committed in $WORKTREE; rebase it there and push." >&2
         exit 1
       fi
-      git -C "$WORKTREE" push origin "HEAD:refs/heads/$branch"
+      # The check runs here, not in the pre-push hook: git connects before the hook,
+      # and GitHub drops the idle connection while the hook runs (exit 141).
+      pnpm -C "$WORKTREE" run check
+      git -C "$WORKTREE" push --no-verify origin "HEAD:refs/heads/$branch"
       if [ "$CHOICE" = branch ]; then
         if gh pr view "$branch" > /dev/null 2>&1; then
           echo "$branch already has a pull request; it is updated."

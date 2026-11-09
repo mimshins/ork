@@ -22,7 +22,7 @@ nodes:
   frame:
     type: claude.worker
     prompt: |-
-      Find the right way in for this brief. Change nothing.
+      Find the right way in for this brief. Change nothing. Read files with Read and search with Grep. When you do use Bash, run one plain read command at a time, such as head -8 .ai/plans/*.md rfcs/active/*.md, with no loops, shell variables or redirects: anything else stops the run to ask the maintainer.
 
       Read the brief, the title and first lines of every file in .ai/plans/ and rfcs/active/ (plans may be named by a run id, so a name says little), then any that look related, and what the brief touches: the specs under specs/ that govern it, the ADRs they cite, and the code. List the design decisions it leaves open: anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or that changes what users see.
 
