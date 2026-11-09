@@ -57,7 +57,8 @@ version it offers, and, for `ork ui`,
 - **Registry:** `https://registry.npmjs.org`, or `ORK_UPDATE_REGISTRY`.
 - `ork doctor`'s first line is Ork's version against the record: a warning with
   `ork upgrade` when a newer one is known, otherwise the date of the last check
-  (or that none ran, or that the check is off). Doctor makes no request.
+  (or that none ran, or that the daily check is off here, and why: no terminal,
+  `CI`, and so on). Doctor makes no request.
 
 ## ork upgrade
 

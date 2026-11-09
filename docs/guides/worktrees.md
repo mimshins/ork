@@ -78,13 +78,21 @@ The project must be a git repository with at least one commit.
 
 - Ork commits what the session left uncommitted, as `ork: <node> (run <id>)`.
   Your repository's git hooks run; if they refuse, the node fails with the
-  hook's message and keeps its changes.
-- A child that passes is merged into its owner's worktree. A conflict is
-  aborted, reported to the owner, and the child's worktree is kept.
+  hook's message (`✗ fail: …`) and keeps its changes.
+- A leader's work is committed before it delegates, as
+  `ork: <node> before delegating (run <id>)`, so its children branch from it.
+- A child that passes is merged into its owner's worktree, as
+  `ork: merge <child> into <owner> (run <id>)`. A conflict is aborted, reported
+  to the owner, and the child's worktree is kept; the child's line reads
+  `! pass, merge conflict`.
 
 ## After the run
 
-- Worktrees of merged children are removed; their branches stay.
+- Worktrees of merged children are removed, also when the run is stopped; their
+  branches stay. The transcript says
+  `removed worktree of ork/<run>/<node> (branch kept)`.
+- A failed [`forEach`](./writing-workflows/running-per-item.md#worktrees) item's
+  worktree stays, with the reason `item failed; kept for inspection`.
 - The root nodes' worktrees (the run's result) and anything unmerged stay. The
   run summary lists each one with its branch, path and reason.
 - Ork never pushes, and never takes over, moves or deletes a branch it did not
@@ -95,18 +103,22 @@ The project must be a git repository with at least one commit.
 ```sh
 ork worktrees                     # or `ork wt`: what runs created, and its state
 ork worktrees clean               # merged branches' worktrees; asks first
-ork worktrees clean --run <id>    # one run only
+ork worktrees clean --run <id>    # one run only, by its full id
 ork worktrees clean --all         # unmerged ones too
 ork worktrees clean --branches    # delete the branches as well
 ork worktrees remove <branch>     # one worktree (a detached one by run/node, as listed)
 ork worktrees remove <branch> --branch   # and its branch
 ```
 
+`ork worktrees` in a repository with no commit yet prints an empty list.
+
 **What the list shows:** every worktree and branch your runs recorded creating,
 whatever your rules named it, plus any `ork/` branch, each with its path, its
 uncommitted changes, and the commits not yet merged into your current branch. It
 reads their state from git, so it works for any run, even one from a crashed
-process.
+process. An `ork/` branch no run recorded, such as one you made by hand, is
+marked `not created by Ork`: `clean` and `remove` keep it, even with `--force`,
+so delete it with git if it's yours to delete.
 
 **What `clean` never removes:**
 
@@ -120,12 +132,20 @@ process.
 A detached worktree (`commit: never`) is cleaned only with `--all`, and one
 holding a commit no branch has (a `tool.git` commit) only with `--force` too.
 
+`clean` shows its plan and asks; `n` prints `Cancelled.` and removes nothing.
+Without a terminal, add `--yes`. With `--force`, the plan lists what each item
+would lose before asking: `Loses in <item>:`, then its uncommitted and untracked
+files and its unmerged commits. A `--run` id that no run in this project has is
+an error (`No run <id> in this project.`).
+
 `clean` takes no name: to remove one worktree, use `remove`. Given a name,
 `clean` stops with an error that says so.
 
-**`remove`** takes one item by the same rules. When removing it would lose work,
-it prints what (the changes and commits, as git prints them) and needs
-`--force`. Without a terminal, add `--yes`.
+**`remove`** takes one item by the same rules, by its branch or its worktree's
+path (a path through a symlink works too). A branch with no worktree left is
+deleted without `--branch`. When removing it would lose work, it prints what
+(the changes and commits, as git prints them) and needs `--force`. Without a
+terminal, add `--yes`.
 
 ### In the browser
 

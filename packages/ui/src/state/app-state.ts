@@ -51,12 +51,22 @@ export type AppStateOptions = {
 
 export type AppState = ReturnType<typeof createAppState>;
 
+/**
+ * Whether `ork ui` cannot be reached now: the stream is lost or the health
+ * check failed. Not while it is still connecting for the first time.
+ */
+export const isUnreachable = ({ link, server }: Connection): boolean =>
+  link === "lost" || (server !== null && "error" in server);
+
 /** What the status bar says about the server. */
-export const describeConnection = ({ link, server }: Connection): string => {
+export const describeConnection = (connection: Connection): string => {
+  const { link, server } = connection;
   if (server !== null && "error" in server) {
     return `Cannot reach \`ork ui\`: ${server.error}`;
   }
-  if (link === "lost") return "Lost the stream from `ork ui`. Retrying…";
+  if (isUnreachable(connection)) {
+    return "Lost the stream from `ork ui`. Retrying…";
+  }
   return link === "open" && server !== null
     ? `Ork ${server.version}`
     : "Connecting to `ork ui`…";

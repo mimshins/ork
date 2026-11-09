@@ -148,7 +148,10 @@ independent tasks and builds them at the same time:
 2. `build` runs once per task, three at a time, each in its own worktree
    ([once per item](./writing-workflows/running-per-item.md)).
 3. A gate shows you every task's result, with its branch, and asks which you
-   keep. Nothing is merged for you.
+   keep. Nothing is merged for you. The edge into it reads
+   `when: any(statuses, 'pass')`, so the gate still runs when some tasks failed
+   and others passed; without a `when:`, one failed task ends the run before the
+   gate. If every task failed, the run fails.
 
 ```sh
 v=$(ork --version)

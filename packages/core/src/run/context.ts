@@ -12,9 +12,9 @@ import { createOwnership, type DelegationHooks } from "./delegation.ts";
 import type { Activation, RunOptions } from "./handle.ts";
 import type { Holds, Stops } from "./holds.ts";
 import type { createRunPorts } from "./ports.ts";
-import type { createSpend } from "./results.ts";
 import { foldersOf } from "./scope.ts";
 import type { Slots } from "./slots.ts";
+import type { createSpend } from "./spending.ts";
 import type { ExecuteContext, NodeOutput, NodeSummary } from "./types.ts";
 
 /** What the scheduler shares with every activation's context. */
@@ -68,6 +68,10 @@ export const nodeContext = (
     ...(options.calls === undefined ? {} : { calls: options.calls }),
     emit: event => {
       deps.ports.owners.seen(id, event, cwd);
+      if (event.type === "session.finished" && event.fork !== true) {
+        const { sessionId, usage } = event.outcome;
+        deps.spend.report(id, sessionId, usage.costUsd);
+      }
       options.onEvent({ type: "node.event", id, event });
     },
     signal: deps.stops.signalFor(id, template),

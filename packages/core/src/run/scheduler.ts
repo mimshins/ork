@@ -227,6 +227,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     if (result.limited !== undefined) {
       stop(result.stopsAs ?? "quota_exhausted", result.limited);
     }
+    spend.settled(id);
     holds.finished(id);
     ports.finished(id);
     clock.leave(id);

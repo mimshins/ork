@@ -14,7 +14,11 @@ import type { z } from "zod";
 
 import { AgentSchema } from "./agents.ts";
 import { formatEdge } from "./edges.ts";
-import { markValue } from "./marks.ts";
+import {
+  forEachMessage,
+  listRuleMessage,
+  nodeTypeMessage,
+} from "./issue-messages.ts";
 import { newerVersion } from "./newer-version.ts";
 import { NodeSchema, type NodeType } from "./nodes.ts";
 import { type Project, ProjectSchema, UserSettingsSchema } from "./project.ts";
@@ -44,8 +48,6 @@ export type LoadResult =
 export const SCHEMA_URL =
   "https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json";
 
-const NODE_TYPES = NodeSchema.options.map(o => o.shape.type.value);
-
 const createLocate =
   (doc: Document, counter: LineCounter): Locate =>
   path => {
@@ -63,6 +65,18 @@ const createLocate =
 const toPath = (path: readonly PropertyKey[]): (string | number)[] =>
   path.map(p => (typeof p === "number" ? p : String(p)));
 
+/** The value at a path of the raw document, or undefined. */
+const valueAt = (raw: unknown, path: readonly (string | number)[]): unknown => {
+  let value: unknown = raw;
+  for (const segment of path) {
+    value =
+      value !== null && typeof value === "object"
+        ? (Reflect.get(value, segment) as unknown)
+        : undefined;
+  }
+  return value;
+};
+
 const describeIssue = (
   issue: z.core.$ZodIssue,
   raw: unknown,
@@ -75,23 +89,12 @@ const describeIssue = (
       path: first === undefined ? path : [...path, first],
     };
   }
-  if (issue.code === "invalid_union" && issue.discriminator === "type") {
-    // The issue path ends at the `type` key itself.
-    let value: unknown = raw;
-    for (const segment of path) {
-      value =
-        value !== null && typeof value === "object"
-          ? (Reflect.get(value, segment) as unknown)
-          : undefined;
-    }
-    return {
-      message:
-        value === undefined
-          ? `node needs a \`type\`: one of ${NODE_TYPES.map(type => markValue(type)).join(", ")}`
-          : `unknown node type ${markValue(typeof value === "string" ? value : (JSON.stringify(value) ?? ""))}: expected one of ${NODE_TYPES.map(type => markValue(type)).join(", ")}`,
-      path,
-    };
-  }
+  const value = valueAt(raw, path);
+  const said =
+    forEachMessage(issue, path, value) ??
+    listRuleMessage(issue, value) ??
+    nodeTypeMessage(issue, value);
+  if (said !== null) return { message: said, path };
   // Zod quotes the values it names, where Ork's messages mark them.
   return {
     message: issue.message.replaceAll(/"([^"`\n]+)"/gu, "`$1`"),

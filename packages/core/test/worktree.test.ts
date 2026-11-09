@@ -433,7 +433,15 @@ describe("ork worktrees", () => {
     await runIn(root, TEAM, executor);
     write(worktreePath(root, "r1", "lead"), "wip.ts", "wip\n");
 
-    const items = await listOrkWorktrees(root);
+    const items = await listOrkWorktrees(
+      root,
+      ["fix", "lead"].map(node => ({
+        runId: "r1",
+        nodeId: node,
+        path: worktreePath(root, "r1", node),
+        branch: `ork/r1/${node}`,
+      })),
+    );
     expect(
       items.map(i => [i.branch, i.path !== null, i.dirty, i.merged]),
     ).toEqual([

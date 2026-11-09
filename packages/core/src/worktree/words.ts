@@ -63,6 +63,7 @@ export const stateParts = (item: OrkWorktree, into?: string): StatePart[] => {
       part(`${counted(item.ahead, "commit")} on no branch`, true);
     else if (item.path !== null && !item.missing) part("nothing committed");
   }
+  if (!item.recorded) part("not created by Ork");
   if (item.inMainCheckout) part("checked out in the main checkout");
   if (item.heldBy !== undefined) part(`checked out in ${item.heldBy}`);
   return parts;
@@ -95,14 +96,17 @@ export const planLine = (step: CleanStep): PlanLine => {
 };
 
 /**
- * Why an item can't be removed at all, even forced, if it can't: the main
- * checkout or a worktree Ork didn't create holds it, or its run is still
- * going.
+ * Why an item can't be removed at all, even forced, if it can't: no run
+ * recorded creating it, the main checkout or a worktree Ork didn't create holds
+ * it, or its run is still going.
  */
 export const removeRefusal = (
   item: OrkWorktree,
   live: boolean,
 ): string | undefined => {
+  if (!item.recorded) {
+    return "not created by Ork (no run recorded it); delete it with git if it's yours to delete";
+  }
   if (item.inMainCheckout) {
     return "checked out in the main checkout; switch it to another branch first";
   }

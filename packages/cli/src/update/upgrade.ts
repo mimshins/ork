@@ -12,7 +12,8 @@ import type { CheckResult } from "@krapht/ork-integrations";
 export const versionCheck = (
   current: string,
   cache: UpdateCache | null,
-  checksOff: boolean,
+  /** Why the daily check is off for this command (`updateCheckOff`), or null. */
+  checksOff: string | null,
 ): CheckResult => {
   const newer = newerVersion(cache, current);
   if (newer !== null) {
@@ -25,9 +26,9 @@ export const versionCheck = (
   }
   const known =
     cache?.latest === undefined
-      ? checksOff
-        ? "update check off"
-        : "not checked for updates yet"
+      ? checksOff === null
+        ? "not checked for updates yet"
+        : `the daily update check is off here: ${checksOff}`
       : `the latest as of ${cache.checkedAt.slice(0, 10)}`;
   return { name: "ork", status: "ok", detail: `${current} (${known})` };
 };

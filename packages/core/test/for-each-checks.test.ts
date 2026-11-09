@@ -23,6 +23,9 @@ const codesOf = (body: string) =>
 const pathOf = (body: string, code: string) =>
   found(body).find(d => d.code === code)?.path;
 
+const messageOf = (body: string, code: string) =>
+  found(body).find(d => d.code === code)?.message;
+
 const PLAN = `  plan:
     type: tool.shell
     command: plan
@@ -157,6 +160,20 @@ ${PLAN}  build:
       "forEach",
       "from",
     ]);
+  });
+
+  it("says a tool's JSON is read under json, not that nothing declares it", () => {
+    const body = fanned('{ from: "{{nodes.plan.output.tasks}}", maxItems: 4 }');
+    expect(messageOf(body, "forEach.undeclared")).toBe(
+      "`nodes.plan.output.tasks`: a tool's JSON is read as `nodes.plan.output.json.tasks`",
+    );
+  });
+
+  it("names the read path and the missing declaration for a tool's field", () => {
+    const body = fanned('{ from: "{{nodes.plan.output.other}}", maxItems: 4 }');
+    expect(messageOf(body, "forEach.undeclared")).toBe(
+      "`nodes.plan.output.other`: a tool's JSON is read as `nodes.plan.output.json.other`; add `{ list: { … } }` to `plan`'s `output.schema`",
+    );
   });
 
   it("reads an unknown node as a reference error", () => {

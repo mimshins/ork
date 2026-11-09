@@ -121,20 +121,20 @@ describe("planning an upgrade", () => {
 describe("ork doctor's version line", () => {
   it("warns of a newer version, and otherwise says what it knows", () => {
     const cache = { checkedAt: NOW.toISOString(), latest: "0.2.0" };
-    expect(versionCheck("0.1.0", cache, false)).toEqual({
+    expect(versionCheck("0.1.0", cache, null)).toEqual({
       name: "ork",
       status: "warn",
       detail: "0.1.0; 0.2.0 is out",
       hint: "Run ork upgrade.",
     });
-    expect(versionCheck("0.2.0", cache, false).detail).toBe(
+    expect(versionCheck("0.2.0", cache, null).detail).toBe(
       "0.2.0 (the latest as of 2026-11-02)",
     );
-    expect(versionCheck("0.2.0", null, false).detail).toBe(
+    expect(versionCheck("0.2.0", null, null).detail).toBe(
       "0.2.0 (not checked for updates yet)",
     );
-    expect(versionCheck("0.2.0", null, true).detail).toBe(
-      "0.2.0 (update check off)",
+    expect(versionCheck("0.2.0", null, "no terminal").detail).toBe(
+      "0.2.0 (the daily update check is off here: no terminal)",
     );
   });
 });

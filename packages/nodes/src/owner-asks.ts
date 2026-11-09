@@ -239,6 +239,25 @@ export const passedOnContext = (
   ].join("\n");
 
 /**
+ * The node's channel to the person: what it asked is withdrawn when it stops,
+ * so a stopped node leaves no decision open.
+ */
+export const withdrawnOnStop = (context: ExecuteContext): HumanChannel => {
+  const { human } = context;
+  const signalOf = (asked: AbortSignal | undefined): AbortSignal =>
+    asked === undefined
+      ? context.signal
+      : AbortSignal.any([asked, context.signal]);
+  return {
+    permit: request =>
+      human.permit({ ...request, signal: signalOf(request.signal) }),
+    ask: question =>
+      human.ask({ ...question, signal: signalOf(question.signal) }),
+    ...(human.settled === undefined ? {} : { settled: human.settled }),
+  };
+};
+
+/**
  * The child's channel when its owner takes its questions first: a question goes
  * to a fork of the owner's session, then to the person if the fork passes it on
  * or can't answer. Permission prompts go to the person as before.
@@ -248,7 +267,7 @@ export const ownerFirst = (
   owner: OwnerPort,
   deps: ForkDeps,
 ): HumanChannel => {
-  const { human } = context;
+  const human = withdrawnOnStop(context);
   return {
     permit: request => human.permit(request),
     ask: async question => {
@@ -257,16 +276,10 @@ export const ownerFirst = (
       if (context.signal.aborted) {
         throw new Error(`${context.id} was stopped`);
       }
-      // A node stopped while the person is asked withdraws its question.
-      const signal =
-        question.signal === undefined
-          ? context.signal
-          : AbortSignal.any([question.signal, context.signal]);
-      if (answered === null) return human.ask({ ...question, signal });
+      if (answered === null) return human.ask(question);
       if (answered.choice === passOnId(question.options)) {
         return human.ask({
           ...question,
-          signal,
           owner: owner.id,
           context: passedOnContext(question.context, owner.id, answered.note),
         });

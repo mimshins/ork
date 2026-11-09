@@ -404,6 +404,41 @@ describe("the terminal channel", () => {
     );
   });
 
+  it("hands Ctrl-C at a prompt to the run's interrupt", async () => {
+    const input = new PassThrough();
+    const output = Object.assign(new PassThrough(), {
+      isTTY: true,
+      columns: 80,
+    });
+    let said = "";
+    output.setEncoding("utf8");
+    output.on("data", (chunk: string) => {
+      said += chunk;
+    });
+    let interrupts = 0;
+    const human = createTerminalHuman({
+      input,
+      output,
+      interactive: true,
+      interrupt: () => {
+        interrupts += 1;
+      },
+    });
+    const withdraw = new AbortController();
+    const asked = human.ask({
+      nodeId: "gate",
+      question: "Merge?",
+      options: options3,
+      signal: withdraw.signal,
+    });
+    await expect.poll(() => said).toContain("Choose");
+    input.write("\u0003");
+    await expect.poll(() => interrupts).toBe(1);
+    withdraw.abort();
+    await expect(asked).rejects.toThrow("aborted");
+    human.close();
+  });
+
   it("withdraws a question when its signal aborts, and asks the next one", async () => {
     const { human } = terminal([""]);
     const withdraw = new AbortController();

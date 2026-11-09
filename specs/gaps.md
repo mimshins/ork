@@ -14,8 +14,8 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L216, and the next chore is
-C14. At a review, each open entry is closed (built or fixed, then removed), kept
+closes it. Ids are never reused: the next limit is L231, and the next chore is
+C15. At a review, each open entry is closed (built or fixed, then removed), kept
 (moved into its area's spec, then removed here), or carried to a roadmap item,
 or to none yet (unplanned).
 
@@ -43,6 +43,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 
 - [Limits found building readable gates](./gaps/readable-gates-limits.md)
 - [Limits found building for each](./gaps/for-each-limits.md)
+- [Limits found fixing QA run e4894f17](./gaps/qa-e4894f17-limits.md)
 
 ## Gaps
 

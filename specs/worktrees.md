@@ -144,7 +144,9 @@ a node of that declared kind does:
 - A fanned node with a **`parent`** has each passing item merged (or patched)
   into the owner's worktree, one item at a time however many ran together, and
   the item's worktree is then removed. A conflict keeps that item's worktree and
-  merges the others; the item's output has `merge: { ok: false, … }`.
+  merges the others; the item's output has `merge: { ok: false, … }`. A
+  **failed** item's worktree is kept too, with the reason
+  `item failed; kept for inspection`.
 - Under **`commit: never`** there are no item branches: each item has a detached
   worktree, its `results` entry has `worktree` and no `branch`, and with a
   `parent` the default `merge: patch` applies each passing item to the owner,
@@ -181,7 +183,9 @@ item's worktree is the one at its recorded path, whatever branch it is on now;
 another worktree with its branch checked out (the main checkout, or one of the
 user's own, say `git worktree add ../review ork/r1/lead`) is not Ork's, and the
 item has no worktree. An `ork/` branch no run recorded has the worktree that has
-it checked out.
+it checked out. It is listed (marked "not created by Ork") but never Ork's to
+change: `clean` and `remove` keep it, even with `--force`, since Ork never
+deletes a branch it did not create. Delete it with git.
 
 - `ork worktrees [list] [--json]`: each branch (or, for a detached worktree, its
   run and node), its worktree path (or none, or missing), uncommitted changes,
@@ -199,24 +203,36 @@ it checked out.
   unreachable commits is kept unless `--force`. A branch checked out in the main
   checkout or in a worktree Ork didn't create ("checked out in <path>"), and the
   worktree of a run still going ("its run is still going": its process is
-  alive), are kept even with `--force`; stop the run first. It prints the plan
-  and asks first; `--yes` skips the question, and without a terminal it is
-  required. A worktree whose folder is gone shows as `prune worktree` in the
-  plan and `pruned <path>` once done; it is dropped by its own path
-  (`git worktree remove`), never by `git worktree prune`, so a missing worktree
-  that isn't Ork's keeps its entry. `clean` takes no name: given one, it prints
-  that to stderr, points to `ork worktrees remove <name>`, exits 1 and plans
-  nothing (before it opens the store or asks).
+  alive), and an `ork/` branch no run recorded ("not created by Ork"), are kept
+  even with `--force`; stop the run first. It prints the plan and, with
+  `--force`, what each item would lose (its `Loses in <item>:` block: the
+  `remove` text below, for uncommitted changes and unmerged or unreachable
+  commits), then asks; `--yes` skips the question, and without a terminal it is
+  required. Declining prints `Cancelled.`. `--run <id>` names a run of the
+  project: an unknown id is an error (exit 1) rather than an empty plan. A plan
+  of only kept items prints those lines and no "Nothing to clean."; that line is
+  for a plan with no items at all. A worktree whose folder is gone shows as
+  `prune worktree` in the plan and `pruned <path>` once done; it is dropped by
+  its own path (`git worktree remove`), never by `git worktree prune`, so a
+  missing worktree that isn't Ork's keeps its entry. `clean` takes no name:
+  given one, it prints that to stderr, points to `ork worktrees remove <name>`,
+  exits 1 and plans nothing (before it opens the store or asks).
 - `ork worktrees remove <branch|run/node|path> [--branch] [--force] [--yes]`:
   one item, by its branch or (detached) the `run/node` name `list` shows or its
-  worktree's path, by the same rule as clean. It removes the worktree;
-  `--branch` also deletes the branch, and a branch with no worktree is deleted.
-  When that loses work (uncommitted changes, an unmerged branch's commits, a
-  detached worktree's unreachable commits) it prints what's lost, as
-  `git status --porcelain` and `git log --oneline` print it, and needs
-  `--force`. It asks first, as clean does. It changes only its own item: a
-  worktree whose folder is gone is dropped by its own path
-  (`git worktree remove`), never by a prune of every missing one.
+  worktree's path (a symlinked path is resolved first), by the same rule as
+  clean. It removes the worktree; `--branch` also deletes the branch, and a
+  recorded branch with no worktree is deleted. An `ork/` branch no run recorded
+  is refused with a message, not deleted. When that loses work (uncommitted
+  changes, an unmerged branch's commits, a detached worktree's unreachable
+  commits) it prints what's lost, as `git status --porcelain` and
+  `git log --oneline` print it, and needs `--force`. It asks first, as clean
+  does. It changes only its own item: a worktree whose folder is gone is dropped
+  by its own path (`git worktree remove`), never by a prune of every missing
+  one.
+
+In a repository with no commit yet, `ork worktrees` prints an empty list and
+exits 0 (nothing can have been created); `clean` and `remove` still need a
+commit.
 
 The plain words (an item's name, its merge state, its state's parts, a plan's
 line, why an item can't be removed) are core's

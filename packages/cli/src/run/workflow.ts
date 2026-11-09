@@ -172,7 +172,12 @@ export const runWorkflowFile = async (
       control.publish(record(event));
       if (options.json) options.out(JSON.stringify(event));
       else {
-        for (const line of formatRunEvent(event, width, tools)) {
+        for (const line of formatRunEvent(
+          event,
+          width,
+          tools,
+          options.human !== undefined,
+        )) {
           options.out(line);
         }
       }

@@ -17,6 +17,8 @@ export type EachEvent =
       round: number;
       count: number;
       list: unknown[];
+      /** A resumed run resolved this list itself; none on a handed-back one. */
+      anew?: true;
     }
   /** A list longer than the `maxItems` of the node that reads it. */
   | {

@@ -118,11 +118,37 @@ const parallel = (count: number): string =>
     "",
   ].join("\n");
 
+/** `ork validate` for real, in a folder with no `.ork/`. */
+const validateBare = () => {
+  const dir = tempProject();
+  return spawnSync(process.execPath, [BIN, "validate"], {
+    cwd: dir,
+    encoding: "utf8",
+    env: {
+      PATH: process.env["PATH"] ?? "",
+      HOME: dir,
+      ORK_NO_UPDATE_CHECK: "1",
+    },
+  });
+};
+
+describe("ork validate without a project", () => {
+  it("says to run ork init when there is no .ork folder", () => {
+    const { status, stdout } = validateBare();
+    expect(status).toBe(1);
+    expect(stdout).toContain("Run `ork init`");
+  });
+});
+
 describe("ork validate's walk", () => {
   it("says how many ways it walked", () => {
     const { status, stdout } = validateText(GATED);
     expect(status).toBe(0);
     expect(stdout).toContain("Walked 3 ways through: 2 succeed, 1 fails.");
+    expect(stdout).toContain("See each with `ork validate --paths`.");
+    expect(validateText(GATED, "--paths").stdout).not.toContain(
+      "See each with",
+    );
   });
 
   it("reports what it found as a warning, with its line", () => {
@@ -341,6 +367,7 @@ describe("ork worktrees", () => {
     ahead: 2,
     merged: false,
     inMainCheckout: false,
+    recorded: true,
   };
 
   it("shows each branch's state and the clean plan", () => {
@@ -366,6 +393,7 @@ describe("ork worktrees", () => {
           ahead: 1,
           merged: false,
           inMainCheckout: false,
+          recorded: true,
         },
       ]),
     ).toEqual([

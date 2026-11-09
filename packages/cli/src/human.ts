@@ -22,6 +22,8 @@ export type TerminalIO = {
   output: NodeJS.WritableStream;
   /** False when stdin is not a terminal: no one can answer. */
   interactive: boolean;
+  /** Ctrl-C at a prompt, which readline takes from the process in raw mode. */
+  interrupt?: () => void;
 };
 
 export type TerminalHuman = HumanChannel & { close: () => void };
@@ -96,7 +98,10 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
     io.output.write(`${text}\n`);
   };
   const prompt = (text: string, signal?: AbortSignal): Promise<string> => {
-    rl ??= createInterface({ input: io.input, output: io.output });
+    if (rl === undefined) {
+      rl = createInterface({ input: io.input, output: io.output });
+      if (io.interrupt !== undefined) rl.on("SIGINT", io.interrupt);
+    }
     return signal === undefined
       ? rl.question(text)
       : rl.question(text, { signal });

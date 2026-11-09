@@ -314,7 +314,11 @@ const program: NodeExecutor = context =>
             json: { score: 7 },
           },
         }
-      : { ok: false, output: { exitCode: 1, stdout: "", stderr: "x" } },
+      : {
+          ok: false,
+          output: { exitCode: 1, stdout: "", stderr: "x" },
+          error: "build.1 exited with code 1",
+        },
   );
 
 const parts = (source: string) => {
@@ -551,7 +555,10 @@ describe("gathering", () => {
     const { events } = await run(graph, program);
     expect(finishedOf(events, "build").output).toEqual({
       items: ["a", "b"],
-      results: [{ score: 7 }, {}],
+      results: [
+        { score: 7 },
+        { exitCode: 1, error: "build.1 exited with code 1" },
+      ],
       statuses: ["pass", "fail"],
       count: 2,
     });

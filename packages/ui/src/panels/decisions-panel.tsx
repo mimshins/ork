@@ -12,7 +12,12 @@ import { useValue } from "react-containerized-state";
 import { useAppState } from "../state/context.tsx";
 import { WorkspaceContext } from "../workspace/context.ts";
 import { DecisionCard } from "./decision-card.tsx";
-import { DecisionsEmpty, DecisionsFilter } from "./decisions-filter.tsx";
+import {
+  DecisionsEmpty,
+  DecisionsFilter,
+  UnreachableNotice,
+  useUnreachable,
+} from "./decisions-filter.tsx";
 import {
   type DecisionFilter,
   endingOf,
@@ -31,6 +36,7 @@ export const DecisionsPanel = () => {
   const decisions = useValue(state.decisions);
   const settled = useValue(state.settledDecisions);
   const runs = useValue(state.runs);
+  const unreachable = useUnreachable();
   const told = useRef(settled[0]?.id);
   const { value: preferences, update } = state.preferences;
   const saved = useValue(preferences).decisionFilter;
@@ -104,6 +110,7 @@ export const DecisionsPanel = () => {
         />
       ) : (
         <div className={styles["list"]}>
+          {unreachable ? <UnreachableNotice /> : null}
           {view.shown.map(decision => (
             <DecisionCard
               decision={decision}
@@ -113,6 +120,7 @@ export const DecisionsPanel = () => {
                 state.selectRun(run);
                 state.selectNode(node);
               }}
+              unreachable={unreachable}
               workflow={workflowOf(decision.runId)}
             />
           ))}

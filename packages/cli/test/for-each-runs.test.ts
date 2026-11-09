@@ -14,7 +14,12 @@ import {
 } from "@krapht/ork-core";
 import { describe, expect, it } from "vitest";
 
-import { createLogPrinter, formatRunEvent, formatTree } from "../src/index.ts";
+import {
+  createLogPrinter,
+  formatRunEvent,
+  formatTree,
+  unknownNode,
+} from "../src/index.ts";
 
 /** Colors off: lines compare as plain text. */
 const plain = (line: string): string =>
@@ -100,6 +105,25 @@ const logged = (node: string | undefined, json = false): string[] => {
 };
 
 describe("ork logs --node", () => {
+  it.each(["step.9", "nope", "build.9"])(
+    "refuses %s, which no event names",
+    node => {
+      expect(unknownNode(STORED, node, false)).toBe(`Run has no node ${node}.`);
+    },
+  );
+
+  it.each(["build", "build.0", "plan"])("takes %s", node => {
+    expect(unknownNode(STORED, node, false)).toBeNull();
+  });
+
+  it("takes a declared node that never ran", () => {
+    expect(unknownNode(STORED.slice(0, 1), "plan", false)).toBeNull();
+  });
+
+  it("waits for a node a live run may still start", () => {
+    expect(unknownNode(STORED, "build.9", true)).toBeNull();
+  });
+
   it("keeps a fanned node and its items, and nothing of the others", () => {
     const lines = logged("build");
     expect(lines.join("\n")).toContain("build.0");
@@ -122,6 +146,34 @@ describe("ork logs --node", () => {
       ),
     );
     expect(logged("build", true)).toHaveLength(9);
+  });
+});
+
+/** The finished line of a fan-out whose items ended like this. */
+const verdict = (statuses: string[]): string =>
+  formatRunEvent(
+    {
+      type: "node.finished",
+      id: "build",
+      round: 1,
+      ok: false,
+      output: { count: statuses.length, statuses },
+    },
+    5,
+    new Map(),
+  )
+    .map(line => plain(line))
+    .join("");
+
+describe("a node's verdict", () => {
+  it("does not count an item never started as ran", () => {
+    expect(verdict(["pass", "fail", "skipped", "skipped"])).toContain(
+      "✗ 2 of 4 ran",
+    );
+  });
+
+  it("says plain ran when every item started", () => {
+    expect(verdict(["pass", "fail"])).toContain("✗ 2 ran");
   });
 });
 

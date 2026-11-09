@@ -4,11 +4,12 @@
  *   name.
  */
 
-import type {
-  Diagnostic,
-  DiagnosticPath,
-  Node,
-  Workflow,
+import {
+  type Diagnostic,
+  type DiagnosticPath,
+  isToolNode,
+  type Node,
+  type Workflow,
 } from "@krapht/ork-schema";
 
 import { ITEM_ROOTS, parseTemplate, templatePath } from "../expr/evaluate.ts";
@@ -145,6 +146,14 @@ const checkFiles = (
       : [];
   });
 
+/**
+ * Whether one activation's parsed JSON is at `output.json` (a program, an MCP
+ * call).
+ */
+const readsJson = (node: Node): boolean =>
+  (isToolNode(node) || node.type === "mcp.call") &&
+  forEachOf(node) === undefined;
+
 /** The source of one `from`: it exists, runs first, and is a declared list. */
 const checkSource = (
   workflow: Workflow,
@@ -194,15 +203,28 @@ const checkSource = (
       ),
     ];
   }
-  return said === undefined
-    ? [
-        warning(
-          "forEach.undeclared",
-          `\`${named}\`: nothing declares this list, so a run can't check it or its items; add \`{ list: { … } }\` to \`${String(source)}\`'s \`output.schema\``,
-          path,
-        ),
-      ]
-    : [];
+  if (said !== undefined) return [];
+  const add = `add \`{ list: { … } }\` to \`${String(source)}\`'s \`output.schema\``;
+  const node = workflow.nodes[String(source)];
+  if (node !== undefined && readsJson(node) && !field.startsWith("json.")) {
+    const declared = says[String(source)]?.fields.some(
+      ({ field: name }) => name === `json.${field}`,
+    );
+    return [
+      warning(
+        "forEach.undeclared",
+        `\`${named}\`: a tool's JSON is read as \`nodes.${String(source)}.output.json.${field}\`${declared === true ? "" : `; ${add}`}`,
+        path,
+      ),
+    ];
+  }
+  return [
+    warning(
+      "forEach.undeclared",
+      `\`${named}\`: nothing declares this list, so a run can't check it or its items; ${add}`,
+      path,
+    ),
+  ];
 };
 
 /** Every `forEach`'s source, and `{{item}}` in the lists no template reads. */

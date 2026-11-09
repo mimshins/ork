@@ -130,3 +130,35 @@ describe("the canonical form", () => {
     expect(again).toBe(text);
   });
 });
+
+/** The messages a node line makes the parser give, in order. */
+const messages = (node: string): string[] => {
+  const parsed = parseWorkflow(
+    ["schemaVersion: 1", "name: t", "nodes:", `  n: ${node}`].join("\n"),
+  );
+  return parsed.ok ? [] : parsed.diagnostics.map(d => d.message);
+};
+
+const worker = (forEach: string) =>
+  messages(`{ type: claude.worker, prompt: Go, forEach: ${forEach} }`);
+
+describe("the messages for a forEach that is wrong", () => {
+  it.each([
+    ["from without maxItems", "{ from: x }", "needs `maxItems`"],
+    ["an empty list", "{ items: [] }", "at least one item"],
+    ["maxItems of zero", "{ from: x, maxItems: 0 }", "must be at least 1"],
+    ["neither items nor from", "{ maxParallel: 2 }", "needs `items` or `from`"],
+    ["items and from", "{ items: [a], from: x, maxItems: 2 }", "not both"],
+    ["a string", "x", "takes a map"],
+  ])("says what to do for %s", (_name, value, text) => {
+    expect(worker(value)).toEqual([expect.stringContaining(text)]);
+  });
+
+  it("says a list rule takes a map of its fields", () => {
+    expect(
+      messages(
+        "{ type: tool.shell, command: ls, output: { format: json, schema: { tasks: { list: string } } } }",
+      ),
+    ).toEqual([expect.stringContaining("`list` takes a map")]);
+  });
+});

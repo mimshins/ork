@@ -13,6 +13,7 @@ import {
   mkdirSync,
   mkdtempSync,
   realpathSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -26,8 +27,46 @@ const BIN = path.resolve(import.meta.dirname, "../src/bin.ts");
 const git = (cwd: string, ...args: string[]) =>
   execFileSync("git", args, { cwd, encoding: "utf8" });
 
-/** A repo with one commit, a worktree on `ork/r1/lead`, and its own `~`. */
-const place = () => {
+/** Records run `id` creating these worktrees; finished unless `running`. */
+const recordRun = (
+  home: string,
+  root: string,
+  id: string,
+  created: { node: string; path: string; branch?: string }[],
+  running = false,
+): void => {
+  const store = openStore(storePath(home));
+  store.begin({ id, workflow: "w", file: "/w.ork.yaml", project: root });
+  for (const { node, path: folder, branch } of created) {
+    store.append(id, {
+      type: "worktree",
+      id: node,
+      action: "created",
+      path: folder,
+      ...(branch === undefined ? {} : { branch }),
+    });
+  }
+  if (!running) {
+    store.append(id, {
+      type: "run.finished",
+      result: {
+        runId: id,
+        status: "succeeded",
+        costUsd: 0,
+        nodes: [],
+        reasons: [],
+        worktrees: [],
+      },
+    });
+  }
+  store.close();
+};
+
+/**
+ * A repo with one commit, a worktree on `ork/r1/lead` that run r1 recorded
+ * (still going when `running`), and its own `~`.
+ */
+const place = (running = false) => {
   const base = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-wt-cli-")));
   const home = path.join(base, "home");
   const root = path.join(base, "app");
@@ -42,6 +81,13 @@ const place = () => {
   git(root, "commit", "-q", "-m", "init");
   const lead = path.join(base, "ork-r1-lead");
   git(root, "worktree", "add", "--quiet", "-b", "ork/r1/lead", lead);
+  recordRun(
+    home,
+    root,
+    "r1",
+    [{ node: "lead", path: lead, branch: "ork/r1/lead" }],
+    running,
+  );
   return { home, root, lead };
 };
 
@@ -75,6 +121,9 @@ describe("ork worktrees remove", () => {
   it("deletes a branch with no worktree", () => {
     const where = place();
     git(where.root, "branch", "ork/r2/docs");
+    recordRun(where.home, where.root, "r2", [
+      { node: "docs", path: "", branch: "ork/r2/docs" },
+    ]);
     const removed = ork(where, "remove", "ork/r2/docs", "--yes");
     expect(removed.stdout).toContain("deleted ork/r2/docs");
     expect(git(where.root, "branch", "--list", "ork/r2/docs")).toBe("");
@@ -166,6 +215,36 @@ describe("a fanned node's item worktrees", () => {
   });
 });
 
+describe("a branch no run recorded", () => {
+  it("is listed as not created by Ork, and clean and remove keep it", () => {
+    const where = place();
+    git(where.root, "branch", "ork/manual-keep");
+    expect(ork(where, "list").stdout).toContain(
+      "ork/manual-keep  merged · no worktree · not created by Ork",
+    );
+    const clean = ork(
+      where,
+      "clean",
+      "--branches",
+      "--all",
+      "--force",
+      "--yes",
+    );
+    expect(clean.stdout).toContain(
+      "ork/manual-keep: keep (not created by Ork)",
+    );
+    expect(git(where.root, "branch", "--list", "ork/manual-keep")).toContain(
+      "ork/manual-keep",
+    );
+    const remove = ork(where, "remove", "ork/manual-keep", "--force", "--yes");
+    expect(remove.status).toBe(1);
+    expect(remove.stderr).toContain("not created by Ork");
+    expect(git(where.root, "branch", "--list", "ork/manual-keep")).toContain(
+      "ork/manual-keep",
+    );
+  });
+});
+
 describe("ork worktrees clean", () => {
   it("rejects a name and points to remove, planning nothing", () => {
     const where = place();
@@ -187,23 +266,81 @@ describe("ork worktrees clean", () => {
   });
 });
 
+describe("ork worktrees clean --run", () => {
+  it("names a run the project doesn't have, and plans nothing", () => {
+    const where = place();
+    const out = ork(where, "clean", "--run", "nosuch", "--yes");
+    expect(out.status).toBe(1);
+    expect(out.stderr).toContain("No run nosuch in this project.");
+    expect(out.stdout).toBe("");
+  });
+
+  it("says nothing to clean only for a run with nothing left", () => {
+    const where = place();
+    recordRun(where.home, where.root, "r5", []);
+    const out = ork(where, "clean", "--run", "r5", "--yes");
+    expect(out.status).toBe(0);
+    expect(out.stdout).toBe("Nothing to clean.\n");
+  });
+});
+
+describe("ork worktrees remove <path>", () => {
+  it("finds a worktree by a symlinked path", () => {
+    const where = place();
+    const link = path.join(path.dirname(where.root), "link-to-lead");
+    symlinkSync(where.lead, link);
+    const removed = ork(where, "remove", link, "--yes");
+    expect(removed.status).toBe(0);
+    expect(existsSync(where.lead)).toBe(false);
+  });
+});
+
+describe("ork worktrees in a repo with no commit", () => {
+  it("lists nothing, and exits 0", () => {
+    const where = place();
+    const bare = path.join(path.dirname(where.root), "bare");
+    mkdirSync(bare);
+    git(bare, "init", "-q", "-b", "main");
+    const out = ork({ ...where, root: bare });
+    expect(out.status).toBe(0);
+    expect(out.stdout).toBe("No Ork worktrees or branches.\n");
+    expect(ork({ ...where, root: bare }, "clean", "--yes").status).toBe(1);
+  });
+});
+
+describe("ork worktrees clean --force", () => {
+  it("lists what each item would lose before it asks, and so before --yes", () => {
+    const where = place();
+    git(where.lead, "config", "user.email", "dev@example.com");
+    git(where.lead, "config", "user.name", "Dev");
+    writeFileSync(path.join(where.lead, "done.ts"), "done\n");
+    git(where.lead, "add", "-A");
+    git(where.lead, "commit", "-q", "-m", "add done");
+    writeFileSync(path.join(where.lead, "wip.ts"), "wip\n");
+    const out = ork(where, "clean", "--all", "--branches", "--force", "--yes");
+    expect(out.status).toBe(0);
+    expect(out.stdout).toMatch(
+      /Plan:\n {2}ork\/r1\/lead: remove worktree \+ delete branch\nLoses in ork\/r1\/lead:\nUncommitted changes:\n {2}\?\? wip.ts\nCommits not merged:\n {2}\w+ add done\n/u,
+    );
+    expect(existsSync(where.lead)).toBe(false);
+  });
+
+  it("says nothing of losses when nothing is lost", () => {
+    const where = place();
+    const out = ork(where, "clean", "--all", "--force", "--yes");
+    expect(out.stdout).not.toContain("Loses in");
+  });
+});
+
 describe("a run still going", () => {
   it("keeps its worktree from clean --force and from remove", () => {
-    const where = place();
-    const store = openStore(storePath(where.home));
     // This process stands in for the run's, so the run is alive.
-    store.begin({
-      id: "r1",
-      workflow: "w",
-      file: "/w.ork.yaml",
-      project: where.root,
-    });
-    store.close();
+    const where = place(true);
     const clean = ork(where, "clean", "--all", "--force", "--yes");
     expect(clean.stdout).toContain(
       "ork/r1/lead: keep (its run is still going)",
     );
-    expect(clean.stdout).toContain("Nothing to clean.");
+    expect(clean.stdout).not.toContain("Nothing to clean.");
     const remove = ork(where, "remove", "ork/r1/lead", "--force", "--yes");
     expect(remove.stderr).toContain("run r1 is still going; stop it first");
     expect(existsSync(where.lead)).toBe(true);

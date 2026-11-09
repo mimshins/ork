@@ -38,6 +38,24 @@ export const createLogPrinter = (options: LogOptions) => {
   };
 };
 
+/**
+ * Why `--node` names nothing in this run, or `null`: no event names it and the
+ * run didn't declare it. A live run may still start it, so that is not
+ * refused.
+ */
+export const unknownNode = (
+  stored: readonly StoredEvent[],
+  node: string,
+  live: boolean,
+): string | null => {
+  const named = stored.some(({ event }) => isNodeEvent(event, node));
+  const declared = stored.some(
+    ({ event }) =>
+      event.type === "run.started" && event.nodes.some(n => n.id === node),
+  );
+  return named || declared || live ? null : `Run has no node ${node}.`;
+};
+
 export type FollowOptions = LogOptions & {
   /** Keep printing new events while the run is live. */
   follow: boolean;

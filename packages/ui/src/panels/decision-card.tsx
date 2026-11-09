@@ -27,6 +27,8 @@ export type DecisionCardProps = {
   decision: DecisionRecord;
   /** The workflow its run is of, if known. */
   workflow: string | undefined;
+  /** `ork ui` cannot be reached, so an answer cannot be sent. */
+  unreachable?: boolean;
   onAnswer: (
     id: string,
     choose: string,
@@ -48,6 +50,7 @@ const typedInField = (target: EventTarget): boolean =>
 export const DecisionCard = ({
   decision,
   workflow,
+  unreachable = false,
   onAnswer,
   onOpenRun,
 }: DecisionCardProps) => {
@@ -59,7 +62,7 @@ export const DecisionCard = ({
   const [note, setNote] = useState("");
 
   const answer = async (choice: Choice): Promise<void> => {
-    if (sending) return;
+    if (sending || unreachable) return;
     setSending(true);
     setRefusal(null);
     const done = await onAnswer(id, choice.id, note);
@@ -134,6 +137,7 @@ export const DecisionCard = ({
         }}
         onNote={setNote}
         sending={sending}
+        unreachable={unreachable}
       />
       {refusal === null ? null : (
         <p

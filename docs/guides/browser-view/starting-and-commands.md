@@ -15,6 +15,10 @@ in. Running `ork ui` again opens the one that is running. Ctrl-C stops it; your
 runs keep running, and every `ork` command works without it. It uses your own
 accounts and asks for none of them.
 
+The sign-in link acts as you, so a program or an agent in a run never gets it,
+`--no-open` included: there `ork ui` says to run it in your own terminal
+([ADR-047](../../../decisions/ADR-047-script-identity-env-json.md)).
+
 ## How it keeps other sites out
 
 It listens only on `127.0.0.1`, and only your browser gets in: `ork ui` opens it

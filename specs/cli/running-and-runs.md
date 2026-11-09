@@ -31,16 +31,20 @@ with the built-in node types
   `--in-place` runs every node in this checkout instead.
 - stdout gets one transcript line per event, prefixed with the node id
   (`builder │ …`): each start (with its round), session text and tool calls,
-  each result (`✓ pass: …`, `✓ exit 0`, `✓ merge (user)`), skips and exhausted
-  loops, worktree changes (`⎇ created …`, `merged`, `removed`), and a fanned
-  node's list in plain words (`build │ 5 items`, or
-  `! 12 items, over maxItems 10`; an item's lines carry its id, `build.2`); then
-  the run summary: status, total cost, how many nodes ran and were skipped, how
-  many failures an edge handled (`2 ran, 1 skipped, 1 failure handled`), the
-  worktrees left for you (branch, path, why), the reasons it did not succeed,
-  and a warning for each node that never ran with messages nobody read. `--json`
-  prints the [run events](../scheduler/resuming-and-events.md#run-events) as
-  JSON lines.
+  each result (`✓ pass: …`, `✓ exit 0`, `✓ merge (user)`; a node that failed
+  reads `✗ fail` whatever its report said, and a child that did not merge reads
+  `! pass, merge conflict`), skips and exhausted loops, worktree changes
+  (`⎇ created …`, `merged`, `removed worktree of <branch> (branch kept)`), the
+  line for a question (`decision <id>; answer here or with ork decide` when this
+  terminal answers, `ork decide` when none does; a detached run prints one line
+  saying its terminal is off), and a fanned node's list in plain words
+  (`build │ 5 items`, or `! 12 items, over maxItems 10`; an item's lines carry
+  its id, `build.2`); then the run summary: status, total cost, how many nodes
+  ran and were skipped, how many failures an edge handled
+  (`2 ran, 1 skipped, 1 failure handled`), the worktrees left for you (branch,
+  path, why), the reasons it did not succeed, and a warning for each node that
+  never ran with messages nobody read. `--json` prints the
+  [run events](../scheduler/resuming-and-events.md#run-events) as JSON lines.
 - Integrations are optional: before anything starts, Ork checks only the
   programs the workflow's tool nodes run (`gh` for `tool.gh`, `aws` for
   `tool.aws`, `git` for `tool.git`, a `tool.shell` command's first word unless
@@ -61,7 +65,8 @@ with the built-in node types
   printed; `ork ps`, `ork logs` and `ork tree` read it back.
 - Tool nodes run as declared (their `allow` list is checked first); gates and
   questions use the terminal channel below.
-- Exit code 0 when the run succeeded, 1 otherwise. Ctrl-C interrupts the run.
+- Exit code 0 when the run succeeded, 1 otherwise. Ctrl-C interrupts the run, at
+  a question's prompt too.
 - `--detach` starts the same run in the background with no terminal and prints
   its id once it is recorded; its output goes to `.ork/runs/<run>/output.log`
   and its questions wait for `ork decide`. Follow it with `ork logs <run> -f`.
@@ -131,6 +136,8 @@ first (then the prompt is withdrawn and the transcript shows
 For a node with `forEach`, `ork tree` lists its items under it, in list order,
 each with its state, time and cost, and `--json` carries them as the node's
 children (with `template` and `startedAt`), and the node's `listed`.
+`ork logs --node` on a node or item the run never named and never declared is an
+error, unless `--follow` is on a live run, which may still start it.
 `ork logs --node build` keeps the node's events and its items'; `--node build.2`
 keeps one item's. The same filter serves `GET /api/runs/<id>/events?node=` in
 `ork ui`, and `GET /api/runs/<id>/tree` is this same nested tree.

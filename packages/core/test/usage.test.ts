@@ -22,7 +22,7 @@ import {
   usageReport,
   usageRowsOf,
 } from "../src/index.ts";
-import { createSpend, withOwnSpend } from "../src/run/results.ts";
+import { createSpend, withOwnSpend } from "../src/run/spending.ts";
 import { migrate, MIGRATIONS } from "../src/store/schema.ts";
 import { earlierSpend } from "../src/usage/spend.ts";
 
@@ -505,6 +505,18 @@ describe("a result's own spend", () => {
     expect(costs[0]).toBe(5);
     expect(costs[1]).toBe(0);
     expect(costs[2]).toBeCloseTo(0.2);
+  });
+});
+
+describe("running sessions against the budget", () => {
+  it("counts each running session of a node until the node settles", () => {
+    const counter = createSpend(10);
+    counter.report("n", "a", 3);
+    counter.report("n", "b", 4);
+    counter.report("m", "a", 1);
+    expect(counter.budgetLeft()).toBe(2);
+    counter.settled("n");
+    expect(counter.budgetLeft()).toBe(9);
   });
 });
 

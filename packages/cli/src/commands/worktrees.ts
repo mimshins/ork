@@ -7,6 +7,7 @@
  *   panel keeps and removes exactly what these do.
  */
 
+import { realpathSync } from "node:fs";
 import path from "node:path";
 
 import {
@@ -21,44 +22,57 @@ import {
   planRemove,
   type ProjectWorktrees,
   readWorktrees,
+  repoRoot,
   stepActs,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
-import { confirm, style, write, writeErr } from "../output.ts";
+import { style, write, writeErr } from "../output.ts";
+import { goAhead } from "../project/go-ahead.ts";
 import {
   formatLost,
+  formatLosses,
   formatPlan,
   formatWorktrees,
 } from "../project/worktrees.ts";
 
-/** The repo this folder is in, and what Ork created there; null outside one. */
-const here = async (): Promise<
-  ({ root: string } & ProjectWorktrees) | null
-> => {
-  const root = (await inspectProject(process.cwd()))?.root ?? null;
+type Found = { root: string; runs: string[] } & ProjectWorktrees;
+
+/**
+ * The repo this folder is in, and what Ork created there; null outside one. A
+ * repo with no commit has nothing of Ork's, which only a read says as an empty
+ * list.
+ */
+const here = async (emptyWithoutCommit = false): Promise<Found | null> => {
+  const cwd = process.cwd();
+  const root = (await inspectProject(cwd))?.root ?? null;
   if (root === null) {
+    const bare = emptyWithoutCommit ? await repoRoot(cwd) : null;
+    if (bare !== null) {
+      return { root: bare, items: [], live: new Set(), runs: [] };
+    }
     writeErr("Not in a git repository with a commit.");
     process.exitCode = 1;
     return null;
   }
   const store = openStore();
   try {
-    return { root, ...(await readWorktrees(store, root)) };
+    return {
+      root,
+      runs: store.runs({ project: root }).map(run => run.id),
+      ...(await readWorktrees(store, root)),
+    };
   } finally {
     store.close();
   }
 };
 
-/** Asks before acting, unless `--yes`; without a terminal `--yes` is needed. */
-const goAhead = (yes: boolean, verb: string): Promise<boolean> => {
-  if (yes) return Promise.resolve(true);
-  if (!process.stdin.isTTY) {
-    writeErr(`Pass --yes to ${verb} without a terminal.`);
-    process.exitCode = 1;
-    return Promise.resolve(false);
+const realOr = (target: string): string => {
+  try {
+    return realpathSync(target);
+  } catch {
+    return target;
   }
-  return confirm("Go ahead? [y/N] ");
 };
 
 const done = (lines: readonly string[]): void => {
@@ -66,7 +80,7 @@ const done = (lines: readonly string[]): void => {
 };
 
 const show = async (json: boolean): Promise<void> => {
-  const found = await here();
+  const found = await here(true);
   if (found === null) return;
   if (json) write(JSON.stringify(found.items, undefined, 2));
   else for (const line of formatWorktrees(found.items)) write(line);
@@ -126,7 +140,15 @@ const clean = defineCommand({
     const found = await here();
     if (found === null) return;
     const filter: Parameters<typeof planClean>[1] = { merged: !args.all };
-    if (args.run !== undefined) filter.runId = args.run;
+    if (args.run !== undefined) {
+      const runId = found.runs.find(id => id === args.run);
+      if (runId === undefined) {
+        writeErr(`No run ${args.run} in this project.`);
+        process.exitCode = 1;
+        return;
+      }
+      filter.runId = runId;
+    }
     const steps = planClean(found.items, filter, {
       branches: args.branches,
       force: args.force,
@@ -134,12 +156,22 @@ const clean = defineCommand({
     });
     const acting = steps.filter(s => stepActs(s));
     if (acting.length === 0) {
+      // A plan of keeps explains itself; only an empty one needs saying.
       for (const line of formatPlan(steps)) write(line);
-      write("Nothing to clean.");
+      if (steps.length === 0) write("Nothing to clean.");
       return;
     }
     write("Plan:");
     for (const line of formatPlan(steps)) write(line);
+    if (args.force) {
+      const losses = await Promise.all(
+        acting.map(async step => ({
+          item: step.item,
+          lost: await lostWork(found.root, { step, force: true }),
+        })),
+      );
+      for (const line of formatLosses(losses)) write(line);
+    }
     if (!(await goAhead(args.yes, "clean"))) return;
     done(await applyClean(found.root, acting, args.force));
   },
@@ -173,11 +205,13 @@ const remove = defineCommand({
     const found = await here();
     if (found === null) return;
     const byPath = path.resolve(args.target);
+    // git lists real paths; the user may have typed a symlinked one.
+    const paths = new Set([byPath, realOr(byPath)]);
     const item = found.items.find(
       i =>
         keyOf(i) === args.target ||
         labelOf(i) === args.target ||
-        i.path === byPath,
+        (i.path !== null && paths.has(i.path)),
     );
     const planned = planRemove(
       found,

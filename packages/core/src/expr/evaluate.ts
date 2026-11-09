@@ -275,9 +275,22 @@ export const renderTemplate = (
   parts: TemplatePart[],
   scope: Scope,
   { readable = false }: { readable?: boolean } = {},
-): string =>
-  parts.reduce<string>((text, part) => {
-    if (typeof part === "string") return text + part;
-    const value = evaluate(part.expr, scope);
-    return text + (readable ? readableText(value, text) : stringify(value));
-  }, "");
+): string => {
+  let text = "";
+  let afterList = false;
+  for (const part of parts) {
+    const value = typeof part === "string" ? part : evaluate(part.expr, scope);
+    const piece = readable ? readableText(value, text) : stringify(value);
+    if (piece.trim() === "") {
+      text += piece;
+      continue;
+    }
+    // Markdown reads text straight after a list as part of its last item.
+    text =
+      afterList && !isContainer(value)
+        ? `${text.trimEnd()}\n\n${piece.trimStart()}`
+        : text + piece;
+    afterList = readable && isContainer(value) && depthOf(value) <= 2;
+  }
+  return text;
+};

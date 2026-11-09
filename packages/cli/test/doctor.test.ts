@@ -21,6 +21,7 @@ import { describe, expect, it } from "vitest";
 import {
   checkNode,
   formatCheck,
+  headWarning,
   runChecks,
   socketCheck,
   triggerChecks,
@@ -40,6 +41,7 @@ const fakeExec =
 const loggedIn = {
   "git --version": "git version 2.50.0\n",
   "git rev-parse --is-inside-work-tree": "true\n",
+  "git rev-parse --verify HEAD": "abc123\n",
   "git config user.name": "Some One\n",
   "git config user.email": "someone@example.com\n",
   "claude --version": "2.1.314 (Claude Code)\n",
@@ -65,6 +67,7 @@ describe("ork doctor", () => {
       "node: ok",
       "git: ok",
       "git repo: ok",
+      "git commits: ok",
       "claude (sdk driver): warn",
       "claude (cli driver): ok",
       "gh: ok",
@@ -72,6 +75,27 @@ describe("ork doctor", () => {
       "git identity: ok",
     ]);
     expect(JSON.stringify(results)).not.toContain("someone@example.com");
+  });
+
+  it("warns, and still passes, when the repository has no commit", async () => {
+    const { "git rev-parse --verify HEAD": _, ...noHead } = loggedIn;
+    const { results, ok } = await runChecks(fakeExec(noHead), {}, "24.20.0");
+    expect(ok).toBe(true);
+    expect(results.filter(r => r.name === "git commits")).toMatchObject([
+      { status: "warn", detail: "no commit yet" },
+    ]);
+  });
+
+  it("tells init of a repository with no commit, and of no one else", async () => {
+    const inside = {
+      "git --version": "git version 2.50.0",
+      "git rev-parse --is-inside-work-tree": "true\n",
+    };
+    expect(await headWarning(fakeExec(inside))).toContain("no commit yet");
+    expect(await headWarning(fakeExec(loggedIn))).toBeNull();
+    expect(
+      await headWarning(fakeExec({ "git --version": "git version 2.50.0" })),
+    ).toBeNull();
   });
 
   it("accepts an API key or a cloud provider for the SDK driver", async () => {

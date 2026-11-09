@@ -6,7 +6,7 @@
  *   refuses `ork pause`, `ork continue` and `ork stop --node`.
  */
 
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -213,6 +213,100 @@ describe("a run with no terminal", () => {
     expect(run.out.join("\n")).toContain("ork continue received");
   }, 15_000);
 });
+
+const ONE_ITEM = [
+  "schemaVersion: 1",
+  "name: gated",
+  "nodes:",
+  "  build:",
+  "    type: claude.worker",
+  "    prompt: Build",
+  "    isolation: shared",
+  "    forEach:",
+  "      items: [a]",
+  "",
+].join("\n");
+
+const OVER_ITS_CAP = [
+  "schemaVersion: 1",
+  "name: over",
+  "nodes:",
+  "  plan:",
+  "    type: tool.shell",
+  "    output: { format: json }",
+  '    script: "echo \'{\\"tasks\\":[\\"a\\",\\"b\\",\\"c\\"]}\'"',
+  "  build:",
+  "    type: tool.shell",
+  '    command: "echo hi"',
+  "    forEach:",
+  '      from: "{{nodes.plan.output.json.tasks}}"',
+  "      maxItems: 2",
+  "edges:",
+  "  - plan -> build",
+  "",
+].join("\n");
+
+describe("stopping what waits for an answer", () => {
+  it("withdraws the decision of one item stopped by name", async () => {
+    const run = detachedRun(ONE_ITEM);
+    const decision = await opened(run);
+    expect(decision.node).toBe("build.0");
+    run.store.command(decision.runId, { kind: "stop", node: "build.0" });
+    expect(await wakeRun(socketPath(decision.runId, run.home))).toBe(true);
+    await expect
+      .poll(() => run.store.decision(decision.id)?.status)
+      .toBe("withdrawn");
+    const { result } = await run.done;
+    expect(result?.status).toBe("failed");
+  }, 15_000);
+
+  it("ends a detached run on SIGTERM while a list over its cap waits", async () => {
+    const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-ctl-")));
+    writeFileSync(path.join(dir, "over.ork.yaml"), OVER_ITS_CAP);
+    const home = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-home-")));
+    const child = spawn(
+      process.execPath,
+      [BIN, "run", "over.ork.yaml", "--in-place", "--run-id", "sigterm1"],
+      {
+        cwd: dir,
+        stdio: "ignore",
+        env: detachedEnv(home),
+      },
+    );
+    const exited = new Promise<number | null>(resolve => {
+      child.on("exit", code => {
+        resolve(code);
+      });
+    });
+    try {
+      await expect
+        .poll(() => waitsOnItsList(home, "sigterm1"), { timeout: 20_000 })
+        .toBe(true);
+      child.kill("SIGTERM");
+      expect(await exited).toBe(1);
+    } finally {
+      child.kill("SIGKILL");
+    }
+  }, 40_000);
+});
+
+/** What a detached `ork run` inherits, with only this `~`. */
+const detachedEnv = (home: string) => ({
+  PATH: process.env["PATH"] ?? "",
+  HOME: home,
+  NO_COLOR: "1",
+  ORK_DETACHED: "1",
+});
+
+/** Whether the run recorded `each.exceeded`; no store yet reads as no. */
+const waitsOnItsList = (home: string, id: string): boolean => {
+  const store = openStore(storePath(home));
+  try {
+    return store.events(id).some(({ event }) => event.type === "each.exceeded");
+  } finally {
+    store.close();
+  }
+};
 
 /** A live run of one node in its own `~`, held by this process. */
 const oneNodeRun = () => {

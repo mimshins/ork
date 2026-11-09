@@ -42,6 +42,17 @@ describe("the ask_user tool", () => {
     expect(reply).not.toContain("They said");
   });
 
+  it("reports a failed question as a tool error, not as an answer", async () => {
+    const failing: HumanChannel = {
+      ask: () => Promise.reject(new Error("UNIQUE constraint failed")),
+      permit: () => Promise.resolve({ allow: true }),
+    };
+    const reply = await askedWith(failing);
+    expect(reply).toContain('"isError":true');
+    expect(reply).toContain("UNIQUE constraint failed");
+    expect(reply).not.toContain("chose");
+  });
+
   it("says the note given with the choice", async () => {
     expect(
       await askedWith(person("replace", "Keep the old one too")),

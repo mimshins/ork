@@ -14,7 +14,7 @@ import { defineCommand } from "citty";
 
 import { style, write, writeErr } from "../output.ts";
 import { cost, formatRuns, formatTree } from "../runs/format.ts";
-import { followRun } from "../runs/logs.ts";
+import { followRun, unknownNode } from "../runs/logs.ts";
 import { withStore } from "../store.ts";
 
 export { feedback } from "./feedback.ts";
@@ -83,6 +83,19 @@ export const logs = defineCommand({
       const found = findRun(store, args.run, process.cwd());
       if (!found.ok) {
         writeErr(found.error);
+        process.exitCode = 1;
+        return;
+      }
+      const problem =
+        args.node === undefined
+          ? null
+          : unknownNode(
+              store.events(found.run.id),
+              args.node,
+              args.follow && found.run.status === "running",
+            );
+      if (problem !== null) {
+        writeErr(problem);
         process.exitCode = 1;
         return;
       }

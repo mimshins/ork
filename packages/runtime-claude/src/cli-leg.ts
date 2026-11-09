@@ -9,11 +9,17 @@
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 
-import type { RuntimeEvent, SessionUsage } from "@krapht/ork-core";
+import {
+  maskSecrets,
+  type RuntimeEvent,
+  type SessionUsage,
+} from "@krapht/ork-core";
 
 import { type Leg, legStep } from "./hold.ts";
 
-const STDERR_LINES = 20;
+/** How much of the end of a process's stderr is kept to explain its death. */
+const STDERR_TAIL = 16_384;
+const REASON_LIMIT = 500;
 
 export type LegInput = {
   bin: string;
@@ -38,6 +44,27 @@ const parseLine = (line: string): unknown => {
   }
 };
 
+/** Noise a Node crash ends stderr with, or a stack frame: never the reason. */
+const isNoise = (line: string): boolean =>
+  /^Node\.js v\d/u.test(line) || /^\s+at /u.test(line);
+
+/**
+ * Why a process ended without a result: the last block of its stderr as one
+ * masked, capped line (the reason reaches the terminal, which is not masked).
+ */
+const failureReason = (stderr: string, code: number | null): string => {
+  const block = stderr
+    .split("\n")
+    .filter(line => !isNoise(line))
+    .join("\n")
+    .split(/\n\s*\n/u)
+    .map(text => text.trim().replaceAll(/\s*\n\s*/gu, " "))
+    .findLast(text => text !== "");
+  return block === undefined
+    ? `claude exited with code ${String(code)}`
+    : maskSecrets(block).slice(0, REASON_LIMIT);
+};
+
 /** Runs one `claude` process, yielding its events; returns how it ended. */
 export const runLeg = async function* (
   input: LegInput,
@@ -47,26 +74,30 @@ export const runLeg = async function* (
     env: { ...input.env },
     stdio: ["pipe", "pipe", "pipe"],
   });
-  const exited = new Promise<number | null>(resolve => {
-    child.on("close", code => {
-      resolve(code);
+  const exited = new Promise<{
+    code: number | null;
+    signal: NodeJS.Signals | null;
+  }>(resolve => {
+    child.on("close", (code, signal) => {
+      resolve({ code, signal });
     });
   });
   const spawnError = new Promise<Error>(resolve => {
     child.on("error", resolve);
   });
-  const stderr: string[] = [];
+  let stderr = "";
   child.stderr.setEncoding("utf8");
   child.stderr.on("data", (chunk: string) => {
-    stderr.push(...chunk.split("\n").filter(l => l.trim() !== ""));
-    stderr.splice(0, Math.max(0, stderr.length - STDERR_LINES));
+    stderr = (stderr + chunk).slice(-STDERR_TAIL);
   });
   const write = (line: string) => {
     if (child.stdin.writable) child.stdin.write(line);
   };
+  let stopped = false;
   input.attach({
     write,
     stop: () => {
+      stopped = true;
       child.kill("SIGINT");
     },
   });
@@ -87,16 +118,21 @@ export const runLeg = async function* (
         outcome = ended;
       }
     }
-    const code = await Promise.race([exited, spawnError.then(error => error)]);
-    return (
-      outcome ?? {
+    const end = await Promise.race([exited, spawnError.then(error => error)]);
+    if (outcome !== undefined) return outcome;
+    if (end instanceof Error) {
+      return {
         kind: "failed",
-        reason:
-          code instanceof Error
-            ? `could not start ${input.bin}: ${code.message}`
-            : (stderr.at(-1) ?? `claude exited with code ${String(code)}`),
-      }
-    );
+        reason: `could not start ${input.bin}: ${end.message}`,
+      };
+    }
+    return {
+      kind: "failed",
+      reason:
+        stopped || end.signal !== null
+          ? "interrupted"
+          : failureReason(stderr, end.code),
+    };
   } finally {
     input.attach();
     if (child.exitCode === null) child.kill();

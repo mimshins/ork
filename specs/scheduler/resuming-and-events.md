@@ -15,6 +15,10 @@ under the same run id, with a `Replay` built from the run's events:
   finished; from there it runs. A new result marks its output, and an activation
   whose input carries one (directly, or in a join's `results`) runs too.
   Delegated runs are never handed back: their leader's session runs them.
+- **A run resumed more than once is one history.** A result a later resume
+  recorded extends the node's results, and a new run of a round replaces what
+  that round and later ones recorded, so a source that succeeded in an earlier
+  resume is handed back, not run again.
 - **A node cut off mid-session continues it.** When the run was stopped,
   crashed, ran out of budget or timed out (not when it failed), a node whose
   last activation never finished well resumes the Claude session it had, once,
@@ -28,7 +32,9 @@ under the same run id, with a `Replay` built from the run's events:
     handed back, or it has none (`items:`), so an edited file can't move results
     between items. A source that ran anew gives a new list, and then every item
     runs anew and no cut session continues, since it was another item's. A
-    handed-back list is what the store kept, masked like a handed-back output.
+    handed-back list is what the store kept, masked like a handed-back output. A
+    list resolved anew is marked `anew` on its `each.listed`, which drops what
+    that round's items recorded before, in this resume and any later one.
   - Each item is handed back by its id and its node's round, so items finishing
     in any order get their own result back. An unfinished item runs again, and
     one cut off mid-session continues it. `session: resume` finds the session of
@@ -40,6 +46,9 @@ under the same run id, with a `Replay` built from the run's events:
 - `run.started` carries the run's `inputs` and `settings` (`inPlace`, `driver`),
   which the resumed run starts with; the CLI records `run.resumed` with the
   nodes that keep results first.
+- Decision ids go on from the highest the run stored. A decision the last
+  process left open is withdrawn (`decision.withdrawn`), and its session asks
+  again under a new id.
 - Questions about loops out of rounds, and about lists over their `maxItems`,
   that were answered last time get the same answers again, in order.
 - The bus starts with the run's unread and queued messages
@@ -55,7 +64,7 @@ under the same run id, with a `Replay` built from the run's events:
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `run.started`       | the run starts: id, workflow, entries, every declared node and owner, its edges and channels                                                                             |
 | `node.started`      | an activation starts: id, type, round, `owner` when delegated, `item` (of, index) for an item of a fanned node, and the `agent` that fills it (name, source, file, hash) |
-| `each.listed`       | a fanned node resolved its list (again if cut to `maxItems`): node, round, count, list                                                                                   |
+| `each.listed`       | a fanned node resolved its list (again if cut to `maxItems`): node, round, count, list, `anew` when a resumed run resolved it itself                                     |
 | `each.exceeded`     | a fanned node's list is over `maxItems`: node, round, count, maxItems                                                                                                    |
 | `node.event`        | a runtime event from the node's session or tool                                                                                                                          |
 | `node.finished`     | an activation ends: ok, output, usage, error                                                                                                                             |

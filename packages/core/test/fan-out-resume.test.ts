@@ -251,6 +251,121 @@ const resumes =
     return Promise.resolve(pass("did"));
   };
 
+/** One sitting of `planned`: `first` as given, the list, items labelled. */
+const sitting =
+  (
+    label: string,
+    tasks: string[],
+    ran: string[],
+    firstOk = false,
+  ): NodeExecutor =>
+  context => {
+    if (context.id === "first") {
+      ran.push("first");
+      return Promise.resolve(
+        firstOk ? { ok: true, output: { exitCode: 1 } } : failedOnce(),
+      );
+    }
+    if (context.id === "plan") {
+      ran.push("plan");
+      return Promise.resolve({ ok: true, output: { tasks } });
+    }
+    return made(label, ran)(context);
+  };
+
+/** `plan` lists, `build` runs an item each. */
+const sourced = (): CompiledGraph =>
+  compile([
+    "nodes:",
+    "  plan:",
+    "    type: tool.shell",
+    "    command: x",
+    "  build:",
+    "    type: claude.worker",
+    "    prompt: do it",
+    "    forEach:",
+    '      from: "{{nodes.plan.output.tasks}}"',
+    "      maxItems: 3",
+    "edges:",
+    "  - plan -> build",
+  ]);
+
+/** Fails `plan` once, or `failing` items; everything else passes and is noted. */
+const flaky =
+  (ran: string[], planFails: boolean, failing: string[] = []): NodeExecutor =>
+  context => {
+    ran.push(context.id);
+    if (context.id === "plan") {
+      return Promise.resolve(
+        planFails ? failedOnce() : { ok: true, output: { tasks: ["a", "b"] } },
+      );
+    }
+    return Promise.resolve(
+      failing.includes(context.id) ? failedOnce() : pass(`did ${context.id}`),
+    );
+  };
+
+describe("resuming across earlier resumes", () => {
+  it("keeps the list, and the passed item, on a plain resume after a failed item", async () => {
+    const graph = sourced();
+    const first = await play(graph, flaky([], false, ["build.1"]));
+    const ran: string[] = [];
+    const { result, events } = await play(
+      graph,
+      flaky(ran, false),
+      first.events,
+    );
+    expect(ran).toEqual(["build.1"]);
+    expect(listsOf(events)).toEqual([["a", "b"]]);
+    expect(result.status).toBe("succeeded");
+  });
+
+  it("does not rerun a source that finished in an earlier resume", async () => {
+    const graph = sourced();
+    const first = await play(graph, flaky([], true));
+    const second = await play(
+      graph,
+      flaky([], false, ["build.1"]),
+      first.events,
+    );
+    const ran: string[] = [];
+    const third = await play(graph, flaky(ran, false), [
+      ...first.events,
+      ...second.events,
+    ]);
+    expect(ran).toEqual(["build.1"]);
+    expect(third.result.status).toBe("succeeded");
+  });
+
+  it("hands back the source's latest result, and none of an older list's items", async () => {
+    const graph = planned();
+    const first = await play(graph, sitting("one", ["a", "b", "c"], []));
+    const crash = crashAt(first.events, finishOf("build.0"));
+    const second = await play(
+      graph,
+      sitting("two", ["x", "y", "z"], [], true),
+      crash,
+    );
+    const listedAgain = crashAt(
+      second.events,
+      event => event.type === "each.listed",
+    );
+    const ran: string[] = [];
+    const third = await play(graph, sitting("three", [], ran), [
+      ...crash,
+      ...listedAgain,
+    ]);
+    expect(ran).toEqual(["build.0", "build.1", "build.2"]);
+    expect(finishedOf(third.events, "build").output).toMatchObject({
+      results: [
+        { summary: "three build.0=x" },
+        { summary: "three build.1=y" },
+        { summary: "three build.2=z" },
+      ],
+    });
+  });
+});
+
 describe("resuming a fanned node", () => {
   it("reruns only the items a crash left unfinished", async () => {
     const graph = fanned("{ items: [a, b, c], maxParallel: 1 }");

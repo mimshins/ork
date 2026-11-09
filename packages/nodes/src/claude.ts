@@ -23,7 +23,7 @@ import { beforeOf, type Driver } from "@krapht/ork-schema";
 import { planOptionsOf } from "./claude-plan.ts";
 import { resultOf } from "./claude-result.ts";
 import { namedMcpEntries } from "./mcp-servers.ts";
-import { ownerFirst } from "./owner-asks.ts";
+import { ownerFirst, withdrawnOnStop } from "./owner-asks.ts";
 import {
   afterLateTurn,
   budgetNow,
@@ -164,7 +164,7 @@ export const claudeExecutor =
       // A leader that takes its children's questions answers them first.
       human:
         context.owner === undefined
-          ? context.human
+          ? withdrawnOnStop(context)
           : ownerFirst(context, context.owner, {
               runtimeFor: options.runtimeFor,
               driver: options.driver,

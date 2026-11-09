@@ -3,10 +3,11 @@
  *   (ADR-026). Each node's recorded results, in order, up to its first that
  *   failed or never finished, are handed back by the replay, so the scheduler
  *   rebuilds outputs, rounds, joins and loop counts without running them; the
- *   rest run again, and so does everything a new result feeds. Also: the run's
- *   inputs and settings, its worktrees, the answers to its loops, and a fanned
- *   node's lists and its items' results by round (RFC-013). `replay.ts` hands
- *   them back.
+ *   rest run again, and so does everything a new result feeds. A run resumed
+ *   more than once reads as one history: a later result replaces the earlier
+ *   one at its place. Also: the run's inputs and settings, its worktrees, the
+ *   answers to its loops, and a fanned node's lists and its items' results by
+ *   round (RFC-013). `replay.ts` hands them back.
  */
 
 import { type EarlierSpend, earlierSpend } from "../usage/spend.ts";
@@ -70,6 +71,10 @@ const CUTTING = new Set([
 
 type Open = { sessionId?: string; item?: true };
 
+/** Whether `id` is an item (`<node>.<index>`) of `node`. */
+const isItemOf = (id: string, node: string): boolean =>
+  id.startsWith(`${node}.`) && /^\d+$/u.test(id.slice(node.length + 1));
+
 /** Reads a run's events back into what `ork resume` needs. */
 export const resumeState = (events: readonly RunEvent[]): ResumeState => {
   const history = new Map<string, NodeResult[]>();
@@ -90,21 +95,44 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
   /** Nodes whose last activation did not finish well, and its session. */
   const unfinished = new Map<string, string>();
 
+  /** A new run of `id`'s `round` replaces what is recorded there and after. */
+  const supersede = (id: string, round: number): void => {
+    fanOuts.items.get(id)?.delete(round);
+    const kept = history.get(id)?.slice(0, round - 1);
+    if (kept === undefined) return;
+    if (kept.length === 0) history.delete(id);
+    else history.set(id, kept);
+  };
+
+  /** A list resolved anew: what its items did came from another list. */
+  const forgetItems = (node: string, round: number): void => {
+    for (const [id, rounds] of fanOuts.items) {
+      if (isItemOf(id, node)) rounds.delete(round);
+    }
+    for (const id of unfinished.keys()) {
+      if (isItemOf(id, node)) unfinished.delete(id);
+    }
+  };
+
   for (const event of events) {
     if (event.type === "run.started") {
       inputs = event.inputs ?? inputs;
       settings = event.settings ?? settings;
+      // A resume ran on from where each node stopped, so its results extend.
+      closed.clear();
       continue;
     }
     if (event.type === "node.started") {
       // A delegated run belongs to its leader's session: never handed back.
       if (event.owner === undefined) {
         open.set(event.id, event.item === undefined ? {} : { item: true });
+        supersede(event.id, event.round);
       }
       continue;
     }
     if (event.type === "each.listed") {
       fanOuts.lists.set(listKey(event.node, event.round), event.list);
+      if (event.anew === true) forgetItems(event.node, event.round);
       continue;
     }
     if (event.type === "node.event") {
@@ -133,6 +161,7 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
         }
         continue;
       }
+      unfinished.delete(event.id);
       const result: NodeResult = { ok: true, output: event.output };
       if (event.usage !== undefined) result.usage = event.usage;
       if (current.sessionId !== undefined) {

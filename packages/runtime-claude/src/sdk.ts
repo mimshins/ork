@@ -254,8 +254,13 @@ export const createSdkRuntime = (
         }
       } catch (error) {
         input.close();
+        // After an interrupt, the SDK's own error says nothing more.
         yield driverFailure(
-          error instanceof Error ? error.message : String(error),
+          ended.signal.aborted
+            ? "interrupted"
+            : error instanceof Error
+              ? error.message
+              : String(error),
         );
       }
     };

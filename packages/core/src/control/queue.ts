@@ -5,7 +5,8 @@
  *   other terminal. An answer may carry the person's note, which is stored with
  *   it and handed to whoever asked. A withdrawn question (a gate's timeout) is
  *   closed unanswered. A child's question its leader answered first is recorded
- *   as answered by that owner, with its note (ADR-063).
+ *   as answered by that owner, with its note (ADR-063). A resumed run's ids go
+ *   on from the ones stored, and what its last process left open is withdrawn.
  */
 
 import type { RunEvent } from "../run/types.ts";
@@ -68,7 +69,18 @@ export const createDecisionQueue = (
   options: DecisionQueueOptions,
 ): HumanChannel => {
   const { store, runId, emit } = options;
-  let count = 0;
+  // One process per run: a stored decision is an earlier process's, on resume.
+  const earlier = store.decisions({ runId });
+  let count = Math.max(
+    0,
+    ...earlier.map(({ id }) => Number(id.slice(runId.length + 1)) || 0),
+  );
+  // Nobody waits on these any more: the session that asked will ask again.
+  for (const { id, node, status } of earlier) {
+    if (status !== "open") continue;
+    store.withdrawDecision(id);
+    emit({ type: "decision.withdrawn", node, decision: id });
+  }
 
   /** Opens a decision and settles it with the first answer. */
   const decide = (
@@ -272,6 +284,7 @@ export const createDecisionQueue = (
                     : { answer: choice, note: said };
                 });
             },
+        request.signal,
       );
       if (note !== undefined) request.onNote?.(note);
       return answer === "allow"

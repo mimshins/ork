@@ -48,7 +48,9 @@ back on the same card. When decisions come from more than one run, **Workflow**
 and **Run** filters appear, each choice with its count, and a line says how many
 the filter hides; only the panel is filtered, and the filters stay as you left
 them in this browser. In the Monitor, a run with open decisions shows **N
-decisions waiting**, which opens them filtered to that run.
+decisions waiting**, which opens them filtered to that run. If `ork ui` stops
+while you read, the answer buttons turn off and each option shows its
+`ork decide` command.
 
 **Chats** keeps one thread per leader or worker, with what it said, what you
 said, and what it did in between. While the run is live, `Enter` sends and

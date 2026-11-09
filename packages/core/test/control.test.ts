@@ -179,6 +179,22 @@ describe("the decision queue", () => {
     await control.close();
   });
 
+  it("closes a withdrawn permission prompt unanswered", async () => {
+    const { store, events, control } = await setup();
+    const withdraw = new AbortController();
+    const answer = control.human.permit({
+      nodeId: "n",
+      toolName: "Bash",
+      input: { command: "ls" },
+      signal: withdraw.signal,
+    });
+    withdraw.abort();
+    await expect(answer).rejects.toThrow("withdrawn");
+    expect(store.decision("r1-1")?.status).toBe("withdrawn");
+    expect(events.at(-1)?.type).toBe("decision.withdrawn");
+    await control.close();
+  });
+
   it("closes a withdrawn question unanswered", async () => {
     const { store, events, control } = await setup();
     const withdraw = new AbortController();
@@ -213,6 +229,48 @@ describe("the decision queue", () => {
 const NOTES_MIGRATION = MIGRATIONS.findIndex(
   step => typeof step === "string" && step.includes("ADD COLUMN note"),
 );
+
+const ignore = (): void => {
+  // Nothing in these tests stops or messages it.
+};
+
+/** A second process on the same run: the store and home of the first. */
+const reopen = (store: EventStore, home: string, events: RunEvent[]) =>
+  startControl({
+    store,
+    runId: "r1",
+    home,
+    intervalMs: 60_000,
+    emit: event => {
+      events.push(event);
+    },
+    onStop: ignore,
+    onMessage: ignore,
+  });
+
+describe("a resumed run's decisions", () => {
+  it("goes on from the ids stored, and withdraws what the last process left open", async () => {
+    const { store, home, events, control } = await setup();
+    const left = control.human.ask(QUESTION);
+    left.catch(() => null);
+    await control.close();
+
+    const second = await reopen(store, home, events);
+    const asked = second.human.ask(QUESTION);
+    expect(store.decision("r1-1")).toMatchObject({ status: "withdrawn" });
+    expect(store.decision("r1-2")).toMatchObject({ status: "open" });
+    expect(store.answerDecision("r1-2", "merge", "decide")).toBe(true);
+    expect(await wakeRun(socketPath("r1", home))).toBe(true);
+    expect(await asked).toBe("merge");
+    expect(events.map(e => e.type)).toEqual([
+      "decision.opened",
+      "decision.withdrawn",
+      "decision.opened",
+      "decision.answered",
+    ]);
+    await second.close();
+  });
+});
 
 describe("decision notes in the store", () => {
   it("reads a decision answered before notes as one without a note", () => {

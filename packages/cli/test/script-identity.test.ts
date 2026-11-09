@@ -153,7 +153,8 @@ nodes:
     const done = spawnSync(process.execPath, [BIN, "run", file], {
       cwd: sub,
       encoding: "utf8",
-      env: { ...process.env, HOME: place.home },
+      // Not the detached copy a run inside Ork may be: that one says so on stderr.
+      env: { ...process.env, ORK_DETACHED: "", HOME: place.home },
     });
     expect(done.stderr).toBe("");
     expect(done.status).toBe(0);

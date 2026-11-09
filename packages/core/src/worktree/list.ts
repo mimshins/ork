@@ -21,6 +21,11 @@ export type OrkWorktree = {
   checkedOut?: string;
   runId: string;
   nodeId: string;
+  /**
+   * A run recorded creating it. An `ork/` branch no run recorded is the user's:
+   * listed, never removed or deleted.
+   */
+  recorded: boolean;
   /** `null` for a branch without a worktree. */
   path: string | null;
   /** The worktree's directory is gone; clean and remove drop it by its path. */
@@ -124,6 +129,7 @@ const stateOf = async (
   root: string,
   entries: readonly Entry[],
   item: CreatedWorktree,
+  recorded: boolean,
 ): Promise<OrkWorktree> => {
   const { branch } = item;
   // A recorded worktree is the one at its recorded path, whatever branch it
@@ -161,6 +167,7 @@ const stateOf = async (
     ...(checkedOut === undefined ? {} : { checkedOut }),
     runId: item.runId,
     nodeId: item.nodeId,
+    recorded,
     path: entry?.path ?? null,
     missing,
     dirty: changes > 0,
@@ -196,14 +203,18 @@ export const listOrkWorktrees = async (
   );
   const recordedBranches = new Set(created.flatMap(c => c.branch ?? []));
   const items = [
-    ...created.filter(c =>
-      c.branch === undefined
-        ? entries.some(e => e.path === c.path)
-        : branches.includes(c.branch),
-    ),
+    ...created
+      .filter(c =>
+        c.branch === undefined
+          ? entries.some(e => e.path === c.path)
+          : branches.includes(c.branch),
+      )
+      .map(item => ({ item, recorded: true })),
     ...branches
       .filter(b => b.startsWith(BRANCH_PREFIX) && !recordedBranches.has(b))
-      .map(b => prefixed(b)),
+      .map(b => ({ item: prefixed(b), recorded: false })),
   ];
-  return Promise.all(items.map(item => stateOf(root, entries, item)));
+  return Promise.all(
+    items.map(({ item, recorded }) => stateOf(root, entries, item, recorded)),
+  );
 };

@@ -28,6 +28,7 @@ export const row = (
     ahead: 0,
     merged: true,
     inMainCheckout: false,
+    recorded: true,
     key: label,
     label,
     state: "merged",

@@ -157,7 +157,10 @@ export const warningLines = (report: FileReport): string[] =>
     .map(d => diagnosticLine(report.file, d));
 
 /** Human-readable report, one line per diagnostic, compiler style. */
-export const formatReport = (report: FileReport): string[] => {
+export const formatReport = (
+  report: FileReport,
+  showsPaths = false,
+): string[] => {
   const lines = report.diagnostics.map(d => diagnosticLine(report.file, d));
   const errors = report.diagnostics.filter(d => d.severity === "error").length;
   const warnings = report.diagnostics.length - errors;
@@ -182,7 +185,7 @@ export const formatReport = (report: FileReport): string[] => {
       )}`,
     );
   }
-  return [...lines, ...walkLine(report.walk)];
+  return [...lines, ...walkLine(report.walk, showsPaths)];
 };
 
 export const validate = defineCommand({
@@ -254,7 +257,7 @@ export const validate = defineCommand({
       write(JSON.stringify(reports, undefined, 2));
     } else {
       for (const report of reports) {
-        for (const line of formatReport(report)) write(line);
+        for (const line of formatReport(report, args.paths)) write(line);
         if (args.paths) for (const line of pathLines(report.walk)) write(line);
       }
     }

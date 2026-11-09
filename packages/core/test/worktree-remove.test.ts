@@ -17,6 +17,7 @@ import {
   applyClean,
   applyRemove,
   type CleanStep,
+  type CreatedWorktree,
   listOrkWorktrees,
   liveRunIds,
   lostWork,
@@ -25,16 +26,31 @@ import {
   planClean,
   planLine,
   planRemove,
-  readWorktrees,
   removeRefusal,
   stateParts,
 } from "../src/index.ts";
 import { repo, sh, write } from "./fixtures/git.ts";
 
-/** A worktree on `ork/r1/<node>` beside the repo, with its folder. */
+/** What the runs of each test repository recorded creating. */
+const recorded = new Map<string, CreatedWorktree[]>();
+
+const record = (
+  root: string,
+  node: string,
+  place: string,
+  run = "r1",
+): void => {
+  recorded.set(root, [
+    ...(recorded.get(root) ?? []),
+    { runId: run, nodeId: node, path: place, branch: `ork/${run}/${node}` },
+  ]);
+};
+
+/** A worktree on `ork/r1/<node>` beside the repo, with its folder; recorded. */
 const worktree = (root: string, node: string): string => {
   const place = path.join(path.dirname(root), `ork-r1-${node}`);
   sh(root, "worktree", "add", "--quiet", "-b", `ork/r1/${node}`, place);
+  record(root, node, place);
   return place;
 };
 
@@ -51,7 +67,7 @@ const firstOf = (items: readonly OrkWorktree[]): OrkWorktree => {
 };
 
 const read = async (root: string, live: readonly string[] = []) => ({
-  ...(await readWorktrees(openStore(":memory:"), root)),
+  items: await listOrkWorktrees(root, recorded.get(root) ?? []),
   live: new Set(live),
 });
 
@@ -151,6 +167,7 @@ describe("removing one worktree", () => {
   it("deletes a branch with no worktree, which is what removing it means", async () => {
     const root = repo();
     sh(root, "branch", "ork/r2/docs");
+    record(root, "docs", "", "r2");
     const plan = planned(await read(root), "ork/r2/docs");
     expect([plan.step.removeWorktree, plan.step.deleteBranch]).toEqual([
       false,
@@ -179,8 +196,8 @@ describe("removing one worktree", () => {
     expect(
       (await read(root)).items.map(i => [i.branch, i.path, i.missing]),
     ).toEqual([
-      ["ork/r1/docs", docs, true],
       ["ork/r1/lead", null, false],
+      ["ork/r1/docs", docs, true],
     ]);
   });
 
@@ -200,6 +217,39 @@ const gitWorktrees = (root: string): string[] =>
     .split("\n")
     .filter(line => line.startsWith("worktree "))
     .map(line => line.slice("worktree ".length));
+
+describe("a branch no run recorded", () => {
+  it("is listed as not created by Ork, and kept by clean and remove", async () => {
+    const root = repo();
+    sh(root, "branch", "ork/manual-keep");
+    const found = await read(root);
+    expect(found.items.map(i => [i.branch, i.recorded])).toEqual([
+      ["ork/manual-keep", false],
+    ]);
+    expect(stateParts(firstOf(found.items))).toContainEqual({
+      text: "not created by Ork",
+      risk: false,
+    });
+    const steps = planClean(
+      found.items,
+      { merged: false },
+      { branches: true, force: true },
+    );
+    expect(steps.map(s => [s.removeWorktree, s.deleteBranch, s.skip])).toEqual([
+      [false, false, "not created by Ork"],
+    ]);
+    expect(await applyClean(root, steps, true)).toEqual([]);
+    expect(planRemove(found, "ork/manual-keep", true)).toEqual({
+      ok: false,
+      gone: false,
+      error:
+        "Can't remove ork/manual-keep: not created by Ork (no run recorded it); delete it with git if it's yours to delete.",
+    });
+    expect(sh(root, "branch", "--list", "ork/manual-keep")).toContain(
+      "ork/manual-keep",
+    );
+  });
+});
 
 describe("cleaning beside the user's own worktrees", () => {
   it("drops only its own missing worktree, never one of the user's", async () => {
@@ -283,6 +333,7 @@ describe("the words", () => {
     ahead: 2,
     merged: false,
     inMainCheckout: false,
+    recorded: true,
   };
   const keep: CleanStep = {
     item,

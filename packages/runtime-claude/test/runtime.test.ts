@@ -466,6 +466,28 @@ describe("the CLI driver", () => {
     expect(await cacheOf(spec, "worker")).toBe("");
   });
 
+  it("has a stand-in claude that asks nothing, spends a set cost and edits a file", async () => {
+    const { human, asked } = recordingHuman();
+    const cwd = mkdtempSync(path.join(tmpdir(), "ork-fake-"));
+    const env = {
+      ...process.env,
+      FAKE_CLAUDE_NO_ASK: "1",
+      FAKE_CLAUDE_COST: "5.5",
+      FAKE_CLAUDE_EDIT: "out.txt",
+    };
+    const session = createCliRuntime({ bin: FAKE_CLAUDE, env }).start(
+      { ...spec, cwd },
+      { human },
+    );
+    const events = await collect(session.events);
+    expect(asked).toEqual([]);
+    expect(events.at(-1)).toMatchObject({
+      type: "session.finished",
+      outcome: { usage: { costUsd: 5.5 } },
+    });
+    expect(readFileSync(path.join(cwd, "out.txt"), "utf8")).not.toBe("");
+  });
+
   it("reports a missing claude binary as a failed session", async () => {
     const { human } = recordingHuman();
     const session = createCliRuntime({ bin: "/nonexistent/claude" }).start(

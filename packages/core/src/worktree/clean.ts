@@ -39,6 +39,7 @@ export const keyOf = (item: OrkWorktree): string =>
 /** The reasons no `force` overrides: removing would break something. */
 const MAIN_CHECKOUT = "checked out in the main checkout";
 const RUN_GOING = "its run is still going";
+const NOT_ORKS = "not created by Ork";
 
 const kept = (item: OrkWorktree, skip: string): CleanStep => ({
   item,
@@ -52,6 +53,7 @@ export const cleanStep = (
   item: OrkWorktree,
   options: CleanOptions,
 ): CleanStep => {
+  if (!item.recorded) return kept(item, NOT_ORKS);
   if (item.inMainCheckout) return kept(item, MAIN_CHECKOUT);
   if (item.heldBy !== undefined) {
     return kept(item, `checked out in ${item.heldBy}`);
@@ -99,7 +101,8 @@ export const stepActs = (step: CleanStep): boolean =>
  * What `ork worktrees clean` would do. A worktree with uncommitted changes, an
  * unmerged branch, or a detached worktree holding commits no branch has, is
  * kept unless `force`; one checked out in the main checkout or in a worktree
- * Ork didn't create, or whose run is still going, is kept even then.
+ * Ork didn't create, whose run is still going, or an `ork/` branch no run
+ * recorded creating, is kept even then.
  */
 export const planClean = (
   items: readonly OrkWorktree[],

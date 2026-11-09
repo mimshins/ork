@@ -129,7 +129,12 @@ describe("a recorded run", () => {
       status: "succeeded",
       project: s.dir,
     });
-    expect(lines).toEqual(s.out);
+    // The log cannot know a terminal was asking; the live run said so.
+    expect(lines).toEqual(
+      s.out.map(line =>
+        line.replace("answer here or with ork decide", "ork decide"),
+      ),
+    );
     const publishOnly = await logLines(s, "publish");
     expect(publishOnly.lines.length).toBeGreaterThan(0);
     expect(publishOnly.lines.every(l => l.includes("publish"))).toBe(true);

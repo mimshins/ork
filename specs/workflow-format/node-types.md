@@ -62,11 +62,13 @@ _Part of [Workflow file format](../workflow-format.md)._
   take `forEach:`, a list to run the node once for each item of. It is
   `{ items: [...] }` (at least one entry, written in the file) or
   `{ from: "{{nodes.plan.output.tasks}}", maxItems: 8 }` (one path to an earlier
-  node's list, with a required cap), and in both `maxParallel` (default
-  `limits.concurrency`) and `onFailure` (`finish`, the default, or `stop`). The
-  schema refuses `from` without `maxItems`, and `forEach` on a leader, a gate, a
-  sub-agent or a control node
-  ([RFC-013](../../rfcs/archived/RFC-013-for-each.md)). In its `prompt`,
+  node's list, with a required cap; a tool's JSON is read as
+  `output.json.<field>`, and validate says so), and in both `maxParallel`
+  (default `limits.concurrency`) and `onFailure` (`finish`, the default, or
+  `stop`). The schema refuses `from` without `maxItems`, an empty `items`,
+  `maxItems: 0` and a `forEach` that is not a map, each with a message that says
+  what to write, and `forEach` on a leader, a gate, a sub-agent or a control
+  node ([RFC-013](../../rfcs/archived/RFC-013-for-each.md)). In its `prompt`,
   `command`, `arguments`, `inputs`, `env` and `ref`, `{{item}}` and `{{index}}`
   read the item and its place; a later node reads what it gathers (`items`,
   `results`, `statuses`, `count`). What `ork validate` checks is in the

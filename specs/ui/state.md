@@ -93,6 +93,9 @@ current: a server that went away reads "No answer", and one restarted with a new
 token reads "Not signed in". A sign-in from another tab heals the page, since
 the attempts never stop. Beside it are the counts of live runs and open
 decisions, outside the live region: they change too often to read out.
+`isUnreachable(connection)` (the stream is lost, or the health check failed) is
+the one test for "cannot reach `ork ui`", used for that line and by the
+Decisions panel.
 
 ## A run's feed
 

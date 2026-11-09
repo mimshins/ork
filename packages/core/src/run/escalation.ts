@@ -122,18 +122,33 @@ export const createLoops = (options: LoopOptions) => {
 
   /**
    * What a list over its cap runs: asked of a live owner, then the human. All
-   * of it, the first `maxItems`, or `null` to stop.
+   * of it, the first `maxItems`, or `null` to stop. A stop (`signal`) ends the
+   * wait and withdraws the question; the list comes back whole, and nothing of
+   * it starts because the stop also bars its items.
    */
   const overList = async (
     node: string,
     list: unknown[],
     maxItems: number,
     round: number,
+    signal: AbortSignal,
   ): Promise<unknown[] | null> => {
     const question = eachQuestion(node, list.length, maxItems, round);
-    const choice =
+    const asking = async (): Promise<string | null> =>
       (await options.bus?.askOwner(node, question)) ??
-      (await options.human.ask({ nodeId: node, ...question }));
+      (signal.aborted
+        ? null
+        : options.human.ask({ nodeId: node, ...question, signal }));
+    const stopped = Promise.withResolvers<null>();
+    signal.addEventListener(
+      "abort",
+      () => {
+        stopped.resolve(null);
+      },
+      { once: true },
+    );
+    const choice = await Promise.race([asking(), stopped.promise]);
+    if (signal.aborted) return list;
     if (choice === EACH_CHOICES.first) return list.slice(0, maxItems);
     return choice === EACH_CHOICES.all ? list : null;
   };

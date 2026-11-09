@@ -16,17 +16,23 @@ import { answerCommand, type Choice, choiceLabel } from "./decisions-model.ts";
 
 import styles from "./decisions.module.css";
 
+// A tip's label marks `ork ui` as code; a screen reader gets it plain.
+const UNREACHABLE = "Cannot answer here: `ork ui` is not reachable.";
+const PLAIN_UNREACHABLE = "Cannot answer here: ork ui is not reachable";
+
 export const DecisionAnswer = ({
   decision,
   note,
   onNote,
   sending,
+  unreachable,
   onChoose,
 }: {
   decision: DecisionRecord;
   note: string;
   onNote: (note: string) => void;
   sending: boolean;
+  unreachable: boolean;
   onChoose: (choice: Choice) => void;
 }) => (
   <>
@@ -48,14 +54,21 @@ export const DecisionAnswer = ({
         const digit = index < 9 ? String(index + 1) : undefined;
         return (
           <li key={choice.id}>
-            <Tip cli={command}>
+            <Tip
+              cli={command}
+              label={unreachable ? UNREACHABLE : undefined}
+            >
               <button
-                {...cliDescription(command)}
-                aria-disabled={sending ? "true" : undefined}
+                {...cliDescription(
+                  command,
+                  unreachable ? PLAIN_UNREACHABLE : undefined,
+                )}
+                aria-disabled={sending || unreachable ? "true" : undefined}
                 aria-keyshortcuts={digit}
                 className={styles["option"]}
                 data-option=""
                 data-recommended={isRecommended ? "" : undefined}
+                data-unreachable={unreachable ? "" : undefined}
                 onClick={() => {
                   onChoose(choice);
                 }}
@@ -71,6 +84,9 @@ export const DecisionAnswer = ({
                       {choice.description}
                     </span>
                   )}
+                  {unreachable ? (
+                    <code className={styles["optionCommand"]}>{command}</code>
+                  ) : null}
                 </span>
                 {isRecommended ? (
                   <span className={styles["optionMark"]}>recommended</span>

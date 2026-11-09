@@ -341,6 +341,31 @@ describe("a child's question to its owner", () => {
     expect(asked[0]?.signal?.aborted).toBe(true);
   });
 
+  it("withdraws a permission prompt from the person when the node stops", async () => {
+    const { human } = person();
+    const signals: (AbortSignal | undefined)[] = [];
+    const stop = new AbortController();
+    const { runtime } = forking({ choice: "ask-user" });
+    const channel = ownerFirst(
+      contextOf(
+        {
+          ...human,
+          permit: ({ signal }) => {
+            signals.push(signal);
+            return Promise.resolve({ allow: true });
+          },
+        },
+        stop.signal,
+      ),
+      ownerPort("lead-1").port,
+      { runtimeFor: () => Promise.resolve(runtime), inPlace: true },
+    );
+    await channel.permit({ nodeId: "work", toolName: "Bash", input: {} });
+    expect(signals[0]?.aborted).toBe(false);
+    stop.abort();
+    expect(signals[0]?.aborted).toBe(true);
+  });
+
   it("starts no fork while the node is held", async () => {
     const { human } = person();
     const { runtime, specs } = forking({ choice: "b" });

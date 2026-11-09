@@ -177,6 +177,29 @@ describe("ork resume", () => {
     });
   });
 
+  it("asks a resumed run's questions under new ids, not a store error", async () => {
+    const s = setup(
+      `${WORKFLOW}  - publish -> check\n`.replace(
+        "edges:",
+        "  check:\n    type: claude.worker\n    isolation: shared\n    prompt: check\nedges:",
+      ),
+    );
+    expect((await s.run(exits(1))).result?.status).toBe("failed");
+    const record = only(s.store);
+    const again = await s.run(exits(0), {
+      inputs: [],
+      inPlace: true,
+      runId: record.id,
+      resume: readyToResume(s.store, record).state,
+    });
+    expect(again.result?.status).toBe("succeeded");
+    expect(again.out.join("\n")).not.toContain("UNIQUE");
+    expect(s.store.decisions({ runId: record.id }).map(d => d.id)).toEqual([
+      `${record.id}-1`,
+      `${record.id}-2`,
+    ]);
+  });
+
   it("keeps what a watching program kept, until the run has succeeded", async () => {
     const s = setup();
     writeFileSync(path.join(s.dir, "kept.ork.yaml"), KEEPING);

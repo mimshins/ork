@@ -12,6 +12,7 @@ the card, Markdown, folding and the document dialog.
 - [The filter bar](#the-filter-bar)
 - [Monitor control](#monitor-control)
 - [Keys, names and copy](#keys-names-and-copy)
+- [When `ork ui` is unreachable](#when-ork-ui-is-unreachable)
 - [Tokens](#tokens)
 
 ## The filter bar
@@ -88,9 +89,32 @@ Copy, exact:
 - Non-link target: `ADR-068 (decisions/ADR-068-document-field.md)`.
 - Image: `image: diagram of the flow`.
 
+## When `ork ui` is unreachable
+
+`isUnreachable(connection)`
+([app-state.ts](../../packages/ui/src/state/app-state.ts): the stream is `lost`,
+or the health check failed; not while first `connecting`) turns the open cards
+read-only. The list stays as last received.
+
+- **One notice per panel**, above the cards and only when a card is shown (the
+  empty state already teaches `ork decide`): an alert icon and "Cannot answer
+  here: `ork ui` is not reachable. Answer from a terminal with the command under
+  each option." It is a plain paragraph, not a live region: the status bar
+  already says the reason aloud. It never moves focus and leaves silently.
+- **Each option** is `aria-disabled="true"` (not `disabled`, so it stays in the
+  tab order, readable, with its tooltip), `data-unreachable`, flat and muted
+  (the recommended option loses its amber surface; "recommended" stays), and
+  shows its `ork decide` command on a line of its own, with the typed note in
+  it. Its `aria-description` begins "Cannot answer here: ork ui is not
+  reachable".
+- **Keys:** a click, a digit or `Enter` on the card does nothing and sets no
+  refusal. The note, **Open run** and the copy buttons stay enabled.
+- When the server returns, the notice goes and the options answer again.
+
 ## Tokens
 
 No new semantic tokens: text, muted text, link, strong border, sunken surface
+
 and the focus ring are the existing pairings in
 [pairings.ts](../../packages/ui/test/pairings.ts), which already cover them on
 every surface (the card on `--surface-panel`, the dialog on `--surface-raised`,

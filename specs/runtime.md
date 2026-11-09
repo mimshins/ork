@@ -54,23 +54,23 @@ A Claude node ends with **structured output**, not a tool call
 
 ## The drivers
 
-| Concern               | SDK driver ([sdk.ts](../packages/runtime-claude/src/sdk.ts))                                         | CLI driver ([cli.ts](../packages/runtime-claude/src/cli.ts))                                |
-| --------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Process               | `query()` from `@anthropic-ai/claude-agent-sdk`, in Ork's process                                    | the user's own `claude -p --input-format stream-json --output-format stream-json --verbose` |
-| Credentials           | **Refuses to start** without `ANTHROPIC_API_KEY` or `CLAUDE_CODE_USE_BEDROCK`/`_VERTEX`/`_FOUNDRY=1` | whatever the user's `claude` is logged in with; Ork never reads it                          |
-| Brief and later input | an input queue of user messages; the first result closes it                                          | stream-json lines on stdin; the first result ends stdin                                     |
-| System prompt         | `{ type: "preset", preset: "claude_code", append, excludeDynamicSections: true }`                    | `--append-system-prompt`, `--exclude-dynamic-system-prompt-sections`                        |
-| Report                | `outputFormat: { type: "json_schema", schema }`                                                      | `--json-schema`                                                                             |
-| Ork's tools           | an in-process SDK MCP server named `ork`; `strictMcpConfig: true` unless `machineClaude`             | Ork's local MCP server, passed with `--mcp-config`; `--strict-mcp-config` unless the same   |
-| Permission prompts    | `canUseTool` → `HumanChannel.permit`                                                                 | `--permission-prompt-tool mcp__ork__permission` → `HumanChannel.permit`                     |
-| Tool rules            | `allowedTools` (+ Ork's preapproved tools), `disallowedTools`                                        | `--allowedTools` (+ the same), `--disallowedTools`                                          |
-| Model and effort      | `model`, `effort`                                                                                    | `--model`, `--effort`                                                                       |
-| Ork's skills          | `plugins: [{ type: "local", path }]`                                                                 | `--plugin-dir`                                                                              |
-| Extra settings        | `settings` (e.g. `skillOverrides`)                                                                   | `--settings <json>`                                                                         |
-| Limits and resume     | `maxTurns`, `maxBudgetUsd`, `resume`                                                                 | `--max-turns`, `--max-budget-usd`, `--resume`                                               |
-| A leader's cache      | `env` with `ENABLE_PROMPT_CACHING_1H=1`                                                              | the same variable in the `claude` process's environment                                     |
-| Auto-memory           | `env` with `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` unless `machineClaude`                                | the same variable in the `claude` process's environment                                     |
-| A failure to start    | a `session.finished` event with `subtype: "error_driver"`                                            | the same, with the last stderr line                                                         |
+| Concern               | SDK driver ([sdk.ts](../packages/runtime-claude/src/sdk.ts))                                         | CLI driver ([cli.ts](../packages/runtime-claude/src/cli.ts))                                                         |
+| --------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Process               | `query()` from `@anthropic-ai/claude-agent-sdk`, in Ork's process                                    | the user's own `claude -p --input-format stream-json --output-format stream-json --verbose`                          |
+| Credentials           | **Refuses to start** without `ANTHROPIC_API_KEY` or `CLAUDE_CODE_USE_BEDROCK`/`_VERTEX`/`_FOUNDRY=1` | whatever the user's `claude` is logged in with; Ork never reads it                                                   |
+| Brief and later input | an input queue of user messages; the first result closes it                                          | stream-json lines on stdin; the first result ends stdin                                                              |
+| System prompt         | `{ type: "preset", preset: "claude_code", append, excludeDynamicSections: true }`                    | `--append-system-prompt`, `--exclude-dynamic-system-prompt-sections`                                                 |
+| Report                | `outputFormat: { type: "json_schema", schema }`                                                      | `--json-schema`                                                                                                      |
+| Ork's tools           | an in-process SDK MCP server named `ork`; `strictMcpConfig: true` unless `machineClaude`             | Ork's local MCP server, passed with `--mcp-config`; `--strict-mcp-config` unless the same                            |
+| Permission prompts    | `canUseTool` → `HumanChannel.permit`                                                                 | `--permission-prompt-tool mcp__ork__permission` → `HumanChannel.permit`                                              |
+| Tool rules            | `allowedTools` (+ Ork's preapproved tools), `disallowedTools`                                        | `--allowedTools` (+ the same), `--disallowedTools`                                                                   |
+| Model and effort      | `model`, `effort`                                                                                    | `--model`, `--effort`                                                                                                |
+| Ork's skills          | `plugins: [{ type: "local", path }]`                                                                 | `--plugin-dir`                                                                                                       |
+| Extra settings        | `settings` (e.g. `skillOverrides`)                                                                   | `--settings <json>`                                                                                                  |
+| Limits and resume     | `maxTurns`, `maxBudgetUsd`, `resume`                                                                 | `--max-turns`, `--max-budget-usd`, `--resume`                                                                        |
+| A leader's cache      | `env` with `ENABLE_PROMPT_CACHING_1H=1`                                                              | the same variable in the `claude` process's environment                                                              |
+| Auto-memory           | `env` with `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` unless `machineClaude`                                | the same variable in the `claude` process's environment                                                              |
+| A failure to start    | a `session.finished` event with `subtype: "error_driver"`                                            | the same, with the last stderr block (banner and stack dropped, capped, masked); `interrupted` on a signal or a stop |
 
 ## Which driver a session uses
 

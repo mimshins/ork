@@ -45,7 +45,8 @@ with parsed conditions), the entry nodes, and the declared message channels.
   its edges' `when:` can read `statuses` and `count`. `from` must be exactly one
   path (`forEach.from-path`) to a list the source declares as `{ list: … }`
   (`forEach.not-list` when it declares something else, `forEach.undeclared` as a
-  warning when nothing declares it) and to a node that runs before
+  warning when nothing declares it, or, for a tool's field read outside `json`,
+  naming `output.json.<field>`) and to a node that runs before
   (`forEach.order`). `{{item}}` and `{{index}}` are read only in a fanned node's
   `prompt`, `command`, `arguments`, `inputs`, `env` and `ref` (`item.outside`,
   also for `instructions`, `context`, `skills`, `before:`, `verify:` and

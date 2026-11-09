@@ -12,8 +12,21 @@ import {
 
 import { plain, style } from "../output.ts";
 
-export const walkLine = (walk: WalkResult | undefined): string[] =>
-  walk === undefined ? [] : [style("dim", walkSummary(walk))];
+/** The walk's one line; unless `--paths` is on, it points there for each ending. */
+export const walkLine = (
+  walk: WalkResult | undefined,
+  showsPaths = false,
+): string[] =>
+  walk === undefined
+    ? []
+    : [
+        style(
+          "dim",
+          showsPaths
+            ? walkSummary(walk)
+            : `${walkSummary(walk)} See each with \`ork validate --paths\`.`,
+        ),
+      ];
 
 const endingLine = ({ status, notRun, paths }: WalkEnding): string => {
   const ways = `${String(paths)} ${paths === 1 ? "way" : "ways"}`;

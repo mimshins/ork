@@ -14,6 +14,7 @@ import { previewInput } from "../human.ts";
 import { cost, style } from "../output.ts";
 import { firstLine, formatBusEvent } from "./format-bus.ts";
 import { formatRunResult } from "./format-result.ts";
+import { hasConflict, nodeVerdict } from "./verdict.ts";
 
 /** Who answered a decision, as the log says it. */
 const ANSWERED_BY: Record<AnsweredBy, string> = {
@@ -115,20 +116,6 @@ export const formatEvent = (
   return formatOutcome(nodeId, event.outcome);
 };
 
-/** A one-line verdict for a finished node, by what its type outputs. */
-export const nodeVerdict = (output: Record<string, unknown>): string => {
-  const { status, summary, exitCode, choice, answeredBy, count } = output;
-  if (typeof status === "string") {
-    return typeof summary === "string" && summary !== ""
-      ? `${status}: ${summary}`
-      : status;
-  }
-  if (typeof exitCode === "number") return `exit ${String(exitCode)}`;
-  if (typeof choice === "string") return `${choice} (${String(answeredBy)})`;
-  if (typeof count === "number") return `${String(count)} ran`;
-  return "done";
-};
-
 const items = (count: number): string =>
   `${String(count)} ${count === 1 ? "item" : "items"}`;
 
@@ -137,6 +124,8 @@ export const formatRunEvent = (
   event: RunEvent,
   width: number,
   tools: Map<string, string>,
+  /** Whether this terminal asks the questions of the run. */
+  terminal = false,
 ): string[] => {
   const tag = (id: string) => style("cyan", `${id.padEnd(width)} │`);
   if (event.type === "run.started") {
@@ -178,12 +167,17 @@ export const formatRunEvent = (
     );
   }
   if (event.type === "node.finished") {
-    const mark = event.ok ? style("green", "✓") : style("red", "✗");
+    const conflict = hasConflict(event.output);
+    const mark = event.ok
+      ? style(conflict ? "yellow" : "green", conflict ? "!" : "✓")
+      : style("red", "✗");
     const spent =
       event.usage === undefined
         ? ""
         : style("dim", ` · ${cost(event.usage.costUsd)}`);
-    return [`${tag(event.id)} ${mark} ${nodeVerdict(event.output)}${spent}`];
+    return [
+      `${tag(event.id)} ${mark} ${nodeVerdict(event.output, event.ok, event.error)}${spent}`,
+    ];
   }
   if (event.type === "node.skipped") {
     return [`${tag(event.id)} ${style("dim", "- skipped")}`];
@@ -211,7 +205,12 @@ export const formatRunEvent = (
   if (event.type === "edge.taken") return [];
   if (event.type === "worktree") {
     const detail = event.detail === undefined ? "" : ` (${event.detail})`;
-    const line = `${event.action} ${event.branch ?? event.path}${detail}`;
+    // A removed worktree leaves its branch (ADR-020).
+    const what =
+      event.action === "removed" && event.branch !== undefined
+        ? `worktree of ${event.branch} (branch kept)`
+        : `${event.branch ?? event.path}${detail}`;
+    const line = `${event.action} ${what}`;
     return [
       `${tag(event.id)} ${event.action === "conflict" ? style("yellow", `! ${line}`) : style("dim", `⎇ ${line}`)}`,
     ];
@@ -225,7 +224,7 @@ export const formatRunEvent = (
     // A question its owner answered at once has no one to wait on.
     const where =
       event.owner === undefined
-        ? `decision ${event.decision}; ork decide`
+        ? `decision ${event.decision}; ${terminal ? "answer here or with ork decide" : "ork decide"}`
         : `decision ${event.decision}, via ${event.owner}`;
     return [
       `${tag(event.node)} ${style(["yellow", "bold"], "?")} ${what} ${question} ${style("dim", `(${where})`)}`,

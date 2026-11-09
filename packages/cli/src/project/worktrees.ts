@@ -69,3 +69,12 @@ export const formatLost = (lost: LostWork): string[] => [
         ...lost.commits.map(line => `  ${line}`),
       ]),
 ];
+
+/** What a forced clean loses, item by item: the same lines `remove` prints. */
+export const formatLosses = (
+  losses: readonly { item: OrkWorktree; lost: LostWork }[],
+): string[] =>
+  losses.flatMap(({ item, lost }) => {
+    const lines = formatLost(lost);
+    return lines.length === 0 ? [] : [`Loses in ${labelOf(item)}:`, ...lines];
+  });

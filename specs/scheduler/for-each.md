@@ -72,12 +72,12 @@ so a run stopped this way stops there again.
 
 The node's output is:
 
-| Field      | Holds                                                                                                                                                                                                     |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `items`    | the list                                                                                                                                                                                                  |
-| `results`  | in list order, each item's declared output fields (a program's and an MCP call's come from its `json`), its `summary`, and Ork's `branch` and `worktree` when it has them; `{}` for an item never started |
-| `statuses` | in list order, each item's `status`, or `pass`/`fail` from how it ended, or `skipped` for one never started                                                                                               |
-| `count`    | how long the list is                                                                                                                                                                                      |
+| Field      | Holds                                                                                                                                                                                                                                                |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `items`    | the list                                                                                                                                                                                                                                             |
+| `results`  | in list order, each item's declared output fields (a program's and an MCP call's come from its `json`), its `summary`, Ork's `branch` and `worktree` when it has them, and a failed program's `exitCode` and `error`; `{}` for an item never started |
+| `statuses` | in list order, each item's `status`, or `pass`/`fail` from how it ended, or `skipped` for one never started                                                                                                                                          |
+| `count`    | how long the list is                                                                                                                                                                                                                                 |
 
 `ok` holds when every item succeeded. An empty list succeeds with `count: 0`. A
 later node reading `{{nodes.build.output.results}}` gets every item's branch, as
@@ -102,7 +102,9 @@ readable text in a gate's `question` or `document`
   The node finishes failed, cut off rather than failed by its work: its
   `notify:` doesn't fire, and no edge acts on it.
 - **`ork stop --node build`** stops the items running and starts no more; the
-  node fails `stopped by the user`, keeping what it gathered.
+  node fails `stopped by the user`, keeping what it gathered. It also ends the
+  wait for an answer on a list over `maxItems`: the question is withdrawn and no
+  item starts. So does a stop of the whole run, which a resume asks again.
 - **`ork stop --node build.2`** stops one running item; `onFailure` decides the
   rest.
 - **Pausing** the node holds its items, as for a spawned worker's instances.

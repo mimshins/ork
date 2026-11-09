@@ -97,6 +97,28 @@ const fanner =
     return Promise.resolve({ ok: true, output });
   };
 
+/** Like `fanner`, but the item `bad` fails, with the others passing. */
+const flaky =
+  (bad: string, ran: string[]): NodeExecutor =>
+  context => {
+    ran.push(context.id);
+    return Promise.resolve(
+      context.id === bad
+        ? {
+            ok: false,
+            error: "it broke",
+            output: { status: "fail", summary: "it broke" },
+          }
+        : {
+            ok: true,
+            output:
+              context.item === undefined
+                ? outputsOf(context.id)
+                : { status: "pass", summary: context.id },
+          },
+    );
+  };
+
 const outputsOf = (id: string): NodeOutput =>
   id === "plan"
     ? {
@@ -181,6 +203,23 @@ describe("the fan-out example", () => {
       ["build.0", "build.1", "build.2", "plan", "review"].toSorted(),
     );
     expect(ran.at(-1)).toBe("review");
+  });
+
+  it("still asks what to keep when one task failed and others passed", async () => {
+    const ran: string[] = [];
+    const executor = flaky("build.1", ran);
+    const result = await startRun({
+      graph: compile("examples/fan-out.ork.yaml"),
+      inputs: { goal: "g" },
+      cwd: repoRoot,
+      executors: { "claude.worker": executor, "human.gate": executor },
+      human,
+      onEvent: () => {
+        // What ran is enough here.
+      },
+    }).done;
+    expect(ran).toContain("review");
+    expect(result.status).toBe("succeeded");
   });
 
   it("reruns only the tasks a kill left unfinished", async () => {

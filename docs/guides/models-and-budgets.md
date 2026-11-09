@@ -52,8 +52,8 @@ limits:
 ```
 
 - Each session gets the smaller of its own budget and what is left of the run's.
-  Once the run's budget is spent, no new session starts and the run ends as
-  `budget_exhausted`.
+  Once the run's budget is spent, counting what sessions still running have
+  reported so far, no new session starts and the run ends as `budget_exhausted`.
 - A `workflow.call` shares this budget with the run it starts
   ([calling a workflow](./working-across-projects.md#calling-a-workflow)).
 - `concurrency` limits only Claude sessions; tools and gates are not limited. A
@@ -61,10 +61,10 @@ limits:
   sessions only: two runs at the default can hold 8. To cap spending across
   runs, use [quotas](#limits-across-runs).
 
-Costs come from Claude Code's own estimate in each session's final result. The
-run summary shows the total, and `--json` gives each node's usage: cost, tokens
-(including cache reads and writes), turns and time. To see them over time, see
-[what you spent](#what-you-spent).
+Costs come from Claude Code's own estimate, reported at the end of each turn and
+in each session's final result. The run summary shows the total, and `--json`
+gives each node's usage: cost, tokens (including cache reads and writes), turns
+and time. To see them over time, see [what you spent](#what-you-spent).
 
 ## Limits across runs
 

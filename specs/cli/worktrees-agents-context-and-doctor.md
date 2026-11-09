@@ -23,13 +23,17 @@ ready it names `cli`, which a run takes first. When `.ork/project.yaml` names a
 `defaults.driver`, it says that one instead, and runs no check. With neither
 ready, it passes on the CLI driver's hint (install Claude Code, or
 `claude auth login`). A starter that is already there is left as it is, and
-nothing is said or checked ([code](../../packages/cli/src/project/init.ts)).
+nothing is said or checked ([code](../../packages/cli/src/project/init.ts)). In
+a git repository with no commit, `ork init` still writes everything and exits 0,
+then warns that worktree runs branch from `HEAD`, so a first commit is needed.
 
 ## Worktrees
 
 `ork worktrees` lists, cleans and removes the worktrees and branches runs
 recorded creating, whatever the project's [rules](../project-rules.md) named
-them, and any `ork/` branch; see
+them, and lists (but never cleans or removes) any `ork/` branch no run recorded,
+marked "not created by Ork"; `clean --force` shows what it would lose and
+`--run` takes a run of the project; see
 [Worktrees: ork worktrees](../worktrees.md#ork-worktrees).
 
 ## Agents
@@ -99,13 +103,14 @@ node it came from.
 ## Doctor
 
 `ork doctor` first shows Ork's own version against the last update check
-([updates](./updates.md#the-new-version-notice)), then checks Node and git, then
-runs each registered Claude driver's and integration's own check
-([ADR-022](../../decisions/ADR-022-integration-registry.md)): installed, and
-signed in with the user's own login, never printing a token or an account. At
-least one driver must be ready; integrations are optional. The CLI driver's
-check warns when `claude` is older than 2.1.281, which Ork needs to read
-`AGENTS.md` ([context](../context.md#how-a-nodes-session-is-compiled)).
+([updates](./updates.md#the-new-version-notice)), then checks Node and git (a
+repository with no commit is a warning, `git commits`, never a failure: worktree
+runs need a `HEAD`), then runs each registered Claude driver's and integration's
+own check ([ADR-022](../../decisions/ADR-022-integration-registry.md)):
+installed, and signed in with the user's own login, never printing a token or an
+account. At least one driver must be ready; integrations are optional. The CLI
+driver's check warns when `claude` is older than 2.1.281, which Ork needs to
+read `AGENTS.md` ([context](../context.md#how-a-nodes-session-is-compiled)).
 
 Once a project has `.ork/`, doctor adds one check per tool the project uses:
 `ok` when its folders link to `.ork/`, a warning when one is missing or broken

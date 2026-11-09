@@ -47,6 +47,12 @@ export const projectHead = async (
   return { ok: true, branch: answer.code === 0 ? answer.stdout.trim() : null };
 };
 
+/** The top of the repository `cwd` is in, even one with no commit yet. */
+export const repoRoot = async (cwd: string): Promise<string | null> => {
+  const top = await git(cwd, ["rev-parse", "--show-toplevel"]);
+  return top.code === 0 ? top.stdout.trim() : null;
+};
+
 /** What Ork created in the repo at `root`, from its runs' records and git. */
 export const readWorktrees = async (
   store: Pick<EventStore, "runs" | "events">,

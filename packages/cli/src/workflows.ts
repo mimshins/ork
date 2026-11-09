@@ -34,6 +34,8 @@ export const findWorkflowFiles = (
   cwd: string,
   workflows: string = path.join(cwd, WORKFLOW_DIR),
 ): string[] => {
+  // No folder yet (no `ork init`): nothing to find, which the command says.
+  if (paths.length === 0 && !existsSync(workflows)) return [];
   const targets = paths.length > 0 ? paths : [fromCwd(workflows, cwd)];
   return targets.flatMap(target => {
     const absolute = path.resolve(cwd, target);

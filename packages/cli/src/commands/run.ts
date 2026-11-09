@@ -65,14 +65,25 @@ export const onInterrupt = (stop: () => void) => {
 };
 
 /** The terminal that answers a run's questions; none in a detached run. */
-export const terminalHuman = () =>
-  process.env[DETACHED_ENV] === "1"
+export const terminalHuman = () => {
+  const detached = process.env[DETACHED_ENV] === "1";
+  if (detached) {
+    writeErr(
+      style("dim", "detached run: no terminal asks; answer with ork decide"),
+    );
+  }
+  return detached
     ? undefined
     : createTerminalHuman({
         input: process.stdin,
         output: process.stderr,
         interactive: process.stdin.isTTY,
+        // Raises the real signal, so a second Ctrl-C still kills as usual.
+        interrupt: () => {
+          process.kill(process.pid, "SIGINT");
+        },
       });
+};
 
 export const run = defineCommand({
   meta: {

@@ -95,7 +95,8 @@ all views over the same events.
   `ork send`, and `notice`, likewise, the first two with their sender) and when
   the run handled it. The run events `decision.opened`, `decision.answered`,
   `decision.withdrawn` and `run.command` record the same in the run's stream
-  ([messaging](./messaging.md)).
+  ([messaging](./messaging.md)). A resumed run's decision ids go on from the
+  highest stored, and a decision its last process left open is withdrawn.
 - **A resumed run** (`ork resume`) is the same run: its record is `running`
   again in the new process, with that process's id and start, and its events go
   on from the last sequence number, starting with `run.resumed`.

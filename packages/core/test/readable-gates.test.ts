@@ -25,15 +25,38 @@ import {
 } from "../src/index.ts";
 import { migrate, MIGRATIONS } from "../src/store/schema.ts";
 
-const render = (value: unknown, source = "{{inputs.v}}"): string => {
+const render = (
+  value: unknown,
+  source = "{{inputs.v}}",
+  readable = true,
+): string => {
   const template = parseTemplate(source);
   if (!template.ok) throw new Error(template.message);
   return renderTemplate(
     template.parts,
     { inputs: { v: value }, nodes: {} },
-    { readable: true },
+    { readable },
   );
 };
+
+describe("text after a rendered list", () => {
+  it.each([
+    ["a new line", "{{inputs.v}}\nAfter", "- a\n- b\n\nAfter"],
+    ["the same line", "{{inputs.v}} after", "- a\n- b\n\nafter"],
+    ["a blank line", "{{inputs.v}}\n\nAfter", "- a\n- b\n\nAfter"],
+    ["only a trailing newline", "{{inputs.v}}\n", "- a\n- b\n"],
+  ])("starts a new paragraph after %s", (_name, source, expected) => {
+    expect(render(["a", "b"], source)).toBe(expected);
+  });
+
+  it("leaves a scalar's following text alone", () => {
+    expect(render("x", "{{inputs.v}}\nAfter")).toBe("x\nAfter");
+  });
+
+  it("is only for what a person reads", () => {
+    expect(render(["a"], "{{inputs.v}}\nAfter", false)).toBe('["a"]\nAfter');
+  });
+});
 
 describe("readable template values", () => {
   it.each([

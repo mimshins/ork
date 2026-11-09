@@ -20,6 +20,7 @@ import {
 import { defineCommand } from "citty";
 
 import { addAgent, formatAgent, formatAgents } from "../agents/manage.ts";
+import { exec, headWarning } from "../doctor/checks.ts";
 import { style, write, writeErr } from "../output.ts";
 import {
   initDriverLineHere,
@@ -75,6 +76,8 @@ export const init = defineCommand({
       write(line);
     }
     await skillsStep(cwd, { skills: args.skills, link: args.link });
+    const noCommit = await headWarning(exec);
+    if (noCommit !== null) write(style("yellow", `\n! git: ${noCommit}`));
     write(
       `\nNext: edit ${WORKFLOW_DIR}/, then run ${style("bold", "ork validate")}.`,
     );

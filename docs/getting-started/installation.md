@@ -101,16 +101,19 @@ ork doctor
 ```
 
 `ork doctor` shows your Ork version against the last update check, then checks
-Node, git, whether you are in a git repository, each Claude driver, and each
-optional integration. It uses each tool's own login check and never prints a
-token. At least one Claude driver has to be ready; a missing `gh` or `aws` is
-fine unless a workflow has a node that needs it. Example output:
+Node, git, whether you are in a git repository with a commit, each Claude
+driver, each optional integration, and which
+[experiments](../guides/project-rules.md#trying-an-experiment) are on. It uses
+each tool's own login check and never prints a token. At least one Claude driver
+has to be ready; a missing `gh` or `aws` is fine unless a workflow has a node
+that needs it. Example output:
 
 ```
-✓ ork                  0.4.0 (the latest as of 2026-11-07)
+✓ ork                  1.0.0-alpha.8 (the latest as of 2026-11-10)
 ✓ node                 v24.20.0
 ✓ git                  git version 2.39.5
 ✓ git repo             inside a work tree
+✓ git commits          HEAD exists
 ! claude (sdk driver)  no API key or cloud provider
   Set ANTHROPIC_API_KEY (or CLAUDE_CODE_USE_BEDROCK=1 / CLAUDE_CODE_USE_VERTEX=1 / CLAUDE_CODE_USE_FOUNDRY=1) to use the SDK driver.
 ✓ claude (cli driver)  2.1.314 (Claude Code), logged in (claude.ai, firstParty)
@@ -118,22 +121,21 @@ fine unless a workflow has a node that needs it. Example output:
 - aws                  optional, not installed (needed only for tool.aws nodes)
 ✓ git identity         user.name and user.email are set
 ✓ sockets              39 of 103 bytes
+✓ experiments          none on
 ```
 
-Here only the CLI driver is ready and neither optional tool is installed, which
-is a working setup. When nothing required is missing, that is all it prints.
-Otherwise it ends with:
+Only the CLI driver is ready and neither optional tool is installed: a working
+setup. When nothing required is missing, that is all it prints. Else it ends:
 
 ```
 Not ready: Ork needs Node, git, and at least one Claude driver.
 ```
 
-A workflow that names no driver, such as the one `ork init` writes, runs on the
-driver that's ready on the machine running it (the CLI driver when both are),
-and `ork run` says which in one line. A driver named by the node, its agent, the
-workflow's `defaults`, `.ork/project.yaml`'s `defaults`, or `--driver sdk|cli`
-on `ork run` wins. With no driver ready, `ork run` stops before any session
-starts. `ork resume` keeps the driver the run started with.
+A workflow that names no driver, like the one `ork init` writes, runs on the one
+ready here (the CLI driver when both are), and `ork run` says which. A driver
+named by the node, its agent, `defaults` (workflow or `.ork/project.yaml`), or
+`--driver sdk|cli` wins. With none ready, `ork run` stops before any session
+starts. `ork resume` keeps the run's driver.
 
 ## Updating
 
@@ -143,20 +145,19 @@ ork upgrade --check   # only says whether a newer version is out
 ```
 
 `ork upgrade` sees whether npm, pnpm, yarn, bun or Volta installed Ork, shows
-the command it will run, and runs it when you say yes. A copy run from a clone
-or through `npx` gets instructions instead. After an upgrade,
-[What's new](../whats-new.md) says what changed.
+the command, and runs it when you say yes; a clone or `npx` gets instructions.
+After an upgrade, [What's new](../whats-new.md) says what changed.
 
 - **The daily check.** Once a day, in the background, Ork asks the npm registry
   whether a newer version is out, and tells you in one line after a command. It
   sends nothing about you or your projects. `ork doctor` shows your version
   against the last check.
-- **When it's off:** in CI, without a terminal, and with `--json`.
+- **When it's off:** in CI, without a terminal, and with `--json`. There
+  `ork doctor` says why: `the daily update check is off here: no terminal`.
 - **Turning it off everywhere:** set `ORK_NO_UPDATE_CHECK=1` (or
   `NO_UPDATE_NOTIFIER=1`). To ask a mirror instead, set `ORK_UPDATE_REGISTRY`.
 - **Staying on a version.** Until 1.0.0 every pre-release is also `latest`. To
   keep 0.4, install `@krapht/ork@0.4` and set `ORK_NO_UPDATE_CHECK=1`.
-
 - **In `ork ui`:** a banner, with an upgrade and a restart in the page
   ([new versions](../guides/browser-view/new-versions.md)). The same variables
   turn it off; set them where you start `ork ui`.
@@ -186,9 +187,8 @@ pnpm build          # bundles the CLI into packages/cli/dist/bin.mjs
 alias ork="node $HOME/path/to/ork/packages/cli/dist/bin.mjs"
 ```
 
-Run `pnpm build` again after you pull new changes. Inside the Ork clone itself,
-`pnpm ork <command>` runs the CLI straight from its TypeScript sources, with no
-build.
+Run `pnpm build` again after you pull. Inside the clone, `pnpm ork <command>`
+runs the CLI from its TypeScript sources, with no build.
 
 ## Removing Ork
 

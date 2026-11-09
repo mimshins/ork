@@ -44,4 +44,6 @@ nodes:
     recommended: keep
 edges:
   - plan -> build
-  - build -> review
+  - from: build
+    to: review
+    when: any(statuses, 'pass')

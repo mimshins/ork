@@ -43,6 +43,31 @@ const passing = (summary: string, cost = 0): NodeResult => ({
   sessionId: "session-1",
 });
 
+/** Every session costs $5.5; the leader says so before it delegates. */
+const reportingLead =
+  (ran: string[], delegated: (Delegation | undefined)[]): NodeExecutor =>
+  async context => {
+    ran.push(context.id);
+    const done = passing("did", 5.5);
+    if (context.ownership === undefined || done.usage === undefined)
+      return done;
+    context.emit({
+      type: "session.finished",
+      outcome: {
+        subtype: "success",
+        sessionId: "session-1",
+        report: null,
+        text: "",
+        usage: done.usage,
+        errors: [],
+      },
+    });
+    delegated.push(
+      await context.ownership.delegate([{ child: "fix", brief: "too late" }]),
+    );
+    return done;
+  };
+
 type Lead = (own: Ownership) => Promise<Delegation>;
 
 /**
@@ -209,6 +234,20 @@ describe("delegation", () => {
       ["lead", false, "not one of your child workers (fix, check)"],
     ]);
     expect(result.nodes.map(n => n.id)).toContain("fix-3");
+  });
+
+  it("counts a running leader's last reported cost before starting a child", async () => {
+    const ran: string[] = [];
+    const delegated: (Delegation | undefined)[] = [];
+    const { result } = await run(
+      limited("{ budgetUsd: 5 }"),
+      reportingLead(ran, delegated),
+    );
+    expect(ran).toEqual(["lead"]);
+    expect(delegated[0]?.reports[0]?.error).toBe(
+      "not started: the run's budget of $5 is spent",
+    );
+    expect(result.status).toBe("budget_exhausted");
   });
 
   it("does not start children once the run's budget is spent", async () => {

@@ -204,6 +204,63 @@
   --decisions-option-cursor: progress;
 }
 
+/* No server to answer: flat and muted, the command still readable. */
+.option[data-unreachable],
+.option[data-unreachable]:hover,
+.option[data-unreachable][data-recommended] {
+  --decisions-option-bg: transparent;
+  --decisions-option-border-color: var(--color-border);
+  --decisions-option-text: var(--color-text-muted);
+  --decisions-option-cursor: not-allowed;
+}
+
+.option[data-unreachable] .optionMark {
+  --decisions-option-mark-text: var(--color-text-muted);
+}
+
+@media (forced-colors: active) {
+  .option[data-unreachable] {
+    --decisions-option-text: GrayText;
+  }
+}
+
+.optionCommand {
+  --decisions-option-command-text: var(--color-text-muted);
+  --decisions-option-command-font: var(--font-mono);
+  --decisions-option-command-text-size: var(--text-small);
+
+  color: var(--decisions-option-command-text);
+  font-family: var(--decisions-option-command-font);
+  font-size: var(--decisions-option-command-text-size);
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.unreachable {
+  --decisions-notice-text: var(--color-text);
+  --decisions-notice-icon: var(--color-action-text);
+  --decisions-notice-gap: var(--gap);
+  --decisions-notice-padding: var(--gap);
+  --decisions-notice-bg: transparent;
+  --decisions-notice-border: var(--hairline) solid var(--color-border);
+  --decisions-notice-radius: var(--radius-control);
+
+  align-items: flex-start;
+  background: var(--decisions-notice-bg);
+  border: var(--decisions-notice-border);
+  border-radius: var(--decisions-notice-radius);
+  color: var(--decisions-notice-text);
+  display: flex;
+  gap: var(--decisions-notice-gap);
+  margin: var(--decisions-notice-padding);
+  padding: var(--decisions-notice-padding);
+}
+
+.unreachable svg {
+  color: var(--decisions-notice-icon);
+  flex: none;
+}
+
 .optionText {
   --decisions-option-text-gap: var(--gap-hair);
 

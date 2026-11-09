@@ -2,12 +2,19 @@
  * @file The Decisions panel's filter bar: a workflow and a run, each with the
  *   open decisions it has, and a count line (said aloud when it changes) of how
  *   many show and how many the filter hides. It narrows the panel only: the
- *   badge, notifications and `ork decide` still count every open decision.
+ *   badge, notifications and `ork decide` still count every open decision. Here
+ *   too is the one notice for when `ork ui` cannot be reached.
  */
+
+import { useValue } from "react-containerized-state";
 
 import { EmptyState } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
+import { CodeText } from "../components/code-text.tsx";
+import { IconAlert } from "../components/icons.tsx";
 import { Select } from "../components/select.tsx";
+import { isUnreachable } from "../state/app-state.ts";
+import { useAppState } from "../state/context.tsx";
 import {
   ALL_VALUE,
   countLine,
@@ -18,6 +25,26 @@ import {
 } from "./decisions-model.ts";
 
 import styles from "./decisions.module.css";
+
+/** Whether `ork ui` cannot be reached now, so no answer can be sent. */
+export const useUnreachable = (): boolean =>
+  isUnreachable(useValue(useAppState().connection));
+
+/**
+ * One notice for the panel, not a live region: the status bar already says the
+ * reason aloud.
+ */
+export const UnreachableNotice = () => (
+  <p
+    className={styles["unreachable"]}
+    data-unreachable-notice=""
+  >
+    <IconAlert aria-hidden="true" />
+    <span>
+      <CodeText text="Cannot answer here: `ork ui` is not reachable. Answer from a terminal with the command under each option." />
+    </span>
+  </p>
+);
 
 export const DecisionsFilter = ({
   view,

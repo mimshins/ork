@@ -78,7 +78,8 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 - **Messages** to a paused node wait with it. A message sent to a session
   waiting in its hook is read at its next step after continue.
 - **The run's process stays alive.** A crash while paused leaves a run that
-  `ork resume` replays as usual. The resumed run isn't paused.
+  `ork resume` replays as usual. The resumed run isn't paused, and it withdraws
+  a decision left open, which its session asks again.
 - **Pausing one node** applies the same rules to that node alone: its session
   and its next activations, a spawned worker's instances and a fanned node's
   items included. The rest of the run goes on.
@@ -110,6 +111,13 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 - **A fanned node** has its running items stopped and starts no more; one item
   named alone (`--node build.2`) stops only it, and `onFailure` decides the
   rest.
+- **A question or permission prompt it left open is withdrawn**
+  (`decision.withdrawn`), an item's as much as a node's, so a stopped node
+  leaves nothing in `ork decide`.
+- **A node waiting on a list over its `maxItems`** can be stopped: the question
+  is withdrawn, no item starts, and it fails as above. A stop of the whole run,
+  from `ork stop`, Ctrl-C or SIGTERM, ends that wait the same way, in a detached
+  run too ([per item](./scheduler/for-each.md#limits-stop-and-pause)).
 - **Only a running node can be stopped:** `N is not running in run X.`
 
 ## What a run records

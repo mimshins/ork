@@ -13,7 +13,7 @@ import {
 } from "@krapht/ork-core";
 
 import { cost, style } from "../output.ts";
-import { nodeVerdict } from "../run/format.ts";
+import { nodeVerdict } from "../run/verdict.ts";
 
 const STATUS_STYLE: Record<string, Parameters<typeof style>[0]> = {
   running: "cyan",
@@ -132,7 +132,7 @@ const stateText = (node: TreeNode): string => {
     return node.runs > 1 ? `running (round ${String(node.runs)})` : "running";
   }
   if (node.state === "ok" || node.state === "failed") {
-    const verdict = nodeVerdict(node.output ?? {});
+    const verdict = nodeVerdict(node.output ?? {}, node.state === "ok");
     const line = verdict.length > 60 ? `${verdict.slice(0, 59)}…` : verdict;
     return node.runs > 1 ? `${line} (${String(node.runs)} runs)` : line;
   }

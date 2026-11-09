@@ -20,7 +20,7 @@ import {
   startRun,
 } from "../src/index.ts";
 import { unmasked } from "../src/run/declared.ts";
-import { eachQuestion } from "../src/run/escalation.ts";
+import { createLoops, eachQuestion } from "../src/run/escalation.ts";
 
 const LINES = [
   "nodes:",
@@ -402,6 +402,87 @@ describe("the question about a list over its cap", () => {
       { question: "b?", answer: "first" },
     ]);
   });
+});
+
+/** A person who never answers; a question rejects when its signal aborts. */
+const neverAnswers = () => {
+  const signals: (AbortSignal | undefined)[] = [];
+  const asked = Promise.withResolvers<void>();
+  const human: HumanChannel = {
+    ask: ({ signal }) => {
+      signals.push(signal);
+      asked.resolve();
+      const { promise, reject } = Promise.withResolvers<string>();
+      signal?.addEventListener(
+        "abort",
+        () => {
+          reject(new Error("the question was withdrawn"));
+        },
+        { once: true },
+      );
+      return promise;
+    },
+    permit: () => Promise.resolve({ allow: true }),
+  };
+  return { human, signals, asked: asked.promise };
+};
+
+/** A run waiting on its list over the cap, and what it recorded. */
+const waitingRun = async (ran: string[] = []) => {
+  const person = neverAnswers();
+  const events: RunEvent[] = [];
+  const handle = startRun({
+    graph: compile(LINES),
+    inputs: {},
+    cwd: process.cwd(),
+    executors: allTools(planThen(ran)),
+    human: person.human,
+    onEvent: event => {
+      events.push(event);
+    },
+  });
+  await person.asked;
+  return { handle, events, signals: person.signals };
+};
+
+describe("a stop while a list over its cap waits for an answer", () => {
+  it("ends the wait when the run is interrupted, and withdraws the question", async () => {
+    const ran: string[] = [];
+    const { handle, signals } = await waitingRun(ran);
+    handle.interrupt();
+    const result = await handle.done;
+    expect(result.status).toBe("interrupted");
+    expect(signals[0]?.aborted).toBe(true);
+    expect(ran).toEqual([]);
+  }, 2000);
+
+  it("fails the node, stopped by the user, on a stop of that node", async () => {
+    const ran: string[] = [];
+    const { handle, events, signals } = await waitingRun(ran);
+    expect(handle.stopNode("build")).toBe(true);
+    const result = await handle.done;
+    expect(result.status).toBe("failed");
+    expect(buildFinished(events)).toMatchObject({
+      ok: false,
+      error: "stopped by the user",
+    });
+    expect(signals[0]?.aborted).toBe(true);
+    expect(ran).toEqual([]);
+  }, 2000);
+
+  it("stops waiting on a live owner too", async () => {
+    const loops = createLoops({
+      human: neverAnswers().human,
+      bus: { askOwner: () => new Promise(() => {}) },
+      onEvent: () => {},
+      activate: () => {},
+      fail: () => {},
+    });
+    const stop = new AbortController();
+    const chosen = loops.overList("build", ["a", "b", "c"], 2, 1, stop.signal);
+    stop.abort();
+    await expect(chosen).resolves.toEqual(["a", "b", "c"]);
+  }, 2000);
 });
 
 describe("a list handed back on resume", () => {

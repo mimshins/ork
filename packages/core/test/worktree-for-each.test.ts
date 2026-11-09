@@ -63,6 +63,14 @@ const fanned = (options: {
     ].join("\n"),
   );
 
+/** An executor that reports `id` failed after doing its work. */
+const failingAt =
+  (id: string, executor: NodeExecutor): NodeExecutor =>
+  async context => {
+    const done = await executor(context);
+    return { ...done, ok: done.ok && context.id !== id };
+  };
+
 const items = (work: (item: string) => Work): Record<string, Work> =>
   Object.fromEntries(
     ["a", "b", "c"].map((item, at) => [`build.${String(at)}`, work(item)]),
@@ -278,6 +286,25 @@ describe("a fanned node with an owner", () => {
     expect(JSON.stringify(finished)).toContain('"fail"');
   });
 
+  it("keeps the worktree of an item that failed, saying so", async () => {
+    const root = repo();
+    const { executor } = working(
+      items(item => ({ files: { [`src/${item}.ts`]: `${item}\n` } })),
+    );
+    const failing = failingAt("build.1", executor);
+    const { result } = await runIn(
+      root,
+      fanned({ owned: true, each: `{ items: ${ITEMS} }` }),
+      failing,
+    );
+
+    expect(result.worktrees.map(w => [w.id, w.reason])).toContainEqual([
+      "build.1",
+      "item failed; kept for inspection",
+    ]);
+    expect(existsSync(worktreePath(root, "r1", "build.1"))).toBe(true);
+  });
+
   it("applies each item as a patch under commit: never, one at a time", async () => {
     const root = repo();
     const head = sh(root, "rev-parse", "HEAD");
@@ -395,6 +422,21 @@ describe("resuming a fanned node", () => {
     expect(again.cwd).toBe(one.cwd);
     expect(again.cwd).toBe(worktreePath(root, "r1", "build.1"));
     expect(second).toEqual([]);
+  });
+});
+
+describe("an item that fails, then passes in a later round", () => {
+  it("is kept as the run's result, not as a failed item", async () => {
+    const root = repo();
+    const workspace = await workspaceFor(root, fanned({}), [], () => {});
+    await workspace.prepare("build.1", "build");
+    await workspace.finish("build.1", { ok: false, output: {} });
+    await workspace.finish("build.1", { ok: true, output: {} });
+    const kept = await workspace.close();
+
+    expect(kept.map(w => [w.id, w.reason])).toEqual([
+      ["build.1", "the run's result"],
+    ]);
   });
 });
 

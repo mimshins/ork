@@ -35,6 +35,7 @@ type FanOutDeps = StartHooks & {
       list: unknown[],
       maxItems: number,
       round: number,
+      signal: AbortSignal,
     ) => Promise<unknown[] | null>;
   };
 };
@@ -71,12 +72,12 @@ const isRecord = (value: unknown): value is NodeOutput =>
 
 /**
  * What `results` keeps of an item: its declared fields (a program's are under
- * `json`), its summary, and Ork's own branch and worktree. The full output
- * stays in the item's own `node.finished`.
+ * `json`), its summary, Ork's own branch and worktree, and how a program
+ * failed. The full output stays in the item's own `node.finished`.
  */
 const entryOf = (
   declared: Readonly<Record<string, unknown>> | undefined,
-  output: NodeOutput,
+  { ok, output, error }: NodeResult,
 ): NodeOutput => {
   const json = isRecord(output["json"]) ? output["json"] : {};
   const fields = Object.keys(declared ?? {}).map((field): [string, unknown] => [
@@ -86,8 +87,15 @@ const entryOf = (
   const own = ["summary", "branch", "worktree", "merge"].map(
     (field): [string, unknown] => [field, output[field]],
   );
+  const failed: [string, unknown][] =
+    !ok && typeof output["exitCode"] === "number"
+      ? [
+          ["exitCode", output["exitCode"]],
+          ["error", error],
+        ]
+      : [];
   return Object.fromEntries(
-    [...fields, ...own].filter(([, value]) => value !== undefined),
+    [...fields, ...own, ...failed].filter(([, value]) => value !== undefined),
   );
 };
 
@@ -161,9 +169,14 @@ export const createFanOut = (deps: FanOutDeps) => {
         round,
         count: list.length,
         list,
+        ...(recorded === null && options.replay !== undefined
+          ? { anew: true as const }
+          : {}),
       });
     };
     recordList();
+    // Before the wait over the cap, which a stop has to be able to end.
+    const signal = stops.signalFor(id);
     if ("maxItems" in forEach && list.length > forEach.maxItems) {
       options.onEvent({
         type: "each.exceeded",
@@ -177,10 +190,15 @@ export const createFanOut = (deps: FanOutDeps) => {
         list,
         forEach.maxItems,
         round,
+        signal,
       );
       if (chosen === null) {
         const reason = `the list of ${id} has ${String(list.length)} items, over maxItems ${String(forEach.maxItems)}`;
-        return { ...failure(reason), limited: reason, stopsAs: "failed" };
+        return stops.ended(id, {
+          ...failure(reason),
+          limited: reason,
+          stopsAs: "failed",
+        });
       }
       const narrowed = chosen.length !== list.length;
       list = chosen;
@@ -191,7 +209,6 @@ export const createFanOut = (deps: FanOutDeps) => {
     const session = node !== undefined && needsSlot(node);
     const spends = node !== undefined && spendsBudget(node);
     const declared = node === undefined ? undefined : declaredOutputOf(node);
-    const signal = stops.signalFor(id);
     const results: NodeOutput[] = list.map(() => ({}));
     const statuses: string[] = list.map(() => "skipped");
     const failures: string[] = [];
@@ -214,7 +231,7 @@ export const createFanOut = (deps: FanOutDeps) => {
           item: { of: id, index, value: list[index] },
           round,
         });
-        results[index] = entryOf(declared, result.output);
+        results[index] = entryOf(declared, result);
         statuses[index] = statusOf(result);
         if (!result.ok) {
           failures.push(`${itemId}: ${result.error ?? "failed"}`);

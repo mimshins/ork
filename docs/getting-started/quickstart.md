@@ -17,8 +17,8 @@ git init && git commit --allow-empty -m "Start"
 ork doctor
 ```
 
-You need Node, git and one ready Claude driver. `gh` and `aws` show as optional:
-the starter workflow uses neither, so you can leave them uninstalled.
+You need Node, git and one ready Claude driver (`git commits` warns before the
+first commit). `gh` and `aws` are optional: the starter uses neither.
 
 ## 2. Create a starter workflow
 
@@ -29,17 +29,21 @@ ork init
 ```
 created .ork/workflows/hello.ork.yaml
 created .gitignore (.ork/runs/)
-Runs use the driver that's ready when they start: cli here (2.1.314 (Claude Code), logged in (claude.ai)).
+Runs use the driver that's ready when they start: cli here (2.1.314 (Claude Code), logged in (claude.ai, firstParty)).
+Ork's skills for Claude Code: add them here with `ork init --skills`, or install Ork's plugin in Claude Code (/plugin marketplace add mimshins/ork, then /plugin install ork@ork).
+
+Next: edit .ork/workflows/, then run ork validate.
 ```
 
-`ork init` never overwrites a file. It adds `.ork/runs/` to `.gitignore`,
-because run state never belongs in git. (To keep Ork out of your repository
-entirely, use `ork register` instead: see [projects](../guides/projects.md).) If
-your project has a `.claude/` or `.opencode/` folder, it also links their agents
-and skills folders to `.ork/`
-([agents](../guides/agents.md#linking-your-tools-to-ork)). On a terminal it also
-offers to write Ork's skills for Claude Code; either answer is fine here
-([Ork from Claude Code](../guides/claude-code.md)).
+`ork init` never overwrites a file. It adds `.ork/runs/` to `.gitignore` under
+`# Ork run state`: run state never belongs in git (to keep Ork out of git
+entirely, see [`ork register`](../guides/projects.md)). It links the agents and
+skills folders of a `.claude/` or `.opencode/` folder to `.ork/`
+([agents](../guides/agents.md#linking-your-tools-to-ork)), and keeps one that is
+a real folder (`kept … is a real folder, left as it is`). On a terminal it
+offers Ork's skills for Claude Code; either answer is fine
+([Ork from Claude Code](../guides/claude-code.md)). With no commit yet it warns
+(`! git: no commit yet…`) and still writes the files.
 
 The starter workflow is a leader, the worker it owns, and a question for you at
 the end:
@@ -83,19 +87,16 @@ edges:
 
 - `lead` plans and hands work to `worker` (its child, through `parent: lead`),
   and may start up to two more copies of it (`maxWorkers: 2`).
-- `approve` asks you whether to accept the leader's branch.
-- `limits.budgetUsd: 5` caps the whole run at five dollars. No new session
-  starts once that is spent.
+- `approve` asks whether to accept the leader's branch, read from its `branch`
+  output (with none, it reads `Accept the result on ?`).
+- `limits.budgetUsd: 5` caps the run at five dollars. No new session starts once
+  that is spent, a running session counting at its last reported cost.
 
 The file names no Claude driver, as it's meant to be committed and your
 teammates may log in another way. `ork run` uses the driver that's ready on the
 machine running it, the CLI driver when both are, and says which before it
-starts, e.g.
-`No driver is named, so the run uses the cli driver: the one ready here (2.1.314 (Claude Code), logged in (claude.ai)).`
-To pick one, add `driver: cli` or `driver: sdk` under `defaults` (in the
-workflow, or in `.ork/project.yaml` for the whole project), set it on a node, or
-pass `--driver` to `ork run`. If no driver is ready, the run doesn't start and
-says how to get one ready, as `ork doctor` does.
+starts. To pick one, add `driver: cli` or `driver: sdk` under `defaults`, or see
+[installation](./installation.md#check-your-setup).
 
 ## 3. Validate it
 
@@ -105,26 +106,27 @@ ork validate
 
 ```
 ✓ .ork/workflows/hello.ork.yaml (3 nodes, 1 edge, starts at lead)
+Walked 3 ways through: 2 succeed, 1 fails. See each with `ork validate --paths`.
 ```
 
 `ork validate` checks every workflow in `.ork/workflows/` (or the files you
 pass): the schema, the ownership tree, edges and loops, templates, and skill and
-context references. Errors come with the file's line and column.
+context references, with each error's line and column. Then it walks every way
+through; the one that fails is the leader failing, which skips the gate
+([every way through](../guides/writing-workflows/checking.md#every-way-through)).
 
 ## 4. Run it
 
 Before you start, two things to know:
 
-- **The agents ask before they edit a file or run a command.** The starter's
-  sessions run with Claude Code's usual permissions, so each prompt shows the
-  tool and its input: type `y` to allow it. To stop being asked, allow those
+- **The agents ask before they edit a file or run a command.** Each prompt shows
+  the tool and its input: type `y` to allow it. To stop being asked, allow those
   tools in the workflow (`tools.allow`, see
   [writing workflows](../guides/writing-workflows.md#claude-nodes)) or in your
   project's `.claude/settings.json`.
-- **A run costs money.** On an API key or a cloud account it is billed there; on
-  a Claude plan it counts against your plan's limits. The starter stops at five
-  dollars. The run summary prints what it cost, and `ork usage` adds up your
-  runs ([what you spent](../guides/models-and-budgets.md#what-you-spent)).
+- **A run costs money**, billed to your API key or cloud account, or counted
+  against your Claude plan. The summary prints it; `ork usage` adds them up
+  ([what you spent](../guides/models-and-budgets.md#what-you-spent)).
 
 ```sh
 ork run hello --input task="add a README that explains what this project is"
@@ -134,28 +136,30 @@ ork run hello --input task="add a README that explains what this project is"
 line per event, prefixed with the node's id: sessions starting, what the agents
 say, each tool call, worktrees being created and merged, and each result. Then:
 
-- The leader plans, delegates to the worker, and waits. Ork commits the leader's
-  work first, so the worker branches from it.
+- The leader plans and delegates; Ork commits its work first, so the worker
+  branches from it.
 - The worker works in its own worktree, on branch `ork/<run>/worker`. When it
   passes, Ork merges its branch into the leader's.
-- The gate asks you on the terminal. Press Enter for the recommended answer, or
-  type a number or an option's id.
+- The gate asks on the terminal. Press Enter for the recommended answer, or type
+  a number or an option's id; Enter again skips the optional note. `reject` ends
+  the run as succeeded too; nothing is undone (step 5 throws it away).
 - The run summary shows the status, the total cost, and the worktrees left for
   you, with their branches and paths.
 
-`<run>` is the run's id, printed at the top and bottom of the transcript;
-`ork ps` lists it too. Agents can also ask you questions while they work; they
-appear on the terminal the same way. Ctrl-C stops the run.
+`<run>` is the run's id, at the top and bottom of the transcript and in
+`ork ps`. Agents' questions appear the same way; `ork decide` answers them too.
+An answer other than the recommended one is kept as local feedback
+([feedback](../guides/feedback.md#what-stays-on-your-machine)). Ctrl-C stops the
+run, at a question too.
 
-To watch the run in your browser as well, start the browser view in another
-terminal:
-
-```sh
-ork ui
-```
+To watch the run in your browser as well, run `ork ui` in another terminal of
+your own; an agent's shell gets no sign-in link.
 
 Ork never pushes and never touches a branch outside `ork/`. Your checkout stays
-as it was; the result is on the leader's branch.
+as it was; the result is on the leader's branch. With `git.commit: never`
+([never committing](../guides/project-rules.md#never-committing)) there is no
+leader branch, only a path holding the uncommitted changes; step 5's branch
+commands don't apply.
 
 ## 5. Keep the result, or throw it away
 
@@ -176,7 +180,8 @@ ork worktrees clean             # removes merged ones; asks first
 ```
 
 To throw it away instead, remove the run's worktrees and branches, merged or
-not. It shows what it would remove and asks first:
+not. It shows what it would remove, and the changes and commits that would be
+lost, and asks first:
 
 ```sh
 ork worktrees clean --run <run> --all --branches --force
@@ -186,12 +191,7 @@ ork worktrees clean --run <run> --all --branches --force
 
 - [The browser view](../guides/browser-view.md): your runs, their questions, and
   the Builder, in `ork ui`.
-- See what a node's session loads, layer by layer:
-
-  ```sh
-  ork context explain hello lead
-  ```
-
+- `ork context explain hello lead`: what a node's session loads, layer by layer.
 - [Writing workflows](../guides/writing-workflows.md): node types, edges,
   conditions and loops.
 - [Leaders and delegation](../guides/leaders-and-delegation.md): owners,

@@ -238,7 +238,9 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 - `limits.budgetUsd` caps the run: each session starts with
   `min(node budget, what is left)` ([L73](./usage/ledger-limits.md)), and once
   it is spent no session or [call](./scheduler/calls.md) starts and the run ends
-  `budget_exhausted`.
+  `budget_exhausted`. A running session counts at the cost it last reported,
+  which is nothing before its first turn ends, so a child a leader starts in its
+  first turn starts on what finished sessions spent.
 - [Quotas](./usage.md#limits-across-runs) cap what runs spend together: a
   session also gets no more than what is left of them, and at one a run ends
   `quota_exhausted`.

@@ -25,8 +25,38 @@ afterEach(async () => {
 const git = (cwd: string, ...args: string[]) =>
   execFileSync("git", args, { cwd, encoding: "utf8" });
 
-/** A registered repo `app` with a worktree on `ork/r1/lead`. */
-const withRepo = async () => {
+/** Records run `id` creating `branch` (at `folder`), finished unless `running`. */
+const recordRun = (
+  { store }: TestServer,
+  root: string,
+  id: string,
+  created: { node: string; folder: string; branch: string },
+  running = false,
+): void => {
+  store.begin({ id, workflow: "demo", file: "/w.ork.yaml", project: root });
+  store.append(id, {
+    type: "worktree",
+    id: created.node,
+    action: "created",
+    path: created.folder,
+    branch: created.branch,
+  });
+  if (running) return;
+  store.append(id, {
+    type: "run.finished",
+    result: {
+      runId: id,
+      status: "succeeded",
+      costUsd: 0,
+      nodes: [],
+      reasons: [],
+      worktrees: [],
+    },
+  });
+};
+
+/** A registered repo `app` with a worktree on `ork/r1/lead`, run r1's. */
+const withRepo = async (running = false) => {
   fixture = await startTestServer();
   const base = temp("ork-srv-wt-");
   const root = path.join(base, "app");
@@ -41,6 +71,13 @@ const withRepo = async () => {
   const lead = path.join(base, "ork-r1-lead");
   git(root, "worktree", "add", "--quiet", "-b", "ork/r1/lead", lead);
   fixture.store.addProject({ id: "app", root, mode: "attached", dir: base });
+  recordRun(
+    fixture,
+    root,
+    "r1",
+    { node: "lead", folder: lead, branch: "ork/r1/lead" },
+    running,
+  );
   return { server: fixture, root, lead };
 };
 
@@ -88,7 +125,7 @@ describe("the worktrees list", () => {
         state: "merged",
         path: lead,
         parts: [],
-        run: { known: false, live: false },
+        run: { known: true, live: false },
         remove: { label: "Remove…" },
       },
     ]);
@@ -124,13 +161,7 @@ describe("the worktrees list", () => {
   });
 
   it("says a live run's worktree can't be removed, by the remove route's rule", async () => {
-    const opened = await withRepo();
-    opened.server.store.begin({
-      id: "r1",
-      workflow: "demo",
-      file: "/w.ork.yaml",
-      project: opened.root,
-    });
+    const opened = await withRepo(true);
     const answer = dataOf(
       await opened.server.client.call("worktrees", {
         query: { project: opened.root },
@@ -201,6 +232,11 @@ describe("Clean merged…", () => {
       },
     ]);
     git(opened.root, "branch", "ork/r2/docs");
+    recordRun(opened.server, opened.root, "r2", {
+      node: "docs",
+      folder: "",
+      branch: "ork/r2/docs",
+    });
     expect(
       await client.call("worktreesClean", { body: { ...body, digest } }),
     ).toMatchObject({ ok: false, status: 409 });

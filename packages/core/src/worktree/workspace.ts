@@ -23,6 +23,7 @@ import type {
   Workspace,
 } from "../run/types.ts";
 import { closeWorktrees } from "./close.ts";
+import { withConflict } from "./conflict.ts";
 import {
   carryArtifacts,
   checkoutFor,
@@ -62,6 +63,8 @@ export type WorkspaceOptions = {
 };
 
 type Isolation = "worktree" | "continue" | "shared" | "readonly";
+
+const ITEM_FAILED = "item failed; kept for inspection";
 
 export const createWorkspace = (options: WorkspaceOptions): Workspace => {
   const { graph, runId, root, head, onEvent } = options;
@@ -245,6 +248,13 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     const next = await settle(id, id, worktree, result);
     outputs.set(id, next.output);
 
+    // A failed fanned item keeps its worktree for the user to look at; a later
+    // round that passes takes that reason back.
+    if (!next.ok && templateOf.has(id) && !unmerged.has(id)) {
+      unmerged.set(id, ITEM_FAILED);
+    }
+    if (next.ok && unmerged.get(id) === ITEM_FAILED) unmerged.delete(id);
+
     const owner = ownerOf(id);
     const ownerTree = owner === undefined ? undefined : worktrees.get(owner);
     if (!next.ok || owner === undefined || ownerTree === undefined) return next;
@@ -269,17 +279,7 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     const files = outcome.conflicts.join(", ");
     unmerged.set(id, `merge conflict${files === "" ? "" : ` in ${files}`}`);
     event(id, "conflict", worktree, files === "" ? outcome.error : files);
-    return {
-      ...next,
-      output: {
-        ...next.output,
-        merge: {
-          ok: false,
-          conflicts: outcome.conflicts,
-          into: nameOf(ownerTree),
-        },
-      },
-    };
+    return withConflict(next, outcome.conflicts, nameOf(ownerTree));
   };
 
   const close: Workspace["close"] = () =>

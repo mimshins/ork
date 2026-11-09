@@ -1,9 +1,9 @@
 /**
  * @file Small helpers for the scheduler's results: pass-through and failure
- *   results, run-summary entries, what a run has spent, `node.finished` events,
- *   the declared nodes `run.started` lists, the run's result (with what a
- *   `succeeded` run left out: skipped nodes, handled failures, unread mail),
- *   and closing the workspace at the end.
+ *   results, run-summary entries, `node.finished` events, the declared nodes
+ *   `run.started` lists, the run's result (with what a `succeeded` run left
+ *   out: skipped nodes, handled failures, unread mail), and closing the
+ *   workspace at the end.
  */
 
 import type { NodeType } from "@krapht/ork-schema";
@@ -11,8 +11,7 @@ import type { NodeType } from "@krapht/ork-schema";
 import type { AgentRef } from "../agents/apply.ts";
 import { parseTemplate, renderTemplate, type Scope } from "../expr/evaluate.ts";
 import type { CompiledGraph } from "../graph/types.ts";
-import type { RunLimits } from "../usage/quota.ts";
-import { type EarlierSpend, ownSpend, unreported } from "../usage/spend.ts";
+import type { EarlierSpend } from "../usage/spend.ts";
 import { declaredNodes } from "./contacts.ts";
 import type { Activation, RunOptions } from "./handle.ts";
 import type {
@@ -27,97 +26,13 @@ import type {
   UnreadMail,
 } from "./types.ts";
 
+export { spendOf } from "./spending.ts";
+
 /** Control nodes pass their input through; a join's input is its output. */
 export const passThrough = (input: NodeOutput | undefined): NodeResult => ({
   output: input ?? {},
   ok: true,
 });
-
-/**
- * A result with only what this activation spent (ADR-046): a session's report
- * holds its total so far, while its tokens are this process's own. `reported`
- * holds each session's total.
- */
-export const withOwnSpend = (
-  id: string,
-  result: NodeResult,
-  reported: Map<string, number>,
-): NodeResult => {
-  const { sessionId, usage } = result;
-  if (sessionId === undefined || usage === undefined) return result;
-  const own = {
-    ...usage,
-    costUsd: ownSpend(reported, `${id}/${sessionId}`, usage.costUsd),
-  };
-  return {
-    ...result,
-    usage: own,
-    output:
-      "usage" in result.output
-        ? { ...result.output, usage: own }
-        : result.output,
-  };
-};
-
-/** A run's spending so far; a resumed run starts from what it had spent. */
-export const createSpend = (
-  budgetUsd: number | undefined,
-  earlier?: EarlierSpend,
-  limits?: () => RunLimits,
-) => {
-  const reported = new Map(earlier?.reported);
-  let spent = earlier?.total ?? 0;
-  const budgetLeft = () =>
-    budgetUsd === undefined ? undefined : budgetUsd - spent;
-  return {
-    total: () => spent,
-    /** What a session has spent in this activation, from its total so far. */
-    ownOf: (id: string, sessionId: string, total: number): number =>
-      unreported(reported, `${id}/${sessionId}`, total),
-    /** What a session may spend: the least of the budget and any quota. */
-    left: () => {
-      const known = [budgetLeft(), limits?.().leftUsd].filter(
-        left => left !== undefined,
-      );
-      return known.length === 0 ? undefined : Math.min(...known);
-    },
-    budgetLeft,
-    /** What the limits across runs allow now. */
-    quota: (): RunLimits => limits?.() ?? {},
-    /**
-     * What stops anything new from starting: a quota first, as a budget can be
-     * raised.
-     */
-    spentOut: (): { status: RunStatus; reason: string } | null => {
-      const blocked = limits?.().blocked;
-      if (blocked !== undefined) {
-        return { status: "quota_exhausted", reason: blocked };
-      }
-      return budgetUsd !== undefined && spent >= budgetUsd
-        ? {
-            status: "budget_exhausted",
-            reason: `the run's budget of $${String(budgetUsd)} is spent`,
-          }
-        : null;
-    },
-    /**
-     * Counts a result, and gives it back with only its own spend. A replayed
-     * result is as stored, and already in what the run started from.
-     */
-    count: (id: string, result: NodeResult, replayed: boolean): NodeResult => {
-      if (replayed) return result;
-      const own = withOwnSpend(id, result, reported);
-      spent += own.usage?.costUsd ?? 0;
-      return own;
-    },
-  };
-};
-
-/** A run's spending, from what the scheduler is given. */
-export const spendOf = (
-  budgetUsd: number | undefined,
-  options: Pick<RunOptions, "replay" | "limits">,
-) => createSpend(budgetUsd, options.replay?.earlier, options.limits);
 
 export const recordRun = (entry: NodeSummary, result: NodeResult): void => {
   entry.runs += 1;

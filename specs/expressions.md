@@ -69,11 +69,12 @@ path       := name ( "." name | "[" ( number | string ) "]" )*
   ([ADR-068](../decisions/ADR-068-gate-document-and-readable-text.md)). Strings
   stay as they are; a list is `- item` lines; a list of objects is one `- ` item
   per object with its `key: value` lines indented; an object is `key: value`
-  lines; `null` and `undefined` stay empty. A list or object that follows text
-  on the same line starts after a blank line, so it is not glued to the label. A
-  value nested deeper than two levels is an indented code block of pretty JSON,
-  after a blank line unless it opens the text, never one line of raw JSON. A
-  prompt, a tool node's `env:` and every other template keep JSON
+  lines; `null` and `undefined` stay empty. Text right after a list starts a new
+  paragraph, so it does not read as part of the last item. A list or object that
+  follows text on the same line starts after a blank line, so it is not glued to
+  the label. A value nested deeper than two levels is an indented code block of
+  pretty JSON, after a blank line unless it opens the text, never one line of
+  raw JSON. A prompt, a tool node's `env:` and every other template keep JSON
   ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)).
 
 ## Functions

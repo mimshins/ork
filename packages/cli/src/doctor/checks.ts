@@ -57,7 +57,7 @@ export const orkCheck = (): CheckResult =>
   versionCheck(
     ORK_VERSION,
     readUpdateCache(updateCachePath()),
-    updateCheckOff(process.env, [], true) !== null,
+    updateCheckOff(process.env, [], process.stderr.isTTY),
   );
 
 export const MIN_NODE = [24, 20] as const;
@@ -76,6 +76,19 @@ export const checkNode = (version: string): CheckResult => {
       };
 };
 
+/** A work tree with no commit has no `HEAD` for a worktree to branch from. */
+export const checkHead = async (run: Exec): Promise<CheckResult> => {
+  const head = await run("git", ["rev-parse", "--verify", "HEAD"]);
+  return head.ok
+    ? { name: "git commits", status: "ok", detail: "HEAD exists" }
+    : {
+        name: "git commits",
+        status: "warn",
+        detail: "no commit yet",
+        hint: "Make a first commit: worktree runs branch from HEAD.",
+      };
+};
+
 export const checkGit = async (run: Exec): Promise<CheckResult[]> => {
   const version = await run("git", ["--version"]);
   if (!version.ok) {
@@ -89,6 +102,7 @@ export const checkGit = async (run: Exec): Promise<CheckResult[]> => {
     ];
   }
   const inside = await run("git", ["rev-parse", "--is-inside-work-tree"]);
+  const head = inside.ok ? await checkHead(run) : null;
   return [
     { name: "git", status: "ok", detail: firstLine(version.stdout) },
     inside.ok
@@ -99,7 +113,16 @@ export const checkGit = async (run: Exec): Promise<CheckResult[]> => {
           detail: "not a git repository",
           hint: "Run Ork inside a git repository so nodes can use worktrees.",
         },
+    ...(head === null ? [] : [head]),
   ];
+};
+
+/** What `ork init` warns of: a work tree with no commit, else null. */
+export const headWarning = async (run: Exec): Promise<string | null> => {
+  const head = (await checkGit(run)).find(r => r.name === "git commits");
+  return head?.status === "warn"
+    ? `${head.detail}. ${head.hint ?? ""}`.trim()
+    : null;
 };
 
 /**
