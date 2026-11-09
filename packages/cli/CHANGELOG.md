@@ -1,5 +1,19 @@
 # @krapht/ork
 
+## 1.0.0-alpha.8
+
+### Minor Changes
+
+- [`fc36cec`](https://github.com/mimshins/ork/commit/fc36cec389d4dedfec3520c1269840fd1e73bd8b) Thanks [@mimshins](https://github.com/mimshins)! - Show a node run once per item (`forEach`) in the Monitor as one card with its
+  progress and its items as rows, add the `forEach` group and a `from` list
+  dropdown to the Builder, keep a node's items with it in the Logs filter, and add
+  the guides, the plugin's `write` skill and `examples/fan-out.ork.yaml`.
+
+### Patch Changes
+
+- [`f93117d`](https://github.com/mimshins/ork/commit/f93117d6fbf936b75399e02cf34e179070d17819) Thanks [@mimshins](https://github.com/mimshins)! - Show a graph edge's whole condition, wrapped instead of cut, and keep a
+  self-loop's condition clear of the card above it and of the labels beside it.
+
 ## 1.0.0-alpha.7
 
 ### Patch Changes
