@@ -74,4 +74,4 @@ defaults:
   maxTurns: 60
   timeout: 45m
 quotas:
-  dayUsd: 50
+  dayUsd: 100
