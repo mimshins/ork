@@ -57,6 +57,8 @@ export type RunOptions = {
   orkDir?: string;
   /** Recorded in `run.started`. */
   settings?: RunSettings;
+  /** The Ork version running it, recorded in `run.started`. */
+  orkVersion?: string;
   /** For `ork resume`: the results a run recorded, handed back in order. */
   replay?: Replay;
   /** What the limits across runs allow now (RFC-007); none with none set. */

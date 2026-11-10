@@ -1,0 +1,11 @@
+run,workflow,node,model,driver,kind,round,failed,costUsd,inputTokens,outputTokens,cacheReadTokens,cacheWriteTokens,turns,durationMs,at
+c2ebd09e,feature,spec,claude-sonnet-5-5,cli,node,1,0,0.3490706,16,13561,218886,47885,10,107313,2026-11-08T13:44:25.469Z
+c2ebd09e,feature,implement,claude-sonnet-5-5,cli,node,1,0,0.1597042,16,3057,284142,25172,9,104830,2026-11-08T13:48:08.945Z
+c2ebd09e,feature,engine,claude-opus-5-5,cli,node,1,0,1.171546,26,22793,821190,68918,44,271520,2026-11-08T13:50:55.636Z
+c2ebd09e,feature,engine-2,claude-opus-5-5,cli,node,1,0,1.1993230000000001,30,24993,836115,66515,30,359690,2026-11-08T13:57:32.417Z
+c2ebd09e,feature,build,claude-sonnet-5-5,cli,node,1,0,0.21483029999999997,10,3947,146243,40179,7,799570,2026-11-08T13:59:30.739Z
+c2ebd09e,feature,review,claude-opus-5-5,cli,node,1,0,0.9257704,10,15752,186612,71671,20,154764,2026-11-08T14:02:40.433Z
+c2ebd09e,feature,implement,claude-sonnet-5-5,cli,node,2,0,0.0440692,6,1437,131512,4134,4,46200,2026-11-08T14:03:33.233Z
+c2ebd09e,feature,build,claude-sonnet-5-5,cli,node,2,0,0.046834600000000004,6,1428,128746,4917,4,127421,2026-11-08T14:04:48.449Z
+c2ebd09e,feature,review,claude-opus-5-5,cli,node,2,0,0.09735500000000008,4,1088,146855,5776,4,11067,2026-11-08T14:05:33.152Z
+c2ebd09e,feature,docs,claude-sonnet-5-5,cli,node,1,0,0.09625629999999999,6,1193,83743,18985,4,81183,2026-11-08T14:06:55.115Z

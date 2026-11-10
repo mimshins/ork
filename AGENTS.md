@@ -96,6 +96,7 @@ bug fixes need no plan unless they are architectural.
 | How the parts fit together                   | [docs/interaction-map/](./docs/interaction-map/README.md) |
 | Agent orientation, skills, agents, templates | [.ai/](./.ai/README.md)                                   |
 | Local-only plans (gitignored)                | `.ai/plans/`                                              |
+| Public benchmarks of Ork building itself     | [benchmarks/](./benchmarks/README.md)                     |
 
 ## Commands
 
@@ -106,7 +107,10 @@ bug fixes need no plan unless they are architectural.
   updates the index and the links to it.
 - `pnpm benchmark <run> <folder>` measures a finished run and the runs it
   called; `pnpm benchmark:control <folder>` estimates the same changes in plain
-  Claude Code sessions ([benchmark-run](./.ai/skills/benchmark-run/SKILL.md)).
+  Claude Code sessions; `pnpm benchmark:publish <folder> [name…]` copies the
+  safe parts into the public `benchmarks/`, which `pnpm benchmarks:check` (part
+  of `pnpm check`) keeps free of private data
+  ([benchmark-run](./.ai/skills/benchmark-run/SKILL.md)).
 - `pnpm build` bundles the CLI into `packages/cli/dist/bin.mjs`.
 - `pnpm format` fixes formatting (oxfmt); `pnpm lint:fix` fixes lint (oxlint).
 - `pnpm ork <args>` runs the CLI from source.

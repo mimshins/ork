@@ -129,7 +129,7 @@ const runBudget = (
 export const runStartedEvent = (
   graph: CompiledGraph,
   runId: string,
-  options: Pick<RunOptions, "inputs" | "settings">,
+  options: Pick<RunOptions, "inputs" | "settings" | "orkVersion">,
 ): RunEvent => ({
   type: "run.started",
   runId,
@@ -146,6 +146,7 @@ export const runStartedEvent = (
   inputs: options.inputs,
   ...(options.settings === undefined ? {} : { settings: options.settings }),
   ...runBudget(graph, options.settings),
+  ...(options.orkVersion === undefined ? {} : { ork: options.orkVersion }),
 });
 
 /** The unread mail of nodes that never ran; a node that ran saw its notice. */

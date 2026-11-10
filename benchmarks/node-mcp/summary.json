@@ -1,0 +1,227 @@
+{
+  "benchmark": "node-mcp",
+  "ork": {
+    "versions": ["1.0.0-alpha.3"],
+    "from": "packages/cli/package.json at 7ffa69e"
+  },
+  "run": "16ca8153",
+  "status": "succeeded",
+  "runs": [
+    {
+      "id": "16ca8153",
+      "workflow": "feature",
+      "parent": null,
+      "status": "succeeded",
+      "started": "2026-11-08T10:12:24.358Z",
+      "finished": "2026-11-08T10:46:43.577Z",
+      "cost_usd": 5.7899
+    }
+  ],
+  "started": "2026-11-08T10:12:24.358Z",
+  "finished": "2026-11-08T10:46:43.577Z",
+  "cost_usd": 5.7899,
+  "tokens": {
+    "input_tokens": 150,
+    "output_tokens": 114628,
+    "cache_read_tokens": 5739386,
+    "cache_write_tokens": 402623,
+    "all_tokens": 6256787
+  },
+  "turns": 104,
+  "sessions": 9,
+  "failed_sessions": 0,
+  "minutes": {
+    "working": 28.7,
+    "waiting_on_maintainer": 5.7,
+    "wall": 34.3
+  },
+  "decisions": 4,
+  "permission_requests": 2,
+  "by_node": {
+    "feature.spec": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 23,
+      "input_tokens": 32,
+      "output_tokens": 15241,
+      "cache_read_tokens": 621771,
+      "cache_write_tokens": 56546,
+      "cost_usd": 0.4408
+    },
+    "feature.engine": {
+      "model": "claude-opus-5-5",
+      "sessions": 2,
+      "failed": 0,
+      "turns": 50,
+      "input_tokens": 70,
+      "output_tokens": 68996,
+      "cache_read_tokens": 4032307,
+      "cache_write_tokens": 175332,
+      "cost_usd": 3.5893
+    },
+    "feature.build": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 2,
+      "failed": 0,
+      "turns": 7,
+      "input_tokens": 10,
+      "output_tokens": 6304,
+      "cache_read_tokens": 144345,
+      "cache_write_tokens": 43070,
+      "cost_usd": 0.2498
+    },
+    "feature.review": {
+      "model": "claude-opus-5-5",
+      "sessions": 3,
+      "failed": 0,
+      "turns": 18,
+      "input_tokens": 28,
+      "output_tokens": 22942,
+      "cache_read_tokens": 792286,
+      "cache_write_tokens": 88894,
+      "cost_usd": 1.3286
+    },
+    "feature.docs": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 6,
+      "input_tokens": 10,
+      "output_tokens": 1145,
+      "cache_read_tokens": 148677,
+      "cache_write_tokens": 38781,
+      "cost_usd": 0.1815
+    }
+  },
+  "activations": [
+    {
+      "run": "16ca8153",
+      "node": "spec",
+      "round": 1,
+      "agent": "spec-writer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T10:12:24.366Z",
+      "minutes": 2.8
+    },
+    {
+      "run": "16ca8153",
+      "node": "engine",
+      "round": 1,
+      "agent": "engine",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T10:15:51.294Z",
+      "minutes": 10.7
+    },
+    {
+      "run": "16ca8153",
+      "node": "build",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T10:15:36.267Z",
+      "minutes": 11.8
+    },
+    {
+      "run": "16ca8153",
+      "node": "review",
+      "round": 1,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T10:27:21.918Z",
+      "minutes": 12.1
+    },
+    {
+      "run": "16ca8153",
+      "node": "engine",
+      "round": 2,
+      "agent": "engine",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T10:39:36.433Z",
+      "minutes": 2.9
+    },
+    {
+      "run": "16ca8153",
+      "node": "build",
+      "round": 2,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T10:39:29.495Z",
+      "minutes": 3.8
+    },
+    {
+      "run": "16ca8153",
+      "node": "review",
+      "round": 2,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T10:43:16.826Z",
+      "minutes": 0.4
+    },
+    {
+      "run": "16ca8153",
+      "node": "docs",
+      "round": 1,
+      "agent": "docs-keeper",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T10:43:41.410Z",
+      "minutes": 2.7
+    },
+    {
+      "run": "16ca8153",
+      "node": "stage",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T10:46:25.339Z",
+      "minutes": 0
+    },
+    {
+      "run": "16ca8153",
+      "node": "apply",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T10:46:42.248Z",
+      "minutes": 0
+    }
+  ],
+  "agents": [
+    {
+      "name": "spec-writer",
+      "source": "project",
+      "where": ".ai/agents/spec-writer.md",
+      "hash": "14d2a18aca6c"
+    },
+    {
+      "name": "engine",
+      "source": "project",
+      "where": ".ai/agents/engine.md",
+      "hash": "799c5b0f2d35"
+    },
+    {
+      "name": "reviewer",
+      "source": "project",
+      "where": ".ai/agents/reviewer.md",
+      "hash": "e7ecf428ec2f"
+    },
+    {
+      "name": "docs-keeper",
+      "source": "project",
+      "where": ".ai/agents/docs-keeper.md",
+      "hash": "fc551007b412"
+    }
+  ],
+  "workflow_commit": "7ffa69e52538237a3f5d26144db9e6ca0b266217",
+  "result_commits": ["0485790"]
+}

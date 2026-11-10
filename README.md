@@ -61,6 +61,8 @@ ork ui                                       # your runs in the browser
 - **Guides:** everything else, from writing workflows to the browser view, is in
   the [documentation center](./docs/README.md). New to the ideas? Start with
   [How Ork works](./docs/how-ork-works.md).
+- **Benchmarks:** [Ork building Ork](./benchmarks/README.md): what real features
+  cost and how long they took, against a plain Claude Code session.
 - **Reference:** the [specs](./specs/README.md) and the
   [JSON Schema](./packages/schema/workflow.schema.json).
 - **Contributors:** the [design overview](./specs/design.md), the

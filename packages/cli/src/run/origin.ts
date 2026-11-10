@@ -12,6 +12,9 @@ import type { SignalOptions } from "@krapht/ork-core";
 import { ORK_VERSION } from "../__build_info__.ts";
 
 /** Ork's version and the workflow's hash, for the run's feedback records. */
+/** The Ork version a run records in `run.started` and `run.resumed`. */
+export const ORK_RUN_VERSION: string = ORK_VERSION;
+
 export const feedbackOrigin = (workflowFile: string): SignalOptions => {
   const origin: SignalOptions = { version: ORK_VERSION };
   try {

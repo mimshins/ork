@@ -31,9 +31,13 @@ const CONTENTS = "contents";
 const under = (relative: string, prefix: string): boolean =>
   relative === prefix || relative.startsWith(`${prefix}/`);
 
+/** A public benchmark's inputs: copies of files as a run read them. */
+const BENCHMARK_INPUTS = /^benchmarks\/[^/]+\/inputs(?:\/|$)/u;
+
 const skipped = (relative: string): boolean =>
   relative.split("/").includes("node_modules") ||
-  SKIPPED.some(s => under(relative, s));
+  SKIPPED.some(s => under(relative, s)) ||
+  BENCHMARK_INPUTS.test(relative);
 
 /** Every Markdown file under `root`, repository-relative, sorted. */
 export const markdownFiles = (root: string, dir = ""): string[] => {

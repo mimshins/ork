@@ -748,7 +748,7 @@ describe("a workflow's outputs", () => {
     expect(ran).toEqual(["a"]);
   });
 
-  it("records its edges and channels when it starts", async () => {
+  it("records its edges, channels and Ork version when it starts", async () => {
     const graph = compile(
       [
         "schemaVersion: 1",
@@ -770,6 +770,7 @@ describe("a workflow's outputs", () => {
       graph,
       runId: "r",
       inputs: {},
+      orkVersion: "1.2.3",
       cwd: "/tmp",
       executors: { "tool.shell": executor, "claude.worker": executor },
       human: {
@@ -783,6 +784,7 @@ describe("a workflow's outputs", () => {
     await done;
     expect(events[0]).toMatchObject({
       type: "run.started",
+      ork: "1.2.3",
       edges: [
         { from: "a", to: "c" },
         { from: "c", to: "a", when: "exitCode == 1", maxRounds: 2 },

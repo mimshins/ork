@@ -1,0 +1,275 @@
+{
+  "benchmark": "leader-fixes",
+  "ork": {
+    "versions": ["1.0.0-alpha.5"],
+    "from": "packages/cli/package.json at a01b97e"
+  },
+  "run": "c2ebd09e",
+  "status": "succeeded",
+  "runs": [
+    {
+      "id": "c2ebd09e",
+      "workflow": "feature",
+      "parent": null,
+      "status": "succeeded",
+      "started": "2026-11-08T13:42:37.316Z",
+      "finished": "2026-11-08T14:08:45.911Z",
+      "cost_usd": 4.3048
+    }
+  ],
+  "started": "2026-11-08T13:42:37.316Z",
+  "finished": "2026-11-08T14:08:45.911Z",
+  "cost_usd": 4.3048,
+  "tokens": {
+    "input_tokens": 130,
+    "output_tokens": 89249,
+    "cache_read_tokens": 2984044,
+    "cache_write_tokens": 354152,
+    "all_tokens": 3427575
+  },
+  "turns": 136,
+  "sessions": 10,
+  "failed_sessions": 0,
+  "minutes": {
+    "working": 23.8,
+    "waiting_on_maintainer": 2.3,
+    "wall": 26.1
+  },
+  "decisions": 2,
+  "permission_requests": 0,
+  "by_node": {
+    "feature.spec": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 10,
+      "input_tokens": 16,
+      "output_tokens": 13561,
+      "cache_read_tokens": 218886,
+      "cache_write_tokens": 47885,
+      "cost_usd": 0.3491
+    },
+    "feature.implement": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 2,
+      "failed": 0,
+      "turns": 13,
+      "input_tokens": 22,
+      "output_tokens": 4494,
+      "cache_read_tokens": 415654,
+      "cache_write_tokens": 29306,
+      "cost_usd": 0.2038
+    },
+    "feature.engine": {
+      "model": "claude-opus-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 44,
+      "input_tokens": 26,
+      "output_tokens": 22793,
+      "cache_read_tokens": 821190,
+      "cache_write_tokens": 68918,
+      "cost_usd": 1.1715
+    },
+    "feature.engine-2": {
+      "model": "claude-opus-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 30,
+      "input_tokens": 30,
+      "output_tokens": 24993,
+      "cache_read_tokens": 836115,
+      "cache_write_tokens": 66515,
+      "cost_usd": 1.1993
+    },
+    "feature.build": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 2,
+      "failed": 0,
+      "turns": 11,
+      "input_tokens": 16,
+      "output_tokens": 5375,
+      "cache_read_tokens": 274989,
+      "cache_write_tokens": 45096,
+      "cost_usd": 0.2617
+    },
+    "feature.review": {
+      "model": "claude-opus-5-5",
+      "sessions": 2,
+      "failed": 0,
+      "turns": 24,
+      "input_tokens": 14,
+      "output_tokens": 16840,
+      "cache_read_tokens": 333467,
+      "cache_write_tokens": 77447,
+      "cost_usd": 1.0231
+    },
+    "feature.docs": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 4,
+      "input_tokens": 6,
+      "output_tokens": 1193,
+      "cache_read_tokens": 83743,
+      "cache_write_tokens": 18985,
+      "cost_usd": 0.0963
+    }
+  },
+  "activations": [
+    {
+      "run": "c2ebd09e",
+      "node": "spec",
+      "round": 1,
+      "agent": "spec-writer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T13:42:37.322Z",
+      "minutes": 1.8
+    },
+    {
+      "run": "c2ebd09e",
+      "node": "implement",
+      "round": 1,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T13:46:22.625Z",
+      "minutes": 2.4
+    },
+    {
+      "run": "c2ebd09e",
+      "node": "engine",
+      "round": 1,
+      "agent": "engine",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T13:46:22.623Z",
+      "minutes": 5.1
+    },
+    {
+      "run": "c2ebd09e",
+      "node": "engine-2",
+      "round": 1,
+      "agent": "engine",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T13:51:30.974Z",
+      "minutes": 6.6
+    },
+    {
+      "run": "c2ebd09e",
+      "node": "build",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T13:46:09.504Z",
+      "minutes": 13.9
+    },
+    {
+      "run": "c2ebd09e",
+      "node": "review",
+      "round": 1,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T14:00:05.445Z",
+      "minutes": 2.6
+    },
+    {
+      "run": "c2ebd09e",
+      "node": "implement",
+      "round": 2,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T14:02:46.638Z",
+      "minutes": 1.3
+    },
+    {
+      "run": "c2ebd09e",
+      "node": "build",
+      "round": 2,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T14:02:40.736Z",
+      "minutes": 2.7
+    },
+    {
+      "run": "c2ebd09e",
+      "node": "review",
+      "round": 2,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T14:05:21.844Z",
+      "minutes": 0.2
+    },
+    {
+      "run": "c2ebd09e",
+      "node": "docs",
+      "round": 1,
+      "agent": "docs-keeper",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T14:05:33.707Z",
+      "minutes": 1.9
+    },
+    {
+      "run": "c2ebd09e",
+      "node": "stage",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T14:07:28.467Z",
+      "minutes": 0
+    },
+    {
+      "run": "c2ebd09e",
+      "node": "publish",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T14:08:00.936Z",
+      "minutes": 0.7
+    }
+  ],
+  "agents": [
+    {
+      "name": "spec-writer",
+      "source": "project",
+      "where": ".ai/agents/spec-writer.md",
+      "hash": "8f8894d76ccd"
+    },
+    {
+      "name": "engine",
+      "source": "project",
+      "where": ".ai/agents/engine.md",
+      "hash": "799c5b0f2d35"
+    },
+    {
+      "name": "implementer",
+      "source": "project",
+      "where": ".ai/agents/implementer.md",
+      "hash": "3e57fa16e4b3"
+    },
+    {
+      "name": "reviewer",
+      "source": "project",
+      "where": ".ai/agents/reviewer.md",
+      "hash": "e7ecf428ec2f"
+    },
+    {
+      "name": "docs-keeper",
+      "source": "project",
+      "where": ".ai/agents/docs-keeper.md",
+      "hash": "fc551007b412"
+    }
+  ],
+  "workflow_commit": "a01b97e98f599709a980603ffd6c07cc800dd2d6",
+  "result_commits": ["6332204"]
+}

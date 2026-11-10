@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/project.schema.json
+#
+# Ork's own process, as far as project rules express it (AGENTS.md and
+# CONTRIBUTING.md are the source; every node reads AGENTS.md through CLAUDE.md):
+#
+# - The maintainer commits and pushes straight to main, with no pull requests;
+#   contributors push to a branch and open one. A run's nodes never commit
+#   (commit: never): its work stays uncommitted in a detached worktree started
+#   from main, and a workflow's last step is a gate where the person chooses
+#   where it goes. Sessions can't commit, push or open a pull request (the deny
+#   rules); only the script behind that gate does.
+# - The commit message is a short imperative subject, a blank line, what changed
+#   and why, and no AI or agent attribution. feature's docs node drafts it and
+#   the last gate shows it. The commit-msg hook enforces the no-attribution rule
+#   on every commit.
+# - `pnpm check` is the gate. Project rules have no `verify:` default, so each
+#   workflow puts it on its writing nodes.
+# - The driver is left to each contributor: a run takes the one ready on the
+#   machine (`cli` when both are), or `ork run --driver sdk|cli`.
+schemaVersion: 1
+git:
+  commit: never
+  base: main
+permissions:
+  allow:
+    - Bash(pnpm check)
+    - Bash(pnpm format)
+    - Bash(pnpm format:check)
+    - Bash(pnpm lint)
+    - Bash(pnpm lint:fix)
+    - Bash(pnpm typecheck)
+    - Bash(pnpm test)
+    - Bash(pnpm docs:check)
+    - Bash(pnpm map:check)
+    - Bash(pnpm exec oxfmt *)
+    - Bash(npx vitest run *)
+    - Bash(npx oxlint *)
+    - Bash(git status)
+    - Bash(git diff *)
+    - Bash(git log *)
+    # Reading, for every node: awk, find and python are left out, as they can
+    # write files and run commands.
+    - Bash(cd *)
+    - Bash(cat *)
+    - Bash(head *)
+    - Bash(tail *)
+    - Bash(wc *)
+    - Bash(ls *)
+    - Bash(grep *)
+    - Bash(rg *)
+    - Bash(sed -n *)
+    - Bash(cut *)
+    - Bash(sort *)
+    - Bash(uniq *)
+    - Bash(echo *)
+    - Bash(npm view *)
+  deny:
+    - Bash(git commit *)
+    - Bash(git push *)
+    - Bash(git worktree *)
+    - Bash(git -C * worktree *)
+    - Bash(gh *)
+    - Bash(npm publish *)
+    - Bash(pnpm publish *)
+    - Bash(changeset publish *)
+    - Bash(pnpm changeset publish *)
+    - Bash(npx changeset publish *)
+    - Bash(ork feedback publish *)
+    - Bash(pnpm ork feedback publish *)
+defaults:
+  model: sonnet
+  effort: high
+  budgetUsd: 2
+  maxTurns: 60
+  timeout: 45m
+quotas:
+  dayUsd: 50

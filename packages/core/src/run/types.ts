@@ -231,9 +231,11 @@ export type RunEvent =
       settings?: RunSettings;
       /** What the run may spend, if there's a limit: for showing against. */
       budgetUsd?: number;
+      /** The Ork version that started it; absent on runs from before. */
+      ork?: string;
     }
-  /** `ork resume` continues the run; `kept` nodes keep their results. */
-  | { type: "run.resumed"; kept: string[] }
+  /** `ork resume` continues the run, `ork` that version; `kept` keep results. */
+  | { type: "run.resumed"; kept: string[]; ork?: string }
   | {
       type: "node.started";
       id: string;

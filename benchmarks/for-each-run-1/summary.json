@@ -1,0 +1,347 @@
+{
+  "benchmark": "for-each-run-1",
+  "ork": {
+    "versions": ["1.0.0-alpha.6"],
+    "from": "packages/cli/package.json at c3306ee"
+  },
+  "run": "f4e5e533",
+  "status": "succeeded",
+  "runs": [
+    {
+      "id": "f4e5e533",
+      "workflow": "feature",
+      "parent": null,
+      "status": "succeeded",
+      "started": "2026-11-08T14:33:26.781Z",
+      "finished": "2026-11-08T15:35:09.683Z",
+      "cost_usd": 20.0677
+    }
+  ],
+  "started": "2026-11-08T14:33:26.781Z",
+  "finished": "2026-11-08T15:35:09.683Z",
+  "cost_usd": 20.0677,
+  "tokens": {
+    "input_tokens": 660,
+    "output_tokens": 415451,
+    "cache_read_tokens": 52663523,
+    "cache_write_tokens": 1161445,
+    "all_tokens": 54241079
+  },
+  "turns": 397,
+  "sessions": 15,
+  "failed_sessions": 0,
+  "minutes": {
+    "working": 60.7,
+    "waiting_on_maintainer": 1,
+    "wall": 61.7
+  },
+  "decisions": 2,
+  "permission_requests": 0,
+  "by_node": {
+    "feature.spec": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 10,
+      "input_tokens": 16,
+      "output_tokens": 15295,
+      "cache_read_tokens": 233739,
+      "cache_write_tokens": 28955,
+      "cost_usd": 0.2922
+    },
+    "feature.implement": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 5,
+      "failed": 0,
+      "turns": 180,
+      "input_tokens": 344,
+      "output_tokens": 123346,
+      "cache_read_tokens": 34884935,
+      "cache_write_tokens": 331840,
+      "cost_usd": 6.05
+    },
+    "feature.engine-2": {
+      "model": "claude-opus-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 14,
+      "input_tokens": 24,
+      "output_tokens": 19751,
+      "cache_read_tokens": 710970,
+      "cache_write_tokens": 66004,
+      "cost_usd": 1.0653
+    },
+    "feature.engine-3": {
+      "model": "claude-opus-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 38,
+      "input_tokens": 40,
+      "output_tokens": 27568,
+      "cache_read_tokens": 1669154,
+      "cache_write_tokens": 100161,
+      "cost_usd": 1.6866
+    },
+    "feature.implement-2": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 52,
+      "input_tokens": 98,
+      "output_tokens": 23592,
+      "cache_read_tokens": 4030870,
+      "cache_write_tokens": 106403,
+      "cost_usd": 1.0648
+    },
+    "feature.engine": {
+      "model": "claude-opus-5-5",
+      "sessions": 3,
+      "failed": 0,
+      "turns": 72,
+      "input_tokens": 92,
+      "output_tokens": 170320,
+      "cache_read_tokens": 10097658,
+      "cache_write_tokens": 345292,
+      "cost_usd": 8.1886
+    },
+    "feature.build": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 12,
+      "input_tokens": 22,
+      "output_tokens": 16369,
+      "cache_read_tokens": 561480,
+      "cache_write_tokens": 53862,
+      "cost_usd": 0.4353
+    },
+    "feature.review": {
+      "model": "claude-opus-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 12,
+      "input_tokens": 12,
+      "output_tokens": 16801,
+      "cache_read_tokens": 261651,
+      "cache_write_tokens": 83803,
+      "cost_usd": 1.0588
+    },
+    "feature.docs": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 7,
+      "input_tokens": 12,
+      "output_tokens": 2409,
+      "cache_read_tokens": 213066,
+      "cache_write_tokens": 45125,
+      "cost_usd": 0.2259
+    }
+  },
+  "activations": [
+    {
+      "run": "f4e5e533",
+      "node": "spec",
+      "round": 1,
+      "agent": "spec-writer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T14:33:26.789Z",
+      "minutes": 1.7
+    },
+    {
+      "run": "f4e5e533",
+      "node": "implement",
+      "round": 1,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T14:35:38.100Z",
+      "minutes": 4.6
+    },
+    {
+      "run": "f4e5e533",
+      "node": "engine-2",
+      "round": 1,
+      "agent": "engine",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T14:40:26.729Z",
+      "minutes": 5.2
+    },
+    {
+      "run": "f4e5e533",
+      "node": "engine-3",
+      "round": 1,
+      "agent": "engine",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T14:40:26.731Z",
+      "minutes": 7.5
+    },
+    {
+      "run": "f4e5e533",
+      "node": "implement-2",
+      "round": 1,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T14:40:26.732Z",
+      "minutes": 7.6
+    },
+    {
+      "run": "f4e5e533",
+      "node": "implement",
+      "round": 2,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T14:48:21.234Z",
+      "minutes": 10.3
+    },
+    {
+      "run": "f4e5e533",
+      "node": "engine",
+      "round": 1,
+      "agent": "engine",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T14:48:21.236Z",
+      "minutes": 16.9
+    },
+    {
+      "run": "f4e5e533",
+      "node": "implement",
+      "round": 3,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T15:05:28.403Z",
+      "minutes": 5.8
+    },
+    {
+      "run": "f4e5e533",
+      "node": "engine",
+      "round": 2,
+      "agent": "engine",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T15:05:28.402Z",
+      "minutes": 7
+    },
+    {
+      "run": "f4e5e533",
+      "node": "implement",
+      "round": 4,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T15:12:53.115Z",
+      "minutes": 4.7
+    },
+    {
+      "run": "f4e5e533",
+      "node": "engine",
+      "round": 3,
+      "agent": "engine",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T15:12:53.113Z",
+      "minutes": 8.3
+    },
+    {
+      "run": "f4e5e533",
+      "node": "implement",
+      "round": 5,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-08T15:21:22.038Z",
+      "minutes": 4.6
+    },
+    {
+      "run": "f4e5e533",
+      "node": "build",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T14:35:24.580Z",
+      "minutes": 52.8
+    },
+    {
+      "run": "f4e5e533",
+      "node": "review",
+      "round": 1,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T15:28:13.084Z",
+      "minutes": 2.8
+    },
+    {
+      "run": "f4e5e533",
+      "node": "docs",
+      "round": 1,
+      "agent": "docs-keeper",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T15:30:58.915Z",
+      "minutes": 2.7
+    },
+    {
+      "run": "f4e5e533",
+      "node": "stage",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T15:33:39.358Z",
+      "minutes": 0
+    },
+    {
+      "run": "f4e5e533",
+      "node": "publish",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-08T15:34:17.729Z",
+      "minutes": 0.8
+    }
+  ],
+  "agents": [
+    {
+      "name": "spec-writer",
+      "source": "project",
+      "where": ".ai/agents/spec-writer.md",
+      "hash": "8f8894d76ccd"
+    },
+    {
+      "name": "implementer",
+      "source": "project",
+      "where": ".ai/agents/implementer.md",
+      "hash": "3e57fa16e4b3"
+    },
+    {
+      "name": "engine",
+      "source": "project",
+      "where": ".ai/agents/engine.md",
+      "hash": "799c5b0f2d35"
+    },
+    {
+      "name": "reviewer",
+      "source": "project",
+      "where": ".ai/agents/reviewer.md",
+      "hash": "e7ecf428ec2f"
+    },
+    {
+      "name": "docs-keeper",
+      "source": "project",
+      "where": ".ai/agents/docs-keeper.md",
+      "hash": "fc551007b412"
+    }
+  ],
+  "workflow_commit": "c3306eee1af42ff8c9c511fc16438d02ff518d3f",
+  "result_commits": ["ed453d6"]
+}

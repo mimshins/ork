@@ -51,7 +51,7 @@ import {
   liveHandlers,
   takeLastCommands,
 } from "./live-handlers.ts";
-import { feedbackOrigin } from "./origin.ts";
+import { feedbackOrigin, ORK_RUN_VERSION } from "./origin.ts";
 import { preflight } from "./preflight.ts";
 import type { RunWorkflowOptions } from "./workflow-options.ts";
 
@@ -227,7 +227,7 @@ export const runWorkflowFile = async (
           options.resume.fanOuts,
         );
   if (replay !== undefined)
-    onEvent({ type: "run.resumed", kept: replay.kept() });
+    onEvent({ type: "run.resumed", kept: replay.kept(), ork: ORK_RUN_VERSION });
   const ports = callPorts({
     ...options,
     graph,
@@ -254,6 +254,7 @@ export const runWorkflowFile = async (
         ? control.human
         : replayLoopAnswers(control.human, options.resume.loopAnswers),
     onEvent,
+    orkVersion: ORK_RUN_VERSION,
     settings: {
       inPlace: options.inPlace,
       ...(options.driver === undefined ? {} : { driver: options.driver }),

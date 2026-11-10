@@ -5,8 +5,11 @@
  *   `spec.md` (the plan or spec that was built) and `workflow/` (the workflows,
  *   `project.yaml` and agents at the commit the run started from). It reads a
  *   consistent copy of `~/.ork/state.db`, never the live store, and refuses a
- *   run still going. Options: `--name`, `--commits <sha,…>` (else the commits
- *   its tool nodes printed), `--db`, `--repo`.
+ *   run still going. It records the Ork version that ran it: from the runs'
+ *   `run.started` and `run.resumed` events, else `packages/cli/package.json` at
+ *   that commit (a run from before Ork recorded it). Options: `--name`,
+ *   `--commits <sha,…>` (else the commits its tool nodes printed), `--db`,
+ *   `--repo`.
  */
 
 import { execFileSync } from "node:child_process";
@@ -87,6 +90,30 @@ const writeInputs = (tree: Tree, repo: string, dir: string): string => {
   return commit;
 };
 
+/**
+ * The Ork versions that started and resumed the tree's runs, in order; from git
+ * at `commit` for runs from before Ork recorded its version.
+ */
+const orkOf = (tree: Tree, repo: string, commit: string) => {
+  const recorded = [
+    ...new Set(
+      tree.events
+        .filter(e => e.type === "run.started" || e.type === "run.resumed")
+        .map(e => text(e.data["ork"]))
+        .filter(v => v !== undefined),
+    ),
+  ];
+  if (recorded.length > 0) return { versions: recorded, from: "run events" };
+  const manifest = rec(
+    JSON.parse(fileAt(repo, commit, "packages/cli/package.json") ?? "{}"),
+  );
+  const version = text(manifest["version"]);
+  return {
+    versions: version === undefined ? [] : [version],
+    from: `packages/cli/package.json at ${commit.slice(0, 7)}`,
+  };
+};
+
 /** A consistent copy of the live store, in a folder of its own. */
 const copyStore = async (from: string): Promise<string> => {
   const to = path.join(mkdtempSync(path.join(tmpdir(), "ork-bench-")), "s.db");
@@ -125,7 +152,10 @@ const benchmark = (
   mkdirSync(dir, { recursive: true });
   const workflowCommit = writeInputs(tree, options.repo, dir);
   const summary = Object.assign(
-    { benchmark: path.basename(dir) },
+    {
+      benchmark: path.basename(dir),
+      ork: orkOf(tree, options.repo, workflowCommit),
+    },
     summarize(tree),
     {
       workflow_commit: workflowCommit,
@@ -143,6 +173,7 @@ const benchmark = (
   console.log(
     JSON.stringify(
       {
+        ork: summary.ork.versions,
         cost_usd: summary.cost_usd,
         minutes: summary.minutes,
         sessions: summary.sessions,

@@ -1,6 +1,6 @@
 ---
 name: benchmark-run
-description: Save a benchmark of a finished Ork run, and every run it called, into a folder - cost, tokens, working and waiting time, by node, what went wrong - and compare it with an estimate of the same change made in plain Claude Code sessions. Use when asked to benchmark a run. Arguments - the run id, the folder to save into, and optionally a name.
+description: Save a benchmark of a finished Ork run, and every run it called, into a folder - cost, tokens, working and waiting time, the Ork version, by node, what went wrong - compare it with an estimate of the same change made in plain Claude Code sessions, and publish its safe parts to the repository's public benchmarks/. Use when asked to benchmark a run. Arguments - the run id, the folder to save into, and optionally a name.
 argument-hint: <run> <folder> [name]
 ---
 
@@ -27,6 +27,10 @@ itself, and the README's account of what happened.
 - The scripts read a consistent copy of `~/.ork/state.db`. Never write to the
   store.
 - A benchmark folder is never overwritten. Pick another name.
+- **The README is public.** The publish step copies it to `benchmarks/` in this
+  public repository, so write it for someone who has never seen Ork: no local
+  paths, no names but "the maintainer", nothing from a prompt or a plan that
+  isn't already public, and commits linked on GitHub.
 
 ## Steps
 
@@ -41,7 +45,9 @@ itself, and the README's account of what happened.
    ```sh
    pnpm benchmark <run> <folder> --name <name>
    ```
-   This writes `<folder>/<name>/` with `summary.json`, `usage.csv`, `brief.md`,
+   This writes `<folder>/<name>/` with `summary.json` (with `ork`, the Ork
+   version the runs recorded, or the one at their start commit), `usage.csv`,
+   `brief.md`,
    `spec.md` (the plan or spec that was built) and `workflow/` (the workflows,
    `project.yaml` and agents at the commit the run started from).
 4. **Result commits.** `summary.json`'s `result_commits` lists the commits the
@@ -61,24 +67,31 @@ itself, and the README's account of what happened.
    failed sessions and why (turn cap, budget, an error, an Ork bug), review
    rounds, what each permission request asked, conflicts, and how builders
    overlapped (from the activations' starts and minutes, by owner).
-7. **Write `<folder>/<name>/README.md`** in this shape:
-   - `# Benchmark: <name>`, then one paragraph: what the run built, the runs
-     (id and workflow), the date, the Ork version (`pnpm ork --version` at the
-     time, or the latest release before the run), the driver, and the result
-     commit with its stat (`git show --shortstat`).
-   - `## Totals`: a two-column table with status, cost (and each run's cap from
-     its workflow's `limits.budgetUsd`), all tokens and each kind, turns,
-     sessions and failed sessions, working, waiting and wall minutes, decisions
-     and permission requests.
-   - `## By node`: a table from `by_node`, with node, model, sessions, cost,
-     input, output, cache read and cache write.
-   - `## Builders` (for a run with a leader): when the builders ran, how many
-     at once, and which tasks each wave held.
-   - `## What went wrong`: one bullet per problem, each saying whether Ork,
-     the agent or the workflow caused it, and the fix if one was made. Write
-     "Nothing" when nothing went wrong.
+7. **Write `<folder>/<name>/README.md`** for the public, in the shape of the
+   published ones in `benchmarks/` (read one first):
+   - `# <what was built>`, then one paragraph: what Ork built, the run id, the
+     date, the Ork version from `summary.json`'s `ork`, the driver, and the
+     result commit as a GitHub link with its stat (`git show --shortstat`).
+   - `## At a glance`: status, cost and the workflow's `limits.budgetUsd`,
+     working, waiting and wall minutes, sessions (failed), turns, all tokens
+     by kind, questions and permission requests.
+   - `## By node`: from `by_node`: node, model, sessions, cost, output, cache
+     read and cache write.
+   - `## How it ran`: the shape of the run; for a leader, when builders ran and
+     how many at once; review rounds and what they found.
+   - `## What went wrong`: one bullet per problem, each saying whether Ork, the
+     agent or the workflow caused it, and the fix if one was made. "Nothing
+     failed" when nothing did.
    - `## Against a manual session`: this benchmark's row from `CONTROL.md`, and
-     one sentence reading it. Link `../CONTROL.md` for the method and caveats.
-   - `## Files`: what each file in the folder holds.
-8. **Report** the headline numbers to the maintainer (cost, working, waiting and
+     one sentence reading it, linking `../method.md#the-manual-baseline`.
+   - `## Files`: `summary.json`, `usage.csv`, and `inputs/` (the brief, and
+     the workflow, `project.yaml` and agents at the start commit).
+8. **Publish** with `pnpm benchmark:publish <folder> <name>` from this
+   repository. It copies only what may be public into `benchmarks/<name>/`,
+   rewrites `benchmarks/results.json` and the README's results table, and
+   refuses (writing nothing) on a path, an email, a token or a local name.
+   If the overview in `benchmarks/README.md` ("What they show so far") no
+   longer matches the table, update it with the new totals. Run
+   `pnpm benchmarks:check`, and commit only when the maintainer asks.
+9. **Report** the headline numbers to the maintainer (cost, working, waiting and
    wall minutes, the control's median and range), and anything that went wrong.
