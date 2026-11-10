@@ -1,5 +1,104 @@
 # @krapht/ork
 
+## 1.0.0-alpha.10
+
+### Minor Changes
+
+- [`692df82`](https://github.com/mimshins/ork/commit/692df8263a976815f500a7c7a98eb75c8947098d) Thanks [@mimshins](https://github.com/mimshins)! - The Agent SDK driver is gone; Ork runs agents through their CLIs (RFC-014). The
+  driver ids are now `claude-code`, `open-code` and `command-code`. `claude-code`
+  runs your own `claude` and is ready when it is logged in, or when
+  `ANTHROPIC_API_KEY` or `CLAUDE_CODE_USE_BEDROCK`/`_VERTEX`/`_FOUNDRY=1` is set;
+  `ork doctor` says which. `open-code` and `command-code` are listed, and refused
+  until a real session has proven them. A workflow, `.ork/project.yaml` or
+  `--driver` naming `sdk` or `cli` is refused with a message naming `claude-code`;
+  runs recorded with them still resume, read as `claude-code`. The published
+  package no longer depends on `@anthropic-ai/claude-agent-sdk` or
+  `@anthropic-ai/sdk`.
+
+- [`692df82`](https://github.com/mimshins/ork/commit/692df8263a976815f500a7c7a98eb75c8947098d) Thanks [@mimshins](https://github.com/mimshins)! - `ork validate` and `ork run` now refuse a node its driver can't serve, before
+  anything is spent, in words that name both: `maxTurns` on a driver with no turn
+  limit, `budgetUsd` on one that reports no dollars (a token budget is planned), a
+  leader that delegates on a driver that can't reach Ork's tools, and any node on
+  a driver not yet proven on a real session. `ork validate --driver <id>` checks
+  against that driver; without it, against the one a run would take.
+
+- [`692df82`](https://github.com/mimshins/ork/commit/692df8263a976815f500a7c7a98eb75c8947098d) Thanks [@mimshins](https://github.com/mimshins)! - `ork validate` now warns when a workflow could queue on a driver that holds one
+  session per checkout (Command Code): session nodes that share a checkout and can
+  run at once. The warning names the driver and the nodes, and says to give them
+  separate worktrees or use another driver.
+
+### Patch Changes
+
+- [`0198304`](https://github.com/mimshins/ork/commit/0198304ceed0c3d0db343ff323b7f39f9b1e03a6) Thanks [@mimshins](https://github.com/mimshins)! - Messages, `ork doctor` and the setup skill say "agent driver" rather than
+  "Claude driver", since a driver can run OpenCode or Command Code
+
+- [`36de123`](https://github.com/mimshins/ork/commit/36de123e3cfdf293e9ceefe426bc09dac488c9be) Thanks [@mimshins](https://github.com/mimshins)! - `ork validate` now refuses a Claude node's output field written as `list:` with
+  anything but a map of each item's fields (such as `list: string`), with the same
+  message tool nodes get, instead of the session failing when it starts.
+
+- [`692df82`](https://github.com/mimshins/ork/commit/692df8263a976815f500a7c7a98eb75c8947098d) Thanks [@mimshins](https://github.com/mimshins)! - Add the `command-code` adapter: a session runs the user's own `cmd -p` in JSON
+  mode, reaches Ork's tools through the checkout's leased `ork` MCP entry, hands
+  its report in through Ork's `report` tool, and is held to its node's tool rules
+  by a session mod that refuses everything the node did not allow. The driver
+  stays unproven, and refused, until a real session proves it.
+
+- [`692df82`](https://github.com/mimshins/ork/commit/692df8263a976815f500a7c7a98eb75c8947098d) Thanks [@mimshins](https://github.com/mimshins)! - Add the Command Code MCP lease: a session's Ork endpoint is an `ork` entry in
+  its checkout's Command Code local scope, held one session per checkout (a second
+  waits, shown as a `session.waiting` event), and `ork doctor` removes an entry a
+  crashed session left, leaving the user's other entries as they were.
+
+- [`692df82`](https://github.com/mimshins/ork/commit/692df8263a976815f500a7c7a98eb75c8947098d) Thanks [@mimshins](https://github.com/mimshins)! - Each driver now declares what it does itself (`capabilities`) and whether it is
+  `proven`. `ork doctor` finds the `opencode` and `cmd` binaries and lists
+  `open-code` and `command-code` as unproven; neither is taken as the ready driver
+  until a real session has proven it.
+
+- [`692df82`](https://github.com/mimshins/ork/commit/692df8263a976815f500a7c7a98eb75c8947098d) Thanks [@mimshins](https://github.com/mimshins)! - Driver fit is stricter, and Command Code and OpenCode sessions are safer:
+  
+  - `ork validate` and `ork run` refuse a leader and a node it owns that share a
+    checkout on a driver holding one session per checkout (Command Code): they
+    would wait for each other forever. Siblings still only get a warning.
+  - They also refuse a workflow's `limits.budgetUsd`, and a node's `mcp` servers,
+    on a driver that can't keep them (Command Code), naming the node and driver.
+  - `ork validate` checks every node that names no driver against the one a run
+    would take, so an unproven ready driver is reported before `ork run`.
+  - An interrupt while a session is still being wired up now stops it before it
+    starts; a session that ends in an error is no longer continued to deliver a
+    queued message; an OpenCode message starting with `-` is no longer read as a
+    flag; a corrupt Command Code lease record no longer makes sessions wait
+    forever.
+
+- [`36de123`](https://github.com/mimshins/ork/commit/36de123e3cfdf293e9ceefe426bc09dac488c9be) Thanks [@mimshins](https://github.com/mimshins)! - A node fed by two edges no longer starts its second round while its first is
+  still running; the second waits for the first to finish.
+
+- [`692df82`](https://github.com/mimshins/ork/commit/692df8263a976815f500a7c7a98eb75c8947098d) Thanks [@mimshins](https://github.com/mimshins)! - Add the `open-code` driver's adapter: sessions run the user's own
+  `opencode run --standalone --format json` in the node's worktree, with Ork's
+  tools, the permission rules (deny by default) and a dedicated agent in a config
+  file written at mode 0600 outside the checkout and removed after the session.
+  The machine's and the project's OpenCode config stay out. The driver stays
+  unproven, so `ork validate` and `ork run` still refuse it until a real session
+  proves it.
+
+- [`2741011`](https://github.com/mimshins/ork/commit/27410118fbd30415e919d2085d26cd224a71aa31) Thanks [@mimshins](https://github.com/mimshins)! - A node sent back by a loop with more than its message holds (8 KiB) reads the
+  whole with the new `read_input` tool, so the end of a long review is no longer
+  lost
+
+- [`9c48562`](https://github.com/mimshins/ork/commit/9c485624a630b0da97938eabd0f51871e947add2) Thanks [@mimshins](https://github.com/mimshins)! - A run records the Ork version that started it in `run.started`, and the version
+  that resumed it in `run.resumed`
+
+- [`1bbaab0`](https://github.com/mimshins/ork/commit/1bbaab075124baaac06fbb1dd29291eb6f099327) Thanks [@mimshins](https://github.com/mimshins)! - Sessions running together are no longer offered the same part of a run's
+  `limits.budgetUsd`: each sets its cap aside as it starts, so a run passes its
+  budget by at most the turn that crosses a session's cap
+
+- [`2a02daa`](https://github.com/mimshins/ork/commit/2a02daa4a3389a894f73e2ae5ffe91b5fbe447d6) Thanks [@mimshins](https://github.com/mimshins)! - A resumed run's `readonly` or `continue` node works in the worktree of the node
+  before it, even when the resume replays that node, instead of the project root
+
+- [`692df82`](https://github.com/mimshins/ork/commit/692df8263a976815f500a7c7a98eb75c8947098d) Thanks [@mimshins](https://github.com/mimshins)! - Ork's MCP endpoint has a `report` tool for drivers that cannot hold a final
+  answer to a JSON Schema themselves (`open-code`, `command-code`). It checks the
+  report against the node's report schema and returns each violation to the model
+  so it can fix the report and call again; the session ends with the last report
+  it accepted. `claude-code` keeps its structured output and does not get the
+  tool.
+
 ## 1.0.0-alpha.9
 
 ### Patch Changes
