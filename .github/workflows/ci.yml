@@ -131,3 +131,45 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup
       - run: pnpm run map:check
+
+  # On a push to main, once every gate above has passed: open or update the
+  # "chore: release" pull request while changesets are pending, and publish when
+  # that pull request is merged (none left). The gates are the jobs it needs,
+  # so the checks run once per push.
+  release:
+    name: release
+    # Only the main repository releases, only from a push to main; forks never publish.
+    if:
+      github.repository == 'mimshins/ork' && github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+    needs: [format, lint, typecheck, unit, docs, package, map]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # Releases run one at a time, in push order; canary.yml shares the group.
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    permissions:
+      contents: write # the release commit, tags and GitHub releases
+      pull-requests: write # the "chore: release" pull request
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          # changesets/action pushes through the GitHub API with its own token.
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          registry-url: https://registry.npmjs.org
+      - name: Release pull request or publish
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          pr-title: "chore: release"
+          commit-message: "chore: release"
+          version-script: pnpm run changesets:version
+          publish-script: pnpm run release
+          create-github-releases: true
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"

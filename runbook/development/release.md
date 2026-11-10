@@ -31,11 +31,13 @@ without one
 ## The release flow
 
 1. A pull request with a changeset is merged into `main`.
-2. The [Release workflow](../../.github/workflows/release.yml) runs
-   `pnpm check`, then `changesets/action`, which opens or updates the **"chore:
-   release"** pull request. That pull request runs `pnpm changesets:version`:
-   `changeset version` bumps `packages/cli/package.json`, writes
-   `packages/cli/CHANGELOG.md` and deletes the consumed changesets, then
+2. [CI](../../.github/workflows/ci.yml) runs its gates (format, lint, typecheck,
+   unit, docs, package, map), then its `release` job runs `changesets/action`,
+   which opens or updates the **"chore: release"** pull request. The job needs
+   every gate, so nothing unchecked is published, and the checks run once per
+   push. That pull request runs `pnpm changesets:version`: `changeset version`
+   bumps `packages/cli/package.json`, writes `packages/cli/CHANGELOG.md` and
+   deletes the consumed changesets, then
    [build-info.ts](../../tools/release/build-info.ts) binds the new version into
    `packages/cli/src/__build_info__.ts`, which `ork --version` and feedback
    read. It also binds it into the Claude Code plugins' `plugin.json` versions.
@@ -153,7 +155,8 @@ Untick it to publish. After a publish, check that
    request.
 4. After the first publish, consider npm
    [trusted publishing](https://docs.npmjs.com/trusted-publishers) for
-   `@krapht/ork` with this repository's Release workflow, then remove the token.
+   `@krapht/ork` with this repository's `ci.yml` (its `release` job), then
+   remove the token.
 
 ## Check a build locally
 

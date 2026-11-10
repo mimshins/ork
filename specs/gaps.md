@@ -186,10 +186,10 @@ Found building [clean sessions](./runtime.md#what-a-session-loads) (ADR-065):
 ## Chores
 
 - **C2 · Release pull requests run no CI.** Pull requests opened with the
-  built-in `GITHUB_TOKEN` trigger no workflows; the release workflow's full
-  check still gates publishing. Kept on 2026-11-07 as a deliberate limit, since
-  every other change goes straight to `main`. Open only until these words move
-  into the [release runbook](../runbook/development/release.md).
+  built-in `GITHUB_TOKEN` trigger no workflows; CI's release job, which needs
+  every CI gate, still gates publishing. Kept on 2026-11-07 as a deliberate
+  limit, since every other change goes straight to `main`. Open only until these
+  words move into the [release runbook](../runbook/development/release.md).
 - **C8 · The repository sets `skipLibCheck`.** dockview's declarations and the
   MCP SDK's HTTP client don't pass under `exactOptionalPropertyTypes`, so
   `packages/ui` and the root config don't check any library's declarations, and

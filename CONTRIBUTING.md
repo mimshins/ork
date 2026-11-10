@@ -230,7 +230,7 @@ gate lists those ADRs, so you check them before you keep the change.
 3. Run `pnpm check` (the `pre-push` hook runs it too).
 4. Open the pull request against `main`. CI runs the same checks plus the
    changeset check; a maintainer reviews it.
-5. Once merged, the release workflow collects the changesets into a release pull
+5. Once merged, CI's release job collects the changesets into a release pull
    request.
 
 ## Using Ork's accounts model
