@@ -85,8 +85,8 @@ its branch afterwards ([worktrees](./worktrees.md)).
   declared list, `{ list: { <field>: <rule> } }`, is held to being a list
   (`tasks is "fix it", expected a list`), and when it has an item shape each
   item is too; the reason names the first bad item by its index
-  (`tasks[1].title is missing, expected text`). Ork checks this itself on both
-  drivers, and a Claude node's report schema carries it as `type: array` with
+  (`tasks[1].title is missing, expected text`). Ork checks this itself, on every
+  driver, and a Claude node's report schema carries it as `type: array` with
   `items`. An item's extra fields are refused by the report schema and ignored
   by a tool's or MCP call's check, as a result's extra fields are
   ([declared.ts](../packages/core/src/run/declared.ts),
@@ -147,14 +147,11 @@ list of tasks, run them in parallel, and return when every child has reported:
   and then the tool is not offered). An instance works like its template: same
   settings, its own worktree, owned by the leader.
 - The tools' arguments are bound to the leader: `child` is an enum of its child
-  leaders and workers, `template` of its child workers, on both drivers, and a
-  task object takes no other key. A wrong argument is an error and no task runs:
-  `path: message` per issue, and a stray key as
+  leaders and workers, `template` of its child workers, and a task object takes
+  no other key. A wrong argument is an error and no task runs: `path: message`
+  per issue, and a stray key as
   ``tasks[0]: unknown field `node`; the field is `child`, one of: code, tests``,
-  field and ids read from the schema. On the SDK driver the Agent SDK's
-  in-process server validates first, so the leader reads its
-  `Input validation error` and raw issue list, which name the same key, field
-  and ids.
+  field and ids read from the schema.
 - A task is refused, with the reason in its report, when its child is already
   running (in the flow or for another call), or no workers are left. A child the
   leader does not own is not a refused task: it is a wrong argument, so the
@@ -276,8 +273,8 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   If its executor has not ended 10 seconds later it is left behind.
 - **An expired run** aborts what is running and ends `timed_out`, after the same
   10 seconds at most.
-- On a real session (CLI driver, 2026-11-03) a 25-second timeout ended the
-  session within a second, its background command was gone, and a
+- On a real session (claude-code driver, 2026-11-03) a 25-second timeout ended
+  the session within a second, its background command was gone, and a
   `when: timedOut` edge ran.
 - A tool runs in its own process group: an abort, from a timeout or a stop,
   sends it SIGTERM, then SIGKILL after 2 seconds

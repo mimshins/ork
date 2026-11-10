@@ -129,6 +129,7 @@ export type ApplyOptions = Pick<
   RunWorkflowOptions,
   | "runtime"
   | "driverChecks"
+  | "drivers"
   | "human"
   | "out"
   | "err"

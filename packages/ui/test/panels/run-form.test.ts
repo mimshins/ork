@@ -63,13 +63,13 @@ describe("the Run workflow form", () => {
     const values = { ...initialValues(WITH_INPUTS.inputs), feature: "csv" };
     expect(
       commandOf(WITH_INPUTS, values, {
-        driver: "cli",
+        driver: "claude-code",
         inPlace: true,
         allowDirty: true,
         machineClaude: true,
       }),
     ).toBe(
-      "ork run build --detach --input feature=csv --driver cli --in-place --allow-dirty --machine-claude",
+      "ork run build --detach --input feature=csv --driver claude-code --in-place --allow-dirty --machine-claude",
     );
   });
 

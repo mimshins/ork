@@ -1,8 +1,8 @@
 # Architecture
 
 Status: **Built**: `@krapht/ork-integrations`, `@krapht/ork-schema`,
-`@krapht/ork-core`, `@krapht/ork-runtime-claude`, `@krapht/ork-nodes` and the
-CLI `@krapht/ork` exist, and so do `@krapht/ork-server` with `ork ui`
+`@krapht/ork-core`, `@krapht/ork-runtime`, `@krapht/ork-nodes` and the CLI
+`@krapht/ork` exist, and so do `@krapht/ork-server` with `ork ui`
 ([server](./server.md)) and `@krapht/ork-ui`, with its panels and the workflow
 builder and the context inspector ([ui](./ui.md)). `schemaVersion` is still 1,
 so `schema/` has no migration yet. Why:
@@ -17,7 +17,7 @@ ork/
     schema/          Zod schemas → JSON Schema; YAML load/save with stable formatting; migrations
     core/            graph compiler & validator, scheduler, context compiler, message bus,
                      decision queue, event store (SQLite + JSONL), worktree manager
-    runtime-claude/  ClaudeRuntime interface + drivers: sdk (@anthropic-ai/claude-agent-sdk), cli (claude -p stream-json)
+    runtime/  AgentRuntime: adapters (strategies) + one session runner; claude-code (claude -p stream-json); command-code (cmd -p json, unproven); open-code (opencode run --format json, unproven)
     nodes/           built-in node-type registry (each: schema, defaults, execute(), UI metadata)
     server/          node:http JSON API + SSE streams, typed contract and client; loopback + token (ADR-039)
     cli/             `ork` bin (citty): init, validate, run, ps, logs, chat, decide, ui, doctor, context
@@ -31,9 +31,8 @@ ork/
   and oxfmt, and GitHub Actions CI.
 - **Licence:** MIT.
 - **Packages on npm:** only the CLI is published, as `@krapht/ork`, a tsdown
-  bundle of the private `@krapht/ork-schema`, `-core`, `-runtime-claude`,
-  `-nodes` and `-server` packages
-  ([release](../runbook/development/release.md)).
+  bundle of the private `@krapht/ork-schema`, `-core`, `-runtime`, `-nodes` and
+  `-server` packages ([release](../runbook/development/release.md)).
 - **A process per run:** `ork run` hosts the engine in-process, in the
   foreground or detached. The store (`~/.ork/state.db`) is the one place every
   view reads, and each run's socket is the fast path to it
@@ -51,8 +50,46 @@ ork/
   executor, `ork doctor` and `ork run` read
   ([ADR-022](../decisions/ADR-022-integration-registry.md)). The dependency
   direction is
-  `integrations <- schema <- core <- runtime-claude, nodes <- server <- ui, cli`.
+  `integrations <- schema <- core <- runtime, nodes <- server <- ui, cli`.
+- **A driver is an adapter of strategies, run by one runner** (RFC-014):
+  `@krapht/ork-runtime` registers a `CliAdapter` per driver id
+  ([registry.ts](../packages/runtime/src/registry.ts)), made of small strategies
+  ([adapter.ts](../packages/runtime/src/adapter.ts)): `Command` (program,
+  arguments, stdin input if the tool takes it), `EventDecoder` (an output line
+  to events), `McpWiring` (a `flag`, a `config-file` named by a variable, or a
+  per-folder `lease`; released when the session ends), `PermissionPolicy`
+  (`rules` or `callback`), `UsageReader` (dollars or tokens; how legs add up),
+  `ContextLayers` (instruction files, skills and agents, and the variables that
+  keep the machine's setup out) and an optional `HoldHook`. The session runner
+  ([session-runner.ts](../packages/runtime/src/session-runner.ts)) does the rest
+  once: Ork's MCP endpoint, the legs (one process each,
+  [session-leg.ts](../packages/runtime/src/session-leg.ts)), holding a paused
+  node's call (ADR-041), a message to a tool without stdin delivered by resuming
+  the session in a next leg (only after a leg that ended in `success`; an error
+  ends the session with it), Ork's `report` tool for a driver without
+  `reportSchema` (the session ends with the report it accepted;
+  [node report](./runtime/node-report.md)), and interrupt (also during the MCP
+  wiring, before any process: the session then ends `interrupted` and starts
+  none; [runtime](./runtime.md#the-drivers)).
+- **Every adapter keeps one contract**
+  ([contract.test.ts](../packages/runtime/test/contract/contract.test.ts)): one
+  set of cases runs through the session runner against each entry of
+  [entries.ts](../packages/runtime/test/contract/entries.ts), an adapter with a
+  fake tool that replays its CLI's output (`claude-code`:
+  [fake-claude.mjs](../packages/runtime/test/fixtures/fake-claude.mjs)). The
+  cases: events normalized, a report that fits kept and one that breaks the
+  schema rejected, a denied tool still denied, Ork's endpoint reached and then
+  gone, usage counted (dollars only where the descriptor declares `price`), an
+  interrupt ending the session, and a message sent mid-session arriving (at once
+  with `midTurnMessages`, else at the next leg); on a driver without
+  `reportSchema`, a report handed in through the `report` tool, refused once and
+  then kept. A registered adapter with no entry fails the suite, so a new driver
+  is an adapter, a fake and one entry, with no edit to the engine.
 - **One entry point per package:** `packages/<name>/src/index.ts` only
   re-exports the package's public pieces, and other packages import only from
   it. No other module is named `index.ts`; logic lives in modules named for what
   they do (`pnpm lint`: `tools/lint/entry-points.ts`).
+
+## Contents
+
+- [Command Code](./architecture/command-code.md)

@@ -44,7 +44,7 @@ const started = (id: string, model = "sonnet"): RunEvent => ({
     type: "session.started",
     sessionId: `s-${id}`,
     model,
-    driver: "cli",
+    driver: "claude-code",
   },
 });
 
@@ -137,7 +137,7 @@ describe("the usage ledger", () => {
         workflow: "w",
         node: "build",
         model: "sonnet",
-        driver: "cli",
+        driver: "claude-code",
         kind: "node",
         round: 1,
         failed: false,

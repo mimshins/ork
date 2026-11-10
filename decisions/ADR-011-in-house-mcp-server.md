@@ -17,7 +17,7 @@ it pulls in express, hono, and their dependency trees for four methods.
 ## Decision
 
 Ork serves its tools with its own minimal MCP endpoint
-([mcp-http.ts](../packages/runtime-claude/src/mcp-http.ts)):
+([mcp-http.ts](../packages/runtime/src/mcp-http.ts)):
 
 - the streamable HTTP transport with plain JSON responses (no SSE stream, which
   the transport allows), implementing only `initialize`, `ping`, `tools/list`,

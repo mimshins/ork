@@ -10,27 +10,28 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import {
-  type ClaudeRuntime,
+  type AgentRuntime,
   type EventStore,
   type HumanChannel,
   openStore,
   resumable,
 } from "@krapht/ork-core";
 import type { ToolRunner } from "@krapht/ork-nodes";
-import { createCliRuntime } from "@krapht/ork-runtime-claude";
+import { createCliRuntime } from "@krapht/ork-runtime";
 import { parseWorkflow, type Workflow } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
 import {
+  badDriver,
   type DriverChecks,
   runReadyDriver,
   runWorkflowFile,
 } from "../src/index.ts";
-import { readyOnly } from "./fixtures/drivers.ts";
+import { readyOnly, standInDrivers } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
-  "../../runtime-claude/test/fixtures/fake-claude.mjs",
+  "../../runtime/test/fixtures/fake-claude.mjs",
 );
 
 /** A workflow of a writer and a reviewer, with `extra` lines under nodes. */
@@ -92,7 +93,7 @@ const setup = (yaml: string) => {
   ) => {
     const err: string[] = [];
     const drivers: string[] = [];
-    const runtime = (driver: string): Promise<ClaudeRuntime> => {
+    const runtime = (driver: string): Promise<AgentRuntime> => {
       drivers.push(driver);
       return Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE }));
     };
@@ -104,6 +105,7 @@ const setup = (yaml: string) => {
       json: false,
       runtime,
       driverChecks: checks,
+      drivers: standInDrivers,
       human: recommending,
       store,
       home,
@@ -138,21 +140,21 @@ describe("the driver for nodes that name none", () => {
   it.each([
     [
       "only cli is ready",
-      readyOnly("cli"),
-      "cli",
-      "the one ready here (cli is ready)",
+      readyOnly("claude-code"),
+      "claude-code",
+      "the one ready here (claude-code is ready)",
     ],
     [
       "only sdk is ready",
-      readyOnly("sdk"),
-      "sdk",
-      "the one ready here (sdk is ready)",
+      readyOnly("open-code"),
+      "open-code",
+      "the one ready here (open-code is ready)",
     ],
     [
       "both are ready",
-      readyOnly("sdk", "cli"),
-      "cli",
-      "more than one is ready, and a run takes cli first",
+      readyOnly("open-code", "claude-code"),
+      "claude-code",
+      "more than one is ready, and a run takes claude-code first",
     ],
   ])(
     "is the one ready when %s, said in one line",
@@ -180,44 +182,44 @@ describe("the driver for nodes that name none", () => {
     expect(store.runs()).toEqual([]);
     expect(done.err).toEqual([
       "No Claude driver is ready here, and write, review name none.",
-      "Get the sdk driver ready.",
-      "Get the cli driver ready.",
+      "Get the open-code driver ready.",
+      "Get the claude-code driver ready.",
       "See `ork doctor`.",
     ]);
   });
 
   it("is only for the nodes that name none", async () => {
-    const { run } = setup(text("driver: sdk"));
-    const done = await run(readyOnly("cli"));
+    const { run } = setup(text("driver: open-code"));
+    const done = await run(readyOnly("claude-code"));
 
-    expect(done.drivers).toEqual(["sdk", "cli"]);
+    expect(done.drivers).toEqual(["open-code", "claude-code"]);
     expect(done.err).toContain(
-      "review names no driver, so it uses the cli driver: the one ready here (cli is ready).",
+      "review names no driver, so it uses the claude-code driver: the one ready here (claude-code is ready).",
     );
   });
 
   it("isn't looked for when the workflow names one", async () => {
-    const { run, settingsOf } = setup(text("", "", "driver: sdk"));
+    const { run, settingsOf } = setup(text("", "", "driver: open-code"));
     const done = await run(unasked);
 
     expect(done.exitCode).toBe(0);
-    expect(done.drivers).toEqual(["sdk", "sdk"]);
+    expect(done.drivers).toEqual(["open-code", "open-code"]);
     expect(settingsOf(String(done.result?.runId))).not.toHaveProperty(
       "readyDriver",
     );
   });
 
   it("isn't looked for when --driver names one", async () => {
-    const { run } = setup(text("driver: sdk"));
-    const done = await run(unasked, { driver: "cli" });
+    const { run } = setup(text("driver: open-code"));
+    const done = await run(unasked, { driver: "claude-code" });
 
     expect(done.exitCode).toBe(0);
-    expect(done.drivers).toEqual(["cli", "cli"]);
+    expect(done.drivers).toEqual(["claude-code", "claude-code"]);
   });
 
   it("stays the one the run recorded when it resumes", async () => {
     const { run, store } = setup(text());
-    const first = await run(readyOnly("cli"), {}, 1);
+    const first = await run(readyOnly("claude-code"), {}, 1);
     expect(first.result?.status).toBe("failed");
     const runId = String(first.result?.runId);
     const again = await run(unasked, {
@@ -233,17 +235,34 @@ describe("runReadyDriver", () => {
   it("takes the recorded driver without looking", async () => {
     expect(
       await runReadyDriver(workflowOf(text()), {
-        recorded: "sdk",
+        recorded: "open-code",
         checks: unasked,
       }),
-    ).toEqual({ ok: true, driver: "sdk" });
+    ).toEqual({ ok: true, driver: "open-code" });
   });
 
   it("needs nothing when every session node names one", async () => {
     expect(
-      await runReadyDriver(workflowOf(text("driver: cli", "driver: sdk")), {
-        checks: unasked,
-      }),
+      await runReadyDriver(
+        workflowOf(text("driver: claude-code", "driver: open-code")),
+        {
+          checks: unasked,
+        },
+      ),
     ).toEqual({ ok: true });
+  });
+});
+
+describe("--driver", () => {
+  it("names the replacement of a retired id, and the ids otherwise", () => {
+    expect(badDriver("sdk")).toBe(
+      "--driver `sdk` was retired; use `claude-code`",
+    );
+    expect(badDriver("cli")).toBe(
+      "--driver `cli` was retired; use `claude-code`",
+    );
+    expect(badDriver("x")).toBe(
+      "--driver must be one of claude-code, open-code, command-code, got `x`",
+    );
   });
 });

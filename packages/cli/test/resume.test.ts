@@ -2,15 +2,19 @@
  * @file Tests for `ork resume`: a failed run continues under its own id, its
  *   finished Claude node keeps its result (no new session), the failed tool
  *   node runs again, runs that are running or succeeded are refused, and what a
- *   `watch:` node's program kept is still there for it.
+ *   `watch:` node's program kept is still there for it; a run stored with the
+ *   retired driver ids `cli` and `sdk` reads them as `claude-code` in `ork
+ *   resume`, `ork logs` and `ork ps` (RFC-014).
  */
 
 import { existsSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 
 import {
   type EventStore,
+  findRun,
   type HumanChannel,
   inRepoPlace,
   openStore,
@@ -19,15 +23,15 @@ import {
   type RunRecord,
 } from "@krapht/ork-core";
 import { spawnTool, type ToolRunner } from "@krapht/ork-nodes";
-import { createCliRuntime } from "@krapht/ork-runtime-claude";
+import { createCliRuntime } from "@krapht/ork-runtime";
 import { describe, expect, it } from "vitest";
 
-import { runWorkflowFile } from "../src/index.ts";
-import { sdkReady } from "./fixtures/drivers.ts";
+import { followRun, formatRuns, runWorkflowFile } from "../src/index.ts";
+import { openCodeReady, standInDrivers } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
-  "../../runtime-claude/test/fixtures/fake-claude.mjs",
+  "../../runtime/test/fixtures/fake-claude.mjs",
 );
 
 const WORKFLOW = [
@@ -58,10 +62,12 @@ const exits =
   () =>
     Promise.resolve({ exitCode: code, stdout: "", stderr: "" });
 
-const setup = (workflow = WORKFLOW) => {
+const setup = (
+  workflow = WORKFLOW,
+  store: EventStore = openStore(":memory:"),
+) => {
   const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-resume-")));
   writeFileSync(path.join(dir, "notes.ork.yaml"), workflow);
-  const store: EventStore = openStore(":memory:");
   const home = mkdtempSync(path.join(tmpdir(), "ork-home-"));
   const run = async (
     tools: ToolRunner,
@@ -75,7 +81,8 @@ const setup = (workflow = WORKFLOW) => {
       inPlace: true,
       json: false,
       runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
-      driverChecks: sdkReady,
+      driverChecks: openCodeReady,
+      drivers: standInDrivers,
       human: recommending,
       store,
       home,
@@ -226,5 +233,71 @@ describe("ork resume", () => {
     // It only passes by finding what the first run left.
     expect(again.result?.status).toBe("succeeded");
     expect(existsSync(path.dirname(kept))).toBe(false);
+  });
+});
+
+/** What `ork logs` prints for a stored run. */
+const logged = async (
+  store: EventStore,
+  id: string,
+  dir: string,
+): Promise<string[]> => {
+  const found = findRun(store, id, dir);
+  if (!found.ok) throw new Error(found.error);
+  const lines: string[] = [];
+  await followRun(
+    store,
+    found.run,
+    line => {
+      lines.push(line);
+    },
+    { follow: false, json: false },
+  );
+  return lines;
+};
+
+/** Rewrites a stored run's driver ids as a version before RFC-014 wrote them. */
+const asStoredBeforeRfc014 = (file: string): string[] => {
+  const db = new DatabaseSync(file);
+  db.exec(
+    `UPDATE events SET data = replace(replace(data,
+       '"driver":"claude-code"', '"driver":"cli"'),
+       '"readyDriver":"open-code"', '"readyDriver":"sdk"')`,
+  );
+  const rows = db
+    .prepare("SELECT data FROM events")
+    .all()
+    .map(row => String(row["data"]));
+  db.close();
+  return rows;
+};
+
+describe("a run stored with the retired driver ids", () => {
+  it("reads `cli` and `sdk` as claude-code: resume, logs and ps work", async () => {
+    const file = path.join(mkdtempSync(path.join(tmpdir(), "ork-db-")), "o.db");
+    const s = setup(WORKFLOW, openStore(file));
+    expect((await s.run(exits(1))).result?.status).toBe("failed");
+    const stored = asStoredBeforeRfc014(file).join("\n");
+    expect(stored).toContain('"driver":"cli"');
+    expect(stored).toContain('"readyDriver":"sdk"');
+
+    const record = only(s.store);
+    const read = JSON.stringify(s.store.events(record.id, 0));
+    expect(read).not.toMatch(/"(driver|readyDriver)":"(cli|sdk)"/u);
+    expect(read).toContain('"readyDriver":"claude-code"');
+
+    expect((await logged(s.store, record.id, s.dir)).join("\n")).toContain(
+      "write",
+    );
+    expect(formatRuns(s.store.runs(), false).join("\n")).toContain(record.id);
+
+    const ready = readyToResume(s.store, record);
+    expect(ready.state.settings.readyDriver).toBe("claude-code");
+    const again = await s.run(exits(0), {
+      inputs: [],
+      runId: record.id,
+      resume: ready.state,
+    });
+    expect(again.result?.status).toBe("succeeded");
   });
 });

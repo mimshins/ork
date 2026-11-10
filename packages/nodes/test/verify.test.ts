@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type {
-  ClaudeRuntime,
+  AgentRuntime,
   ExecuteContext,
   Mailbox,
   NodeExecutor,
@@ -80,8 +80,8 @@ const runVerified = async (given: {
 }) => {
   const specs: SessionSpec[] = [];
   const stepNodes: Node[] = [];
-  const runtime: ClaudeRuntime = {
-    driver: "sdk",
+  const runtime: AgentRuntime = {
+    driver: "open-code",
     start: spec => {
       const report = given.reports[specs.length] ?? null;
       specs.push(spec);
@@ -94,7 +94,7 @@ const runVerified = async (given: {
   };
   const execute = claudeExecutor({
     runtimeFor: () => Promise.resolve(runtime),
-    readyDriver: "sdk",
+    readyDriver: "open-code",
     inPlace: true,
     steps:
       given.steps ??

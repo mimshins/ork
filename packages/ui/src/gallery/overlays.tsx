@@ -17,8 +17,8 @@ import { Toasts, toasts } from "../components/toast.tsx";
 import styles from "./gallery.module.css";
 
 const DRIVERS = [
-  { value: "cli", label: "claude CLI" },
-  { value: "sdk", label: "Agent SDK" },
+  { value: "claude-code", label: "claude-code" },
+  { value: "open-code", label: "open-code" },
 ];
 
 const noop = () => {
@@ -28,7 +28,7 @@ const noop = () => {
 export const Overlays = () => {
   const [dialog, setDialog] = useState(false);
   const [confirm, setConfirm] = useState(false);
-  const [driver, setDriver] = useState("cli");
+  const [driver, setDriver] = useState("claude-code");
   const [workflow, setWorkflow] = useState<string | null>(null);
   return (
     <Toasts>

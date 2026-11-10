@@ -2,8 +2,7 @@
 
 _Part of [Scheduler: running a workflow](../scheduler.md)._
 
-Status: **Built, proven on real sessions on the CLI driver**; the SDK driver
-only against stand-ins ([C5](../runtime.md#limits))
+Status: **Built, proven on real sessions on the claude-code driver**
 ([ADR-045](../../decisions/ADR-045-workflows-calling-workflows.md),
 [node](../../packages/nodes/src/call.ts),
 [port](../../packages/core/src/remote/calls.ts),

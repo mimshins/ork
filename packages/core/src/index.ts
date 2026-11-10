@@ -69,6 +69,8 @@ export type * from "./run/handle.ts";
 export * from "./run/brief.ts";
 export * from "./run/declared.ts";
 export * from "./run/driver.ts";
+export * from "./run/driver-needs.ts";
+export * from "./run/driver-queues.ts";
 export type * from "./run/calls.ts";
 export * from "./run/bus.ts";
 export * from "./run/bus-text.ts";

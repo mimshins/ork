@@ -7,7 +7,7 @@
  */
 
 import type { EventStore } from "@krapht/ork-core";
-import { CLAUDE_DRIVERS } from "@krapht/ork-integrations";
+import { AGENT_DRIVERS } from "@krapht/ork-integrations";
 
 import { SHELLS } from "./scripts.ts";
 import {
@@ -97,7 +97,7 @@ const decisions: ValueProvider = {
 const drivers: ValueProvider = {
   group: "drivers",
   values: () =>
-    CLAUDE_DRIVERS.map(driver => ({
+    AGENT_DRIVERS.map(driver => ({
       value: driver.id,
       description: driver.label,
     })),

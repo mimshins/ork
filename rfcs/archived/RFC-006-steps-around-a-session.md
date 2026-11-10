@@ -90,7 +90,7 @@ takes, with `lateBudget`'s spending limits.
 
 `PreToolUse` on the report tool runs the command and denies the report on a
 failure, so the session never ends. Ork already has such a hook for holds
-([hold.ts](../../packages/runtime-claude/src/hold.ts)).
+([hold.ts](../../packages/runtime/src/hold.ts)).
 
 - **Pros:** No new process, and the failure arrives inside the turn.
 - **Cons:** Two drivers to get right. [L29](../../specs/scheduler/limits.md)

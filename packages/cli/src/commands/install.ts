@@ -35,6 +35,7 @@ import {
   socketCheck,
   triggerChecks,
 } from "../doctor/checks.ts";
+import { leaseChecks } from "../doctor/lease-checks.ts";
 import { projectChecks } from "../doctor/project-checks.ts";
 import { confirm, style, write, writeErr } from "../output.ts";
 import { projectAt } from "../project/place.ts";
@@ -80,6 +81,7 @@ export const doctor = defineCommand({
       ...(place.mode === "attached" ? [] : projectChecks(place.root)),
       socketCheck(),
       ...triggerChecks(),
+      ...(await leaseChecks(place)),
       experiments,
     ]) {
       for (const line of formatCheck(result)) write(line);

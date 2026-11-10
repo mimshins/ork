@@ -118,11 +118,11 @@ export const JOURNEYS = [
         docs: [DESIGN.runtime],
       },
       {
-        from: "sdkDriver",
+        from: "cliDriver",
         to: "session",
         title: "Claude Code runs the loop",
         detail:
-          "The SDK starts the agent loop with the brief as the first user message.",
+          "The driver starts your `claude` headless, with the brief as the first user message.",
       },
       {
         from: "session",

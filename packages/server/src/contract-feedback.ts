@@ -17,6 +17,7 @@ import type {
   Post,
   PostPlan,
 } from "@krapht/ork-core";
+import type { Driver } from "@krapht/ork-schema";
 import { z } from "zod";
 
 export type {
@@ -53,8 +54,24 @@ export const AcceptSchema = z.strictObject({
   workflow: z.string().min(1).optional(),
 });
 
+/**
+ * The driver ids Propose fix and the Run workflow form take, written out so a
+ * browser bundle needn't load the driver registry; their type keeps them the
+ * same as the workflow schema's `Driver` (RFC-014).
+ */
+const DRIVER_NAMES: { readonly [Id in Driver]: Id } = {
+  "claude-code": "claude-code",
+  "open-code": "open-code",
+  "command-code": "command-code",
+};
+
+export const DriverIdSchema = z.enum(DRIVER_NAMES);
+
+/** The driver ids, in the order a form lists them. */
+export const DRIVER_CHOICES = DriverIdSchema.options;
+
 export const ApplySchema = z.strictObject({
-  driver: z.enum(["sdk", "cli"]).optional(),
+  driver: DriverIdSchema.optional(),
 });
 
 export const PublishPreviewSchema = z.strictObject({

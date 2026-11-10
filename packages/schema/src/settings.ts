@@ -4,7 +4,7 @@
  *   isolation, budgets and turns, the built-in practices, and tool rules.
  */
 
-import { DRIVER_IDS } from "@krapht/ork-integrations";
+import { DRIVER_IDS, RETIRED_DRIVERS } from "@krapht/ork-integrations";
 import { z } from "zod";
 
 const VariableNameSchema = z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/u);
@@ -74,8 +74,24 @@ export const NodeIdSchema = z
   );
 export type NodeId = z.infer<typeof NodeIdSchema>;
 
-/** The registered Claude drivers' ids (ADR-022). */
-export const DriverSchema = z.enum(DRIVER_IDS);
+/** What to write instead of a driver id RFC-014 retired, or `undefined`. */
+export const retiredDriverHint = (value: unknown): string | undefined => {
+  const now =
+    typeof value === "string" && Object.hasOwn(RETIRED_DRIVERS, value)
+      ? RETIRED_DRIVERS[value]
+      : undefined;
+  return now === undefined
+    ? undefined
+    : `driver \`${String(value)}\` was retired; use \`${now}\``;
+};
+
+/**
+ * The registered agent drivers' ids (ADR-022); a retired id says what replaced
+ * it.
+ */
+export const DriverSchema = z.enum(DRIVER_IDS, {
+  error: issue => retiredDriverHint(issue.input),
+});
 export type Driver = z.infer<typeof DriverSchema>;
 
 /** `opus`, `sonnet`, `haiku`, or a full model id such as `claude-opus-5-5`. */

@@ -460,7 +460,7 @@ export const NODES = [
     x: 1440,
     y: 240,
     status: "built",
-    pkg: "runtime-claude",
+    pkg: "runtime",
     summary:
       "One of Ork's MCP tools, given to every Claude node, for the friction an agent sees that no event shows. Its description asks for only what materially got in the way, in one line and a short body.",
     facts: [

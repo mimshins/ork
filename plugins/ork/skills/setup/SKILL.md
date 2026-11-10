@@ -22,9 +22,9 @@ ork doctor
   https://github.com/mimshins/ork/blob/main/docs/getting-started/installation.md
 - **Read `ork doctor` to them.** It needs git, a git repository with a commit,
   and one Claude driver. Don't run `git init` or a commit without asking.
-- **A driver not ready:** they log in themselves, with `claude` (the CLI
-  driver), or by setting `ANTHROPIC_API_KEY` or a cloud provider in their own
-  shell (the SDK driver). Never ask for a key, never take one pasted to you, and
+- **A driver not ready:** they log in themselves, with `claude auth login`, or
+  by setting `ANTHROPIC_API_KEY` or a cloud provider in their own shell (either
+  makes the claude-code driver ready). Never ask for a key, never take one pasted to you, and
   never write one into a file or a command. `gh` and `aws` are optional, and
   their logins are their own too (`gh auth login`, `aws sso login`).
 

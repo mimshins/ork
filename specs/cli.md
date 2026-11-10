@@ -43,30 +43,30 @@ ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agen
 ork migrate --from-agents a,b [--reviewer r] [--name n]  # draft a gated workflow from the project's agents
 ork link [tools…] [--check]      # point tools' agents and skills folders (.claude/agents, …) at .ork/
 ork doctor                       # node, git (and a first commit), every Claude driver and integration (its own login check), links
-ork validate [<wf>…] [--paths] [--json]   # schema, graph, project rules, agents and skill/context references, with yaml line numbers, then a walk of every way through; `--paths` lists each ending (the walk line points to it); with no file, the project's triggers too
+ork validate [<wf>…] [--paths] [--json] [--driver <id>]   # schema, graph, project rules, agents and skill/context references, with yaml line numbers, then a walk of every way through; `--paths` lists each ending (the walk line points to it); with no file, the project's triggers too; each session node is checked against its driver (`--driver`, else the one a run would take; [driver fit](./graph-compiler.md#driver-fit))
 ork agents list [--json] | show <name> [--json]   # the agents nodes can take, and where each comes from
 ork agents add <name> [--description d] [--model m] [--from <agent>] [--user] | rm <name> [--user]
-ork run <wf> [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json] [--detach]  # <wf>: a file, a name in .ork/workflows/, or ork:<name>
-ork run <wf> --node <id> [--input k=v] [--driver sdk|cli] [--in-place] [--json]
+ork run <wf> [--input k=v] [--driver <id>] [--in-place] [--allow-dirty] [--json] [--detach]  # <wf>: a file, a name in .ork/workflows/, or ork:<name>
+ork run <wf> --node <id> [--input k=v] [--driver <id>] [--in-place] [--json]
 ork ps [--all] [--limit n] [--json]               # this project's runs, newest first
 ork logs [<run>] [--node n] [--follow] [--json]   # a run's transcript, replayed or live
 ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node
 ork usage [--all] [--since 30d] [--until day] [--by day|workflow|model|…] [--workflow w] [--json]  # what runs spent over time
 ork prune --older-than 90d [--all] [--dry-run] [--yes]  # forget old runs' logs; what they spent stays
 ork decide [<run>] [--all] [--list] [--json] [--workflow <name>] [--id <d> --document] [--id <d> --choose <option> [--say <text>] [--note <text>] [--rating good|bad]]  # answer open decisions; --say gives the answer a note for the run, --note notes the decision's node as feedback
-ork chat <run> <node> [-m <text>] [--driver sdk|cli]  # talk to a node, live or by resuming its session
+ork chat <run> <node> [-m <text>] [--driver <id>]  # talk to a node, live or by resuming its session
 ork relay <run>/<node> <run>/<node> [--max-messages n]  # let two running nodes of different runs message each other
 ork relay end <a> <b> | ork relay list [run] [--all] [--json]
 ork stop [<run>] [--node n]      # stop a live run from any terminal, or one node (it fails; the run goes on)
 ork pause [<run>] [--node n]     # nothing new starts; sessions wait before their next tool call
 ork continue [<run>] [--node n]  # let a paused run, or one paused node, go on
-ork resume [<run>] [--input k=v] [--driver sdk|cli] [--in-place] [--allow-dirty] [--json] [--detach]  # continue a run that didn't succeed
+ork resume [<run>] [--input k=v] [--driver <id>] [--in-place] [--allow-dirty] [--json] [--detach]  # continue a run that didn't succeed
 ork watch [--detach] | --status | --accept | --stop  # look at each project's triggers, and start a run for each new thing
 ork worktrees [list|clean|remove <branch|path>]  # Ork's worktrees and branches; clean them up, or remove one, safely
 ork context explain <wf> <node> [--json]  # what one node's session loads, layer by layer
 ork feedback list [--all] [--json] | show <item> [--json] | note <run> [<node>] -m <text> | dismiss <item> | restore <item>  # local feedback
 ork feedback accept <item> [--lesson [-m <text>] [--workflow <w>]]  # accept an item; --lesson: every later session of its workflow reads it
-ork feedback apply <item> [--driver sdk|cli]  # Ork's own workflow proposes a fix on a branch; keep or discard it
+ork feedback apply <item> [--driver <id>]  # Ork's own workflow proposes a fix on a branch; keep or discard it
 ork feedback triage [--yes] | split <item>   # merge items about the same problem, by rules, asking each time; split one back
 ork feedback publish <item> [--hide-names]   # share an item about Ork with its maintainers: redacted, previewed, then y/N, with your own gh
 ork feedback export [--all] [-o <file>] | import <file>  # move feedback records as JSON lines

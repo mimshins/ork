@@ -296,7 +296,7 @@ export const NODES = [
     facts: [
       "Built, after Claude Code's own prompt: the practices, your context, the workflow's context, Ork's harness text, then the node's context.",
       "Suffix: the brief, as the first user message.",
-      "Leaders, which live long and wait on their children, get the 1-hour cache (`ENABLE_PROMPT_CACHING_1H=1`) on both drivers; the benchmark is to confirm the saving.",
+      "Leaders, which live long and wait on their children, get the 1-hour cache (`ENABLE_PROMPT_CACHING_1H=1`); the benchmark is to confirm the saving.",
     ],
     docs: [CONTEXT.session, RUNTIME.plan, DESIGN.context],
   },
@@ -310,15 +310,14 @@ export const NODES = [
     x: 600,
     y: 360,
     status: "built",
-    pkg: "runtime-claude",
+    pkg: "runtime",
     summary:
       "What Ork appends to Claude Code's own system prompt: the practices, the context files of each layer, and Ork's harness text with the node's instructions.",
     facts: [
-      "SDK: `systemPrompt: { type: 'preset', preset: 'claude_code', append }`.",
-      "CLI: `--append-system-prompt`.",
+      "`--append-system-prompt`, after Claude Code's own preset.",
       "The harness text names whom the node can message, nodes of other runs it is linked to included, and says their messages are not the user's.",
     ],
-    docs: [RUNTIME.sdk, RUNTIME.cli, LINKS.spec, DESIGN.runtime],
+    docs: [RUNTIME.cli, LINKS.spec, DESIGN.runtime],
   },
   {
     id: "settings",
@@ -328,23 +327,17 @@ export const NODES = [
     x: 600,
     y: 480,
     status: "built",
-    pkg: "runtime-claude",
+    pkg: "runtime",
     summary:
       "Which of Claude Code's own setting sources load, and extra settings for the session, so the project layer works natively and shadowed skills stay off.",
     facts: [
-      "`settingSources: ['project', 'local']`, never `user`.",
+      "`--setting-sources project,local`, never `user`.",
       "No MCP server but Ork's and no auto-memory unless the run is started with `--machine-claude`.",
       '`skillOverrides: { <name>: "off" }` hides each shadowed or left-out project skill; a plugin\'s `ork:<name>` is untouched.',
       "`project.instructions: ignore` adds `claudeMdExcludes` for the checkout and stops Claude Code reading `AGENTS.md`.",
-      "SDK: `settings`; CLI: `--settings`.",
+      "Extra settings go in `--settings`.",
     ],
-    docs: [
-      CONTEXT.session,
-      RUNTIME.sdk,
-      RUNTIME.cli,
-      RUNTIME.loads,
-      DESIGN.context,
-    ],
+    docs: [CONTEXT.session, RUNTIME.cli, RUNTIME.loads, DESIGN.context],
   },
   {
     id: "plugin",
@@ -359,7 +352,7 @@ export const NODES = [
       "A local plugin written for each node of the run, holding the winning skills from the user, workflow and node layers.",
     facts: [
       "In `.ork/runs/<run>/plugins/<node>/`, named `ork`, so its skills load as `ork:<name>` and never collide with the project's.",
-      "SDK: `plugins: [{ type: 'local', path }]`; CLI: `--plugin-dir`.",
+      "Passed with `--plugin-dir`.",
     ],
     docs: [CONTEXT.session, CONTEXT.tests, DESIGN.context],
   },
@@ -371,7 +364,7 @@ export const NODES = [
     x: 600,
     y: 720,
     status: "built",
-    pkg: "runtime-claude",
+    pkg: "runtime",
     summary:
       "The brief, sent as the session's first user message, after the cached prefix.",
     facts: [
@@ -388,14 +381,14 @@ export const NODES = [
     x: 600,
     y: 840,
     status: "built",
-    pkg: "runtime-claude",
+    pkg: "runtime",
     summary:
       "The node's model and effort, turn and budget limits, and its tool rules, from the node or the workflow's `defaults`.",
     facts: [
       "Built: `model`, `effort`, `maxTurns`, `budgetUsd` (capped by what is left of the run's) and `tools` go into the session spec, from the node or `defaults`.",
       "A session out of turns or budget ends without a report: a `fail` for its edges, or for the leader that delegated it.",
       "`readonly` adds the write tools to the deny list; read-only git (`diff`, `log`, `show`, `status`) runs without asking, other commands ask.",
-      "Built: `tools.only` leaves the session only those built-in tools (the SDK's `tools`, the CLI's `--tools`); Ork's own tools stay. An agent's Claude Code `tools:` and `disallowedTools:` become `tools.only` and `tools.deny`.",
+      "Built: `tools.only` leaves the session only those built-in tools (`--tools`); Ork's own tools stay. An agent's Claude Code `tools:` and `disallowedTools:` become `tools.only` and `tools.deny`.",
     ],
     docs: [SCHEMA.nodes, RUNTIME.plan, DESIGN.context],
   },

@@ -11,13 +11,13 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 
 import {
-  type ClaudeRuntime,
+  type AgentRuntime,
   type HumanChannel,
   openStore,
   workflowTextHash,
 } from "@krapht/ork-core";
 import type { ToolRunner } from "@krapht/ork-nodes";
-import { createCliRuntime } from "@krapht/ork-runtime-claude";
+import { createCliRuntime } from "@krapht/ork-runtime";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -34,7 +34,7 @@ import {
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
-  "../../runtime-claude/test/fixtures/fake-claude.mjs",
+  "../../runtime/test/fixtures/fake-claude.mjs",
 );
 
 const WORKFLOW = [
@@ -83,12 +83,36 @@ const project = () => {
   return dir;
 };
 
-/** Only the SDK driver is ready: what these runs took before. */
-const sdkReady: RunWorkflowOptions["driverChecks"] = () =>
+/**
+ * Proven, able descriptors for the stand-in sessions (the real open-code is
+ * unproven).
+ */
+const standInDrivers: NonNullable<RunWorkflowOptions["drivers"]> = (
+  ["claude-code", "open-code", "command-code"] as const
+).map(id => ({
+  id,
+  proven: true,
+  onePerCheckout: id === "command-code",
+  capabilities: {
+    questions: true,
+    permissionPrompt: true,
+    price: true,
+    midTurnMessages: true,
+    reportSchema: true,
+    turnLimit: true,
+    mcpServers: true,
+  },
+}));
+
+/**
+ * Only open-code is ready: not the preferred driver, so a test sees which one a
+ * run took.
+ */
+const openCodeReady: RunWorkflowOptions["driverChecks"] = () =>
   Promise.resolve([
     {
-      id: "sdk",
-      result: { name: "sdk", status: "ok", detail: "sdk is ready" },
+      id: "open-code",
+      result: { name: "open-code", status: "ok", detail: "open-code is ready" },
     },
   ]);
 
@@ -101,7 +125,7 @@ const options = (overrides: Partial<RunNodeOptions>) => {
   const out: string[] = [];
   const err: string[] = [];
   const drivers: string[] = [];
-  const runtime = (driver: string): Promise<ClaudeRuntime> => {
+  const runtime = (driver: string): Promise<AgentRuntime> => {
     drivers.push(driver);
     return Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE }));
   };
@@ -113,7 +137,8 @@ const options = (overrides: Partial<RunNodeOptions>) => {
     inPlace: false,
     json: false,
     runtime,
-    driverChecks: sdkReady,
+    driverChecks: openCodeReady,
+    drivers: standInDrivers,
     human: recommending,
     store: openStore(":memory:"),
     home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
@@ -154,7 +179,7 @@ describe("ork run --node", () => {
     const result = await runNode(run.value);
 
     expect(result.exitCode).toBe(0);
-    expect(run.drivers).toEqual(["sdk"]);
+    expect(run.drivers).toEqual(["open-code"]);
     expect(result.outcome?.report).toEqual({
       status: "pass",
       summary: "tools: ask_user,permission,feedback",
@@ -171,7 +196,7 @@ describe("ork run --node", () => {
       "  $0.0123 · 100 in / 20 out (80 cached) · 2 turns · 1.5s",
     ]);
     expect(run.err).toEqual([
-      "No driver is named, so the run uses the sdk driver: the one ready here (sdk is ready).",
+      "No driver is named, so the run uses the open-code driver: the one ready here (open-code is ready).",
     ]);
   });
 
@@ -191,9 +216,9 @@ describe("ork run --node", () => {
   });
 
   it("streams events as JSON lines with a driver override", async () => {
-    const run = options({ json: true, driver: "cli" });
+    const run = options({ json: true, driver: "claude-code" });
     await runNode(run.value);
-    expect(run.drivers).toEqual(["cli"]);
+    expect(run.drivers).toEqual(["claude-code"]);
     expect(run.out.map(line => /^\{"type":"([^"]+)"/u.exec(line)?.[1])).toEqual(
       [
         "session.started",
@@ -541,7 +566,8 @@ const pipeline = (overrides: Partial<RunWorkflowOptions>) => {
     inPlace: true,
     json: false,
     runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
-    driverChecks: sdkReady,
+    driverChecks: openCodeReady,
+    drivers: standInDrivers,
     human: recommending,
     store: openStore(":memory:"),
     home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
@@ -623,7 +649,7 @@ describe("ork run (a whole workflow)", () => {
     const run = pipeline({ cwd: dir, inPlace: false });
     expect((await runWorkflowFile(run.value)).exitCode).toBe(1);
     expect(run.err).toEqual([
-      "No driver is named, so the run uses the sdk driver: the one ready here (sdk is ready).",
+      "No driver is named, so the run uses the open-code driver: the one ready here (open-code is ready).",
       "These instructions, skills or agents have uncommitted changes, and the worktrees only get committed files:",
       "  CLAUDE.md",
       "Commit or stash them, or pass --allow-dirty to run with the committed versions.",

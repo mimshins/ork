@@ -14,7 +14,7 @@ import {
   inRepoPlace,
   openStore,
 } from "@krapht/ork-core";
-import { createCliRuntime } from "@krapht/ork-runtime-claude";
+import { createCliRuntime } from "@krapht/ork-runtime";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -22,7 +22,7 @@ import {
   loadWorkflow,
   runWorkflowFile,
 } from "../src/index.ts";
-import { sdkReady } from "./fixtures/drivers.ts";
+import { openCodeReady, standInDrivers } from "./fixtures/drivers.ts";
 
 const registry: readonly Experiment[] = [
   { name: "one", summary: "The first", spec: "specs/one.md" },
@@ -102,7 +102,8 @@ const ran = async (root: string) => {
     inPlace: true,
     json: false,
     runtime: () => Promise.resolve(createCliRuntime({ bin: "unused" })),
-    driverChecks: sdkReady,
+    driverChecks: openCodeReady,
+    drivers: standInDrivers,
     human,
     store: openStore(":memory:"),
     home: path.join(root, "home"),

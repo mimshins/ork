@@ -18,7 +18,7 @@ Rather have your coding agent install and set up Ork? See
 | -------------------------- | ----------------------------------------- | --------------------------- |
 | **Node.js 24.20 or later** | Ork runs on Node                          | `node --version`            |
 | **git**                    | Each writing node works in a git worktree | `git --version`             |
-| **One Claude driver**      | The agents themselves (below)             | `ork doctor`, after install |
+| **One agent driver**       | The agents themselves (below)             | `ork doctor`, after install |
 
 How to get Node and git on your system: [Your platform](#your-platform).
 
@@ -31,17 +31,16 @@ that never touches AWS never needs `aws`.
 | `gh`  | `tool.gh` nodes: pull requests, issues, CI | `gh auth status`              |
 | `aws` | `tool.aws` nodes                           | `aws sts get-caller-identity` |
 
-For Claude, pick one way in (Ork uses your own login and never stores it; see
-[Accounts and credentials](../guides/accounts.md)):
+For the agents (Ork uses your own login, never stores it; see
+[Accounts](../guides/accounts.md) and [Drivers](../guides/drivers.md)):
 
-- **The CLI driver** (`driver: cli`): your own
-  [Claude Code](https://code.claude.com/docs) (`claude`), logged in by you.
-  Version **2.1.281 or later**, so it reads `AGENTS.md`; `ork doctor` warns on
-  an older one.
-- **The Agent SDK driver** (`driver: sdk`): set `ANTHROPIC_API_KEY`, or use
-  Amazon Bedrock, Google Vertex or Microsoft Foundry
-  (`CLAUDE_CODE_USE_BEDROCK=1`, `CLAUDE_CODE_USE_VERTEX=1` or
-  `CLAUDE_CODE_USE_FOUNDRY=1`, with that cloud's own credentials).
+- **The `claude-code` driver**: your own
+  [Claude Code](https://code.claude.com/docs) (`claude`), version **2.1.281 or
+  later**, so it reads `AGENTS.md` (`ork doctor` warns on an older one). It runs
+  with `claude`'s own login, or with `ANTHROPIC_API_KEY`, or with Amazon
+  Bedrock, Google Vertex or Microsoft Foundry (`CLAUDE_CODE_USE_BEDROCK=1`,
+  `CLAUDE_CODE_USE_VERTEX=1` or `CLAUDE_CODE_USE_FOUNDRY=1`, with that cloud's
+  own credentials).
 
 Ork is free. What the agents use is billed to your API key or cloud account, or
 counts against your Claude plan's limits.
@@ -101,41 +100,42 @@ ork doctor
 ```
 
 `ork doctor` shows your Ork version against the last update check, then checks
-Node, git, whether you are in a git repository with a commit, each Claude
-driver, each optional integration, and which
+Node, git, whether you are in a git repository with a commit, each agent driver,
+each optional integration, and which
 [experiments](../guides/project-rules.md#trying-an-experiment) are on. It uses
-each tool's own login check and never prints a token. At least one Claude driver
+each tool's own login check and never prints a token. At least one agent driver
 has to be ready; a missing `gh` or `aws` is fine unless a workflow has a node
 that needs it. Example output:
 
 ```
-✓ ork                  1.0.0-alpha.8 (the latest as of 2026-11-10)
-✓ node                 v24.20.0
-✓ git                  git version 2.39.5
-✓ git repo             inside a work tree
-✓ git commits          HEAD exists
-! claude (sdk driver)  no API key or cloud provider
-  Set ANTHROPIC_API_KEY (or CLAUDE_CODE_USE_BEDROCK=1 / CLAUDE_CODE_USE_VERTEX=1 / CLAUDE_CODE_USE_FOUNDRY=1) to use the SDK driver.
-✓ claude (cli driver)  2.1.314 (Claude Code), logged in (claude.ai, firstParty)
-- gh                   optional, not installed (needed only for tool.gh nodes)
-- aws                  optional, not installed (needed only for tool.aws nodes)
-✓ git identity         user.name and user.email are set
-✓ sockets              39 of 103 bytes
-✓ experiments          none on
+✓ ork                          1.0.0-alpha.8 (the latest as of 2026-11-10)
+✓ node                         v24.20.0
+✓ git                          git version 2.39.5
+✓ git repo                     inside a work tree
+✓ git commits                  HEAD exists
+✓ claude (claude-code driver)  2.1.314 (Claude Code), logged in (claude.ai, firstParty)
+- opencode (open-code driver)  v2.1.0, unproven: not yet proven on a real session; ...
+- cmd (command-code driver)    1.88.5, unproven: not yet proven on a real session; ...
+- gh                           optional, not installed (needed only for tool.gh nodes)
+- aws                          optional, not installed (needed only for tool.aws nodes)
+✓ git identity                 user.name and user.email are set
+✓ sockets                      39 of 103 bytes
+✓ experiments                  none on
 ```
 
-Only the CLI driver is ready and neither optional tool is installed: a working
-setup. When nothing required is missing, that is all it prints. Else it ends:
+The `claude-code` driver is ready and neither optional tool is installed: a
+working setup. When nothing required is missing, that is all it prints. Else it
+ends:
 
 ```
-Not ready: Ork needs Node, git, and at least one Claude driver.
+Not ready: Ork needs Node, git, and at least one agent driver.
 ```
 
 A workflow that names no driver, like the one `ork init` writes, runs on the one
-ready here (the CLI driver when both are), and `ork run` says which. A driver
-named by the node, its agent, `defaults` (workflow or `.ork/project.yaml`), or
-`--driver sdk|cli` wins. With none ready, `ork run` stops before any session
-starts. `ork resume` keeps the run's driver.
+ready here, and `ork run` says which. A driver named by the node, its agent,
+`defaults` (workflow or `.ork/project.yaml`), or `--driver claude-code` wins.
+With none ready, `ork run` stops before any session starts. `ork resume` keeps
+the run's driver.
 
 ## Updating
 

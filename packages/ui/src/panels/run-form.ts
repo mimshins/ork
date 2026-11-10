@@ -5,9 +5,13 @@
  *   the command stays as short as one a person would type.
  */
 
-import type { InputDef, WorkflowView } from "@krapht/ork-server/client";
+import type {
+  DRIVER_CHOICES,
+  InputDef,
+  WorkflowView,
+} from "@krapht/ork-server/client";
 
-export type DriverChoice = "" | "sdk" | "cli";
+export type DriverChoice = "" | (typeof DRIVER_CHOICES)[number];
 
 export type RunFlags = {
   driver: DriverChoice;

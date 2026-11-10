@@ -93,8 +93,7 @@ the kinds the current map uses.
   (keep to 240–300). Height never changes.
 - Rounded 13, a 3.5-unit accent bar in the zone tone on the left, title
   (15px, 650) at y 31, sub (12px) at y 51, status dot bottom right, optional
-  package chip (`core`, `runtime-claude`, …) on the top edge, as wide as its
-  name.
+  package chip (`core`, `runtime`, …) on the top edge, as wide as its name.
 - Titles and subs that overflow are cut with an ellipsis and get a tooltip, so
   keep titles ≤ ~22 characters and subs ≤ ~30.
 

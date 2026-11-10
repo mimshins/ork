@@ -19,6 +19,7 @@ import {
   parseInputPairs,
   replayLoopAnswers,
   resolveInputs,
+  placeFiles,
   runDirOf,
   type RunEvent,
   type RunHandle,
@@ -203,7 +204,7 @@ export const runWorkflowFile = async (
 
   const maskedNames = maskedNamesOfRun(workflow, place, projects);
   const executorOptions: Parameters<typeof builtinExecutors>[0] = {
-    runtimeFor: options.runtime,
+    runtimeFor: driver => options.runtime(driver, placeFiles(place).runs),
     inPlace: options.inPlace,
     maskedNames,
   };

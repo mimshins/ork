@@ -99,7 +99,7 @@ has no Go to digit; its tab sits after Usage in the bottom group.
   which is said as it changes.
 - **Propose fix…** confirms first, naming the project and that it's a paid run,
   with the Run workflow dialog's **Driver** field (the workflow's, else the one
-  ready; `sdk` or `cli`), which its
+  ready; `claude-code`, `open-code` or `command-code`), which its
   `ork feedback apply <item> --driver <driver>` follows; then starts
   `ork:feedback-apply` on that driver (`{ driver }` to the apply route, none for
   the workflow's own), goes to the Monitor, and the run's heading takes the

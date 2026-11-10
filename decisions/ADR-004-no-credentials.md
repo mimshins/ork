@@ -28,8 +28,8 @@ Anthropic's terms. Anthropic's legal and compliance page says:
    ([checks.ts](../packages/cli/src/doctor/checks.ts)) reports whether each tool
    is installed and signed in, and never prints a token or the account email.
 3. **The SDK driver needs an API key or a cloud provider.** It refuses to start
-   otherwise ([sdk.ts](../packages/runtime-claude/src/sdk.ts)), so a claude.ai
-   login is never routed through Ork's own code.
+   otherwise (`sdk.ts`, removed by RFC-014), so a claude.ai login is never
+   routed through Ork's own code.
 4. **The CLI driver runs the user's own `claude`**, logged in by the user; Ork
    never reads or passes its credentials. Whether an orchestrator may drive a
    subscription-logged-in `claude` is not clearly covered by the terms; the

@@ -173,7 +173,7 @@ export const EDGES = [
       [846, 396],
       [846, 616],
     ],
-    docs: [RUNTIME.sdk, RUNTIME.cli, DESIGN.runtime],
+    docs: [RUNTIME.cli, DESIGN.runtime],
   },
   {
     id: "settings-session",
@@ -182,7 +182,7 @@ export const EDGES = [
     kind: "process",
     label: "sources · settings",
     detail:
-      "`settingSources` and `settings` for the SDK, `--setting-sources` and `--settings` for the CLI.",
+      "`--setting-sources` and `--settings` on the `claude` command line.",
     docs: [DESIGN.runtime],
   },
   {
@@ -230,7 +230,7 @@ export const EDGES = [
     kind: "process",
     label: "structured output",
     detail:
-      "The session ends with its report as structured output (`outputFormat`, `--json-schema`), which the driver reads from the final result.",
+      "The session ends with its report as structured output (`--json-schema`), which the driver reads from the final result.",
     docs: [RUNTIME.report, DESIGN.runtime],
   },
   {

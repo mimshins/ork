@@ -71,7 +71,7 @@ review carried are open work in the [register](../gaps.md#limits).
   the project's root only, not a user's own servers. A server starts for each
   call, and a stdio server's stderr isn't kept. A server started through a
   wrapper such as `sh -c` can outlive its node if it ignores the end of its
-  input, as the SDK doesn't start it in a process group of its own.
+  input, as the MCP SDK doesn't start it in a process group of its own.
 - **L96 · A check that passes reads one late message.** A message during a check
   gets one more turn and another check. One that comes after that waits for the
   node's next session, and stays unread if there is none, so a busy peer can't

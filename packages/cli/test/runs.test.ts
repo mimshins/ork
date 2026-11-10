@@ -16,7 +16,7 @@ import {
   type RunEvent,
   runTree,
 } from "@krapht/ork-core";
-import { createCliRuntime } from "@krapht/ork-runtime-claude";
+import { createCliRuntime } from "@krapht/ork-runtime";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -29,11 +29,11 @@ import {
   runWorkflowFile,
   type RunWorkflowOptions,
 } from "../src/index.ts";
-import { sdkReady } from "./fixtures/drivers.ts";
+import { openCodeReady, standInDrivers } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
-  "../../runtime-claude/test/fixtures/fake-claude.mjs",
+  "../../runtime/test/fixtures/fake-claude.mjs",
 );
 
 const WORKFLOW = [
@@ -84,7 +84,8 @@ const setup = (overrides: Partial<RunWorkflowOptions> = {}) => {
     inPlace: true,
     json: false,
     runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
-    driverChecks: sdkReady,
+    driverChecks: openCodeReady,
+    drivers: standInDrivers,
     human: recommending,
     store,
     home: mkdtempSync(path.join(tmpdir(), "ork-home-")),

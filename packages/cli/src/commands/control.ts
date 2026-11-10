@@ -19,7 +19,13 @@ import { defineCommand } from "citty";
 
 import { style, write, writeErr } from "../output.ts";
 import { runWorkflowFile } from "../run/workflow.ts";
-import { flagValues, isDriver, loadRuntime, terminalHuman } from "./run.ts";
+import {
+  badDriver,
+  flagValues,
+  isDriver,
+  loadRuntime,
+  terminalHuman,
+} from "./run.ts";
 
 const failed = (message: string): void => {
   writeErr(message);
@@ -99,7 +105,7 @@ export const resume = defineCommand({
     },
     driver: {
       type: "string",
-      description: "sdk or cli (default: the one the run used)",
+      description: "claude-code (default: the one the run used)",
     },
     "in-place": {
       type: "boolean",
@@ -125,7 +131,7 @@ export const resume = defineCommand({
   },
   run: async ({ args, rawArgs }) => {
     if (args.driver !== undefined && !isDriver(args.driver)) {
-      failed(`--driver must be sdk or cli, got \`${args.driver}\``);
+      failed(badDriver(args.driver));
       return;
     }
     const store = openStore();

@@ -39,7 +39,7 @@ applicable" that don't apply:
   at once. Put shared contracts (schema, types) in tasks of their own, first.
 
 Respect the rules the plan will be built under: the dependency direction,
-mechanism not policy, prevention over detection, both drivers or a gap, and no
+mechanism not policy, prevention over detection, every built driver or a gap, and no
 credentials.
 
 ## Asking

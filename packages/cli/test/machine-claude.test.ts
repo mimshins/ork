@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import {
-  type ClaudeRuntime,
+  type AgentRuntime,
   type EventStore,
   type HumanChannel,
   openStore,
@@ -18,7 +18,7 @@ import {
   type SessionSpec,
 } from "@krapht/ork-core";
 import type { ToolRunner } from "@krapht/ork-nodes";
-import { createCliRuntime } from "@krapht/ork-runtime-claude";
+import { createCliRuntime } from "@krapht/ork-runtime";
 import { describe, expect, it } from "vitest";
 
 import { resumeChat, runWorkflowFile } from "../src/index.ts";
@@ -26,7 +26,7 @@ import { readyOnly } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
-  "../../runtime-claude/test/fixtures/fake-claude.mjs",
+  "../../runtime/test/fixtures/fake-claude.mjs",
 );
 
 const WORKFLOW = [
@@ -60,10 +60,10 @@ const quiet = () => {
 };
 
 /** The stand-in `claude`, keeping each session's spec. */
-const watched = (specs: SessionSpec[]) => (): Promise<ClaudeRuntime> => {
+const watched = (specs: SessionSpec[]) => (): Promise<AgentRuntime> => {
   const inner = createCliRuntime({ bin: FAKE_CLAUDE });
   return Promise.resolve({
-    driver: "cli",
+    driver: "claude-code",
     start: (spec, ports) => {
       specs.push(spec);
       return inner.start(spec, ports);
@@ -88,7 +88,7 @@ const setup = () => {
       inPlace: true,
       json: false,
       runtime: watched(specs),
-      driverChecks: readyOnly("cli"),
+      driverChecks: readyOnly("claude-code"),
       human: recommending,
       store,
       home,

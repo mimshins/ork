@@ -22,5 +22,5 @@ code are linked from their own specs. Ownership rules:
 - **Worker:** a fresh session for each task, in its own worktree and branch,
   reporting to its owner.
 - **Sub-agent:** runs _inside_ its parent's session as a Claude Code subagent
-  (SDK `agents` option or CLI `--agents`). It is cheap and isolates context, but
-  has no separate process.
+  (`claude`'s `--agents`). It is cheap and isolates context, but has no separate
+  process.

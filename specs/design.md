@@ -10,8 +10,7 @@ builds in good practice: token saving, context engineering, bounded loops,
 quality gates, a human in the loop, and full observability.
 
 **Credentials.** Ork never stores, proxies, or asks for credentials: every
-integration uses the user's own login, and the Agent SDK driver runs only with
-an API key or a cloud provider
+integration uses the user's own login, an API key or a cloud provider
 ([ADR-004](../decisions/ADR-004-no-credentials.md)).
 
 This page is the overview for contributors; the plain-words version for people
@@ -46,8 +45,10 @@ who use Ork is [How Ork works](../docs/how-ork-works.md). The contracts are the
   Schema export, and the graph compiler and validator. `ork init` and
   `ork validate`.
 - **M1b: runtime.**
-  - `runtime-claude` with the SDK and CLI drivers behind `ClaudeRuntime`, plus
-    the Ork MCP tools.
+  - `runtime` with the drivers behind `AgentRuntime`, plus the Ork MCP tools
+    (the Agent SDK driver, built here, was removed by
+    [RFC-014](../rfcs/archived/RFC-014-cli-drivers-only.md); `claude-code` runs
+    the user's own `claude`).
   - `ork doctor`.
   - Run a single node end-to-end (`ork run <wf> --node <id>`).
 - **M1c: engine** (built: [scheduler](./scheduler.md),
@@ -62,8 +63,7 @@ who use Ork is [How Ork works](../docs/how-ork-works.md). The contracts are the
   the message bus with `send_message`, `read_inbox` and loops asking a live
   owner; `chat` and `resume`; `claim` and `release`; feedback capture; the
   `software-factory` and `pr-review` examples, run end to end on the CLI
-  driver). The SDK driver is covered by unit tests only, with no paid run
-  ([C5](./runtime.md#limits)).
+  driver).
   - Feedback capture: the `feedback` tool, system signals, the local table and
     fingerprints, `ork feedback list | show | dismiss`.
 - **M2: UI.**
@@ -89,7 +89,7 @@ who use Ork is [How Ork works](../docs/how-ork-works.md). The contracts are the
     CLAUDE.md + AGENTS.md, and a shadowed skill.
   - Expression evaluator.
   - Scheduler on a fake runtime, covering join, loop cap and escalation.
-- **Integration:** the fake `ClaudeRuntime` driver replays recorded stream-json,
+- **Integration:** the fake `AgentRuntime` driver replays recorded stream-json,
   so CI needs no API key.
 - **End-to-end by hand:**
   - `ork doctor` passes.

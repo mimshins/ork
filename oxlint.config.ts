@@ -1,14 +1,14 @@
 /**
  * @file Oxlint configuration: the type-aware rule set, the repository's
- *   conventions, the package boundaries (`schema <- core <- runtime-claude,
- *   nodes <- server <- ui, cli`) enforced as restricted imports, and the UI's
- *   React, hooks and accessibility rules.
+ *   conventions, the package boundaries (`schema <- core <- runtime, nodes <-
+ *   server <- ui, cli`) enforced as restricted imports, and the UI's React,
+ *   hooks and accessibility rules.
  */
 
 import { defineConfig, type OxlintOverride } from "oxlint";
 
 // Dependency direction between workspace packages:
-//   integrations <- schema <- core <- runtime-claude, nodes <- server <- ui, cli
+//   integrations <- schema <- core <- runtime, nodes <- server <- ui, cli
 // A package may import only the packages to its left. The UI is browser code:
 // it imports only the server's browser entry (`@krapht/ork-server/client`),
 // and the CLI takes its built files, never its source.
@@ -16,7 +16,7 @@ const PACKAGES = [
   "integrations",
   "schema",
   "core",
-  "runtime-claude",
+  "runtime",
   "nodes",
   "server",
   "ui",
@@ -27,15 +27,15 @@ const ALLOWED: Record<(typeof PACKAGES)[number], readonly string[]> = {
   integrations: [],
   schema: ["integrations"],
   core: ["integrations", "schema"],
-  "runtime-claude": ["integrations", "schema", "core"],
+  runtime: ["integrations", "schema", "core"],
   nodes: ["integrations", "schema", "core"],
-  server: ["integrations", "schema", "core", "runtime-claude", "nodes"],
+  server: ["integrations", "schema", "core", "runtime", "nodes"],
   ui: ["server"],
-  cli: ["integrations", "schema", "core", "runtime-claude", "nodes", "server"],
+  cli: ["integrations", "schema", "core", "runtime", "nodes", "server"],
 };
 
 const DIRECTION =
-  "dependency direction: integrations <- schema <- core <- runtime-claude, nodes <- server <- ui, cli";
+  "dependency direction: integrations <- schema <- core <- runtime, nodes <- server <- ui, cli";
 
 /** The npm name of a workspace package: the CLI is `@krapht/ork` itself. */
 const npmName = (pkg: (typeof PACKAGES)[number]): string =>
@@ -68,7 +68,8 @@ const boundaries = (pkg: (typeof PACKAGES)[number]): OxlintOverride => {
               message: "import a package through its public entry point",
             },
             {
-              regex: `^(\\.\\./)+(${PACKAGES.join("|")}|packages)(/|$)`,
+              // `runtime` needs two levels up: core's own `src/runtime/` is `../runtime`.
+              regex: `^((\\.\\./)+(${PACKAGES.filter(name => name !== "runtime").join("|")})|(\\.\\./){2,}runtime|(\\.\\./)+packages)(/|$)`,
               message: "no relative import into another package",
             },
           ],

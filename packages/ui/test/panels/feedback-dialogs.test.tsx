@@ -169,9 +169,11 @@ describe("proposing a fix", () => {
     expect(
       within(confirm).getByRole("combobox", { name: "Driver" }).textContent,
     ).toContain("The workflow's, else the one ready");
-    await pick("Driver", "cli: your claude login");
+    await pick("Driver", "claude-code");
     expect(
-      within(confirm).getByText("ork feedback apply 9fae0c1d2e3f --driver cli"),
+      within(confirm).getByText(
+        "ork feedback apply 9fae0c1d2e3f --driver claude-code",
+      ),
     ).toBeDefined();
     expect(await violations(confirm)).toEqual([]);
     await userEvent.click(
@@ -179,7 +181,7 @@ describe("proposing a fix", () => {
     );
     await screen.findByText("Run fix11111 started");
     expect(asked(opened, "apply")).toEqual([
-      { route: "apply", id: LOOP, body: { driver: "cli" } },
+      { route: "apply", id: LOOP, body: { driver: "claude-code" } },
     ]);
   });
 

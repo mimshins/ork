@@ -6,7 +6,7 @@ _Part of [Running workflows](../running-workflows.md)._
 
 ```sh
 ork run software-factory --input feature="export to CSV"
-ork run path/to/review.ork.yaml --driver cli
+ork run path/to/review.ork.yaml --driver claude-code
 ```
 
 The workflow is a path, the name of a file in `.ork/workflows/`, or one of Ork's
@@ -14,14 +14,14 @@ own, such as `ork:feedback-apply` ([feedback](../feedback.md#asking-for-a-fix)).
 Before anything starts, Ork checks the workflow, its inputs, and (when it has
 `worktree` nodes) your checkout. Any error stops it there.
 
-| Option              | What it does                                                    |
-| ------------------- | --------------------------------------------------------------- |
-| `--input k=v`       | a workflow input; repeat it for each one                        |
-| `--driver sdk\|cli` | overrides the workflow's and each node's driver                 |
-| `--in-place`        | runs every node in your checkout, without worktrees             |
-| `--allow-dirty`     | runs although instructions or skills have uncommitted changes   |
-| `--machine-claude`  | sessions load your MCP servers and Claude's memory (see below)  |
-| `--json`            | prints every run event as a JSON line instead of the transcript |
+| Option             | What it does                                                    |
+| ------------------ | --------------------------------------------------------------- |
+| `--input k=v`      | a workflow input; repeat it for each one                        |
+| `--driver <id>`    | overrides the workflow's and each node's driver                 |
+| `--in-place`       | runs every node in your checkout, without worktrees             |
+| `--allow-dirty`    | runs although instructions or skills have uncommitted changes   |
+| `--machine-claude` | sessions load your MCP servers and Claude's memory (see below)  |
+| `--json`           | prints every run event as a JSON line instead of the transcript |
 
 ### What a session loads
 

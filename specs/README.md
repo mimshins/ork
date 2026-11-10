@@ -27,7 +27,7 @@ where each part is specified.
 | [Workflow file format](./workflow-format.md)      | Built     | M1a       |
 | [Expressions](./expressions.md)                   | Built     | M1a       |
 | [Graph compiler](./graph-compiler.md)             | Built     | M1a       |
-| [Runtime: the Claude drivers](./runtime.md)       | Built     | M1b       |
+| [Runtime: the agent drivers](./runtime.md)        | Built     | M1b       |
 | [Scheduler: running a workflow](./scheduler.md)   | Built     | M1c       |
 | [Worktrees: where nodes work](./worktrees.md)     | Built     | M1c       |
 | [Project rules](./project-rules.md)               | Built     | M1e       |

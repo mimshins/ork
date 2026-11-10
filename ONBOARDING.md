@@ -113,8 +113,8 @@ branch? Which layer wins when two skills share a name? What does a run keep?
 ## Stage 4: The code
 
 Read the packages in dependency order, so each uses only what you have seen:
-`integrations <- schema <- core <- runtime-claude, nodes <- server <- ui, cli`.
-Every source file opens with a `@file` block saying what it is for. Each
+`integrations <- schema <- core <- runtime, nodes <- server <- ui, cli`. Every
+source file opens with a `@file` block saying what it is for. Each
 `src/index.ts` only re-exports, so it lists a package's public pieces (the UI
 has `src/main.tsx` instead). `test/` shows behavior with fakes and needs no
 account: `pnpm exec vitest run packages/core/test/expr.test.ts` runs one file.
@@ -142,24 +142,25 @@ reaches them. **Why now:** this is the engine, and it runs without Claude.
   `routing.ts`, `delegation.ts`, `plan.ts` and `bus.ts`, beside
   [scheduler.test.ts](./packages/core/test/scheduler.test.ts).
 - `runtime/`: [types.ts](./packages/core/src/runtime/types.ts), the port: an
-  interface the engine defines and the Claude drivers implement. A driver is how
-  Ork starts a Claude session, with the Agent SDK or your own `claude`.
+  interface the engine defines and the agent drivers implement. A driver is how
+  Ork starts an agent session by running that tool's own CLI headless: `claude`
+  (`claude-code`), `opencode` (`open-code`) or `cmd` (`command-code`).
 - `context/resolve.ts`, `store/recorder.ts` and `worktree/manager.ts`.
 
 **You can answer:** What does the compiler give the scheduler? What decides
 which edges are taken? What does `core` know about Claude, and through what?
 
-### `runtime-claude` and `nodes`
+### `runtime` and `nodes`
 
-**Read** [registry.ts](./packages/runtime-claude/src/registry.ts), `cli.ts`,
-`sdk.ts` and `tools/` (what Ork gives a session), with
-[runtime.test.ts](./packages/runtime-claude/test/runtime.test.ts). Then
+**Read** [registry.ts](./packages/runtime/src/registry.ts), `cli.ts`,
+`mcp-http.ts` and `tools/` (what Ork gives a session), with
+[runtime.test.ts](./packages/runtime/test/runtime.test.ts). Then
 [builtins.ts](./packages/nodes/src/builtins.ts), `tools.ts`, `claude.ts` and
 `gate.ts`. **Why now:** these implement what `core` only declares.
 
-**You can answer:** How do the two drivers differ? What does an executor (the
-code that runs one node type) get from the scheduler, and return? What checks a
-tool node's command before it runs?
+**You can answer:** How does the claude-code driver reach Ork's tools? What does
+an executor (the code that runs one node type) get from the scheduler, and
+return? What checks a tool node's command before it runs?
 
 ### `server`, `ui` and `cli`
 

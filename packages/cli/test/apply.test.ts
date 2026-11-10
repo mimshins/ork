@@ -25,7 +25,7 @@ import {
   openStore,
   type RunResult,
 } from "@krapht/ork-core";
-import { createCliRuntime } from "@krapht/ork-runtime-claude";
+import { createCliRuntime } from "@krapht/ork-runtime";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -35,11 +35,11 @@ import {
   applyItem,
   outcomeOf,
 } from "../src/runs/apply.ts";
-import { sdkReady } from "./fixtures/drivers.ts";
+import { openCodeReady, standInDrivers } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
-  "../../runtime-claude/test/fixtures/fake-claude.mjs",
+  "../../runtime/test/fixtures/fake-claude.mjs",
 );
 
 /** A repository with one commit, its run state ignored. */
@@ -109,7 +109,8 @@ const options = (
   item,
   registered: [],
   runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
-  driverChecks: sdkReady,
+  driverChecks: openCodeReady,
+  drivers: standInDrivers,
   human: answering(choice),
   home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
   out: () => {

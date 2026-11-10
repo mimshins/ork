@@ -76,7 +76,9 @@ runs and worktrees in plain words.
 
 - [Feedback from your runs](./guides/feedback.md): what Ork and the agents note
   as runs go, and `ork feedback`.
-- [Accounts and credentials](./guides/accounts.md): the two Claude drivers, `gh`
+- [Drivers](./guides/drivers.md): the agent tools Ork can run, what each does
+  and refuses, and why permissions are denied unless allowed.
+- [Accounts and credentials](./guides/accounts.md): each driver's login, `gh`
   and `aws`, and what Ork never stores.
 - [Where Ork keeps things](./guides/where-ork-keeps-things.md): what's on your
   machine, what leaves it, and removing Ork.

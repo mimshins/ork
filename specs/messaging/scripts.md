@@ -2,8 +2,7 @@
 
 _Part of [Messaging, decisions and logs](../messaging.md)._
 
-Status: **Built, proven on a real session on the CLI driver**; the SDK driver
-only against stand-ins ([C5](../runtime.md#limits))
+Status: **Built, proven on a real session on the claude-code driver**
 ([ADR-048](../../decisions/ADR-048-scripts-and-rules-on-the-bus.md),
 [send.ts](../../packages/core/src/remote/send.ts),
 [rules.ts](../../packages/core/src/run/rules.ts),

@@ -17,8 +17,8 @@ is what was left simpler, or could not be checked.
 - **L217 · A node that is delegated and run by an edge may keep a stale
   result.** `node.started` supersedes an earlier result by its round, used as a
   position, so a node run both ways in one run can read the older one.
-- **L218 · The SDK driver's `interrupted` branch is untested.** There is no fake
-  of the Agent SDK; the CLI driver's is tested.
+- **L218 · Gone with the SDK driver.** Its `interrupted` branch was untested;
+  RFC-014 removed the driver, and the claude-code driver's branch is tested.
 - **L219 · The real `claude` may die when a question stays open.** The fake
   `claude` died after about five minutes with a question open. Only the failure
   reason text is fixed. The maintainer should check whether the real CLI does

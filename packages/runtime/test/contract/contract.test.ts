@@ -1,0 +1,132 @@
+/**
+ * @file The contract every adapter keeps (RFC-014), run against each entry of
+ *   `entries.ts` on its fake tool through the shared session runner: events
+ *   normalized, a valid report kept and an invalid one rejected, a denied tool
+ *   still denied, Ork's endpoint reached and then gone, usage counted, an
+ *   interrupt ending the session, a message sent mid-session arriving, and,
+ *   where the driver cannot hold the report to its schema, a report handed in
+ *   through Ork's `report` tool. Every adapter registered in `registry.ts` must
+ *   have an entry.
+ */
+
+import type { DriverCapabilities } from "@krapht/ork-integrations";
+import { describe, expect, it } from "vitest";
+
+import { ADAPTERS } from "../../src/index.ts";
+import { CONTRACT } from "./entries.ts";
+import {
+  answers,
+  collect,
+  collectActing,
+  outcomeOf,
+  resultsOf,
+  start,
+} from "./harness.ts";
+
+const EVENT_TYPES = new Set([
+  "session.started",
+  "assistant.text",
+  "tool.called",
+  "tool.result",
+  "plan.limit",
+  "session.finished",
+]);
+
+/** The drivers with an adapter in the registry. */
+const registered = (): string[] =>
+  Object.entries(ADAPTERS)
+    .filter(([, adapter]) => adapter !== null)
+    .map(([driver]) => driver);
+
+/** When a message sent mid-session reaches the tool. */
+const when = (capabilities: DriverCapabilities): string =>
+  capabilities.midTurnMessages ? "as soon as it can" : "at its next leg";
+
+describe("the contract list", () => {
+  it("has an entry for every adapter registered, and no other", () => {
+    expect(CONTRACT.map(entry => entry.driver).toSorted()).toEqual(
+      registered().toSorted(),
+    );
+  });
+
+  it("tests the adapter registered under each entry's id", () => {
+    expect(CONTRACT.map(entry => ADAPTERS[entry.driver])).toEqual(
+      CONTRACT.map(entry => entry.adapter),
+    );
+  });
+});
+
+describe.each(CONTRACT)("the $driver adapter", entry => {
+  it("normalizes its output: a start naming the driver, text, an end", async () => {
+    const events = await collect(start(entry, "plain").session);
+    expect(events[0]).toMatchObject({
+      type: "session.started",
+      driver: entry.driver,
+    });
+    expect(events.map(e => e.type)).toContain("assistant.text");
+    expect(events.filter(e => !EVENT_TYPES.has(e.type))).toEqual([]);
+    expect(outcomeOf(events).sessionId).not.toBe("");
+  });
+
+  it("ends with the report it gave when the report fits the schema", async () => {
+    const outcome = outcomeOf(await collect(start(entry, "plain").session));
+    expect(outcome.subtype).toBe("success");
+    expect(outcome.report).toMatchObject({ status: "pass" });
+  });
+
+  it("ends with no report when the report breaks the schema", async () => {
+    const events = await collect(start(entry, "invalid-report").session);
+    expect(outcomeOf(events).report).toBeNull();
+  });
+
+  it("keeps a tool the node denies denied", async () => {
+    const events = await collect(start(entry, "try-denied").session);
+    expect(resultsOf(events, "Bash")).toEqual([true]);
+  });
+
+  it("reaches Ork's endpoint during the session, and it is gone after", async () => {
+    const started = start(entry, "plain");
+    const during: boolean[] = [];
+    await collectActing(started.session, async () => {
+      during.push(await answers(started.endpoint()));
+    });
+    expect(during).toEqual([true]);
+    expect(await answers(started.endpoint())).toBe(false);
+  });
+
+  it("counts its usage: tokens, turns, and dollars when it reports them", async () => {
+    const { usage } = outcomeOf(await collect(start(entry, "plain").session));
+    expect(usage.inputTokens).toBeGreaterThan(0);
+    expect(usage.outputTokens).toBeGreaterThan(0);
+    expect(usage.turns).toBeGreaterThan(0);
+    expect(usage.costUsd > 0).toBe(entry.capabilities.price);
+  });
+
+  it("ends when interrupted", async () => {
+    const { session } = start(entry, "hang");
+    const outcome = outcomeOf(await collectActing(session, session.interrupt));
+    expect(outcome).toMatchObject({
+      subtype: "error_driver",
+      errors: ["interrupted"],
+    });
+  });
+
+  it(`takes a message sent mid-session ${when(entry.capabilities)}`, async () => {
+    const { session } = start(entry, "wait-message");
+    const events = await collectActing(session, () => {
+      session.send("Also add tests");
+    });
+    expect(outcomeOf(events).text).toContain("got: Also add tests");
+  });
+});
+
+describe.each(CONTRACT.filter(entry => !entry.capabilities.reportSchema))(
+  "the $driver adapter, with no report schema of its own",
+  entry => {
+    it("ends with the report Ork's report tool accepted, after refusing one", async () => {
+      const events = await collect(start(entry, "report-tool").session);
+      expect(resultsOf(events, "report")).toEqual([true, false]);
+      expect(outcomeOf(events).report).toMatchObject({ status: "pass" });
+    });
+  },
+);

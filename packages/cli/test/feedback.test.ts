@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { type HumanChannel, openStore } from "@krapht/ork-core";
-import { createCliRuntime } from "@krapht/ork-runtime-claude";
+import { createCliRuntime } from "@krapht/ork-runtime";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -21,11 +21,11 @@ import {
   noteRun,
   runWorkflowFile,
 } from "../src/index.ts";
-import { sdkReady } from "./fixtures/drivers.ts";
+import { openCodeReady, standInDrivers } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
-  "../../runtime-claude/test/fixtures/fake-claude.mjs",
+  "../../runtime/test/fixtures/fake-claude.mjs",
 );
 
 const WORKFLOW = [
@@ -66,7 +66,8 @@ describe("feedback in a run", () => {
       inPlace: true,
       json: false,
       runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
-      driverChecks: sdkReady,
+      driverChecks: openCodeReady,
+      drivers: standInDrivers,
       human: contrary,
       store,
       home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
@@ -95,7 +96,7 @@ describe("feedback in a run", () => {
       ...origin,
       workflow: "notes",
       nodeType: "claude.worker",
-      driver: "cli",
+      driver: "claude-code",
     });
 
     const found = findFeedbackItem(store, id.slice(0, 4));

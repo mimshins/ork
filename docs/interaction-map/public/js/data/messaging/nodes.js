@@ -441,15 +441,14 @@ export const NODES = [
     x: 1160,
     y: 240,
     status: "built",
-    pkg: "runtime-claude",
+    pkg: "runtime",
     summary:
       "Delivers a message into a running session as a user message with `priority: next`: Claude Code shows it at the session's next step, even mid-turn, without interrupting a tool call.",
     facts: [
-      "SDK: the next item of the session's input stream.",
-      "CLI: a JSON line on `claude`'s stdin.",
+      "A JSON line on `claude`'s stdin.",
       "Checked by hand with `claude` 2.1.314: a message sent during a tool call reached the same turn.",
     ],
-    docs: [RUNTIME.sdk, RUNTIME.cli, DESIGN.runtime],
+    docs: [RUNTIME.cli, DESIGN.runtime],
   },
   {
     id: "mcpTools",
@@ -459,7 +458,7 @@ export const NODES = [
     x: 1160,
     y: 480,
     status: "built",
-    pkg: "runtime-claude",
+    pkg: "runtime",
     summary:
       "How a session reaches the rest of the run: ordinary tool calls that Ork answers.",
     facts: [
@@ -493,21 +492,20 @@ export const NODES = [
   {
     id: "permission",
     title: "Permission gate",
-    sub: "`canUseTool` · prompt tool",
+    sub: "the prompt tool",
     zone: "runtime",
     x: 1160,
     y: 720,
     status: "built",
-    pkg: "runtime-claude",
+    pkg: "runtime",
     summary:
       "When a session wants a tool its rules neither allow nor deny, the question comes to Ork instead of a terminal prompt, and becomes a decision.",
     facts: [
-      "SDK: the `canUseTool` callback.",
-      "CLI: `--permission-prompt-tool mcp__ork__permission`.",
+      "`--permission-prompt-tool mcp__ork__permission`.",
       "The node's `tools.allow` and `tools.deny` decide first.",
-      "Both drivers route the prompt to the decision queue: allow or deny, from the terminal or `ork decide`; with no one at a terminal and not detached, it is denied.",
+      "The prompt goes to the decision queue: allow or deny, from the terminal or `ork decide`; with no one at a terminal and not detached, it is denied.",
     ],
-    docs: [RUNTIME.sdk, RUNTIME.mcp, CLI.human, DESIGN.runtime],
+    docs: [RUNTIME.cli, RUNTIME.mcp, CLI.human, DESIGN.runtime],
   },
 
   // ── Node sessions ────────────────────────────────────────────────────────

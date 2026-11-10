@@ -1,7 +1,7 @@
 /**
- * @file The port between the engine and a Claude driver. `@krapht/ork-core`
- *   defines it; `@krapht/ork-runtime-claude` implements it with the Agent SDK
- *   and the headless `claude` CLI; tests implement it with a fake.
+ * @file The port between the engine and an agent driver. `@krapht/ork-core`
+ *   defines it; `@krapht/ork-runtime` implements it (through the headless CLIs
+ *   of `claude`, `opencode` and `cmd`); tests implement it with a fake.
  */
 
 import type { Driver, Effort } from "@krapht/ork-schema";
@@ -170,6 +170,11 @@ export type RuntimeEvent = (
       driver?: Driver;
     }
   | { type: "assistant.text"; text: string }
+  /**
+   * The session waits before its tool starts, e.g. for its checkout: Command
+   * Code runs one session per checkout (RFC-014). Nothing derives from it.
+   */
+  | { type: "session.waiting"; reason: string }
   | {
       type: "tool.called";
       id: string;
@@ -286,7 +291,7 @@ export type SessionPorts = {
   feedback?: FeedbackPort;
 };
 
-export type ClaudeRuntime = {
+export type AgentRuntime = {
   driver: Driver;
   start: (spec: SessionSpec, ports: SessionPorts) => Session;
 };

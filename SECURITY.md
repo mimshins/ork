@@ -1,9 +1,10 @@
 # Reporting Security Issues
 
 Ork runs AI agents and command-line tools on your machine, with your own
-accounts (`claude`, `gh`, `aws`). A vulnerability here can let a workflow, an
-agent, or a web page do more on that machine than you allowed, so please report
-it privately and give us time to fix it before you disclose it.
+accounts (`claude`, `opencode`, `cmd`, `gh`, `aws`). A vulnerability here can
+let a workflow, an agent, or a web page do more on that machine than you
+allowed, so please report it privately and give us time to fix it before you
+disclose it.
 
 ## How to let us know
 
@@ -22,6 +23,31 @@ anything posted there is visible to everyone and cannot be taken back.
 - Whether it needs a malicious workflow file, a malicious repository, a
   malicious web page, or none of these.
 
+## How Ork's token reaches a session
+
+Each session of an agent tool reaches Ork's local tool server (on `127.0.0.1`,
+random port) with a per-session bearer token. Ork never stores a credential of
+yours; this token is Ork's own and lives only as long as the session. How each
+driver is given it, and what removes it:
+
+- **`claude-code`:** a flag in the `claude` process's arguments only. Nothing is
+  written to disk.
+- **`open-code`:** a config file named by `OPENCODE_CONFIG`, in a private folder
+  (0700) under the system's temporary folder, written at 0600 and outside the
+  checkout. It goes when the session ends, and a crashed session's folder goes
+  when the next `open-code` session starts.
+- **`command-code`:** an `ork` entry in the checkout's local scope of Command
+  Code's own config (`~/.commandcode/projects/<path>/mcp.json`, 0600). Ork
+  removes it when the session ends, and after a crash the next Command Code
+  session or `ork doctor` removes it. Only the `ork` entry is touched; your
+  other entries stay as they were.
+
+The token is never written to logs, events or artifacts (it is masked), and a
+project's own `.mcp.json` is never changed. A driver with no permission prompt
+(`open-code`, `command-code`) denies every tool a node did not allow, so an
+unattended session can't run a shell command it was never given
+([Drivers](./docs/guides/drivers.md#permissions-denied-unless-allowed)).
+
 ## Scope
 
 Treat a workflow file someone shares with you as untrusted input. In scope, for
@@ -38,7 +64,7 @@ example:
   artifacts, or a workflow file;
 - the build and release supply chain of this repository.
 
-Out of scope: vulnerabilities in Claude Code, the Claude Agent SDK, `gh`, or
+Out of scope: vulnerabilities in Claude Code, OpenCode, Command Code, `gh`, or
 `aws` themselves (report them to their maintainers), and what an agent does with
 permissions you granted it.
 

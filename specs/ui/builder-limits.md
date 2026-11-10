@@ -6,8 +6,6 @@ What the workflow builder does for now, by choice
 ([ADR-051](../../decisions/ADR-051-workflow-builder.md),
 [ADR-052](../../decisions/ADR-052-conditions-from-declared-outputs.md)). Those
 the gaps review carried are open work in the [register](../gaps.md#limits).
-Whether the SDK driver lets a session retry a value outside a Claude schema,
-once L115, is part of [C5](../runtime.md#limits).
 
 - **L103 · A workflow can't be arranged by hand.** Where a card sits follows
   from the nodes and edges, so a workflow drawn badly is a bug in the layout,

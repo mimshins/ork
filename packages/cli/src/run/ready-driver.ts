@@ -6,8 +6,13 @@
  *   keeps the driver it recorded.
  */
 
-import { namingNoDriver } from "@krapht/ork-core";
 import {
+  type DriverNeeds,
+  driverRefusals,
+  namingNoDriver,
+} from "@krapht/ork-core";
+import {
+  AGENT_DRIVERS,
   type DriverCheck,
   driverChecks,
   readyDriver,
@@ -99,3 +104,21 @@ export const runReadyDriver = async (
     await (options.checks ?? checksHere)(),
   );
 };
+
+/**
+ * What stops a session node from running on its driver, one line each: the
+ * driver's declared `capabilities` and `proven` against what the node asks
+ * (`drivers` default: the real descriptors; tests pass their own).
+ */
+export const unfitLines = (
+  workflow: Workflow,
+  drivers: readonly DriverNeeds[] | undefined,
+  choice: {
+    override?: Driver | undefined;
+    ready?: Driver | undefined;
+    only?: string;
+  },
+): string[] =>
+  driverRefusals(workflow, drivers ?? AGENT_DRIVERS, choice).map(
+    ({ message }) => message,
+  );

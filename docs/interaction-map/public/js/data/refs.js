@@ -9,10 +9,7 @@ import { d } from "./types.js";
 export const DESIGN = {
   concepts: d("specs/concepts.md", "Spec: core concepts"),
   packages: d("specs/architecture.md", "Spec: the packages"),
-  runtime: d(
-    "specs/runtime.md",
-    "Spec: the runtime adapter and its two drivers",
-  ),
+  runtime: d("specs/runtime.md", "Spec: the runtime adapter and its drivers"),
   format: d("specs/workflow-format.md", "Spec: the workflow file format"),
   context: d("specs/context.md", "Spec: context, skills and precedence"),
   messaging: d("specs/messaging.md", "Spec: messaging, decisions and logs"),
@@ -354,10 +351,7 @@ export const FEEDBACK = {
     "packages/core/src/store/feedback.ts",
     "Code: records and items in the store",
   ),
-  tool: d(
-    "packages/runtime-claude/src/tools/feedback.ts",
-    "Code: the feedback tool",
-  ),
+  tool: d("packages/runtime/src/tools/feedback.ts", "Code: the feedback tool"),
   cli: d("packages/cli/src/runs/feedback.ts", "Code: `ork feedback`'s output"),
   tests: d("packages/core/test/feedback.test.ts", "Tests: feedback capture"),
   cliTests: d(
@@ -507,7 +501,7 @@ export const CONTROL = {
     "Code: a run's holds and a node's stop",
   ),
   hold: d(
-    "packages/runtime-claude/src/hold.ts",
+    "packages/runtime/src/hold.ts",
     "Code: holding a session before its next tool call",
   ),
   holdTests: d(
@@ -554,8 +548,8 @@ export const QUESTIONS = {
     "Tests: no session, no budget, a failed or late fork, a stop, a pause, a read-only fork",
   ),
   forkTests: d(
-    "packages/runtime-claude/test/fork.test.ts",
-    "Tests: both drivers fork a session",
+    "packages/runtime/test/fork.test.ts",
+    "Tests: the driver forks a session",
   ),
   adr: d(
     "decisions/ADR-063-leader-questions.md",
@@ -593,11 +587,11 @@ export const BUS = {
     "Tests: addressing, notices and owner questions",
   ),
   tools: d(
-    "packages/runtime-claude/src/tools/messages.ts",
+    "packages/runtime/src/tools/messages.ts",
     "Code: send_message, read_inbox and answer",
   ),
   toolTests: d(
-    "packages/runtime-claude/test/messages.test.ts",
+    "packages/runtime/test/messages.test.ts",
     "Tests: the message tools",
   ),
   claims: d("packages/core/src/run/claims.ts", "Code: the run's claims"),
@@ -606,7 +600,7 @@ export const BUS = {
     "Tests: overlapping claims, notices and release",
   ),
   claimTools: d(
-    "packages/runtime-claude/src/tools/claims.ts",
+    "packages/runtime/src/tools/claims.ts",
     "Code: claim and release",
   ),
   claimAdr: d(
@@ -641,7 +635,7 @@ export const LINKS = {
     "Code: a run taking its `relay` and `notice` commands",
   ),
   tools: d(
-    "packages/runtime-claude/src/tools/messages.ts",
+    "packages/runtime/src/tools/messages.ts",
     "Code: the message tools, `wait_for_messages`",
   ),
   tests: d(
@@ -1083,23 +1077,30 @@ export const RUNTIME = {
     "Code: the node report as structured output",
   ),
   plan: d("packages/core/src/run/plan.ts", "Code: a node's session spec"),
-  sdk: d("packages/runtime-claude/src/sdk.ts", "Code: the SDK driver"),
-  cli: d("packages/runtime-claude/src/cli.ts", "Code: the CLI driver"),
-  mcp: d(
-    "packages/runtime-claude/src/mcp-http.ts",
-    "Code: Ork's local MCP server",
+  cli: d(
+    "packages/runtime/src/adapters/claude-code.ts",
+    "Code: the claude-code adapter",
   ),
+  runner: d(
+    "packages/runtime/src/session-runner.ts",
+    "Code: the session runner every adapter runs on",
+  ),
+  mcp: d("packages/runtime/src/mcp-http.ts", "Code: Ork's local MCP server"),
   tools: d(
-    "packages/runtime-claude/src/tools/registry.ts",
+    "packages/runtime/src/tools/registry.ts",
     "Code: the registry of Ork's tools",
   ),
   delegate: d(
-    "packages/runtime-claude/src/tools/delegate.ts",
+    "packages/runtime/src/tools/delegate.ts",
     "Code: the delegate and spawn_worker tools",
   ),
   tests: d(
-    "packages/runtime-claude/test/runtime.test.ts",
-    "Tests: both drivers, against a stand-in claude",
+    "packages/runtime/test/runtime.test.ts",
+    "Tests: the claude-code driver, against a stand-in claude",
+  ),
+  contract: d(
+    "packages/runtime/test/contract/contract.test.ts",
+    "Tests: the contract every adapter keeps, on its fake tool",
   ),
   driver: d(
     "packages/core/src/run/driver.ts",
@@ -1118,12 +1119,12 @@ export const RUNTIME = {
     "Spec: which driver a session uses",
   ),
   clean: d(
-    "packages/runtime-claude/src/clean.ts",
+    "packages/runtime/src/adapters/claude-code.ts",
     "Code: a session clean of the machine's Claude setup",
   ),
   cleanTests: d(
-    "packages/runtime-claude/test/clean.test.ts",
-    "Tests: clean sessions, and `--machine-claude`, on both drivers",
+    "packages/runtime/test/clean.test.ts",
+    "Tests: clean sessions, and `--machine-claude`",
   ),
   loads: d(
     "specs/runtime.md#what-a-session-loads",
@@ -1136,6 +1137,48 @@ export const RUNTIME = {
   namedMcpAdr: d(
     "decisions/ADR-067-nodes-name-mcp-servers.md",
     "ADR-067: a node names the MCP servers it needs",
+  ),
+  strategies: d(
+    "packages/runtime/src/adapter.ts",
+    "Code: the strategies an adapter is made of",
+  ),
+  reportTool: d(
+    "packages/runtime/src/tools/report.ts",
+    "Code: the report tool, for a driver without structured output",
+  ),
+  reportSpec: d(
+    "specs/runtime/node-report.md",
+    "Spec: the node report, and Ork's report tool",
+  ),
+  lease: d(
+    "packages/runtime/src/lease.ts",
+    "Code: the per-checkout lease and its queue",
+  ),
+  commandCode: d(
+    "packages/runtime/src/adapters/command-code.ts",
+    "Code: the command-code adapter",
+  ),
+  commandSpec: d(
+    "specs/architecture/command-code.md",
+    "Spec: the command-code driver",
+  ),
+  queues: d(
+    "packages/core/src/run/driver-queues.ts",
+    "Code: where sessions on a one-per-checkout driver could queue",
+  ),
+  openCode: d(
+    "packages/runtime/src/adapters/open-code.ts",
+    "Code: the open-code adapter",
+  ),
+  openSpec: d("specs/runtime/open-code.md", "Spec: the open-code driver"),
+  driverGuide: d("docs/guides/drivers.md", "Guide: the drivers"),
+  needs: d(
+    "packages/core/src/run/driver-needs.ts",
+    "Code: what a node needs of its driver, and the refusals",
+  ),
+  rfc: d(
+    "rfcs/archived/RFC-014-cli-drivers-only.md",
+    "RFC-014: CLI drivers only",
   ),
 };
 

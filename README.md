@@ -38,14 +38,16 @@ Two ways in:
   any MCP client) installs Ork, sets up your project and writes a first
   workflow, asking you before each change.
 
-You need Node 24.20+, git, and one Claude driver: your own `claude` login, or an
-API key, Bedrock, Vertex or Foundry. `gh` and `aws` are optional, needed only by
-workflows that use them. Run Ork inside a git repository with at least one
+You need Node 24.20+, git, and one agent driver: your own `claude` login, or an
+API key, Bedrock, Vertex or Foundry. (`opencode` and Command Code's `cmd` are
+built too, but unproven and refused until a real session has run on them; see
+[Drivers](./docs/guides/drivers.md).) `gh` and `aws` are optional, needed only
+by workflows that use them. Run Ork inside a git repository with at least one
 commit:
 
 ```sh
 npm install --global @krapht/ork
-ork doctor                                   # checks Node, git, your Claude login
+ork doctor                                   # checks Node, git, your agent logins
 ork init                                     # a starter workflow in .ork/workflows/
 ork validate                                 # checks the workflow
 ork run hello --input task="add a README"    # leader, worker, then your approval

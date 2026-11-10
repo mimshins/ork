@@ -22,19 +22,19 @@ and owns no such node is the error `questions.no-children`.
 When a child calls `ask_user` and its leader has `questions: owner`:
 
 1. **A fork of the leader's latest session answers it.** Ork resumes a copy of
-   that session (`SessionSpec.fork`: `--resume <id> --fork-session` on the CLI
-   driver, `forkSession` on the SDK; [runtime](../runtime.md#the-port)), in the
-   leader's checkout, with the leader's model and settings. Its prompt is the
-   child's question, context, options and recommended one, and its report must
-   be `choice`, one of the options or the pass-on option, and `note`, why. It
-   can only read: its built-in tools are `Read`, `Grep` and `Glob` and nothing
-   else (`tools.only`, so no `Bash`, write tool or `Agent`), it has no MCP
-   server but Ork's (`strictMcp`), and of Ork's tools no `ask_user` and none of
-   a leader's; the project's denials still hold, no subagents or plugins are
-   passed, and a permission prompt is refused. It reports through the structured
-   output `--json-schema` sets up. It has at most 3 turns (`FORK_MAX_TURNS`) and
-   5 minutes (`FORK_TIMEOUT_MS`), after which it is interrupted and the person
-   is asked. The leader's own session is left as it was, so this works while the
+   that session (`SessionSpec.fork`: `--resume <id> --fork-session` on the
+   claude-code driver; [runtime](../runtime.md#the-port)), in the leader's
+   checkout, with the leader's model and settings. Its prompt is the child's
+   question, context, options and recommended one, and its report must be
+   `choice`, one of the options or the pass-on option, and `note`, why. It can
+   only read: its built-in tools are `Read`, `Grep` and `Glob` and nothing else
+   (`tools.only`, so no `Bash`, write tool or `Agent`), it has no MCP server but
+   Ork's (`strictMcp`), and of Ork's tools no `ask_user` and none of a leader's;
+   the project's denials still hold, no subagents or plugins are passed, and a
+   permission prompt is refused. It reports through the structured output
+   `--json-schema` sets up. It has at most 3 turns (`FORK_MAX_TURNS`) and 5
+   minutes (`FORK_TIMEOUT_MS`), after which it is interrupted and the person is
+   asked. The leader's own session is left as it was, so this works while the
    leader waits in `delegate`.
 2. **The pass-on option** is `ask-user`, or `ask-user-2`, `-3`, … when a child's
    option already has that id.

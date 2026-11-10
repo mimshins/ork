@@ -94,6 +94,7 @@ export const formatEvent = (
     ];
   }
   if (event.type === "assistant.text") return indent(event.text);
+  if (event.type === "session.waiting") return indent(event.reason);
   if (event.type === "tool.called") {
     tools.set(event.id, event.name);
     return [style("dim", `  · ${previewInput(event.name, event.input)}`)];

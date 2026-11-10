@@ -26,10 +26,9 @@ ork worktrees clean     # removes the merged ones; asks first
 ork upgrade             # a newer version? upgrade the way you installed Ork
 ```
 
-A workflow that names no Claude driver runs on the one that's ready: the CLI
-driver uses your own logged-in `claude`; the SDK driver needs
-`ANTHROPIC_API_KEY` or a cloud provider. `--driver cli` or `--driver sdk` picks
-one.
+A workflow that names no Claude driver runs on the one that's ready. Today that
+is `claude-code`: your own `claude`, logged in or with `ANTHROPIC_API_KEY` or a
+cloud provider set. `--driver claude-code` names it.
 
 Ork never stores or asks for credentials: it uses the tools you already have,
 signed in with your own accounts. Once a day it asks the npm registry whether a

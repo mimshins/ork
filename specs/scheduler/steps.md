@@ -2,8 +2,7 @@
 
 _Part of [Scheduler: running a workflow](../scheduler.md)._
 
-Status: **Built, proven on a real session on the CLI driver**; the SDK driver
-only against stand-ins ([C5](../runtime.md#limits)).
+Status: **Built, proven on a real session on the claude-code driver**.
 
 A leader or worker can run a program in its own checkout, which a tool node
 can't reach, and which a delegated child gets too, as it follows no edges.
@@ -90,5 +89,5 @@ author named it.
 - **Output:** `text`, and `json` from `structuredContent` or text that parses,
   its numbers masked too. A result marked `isError` fails the node, and `json`
   over 64 KiB does too and is left out. The `error` is cut to 1 KiB.
-- **Timeout:** the node's `timeout`, which lifts the SDK's own 60 seconds on
+- **Timeout:** the node's `timeout`, which lifts the MCP SDK's own 60 seconds on
   starting the server as on the call.

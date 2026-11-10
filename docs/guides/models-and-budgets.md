@@ -135,17 +135,17 @@ nodes:
 
 ```yaml
 defaults:
-  driver: cli # or sdk
+  driver: claude-code
 ```
 
 `driver` picks how Ork reaches Claude, per workflow or per node, and
 `ork run --driver` overrides both. With none named, a run uses the driver that's
-ready on the machine running it, the CLI driver when both are. The two drivers
-behave the same; they differ in whose login they use
-([Accounts and credentials](./accounts.md)).
+ready on the machine running it. Today that is `claude-code`, your own `claude`;
+`open-code` and `command-code` are built but not proven yet, so they are refused
+([Drivers](./drivers.md), [Accounts and credentials](./accounts.md)).
 
-The SDK driver is covered by Ork's unit tests only: Ork's own end-to-end runs,
-the examples among them, have all used the CLI driver.
+`ork validate` and `ork run` refuse a node its driver can't serve, naming both
+([troubleshooting](./troubleshooting/setup.md)).
 
 ## What you spent
 

@@ -85,8 +85,9 @@
         "driver": {
           "type": "string",
           "enum": [
-            "sdk",
-            "cli"
+            "claude-code",
+            "open-code",
+            "command-code"
           ]
         },
         "model": {

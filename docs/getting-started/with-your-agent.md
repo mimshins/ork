@@ -38,8 +38,8 @@ each step that changes something:
 - **Starting a run,** because a run spends your money.
 
 When it has installed `ork`, restart Claude Code, or reconnect `ork` in `/mcp`,
-so the tools start. If no Claude driver is ready, it tells you how to log in;
-you do that yourself (see [below](#what-an-agent-cant-do-for-you)).
+so the tools start. If no agent driver is ready, it tells you how to log in; you
+do that yourself (see [below](#what-an-agent-cant-do-for-you)).
 
 Then ask it things such as:
 
@@ -157,14 +157,15 @@ The [guides](../README.md#guides) explain the rest, such as
   tool uses its own login, which you do yourself:
 
   ```sh
-  claude            # then /login, for the CLI driver
+  claude            # then /login, for the claude-code driver
   gh auth login     # for tool.gh nodes
   aws sso login     # for tool.aws nodes, or your own profile
   ```
 
-  For the SDK driver, set `ANTHROPIC_API_KEY` (or Bedrock, Vertex or Foundry) in
-  your own shell. Don't paste a key into a conversation with an agent: it ends
-  up in the transcript. See [Accounts and credentials](../guides/accounts.md).
+  Instead of a `claude` login, you can set `ANTHROPIC_API_KEY` (or Bedrock,
+  Vertex or Foundry) in your own shell. Don't paste a key into a conversation
+  with an agent: it ends up in the transcript. See
+  [Accounts and credentials](../guides/accounts.md).
 
 - **Spend without asking.** An agent following Ork's skills starts a run only
   when you say so, and Claude Code asks you before the tool that starts one.

@@ -10,11 +10,11 @@
 
 Only the CLI, `@krapht/ork` (its `bin` is `ork`), built by tsdown into one
 bundle, `packages/cli/dist/bin.mjs`. The private workspace packages
-(`@krapht/ork-schema`, `-core`, `-runtime-claude`, and the others) are bundled
-into it. Third-party packages in its `dependencies` are installed with it.
-Versions stay on `0.x` until the workflow format and the CLI are stable: a
-breaking change is a `minor` bump, a fix or addition a `patch`. 1.0.0 comes
-through the pre-release channels below.
+(`@krapht/ork-schema`, `-core`, `-runtime`, and the others) are bundled into it.
+Third-party packages in its `dependencies` are installed with it. Versions stay
+on `0.x` until the workflow format and the CLI are stable: a breaking change is
+a `minor` bump, a fix or addition a `patch`. 1.0.0 comes through the pre-release
+channels below.
 
 ## Add a changeset (every pull request that ships code)
 

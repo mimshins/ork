@@ -9,7 +9,7 @@
 import {
   adoptedCalls,
   type CallPort,
-  type ClaudeRuntime,
+  type AgentRuntime,
   type CompiledGraph,
   createCalls,
   createRelay,
@@ -36,7 +36,7 @@ export type CallPortsOptions = {
   place: ProjectPlace;
   human: HumanChannel;
   emit: (event: RunEvent) => void;
-  runtime: (driver: Driver) => Promise<ClaudeRuntime>;
+  runtime: (driver: Driver, runs?: string) => Promise<AgentRuntime>;
   out: (line: string) => void;
   home?: string | undefined;
   calledBy?: string | undefined;

@@ -31,6 +31,7 @@ import {
   tellLiveRun,
   unlinkNodes,
 } from "@krapht/ork-core";
+import type { Driver } from "@krapht/ork-schema";
 
 import { projectOf, runOf, type ServerContext } from "./context.ts";
 import { accepted, fail, type Handlers, ok } from "./router.ts";
@@ -59,7 +60,7 @@ const commandAnswer = (runId: string, asked: Commanded) => {
 
 type RunFlags = {
   inputs?: Record<string, string> | undefined;
-  driver?: "sdk" | "cli" | undefined;
+  driver?: Driver | undefined;
   inPlace?: boolean | undefined;
   allowDirty?: boolean | undefined;
   /** `ork run` only: a resume reads it from the run's settings. */

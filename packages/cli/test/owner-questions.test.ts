@@ -16,7 +16,7 @@ import {
   openStore,
   type RunEvent,
 } from "@krapht/ork-core";
-import { createCliRuntime } from "@krapht/ork-runtime-claude";
+import { createCliRuntime } from "@krapht/ork-runtime";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { formatEvent, runWorkflowFile } from "../src/index.ts";
@@ -24,7 +24,7 @@ import { readyOnly } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
-  "../../runtime-claude/test/fixtures/fake-claude.mjs",
+  "../../runtime/test/fixtures/fake-claude.mjs",
 );
 
 /** A leader and the worker it owns, which runs after it in the flow. */
@@ -77,7 +77,7 @@ const run = async (questions: string) => {
     inPlace: true,
     json: false,
     runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
-    driverChecks: readyOnly("cli"),
+    driverChecks: readyOnly("claude-code"),
     human,
     store,
     home: mkdtempSync(path.join(tmpdir(), "ork-home-")),

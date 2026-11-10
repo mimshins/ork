@@ -13,16 +13,16 @@ How to write the cards, connections and journeys. The shapes are in
 
 ## Nodes (cards)
 
-| Field     | Write                                                                                                                                                                |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`   | The name people use for it. ≤ ~22 characters.                                                                                                                        |
-| `sub`     | One line: where it is or what it does, e.g. `` `ClaudeRuntime` · `Session` ``. ≤ ~30.                                                                                |
-| `summary` | 2–3 sentences: what it is, why it exists, the one thing to know.                                                                                                     |
-| `facts`   | 2–5 bullets: what it holds, owns, guarantees, how it is configured. One fact each.                                                                                   |
-| `see`     | The same thing on other maps.                                                                                                                                        |
-| `docs`    | 1–4 links, most specific first: the code, the test, the design section.                                                                                              |
-| `pkg`     | The Ork package its code lives in (`schema`, `core`, `runtime-claude`, `nodes`, `server`, `cli`, `ui`), or `null` for people, outside tools and services, and files. |
-| `src`     | Optional: the directory or file its code lives (or will live) in; the check uses it to flag statuses to review.                                                      |
+| Field     | Write                                                                                                                                                         |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`   | The name people use for it. ≤ ~22 characters.                                                                                                                 |
+| `sub`     | One line: where it is or what it does, e.g. `` `AgentRuntime` · `Session` ``. ≤ ~30.                                                                          |
+| `summary` | 2–3 sentences: what it is, why it exists, the one thing to know.                                                                                              |
+| `facts`   | 2–5 bullets: what it holds, owns, guarantees, how it is configured. One fact each.                                                                            |
+| `see`     | The same thing on other maps.                                                                                                                                 |
+| `docs`    | 1–4 links, most specific first: the code, the test, the design section.                                                                                       |
+| `pkg`     | The Ork package its code lives in (`schema`, `core`, `runtime`, `nodes`, `server`, `cli`, `ui`), or `null` for people, outside tools and services, and files. |
+| `src`     | Optional: the directory or file its code lives (or will live) in; the check uses it to flag statuses to review.                                               |
 
 ## Statuses
 

@@ -7,7 +7,7 @@
  */
 
 import {
-  type ClaudeRuntime,
+  type AgentRuntime,
   declaredOutputOf,
   type ExecuteContext,
   type NodeExecutor,
@@ -45,7 +45,7 @@ import {
 export { resultOf };
 
 export type ClaudeExecutorOptions = {
-  runtimeFor: (driver: Driver) => Promise<ClaudeRuntime>;
+  runtimeFor: (driver: Driver) => Promise<AgentRuntime>;
   /** Overrides every node's driver, as `ork run --driver` does. */
   driver?: Driver;
   /** The driver ready here when the run started, for nodes that name none. */

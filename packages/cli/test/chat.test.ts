@@ -18,15 +18,15 @@ import {
   type RunRecord,
   tellLiveRun,
 } from "@krapht/ork-core";
-import { createCliRuntime } from "@krapht/ork-runtime-claude";
+import { createCliRuntime } from "@krapht/ork-runtime";
 import { describe, expect, it } from "vitest";
 
 import { resumeChat, runWorkflowFile } from "../src/index.ts";
-import { sdkReady } from "./fixtures/drivers.ts";
+import { openCodeReady, standInDrivers } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
-  "../../runtime-claude/test/fixtures/fake-claude.mjs",
+  "../../runtime/test/fixtures/fake-claude.mjs",
 );
 
 const WORKFLOW = [
@@ -80,7 +80,8 @@ const start = () => {
     inPlace: true,
     json: false,
     runtime: fake,
-    driverChecks: sdkReady,
+    driverChecks: openCodeReady,
+    drivers: standInDrivers,
     human: gateWaits,
     store,
     home,
@@ -139,7 +140,7 @@ describe("ork chat", () => {
         node,
         body: "Also add a summary",
         runtime: fake,
-        driverChecks: sdkReady,
+        driverChecks: openCodeReady,
         human: gateWaits,
         out: line => {
           out.push(line);
@@ -151,7 +152,7 @@ describe("ork chat", () => {
     expect(nodeSession(events, "ship").session).toMatchObject({
       sessionId: "fake-1",
       cwd: run.dir,
-      driver: "cli",
+      driver: "claude-code",
       running: false,
     });
     expect(events.map(e => e.event.type)).toContain("user.message");
@@ -182,7 +183,7 @@ describe("ork chat", () => {
         sessionId: "fake-1",
         model: "sonnet",
         cwd: run.dir,
-        driver: "cli",
+        driver: "claude-code",
       },
     });
     run.store.append(record.id, {
@@ -200,7 +201,7 @@ describe("ork chat", () => {
         node: "ship.2",
         body: "Again",
         runtime: fake,
-        driverChecks: sdkReady,
+        driverChecks: openCodeReady,
         human: gateWaits,
         out: line => {
           out.push(line);

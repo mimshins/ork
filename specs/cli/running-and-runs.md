@@ -53,9 +53,9 @@ with the built-in node types
   ([L98](../messaging/scripts-limits.md)).
 - **The driver:** a session node that names no driver, when `--driver` isn't
   given, takes the one ready on this machine, from `ork doctor`'s own checks
-  (`cli` when both are). The run says so in one line on stderr before it starts,
-  records it for `ork resume`, and doesn't start when none is ready, with
-  `ork doctor`'s hints
+  (today `claude-code`, the only one built). The run says so in one line on
+  stderr before it starts, records it for `ork resume`, and doesn't start when
+  none is ready, with `ork doctor`'s hints
   ([which driver](../runtime.md#which-driver-a-session-uses)).
 - **The machine's Claude setup:** sessions start clean of the machine's MCP
   servers and Claude Code's auto-memory; `--machine-claude` loads them for this

@@ -23,8 +23,9 @@ import {
 import type { Diagnostic, Locate, Workflow } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
-import { style, write } from "../output.ts";
+import { style, write, writeErr } from "../output.ts";
 import { projectAt, registeredProjects } from "../project/place.ts";
+import { driverArg, driverDiagnostics } from "../run/driver-check.ts";
 import { findWorkflowFiles, refusedBuiltin } from "../workflows.ts";
 import { pathLines, walkLine } from "./walk-report.ts";
 
@@ -212,8 +213,19 @@ export const validate = defineCommand({
         "List each way a run can end, and the choices that lead there",
       default: false,
     },
+    driver: {
+      type: "string",
+      description:
+        "Check the nodes against this driver (default: the one a run would take, the one ready here)",
+    },
   },
   run: async ({ args }) => {
+    const driver = driverArg(args.driver);
+    if (!driver.ok) {
+      writeErr(driver.error);
+      process.exitCode = 1;
+      return;
+    }
     const cwd = process.cwd();
     if (refusedBuiltin(args._, cwd)) return;
     const files = findWorkflowFiles(
@@ -235,7 +247,17 @@ export const validate = defineCommand({
     const walked: FileReport[] = [];
     for (const file of files) {
       // oxlint-disable-next-line eslint/no-await-in-loop -- see above
-      const { report } = await walkLoaded(loadWorkflow(file, cwd));
+      const loaded = await walkLoaded(loadWorkflow(file, cwd));
+      const { report } = loaded;
+      if (loaded.workflow !== null) {
+        report.diagnostics.push(
+          // oxlint-disable-next-line eslint/no-await-in-loop -- see above
+          ...(await driverDiagnostics(loaded.workflow, {
+            override: driver.driver,
+            locate: loaded.locate,
+          })),
+        );
+      }
       walked.push(report);
     }
     const reports: FileReport[] = [

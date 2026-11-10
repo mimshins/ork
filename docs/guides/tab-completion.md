@@ -57,7 +57,7 @@ commands.
 - **Node ids** after `--node`: the run's nodes (the newest run's when you give
   none), or the workflow's for `ork run <workflow> --node`.
 - **Open decisions** after `ork decide --id`.
-- **Drivers** after `--driver`: `sdk` or `cli`.
+- **Drivers** after `--driver`: `claude-code`, `open-code` or `command-code`.
 
 Values are read from your project and Ork's store on your machine. Completing
 never changes either, never shows a prompt or an output, and offers nothing

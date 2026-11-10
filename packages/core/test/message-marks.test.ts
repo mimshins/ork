@@ -33,7 +33,7 @@ const PACKAGES = [
   "integrations",
   "schema",
   "core",
-  "runtime-claude",
+  "runtime",
   "nodes",
   "server",
   "cli",

@@ -24,7 +24,11 @@ import { z } from "zod";
 
 import { BUILDER_API, type BuilderResponses } from "./contract-builder.ts";
 import { CONTEXT_API, type ContextResponses } from "./contract-context.ts";
-import { FEEDBACK_API, type FeedbackResponses } from "./contract-feedback.ts";
+import {
+  DriverIdSchema,
+  FEEDBACK_API,
+  type FeedbackResponses,
+} from "./contract-feedback.ts";
 import type { WorkflowGraph } from "./contract-graph.ts";
 import { LINKS_API } from "./contract-links.ts";
 import {
@@ -55,8 +59,6 @@ export type {
 
 const Count = z.coerce.number().int().positive();
 const Seq = z.coerce.number().int().nonnegative();
-const Driver = z.enum(["sdk", "cli"]);
-
 export const RunsQuerySchema = z.strictObject({
   project: z.string().min(1).optional(),
   limit: Count.optional(),
@@ -94,7 +96,7 @@ export const AnswerSchema = z.strictObject({
 
 const RunFlags = {
   inputs: z.record(z.string(), z.string()).optional(),
-  driver: Driver.optional(),
+  driver: DriverIdSchema.optional(),
   inPlace: z.boolean().optional(),
   allowDirty: z.boolean().optional(),
 };

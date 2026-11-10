@@ -23,8 +23,8 @@ const lines = (count: number): string =>
 
 describe("markdown", () => {
   it("slugs headings like GitHub", () => {
-    expect(slugify("Runtime adapter (`packages/runtime-claude`)")).toBe(
-      "runtime-adapter-packagesruntime-claude",
+    expect(slugify("Runtime adapter (`packages/runtime`)")).toBe(
+      "runtime-adapter-packagesruntime",
     );
     expect(slugify("UI (milestone 2): `ork ui` on localhost")).toBe(
       "ui-milestone-2-ork-ui-on-localhost",

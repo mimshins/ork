@@ -148,7 +148,7 @@ describe("the store, for completion", () => {
       "--dr",
     ]);
     expect(result.stdout).toBe(
-      ":group flags\n--driver\tsdk (API key or cloud provider) or cli (your claude login)\n",
+      ":group flags\n--driver\tclaude-code (default: the driver ready here)\n",
     );
     expect(result.stderr).toBe("");
   });

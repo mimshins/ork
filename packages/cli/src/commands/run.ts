@@ -5,15 +5,15 @@
  */
 
 import {
-  type ClaudeRuntime,
+  type AgentRuntime,
   DETACHED_ENV,
   detachRun,
   newRunId,
   openStore,
 } from "@krapht/ork-core";
-import { CLAUDE_DRIVERS } from "@krapht/ork-integrations";
+import { AGENT_DRIVERS } from "@krapht/ork-integrations";
 import { sessionEnv } from "@krapht/ork-nodes";
-import type { Driver } from "@krapht/ork-schema";
+import { type Driver, retiredDriverHint } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
@@ -38,13 +38,21 @@ export const flagValues = (
 };
 
 export const isDriver = (value: string): value is Driver =>
-  CLAUDE_DRIVERS.some(d => d.id === value);
+  AGENT_DRIVERS.some(d => d.id === value);
+
+/** Why `--driver` refuses a value: a retired id names its replacement. */
+export const badDriver = (value: string): string =>
+  `--${retiredDriverHint(value) ?? `driver must be one of ${AGENT_DRIVERS.map(d => d.id).join(", ")}, got \`${value}\``}`;
 
 /** Loads the drivers only when a run starts, so other commands stay fast. */
-export const loadRuntime = async (driver: Driver): Promise<ClaudeRuntime> =>
-  (await import("@krapht/ork-runtime-claude")).createRuntime(
+export const loadRuntime = async (
+  driver: Driver,
+  runs?: string,
+): Promise<AgentRuntime> =>
+  (await import("@krapht/ork-runtime")).createRuntime(
     driver,
     sessionEnv(process.env),
+    runs,
   );
 
 /**
@@ -107,7 +115,7 @@ export const run = defineCommand({
     },
     driver: {
       type: "string",
-      description: "sdk (API key or cloud provider) or cli (your claude login)",
+      description: "claude-code (default: the driver ready here)",
     },
     "in-place": {
       type: "boolean",
@@ -168,9 +176,7 @@ export const run = defineCommand({
   },
   run: async ({ args, rawArgs }) => {
     if (args.driver !== undefined && !isDriver(args.driver)) {
-      writeErr(
-        `--driver must be ${CLAUDE_DRIVERS.map(d => d.id).join(" or ")}, got \`${args.driver}\``,
-      );
+      writeErr(badDriver(args.driver));
       process.exitCode = 1;
       return;
     }

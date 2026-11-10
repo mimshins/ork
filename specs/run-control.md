@@ -2,10 +2,10 @@
 
 Status: **Built** ([holds.ts](../packages/core/src/run/holds.ts),
 [commands](../packages/core/src/remote/commands.ts),
-[drivers' hold](../packages/runtime-claude/src/hold.ts),
+[drivers' hold](../packages/runtime/src/hold.ts),
 [`ork pause`](../packages/cli/src/commands/pause.ts),
 [tests](../packages/core/test/holds.test.ts),
-[driver tests](../packages/runtime-claude/test/hold.test.ts),
+[driver tests](../packages/runtime/test/hold.test.ts),
 [end to end](../packages/cli/test/control.test.ts),
 [API tests](../packages/server/test/control.test.ts)). The UI's buttons are M2
 ([ui](./ui.md)). Stop, pause and continue reach the items of a `forEach` node
@@ -57,10 +57,9 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 - **A Claude session** (leader, worker, and the subagents in it) waits before
   its next tool call. The turn in flight finishes, and the tool call that
   follows waits in a `PreToolUse` hook. The hook fires before every tool call,
-  pre-approved ones and Ork's own included.
-  - **CLI driver:** an HTTP hook in `--settings` that points at the session's
-    `/hold` endpoint, beside Ork's MCP tools, behind the same token.
-  - **SDK driver:** a callback hook.
+  pre-approved ones and Ork's own included. It is an HTTP hook in `--settings`
+  that points at the session's `/hold` endpoint, beside Ork's MCP tools, behind
+  the same token.
 - **A long pause.** A hold that is still paused after 9 minutes (the hook's
   timeout is 10) answers `defer` instead:
   - The turn ends with the call pending, and the `claude` process exits.
@@ -139,11 +138,8 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 ## Limits
 
 - **Managed settings can forbid HTTP hooks** (`allowManagedHooksOnly`,
-  `allowedHttpHookUrls`). Then the CLI driver's hold never fires, and a
-  CLI-driven node pauses only at its next activation
-  ([L29](./scheduler/limits.md)).
-- **The SDK path hasn't run live** (it needs an API key), only against its types
-  and the fake runtime ([C5](./runtime.md#limits)).
+  `allowedHttpHookUrls`). Then the claude-code driver's hold never fires, and a
+  node pauses only at its next activation ([L29](./scheduler/limits.md)).
 - **A single-node run** (`ork run <wf> --node n`) takes `stop`, but not pause or
   a node's stop: `ork pause`, `ork continue`, `ork stop --node` and the API's
   routes refuse a `node-…` run with "stop the whole run instead", as links,

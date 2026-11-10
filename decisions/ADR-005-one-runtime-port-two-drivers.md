@@ -1,8 +1,10 @@
 # ADR-005 — One runtime port, two Claude drivers
 
 - **Status:** Accepted; amended by
-  [ADR-064](./ADR-064-driver-chosen-at-run-time.md) and
-  [ADR-065](./ADR-065-clean-claude-sessions.md)
+  [ADR-064](./ADR-064-driver-chosen-at-run-time.md),
+  [ADR-065](./ADR-065-clean-claude-sessions.md) and
+  [ADR-074](./ADR-074-neutral-runtime-names.md) (names); the two-driver decision
+  is superseded by [ADR-076](./ADR-076-cli-drivers-only.md)
 - **Date:** 2026-10-30
 - **Topic:** runtime
 - **RFC:** waived — decided in design review on 2026-10-30
@@ -24,16 +26,16 @@ which one a node uses.
    ([types.ts](../packages/core/src/runtime/types.ts)). The engine depends only
    on the port; tests use a fake.
 2. **Two drivers** in `@krapht/ork-runtime-claude`:
-   - the Agent SDK driver ([sdk.ts](../packages/runtime-claude/src/sdk.ts)):
-     streaming input, `canUseTool` for permissions, Ork's tools as an in-process
-     MCP server;
-   - the CLI driver ([cli.ts](../packages/runtime-claude/src/cli.ts)):
+   - the Agent SDK driver (`sdk.ts`, removed by RFC-014): streaming input,
+     `canUseTool` for permissions, Ork's tools as an in-process MCP server;
+   - the CLI driver ([cli.ts](../packages/runtime/src/adapters/claude-code.ts)):
      `claude -p` with stream-json in and out, Ork's tools and permission prompt
      served over a local MCP endpoint
      ([ADR-011](./ADR-011-in-house-mcp-server.md)).
 3. **One normalizer.** Both drivers emit the same message JSON (the SDK's
    messages are the CLI's stream-json lines), so one function maps them to Ork's
-   events ([normalize.ts](../packages/runtime-claude/src/normalize.ts)).
+   events
+   ([normalize.ts](../packages/runtime/src/adapters/claude-code-events.ts)).
 4. **Per node.** A node (or the workflow's defaults) picks `driver: sdk | cli`.
 
 ## Options considered
@@ -58,5 +60,5 @@ from drifting apart.
   tools, structured output, resume) or a documented gap in
   [specs/runtime.md](../specs/runtime.md).
 - The CLI driver is tested end to end against a stand-in `claude`
-  ([fake-claude.mjs](../packages/runtime-claude/test/fixtures/fake-claude.mjs)),
-  so CI needs no account.
+  ([fake-claude.mjs](../packages/runtime/test/fixtures/fake-claude.mjs)), so CI
+  needs no account.

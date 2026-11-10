@@ -15,6 +15,7 @@ import {
   placeOf,
   runDirOf,
 } from "@krapht/ork-core";
+import type { Driver } from "@krapht/ork-schema";
 
 import type { ServerContext } from "./context.ts";
 import { accepted, fail } from "./router.ts";
@@ -25,7 +26,7 @@ const BUILTIN = "ork:feedback-apply";
 export const applyRoute = async (
   context: ServerContext,
   item: FeedbackItem,
-  driver: "sdk" | "cli" | undefined,
+  driver: Driver | undefined,
 ) => {
   const { store } = context;
   const allowed = feedbackActions(item, openFixRun(store, item)).apply;

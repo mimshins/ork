@@ -28,7 +28,7 @@ import {
   resolveWorkflowArg,
   runWorkflowFile,
 } from "../src/index.ts";
-import { sdkReady } from "./fixtures/drivers.ts";
+import { openCodeReady, standInDrivers } from "./fixtures/drivers.ts";
 
 const git = (cwd: string, ...args: string[]) =>
   execFileSync("git", args, { cwd, encoding: "utf8" });
@@ -184,7 +184,8 @@ describe("an attached project's workflows", () => {
       inPlace: false,
       json: true,
       runtime: () => Promise.reject(new Error("no Claude here")),
-      driverChecks: sdkReady,
+      driverChecks: openCodeReady,
+      drivers: standInDrivers,
       store,
       home,
       tools,

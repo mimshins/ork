@@ -67,20 +67,20 @@ directly.
 
 ## Project structure
 
-| Package                   | npm name                     | Role                                      |
-| ------------------------- | ---------------------------- | ----------------------------------------- |
-| `packages/integrations`   | `@krapht/ork-integrations`   | Registries: CLI tools and Claude drivers  |
-| `packages/schema`         | `@krapht/ork-schema`         | Workflow file format                      |
-| `packages/core`           | `@krapht/ork-core`           | Compiler, scheduler, context, worktrees   |
-| `packages/runtime-claude` | `@krapht/ork-runtime-claude` | Claude drivers: Agent SDK and `claude`    |
-| `packages/nodes`          | `@krapht/ork-nodes`          | Built-in node types                       |
-| `packages/server`         | `@krapht/ork-server`         | Local HTTP + SSE API for the UI           |
-| `packages/ui`             | `@krapht/ork-ui`             | The browser UI, built into the CLI        |
-| `packages/cli`            | `@krapht/ork`                | The `ork` command; the only published one |
+| Package                 | npm name                   | Role                                      |
+| ----------------------- | -------------------------- | ----------------------------------------- |
+| `packages/integrations` | `@krapht/ork-integrations` | Registries: CLI tools and agent drivers   |
+| `packages/schema`       | `@krapht/ork-schema`       | Workflow file format                      |
+| `packages/core`         | `@krapht/ork-core`         | Compiler, scheduler, context, worktrees   |
+| `packages/runtime`      | `@krapht/ork-runtime`      | The agent drivers (`claude-code` first)   |
+| `packages/nodes`        | `@krapht/ork-nodes`        | Built-in node types                       |
+| `packages/server`       | `@krapht/ork-server`       | Local HTTP + SSE API for the UI           |
+| `packages/ui`           | `@krapht/ork-ui`           | The browser UI, built into the CLI        |
+| `packages/cli`          | `@krapht/ork`              | The `ork` command; the only published one |
 
 A package may import only the packages to its left in
-`integrations <- schema <- core <- runtime-claude, nodes <- server <- ui, cli`,
-through their public entry point. oxlint enforces this.
+`integrations <- schema <- core <- runtime, nodes <- server <- ui, cli`, through
+their public entry point. oxlint enforces this.
 
 ## Working on code
 

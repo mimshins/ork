@@ -7,10 +7,11 @@
 import path from "node:path";
 
 import {
-  type ClaudeRuntime,
+  type AgentRuntime,
   createFeedback,
   createRecorder,
   createSignals,
+  type DriverNeeds,
   type EventStore,
   type HumanChannel,
   inside,
@@ -18,6 +19,7 @@ import {
   parseInputPairs,
   planNodeSession,
   resolveInputs,
+  placeFiles,
   runDirOf,
   type RunEvent,
   type Session,
@@ -42,6 +44,7 @@ import {
   checksHere,
   chooseReadyDriver,
   type DriverChecks,
+  unfitLines,
 } from "./ready-driver.ts";
 
 export type RunNodeOptions = {
@@ -57,9 +60,14 @@ export type RunNodeOptions = {
   machineClaude?: boolean;
   /** Print the runtime events as JSON lines instead of a transcript. */
   json: boolean;
-  runtime: (driver: Driver) => Promise<ClaudeRuntime>;
+  runtime: (driver: Driver, runs?: string) => Promise<AgentRuntime>;
   /** The drivers' checks, when the node names none (default: the real ones). */
   driverChecks?: DriverChecks;
+  /**
+   * The driver descriptors the node is checked against (default: the real
+   * ones).
+   */
+  drivers?: readonly DriverNeeds[];
   /** The terminal; it races `ork decide`. None: questions wait for `ork decide`. */
   human?: HumanChannel;
   /** `~`, for the run's socket; tests pass a folder. */
@@ -149,6 +157,11 @@ export const runNode = async (
   if (ready?.line !== undefined) options.err(ready.line);
   const driver = named ?? ready?.driver;
   if (driver === undefined) return failed(["No Claude driver is ready here."]);
+  const unfit = unfitLines(workflow, options.drivers, {
+    override: driver,
+    only: options.nodeId,
+  });
+  if (unfit.length > 0) return failed(unfit);
   for (const line of noteLines([...notes.warnings, ...plan.warnings])) {
     options.err(line);
   }
@@ -211,7 +224,7 @@ export const runNode = async (
   });
   record({ type: "node.started", id, nodeType, round: 1 });
 
-  const runtime = await options.runtime(driver);
+  const runtime = await options.runtime(driver, placeFiles(place).runs);
   if (options.machineClaude === true) plan.spec.machineClaude = true;
   const session = runtime.start(
     { ...plan.spec, ...servers.value },

@@ -81,7 +81,7 @@
  *
  * @typedef {"schema"
  *   | "core"
- *   | "runtime-claude"
+ *   | "runtime"
  *   | "nodes"
  *   | "server"
  *   | "cli"

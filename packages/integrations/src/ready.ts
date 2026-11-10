@@ -4,7 +4,7 @@
  *   no driver, so a committed workflow never carries one person's login.
  */
 
-import { CLAUDE_DRIVERS, type DriverId } from "./drivers.ts";
+import { AGENT_DRIVERS, type DriverId } from "./drivers.ts";
 import type { CheckResult, Env, Exec } from "./integration.ts";
 
 export type DriverCheck = { id: DriverId; result: CheckResult };
@@ -12,7 +12,7 @@ export type DriverCheck = { id: DriverId; result: CheckResult };
 /** Each registered Claude driver's own check, in registry order. */
 export const driverChecks = (run: Exec, env: Env): Promise<DriverCheck[]> =>
   Promise.all(
-    CLAUDE_DRIVERS.map(async driver => ({
+    AGENT_DRIVERS.map(async driver => ({
       id: driver.id,
       result: await driver.doctor(run, env),
     })),
@@ -22,7 +22,7 @@ export const driverChecks = (run: Exec, env: Env): Promise<DriverCheck[]> =>
  * The driver a run takes when more than one is ready: most people have a
  * `claude` login rather than an API key.
  */
-export const PREFERRED_DRIVER: DriverId = "cli";
+export const PREFERRED_DRIVER: DriverId = "claude-code";
 
 export type ReadyDriver =
   | {

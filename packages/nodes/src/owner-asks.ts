@@ -10,7 +10,7 @@
  */
 
 import {
-  type ClaudeRuntime,
+  type AgentRuntime,
   type DecisionChoice,
   type ExecuteContext,
   type HumanChannel,
@@ -81,7 +81,7 @@ const forkReportSchema = (ids: readonly string[]) => {
 export type ForkAnswer = { choice: string; note?: string };
 
 export type ForkDeps = {
-  runtimeFor: (driver: Driver) => Promise<ClaudeRuntime>;
+  runtimeFor: (driver: Driver) => Promise<AgentRuntime>;
   /** `--driver`, for a leader whose session recorded none. */
   driver?: Driver | undefined;
   readyDriver?: Driver | undefined;

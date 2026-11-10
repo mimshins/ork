@@ -112,8 +112,9 @@
         "driver": {
           "type": "string",
           "enum": [
-            "sdk",
-            "cli"
+            "claude-code",
+            "open-code",
+            "command-code"
           ]
         },
         "model": {
@@ -440,8 +441,9 @@
           "driver": {
             "type": "string",
             "enum": [
-              "sdk",
-              "cli"
+              "claude-code",
+              "open-code",
+              "command-code"
             ]
           },
           "skills": {
@@ -646,8 +648,9 @@
               "driver": {
                 "type": "string",
                 "enum": [
-                  "sdk",
-                  "cli"
+                  "claude-code",
+                  "open-code",
+                  "command-code"
                 ]
               },
               "skills": {
@@ -1146,8 +1149,9 @@
               "driver": {
                 "type": "string",
                 "enum": [
-                  "sdk",
-                  "cli"
+                  "claude-code",
+                  "open-code",
+                  "command-code"
                 ]
               },
               "skills": {
@@ -1701,8 +1705,9 @@
               "driver": {
                 "type": "string",
                 "enum": [
-                  "sdk",
-                  "cli"
+                  "claude-code",
+                  "open-code",
+                  "command-code"
                 ]
               },
               "skills": {

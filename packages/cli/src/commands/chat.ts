@@ -22,7 +22,7 @@ import { style, write, writeErr } from "../output.ts";
 import { resumeChat } from "../runs/chat.ts";
 import { followRun } from "../runs/logs.ts";
 import { chatRefusal } from "./in-a-run.ts";
-import { isDriver, loadRuntime } from "./run.ts";
+import { badDriver, isDriver, loadRuntime } from "./run.ts";
 
 /** Asks for one line; `null` once the input ends (Ctrl-D). */
 const askLine = async (): Promise<string | null> => {
@@ -112,7 +112,7 @@ export const chat = defineCommand({
     driver: {
       type: "string",
       description:
-        "For a finished run: sdk or cli (default: the one it ran with)",
+        "For a finished run: claude-code (default: the one it ran with)",
     },
   },
   run: async ({ args }) => {
@@ -143,7 +143,7 @@ export const chat = defineCommand({
         return;
       }
       if (args.driver !== undefined && !isDriver(args.driver)) {
-        writeErr(`--driver must be sdk or cli, not \`${args.driver}\`.`);
+        writeErr(`${badDriver(args.driver)}.`);
         process.exitCode = 1;
         return;
       }

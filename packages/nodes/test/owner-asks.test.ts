@@ -10,7 +10,7 @@
  */
 
 import type {
-  ClaudeRuntime,
+  AgentRuntime,
   ExecuteContext,
   HoldPort,
   HumanChannel,
@@ -115,7 +115,7 @@ const ownerPort = (sessionId?: string, budgetLeft = 5) => {
     session: () =>
       sessionId === undefined
         ? undefined
-        : { sessionId, cwd: "/w", driver: "cli" },
+        : { sessionId, cwd: "/w", driver: "claude-code" },
     budgetLeftUsd: () => budgetLeft,
     charge: forkSession => {
       charged.push(forkSession);
@@ -165,8 +165,8 @@ const sessionEnding = async function* (
 /** A runtime whose sessions end with `report`, and the specs it started. */
 const forking = (fields: Record<string, unknown> | null) => {
   const specs: SessionSpec[] = [];
-  const runtime: ClaudeRuntime = {
-    driver: "cli",
+  const runtime: AgentRuntime = {
+    driver: "claude-code",
     start: spec => {
       specs.push(spec);
       return {
@@ -186,8 +186,8 @@ const forking = (fields: Record<string, unknown> | null) => {
 const endless = () => {
   let interrupts = 0;
   const { promise: started, resolve: start } = Promise.withResolvers<void>();
-  const runtime: ClaudeRuntime = {
-    driver: "cli",
+  const runtime: AgentRuntime = {
+    driver: "claude-code",
     start: () => {
       const { promise: cut, resolve } = Promise.withResolvers<void>();
       const events = async function* (): AsyncGenerator<RuntimeEvent> {

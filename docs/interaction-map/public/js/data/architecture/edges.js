@@ -440,39 +440,80 @@ export const EDGES = [
 
   // ── Claude runtime ───────────────────────────────────────────────────────
   {
-    id: "runtime-sdk",
-    from: "runtimeAdapter",
-    to: "sdkDriver",
-    kind: "local",
-    label: "`driver: sdk`",
-    detail: "The default driver, set in `defaults.driver` or per node.",
-    status: "built",
-    docs: [DESIGN.runtime],
-  },
-  {
     id: "runtime-cli",
     from: "runtimeAdapter",
     to: "cliDriver",
     kind: "local",
-    label: "`driver: cli`",
+    label: "`driver: claude-code`",
     detail:
-      "Chosen per node or in `defaults.driver`, or with `ork run --driver cli`.",
+      "Named per node or in `defaults.driver`, or with `ork run --driver claude-code`; with none named, the one ready here.",
     status: "built",
     docs: [DESIGN.runtime],
   },
   {
-    id: "sdk-session",
-    from: "sdkDriver",
-    to: "session",
-    kind: "process",
-    label: "`query()` · streaming input",
+    id: "runtime-runner",
+    from: "runtimeAdapter",
+    to: "sessionRunner",
+    kind: "local",
+    label: "`start(spec)`",
     detail:
-      "The SDK runs the Claude Code loop in a child process; Ork feeds it user messages as an async stream.",
+      "A session starts through the adapter registered under the driver's id; the runner does the rest once for every driver.",
     status: "built",
-    via: [
-      [1690, 276],
-      [1690, 740],
-    ],
+    docs: [DESIGN.runtime],
+  },
+  {
+    id: "runner-cli",
+    from: "sessionRunner",
+    to: "cliDriver",
+    kind: "local",
+    label: "strategies",
+    detail:
+      "The `claude-code` adapter supplies the command, decoder, flag-based MCP wiring, permission prompt and usage; the runner runs them.",
+    status: "built",
+    docs: [DESIGN.runtime],
+  },
+  {
+    id: "runner-command",
+    from: "sessionRunner",
+    to: "commandDriver",
+    kind: "local",
+    label: "strategies · lease",
+    detail:
+      "The `command-code` adapter, unproven, supplies its own strategies, with a per-checkout lease as its MCP wiring.",
+    status: "partial",
+    docs: [DESIGN.runtime],
+  },
+  {
+    id: "runner-open",
+    from: "sessionRunner",
+    to: "openDriver",
+    kind: "local",
+    label: "strategies · config file",
+    detail:
+      "The `open-code` adapter, unproven, supplies its own strategies, with a 0600 config file as its MCP wiring.",
+    status: "partial",
+    docs: [DESIGN.runtime],
+  },
+  {
+    id: "contract-runner",
+    from: "contractSuite",
+    to: "sessionRunner",
+    kind: "local",
+    label: "every adapter, on a fake",
+    detail:
+      "The suite drives each adapter through the runner against a fake of its tool; a registered adapter with no entry fails it.",
+    status: "built",
+    docs: [DESIGN.runtime],
+  },
+  {
+    id: "tools-report",
+    from: "mcpTools",
+    to: "reportTool",
+    kind: "local",
+    label: "no `reportSchema`",
+    detail:
+      "The registry binds `report` only for a driver without structured output.",
+    status: "built",
     docs: [DESIGN.runtime],
   },
   {

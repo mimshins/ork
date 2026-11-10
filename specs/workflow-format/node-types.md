@@ -102,6 +102,12 @@ model id) and an `effort` (`low`, `medium`, `high`, `xhigh`, `max`); a node's
 own value wins, then `defaults`, then Claude Code's default for the model. A
 spawned worker takes its template's.
 
+Claude nodes and `defaults` (the workflow's or `.ork/project.yaml`'s) take a
+`driver`: `claude-code`, `open-code` or `command-code`
+([which driver a session uses](../runtime.md#which-driver-a-session-uses)). The
+ids `sdk` and `cli` of earlier versions are refused with "driver `sdk` was
+retired; use `claude-code`"; no `schemaVersion` changed.
+
 Claude nodes and `defaults` also take `practices` (caveman, ponytail), on unless
 turned off and inherited down the ownership tree; see
 [built-in practices](../context.md#built-in-practices).

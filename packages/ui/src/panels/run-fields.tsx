@@ -5,7 +5,7 @@
  *   setup, and what it says with no project to run in.
  */
 
-import type { WorkflowView } from "@krapht/ork-server/client";
+import { DRIVER_CHOICES, type WorkflowView } from "@krapht/ork-server/client";
 import { useId } from "react";
 
 import { EmptyState } from "../components/bits.tsx";
@@ -20,8 +20,7 @@ import styles from "./runs.module.css";
 
 const DRIVERS: readonly { value: DriverChoice; label: string }[] = [
   { value: "", label: "The workflow's, else the one ready" },
-  { value: "sdk", label: "sdk: API key or cloud provider" },
-  { value: "cli", label: "cli: your claude login" },
+  ...DRIVER_CHOICES.map(id => ({ value: id, label: id })),
 ];
 
 export const InputFields = ({

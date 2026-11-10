@@ -16,8 +16,8 @@ Read [AGENTS.md](../../AGENTS.md), then the user docs you're testing
   repos, a temp npm prefix. Never touch the real `~/.ork`, the user's repos, or
   this repository's own git state; run no git command from a hook's
   environment.
-- **Nothing paid.** Put a fake `claude` first on `PATH`: the CLI driver's
-  stand-in, `packages/runtime-claude/test/fixtures/fake-claude.mjs`, behind a
+- **Nothing paid.** Put a fake `claude` first on `PATH`: the claude-code
+  driver's stand-in, `packages/runtime/test/fixtures/fake-claude.mjs`, behind a
   `claude` shim. Put a fake `gh` that logs its arguments and exits 1 first on
   `PATH` too. Check `command -v claude gh` before any run. Unset
   `ANTHROPIC_API_KEY` and the Bedrock and Vertex variables. A real run happens

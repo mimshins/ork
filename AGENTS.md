@@ -15,21 +15,21 @@ data.
 
 ## Layout
 
-| Package                   | npm name                     | Role                                                    |
-| ------------------------- | ---------------------------- | ------------------------------------------------------- |
-| `packages/integrations`   | `@krapht/ork-integrations`   | Registries: one adapter per CLI tool and Claude driver  |
-| `packages/schema`         | `@krapht/ork-schema`         | Workflow file format: Zod model, JSON Schema, YAML      |
-| `packages/core`           | `@krapht/ork-core`           | Compiler, expressions, runtime port, scheduler, context |
-| `packages/runtime-claude` | `@krapht/ork-runtime-claude` | The Agent SDK and headless `claude` CLI drivers         |
-| `packages/nodes`          | `@krapht/ork-nodes`          | Built-in node types                                     |
-| `packages/server`         | `@krapht/ork-server`         | `ork ui`'s HTTP + SSE API and `ork mcp`'s tools         |
-| `packages/ui`             | `@krapht/ork-ui`             | The browser UI `ork ui` serves, built into the CLI      |
-| `packages/cli`            | `@krapht/ork`                | The `ork` command, the only published package           |
+| Package                 | npm name                   | Role                                                     |
+| ----------------------- | -------------------------- | -------------------------------------------------------- |
+| `packages/integrations` | `@krapht/ork-integrations` | Registries: one adapter per CLI tool and agent driver    |
+| `packages/schema`       | `@krapht/ork-schema`       | Workflow file format: Zod model, JSON Schema, YAML       |
+| `packages/core`         | `@krapht/ork-core`         | Compiler, expressions, runtime port, scheduler, context  |
+| `packages/runtime`      | `@krapht/ork-runtime`      | The agent drivers (`claude-code` first), as CLI adapters |
+| `packages/nodes`        | `@krapht/ork-nodes`        | Built-in node types                                      |
+| `packages/server`       | `@krapht/ork-server`       | `ork ui`'s HTTP + SSE API and `ork mcp`'s tools          |
+| `packages/ui`           | `@krapht/ork-ui`           | The browser UI `ork ui` serves, built into the CLI       |
+| `packages/cli`          | `@krapht/ork`              | The `ork` command, the only published package            |
 
 Dependency direction (enforced by `oxlint.config.ts`):
-`integrations <- schema <- core <- runtime-claude, nodes <- server <- ui, cli`.
-Import other packages through their public entry point (`@krapht/ork-<name>`),
-never by relative path.
+`integrations <- schema <- core <- runtime, nodes <- server <- ui, cli`. Import
+other packages through their public entry point (`@krapht/ork-<name>`), never by
+relative path.
 
 ## Spec-driven development
 

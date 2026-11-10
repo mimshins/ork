@@ -23,7 +23,7 @@ import type {
   FeedbackStore,
 } from "./feedback-types.ts";
 import { maskSecrets } from "./mask.ts";
-import { inTransaction, type Row, text } from "./rows.ts";
+import { currentDriver, inTransaction, type Row, text } from "./rows.ts";
 
 const STATUSES: readonly FeedbackStatus[] = [
   "new",
@@ -62,7 +62,8 @@ const ORIGIN_COLUMNS: readonly [keyof FeedbackOrigin, string][] = [
 const recordOf = (row: Row): FeedbackRecord => {
   const origin: FeedbackOrigin = {};
   for (const [key, column] of ORIGIN_COLUMNS) {
-    const value = text(row, column);
+    const value =
+      key === "driver" ? currentDriver(text(row, column)) : text(row, column);
     if (value !== "") origin[key] = value;
   }
   const feedback: FeedbackReport = {

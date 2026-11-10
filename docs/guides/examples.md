@@ -42,12 +42,11 @@ curl -fsSL --create-dirs -o .ork/workflows/context/house-style.md "$base/context
 ork run software-factory --input feature="Add a farewell(name) function beside greet, with a test"
 ```
 
-It names the SDK driver; with only a `claude` login, add `--driver cli` to
-`ork run`. Its agents use opus for the spec, the builder, security and the
-approver, and sonnet elsewhere, within a run budget of $20. For a first try, set
-the agents' models to `haiku` and `limits.budgetUsd` lower; a small feature then
-costs a few cents. Allow the builder what it needs to work without asking, for
-example:
+It runs on the claude-code driver, your own `claude`. Its agents use opus for
+the spec, the builder, security and the approver, and sonnet elsewhere, within a
+run budget of $20. For a first try, set the agents' models to `haiku` and
+`limits.budgetUsd` lower; a small feature then costs a few cents. Allow the
+builder what it needs to work without asking, for example:
 
 ```yaml
 builder:
@@ -134,9 +133,9 @@ pushed or posted until you answer. Read-only nodes run read-only git
 (`git diff`, `log`, `show`, `status`) without asking; any other command, such as
 the tests, asks you first.
 
-Every example runs on either driver: `--driver cli` uses your logged-in
-`claude`; `--driver sdk` needs `ANTHROPIC_API_KEY` (or Bedrock, Vertex or
-Foundry) ([accounts](./accounts.md)).
+Every example runs on the claude-code driver: your own `claude`, logged in or
+with `ANTHROPIC_API_KEY` (or Bedrock, Vertex or Foundry) set
+([accounts](./accounts.md)).
 
 ## fan-out
 

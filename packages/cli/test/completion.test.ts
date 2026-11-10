@@ -110,13 +110,17 @@ describe("ork __complete", () => {
   });
 
   it("completes a flag's values: drivers, and nothing for a free value", async () => {
-    expect(await values("run", "--driver", "")).toEqual(["sdk", "cli"]);
-    expect(await values("chat", "--driver", "c")).toEqual(["cli"]);
+    expect(await values("run", "--driver", "")).toEqual([
+      "claude-code",
+      "open-code",
+      "command-code",
+    ]);
+    expect(await values("chat", "--driver", "cl")).toEqual(["claude-code"]);
     expect(await values("ps", "--limit", "")).toEqual([]);
   });
 
   it("knows a value flag takes the next word, and a boolean doesn't", async () => {
-    expect(await values("run", "--driver", "sdk", "--d")).toEqual([
+    expect(await values("run", "--driver", "claude-code", "--d")).toEqual([
       "--driver",
       "--detach",
     ]);

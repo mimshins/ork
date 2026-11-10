@@ -10,16 +10,16 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { type HumanChannel, inRepoPlace, openStore } from "@krapht/ork-core";
-import { createCliRuntime } from "@krapht/ork-runtime-claude";
+import { createCliRuntime } from "@krapht/ork-runtime";
 import { describe, expect, it } from "vitest";
 
 import { runWorkflowFile } from "../src/index.ts";
 import { limitsHere, runLimits } from "../src/run/limits.ts";
-import { sdkReady } from "./fixtures/drivers.ts";
+import { openCodeReady, standInDrivers } from "./fixtures/drivers.ts";
 
 const FAKE_CLAUDE = path.resolve(
   import.meta.dirname,
-  "../../runtime-claude/test/fixtures/fake-claude.mjs",
+  "../../runtime/test/fixtures/fake-claude.mjs",
 );
 
 const SESSION = `schemaVersion: 1
@@ -62,7 +62,8 @@ const setup = () => {
       inPlace: true,
       json: false,
       runtime: () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE })),
-      driverChecks: sdkReady,
+      driverChecks: openCodeReady,
+      drivers: standInDrivers,
       human: recommending,
       store,
       home,

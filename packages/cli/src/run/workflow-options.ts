@@ -1,7 +1,8 @@
 /** @file What `ork run` for a whole workflow takes (and `ork resume`). */
 
 import type {
-  ClaudeRuntime,
+  AgentRuntime,
+  DriverNeeds,
   EventStore,
   HumanChannel,
   ResumeState,
@@ -29,12 +30,14 @@ export type RunWorkflowOptions = {
   allowDirty?: boolean;
   /** Print the run's events as JSON lines instead of a transcript. */
   json: boolean;
-  runtime: (driver: Driver) => Promise<ClaudeRuntime>;
+  runtime: (driver: Driver, runs?: string) => Promise<AgentRuntime>;
   /**
    * The drivers' checks, for nodes that name no driver (default: the real ones,
    * as `ork doctor` runs them).
    */
   driverChecks?: DriverChecks;
+  /** The driver descriptors a node is checked against (default: the real ones). */
+  drivers?: readonly DriverNeeds[];
   /**
    * The run's own terminal; it races `ork decide` for every question. None for
    * a detached run, whose questions wait for `ork decide`.

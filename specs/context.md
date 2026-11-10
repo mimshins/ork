@@ -47,14 +47,13 @@ so nothing is loaded twice.
 
 - **Skills from the user, workflow and node layers** that win their name are
   copied into a plugin for the node, `.ork/runs/<run>/plugins/<node>/`, named
-  `ork`, so the session sees them as `ork:<name>` (SDK `plugins`, CLI
-  `--plugin-dir`).
+  `ork`, so the session sees them as `ork:<name>` (`--plugin-dir`).
 - **Project skills** stay where Claude Code finds them. One that a higher layer
   shadows, or that `project.skills` leaves out (`ignore`, or not in `allow`), is
-  switched off with Claude Code's `skillOverrides` setting (SDK `settings`, CLI
-  `--settings`): it is neither listed nor invocable. Switching off a project
-  skill also hides a bundled skill whose alias has its name (a project `review`
-  hides `/code-review`).
+  switched off with Claude Code's `skillOverrides` setting (`--settings`): it is
+  neither listed nor invocable. Switching off a project skill also hides a
+  bundled skill whose alias has its name (a project `review` hides
+  `/code-review`).
 - **Project instructions** are Claude Code's own: it reads `CLAUDE.md`, or
   `AGENTS.md` when there is no `CLAUDE.md` (Claude Code 2.1.281 and later;
   `ork doctor` warns on an older `claude`). Ork never adds `AGENTS.md` itself.
@@ -125,9 +124,9 @@ as before: an agent can fill a node and still be a subagent a session calls.
   `artifacts`, and its own fields are not cut ([L171](./runtime.md#limits)).
 - **Cache-friendly prompt order:** stable prefix (system preset, skills, project
   docs, workflow context) first, the per-task brief last. A leader's session
-  asks for the 1-hour cache (`promptCache: "1h"` in its spec), and both drivers
-  start it with `ENABLE_PROMPT_CACHING_1H=1`
-  ([cache-env.ts](../packages/runtime-claude/src/cache-env.ts)): a leader
+  asks for the 1-hour cache (`promptCache: "1h"` in its spec), and the driver
+  starts it with `ENABLE_PROMPT_CACHING_1H=1`
+  ([claude-code.ts](../packages/runtime/src/adapters/claude-code.ts)): a leader
   blocked in `delegate` usually waits past the 5-minute cache, and would write
   its prefix again after each wait. An hour's cache write costs more (about 2×
   base input against 1.25×), so the saving is to be confirmed in the cost

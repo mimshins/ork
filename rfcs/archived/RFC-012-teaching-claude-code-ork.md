@@ -20,8 +20,8 @@
 Ork teaches only the sessions it starts. Inside a run, each session gets an
 in-process MCP server named `ork` (`report`, `delegate`, `ask_user`,
 `permission` and the rest,
-[tools/](../../packages/runtime-claude/src/tools/registry.ts)) and three
-built-in skills, `ork:review`, `ork:brief` and `ork:report`
+[tools/](../../packages/runtime/src/tools/registry.ts)) and three built-in
+skills, `ork:review`, `ork:brief` and `ork:report`
 ([builtin-skills.ts](../../packages/core/src/context/builtin-skills.ts),
 [ADR-023](../../decisions/ADR-023-context-compiler.md)). Contributors to this
 repository have four skills in [.ai/skills/](../../.ai/skills/).

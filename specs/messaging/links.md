@@ -2,8 +2,7 @@
 
 _Part of [Messaging, decisions and logs](../messaging.md)._
 
-Status: **Built, proven on real sessions on the CLI driver**; the SDK driver
-only against stand-ins ([C5](../runtime.md#limits))
+Status: **Built, proven on real sessions on the claude-code driver**
 ([ADR-044](../../decisions/ADR-044-relay-between-runs.md),
 [links.ts](../../packages/core/src/remote/links.ts),
 [relay.ts](../../packages/core/src/remote/relay.ts),

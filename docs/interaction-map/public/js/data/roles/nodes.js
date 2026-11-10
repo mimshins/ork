@@ -496,7 +496,7 @@ export const NODES = [
     summary:
       "A `claude.subagent` lives inside its owner's session, a leader's or a worker's, as a Claude Code subagent: no process, no worktree, no edges of its own.",
     facts: [
-      "Passed to its owner's session as a Claude Code subagent (the SDK's `agents`, the CLI's `--agents`); the session hands it work with the Agent tool.",
+      "Passed to its owner's session as a Claude Code subagent (`claude`'s `--agents`); the session hands it work with the Agent tool.",
       "Its role, `instructions` and `prompt` are its system prompt; its `model`, `maxTurns` and `tools.only` carry over.",
       "It needs a Claude `parent`, and an edge to it is an error (`edge.subagent`).",
     ],

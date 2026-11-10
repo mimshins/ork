@@ -7,8 +7,8 @@
 
 ## Context
 
-[RFC-014](./RFC-014-cli-drivers-only.md) lets Ork run OpenCode and Command Code
-beside `claude`. Three parts of the workflow file assume Claude:
+[RFC-014](../archived/RFC-014-cli-drivers-only.md) lets Ork run OpenCode and
+Command Code beside `claude`. Three parts of the workflow file assume Claude:
 
 - **Node types** are `claude.worker` and `claude.leader`
   ([ADR-006](../../decisions/ADR-006-workflow-file-format.md)), though either

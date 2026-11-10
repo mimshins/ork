@@ -59,8 +59,9 @@ const projectWith = (text?: string): string => {
   return root;
 };
 
-const DEFAULTS_SDK = "schemaVersion: 1\ndefaults:\n  driver: sdk\n";
-const DEFAULTS_CLI = "schemaVersion: 1\ndefaults:\n  driver: cli\n";
+const DEFAULTS_OPEN_CODE = "schemaVersion: 1\ndefaults:\n  driver: open-code\n";
+const DEFAULTS_CLAUDE_CODE =
+  "schemaVersion: 1\ndefaults:\n  driver: claude-code\n";
 
 /** What `ork init` would say, for a project, a fake `exec` and an env. */
 const said = (run: Exec, env: Env, project?: string) =>
@@ -73,56 +74,56 @@ describe("what ork init says of drivers", () => {
       LOGIN,
       {},
       undefined,
-      "Runs use the driver that's ready when they start: cli here (2.1.314 (Claude Code), logged in (claude.ai)).",
+      "Runs use the driver that's ready when they start: claude-code here (2.1.314 (Claude Code), logged in (claude.ai)).",
     ],
     [
-      "an API key alone",
-      NO_CLAUDE,
+      "an API key and claude logged out",
+      LOGGED_OUT,
       KEY,
       undefined,
-      "Runs use the driver that's ready when they start: sdk here (ANTHROPIC_API_KEY is set).",
+      "Runs use the driver that's ready when they start: claude-code here (2.1.314 (Claude Code), ANTHROPIC_API_KEY is set).",
     ],
     [
       "Bedrock alone",
       LOGGED_OUT,
       { CLAUDE_CODE_USE_BEDROCK: "1" },
       undefined,
-      "Runs use the driver that's ready when they start: sdk here (Amazon Bedrock).",
+      "Runs use the driver that's ready when they start: claude-code here (2.1.314 (Claude Code), Amazon Bedrock (CLAUDE_CODE_USE_BEDROCK)).",
     ],
     [
-      "both",
+      "a login and an API key, the login named",
       LOGIN,
       KEY,
       undefined,
-      "Runs use the driver that's ready when they start: cli here (more than one is ready, and cli comes first).",
+      "Runs use the driver that's ready when they start: claude-code here (2.1.314 (Claude Code), logged in (claude.ai)).",
     ],
     [
-      "a project default of sdk",
+      "a project default of open-code",
       LOGIN,
       KEY,
-      DEFAULTS_SDK,
-      "Runs use the sdk driver, .ork/project.yaml's default, unless a workflow names another.",
+      DEFAULTS_OPEN_CODE,
+      "Runs use the open-code driver, .ork/project.yaml's default, unless a workflow names another.",
     ],
     [
-      "a project default of cli, with only an API key",
+      "a project default of claude-code, with only an API key",
       NO_CLAUDE,
       KEY,
-      DEFAULTS_CLI,
-      "Runs use the cli driver, .ork/project.yaml's default, unless a workflow names another.",
+      DEFAULTS_CLAUDE_CODE,
+      "Runs use the claude-code driver, .ork/project.yaml's default, unless a workflow names another.",
     ],
     [
       "neither, with claude logged out",
       LOGGED_OUT,
       {},
       undefined,
-      "Runs use the driver that's ready when they start, and none is ready here yet: Run `claude auth login` yourself; Ork never handles your login.",
+      "Runs use the driver that's ready when they start, and none is ready here yet: Run `claude auth login` yourself, or set ANTHROPIC_API_KEY (or CLAUDE_CODE_USE_BEDROCK=1 / CLAUDE_CODE_USE_VERTEX=1 / CLAUDE_CODE_USE_FOUNDRY=1); Ork never handles your login.",
     ],
     [
-      "neither, without claude",
+      "an API key, without claude",
       NO_CLAUDE,
-      {},
+      KEY,
       undefined,
-      "Runs use the driver that's ready when they start, and none is ready here yet: Install Claude Code to use the CLI driver.",
+      "Runs use the driver that's ready when they start, and none is ready here yet: Install Claude Code to use the claude-code driver.",
     ],
   ])("with %s", async (_case, run, env, project, line) => {
     expect(await said(run, env, project)).toBe(line);

@@ -1,7 +1,7 @@
 # Messaging, decisions and logs
 
 Status: **Built**: Ork's MCP tools
-([tools/](../packages/runtime-claude/src/tools/registry.ts)), the
+([tools/](../packages/runtime/src/tools/registry.ts)), the
 [event store](./event-store.md), the decision queue, `ork decide`, `ork stop`
 (and `ork pause`, `ork continue`: [run control](./run-control.md)), the run's
 socket ([control/](../packages/core/src/control/control.ts),
@@ -16,11 +16,11 @@ out of rounds (built; the Monitor doesn't show it yet).
 
 ## Ork MCP tools
 
-One registry
-([tools/registry.ts](../packages/runtime-claude/src/tools/registry.ts)), one
-file per tool, binds the tools each session gets; both drivers serve what it
-binds. A node's report is its structured output, not a tool
-([runtime](./runtime.md#the-node-report)). Built tools are marked ✓:
+One registry ([tools/registry.ts](../packages/runtime/src/tools/registry.ts)),
+one file per tool, binds the tools each session gets; the driver serves what it
+binds. A node's report is its structured output, or the `report` tool on a
+driver that can't hold its answer to a schema
+([node report](./runtime/node-report.md)). Built tools are marked ✓:
 
 - ✓ `send_message(to, body)`, ✓ `read_inbox()` and ✓
   `wait_for_messages(timeoutSeconds?)`: leaders and workers in a run, unless the
@@ -41,7 +41,10 @@ binds. A node's report is its structured output, not a tool
 - ✓ `feedback(kind, target?, title, body?, severity?, evidence?)`: every session
   in a run, capped at 3 per session; see
   [Feedback and self-improvement](./feedback.md).
-- ✓ `permission`: CLI driver only.
+- ✓ `permission`: the claude-code driver's `--permission-prompt-tool`.
+- ✓ `report(<the node's report>)`: sessions on a driver without `reportSchema`;
+  it refuses a report outside the node's schema with what to fix
+  ([node report](./runtime/node-report.md)).
 
 Ork's own tools need no permission prompt, except `permission`, which is the
 prompt itself.

@@ -21,7 +21,8 @@ Every package and process: the CLI, the server and the UI; the engine's
 subsystems (graph compiler, schema, scheduler, context compiler, message bus,
 decision queue, worktree manager, node types, event store, workflow calls, links
 between runs, a `watch:` on a node); the files and CLIs on your machine; the
-runtime adapter, its two drivers and Ork's MCP tools; the Claude session and the
+runtime adapter, the session runner every driver shares, the three drivers (two
+unproven), the contract suite and Ork's MCP tools; the Claude session and the
 model providers. The bottom row is `ork watch`, from outside any run: the
 command, the watcher and its guards, accepting a trigger, and the trigger files.
 Rows 3–5 of "Your machine" stay empty as a corridor for the engine–runtime

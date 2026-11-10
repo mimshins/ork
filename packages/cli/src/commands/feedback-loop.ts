@@ -18,7 +18,13 @@ import {
   triageSummary,
 } from "../runs/triage.ts";
 import { withStore } from "../store.ts";
-import { isDriver, loadRuntime, onInterrupt, terminalHuman } from "./run.ts";
+import {
+  badDriver,
+  isDriver,
+  loadRuntime,
+  onInterrupt,
+  terminalHuman,
+} from "./run.ts";
 
 const itemArg = {
   type: "positional",
@@ -36,7 +42,7 @@ export const apply = defineCommand({
     item: itemArg,
     driver: {
       type: "string",
-      description: "sdk (API key or cloud provider) or cli (your claude login)",
+      description: "claude-code (default: the driver ready here)",
     },
     "run-id": {
       type: "string",
@@ -45,7 +51,7 @@ export const apply = defineCommand({
   },
   run: async ({ args }) => {
     if (args.driver !== undefined && !isDriver(args.driver)) {
-      writeErr(`--driver must be sdk or cli, got \`${args.driver}\``);
+      writeErr(badDriver(args.driver));
       process.exitCode = 1;
       return;
     }

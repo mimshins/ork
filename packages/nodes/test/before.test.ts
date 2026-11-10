@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type {
-  ClaudeRuntime,
+  AgentRuntime,
   ExecuteContext,
   RuntimeEvent,
   SessionSpec,
@@ -52,8 +52,8 @@ const runNode = async (
   over: Partial<ExecuteContext> = {},
 ) => {
   const specs: SessionSpec[] = [];
-  const runtime: ClaudeRuntime = {
-    driver: "sdk",
+  const runtime: AgentRuntime = {
+    driver: "open-code",
     start: spec => {
       specs.push(spec);
       return {
@@ -65,7 +65,7 @@ const runNode = async (
   };
   const execute = claudeExecutor({
     runtimeFor: () => Promise.resolve(runtime),
-    readyDriver: "sdk",
+    readyDriver: "open-code",
     inPlace: true,
     steps: toolExecutor(spawnTool, { environ: {} }),
   });

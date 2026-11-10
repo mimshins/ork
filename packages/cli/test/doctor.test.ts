@@ -1,15 +1,24 @@
 /**
  * @file Tests for `ork doctor`'s checks, against a fake `exec`, what it says of
  *   triggers, against a store in a temp `~`, and whether a run's socket path
- *   fits under `~`.
+ *   fits under `~`, and the `ork` MCP entries a stopped Command Code session
+ *   left, which it removes.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import {
   type EventStore,
+  inRepoPlace,
   openStore,
   readProjectTriggers,
   storePath,
@@ -22,6 +31,7 @@ import {
   checkNode,
   formatCheck,
   headWarning,
+  leaseChecks,
   runChecks,
   socketCheck,
   triggerChecks,
@@ -60,7 +70,7 @@ const loggedIn = {
 };
 
 describe("ork doctor", () => {
-  it("passes with the CLI driver logged in, and never prints the email", async () => {
+  it("passes with the claude-code driver logged in, and never prints the email", async () => {
     const { results, ok } = await runChecks(fakeExec(loggedIn), {}, "24.20.0");
     expect(ok).toBe(true);
     expect(results.map(r => `${r.name}: ${r.status}`)).toEqual([
@@ -68,8 +78,9 @@ describe("ork doctor", () => {
       "git: ok",
       "git repo: ok",
       "git commits: ok",
-      "claude (sdk driver): warn",
-      "claude (cli driver): ok",
+      "claude (claude-code driver): ok",
+      "opencode (open-code driver): skip",
+      "cmd (command-code driver): skip",
       "gh: ok",
       "aws: skip",
       "git identity: ok",
@@ -98,8 +109,12 @@ describe("ork doctor", () => {
     ).toBeNull();
   });
 
-  it("accepts an API key or a cloud provider for the SDK driver", async () => {
-    const run = fakeExec({ "git --version": "git version 2.50.0" });
+  it("accepts an API key or a cloud provider for claude-code without a login", async () => {
+    const run = fakeExec({
+      "git --version": "git version 2.50.0",
+      "claude --version": "2.1.314 (Claude Code)\n",
+      "claude auth status --json": JSON.stringify({ loggedIn: false }),
+    });
     const withKey = await runChecks(run, { ANTHROPIC_API_KEY: "x" }, "24.20.0");
     const withBedrock = await runChecks(
       run,
@@ -107,7 +122,9 @@ describe("ork doctor", () => {
       "24.20.0",
     );
     expect(withKey.ok).toBe(true);
-    expect(withBedrock.results[3]?.detail).toBe("Amazon Bedrock");
+    expect(withBedrock.results[3]?.detail).toBe(
+      "2.1.314 (Claude Code), Amazon Bedrock (CLAUDE_CODE_USE_BEDROCK)",
+    );
     expect(JSON.stringify(withKey.results)).not.toContain('"x"');
   });
 
@@ -118,9 +135,9 @@ describe("ork doctor", () => {
       "24.20.0",
     );
     expect(ok).toBe(false);
-    expect(results.find(r => r.name === "claude (cli driver)")?.status).toBe(
-      "warn",
-    );
+    expect(
+      results.find(r => r.name === "claude (claude-code driver)")?.status,
+    ).toBe("warn");
   });
 
   it("fails on an old Node or a missing git", async () => {
@@ -259,5 +276,55 @@ describe("ork doctor on triggers", () => {
       hint: "Its triggers are off until it can be read.",
     });
     expect(check?.detail).toContain(file);
+  });
+});
+
+/**
+ * A project whose runs folder holds the lease of a Command Code session that
+ * stopped in a checkout since removed, and that checkout's local scope in a
+ * temp `~`, with the user's own `other` entry beside Ork's.
+ */
+const staleLease = () => {
+  const root = mkdtempSync(path.join(tmpdir(), "ork-doctor-lease-"));
+  const home = path.join(root, "home");
+  const entry = path.join(home, ".commandcode", "projects", "gone", "mcp.json");
+  mkdirSync(path.dirname(entry), { recursive: true });
+  writeFileSync(
+    entry,
+    JSON.stringify({
+      mcpServers: { other: { url: "http://x/1" }, ork: { url: "http://x/2" } },
+    }),
+  );
+  const place = inRepoPlace(path.join(root, "project"));
+  const ledger = path.join(place.dir, "runs", ".leases");
+  mkdirSync(ledger, { recursive: true });
+  const folder = path.join(root, "gone");
+  writeFileSync(
+    path.join(ledger, "gone.json"),
+    JSON.stringify({ id: "l1", folder, pid: 0, entry }),
+  );
+  return { place, home, entry, folder, ledger };
+};
+
+describe("ork doctor on Command Code leases", () => {
+  it("removes the ork entry a stopped session left and says so", async () => {
+    const given = staleLease();
+    const results = await leaseChecks(given.place, { HOME: given.home });
+    expect(results).toEqual([
+      {
+        name: "command-code",
+        status: "ok",
+        detail: `removed the \`ork\` MCP entry a stopped session left in ${given.folder}`,
+      },
+    ]);
+    expect(JSON.parse(readFileSync(given.entry, "utf8"))).toEqual({
+      mcpServers: { other: { url: "http://x/1" } },
+    });
+    expect(readdirSync(given.ledger)).toEqual([]);
+  });
+
+  it("says nothing when no lease was left", async () => {
+    const place = inRepoPlace(mkdtempSync(path.join(tmpdir(), "ork-doctor-")));
+    expect(await leaseChecks(place, {})).toEqual([]);
   });
 });

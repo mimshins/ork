@@ -1,7 +1,7 @@
 # Quickstart
 
 From an empty folder to a finished run. You need Ork installed and at least one
-Claude driver ready ([Installation](./installation.md)).
+agent driver ready ([Installation](./installation.md)).
 
 Want Claude Code to do these steps with you? See
 [With your agent](./with-your-agent.md).
@@ -17,7 +17,7 @@ git init && git commit --allow-empty -m "Start"
 ork doctor
 ```
 
-You need Node, git and one ready Claude driver (`git commits` warns before the
+You need Node, git and one ready agent driver (`git commits` warns before the
 first commit). `gh` and `aws` are optional: the starter uses neither.
 
 ## 2. Create a starter workflow
@@ -29,7 +29,7 @@ ork init
 ```
 created .ork/workflows/hello.ork.yaml
 created .gitignore (.ork/runs/)
-Runs use the driver that's ready when they start: cli here (2.1.314 (Claude Code), logged in (claude.ai, firstParty)).
+Runs use the driver that's ready when they start: claude-code here (2.1.314 (Claude Code), logged in (claude.ai, firstParty)).
 Ork's skills for Claude Code: add them here with `ork init --skills`, or install Ork's plugin in Claude Code (/plugin marketplace add mimshins/ork, then /plugin install ork@ork).
 
 Next: edit .ork/workflows/, then run ork validate.
@@ -92,10 +92,10 @@ edges:
 - `limits.budgetUsd: 5` caps the run at five dollars. No new session starts once
   that is spent, a running session counting at its last reported cost.
 
-The file names no Claude driver, as it's meant to be committed and your
-teammates may log in another way. `ork run` uses the driver that's ready on the
-machine running it, the CLI driver when both are, and says which before it
-starts. To pick one, add `driver: cli` or `driver: sdk` under `defaults`, or see
+The file names no driver, as it's meant to be committed and your teammates may
+log in another way. `ork run` uses the driver that's ready on the machine
+running it, and says which before it starts. To name one, add
+`driver: claude-code` under `defaults`, or see
 [installation](./installation.md#check-your-setup).
 
 ## 3. Validate it

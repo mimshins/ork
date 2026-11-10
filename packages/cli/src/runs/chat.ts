@@ -12,12 +12,13 @@ import path from "node:path";
 
 import {
   appendRecorder,
-  type ClaudeRuntime,
+  type AgentRuntime,
   type EventStore,
   type HumanChannel,
   nodeSession,
   planNodeSession,
   type RunRecord,
+  placeFiles,
   runDirOf,
   templateOf,
 } from "@krapht/ork-core";
@@ -39,7 +40,7 @@ export type ResumeChatOptions = {
   run: RunRecord;
   node: string;
   body: string;
-  runtime: (driver: Driver) => Promise<ClaudeRuntime>;
+  runtime: (driver: Driver, runs?: string) => Promise<AgentRuntime>;
   /** Default: the driver the session ran with. */
   driver?: Driver;
   /** The drivers' checks, when nothing names one (default: the real ones). */
@@ -139,7 +140,7 @@ export const resumeChat = async (
     body: options.body,
     delivered: "resumed",
   });
-  const runtime = await options.runtime(driver);
+  const runtime = await options.runtime(driver, placeFiles(place).runs);
   const started = runtime.start(
     {
       ...plan.spec,

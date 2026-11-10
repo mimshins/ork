@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L232, and the next chore is
+closes it. Ids are never reused: the next limit is L239, and the next chore is
 C15. At a review, each open entry is closed (built or fixed, then removed), kept
 (moved into its area's spec, then removed here), or carried to a roadmap item,
 or to none yet (unplanned).
@@ -81,7 +81,7 @@ review:
 - **G21 · Ork doesn't check a report field written as JSON Schema.** A list of
   objects such as `build`'s `decisions` is required in the report's schema, but
   only the driver's structured output enforces it: Ork's own declared-output
-  check skips such a field, and the SDK driver's enforcement is unmeasured.
+  check skips such a field.
 - **G22 · Some answers' notes are only recorded.** A
   [note](./messaging.md#decisions) given to a loop out of rounds or a link at
   its limit is stored and shown, but reaches no session: "one more round" can't
@@ -92,22 +92,21 @@ review:
   recorded as `succeeded`, so `ork resume` refuses them; run them again.
 - **G24 · An older run looks for its driver again when resumed.** A run started
   before [the driver rule](./runtime.md#which-driver-a-session-uses) recorded no
-  `readyDriver`, so `ork resume` takes the one ready now, where the run itself
-  took the SDK driver.
+  `readyDriver`, so `ork resume` takes the one ready now.
 - **G25 · A leader's fork is unproven on a real session.** A child's question to
   its leader ([leader questions](./messaging/leader-questions.md)) is answered
   by a fork of the leader's session, tested only against stand-ins. The first
   real run must measure: (1) while the leader waits in `delegate`, its saved
-  session ends with that pending call; whether `--fork-session` and the SDK's
-  `forkSession` resume it cleanly; (2) what a fork reports as `total_cost_usd`:
-  a resumed session reports its total so far, carried over from its transcript
-  (ADR-046), and a fork copies that transcript, so it may report the leader's
-  total plus its own; Ork counts the fork's whole report (as
-  `<leader>/<fork session>`), which would overcount the run's spend and might
-  trip the fork's `--max-budget-usd` at once; if it does, charge the report less
-  the leader's last total; (3) the fork's tools and system prompt differ from
-  the leader's, so each question reads the leader's session uncached; (4) that
-  the structured report still comes back with `--tools Read,Grep,Glob`.
+  session ends with that pending call; whether `--fork-session` resumes it
+  cleanly; (2) what a fork reports as `total_cost_usd`: a resumed session
+  reports its total so far, carried over from its transcript (ADR-046), and a
+  fork copies that transcript, so it may report the leader's total plus its own;
+  Ork counts the fork's whole report (as `<leader>/<fork session>`), which would
+  overcount the run's spend and might trip the fork's `--max-budget-usd` at
+  once; if it does, charge the report less the leader's last total; (3) the
+  fork's tools and system prompt differ from the leader's, so each question
+  reads the leader's session uncached; (4) that the structured report still
+  comes back with `--tools Read,Grep,Glob`.
 - **G27 · A permission is answered one call at a time.** Each Bash command asks
   again (six in run 0427fb01); nothing allows a tool for the rest of a node.
 - **G28 · An experiment has no way out.** Nothing promotes or removes one.
@@ -175,13 +174,67 @@ the next review:
 Found building [clean sessions](./runtime.md#what-a-session-loads) (ADR-065):
 
 - **L180 · Only strict MCP is measured.** The $0.113 to $0.032 probe (CLI
-  driver) measured `--strict-mcp-config`; the other two switches, and the SDK
-  driver (checked against its types only), are unmeasured until the rerun.
+  driver) measured `--strict-mcp-config`; the other two switches are unmeasured
+  until the rerun.
 
 - **L213 · A `continue` node can't follow a tool node.** Its worktree is found
   through gates and control nodes only, so a program can't decide whether a gate
   before it opens. `build`'s `ratify` gate therefore runs on every build
   ([ADR-071](../decisions/ADR-071-workflows-by-stage.md)).
+
+Found removing the Agent SDK driver
+([RFC-014](../rfcs/archived/RFC-014-cli-drivers-only.md)):
+
+- **L232 · Two drivers are built but unproven.** `open-code` and `command-code`
+  have adapters tested against fake tools, but `proven: false`: `ork validate`
+  and `ork run` refuse them and `ork doctor` lists them as `skip`, until the
+  maintainer runs one capped real session on each (RFC-014 tasks 16 and 21) and
+  flips the flag. Their doctor checks only find the binary: the tools' logins
+  are not read, so a missing login shows up in the first session. What the fakes
+  assume and the real run must check: Command Code's MCP tool name
+  (`mcp__ork__<tool>`), its refusal frame, the `--mod` API in `-p` mode;
+  OpenCode's `ork_report` visibility, the shell's start folder, shell allow-list
+  behaviour, the `steps` turn cap (so `turnLimit` is false), and the event field
+  names (see [open-code](./runtime/open-code.md)).
+- **L233 · `budgetUsd` is refused on a driver that reports no dollars.**
+  `command-code` reports tokens only, so `ork validate` and `ork run` refuse a
+  node with `budgetUsd` on it, and every session node of a workflow with
+  `limits.budgetUsd` (the run's budget caps each session too). The starter
+  workflow `ork init` writes sets `limits.budgetUsd: 5`, so it is refused on
+  `command-code` until then. A token budget (`budgetTokens`) comes with
+  [RFC-015](../rfcs/active/RFC-015-format-for-several-drivers.md).
+- **L234 · No mid-session permission prompts off `claude-code`.** A driver
+  without `permissionPrompt` gets the node's allow and deny lists as its tool's
+  own rules, deny by default, so what `claude` would have asked about is refused
+  instead. Driver fit also checks only what a workflow states: a message over a
+  link made at run time is not checked against the node's driver, and a worker's
+  own `ask_user` is not either, only a leader that delegates.
+
+- **L235 · Command Code runs one session per checkout.** Its MCP entry is per
+  folder, so a second session in a checkout waits for the first, logged as a
+  `session.waiting` event; `ork validate` warns where siblings could queue, and
+  refuses an owner with a node it owns in its checkout (they would deadlock).
+  `cmd acp` is the later fix. Also: permissions are enforced by an Ork-written
+  `--mod` with `--permission-mode yolo`, but the machine's skills, memory, mods
+  and MCP servers still load; a node's own `mcp` servers are not wired, so such
+  a node is refused (`mcpServers: false`); plan mode is not mapped; no hold hook
+  on pause; exit 8 without a result line falls to a generic failure; stale
+  leases are swept at a Command Code session's start and by `ork doctor`, not at
+  run start; two paths can share one slug; the stale sweep is not atomic across
+  two processes; a corrupt lease record is dropped as stale, but the `ork` entry
+  it may have left is then found by the next session's check and refused, not
+  removed.
+- **L236 · OpenCode limits.** No hold on pause mid-session; `glob` and `grep`
+  are not allowed by default; an empty `XDG_CONFIG_HOME` hides `~/.config/git`
+  from shell commands; `--model` needs `provider/model` (RFC-015); `effort` is
+  not mapped and `machineClaude` does not apply; the secret config lives under
+  the temp folder, not the run folder; a crashed session's folder is swept at
+  the next `open-code` session only, not by `ork doctor`; the brief is visible
+  as a process argument.
+- **L237 · The `report` tool reads a schema with zod.** A report schema zod
+  cannot read falls back to any object plus the status and summary check.
+- **L238 · No protocol drivers.** OpenCode's server and ACP (`cmd acp`) stay a
+  later change to a single adapter.
 
 ## Chores
 
@@ -213,9 +266,8 @@ Found building [clean sessions](./runtime.md#what-a-session-loads) (ADR-065):
   driver of a `from:` fan-out of Claude workers into worktrees (paid) is left to
   the maintainer, after the second run has landed. Check that items start
   together under `maxParallel`, that each takes its own session and worktree,
-  and that a resumed run goes on with the unfinished ones. The Agent SDK driver
-  can't be run on the maintainer's machine, so it stays untested on real runs.
-  Carried, unplanned: it waits on the world.
+  and that a resumed run goes on with the unfinished ones. Carried, unplanned:
+  it waits on the world.
   ([running a node once per item](./scheduler/for-each.md))
 
 - **C13 · No `fix` workflow.** A bug has to go through `plan`'s gate. A shorter

@@ -16,7 +16,7 @@ import type { Driver, Workflow } from "@krapht/ork-schema";
 
 import { prepareCheckout } from "./checkout.ts";
 import { limitsRefusal, runLimits } from "./limits.ts";
-import { runReadyDriver } from "./ready-driver.ts";
+import { runReadyDriver, unfitLines } from "./ready-driver.ts";
 import type { RunWorkflowOptions } from "./workflow.ts";
 
 type Inputs = Parameters<typeof prepareCheckout>[2];
@@ -70,6 +70,11 @@ export const preflight = async (
   });
   if (!driver.ok) return { ok: false, lines: driver.lines };
   if (driver.line !== undefined) options.err(driver.line);
+  const unfit = unfitLines(given.effective, options.drivers, {
+    override: options.driver,
+    ready: driver.driver ?? options.resume?.settings.readyDriver,
+  });
+  if (unfit.length > 0) return { ok: false, lines: unfit };
   const checkout = await prepareCheckout(
     workflow,
     { ...options, cwd: place.root },

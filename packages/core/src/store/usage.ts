@@ -11,7 +11,13 @@ import type { DatabaseSync } from "node:sqlite";
 import type { RunEvent } from "../run/types.ts";
 import { ownSpend } from "../usage/spend.ts";
 import { runProcessAlive } from "./process-age.ts";
-import { eventOf, inTransaction, type Row, text } from "./rows.ts";
+import {
+  currentDriver,
+  eventOf,
+  inTransaction,
+  type Row,
+  text,
+} from "./rows.ts";
 import type { RunRecord, UsageFilter, UsageRow, UsageStore } from "./types.ts";
 import { templateOf } from "./view.ts";
 
@@ -148,7 +154,7 @@ export const backfillUsage = (db: DatabaseSync): void => {
 const rowOf = (r: Row): UsageRow => {
   const template = text(r, "template");
   const model = text(r, "model");
-  const driver = text(r, "driver");
+  const driver = currentDriver(text(r, "driver"));
   return {
     runId: text(r, "run_id"),
     seq: Number(r?.["seq"]),

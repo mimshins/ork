@@ -4,21 +4,46 @@ _Part of [Troubleshooting](../troubleshooting.md)._
 
 ## Setup
 
-**`! claude (sdk driver)  no API key or cloud provider`.** The SDK driver needs
-`ANTHROPIC_API_KEY`, or Bedrock, Vertex or Foundry
-([accounts](../accounts.md#the-agent-sdk-driver-driver-sdk)). If your `claude`
-login is ready instead, that's enough: a workflow that names no driver uses the
-one that's ready. For one that names `sdk`, run it with the CLI driver:
+**`! claude (claude-code driver)  …, not logged in`.** The claude-code driver
+needs your `claude` logged in (`claude auth login`, which you run yourself), or
+`ANTHROPIC_API_KEY`, or Bedrock, Vertex or Foundry set in your shell
+([accounts](../accounts.md#the-claude-code-driver-driver-claude-code)).
 
-```sh
-ork run <workflow> --driver cli
-```
+**`` driver `sdk` was retired; use `claude-code` ``.** The ids `sdk` and `cli`
+of earlier versions are gone. Change `driver:` in the workflow or
+`.ork/project.yaml` to `claude-code`, or drop it so the run takes the one that's
+ready; on the command line, use `--driver claude-code`. Runs recorded with the
+old ids still resume.
+
+**`node … sets maxTurns, but driver … has no turn limit`** (or `budgetUsd`, the
+workflow's `limits.budgetUsd`, MCP servers in `mcp`, or delegates to the nodes
+it owns). The node asks for something its driver does not do. Remove the
+setting, name a driver that has it, or run `ork validate --driver claude-code`
+to see each node against that driver
+([models and budgets](../models-and-budgets.md#the-driver)).
+
+**`driver command-code runs one session per checkout, but … could run at once`**
+(a warning from `ork validate`). Command Code holds one session per checkout at
+a time, so two nodes in the same checkout, such as `shared` siblings, wait for
+each other. Give those nodes `isolation: worktree`, or run them on another
+driver.
+
+**`node … runs on driver command-code, which runs one session per checkout, but … one owns another`**
+(an error from `ork validate` and `ork run`). A leader and a worker it owns
+share a checkout: the leader holds it while it waits on the worker, and the
+worker waits for it, so neither would finish. Give the worker
+`isolation: worktree`, or run one of them on another driver.
+
+**`node … runs on driver …, which is not yet proven on a real session`.**
+`open-code` and `command-code` are refused until a real session has proven them.
+Name `claude-code`, or no driver.
 
 **`No Claude driver is ready here, and … name none.`** Neither your `claude`
-login nor an API key is set up, and the nodes it names don't pick a driver, so
-the run doesn't start. The message gives each driver's hint, such as logging in
-with `claude` or setting `ANTHROPIC_API_KEY`, then ``See `ork doctor`.`` Do what
-one hint says, or run `ork doctor` for the same ([accounts](../accounts.md)).
+login nor an API key or cloud provider is set up, and the nodes it names don't
+pick a driver, so the run doesn't start. The message gives each driver's hint,
+such as logging in with `claude` or setting `ANTHROPIC_API_KEY`, then
+``See `ork doctor`.`` Do what one hint says, or run `ork doctor` for the same
+([accounts](../accounts.md)).
 
 **`claude` is older than 2.1.281.** Update Claude Code. Older versions may not
 read `AGENTS.md`, so a project with only `AGENTS.md` would run without its

@@ -29,6 +29,9 @@ const sessionLine = ({ event }: Of<"node.event">): string => {
     case "assistant.text": {
       return oneLine(event.text);
     }
+    case "session.waiting": {
+      return oneLine(event.reason);
+    }
     case "tool.called": {
       return `${event.name} ${oneLine(JSON.stringify(event.input))}`;
     }

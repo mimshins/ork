@@ -12,7 +12,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 import {
   type CallPort,
   type CallRequest,
-  type ClaudeRuntime,
+  type AgentRuntime,
   createHolds,
   type ExecuteContext,
   type HumanChannel,
@@ -642,7 +642,10 @@ const capOf = (cap: number | undefined): { budgetUsd?: number } =>
   cap === undefined ? {} : { budgetUsd: cap };
 
 /** A Claude executor with `options`, and the drivers it started. */
-const executing = (options: { driver?: "cli"; readyDriver?: "sdk" }) => {
+const executing = (options: {
+  driver?: "claude-code";
+  readyDriver?: "open-code";
+}) => {
   const drivers: string[] = [];
   const execute = claudeExecutor({
     runtimeFor: driver => {
@@ -678,7 +681,7 @@ const machineOfSpecs = async (machine: { machineClaude?: boolean }) => {
           };
         },
       }),
-    readyDriver: "sdk",
+    readyDriver: "open-code",
     inPlace: true,
     ...machine,
   });
@@ -702,7 +705,7 @@ const specsWithMcp = async (node: Node, file: string | undefined) => {
           };
         },
       }),
-    readyDriver: "sdk",
+    readyDriver: "open-code",
     inPlace: true,
   });
   const ctx = context("design", node);
@@ -781,8 +784,8 @@ describe("Claude nodes", () => {
 
   it("reads a message that came in as it finished, in one more turn", async () => {
     const specs: SessionSpec[] = [];
-    const runtime: ClaudeRuntime = {
-      driver: "sdk",
+    const runtime: AgentRuntime = {
+      driver: "open-code",
       start: spec => {
         specs.push(spec);
         return {
@@ -794,7 +797,7 @@ describe("Claude nodes", () => {
     };
     const execute = claudeExecutor({
       runtimeFor: () => Promise.resolve(runtime),
-      readyDriver: "sdk",
+      readyDriver: "open-code",
       inPlace: true,
     });
     const node: Node = { type: "claude.worker", prompt: "Fix" };
@@ -828,8 +831,8 @@ describe("Claude nodes", () => {
 
     const lateRun = async (overrides: Partial<ExecuteContext>) => {
       const specs: SessionSpec[] = [];
-      const runtime: ClaudeRuntime = {
-        driver: "sdk",
+      const runtime: AgentRuntime = {
+        driver: "open-code",
         start: spec => {
           specs.push(spec);
           const report = specs.length === 1 ? PASSED : null;
@@ -848,7 +851,7 @@ describe("Claude nodes", () => {
       };
       const execute = claudeExecutor({
         runtimeFor: () => Promise.resolve(runtime),
-        readyDriver: "sdk",
+        readyDriver: "open-code",
         inPlace: true,
       });
       const node: Node = { type: "claude.worker", prompt: "Fix" };
@@ -988,8 +991,8 @@ describe("Claude nodes", () => {
 
   it("reads an item in a Claude node's prompt", async () => {
     const specs: SessionSpec[] = [];
-    const runtime: ClaudeRuntime = {
-      driver: "sdk",
+    const runtime: AgentRuntime = {
+      driver: "open-code",
       start: spec => {
         specs.push(spec);
         return {
@@ -1005,7 +1008,7 @@ describe("Claude nodes", () => {
         drivers.push(driver);
         return Promise.resolve(runtime);
       },
-      driver: "cli",
+      driver: "claude-code",
       inPlace: true,
     });
     const node: Node = { type: "claude.worker", prompt: "Do {{item.title}}" };
@@ -1021,8 +1024,8 @@ describe("Claude nodes", () => {
 
   it("runs a session with the run's outputs, its budget, and the re-entry input", async () => {
     const specs: SessionSpec[] = [];
-    const runtime: ClaudeRuntime = {
-      driver: "sdk",
+    const runtime: AgentRuntime = {
+      driver: "open-code",
       start: spec => {
         specs.push(spec);
         return {
@@ -1038,7 +1041,7 @@ describe("Claude nodes", () => {
         drivers.push(driver);
         return Promise.resolve(runtime);
       },
-      driver: "cli",
+      driver: "claude-code",
       inPlace: true,
     });
     const node: Node = {
@@ -1055,7 +1058,7 @@ describe("Claude nodes", () => {
       }),
     );
     expect(result.ok).toBe(true);
-    expect(drivers).toEqual(["cli"]);
+    expect(drivers).toEqual(["claude-code"]);
     expect(specs[0]?.budgetUsd).toBe(1);
     expect(specs[0]?.effort).toBe("high");
     expect(specs[0]?.prompt).toContain("Fix ork/r1/builder\n\n## Round 2");
@@ -1064,16 +1067,20 @@ describe("Claude nodes", () => {
 
   describe("the driver", () => {
     it("is the node's own, over the one ready", async () => {
-      const { execute, drivers } = executing({ readyDriver: "sdk" });
-      const node: Node = { type: "claude.worker", prompt: "x", driver: "cli" };
+      const { execute, drivers } = executing({ readyDriver: "open-code" });
+      const node: Node = {
+        type: "claude.worker",
+        prompt: "x",
+        driver: "claude-code",
+      };
       await execute(context("fix", node));
-      expect(drivers).toEqual(["cli"]);
+      expect(drivers).toEqual(["claude-code"]);
     });
 
     it("is the one ready, when nothing names one", async () => {
-      const { execute, drivers } = executing({ readyDriver: "sdk" });
+      const { execute, drivers } = executing({ readyDriver: "open-code" });
       await execute(context("fix", { type: "claude.worker", prompt: "x" }));
-      expect(drivers).toEqual(["sdk"]);
+      expect(drivers).toEqual(["open-code"]);
     });
 
     it("leaves the node not started when there is none", async () => {
@@ -1090,8 +1097,8 @@ describe("Claude nodes", () => {
 
   it("gives a leader its children, and resumes it with only the new task", async () => {
     const started: { spec: SessionSpec; ports: SessionPorts }[] = [];
-    const runtime: ClaudeRuntime = {
-      driver: "sdk",
+    const runtime: AgentRuntime = {
+      driver: "open-code",
       start: (spec, ports) => {
         started.push({ spec, ports });
         return {
@@ -1103,7 +1110,7 @@ describe("Claude nodes", () => {
     };
     const execute = claudeExecutor({
       runtimeFor: () => Promise.resolve(runtime),
-      readyDriver: "sdk",
+      readyDriver: "open-code",
       inPlace: true,
     });
     const ownership: Ownership = {
@@ -1144,7 +1151,7 @@ describe("Claude nodes", () => {
     const execute = claudeExecutor({
       runtimeFor: () =>
         Promise.resolve({
-          driver: "sdk",
+          driver: "open-code",
           start: spec => {
             specs.push(spec);
             return {
@@ -1154,7 +1161,7 @@ describe("Claude nodes", () => {
             };
           },
         }),
-      readyDriver: "sdk",
+      readyDriver: "open-code",
       inPlace: true,
     });
     const node: Node = { type: "claude.worker", prompt: "You fix bugs." };

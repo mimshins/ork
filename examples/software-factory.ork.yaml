@@ -16,7 +16,7 @@ layers:
     instructions: inherit
     skills: inherit
 defaults:
-  driver: sdk
+  driver: claude-code
   model: sonnet
   isolation: worktree
   budgetUsd: 2

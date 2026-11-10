@@ -130,7 +130,7 @@ const RUN: RunEvent[] = [
       type: "session.started",
       sessionId: "s",
       model: "sonnet",
-      driver: "cli",
+      driver: "claude-code",
     },
   },
   {
@@ -259,7 +259,7 @@ describe("system signals", () => {
         workflowHash: "abc",
         nodeType: "claude.worker",
         model: "sonnet",
-        driver: "cli",
+        driver: "claude-code",
         version: "1.2.3",
       },
     });

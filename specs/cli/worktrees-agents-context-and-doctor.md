@@ -18,14 +18,14 @@ names no driver: it is committed, and a run takes the driver ready on the
 machine running it ([runtime](../runtime.md#which-driver-a-session-uses)).
 `ork init` says in one line which that is here, from [doctor](#doctor)'s own
 checks (the same checks, not a copy):
-`Runs use the driver that's ready when they start: cli here (…).` With both
-ready it names `cli`, which a run takes first. When `.ork/project.yaml` names a
-`defaults.driver`, it says that one instead, and runs no check. With neither
-ready, it passes on the CLI driver's hint (install Claude Code, or
-`claude auth login`). A starter that is already there is left as it is, and
-nothing is said or checked ([code](../../packages/cli/src/project/init.ts)). In
-a git repository with no commit, `ork init` still writes everything and exits 0,
-then warns that worktree runs branch from `HEAD`, so a first commit is needed.
+`Runs use the driver that's ready when they start: claude-code here (…).` When
+`.ork/project.yaml` names a `defaults.driver`, it says that one instead, and
+runs no check. With none ready, it passes on the claude-code driver's hint
+(install Claude Code, `claude auth login`, or an API key or cloud provider). A
+starter that is already there is left as it is, and nothing is said or checked
+([code](../../packages/cli/src/project/init.ts)). In a git repository with no
+commit, `ork init` still writes everything and exits 0, then warns that worktree
+runs branch from `HEAD`, so a first commit is needed.
 
 ## Worktrees
 
@@ -108,9 +108,15 @@ repository with no commit is a warning, `git commits`, never a failure: worktree
 runs need a `HEAD`), then runs each registered Claude driver's and integration's
 own check ([ADR-022](../../decisions/ADR-022-integration-registry.md)):
 installed, and signed in with the user's own login, never printing a token or an
-account. At least one driver must be ready; integrations are optional. The CLI
-driver's check warns when `claude` is older than 2.1.281, which Ork needs to
-read `AGENTS.md` ([context](../context.md#how-a-nodes-session-is-compiled)).
+account. At least one driver must be ready; integrations are optional. The
+claude-code driver is ready when `claude` is logged in, or `ANTHROPIC_API_KEY`
+or `CLAUDE_CODE_USE_BEDROCK`/`_VERTEX`/`_FOUNDRY=1` is set, and its detail says
+which; it warns when `claude` is older than 2.1.281, which Ork needs to read
+`AGENTS.md` ([context](../context.md#how-a-nodes-session-is-compiled)). The
+drivers `open-code` and `command-code` are checked with `opencode --version` and
+`cmd --version`; while their descriptor is not `proven`, they are listed as
+`skip` with "unproven" (their logins, `opencode auth login` and `cmd login`, are
+named, never read), and never count as a ready driver.
 
 Once a project has `.ork/`, doctor adds one check per tool the project uses:
 `ok` when its folders link to `.ork/`, a warning when one is missing or broken
@@ -118,6 +124,13 @@ Once a project has `.ork/`, doctor adds one check per tool the project uses:
 folder or links elsewhere. These checks never fail the doctor. It also warns
 when the project's copies of Ork's skills for Claude Code are older than Ork,
 with `ork init --skills` as the fix ([Ork for Claude Code](../claude-code.md)).
+
+A `command-code` line appears only when a Command Code session stopped without
+removing its `ork` MCP entry (a crash): doctor removes it from the checkout's
+local scope, leaving the user's other entries, and says where (`ok`), or warns
+with `cmd mcp remove --scope local ork` as the fix when it can't. It reads the
+lease records in the project's runs folder
+([architecture](../architecture/command-code.md)).
 
 A `sockets` check warns when the longest run socket path under `~`
 (`~/.ork/sockets/node-<8>.sock`) is past what the system allows (103 bytes on

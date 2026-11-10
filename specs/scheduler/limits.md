@@ -16,12 +16,12 @@ are open work in the [register](../gaps.md#limits).
 - **L4 · A run of one node is not resumed.** `ork run --node` runs again
   instead. ([ADR-026](../../decisions/ADR-026-resume-by-replay.md))
 - **L6 · `delegate` blocks the leader.** There is no asynchronous form, and on
-  the CLI driver one call can stay open for at most 24 hours.
+  the claude-code driver one call can stay open for at most 24 hours.
   ([ADR-017](../../decisions/ADR-017-blocking-delegate.md))
-- **L29 · Managed settings can turn off the CLI driver's pause.** A pause holds
-  a `claude -p` session in a `PreToolUse` HTTP hook; where managed settings
-  allow only managed hooks or other hook URLs, the hook never fires, and a
-  CLI-driven node pauses only at its next activation.
+- **L29 · Managed settings can turn off the claude-code driver's pause.** A
+  pause holds a `claude -p` session in a `PreToolUse` HTTP hook; where managed
+  settings allow only managed hooks or other hook URLs, the hook never fires,
+  and the node pauses only at its next activation.
   ([run control](../run-control.md#limits))
 - **L30 · A single-node run takes only `stop`.** `ork run <wf> --node <id>` is
   not paused or continued, and has no node of its own to stop: `ork pause`,
