@@ -7,7 +7,6 @@
 
 import type { Driver, Node, NodeType, Workflow } from "@krapht/ork-schema";
 
-import type { AgentRef } from "../agents/apply.ts";
 import type { FeedbackPort, FeedbackReport } from "../feedback/types.ts";
 import type {
   Claims,
@@ -18,12 +17,14 @@ import type {
   OwnerPort,
   Ownership,
   RuntimeEvent,
+  SessionEnd,
   SessionUsage,
 } from "../runtime/types.ts";
 import type { RunLimits } from "../usage/quota.ts";
 import type { BusEvent } from "./bus-events.ts";
 import type { CallPort } from "./calls.ts";
 import type { DecisionEvent, EachEvent } from "./decision-events.ts";
+import type { NodeEvent } from "./node-events.ts";
 import type { WatchEvent } from "./watch-events.ts";
 import type { Checkout, KeptWorktree, Workspace } from "./workspace-types.ts";
 
@@ -39,8 +40,10 @@ export type NodeResult = {
   /** Whether the node succeeded; an edge without `when:` is taken only then. */
   ok: boolean;
   usage?: SessionUsage;
-  /** Why the node failed, for the run summary. */
+  /** Why the node failed, for the run summary: `end.message` once set. */
   error?: string;
+  /** How it ended (specs/runtime/session-ends.md); `endOf` reads one when unset. */
+  end?: SessionEnd;
   /** The Claude session it ran, so a leader can resume it (ADR-019). */
   sessionId?: string;
   /**
@@ -149,6 +152,8 @@ export type NodeSummary = {
   ok: boolean | null;
   output: NodeOutput | null;
   error?: string;
+  /** How its last run failed; a called run's failure carries it up. */
+  end?: SessionEnd;
   costUsd: number;
 };
 
@@ -236,29 +241,7 @@ export type RunEvent =
     }
   /** `ork resume` continues the run, `ork` that version; `kept` keep results. */
   | { type: "run.resumed"; kept: string[]; ork?: string }
-  | {
-      type: "node.started";
-      id: string;
-      nodeType: NodeType;
-      round: number;
-      /** The leader that delegated this run, if one did. */
-      owner?: string;
-      /** The agent that fills the node, if one does. */
-      agent?: AgentRef;
-      /** For an item of a fanned node, which node and which entry. */
-      item?: { of: string; index: number };
-    }
-  | { type: "node.event"; id: string; event: RuntimeEvent }
-  | {
-      type: "node.finished";
-      id: string;
-      round: number;
-      ok: boolean;
-      output: NodeOutput;
-      usage?: SessionUsage;
-      error?: string;
-    }
-  | { type: "node.skipped"; id: string }
+  | NodeEvent
   | { type: "edge.taken"; from: string; to: string }
   | { type: "loop.exhausted"; from: string; to: string; maxRounds: number }
   | WatchEvent

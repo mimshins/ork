@@ -3,7 +3,8 @@
  *   scrolling region with a name, which the keys can scroll once it has the
  *   focus. It follows the end while the scroll is at the end, and holds still
  *   when scrolled up, as the Logs panel does. It's not a live region: a screen
- *   reader isn't read every line.
+ *   reader isn't read every line. A well of text that is read from its start,
+ *   such as an error, doesn't follow (`follow={false}`).
  */
 
 import { type RefObject, useLayoutEffect, useRef } from "react";
@@ -16,11 +17,14 @@ const NEAR_END = 32;
 export const OutputWell = ({
   label,
   text,
+  follow = true,
   ref,
 }: {
   /** The region's name: "Output of pnpm". */
   label: string;
   text: string;
+  /** Scrolls to the end as text is added; `false` stays at the start. */
+  follow?: boolean;
   /** The region, for whoever moves the focus to it. */
   ref?: RefObject<HTMLElement | null>;
 }) => {
@@ -29,7 +33,9 @@ export const OutputWell = ({
   const following = useRef(true);
   useLayoutEffect(() => {
     const well = region.current;
-    if (well !== null && following.current) well.scrollTop = well.scrollHeight;
+    if (well !== null && follow && following.current) {
+      well.scrollTop = well.scrollHeight;
+    }
   });
   return (
     <section

@@ -28,6 +28,7 @@ import {
   carryArtifacts,
   checkoutFor,
   commitWork,
+  uncommitted,
   handOver,
   nameOf,
   openWorktree,
@@ -229,8 +230,7 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     if (work.committed) event(id, "committed", worktree);
     if (work.error === undefined) return next;
     unmerged.set(holder, `uncommitted: ${work.error}`);
-    const error = `could not commit its work: ${work.error}`;
-    return { ...next, ok: false, error };
+    return uncommitted(next, work.error);
   };
 
   const finish: Workspace["finish"] = async (id, result) => {

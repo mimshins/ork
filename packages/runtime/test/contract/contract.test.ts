@@ -5,15 +5,19 @@
  *   still denied, Ork's endpoint reached and then gone, usage counted, an
  *   interrupt ending the session, a message sent mid-session arriving, and,
  *   where the driver cannot hold the report to its schema, a report handed in
- *   through Ork's `report` tool. Every adapter registered in `registry.ts` must
- *   have an entry.
+ *   through Ork's `report` tool. The same cause ends as the same kind on every
+ *   driver (specs/runtime/session-ends.md). Every adapter registered in
+ *   `registry.ts` must have an entry.
  */
+
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 import type { DriverCapabilities } from "@krapht/ork-integrations";
 import { describe, expect, it } from "vitest";
 
 import { ADAPTERS } from "../../src/index.ts";
-import { CONTRACT } from "./entries.ts";
+import { CONTRACT, TOOL_ENDS } from "./entries.ts";
 import {
   answers,
   collect,
@@ -107,6 +111,7 @@ describe.each(CONTRACT)("the $driver adapter", entry => {
     const outcome = outcomeOf(await collectActing(session, session.interrupt));
     expect(outcome).toMatchObject({
       subtype: "error_driver",
+      end: { kind: "interrupted" },
       errors: ["interrupted"],
     });
   });
@@ -130,3 +135,51 @@ describe.each(CONTRACT.filter(entry => !entry.capabilities.reportSchema))(
     });
   },
 );
+
+describe.each(CONTRACT)("the $driver adapter's ends", entry => {
+  it.each(entry.ends)(
+    "ends a session the tool says hit %s as that kind",
+    async kind => {
+      const events = await collect(start(entry, `end:${kind}`).session);
+      expect(outcomeOf(events).end?.kind).toBe(kind);
+    },
+  );
+
+  it("writes the turn limit with the node's number, and keeps the tool's words out of it", async () => {
+    const { end } = outcomeOf(
+      await collect(start(entry, "end:turn_limit").session),
+    );
+    expect(end?.message).toBe("reached its turn limit (5)");
+  });
+
+  it("keeps a provider's error as the detail, never the message", async () => {
+    const { end } = outcomeOf(
+      await collect(start(entry, "end:model_unavailable").session),
+    );
+    expect(end?.detail).toContain("prefill");
+    expect(end?.message).not.toContain("prefill");
+  });
+
+  it("ends as tool_missing when its program isn't installed", async () => {
+    const missing = path.join(
+      tmpdir(),
+      "ork-no-such-tool",
+      entry.adapter.command.bin,
+    );
+    const { end } = outcomeOf(
+      await collect(start(entry, "plain", missing).session),
+    );
+    expect(end?.kind).toBe("tool_missing");
+  });
+
+  it("ends a session that reported as done", async () => {
+    const { end } = outcomeOf(await collect(start(entry, "plain").session));
+    expect(end).toEqual({ kind: "done", message: "finished" });
+  });
+});
+
+describe.each(CONTRACT)("the $driver contract entry", entry => {
+  it("plays every cause a tool reports", () => {
+    expect(entry.ends).toEqual(expect.arrayContaining([...TOOL_ENDS]));
+  });
+});

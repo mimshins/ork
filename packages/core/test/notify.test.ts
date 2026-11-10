@@ -376,7 +376,7 @@ describe("a rule and a stop", () => {
       await cutOff(handle => {
         handle.stopNode("check");
       }, KILLED),
-    ).toEqual(["check failed: stopped by the user"]);
+    ).toEqual(["check failed: was stopped"]);
   });
 });
 

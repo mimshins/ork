@@ -24,7 +24,9 @@
  *   it), `wait-message` (answers the next stdin message), `hang` (starts and
  *   waits to be interrupted) or `report-tool` (hands in a report through
  *   Ork's `report` tool, first one outside the schema, then one inside, and
- *   ends with no structured output).
+ *   ends with no structured output). `end:<kind>` ends the session the way
+ *   Claude Code says that cause (`end:turn_limit` is `error_max_turns`,
+ *   `end:rate_limited` an `API Error: 429` result, …; `ENDS` below).
  */
 
 import { existsSync, rmSync, writeFileSync } from "node:fs";
@@ -94,7 +96,36 @@ const finish = (text, report) =>
     usage: USAGE,
   });
 const PASS = { status: "pass", summary: "done", artifacts: {} };
-if (scenario === "hang") {
+const apiError = (status, type, message) =>
+  `API Error: ${status} ${JSON.stringify({ type: "error", error: { type, message } })}`;
+/** How Claude Code's result says each cause, for `end:<kind>`. */
+const ENDS = {
+  turn_limit: { subtype: "error_max_turns", errors: ["Reached maximum number of turns (5)"] },
+  budget_limit: { subtype: "error_max_budget_usd", errors: ["Reached maximum budget ($0.5)"] },
+  auth: { result: "Invalid API key · Please run /login" },
+  out_of_credits: { result: "Credit balance is too low" },
+  rate_limited: { result: apiError(429, "rate_limit_error", "Number of request tokens has exceeded your per-minute rate limit") },
+  provider_unavailable: { result: apiError(529, "overloaded_error", "Overloaded") },
+  model_unavailable: {
+    result: apiError(400, "invalid_request_error", "This model does not support assistant message prefill. The conversation must end with a user message."),
+  },
+};
+if (scenario.startsWith("end:")) {
+  init();
+  out({
+    type: "result",
+    subtype: "success",
+    is_error: true,
+    session_id: "fake-1",
+    result: "",
+    total_cost_usd: cost,
+    num_turns: 1,
+    duration_ms: 100,
+    usage: USAGE,
+    ...ENDS[scenario.slice(4)],
+  });
+  process.exit(1);
+} else if (scenario === "hang") {
   init();
   await new Promise(() => setInterval(() => {}, 1000));
 } else if (scenario === "try-denied") {

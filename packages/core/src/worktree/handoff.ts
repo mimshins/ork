@@ -11,6 +11,7 @@ import { existsSync } from "node:fs";
 
 import type { ResolvedGitRules } from "@krapht/ork-schema";
 
+import { endedWith, endFor } from "../run/ended.ts";
 import type {
   Checkout,
   KeptWorktree,
@@ -282,3 +283,10 @@ export const commitWork = async (
     return { committed: false, error: reason };
   }
 };
+
+/** A node's result once its work could not be committed: a failed `git commit`. */
+export const uncommitted = (result: NodeResult, error: string): NodeResult =>
+  endedWith(
+    { ...result, ok: false },
+    endFor("command_failed", { program: "git commit" }, error),
+  );

@@ -9,6 +9,10 @@
 import {
   evaluate,
   declaredProblem,
+  endedWith,
+  endFor,
+  type EndFacts,
+  type EndKind,
   type ExecuteContext,
   type NodeExecutor,
   type NodeResult,
@@ -34,12 +38,24 @@ import { capped, clipError, OUTPUT_LIMIT } from "./tools.ts";
 /** A node's `timeout:` is what limits a call; this only lifts the SDK's 60 s. */
 const NO_LIMIT_MS = 24 * 60 * 60 * 1000;
 
-const failed = (error: string, output: Record<string, unknown> = {}) =>
-  ({ ok: false, output, error }) satisfies NodeResult;
+const failed = (
+  kind: EndKind,
+  facts: EndFacts,
+  detail?: string,
+  output: Record<string, unknown> = {},
+): NodeResult => endedWith({ ok: false, output }, endFor(kind, facts, detail));
 
-/** A failure another try might not have, so a `watch:` looks again. */
-const missed = (error: string, output: Record<string, unknown> = {}) =>
-  ({ ok: false, transient: true, output, error }) satisfies NodeResult;
+/** How a call that threw ended: a sign-in, a server that won't start, or else. */
+const thrownKind = (error: unknown): EndKind => {
+  const code =
+    typeof error === "object" && error !== null && "code" in error
+      ? error.code
+      : undefined;
+  if (code === 401 || error?.constructor.name === "UnauthorizedError") {
+    return "auth";
+  }
+  return code === "ENOENT" ? "tool_missing" : "command_failed";
+};
 
 /**
  * A string's templates rendered. A string that is one `{{ … }}` and nothing
@@ -133,19 +149,24 @@ export const mcpCallExecutor =
   async context => {
     const { node } = context;
     if (node.type !== "mcp.call") {
-      return failed(`${context.id} is not an MCP call`);
+      const said = `${context.id} is not an MCP call`;
+      return failed("unknown", {}, said);
     }
     const environ = options.environ ?? process.env;
     const declared = readMcpServer(context.projectRoot, node.server);
-    if (!declared.ok) return failed(declared.error);
+    if (!declared.ok) {
+      return failed("invalid_node", { reason: declared.error });
+    }
     const nodeEnv = renderEnv(node, context, environ);
-    if (!nodeEnv.ok) return failed(nodeEnv.error);
+    if (!nodeEnv.ok) return failed("invalid_node", { reason: nodeEnv.error });
     const expanded = expandServer(
       declared.value,
       { ...environ, ...nodeEnv.values },
       node.plainEnv,
     );
-    if (!expanded.ok) return failed(expanded.error);
+    if (!expanded.ok) {
+      return failed("invalid_node", { reason: expanded.error });
+    }
     const scrub = scrubberOf([
       ...secretsOf(context.workflow, environ, options.maskedNames),
       ...expanded.value.values,
@@ -198,13 +219,22 @@ export const mcpCallExecutor =
         isError: reported || tooLong || problem !== null,
       });
       if (reported) {
-        return missed(`${name} failed: ${clipError(said)}`, output);
+        return failed("command_failed", { program: name }, said, output);
       }
-      if (tooLong) return failed(`${name}'s result is over 64 KiB`, output);
-      return problem === null ? { ok: true, output } : failed(problem, output);
+      if (tooLong) {
+        const reason = `${name}'s result is over 64 KiB`;
+        return failed("invalid_output", { reason }, undefined, output);
+      }
+      return problem === null
+        ? endedWith({ ok: true, output }, endFor("done"))
+        : failed("invalid_output", { reason: problem }, undefined, output);
     } catch (error) {
       context.emit({ type: "tool.result", id: context.id, isError: true });
-      return missed(clipError(scrub(reasonOf(error, node.server))));
+      return failed(
+        thrownKind(error),
+        { program: `MCP server \`${node.server}\`` },
+        clipError(scrub(reasonOf(error, node.server))),
+      );
     } finally {
       await client.close().catch(() => {
         // Nothing is left to do with a connection that won't close.

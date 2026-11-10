@@ -21,6 +21,7 @@ module on the tokens, and has a keyboard test and an axe test
 | `Toasts`                  | Base UI | `toasts` adds one from outside React; F6 jumps into them                                                                            |
 | `Meter`                   | Base UI | a row of blocks; the value is always in words too                                                                                   |
 | `StatusBadge`             | Ork     | a pixel glyph and a word, bare or as a pill; each color has its own shape                                                           |
+| `EndBadge`, `EndNote`     | Ork     | how a node ended: the kind's word toned by who acts, "may pass" in words; the note adds the hint, who acts and a closed Details     |
 | `Kbd`, `EmptyState`       | Ork     | a key hint, and what is missing with the next step and its command (`cli`)                                                          |
 | `CopyCommand`             | Ork     | the code block: full width, a strong edge, its copy button top right                                                                |
 | `Markdown`                | Ork     | untrusted text as a view: a tree mapped to elements, a link allow-list, no HTML ([design](./panels-decisions-readable.md#markdown)) |
@@ -54,6 +55,23 @@ module on the tokens, and has a keyboard test and an axe test
   with the tokens).
 - **The panels' own pieces** (the node card, the tree row, the log line, the
   decision card and the chat bubble) are built with their panels.
+
+### How a node ended
+
+The server resolves each end (`EndView`: the kind's label, who acts, whether it
+may pass, the hint, the guide's anchor) onto a tree node's `end` and onto every
+`node.finished` it serves, an old one through core's `endOf`; the UI never reads
+`error` for a decision and branches on the actor and `transient`, never the kind
+([contract](../../packages/server/src/contract-ends.ts)).
+
+- **`EndBadge`** is `StatusBadge` with the kind's word, toned by actor: the
+  agent, the workflow and Ork red, your account amber, the provider and you
+  grey. A kind that may pass adds "may pass" in words. None for a good end.
+- **`EndNote`** is the story of one end: the badge and Ork's sentence, what to
+  do, who acts, a link to the guide, and **Details**, the scrubbed raw text in a
+  well that starts at its top, closed by default, with a copy button; none
+  without a detail. A hint that points to Details loses that sentence when there
+  is none.
 
 **The gallery** shows every component in its states, with a theme switch:
 `pnpm ui:dev`, then `/gallery.html`. It never ships: `vite build --mode gallery`

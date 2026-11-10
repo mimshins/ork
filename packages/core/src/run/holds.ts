@@ -11,7 +11,7 @@
  */
 
 import type { HoldPoint, HoldPort } from "../runtime/types.ts";
-import { failure } from "./results.ts";
+import { endFor, failedWith } from "./ended.ts";
 import type { NodeResult, RunEvent } from "./types.ts";
 
 export type Holds = {
@@ -220,7 +220,13 @@ export const createStops = (run: AbortSignal): Stops => {
     ended: (id, result) => {
       own.delete(id);
       return stopped.delete(id)
-        ? { ...result, ...failure("stopped by the user") }
+        ? {
+            ...result,
+            ...failedWith(endFor("interrupted"), {
+              status: "fail",
+              summary: "stopped by the user",
+            }),
+          }
         : result;
     },
   };

@@ -13,9 +13,9 @@ import { type Scope, templatePath, templateValue } from "../expr/evaluate.ts";
 import { declaredOutputOf } from "../graph/types.ts";
 import { declaredProblem, unmasked } from "./declared.ts";
 import type { StartHooks } from "./delegation.ts";
+import { endFor, endOf, failedWith, type SessionEnd } from "./ended.ts";
 import type { Activation, RunOptions } from "./handle.ts";
 import type { Holds, Stops } from "./holds.ts";
-import { failure } from "./results.ts";
 import { spendsBudget, needsSlot, type Slots } from "./slots.ts";
 import type { NodeOutput, NodeResult } from "./types.ts";
 
@@ -160,7 +160,9 @@ export const createFanOut = (deps: FanOutDeps) => {
       recorded === null
         ? listOf(forEach, scope)
         : { ok: true, list: unmasked(forEach, recorded) };
-    if (!listed.ok) return failure(listed.error);
+    if (!listed.ok) {
+      return failedWith(endFor("invalid_node", { reason: listed.error }));
+    }
     let { list } = listed;
     const recordList = (): void => {
       options.onEvent({
@@ -194,8 +196,12 @@ export const createFanOut = (deps: FanOutDeps) => {
       );
       if (chosen === null) {
         const reason = `the list of ${id} has ${String(list.length)} items, over maxItems ${String(forEach.maxItems)}`;
+        // No one let it run that many: the workflow's list is over its cap.
         return stops.ended(id, {
-          ...failure(reason),
+          ...failedWith(endFor("invalid_node", { reason }), {
+            status: "fail",
+            summary: reason,
+          }),
           limited: reason,
           stopsAs: "failed",
         });
@@ -212,6 +218,8 @@ export const createFanOut = (deps: FanOutDeps) => {
     const results: NodeOutput[] = list.map(() => ({}));
     const statuses: string[] = list.map(() => "skipped");
     const failures: string[] = [];
+    /** How the first item that failed ended: the fanned node's own end. */
+    let firstEnd: SessionEnd | undefined;
 
     const mayStart = (): boolean =>
       !signal.aborted &&
@@ -234,6 +242,7 @@ export const createFanOut = (deps: FanOutDeps) => {
         results[index] = entryOf(declared, result);
         statuses[index] = statusOf(result);
         if (!result.ok) {
+          firstEnd ??= endOf(result);
           failures.push(`${itemId}: ${result.error ?? "failed"}`);
         } else if (mergeFailed(result)) {
           failures.push(`${itemId}: its work could not be merged`);
@@ -261,6 +270,7 @@ export const createFanOut = (deps: FanOutDeps) => {
       ok,
       output: { items: list, results, statuses, count: list.length },
       ...(ok ? {} : { error: whyNot(list.length, failures, skipped) }),
+      ...(ok || firstEnd === undefined ? {} : { end: firstEnd }),
       // Cut off, not failed: it fires no `notify:`, and resume goes on.
       ...(!ok && deps.isStopped()
         ? { limited: deps.reasons[0] ?? "the run stopped" }

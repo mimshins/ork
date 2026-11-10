@@ -17,6 +17,7 @@ import {
   sessionDriver,
   type SessionSpec,
   type StepRun,
+  stoppedEnd,
 } from "@krapht/ork-core";
 import { beforeOf, type Driver } from "@krapht/ork-schema";
 
@@ -139,28 +140,25 @@ export const claudeExecutor =
       // A step that outlived a stop, or a pause, must not lead to a model turn.
       await context.hold?.wait("start", context.signal);
       if (context.signal.aborted) {
-        return beforeFailed({ ...ran, error: "the node was stopped" });
+        // Its end, not the step's own `done`.
+        const end = stoppedEnd(context.signal);
+        return beforeFailed({ ...ran, ok: false, error: end.message, end });
       }
       planOptions.before = ran.output;
     }
     // Checked now: a step, or the node's checkout, may have taken a while.
     const blocked = context.quota?.().blocked;
-    if (blocked !== undefined) return notStarted(blocked, blocked);
+    if (blocked !== undefined)
+      return notStarted("plan_limit", blocked, blocked);
     const budget = await budgetToStart(context);
     if (budget !== undefined && budget <= 0) {
-      return notStarted("nothing is left of the run's budget");
+      return notStarted("budget_limit", "nothing is left of the run's budget");
     }
     if (budget !== undefined) planOptions.budgetLeftUsd = budget;
     const plan = planNodeSession(context.workflow, context.id, planOptions);
-    if (!plan.ok) {
-      return {
-        ok: false,
-        output: { status: "fail", summary: plan.error },
-        error: plan.error,
-      };
-    }
+    if (!plan.ok) return notStarted("invalid_node", plan.error);
     const servers = namedMcpEntries(context.projectRoot, plan.mcp);
-    if (!servers.ok) return notStarted(servers.error);
+    if (!servers.ok) return notStarted("invalid_node", servers.error);
     const spec = { ...specFor(plan.spec, context), ...servers.value };
     if (options.machineClaude === true) spec.machineClaude = true;
     const driver = sessionDriver({
@@ -169,7 +167,10 @@ export const claudeExecutor =
       ready: options.readyDriver,
     });
     if (driver === undefined) {
-      return notStarted("no agent driver is ready; see `ork doctor`");
+      return notStarted(
+        "tool_missing",
+        "no agent driver is ready; see `ork doctor`",
+      );
     }
     const runtime = await options.runtimeFor(driver);
     const ports: SessionPorts = {

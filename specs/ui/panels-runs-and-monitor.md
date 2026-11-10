@@ -105,7 +105,9 @@ Its CLI twin is `ork tree <run>`.
 - **Pointing at a node** in the graph or the table steps the others back in
   both, except under more contrast.
 - **The selected node's strip** sits under the table, with its type, model,
-  tokens and controls.
+  tokens and controls. A node that did not end well adds its end note
+  ([design](./design-components-and-copy.md#how-a-node-ended)); a stopped run
+  lists such nodes under the stat strip, and a line picks its node.
 - **Small panels:** the graph keeps a usable height, and the panel scrolls when
   it has less than that, as at 200% zoom (WCAG 1.4.10).
 - **A node not done when its run ended** reads skipped if it never started, and

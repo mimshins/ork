@@ -222,7 +222,7 @@ describe("calling a workflow", () => {
     });
     const result = await port.invoke(request(), signal());
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("build broke");
+    expect(result.end?.detail).toContain("build broke");
     expect(result.output).toMatchObject({
       status: "fail",
       runStatus: "failed",
@@ -341,7 +341,9 @@ describe("calling a workflow", () => {
       signal(),
     );
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("builder of run called01 did not report");
+    expect(result.output["summary"]).toContain(
+      "builder of run called01 did not report",
+    );
   });
 
   it("keeps one run for a call with a node, and tells its live session the next input", async () => {
@@ -718,7 +720,9 @@ describe("calling a workflow", () => {
         Promise.resolve({ ok: false, runId: run.id, error: "dirty", log: "" }),
     });
     const result = await port.invoke(request(), signal());
-    expect(result.error).toBe("Run earlier1 could not be resumed: dirty");
+    expect(result.error).toBe(
+      "could not start: Run earlier1 could not be resumed: dirty",
+    );
   });
 
   it("goes on with a conversation left between activations by a resume", async () => {
@@ -879,7 +883,29 @@ describe("calling a workflow", () => {
       request({ node: "builder", wait: "node" }),
       signal(),
     );
-    expect(result).toMatchObject({ ok: false, error: "tests broke" });
+    expect(result).toMatchObject({
+      ok: false,
+      output: { summary: "tests broke" },
+    });
+  });
+
+  it("carries up how the called node ended", async () => {
+    const end = { kind: "turn_limit", message: "reached its turn limit (8)" };
+    const port = portFor(id => {
+      store.append(id, {
+        type: "node.finished",
+        id: "builder",
+        round: 1,
+        ok: false,
+        output: { status: "fail", summary: "out of turns" },
+        end: { kind: "turn_limit", message: "reached its turn limit (8)" },
+      });
+    });
+    const result = await port.invoke(
+      request({ node: "builder", wait: "node" }),
+      signal(),
+    );
+    expect(result).toMatchObject({ error: end.message, end });
   });
 
   it("refuses a workflow name that walks out of the workflows folder", async () => {

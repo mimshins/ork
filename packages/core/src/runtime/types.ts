@@ -22,8 +22,11 @@ import type {
   RelayPort,
   SendResult,
 } from "./mailbox.ts";
+import type { SessionOutcome, SessionUsage } from "./outcome.ts";
 
 export type { InboxMessage, Mailbox, MessageVia, RelayPort, SendResult };
+export type { SessionEnd } from "./ends.ts";
+export type { SessionOutcome, SessionUsage };
 export type {
   DecisionChoice,
   HumanChannel,
@@ -119,28 +122,6 @@ export type SessionSpec = {
    * the driver untouched; never put in an event.
    */
   mcpServers?: Record<string, Record<string, unknown>>;
-};
-
-export type SessionUsage = {
-  costUsd: number;
-  inputTokens: number;
-  outputTokens: number;
-  cacheReadTokens: number;
-  cacheWriteTokens: number;
-  turns: number;
-  durationMs: number;
-};
-
-export type SessionOutcome = {
-  /** `success`, or the driver's error subtype (e.g. `error_max_turns`). */
-  subtype: string;
-  sessionId: string;
-  /** `null` when the session ended without a valid report. */
-  report: NodeReport | null;
-  /** The final assistant text. */
-  text: string;
-  usage: SessionUsage;
-  errors: string[];
 };
 
 /** What Claude Code says of a subscription's rate limit (RFC-007). */

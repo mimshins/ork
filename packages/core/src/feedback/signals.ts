@@ -1,37 +1,26 @@
 /**
  * @file System signals (specs/feedback.md): feedback Ork derives from a run's
  *   own events, with no model call. A loop out of rounds, a budget that ran
- *   out, a tool the user denied, an Ork tool that failed, a gate that timed
- *   out, and an answer that differs from the recommended one each become a
- *   `feedback.recorded` event. The same observer fills in every record's origin
- *   (workflow, node type, model, driver, Ork version) and drops a run's
- *   duplicates.
+ *   out, a tool the user denied, an Ork tool that failed, a report the `report`
+ *   tool refused, a gate that timed out, a node that ended in a way its actor
+ *   should act on (specs/runtime/session-ends.md), and an answer that differs
+ *   from the recommended one each become a `feedback.recorded` event. The same
+ *   observer fills in every record's origin (workflow, node type, model,
+ *   driver, Ork version) and drops a run's duplicates.
  */
 
 import type { RunEvent } from "../run/types.ts";
+import { endOf } from "../runtime/ends-legacy.ts";
+import { END_KINDS } from "../runtime/ends.ts";
+import { endSignal, type Signal } from "./end-signals.ts";
 import { fingerprint } from "./fingerprint.ts";
-import type {
-  FeedbackKind,
-  FeedbackOrigin,
-  FeedbackSeverity,
-  FeedbackTarget,
-} from "./types.ts";
+import type { FeedbackOrigin } from "./types.ts";
 
 export type SignalOptions = {
   /** Ork's version. */
   version?: string;
   /** The workflow file's content hash. */
   workflowHash?: string;
-};
-
-type Signal = {
-  code: string;
-  kind: FeedbackKind;
-  target: FeedbackTarget;
-  severity: FeedbackSeverity;
-  title: string;
-  body: string;
-  evidence?: string[];
 };
 
 type Asked = {
@@ -176,6 +165,21 @@ export const createSignals = (
         return null;
       }
       const tool = name.slice(ORK_TOOL.length);
+      // A report the tool refused is the agent's to fix, not Ork's bug.
+      if (tool === "report") {
+        return [
+          event.id,
+          {
+            code: "report.rejected",
+            kind: "context-gap",
+            target: "workflow",
+            severity: "low",
+            title: `${event.id}'s report was not accepted`,
+            body: END_KINDS.invalid_report.hint,
+            evidence: [name],
+          },
+        ];
+      }
       return [
         event.id,
         {
@@ -205,6 +209,10 @@ export const createSignals = (
           body: "No one answered in time. Lengthen its `timeout`, or keep it if the default was right.",
         },
       ];
+    }
+    if (event.type === "node.finished" && !event.ok) {
+      const signal = endSignal(event.id, endOf(event));
+      return signal === null ? null : [event.id, signal];
     }
     return null;
   };

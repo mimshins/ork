@@ -20,6 +20,8 @@ export type LogOptions = {
   node?: string;
   /** The stored events as JSON lines. */
   json: boolean;
+  /** A failed node's hint and scrubbed detail; on when `node` names one. */
+  verbose?: boolean;
 };
 
 /** Turns stored events into lines, keeping the state a transcript needs. */
@@ -34,7 +36,13 @@ export const createLogPrinter = (options: LogOptions) => {
     if (options.node !== undefined && !isNodeEvent(event, options.node))
       return [];
     if (options.json) return [JSON.stringify(stored)];
-    return formatRunEvent(event, width, tools);
+    return formatRunEvent(
+      event,
+      width,
+      tools,
+      false,
+      options.verbose === true || options.node !== undefined,
+    );
   };
 };
 

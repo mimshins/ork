@@ -38,7 +38,12 @@ import {
 } from "../commands/validate.ts";
 import { formatEvent, formatRunEvent } from "./format.ts";
 import { limitsRefusal, runLimits } from "./limits.ts";
-import { noteLines, oneNodeNotes } from "./node-notes.ts";
+import {
+  endedFields,
+  noteLines,
+  oneNodeNotes,
+  oneNodeResult,
+} from "./node-notes.ts";
 import { feedbackOrigin } from "./origin.ts";
 import {
   checksHere,
@@ -60,6 +65,8 @@ export type RunNodeOptions = {
   machineClaude?: boolean;
   /** Print the runtime events as JSON lines instead of a transcript. */
   json: boolean;
+  /** A failed node's hint and scrubbed detail in the transcript. */
+  verbose?: boolean;
   runtime: (driver: Driver, runs?: string) => Promise<AgentRuntime>;
   /** The drivers' checks, when the node names none (default: the real ones). */
   driverChecks?: DriverChecks;
@@ -205,7 +212,13 @@ export const runNode = async (
       control.publish(recorder(event));
       // The session's own events are printed as they stream.
       if (event.type === "feedback.recorded" && !options.json) {
-        for (const line of formatRunEvent(event, id.length, new Map())) {
+        for (const line of formatRunEvent(
+          event,
+          id.length,
+          new Map(),
+          false,
+          options.verbose,
+        )) {
           options.out(line);
         }
       }
@@ -245,12 +258,16 @@ export const runNode = async (
     if (event.type === "session.finished") outcome = event.outcome;
     if (options.json) options.out(JSON.stringify(event));
     else
-      for (const line of formatEvent(options.nodeId, event, tools)) {
+      for (const line of formatEvent(
+        options.nodeId,
+        event,
+        tools,
+        options.verbose,
+      )) {
         options.out(line);
       }
   }
   const result = resultOf(outcome);
-  const costUsd = result.usage?.costUsd ?? 0;
   record({
     type: "node.finished",
     id,
@@ -258,29 +275,11 @@ export const runNode = async (
     ok: result.ok,
     output: result.output,
     ...(result.usage === undefined ? {} : { usage: result.usage }),
-    ...(result.error === undefined ? {} : { error: result.error }),
+    ...endedFields(result),
   });
   record({
     type: "run.finished",
-    result: {
-      runId,
-      status: succeeded(outcome) ? "succeeded" : "failed",
-      costUsd,
-      nodes: [
-        {
-          id,
-          runs: 1,
-          ok: result.ok,
-          output: result.output,
-          costUsd,
-          ...(result.error === undefined ? {} : { error: result.error }),
-        },
-      ],
-      reasons: result.error === undefined ? [] : [`${id}: ${result.error}`],
-      worktrees: [],
-      skipped: 0,
-      failuresHandled: 0,
-    },
+    result: oneNodeResult(runId, id, result, succeeded(outcome)),
   });
   await control.close();
   return { exitCode: succeeded(outcome) ? 0 : 1, outcome };

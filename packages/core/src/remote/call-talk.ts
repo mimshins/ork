@@ -7,7 +7,7 @@
 
 import { socketPath, wakeRun } from "../control/socket.ts";
 import type { CallRequest } from "../run/calls.ts";
-import { failure } from "../run/results.ts";
+import { endedWith, endFor, failedWith, failure } from "../run/results.ts";
 import type { NodeResult } from "../run/types.ts";
 import type { RunRecord } from "../store/types.ts";
 import { usageRowsOf } from "../store/usage.ts";
@@ -122,22 +122,28 @@ const resumeNode = async (
     )
     .at(-1);
   if (finished?.report === null || finished === undefined) {
-    return failure(`${node} ended without a report when resumed.`);
+    const said = `${node} ended without a report when resumed.`;
+    return failedWith(endFor("no_report", {}, said), {
+      status: "fail",
+      summary: said,
+    });
   }
   const ok = finished.report.status !== "fail";
   // The session reports its total so far; the caller pays for this turn only.
   const own = usageRowsOf(run, store.events(run.id))
     .filter(row => row.seq > from && row.node === node)
     .reduce((sum, row) => sum + row.costUsd, 0);
-  return {
-    ok,
-    output: { ...finished.report, run: run.id },
-    ...(ok ? {} : { error: finished.report.summary }),
-    usage: {
-      ...finished.usage,
-      costUsd: own + talk.newCost(run.id),
+  return endedWith(
+    {
+      ok,
+      output: { ...finished.report, run: run.id },
+      usage: {
+        ...finished.usage,
+        costUsd: own + talk.newCost(run.id),
+      },
     },
-  };
+    endFor(ok ? "done" : "reported_failure"),
+  );
 };
 
 /** A later activation: as a message, or by resuming a session that has ended. */
@@ -167,6 +173,12 @@ export const continueConversation = async (
   }
   const [run] = store.lookup(id);
   if (run === undefined) return failure(`Run ${id} is gone.`);
-  if (signal.aborted) return failure(`Stopped while run ${id} was finishing.`);
+  if (signal.aborted) {
+    const said = `Stopped while run ${id} was finishing.`;
+    return failedWith(endFor("interrupted", {}, said), {
+      status: "fail",
+      summary: said,
+    });
+  }
   return resumeNode(talk, run, request, node, signal);
 };

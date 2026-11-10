@@ -26,20 +26,20 @@ opencode run --standalone --format json --agent ork \
   [--model <provider/model>] [--session <id> [--fork]] <message>
 ```
 
-| Concern            | `open-code`                                                                                                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Server             | `--standalone`: a private server built from the session's environment; the shared background service would ignore it                                                      |
-| Working folder     | the process's `cwd`, the node's worktree (`opencode run` has no folder argument); `external_directory` is denied                                                          |
-| Brief and messages | the last argument; a message sent mid-session waits for the leg's end, and the next leg continues the session with `--session <id>` and the message                       |
-| System prompt      | `systemAppend` in a file of the private folder, listed in the config's `instructions`, which OpenCode adds to its own prompt                                              |
-| Ork's tools        | the config's `mcp.servers.ork`: `remote`, the endpoint's URL, `oauth: false`, `codemode: false`, the bearer token in `headers`; the model sees `ork_<tool>`               |
-| The node's servers | each `.mcp.json` entry the node names, as a `local` server (`command` and `args` as one list, `env` as `environment`) or a `remote` one (`url`, `headers`), Code Mode off |
-| Report             | Ork's `report` tool (`reportSchema` is false); the session ends with the last report it accepted                                                                          |
-| Model              | `--model` as the node gives it; OpenCode needs `provider/model` (RFC-015 settles the names)                                                                               |
-| Turn cap           | `maxTurns` is written as the `ork` agent's `steps`, which holds: on its last step OpenCode tells the model to stop and gives it no tools, so the node ends with no report |
-| Resume and fork    | `--session <id>`; with `fork`, `--fork`                                                                                                                                   |
-| Interrupt          | SIGINT; OpenCode interrupts its session and exits 130, read as `interrupted`                                                                                              |
-| Pause              | no hook to hold a call: a paused node's session runs to its leg's end                                                                                                     |
+| Concern            | `open-code`                                                                                                                                                                                                                                                                |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Server             | `--standalone`: a private server built from the session's environment; the shared background service would ignore it                                                                                                                                                       |
+| Working folder     | the process's `cwd`, the node's worktree (`opencode run` has no folder argument); `external_directory` is denied                                                                                                                                                           |
+| Brief and messages | the last argument; a message sent mid-session waits for the leg's end, and the next leg continues the session with `--session <id>` and the message                                                                                                                        |
+| System prompt      | `systemAppend` in a file of the private folder, listed in the config's `instructions`, which OpenCode adds to its own prompt                                                                                                                                               |
+| Ork's tools        | the config's `mcp.servers.ork`: `remote`, the endpoint's URL, `oauth: false`, `codemode: false`, the bearer token in `headers`; the model sees `ork_<tool>`                                                                                                                |
+| The node's servers | each `.mcp.json` entry the node names, as a `local` server (`command` and `args` as one list, `env` as `environment`) or a `remote` one (`url`, `headers`), Code Mode off                                                                                                  |
+| Report             | Ork's `report` tool (`reportSchema` is false); the session ends with the last report it accepted                                                                                                                                                                           |
+| Model              | `--model` as the node gives it; OpenCode needs `provider/model` (RFC-015 settles the names)                                                                                                                                                                                |
+| Turn cap           | `maxTurns` is written as the `ork` agent's `steps`, which holds: on its last step OpenCode tells the model to stop and gives it no tools, so it cannot report; the decoder counts the steps, and a session that used all of them and handed in no report ends `turn_limit` |
+| Resume and fork    | `--session <id>`; with `fork`, `--fork`                                                                                                                                                                                                                                    |
+| Interrupt          | SIGINT; OpenCode interrupts its session and exits 130, read as `interrupted`                                                                                                                                                                                               |
+| Pause              | no hook to hold a call: a paused node's session runs to its leg's end                                                                                                                                                                                                      |
 
 ## The config file
 
@@ -96,7 +96,10 @@ first line naming it, keeps the last `text` as the final text, sums each
 `step_finish` (a turn each; reasoning counts as output), and at the process's
 exit ends the session: `success` on exit 0, `error_during_execution` with the
 printed errors otherwise, or `error_driver` with the stderr's last block when it
-printed none. Legs add up, cost included: each reports only its own steps. Tool
+printed none. Its [end](./session-ends.md) comes from the same: an `error` line
+(its name, status code and body) through the shared provider classifier, exit
+130 as `interrupted`, and every step used without a report as `turn_limit`, else
+`no_report`. Legs add up, cost included: each reports only its own steps. Tool
 names come back in Claude Code's words (`shell` is `Bash`, `ork_report` is
 `mcp__ork__report`), the words a node's rules use.
 
@@ -118,8 +121,9 @@ Flash, two nodes for $0.002 in all:
   hands in ends the session.
 - `shell` runs in the worktree; a command the node did not allow, and a read
   outside the worktree, are refused (`permission.rejected`).
-- `steps` caps the turns: at the cap the node fails with no report, where
-  `claude-code` says `error_max_turns`.
+- `steps` caps the turns: at the cap the model has no tools and cannot report.
+  OpenCode prints nothing at the cap, so the decoder counts the steps and ends
+  the node `turn_limit`, as `claude-code` and `command-code` do.
 - A message starting with `-` reaches the model as the message.
 - Tool names in `tool_use` lines are the permission actions (`read`, `shell`).
 - **Claude models through the `commandcode` provider fail** after any tool call

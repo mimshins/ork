@@ -3,8 +3,16 @@
  *   session starts: the messages, steps and `forEach` it does not run. A node
  *   with `forEach` (RFC-013) runs once with no item when it has `items`, and is
  *   refused when it has `from`, as the node that reports its list is not run.
+ *   And, after it, its run summary: how the node ended
+ *   (specs/runtime/session-ends.md).
  */
 
+import {
+  endOf,
+  type NodeResult,
+  type NodeSummary,
+  type RunResult,
+} from "@krapht/ork-core";
 import { beforeOf, type Workflow } from "@krapht/ork-schema";
 
 import { style } from "../output.ts";
@@ -47,5 +55,42 @@ export const oneNodeNotes = (
         step => `${id}'s ${step}: does not run in a run of one node.`,
       ),
     ],
+  };
+};
+
+/** The `node.finished` fields that say how it ended: its error and its end. */
+export const endedFields = (
+  result: NodeResult,
+): Pick<NodeSummary, "error" | "end"> => ({
+  ...(result.error === undefined ? {} : { error: result.error }),
+  end: endOf(result),
+});
+
+/** The one-node run's result, its reason the node's message. */
+export const oneNodeResult = (
+  runId: string,
+  id: string,
+  result: NodeResult,
+  ok: boolean,
+): RunResult => {
+  const costUsd = result.usage?.costUsd ?? 0;
+  return {
+    runId,
+    status: ok ? "succeeded" : "failed",
+    costUsd,
+    nodes: [
+      {
+        id,
+        runs: 1,
+        ok: result.ok,
+        output: result.output,
+        costUsd,
+        ...endedFields(result),
+      },
+    ],
+    reasons: result.error === undefined ? [] : [`${id}: ${result.error}`],
+    worktrees: [],
+    skipped: 0,
+    failuresHandled: 0,
   };
 };

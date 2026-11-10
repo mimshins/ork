@@ -14,10 +14,10 @@ import type {
   Ownership,
   SpawnTask,
 } from "../runtime/types.ts";
+import { endFor, failedWith, stoppedEnd } from "./ended.ts";
 import { forEachOf } from "./fan-out.ts";
 import type { Activation } from "./handle.ts";
 import type { Holds } from "./holds.ts";
-import { failure } from "./results.ts";
 import type { Slots } from "./slots.ts";
 import type { Brief, NodeResult } from "./types.ts";
 
@@ -69,7 +69,11 @@ export const createRunChild =
         .forNode(child.id, child.template)
         .wait("start", hooks.signal);
       if (hooks.isStopped() || hooks.budgetSpent()) {
-        return failure(`not started: ${hooks.reasons[0] ?? "the run stopped"}`);
+        const why = `not started: ${hooks.reasons[0] ?? "the run stopped"}`;
+        const end = hooks.budgetSpent()
+          ? endFor("budget_limit", {}, why)
+          : stoppedEnd(hooks.signal, why);
+        return failedWith(end, { status: "fail", summary: why });
       }
       return await hooks.perform({ ...child, input: undefined, brief });
     } finally {

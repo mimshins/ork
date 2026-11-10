@@ -1,15 +1,16 @@
 /**
  * @file One run in the Monitor: a stat strip, its graph, its nodes as a table
- *   with what each is doing, and the selected node's strip, live from its
- *   stream. Pointing at a node in the graph or the table picks it out in both.
+ *   with what each is doing, why a stopped run stopped, and the selected node's
+ *   strip, live from its stream. Pointing at a node in the graph or the table
+ *   picks it out in both.
  */
 
 import { useState } from "react";
 
-import { EmptyState } from "../components/bits.tsx";
-import { GraphView } from "../graph/graph-view.tsx";
-import { MonitorError, NodeSection } from "./node-section.tsx";
+import { MonitorError, RunCanvas } from "./monitor-parts.tsx";
+import { NodeSection } from "./node-section.tsx";
 import { OwnershipTree } from "./ownership-tree.tsx";
+import { RunEnds } from "./run-ends.tsx";
 import { RunHeader } from "./run-header.tsx";
 import { RunLinks } from "./run-links.tsx";
 import { useClock } from "./use-clock.ts";
@@ -47,29 +48,23 @@ export const RunMonitor = ({ run }: { run: RunView }) => {
         waiting={waiting}
       />
       {error === null ? null : <MonitorError error={error} />}
-      <div className={styles["canvas"]}>
-        {layout === null ? (
-          <EmptyState
-            cli={`ork tree ${run.id}`}
-            title="Reading the run…"
-          >
-            For now:
-          </EmptyState>
-        ) : (
-          <GraphView
-            facts={facts}
-            holding={holding}
-            hovered={hovered}
-            label={`Graph of run ${run.id}, ${run.workflow}`}
-            layout={layout}
-            live
-            onHover={setHovered}
-            onNodeMenu={openControls}
-            onSelect={state.selectNode}
-            selected={selected ?? undefined}
-          />
-        )}
-      </div>
+      <RunEnds
+        onSelect={state.selectNode}
+        roots={roots}
+        run={run}
+      />
+      <RunCanvas
+        facts={facts}
+        holding={holding}
+        hovered={hovered}
+        label={`Graph of run ${run.id}, ${run.workflow}`}
+        layout={layout}
+        onHover={setHovered}
+        onNodeMenu={openControls}
+        onSelect={state.selectNode}
+        runId={run.id}
+        selected={selected ?? undefined}
+      />
       <OwnershipTree
         connections={connections}
         edges={graph?.edges ?? []}

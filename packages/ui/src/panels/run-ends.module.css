@@ -1,0 +1,71 @@
+/**
+ * @file The run summary's look: a card under the stat strip with a row for each
+ *   node that did not end well. A row is a button that picks the node.
+ */
+
+.ends {
+  --run-ends-bg: var(--surface-panel);
+  --run-ends-radius: var(--radius-panel);
+  --run-ends-padding: var(--gap-tight) var(--gap);
+  --run-ends-gap: var(--gap-tight);
+
+  background: var(--run-ends-bg);
+  border-radius: var(--run-ends-radius);
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--run-ends-gap);
+  padding: var(--run-ends-padding);
+}
+
+.list {
+  --run-ends-list-margin: 0;
+  --run-ends-list-padding: 0;
+
+  list-style: none;
+  margin: var(--run-ends-list-margin);
+  padding: var(--run-ends-list-padding);
+}
+
+.row {
+  --run-ends-row-bg: transparent;
+  --run-ends-text: var(--color-text);
+  --run-ends-id-font: var(--font-mono);
+  --run-ends-row-gap: var(--gap);
+  --run-ends-row-min-height: var(--target-min);
+  --run-ends-row-padding: 0 var(--gap-tight);
+
+  align-items: center;
+  background: var(--run-ends-row-bg);
+  border: 0;
+  color: var(--run-ends-text);
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  font: inherit;
+  gap: var(--run-ends-row-gap);
+  min-height: var(--run-ends-row-min-height);
+  overflow-wrap: anywhere;
+  padding: var(--run-ends-row-padding);
+  text-align: start;
+  width: 100%;
+}
+
+.row:hover {
+  --run-ends-row-bg: var(--surface-hover);
+}
+
+.row:focus-visible {
+  --focus-ring-offset: calc(var(--focus-width) * -1);
+}
+
+.id {
+  font-family: var(--run-ends-id-font);
+}
+
+@media (forced-colors: active) {
+  .row:hover {
+    --run-ends-row-bg: Highlight;
+    --run-ends-text: HighlightText;
+  }
+}

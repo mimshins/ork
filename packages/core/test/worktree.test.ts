@@ -381,7 +381,7 @@ describe("worktrees", () => {
     const { result } = await runIn(root, graph, executor);
     expect(result.status).toBe("failed");
     expect(result.reasons[0]).toMatch(
-      /^lead: could not commit its work: git commit failed/u,
+      /^lead: git commit exited with an error$/u,
     );
     expect(
       readFileSync(

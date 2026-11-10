@@ -14,7 +14,9 @@ import {
   type CallRequest,
   type AgentRuntime,
   createHolds,
+  endFor,
   type ExecuteContext,
+  failedWith,
   type HumanChannel,
   type Mailbox,
   type NodeResult,
@@ -50,6 +52,8 @@ import {
 import {
   afterLateTurn,
   lateLimits,
+  limitWatch,
+  notStarted,
   withUsageOf,
 } from "../src/session-turns.ts";
 
@@ -57,6 +61,17 @@ const human = (
   answer: (options: string[]) => Promise<string>,
 ): HumanChannel => ({
   ask: ({ options }) => answer(options.map(o => o.id)),
+  permit: () => Promise.resolve({ allow: true }),
+});
+
+/** Never answers; rejects once the question is withdrawn. */
+const withdrawnOnAbort = (): HumanChannel => ({
+  ask: ({ signal }) =>
+    new Promise((_, reject) => {
+      signal?.addEventListener("abort", () => {
+        reject(new Error("withdrawn"));
+      });
+    }),
   permit: () => Promise.resolve({ allow: true }),
 });
 
@@ -145,6 +160,7 @@ describe("tool commands", () => {
     expect(result).toEqual({
       ok: true,
       output: { exitCode: 0, stdout: "ok", stderr: "" },
+      end: { kind: "done", message: "finished" },
     });
     expect(run.events.map(e => e.type)).toEqual(["tool.called", "tool.result"]);
   });
@@ -161,7 +177,9 @@ describe("tool commands", () => {
     expect(calls).toEqual([]);
     expect(result).toMatchObject({
       ok: false,
-      error: "`repo delete me` is not in the node's allow list (`pr view`)",
+      error:
+        "could not start: `repo delete me` is not in the node's allow list (`pr view`)",
+      end: { kind: "invalid_node" },
     });
   });
 
@@ -209,8 +227,10 @@ describe("tool commands", () => {
     const file = path.join(run.cwd, ".ork/runs/r1/t.1.stdout.txt");
     expect(result).toMatchObject({
       ok: false,
-      error: "make exited with 2: boom",
+      error: "make exited with 2",
+      end: { kind: "command_failed", detail: "boom" },
     });
+    expect(result.transient).toBeUndefined();
     expect(String(result.output["stdout"])).toContain(
       `(truncated; the full output is in ${file})`,
     );
@@ -234,7 +254,7 @@ describe("git nodes", () => {
     expect(push).toMatchObject({
       ok: false,
       error:
-        "`push origin main` is not in the node's allow list (`add`, `commit`)",
+        "could not start: `push origin main` is not in the node's allow list (`add`, `commit`)",
     });
     const allowed = await toolExecutor(runner)(
       context("ship", {
@@ -553,6 +573,27 @@ describe("human gates", () => {
     expect(timeoutMs("15m")).toBe(900_000);
   });
 
+  it("times out when its default is no answer it offers", async () => {
+    const timed: Node = { ...gate, timeout: "0s", default: "maybe" };
+    const result = await gateExecutor(
+      context("g", timed, { human: withdrawnOnAbort() }),
+    );
+    expect(result).toMatchObject({
+      ok: false,
+      error: "reached its timeout (0s)",
+      end: { kind: "timed_out", message: "reached its timeout (0s)" },
+    });
+  });
+
+  it("ends withdrawn when its run stops it", async () => {
+    const stop = new AbortController();
+    const asked = gateExecutor(
+      context("g", gate, { human: withdrawnOnAbort(), signal: stop.signal }),
+    );
+    stop.abort();
+    expect((await asked).end?.kind).toBe("interrupted");
+  });
+
   it("keeps its time while the run is paused, and answers once it continues", async () => {
     const silent: HumanChannel = {
       ask: ({ signal }) =>
@@ -753,7 +794,8 @@ describe("a Claude node's MCP servers", () => {
     );
     expect(result).toMatchObject({
       ok: false,
-      error: "not started: no MCP server `gone` in .mcp.json",
+      output: { summary: "not started: no MCP server `gone` in .mcp.json" },
+      end: { kind: "invalid_node" },
     });
     expect(specs).toEqual([]);
   });
@@ -942,11 +984,13 @@ describe("Claude nodes", () => {
       },
       usage,
       sessionId: "s",
+      end: { kind: "done", message: "finished" },
     });
     expect(resultOf(outcome(null))).toMatchObject({
       ok: false,
-      output: { status: "fail" },
-      error: "ended without a report (error_max_turns): out of turns",
+      output: { status: "fail", summary: "reached its turn limit" },
+      error: "reached its turn limit",
+      end: { kind: "turn_limit", detail: "out of turns" },
     });
   });
 
@@ -964,7 +1008,9 @@ describe("Claude nodes", () => {
         status: "fail",
         summary: "verdict is `maybe`, expected `approve` or `escalate`",
       },
-      error: "verdict is `maybe`, expected `approve` or `escalate`",
+      error:
+        "handed in a report that breaks its declared output: verdict is `maybe`, expected `approve` or `escalate`",
+      end: { kind: "invalid_report" },
       sessionId: "s",
     });
     // What it didn't declare isn't its output, so no condition can read it.
@@ -1117,9 +1163,10 @@ describe("Claude nodes", () => {
         context("fix", { type: "claude.worker", prompt: "x" }),
       );
       expect(drivers).toEqual([]);
-      expect(result.error).toBe(
-        "not started: no agent driver is ready; see `ork doctor`",
-      );
+      expect(result.end).toMatchObject({
+        kind: "tool_missing",
+        detail: "no agent driver is ready; see `ork doctor`",
+      });
     });
   });
 
@@ -1342,7 +1389,118 @@ describe("workflow.call", () => {
   it("fails when the run has no way to call", async () => {
     await expect(callExecutor(context("kit", CALL))).resolves.toMatchObject({
       ok: false,
-      error: "This run cannot call workflows.",
+      error: "could not start: this run cannot call workflows",
+    });
+  });
+});
+
+describe("how a node ends", () => {
+  it("ends a tool node `auth` when its program says no one is signed in", async () => {
+    const { runner } = recordingRunner({
+      exitCode: 4,
+      stdout: "",
+      stderr: "To get started with GitHub CLI, please run:  gh auth login\n",
+    });
+    const result = await toolExecutor(runner)(
+      context("pr", { type: "tool.gh", command: "pr view" }),
+    );
+    expect(result).toMatchObject({
+      ok: false,
+      error: "could not sign in to its provider",
+      end: { kind: "auth" },
+    });
+    expect(result.end?.detail).toContain("gh auth login");
+  });
+
+  it("ends a tool node `tool_missing` when its program won't start", async () => {
+    const { runner } = recordingRunner({
+      exitCode: -1,
+      stdout: "",
+      stderr: "could not run make: spawn make ENOENT",
+    });
+    const result = await toolExecutor(runner)(
+      context("t", { type: "tool.shell", command: "make" }),
+    );
+    expect(result.error).toBe("could not start make: it isn't installed");
+    expect(result.end?.kind).toBe("tool_missing");
+  });
+
+  it("ends a stopped tool node `interrupted`", async () => {
+    const stop = new AbortController();
+    stop.abort();
+    const { runner } = recordingRunner({
+      exitCode: 143,
+      stdout: "",
+      stderr: "",
+    });
+    const result = await toolExecutor(runner)(
+      context(
+        "t",
+        { type: "tool.shell", command: "make" },
+        {
+          signal: stop.signal,
+        },
+      ),
+    );
+    expect(result.end?.kind).toBe("interrupted");
+  });
+
+  it("takes the driver's end, marks a transient one, and keeps raw text in its detail", () => {
+    const result = resultOf({
+      ...outcome(null),
+      end: endFor("rate_limited", {}, '{"type":"rate_limit_error"}'),
+    });
+    expect(result).toMatchObject({
+      ok: false,
+      transient: true,
+      error: "was asked by its provider to slow down",
+      output: { summary: "was asked by its provider to slow down" },
+      end: { kind: "rate_limited", detail: '{"type":"rate_limit_error"}' },
+    });
+  });
+
+  it("ends a node a limit across runs stopped `plan_limit`, before what its session saw", () => {
+    const watch = limitWatch({});
+    watch.stoppedBy("the Claude plan's five_hour limit was reached");
+    const result = watch.result(resultOf(outcome(null)));
+    expect(result).toMatchObject({
+      end: { kind: "plan_limit" },
+      limited: "the Claude plan's five_hour limit was reached",
+      transient: true,
+    });
+  });
+
+  it("stops the run on a plan limit only the session's words said", () => {
+    const said = "Claude AI usage limit reached|1767225600";
+    const result = limitWatch({}).result(
+      resultOf({ ...outcome(null), end: endFor("plan_limit", {}, said) }),
+    );
+    expect(result).toMatchObject({
+      end: { kind: "plan_limit" },
+      limited: "ran into a usage limit",
+    });
+  });
+
+  it("says what a node that never started ran into", () => {
+    expect(
+      notStarted("budget_limit", "nothing is left of the run's budget"),
+    ).toMatchObject({
+      ok: false,
+      error: "reached its budget",
+      output: { summary: "not started: nothing is left of the run's budget" },
+    });
+  });
+
+  it("stops the run on a called run's plan limit, read from its kind", async () => {
+    const calls = callAnswering(
+      failedWith(endFor("plan_limit", {}, "the called run's quota is spent")),
+    );
+    const result = await callExecutor(
+      context("kit", { type: "workflow.call", workflow: "kit" }, { calls }),
+    );
+    expect(result).toMatchObject({
+      end: { kind: "plan_limit" },
+      limited: "the called run's quota is spent",
     });
   });
 });

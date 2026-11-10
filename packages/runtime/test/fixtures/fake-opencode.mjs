@@ -20,7 +20,10 @@
  *   a continued one ends with `got: <the message>`), `hang` (starts and waits
  *   for SIGINT, then exits 130 as the real one does), `report-tool` (an
  *   `ork_report` outside the schema, then one inside, and nothing else) and
- *   `fail` (an `error` line, exit 1).
+ *   `fail` (an `error` line, exit 1). `end:<kind>` ends the session the way
+ *   OpenCode says that cause: `end:turn_limit` uses every step the `ork`
+ *   agent's `steps` allows and reports nothing; the others print the `error`
+ *   line OpenCode gives (`ENDS`) and exit 1.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -116,6 +119,36 @@ const finish = said => {
 };
 
 line("step_start", { part: { type: "step-start" } });
+
+const apiError = (statusCode, type, said) => ({
+  name: "APIError",
+  data: {
+    message: said,
+    statusCode,
+    isRetryable: statusCode >= 429,
+    responseBody: JSON.stringify({ type: "error", error: { type, message: said } }),
+  },
+});
+/** The `error` line OpenCode prints for each cause, for `end:<kind>`. */
+const ENDS = {
+  auth: { name: "ProviderAuthError", data: { providerID: "anthropic", message: "Invalid API key" } },
+  out_of_credits: apiError(400, "invalid_request_error", "Your credit balance is too low to access the Anthropic API."),
+  rate_limited: apiError(429, "rate_limit_error", "Number of request tokens has exceeded your per-minute rate limit"),
+  provider_unavailable: apiError(529, "overloaded_error", "Overloaded"),
+  model_unavailable: apiError(
+    400,
+    "invalid_request_error",
+    "This model does not support assistant message prefill. The conversation must end with a user message.",
+  ),
+};
+if (scenario === "end:turn_limit") {
+  for (let i = 0; i < (config.agents?.ork?.steps ?? 1); i += 1) step();
+  text("I have reached the step limit.");
+  process.exit(0);
+} else if (scenario.startsWith("end:")) {
+  line("error", { error: ENDS[scenario.slice(4)] });
+  process.exit(1);
+}
 
 const PASS = { status: "pass", summary: "done", artifacts: {} };
 if (scenario === "hang") {

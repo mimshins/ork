@@ -1,14 +1,15 @@
 /**
  * @file The selected node's strip in the Monitor: what it is and what it has
  *   used, what its `watch:` is waiting for, its controls and the way to a note
- *   on it, and for a call, the way to the run it started.
+ *   on it, for a call, the way to the run it started, and, when it did not end
+ *   well, how it ended (`EndNote`).
  */
 
 import type { TreeNode } from "@krapht/ork-server/client";
 import { type Ref, useEffect, useState } from "react";
 
 import { Button } from "../components/button.tsx";
-import { CodeText } from "../components/code-text.tsx";
+import { EndNote } from "../components/end-note.tsx";
 import { formatTokens, typeWord } from "../graph/facts.ts";
 import { itemIndex, nodeActions, noteAction } from "./monitor-model.ts";
 import { RunControls } from "./run-controls.tsx";
@@ -140,6 +141,16 @@ export const NodeSection = ({
           </div>
         )}
       </dl>
+      {node.end === undefined || node.end.actor === null ? null : (
+        <div className={styles["end"]}>
+          <EndNote
+            end={node.end}
+            key={node.id}
+            node={node.id}
+            runId={run.id}
+          />
+        </div>
+      )}
       <RunControls
         actions={nodeActions(run, node)}
         node={node.id}
@@ -162,13 +173,3 @@ export const NodeSection = ({
     </section>
   );
 };
-
-/** What went wrong reading the run. */
-export const MonitorError = ({ error }: { error: string }) => (
-  <p
-    className={styles["error"]}
-    role="alert"
-  >
-    <CodeText text={error} />
-  </p>
-);

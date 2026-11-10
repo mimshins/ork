@@ -154,7 +154,11 @@ describe("before:", () => {
     });
     expect(specs).toEqual([]);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("its before step failed");
+    expect(result.output["summary"]).toContain("its before step failed");
+    expect(result.end).toMatchObject({
+      kind: "command_failed",
+      message: "sh exited with 3",
+    });
     expect(result.output["before"]).toMatchObject({ exitCode: 3 });
   });
 
@@ -175,6 +179,7 @@ describe("before:", () => {
     );
     expect(specs).toEqual([]);
     expect(result.ok).toBe(false);
+    expect(result.end?.kind).toBe("interrupted");
   });
 
   it("waits out a pause before its session starts", async () => {

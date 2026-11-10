@@ -11,6 +11,9 @@
  *   running process.
  */
 
+import { homedir } from "node:os";
+import path from "node:path";
+
 import type {
   AgentRuntime,
   NodeReport,
@@ -23,7 +26,8 @@ import type {
 import type { CliAdapter, OrkEndpoint, Wired } from "./adapter.ts";
 import { holdAtTool } from "./hold.ts";
 import { startOrkMcpHttp } from "./mcp-http.ts";
-import { driverFailure, type LegInput, runLeg } from "./session-leg.ts";
+import { driverFailure, type EndScope, failureKind } from "./session-end.ts";
+import { type LegInput, runLeg } from "./session-leg.ts";
 import { orkTools, preapprovedTools } from "./tools/registry.ts";
 import { REPORT_TOOL } from "./tools/report.ts";
 
@@ -36,6 +40,23 @@ export type RunnerOptions = {
   /** The project's runs folder: a `lease` wiring keeps its ledger there. */
   runs?: string;
 };
+
+/**
+ * What a session's end is written with: the node's limits and program, and its
+ * folder and the home folder taken out of the detail.
+ */
+const scopeOf = (
+  spec: SessionSpec,
+  bin: string,
+  env: Readonly<Record<string, string | undefined>>,
+): EndScope => ({
+  facts: {
+    ...(spec.maxTurns === undefined ? {} : { maxTurns: spec.maxTurns }),
+    ...(spec.budgetUsd === undefined ? {} : { budgetUsd: spec.budgetUsd }),
+    program: path.basename(bin),
+  },
+  scrub: { roots: [spec.cwd], home: env["HOME"] ?? homedir() },
+});
 
 /** A spec that resumes `sessionId`; a fork's later legs continue the fork. */
 const resumed = (spec: SessionSpec, sessionId: string): SessionSpec => ({
@@ -113,6 +134,8 @@ export const createSessionRuntime = (
     let reported: NodeReport | null = null;
     const { hold } = ports;
     const hook = hold === undefined ? undefined : adapter.hold;
+    const bin = options.bin ?? adapter.command.bin;
+    const scope = scopeOf(spec, bin, options.env ?? process.env);
 
     const events = async function* (): AsyncGenerator<RuntimeEvent> {
       const tools = orkTools({
@@ -158,6 +181,8 @@ export const createSessionRuntime = (
         } catch (error) {
           yield driverFailure(
             `could not reach Ork's tools: ${error instanceof Error ? error.message : String(error)}`,
+            failureKind(error),
+            scope,
           );
           return;
         }
@@ -173,8 +198,9 @@ export const createSessionRuntime = (
           carried: SessionUsage | undefined,
         ): LegInput => ({
           adapter,
-          bin: options.bin ?? adapter.command.bin,
+          bin,
           env,
+          scope,
           cwd: spec.cwd,
           args: [
             ...adapter.command.args(legSpec, { endpoint, allowed }),
@@ -197,12 +223,12 @@ export const createSessionRuntime = (
         for (;;) {
           // Interrupted while wiring (no process yet to stop) or between legs.
           if (ended.signal.aborted) {
-            yield driverFailure("interrupted");
+            yield driverFailure("interrupted", "interrupted", scope);
             return;
           }
           const leg = yield* runLeg(legOf(legSpec, spent));
           if (leg.kind === "failed") {
-            yield driverFailure(leg.reason);
+            yield driverFailure(leg.reason, leg.end, scope);
             return;
           }
           if (leg.kind === "finished") return;

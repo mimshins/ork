@@ -69,6 +69,17 @@ const lost: NodeResult = {
   error: "x exited with 1: offline",
 };
 
+/**
+ * A non-zero exit, as a tool node ends it: not transient, but a look may mend
+ * it.
+ */
+const exited: NodeResult = {
+  ok: false,
+  output: { exitCode: 3, stdout: "", stderr: "pending" },
+  error: "sh exited with 3",
+  end: { kind: "command_failed", message: "sh exited with 3" },
+};
+
 /** Answers in order, then keeps giving the last. */
 const scripted = (
   answers: readonly NodeResult[],
@@ -259,6 +270,16 @@ describe("a watch", () => {
     expect(executor.calls()).toBe(6);
   });
 
+  it("looks again after a non-zero exit, which isn't transient", async () => {
+    const executor = scripted([exited, said("passed")]);
+    const { handle } = started(
+      graphOf(watching("json.result != 'pending'")),
+      executor,
+    );
+    expect((await handle.done).status).toBe("succeeded");
+    expect(executor.calls()).toBe(2);
+  });
+
   it("ends after `misses` failed looks in a row", async () => {
     const executor = scripted([lost]);
     const { handle } = started(
@@ -297,7 +318,7 @@ describe("a watch", () => {
     const result = await handle.done;
     const ci = result.nodes.find(({ id }) => id === "ci");
     expect(ci?.ok).toBe(false);
-    expect(ci?.error).toContain("never held");
+    expect(ci?.end?.detail).toContain("never held");
     expect(ci?.output).toMatchObject({
       timedOut: true,
       json: { result: "pending" },
@@ -312,7 +333,7 @@ describe("a watch", () => {
       stuck,
     );
     const result = await handle.done;
-    expect(result.nodes[0]?.error).toContain("never held");
+    expect(result.nodes[0]?.end?.detail).toContain("never held");
   });
 
   it("stops when the user stops it", async () => {
@@ -325,7 +346,7 @@ describe("a watch", () => {
     await sleep(30);
     handle.stopNode("ci");
     const result = await handle.done;
-    expect(result.nodes[0]?.error).toBe("stopped by the user");
+    expect(result.nodes[0]?.end?.kind).toBe("interrupted");
     expect(ofType(events, "watch.ended")[0]?.outcome).toBe("stopped");
   });
 
@@ -388,7 +409,7 @@ describe("a watch", () => {
     await sleep(1100);
     handle.proceed();
     const result = await handle.done;
-    expect(result.nodes[0]?.error).toContain("never held");
+    expect(result.nodes[0]?.end?.detail).toContain("never held");
     expect(ofType(events, "watch.ended")[0]?.outcome).toBe("timed_out");
   });
 

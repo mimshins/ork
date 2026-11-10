@@ -34,6 +34,7 @@ import {
   recordRun,
   runResult,
   runStartedEvent,
+  runTimedOut,
   startedEvent,
 } from "./results.ts";
 import { createRouter } from "./router.ts";
@@ -123,7 +124,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     expire: reason => {
       stop("timed_out", reason);
       options.calls?.stopAll();
-      abort.abort();
+      abort.abort(runTimedOut(limits.timeout));
       settle();
     },
     leave: () => {

@@ -13,6 +13,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { followEvents, pendingDecisions } from "@krapht/ork-core";
 
 import { projectOf, runOf, type ServerContext, viewOf } from "./context.ts";
+import { servedEvent } from "./end-view.ts";
 import { openEventStream, sendError } from "./http.ts";
 
 /** How often the overview stream compares the store. */
@@ -55,7 +56,7 @@ export const runStream = async (
     context.store,
     found.run.id,
     stored => {
-      stream.send("run-event", stored, stored.seq);
+      stream.send("run-event", servedEvent(stored), stored.seq);
     },
     {
       follow: true,

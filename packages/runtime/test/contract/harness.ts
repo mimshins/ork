@@ -9,6 +9,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type {
+  EndKind,
   HumanChannel,
   RuntimeEvent,
   Session,
@@ -25,7 +26,8 @@ export type Scenario =
   | "try-denied"
   | "wait-message"
   | "hang"
-  | "report-tool";
+  | "report-tool"
+  | `end:${EndKind}`;
 
 const human: HumanChannel = {
   ask: ({ recommended }) => Promise.resolve(recommended ?? "none"),
@@ -50,15 +52,19 @@ export type Started = {
   endpoint: () => string;
 };
 
-/** Starts a session of `entry` on its fake tool, playing `scenario`. */
-export const start = (entry: ContractEntry, scenario: Scenario): Started => {
+/** Starts a session of `entry` on its fake tool (or `bin`), playing `scenario`. */
+export const start = (
+  entry: ContractEntry,
+  scenario: Scenario,
+  bin: string = entry.fakeTool,
+): Started => {
   const cwd = mkdtempSync(path.join(tmpdir(), "ork-contract-"));
   const endpointFile = path.join(cwd, ".endpoint");
   // A throwaway home and runs folder: a tool may keep config per user (Command
   // Code's MCP entries) and Ork keeps leases in the runs folder.
   const home = mkdtempSync(path.join(tmpdir(), "ork-contract-home-"));
   const session = createSessionRuntime(entry.adapter, {
-    bin: entry.fakeTool,
+    bin,
     env: {
       ...process.env,
       HOME: home,

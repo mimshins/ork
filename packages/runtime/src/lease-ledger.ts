@@ -93,7 +93,11 @@ export const runCmd = (
         timeout: CMD_TIMEOUT_MS,
       },
       (error, stdout, stderr) => {
-        resolve({ ok: error === null, out: `${stdout}${stderr}`.trim() });
+        const said = `${stdout}${stderr}`.trim();
+        // A missing `cmd` prints nothing: say so, so it reads as `tool_missing`.
+        const missing =
+          error?.code === "ENOENT" ? `spawn ${options.bin} ENOENT` : "";
+        resolve({ ok: error === null, out: said || missing });
       },
     );
   });

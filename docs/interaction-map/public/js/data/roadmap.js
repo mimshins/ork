@@ -1082,6 +1082,19 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "node-ends",
+        title: "Every node ends as one known kind",
+        status: "active",
+        detail:
+          "Normalized outcomes, built and waiting to land (it becomes done with its commit). A closed set of end kinds (turn limit, budget limit, timed out, not signed in, rate limited, tool missing, command failed, and more), each with Ork's own message, who should act and what to do, set the same way on all three drivers by their adapters and one shared provider-error classifier. `node.finished` carries the end and old runs are read through a legacy mapping. `ork run` and `ork logs` print the kind and message, `--verbose` and `ork logs --node` the scrubbed details; the browser view shows a badge, the hint and a Details button; feedback files by actor. Closes L239 (OpenCode's step cap is a turn limit) and changes L240. Left: no `ork runs show`, no automatic retry of transient kinds (L241, L243 to L248); duplicate feedback records and budget_limit proven on Claude Code only are tracked too.",
+        docs: [
+          "docs/guides/why-a-node-stopped.md",
+          "specs/runtime/session-ends.md",
+          "decisions/ADR-079-closed-set-of-end-kinds.md",
+          "specs/gaps/end-kinds-limits.md",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",

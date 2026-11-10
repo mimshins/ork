@@ -3,7 +3,7 @@
  *   about, a line in words, the filters, and the command that shows the same.
  */
 
-import type { StoredEvent } from "@krapht/ork-server/client";
+import type { EndView, StoredEvent } from "@krapht/ork-server/client";
 
 type Event = StoredEvent["event"];
 type Of<T extends Event["type"]> = Extract<Event, { type: T }>;
@@ -58,18 +58,29 @@ const innerLine = (event: Of<"node.event">): string => {
   return event.event.fork === true && line !== "" ? `fork: ${line}` : line;
 };
 
-const finishedLine = ({
-  ok,
-  error,
-  round,
-  output,
-}: Of<"node.finished">): string => {
+/** A node that did not end well: which, in which round, and how. */
+type Ended = { id: string; round: number; end: EndView };
+
+export const endedOf = (event: Event): Ended | undefined =>
+  event.type === "node.finished" && event.end.actor !== null
+    ? event
+    : undefined;
+
+const inRound = (round: number, word: string): string =>
+  round > 1 ? `round ${String(round)}: ${word}` : word;
+
+/** A bad end's line as the row shows it: the badge says the kind, this the rest. */
+export const endLineOf = ({ round, end }: Ended): string =>
+  inRound(round, end.message);
+
+const finishedLine = (event: Of<"node.finished">): string => {
+  const { output, round, end } = event;
+  if (end.actor !== null) return inRound(round, `${end.label}: ${end.message}`);
   const { summary } = output;
-  const said = typeof summary === "string" ? `: ${oneLine(summary)}` : "";
-  const word = ok
-    ? `ok${said}`
-    : `failed${error === undefined ? "" : `: ${oneLine(error)}`}`;
-  return round > 1 ? `round ${String(round)}: ${word}` : word;
+  return inRound(
+    round,
+    `ok${typeof summary === "string" ? `: ${oneLine(summary)}` : ""}`,
+  );
 };
 
 /** The event in a line; empty when its type says it all. */

@@ -89,5 +89,11 @@ export const lookAt = async (options: {
   });
   return result.ok
     ? resultOf(result.output["json"])
-    : { ok: false, error: result.error ?? "the check failed" };
+    : {
+        ok: false,
+        // A trigger has no Details to open, so its error keeps what the check said.
+        error: [result.error ?? "the check failed", result.end?.detail]
+          .filter(part => part !== undefined)
+          .join(": "),
+      };
 };

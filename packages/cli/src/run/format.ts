@@ -3,18 +3,19 @@
  *   run events with node prefixes; the run summary is `format-result.ts`'s.
  */
 
-import type {
-  AnsweredBy,
-  RunEvent,
-  RuntimeEvent,
-  SessionOutcome,
+import {
+  type AnsweredBy,
+  type RunEvent,
+  type RuntimeEvent,
+  type SessionOutcome,
+  outcomeEnd,
 } from "@krapht/ork-core";
 
 import { previewInput } from "../human.ts";
 import { cost, style } from "../output.ts";
 import { firstLine, formatBusEvent } from "./format-bus.ts";
+import { endHeadline, endLines, formatFinished } from "./format-end.ts";
 import { formatRunResult } from "./format-result.ts";
-import { hasConflict, nodeVerdict } from "./verdict.ts";
 
 /** Who answered a decision, as the log says it. */
 const ANSWERED_BY: Record<AnsweredBy, string> = {
@@ -55,12 +56,14 @@ export const formatUsage = ({ usage }: SessionOutcome): string =>
 export const formatOutcome = (
   nodeId: string,
   outcome: SessionOutcome,
+  verbose = false,
 ): string[] => {
   const { report } = outcome;
   if (report === null) {
+    const end = outcomeEnd(outcome);
     return [
-      `${style("red", "✗")} ${style("bold", nodeId)} ended without a report (${outcome.subtype})`,
-      ...outcome.errors.map(e => `  ${style("red", e)}`),
+      `${style("red", "✗")} ${style("bold", nodeId)} ${endHeadline(end)}`,
+      ...endLines(end, verbose),
       `  ${formatUsage(outcome)}`,
     ];
   }
@@ -83,6 +86,7 @@ export const formatEvent = (
   nodeId: string,
   event: RuntimeEvent,
   tools: Map<string, string>,
+  verbose = false,
 ): string[] => {
   if (event.type === "session.started") {
     const fork = event.fork === true ? ", a fork to answer a question" : "";
@@ -114,7 +118,7 @@ export const formatEvent = (
           ),
         ];
   }
-  return formatOutcome(nodeId, event.outcome);
+  return formatOutcome(nodeId, event.outcome, verbose);
 };
 
 const items = (count: number): string =>
@@ -127,6 +131,8 @@ export const formatRunEvent = (
   tools: Map<string, string>,
   /** Whether this terminal asks the questions of the run. */
   terminal = false,
+  /** `--verbose`: a failed node's hint and its scrubbed detail. */
+  verbose = false,
 ): string[] => {
   const tag = (id: string) => style("cyan", `${id.padEnd(width)} │`);
   if (event.type === "run.started") {
@@ -163,22 +169,12 @@ export const formatRunEvent = (
         `${tag(event.id)} ${fork}${style("dim", `${inner.model}, session ${inner.sessionId}${why}`)}`,
       ];
     }
-    return formatEvent(event.id, event.event, tools).map(
+    return formatEvent(event.id, event.event, tools, verbose).map(
       line => `${tag(event.id)} ${fork}${line.replace(/^ {2}/u, "")}`,
     );
   }
   if (event.type === "node.finished") {
-    const conflict = hasConflict(event.output);
-    const mark = event.ok
-      ? style(conflict ? "yellow" : "green", conflict ? "!" : "✓")
-      : style("red", "✗");
-    const spent =
-      event.usage === undefined
-        ? ""
-        : style("dim", ` · ${cost(event.usage.costUsd)}`);
-    return [
-      `${tag(event.id)} ${mark} ${nodeVerdict(event.output, event.ok, event.error)}${spent}`,
-    ];
+    return formatFinished(event, tag(event.id), verbose);
   }
   if (event.type === "node.skipped") {
     return [`${tag(event.id)} ${style("dim", "- skipped")}`];

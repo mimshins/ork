@@ -15,6 +15,7 @@ import { z } from "zod";
 
 import {
   type CliAdapter,
+  commandCodeDecoder,
   createSessionRuntime,
   type Decoded,
 } from "../src/index.ts";
@@ -226,6 +227,30 @@ describe("the session runner's process", () => {
     );
     expect(events.at(-1)).toMatchObject({
       outcome: { text: `${folder} (resumed: )` },
+    });
+  });
+});
+
+/** Prints a Command Code result line, then is killed by a signal Ork never sent. */
+const killedAfterResult: CliAdapter = {
+  ...adapter,
+  command: {
+    bin: "node",
+    args: () => [
+      "-e",
+      'console.log(JSON.stringify({ type: "result", subtype: "success", sessionId: "k1", finalText: "done" })); setTimeout(() => process.kill(process.pid, "SIGKILL"), 50);',
+    ],
+  },
+  legDecoder: () => commandCodeDecoder(),
+};
+
+describe("the session runner, when a signal it did not send kills the tool", () => {
+  it("keeps the result line the decoder held", async () => {
+    const events = await collect(
+      createSessionRuntime(killedAfterResult).start(spec, { human }).events,
+    );
+    expect(events.at(-1)).toMatchObject({
+      outcome: { sessionId: "k1", text: "done", end: { kind: "no_report" } },
     });
   });
 });

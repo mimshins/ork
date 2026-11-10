@@ -24,14 +24,18 @@ and the workflow's failure rules apply; a stopped run can be resumed.
 `ork resume` command it stands for, and picks the run up where it left off, in
 the background. A node that called another workflow links to that run, and one
 that's [watching a source](../watching.md) says what it's waiting for and how
-often it looks. **Note…** on a node, or among the run's controls, adds your
-[feedback](../feedback.md) on how it went.
+often it looks. A node that failed shows why: a badge for the kind, Ork's
+message, what to do and who acts, and a **Details** button for the scrubbed raw
+text (`ork logs <run> --node <id>` shows the same;
+[why a node stopped](../why-a-node-stopped.md) lists every kind). **Note…** on a
+node, or among the run's controls, adds your [feedback](../feedback.md) on how
+it went.
 
 **Logs** shows a run's events. It stays on the newest; scroll up and it holds
 still, and **Follow** counts what is new. Filter by node (`build` keeps `build`
 and its items; `build.2` keeps one), by event type or by text. Filters look
 through what is loaded, and **Load older** reads more. Open a row for the whole
-event.
+event; a failed node's row shows its kind, message and **Details** too.
 
 **Decisions** collects every open question from every run. Answer with one
 click, or with the focus in a card press `1` to `9`, or `Enter` on the card for

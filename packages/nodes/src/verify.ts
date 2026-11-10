@@ -9,6 +9,8 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import {
+  endedWith,
+  endOf,
   type ExecuteContext,
   heldTimeout,
   type NodeExecutor,
@@ -25,11 +27,14 @@ import { OUTPUT_LIMIT } from "./tools.ts";
 /** A setup that failed: no session started, so nothing was spent on it. */
 export const beforeFailed = (ran: NodeResult): NodeResult => {
   const error = `its before step failed: ${ran.error ?? "no reason given"}`;
-  return {
-    ok: false,
-    error,
-    output: { status: "fail", summary: error, before: ran.output },
-  };
+  // The node ends as its step did.
+  return endedWith(
+    {
+      ok: false,
+      output: { status: "fail", summary: error, before: ran.output },
+    },
+    endOf({ ...ran, ok: false }),
+  );
 };
 
 /** With nothing to run a step, a report cannot be accepted. */
@@ -211,10 +216,13 @@ export const checkedResult = (
   const error = result.ok
     ? reason
     : `${reason} (then: ${result.error ?? "no report"})`;
-  return {
-    ...result,
-    ok: false,
-    error,
-    output: { ...result.output, status: "fail", summary: error, verify },
-  };
+  // A report the check refused ends as the check did; a later failure as itself.
+  return endedWith(
+    {
+      ...result,
+      ok: false,
+      output: { ...result.output, status: "fail", summary: error, verify },
+    },
+    endOf(result.ok ? { ...check, ok: false } : result),
+  );
 };

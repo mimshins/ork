@@ -12,18 +12,20 @@ import type {
   Paused,
   ProjectRecord,
   RunRecord,
-  StoredEvent,
   LimitsReport,
   StoredRunStatus,
-  TreeNode,
   TriggersReport,
   UsageReport,
 } from "@krapht/ork-core";
-import type { InputDef } from "@krapht/ork-schema";
 import { z } from "zod";
 
-import { BUILDER_API, type BuilderResponses } from "./contract-builder.ts";
+import {
+  BUILDER_API,
+  type BuilderResponses,
+  type InputDef,
+} from "./contract-builder.ts";
 import { CONTEXT_API, type ContextResponses } from "./contract-context.ts";
+import type { StoredEvent, TreeNode } from "./contract-ends.ts";
 import {
   DriverIdSchema,
   FEEDBACK_API,
@@ -47,11 +49,8 @@ export type UsageAnswer = UsageReport & { limits: LimitsReport };
 /** The records the answers are made of, for a client that imports only this. */
 export type {
   DecisionRecord,
-  InputDef,
   LinkRecord,
   ProjectRecord,
-  StoredEvent,
-  TreeNode,
   TriggersReport,
   LimitsReport,
   UsageReport,

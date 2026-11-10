@@ -1098,6 +1098,26 @@ export const RUNTIME = {
     "packages/runtime/test/runtime.test.ts",
     "Tests: the claude-code driver, against a stand-in claude",
   ),
+  ends: d(
+    "packages/core/src/runtime/ends.ts",
+    "Code: the closed set of end kinds and its registry",
+  ),
+  classifier: d(
+    "packages/runtime/src/provider-errors.ts",
+    "Code: the provider-error classifier every adapter uses",
+  ),
+  endsSpec: d(
+    "specs/runtime/session-ends.md",
+    "Spec: how a session ends, every kind and who maps it",
+  ),
+  endsGuide: d(
+    "docs/guides/why-a-node-stopped.md",
+    "Guide: why a node stopped, every kind and what to do",
+  ),
+  endsAdr: d(
+    "decisions/ADR-079-closed-set-of-end-kinds.md",
+    "ADR-079: every node ends as one kind of a closed set",
+  ),
   contract: d(
     "packages/runtime/test/contract/contract.test.ts",
     "Tests: the contract every adapter keeps, on its fake tool",

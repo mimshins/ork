@@ -77,6 +77,12 @@ export const logs = defineCommand({
       description: "Print the stored events as JSON lines",
       default: false,
     },
+    verbose: {
+      type: "boolean",
+      description:
+        "Show why each failed node stopped, with its scrubbed details (always on with --node)",
+      default: false,
+    },
   },
   run: ({ args }) =>
     withStore(async store => {
@@ -106,6 +112,7 @@ export const logs = defineCommand({
       await followRun(store, found.run, write, {
         follow: args.follow,
         json: args.json,
+        verbose: args.verbose,
         signal: abort.signal,
         ...(args.node === undefined ? {} : { node: args.node }),
       });

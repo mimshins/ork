@@ -5,11 +5,24 @@
  *   node's usage, so it counts against the caller.
  */
 
-import { failure } from "../run/results.ts";
-import type { NodeResult, RunEvent, RunResult } from "../run/types.ts";
+import {
+  endedWith,
+  endFor,
+  type EndKind,
+  endOf,
+  failedWith,
+  type SessionEnd,
+} from "../run/ended.ts";
+import type {
+  NodeResult,
+  RunEvent,
+  RunResult,
+  RunStatus,
+} from "../run/types.ts";
 import type { SessionUsage } from "../runtime/types.ts";
 import type { EventStore } from "../store/types.ts";
 import { liveStatus } from "../store/view.ts";
+import { NOT_STARTED } from "../usage/quota.ts";
 import { followEvents } from "./follow.ts";
 
 export type CallWatch = {
@@ -51,27 +64,53 @@ export const noWait = (id: string): NodeResult => ({
   output: { status: "pass", summary: `Run ${id} started.`, run: id },
 });
 
+/**
+ * A call that could not start its run: refused by a limit across runs
+ * (RFC-007), or something the calling node asks for that isn't there.
+ */
+export const startFailed = (error: string): NodeResult =>
+  failedWith(
+    error.includes(NOT_STARTED)
+      ? endFor("plan_limit", {}, error)
+      : endFor("invalid_node", { reason: error }),
+    { status: "fail", summary: error },
+  );
+
+/** How a run that ended `status` ended, when its nodes don't say. */
+const STATUS_KINDS: Readonly<Record<RunStatus, EndKind>> = {
+  succeeded: "done",
+  failed: "unknown",
+  budget_exhausted: "budget_limit",
+  quota_exhausted: "plan_limit",
+  timed_out: "timed_out",
+  interrupted: "interrupted",
+};
+
+/**
+ * How a called run ended, carried up to the node that called it: a limit the
+ * run stopped at, or else how its first failed node ended.
+ */
+export const runEnd = (result: RunResult, detail: string): SessionEnd => {
+  const kind = STATUS_KINDS[result.status];
+  const node = result.nodes.find(entry => entry.ok === false);
+  return kind === "unknown" && node !== undefined
+    ? endOf({
+        ok: false,
+        output: node.output ?? {},
+        ...(node.error === undefined ? {} : { error: node.error }),
+        ...(node.end === undefined ? {} : { end: node.end }),
+      })
+    : endFor(kind, {}, detail);
+};
+
 /** A node's report as a call's result; a failing one says why. */
 const reportResult = (
   id: string,
-  node: string,
   output: Record<string, unknown>,
   ok: boolean,
   usage: SessionUsage,
-): NodeResult => {
-  const summary = output["summary"];
-  return {
-    ok,
-    output: { ...output, run: id },
-    usage,
-    ...(ok
-      ? {}
-      : {
-          error:
-            typeof summary === "string" ? summary : `${node} reported failure.`,
-        }),
-  };
-};
+  end: SessionEnd = endFor(ok ? "done" : "reported_failure"),
+): NodeResult => endedWith({ ok, output: { ...output, run: id }, usage }, end);
 
 /**
  * What the node last reported, for a caller coming back to the run: a resumed
@@ -92,7 +131,7 @@ export const storedReport = (
     .at(-1);
   return found === undefined
     ? undefined
-    : reportResult(id, node, found, true, usageOf(watch.newCost(id)));
+    : reportResult(id, found, true, usageOf(watch.newCost(id)));
 };
 
 const resultOf = (id: string, result: RunResult, cost: number): NodeResult => {
@@ -100,18 +139,20 @@ const resultOf = (id: string, result: RunResult, cost: number): NodeResult => {
   const summary = ok
     ? `Run ${id} succeeded.`
     : `Run ${id} ended ${result.status}: ${result.reasons.join("; ")}`;
-  return {
-    ok,
-    output: {
-      status: ok ? "pass" : "fail",
-      summary,
-      run: id,
-      runStatus: result.status,
-      outputs: result.outputs ?? {},
+  return endedWith(
+    {
+      ok,
+      output: {
+        status: ok ? "pass" : "fail",
+        summary,
+        run: id,
+        runStatus: result.status,
+        outputs: result.outputs ?? {},
+      },
+      usage: usageOf(cost),
     },
-    usage: usageOf(cost),
-    ...(ok ? {} : { error: summary }),
-  };
+    ok ? endFor("done") : runEnd(result, summary),
+  );
 };
 
 /** The first thing `pick` finds in the run's events after `after`, if any. */
@@ -155,8 +196,12 @@ export const waitForRun = async (
   if (result !== undefined) return resultOf(id, result, cost);
   const [run] = watch.store.lookup(id);
   const status = run === undefined ? "gone" : liveStatus(run);
+  const said = `Run ${id} ended without a result (${status}).`;
   return {
-    ...failure(`Run ${id} ended without a result (${status}).`),
+    ...failedWith(endFor("unknown", {}, said), {
+      status: "fail",
+      summary: said,
+    }),
     usage: usageOf(cost),
   };
 };
@@ -170,27 +215,35 @@ export const waitForNode = async (
   signal: AbortSignal,
 ): Promise<NodeResult> => {
   const seen = await followRun<
-    { ok: boolean; output: Record<string, unknown> } | { ended: RunResult }
+    | { ok: boolean; output: Record<string, unknown>; end: SessionEnd }
+    | { ended: RunResult }
   >(watch, id, after, signal, event => {
     if (event.type === "node.finished" && event.id === node) {
-      return { ok: event.ok, output: event.output };
+      return { ok: event.ok, output: event.output, end: endOf(event) };
     }
     return event.type === "run.finished" ? { ended: event.result } : undefined;
   });
   const usage = usageOf(watch.newCost(id));
   if (seen === undefined) {
+    const said = `Run ${id} ended before ${node} reported.`;
     return {
-      ...failure(`Run ${id} ended before ${node} reported.`),
+      ...failedWith(endFor("unknown", {}, said), {
+        status: "fail",
+        summary: said,
+      }),
       usage,
     };
   }
   if ("ended" in seen) {
+    const said = `${node} of run ${id} did not report: the run ended ${seen.ended.status}.`;
+    const end =
+      seen.ended.status === "succeeded"
+        ? endFor("no_report", {}, said)
+        : runEnd(seen.ended, said);
     return {
-      ...failure(
-        `${node} of run ${id} did not report: the run ended ${seen.ended.status}.`,
-      ),
+      ...failedWith(end, { status: "fail", summary: said }),
       usage,
     };
   }
-  return reportResult(id, node, seen.output, seen.ok, usage);
+  return reportResult(id, seen.output, seen.ok, usage, seen.end);
 };

@@ -173,7 +173,9 @@ describe("a tool node's environment", () => {
     const run = context(shell({ env: { TOKEN: "{{env.GONE}}" } }));
     const { runner, seen } = runnerOf({});
     const result = await toolExecutor(runner, { environ })(run);
-    expect(result.error).toBe("env.TOKEN reads GONE, which is not set");
+    expect(result.error).toBe(
+      "could not start: env.TOKEN reads GONE, which is not set",
+    );
     expect(seen).toEqual([]);
   });
 
@@ -289,10 +291,13 @@ describe("a tool node's JSON result", () => {
     const run = context(json());
     const bad = await toolExecutor(runnerOf({ stdout: "nope" }).runner)(run);
     expect(bad.ok).toBe(false);
-    expect(bad.error).toContain("n: stdout is not valid JSON");
+    expect(bad.end?.kind).toBe("invalid_output");
+    expect(bad.error).toContain(": stdout is not valid JSON");
     expect(bad.output["exitCode"]).toBe(0);
     const empty = await toolExecutor(runnerOf({ stdout: " \n" }).runner)(run);
-    expect(empty.error).toBe("n: stdout is empty");
+    expect(empty.error).toBe(
+      "gave JSON that breaks its declared output: stdout is empty",
+    );
   });
 
   it("fails on a bad file rather than falling back to stdout", async () => {
@@ -301,7 +306,7 @@ describe("a tool node's JSON result", () => {
       writeFileSync(outputFileOf(env), "{");
     });
     const result = await toolExecutor(runner)(run);
-    expect(result.error).toContain("n: $ORK_OUTPUT is not valid JSON");
+    expect(result.error).toContain(": $ORK_OUTPUT is not valid JSON");
   });
 
   it("does not parse a program that failed, and leaves no file", async () => {
@@ -349,7 +354,9 @@ describe("a tool node's JSON result", () => {
       runnerOf({ stdout: '{"state":"DRAFT"}' }).runner,
     )(run);
     expect(result.ok).toBe(false);
-    expect(result.error).toBe("state is `DRAFT`, expected `OPEN` or `CLOSED`");
+    expect(result.error).toBe(
+      "gave JSON that breaks its declared output: state is `DRAFT`, expected `OPEN` or `CLOSED`",
+    );
     // What it didn't declare isn't its output, so no condition can read it.
     expect(result.output["json"]).toBeUndefined();
     expect(result.output["stdout"]).toContain("DRAFT");
@@ -417,7 +424,9 @@ describe("a secret in what a program returns", () => {
   it("is not quoted by a JSON parse error", async () => {
     const { result, recorded } = await runJson(SECRET);
     expect(result.ok).toBe(false);
-    expect(result.error).toBe("n: stdout is not valid JSON");
+    expect(result.error).toBe(
+      "gave JSON that breaks its declared output: stdout is not valid JSON",
+    );
     expect(recorded).not.toContain(SECRET);
   });
 
@@ -631,7 +640,9 @@ describe("a secret in what a program returns", () => {
   it("says when JSON is too deep, rather than invalid", async () => {
     const deep = `${"[".repeat(200_000)}${"]".repeat(200_000)}`;
     const { result } = await runJson(deep);
-    expect(result.error).toBe("n: stdout is nested too deeply to read");
+    expect(result.error).toBe(
+      "gave JSON that breaks its declared output: stdout is nested too deeply to read",
+    );
   });
 
   it("is masked when the run's caller reads it", async () => {
@@ -700,7 +711,7 @@ describe("a secret in what a program returns", () => {
     });
     const run = context(node, { outputs: { a: { text: "x\0y" } } });
     const result = await toolExecutor(spawnTool, { environ })(run);
-    expect(result.error).toBe("env.X holds a null byte");
+    expect(result.error).toBe("could not start: env.X holds a null byte");
     expect(JSON.stringify([result, run.events])).not.toContain(SECRET);
   });
 
@@ -761,7 +772,9 @@ describe("where a program's result waits", () => {
       mkdirSync(file);
     });
     const result = await toolExecutor(runner, { environ })(run);
-    expect(result.error).toBe("n: $ORK_OUTPUT is not a file");
+    expect(result.error).toBe(
+      "gave JSON that breaks its declared output: $ORK_OUTPUT is not a file",
+    );
     expect(existsSync(file)).toBe(false);
   });
 

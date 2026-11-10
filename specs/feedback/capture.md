@@ -13,10 +13,23 @@ _Part of [Feedback and self-improvement](../feedback.md)._
 **System signals** (built), each recorded right after the event that shows it: a
 loop out of rounds (`loop.exhausted`), a budget that ran out
 (`budget.exhausted`), a tool the user denied (`permission.denied`), an Ork tool
-that returned an error (`tool.error`), a gate that timed out and took its
-default (`gate.timeout`), and an answer other than the recommended one
+that returned an error (`tool.error`, which leaves out the `report` tool), a
+report the `report` tool refused (`report.rejected`, a context gap the agent's
+own: the agent got its report wrong, not Ork), a gate that timed out and took
+its default (`gate.timeout`), and an answer other than the recommended one
 (`recommendation.overridden`). They are derived where a run's events are
 recorded, so the decision queue's events count too.
+
+A failed node's end files by who should act on it (the per-node `end.<kind>`
+signal, [end-signals.ts](../../packages/core/src/feedback/end-signals.ts)): an
+`ork` kind (`unknown`, `driver_crashed`) is a bug carrying the scrubbed detail,
+a `workflow` kind a workflow note, an `agent` kind a context gap. An account's,
+provider's or user's end is a setup hint on screen, not feedback, and an agent's
+`fail` report or a tool node's non-zero exit is its answer, not filed
+([how a session ends](../runtime/session-ends.md)). It can duplicate the run's
+own record of the same cause (`budget.exhausted`, `report.rejected`): the two
+have different fingerprints, so both are kept
+([L247](../gaps/end-kinds-limits.md)).
 
 **The `feedback` tool:**
 `feedback(kind, target?, title, body?, severity?, evidence?)`, for every Claude

@@ -407,6 +407,7 @@ describe("the CLI driver", () => {
       type: "session.finished",
       outcome: {
         subtype: "success",
+        end: { kind: "done", message: "finished" },
         sessionId: "fake-1",
         text: "The user chose: a",
         report: {

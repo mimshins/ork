@@ -63,6 +63,11 @@ export type Integration<Options extends z.ZodRawShape = z.ZodRawShape> = {
    * check (any program).
    */
   doctor?: (exec: Exec, env: Env) => Promise<CheckResult>;
+  /**
+   * Whether a failed run says the user is not signed in, so the node ends
+   * `auth` rather than `command_failed`. Omitted when the program can't say.
+   */
+  signedOut?: (run: { exitCode: number; stderr: string }) => boolean;
 };
 
 /** Declares an integration with its option types checked. */

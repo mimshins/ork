@@ -42,18 +42,25 @@ or tighten what the reviewers ask for.
 nodes it owns, and its channels; the refusal lists whom it can reach. Add a
 `messages` channel to the workflow to connect two others.
 
-**A node fails with `status: fail` and no report.** The session ended without a
-valid report, often because it hit `maxTurns` or `budgetUsd`. Raise the limit,
-or narrow the node's brief.
+**A node fails and I don't know why.** Its line says a kind and a message, for
+example `✗ Turn limit: reached its turn limit (8)`. Every kind, who acts on it
+and what to do is in [why a node stopped](../why-a-node-stopped.md). The raw
+tool or provider text is behind `ork run --verbose`, or
+`ork logs <run> --node <id>`.
+
+**A node fails as `Turn limit` or `Budget limit`.** It used all of its
+`maxTurns` or `budgetUsd`. Raise the limit, or narrow the node's brief
+([turn limit](../why-a-node-stopped.md#turn-limit),
+[budget limit](../why-a-node-stopped.md#budget-limit)).
 
 **The run ends `budget_exhausted`.** `limits.budgetUsd` is spent; no new session
 starts. Raise it, or use cheaper models for checks
 ([models, effort and budgets](../models-and-budgets.md)).
 
-**A node fails with `timed out after …`, or the run ends `timed_out`.** It used
-all of its `timeout`; time waiting on you doesn't count. Raise it, or handle it
-with `when: timedOut` ([timeouts](../models-and-budgets.md#timeouts)).
-`ork resume` continues a run that timed out.
+**A node fails as `Timed out`, or the run ends `timed_out`.** It used all of its
+`timeout`; time waiting on you doesn't count. Raise it, or handle it with
+`when: timedOut` ([timeouts](../models-and-budgets.md#timeouts)). `ork resume`
+continues a run that timed out.
 
 **A node fails because a git hook refused its commit.** Ork commits each node's
 work with your repository's hooks. The node's message shows the hook's output,

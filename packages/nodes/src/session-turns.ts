@@ -5,8 +5,13 @@
  */
 
 import {
+  endedWith,
+  endFor,
+  type EndKind,
   type ExecuteContext,
+  failedWith,
   type NodeResult,
+  outcomeEnd,
   planReason,
   type RuntimeEvent,
   type SessionOutcome,
@@ -47,15 +52,16 @@ export const afterLateTurn = (
   later: SessionOutcome,
 ): SessionOutcome => {
   const merged = withUsageOf(first, later);
-  return later.report === null
-    ? {
-        ...merged,
-        report: first.report,
-        subtype: first.subtype,
-        text: first.text,
-        errors: first.errors,
-      }
-    : merged;
+  if (later.report !== null) return merged;
+  const { end: _later, ...rest } = merged;
+  return {
+    ...rest,
+    report: first.report,
+    subtype: first.subtype,
+    ...(first.end === undefined ? {} : { end: first.end }),
+    text: first.text,
+    errors: first.errors,
+  };
 };
 
 export type TurnLimits = { budgetUsd?: number; maxTurns?: number };
@@ -164,7 +170,9 @@ export const limitWatch = (context: Pick<ExecuteContext, "quota">) => {
             left !== undefined &&
             asked.budgetUsd !== undefined &&
             asked.budgetUsd >= left;
-          if (capped && outcome?.subtype === "error_max_budget_usd") {
+          const spent =
+            outcome !== null && outcomeEnd(outcome).kind === "budget_limit";
+          if (capped && spent) {
             why =
               context.quota?.().blocked ??
               "a session reached what was left of a quota";
@@ -172,15 +180,37 @@ export const limitWatch = (context: Pick<ExecuteContext, "quota">) => {
         },
       };
     },
-    result: (result: NodeResult): NodeResult =>
-      result.ok || why === undefined ? result : { ...result, limited: why },
+    // A limit across runs comes before what the session itself saw; a plan
+    // limit only the session's words said stops the run too (RFC-007).
+    result: (result: NodeResult): NodeResult => {
+      if (result.ok) return result;
+      if (why !== undefined) {
+        return {
+          ...endedWith(result, endFor("plan_limit", {}, why)),
+          limited: why,
+        };
+      }
+      const { end } = result;
+      return end?.kind === "plan_limit"
+        ? { ...result, limited: end.message }
+        : result;
+    },
   };
 };
 
-/** No session started: nothing was left for one. */
-export const notStarted = (reason: string, limited?: string): NodeResult => ({
-  ok: false,
-  error: `not started: ${reason}`,
-  output: { status: "fail", summary: `not started: ${reason}` },
+/**
+ * No session started: nothing was left for one, or nothing to start it. Its
+ * summary keeps Ork's reason, `end.detail` too; the message is the kind's.
+ */
+export const notStarted = (
+  kind: EndKind,
+  reason: string,
+  limited?: string,
+): NodeResult => ({
+  // Only `tool_missing` reads `program`: a Claude node's program is its driver.
+  ...failedWith(endFor(kind, { reason, program: "an agent driver" }, reason), {
+    status: "fail",
+    summary: `not started: ${reason}`,
+  }),
   ...(limited === undefined ? {} : { limited }),
 });

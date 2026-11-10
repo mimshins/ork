@@ -35,7 +35,11 @@ a throwaway `HOME` (no model session), the headless docs
   `toolName` is `mcp__<server>__<tool>`, as the fake assumed.
 - **Exit codes:** 0 success, 1 error, 3 not signed in, 4 permission denied, 5
   rate limited, 6 network, 7 server error, 8 out of turns (`error_max_turns`), 9
-  no response, 10 out of credits, 130 interrupted.
+  no response, 10 out of credits, 130 interrupted. Ork reads them as end kinds
+  ([how a session ends](../runtime/session-ends.md#who-maps-what)): 3 and 4
+  `auth`, 5 `rate_limited`, 6, 7 and 9 `provider_unavailable`, 8 `turn_limit`,
+  10 `out_of_credits`, 130 `interrupted`; any other failure goes through the
+  shared provider classifier.
 - **MCP scopes:** user (`~/.commandcode/mcp.json`), project (`.mcp.json` in the
   checkout) and local (`~/.commandcode/projects/<slug>/mcp.json`, private to the
   machine), local winning. `<slug>` is the checkout's real path with every

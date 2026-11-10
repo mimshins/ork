@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatsPanel } from "../../src/panels/chats-panel.tsx";
 import { violations } from "../axe.ts";
 import { stubWindow } from "../dom.ts";
+import { DONE, TURN_LIMIT } from "../ends.ts";
 import { runView } from "../state/fixtures.ts";
 import { type FakeRoutes, openPanelState, renderPanel } from "./harness.tsx";
 
@@ -114,6 +115,7 @@ describe("the Chats panel", () => {
           ok: false,
           output: {},
           error: "`lead` broke",
+          end: TURN_LIMIT,
         }),
       ],
     });
@@ -168,6 +170,7 @@ describe("the Chats panel", () => {
           round: 1,
           ok: true,
           output: { status: "pass", summary: "The note is blue." },
+          end: DONE,
         }),
       ].filter(event => event !== undefined),
     });

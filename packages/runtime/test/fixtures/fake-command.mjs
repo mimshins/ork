@@ -14,7 +14,8 @@
  *   `wait-message` (a slow first leg; `--resume` ends with `got: <the
  *   message>`), `hang` (starts and waits to be interrupted), `report-tool`
  *   (Ork's `report` tool, first with a report outside the schema, then with
- *   one inside) and `max-turns` (a `max_turns` result, exit code 8). It loads
+ *   one inside), `max-turns` (a `max_turns` result, exit code 8) and `end:<kind>`
+ *   (the error result and exit code Command Code gives that cause; `ENDS`). It loads
  *   `--mod <file>` as Command Code does, and a call the mod's
  *   `beforeToolCall` blocks ends in a `tool_hook_blocked` frame. With
  *   `--resume <id> --fork-session` its session is `fork-of-<id>`.
@@ -155,7 +156,24 @@ const say = text => {
 event({ type: "run_start", sessionId: session });
 event({ type: "turn_start", turnNumber: 1 });
 
-if (scenario === "hang") {
+/** The exit code and error Command Code gives each cause, for `end:<kind>`. */
+const ENDS = {
+  auth: [3, "Not authenticated. Run `cmd login` to sign in."],
+  out_of_credits: [10, "You are out of credits."],
+  rate_limited: [5, "Rate limited. Try again later."],
+  provider_unavailable: [7, "The server returned an error (529)."],
+  model_unavailable: [
+    1,
+    'API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"This model does not support assistant message prefill. The conversation must end with a user message."}}',
+  ],
+};
+if (scenario === "end:turn_limit") {
+  finish("", "max_turns", 8);
+} else if (scenario.startsWith("end:")) {
+  const [code, error] = ENDS[scenario.slice(4)];
+  out({ type: "result", subtype: "error", sessionId: session, usage: USAGE, durationMs: 1, finalText: "", error });
+  process.exit(code);
+} else if (scenario === "hang") {
   await new Promise(() => setInterval(() => {}, 1000));
 } else if (scenario === "max-turns") {
   finish("", "max_turns", 8);

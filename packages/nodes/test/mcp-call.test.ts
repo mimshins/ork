@@ -143,7 +143,11 @@ describe("mcp.call over stdio", () => {
   it("gives text with no JSON when that's all there is", async () => {
     const { result } = await call("fails", {}, { PATH: process.env["PATH"] });
     expect(result.ok).toBe(false);
-    expect(result.error).toBe("echo.fails failed: the tracker is down");
+    expect(result.end).toEqual({
+      kind: "command_failed",
+      message: "echo.fails exited with an error",
+      detail: "the tracker is down",
+    });
     expect(result.output["json"]).toBeUndefined();
   });
 
@@ -247,7 +251,8 @@ describe("mcp.call over stdio", () => {
       projectWith({ echo: { command: "no-such-program-here" } }),
     );
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("no-such-program-here");
+    expect(result.end?.kind).toBe("tool_missing");
+    expect(result.end?.detail).toContain("no-such-program-here");
   });
 });
 
@@ -358,7 +363,7 @@ describe("a watching mcp.call", () => {
   it("can try again after the server says it failed", async () => {
     const { result } = await call("fails");
     expect(result.ok).toBe(false);
-    expect(result.transient).toBe(true);
+    expect(result.end?.kind).toBe("command_failed");
   });
 
   it("can try again after a server that won't start", async () => {
@@ -369,7 +374,8 @@ describe("a watching mcp.call", () => {
       projectWith({ echo: { command: "no-such-program-here" } }),
     );
     expect(result.ok).toBe(false);
-    expect(result.transient).toBe(true);
+    expect(result.end?.kind).toBe("tool_missing");
+    expect(result.transient).toBeUndefined();
   });
 
   it("can't mend an answer it didn't declare", async () => {
@@ -396,7 +402,7 @@ describe("a watching mcp.call", () => {
     const { result, ended } = await watched({}, "fails");
     expect(result.status).toBe("failed");
     expect(result.nodes[0]?.error).toContain("2 looks in a row failed");
-    expect(result.nodes[0]?.error).toContain("the tracker is down");
+    expect(result.nodes[0]?.end?.detail).toContain("the tracker is down");
     expect(ended).toEqual([
       { type: "watch.ended", id: "m", looks: 2, outcome: "failed" },
     ]);
@@ -459,7 +465,8 @@ describe("mcp.call over HTTP", () => {
       projectWith({ echo: { type: "http", url } }),
     );
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("asks for a sign-in");
+    expect(result.end?.kind).toBe("auth");
+    expect(result.end?.detail).toContain("asks for a sign-in");
   });
 });
 

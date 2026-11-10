@@ -18,6 +18,7 @@ import {
 } from "@krapht/ork-core";
 
 import { projectOf, runOf, type ServerContext, viewOf } from "./context.ts";
+import { servedEvent, treeWithEnds } from "./end-view.ts";
 import { runGraph } from "./graph.ts";
 import { fail, type Handlers, ok } from "./router.ts";
 import { projectWorkflows } from "./workflows.ts";
@@ -113,7 +114,8 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
   tree: ({ params }) => {
     const found = runOf(context, params.id);
     if (!found.ok) return found.refusal;
-    return ok(nestItems(activeTree(context.store.events(found.run.id))));
+    const stored = context.store.events(found.run.id);
+    return ok(treeWithEnds(nestItems(activeTree(stored)), stored));
   },
 
   graph: ({ params }) => {
@@ -138,7 +140,9 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
     const newest =
       query.last === undefined ? events : events.slice(-query.last);
     return ok(
-      query.limit === undefined ? newest : newest.slice(0, query.limit),
+      (query.limit === undefined ? newest : newest.slice(0, query.limit)).map(
+        stored => servedEvent(stored),
+      ),
     );
   },
 

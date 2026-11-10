@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L241, and the next chore is
+closes it. Ids are never reused: the next limit is L249, and the next chore is
 C15. At a review, each open entry is closed (built or fixed, then removed), kept
 (moved into its area's spec, then removed here), or carried to a roadmap item,
 or to none yet (unplanned).
@@ -44,6 +44,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 - [Limits found building readable gates](./gaps/readable-gates-limits.md)
 - [Limits found building for each](./gaps/for-each-limits.md)
 - [Limits found fixing QA run e4894f17](./gaps/qa-e4894f17-limits.md)
+- [Limits found building end kinds](./gaps/end-kinds-limits.md)
 
 ## Gaps
 
@@ -225,15 +226,13 @@ Found removing the Agent SDK driver
   cannot read falls back to any object plus the status and summary check.
 - **L238 · No protocol drivers.** OpenCode's server and ACP (`cmd acp`) stay a
   later change to a single adapter.
-- **L239 · A capped `open-code` node says "no valid report".** At its `steps`
-  cap OpenCode gives the model no tools, so it can't call `report`, and the node
-  fails with no report instead of `error_max_turns`, which `claude-code` and
-  `command-code` say. Nothing in the printed events marks the cap.
 - **L240 · Claude through OpenCode's `commandcode` provider fails.** After any
   tool call the next request is refused ("assistant message prefill", or a
   `thinking` block's signature), on Haiku and Sonnet 5.5 alike; other models
   through the same provider work. It lies between OpenCode and the provider, so
-  the guide says to run Claude on `claude-code`.
+  the guide says to run Claude on `claude-code`. A node that hits it now ends as
+  [Model unavailable](../docs/guides/why-a-node-stopped.md#model-unavailable)
+  with the provider's text under Details, not as raw JSON in the run summary.
 
 ## Chores
 

@@ -369,7 +369,8 @@
   margin: 0;
 }
 
-.watching {
+.watching,
+.end {
   flex-basis: 100%;
 }
 

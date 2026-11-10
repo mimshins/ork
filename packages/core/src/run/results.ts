@@ -13,6 +13,16 @@ import { parseTemplate, renderTemplate, type Scope } from "../expr/evaluate.ts";
 import type { CompiledGraph } from "../graph/types.ts";
 import type { EarlierSpend } from "../usage/spend.ts";
 import { declaredNodes } from "./contacts.ts";
+import {
+  endedWith,
+  endFor,
+  type EndKind,
+  endOf,
+  failedWith,
+  runTimedOut,
+  scrubbedEnd,
+  stoppedEnd,
+} from "./ended.ts";
 import type { Activation, RunOptions } from "./handle.ts";
 import type {
   KeptWorktree,
@@ -26,6 +36,16 @@ import type {
   UnreadMail,
 } from "./types.ts";
 
+export {
+  endedWith,
+  endFor,
+  endOf,
+  failedWith,
+  runTimedOut,
+  scrubbedEnd,
+  stoppedEnd,
+};
+export type { EndKind };
 export { spendOf } from "./spending.ts";
 export { createGatherer } from "./gather.ts";
 
@@ -42,6 +62,8 @@ export const recordRun = (entry: NodeSummary, result: NodeResult): void => {
   entry.costUsd += result.usage?.costUsd ?? 0;
   if (result.error === undefined) delete entry.error;
   else entry.error = result.error;
+  if (result.ok) delete entry.end;
+  else entry.end = endOf(result);
 };
 
 export const startedEvent = (
@@ -77,6 +99,8 @@ export const finishedEvent = (
   };
   if (result.usage !== undefined) event.usage = result.usage;
   if (result.error !== undefined) event.error = result.error;
+  // A path that sets no end yet is read as old runs are; `unknown` files a bug.
+  event.end = endOf(result);
   return event;
 };
 

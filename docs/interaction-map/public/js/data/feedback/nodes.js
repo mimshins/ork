@@ -188,6 +188,7 @@ export const NODES = [
     facts: [
       "Built: a loop out of rounds, a budget that ran out, a tool you denied, an Ork tool that failed, a gate that timed out, and an answer other than the recommended one.",
       "Derived where the run's events are recorded, decisions included, and recorded right after the event that shows them.",
+      "A node's end files by who should act: Ork's own bug (an unknown or crashed end, with the scrubbed detail), the workflow's, or the agent's context gap. An account's, provider's or user's end is a setup hint, not feedback, and a report the `report` tool refuses is the agent's.",
     ],
     docs: [DESIGN.feedback, FEEDBACK.signals, FEEDBACK.tests, FEEDBACK.adr],
   },

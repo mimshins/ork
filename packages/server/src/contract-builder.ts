@@ -4,10 +4,13 @@
  *   imports only `zod` and types, so a browser bundle can use it.
  */
 
-import type { Diagnostic, WorkflowEdit } from "@krapht/ork-schema";
+import type { Diagnostic, InputDef, WorkflowEdit } from "@krapht/ork-schema";
 import { z } from "zod";
 
 import type { WorkflowGraph } from "./contract-graph.ts";
+
+/** A workflow's declared input, for a client that imports only the contract. */
+export type { InputDef };
 
 export type { Diagnostic, WorkflowEdit };
 

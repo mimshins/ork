@@ -47,9 +47,10 @@ export type Decoded = {
 export type EventDecoder = (line: string) => Decoded;
 
 /**
- * For a tool whose output has no result line: one leg's decoder, which keeps
- * what it read, and once the process exits by itself gives the leg's end (a
- * `session.finished`), or nothing when the exit is a failure to explain.
+ * For a tool whose output has no result line, or whose end needs its exit code:
+ * one leg's decoder, which keeps what it read, and once the process exits by
+ * itself gives the leg's end (a `session.finished`), or nothing when the exit
+ * is a failure to explain.
  */
 export type LegDecoder = {
   decode: EventDecoder;
@@ -136,11 +137,6 @@ export type CliAdapter = {
   driver: DriverId;
   command: Command;
   decode: EventDecoder;
-  /**
-   * A fresh decoder for each leg, for a tool whose lines need what came before
-   * (a session id said early, turns counted); `decode` otherwise.
-   */
-  decoder?: () => EventDecoder;
   /** A fresh decoder for each leg's spec, used instead of `decode` when set. */
   legDecoder?: (spec: SessionSpec) => LegDecoder;
   mcp: McpWiring;

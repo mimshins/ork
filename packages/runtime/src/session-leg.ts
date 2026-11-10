@@ -10,14 +10,18 @@ import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 
 import {
+  type EndKind,
   maskSecrets,
   type NodeReport,
   type RuntimeEvent,
+  type SessionOutcome,
   type SessionUsage,
 } from "@krapht/ork-core";
 import type { Driver } from "@krapht/ork-schema";
 
 import type { CliAdapter, Decoded, LegDecoder } from "./adapter.ts";
+import { classifyProviderError } from "./provider-errors.ts";
+import { type EndScope, failureKind, settleEnd } from "./session-end.ts";
 
 /** How much of the end of a process's stderr is kept to explain its death. */
 const STDERR_TAIL = 16_384;
@@ -26,27 +30,6 @@ const REASON_LIMIT = 500;
 /** Marks a session's start with the driver that runs it. */
 export const withDriver = (event: RuntimeEvent, driver: Driver): RuntimeEvent =>
   event.type === "session.started" ? { ...event, driver } : event;
-
-/** A finished event for a session the driver could not run. */
-export const driverFailure = (message: string): RuntimeEvent => ({
-  type: "session.finished",
-  outcome: {
-    subtype: "error_driver",
-    sessionId: "",
-    report: null,
-    text: "",
-    usage: {
-      costUsd: 0,
-      inputTokens: 0,
-      outputTokens: 0,
-      cacheReadTokens: 0,
-      cacheWriteTokens: 0,
-      turns: 0,
-      durationMs: 0,
-    },
-    errors: [message],
-  },
-});
 
 /** How one leg of a session (one process) ended. */
 export type Leg =
@@ -62,7 +45,7 @@ export type Leg =
       /** Its result, yielded only if the session never resumes. */
       last: RuntimeEvent;
     }
-  | { kind: "failed"; reason: string };
+  | { kind: "failed"; reason: string; end: EndKind };
 
 export type LegInput = {
   adapter: CliAdapter;
@@ -87,7 +70,26 @@ export type LegInput = {
   attach: (io?: { write: (line: string) => void; stop: () => void }) => void;
   /** The adapter's decoder for this leg, when it has one (`legDecoder`). */
   decoder?: LegDecoder;
+  /** What the session's end is written with. */
+  scope: EndScope;
 };
+
+/**
+ * A session's outcome with its report (the one Ork's `report` tool accepted,
+ * when the session has that tool) and its end settled.
+ */
+const settled = (outcome: SessionOutcome, input: LegInput): SessionOutcome =>
+  settleEnd(
+    input.reported === undefined
+      ? outcome
+      : { ...outcome, report: input.reported() },
+    input.scope.facts,
+    input.scope.scrub,
+  );
+
+/** The kinds of a session that ended well, so a queued message continues it. */
+const wentWell = (kind: EndKind | undefined): boolean =>
+  kind === "done" || kind === "reported_failure" || kind === "no_report";
 
 /**
  * What one decoded line yields, and how the leg ends if it does: a result is
@@ -105,8 +107,8 @@ const legStep = (
   let ended: Leg | undefined;
   for (const said of decoded.events) {
     const event =
-      said.type === "session.finished" && input.reported !== undefined
-        ? { ...said, outcome: { ...said.outcome, report: input.reported() } }
+      said.type === "session.finished"
+        ? { ...said, outcome: settled(said.outcome, input) }
         : said;
     if (event.type === "session.started" && carried !== undefined) continue;
     if (event.type !== "session.finished") {
@@ -126,7 +128,7 @@ const legStep = (
       const last = { ...event, outcome: { ...event.outcome, usage } };
       // A queued message continues only a session that ended well; an error
       // (a turn limit, a failed run) ends it, so no limit is overrun or hidden.
-      if (input.withhold() && event.outcome.subtype === "success") {
+      if (input.withhold() && wentWell(event.outcome.end?.kind)) {
         ended = {
           kind: "continued",
           sessionId: event.outcome.sessionId,
@@ -208,8 +210,7 @@ export const runLeg = async function* (
 
   let outcome: Leg | undefined;
   const { decoder } = input;
-  const decode =
-    decoder?.decode ?? input.adapter.decoder?.() ?? input.adapter.decode;
+  const decode = decoder?.decode ?? input.adapter.decode;
   try {
     for await (const line of createInterface({ input: child.stdout })) {
       const { events, ended } = legStep(decode(line), input);
@@ -222,13 +223,9 @@ export const runLeg = async function* (
     }
     const end = await Promise.race([exited, spawnError.then(error => error)]);
     if (outcome !== undefined) return outcome;
-    // A tool with no result line ends its session by exiting.
-    if (
-      decoder !== undefined &&
-      !(end instanceof Error) &&
-      !stopped &&
-      end.signal === null
-    ) {
+    // A tool with no result line ends its session by exiting; one killed by a
+    // signal Ork did not send may still have printed (and its decoder held) one.
+    if (decoder !== undefined && !(end instanceof Error) && !stopped) {
       const { events, ended } = legStep(
         { events: decoder.exit(end.code) },
         input,
@@ -240,14 +237,17 @@ export const runLeg = async function* (
       return {
         kind: "failed",
         reason: `could not start ${input.bin}: ${end.message}`,
+        end: failureKind(end),
       };
     }
+    if (stopped || end.signal !== null) {
+      return { kind: "failed", reason: "interrupted", end: "interrupted" };
+    }
+    const reason = failureReason(input.adapter.command.bin, stderr, end.code);
     return {
       kind: "failed",
-      reason:
-        stopped || end.signal !== null
-          ? "interrupted"
-          : failureReason(input.adapter.command.bin, stderr, end.code),
+      reason,
+      end: classifyProviderError(reason)?.kind ?? "driver_crashed",
     };
   } finally {
     input.attach();

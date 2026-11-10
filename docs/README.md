@@ -82,6 +82,8 @@ runs and worktrees in plain words.
   and `aws`, and what Ork never stores.
 - [Where Ork keeps things](./guides/where-ork-keeps-things.md): what's on your
   machine, what leaves it, and removing Ork.
+- [Why a node stopped](./guides/why-a-node-stopped.md): every way a node ends,
+  who acts on it, what to do, and `--verbose` for the details.
 - [Troubleshooting](./guides/troubleshooting.md): common messages and what to do
   about them.
 - [What's new](./whats-new.md): each release in a few lines, and how to upgrade.

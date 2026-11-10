@@ -19,6 +19,7 @@ import { LogsPanel } from "../../src/panels/logs-panel.tsx";
 import { createWorkspace } from "../../src/workspace/workspace.ts";
 import { violations } from "../axe.ts";
 import { stubWindow } from "../dom.ts";
+import { DONE, RATE_LIMITED, TURN_LIMIT } from "../ends.ts";
 import { openPanelState, renderPanel } from "./harness.tsx";
 
 const at = "2026-11-03T00:00:00.000Z";
@@ -137,6 +138,7 @@ describe("the Logs panel", () => {
             ok: false,
             output: {},
             error: "`a` broke",
+            end: { ...TURN_LIMIT, detail: "`a` broke" },
           },
         },
       ],
@@ -150,8 +152,9 @@ describe("the Logs panel", () => {
     const [said, finished] = rows();
     expect(said?.textContent).toContain("echo `date` > x");
     expect(said?.querySelector("code")).toBeNull();
-    // Why it failed can be a model's or a tool's words.
-    expect(finished?.textContent).toContain("`a` broke");
+    // Why it ended is Ork's sentence; the model's or tool's words wait in Details.
+    expect(finished?.textContent).toContain("reached its turn limit (8)");
+    expect(finished?.textContent).not.toContain("`a` broke");
     expect(finished?.querySelector("code")).toBeNull();
   });
 
@@ -260,5 +263,81 @@ describe("the Logs panel", () => {
   it("has nothing for axe to find", async () => {
     await open();
     await expect(violations(document.body)).resolves.toEqual([]);
+  });
+});
+
+describe("the Logs panel, for a node that ended badly", () => {
+  const events: StoredEvent[] = [
+    {
+      runId: "r",
+      seq: 1,
+      at,
+      event: {
+        type: "node.finished",
+        id: "a",
+        round: 2,
+        ok: false,
+        output: {},
+        end: RATE_LIMITED,
+      },
+    },
+    {
+      runId: "r",
+      seq: 2,
+      at,
+      event: {
+        type: "node.finished",
+        id: "b",
+        round: 1,
+        ok: true,
+        output: { summary: "All done." },
+        end: DONE,
+      },
+    },
+  ];
+
+  const openEnds = async () => {
+    const opened = openPanelState({ events });
+    renderPanel(opened.state, <LogsPanel />);
+    await act(async () => {
+      opened.state.selectRun("r");
+      await Promise.resolve();
+    });
+    await screen.findByRole("list", { name: "Events of run r" });
+    return opened;
+  };
+
+  it("shows the kind and Ork's sentence, and keeps ok for a good end", async () => {
+    await openEnds();
+    const [bad, good] = rows();
+    expect(bad?.textContent).toContain("Rate limited");
+    expect(bad?.textContent).toContain("round 2: was asked by its provider");
+    expect(bad?.textContent).not.toContain("rate_limit_error");
+    expect(good?.textContent).toContain("ok: All done.");
+  });
+
+  it("opens its whole story over the event, with the details closed", async () => {
+    await openEnds();
+    await userEvent.click(
+      screen.getByRole("button", { name: /node\.finished.*Rate limited/u }),
+    );
+    const note = screen.getByRole("group", { name: "How a ended" });
+    expect(
+      within(note)
+        .getByRole("button", { name: "Details" })
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
+    expect(
+      screen.getByRole("group", { name: "Event 1 in full" }).textContent,
+    ).toContain("rate_limit_error");
+    await expect(violations(document.body)).resolves.toEqual([]);
+  });
+
+  it("is found by the kind's label", async () => {
+    await openEnds();
+    await userEvent.type(screen.getByLabelText("Text"), "rate limited");
+    await vi.waitFor(() => {
+      expect(rows()).toHaveLength(1);
+    });
   });
 });

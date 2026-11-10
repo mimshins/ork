@@ -1,17 +1,25 @@
 /**
- * @file The `command-code` adapter's `EventDecoder` and `UsageReader`: maps
+ * @file The `command-code` adapter's `LegDecoder` and `UsageReader`: maps
  *   Command Code's `--output-format json` lines (`{"type":"event"}` frames,
  *   then one `{"type":"result"}` line; measured on 1.88.5,
  *   specs/architecture.md, "Command Code") to Ork's runtime events. Tool names
  *   are given Ork's (Claude Code's) names, so logs and the node's rules read
  *   the same on every driver. One decoder reads one leg: the session id comes
  *   in an early `run_start` frame and the result line counts no turns, so it
- *   keeps both.
+ *   keeps both. The result line is held until the process exits: its exit code
+ *   says how the session ended (specs/architecture/command-code.md).
  */
 
-import type { RuntimeEvent, SessionUsage } from "@krapht/ork-core";
+import {
+  type EndKind,
+  endFor,
+  type RuntimeEvent,
+  type SessionEnd,
+  type SessionUsage,
+} from "@krapht/ork-core";
 
-import type { EventDecoder, UsageReader } from "../adapter.ts";
+import type { LegDecoder, UsageReader } from "../adapter.ts";
+import { errorEnd } from "../session-end.ts";
 import { addUsage } from "./claude-code-events.ts";
 
 type Json = Record<string, unknown>;
@@ -51,6 +59,32 @@ const SUBTYPES: Readonly<Record<string, string>> = {
   error: "error_during_execution",
 };
 
+/**
+ * Command Code's exit codes, by the kind they mean; 0 is a session that ended
+ * well and 1 an error its text explains.
+ */
+export const COMMAND_CODE_EXITS: Readonly<Record<number, EndKind>> = {
+  3: "auth",
+  // Refused by its server: the account may not use this.
+  4: "auth",
+  5: "rate_limited",
+  6: "provider_unavailable",
+  7: "provider_unavailable",
+  8: "turn_limit",
+  9: "provider_unavailable",
+  10: "out_of_credits",
+  130: "interrupted",
+};
+
+/** What a leg's exit code and result line say went wrong, if anything. */
+const signalOf = (code: number | null, error: string): SessionEnd | null => {
+  const kind = code === null ? undefined : COMMAND_CODE_EXITS[code];
+  if (kind !== undefined) return endFor(kind, {}, error);
+  // A clean exit, or a kill after a result that said no error.
+  if ((code === 0 || code === null) && error === "") return null;
+  return errorEnd(error);
+};
+
 /** The text blocks of a `message_end` frame's content. */
 const textOf = (content: unknown): string =>
   (Array.isArray(content) ? content : [])
@@ -70,10 +104,14 @@ const parseLine = (line: string): unknown => {
   }
 };
 
-/** A decoder for one leg of a Command Code session. */
-export const commandCodeDecoder = (): EventDecoder => {
+/**
+ * A decoder for one leg of a Command Code session; its end comes at the exit,
+ * from the held result line and the exit code.
+ */
+export const commandCodeDecoder = (): LegDecoder => {
   let sessionId = "";
   let turns = 0;
+  let held: Json | undefined;
 
   const frame = (event: Json): RuntimeEvent[] => {
     const type = event["type"];
@@ -109,13 +147,20 @@ export const commandCodeDecoder = (): EventDecoder => {
     return [];
   };
 
-  const result = (line: Json): RuntimeEvent => {
+  const result = (line: Json, code: number | null): RuntimeEvent => {
     const usage = isObject(line["usage"]) ? line["usage"] : {};
     const error = str(line["error"]);
+    const subtype = str(line["subtype"]);
+    const signal =
+      subtype === "max_turns"
+        ? endFor("turn_limit", {}, error)
+        : signalOf(code, error);
     return {
       type: "session.finished",
       outcome: {
-        subtype: SUBTYPES[str(line["subtype"])] ?? "error_during_execution",
+        subtype: SUBTYPES[subtype] ?? "error_during_execution",
+        // The report comes through Ork's `report` tool: the runner settles it.
+        end: signal ?? endFor("no_report"),
         sessionId: str(line["sessionId"]) || sessionId,
         // Command Code holds no report to a schema: Ork's `report` tool does.
         report: null,
@@ -134,15 +179,27 @@ export const commandCodeDecoder = (): EventDecoder => {
     };
   };
 
-  return line => {
-    const message = parseLine(line);
-    if (!isObject(message)) return { events: [] };
-    if (message["type"] === "result") return { events: [result(message)] };
-    const event = message["event"];
-    return {
-      events:
-        message["type"] === "event" && isObject(event) ? frame(event) : [],
-    };
+  return {
+    decode: line => {
+      const message = parseLine(line);
+      if (!isObject(message)) return { events: [] };
+      if (message["type"] === "result") {
+        held = message;
+        return { events: [] };
+      }
+      const event = message["event"];
+      return {
+        events:
+          message["type"] === "event" && isObject(event) ? frame(event) : [],
+      };
+    },
+    exit: code => {
+      if (held !== undefined) return [result(held, code)];
+      // Without a result line, only a known exit code explains the end;
+      // anything else is explained from stderr.
+      const kind = code === null ? undefined : COMMAND_CODE_EXITS[code];
+      return kind === undefined ? [] : [result({ error: "" }, code)];
+    },
   };
 };
 

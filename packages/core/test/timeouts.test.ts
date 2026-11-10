@@ -14,6 +14,7 @@ import {
   type HumanChannel,
   type NodeExecutor,
   type NodeResult,
+  type RunEvent,
   startRun,
 } from "../src/index.ts";
 import { createHolds } from "../src/run/holds.ts";
@@ -63,6 +64,7 @@ const run = (
   graph: CompiledGraph,
   executor: NodeExecutor,
   human: HumanChannel = answersAfter(0),
+  onEvent: (event: RunEvent) => void = ignore,
 ) => {
   const ran: string[] = [];
   const counted: NodeExecutor = context => {
@@ -75,7 +77,7 @@ const run = (
     cwd: process.cwd(),
     executors: { "tool.shell": counted, "claude.worker": counted },
     human,
-    onEvent: ignore,
+    onEvent,
     runDir: "/nonexistent",
     timeoutGraceMs: 20,
   });
@@ -115,6 +117,13 @@ const waitsUntil = (done: Promise<void>): HumanChannel => ({
   },
 });
 
+/** Keeps each finished node's end. */
+const endsInto =
+  (ends: unknown[]) =>
+  (event: RunEvent): void => {
+    if (event.type === "node.finished") ends.push(event.end);
+  };
+
 const limited = (node: string) =>
   compile(["limits: { timeout: 1s }", "nodes:", node]);
 
@@ -138,7 +147,7 @@ describe("a node's timeout", () => {
       {
         partial: "kept",
         status: "fail",
-        summary: "timed out after 1s",
+        summary: "reached its timeout (1s)",
         timedOut: true,
       },
     ]);
@@ -148,14 +157,14 @@ describe("a node's timeout", () => {
     const graph = compile(["nodes:", tool("slow", ", timeout: 1s")]);
     const { result } = await run(graph, untilAborted);
     expect(result.status).toBe("failed");
-    expect(result.reasons.join()).toContain("timed out after 1s");
+    expect(result.reasons.join()).toContain("slow: reached its timeout (1s)");
   });
 
   it("does not wait for an executor that will not end", async () => {
     const graph = compile(["nodes:", tool("slow", ", timeout: 1s")]);
     const { result } = await run(graph, stuck);
     expect(result.status).toBe("failed");
-    expect(result.reasons.join()).toContain("timed out after 1s");
+    expect(result.reasons.join()).toContain("slow: reached its timeout (1s)");
   });
 
   it("leaves a node alone that ends in time", async () => {
@@ -283,6 +292,19 @@ describe("a run's timeout", () => {
     const { result } = await run(limited(tool("slow")), untilAborted);
     expect(result.status).toBe("timed_out");
     expect(result.reasons.join()).toContain("the run's timeout of 1s passed");
+  });
+
+  it("ends what was running as timed out, not interrupted", async () => {
+    const ends: unknown[] = [];
+    await run(
+      limited(tool("slow")),
+      untilAborted,
+      answersAfter(0),
+      endsInto(ends),
+    );
+    expect(ends).toEqual([
+      { kind: "timed_out", message: "reached its timeout (1s)" },
+    ]);
   });
 
   it("ends even when an executor will not", async () => {

@@ -476,7 +476,7 @@ describe("what a fanned node runs over", () => {
     const { events } = await run(fromPlan(), planned("fix it"));
     expect(finishedOf(events, "build")).toMatchObject({
       ok: false,
-      error: "tasks is `fix it`, expected a list",
+      error: "could not start: tasks is `fix it`, expected a list",
     });
     expect(hasStarted(events, "build.0")).toBe(false);
   });
@@ -728,10 +728,10 @@ describe("limits, stop, pause and loops", () => {
     await handle.done;
     expect(finishedOf(events, "build")).toMatchObject({
       ok: false,
-      error: "stopped by the user",
+      end: { kind: "interrupted" },
       output: { statuses: ["fail", "fail", "skipped"], count: 3 },
     });
-    expect(finishedOf(events, "build.0").error).toBe("stopped by the user");
+    expect(finishedOf(events, "build.0").end?.kind).toBe("interrupted");
     expect(hasStarted(events, "build.2")).toBe(false);
   });
 

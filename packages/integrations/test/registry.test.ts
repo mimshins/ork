@@ -10,6 +10,7 @@ import {
   aws,
   AGENT_DRIVERS,
   DRIVER_IDS,
+  gh,
   git,
   INTEGRATIONS,
   integrationFor,
@@ -176,5 +177,21 @@ describe("the claude-code driver's check", () => {
       turnLimit: true,
       mcpServers: false,
     });
+  });
+});
+
+describe("a sign-in a failed run asks for", () => {
+  it("is read from gh's exit code and aws's words", () => {
+    expect(gh.signedOut?.({ exitCode: 4, stderr: "" })).toBe(true);
+    expect(gh.signedOut?.({ exitCode: 1, stderr: "not found" })).toBe(false);
+    expect(
+      aws.signedOut?.({
+        exitCode: 255,
+        stderr: "Unable to locate credentials. You can configure them.",
+      }),
+    ).toBe(true);
+    expect(aws.signedOut?.({ exitCode: 254, stderr: "NoSuchBucket" })).toBe(
+      false,
+    );
   });
 });

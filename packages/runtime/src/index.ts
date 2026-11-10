@@ -1,7 +1,7 @@
 /**
  * @file `@krapht/ork-runtime`'s public surface: the adapter strategies, the
  *   session runner, the `claude-code` adapter, the `lease` MCP wiring, and
- *   Ork's MCP server and tools.
+ *   Ork's MCP server and tools, and the provider-error classifier.
  */
 
 export * from "./adapter.ts";
@@ -16,7 +16,9 @@ export * from "./secret-file.ts";
 export * from "./hold.ts";
 export * from "./lease.ts";
 export * from "./mcp-http.ts";
+export * from "./provider-errors.ts";
 export * from "./registry.ts";
+export * from "./session-end.ts";
 export * from "./session-leg.ts";
 export * from "./session-runner.ts";
 export * from "./tools/delegate.ts";

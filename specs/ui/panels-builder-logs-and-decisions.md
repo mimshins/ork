@@ -57,7 +57,9 @@ The selected run's events, live
 - **A row** has the event's time, node, type and a line in words. Opening it
   shows the whole event. The list is one tab stop: the arrow keys, `Home` and
   `End` move through it, and `Enter` opens a row. An opened event is one more
-  stop, so the keys can scroll it.
+  stop, so the keys can scroll it. A `node.finished` that did not end well shows
+  its end kind as a badge and Ork's sentence, and opened, its end note
+  ([design](./design-components-and-copy.md#how-a-node-ended)) over the event.
 - **Filters** are by node, by event type and by text anywhere in the event. The
   node filter is the shared selection, so choosing a node in the Monitor opens
   it here and the other way round. They look through what is loaded

@@ -20,6 +20,7 @@ import {
 import type { CompiledGraph } from "../graph/types.ts";
 import type { HoldPort, HumanChannel } from "../runtime/types.ts";
 import { templateOf } from "../store/view.ts";
+import { endedWith, endFor } from "./ended.ts";
 import { heldTimeout, type Holds } from "./holds.ts";
 import type { NodeResult } from "./types.ts";
 
@@ -150,18 +151,20 @@ export const createClock = (options: {
 };
 
 const timedOut = (timeout: string, partial: NodeResult | null): NodeResult => {
-  const error = `timed out after ${timeout}`;
-  return {
-    ...partial,
-    ok: false,
-    error,
-    output: {
-      ...partial?.output,
-      status: "fail",
-      summary: error,
-      timedOut: true,
+  const end = endFor("timed_out", { timeout });
+  return endedWith(
+    {
+      ...partial,
+      ok: false,
+      output: {
+        ...partial?.output,
+        status: "fail",
+        summary: end.message,
+        timedOut: true,
+      },
     },
-  };
+    end,
+  );
 };
 
 /** Runs `start` under `timeout`, if it has one. */

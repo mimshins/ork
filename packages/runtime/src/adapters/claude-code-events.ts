@@ -5,13 +5,17 @@
  */
 
 import {
+  type EndKind,
+  endFor,
   parseReport,
   type RuntimeEvent,
+  type SessionEnd,
   type SessionOutcome,
   type SessionUsage,
 } from "@krapht/ork-core";
 
 import type { Decoded, UsageReader } from "../adapter.ts";
+import { errorEnd, sessionEnd } from "../session-end.ts";
 
 type Json = Record<string, unknown>;
 
@@ -44,18 +48,46 @@ const usageOf = (result: Json): SessionUsage => {
   };
 };
 
+/** Claude Code's error subtypes that name their own kind. */
+const SUBTYPE_KINDS: Readonly<Record<string, EndKind>> = {
+  error_max_turns: "turn_limit",
+  error_max_budget_usd: "budget_limit",
+  error_max_structured_output_retries: "invalid_report",
+};
+
+/**
+ * What a result says went wrong, if anything: a subtype that names its kind, or
+ * an error (`is_error`, or an error subtype) read by the provider classifier,
+ * `unknown` when it says nothing Ork knows.
+ */
+const signalOf = (
+  subtype: string,
+  result: Json,
+  errors: readonly string[],
+): SessionEnd | null => {
+  const text = [...errors, str(result["result"])].join("\n").trim();
+  const named = SUBTYPE_KINDS[subtype];
+  if (named !== undefined) return endFor(named, {}, text);
+  if (subtype === "success" && result["is_error"] !== true) return null;
+  return errorEnd(text);
+};
+
 /** The outcome a `result` message describes. */
 export const outcomeOf = (result: Json): SessionOutcome => {
-  const errors = result["errors"];
+  const said = result["errors"];
+  const errors = Array.isArray(said)
+    ? said.filter(e => typeof e === "string")
+    : [];
+  const subtype = str(result["subtype"]) || "unknown";
+  const report = parseReport(result["structured_output"]);
   return {
-    subtype: str(result["subtype"]) || "unknown",
+    subtype,
+    end: sessionEnd(signalOf(subtype, result, errors), report),
     sessionId: str(result["session_id"]),
-    report: parseReport(result["structured_output"]),
+    report,
     text: str(result["result"]),
     usage: usageOf(result),
-    errors: Array.isArray(errors)
-      ? errors.filter(e => typeof e === "string")
-      : [],
+    errors,
   };
 };
 

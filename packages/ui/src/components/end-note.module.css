@@ -1,0 +1,89 @@
+/**
+ * @file The end note's look: a sunken well in a node's strip or an opened log
+ *   row, holding the badge and message, what to do, who acts, the guide's link
+ *   and the Details. It wraps, so a narrow panel and 200% zoom lose nothing.
+ */
+
+.note {
+  --end-note-bg: var(--surface-sunken);
+  --end-note-radius: var(--radius-panel);
+  --end-note-padding: var(--gap-tight) var(--gap);
+  --end-note-gap: var(--gap-tight);
+  --end-note-message-text: var(--color-text);
+
+  background: var(--end-note-bg);
+  border-radius: var(--end-note-radius);
+  color: var(--end-note-message-text);
+  display: flex;
+  flex-direction: column;
+  gap: var(--end-note-gap);
+  overflow-wrap: anywhere;
+  padding: var(--end-note-padding);
+}
+
+.message,
+.hint {
+  --end-note-line-margin: 0;
+  --end-note-line-gap: var(--gap-tight);
+
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--end-note-line-gap);
+  margin: var(--end-note-line-margin);
+}
+
+.hint {
+  --end-note-hint-text: var(--color-text-muted);
+
+  color: var(--end-note-hint-text);
+}
+
+.facts {
+  --end-note-facts-gap: var(--gap-tight) var(--gap-loose);
+  --end-note-facts-margin: 0;
+
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--end-note-facts-gap);
+  margin: var(--end-note-facts-margin);
+}
+
+.who {
+  --end-note-who-gap: var(--space-6);
+
+  align-items: baseline;
+  display: flex;
+  gap: var(--end-note-who-gap);
+}
+
+.who dt {
+  --end-note-caption-text: var(--color-text-muted);
+  --end-note-caption-font: var(--font-caption);
+  --end-note-caption-text-size: var(--text-caption);
+  --end-note-caption-tracking: var(--tracking-caption);
+  --end-note-caption-case: var(--case-caption);
+
+  color: var(--end-note-caption-text);
+  font-family: var(--end-note-caption-font);
+  font-size: var(--end-note-caption-text-size);
+  letter-spacing: var(--end-note-caption-tracking);
+  text-transform: var(--end-note-caption-case);
+}
+
+.who dd {
+  --end-note-who-value-margin: 0;
+
+  margin: var(--end-note-who-value-margin);
+}
+
+.guide {
+  --end-note-guide-text: var(--color-link);
+  --end-note-guide-gap: var(--space-6);
+
+  align-items: center;
+  color: var(--end-note-guide-text);
+  display: inline-flex;
+  gap: var(--end-note-guide-gap);
+}

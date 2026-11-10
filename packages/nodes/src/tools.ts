@@ -13,7 +13,6 @@ import {
   declaredProblem,
   type ExecuteContext,
   type NodeExecutor,
-  type NodeResult,
   parseTemplate,
   renderTemplate,
   runScope,
@@ -22,6 +21,7 @@ import { integrationFor } from "@krapht/ork-integrations";
 import { isToolNode, type ToolNode, markValue } from "@krapht/ork-schema";
 
 import { commandLineOf, tokenize } from "./tool-command.ts";
+import { exitEnd, failed, invalidOutput } from "./tool-ends.ts";
 import {
   type Environ,
   identityOf,
@@ -144,12 +144,6 @@ export const capped = (text: string, file: () => string): string => {
 export const clipError = (text: string): string =>
   text.length <= ERROR_LIMIT ? text : `${text.slice(0, ERROR_LIMIT)}…`;
 
-const failed = (error: string): NodeResult => ({
-  ok: false,
-  output: { exitCode: -1, stdout: "", stderr: error },
-  error,
-});
-
 /** Runs a user's CLI through its integration's adapter, with its own login. */
 export const toolExecutor =
   (
@@ -162,7 +156,8 @@ export const toolExecutor =
   ): NodeExecutor =>
   async context => {
     const { node } = context;
-    if (!isToolNode(node)) return failed(`${context.id} is not a tool node`);
+    if (!isToolNode(node))
+      return failed(`${context.id} is not a tool`, "unknown");
     const environ = options.environ ?? process.env;
     // A value can also arrive through an input, so this covers the command too.
     const scrub = scrubberOf(
@@ -283,18 +278,10 @@ export const toolExecutor =
       id: context.id,
       isError: run.exitCode !== 0 || json?.ok === false || declared !== null,
     });
-    if (json?.ok === false) {
-      return { ok: false, output, error: `${context.id}: ${json.error}` };
-    }
+    if (json?.ok === false) return invalidOutput(output, json.error);
     // What it didn't declare isn't its output, so no condition can read it.
-    if (declared !== null) return { ok: false, output, error: declared };
+    if (declared !== null) return invalidOutput(output, declared);
     if (json !== null) output["json"] = json.json;
-    if (run.exitCode === 0) return { ok: true, output };
-    const last = run.stderr.trim().split("\n").at(-1) ?? "";
-    return {
-      ok: false,
-      transient: true,
-      output,
-      error: `${scrub(command.program)} exited with ${String(run.exitCode)}${last === "" ? "" : `: ${clipError(last)}`}`,
-    };
+    const signedOut = integration?.signedOut;
+    return exitEnd(output, run, context, scrub(command.program), signedOut);
   };

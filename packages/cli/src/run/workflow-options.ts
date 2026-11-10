@@ -30,6 +30,8 @@ export type RunWorkflowOptions = {
   allowDirty?: boolean;
   /** Print the run's events as JSON lines instead of a transcript. */
   json: boolean;
+  /** A failed node's hint and scrubbed detail in the transcript. */
+  verbose?: boolean;
   runtime: (driver: Driver, runs?: string) => Promise<AgentRuntime>;
   /**
    * The drivers' checks, for nodes that name no driver (default: the real ones,

@@ -244,9 +244,9 @@ describe("delegation", () => {
       reportingLead(ran, delegated),
     );
     expect(ran).toEqual(["lead"]);
-    expect(delegated[0]?.reports[0]?.error).toBe(
-      "not started: the run's budget of $5 is spent",
-    );
+    expect(delegated[0]?.reports[0]?.output).toMatchObject({
+      summary: "not started: the run's budget of $5 is spent",
+    });
     expect(result.status).toBe("budget_exhausted");
   });
 
@@ -256,7 +256,7 @@ describe("delegation", () => {
       return own.delegate([{ child: "check", brief: "too late" }]);
     });
     const { result } = await run(limited("{ budgetUsd: 1 }"), executor);
-    expect(delegations[0]?.reports[0]?.error).toBe(
+    expect(delegations[0]?.reports[0]?.output["summary"]).toBe(
       "not started: the run's budget of $1 is spent",
     );
     expect(result.status).toBe("budget_exhausted");

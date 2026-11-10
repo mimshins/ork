@@ -1,0 +1,55 @@
+/**
+ * @file The end's Details: a caption and the copy button above a well of the
+ *   raw text.
+ */
+
+.details {
+  --end-details-gap: var(--gap-tight);
+
+  display: flex;
+  flex-basis: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--end-details-gap);
+}
+
+.open {
+  --end-details-open-gap: var(--gap-tight);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--end-details-open-gap);
+  width: 100%;
+}
+
+.bar {
+  --end-details-bar-gap: var(--gap-tight);
+  --end-details-bar-justify: space-between;
+
+  align-items: center;
+  display: flex;
+  gap: var(--end-details-bar-gap);
+  justify-content: var(--end-details-bar-justify);
+}
+
+.caption {
+  --end-details-caption-text: var(--color-text-muted);
+  --end-details-caption-font: var(--font-caption);
+  --end-details-caption-text-size: var(--text-caption);
+  --end-details-caption-tracking: var(--tracking-caption);
+  --end-details-caption-case: var(--case-caption);
+
+  color: var(--end-details-caption-text);
+  font-family: var(--end-details-caption-font);
+  font-size: var(--end-details-caption-text-size);
+  letter-spacing: var(--end-details-caption-tracking);
+  text-transform: var(--end-details-caption-case);
+}
+
+.copy {
+  --end-details-copy-gap: var(--gap-tight);
+
+  align-items: center;
+  display: flex;
+  gap: var(--end-details-copy-gap);
+}

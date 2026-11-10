@@ -8,9 +8,14 @@ _Part of [Running workflows](../running-workflows.md)._
 ork ps                 # this project's runs, newest first (--all: every project)
 ork logs               # the newest run's transcript; or ork logs <run-id>
 ork logs 3f2a -f       # follow a run that is still going, by an id prefix
-ork logs --node review # one node's events
+ork logs --node review # one node's events, with why it stopped and its details
+ork logs 3f2a --verbose # every failed node's hint and scrubbed details
 ork tree               # the ownership tree: each node's state, tokens and cost
 ```
+
+A failed node says why in one line, as a kind and a message; `--verbose` (on
+`ork run` too) and `ork logs --node` add what to do and the raw text, scrubbed.
+[Why a node stopped](../why-a-node-stopped.md) lists every kind.
 
 A run a `workflow.call` started shows its cost as `$0.42 in <caller>`, since the
 caller's cost already counts it. `ork ps --json` adds each finished run's

@@ -8,7 +8,6 @@
  */
 
 import type { CallPort, CallRequest } from "../run/calls.ts";
-import { failure } from "../run/results.ts";
 import type { NodeResult, RunEvent } from "../run/types.ts";
 import { liveStatus } from "../store/view.ts";
 import {
@@ -23,7 +22,13 @@ import {
   linkChannels,
   tellInput,
 } from "./call-talk.ts";
-import { noWait, storedReport, waitForNode, waitForRun } from "./call-wait.ts";
+import {
+  noWait,
+  startFailed,
+  storedReport,
+  waitForNode,
+  waitForRun,
+} from "./call-wait.ts";
 import { requestStop } from "./commands.ts";
 
 export type CallsOptions = StartOptions &
@@ -136,7 +141,7 @@ export const createCalls = (options: CallsOptions): CallPort => {
     signal: AbortSignal,
   ): Promise<NodeResult> => {
     const unadopted = await adoptConversation(request, signal);
-    if (unadopted !== null) return failure(unadopted);
+    if (unadopted !== null) return startFailed(unadopted);
     const known = conversations.get(request.callId);
     if (known !== undefined) {
       const done = stopOnAbort(known, signal);
@@ -148,7 +153,7 @@ export const createCalls = (options: CallsOptions): CallPort => {
     }
     const begun = await begin(request);
     adopt.delete(request.callId);
-    if (!begun.ok) return failure(begun.error);
+    if (!begun.ok) return startFailed(begun.error);
     const { id, after, fresh } = begun;
     conversations.set(request.callId, id);
     const done = stopOnAbort(id, signal);
@@ -157,7 +162,7 @@ export const createCalls = (options: CallsOptions): CallPort => {
         const refused = await linkChannels(talk, id, request, signal);
         if (refused !== null) {
           stop(id);
-          return failure(refused);
+          return startFailed(refused);
         }
       }
       if (fresh) tellInput(talk, id, request);
@@ -179,7 +184,7 @@ export const createCalls = (options: CallsOptions): CallPort => {
     signal: AbortSignal,
   ): Promise<NodeResult> => {
     const begun = await begin(request);
-    if (!begun.ok) return failure(begun.error);
+    if (!begun.ok) return startFailed(begun.error);
     const { id, after } = begun;
     // Stopped while the run was starting, a stop had nothing to reach yet.
     const done = stopOnAbort(id, signal);

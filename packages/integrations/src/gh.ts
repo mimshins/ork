@@ -12,6 +12,9 @@ export const gh = defineIntegration({
   program: "gh",
   options: {},
   args: () => [],
+  // gh exits 4 when a command needs authentication.
+  signedOut: ({ exitCode, stderr }) =>
+    exitCode === 4 || /\bgh auth login\b/u.test(stderr),
   doctor: async exec => {
     const version = await exec("gh", ["--version"]);
     if (!version.ok) {

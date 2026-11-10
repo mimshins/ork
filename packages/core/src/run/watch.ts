@@ -12,9 +12,20 @@ import { timeoutMs, type Watch, markValue } from "@krapht/ork-schema";
 import { evaluate, type Scope, truthy } from "../expr/evaluate.ts";
 import { parseExpr } from "../expr/parse.ts";
 import type { HoldPort, RuntimeEvent } from "../runtime/types.ts";
+import { endedWith, type EndKind, endFor, failedWith } from "./ended.ts";
 import { heldTimeout } from "./holds.ts";
-import { failure } from "./results.ts";
 import type { NodeOutput, NodeResult, RunEvent } from "./types.ts";
+
+/**
+ * The ends of a failed look that the next look may mend besides a transient
+ * kind: what a tool's non-zero exit or an MCP call's error ends as.
+ */
+const LOOKS_AGAIN: ReadonlySet<EndKind | undefined> = new Set<EndKind>([
+  "command_failed",
+  "auth",
+  "tool_missing",
+  "interrupted",
+]);
 
 /** How many failed looks in a row end a wait, when a node doesn't say. */
 export const DEFAULT_MISSES = 3;
@@ -81,7 +92,11 @@ export const runWatch = async (options: {
 }): Promise<NodeResult> => {
   const { id, watch, declared, look, hold, signal, graceMs, onEvent } = options;
   const until = parseExpr(watch.until);
-  if (!until.ok) return failure(`watch.until: ${until.message}`);
+  if (!until.ok) {
+    return failedWith(
+      endFor("invalid_node", { reason: `watch.until: ${until.message}` }),
+    );
+  }
   const every = options.everyMs ?? timeoutMs(watch.every) ?? 0;
   const misses = watch.misses ?? DEFAULT_MISSES;
   const limit = new AbortController();
@@ -99,17 +114,19 @@ export const runWatch = async (options: {
 
   const expiredResult = (): NodeResult => {
     const error = `watched for ${watch.timeout}, and ${markValue(watch.until)} never held`;
-    return {
-      ...last,
-      ok: false,
-      error,
-      output: {
-        ...last?.output,
-        status: "fail",
-        summary: error,
-        timedOut: true,
+    return endedWith(
+      {
+        ...last,
+        ok: false,
+        output: {
+          ...last?.output,
+          status: "fail",
+          summary: error,
+          timedOut: true,
+        },
       },
-    };
+      endFor("timed_out", { timeout: watch.timeout }, error),
+    );
   };
 
   /** Stands still while paused, and records the hold at once. */
@@ -168,7 +185,13 @@ export const runWatch = async (options: {
       // oxlint-disable-next-line eslint/no-await-in-loop -- see above
       const result = active.aborted ? null : await lookOnce();
       if (signal.aborted) {
-        return ended("stopped", failure("stopped while watching"));
+        return ended(
+          "stopped",
+          failedWith(endFor("interrupted"), {
+            status: "fail",
+            summary: "stopped while watching",
+          }),
+        );
       }
       if (limit.signal.aborted || result === null) {
         return ended("timed_out", expiredResult());
@@ -193,7 +216,9 @@ export const runWatch = async (options: {
       } else {
         // A look that ran out of its own time may do better on the next.
         const retry =
-          result.transient === true || result.output["timedOut"] === true;
+          result.transient === true ||
+          LOOKS_AGAIN.has(result.end?.kind) ||
+          result.output["timedOut"] === true;
         if (!retry) return ended("failed", result);
         missed += 1;
         if (missed >= misses) {

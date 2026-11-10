@@ -108,7 +108,13 @@ are named by id or a unique prefix: no match is 404, several are 400.
   behind it changed after the run started
   ([context-routes.ts](../../packages/server/src/context-routes.ts)).
 - **Events** are the stored events, already masked; the server sends nothing the
-  store does not hold.
+  store does not hold, except each `node.finished`'s `end` as an `EndView`
+  (`kind`, `message`, `detail?`, plus the registry's `label`, `actor`,
+  `transient`, `hint` and `docsAnchor`), read through core's `endOf` so a run
+  stored before ends existed has one too. **The tree** carries the same `end` on
+  each node that has finished, and a failed node's `now` is its message, not the
+  raw error ([end-view.ts](../../packages/server/src/end-view.ts),
+  [contract](../../packages/server/src/contract-ends.ts)). No endpoint is new.
 - **The built UI** is the first folder that holds an `index.html`: `dist/ui`
   beside the published bundle, or `packages/ui/dist` from source once
   `pnpm ui:build` has run

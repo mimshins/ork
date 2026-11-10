@@ -14,7 +14,7 @@ import type { CliAdapter } from "./adapter.ts";
 import { claudeCodeAdapter } from "./adapters/claude-code.ts";
 import { commandCodeAdapter } from "./adapters/command-code.ts";
 import { openCodeAdapter } from "./adapters/open-code.ts";
-import { driverFailure } from "./session-leg.ts";
+import { driverFailure } from "./session-end.ts";
 import { createSessionRuntime } from "./session-runner.ts";
 
 /** The message a session on a driver with no adapter yet ends with. */
@@ -26,7 +26,9 @@ const notBuilt = (driver: DriverId): AgentRuntime => ({
   start: () => ({
     // oxlint-disable-next-line typescript/require-await -- one event, already known
     events: (async function* () {
-      yield driverFailure(notBuiltYet(driver));
+      yield driverFailure(notBuiltYet(driver), "model_unavailable", {
+        facts: {},
+      });
     })(),
     send: () => {
       // Nothing runs, so nothing reads it.

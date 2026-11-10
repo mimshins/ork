@@ -5,6 +5,8 @@
  */
 
 import {
+  endFor,
+  failedWith,
   type NodeExecutor,
   type NodeResult,
   NOT_STARTED,
@@ -20,27 +22,26 @@ import {
  */
 const limitedCall = (result: NodeResult): NodeResult => {
   if (result.ok) return result;
-  const refused = (result.error ?? "").includes(NOT_STARTED);
+  const why = result.end?.detail ?? result.error;
+  const refused =
+    result.end?.kind === "plan_limit" || (why ?? "").includes(NOT_STARTED);
   return refused || result.output["runStatus"] === "quota_exhausted"
-    ? { ...result, limited: result.error ?? "the called run reached a limit" }
+    ? { ...result, limited: why ?? "the called run reached a limit" }
     : result;
 };
 
 export const callExecutor: NodeExecutor = context => {
   const { node, calls } = context;
   if (node.type !== "workflow.call") {
-    return Promise.resolve({
-      ok: false,
-      output: {},
-      error: `${context.id} is not a call`,
-    });
+    return Promise.resolve(
+      failedWith(endFor("unknown", {}, `${context.id} is not a call`), {}),
+    );
   }
   if (calls === undefined) {
-    return Promise.resolve({
-      ok: false,
-      output: { status: "fail" },
-      error: "This run cannot call workflows.",
-    });
+    const reason = "this run cannot call workflows";
+    return Promise.resolve(
+      failedWith(endFor("invalid_node", { reason }), { status: "fail" }),
+    );
   }
   const scope = runScope(
     context.inputs,

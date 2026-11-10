@@ -9,9 +9,16 @@
  *   `ork_report` is `mcp__ork__report`), the words a node's rules use.
  */
 
-import type { RuntimeEvent, SessionSpec, SessionUsage } from "@krapht/ork-core";
+import {
+  endFor,
+  type RuntimeEvent,
+  type SessionEnd,
+  type SessionSpec,
+  type SessionUsage,
+} from "@krapht/ork-core";
 
 import type { Decoded, LegDecoder, UsageReader } from "../adapter.ts";
+import { errorEnd } from "../session-end.ts";
 import { ORK_SERVER, toolId } from "../tools/tool.ts";
 
 type Json = Record<string, unknown>;
@@ -134,10 +141,40 @@ export const decodeOpenCodeLine = (line: string): Decoded => {
   }
 };
 
+/** An `error` line's words, for the session's errors. */
+const errorText = (error: unknown): string =>
+  str(get(get(error, "data"), "message")) ||
+  str(get(error, "message")) ||
+  str(get(error, "name")) ||
+  "error";
+
+/** An `error` line's end: its name, status and body, through the classifier. */
+const errorLineEnd = (error: unknown): SessionEnd => {
+  const data = get(error, "data");
+  const status = get(data, "statusCode");
+  const said = [
+    str(get(error, "name")),
+    errorText(error),
+    str(get(data, "responseBody")),
+  ]
+    .filter(part => part !== "")
+    .join("\n");
+  return errorEnd(
+    said,
+    "unknown",
+    typeof status === "number" ? status : undefined,
+  );
+};
+
+/** The exit code OpenCode gives an interrupted session. */
+const INTERRUPTED = 130;
+
 /**
  * A decoder for one leg of a session: it starts the session at the first line
  * that names it, and keeps the last text, the steps' usage and the errors for
- * the end.
+ * the end. OpenCode prints nothing at its step cap (`steps`, the node's
+ * `maxTurns`): a session that used every step and handed in no report reached
+ * its turn limit, which the runner settles once it knows the report.
  */
 export const openCodeDecoder = (spec: SessionSpec): LegDecoder => {
   const began = Date.now();
@@ -145,6 +182,7 @@ export const openCodeDecoder = (spec: SessionSpec): LegDecoder => {
   let text = "";
   let usage = NONE;
   const errors: string[] = [];
+  let failed: SessionEnd | null = null;
   return {
     decode: line => {
       const message = parseLine(line);
@@ -169,13 +207,8 @@ export const openCodeDecoder = (spec: SessionSpec): LegDecoder => {
           break;
         }
         case "error": {
-          const error = message["error"];
-          errors.push(
-            str(get(get(error, "data"), "message")) ||
-              str(get(error, "message")) ||
-              str(get(error, "name")) ||
-              "error",
-          );
+          errors.push(errorText(message["error"]));
+          failed ??= errorLineEnd(message["error"]);
           break;
         }
         default: {
@@ -185,13 +218,20 @@ export const openCodeDecoder = (spec: SessionSpec): LegDecoder => {
       return { events };
     },
     exit: code => {
+      const interrupted = code === INTERRUPTED;
       // A failure that said nothing is explained from stderr instead.
-      if (code !== 0 && errors.length === 0) return [];
+      if (code !== 0 && errors.length === 0 && !interrupted) return [];
+      const capped =
+        spec.maxTurns !== undefined && usage.turns >= spec.maxTurns;
+      const end = interrupted
+        ? endFor("interrupted", {}, errors.join("\n"))
+        : (failed ?? endFor(capped ? "turn_limit" : "no_report"));
       return [
         {
           type: "session.finished",
           outcome: {
             subtype: code === 0 ? "success" : "error_during_execution",
+            end,
             sessionId,
             report: null,
             text,

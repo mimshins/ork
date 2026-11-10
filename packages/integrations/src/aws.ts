@@ -20,6 +20,10 @@ export const aws = defineIntegration({
     ...(profile === undefined ? [] : ["--profile", profile]),
     ...(region === undefined ? [] : ["--region", region]),
   ],
+  signedOut: ({ stderr }) =>
+    /Unable to locate credentials|ExpiredToken|InvalidClientTokenId|Token has expired|aws sso login|SSO session .* expired/iu.test(
+      stderr,
+    ),
   doctor: async (exec, env) => {
     const version = await exec("aws", ["--version"]);
     if (!version.ok) {

@@ -206,3 +206,11 @@
 .detail:focus-visible {
   --focus-ring-offset: calc(var(--focus-width) * -1);
 }
+
+.end {
+  --logs-end-bg: var(--surface-panel);
+  --logs-end-padding: var(--gap-tight) var(--gap);
+
+  background: var(--logs-end-bg);
+  padding: var(--logs-end-padding);
+}

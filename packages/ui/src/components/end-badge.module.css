@@ -1,0 +1,24 @@
+/**
+ * @file The end badge's look: the status badge, then the word "may pass" in the
+ *   muted caption color when another try may not fail.
+ */
+
+.end {
+  --end-badge-end-gap: var(--space-6);
+
+  align-items: center;
+  display: inline-flex;
+  gap: var(--end-badge-end-gap);
+  max-width: 100%;
+}
+
+.note {
+  --end-badge-note-text: var(--color-text-muted);
+  --end-badge-note-font: var(--font-mono);
+  --end-badge-note-text-size: var(--text-small);
+
+  color: var(--end-badge-note-text);
+  font-family: var(--end-badge-note-font);
+  font-size: var(--end-badge-note-text-size);
+  white-space: nowrap;
+}

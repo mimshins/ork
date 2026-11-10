@@ -308,9 +308,10 @@ describe("a look of a watch", () => {
     expect(result.output["stdout"]).toBe("[none]\n");
   });
 
-  it("can try again after a non-zero exit", async () => {
+  it("ends a non-zero exit as a failed command a watch looks again at, not transient", async () => {
     const { result } = await run({ script: "exit 3" });
-    expect(result.transient).toBe(true);
+    expect(result.end?.kind).toBe("command_failed");
+    expect(result.transient).toBeUndefined();
   });
 
   it("can't mend a program that says what it didn't declare", async () => {

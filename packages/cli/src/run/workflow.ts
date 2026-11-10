@@ -178,6 +178,7 @@ export const runWorkflowFile = async (
           width,
           tools,
           options.human !== undefined,
+          options.verbose,
         )) {
           options.out(line);
         }

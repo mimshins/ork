@@ -139,6 +139,12 @@ export const run = defineCommand({
       description: "Print the events as JSON lines",
       default: false,
     },
+    verbose: {
+      type: "boolean",
+      description:
+        "Show why each failed node stopped, with its scrubbed details",
+      default: false,
+    },
     detach: {
       type: "boolean",
       description:
@@ -226,6 +232,7 @@ export const run = defineCommand({
       inPlace: args["in-place"],
       ...(args["machine-claude"] ? { machineClaude: true } : {}),
       json: args.json,
+      verbose: args.verbose,
       runtime: loadRuntime,
       store,
       ...(human === undefined ? {} : { human }),

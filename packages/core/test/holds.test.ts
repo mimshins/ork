@@ -242,7 +242,30 @@ describe("stopping one node", () => {
     expect(result.nodes).toContainEqual(
       expect.objectContaining({ id: "b", ok: true }),
     );
-    expect(result.reasons.join("\n")).toContain("stopped by the user");
+    expect(result.reasons.join("\n")).toContain("a: was stopped");
+  });
+});
+
+/** Throws for each node what `said` has for it. */
+const throwing =
+  (said: Record<string, string>): NodeExecutor =>
+  context =>
+    Promise.reject(new Error(said[context.id] ?? "boom"));
+
+/** Each finished node's end kind, by id. */
+const endKinds = (events: readonly RunEvent[]) =>
+  Object.fromEntries(
+    events.flatMap(e =>
+      e.type === "node.finished" ? [[e.id, e.end?.kind]] : [],
+    ),
+  );
+
+describe("a node whose executor threw", () => {
+  it("ends by what the error says, and as unknown when it says nothing Ork knows", async () => {
+    const executor = throwing({ a: "git reset failed: spawn git ENOENT" });
+    const { handle, events } = start(twoWorkers(false), executor);
+    await handle.done;
+    expect(endKinds(events)).toEqual({ a: "tool_missing", b: "unknown" });
   });
 });
 

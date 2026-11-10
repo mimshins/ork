@@ -44,7 +44,12 @@ with the built-in node types
   (`2 ran, 1 skipped, 1 failure handled`), the worktrees left for you (branch,
   path, why), the reasons it did not succeed, and a warning for each node that
   never ran with messages nobody read. `--json` prints the
-  [run events](../scheduler/resuming-and-events.md#run-events) as JSON lines.
+  [run events](../scheduler/resuming-and-events.md#run-events) as JSON lines. A
+  failed node's line is `<node> │ ✗ <Label>: <message>`, its kind and Ork's own
+  sentence, with `(may pass; ork resume retries)` after a transient kind; never
+  the provider's words. **`--verbose`** adds, under each failed node, the kind's
+  hint and the scrubbed detail
+  ([how a session ends](../runtime/session-ends.md)).
 - Integrations are optional: before anything starts, Ork checks only the
   programs the workflow's tool nodes run (`gh` for `tool.gh`, `aws` for
   `tool.aws`, `git` for `tool.git`, a `tool.shell` command's first word unless
@@ -103,7 +108,8 @@ with the built-in node types
 - stdout gets the transcript (session start, assistant text, one line per tool
   call, failed tool results) and then the report: status, summary, branch,
   artifacts, the `output.schema` fields, and usage (cost, tokens, turns, time).
-  `--json` prints the runtime events as JSON lines instead.
+  `--json` prints the runtime events as JSON lines instead. A failure reads as
+  in `ork run`: its kind and message, and with `--verbose` the hint and detail.
 - Exit code 0 when the node reports `pass`, `done` or `changes_requested`; 1 on
   `fail` or no valid report. Ctrl-C interrupts the session.
 
@@ -139,8 +145,11 @@ children (with `template` and `startedAt`), and the node's `listed`.
 `ork logs --node` on a node or item the run never named and never declared is an
 error, unless `--follow` is on a live run, which may still start it.
 `ork logs --node build` keeps the node's events and its items'; `--node build.2`
-keeps one item's. The same filter serves `GET /api/runs/<id>/events?node=` in
-`ork ui`, and `GET /api/runs/<id>/tree` is this same nested tree.
+keeps one item's. `ork logs --node` always shows a failed node's hint and
+scrubbed detail, as `--verbose` does for the whole run (there is no
+`ork runs show`; the browser view's Details button names this command). The same
+filter serves `GET /api/runs/<id>/events?node=` in `ork ui`, and
+`GET /api/runs/<id>/tree` is this same nested tree.
 
 ## Decisions and stopping
 

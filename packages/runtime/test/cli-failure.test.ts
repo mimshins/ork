@@ -46,6 +46,18 @@ const fakeClaude = (body: string): string => {
   return file;
 };
 
+/** The kind a session that died with `body` ended as. */
+const kindOf = async (body: string): Promise<string | undefined> => {
+  const session = createCliRuntime({ bin: fakeClaude(body) }).start(spec, {
+    human,
+  });
+  let kind: string | undefined;
+  for await (const event of session.events) {
+    if (event.type === "session.finished") kind = event.outcome.end?.kind;
+  }
+  return kind;
+};
+
 const reasonOf = (events: readonly RuntimeEvent[]): string => {
   const last = events.at(-1);
   if (last?.type !== "session.finished") throw new Error("no finish");
@@ -134,5 +146,15 @@ describe("a claude that dies without a result", () => {
   it("says interrupted when Ork stopped it, however it exits", async () => {
     const body = `${STARTED} process.on("SIGINT", () => { process.stderr.write("bye\\n"); process.exit(1); }); setInterval(() => {}, 1000);`;
     expect(await stoppedOf(body)).toBe("interrupted");
+  });
+
+  it("ends a crash it can't read as driver_crashed", async () => {
+    expect(await kindOf(stderrOf("Error: boom\n"))).toBe("driver_crashed");
+  });
+
+  it("reads a provider's words in stderr through the classifier", async () => {
+    expect(
+      await kindOf(stderrOf("Invalid API key · Please run /login\n")),
+    ).toBe("auth");
   });
 });

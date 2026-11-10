@@ -256,7 +256,14 @@ describe("a list over its maxItems", () => {
     expect(result.status).toBe("failed");
     expect(result.reasons[0]).toContain("over maxItems 2");
     expect(started(events)).not.toContain("build.0");
-    expect(buildFinished(events)?.ok).toBe(false);
+    expect(buildFinished(events)).toMatchObject({
+      ok: false,
+      end: {
+        kind: "invalid_node",
+        message:
+          "could not start: the list of build has 4 items, over maxItems 2",
+      },
+    });
   });
 
   it("runs the first maxItems on first", async () => {
@@ -464,7 +471,7 @@ describe("a stop while a list over its cap waits for an answer", () => {
     expect(result.status).toBe("failed");
     expect(buildFinished(events)).toMatchObject({
       ok: false,
-      error: "stopped by the user",
+      end: { kind: "interrupted" },
     });
     expect(signals[0]?.aborted).toBe(true);
     expect(ran).toEqual([]);

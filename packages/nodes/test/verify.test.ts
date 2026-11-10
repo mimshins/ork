@@ -218,8 +218,8 @@ describe("verify:", () => {
       checks: [FAILED, FAILED],
     });
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("its check failed");
-    expect(result.error).toContain("2 tests failed");
+    expect(result.output["summary"]).toContain("its check failed");
+    expect(result.output["summary"]).toContain("2 tests failed");
     expect(result.output["status"]).toBe("fail");
     expect(result.sessionId).toBe("s1");
     expect(specs).toHaveLength(2);
@@ -242,7 +242,7 @@ describe("verify:", () => {
       over: { budgetLeftNow: () => USAGE.costUsd },
     });
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("its check failed");
+    expect(result.output["summary"]).toContain("its check failed");
     expect(specs).toHaveLength(1);
   });
 
@@ -283,8 +283,8 @@ describe("verify:", () => {
     });
     expect(stepNodes).toHaveLength(1);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("its check failed");
-    expect(result.error).toContain("reported fail");
+    expect(result.output["summary"]).toContain("its check failed");
+    expect(result.output["summary"]).toContain("then: reported that it failed");
   });
 
   it("stays failed if a session then reports changes_requested", async () => {
@@ -295,7 +295,7 @@ describe("verify:", () => {
     expect(stepNodes).toHaveLength(1);
     expect(result.ok).toBe(false);
     expect(result.output["status"]).toBe("fail");
-    expect(result.error).toContain("its check failed");
+    expect(result.output["summary"]).toContain("its check failed");
   });
 
   it("fails a node whose resume gives no report", async () => {
@@ -304,7 +304,9 @@ describe("verify:", () => {
       checks: [FAILED],
     });
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("ended without a report");
+    expect(result.output["summary"]).toContain(
+      "then: ended without handing in a report",
+    );
   });
 
   it("does not pass a node stopped before its check", async () => {

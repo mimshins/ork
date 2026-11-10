@@ -157,14 +157,17 @@ describe("the command-code adapter's arguments", () => {
 
 describe("the command-code decoder", () => {
   it("takes the session id from run_start, counts turns, and maps max_turns", () => {
-    const decode = commandCodeDecoder();
+    const { decode, exit } = commandCodeDecoder();
     const lines = [
       { type: "event", event: { type: "run_start", sessionId: "s9" } },
       { type: "event", event: { type: "turn_start", turnNumber: 1 } },
       { type: "event", event: { type: "turn_start", turnNumber: 2 } },
       { type: "result", subtype: "max_turns", usage: {}, finalText: "" },
     ];
-    const events = lines.flatMap(line => decode(JSON.stringify(line)).events);
+    const events = [
+      ...lines.flatMap(line => decode(JSON.stringify(line)).events),
+      ...exit(8),
+    ];
     expect(events[0]).toEqual({
       type: "session.started",
       sessionId: "s9",
@@ -173,6 +176,7 @@ describe("the command-code decoder", () => {
     expect(events.at(-1)).toMatchObject({
       outcome: {
         subtype: "error_max_turns",
+        end: { kind: "turn_limit" },
         sessionId: "s9",
         usage: { turns: 2, costUsd: 0 },
       },

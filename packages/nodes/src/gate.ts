@@ -8,6 +8,8 @@
 
 import {
   type DecisionChoice,
+  endedWith,
+  endFor,
   heldTimeout,
   type NodeExecutor,
   parseTemplate,
@@ -92,15 +94,18 @@ export const gateExecutor: NodeExecutor = async context => {
   try {
     const output = await Promise.race([answer, ...expired]);
     if (!options.some(o => o.id === output.choice)) {
-      return {
-        ok: false,
-        output,
-        error: "no one answered the gate",
-      };
+      const facts = node.timeout === undefined ? {} : { timeout: node.timeout };
+      return endedWith(
+        { ok: false, output },
+        endFor("timed_out", facts, "no one answered the gate"),
+      );
     }
     return { ok: true, output };
   } catch {
-    return { ok: false, output: {}, error: "the gate was withdrawn" };
+    return endedWith(
+      { ok: false, output: {} },
+      endFor("interrupted", {}, "the gate was withdrawn"),
+    );
   } finally {
     answered.abort();
   }

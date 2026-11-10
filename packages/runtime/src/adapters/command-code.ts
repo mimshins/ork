@@ -88,8 +88,9 @@ const withMod: McpWiring = {
 export const commandCodeAdapter: CliAdapter = {
   driver: "command-code",
   command: { bin: "cmd", args: spec => commandCodeArgs(spec) },
-  decode: line => commandCodeDecoder()(line),
-  decoder: commandCodeDecoder,
+  decode: line => commandCodeDecoder().decode(line),
+  // The result line waits for the exit code, which says how the session ended.
+  legDecoder: () => commandCodeDecoder(),
   mcp: withMod,
   permissions: { kind: "rules", denyByDefault: true },
   usage: commandCodeUsage,
