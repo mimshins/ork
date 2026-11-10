@@ -54,6 +54,13 @@ permissions:
     - Bash(uniq *)
     - Bash(echo *)
     - Bash(npm view *)
+    # The docs of the agent CLIs Ork drives (RFC-014): read-only, for every
+    # node. Each host is listed, since a redirect to another host asks again.
+    - WebFetch(domain:code.claude.com)
+    - WebFetch(domain:docs.claude.com)
+    - WebFetch(domain:docs.anthropic.com)
+    - WebFetch(domain:opencode.ai)
+    - WebFetch(domain:commandcode.ai)
   deny:
     - Bash(git commit *)
     - Bash(git push *)
