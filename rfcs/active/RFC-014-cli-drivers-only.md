@@ -1,6 +1,6 @@
 # RFC-014 — CLI drivers only: claude, OpenCode and Command Code
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-10
 - **Supersedes:** —
 - **Superseded by:** —
