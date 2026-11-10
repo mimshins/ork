@@ -519,7 +519,7 @@ edges:
   - from: review
     to: build
     when: "!all(statuses, 'pass')"
-    maxRounds: 2
+    maxRounds: 3
   - from: review
     to: ratify
     when: all(statuses, 'pass')
