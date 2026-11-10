@@ -19,6 +19,8 @@
     "map:check": "tsc -p docs/interaction-map && node docs/interaction-map/tools/check.mjs",
     "docs:check": "node tools/docs/check.ts",
     "rfc:close": "node tools/rfcs/close.ts",
+    "benchmark": "node tools/benchmark/measure.ts",
+    "benchmark:control": "node tools/benchmark/control.ts",
     "changesets:create": "changeset add",
     "changesets:empty": "changeset add --empty",
     "changesets:status": "node tools/release/check-changeset.ts",

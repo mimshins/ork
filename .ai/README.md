@@ -71,6 +71,9 @@ Load only what the task needs.
   layout for long documents, and `pnpm docs:check`.
 - [`resync-map`](./skills/resync-map/SKILL.md) — bring the interaction map up to
   date with the code.
+- [`benchmark-run`](./skills/benchmark-run/SKILL.md) — save a benchmark of a
+  finished run and its called runs, with an estimate of the same change in plain
+  Claude Code sessions (`pnpm benchmark`, `pnpm benchmark:control`).
 
 ### Agents (`agents/`)
 

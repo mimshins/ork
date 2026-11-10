@@ -104,6 +104,9 @@ bug fixes need no plan unless they are architectural.
 - `pnpm docs:check` checks links, anchors and the hub/chunk layout.
 - `pnpm rfc:close RFC-NNN` marks a shipped RFC Implemented, archives it and
   updates the index and the links to it.
+- `pnpm benchmark <run> <folder>` measures a finished run and the runs it
+  called; `pnpm benchmark:control <folder>` estimates the same changes in plain
+  Claude Code sessions ([benchmark-run](./.ai/skills/benchmark-run/SKILL.md)).
 - `pnpm build` bundles the CLI into `packages/cli/dist/bin.mjs`.
 - `pnpm format` fixes formatting (oxfmt); `pnpm lint:fix` fixes lint (oxlint).
 - `pnpm ork <args>` runs the CLI from source.
