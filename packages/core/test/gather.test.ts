@@ -142,12 +142,10 @@ describe("output.gather", () => {
     ).toEqual([]);
   });
 
-  it("refuses a list rule the run wouldn't hold to a list", () => {
-    expect(
-      codes(withDecisions("{ list: string }")).some(line =>
-        line.includes("isn't declared as a list"),
-      ),
-    ).toBe(true);
+  it("never sees a list rule the run wouldn't hold to a list", () => {
+    expect(() => codes(withDecisions("{ list: string }"))).toThrow(
+      "`list` takes a map",
+    );
   });
 
   it("refuses a node with forEach", () => {

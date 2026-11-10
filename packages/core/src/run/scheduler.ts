@@ -1,10 +1,7 @@
 /**
- * @file The scheduler: runs a compiled workflow to the end: entries, executors,
- *   routing (`routing.ts`), loops (`escalation.ts`), delegated children
- *   (`delegation.ts`), fan-outs (`fan-out.ts`), the bus, claims and feedback
- *   (`ports.ts`), the budget and concurrency (`slots.ts`), pause, continue and
- *   a node's stop (`holds.ts`, ADR-041), and timeouts (`timeouts.ts`,
- *   ADR-043).
+ * @file The scheduler: runs a compiled workflow to the end, one round of a node
+ *   at a time. Routing, loops, delegation, fan-outs, ports, slots, holds
+ *   (ADR-041) and timeouts (ADR-043) each live in their own module.
  */
 
 import { createLoops } from "./escalation.ts";
@@ -264,7 +261,9 @@ export const startRun = (options: RunOptions): RunHandle => {
         queue.splice(index, 1);
         continue;
       }
-      if (holds.isHeld(activation.id, activation.template)) {
+      const { id, template } = activation;
+      // A node's next round waits for the one it is running to finish.
+      if (holds.isHeld(id, template) || running.has(id)) {
         index += 1;
         continue;
       }

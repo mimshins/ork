@@ -161,4 +161,23 @@ describe("the messages for a forEach that is wrong", () => {
       ),
     ).toEqual([expect.stringContaining("`list` takes a map")]);
   });
+
+  it.each(["{ list: string }", "{ list: { title: text } }"])(
+    "says the same for a Claude node's %s",
+    rule => {
+      expect(
+        messages(
+          `{ type: claude.worker, prompt: Go, output: { schema: { tasks: ${rule} } } }`,
+        ),
+      ).toEqual([expect.stringContaining("`list` takes a map")]);
+    },
+  );
+
+  it("still takes JSON Schema and value rules in a Claude node's output", () => {
+    expect(
+      messages(
+        "{ type: claude.worker, prompt: Go, output: { schema: { a: { type: array }, b: [x, y], c: { list: {} } } } }",
+      ),
+    ).toEqual([]);
+  });
 });

@@ -15,6 +15,21 @@ const DeclaredFieldRuleSchema = z.union([
   z.enum(["string", "number", "integer", "boolean"]),
 ]);
 
+/** What a `list` field that is not a map of item fields is told. */
+export const LIST_RULE_HINT =
+  "`list` takes a map of each item's fields, e.g. `list: { title: string }` (`list: {}` for items of any shape)";
+
+/** A list field (RFC-013): `{ list: { …each item's fields } }`. */
+export const ListRuleSchema = z
+  .strictObject({
+    list: z
+      .record(z.string(), DeclaredFieldRuleSchema)
+      .describe(
+        "The fields each item has, e.g. { title: string }; { } for no shape.",
+      ),
+  })
+  .describe("A list of items, such as a plan's tasks.");
+
 /**
  * What a program's or a tool's JSON result says, field by field: the values a
  * field can have, its type, or a list (RFC-013) with an optional item shape. A
@@ -23,18 +38,7 @@ const DeclaredFieldRuleSchema = z.union([
  */
 export const DeclaredOutputSchema = z.record(
   z.string(),
-  z.union([
-    DeclaredFieldRuleSchema,
-    z
-      .strictObject({
-        list: z
-          .record(z.string(), DeclaredFieldRuleSchema)
-          .describe(
-            "The fields each item has, e.g. { title: string }; { } for no shape.",
-          ),
-      })
-      .describe("A list of items, such as a plan's tasks."),
-  ]),
+  z.union([DeclaredFieldRuleSchema, ListRuleSchema]),
 );
 
 /** What a tool node's program sees, and how it returns structured output. */

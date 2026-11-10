@@ -551,7 +551,52 @@
                 "propertyNames": {
                   "type": "string"
                 },
-                "additionalProperties": {}
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "list": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "anyOf": [
+                              {
+                                "minItems": 1,
+                                "type": "array",
+                                "items": {
+                                  "type": [
+                                    "string",
+                                    "number",
+                                    "boolean"
+                                  ]
+                                }
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "string",
+                                  "number",
+                                  "integer",
+                                  "boolean"
+                                ]
+                              }
+                            ]
+                          },
+                          "description": "The fields each item has, e.g. { title: string }; { } for no shape."
+                        }
+                      },
+                      "required": [
+                        "list"
+                      ],
+                      "additionalProperties": false,
+                      "description": "A list of items, such as a plan's tasks."
+                    },
+                    {}
+                  ]
+                }
               },
               "gather": {
                 "description": "List fields kept across rounds: each round's entries are added to the earlier rounds' instead of replacing them, e.g. [decisions].",
@@ -758,7 +803,52 @@
                     "propertyNames": {
                       "type": "string"
                     },
-                    "additionalProperties": {}
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "list": {
+                              "type": "object",
+                              "propertyNames": {
+                                "type": "string"
+                              },
+                              "additionalProperties": {
+                                "anyOf": [
+                                  {
+                                    "minItems": 1,
+                                    "type": "array",
+                                    "items": {
+                                      "type": [
+                                        "string",
+                                        "number",
+                                        "boolean"
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "string",
+                                      "number",
+                                      "integer",
+                                      "boolean"
+                                    ]
+                                  }
+                                ]
+                              },
+                              "description": "The fields each item has, e.g. { title: string }; { } for no shape."
+                            }
+                          },
+                          "required": [
+                            "list"
+                          ],
+                          "additionalProperties": false,
+                          "description": "A list of items, such as a plan's tasks."
+                        },
+                        {}
+                      ]
+                    }
                   },
                   "gather": {
                     "description": "List fields kept across rounds: each round's entries are added to the earlier rounds' instead of replacing them, e.g. [decisions].",
@@ -1259,7 +1349,52 @@
                     "propertyNames": {
                       "type": "string"
                     },
-                    "additionalProperties": {}
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "list": {
+                              "type": "object",
+                              "propertyNames": {
+                                "type": "string"
+                              },
+                              "additionalProperties": {
+                                "anyOf": [
+                                  {
+                                    "minItems": 1,
+                                    "type": "array",
+                                    "items": {
+                                      "type": [
+                                        "string",
+                                        "number",
+                                        "boolean"
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "string",
+                                      "number",
+                                      "integer",
+                                      "boolean"
+                                    ]
+                                  }
+                                ]
+                              },
+                              "description": "The fields each item has, e.g. { title: string }; { } for no shape."
+                            }
+                          },
+                          "required": [
+                            "list"
+                          ],
+                          "additionalProperties": false,
+                          "description": "A list of items, such as a plan's tasks."
+                        },
+                        {}
+                      ]
+                    }
                   },
                   "gather": {
                     "description": "List fields kept across rounds: each round's entries are added to the earlier rounds' instead of replacing them, e.g. [decisions].",
@@ -1815,7 +1950,52 @@
                     "propertyNames": {
                       "type": "string"
                     },
-                    "additionalProperties": {}
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "list": {
+                              "type": "object",
+                              "propertyNames": {
+                                "type": "string"
+                              },
+                              "additionalProperties": {
+                                "anyOf": [
+                                  {
+                                    "minItems": 1,
+                                    "type": "array",
+                                    "items": {
+                                      "type": [
+                                        "string",
+                                        "number",
+                                        "boolean"
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "type": "string",
+                                    "enum": [
+                                      "string",
+                                      "number",
+                                      "integer",
+                                      "boolean"
+                                    ]
+                                  }
+                                ]
+                              },
+                              "description": "The fields each item has, e.g. { title: string }; { } for no shape."
+                            }
+                          },
+                          "required": [
+                            "list"
+                          ],
+                          "additionalProperties": false,
+                          "description": "A list of items, such as a plan's tasks."
+                        },
+                        {}
+                      ]
+                    }
                   },
                   "gather": {
                     "description": "List fields kept across rounds: each round's entries are added to the earlier rounds' instead of replacing them, e.g. [decisions].",

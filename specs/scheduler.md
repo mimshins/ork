@@ -32,7 +32,8 @@ its branch afterwards ([worktrees](./worktrees.md)).
 - When a node finishes, each outgoing edge is **taken** or **not taken**
   (below). A taken edge activates its target, with the source's output as the
   target's input. A node with several incoming edges runs whenever any of them
-  is taken; only `control.join` waits.
+  is taken; only `control.join` waits. A node runs one round at a time: one
+  activated while it runs starts once that round has finished.
 - A node with `forEach` [runs each item](./scheduler/for-each.md) as its own
   activation inside its one activation, and finishes once.
 - **Dead paths.** A node all of whose incoming non-loop edges resolved as not

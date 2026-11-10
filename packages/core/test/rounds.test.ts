@@ -7,6 +7,7 @@
  */
 
 import path from "node:path";
+import { setTimeout } from "node:timers/promises";
 
 import { parseWorkflow } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
@@ -297,5 +298,42 @@ describe("a run left waiting", () => {
     inbox.arrive(edgeFrom(graph, "review"), true, { status: "pass" });
 
     expect(inbox.waiting()).toEqual([{ id: "reviews", waitingOn: ["a11y"] }]);
+  });
+});
+
+/** Each node takes its delay in ms; the events say what started and ended. */
+const timed = async (delays: Record<string, number>) => {
+  const executor: NodeExecutor = async context => {
+    await setTimeout(delays[context.id] ?? 0);
+    return { ok: true, output: { status: "pass", summary: "ok" } };
+  };
+  const marks: string[] = [];
+  await startRun({
+    graph: workflow(
+      [`fast: ${WORKER("f")}`, `slow: ${WORKER("s")}`, `after: ${WORKER("a")}`],
+      ["fast -> after", "slow -> after"],
+    ),
+    inputs: {},
+    cwd: repoRoot,
+    executors: { "claude.worker": executor },
+    human: answering("stop").human,
+    runId: "r1",
+    onEvent: event => {
+      if (event.type === "node.started" || event.type === "node.finished") {
+        marks.push(`${event.type} ${event.id} ${String(event.round)}`);
+      }
+    },
+  }).done;
+  return marks.filter(mark => mark.includes(" after "));
+};
+
+describe("a node fed twice", () => {
+  it("runs its next round only once the one before it has finished", async () => {
+    expect(await timed({ slow: 10, after: 40 })).toEqual([
+      "node.started after 1",
+      "node.finished after 1",
+      "node.started after 2",
+      "node.finished after 2",
+    ]);
   });
 });

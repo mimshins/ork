@@ -15,6 +15,8 @@ import {
   DurationSchema,
   EffortSchema,
   IsolationSchema,
+  LIST_RULE_HINT,
+  ListRuleSchema,
   McpNamesSchema,
   ModelSchema,
   NodeIdSchema,
@@ -29,6 +31,14 @@ import { stepFields } from "./steps.ts";
 import { TOOL_NODE_SCHEMAS } from "./tool-nodes.ts";
 
 const base = nodeBaseFields;
+
+/** A Claude node's output field that is not a list: a rule or JSON Schema. */
+const NotListSchema = z
+  .unknown()
+  .refine(
+    value => typeof value !== "object" || value === null || !("list" in value),
+    { message: LIST_RULE_HINT },
+  );
 
 /**
  * What an agent brings to the node it fills, and what a plain Claude node sets
@@ -60,7 +70,7 @@ export const agentSettings = {
   output: z
     .strictObject({
       schema: z
-        .record(z.string(), z.unknown())
+        .record(z.string(), z.union([ListRuleSchema, NotListSchema]))
         .optional()
         .describe(
           "Extra structured fields the node must report, e.g. { verdict: [approve, escalate] }.",

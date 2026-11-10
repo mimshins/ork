@@ -8,6 +8,7 @@ import type { z } from "zod";
 
 import { markValue } from "./marks.ts";
 import { NodeSchema } from "./nodes.ts";
+import { LIST_RULE_HINT } from "./settings.ts";
 
 const NODE_TYPES = NodeSchema.options.map(o => o.shape.type.value);
 
@@ -51,7 +52,7 @@ export const listRuleMessage = (
   value: unknown,
 ): string | null =>
   issue.code === "invalid_union" && isMap(value) && "list" in value
-    ? "`list` takes a map of each item's fields, e.g. `list: { title: string }` (`list: {}` for items of any shape)"
+    ? LIST_RULE_HINT
     : null;
 
 /** The text for a node whose `type` is missing or unknown, else `null`. */
