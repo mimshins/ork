@@ -22,6 +22,11 @@ export default defineConfig({
       {
         test: {
           name: "node",
+          // Many tests start the CLI, git or a child process: 2.5-3.5 s in a
+          // full run, past Vitest's 5 s default on a busy machine (a pre-push
+          // check while a run's sessions work). A test that needs longer still
+          // sets its own.
+          testTimeout: 15_000,
           include: [
             "packages/*/test/**/*.test.ts",
             "tools/*/test/**/*.test.ts",
