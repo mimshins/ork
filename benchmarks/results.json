@@ -97,6 +97,24 @@
       "changed_lines": 8065,
       "manual_usd": [23.87, 36.5, 54.97],
       "manual_working_min": [70.5, 111.9, 291.6]
+    },
+    {
+      "benchmark": "cli-drivers-only",
+      "run": "aa51c078",
+      "ork": ["1.0.0-alpha.9"],
+      "status": "failed",
+      "started": "2026-11-10T09:27:18.170Z",
+      "cost_usd": 50.3167,
+      "working_min": 150,
+      "waiting_min": 10.8,
+      "wall_min": 160.8,
+      "sessions": 40,
+      "failed_sessions": 2,
+      "permission_requests": 10,
+      "result_commits": ["692df82"],
+      "changed_lines": 11097,
+      "manual_usd": [32.84, 50.22, 75.63],
+      "manual_working_min": [97, 154, 401.2]
     }
   ]
 }

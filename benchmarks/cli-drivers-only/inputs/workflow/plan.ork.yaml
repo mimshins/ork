@@ -1,0 +1,127 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: plan
+description: From a brief or an Accepted RFC to a plan you approved, saved in .ai/plans/. The spec-writer asks you each open design decision, one at a time, drafts the plan and revises it until you approve it. Nothing is built.
+inputs:
+  brief:
+    type: string
+    required: true
+    description: The requirements in your own words, short.
+  rfc:
+    type: string
+    default: ""
+    description: The text of an Accepted RFC, when there is one. Its Decision section is settled.
+  name:
+    type: string
+    default: ""
+    description: The file name for the plan in .ai/plans/, without .md. The run's id when empty.
+layers:
+  project:
+    instructions: inherit
+defaults:
+  model: sonnet
+  effort: medium
+  budgetUsd: 2
+limits:
+  budgetUsd: 10
+  concurrency: 1
+  timeout: 12h
+nodes:
+  spec:
+    type: claude.worker
+    agent: spec-writer
+    prompt: |-
+      Write the plan for this brief. Before you draft, put each open design decision to the maintainer with ask_user, as your instructions say.
+
+      {{inputs.brief}}
+
+      The Accepted RFC, if any (empty when there is none). When there is one, its Decision section is settled: don't ask about it again, and plan how to build it. If this plan finishes the RFC, add the line `Closes RFC: RFC-NNN` at the top of the plan; leave it out when later runs still have work under this RFC.
+
+      {{inputs.rfc}}
+
+      When you run again, the next message is the maintainer's answer to the approval gate: choice revise, and note, their words on what to change. Revise the plan as they say and report all of it again. If the note is empty, ask with ask_user what to change rather than guessing.
+    model: sonnet
+    effort: high
+    isolation: readonly
+    budgetUsd: 2
+    maxTurns: 40
+    session: resume
+    output:
+      schema:
+        decisions:
+          type: array
+          description: Every choice settled while planning, as in the plan's Decided section; an empty list when none.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - what
+              - why
+              - decidedBy
+              - hardToReverse
+            properties:
+              what:
+                type: string
+              why:
+                type: string
+              decidedBy:
+                type: string
+                description: Who decided it - maintainer, or the node id.
+              hardToReverse:
+                type: boolean
+                description: True when AGENTS.md says it needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency), and no Accepted RFC already settled it.
+              date:
+                type: string
+                description: YYYY-MM-DD.
+              alternatives:
+                type: array
+                items:
+                  type: string
+        plan: string
+  approve:
+    type: human.gate
+    question: |-
+      Approve this plan?
+
+      Open questions: {{nodes.spec.output.summary}}
+
+      Read the plan with Read document. To request changes, answer revise with a note saying what to change: the note goes to the spec-writer as it is. stop ends the run.
+    document: "{{nodes.spec.output.plan}}"
+    options:
+      - approve
+      - revise
+      - stop
+  save:
+    type: tool.shell
+    script: |-
+      set -eu
+      name="$(printf %s "$NAME" | tr -c 'A-Za-z0-9._-' '-')"
+      name="${name:-$RUN}"
+      mkdir -p .ai/plans
+      out=".ai/plans/$name.md"
+      # Never replace a plan already there.
+      if [ -e "$out" ]; then
+        out=".ai/plans/$name-$RUN.md"
+      fi
+      printf '%s\n' "$PLAN" > "$out"
+      printf '%s' "$out"
+    allow:
+      - sh
+    env:
+      NAME: "{{inputs.name}}"
+      RUN: "{{run.id}}"
+      PLAN: "{{nodes.spec.output.plan}}"
+edges:
+  - spec -> approve
+  - from: approve
+    to: spec
+    when: choice == 'revise'
+    maxRounds: 10
+  - from: approve
+    to: save
+    when: choice == 'approve'
+outputs:
+  plan: "{{nodes.spec.output.plan}}"
+  path: "{{nodes.save.output.stdout}}"
+  decisions: "{{nodes.spec.output.decisions}}"
+  choice: "{{nodes.approve.output.choice}}"

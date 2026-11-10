@@ -14,32 +14,35 @@ Code by hand, are here too.
 
 ## What they show so far
 
-Five runs, 2026-11-08, Ork 1.0.0-alpha.1 to alpha.6, together 15,189 changed
-lines:
+Six runs, 2026-11-08 to 2026-11-10, Ork 1.0.0-alpha.1 to alpha.9, together
+26,286 changed lines:
 
-- **Large changes cost less.** On the two changes of 4,000 lines and more, Ork
-  spent 40–45% less than the same change is estimated to cost in a plain Claude
-  Code session. Across all five, it spent $47.85 against a manual median of
-  $68.74.
+- **Large changes cost less, or the same.** Of the three changes over 4,000
+  lines, two cost 40–45% less than the same change is estimated to cost in a
+  plain Claude Code session, and the largest (11,097 lines) cost about the same,
+  after three Ork bugs that were fixed afterwards. Across all six, Ork spent
+  $98.16 against a manual median of $118.96, 17% less.
 - **Small changes cost more.** Under about 1,200 changed lines, Ork's spec,
   review and docs steps are a fixed cost that a quick manual session skips: it
   spent 15–37% more there, though still inside the manual range.
-- **The minutes are unattended.** Ork's working time was about the manual
-  estimate's (214 against 211 minutes), but a manual session needs someone at
-  the keyboard throughout. An Ork run needs the maintainer only at its gates:
-  outside the first run, 13 minutes in all. The first run waited over two hours,
+- **The minutes are unattended.** Ork's working time was the manual estimate's
+  (364 against 365 minutes), but a manual session needs someone at the keyboard
+  throughout. An Ork run needs the maintainer only at its gates and questions:
+  outside the first run, 24 minutes in all. The first run waited over two hours,
   on 33 permission prompts that later versions removed.
-- **The review earns its keep.** Three of the five runs had their first build
-  sent back by Ork's reviewer, with findings up to a feature that never actually
-  loaded; each was fixed before anything shipped.
-- **Ork got better between runs.** The first runs exposed Ork bugs (builders
-  colliding on git's index, a worktree removed too early) and permission
-  prompts; each was fixed in the alphas that followed, and the last two runs had
-  no failures and no prompts.
+- **The review earns its keep.** Four of the six runs had their first build sent
+  back by Ork's reviewer, with findings up to a feature that never actually
+  loaded and a deadlock that validation only warned about; each was fixed before
+  anything shipped.
+- **Each run makes Ork better.** Every run so far exposed something in Ork:
+  builders colliding on git's index, a worktree removed too early, a budget
+  passed by sessions started side by side, a review after a resume reading the
+  wrong checkout. Each was fixed before the next run, and each benchmark's
+  README says how.
 
 Where the savings come from: each builder starts a small, fresh session from a
 brief, not a long transcript; what Ork adds to a prompt is ordered so sessions
-share Claude's prompt cache (96% of all input tokens were cache reads); routine
+share Claude's prompt cache (97% of all input tokens were cache reads); routine
 work runs on Sonnet and only the engine work on Opus; and builders run side by
 side.
 
@@ -54,6 +57,7 @@ side.
 | [readable-gates](./readable-gates/README.md)         | 1.0.0-alpha.4 | failed    |         4,294 |   $11.75 |        $19.43 ($12.71–$29.27) |              71 |                  60 (38–155) |
 | [leader-fixes](./leader-fixes/README.md)             | 1.0.0-alpha.5 | succeeded |           755 |    $4.30 |           $3.42 ($2.23–$5.15) |              24 |                    11 (7–27) |
 | [for-each-run-1](./for-each-run-1/README.md)         | 1.0.0-alpha.6 | succeeded |         8,065 |   $20.07 |        $36.50 ($23.87–$54.97) |              61 |                 112 (71–292) |
+| [cli-drivers-only](./cli-drivers-only/README.md)     | 1.0.0-alpha.9 | failed    |        11,097 |   $50.32 |        $50.22 ($32.84–$75.63) |             150 |                 154 (97–401) |
 
 The manual columns apply a rate measured over 111 pushes in 4 plain Claude Code
 sessions on this repository (178 commits, 185,087 changed lines): $4.53

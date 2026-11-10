@@ -1,0 +1,540 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: build
+description: From an approved plan to a change you keep or discard. A leader builds it through the ui-designer, a11y-auditor, implementer or engine agent, and design decisions the plan doesn't settle come to you; three independent reviewers, one per concern, send findings back in a bounded loop; you ratify the decisions made; the docs-keeper syncs the knowledge; then you choose to commit and push to main, commit and push to a branch with a pull request, keep it uncommitted, or discard it. Nothing is committed before that.
+inputs:
+  plan:
+    type: string
+    required: true
+    description: The approved plan, as markdown. ork run plan or ork run start produces one.
+layers:
+  project:
+    instructions: inherit
+    skills:
+      allow:
+        - knowledge-drift-sync
+        - resync-map
+        - docs-structure
+defaults:
+  model: sonnet
+  effort: medium
+  budgetUsd: 2
+limits:
+  budgetUsd: 35
+  concurrency: 4
+  timeout: 5h
+nodes:
+  build:
+    type: claude.leader
+    prompt: |-
+      Build this approved plan through the agents you own. Decide what it needs:
+      - UI work (packages/ui): delegate to design first, then the build, then a11y to audit the result.
+      - Engine work (scheduler, runtime port and drivers, store and events, run control, replay): delegate the build to engine; anything else to implement.
+
+      Build in waves, following each task's dependencies and files in the plan. Shared contracts (schema, types) go first, as their own wave. Then send each wave as exactly one tool call, so its tasks run at once: your calls run one after another, so a `delegate` and a `spawn_worker` sent together do not overlap. Use `delegate` when each builder in the wave has one task, and otherwise one `spawn_worker` call for the whole wave, naming each task's builder as its template, since a child that is already running refuses another task. Tasks in one wave must not touch the same files, and each must pass pnpm check without another task of its wave. Files everyone appends to (index.ts exports, generated schemas, specs, gaps ids, roadmap data) belong to one task or a last wave. Run tasks together in one builder when they are small or share files: every builder is a new session and a full pnpm check, so split only substantial work. A merge conflict in a child's report is yours to resolve.
+
+      Each child already has the plan; your brief says which tasks are theirs. Fix only what integrates their work. Ork runs pnpm check on your checkout before your report counts. When you run again, your input is either the independent reviews (`results` holds each concern's `findings`, and `statuses` its verdict, in the order of `items`; a `fail` is a reviewer that didn't finish, with nothing for you to fix), or the maintainer's answer at the ratify gate (choice revise, and note, their words on what to change): delegate the fixes. If that note is empty, ask with ask_user what to change rather than guessing. When a child asks a question, answer it only when the approved plan or an earlier answer settles it, and say which. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One the plan doesn't settle always takes the pass-on option, so it reaches the maintainer. Never decide one for them. Say in `unchecked` what no child and no check covered (an empty string when nothing). Report pass only when every child you used passed, and gather the entries of the plan's Decided section, copying each one's hardToReverse as written, and every decision your children reported into your own `decisions`, keeping who decided each. Ork keeps the decisions of your earlier rounds, so when you run again, report the ones made in this round.
+
+      {{inputs.plan}}
+    model: sonnet
+    effort: high
+    isolation: worktree
+    budgetUsd: 4
+    maxTurns: 60
+    timeout: 3h
+    tools:
+      allow:
+        - Edit
+        - Write
+        - Bash
+    output:
+      schema:
+        decisions:
+          type: array
+          description: Every entry of the plan's Decided section and every decision of each child you used, gathered, with its decidedBy kept; in a later round, only that round's. Ork keeps every round's. An empty list when none.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - what
+              - why
+              - decidedBy
+              - hardToReverse
+            properties:
+              what:
+                type: string
+              why:
+                type: string
+              decidedBy:
+                type: string
+                description: Who decided it - maintainer, or the node id.
+              hardToReverse:
+                type: boolean
+                description: True when AGENTS.md says it needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency).
+              date:
+                type: string
+                description: YYYY-MM-DD.
+              alternatives:
+                type: array
+                items:
+                  type: string
+        unchecked: string
+      gather:
+        - decisions
+    before:
+      command: pnpm install --frozen-lockfile --prefer-offline
+      timeout: 10m
+    verify:
+      command: pnpm check
+      timeout: 20m
+      attempts: 1
+    maxWorkers: 8
+    questions: owner
+  design:
+    type: claude.worker
+    parent: build
+    agent: ui-designer
+    prompt: |-
+      Design the UI part of this task before it is coded, as your owner's brief says. Write the design (purpose, states, tokens, keyboard map, accessible names, copy word for word) into specs/ui/ and any new tokens into packages/ui/src/design/, with their pairings in packages/ui/test/pairings.ts. Write no feature code. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. Report every choice you made that the plan didn't settle in `decisions`. The approved plan:
+
+      {{inputs.plan}}
+    model: sonnet
+    effort: high
+    isolation: worktree
+    budgetUsd: 3
+    maxTurns: 40
+    tools:
+      allow:
+        - Edit
+        - Write
+        - Bash
+    output:
+      schema:
+        decisions:
+          type: array
+          description: Every choice you made that the plan didn't settle; an empty list when none.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - what
+              - why
+              - decidedBy
+              - hardToReverse
+            properties:
+              what:
+                type: string
+              why:
+                type: string
+              decidedBy:
+                type: string
+                description: Who decided it - maintainer, or the node id.
+              hardToReverse:
+                type: boolean
+                description: True when AGENTS.md says it needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency).
+              date:
+                type: string
+                description: YYYY-MM-DD.
+              alternatives:
+                type: array
+                items:
+                  type: string
+    mcp:
+      - chrome-devtools
+    before:
+      command: pnpm install --frozen-lockfile --prefer-offline
+      timeout: 10m
+  a11y:
+    type: claude.worker
+    parent: build
+    agent: a11y-auditor
+    prompt: Audit the uncommitted UI change in your owner's checkout (git status, git diff HEAD) against WCAG 2.2 AA. Open the changed surfaces in the browser tools for axe, a keyboard pass, zoom and contrast, and audit the changed components' markup, names and roles, focus handling, keyboard map, tokens and their contrast pairings, and run the UI's tests (npx vitest run packages/ui). Report pass, or changes_requested with every finding in `findings` (surface, criterion, how it fails, the fix), and list anything you couldn't check. In Bash keep to plain read commands (cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo, read-only git), the tests and pnpm install --offline, with no awk, find, python, shell variables, brace expansion or paths outside this checkout, and write no files, not even a temporary test. Anything else stops the run to ask the maintainer. What needs more than that goes in the list of what you couldn't check.
+    model: sonnet
+    isolation: readonly
+    budgetUsd: 2
+    maxTurns: 40
+    tools:
+      allow:
+        - Bash(pnpm install --offline *)
+    session: resume
+    output:
+      schema:
+        findings: string
+    mcp:
+      - chrome-devtools
+  implement:
+    type: claude.worker
+    parent: build
+    agent: implementer
+    prompt: |-
+      Build the tasks your owner's brief gives you from this approved plan. If a design is in your checkout (git status), build to it. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. Report every other choice you made that the plan didn't settle in `decisions`. Ork runs pnpm check before your report counts.
+
+      {{inputs.plan}}
+    effort: high
+    isolation: worktree
+    budgetUsd: 6
+    maxTurns: 80
+    timeout: 90m
+    tools:
+      allow:
+        - Edit
+        - Write
+        - Bash
+    session: resume
+    output:
+      schema:
+        decisions:
+          type: array
+          description: Every choice you made that the plan didn't settle; an empty list when none.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - what
+              - why
+              - decidedBy
+              - hardToReverse
+            properties:
+              what:
+                type: string
+              why:
+                type: string
+              decidedBy:
+                type: string
+                description: Who decided it - maintainer, or the node id.
+              hardToReverse:
+                type: boolean
+                description: True when AGENTS.md says it needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency).
+              date:
+                type: string
+                description: YYYY-MM-DD.
+              alternatives:
+                type: array
+                items:
+                  type: string
+    before:
+      command: pnpm install --frozen-lockfile --prefer-offline
+      timeout: 10m
+    verify:
+      command: pnpm check
+      timeout: 20m
+      attempts: 2
+  engine:
+    type: claude.worker
+    parent: build
+    agent: engine
+    prompt: |-
+      Build the tasks your owner's brief gives you from this approved plan. If a design is in your checkout (git status), build to it. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. The engine's semantics are always a design decision. Report every other choice you made that the plan didn't settle in `decisions`. Ork runs pnpm check before your report counts.
+
+      {{inputs.plan}}
+    model: opus
+    effort: high
+    isolation: worktree
+    budgetUsd: 8
+    maxTurns: 80
+    timeout: 90m
+    tools:
+      allow:
+        - Edit
+        - Write
+        - Bash
+    session: resume
+    output:
+      schema:
+        decisions:
+          type: array
+          description: Every choice you made that the plan didn't settle; an empty list when none.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - what
+              - why
+              - decidedBy
+              - hardToReverse
+            properties:
+              what:
+                type: string
+              why:
+                type: string
+              decidedBy:
+                type: string
+                description: Who decided it - maintainer, or the node id.
+              hardToReverse:
+                type: boolean
+                description: True when AGENTS.md says it needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency).
+              date:
+                type: string
+                description: YYYY-MM-DD.
+              alternatives:
+                type: array
+                items:
+                  type: string
+    before:
+      command: pnpm install --frozen-lockfile --prefer-offline
+      timeout: 10m
+    verify:
+      command: pnpm check
+      timeout: 20m
+      attempts: 2
+  review:
+    type: claude.worker
+    agent: reviewer
+    prompt: |-
+      Review the uncommitted change in this checkout (git status, git diff HEAD) against the approved plan below, for one concern only; two other reviewers cover the rest. pnpm check already passed here; don't run it again.
+
+      Your concern, {{item.concern}}: {{item.look}}
+
+      Start `summary` with your concern's name. Report pass, or changes_requested with every finding of this concern in `findings` (file:line, what is wrong, the smallest fix), most severe first. Read every changed source file and test body your concern touches, in full; your limits allow it, so don't stop to economise. List in `unchecked` what your concern touches that you didn't read or couldn't check (an empty string when nothing). When you run again, check that your earlier findings were fixed, and read what your last `unchecked` listed.
+
+      Read files with Read and search with Grep. When you do use Bash, keep to cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo, npm view and read-only git, with no awk, no find, no shell variables, no brace expansion and no paths outside this checkout: anything else stops the run to ask the maintainer.
+
+      {{inputs.plan}}
+    model: opus
+    effort: high
+    isolation: readonly
+    budgetUsd: 2
+    maxTurns: 40
+    session: resume
+    output:
+      schema:
+        findings: string
+        unchecked: string
+    forEach:
+      items:
+        - concern: correctness
+          look: "bugs and behaviour: does the code do what the plan says, including failure paths, races, resume and edge cases."
+        - concern: tests
+          look: does each acceptance criterion have a test that would fail without the change, and do the tests assert behaviour rather than the implementation.
+        - concern: repository rules
+          look: "the rules in AGENTS.md: dependency direction, entry points, @file blocks, stale specs and user docs, the interaction map and roadmap, gaps, changesets, secrets, and AI attribution."
+      maxParallel: 3
+  ratify:
+    type: human.gate
+    question: |-
+      Ratify the decisions made during this build? ADRs are written next, from the ones marked hardToReverse.
+
+      Look for hardToReverse entries where decidedBy is not maintainer: an agent made those.
+
+      - continue: accept them all and go on to the docs.
+      - revise: send your note to the build leader to change them.
+      - stop: end the run. The change stays in its worktree.
+    document: |-
+      ## Decisions made during the build
+
+      {{nodes.build.output.decisions}}
+
+      ## Review
+
+      {{nodes.review.output.results}}
+    options:
+      - continue
+      - revise
+      - stop
+  docs:
+    type: claude.worker
+    agent: docs-keeper
+    prompt: |-
+      The change in this checkout (git status, git diff HEAD) passed review. Sync the knowledge with it: run knowledge-drift-sync, resync-map when it changes what the map shows, and docs-structure for any document over 200 lines.
+
+      Then write an ADR in decisions/ for each decision below with hardToReverse true, from .ai/templates/adr.md: the next free number, a row in decisions/README.md's index, and links to the specs under specs/ that carry it (the plan is gitignored, so don't link it). Related decisions may share one ADR; a decision listed twice is one. List every ADR you wrote in `adrs`, an empty list when none.
+
+      If the plan has a line `Closes RFC: RFC-NNN`, run `pnpm rfc:close RFC-NNN` first: it marks the RFC Implemented, moves it to rfcs/archived/ and updates the index. Then write one ADR for that RFC and link the two both ways. If the script says the RFC isn't in rfcs/active/, leave it, and say so in your summary so the maintainer can close it later. Without that line, leave RFCs alone: an RFC can span several runs.
+
+      Make sure the change has a changeset in .changeset/ (a Markdown file naming the bump for @krapht/ork and a changelog line; `pnpm changesets:empty` for internal-only work), and add one if it doesn't. A commit step refuses a change without one.
+
+      Then write the commit message for the whole change: `commitSubject`, a short imperative subject with no prefix (like "Let Claude nodes name the MCP servers they load"), and `commitBody`, what changed and why in a few lines. No AI or agent attribution. Ork runs pnpm check before your report counts.
+
+      The build's decisions: {{nodes.build.output.decisions}}
+
+      The approved plan:
+
+      {{inputs.plan}}
+    isolation: continue
+    budgetUsd: 2
+    maxTurns: 60
+    practices:
+      caveman: false
+    tools:
+      allow:
+        - Edit
+        - Write
+        - Bash
+    output:
+      schema:
+        commitSubject: string
+        commitBody: string
+        adrs:
+          type: array
+          description: Every ADR you wrote; an empty list when none.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - title
+              - path
+            properties:
+              title:
+                type: string
+              path:
+                type: string
+    verify:
+      command: pnpm check
+      timeout: 20m
+      attempts: 1
+  stage:
+    type: tool.git
+    command: add -A
+    allow:
+      - add
+    cwd: "{{nodes.docs.output.worktree}}"
+  decide:
+    type: human.gate
+    question: |-
+      Where does this change go? Nothing is committed yet.
+
+      - main: commit it and push to main.
+      - branch: commit it, push to the branch your note names (no note: ork/<run>) and open a pull request to main.
+      - keep-uncommitted: apply it to your checkout for you to commit.
+      - discard: leave it in the worktree (ork worktrees remove <run>/<node> --force removes it).
+
+      Read the document for what was built, the review, and the commit message.
+    document: |-
+      ## What was built
+
+      {{nodes.build.output.summary}}
+
+      Docs: {{nodes.docs.output.summary}}
+
+      Worktree: {{nodes.docs.output.worktree}}
+
+      ## Review
+
+      Verdicts of correctness, tests and repository rules, in that order: {{nodes.review.output.statuses}}
+
+      Each concern's summary, findings left open and what it didn't check:
+
+      {{nodes.review.output.results}}
+
+      ## What wasn't checked
+
+      Build: {{nodes.build.output.unchecked}}
+
+      ## ADRs
+
+      Check these before you keep the change:
+
+      {{nodes.docs.output.adrs}}
+
+      ## Commit message
+
+      {{nodes.docs.output.commitSubject}}
+
+      {{nodes.docs.output.commitBody}}
+
+      ## Files changed
+
+      {{nodes.stage.output.staged}}
+    options:
+      - main
+      - branch
+      - keep-uncommitted
+      - discard
+  publish:
+    type: tool.shell
+    script: |-
+      set -eu
+      if [ "$CHOICE" = main ]; then
+        branch=main
+      else
+        branch="$(printf %s "$NOTE" | tr -d '[:space:]')"
+        branch="${branch:-ork/$RUN}"
+      fi
+      if ! git check-ref-format --branch "$branch" > /dev/null 2>&1; then
+        echo "'$branch' is not a valid branch name. The change is still in $WORKTREE." >&2
+        exit 1
+      fi
+      if [ "$CHOICE" = branch ] && [ "$branch" = main ]; then
+        echo "Choose main to push to main; branch opens a pull request from another branch." >&2
+        exit 1
+      fi
+      # Already committed when an earlier try stopped at the rebase or the push.
+      if ! git -C "$WORKTREE" diff --cached --quiet; then
+        if ! git -C "$WORKTREE" diff --cached --name-only --diff-filter=AM -- .changeset | grep -q '\.md$'; then
+          echo "No changeset in this change. Add one in $WORKTREE (pnpm changesets:create or changesets:empty), stage it, and resume." >&2
+          exit 1
+        fi
+        printf '%s\n\n%s\n' "$SUBJECT" "$BODY" | git -C "$WORKTREE" commit -F -
+      fi
+      base=main
+      if git -C "$WORKTREE" ls-remote --exit-code --heads origin "$branch" > /dev/null 2>&1; then
+        base="$branch"
+      fi
+      git -C "$WORKTREE" fetch origin "$base"
+      if ! git -C "$WORKTREE" rebase FETCH_HEAD; then
+        git -C "$WORKTREE" rebase --abort
+        echo "The change conflicts with origin/$base. It is committed in $WORKTREE; rebase it there and push." >&2
+        exit 1
+      fi
+      # The check runs here, not in the pre-push hook: git connects before the hook,
+      # and GitHub drops the idle connection while the hook runs (exit 141).
+      pnpm -C "$WORKTREE" run check
+      git -C "$WORKTREE" push --no-verify origin "HEAD:refs/heads/$branch"
+      if [ "$CHOICE" = branch ]; then
+        if gh pr view "$branch" > /dev/null 2>&1; then
+          echo "$branch already has a pull request; it is updated."
+        else
+          gh pr create --base main --head "$branch" --title "$SUBJECT" --body "$BODY"
+        fi
+      elif [ "$(git branch --show-current)" = main ] && [ -z "$(git status --porcelain)" ]; then
+        git fetch origin main
+        git merge --ff-only FETCH_HEAD
+      else
+        echo "Pushed to main. Your checkout has other work or another branch, so it was left alone: git pull when ready."
+      fi
+    allow:
+      - sh
+    env:
+      CHOICE: "{{nodes.decide.output.choice}}"
+      NOTE: "{{nodes.decide.output.note}}"
+      RUN: "{{run.id}}"
+      SUBJECT: "{{nodes.docs.output.commitSubject}}"
+      BODY: "{{nodes.docs.output.commitBody}}"
+      WORKTREE: "{{nodes.docs.output.worktree}}"
+  apply:
+    type: tool.shell
+    script: |-
+      patch="$(mktemp)"
+      git -C "$WORKTREE" diff --cached --binary > "$patch"
+      git apply --check "$patch"
+      git apply "$patch"
+      git apply --stat "$patch"
+      rm -f "$patch"
+    allow:
+      - sh
+    env:
+      WORKTREE: "{{nodes.docs.output.worktree}}"
+edges:
+  - build -> review
+  - from: review
+    to: build
+    when: "!all(statuses, 'pass')"
+    maxRounds: 2
+  - from: review
+    to: ratify
+    when: all(statuses, 'pass')
+  - from: ratify
+    to: docs
+    when: choice == 'continue'
+  - from: ratify
+    to: build
+    when: choice == 'revise'
+    maxRounds: 2
+  - docs -> stage
+  - stage -> decide
+  - from: decide
+    to: publish
+    when: choice == 'main' || choice == 'branch'
+  - from: decide
+    to: apply
+    when: choice == 'keep-uncommitted'

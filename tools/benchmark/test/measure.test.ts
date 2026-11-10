@@ -142,6 +142,19 @@ describe("result commits", () => {
     ];
     expect(resultCommits(events)).toEqual(["ed453d6", "1a2b3c4d"]);
   });
+
+  it("takes what was pushed over what was committed before a rebase", () => {
+    const events = [
+      event("node.finished", 1, {
+        id: "publish",
+        output: {
+          stdout: "[detached HEAD 19a2583] Run agents through their CLIs",
+          stderr: "To github.com:o/r.git\n   d6f2378..692df82  HEAD -> main",
+        },
+      }),
+    ];
+    expect(resultCommits(events)).toEqual(["692df82"]);
+  });
 });
 
 const usage = (node: string, costUsd: number) => ({

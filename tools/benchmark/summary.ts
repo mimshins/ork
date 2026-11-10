@@ -49,14 +49,27 @@ export const agentsOf = (events: readonly StoredEvent[]): Json[] => {
   return [...agents.values()];
 };
 
-/** Commits a run's tool nodes made, from what `git commit` printed. */
+/**
+ * Commits a run's tool nodes made. A node that pushed gives what it pushed
+ * (`a..b HEAD -> main`), as a rebase before the push changes the commit; else
+ * what `git commit` printed.
+ */
 export const resultCommits = (events: readonly StoredEvent[]): string[] => {
   const shas = new Set<string>();
   for (const e of events) {
     if (e.type !== "node.finished") continue;
     const output = rec(e.data["output"]);
     const printed = [text(output["stdout"]), text(output["stderr"])].join("\n");
-    for (const m of printed.matchAll(/^\[[^\]\n]* ([0-9a-f]{7,40})\] /gmu)) {
+    const pushed = [
+      ...printed.matchAll(
+        /^\s+[0-9a-f]{7,40}\.\.([0-9a-f]{7,40})\s+\S+ -> /gmu,
+      ),
+    ];
+    const made =
+      pushed.length > 0
+        ? pushed
+        : [...printed.matchAll(/^\[[^\]\n]* ([0-9a-f]{7,40})\] /gmu)];
+    for (const m of made) {
       if (m[1] !== undefined) shas.add(m[1]);
     }
   }
