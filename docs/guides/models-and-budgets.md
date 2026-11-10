@@ -51,9 +51,10 @@ limits:
   concurrency: 2 # Claude sessions at once (default 4)
 ```
 
-- Each session gets the smaller of its own budget and what is left of the run's.
-  Once the run's budget is spent, counting what sessions still running have
-  reported so far, no new session starts and the run ends as `budget_exhausted`.
+- Each session gets the smaller of its own budget and what is left of the run's,
+  less what sessions running beside it were given, and with none left waits for
+  one to finish. Once the budget is spent, no new session starts and the run
+  ends as `budget_exhausted`.
 - A `workflow.call` shares this budget with the run it starts
   ([calling a workflow](./working-across-projects.md#calling-a-workflow)).
 - `concurrency` limits only Claude sessions; tools and gates are not limited. A

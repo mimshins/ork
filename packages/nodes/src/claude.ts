@@ -26,7 +26,7 @@ import { namedMcpEntries } from "./mcp-servers.ts";
 import { ownerFirst, withdrawnOnStop } from "./owner-asks.ts";
 import {
   afterLateTurn,
-  budgetNow,
+  budgetToStart,
   lateLimits,
   limitWatch,
   notStarted,
@@ -134,7 +134,7 @@ export const claudeExecutor =
     // Checked now: a step, or the node's checkout, may have taken a while.
     const blocked = context.quota?.().blocked;
     if (blocked !== undefined) return notStarted(blocked, blocked);
-    const budget = budgetNow(context);
+    const budget = await budgetToStart(context);
     if (budget !== undefined && budget <= 0) {
       return notStarted("nothing is left of the run's budget");
     }
@@ -180,6 +180,7 @@ export const claudeExecutor =
     const watch = limitWatch(context);
     const run = async (asked: SessionSpec): Promise<SessionOutcome | null> => {
       const watching = watch.session(asked);
+      context.reserveBudget?.(asked.budgetUsd);
       const session = runtime.start(asked, ports);
       const stop = () => {
         void session.interrupt();
@@ -199,6 +200,7 @@ export const claudeExecutor =
           context.emit(event);
         }
       } finally {
+        context.reserveBudget?.(0);
         disconnect?.();
         context.signal.removeEventListener("abort", stop);
       }

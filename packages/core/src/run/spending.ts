@@ -7,6 +7,7 @@
 import type { RunLimits } from "../usage/quota.ts";
 import { type EarlierSpend, ownSpend, unreported } from "../usage/spend.ts";
 import type { RunOptions } from "./handle.ts";
+import { createReserves } from "./reserves.ts";
 import type { NodeResult, RunStatus } from "./types.ts";
 
 /**
@@ -47,10 +48,18 @@ export const createSpend = (
   const inFlight = new Map<string, number>();
   const committed = () =>
     spent + [...inFlight.values()].reduce((sum, cost) => sum + cost, 0);
+  /** Caps running sessions were given (ADR-077): out of what is offered. */
+  const reserves = createReserves();
   const budgetLeft = () =>
-    budgetUsd === undefined ? undefined : budgetUsd - committed();
+    budgetUsd === undefined
+      ? undefined
+      : budgetUsd - committed() - reserves.total();
   return {
     total: () => spent,
+    /** A node sets aside its session's cap; nothing or 0 lets it go. */
+    reserve: reserves.reserve,
+    /** Waits until another node's reserve frees; `false` when none can. */
+    freed: reserves.freed,
     /** What a session has spent in this activation, from its total so far. */
     ownOf: (id: string, sessionId: string, total: number): number =>
       unreported(reported, `${id}/${sessionId}`, total),
@@ -64,6 +73,7 @@ export const createSpend = (
       for (const key of inFlight.keys()) {
         if (key.startsWith(`${id}/`)) inFlight.delete(key);
       }
+      reserves.drop(id);
     },
     /** What a session may spend: the least of the budget and any quota. */
     left: () => {

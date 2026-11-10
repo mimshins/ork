@@ -105,6 +105,10 @@ export type ExecuteContext = {
   budgetLeftUsd: number | undefined;
   /** What is left of the run's own budget now, with what others have spent. */
   budgetLeftNow?: () => number | undefined;
+  /** Sets aside its session's cap from the run's budget; 0 lets it go. */
+  reserveBudget?: (usd: number | undefined) => void;
+  /** Waits until another node's reserve frees; `false` when none can. */
+  budgetFreed?: (signal: AbortSignal) => Promise<boolean>;
   /** What the limits across runs allow now. */
   quota?: () => RunLimits;
   /** What a session has spent in this activation, from its reported total. */

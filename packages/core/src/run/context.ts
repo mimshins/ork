@@ -60,6 +60,15 @@ export const nodeContext = (
     ...foldersOf(options),
     budgetLeftUsd: deps.spend.left(),
     budgetLeftNow: deps.spend.budgetLeft,
+    // A leader's children may wait on a reserve, but never on their leader's.
+    reserveBudget: usd => {
+      deps.spend.reserve(
+        id,
+        usd,
+        deps.nodeOf(activation)?.type !== "claude.leader",
+      );
+    },
+    budgetFreed: signal => deps.spend.freed(id, signal),
     quota: deps.spend.quota,
     ownSpend: (sessionId, total) => deps.spend.ownOf(id, sessionId, total),
     human: deps.human,

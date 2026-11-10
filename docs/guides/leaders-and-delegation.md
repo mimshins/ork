@@ -169,8 +169,8 @@ Decisions panel says "Answered … by `lead`, its owner". A leader with no
 
 - While a leader waits for its children, its session slot goes to them, so a run
   never deadlocks even at `limits.concurrency: 1`.
-- Children count against the run's `limits.budgetUsd`. Once it is spent, no new
-  child starts.
+- Children count against the run's `limits.budgetUsd`, after what the leader's
+  own session set aside. Once it is spent, no new child starts.
 
 ## See who did what
 

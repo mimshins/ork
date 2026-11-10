@@ -168,7 +168,7 @@ export const NODES = [
       "Starts nodes when their inputs are ready, evaluates each outgoing edge's `when:` on the finished node's output, and counts how often a loop edge has been taken.",
     facts: [
       "Runs at most `limits.concurrency` sessions at once (4 here).",
-      "Stops the run when spend reaches `limits.budgetUsd` ($20 here).",
+      "Stops the run when spend reaches `limits.budgetUsd` ($20 here). Each session sets its cap aside as it starts, so sessions running together are never offered the same dollars (ADR-077).",
       "A `timeout` on a node or `limits.timeout` on the run, where set, fails the node with `timedOut` or ends the run `timed_out`; the clock stands still while waiting on you. None is set here.",
       "An edge without `when:` fires only on success; a skipped branch skips everything that only it feeds, so the join never waits on it.",
       "In a later round, an edge from a node that can't run again in that round counts as not taken, so the join still fires. A run left with a node waiting fails with an `ork engine error:` reason; it never ends `succeeded` past its gate.",

@@ -13,6 +13,7 @@ import {
   type SessionSpec,
   type SessionUsage,
 } from "@krapht/ork-core";
+import { isClaudeNode } from "@krapht/ork-schema";
 
 /**
  * The later outcome, with the tokens of both processes. Its cost is already the
@@ -97,6 +98,42 @@ export const budgetNow = (
     left => (left === undefined ? [] : [left]),
   );
   return known.length === 0 ? undefined : Math.min(...known);
+};
+
+type StartContext = Pick<
+  ExecuteContext,
+  | "budgetLeftUsd"
+  | "budgetLeftNow"
+  | "quota"
+  | "budgetFreed"
+  | "reserveBudget"
+  | "node"
+  | "workflow"
+  | "signal"
+>;
+
+/**
+ * What a node's first session may spend, set aside from the run's budget in the
+ * same step that reads it (ADR-077), so a node starting beside it is never
+ * offered the same part: the least of what is left and the node's own
+ * `budgetUsd`. With nothing left, it waits for a worker running beside it to
+ * finish, as long as one may.
+ */
+export const budgetToStart = async (
+  context: StartContext,
+): Promise<number | undefined> => {
+  const left = budgetNow(context);
+  if (left !== undefined && left <= 0) {
+    const freed = await context.budgetFreed?.(context.signal);
+    return freed === true ? budgetToStart(context) : left;
+  }
+  const own = isClaudeNode(context.node)
+    ? (context.node.budgetUsd ?? context.workflow.defaults?.budgetUsd)
+    : undefined;
+  context.reserveBudget?.(
+    own === undefined || left === undefined ? left : Math.min(own, left),
+  );
+  return left;
 };
 
 /**

@@ -8,12 +8,13 @@ Found fixing the 1.0.0-alpha QA run e4894f17 (fake `claude`, packed tarball,
 2026-11-10). What was fixed is in the specs and guides it touches; what follows
 is what was left simpler, or could not be checked.
 
-- **L216 · The budget check knows only reported cost.** A session's cost is 0
-  until its first turn ends, so children a leader starts in its first turn, and
-  sessions started in parallel, are not held back by `limits.budgetUsd`. The
-  overshoot is bounded only by `--max-budget-usd`, which is the budget left when
-  the session starts. The check with real costs is the maintainer's.
-  ([limits](../usage.md))
+- **L216 · Only a node's own sessions set their cap aside.** Since
+  [ADR-077](../../decisions/ADR-077-reserve-session-caps.md) a session reserves
+  its cap from `limits.budgetUsd` as it starts. A fork that answers a child's
+  question for its leader, and a `workflow.call`, do not; they are offered what
+  is left after the reserves and count when they end (L53). A session can still
+  pass its own cap by the turn that crosses it, as `--max-budget-usd` stops it
+  after that turn. ([limits](../usage.md))
 - **L217 · A node that is delegated and run by an edge may keep a stale
   result.** `node.started` supersedes an earlier result by its round, used as a
   position, so a node run both ways in one run can read the older one.
