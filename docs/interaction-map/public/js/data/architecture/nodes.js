@@ -976,7 +976,7 @@ export const NODES = [
     status: "built",
     pkg: "runtime",
     summary:
-      "One interface over the drivers: `claude-code`, your own `claude`, is proven; `open-code` and `command-code` are built but unproven, so a run refuses them. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
+      "One interface over the drivers: `claude-code`, your own `claude`, `open-code` and `command-code`, each proven on a real session. The engine starts a session from a session spec and gets back normalized events, a way to send messages between turns, interrupt and resume.",
     facts: [
       "`start(spec, human)` takes the cwd, model, brief, system prompt addition, setting sources, tool rules, limits and the report schema.",
       "A driver emits normalized events: started, text, tool called, tool result, finished with the outcome and usage.",
@@ -1048,7 +1048,7 @@ export const NODES = [
     summary:
       "Runs a node through your installed `claude` command in headless mode, with JSON streams in and out. Uses whatever login that `claude` has, or `ANTHROPIC_API_KEY`, Bedrock, Vertex or Foundry; `ork doctor` says which.",
     facts: [
-      "The only proven driver (RFC-014); `open-code` and `command-code` are built but `proven: false`, listed by `ork doctor` as unproven and refused by `ork validate` and `ork run` until a real session has proven them.",
+      "The first proven driver (RFC-014), and the one a run takes when it is ready; `open-code` and `command-code` were proven on real sessions after it.",
       "An adapter of small strategies (command, event decoder, MCP wiring, permissions, usage, context layers, hold hook), run by the session runner every driver shares.",
       "`--input-format stream-json --output-format stream-json --verbose`.",
       "The report comes back through `--json-schema`; Ork's tools through `--mcp-config`.",
@@ -1137,17 +1137,17 @@ export const NODES = [
     zone: "runtime",
     x: 1720,
     y: 480,
-    status: "partial",
+    status: "built",
     pkg: "runtime",
     src: "packages/runtime/src/adapters/command-code.ts",
     summary:
-      "Built, unproven. Runs a node through your `cmd` (Command Code) in headless mode. Ork's tools reach it through an `ork` entry in the checkout's local MCP scope, so only one session runs per checkout at a time.",
+      "Built, proven on a real session. Runs a node through your `cmd` (Command Code) in headless mode. Ork's tools reach it through an `ork` entry in the checkout's local MCP scope, so only one session runs per checkout at a time.",
     facts: [
-      "`proven: false` until the maintainer's capped real session: `ork validate` and `ork run` refuse it, and `ork doctor` lists it as unproven.",
+      "Proven on its gate run (2026-11-10): `cmd` runs with `--dangerously-skip-permissions`, since its own `-p` gate otherwise refuses shell and edits, and Ork's mod is the only gate.",
       "The lease adds the `ork` entry before the session and removes it after, a crash included (the next session or `ork doctor` sweeps), leaving the user's other entries. A second session in the checkout waits, logged as `session.waiting`.",
       "`ork validate` warns where nodes could queue, and refuses an owner and a node it owns in one checkout, as they would deadlock.",
       "Deny by default: a session mod blocks every call the node did not allow. Reports only tokens, so `budgetUsd` is refused; exit 8 is `error_max_turns`.",
-      "Not measured until the real run: the tool names in frames, the refusal frame, and the mod API in `-p` mode.",
+      "The mod lets Command Code's tool loader (`search_tools`) through, which loads the `report` schema, and allows reads inside the worktree without a rule.",
     ],
     docs: [
       RUNTIME.commandCode,
@@ -1164,17 +1164,17 @@ export const NODES = [
     zone: "runtime",
     x: 1720,
     y: 600,
-    status: "partial",
+    status: "built",
     pkg: "runtime",
     src: "packages/runtime/src/adapters/open-code.ts",
     summary:
-      "Built, unproven. Runs a node through your `opencode` in headless mode, in the node's worktree, with a private config that holds Ork's tool connection.",
+      "Built, proven on a real session. Runs a node through your `opencode` in headless mode, in the node's worktree, with a private config that holds Ork's tool connection.",
     facts: [
-      "`proven: false` until the maintainer's capped real session; refused until then.",
+      "Proven on its gate run (2026-11-10). OpenCode takes its folder from `PWD`, which the session runner sets, and matches path rules relative to the worktree.",
       "The bearer token lives in a 0600 config file under the system's temporary folder, outside the checkout, and goes when the session ends.",
-      "Deny by default: the whole rule set is written every session, since OpenCode runs a shell call with no rules. It reports dollars, so `budgetUsd` works; it has no turn limit.",
+      "Deny by default: the whole rule set is written every session, since OpenCode runs a shell call with no rules. It reports dollars, so `budgetUsd` works; `maxTurns` is the agent's `steps`.",
       "No result line: the last text is the final text and the process exit ends the session. The machine's own OpenCode setup and MCP servers stay out.",
-      "Not measured until the real run: that `ork_report` reaches the model, the shell's start folder, and that `steps` caps the turns.",
+      "Claude models through OpenCode's `commandcode` provider fail after a tool call (L240); run Claude on `claude-code`.",
     ],
     docs: [RUNTIME.openCode, RUNTIME.openSpec, RUNTIME.driverGuide],
   },

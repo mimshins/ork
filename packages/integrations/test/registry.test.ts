@@ -133,35 +133,38 @@ describe("the claude-code driver's check", () => {
     });
   });
 
-  it("lists the unproven drivers as skipped, never ready", async () => {
+  it("lists the other drivers as ready once their tool answers", async () => {
     const others = await Promise.all(
       AGENT_DRIVERS.slice(1).map(d => d.doctor(answersAnything, {})),
     );
-    expect(others.map(r => r.status)).toEqual(["skip", "skip"]);
-    expect(others.every(r => r.detail.includes("unproven"))).toBe(true);
+    expect(others.map(r => r.status)).toEqual(["ok", "ok"]);
+    expect(others.some(r => r.detail.includes("unproven"))).toBe(false);
   });
 
-  it("names a missing tool and still lists the driver as unproven", async () => {
+  it("skips a driver whose tool is missing, saying how to get it", async () => {
     const found = await AGENT_DRIVERS[2].doctor(
       () => Promise.resolve({ ok: false, stdout: "" }),
       {},
     );
-    expect(found.status).toBe("skip");
-    expect(found.detail).toContain("cmd CLI not found");
+    expect(found).toMatchObject({
+      status: "skip",
+      detail: "cmd CLI not found",
+      hint: "Install cmd to use the command-code driver.",
+    });
   });
 
-  it("declares what each driver does itself, and proves only claude-code", () => {
+  it("declares what each driver does itself, each proven", () => {
     const [claude, open, command] = AGENT_DRIVERS;
     expect(claude.proven).toBe(true);
     expect(Object.values(claude.capabilities).every(Boolean)).toBe(true);
-    expect([open.proven, command.proven]).toEqual([false, false]);
+    expect([open.proven, command.proven]).toEqual([true, true]);
     expect(open.capabilities).toEqual({
       questions: true,
       permissionPrompt: false,
       price: true,
       midTurnMessages: false,
       reportSchema: false,
-      turnLimit: false,
+      turnLimit: true,
       mcpServers: true,
     });
     expect(command.capabilities).toEqual({

@@ -36,6 +36,11 @@ const noTurnLimit = standInDrivers.map(d =>
   }),
 );
 
+/** Descriptors where `open-code` and `command-code` are not yet proven. */
+const unproven = standInDrivers.map(d =>
+  Object.assign({}, d, { proven: d.id === "claude-code" }),
+);
+
 const unasked = () => Promise.reject(new Error("the drivers' checks ran"));
 
 describe("ork validate's driver check", () => {
@@ -90,6 +95,7 @@ describe("ork validate's driver check", () => {
 
   it("refuses a plain node that names no driver when the one ready is unproven", async () => {
     const found = await driverDiagnostics(workflowOf(yamlOf("")), {
+      drivers: unproven,
       checks: readyOnly("open-code"),
     });
     expect(found.map(d => d.message)).toEqual([
@@ -100,7 +106,7 @@ describe("ork validate's driver check", () => {
   it("refuses a workflow that names an unproven driver", async () => {
     const found = await driverDiagnostics(
       workflowOf(yamlOf("    driver: command-code\n")),
-      { checks: unasked },
+      { drivers: unproven, checks: unasked },
     );
     expect(found.map(d => d.message)).toEqual([
       "node `build` runs on driver `command-code`, which is not yet proven on a real session",
@@ -151,7 +157,9 @@ const start = (yaml: string, extra: Record<string, unknown> = {}) => {
 
 describe("ork run's driver check", () => {
   it("refuses an unproven driver before any session starts", async () => {
-    const done = await start(yamlOf("    driver: command-code\n"));
+    const done = await start(yamlOf("    driver: command-code\n"), {
+      drivers: unproven,
+    });
     expect(done.exitCode).toBe(1);
     expect(done.started).toEqual([]);
     expect(done.err.join("\n")).toContain(

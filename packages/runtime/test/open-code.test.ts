@@ -261,7 +261,7 @@ describe("the open-code permission rules", () => {
   it("deny everything first, then open the worktree's reads and Ork's tools", () => {
     expect(rules({ allow: [], deny: [] })).toEqual([
       { action: "*", resource: "*", effect: "deny" },
-      { action: "read", resource: "/w/*", effect: "allow" },
+      { action: "read", resource: "*", effect: "allow" },
       { action: "ork_*", resource: "*", effect: "allow" },
       { action: "read", resource: "*.env", effect: "deny" },
     ]);
@@ -274,7 +274,7 @@ describe("the open-code permission rules", () => {
     });
     expect(written.slice(2, 5)).toEqual([
       { action: "shell", resource: "git status *", effect: "allow" },
-      { action: "edit", resource: "/w/*", effect: "allow" },
+      { action: "edit", resource: "*", effect: "allow" },
       { action: "github_get_issue", resource: "*", effect: "allow" },
     ]);
     expect(written.at(-1)).toEqual({
@@ -282,6 +282,16 @@ describe("the open-code permission rules", () => {
       resource: "*",
       effect: "deny",
     });
+  });
+
+  it("match a path rule relative to the worktree, as OpenCode does", () => {
+    const written = rules({
+      allow: ["Read(./src/**)", "Read(/w/docs/*)"],
+      deny: ["Edit(secrets/**)"],
+    });
+    expect(written.map(r => `${r.action} ${r.resource}`)).toEqual(
+      expect.arrayContaining(["read src/**", "read docs/*", "edit secrets/**"]),
+    );
   });
 
   it("keep `.env` refused after a node's read allow", () => {

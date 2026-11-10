@@ -114,8 +114,8 @@ that needs it. Example output:
 ✓ git repo                     inside a work tree
 ✓ git commits                  HEAD exists
 ✓ claude (claude-code driver)  2.1.314 (Claude Code), logged in (claude.ai, firstParty)
-- opencode (open-code driver)  v2.1.0, unproven: not yet proven on a real session; ...
-- cmd (command-code driver)    1.88.5, unproven: not yet proven on a real session; ...
+✓ opencode (open-code driver)  v2.1.0; sign in with `opencode auth login` if a session asks
+- cmd (command-code driver)    cmd CLI not found
 - gh                           optional, not installed (needed only for tool.gh nodes)
 - aws                          optional, not installed (needed only for tool.aws nodes)
 ✓ git identity                 user.name and user.email are set
@@ -123,9 +123,9 @@ that needs it. Example output:
 ✓ experiments                  none on
 ```
 
-The `claude-code` driver is ready and neither optional tool is installed: a
-working setup. When nothing required is missing, that is all it prints. Else it
-ends:
+The `claude-code` and `open-code` drivers are ready, and Command Code's `cmd`
+and neither optional tool is installed: a working setup. When nothing required
+is missing, that is all it prints. Else it ends:
 
 ```
 Not ready: Ork needs Node, git, and at least one agent driver.

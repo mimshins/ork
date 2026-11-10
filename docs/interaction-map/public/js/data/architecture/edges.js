@@ -479,8 +479,8 @@ export const EDGES = [
     kind: "local",
     label: "strategies · lease",
     detail:
-      "The `command-code` adapter, unproven, supplies its own strategies, with a per-checkout lease as its MCP wiring.",
-    status: "partial",
+      "The `command-code` adapter supplies its own strategies, with a per-checkout lease as its MCP wiring.",
+    status: "built",
     docs: [DESIGN.runtime],
   },
   {
@@ -490,8 +490,8 @@ export const EDGES = [
     kind: "local",
     label: "strategies · config file",
     detail:
-      "The `open-code` adapter, unproven, supplies its own strategies, with a 0600 config file as its MCP wiring.",
-    status: "partial",
+      "The `open-code` adapter supplies its own strategies, with a 0600 config file as its MCP wiring.",
+    status: "built",
     docs: [DESIGN.runtime],
   },
   {

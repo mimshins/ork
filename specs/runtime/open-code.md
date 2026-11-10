@@ -2,7 +2,7 @@
 
 _Part of [Runtime: the agent drivers](../runtime.md)._
 
-Status: **Built, unproven**: the adapter
+Status: **Built and proven** on a real session (2026-11-10): the adapter
 ([open-code.ts](../../packages/runtime/src/adapters/open-code.ts),
 [config](../../packages/runtime/src/adapters/open-code-config.ts),
 [events](../../packages/runtime/src/adapters/open-code-events.ts)), the private
@@ -11,8 +11,8 @@ a stand-in `opencode`
 ([fake-opencode.mjs](../../packages/runtime/test/fixtures/fake-opencode.mjs))
 that passes the [contract suite](../../packages/runtime/test/contract/) and the
 driver's own [tests](../../packages/runtime/test/open-code.test.ts). The
-descriptor stays `proven: false`, so `ork validate` and `ork run` refuse it,
-until the maintainer's capped real session (plan task 21). Why:
+maintainer's capped gate run ([below](#measured-on-the-gate-run)) proved it, so
+the descriptor is `proven: true`. Why:
 [RFC-014](../../rfcs/archived/RFC-014-cli-drivers-only.md) (its open questions 1
 to 3 hold the spike this follows).
 
@@ -36,7 +36,7 @@ opencode run --standalone --format json --agent ork \
 | The node's servers | each `.mcp.json` entry the node names, as a `local` server (`command` and `args` as one list, `env` as `environment`) or a `remote` one (`url`, `headers`), Code Mode off |
 | Report             | Ork's `report` tool (`reportSchema` is false); the session ends with the last report it accepted                                                                          |
 | Model              | `--model` as the node gives it; OpenCode needs `provider/model` (RFC-015 settles the names)                                                                               |
-| Turn cap           | `maxTurns` is written as the `ork` agent's `steps`; `turnLimit` stays false until a real run shows the cap holds                                                          |
+| Turn cap           | `maxTurns` is written as the `ork` agent's `steps`, which holds: on its last step OpenCode tells the model to stop and gives it no tools, so the node ends with no report |
 | Resume and fork    | `--session <id>`; with `fork`, `--fork`                                                                                                                                   |
 | Interrupt          | SIGINT; OpenCode interrupts its session and exits 130, read as `interrupted`                                                                                              |
 | Pause              | no hook to hold a call: a paused node's session runs to its leg's end                                                                                                     |
@@ -59,11 +59,12 @@ it rejects. With no rules at all a shell call runs, so the adapter writes the
 whole rule set every session, never `--auto`. The last matching rule wins:
 
 1. `* *` deny.
-2. `read <worktree>/*` allow, as `claude` reads without asking; under
-   `acceptEdits`, `edit <worktree>/*` too.
+2. `read *` allow, as `claude` reads without asking; under `acceptEdits`,
+   `edit *` too. A path is matched relative to the worktree, and one outside it
+   is `external_directory`, which rule 1 denies.
 3. The node's allows: `Read`, `Glob`, `Grep` as `read`, `glob`, `grep`; `Edit`,
-   `Write`, `MultiEdit`, `NotebookEdit` as `edit` (a bare one in the worktree);
-   `Bash(<cmd>)` as `shell <cmd>` (`git status:*` is `git status *`);
+   `Write`, `MultiEdit`, `NotebookEdit` as `edit` (a path relative to the
+   worktree); `Bash(<cmd>)` as `shell <cmd>` (`git status:*` is `git status *`);
    `WebFetch`, `WebSearch`, `Task`, `Skill`, `TodoWrite` as `webfetch`,
    `websearch`, `subagent`, `skill`, `todowrite`; `mcp__<server>__<tool>` as
    `<server>_<tool>`. A tool with no OpenCode action is left out, so denied.
@@ -99,15 +100,32 @@ printed none. Legs add up, cost included: each reports only its own steps. Tool
 names come back in Claude Code's words (`shell` is `Bash`, `ork_report` is
 `mcp__ork__report`), the words a node's rules use.
 
-## Unmeasured until the real run
+## Measured on the gate run
 
-- That `ork_report` is in the model's tool list with Code Mode off.
-- That the model's `shell` tool starts in the worktree, and a path outside it is
-  refused.
-- How `shell` allow-lists behave: the spike's evaluator refused some commands a
-  rule allowed, so a node may get less than it asked for.
-- The exact tool names in `tool_use` lines (taken to be the permission actions).
-- That `steps` caps the turns, and that a message starting with `-` is read as
-  the message.
-- That an empty `OPENCODE_CONFIG_DIR` adds no config source, and whether the
-  `.claude/` switches change anything.
+On 2026-11-10, OpenCode 2.1.0 with the `commandcode` provider and DeepSeek V4.1
+Flash, two nodes for $0.002 in all:
+
+- **The folder.** OpenCode takes its folder from `PWD`, not the process's
+  working folder, so the session runner sets `PWD` to the session's folder for
+  every driver. Before, a worktree node worked in the main checkout.
+- **Path rules.** OpenCode matches a `read` or `edit` against the path relative
+  to the worktree (an absolute path inside it is made relative), and `*` crosses
+  folders; a path outside it asks `external_directory`, which the first rule
+  denies. So the worktree's reads are `read *`, and a node's path rules are
+  written relative to it: `Read(./src/**)` is `read src/**`. Absolute patterns
+  matched nothing, so every read was refused.
+- `ork_report` is in the model's tool list with Code Mode off, and the report it
+  hands in ends the session.
+- `shell` runs in the worktree; a command the node did not allow, and a read
+  outside the worktree, are refused (`permission.rejected`).
+- `steps` caps the turns: at the cap the node fails with no report, where
+  `claude-code` says `error_max_turns`.
+- A message starting with `-` reaches the model as the message.
+- Tool names in `tool_use` lines are the permission actions (`read`, `shell`).
+- **Claude models through the `commandcode` provider fail** after any tool call
+  ("This model does not support assistant message prefill", or a `thinking`
+  block's signature), on Haiku 5.5 and Sonnet 5.5 alike; DeepSeek through the
+  same provider works. That is between OpenCode and the provider, not Ork: run
+  Claude on `claude-code`.
+- Not measured: whether an empty `OPENCODE_CONFIG_DIR` adds a config source, and
+  what the `.claude/` switches change.

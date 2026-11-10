@@ -131,6 +131,7 @@ describe("the command-code adapter's arguments", () => {
       "json",
       "--permission-mode",
       "yolo",
+      "--dangerously-skip-permissions",
       "--skip-onboarding",
       "--no-auto-update",
       "--max-turns",
@@ -183,9 +184,10 @@ describe("the command-code session mod", () => {
   it("refuses everything to a node that allowed nothing, but Ork's own tools", async () => {
     const decide = await decideOf({ allow: [], deny: [] });
     expect(decide("shell", { command: "ls" })).toBeDefined();
-    expect(decide("read_file", {})).toBeDefined();
+    expect(decide("edit_file", {})).toBeDefined();
     expect(decide("mcp__github__issue", {})).toBeDefined();
     expect(decide("mcp__ork__report", {})).toBeUndefined();
+    expect(decide("search_tools", { query: "report" })).toBeUndefined();
   });
 
   it("allows what the node allowed, in Claude Code's words; a deny wins", async () => {
@@ -199,6 +201,24 @@ describe("the command-code session mod", () => {
     expect(decide("grep", {})).toBeUndefined();
     expect(decide("mcp__github__issue", {})).toBeUndefined();
     expect(decide("web_fetch", {})).toBeDefined();
+  });
+});
+
+describe("the command-code session mod's reads", () => {
+  it("lets a read inside the worktree through without a rule", async () => {
+    const decide = await decideOf({ allow: [], deny: [] });
+    expect(decide("read_file", { file_path: "src/a.ts" })).toBeUndefined();
+    expect(decide("grep", { pattern: "x" })).toBeUndefined();
+    expect(
+      decide("read_multiple_files", { paths: ["a", "b/c"] }),
+    ).toBeUndefined();
+  });
+
+  it("refuses one that reaches outside it, and keeps a node's deny", async () => {
+    const decide = await decideOf({ allow: [], deny: ["Read(secrets/*)"] });
+    expect(decide("read_file", { file_path: "/etc/hosts" })).toBeDefined();
+    expect(decide("read_file", { file_path: "../other/a.ts" })).toBeDefined();
+    expect(decide("read_file", { file_path: "secrets/key" })).toBeDefined();
   });
 });
 

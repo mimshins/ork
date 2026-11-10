@@ -43,8 +43,18 @@ const ACTIONS: Readonly<Record<string, string>> = {
 
 const BUILT_IN = new Set(Object.values(ACTIONS));
 
-/** Actions whose resource is a path: a bare allow stays in the worktree. */
+/**
+ * Actions whose resource is a path. OpenCode matches it relative to the
+ * worktree (an absolute path inside it too), `*` across folders, and asks
+ * `external_directory`, denied first, for any path outside it.
+ */
 const PATH_ACTIONS = new Set(["read", "edit"]);
+
+/** A rule's path as OpenCode matches it: relative to the worktree. */
+const pathResource = (spec: string, cwd: string): string => {
+  const relative = path.isAbsolute(spec) ? path.relative(cwd, spec) : spec;
+  return relative.replace(/^\.\//u, "") || "*";
+};
 
 /** OpenCode's name for an MCP server's tool: other characters become `_`. */
 const mcpAction = (server: string, tool: string): string =>
@@ -77,12 +87,11 @@ export const ruleOf = (
       action === "shell"
         ? shellResource(spec)
         : PATH_ACTIONS.has(action)
-          ? path.resolve(cwd, spec)
+          ? pathResource(spec, cwd)
           : spec;
     return { action, resource, effect };
   }
-  const scoped = effect === "allow" && PATH_ACTIONS.has(action);
-  return { action, resource: scoped ? `${cwd}/*` : "*", effect };
+  return { action, resource: "*", effect };
 };
 
 const rulesOf = (
@@ -90,6 +99,13 @@ const rulesOf = (
   effect: Rule["effect"],
   cwd: string,
 ): Rule[] => rules.flatMap(rule => ruleOf(rule, effect, cwd) ?? []);
+
+/** An action allowed anywhere in the worktree; outside it is denied. */
+const worktree = (action: string): Rule => ({
+  action,
+  resource: "*",
+  effect: "allow",
+});
 
 /**
  * The session's rules, in order: deny everything; read in the worktree (as
@@ -106,11 +122,6 @@ export const permissionRules = (spec: SessionSpec): Rule[] => {
   // `only` limits the built-in tools, as `--tools` does; MCP tools pass.
   const inOnly = (rule: Rule): boolean =>
     only === undefined || only.has(rule.action) || !BUILT_IN.has(rule.action);
-  const worktree = (action: string): Rule => ({
-    action,
-    resource: `${cwd}/*`,
-    effect: "allow",
-  });
   const allows = [
     worktree("read"),
     ...(spec.permissionMode === "acceptEdits" ? [worktree("edit")] : []),

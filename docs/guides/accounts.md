@@ -13,8 +13,8 @@ against your Claude plan's limits; a budget caps each run
 | Integration  | How Ork reaches it                                                            | You log in with                                                          |
 | ------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | Claude       | the `claude-code` driver, running your own `claude`                           | `claude`'s own login, `ANTHROPIC_API_KEY`, or Bedrock / Vertex / Foundry |
-| OpenCode     | the `open-code` driver, running your own `opencode` (unproven)                | `opencode auth login`                                                    |
-| Command Code | the `command-code` driver, running your own `cmd` (unproven)                  | `cmd login`                                                              |
+| OpenCode     | the `open-code` driver, running your own `opencode`                           | `opencode auth login`                                                    |
+| Command Code | the `command-code` driver, running your own `cmd`                             | `cmd login`                                                              |
 | GitHub       | optional: your `gh` CLI, for `tool.gh` nodes and `ork feedback publish`       | `gh auth login`                                                          |
 | AWS          | optional: your `aws` CLI, for `tool.aws` nodes (`profile`, `region` per node) | `aws sso login`, or a profile                                            |
 
@@ -25,12 +25,11 @@ never a token.
 
 Ork runs agents through a **driver**: the CLI of an agent tool, run headless
 ([Drivers](./drivers.md) says what each does and refuses). `claude-code`, your
-own `claude`, is the proven one. `open-code` and `command-code` are built but
-**unproven**: `ork doctor` finds the `opencode` and `cmd` binaries and lists
-them as `skip` (it does not read their logins), and a node that names one is
-refused until a real session has proven it. A workflow that names no driver runs
-on the one that's ready, and `ork run` says which. A driver the workflow or a
-node names, or `--driver` on `ork run`, wins.
+own `claude`, `open-code`, your own `opencode`, and `command-code`, your own
+`cmd`, have each run a real session. `ork doctor` finds the `opencode` and `cmd`
+binaries (it does not read their logins), and lists one it can't find as `skip`.
+A workflow that names no driver runs on the one that's ready, and `ork run` says
+which. A driver the workflow or a node names, or `--driver` on `ork run`, wins.
 
 The ids `sdk` and `cli` of earlier versions are retired: a workflow, a
 `.ork/project.yaml` or `--driver` that names one is refused with a message
@@ -57,7 +56,7 @@ It requires Claude Code 2.1.281 or later.
 > before using a subscription login; with an API key or a cloud provider it is
 > fine.
 
-### The open-code driver (`driver: open-code`, unproven)
+### The open-code driver (`driver: open-code`)
 
 Runs your own `opencode` (tested against 2.1.0), headless. Log in with
 `opencode auth login`; Ork never reads that login, and a missing one shows up in
@@ -65,7 +64,7 @@ the first session. Ork gives the session a private config with its tool
 connection, and removes it when the session ends
 ([SECURITY.md](../../SECURITY.md)).
 
-### The command-code driver (`driver: command-code`, unproven)
+### The command-code driver (`driver: command-code`)
 
 Runs your own `cmd` ([Command Code](https://commandcode.ai), tested against
 1.88.5), headless. Log in with `cmd login`; Ork never reads that login either.

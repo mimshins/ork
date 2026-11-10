@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L239, and the next chore is
+closes it. Ids are never reused: the next limit is L241, and the next chore is
 C15. At a review, each open entry is closed (built or fixed, then removed), kept
 (moved into its area's spec, then removed here), or carried to a roadmap item,
 or to none yet (unplanned).
@@ -185,17 +185,6 @@ Found building [clean sessions](./runtime.md#what-a-session-loads) (ADR-065):
 Found removing the Agent SDK driver
 ([RFC-014](../rfcs/archived/RFC-014-cli-drivers-only.md)):
 
-- **L232 · Two drivers are built but unproven.** `open-code` and `command-code`
-  have adapters tested against fake tools, but `proven: false`: `ork validate`
-  and `ork run` refuse them and `ork doctor` lists them as `skip`, until the
-  maintainer runs one capped real session on each (RFC-014 tasks 16 and 21) and
-  flips the flag. Their doctor checks only find the binary: the tools' logins
-  are not read, so a missing login shows up in the first session. What the fakes
-  assume and the real run must check: Command Code's MCP tool name
-  (`mcp__ork__<tool>`), its refusal frame, the `--mod` API in `-p` mode;
-  OpenCode's `ork_report` visibility, the shell's start folder, shell allow-list
-  behaviour, the `steps` turn cap (so `turnLimit` is false), and the event field
-  names (see [open-code](./runtime/open-code.md)).
 - **L233 · `budgetUsd` is refused on a driver that reports no dollars.**
   `command-code` reports tokens only, so `ork validate` and `ork run` refuse a
   node with `budgetUsd` on it, and every session node of a workflow with
@@ -215,15 +204,16 @@ Found removing the Agent SDK driver
   `session.waiting` event; `ork validate` warns where siblings could queue, and
   refuses an owner with a node it owns in its checkout (they would deadlock).
   `cmd acp` is the later fix. Also: permissions are enforced by an Ork-written
-  `--mod` with `--permission-mode yolo`, but the machine's skills, memory, mods
-  and MCP servers still load; a node's own `mcp` servers are not wired, so such
-  a node is refused (`mcpServers: false`); plan mode is not mapped; no hold hook
-  on pause; exit 8 without a result line falls to a generic failure; stale
-  leases are swept at a Command Code session's start and by `ork doctor`, not at
-  run start; two paths can share one slug; the stale sweep is not atomic across
-  two processes; a corrupt lease record is dropped as stale, but the `ork` entry
-  it may have left is then found by the next session's check and refused, not
-  removed.
+  `--mod`, with Command Code's own gate off (`--dangerously-skip-permissions`),
+  so a broken mod would leave nothing in its place; the machine's skills,
+  memory, mods and MCP servers still load; a node's own `mcp` servers are not
+  wired, so such a node is refused (`mcpServers: false`); plan mode is not
+  mapped; no hold hook on pause; exit 8 without a result line falls to a generic
+  failure; stale leases are swept at a Command Code session's start and by
+  `ork doctor`, not at run start; two paths can share one slug; the stale sweep
+  is not atomic across two processes; a corrupt lease record is dropped as
+  stale, but the `ork` entry it may have left is then found by the next
+  session's check and refused, not removed.
 - **L236 · OpenCode limits.** No hold on pause mid-session; `glob` and `grep`
   are not allowed by default; an empty `XDG_CONFIG_HOME` hides `~/.config/git`
   from shell commands; `--model` needs `provider/model` (RFC-015); `effort` is
@@ -235,6 +225,15 @@ Found removing the Agent SDK driver
   cannot read falls back to any object plus the status and summary check.
 - **L238 · No protocol drivers.** OpenCode's server and ACP (`cmd acp`) stay a
   later change to a single adapter.
+- **L239 · A capped `open-code` node says "no valid report".** At its `steps`
+  cap OpenCode gives the model no tools, so it can't call `report`, and the node
+  fails with no report instead of `error_max_turns`, which `claude-code` and
+  `command-code` say. Nothing in the printed events marks the cap.
+- **L240 · Claude through OpenCode's `commandcode` provider fails.** After any
+  tool call the next request is refused ("assistant message prefill", or a
+  `thinking` block's signature), on Haiku and Sonnet 5.5 alike; other models
+  through the same provider work. It lies between OpenCode and the provider, so
+  the guide says to run Claude on `claude-code`.
 
 ## Chores
 

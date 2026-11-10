@@ -4,18 +4,21 @@ A **driver** is how Ork reaches an agent tool: Ork runs that tool's own
 command-line program, headless, and reads what it prints. Ork has three drivers.
 A workflow, a node or `ork run --driver` names one by its id.
 
-| Driver         | Runs                | Status                                        |
-| -------------- | ------------------- | --------------------------------------------- |
-| `claude-code`  | your own `claude`   | Proven; the one every run takes today         |
-| `open-code`    | your own `opencode` | Built, **unproven**: refused until a real run |
-| `command-code` | your own `cmd`      | Built, **unproven**: refused until a real run |
+| Driver         | Runs                | Status                                      |
+| -------------- | ------------------- | ------------------------------------------- |
+| `claude-code`  | your own `claude`   | Proven; the one a run takes when it is here |
+| `open-code`    | your own `opencode` | Proven on a real session                    |
+| `command-code` | your own `cmd`      | Proven on a real session                    |
 
-"Unproven" means the driver passes Ork's tests against a stand-in for the tool,
-but nobody has yet run it on a real session. Until that happens `ork validate`
-and `ork run` refuse a node on it (`not yet proven on a real session`), and
-`ork doctor` lists it as `skip`, with `unproven` in the detail. Naming it is
-safe; it fails before any money is spent. Logins, and what each tool needs:
-[Accounts and credentials](./accounts.md).
+Each driver passes Ork's tests against a stand-in for its tool and has run a
+real session. A driver added later is refused by `ork validate` and `ork run`
+(`not yet proven on a real session`) until it has. `ork doctor` lists a driver
+whose tool it can't find as `skip`, with how to install it. Logins, and what
+each tool needs: [Accounts and credentials](./accounts.md).
+
+Run Claude models on `claude-code`. Through OpenCode's `commandcode` provider
+they fail after their first tool call, an error between OpenCode and that
+provider; other models through it work.
 
 ## What each driver does
 
@@ -29,7 +32,7 @@ needs more is refused rather than half-run:
 | Cost in dollars (`budgetUsd`)                  | yes           | yes                      | no, tokens only          |
 | A message mid-turn                             | yes           | no (next leg)            | no (next leg)            |
 | Report as structured output                    | yes           | no (Ork's `report` tool) | no (Ork's `report` tool) |
-| Turn limit (`maxTurns`)                        | yes           | no                       | yes                      |
+| Turn limit (`maxTurns`)                        | yes           | yes                      | yes                      |
 | A node's own MCP servers (`mcp`)               | yes           | yes                      | no                       |
 
 Where Ork has a fallback it uses it, and nothing is refused: a driver without

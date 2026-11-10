@@ -3,8 +3,8 @@
 Status: **Built**: the port, the adapter strategies and session runner, the
 `claude-code` driver and Ork's MCP tools, tested against a stand-in `claude`;
 the [`open-code`](./runtime/open-code.md) and
-[`command-code`](./architecture/command-code.md) drivers are built and unproven
-([code](../packages/runtime/src/index.ts),
+[`command-code`](./architecture/command-code.md) drivers are built and proven on
+a real session ([code](../packages/runtime/src/index.ts),
 [tests](../packages/runtime/test/runtime.test.ts)), and run one node at a time
 by [`ork run --node`](./cli/running-and-runs.md#running-one-node). Why:
 [ADR-004](../decisions/ADR-004-no-credentials.md),
@@ -50,8 +50,10 @@ descriptor has `capabilities` (`questions`, `permissionPrompt`, `price`,
 `midTurnMessages`, `reportSchema`, `turnLimit`, `mcpServers`; false: Ork
 supplies a fallback or refuses the node) and `proven`. `open-code` runs the
 user's own `opencode` ([its page](./runtime/open-code.md)); `command-code` runs
-`cmd` ([its page](./architecture/command-code.md)). Both are `proven: false`:
-`ork doctor` shows them as unproven `skip`. The ids `sdk` and `cli` are retired:
+`cmd` ([its page](./architecture/command-code.md)). Both are `proven: true`,
+since their gate runs (2026-11-10); a descriptor with `proven: false` is refused
+and never counts as ready. The session runner sets `PWD` to the session's
+folder, which OpenCode reads as its own. The ids `sdk` and `cli` are retired:
 naming one is refused ("use `claude-code`"); a stored run's are read as
 `claude-code` ([rows.ts](../packages/core/src/store/rows.ts)), never rewritten.
 

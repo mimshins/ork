@@ -18,16 +18,16 @@ accounts. Ork never handles credentials
 Dependency direction, enforced by `oxlint.config.ts`:
 `integrations <- schema <- core <- runtime, nodes <- server <- ui, cli`.
 
-| Package                    | Folder                  | Role                                                                               |
-| -------------------------- | ----------------------- | ---------------------------------------------------------------------------------- |
-| `@krapht/ork-integrations` | `packages/integrations` | Registries of tool integrations and agent drivers (adapters)                       |
-| `@krapht/ork-schema`       | `packages/schema`       | Workflow file format: Zod model, JSON Schema, canonical YAML                       |
-| `@krapht/ork-core`         | `packages/core`         | Expressions, graph compiler, runtime port, session planning, the engine            |
-| `@krapht/ork-runtime`      | `packages/runtime`      | Agent drivers as CLI adapters: `claude-code`; `open-code`, `command-code` unproven |
-| `@krapht/ork-nodes`        | `packages/nodes`        | Built-in node types: Claude, tool, gate and call executors                         |
-| `@krapht/ork-server`       | `packages/server`       | `ork ui`'s HTTP + SSE API (ADR-039) and `ork mcp`'s tools (ADR-057)                |
-| `@krapht/ork-ui`           | `packages/ui`           | The browser UI `ork ui` serves (ADR-040); built into the CLI's `dist/ui`           |
-| `@krapht/ork`              | `packages/cli`          | The `ork` command; the only published package, bundling the others                 |
+| Package                    | Folder                  | Role                                                                      |
+| -------------------------- | ----------------------- | ------------------------------------------------------------------------- |
+| `@krapht/ork-integrations` | `packages/integrations` | Registries of tool integrations and agent drivers (adapters)              |
+| `@krapht/ork-schema`       | `packages/schema`       | Workflow file format: Zod model, JSON Schema, canonical YAML              |
+| `@krapht/ork-core`         | `packages/core`         | Expressions, graph compiler, runtime port, session planning, the engine   |
+| `@krapht/ork-runtime`      | `packages/runtime`      | Agent drivers as CLI adapters: `claude-code`, `open-code`, `command-code` |
+| `@krapht/ork-nodes`        | `packages/nodes`        | Built-in node types: Claude, tool, gate and call executors                |
+| `@krapht/ork-server`       | `packages/server`       | `ork ui`'s HTTP + SSE API (ADR-039) and `ork mcp`'s tools (ADR-057)       |
+| `@krapht/ork-ui`           | `packages/ui`           | The browser UI `ork ui` serves (ADR-040); built into the CLI's `dist/ui`  |
+| `@krapht/ork`              | `packages/cli`          | The `ork` command; the only published package, bundling the others        |
 
 Status per area: [specs/README.md](../../specs/README.md). Release route:
 [ADR-015](../../decisions/ADR-015-changesets-and-one-bundled-cli.md).

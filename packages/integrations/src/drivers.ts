@@ -1,10 +1,9 @@
 /**
  * @file The agent drivers Ork can run a session with, as descriptors: id, label
- *   and doctor check (RFC-014: `claude-code` now; `open-code` and
- *   `command-code` built, unproven until a real run). `@krapht/ork-runtime`
- *   registers a factory for each id, so adding a driver is one descriptor here
- *   and one factory there (ADR-022). Ork never handles the user's login
- *   (ADR-004).
+ *   and doctor check (RFC-014: `claude-code`, `open-code` and `command-code`,
+ *   each proven on a real session). `@krapht/ork-runtime` registers a factory
+ *   for each id, so adding a driver is one descriptor here and one factory
+ *   there (ADR-022). Ork never handles the user's login (ADR-004).
  */
 
 import type { CheckResult, Env, Exec } from "./integration.ts";
@@ -180,10 +179,11 @@ const installedCli = (
     const unproven = rest.proven
       ? ""
       : ", unproven: not yet proven on a real session";
+    // Another driver is optional: a missing tool is a skip, not a warning.
     if (!version.ok) {
       return {
         name,
-        status: rest.proven ? "warn" : "skip",
+        status: "skip",
         detail: `${program} CLI not found${unproven}`,
         // No hint while unproven: it would show under "no driver is ready".
         ...(rest.proven
@@ -201,25 +201,24 @@ const installedCli = (
 
 const openCode = installedCli("open-code", "opencode", "opencode auth login", {
   label: "the `opencode` CLI",
-  proven: false,
+  proven: true,
   onePerCheckout: false,
-  // `questions`: Ork's tools reach the model with Code Mode off (RFC-014 open
-  // question 1, answered on paper). `turnLimit` stays false until a real run
-  // shows the agent's `steps` cap holds.
+  // Proven on a real session (2026-11-10): Ork's tools reach the model with
+  // Code Mode off, and the agent's `steps` caps the turns.
   capabilities: {
     questions: true,
     permissionPrompt: false,
     price: true,
     midTurnMessages: false,
     reportSchema: false,
-    turnLimit: false,
+    turnLimit: true,
     mcpServers: true,
   },
 });
 
 const commandCode = installedCli("command-code", "cmd", "cmd login", {
   label: "the `cmd` CLI of Command Code",
-  proven: false,
+  proven: true,
   onePerCheckout: true,
   capabilities: {
     questions: true,

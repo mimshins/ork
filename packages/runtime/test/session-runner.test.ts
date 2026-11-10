@@ -6,6 +6,7 @@
  *   no process, and the MCP wiring is released when the session ends.
  */
 
+import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 import type { RuntimeEvent, SessionSpec, SessionUsage } from "@krapht/ork-core";
@@ -198,5 +199,33 @@ describe("the session runner, when a session ends early", () => {
       },
     ]);
     expect(released).toEqual(["slow:worker"]);
+  });
+});
+
+/** Reports the `PWD` it was given, which OpenCode takes as its folder. */
+const pwdAdapter: CliAdapter = {
+  ...adapter,
+  command: {
+    bin: "node",
+    args: () => [
+      "-e",
+      'console.log(JSON.stringify({ t: "result", id: "s1", text: process.env.PWD }));',
+      "-",
+      "-",
+    ],
+  },
+};
+
+describe("the session runner's process", () => {
+  it("has PWD set to the session's folder, not Ork's", async () => {
+    const folder = path.dirname(process.cwd());
+    const events = await collect(
+      createSessionRuntime(pwdAdapter, {
+        env: { ...process.env, PWD: "/elsewhere" },
+      }).start({ ...spec, cwd: folder }, { human }).events,
+    );
+    expect(events.at(-1)).toMatchObject({
+      outcome: { text: `${folder} (resumed: )` },
+    });
   });
 });

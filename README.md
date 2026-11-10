@@ -39,11 +39,10 @@ Two ways in:
   workflow, asking you before each change.
 
 You need Node 24.20+, git, and one agent driver: your own `claude` login, or an
-API key, Bedrock, Vertex or Foundry. (`opencode` and Command Code's `cmd` are
-built too, but unproven and refused until a real session has run on them; see
-[Drivers](./docs/guides/drivers.md).) `gh` and `aws` are optional, needed only
-by workflows that use them. Run Ork inside a git repository with at least one
-commit:
+API key, Bedrock, Vertex or Foundry. Your own `opencode` or Command Code's `cmd`
+work too ([Drivers](./docs/guides/drivers.md)). `gh` and `aws` are optional,
+needed only by workflows that use them. Run Ork inside a git repository with at
+least one commit:
 
 ```sh
 npm install --global @krapht/ork

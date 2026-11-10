@@ -5,9 +5,10 @@
  *   `--permission-mode yolo` and loads, with `--mod`, a mod written for the
  *   session outside the checkout: its `beforeToolCall` hook blocks every call
  *   the node did not allow. Ork's own tools (`mcp__ork__*`) always go through.
- *   The rules are the node's, in Claude Code's words (`Bash(git:*)`, `Read`,
- *   `mcp__github`); a specifier Ork does not read never allows a call and
- *   always denies one.
+ *   Command Code's tool loader passes, and reads inside the worktree need no
+ *   rule, as with Claude Code; one reaching outside it does. The rules are the
+ *   node's, in Claude Code's words (`Bash(git:*)`, `Read`, `mcp__github`); a
+ *   specifier Ork does not read never allows a call and always denies one.
  */
 
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -18,11 +19,17 @@ import type { SessionSpec } from "@krapht/ork-core";
 
 import { COMMAND_CODE_TOOLS } from "./command-code-events.ts";
 
-/** What the mod enforces: the node's allow, deny and only lists. */
-export type ModRules = { allow: string[]; deny: string[]; only?: string[] };
+/** What the mod enforces: the node's lists, and the worktree reads stay in. */
+export type ModRules = {
+  cwd: string;
+  allow: string[];
+  deny: string[];
+  only?: string[];
+};
 
 /** The rules of a session: an `acceptEdits` node may edit without a rule. */
 export const modRules = (spec: SessionSpec): ModRules => ({
+  cwd: spec.cwd,
   allow: [
     ...spec.tools.allow,
     ...(spec.permissionMode === "acceptEdits" ? ["Edit"] : []),
@@ -38,7 +45,20 @@ export const modRules = (spec: SessionSpec): ModRules => ({
 export const modSource = (
   rules: ModRules,
 ): string => `// Ork's rules for one session; written by Ork, removed after it.
+import { relative, resolve } from "node:path";
 const RULES = ${JSON.stringify(rules)};
+// Command Code's own: loading a deferred tool's schema, Ork's report included.
+const META = new Set(["search_tools", "tool_search"]);
+// Reads a session makes in its worktree without a rule, as Claude Code does.
+const READS = new Set(["read_file", "read_multiple_files", "read_directory", "glob", "grep"]);
+const pathsOf = input => Object.entries(input ?? {})
+  .filter(([key]) => /path|file|dir/i.test(key))
+  .flatMap(([, value]) => (Array.isArray(value) ? value : [value]))
+  .filter(value => typeof value === "string");
+const inside = input => pathsOf(input).every(each => {
+  const from = relative(RULES.cwd, resolve(RULES.cwd, each));
+  return from === "" || (!from.startsWith("..") && !from.startsWith("/"));
+});
 const TOOLS = ${JSON.stringify(COMMAND_CODE_TOOLS)};
 // A rule's word, as Command Code reads it, covers these of Ork's tool names.
 const COVERS = { read: ["Read", "Glob", "Grep"], edit: ["Edit", "Write"] };
@@ -77,10 +97,11 @@ const matches = (rule, name, input) => {
 };
 export const decide = (name, input) => {
   if (RULES.deny.some(rule => matches(rule, name, input) !== false)) return "denied for this node";
-  if (name.startsWith("mcp__ork__")) return undefined;
+  if (name.startsWith("mcp__ork__") || META.has(name)) return undefined;
   if (RULES.only !== undefined && !RULES.only.some(rule => matches(rule, name, input) === true)) {
     return "not one of this node's tools";
   }
+  if (READS.has(name) && inside(input)) return undefined;
   if (RULES.allow.some(rule => matches(rule, name, input) === true)) return undefined;
   return "not allowed for this node";
 };

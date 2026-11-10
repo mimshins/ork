@@ -1070,9 +1070,11 @@ export const MILESTONES = [
       {
         id: "cli-drivers-only",
         title: "CLI drivers only",
-        status: "active",
+        status: "done",
+        commits: ["692df82"],
+        date: "2026-11-10",
         detail:
-          "RFC-014, in steps. Done: the port and package take neutral names (`AgentRuntime`, `@krapht/ork-runtime`, ADR-074); the Agent SDK driver and its dependencies are gone; the driver ids are `claude-code`, `open-code` and `command-code`, where `claude-code` is ready with a `claude` login, an API key or a cloud provider, and the retired `sdk` and `cli` are refused with the new id and read as `claude-code` in stored runs. Also built: the shared session runner and adapter strategies, a contract suite every adapter passes against a fake tool, capabilities with refusals in `ork validate` and `ork run`, the shared `report` tool, and the Command Code (per-checkout MCP lease, deny by default through an Ork-written mod) and OpenCode (config file at mode 0600 outside the checkout, deny-by-default rules) adapters. Both stay `proven: false` and are refused until the maintainer runs one capped real session on each; then the RFC closes with its ADR.",
+          "RFC-014. Done: the port and package take neutral names (`AgentRuntime`, `@krapht/ork-runtime`, ADR-074); the Agent SDK driver and its dependencies are gone; the driver ids are `claude-code`, `open-code` and `command-code`, where `claude-code` is ready with a `claude` login, an API key or a cloud provider, and the retired `sdk` and `cli` are refused with the new id and read as `claude-code` in stored runs. Also built: the shared session runner and adapter strategies, a contract suite every adapter passes against a fake tool, capabilities with refusals in `ork validate` and `ork run`, the shared `report` tool, and the Command Code (per-checkout MCP lease, deny by default through an Ork-written mod) and OpenCode (config file at mode 0600 outside the checkout, deny-by-default rules) adapters. Each was proven on a capped real session on 2026-11-10, which found and fixed four bugs: OpenCode took its folder from `PWD` and its path rules were absolute, and Command Code's own `-p` gate refused shell while Ork's mod refused reads and its tool loader. The RFC closed with ADR-076.",
         docs: [
           "rfcs/archived/RFC-014-cli-drivers-only.md",
           "decisions/ADR-074-neutral-runtime-names.md",

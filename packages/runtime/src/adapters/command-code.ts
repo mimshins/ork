@@ -31,8 +31,10 @@ const queryOf = (spec: SessionSpec): string => {
 };
 
 /**
- * The `cmd` arguments for a session spec. `yolo`: Command Code prompts for
- * nothing, and the session's mod refuses what the node did not allow.
+ * The `cmd` arguments for a session spec. `--dangerously-skip-permissions`: in
+ * `-p` mode only it lifts Command Code's own gate on edits and shell (the
+ * permission mode alone does not), so the session's mod, which refuses what the
+ * node did not allow, is the only gate.
  */
 export const commandCodeArgs = (spec: SessionSpec): string[] => {
   const args = [
@@ -42,6 +44,7 @@ export const commandCodeArgs = (spec: SessionSpec): string[] => {
     "json",
     "--permission-mode",
     "yolo",
+    "--dangerously-skip-permissions",
     "--skip-onboarding",
     "--no-auto-update",
   ];

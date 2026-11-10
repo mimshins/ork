@@ -34,9 +34,9 @@ share a checkout: the leader holds it while it waits on the worker, and the
 worker waits for it, so neither would finish. Give the worker
 `isolation: worktree`, or run one of them on another driver.
 
-**`node … runs on driver …, which is not yet proven on a real session`.**
-`open-code` and `command-code` are refused until a real session has proven them.
-Name `claude-code`, or no driver.
+**`node … runs on driver …, which is not yet proven on a real session`.** A
+driver is refused until a real session has proven it. `claude-code`, `open-code`
+and `command-code` all have; name one of them, or no driver.
 
 **`No agent driver is ready here, and … name none.`** Neither your `claude`
 login nor an API key or cloud provider is set up, and the nodes it names don't

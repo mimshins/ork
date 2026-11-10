@@ -114,9 +114,10 @@ or `CLAUDE_CODE_USE_BEDROCK`/`_VERTEX`/`_FOUNDRY=1` is set, and its detail says
 which; it warns when `claude` is older than 2.1.281, which Ork needs to read
 `AGENTS.md` ([context](../context.md#how-a-nodes-session-is-compiled)). The
 drivers `open-code` and `command-code` are checked with `opencode --version` and
-`cmd --version`; while their descriptor is not `proven`, they are listed as
-`skip` with "unproven" (their logins, `opencode auth login` and `cmd login`, are
-named, never read), and never count as a ready driver.
+`cmd --version`: `ok` when the tool answers (their logins, `opencode auth login`
+and `cmd login`, are named, never read), `skip` with how to install it when it
+is missing. A driver whose descriptor is not `proven` is listed as `skip` with
+"unproven", and never counts as a ready driver.
 
 Once a project has `.ork/`, doctor adds one check per tool the project uses:
 `ok` when its folders link to `.ork/`, a warning when one is missing or broken

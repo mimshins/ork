@@ -161,8 +161,10 @@ export const createSessionRuntime = (
           );
           return;
         }
+        // OpenCode takes its folder from PWD, which a spawn's cwd leaves as is.
         const env = {
           ...(options.env ?? process.env),
+          PWD: spec.cwd,
           ...adapter.context.env(spec),
           ...wired.env,
         };
