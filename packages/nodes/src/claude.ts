@@ -157,7 +157,7 @@ export const claudeExecutor =
       ready: options.readyDriver,
     });
     if (driver === undefined) {
-      return notStarted("no Claude driver is ready; see `ork doctor`");
+      return notStarted("no agent driver is ready; see `ork doctor`");
     }
     const runtime = await options.runtimeFor(driver);
     const ports: SessionPorts = {

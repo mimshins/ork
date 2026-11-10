@@ -42,7 +42,7 @@ ork projects [--json] | forget <id> | move <id> <path>  # the registered project
 ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agents and skills under .ork/, tool folders relinked; commits nothing
 ork migrate --from-agents a,b [--reviewer r] [--name n]  # draft a gated workflow from the project's agents
 ork link [tools…] [--check]      # point tools' agents and skills folders (.claude/agents, …) at .ork/
-ork doctor                       # node, git (and a first commit), every Claude driver and integration (its own login check), links
+ork doctor                       # node, git (and a first commit), every agent driver and integration (its own login check), links
 ork validate [<wf>…] [--paths] [--json] [--driver <id>]   # schema, graph, project rules, agents and skill/context references, with yaml line numbers, then a walk of every way through; `--paths` lists each ending (the walk line points to it); with no file, the project's triggers too; each session node is checked against its driver (`--driver`, else the one a run would take; [driver fit](./graph-compiler.md#driver-fit))
 ork agents list [--json] | show <name> [--json]   # the agents nodes can take, and where each comes from
 ork agents add <name> [--description d] [--model m] [--from <agent>] [--user] | rm <name> [--user]

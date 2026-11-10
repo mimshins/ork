@@ -126,7 +126,7 @@ export const headWarning = async (run: Exec): Promise<string | null> => {
 };
 
 /**
- * Runs every check: Node and git, then every registered Claude driver and
+ * Runs every check: Node and git, then every registered agent driver and
  * integration (ADR-022). Node, git, and at least one driver are required;
  * integrations are optional.
  */

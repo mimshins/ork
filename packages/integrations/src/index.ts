@@ -1,6 +1,6 @@
 /**
  * @file `@krapht/ork-integrations`: the registries of Ork's integrations (the
- *   user's CLI tools) and Claude drivers, and the layouts of the coding-agent
+ *   user's CLI tools) and agent drivers, and the layouts of the coding-agent
  *   tools whose folders hold a project's agents and skills. Everything that
  *   names a tool or a driver (the workflow schema, the tool executor, `ork
  *   doctor`, `ork run`) reads these lists instead of naming them itself

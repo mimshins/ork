@@ -156,7 +156,7 @@ export const runNode = async (
   if (ready?.ok === false) return failed(ready.lines);
   if (ready?.line !== undefined) options.err(ready.line);
   const driver = named ?? ready?.driver;
-  if (driver === undefined) return failed(["No Claude driver is ready here."]);
+  if (driver === undefined) return failed(["No agent driver is ready here."]);
   const unfit = unfitLines(workflow, options.drivers, {
     override: driver,
     only: options.nodeId,

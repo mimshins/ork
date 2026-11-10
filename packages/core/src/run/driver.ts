@@ -1,5 +1,5 @@
 /**
- * @file Which Claude driver a session runs on, one rule for every caller (`ork
+ * @file Which agent driver a session runs on, one rule for every caller (`ork
  *   run`, `--node`, `ork chat`, `ork resume`, called and detached runs):
  *   `--driver`, else the node's (or its agent's), else the workflow's
  *   `defaults.driver` (the project's included), else the one ready on this

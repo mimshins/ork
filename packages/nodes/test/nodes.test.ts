@@ -1090,7 +1090,7 @@ describe("Claude nodes", () => {
       );
       expect(drivers).toEqual([]);
       expect(result.error).toBe(
-        "not started: no Claude driver is ready; see `ork doctor`",
+        "not started: no agent driver is ready; see `ork doctor`",
       );
     });
   });

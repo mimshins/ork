@@ -13,7 +13,7 @@ so `schema/` has no migration yet. Why:
 ```
 ork/
   packages/
-    integrations/    registries: one adapter per CLI tool (gh, aws, shell) and Claude driver (ADR-022)
+    integrations/    registries: one adapter per CLI tool (gh, aws, shell) and agent driver (ADR-022)
     schema/          Zod schemas → JSON Schema; YAML load/save with stable formatting; migrations
     core/            graph compiler & validator, scheduler, context compiler, message bus,
                      decision queue, event store (SQLite + JSONL), worktree manager
@@ -45,7 +45,7 @@ ork/
   `ork ui` supervises it in a child process, so the page can restart it onto a
   newly installed `ork`
   ([ADR-060](../decisions/ADR-060-ork-ui-supervises-its-server.md)).
-- **Integrations are adapters:** each CLI tool and Claude driver is one adapter
+- **Integrations are adapters:** each CLI tool and agent driver is one adapter
   in `@krapht/ork-integrations`, listed in a registry that the schema, the tool
   executor, `ork doctor` and `ork run` read
   ([ADR-022](../decisions/ADR-022-integration-registry.md)). The dependency

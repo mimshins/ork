@@ -59,7 +59,7 @@ export const chooseReadyDriver = (
     return {
       ok: false,
       lines: [
-        `No Claude driver is ready here, and ${names.join(", ")} ${names.length === 1 ? "names" : "name"} none.`,
+        `No agent driver is ready here, and ${names.join(", ")} ${names.length === 1 ? "names" : "name"} none.`,
         ...ready.hints,
         "See `ork doctor`.",
       ],

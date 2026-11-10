@@ -92,7 +92,7 @@ has one of these names gets its values with no change.
 | `workflow`, `files`           | workflows | The project's workflows by name, then Ork's own `ork:` ones; `files` also asks for file names                                                     |
 | `node` (positional, `--node`) | nodes     | With a `workflow` positional, the nodes of the workflow given (none before it is); else the nodes of the run given, or the project's newest run's |
 | `decide id`                   | decisions | Open decisions of live runs: the run given, else the project's; described by kind, run and node                                                   |
-| `driver`                      | drivers   | The Claude drivers' ids, with their labels                                                                                                        |
+| `driver`                      | drivers   | The agent drivers' ids, with their labels                                                                                                         |
 | `completion shell`            | shells    | The shells there is a script for                                                                                                                  |
 | `path`, `file`, `output`      | files     | File names, from the shell                                                                                                                        |
 

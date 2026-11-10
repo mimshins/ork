@@ -128,7 +128,7 @@ describe("ork doctor", () => {
     expect(JSON.stringify(withKey.results)).not.toContain('"x"');
   });
 
-  it("fails without any Claude driver", async () => {
+  it("fails without any agent driver", async () => {
     const { ok, results } = await runChecks(
       fakeExec({ "git --version": "git version 2.50.0" }),
       {},

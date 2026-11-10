@@ -2,7 +2,7 @@
  * @file This installation of Ork: its name and version for the root command;
  *   `ork doctor`, which prints Ork's version against the last update check and
  *   the environment checks (Node, git, the user's own claude, gh and aws
- *   logins, the project's links) and fails when no Claude driver can run; and
+ *   logins, the project's links) and fails when no agent driver can run; and
  *   `ork upgrade`, which asks the npm registry for the latest version and, when
  *   it is newer, upgrades Ork the way it was installed after the user agrees
  *   (`--yes` skips the question; `--check` only reports). A clone or `npx` gets
@@ -88,7 +88,7 @@ export const doctor = defineCommand({
     }
     if (!ok) {
       write(
-        `\n${style("red", "Not ready:")} Ork needs Node, git, and at least one Claude driver.`,
+        `\n${style("red", "Not ready:")} Ork needs Node, git, and at least one agent driver.`,
       );
       process.exitCode = 1;
     }

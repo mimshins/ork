@@ -1,5 +1,5 @@
 /**
- * @file Driver checks for tests: which Claude drivers are "ready", so a run of
+ * @file Driver checks for tests: which agent drivers are "ready", so a run of
  *   a workflow that names no driver picks one without running a real `claude`
  *   or reading the machine's environment.
  */

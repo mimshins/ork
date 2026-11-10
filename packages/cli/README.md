@@ -26,7 +26,7 @@ ork worktrees clean     # removes the merged ones; asks first
 ork upgrade             # a newer version? upgrade the way you installed Ork
 ```
 
-A workflow that names no Claude driver runs on the one that's ready. Today that
+A workflow that names no agent driver runs on the one that's ready. Today that
 is `claude-code`: your own `claude`, logged in or with `ANTHROPIC_API_KEY` or a
 cloud provider set. `--driver claude-code` names it.
 

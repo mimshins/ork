@@ -128,7 +128,7 @@ export const resumeChat = async (
   if (driver === undefined) {
     const ready = readyDriver(await (options.driverChecks ?? checksHere)());
     if (!ready.ok) {
-      return ["No Claude driver is ready here.", ...ready.hints].join(" ");
+      return ["No agent driver is ready here.", ...ready.hints].join(" ");
     }
     driver = ready.driver;
   }

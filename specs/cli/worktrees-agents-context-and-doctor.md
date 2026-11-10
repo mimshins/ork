@@ -105,7 +105,7 @@ node it came from.
 `ork doctor` first shows Ork's own version against the last update check
 ([updates](./updates.md#the-new-version-notice)), then checks Node and git (a
 repository with no commit is a warning, `git commits`, never a failure: worktree
-runs need a `HEAD`), then runs each registered Claude driver's and integration's
+runs need a `HEAD`), then runs each registered agent driver's and integration's
 own check ([ADR-022](../../decisions/ADR-022-integration-registry.md)):
 installed, and signed in with the user's own login, never printing a token or an
 account. At least one driver must be ready; integrations are optional. The

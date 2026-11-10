@@ -21,7 +21,7 @@ ork doctor
   yes. The guide:
   https://github.com/mimshins/ork/blob/main/docs/getting-started/installation.md
 - **Read `ork doctor` to them.** It needs git, a git repository with a commit,
-  and one Claude driver. Don't run `git init` or a commit without asking.
+  and one agent driver. Don't run `git init` or a commit without asking.
 - **A driver not ready:** they log in themselves, with `claude auth login`, or
   by setting `ANTHROPIC_API_KEY` or a cloud provider in their own shell (either
   makes the claude-code driver ready). Never ask for a key, never take one pasted to you, and

@@ -38,7 +38,7 @@ worker waits for it, so neither would finish. Give the worker
 `open-code` and `command-code` are refused until a real session has proven them.
 Name `claude-code`, or no driver.
 
-**`No Claude driver is ready here, and … name none.`** Neither your `claude`
+**`No agent driver is ready here, and … name none.`** Neither your `claude`
 login nor an API key or cloud provider is set up, and the nodes it names don't
 pick a driver, so the run doesn't start. The message gives each driver's hint,
 such as logging in with `claude` or setting `ANTHROPIC_API_KEY`, then

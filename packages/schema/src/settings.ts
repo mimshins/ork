@@ -1,6 +1,6 @@
 /**
  * @file The settings the workflow format shares between nodes, agents, defaults
- *   and project rules: ids and names, the Claude driver and model, effort,
+ *   and project rules: ids and names, the agent driver and model, effort,
  *   isolation, budgets and turns, the built-in practices, and tool rules.
  */
 

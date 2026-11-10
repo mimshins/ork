@@ -181,7 +181,7 @@ describe("the driver for nodes that name none", () => {
     expect(done.drivers).toEqual([]);
     expect(store.runs()).toEqual([]);
     expect(done.err).toEqual([
-      "No Claude driver is ready here, and write, review name none.",
+      "No agent driver is ready here, and write, review name none.",
       "Get the open-code driver ready.",
       "Get the claude-code driver ready.",
       "See `ork doctor`.",

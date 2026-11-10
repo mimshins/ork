@@ -1,5 +1,5 @@
 /**
- * @file Which Claude driver is ready on this machine: each driver's own check
+ * @file Which agent driver is ready on this machine: each driver's own check
  *   (what `ork doctor` shows), and the one a run takes for the nodes that name
  *   no driver, so a committed workflow never carries one person's login.
  */
@@ -9,7 +9,7 @@ import type { CheckResult, Env, Exec } from "./integration.ts";
 
 export type DriverCheck = { id: DriverId; result: CheckResult };
 
-/** Each registered Claude driver's own check, in registry order. */
+/** Each registered agent driver's own check, in registry order. */
 export const driverChecks = (run: Exec, env: Env): Promise<DriverCheck[]> =>
   Promise.all(
     AGENT_DRIVERS.map(async driver => ({

@@ -16,7 +16,7 @@
 # - `pnpm check` is the gate. Project rules have no `verify:` default, so each
 #   workflow puts it on its writing nodes.
 # - The driver is left to each contributor: a run takes the one ready on the
-#   machine (`cli` when both are), or `ork run --driver sdk|cli`.
+#   machine (today `claude-code`), or `ork run --driver <id>`.
 schemaVersion: 1
 git:
   commit: never
