@@ -7,6 +7,7 @@ import { askUserTool } from "./ask-user.ts";
 import { claimTool, releaseTool } from "./claims.ts";
 import { delegateTool, spawnWorkerTool } from "./delegate.ts";
 import { feedbackTool } from "./feedback.ts";
+import { readInputTool } from "./input.ts";
 import {
   answerTool,
   readInboxTool,
@@ -31,6 +32,7 @@ export const ORK_TOOLS: readonly OrkTool[] = [
   readInboxTool,
   waitForMessagesTool,
   answerTool,
+  readInputTool,
   claimTool,
   releaseTool,
   feedbackTool,

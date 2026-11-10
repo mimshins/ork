@@ -1065,6 +1065,34 @@ describe("Claude nodes", () => {
     expect(specs[0]?.prompt).toContain('"changes_requested"');
   });
 
+  it("hands a sent-back input the note cut to read_input, whole", async () => {
+    const seen: { prompt: string; input: string | undefined }[] = [];
+    const execute = claudeExecutor({
+      runtimeFor: driver =>
+        Promise.resolve({
+          driver,
+          start: (spec, ports) => {
+            seen.push({ prompt: spec.prompt, input: ports.input });
+            return {
+              events: finishedPassing(),
+              send: () => {},
+              interrupt: () => Promise.resolve(),
+            };
+          },
+        }),
+      driver: "claude-code",
+      inPlace: true,
+    });
+    const node: Node = { type: "claude.worker", prompt: "Fix" };
+    const input = { findings: "x".repeat(9000) };
+    await execute(context("fix", node, { round: 2, input }));
+    await execute(context("fix", node, { round: 2, input: { findings: "y" } }));
+    expect(seen[0]?.input).toBe(JSON.stringify(input, undefined, 2));
+    expect(seen[0]?.prompt).toContain("Call read_input for all of it");
+    expect(seen[1]?.input).toBeUndefined();
+    expect(seen[1]?.prompt).not.toContain("read_input");
+  });
+
   describe("the driver", () => {
     it("is the node's own, over the one ready", async () => {
       const { execute, drivers } = executing({ readyDriver: "open-code" });

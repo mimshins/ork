@@ -125,7 +125,8 @@ in a later round doesn't wait on a branch the loop didn't go back to.
   it on ([leader questions](./messaging/leader-questions.md)).
 - A re-entered **worker** starts a fresh session whose brief ends with a
   `## Round n` section carrying its input (e.g. the join's `statuses` and
-  `results`), so reviews stay unbiased.
+  `results`), so reviews stay unbiased. Past 8 KiB the section shows the start
+  and the session reads the whole with `read_input` (ADR-078).
 - A re-entered **leader resumes** its last session (ADR-019) with only the new
   round's input as the next message, keeping its context and cache. The same
   holds when a leader is delegated to again.

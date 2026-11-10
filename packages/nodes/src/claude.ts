@@ -60,12 +60,24 @@ export type ClaudeExecutorOptions = {
 
 const MAX_INPUT = 8192;
 
-/** On a loop re-entry, the brief carries what the workflow sent back. */
+const inputJson = (input: unknown): string =>
+  JSON.stringify(input ?? {}, undefined, 2);
+
+/** What a sent-back input is whole, for `read_input`, when its note cuts it. */
+export const wholeInput = (input: unknown): string | undefined => {
+  const json = inputJson(input);
+  return json.length > MAX_INPUT ? json : undefined;
+};
+
+/** A re-entry's note of what was sent back; `read_input` has a cut rest. */
 export const reentryNote = (round: number, input: unknown): string => {
-  const json = JSON.stringify(input ?? {}, undefined, 2);
-  const body =
-    json.length > MAX_INPUT ? `${json.slice(0, MAX_INPUT)}\n…` : json;
-  return `\n\n## Round ${String(round)}\n\nThe workflow sent this task back to you with:\n\n\`\`\`json\n${body}\n\`\`\``;
+  const json = inputJson(input);
+  const cut = json.length > MAX_INPUT;
+  const body = cut ? `${json.slice(0, MAX_INPUT)}\n…` : json;
+  const rest = cut
+    ? `\n\nThat is the first ${String(MAX_INPUT)} of its ${String(json.length)} characters. Call read_input for all of it before you act on it.`
+    : "";
+  return `\n\n## Round ${String(round)}\n\nThe workflow sent this task back to you with:\n\n\`\`\`json\n${body}\n\`\`\`${rest}`;
 };
 
 /**
@@ -177,6 +189,8 @@ export const claudeExecutor =
     if (context.mailbox !== undefined) ports.mailbox = context.mailbox;
     if (context.claims !== undefined) ports.claims = context.claims;
     if (context.feedback !== undefined) ports.feedback = context.feedback;
+    const whole = context.round > 1 ? wholeInput(context.input) : undefined;
+    if (whole !== undefined) ports.input = whole;
     const watch = limitWatch(context);
     const run = async (asked: SessionSpec): Promise<SessionOutcome | null> => {
       const watching = watch.session(asked);

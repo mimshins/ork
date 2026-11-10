@@ -289,6 +289,8 @@ export type SessionPorts = {
   claims?: Claims;
   /** Only for a leader or worker inside a run. */
   feedback?: FeedbackPort;
+  /** What the workflow sent back to the node, whole, when its note was cut. */
+  input?: string;
 };
 
 export type AgentRuntime = {

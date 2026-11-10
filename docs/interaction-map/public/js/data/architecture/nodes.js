@@ -1015,7 +1015,7 @@ export const NODES = [
     summary:
       "The tools every Claude node gets for working inside the hierarchy: messaging, reporting, delegating, asking you, and claiming files.",
     facts: [
-      "Built: one registry binds each session's tools, one file per tool: `ask_user`, `permission` (the prompt tool), for leaders `delegate`, `spawn_worker` and `answer`, `send_message`, `read_inbox` and `wait_for_messages` for every leader and worker (with `links: off`, only those with someone to reach), and `claim` and `release` for parallel writers; arguments are validated with Zod.",
+      "Built: one registry binds each session's tools, one file per tool: `ask_user`, `permission` (the prompt tool), for leaders `delegate`, `spawn_worker` and `answer`, `send_message`, `read_inbox` and `wait_for_messages` for every leader and worker (with `links: off`, only those with someone to reach), `claim` and `release` for parallel writers, and `read_input` for a node whose sent-back input was too long for its message (ADR-078); arguments are validated with Zod.",
       "Built: `feedback` for every session in a run. The report is structured output on a driver that has it (`claude-code`), and Ork's `report` tool on one that does not.",
       "A local MCP server on 127.0.0.1 behind a per-session bearer token, passed to `claude` with `--mcp-config`.",
     ],

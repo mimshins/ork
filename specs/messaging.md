@@ -29,6 +29,9 @@ driver that can't hold its answer to a schema
   last two.
 - ✓ `answer(question, choice, note?)`: leaders in a run, for the questions Ork
   asks them as owners; the note is recorded in `owner.answered`.
+- ✓ `read_input(from?)`: a node whose sent-back input (a loop's `## Round n`)
+  was too long for its message, 8 KiB, reads the whole, 32,000 characters a call
+  ([ADR-078](../decisions/ADR-078-read-input.md)).
 - ✓ `delegate({ tasks: [{ child, brief }] })`: leaders with declared children
   only ([scheduler](./scheduler.md#delegation)).
 - ✓ `spawn_worker({ tasks: [{ template, brief }] })`: leaders with a child
