@@ -24,13 +24,17 @@ import {
 } from "../src/index.ts";
 import { compile, repo, runIn, sh, working, write } from "./fixtures/git.ts";
 
-/** `executor`, except that `check` fails. */
-const failingCheck =
-  (executor: NodeExecutor): NodeExecutor =>
+/** `executor`, except that node `id` fails. */
+const failingNode =
+  (id: string, executor: NodeExecutor): NodeExecutor =>
   context =>
-    context.id === "check"
+    context.id === id
       ? Promise.resolve({ ok: false, output: { status: "fail" }, error: "no" })
       : executor(context);
+
+/** `executor`, except that `check` fails. */
+const failingCheck = (executor: NodeExecutor): NodeExecutor =>
+  failingNode("check", executor);
 
 const TEAM = compile(
   [
@@ -300,6 +304,30 @@ describe("worktrees", () => {
     });
     expect(reused.reused).toBe(true);
     expect(sh(reused.path, "ls-files", "src/fix.ts")).toBe("src/fix.ts\n");
+  });
+
+  it("resumes a readonly node in the worktree its replayed input left", async () => {
+    const root = repo();
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: review",
+        "nodes:",
+        "  lead: { type: claude.leader }",
+        "  review: { type: claude.worker, isolation: readonly }",
+        "edges:",
+        "  - lead -> review",
+      ].join("\n"),
+    );
+    const { executor } = working({ lead: { files: { "src/a.ts": "a\n" } } });
+    const first = await runIn(root, graph, failingNode("review", executor));
+    expect(first.result.status).toBe("failed");
+
+    const { executor: second, cwds } = working({});
+    const again = await runIn(root, graph, second, first.events);
+    expect(again.result.status).toBe("succeeded");
+    // lead was replayed, not prepared again: review still follows it.
+    expect(cwds).toEqual({ review: worktreePath(root, "r1", "lead") });
   });
 
   it("keeps a child whose merge conflicts, and tells the owner which files", async () => {

@@ -84,9 +84,10 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
     if (!existsSync(left.path)) continue;
     const { id, merged: wasMerged, ...worktree } = left;
     worktrees.set(id, worktree);
+    // A replayed node is never prepared again, so keep where it worked.
+    placeOf.set(id, worktree.path);
     if (wasMerged) merged.add(id);
   }
-
   const nodeOf = (id: string) =>
     graph.nodes.get(templateOf.get(id) ?? id)?.node;
   const ownerOf = (id: string): string | undefined => nodeOf(id)?.parent;
