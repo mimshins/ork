@@ -197,10 +197,10 @@ gate lists those ADRs, so you check them before you keep the change.
 
 - **Runs are paid.** Each session spends on your own account, through the driver
   that's ready on your machine (your `claude` login or an API key; `ork run`
-  says which). Each session has a budget, each run a cap (`start` $55, `build`
-  $35, `qa-pass` $14) and the project a daily quota ($100). The first runs are
-  measured for Ork's cost benchmark, so start them only on the maintainer's go
-  and keep their run ids (`ork tree <run>`, `ork usage`).
+  says which). Each session has a budget, each run a cap (`start` $70, `build`
+  $50, `qa-pass` $14) and the project a daily quota ($100). Runs are measured
+  for Ork's [benchmarks](./benchmarks/README.md), so start them only on the
+  maintainer's go and keep their run ids (`ork tree <run>`, `ork usage`).
 - **Ork commits nothing here.** The work stays uncommitted in a worktree beside
   your clone. When you keep it, the gate's next step applies it to your
   checkout, uncommitted, and you commit and push it as below.

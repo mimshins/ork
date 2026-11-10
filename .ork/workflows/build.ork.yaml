@@ -20,7 +20,7 @@ defaults:
   effort: medium
   budgetUsd: 2
 limits:
-  budgetUsd: 35
+  budgetUsd: 50
   concurrency: 4
   timeout: 5h
 nodes:
