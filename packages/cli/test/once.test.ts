@@ -70,6 +70,12 @@ afterEach(() => {
   rmSync(repo, { recursive: true, force: true });
 });
 
+/**
+ * A command that prints its arguments as given, on every platform: GNU `echo`
+ * answers `--help` with its own usage, macOS's prints it.
+ */
+const PRINT_ARGS = ["sh", "-c", 'printf "%s " "$@"', "sh"];
+
 describe("ork once", () => {
   it("skips a check that passed on the same files, with one line", () => {
     expect(ork(["once", ...counting()]).status).toBe(0);
@@ -96,14 +102,14 @@ describe("ork once", () => {
   });
 
   it("takes the command's own flags as the command's", () => {
-    const result = ork(["once", "--", "echo", "--force", "hi"]);
+    const result = ork(["once", "--", ...PRINT_ARGS, "--force", "hi"]);
     expect(result.stdout.trim()).toBe("--force hi");
   });
 
   it("runs a command whose own flag is --help or -h", () => {
-    const help = ork(["once", "--", "echo", "--help"]);
+    const help = ork(["once", "--", ...PRINT_ARGS, "--help"]);
     expect(help.stdout.trim()).toBe("--help");
-    expect(ork(["once", "--", "echo", "-h"]).stdout.trim()).toBe("-h");
+    expect(ork(["once", "--", ...PRINT_ARGS, "-h"]).stdout.trim()).toBe("-h");
   });
 
   it("still shows its own help before --", () => {
