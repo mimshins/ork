@@ -1,5 +1,75 @@
 # @krapht/ork
 
+## 1.0.0-alpha.11
+
+### Minor Changes
+
+- [`546d0b0`](https://github.com/mimshins/ork/commit/546d0b023300934e5dfbc60af8ba5731e294f8fe) Thanks [@mimshins](https://github.com/mimshins)! - The `open-code` and `command-code` drivers are proven on real sessions and no
+  longer refused; `open-code` now takes `maxTurns`. Their gate runs found and
+  fixed four bugs: OpenCode worked in the main checkout instead of the node's
+  worktree (it reads `PWD`, which every session now gets), and its path rules
+  never matched, so every read was refused; Command Code's own print-mode gate
+  refused every shell call, and Ork's mod refused reads in the worktree and the
+  tool loader a session needs for Ork's `report`. `ork doctor` lists a driver
+  whose tool is missing as `skip` with how to install it.
+
+- [`537fa44`](https://github.com/mimshins/ork/commit/537fa44c7d675fdeb80f43f238bb26e1d7b599f2) Thanks [@mimshins](https://github.com/mimshins)! - Runs are lighter on your machine. A project's new `heavy` rule names its
+  full-suite commands (`pnpm check`, `pnpm test`, `vitest run`): a node with
+  `verify:` may no longer run them in its session, since Ork runs that check, and
+  each takes one of 2 machine-wide slots (`ORK_HEAVY_SLOTS` changes the count), so
+  three checks at once no longer heat the machine. A wait shows in `ork ps`, the
+  logs and the browser view, and doesn't count towards a timeout. A new `priority`
+  rule starts sessions and tool commands at a lower OS priority by default
+  (`priority: normal` turns it off). `ork usage --by node` shows the CPU each
+  node's tool commands used, and the browser view's overview no longer re-reads
+  every event of every running run each second.
+
+- [`9463d8f`](https://github.com/mimshins/ork/commit/9463d8f0d5b3c038cf2505817ab3767ba5d51140) Thanks [@mimshins](https://github.com/mimshins)! - `ork decide`, permission prompts and every yes-or-no question (`init`,
+  `migrate`, `upgrade`, `worktrees`, `watch`, `feedback`, `usage`) use the
+  terminal kit: `ork decide` shows a card with an ASK chip and the node's chip,
+  the run and "n of m", the question wrapped, the context dimmed (`--verbose` or
+  `d` shows it all), and options moved with ↑/↓, `j`/`k` or `1`–`9`, with the
+  recommended one chosen; `q` leaves a question for later and the answered card
+  collapses to one line. `ork decide --list` shows chips and columns, and
+  `ork chat` takes its message on a line editor. Plain output (not a terminal,
+  `NO_COLOR`, `--plain`) keeps the numbered prompts.
+
+- [`9463d8f`](https://github.com/mimshins/ork/commit/9463d8f0d5b3c038cf2505817ab3767ba5d51140) Thanks [@mimshins](https://github.com/mimshins)! - A terminal kit for the CLI's output and prompts: one theme (colored chips,
+  stable per-node colors), width-aware wrap and cut, and three prompts (select
+  with ↑/↓, `j`/`k`, `1`–`9`, a note and a details toggle; text; yes or no) that
+  redraw only their own lines and collapse to one line once answered. Every
+  command takes a new global `--plain` flag (or `ORK_PLAIN=1`), like `NO_COLOR` or
+  a non-terminal, for output with no color or redraw and line prompts, for screen
+  readers and logs. `ork run`'s transcript and summary are the first on it: node
+  chips, short tool lines (`--verbose` shows each call whole), wrapped agent text
+  and `RUN`, `OK`, `FAIL` and `WAIT` chips. Other commands move onto the kit in
+  the following changes.
+
+- [`9463d8f`](https://github.com/mimshins/ork/commit/9463d8f0d5b3c038cf2505817ab3767ba5d51140) Thanks [@mimshins](https://github.com/mimshins)! - `ork ps`, `usage`, `feedback list`, `projects`, `worktrees`, `watch --status`,
+  `doctor` and `validate` print on a terminal with chips for status (`OK`, `FAIL`,
+  `WARN`, `SKIP`, a run's state, a project's mode), aligned columns, lines cut or
+  wrapped to the screen, and dimmed, indented hints. Not a terminal, `NO_COLOR`,
+  `--plain`, `ORK_PLAIN=1` and `--json` print what they always did.
+
+### Patch Changes
+
+- [`9ceef42`](https://github.com/mimshins/ork/commit/9ceef422e7f06f9fb95c8adcefa35b0c7e78b22a) Thanks [@mimshins](https://github.com/mimshins)! - `priority: low` now starts sessions and tool commands under `nice` (and, on
+  macOS, utility QoS), so they run lower from their first instruction instead of
+  being lowered just after they start.
+
+- [`4d2be85`](https://github.com/mimshins/ork/commit/4d2be851c97df253c5c4d012284e3e2c65391128) Thanks [@mimshins](https://github.com/mimshins)! - Every node now ends as one known kind (turn limit, budget limit, timed out,
+  command failed, not signed in, and so on), with Ork's own message as its error
+  and the raw tool or provider text kept, scrubbed, as the end's detail. Tool,
+  MCP, call and Claude nodes all set it; a transient kind marks the result
+  transient. Feedback files a node's end by who should act: Ork's bugs, the
+  workflow's, or the agent's context, and a report the `report` tool refuses is
+  the agent's, not an Ork bug.
+  
+  `ork run` and `ork logs` print a failed node as `✗ <Label>: <message>`, with
+  `(may pass; ork resume retries)` for a kind that may pass; `--verbose` (and
+  `ork logs --node <id>`) adds the hint and the scrubbed details. The browser view
+  shows the same as a badge with the message, the hint and a Details button.
+
 ## 1.0.0-alpha.10
 
 ### Minor Changes
