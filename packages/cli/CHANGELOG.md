@@ -1,5 +1,43 @@
 # @krapht/ork
 
+## 1.0.0-alpha.13
+
+### Minor Changes
+
+- [`f9633ad`](https://github.com/mimshins/ork/commit/f9633ada96c0e4b82d0dd67d7f36a328845c0434) Thanks [@mimshins](https://github.com/mimshins)! - Breaking: the agent node types are renamed `claude.worker` → `agent.worker`,
+  `claude.leader` → `agent.leader` and `claude.subagent` → `agent.subagent`, and
+  the old names are refused by `ork validate` and `ork run`. Run `ork migrate` in
+  each project to rewrite your workflows (`--dry-run` shows the changes first);
+  `model` values are left as they are. A `model` may now start with its driver,
+  `<driver>.<model>` (`claude-code.opus`,
+  `open-code.anthropic/claude-sonnet-5-5`): it pins that node to the driver, ahead
+  of `ork run --driver`, and `ork validate` refuses a prefix that contradicts the
+  node's `driver`. Plain models such as `deepseek/deepseek-v4.1-flash` still work.
+  A driver now says whether it runs subagents, and an `agent.subagent` under a
+  leader on one that doesn't is refused. Affected packages: the CLI bundles the
+  rest, so only `@krapht/ork` is released.
+
+- [`7c63daa`](https://github.com/mimshins/ork/commit/7c63daaadd11490a39a26ca0804ce1fa31f2aa5a) Thanks [@mimshins](https://github.com/mimshins)! - `ork once -- <command>` runs a command unless the same check already passed on
+  identical files (a hash of the working tree, the check's name and Node's
+  version; `--with-head`, `--covers`, `--force`), and keeps passes in the
+  repository's git folder, shared by its worktrees. `once: true` on a `verify:` or
+  a tool node does the same in a workflow, and the run logs a `verify.skipped`
+  line in `ork logs` and the UI. The test suite uses less CPU: a third of the
+  cores, fake timers, a compile cache for the CLI's child processes, and shared
+  fixture repositories.
+
+### Patch Changes
+
+- [`a3b78f3`](https://github.com/mimshins/ork/commit/a3b78f3330986c5f86c66939e995df2094e0be62) Thanks [@mimshins](https://github.com/mimshins)! - A `human.gate` in a run with no terminal (a pipe, a script, a background resume)
+  now waits for `ork decide` or the UI instead of being answered "no one" (or its
+  recommended option) on the spot. A resumed run's `continue` node now works in
+  the worktree a replayed read-only node used, rather than in a new worktree
+  without the run's change.
+
+- [`a3d464d`](https://github.com/mimshins/ork/commit/a3d464d1f0e8e4543e5a40e6ff1d53a6f422a23e) Thanks [@mimshins](https://github.com/mimshins)! - A Claude Code session that hands in its report and then keeps writing no longer
+  ends as "no report": Ork keeps the report it handed in. Before, such a
+  reviewer's findings were lost and it counted as a reviewer that didn't finish.
+
 ## 1.0.0-alpha.12
 
 ### Minor Changes
