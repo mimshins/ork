@@ -1,5 +1,26 @@
 # @krapht/ork
 
+## 1.0.0-alpha.12
+
+### Minor Changes
+
+- [`b639efe`](https://github.com/mimshins/ork/commit/b639efe1b09e50d40c9376e4d9be1b7314599373) Thanks [@mimshins](https://github.com/mimshins)! - `ork attach <run>` follows a run and every run it called, at any depth, and asks
+  their open questions on your terminal; Ctrl-C detaches and leaves the run going.
+  A foreground `ork run` that calls workflows now does the same for the runs it
+  calls, so a called run's gate (such as `start`'s plan) is answered in the
+  terminal that started it. `ork run --detach` points to `ork attach` first.
+
+- [`5f2cd36`](https://github.com/mimshins/ork/commit/5f2cd3648c652bcfa392be5beb4fcd1cd896e150) Thanks [@mimshins](https://github.com/mimshins)! - A Claude node's `model` and `effort` can be `{{item.<field>}}` on a `forEach`
+  node, so each item runs on its own model. `ork validate` checks written items,
+  an item from `from:` is checked when it runs, and the builder shows a templated
+  `effort` as text, and `ork chat` resumes an item on its own model. `build`'s
+  review now runs one Opus and two Sonnet reviewers.
+
+### Patch Changes
+
+- [`d6f71ce`](https://github.com/mimshins/ork/commit/d6f71ceeb2cbdef55c6623d12f5302e7233a4bb0) Thanks [@mimshins](https://github.com/mimshins)! - A `low`-priority session or tool command is lowered once, by `nice`, not twice:
+  it could land at the lowest priority instead of below Ork's.
+
 ## 1.0.0-alpha.11
 
 ### Minor Changes
