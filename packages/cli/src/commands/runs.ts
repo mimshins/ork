@@ -80,7 +80,7 @@ export const logs = defineCommand({
     verbose: {
       type: "boolean",
       description:
-        "Show why each failed node stopped, with its scrubbed details (always on with --node)",
+        "Show each tool call whole, and why each failed node stopped, with its scrubbed details (always on with --node)",
       default: false,
     },
   },

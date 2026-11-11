@@ -21,6 +21,9 @@ import {
 } from "@krapht/ork-core";
 
 import { style } from "../output.ts";
+import { chip } from "../term/chips.ts";
+import { cut } from "../term/layout.ts";
+import { type Term, termOf } from "../term/mode.ts";
 
 export type Registered =
   | { ok: true; project: ProjectRecord; created: boolean }
@@ -149,13 +152,47 @@ export const relocateProject = (
   return { ok: true, project: { ...project, root, dir }, created: false };
 };
 
-/** One project's lines for `ork projects`. */
-export const formatProject = (project: ProjectRecord): string[] => {
-  const gone = existsSync(project.root) ? "" : style("yellow", " (missing)");
+/**
+ * One project's lines for `ork projects`; rich, its mode and a missing clone
+ * are chips, its id is padded to `idWidth` and its root is cut to the screen.
+ */
+export const formatProject = (
+  project: ProjectRecord,
+  term: Term = termOf(process.stdout),
+  idWidth = 0,
+): string[] => {
+  const missing = !existsSync(project.root);
+  if (!term.rich) {
+    const gone = missing ? style("yellow", " (missing)") : "";
+    return [
+      `${style("bold", project.id)}  ${style("dim", project.mode)}  ${project.root}${gone}`,
+      style("dim", `  files: ${shownPath(project.dir, project.root)}`),
+    ];
+  }
+  const mode = chip(term, project.mode.toUpperCase(), "muted");
+  const gone = missing ? ` ${chip(term, "MISSING", "warn")}` : "";
+  const room =
+    term.width -
+    (idWidth + 2 + project.mode.length + 2 + 2) -
+    (missing ? 10 : 0);
   return [
-    `${style("bold", project.id)}  ${style("dim", project.mode)}  ${project.root}${gone}`,
-    style("dim", `  files: ${shownPath(project.dir, project.root)}`),
+    `${style("bold", project.id.padEnd(idWidth))}  ${mode}  ${cut(project.root, Math.max(8, room))}${gone}`,
+    style(
+      "dim",
+      cut(`  files: ${shownPath(project.dir, project.root)}`, term.width),
+    ),
   ];
+};
+
+/** Every project's lines, their ids aligned when rich. */
+export const formatProjects = (
+  projects: readonly ProjectRecord[],
+  term: Term = termOf(process.stdout),
+): string[] => {
+  const idWidth = term.rich
+    ? Math.max(0, ...projects.map(p => p.id.length))
+    : 0;
+  return projects.flatMap(p => formatProject(p, term, idWidth));
 };
 
 /** What `ork register` prints: the project, and where its files go. */

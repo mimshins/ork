@@ -1,21 +1,25 @@
 /**
- * @file How runs read on the terminal: session events, node results, usage, and
- *   run events with node prefixes; the run summary is `format-result.ts`'s.
+ * @file How runs read on the terminal: session events and run events with node
+ *   chips or prefixes; the node result is `format-outcome.ts`'s, a tool call
+ *   `format-tool.ts`'s and the run summary `format-result.ts`'s.
  */
 
-import {
-  type AnsweredBy,
-  type RunEvent,
-  type RuntimeEvent,
-  type SessionOutcome,
-  outcomeEnd,
-} from "@krapht/ork-core";
+import type { AnsweredBy, RunEvent, RuntimeEvent } from "@krapht/ork-core";
 
-import { previewInput } from "../human.ts";
-import { cost, style } from "../output.ts";
+import { chip, CHIP_LABELS, nodeChip } from "../term/chips.ts";
+import { widthOf } from "../term/layout.ts";
 import { firstLine, formatBusEvent } from "./format-bus.ts";
-import { endHeadline, endLines, formatFinished } from "./format-end.ts";
+import { formatFinished } from "./format-end.ts";
+import { formatOutcome } from "./format-outcome.ts";
 import { formatRunResult } from "./format-result.ts";
+import { indent, toolLines, wrapped } from "./format-tool.ts";
+import { createView, styler, type View } from "./view.ts";
+
+export { createView, indent };
+
+/** A line's 2-column indent, after any style codes that open it. */
+// oxlint-disable-next-line no-control-regex -- matches a style's escape codes
+const INDENT = /^((?:\u001B\[[0-9;]*m)*) {2}/u;
 
 /** Who answered a decision, as the log says it. */
 const ANSWERED_BY: Record<AnsweredBy, string> = {
@@ -25,69 +29,18 @@ const ANSWERED_BY: Record<AnsweredBy, string> = {
   owner: "its owner",
 };
 
-export const STATUS_MARK: Record<string, string> = {
-  pass: style("green", "✓"),
-  done: style("green", "✓"),
-  changes_requested: style("yellow", "!"),
-  fail: style("red", "✗"),
-};
-
-const seconds = (ms: number): string => `${(ms / 1000).toFixed(1)}s`;
-
-export const indent = (text: string): string[] =>
-  text
-    .trimEnd()
-    .split("\n")
-    .map(line => `  ${line}`);
-
-/** The usage line: cost, tokens, turns and time. */
-export const formatUsage = ({ usage }: SessionOutcome): string =>
-  style(
-    "dim",
-    [
-      cost(usage.costUsd),
-      `${String(usage.inputTokens)} in / ${String(usage.outputTokens)} out (${String(usage.cacheReadTokens)} cached)`,
-      `${String(usage.turns)} turns`,
-      seconds(usage.durationMs),
-    ].join(" · "),
-  );
-
-/** How a finished session reads on the terminal. */
-export const formatOutcome = (
-  nodeId: string,
-  outcome: SessionOutcome,
-  verbose = false,
-): string[] => {
-  const { report } = outcome;
-  if (report === null) {
-    const end = outcomeEnd(outcome);
-    return [
-      `${style("red", "✗")} ${style("bold", nodeId)} ${endHeadline(end)}`,
-      ...endLines(end, verbose),
-      `  ${formatUsage(outcome)}`,
-    ];
-  }
-  const lines = [
-    `${STATUS_MARK[report.status] ?? "-"} ${style("bold", nodeId)} ${report.status}: ${report.summary}`,
-  ];
-  if (report.branch !== undefined) lines.push(`  branch: ${report.branch}`);
-  for (const [name, file] of Object.entries(report.artifacts)) {
-    lines.push(`  ${name}: ${file}`);
-  }
-  for (const [name, value] of Object.entries(report.fields)) {
-    lines.push(`  ${name}: ${JSON.stringify(value)}`);
-  }
-  lines.push(`  ${formatUsage(outcome)}`);
-  return lines;
-};
-
 /** The transcript lines for one event; tool names come from `tools`. */
 export const formatEvent = (
   nodeId: string,
   event: RuntimeEvent,
   tools: Map<string, string>,
   verbose = false,
+  view: View = createView(),
+  /** Columns the lines may take, rich: wrapped and cut to it. */
+  room: number = view.term.width - 1,
 ): string[] => {
+  const { term } = view;
+  const style = styler(term);
   if (event.type === "session.started") {
     const fork = event.fork === true ? ", a fork to answer a question" : "";
     return [
@@ -97,11 +50,13 @@ export const formatEvent = (
       ),
     ];
   }
-  if (event.type === "assistant.text") return indent(event.text);
+  if (event.type === "assistant.text") {
+    return term.rich ? wrapped(event.text, room) : indent(event.text);
+  }
   if (event.type === "session.waiting") return indent(event.reason);
   if (event.type === "tool.called") {
     tools.set(event.id, event.name);
-    return [style("dim", `  · ${previewInput(event.name, event.input)}`)];
+    return toolLines(event.name, event.input, view, room, verbose, nodeId);
   }
   if (event.type === "tool.result") {
     return event.isError
@@ -118,7 +73,7 @@ export const formatEvent = (
           ),
         ];
   }
-  return formatOutcome(nodeId, event.outcome, verbose);
+  return formatOutcome(nodeId, event.outcome, verbose, term);
 };
 
 const items = (count: number): string =>
@@ -133,14 +88,25 @@ export const formatRunEvent = (
   terminal = false,
   /** `--verbose`: a failed node's hint and its scrubbed detail. */
   verbose = false,
+  view: View = createView(),
 ): string[] => {
-  const tag = (id: string) => style("cyan", `${id.padEnd(width)} │`);
+  const { term } = view;
+  const style = styler(term);
+  // Rich, a node's chip leads its first line and spaces its other lines.
+  const tag = (id: string) =>
+    term.rich
+      ? `${nodeChip(term, id)}${" ".repeat(Math.max(0, width - id.length))}`
+      : style("cyan", `${id.padEnd(width)} │`);
+  const blank = (id: string) =>
+    term.rich ? " ".repeat(widthOf(tag(id))) : tag(id);
+  const under = (id: string, lines: string[]): string[] =>
+    lines.map((line, i) => `${i === 0 ? tag(id) : blank(id)} ${line}`);
   if (event.type === "run.started") {
+    const starts = `starts at ${event.entries.join(", ")}`;
     return [
-      style(
-        "dim",
-        `▸ run ${event.runId} of ${event.workflow} (starts at ${event.entries.join(", ")})`,
-      ),
+      term.rich
+        ? `${chip(term, CHIP_LABELS.run, "accent")} run ${style("bold", event.runId)} of ${event.workflow} ${style("dim", starts)}`
+        : style("dim", `▸ run ${event.runId} of ${event.workflow} (${starts})`),
       ...(event.settings?.trigger === undefined
         ? []
         : [
@@ -149,6 +115,8 @@ export const formatRunEvent = (
               `  started by trigger ${event.settings.trigger}; untrusted inputs: ${(event.settings.untrusted ?? []).join(", ") || "none"}`,
             ),
           ]),
+      // A block of its own: the transcript starts after a blank line.
+      ...(term.rich ? [""] : []),
     ];
   }
   if (event.type === "node.started") {
@@ -169,12 +137,23 @@ export const formatRunEvent = (
         `${tag(event.id)} ${fork}${style("dim", `${inner.model}, session ${inner.sessionId}${why}`)}`,
       ];
     }
-    return formatEvent(event.id, event.event, tools, verbose).map(
-      line => `${tag(event.id)} ${fork}${line.replace(/^ {2}/u, "")}`,
+    // The tag's width and its space are not the body's; its 2-column indent is.
+    // A fork's `fork · ` prefix (7 columns) is on each line too.
+    const room =
+      term.width -
+      widthOf(tag(event.id)) -
+      1 +
+      2 -
+      (inner.fork === true ? 7 : 0);
+    return under(
+      event.id,
+      formatEvent(event.id, event.event, tools, verbose, view, room).map(
+        line => `${fork}${line.replace(INDENT, "$1")}`,
+      ),
     );
   }
   if (event.type === "node.finished") {
-    return formatFinished(event, tag(event.id), verbose);
+    return formatFinished(event, tag(event.id), verbose, term, blank(event.id));
   }
   if (event.type === "node.skipped") {
     return [`${tag(event.id)} ${style("dim", "- skipped")}`];
@@ -201,6 +180,7 @@ export const formatRunEvent = (
   }
   if (event.type === "edge.taken") return [];
   if (event.type === "worktree") {
+    if (event.action !== "removed") view.roots.set(event.id, event.path);
     const detail = event.detail === undefined ? "" : ` (${event.detail})`;
     // A removed worktree leaves its branch (ADR-020).
     const what =
@@ -224,7 +204,7 @@ export const formatRunEvent = (
         ? `decision ${event.decision}; ${terminal ? "answer here or with ork decide" : "ork decide"}`
         : `decision ${event.decision}, via ${event.owner}`;
     return [
-      `${tag(event.node)} ${style(["yellow", "bold"], "?")} ${what} ${question} ${style("dim", `(${where})`)}`,
+      `${tag(event.node)} ${term.rich ? chip(term, CHIP_LABELS.ask, "accent") : style(["yellow", "bold"], "?")} ${what} ${question} ${style("dim", `(${where})`)}`,
     ];
   }
   if (event.type === "decision.answered") {
@@ -269,7 +249,7 @@ export const formatRunEvent = (
     const over = `${items(event.count)}, over maxItems ${String(event.maxItems)}`;
     return [`${tag(event.node)} ${style("yellow", `! ${over}`)}`];
   }
-  if (event.type === "run.finished") return formatRunResult(event.result);
+  if (event.type === "run.finished") return formatRunResult(event.result, term);
   if (event.type === "run.resumed") {
     const [one] = event.kept;
     const kept =
@@ -291,5 +271,5 @@ export const formatRunEvent = (
       `${tag(event.node)} ${style(["magenta", "bold"], "you:")} ${firstLine(event.body)}${style("dim", note)}`,
     ];
   }
-  return formatBusEvent(event).map(line => `${tag(event.node)} ${line}`);
+  return under(event.node, formatBusEvent(event, term));
 };

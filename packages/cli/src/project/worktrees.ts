@@ -17,18 +17,25 @@ import {
 } from "@krapht/ork-core";
 
 import { style } from "../output.ts";
+import { chip } from "../term/chips.ts";
+import { cut } from "../term/layout.ts";
+import { type Term, termOf } from "../term/mode.ts";
+import { paint } from "../term/theme.ts";
 
 /** One line of state: its merge state, then what clean would care about. */
-export const worktreeState = (item: OrkWorktree): string => {
+export const worktreeState = (
+  item: OrkWorktree,
+  term: Term = termOf(process.stdout),
+): string => {
   const merge = mergeStateOf(item);
   const head =
     merge === "merged"
-      ? [style("green", "merged")]
+      ? [term.rich ? chip(term, "MERGED", "ok") : style("green", "merged")]
       : merge === "detached"
         ? ["detached"]
         : [];
   const parts = stateParts(item).map(part =>
-    part.risk ? style("yellow", part.text) : part.text,
+    part.risk ? paint(term, "warn", part.text) : part.text,
   );
   return [...head, ...parts].join(" · ");
 };
@@ -39,12 +46,20 @@ const nameOf = (item: OrkWorktree): string =>
     ? `${labelOf(item)} (detached)`
     : labelOf(item);
 
-export const formatWorktrees = (items: readonly OrkWorktree[]): string[] => {
+export const formatWorktrees = (
+  items: readonly OrkWorktree[],
+  term: Term = termOf(process.stdout),
+): string[] => {
   if (items.length === 0) return ["No Ork worktrees or branches."];
   const width = Math.max(...items.map(i => nameOf(i).length));
   return items.flatMap(item => [
-    `${style("bold", nameOf(item).padEnd(width))}  ${worktreeState(item)}`,
-    ...(item.path === null ? [] : [`  ${style("dim", item.path)}`]),
+    `${style("bold", nameOf(item).padEnd(width))}  ${worktreeState(item, term)}`,
+    // Rich, a long path is cut to the screen.
+    ...(item.path === null
+      ? []
+      : [
+          `  ${style("dim", term.rich ? cut(item.path, term.width - 2) : item.path)}`,
+        ]),
   ]);
 };
 

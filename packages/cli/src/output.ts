@@ -1,16 +1,24 @@
 /**
  * @file Terminal output helpers: styled text that turns plain when stdout is
- *   not a TTY or `NO_COLOR` is set, and a yes-or-no question on the terminal.
+ *   not a TTY or `NO_COLOR` is set, and a yes-or-no question on the terminal
+ *   (through the terminal kit).
  */
 
-import { createInterface } from "node:readline/promises";
 import { stripVTControlCharacters, styleText } from "node:util";
+
+import { confirm as askConfirm } from "./term/confirm.ts";
+import { plainEnv } from "./term/mode.ts";
+import { printAbove } from "./term/screen.ts";
 
 type Format = Parameters<typeof styleText>[0];
 
-/** Styles text for stdout; plain when stdout is not a TTY or NO_COLOR is set. */
+/**
+ * Styles text for stdout; plain when stdout is not a TTY, `NO_COLOR` is set, or
+ * `--plain` (`ORK_PLAIN`) was given. The environment is read on each call:
+ * `--plain` is set after the modules load.
+ */
 export const style = (format: Format, text: string): string =>
-  styleText(format, text, { stream: process.stdout });
+  plainEnv() ? text : styleText(format, text, { stream: process.stdout });
 
 /**
  * Text from outside, fit for a terminal: escape sequences could hide a line on
@@ -19,11 +27,14 @@ export const style = (format: Format, text: string): string =>
 export const plain = (text: string): string =>
   stripVTControlCharacters(text).replaceAll(/[\p{Cc}\p{Bidi_Control}]/gu, " ");
 
+/** A line to stdout; above a prompt that is open on the same terminal. */
 export const write = (text: string): void => {
+  if (process.stdout.isTTY && printAbove(text)) return;
   process.stdout.write(`${text}\n`);
 };
 
 export const writeErr = (text: string): void => {
+  if (process.stderr.isTTY && printAbove(text)) return;
   process.stderr.write(`${text}\n`);
 };
 
@@ -31,18 +42,13 @@ export const writeErr = (text: string): void => {
 export const cost = (usd: number): string =>
   usd === 0 ? "$0.00" : `$${usd.toFixed(4)}`;
 
-/** Asks a yes-or-no question on the terminal; anything but yes is no. */
-export const confirm = async (question: string): Promise<boolean> => {
-  const rl = createInterface({ input: process.stdin, output: process.stderr });
-  // Input ending (Ctrl-D) answers nothing, which is no.
-  const { promise: ended, resolve: end } = Promise.withResolvers<string>();
-  rl.once("close", () => {
-    end("");
-  });
-  try {
-    const answer = await Promise.race([rl.question(question), ended]);
-    return ["y", "yes"].includes(answer.trim().toLowerCase());
-  } finally {
-    rl.close();
-  }
-};
+/**
+ * Asks a yes-or-no question on the terminal (stderr), through the kit's confirm
+ * prompt; anything but yes is no. A trailing `[y/N]` in `question` is dropped:
+ * the prompt adds its own.
+ */
+export const confirm = (question: string): Promise<boolean> =>
+  askConfirm(
+    { input: process.stdin, output: process.stderr },
+    { question: question.replace(/\s*\[y\/N\]\s*$/u, "") },
+  );

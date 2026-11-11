@@ -14,6 +14,9 @@ import {
 
 import { cost, style } from "../output.ts";
 import { nodeVerdict } from "../run/verdict.ts";
+import { statusChip } from "../term/chips.ts";
+import { type Term, termOf } from "../term/mode.ts";
+import { type Cell, type Column, header, table } from "../term/table.ts";
 
 const STATUS_STYLE: Record<string, Parameters<typeof style>[0]> = {
   running: "cyan",
@@ -50,6 +53,8 @@ export const duration = (ms: number): string => {
 
 export { cost };
 
+const dim = (s: string): string => style("dim", s);
+
 /**
  * The `ork ps` table; `withProject` adds each run's project. A called run's
  * cost is dimmed and says its caller's, whose cost already counts it.
@@ -59,6 +64,7 @@ export const formatRuns = (
   withProject: boolean,
   now: number = Date.now(),
   statusOf: (run: RunRecord) => string = liveStatus,
+  term: Term = termOf(process.stdout),
 ): string[] => {
   if (runs.length === 0) return ["No runs."];
   const rows = runs.map(run => {
@@ -78,46 +84,37 @@ export const formatRuns = (
       project: run.project,
     };
   });
-  const width = (pick: (r: (typeof rows)[number]) => string, title: string) =>
-    Math.max(title.length, ...rows.map(r => pick(r).length));
-  const w = {
-    id: width(r => r.id, "RUN"),
-    workflow: width(r => r.workflow, "WORKFLOW"),
-    status: width(r => r.status, "STATUS"),
-    when: width(r => r.when, "STARTED"),
-    cost: width(r => r.cost, "COST"),
+  const rowOf = (r: (typeof rows)[number]): Cell[] => {
+    const cells: Cell[] = [
+      { text: r.id, look: s => style("bold", s) },
+      { text: r.workflow },
+      {
+        text: r.status,
+        chip: statusChip(r.status),
+        look: s => style(STATUS_STYLE[r.status] ?? "reset", s),
+      },
+      { text: r.when, look: dim },
+      r.called ? { text: r.cost, look: dim } : { text: r.cost },
+    ];
+    if (withProject) cells.push({ text: r.project, look: dim });
+    return cells;
   };
-  const header = [
-    "RUN".padEnd(w.id),
-    "WORKFLOW".padEnd(w.workflow),
-    "STATUS".padEnd(w.status),
-    "STARTED".padEnd(w.when),
-    "COST".padStart(w.cost),
-    ...(withProject ? ["PROJECT"] : []),
-  ].join("  ");
-  return [
-    style("dim", header),
-    ...rows.map(r =>
-      [
-        style("bold", r.id.padEnd(w.id)),
-        r.workflow.padEnd(w.workflow),
-        style(STATUS_STYLE[r.status] ?? "reset", r.status.padEnd(w.status)),
-        style("dim", r.when.padEnd(w.when)),
-        r.called
-          ? style("dim", r.cost.padStart(w.cost))
-          : r.cost.padStart(w.cost),
-        ...(withProject ? [style("dim", r.project)] : []),
-      ].join("  "),
-    ),
-  ];
+  const heads = ["RUN", "WORKFLOW", "STATUS", "STARTED", "COST"].map(text =>
+    header(text),
+  );
+  if (withProject) heads.push(header("PROJECT"));
+  const columns: Column[] = [{}, { flex: true }, {}, {}, { align: "right" }];
+  if (withProject) columns.push({ flex: true });
+  return table(term, columns, [heads, ...rows.map(row => rowOf(row))]);
 };
 
-const STATE_MARK: Record<NodeState, string> = {
-  waiting: style("dim", "·"),
-  running: style("cyan", "●"),
-  ok: style("green", "✓"),
-  failed: style("red", "✗"),
-  skipped: style("dim", "-"),
+/** Marks are made when used, so `--plain` (set after load) is read. */
+const STATE_MARK: Record<NodeState, () => string> = {
+  waiting: () => style("dim", "·"),
+  running: () => style("cyan", "●"),
+  ok: () => style("green", "✓"),
+  failed: () => style("red", "✗"),
+  skipped: () => style("dim", "-"),
 };
 
 /** `950`, `12.3k`, `1.2M`. */
@@ -166,7 +163,7 @@ export const formatTree = (
     const state =
       node.held === true
         ? `${style("yellow", "‖")} paused`
-        : `${STATE_MARK[node.state]} ${stateText(node)}`;
+        : `${STATE_MARK[node.state]()} ${stateText(node)}`;
     const spent =
       isItem(node) && node.startedAt !== undefined
         ? style(

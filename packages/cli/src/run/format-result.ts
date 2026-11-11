@@ -6,16 +6,25 @@
 
 import type { RunResult } from "@krapht/ork-core";
 
-import { cost, style } from "../output.ts";
+import { cost } from "../output.ts";
+import { chip, CHIP_LABELS } from "../term/chips.ts";
+import type { Term } from "../term/mode.ts";
+import { createView, styler } from "./view.ts";
 
-const RUN_MARK: Record<RunResult["status"], string> = {
-  succeeded: style("green", "✓"),
-  failed: style("red", "✗"),
-  budget_exhausted: style("yellow", "!"),
-  quota_exhausted: style("yellow", "!"),
-  timed_out: style("yellow", "!"),
-  interrupted: style("yellow", "!"),
+/** How a run ended: its mark, and its chip's word and role when rich. */
+const RUN_END: Record<
+  RunResult["status"],
+  { mark: string; ok: "ok" | "danger" | "warn"; label: string }
+> = {
+  succeeded: { mark: "✓", ok: "ok", label: CHIP_LABELS.ok },
+  failed: { mark: "✗", ok: "danger", label: CHIP_LABELS.fail },
+  budget_exhausted: { mark: "!", ok: "warn", label: CHIP_LABELS.wait },
+  quota_exhausted: { mark: "!", ok: "warn", label: CHIP_LABELS.wait },
+  timed_out: { mark: "!", ok: "warn", label: CHIP_LABELS.wait },
+  interrupted: { mark: "!", ok: "warn", label: CHIP_LABELS.wait },
 };
+
+const MARK_COLOR = { ok: "green", danger: "red", warn: "yellow" } as const;
 
 /** `1 failure handled`, `2 failures handled`. */
 const failuresHandled = (count: number): string =>
@@ -25,13 +34,22 @@ const failuresHandled = (count: number): string =>
  * The run summary: status, cost, what ran, what was skipped and which failures
  * an edge handled, branches to look at, why, and mail to nodes that never ran.
  */
-export const formatRunResult = (result: RunResult): string[] => {
+export const formatRunResult = (
+  result: RunResult,
+  term: Term = createView().term,
+): string[] => {
+  const style = styler(term);
+  const end = RUN_END[result.status];
+  // A chip says it in words; plain, the mark does, as it always did.
+  const mark = term.rich
+    ? chip(term, end.label, end.ok)
+    : style(MARK_COLOR[end.ok], end.mark);
   const ran = result.nodes.filter(n => n.runs > 0).length;
   const skipped = result.skipped ?? result.nodes.length - ran;
   const handled = result.failuresHandled ?? 0;
   const lines = [
     "",
-    `${RUN_MARK[result.status]} run ${result.runId} ${result.status.replace("_", " ")} ${style(
+    `${mark} run ${result.runId} ${result.status.replace("_", " ")} ${style(
       "dim",
       `· ${cost(result.costUsd)} · ${String(ran)} ran, ${String(skipped)} skipped${handled === 0 ? "" : `, ${failuresHandled(handled)}`}`,
     )}`,

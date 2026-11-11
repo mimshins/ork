@@ -45,7 +45,7 @@ import {
   warningLines,
 } from "../commands/validate.ts";
 import { callPorts } from "./calls.ts";
-import { formatRunEvent } from "./format.ts";
+import { createView, formatRunEvent } from "./format.ts";
 import {
   liveControl,
   liveHandlers,
@@ -147,6 +147,7 @@ export const runWorkflowFile = async (
       : appendRecorder(options.store, runId, runDir);
   const width = Math.max(...Object.keys(workflow.nodes).map(id => id.length));
   const tools = new Map<string, string>();
+  const view = createView();
   const started = Promise.withResolvers<RunHandle>();
   // The handle, once the run has started: pause and stop act on it at once.
   const live: { handle?: RunHandle } = {};
@@ -179,6 +180,7 @@ export const runWorkflowFile = async (
           tools,
           options.human !== undefined,
           options.verbose,
+          view,
         )) {
           options.out(line);
         }

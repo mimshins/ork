@@ -27,12 +27,13 @@ const DESCRIBE: Record<ToolLink["state"], (link: ToolLink) => string> = {
 
 const describe = (link: ToolLink): string => DESCRIBE[link.state](link);
 
-const LABEL: Record<ToolLink["state"], string> = {
-  linked: style("dim", "ok     "),
-  missing: style("yellow", "missing"),
-  broken: style("red", "broken "),
-  elsewhere: style("yellow", "kept   "),
-  folder: style("yellow", "kept   "),
+/** Labels are made when used, so `--plain` (set after load) is read. */
+const LABEL: Record<ToolLink["state"], () => string> = {
+  linked: () => style("dim", "ok     "),
+  missing: () => style("yellow", "missing"),
+  broken: () => style("red", "broken "),
+  elsewhere: () => style("yellow", "kept   "),
+  folder: () => style("yellow", "kept   "),
 };
 
 /** One line per folder; `created` marks the links this call made. */
@@ -43,7 +44,7 @@ export const formatLinks = (
   links.map(link => {
     const label = created.includes(link.path)
       ? style("green", "linked ")
-      : LABEL[link.state];
+      : LABEL[link.state]();
     return `${label} ${describe(link)}`;
   });
 

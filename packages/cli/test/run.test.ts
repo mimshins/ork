@@ -23,7 +23,6 @@ import { describe, expect, it } from "vitest";
 import {
   createTerminalHuman,
   flagValues,
-  pickOption,
   previewInput,
   resolveWorkflowArg,
   type RunNodeOptions,
@@ -302,13 +301,6 @@ describe("arguments", () => {
 
 describe("the terminal channel", () => {
   const options3 = [{ id: "a" }, { id: "b", label: "B" }, { id: "c" }];
-
-  it("picks an option by number, id, or the recommended default", () => {
-    expect(pickOption("2", options3, "a")).toBe("b");
-    expect(pickOption("c", options3, "a")).toBe("c");
-    expect(pickOption("", options3, "a")).toBe("a");
-    expect(pickOption("9", options3, "a")).toBeUndefined();
-  });
 
   it("previews what a tool will do on one line", () => {
     expect(previewInput("Bash", { command: "ls\n  -la" })).toBe(

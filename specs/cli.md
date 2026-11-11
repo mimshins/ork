@@ -28,12 +28,17 @@ tool node's program runs ([scripts](./messaging/scripts.md#ork-send))
 [send tests](../packages/cli/test/send.test.ts),
 [init driver tests](../packages/cli/test/init-driver.test.ts),
 [ready driver tests](../packages/cli/test/ready-driver.test.ts),
-[help tests](../packages/cli/test/help.test.ts)). `--help` leaves out the flags
-only Ork passes to itself (their descriptions start `Internal:`), and
-`ork --help` lists the commands in groups
+[help tests](../packages/cli/test/help.test.ts)). The terminal kit, the global
+`--plain` flag, and the commands that print or ask through the kit (every one
+that asked or listed) are built ([terminal](./cli/terminal.md)). `--help` leaves
+out the flags only Ork passes to itself (their descriptions start `Internal:`),
+and `ork --help` lists the commands in groups
 ([completion and help](./cli/completion.md#ork---help)). Published as
 `@krapht/ork` ([release](../runbook/development/release.md),
 [ADR-015](../decisions/ADR-015-changesets-and-one-bundled-cli.md)).
+
+Every command takes `--plain` (or `ORK_PLAIN=1`): no color, no redrawn prompts
+([terminal](./cli/terminal.md)).
 
 ```
 ork init [--no-link] [--skills]  # scaffold .ork/, .gitignore entries, a starter workflow that names no driver; link tool folders; record the project; Ork's skills for Claude Code
@@ -46,14 +51,14 @@ ork doctor                       # node, git (and a first commit), every agent d
 ork validate [<wf>…] [--paths] [--json] [--driver <id>]   # schema, graph, project rules, agents and skill/context references, with yaml line numbers, then a walk of every way through; `--paths` lists each ending (the walk line points to it); with no file, the project's triggers too; each session node is checked against its driver (`--driver`, else the one a run would take; [driver fit](./graph-compiler.md#driver-fit))
 ork agents list [--json] | show <name> [--json]   # the agents nodes can take, and where each comes from
 ork agents add <name> [--description d] [--model m] [--from <agent>] [--user] | rm <name> [--user]
-ork run <wf> [--input k=v] [--driver <id>] [--in-place] [--allow-dirty] [--json] [--detach]  # <wf>: a file, a name in .ork/workflows/, or ork:<name>
-ork run <wf> --node <id> [--input k=v] [--driver <id>] [--in-place] [--json]
+ork run <wf> [--input k=v] [--driver <id>] [--in-place] [--allow-dirty] [--json] [--detach] [--verbose]  # <wf>: a file, a name in .ork/workflows/, or ork:<name>
+ork run <wf> --node <id> [--input k=v] [--driver <id>] [--in-place] [--json] [--verbose]
 ork ps [--all] [--limit n] [--json]               # this project's runs, newest first
-ork logs [<run>] [--node n] [--follow] [--json]   # a run's transcript, replayed or live
+ork logs [<run>] [--node n] [--follow] [--json] [--verbose]   # a run's transcript, replayed or live
 ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node
 ork usage [--all] [--since 30d] [--until day] [--by day|workflow|model|…] [--workflow w] [--json]  # what runs spent over time
 ork prune --older-than 90d [--all] [--dry-run] [--yes]  # forget old runs' logs; what they spent stays
-ork decide [<run>] [--all] [--list] [--json] [--workflow <name>] [--id <d> --document] [--id <d> --choose <option> [--say <text>] [--note <text>] [--rating good|bad]]  # answer open decisions; --say gives the answer a note for the run, --note notes the decision's node as feedback
+ork decide [<run>] [--all] [--list] [--json] [--workflow <name>] [--id <d> --document] [--id <d> --choose <option> [--say <text>] [--note <text>] [--rating good|bad]] [--verbose]  # answer open decisions (a card with arrow keys on a terminal; --verbose shows each question's whole context); --say gives the answer a note for the run, --note notes the decision's node as feedback
 ork chat <run> <node> [-m <text>] [--driver <id>]  # talk to a node, live or by resuming its session
 ork relay <run>/<node> <run>/<node> [--max-messages n]  # let two running nodes of different runs message each other
 ork relay end <a> <b> | ork relay list [run] [--all] [--json]
@@ -85,6 +90,11 @@ ork completion zsh|bash|fish     # print a tab-completion script; the script run
   - [Runs](./cli/running-and-runs.md#runs)
   - [Decisions and stopping](./cli/running-and-runs.md#decisions-and-stopping)
   - [Resuming a run](./cli/running-and-runs.md#resuming-a-run)
+- [The terminal kit and `--plain`](./cli/terminal.md)
+  - [Mode](./cli/terminal.md#mode)
+  - [Look](./cli/terminal.md#look)
+  - [Prompts](./cli/terminal.md#prompts)
+  - [Limits](./cli/terminal.md#limits)
 - [Worktrees, agents, context and doctor](./cli/worktrees-agents-context-and-doctor.md)
   - [Projects](./cli/worktrees-agents-context-and-doctor.md#projects)
   - [Worktrees](./cli/worktrees-agents-context-and-doctor.md#worktrees)

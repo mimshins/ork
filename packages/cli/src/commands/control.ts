@@ -33,6 +33,7 @@ const failed = (message: string): void => {
 };
 
 export * from "./decide.ts";
+export * from "./decide-list.ts";
 
 export const stop = defineCommand({
   meta: { name: "stop", description: "Stop a live run, or one of its nodes" },

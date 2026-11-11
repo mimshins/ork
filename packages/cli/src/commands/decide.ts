@@ -10,7 +10,6 @@
 import {
   answerDecision,
   checkNote,
-  type DecisionRecord,
   type EventStore,
   findRun,
   type Noted,
@@ -23,6 +22,8 @@ import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
+import { canKey } from "../term/mode.ts";
+import { formatDecisions } from "./decide-list.ts";
 import { decideRefusal } from "./in-a-run.ts";
 
 const failed = (message: string): void => {
@@ -74,22 +75,6 @@ export const saidLine = (store: EventStore, id: string): string => {
   return note === undefined ? "" : style("dim", ` · said: ${note}`);
 };
 
-/** One line per open decision, for `--list`. */
-export const formatDecisions = (
-  decisions: readonly DecisionRecord[],
-  workflow?: string,
-): string[] =>
-  decisions.length === 0
-    ? [
-        workflow === undefined
-          ? "No open decisions."
-          : `No open decisions in workflow ${workflow}.`,
-      ]
-    : decisions.map(
-        d =>
-          `${style("bold", d.id)}  ${style("cyan", d.node)}${d.owner === undefined ? "" : style("dim", ` via ${d.owner}`)}  ${d.question} ${d.document === undefined ? "" : `${style("dim", "+document")} `}${style("dim", `[${d.options.map(o => (o.id === d.recommended ? `${o.id}*` : o.id)).join(", ")}]`)}`,
-      );
-
 export const decide = defineCommand({
   meta: {
     name: "decide",
@@ -134,6 +119,11 @@ export const decide = defineCommand({
         "…and note how its node went; the note joins the run's feedback",
     },
     rating: { type: "string", description: "…rating it good or bad" },
+    verbose: {
+      type: "boolean",
+      description: "Show each question's whole context, not its first lines",
+      default: false,
+    },
   },
   run: async ({ args }) => {
     const answers =
@@ -151,6 +141,7 @@ export const decide = defineCommand({
       input: process.stdin,
       output: process.stdout,
       interactive: process.stdin.isTTY,
+      verbose: args.verbose,
     });
     try {
       if (args.document) {
@@ -202,7 +193,7 @@ export const decide = defineCommand({
       }
       if (args.say !== undefined) {
         failed(
-          "--say goes with --id and --choose; answering here asks for a note after each choice.",
+          "--say goes with --id and --choose; answering here, press n to add a note (plain: it asks for one after each choice).",
         );
         return;
       }
@@ -228,8 +219,10 @@ export const decide = defineCommand({
         for (const line of formatDecisions(open, args.workflow)) write(line);
         return;
       }
-      for (const d of open) {
-        write(style("dim", `run ${d.runId} · decision ${d.id}`));
+      // A card collapses to the line that says what was chosen; only plain
+      // output needs the answer's line as well.
+      const collapses = canKey(process.stdin, process.stdout);
+      for (const [index, d] of open.entries()) {
         const question: Parameters<typeof human.ask>[0] = {
           nodeId: d.node,
           question: d.question,
@@ -243,7 +236,14 @@ export const decide = defineCommand({
           note = given;
         };
         // oxlint-disable-next-line no-await-in-loop -- one question at a time
-        const choice = await human.ask(question);
+        const choice = await human.askAt(question, {
+          run: d.runId,
+          decision: d.id,
+          index: index + 1,
+          total: open.length,
+        });
+        // `q` leaves the question open for later.
+        if (choice === null) continue;
         // oxlint-disable-next-line no-await-in-loop -- answered in order
         const answered = await answerDecision(
           store,
@@ -253,11 +253,12 @@ export const decide = defineCommand({
           "decide",
           note,
         );
-        write(
-          answered.ok
-            ? `${style("green", "✓")} ${d.id}: ${choice}${saidLine(store, d.id)}\n`
-            : `${style("yellow", "!")} ${answered.error}\n`,
-        );
+        if (!answered.ok) write(`${style("yellow", "!")} ${answered.error}\n`);
+        else if (!collapses) {
+          write(
+            `${style("green", "✓")} ${d.id}: ${choice}${saidLine(store, d.id)}\n`,
+          );
+        }
       }
     } finally {
       human?.close();

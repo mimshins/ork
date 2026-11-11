@@ -142,7 +142,7 @@ export const run = defineCommand({
     verbose: {
       type: "boolean",
       description:
-        "Show why each failed node stopped, with its scrubbed details",
+        "Show each tool call whole, and why each failed node stopped, with its scrubbed details",
       default: false,
     },
     detach: {

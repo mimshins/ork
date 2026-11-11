@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L249, and the next chore is
+closes it. Ids are never reused: the next limit is L256, and the next chore is
 C15. At a review, each open entry is closed (built or fixed, then removed), kept
 (moved into its area's spec, then removed here), or carried to a roadmap item,
 or to none yet (unplanned).
@@ -233,6 +233,31 @@ Found removing the Agent SDK driver
   the guide says to run Claude on `claude-code`. A node that hits it now ends as
   [Model unavailable](../docs/guides/why-a-node-stopped.md#model-unavailable)
   with the provider's text under Details, not as raw JSON in the run summary.
+
+- **L249 · The terminal kit counts a code point as one column.** A wide
+  character (CJK, an emoji) can make a line one column too long, which wraps it.
+  Width by `Intl.Segmenter` and an East Asian width table waits for a report.
+  See [terminal](./cli/terminal.md#limits).
+- **L250 · A select taller than the screen is not scrolled.** A list of more
+  options than the terminal has rows redraws wrongly; the details are cut to
+  fit, the options are not.
+- **L251 · A killed process can leave the cursor hidden.** A prompt restores the
+  cursor and raw mode on every exit it can see (an answer, Esc, Ctrl-C, a
+  withdrawal), not on `SIGKILL` or `SIGTERM`; `reset` or the next prompt shows
+  it again.
+- **L252 · Only tool lines are cut to the screen width.** Other run events (a
+  message's first line, a claim, a failed node's detail, a warning) are not cut
+  or wrapped by the kit; the terminal wraps them.
+- **L253 · A live `ork chat` asks line by line.** Replies print while it waits,
+  which a redrawn prompt cannot share the screen with, so the prompt is the
+  plain one (no in-place editing or cursor keys beyond the terminal's own).
+- **L254 · Plain output has not been checked with a screen reader.** The plan
+  calls for a VoiceOver pass over `--plain`; it is not done.
+- **L255 · `--plain` is taken out of the arguments wherever it appears.** A
+  `--plain` that is another flag's value (`ork chat -m --plain`) is dropped
+  before the command sees it, and sets plain output. Put the value after `=` or
+  after `--` to send it as text; reading each command's flags to tell the two
+  apart waits for a report.
 
 ## Chores
 

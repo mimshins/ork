@@ -49,7 +49,18 @@ with the built-in node types
   sentence, with `(may pass; ork resume retries)` after a transient kind; never
   the provider's words. **`--verbose`** adds, under each failed node, the kind's
   hint and the scrubbed detail
-  ([how a session ends](../runtime/session-ends.md)).
+  ([how a session ends](../runtime/session-ends.md)), and shows each tool call
+  whole.
+- **On a terminal** (rich, [the kit](terminal.md)) the transcript draws a `RUN`
+  chip on the header (then a blank line), a node chip in a color stable for its
+  id (in place of the `<node> │` tag, padded to the widest id) on the first line
+  of each event, and spaces under it. A tool call is `Tool  first line`, cut at
+  the screen width with `+N lines` when it had more, a path inside the node's
+  worktree (from its `worktree` event) relative to it; the agent's text wraps
+  with a hanging indent; a question is an `ASK` chip; the summary starts with an
+  `OK`, `FAIL` or `WAIT` chip (`WAIT`: the run stopped short, its status says
+  why). Not a terminal, with `NO_COLOR`, `--plain` or `ORK_PLAIN=1`, the lines
+  above are as they were: no escape codes, the `<node> │` tag, `▸`, `✓`.
 - Integrations are optional: before anything starts, Ork checks only the
   programs the workflow's tool nodes run (`gh` for `tool.gh`, `aws` for
   `tool.aws`, `git` for `tool.git`, a `tool.shell` command's first word unless
@@ -121,14 +132,20 @@ stderr, one prompt at a time, unless `ork decide` in another terminal answers
 first (then the prompt is withdrawn and the transcript shows
 `→ <answer> (ork decide)`):
 
-- `ask_user` lists the options with the recommended one marked; Enter takes the
-  recommended option, and a number or an option id picks one. An invalid answer
-  asks again. Then `Note for the run (optional, Enter to skip):` takes one line,
-  the answer's [note](../messaging.md#decisions); while it waits the decision is
-  still open, so `ork decide`, the UI or a gate's timeout can still answer it.
+- `ask_user` shows a card (an ASK chip, the node's chip, the question, its
+  context dimmed) and the options as a list moved with ↑/↓, `j`/`k` or `1`–`9`,
+  the recommended one marked and chosen; `n` adds the answer's
+  [note](../messaging.md#decisions) and `d` shows the whole context or document
+  ([the select prompt](terminal.md#prompts)). Plain (not a terminal, `NO_COLOR`,
+  `--plain`), it lists numbered options: Enter takes the recommended one, a
+  number or an option id picks one, an invalid answer asks again, then
+  `Note for the run (optional, Enter to skip):` takes one line. While it waits
+  the decision is still open, so `ork decide`, the UI or a gate's timeout can
+  still answer it.
 - A permission prompt shows the tool and a one-line preview of its input and
-  asks `Allow? [y/N]`; anything but `y` denies it, and a denial takes the same
-  optional note line, which the session reads with the denial.
+  asks `Allow?` as a yes-or-no (`y`, `n`, ←/→, Enter; plain, `Allow? [y/N]`);
+  anything but yes denies it, and a denial takes the same optional note line,
+  which the session reads with the denial.
 - Without a terminal (stdin is not a TTY), tools are denied and a question gets
   the recommended option, or tells the node to use its judgment and say so in
   its report.

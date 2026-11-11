@@ -4,8 +4,6 @@
  *   node of a finished run is answered by resuming its last session.
  */
 
-import { createInterface } from "node:readline/promises";
-
 import {
   type EventStore,
   findRun,
@@ -21,26 +19,33 @@ import { createTerminalHuman } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
 import { resumeChat } from "../runs/chat.ts";
 import { followRun } from "../runs/logs.ts";
+import { readText } from "../term/text.ts";
 import { chatRefusal } from "./in-a-run.ts";
 import { badDriver, isDriver, loadRuntime } from "./run.ts";
 
-/** Asks for one line; `null` once the input ends (Ctrl-D). */
-const askLine = async (): Promise<string | null> => {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const closed = new Promise<null>(resolve => {
-    rl.once("close", () => {
-      resolve(null);
-    });
-  });
-  try {
-    const line = await Promise.race([
-      rl.question(style("bold", "you › ")),
-      closed,
-    ]);
-    return line;
-  } finally {
-    rl.close();
-  }
+/**
+ * Asks for one line; `null` once the input ends (Ctrl-D), Esc leaves, or
+ * `signal` withdraws it. A live chat prints replies while it waits, which a
+ * redrawn prompt can't share the screen with, so it asks line by line.
+ */
+const askLine = async (
+  live = false,
+  signal?: AbortSignal,
+): Promise<string | null> => {
+  const asked = await readText(
+    {
+      input: process.stdin,
+      output: process.stdout,
+      ...(live ? { env: { ...process.env, ORK_PLAIN: "1" } } : {}),
+    },
+    {
+      message: "you",
+      // The line stays as `you › text` above the reply.
+      done: value => ` you › ${value ?? ""}`,
+      ...(signal === undefined ? {} : { signal }),
+    },
+  ).catch(() => ({ kind: "cancelled" as const }));
+  return asked.kind === "text" ? asked.value : null;
 };
 
 /** Chats with a node of a live run until the input ends or the run does. */
@@ -73,7 +78,10 @@ const chatLive = async (
   });
   for (;;) {
     // oxlint-disable-next-line no-await-in-loop -- one message at a time
-    const line = await Promise.race([askLine(), following.then(() => null)]);
+    const line = await Promise.race([
+      askLine(true, abort.signal),
+      following.then(() => null),
+    ]);
     if (line === null || abort.signal.aborted) break;
     // oxlint-disable-next-line no-await-in-loop -- sent before the next prompt
     if (line.trim() !== "") await tellLiveRun(store, run, node, line);

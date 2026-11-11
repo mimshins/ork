@@ -12,8 +12,10 @@ import {
   type SessionEnd,
 } from "@krapht/ork-core";
 
-import { cost, style } from "../output.ts";
+import { cost } from "../output.ts";
+import type { Term } from "../term/mode.ts";
 import { hasConflict, nodeVerdict } from "./verdict.ts";
+import { createView, styler } from "./view.ts";
 
 /** What a transient kind says in place of its hint on the log line. */
 const MAY_PASS = "(may pass; ork resume retries)";
@@ -30,7 +32,12 @@ export const endHeadline = (end: SessionEnd): string => {
  * when `full`. A transient kind's hint is its retry wording, which the headline
  * already says, so it is not printed twice.
  */
-export const endLines = (end: SessionEnd, full: boolean): string[] => {
+export const endLines = (
+  end: SessionEnd,
+  full: boolean,
+  term: Term = createView().term,
+): string[] => {
+  const style = styler(term);
   const { actor, hint, transient } = END_KINDS[end.kind];
   const setup = actor === "account" || actor === "provider";
   const lines: string[] = [];
@@ -55,7 +62,11 @@ export const formatFinished = (
   event: Extract<RunEvent, { type: "node.finished" }>,
   tag: string,
   verbose: boolean,
+  term: Term = createView().term,
+  /** The tag on the lines under the first; the same tag when not given. */
+  rest: string = tag,
 ): string[] => {
+  const style = styler(term);
   const conflict = hasConflict(event.output);
   const mark = event.ok
     ? style(conflict ? "yellow" : "green", conflict ? "!" : "✓")
@@ -76,6 +87,6 @@ export const formatFinished = (
   }
   return [
     `${tag} ${mark} ${endHeadline(end)}${spent}`,
-    ...endLines(end, verbose).map(line => `${tag} ${line}`),
+    ...endLines(end, verbose, term).map(line => `${rest} ${line}`),
   ];
 };

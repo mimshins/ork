@@ -146,7 +146,7 @@ export const migrateHere = async (
       fail("Pass --yes to migrate without a terminal.");
       return;
     }
-    if (!options.yes && !(await confirm("Go ahead? [y/N] "))) return;
+    if (!options.yes && !(await confirm("Go ahead?"))) return;
     applyMigration(plan, store);
     write(`${style("green", "✓")} migrated. ${afterMigration(plan)}`);
   } finally {

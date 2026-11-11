@@ -77,9 +77,9 @@ Merge them? [y/N]
 ```
 
 A merged item lists under the one seen first, with its count; later records go
-there too. No model runs. Every item it looked at becomes `triaged`, so a
-declined merge isn't offered again until a new item joins it.
-`ork feedback split <item>` undoes a merge.
+there too. No model runs. Every item looked at becomes `triaged`, so a declined
+merge isn't offered again until a new item joins it. `ork feedback split <item>`
+undoes a merge. On a terminal it asks Yes/No (`--plain`: `[y/N]`).
 
 ## Turning one into a lesson
 

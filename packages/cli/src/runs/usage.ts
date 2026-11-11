@@ -12,6 +12,9 @@ import {
 } from "@krapht/ork-core";
 
 import { style } from "../output.ts";
+import { CHIP_LABELS, chip } from "../term/chips.ts";
+import { type Term, termOf } from "../term/mode.ts";
+import { header, table } from "../term/table.ts";
 import { cost } from "./format.ts";
 
 const UNITS: Record<string, number> = {
@@ -92,28 +95,30 @@ const TITLES: Record<UsageDimension, string> = {
   project: "By project",
 };
 
-const table = (groups: readonly UsageGroup[]): string[] => {
-  const rows = groups.map(group => ({
-    key: group.key,
-    cost: cost(group.costUsd),
-    sessions: String(group.sessions),
-    tokens: `${tokens(group.inputTokens + group.cacheReadTokens + group.cacheWriteTokens)} in / ${tokens(group.outputTokens)} out`,
-    cache: percent(group.cacheHitRate),
-  }));
-  const width = (pick: (row: (typeof rows)[number]) => string, title: string) =>
-    Math.max(title.length, ...rows.map(row => pick(row).length));
-  const w = {
-    key: width(r => r.key, ""),
-    cost: width(r => r.cost, "COST"),
-    sessions: width(r => r.sessions, "SESSIONS"),
-    tokens: width(r => r.tokens, "TOKENS"),
-  };
-  const line = (key: string, c: string, s: string, t: string, h: string) =>
-    `  ${key.padEnd(w.key)}  ${c.padStart(w.cost)}  ${s.padStart(w.sessions)}  ${t.padEnd(w.tokens)}  ${h}`;
-  return [
-    style("dim", line("", "COST", "SESSIONS", "TOKENS", "CACHE")),
-    ...rows.map(r => line(r.key, r.cost, r.sessions, r.tokens, r.cache)),
-  ];
+const usageTable = (term: Term, groups: readonly UsageGroup[]): string[] => {
+  return table(
+    term,
+    [{ flex: true }, { align: "right" }, { align: "right" }, {}, {}],
+    [
+      [
+        header(""),
+        header("COST"),
+        header("SESSIONS"),
+        header("TOKENS"),
+        header("CACHE"),
+      ],
+      ...groups.map(group => [
+        { text: group.key },
+        { text: cost(group.costUsd) },
+        { text: String(group.sessions) },
+        {
+          text: `${tokens(group.inputTokens + group.cacheReadTokens + group.cacheWriteTokens)} in / ${tokens(group.outputTokens)} out`,
+        },
+        { text: percent(group.cacheHitRate) },
+      ]),
+    ],
+    "  ",
+  );
 };
 
 /** What `ork usage` prints without `--by`. */
@@ -132,27 +137,32 @@ const shortTime = (iso: string): string =>
     timeStyle: "short",
   });
 
+/** A warning line: a `WARN` chip when rich, else the line in yellow. */
+const warned = (term: Term, text: string): string =>
+  term.rich
+    ? `  ${chip(term, CHIP_LABELS.warn, "warn")} ${text}`
+    : style("yellow", `  ${text}`);
+
 /** The limits across runs, above a report; nothing with none set. */
-export const formatLimits = ({
-  problems,
-  caps,
-  plan,
-}: LimitsReport): string[] => {
+export const formatLimits = (
+  { problems, caps, plan }: LimitsReport,
+  term: Term = termOf(process.stdout),
+): string[] => {
   if (problems.length === 0 && caps.length === 0 && plan.length === 0) {
     return [];
   }
   return [
     style("bold", "Limits"),
-    ...problems.map(problem => style("yellow", `  ${problem}`)),
+    ...problems.map(problem => warned(term, problem)),
     ...caps.map(cap => {
       const whose = cap.project === undefined ? "all projects" : "this project";
       const line = `  ${whose}, this ${cap.window}: ${usd(cap.spentUsd)} of ${usd(cap.capUsd)}, resets ${shortTime(cap.resetsAt)}`;
-      return cap.leftUsd <= 0 ? style("yellow", line) : line;
+      return cap.leftUsd <= 0 ? warned(term, line.trimStart()) : line;
     }),
     ...plan.map(limit =>
-      style(
-        "yellow",
-        `  Claude plan's ${limit.window.replaceAll("_", " ")} limit ${limit.status === "rejected" ? "was reached" : "is close"}${limit.resetsAt === undefined ? "" : `, resets ${shortTime(limit.resetsAt)}`}`,
+      warned(
+        term,
+        `Claude plan's ${limit.window.replaceAll("_", " ")} limit ${limit.status === "rejected" ? "was reached" : "is close"}${limit.resetsAt === undefined ? "" : `, resets ${shortTime(limit.resetsAt)}`}`,
       ),
     ),
     "",
@@ -164,6 +174,7 @@ export const formatUsage = (
   report: UsageReport,
   scope: string,
   by?: UsageDimension,
+  term: Term = termOf(process.stdout),
 ): string[] => {
   const { totals } = report;
   if (totals.sessions === 0) return [`No Claude sessions in ${scope}.`];
@@ -181,7 +192,11 @@ export const formatUsage = (
           ? groups.slice(-OVERVIEW_ROWS)
           : groups.slice(0, OVERVIEW_ROWS)
         : groups;
-    lines.push("", style("bold", TITLES[dimension]), ...table(shown));
+    lines.push(
+      "",
+      style("bold", TITLES[dimension]),
+      ...usageTable(term, shown),
+    );
     if (shown.length < groups.length) {
       lines.push(
         style(

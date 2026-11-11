@@ -36,7 +36,7 @@ import {
   loadWorkflow,
   warningLines,
 } from "../commands/validate.ts";
-import { formatEvent, formatRunEvent } from "./format.ts";
+import { createView, formatEvent, formatRunEvent } from "./format.ts";
 import { limitsRefusal, runLimits } from "./limits.ts";
 import {
   endedFields,
@@ -207,6 +207,7 @@ export const runNode = async (
   const signals = createSignals(
     feedbackOrigin(path.resolve(options.cwd, options.file)),
   );
+  const view = createView();
   const record = (raw: RunEvent): void => {
     for (const event of signals(raw)) {
       control.publish(recorder(event));
@@ -218,6 +219,7 @@ export const runNode = async (
           new Map(),
           false,
           options.verbose,
+          view,
         )) {
           options.out(line);
         }
@@ -263,6 +265,7 @@ export const runNode = async (
         event,
         tools,
         options.verbose,
+        view,
       )) {
         options.out(line);
       }

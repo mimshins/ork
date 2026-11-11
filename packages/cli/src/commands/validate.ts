@@ -23,11 +23,11 @@ import {
 import type { Diagnostic, Locate, Workflow } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
-import { style, write, writeErr } from "../output.ts";
+import { write, writeErr } from "../output.ts";
 import { projectAt, registeredProjects } from "../project/place.ts";
 import { driverArg, driverDiagnostics } from "../run/driver-check.ts";
 import { findWorkflowFiles, refusedBuiltin } from "../workflows.ts";
-import { pathLines, walkLine } from "./walk-report.ts";
+import { formatReport, reportLines, warningLines } from "./validate-report.ts";
 
 const hasErrors = (diagnostics: readonly Diagnostic[]): boolean =>
   diagnostics.some(d => d.severity === "error");
@@ -138,56 +138,8 @@ export const walkLoaded = async (
   };
 };
 
-const plural = (count: number, word: string) =>
-  `${count} ${word}${count === 1 ? "" : "s"}`;
-
-const diagnosticLine = (file: string, d: Diagnostic): string => {
-  const where =
-    d.line === undefined ? file : `${file}:${d.line}:${d.column ?? 1}`;
-  const severity =
-    d.severity === "error"
-      ? style(["red", "bold"], "error")
-      : style(["yellow", "bold"], "warning");
-  return `${style("dim", where)} ${severity} ${d.message} ${style("dim", `(${d.code})`)}`;
-};
-
-/** The warnings alone, for a run that goes ahead despite them. */
-export const warningLines = (report: FileReport): string[] =>
-  report.diagnostics
-    .filter(d => d.severity === "warning")
-    .map(d => diagnosticLine(report.file, d));
-
-/** Human-readable report, one line per diagnostic, compiler style. */
-export const formatReport = (
-  report: FileReport,
-  showsPaths = false,
-): string[] => {
-  const lines = report.diagnostics.map(d => diagnosticLine(report.file, d));
-  const errors = report.diagnostics.filter(d => d.severity === "error").length;
-  const warnings = report.diagnostics.length - errors;
-  if (report.summary === undefined && errors === 0) {
-    lines.push(
-      `${style("green", "✓")} ${report.file}${warnings === 0 ? "" : style("dim", ` (${plural(warnings, "warning")})`)}`,
-    );
-  } else if (report.summary !== undefined && errors === 0) {
-    const { nodes, edges, entries } = report.summary;
-    const extra = warnings > 0 ? `, ${plural(warnings, "warning")}` : "";
-    lines.push(
-      `${style("green", "✓")} ${report.file} ${style(
-        "dim",
-        `(${plural(nodes, "node")}, ${plural(edges, "edge")}, starts at ${entries.join(", ")}${extra})`,
-      )}`,
-    );
-  } else {
-    lines.push(
-      `${style("red", "✗")} ${report.file} ${style(
-        "dim",
-        `(${plural(errors, "error")}, ${plural(warnings, "warning")})`,
-      )}`,
-    );
-  }
-  return [...lines, ...walkLine(report.walk, showsPaths)];
-};
+// Where `ork run` and the tests have always found them.
+export { formatReport, warningLines };
 
 export const validate = defineCommand({
   meta: {
@@ -279,8 +231,7 @@ export const validate = defineCommand({
       write(JSON.stringify(reports, undefined, 2));
     } else {
       for (const report of reports) {
-        for (const line of formatReport(report, args.paths)) write(line);
-        if (args.paths) for (const line of pathLines(report.walk)) write(line);
+        for (const line of reportLines(report, args.paths)) write(line);
       }
     }
     if (reports.some(r => hasErrors(r.diagnostics))) {

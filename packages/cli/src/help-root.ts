@@ -15,6 +15,15 @@ import { style } from "./output.ts";
 export const DOCS_URL =
   "https://github.com/mimshins/ork/blob/main/docs/README.md";
 
+/** The flags every command takes, which `bin.ts` handles before citty. */
+export const GLOBAL_FLAGS = [
+  {
+    name: "--plain",
+    description:
+      "Plain output: no color, no redrawn prompts (also ORK_PLAIN=1, NO_COLOR)",
+  },
+] as const;
+
 type Row = { name: string; line: string };
 
 const rowOf = (entry: CommandEntry): Row => {
@@ -58,6 +67,9 @@ export const renderRootHelp = async (cmd: CommandDef): Promise<string> => {
     "",
     ...groups.flatMap(group => groupLines(group, width)),
     `Usage: ${name} <command> [flags]`,
+    "",
+    "Flags for every command:",
+    ...GLOBAL_FLAGS.map(f => `  ${f.name}  ${f.description}`),
     "",
     `Use "${name} <command> --help" for more about a command.`,
     `${name} v${meta.version ?? ""}`,

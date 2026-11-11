@@ -105,22 +105,22 @@ each optional integration, and which
 [experiments](../guides/project-rules.md#trying-an-experiment) are on. It uses
 each tool's own login check and never prints a token. At least one agent driver
 has to be ready; a missing `gh` or `aws` is fine unless a workflow has a node
-that needs it. Example output:
+that needs it. Example output (`--plain`: `✓` and `-`):
 
 ```
-✓ ork                          1.0.0-alpha.8 (the latest as of 2026-11-10)
-✓ node                         v24.20.0
-✓ git                          git version 2.39.5
-✓ git repo                     inside a work tree
-✓ git commits                  HEAD exists
-✓ claude (claude-code driver)  2.1.314 (Claude Code), logged in (claude.ai, firstParty)
-✓ opencode (open-code driver)  v2.1.0; sign in with `opencode auth login` if a session asks
-- cmd (command-code driver)    cmd CLI not found
-- gh                           optional, not installed (needed only for tool.gh nodes)
-- aws                          optional, not installed (needed only for tool.aws nodes)
-✓ git identity                 user.name and user.email are set
-✓ sockets                      39 of 103 bytes
-✓ experiments                  none on
+ OK    ork                          1.0.0-alpha.10 (the latest as of 2026-11-10)
+ OK    node                         v24.20.0
+ OK    git                          git version 2.39.5
+ OK    git repo                     inside a work tree
+ OK    git commits                  HEAD exists
+ OK    claude (claude-code driver)  2.1.314 (Claude Code), logged in (claude.ai, firstParty)
+ OK    opencode (open-code driver)  v2.1.0; sign in with `opencode auth login` if a session asks
+ SKIP  cmd (command-code driver)    cmd CLI not found
+ SKIP  gh                           optional, not installed (needed only for tool.gh nodes)
+ SKIP  aws                          optional, not installed (needed only for tool.aws nodes)
+ OK    git identity                 user.name and user.email are set
+ OK    sockets                      39 of 103 bytes
+ OK    experiments                  none on
 ```
 
 The `claude-code` and `open-code` drivers are ready, and Command Code's `cmd`

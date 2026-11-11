@@ -140,6 +140,27 @@ describe("ork doctor's version line", () => {
 });
 
 describe("the notice", () => {
+  it("prints no escape code under ORK_PLAIN", () => {
+    vi.stubEnv("ORK_PLAIN", "1");
+    vi.stubEnv("FORCE_COLOR", "1");
+    const file = updateCachePath(tempHome());
+    writeUpdateCache(file, { checkedAt: NOW.toISOString(), latest: "99.0.0" });
+    const written: string[] = [];
+    const spy = vi
+      .spyOn(process.stderr, "write")
+      .mockImplementation((chunk: string | Uint8Array) => {
+        written.push(String(chunk));
+        return true;
+      });
+    try {
+      showUpdateNotice(file, NOW);
+    } finally {
+      spy.mockRestore();
+      vi.unstubAllEnvs();
+    }
+    expect(written.join("")).not.toContain("\u001B");
+  });
+
   it("prints once, and records that the user was told", () => {
     const file = updateCachePath(tempHome());
     writeUpdateCache(file, { checkedAt: NOW.toISOString(), latest: "99.0.0" });

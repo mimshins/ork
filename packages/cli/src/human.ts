@@ -1,32 +1,60 @@
 /**
  * @file The terminal `HumanChannel`: answers `ask_user` questions, gates and
  *   permission prompts on the terminal, one at a time, and denies or defers
- *   when no one is there. After a choice it offers one optional line for a
- *   note, which Enter skips. In a run it is the decision queue's local
- *   answerer, racing `ork decide`.
+ *   when no one is there. It draws through the terminal kit (`term/`): a card
+ *   with an ASK chip and a list moved with the arrow keys, a yes-or-no for a
+ *   permission, and one optional line for a note after a choice. Plain (not a
+ *   terminal, `NO_COLOR`, `--plain`) it keeps the numbered prompts. In a run it
+ *   is the decision queue's local answerer, racing `ork decide`.
  */
 
 import { createInterface, type Interface } from "node:readline/promises";
 
 import {
-  type DecisionChoice,
   type HumanChannel,
-  type NoteTaker,
+  type HumanQuestion,
   TOOL_INPUT_KEYS,
 } from "@krapht/ork-core";
 
-import { style } from "./output.ts";
+import {
+  type AskPlace,
+  cardLines,
+  clean,
+  doneLine,
+  permitLine,
+} from "./human-card.ts";
+import { plain } from "./output.ts";
+import { confirmOrStop } from "./term/confirm.ts";
+import { withdrawn } from "./term/line.ts";
+import { plainEnv, type PromptIO, type Term, termOf } from "./term/mode.ts";
+import { plainOptions, select, type SelectOption } from "./term/select.ts";
+import { readText } from "./term/text.ts";
+import { paint } from "./term/theme.ts";
 
 export type TerminalIO = {
   input: NodeJS.ReadableStream;
   output: NodeJS.WritableStream;
   /** False when stdin is not a terminal: no one can answer. */
   interactive: boolean;
-  /** Ctrl-C at a prompt, which readline takes from the process in raw mode. */
+  /** Ctrl-C at a prompt, which the terminal takes from the process in raw mode. */
   interrupt?: () => void;
+  /** Shows a question's whole context, not its first lines (`--verbose`). */
+  verbose?: boolean;
+  /** The environment that decides rich or plain; `process.env` when not given. */
+  env?: NodeJS.ProcessEnv;
 };
 
-export type TerminalHuman = HumanChannel & { close: () => void };
+export type { AskPlace };
+
+export type TerminalHuman = HumanChannel & {
+  close: () => void;
+  /**
+   * `ask` for `ork decide`: the card names the run and "n of m", the answer
+   * collapses to the decision's id, and `q` or Esc leaves the question for
+   * later (resolves `null`).
+   */
+  askAt: (question: HumanQuestion, place: AskPlace) => Promise<string | null>;
+};
 
 const PREVIEW = 160;
 
@@ -36,7 +64,7 @@ const SHORT_DOCUMENT_LINES = 40;
 const NO_ONE_TO_PERMIT =
   "No one is at the terminal to approve this tool, so it is not allowed in this run.";
 
-const NOTE_PROMPT = "  Note for the run (optional, Enter to skip): ";
+const NOTE_MESSAGE = "Note for the run (optional, Enter to skip)";
 
 const NO_ONE_TO_ASK =
   "no one (nobody is at the terminal; use your best judgment and say so in your report)";
@@ -55,35 +83,13 @@ export const previewInput = (
     : `${toolName} ${line}`;
 };
 
-/** The option an answer names: its number, or its id. */
-export const pickOption = (
-  answer: string,
-  options: readonly DecisionChoice[],
-  recommended: string | undefined,
-): string | undefined => {
-  const value = answer.trim();
-  if (value === "") return recommended;
-  const index = Number(value);
-  if (Number.isInteger(index) && index >= 1 && index <= options.length) {
-    return options[index - 1]?.id;
-  }
-  return options.find(o => o.id === value)?.id;
-};
-
-const optionLine = (
-  option: DecisionChoice,
-  index: number,
-  recommended: string | undefined,
-): string => {
-  const label = option.label === undefined ? "" : ` ${option.label}`;
-  const description =
-    option.description === undefined
-      ? ""
-      : style("dim", ` - ${option.description}`);
-  const mark =
-    option.id === recommended ? style("green", " (recommended)") : "";
-  return `  ${String(index + 1)}) ${style("bold", option.id)}${label}${description}${mark}`;
-};
+/** Never answers, until `signal` withdraws it: what a stopped prompt leaves. */
+const parked = (signal: AbortSignal | undefined): Promise<never> =>
+  new Promise((_, reject) => {
+    signal?.addEventListener("abort", () => {
+      reject(withdrawn(signal));
+    });
+  });
 
 /**
  * Answers permission prompts and `ask_user` questions on the terminal, one at a
@@ -92,43 +98,57 @@ const optionLine = (
  */
 export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
   let rl: Interface | undefined;
+  let closed: Promise<undefined> | undefined;
   let turn: Promise<unknown> = Promise.resolve();
 
   const say = (text: string): void => {
     io.output.write(`${text}\n`);
   };
-  const prompt = (text: string, signal?: AbortSignal): Promise<string> => {
+  /** The one `readline` the plain prompts share; a rich prompt never opens it. */
+  const readLine = (
+    text: string,
+    signal?: AbortSignal,
+  ): Promise<string | undefined> => {
     if (rl === undefined) {
-      rl = createInterface({ input: io.input, output: io.output });
-      if (io.interrupt !== undefined) rl.on("SIGINT", io.interrupt);
+      const opened = createInterface({
+        input: io.input,
+        output: io.output,
+        ...(plainEnv(io.env) ? { terminal: false } : {}),
+      });
+      if (io.interrupt !== undefined) opened.on("SIGINT", io.interrupt);
+      closed = new Promise<undefined>(resolve => {
+        opened.once("close", () => {
+          // oxlint-disable-next-line unicorn/no-useless-undefined -- a closed input answers nothing
+          resolve(undefined);
+        });
+      });
+      rl = opened;
     }
-    return signal === undefined
-      ? rl.question(text)
-      : rl.question(text, { signal });
+    const answer =
+      signal === undefined ? rl.question(text) : rl.question(text, { signal });
+    return closed === undefined ? answer : Promise.race([answer, closed]);
   };
+  const kit: PromptIO = {
+    input: io.input,
+    output: io.output,
+    readLine,
+    ...(io.env === undefined ? {} : { env: io.env }),
+    ...(io.interrupt === undefined ? {} : { interrupt: io.interrupt }),
+  };
+  const term = (): Term => termOf(io.output, io.env);
+
   /** The optional line after a choice, when the asker takes a note. */
   const takeNote = async (
-    onNote: NoteTaker | undefined,
+    onNote: ((note: string) => void) | undefined,
     signal: AbortSignal | undefined,
   ): Promise<void> => {
     if (onNote === undefined) return;
-    const note = (await prompt(NOTE_PROMPT, signal)).trim();
-    if (note !== "") onNote(note);
-  };
-  const choose = async (
-    hint: string,
-    options: readonly DecisionChoice[],
-    recommended: string | undefined,
-    signal: AbortSignal | undefined,
-    document: string | undefined,
-  ): Promise<string> => {
-    const answer = await prompt(`  Choose${hint}: `, signal);
-    // Picked first, so an option named `d` wins over reading the document.
-    const picked = pickOption(answer, options, recommended);
-    if (picked !== undefined) return picked;
-    if (document !== undefined && answer.trim() === "d") say(document);
-    else say(style("dim", "  Type an option's number or id."));
-    return choose(hint, options, recommended, signal, document);
+    const noted = await readText(kit, {
+      message: NOTE_MESSAGE,
+      ...(signal === undefined ? {} : { signal }),
+    });
+    if (noted.kind === "interrupted") await parked(signal);
+    if (noted.kind === "text" && noted.value !== "") onNote(noted.value);
   };
   // Prompts from parallel tool calls wait for each other.
   const oneAtATime = <T>(work: () => Promise<T>): Promise<T> => {
@@ -137,76 +157,96 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
     return result;
   };
 
+  const asking = (q: HumanQuestion, place?: AskPlace): Promise<string | null> =>
+    oneAtATime(async () => {
+      const { signal } = q;
+      if (signal?.aborted === true)
+        throw new Error("the question was withdrawn");
+      const t = term();
+      const documentLines = q.document?.trimEnd().split("\n").length ?? 0;
+      const document = q.document === undefined ? undefined : clean(q.document);
+      const printed =
+        document !== undefined && documentLines <= SHORT_DOCUMENT_LINES;
+      const shownDocument = t.rich || !printed ? undefined : document;
+      const header = (tt: Term): string[] =>
+        cardLines(tt, q, place, io.verbose === true, shownDocument).lines;
+      const options: SelectOption[] = q.options.map(o => ({
+        id: o.id,
+        ...(o.label === undefined ? {} : { label: plain(o.label) }),
+        ...(o.description === undefined
+          ? {}
+          : { description: plain(o.description) }),
+      }));
+      // Plain prints a short document first and offers a long one; a card
+      // offers any document, and the context its lines cut.
+      const { moreContext } = cardLines(t, q, place, io.verbose === true);
+      const details = t.rich
+        ? [moreContext ? clean(q.context ?? "") : undefined, document]
+            .filter(part => part !== undefined)
+            .join("\n\n") || undefined
+        : printed
+          ? undefined
+          : document;
+      if (!io.interactive) {
+        for (const line of header(t)) say(line);
+        for (const line of plainOptions(options, q.recommended)) say(line);
+        const answer = q.recommended ?? NO_ONE_TO_ASK;
+        say(paint(t, "muted", `  no terminal; answered ${answer}`));
+        return answer;
+      }
+      const result = await select(kit, {
+        header,
+        options,
+        ...(q.recommended === undefined ? {} : { recommended: q.recommended }),
+        ...(details === undefined ? {} : { details }),
+        ...(!t.rich && details !== undefined
+          ? {
+              footer: [
+                `  Document: ${String(documentLines)} lines. Type d to read it.`,
+              ],
+            }
+          : {}),
+        note: q.onNote !== undefined,
+        notePrompt: NOTE_MESSAGE,
+        later: place !== undefined,
+        done: (answer, tt) => doneLine(tt, place, q.nodeId, answer),
+        ...(signal === undefined ? {} : { signal }),
+      });
+      if (result.kind === "interrupted") return parked(signal);
+      if (result.kind === "later") return null;
+      if (result.note !== undefined) q.onNote?.(result.note);
+      return result.id;
+    });
+
   return {
     permit: ({ nodeId, toolName, input, signal, onNote }) =>
       oneAtATime(async () => {
         if (signal?.aborted === true) {
           throw new Error("the prompt was withdrawn");
         }
-        say(
-          `${style(["yellow", "bold"], "?")} ${style("bold", nodeId)} wants to run ${previewInput(toolName, input)}`,
-        );
+        const t = term();
+        if (t.rich) say("");
+        say(permitLine(t, nodeId, previewInput(toolName, input)));
         if (!io.interactive) {
-          say(style("dim", `  denied: ${NO_ONE_TO_PERMIT}`));
+          say(paint(t, "muted", `  denied: ${NO_ONE_TO_PERMIT}`));
           return { allow: false, message: NO_ONE_TO_PERMIT };
         }
-        const answer = (await prompt("  Allow? [y/N] ", signal))
-          .trim()
-          .toLowerCase();
-        if (answer === "y" || answer === "yes") return { allow: true };
+        const allowed = await confirmOrStop(kit, {
+          question: "Allow?",
+          ...(signal === undefined ? {} : { signal }),
+        });
+        // Ctrl-C stops the run: no note is asked for, and no answer comes.
+        if (allowed === null) return parked(signal);
+        if (allowed) return { allow: true };
         // A denial may say why; an allowal has nothing to tell the session.
         await takeNote(onNote, signal);
         return { allow: false, message: "The user did not allow this tool." };
       }),
 
     // A withdrawn question (a gate's timeout) rejects, which frees the turn.
-    ask: ({
-      nodeId,
-      question,
-      options,
-      recommended,
-      context,
-      document,
-      signal,
-      onNote,
-    }) =>
-      oneAtATime(async () => {
-        if (signal?.aborted === true) {
-          throw new Error("the question was withdrawn");
-        }
-        const documentLines = document?.trimEnd().split("\n").length ?? 0;
-        if (document !== undefined && documentLines <= SHORT_DOCUMENT_LINES) {
-          say(document);
-        }
-        say(
-          `${style(["yellow", "bold"], "?")} ${style("bold", nodeId)} asks: ${question}`,
-        );
-        if (context !== undefined) {
-          say(style("dim", `  ${context.replaceAll("\n", "\n  ")}`));
-        }
-        for (const [index, option] of options.entries()) {
-          say(optionLine(option, index, recommended));
-        }
-        if (!io.interactive) {
-          const answer = recommended ?? NO_ONE_TO_ASK;
-          say(style("dim", `  no terminal; answered ${answer}`));
-          return answer;
-        }
-        const fallback = options.findIndex(o => o.id === recommended);
-        const hint = fallback === -1 ? "" : ` [${String(fallback + 1)}]`;
-        if (documentLines > SHORT_DOCUMENT_LINES) {
-          say(`  Document: ${String(documentLines)} lines. Type d to read it.`);
-        }
-        const picked = await choose(
-          hint,
-          options,
-          recommended,
-          signal,
-          document,
-        );
-        await takeNote(onNote, signal);
-        return picked;
-      }),
+    ask: async q => (await asking(q)) ?? NO_ONE_TO_ASK,
+
+    askAt: (q, place) => asking(q, place),
 
     close: () => {
       rl?.close();

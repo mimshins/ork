@@ -5,10 +5,11 @@
  *   starts the daily background check and ends with the notice (ADR-038); the
  *   background copy it starts only runs the check. It first clears git's local
  *   variables (a hook's `GIT_DIR`, `GIT_INDEX_FILE`, …), so nothing Ork starts
- *   acts on the hook's repository (specs/worktrees.md). `--help` leaves out the
- *   flags only Ork passes to itself. `ork __complete`, which tab completion
- *   runs on every Tab, goes first: no update check, and no citty, so a typed
- *   `--help` is a word to complete.
+ *   acts on the hook's repository (specs/worktrees.md). The global `--plain`
+ *   flag is taken out of the arguments and set as `ORK_PLAIN=1`. `--help`
+ *   leaves out the flags only Ork passes to itself. `ork __complete`, which tab
+ *   completion runs on every Tab, goes first: no update check, and no citty, so
+ *   a typed `--help` is a word to complete.
  */
 
 import { clearGitLocalEnv } from "@krapht/ork-core";
@@ -17,6 +18,7 @@ import { runMain } from "citty";
 import { COMPLETE_COMMAND } from "./completion/scripts.ts";
 import { showHelp } from "./help.ts";
 import { main } from "./main.ts";
+import { takePlainFlag } from "./term/mode.ts";
 import {
   runUpdateChild,
   showUpdateNotice,
@@ -27,7 +29,8 @@ import {
 
 clearGitLocalEnv();
 
-const argv = process.argv.slice(2);
+// The global `--plain` becomes `ORK_PLAIN=1`, which the term kit reads.
+const argv = takePlainFlag(process.argv.slice(2));
 
 if (argv[0] === COMPLETE_COMMAND) {
   const { printCompletions } = await import("./commands/completion.ts");
@@ -41,5 +44,5 @@ if (argv[0] === COMPLETE_COMMAND) {
       showUpdateNotice();
     });
   }
-  await runMain(main, { showUsage: showHelp });
+  await runMain(main, { rawArgs: argv, showUsage: showHelp });
 }

@@ -13,7 +13,7 @@ import { write, writeErr } from "../output.ts";
 import { draftHere } from "../project/draft.ts";
 import { migrateHere } from "../project/migrate.ts";
 import {
-  formatProject,
+  formatProjects,
   formatRegistered,
   registerProject,
 } from "../project/register.ts";
@@ -81,9 +81,7 @@ export const projects = defineCommand({
       write(
         "No projects registered yet: ork init (in-repo) or ork register (attached).",
       );
-    } else
-      for (const project of all)
-        for (const line of formatProject(project)) write(line);
+    } else for (const line of formatProjects(all)) write(line);
   },
 });
 

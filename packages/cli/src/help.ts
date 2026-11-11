@@ -8,7 +8,7 @@
 import { type ArgsDef, type CommandDef, renderUsage } from "citty";
 
 import { argsOf, publicArgs, subcommandsOf } from "./command-tree.ts";
-import { renderRootHelp } from "./help-root.ts";
+import { GLOBAL_FLAGS, renderRootHelp } from "./help-root.ts";
 
 /** Citty's `a|b|c` usage list of a command's shown subcommands. */
 const choicesOf = async (cmd: CommandDef): Promise<string> =>
@@ -32,11 +32,12 @@ export const renderHelp = async <T extends ArgsDef, P extends ArgsDef>(
   const above: CommandDef | undefined =
     parent?.meta === undefined ? undefined : { meta: parent.meta };
   const usage = await renderUsage(shown, above);
-  if (cmd.subCommands === undefined) return usage;
+  const globals = `GLOBAL OPTIONS\n\n${GLOBAL_FLAGS.map(f => `  ${f.name}  ${f.description}`).join("\n")}`;
+  if (cmd.subCommands === undefined) return `${usage}\n\n${globals}`;
   const choices = await choicesOf(shown);
-  return usage
+  return `${usage
     .replace(` [OPTIONS] ${choices}`, ` <command> [flags]`)
-    .replace(` ${choices}`, ` <command> [flags]`);
+    .replace(` ${choices}`, ` <command> [flags]`)}\n\n${globals}`;
 };
 
 /** Prints {@link renderHelp}'s usage, as citty prints its own. */

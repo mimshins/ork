@@ -23,7 +23,6 @@ import {
   updateCachePath,
   writeUpdateCache,
 } from "@krapht/ork-core";
-import type { CheckResult } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
 import { ORK_NAME, ORK_VERSION } from "../__build_info__.ts";
@@ -35,30 +34,19 @@ import {
   socketCheck,
   triggerChecks,
 } from "../doctor/checks.ts";
+import { formatCheck } from "../doctor/format.ts";
 import { leaseChecks } from "../doctor/lease-checks.ts";
 import { projectChecks } from "../doctor/project-checks.ts";
 import { confirm, style, write, writeErr } from "../output.ts";
 import { projectAt } from "../project/place.ts";
+
+export { formatCheck };
 
 /** The root command's name, version and description. */
 export const ORK_META = {
   name: "ork",
   version: ORK_VERSION,
   description: "Orchestrate Claude agents on your machine",
-};
-
-const MARK: Record<CheckResult["status"], string> = {
-  ok: style("green", "✓"),
-  warn: style("yellow", "!"),
-  fail: style("red", "✗"),
-  skip: style("dim", "-"),
-};
-
-export const formatCheck = (result: CheckResult): string[] => {
-  const line = `${MARK[result.status]} ${result.name.padEnd(20)} ${result.detail}`;
-  return result.hint === undefined
-    ? [line]
-    : [line, `  ${style("dim", result.hint)}`];
 };
 
 export const doctor = defineCommand({
@@ -129,7 +117,7 @@ const agreed = (yes: boolean, command: string): Promise<boolean> => {
     write(`Run it yourself: ${command}\nor run ork upgrade --yes.`);
     return Promise.resolve(false);
   }
-  return confirm(`Run ${style("bold", command)}? [y/N] `);
+  return confirm(`Run ${command}?`);
 };
 
 export const upgrade = defineCommand({

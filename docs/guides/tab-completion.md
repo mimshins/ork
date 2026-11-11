@@ -3,7 +3,8 @@
 Press Tab after `ork` to complete commands, flags and the values you would
 otherwise copy from `ork ps`: workflow names, run ids, node ids and the ids of
 open decisions. It works in zsh, bash and fish. Ork prints the script; you put
-it where your shell loads it. Ork never edits your shell's files.
+it where your shell loads it. Ork never edits your shell's files. `--plain`
+(plain output, [the terminal](./terminal.md)) completes with every command.
 
 ## Turn it on
 

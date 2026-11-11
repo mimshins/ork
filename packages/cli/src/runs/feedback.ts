@@ -15,6 +15,9 @@ import {
 } from "@krapht/ork-core";
 
 import { style } from "../output.ts";
+import { chip } from "../term/chips.ts";
+import { cut, widthOf } from "../term/layout.ts";
+import { type Term, termOf } from "../term/mode.ts";
 import { ago } from "./format.ts";
 
 export type FoundItem =
@@ -58,14 +61,27 @@ const about = (item: FeedbackItem): string => `${item.target}/${item.kind}`;
 export const formatFeedbackItems = (
   items: readonly FeedbackItem[],
   now: number = Date.now(),
+  term: Term = termOf(process.stdout),
 ): string[] => {
   if (items.length === 0) return ["No feedback yet."];
   const width = Math.max(...items.map(i => about(i).length));
   return items.map(item => {
-    const status =
-      item.status === "new" ? "" : ` ${style("dim", `[${item.status}]`)}`;
+    const mark =
+      item.status === "new"
+        ? ""
+        : term.rich
+          ? ` ${chip(term, item.status.toUpperCase(), item.status === "dismissed" ? "muted" : "accent")}`
+          : ` ${style("dim", `[${item.status}]`)}`;
     const times = `${String(item.count)}×`.padStart(4);
-    return `${style("dim", item.id)} ${times} ${style(SEVERITY_STYLE[item.severity], about(item).padEnd(width))}  ${item.title}${status} ${style("dim", `· ${ago(item.lastSeen, now)}`)}`;
+    const when = ` ${style("dim", `· ${ago(item.lastSeen, now)}`)}`;
+    // Rich, the title gives way so the line fits the screen.
+    const room =
+      term.width -
+      (item.id.length + 1 + times.length + 1 + width + 2) -
+      widthOf(mark) -
+      widthOf(when);
+    const title = term.rich ? cut(item.title, Math.max(8, room)) : item.title;
+    return `${style("dim", item.id)} ${times} ${style(SEVERITY_STYLE[item.severity], about(item).padEnd(width))}  ${title}${mark}${when}`;
   });
 };
 

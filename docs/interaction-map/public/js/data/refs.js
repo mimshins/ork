@@ -242,6 +242,15 @@ export const CLI = {
     "ADR-066: experiments, off by default",
   ),
   upgrade: d("packages/cli/src/commands/install.ts", "Code: `ork upgrade`"),
+  terminal: d(
+    "specs/cli/terminal.md",
+    "Spec: the terminal kit, `--plain` and the prompts",
+  ),
+  terminalCode: d(
+    "packages/cli/src/term/select.ts",
+    "Code: the terminal kit's select prompt",
+  ),
+  terminalGuide: d("docs/guides/terminal.md", "Guide: the terminal"),
   updates: d(
     "specs/cli/updates.md",
     "Spec: the new-version notice and upgrade",

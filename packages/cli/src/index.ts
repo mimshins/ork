@@ -33,6 +33,7 @@ export * from "./project/place.ts";
 export * from "./project/register.ts";
 export * from "./project/worktrees.ts";
 export * from "./run/format.ts";
+export * from "./run/format-outcome.ts";
 export * from "./run/format-result.ts";
 export * from "./run/node.ts";
 export * from "./run/origin.ts";

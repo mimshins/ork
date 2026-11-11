@@ -105,7 +105,7 @@ ork validate
 ```
 
 ```
-✓ .ork/workflows/hello.ork.yaml (3 nodes, 1 edge, starts at lead)
+ OK  .ork/workflows/hello.ork.yaml (3 nodes, 1 edge, starts at lead)
 Walked 3 ways through: 2 succeed, 1 fails. See each with `ork validate --paths`.
 ```
 
@@ -140,9 +140,9 @@ say, each tool call, worktrees being created and merged, and each result. Then:
   branches from it.
 - The worker works in its own worktree, on branch `ork/<run>/worker`. When it
   passes, Ork merges its branch into the leader's.
-- The gate asks on the terminal. Press Enter for the recommended answer, or type
-  a number or an option's id; Enter again skips the optional note. `reject` ends
-  the run as succeeded too; nothing is undone (step 5 throws it away).
+- The gate asks on the terminal. Press Enter for the recommended answer, or move
+  with ↑/↓ for another (`n` adds a note; [`--plain`](../guides/terminal.md) asks
+  the numbered way). `reject` ends the run as succeeded too (step 5).
 - The run summary shows the status, the total cost, and the worktrees left for
   you, with their branches and paths.
 

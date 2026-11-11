@@ -38,6 +38,8 @@ runs and worktrees in plain words.
   per node, limits, and what you spent.
 - [The example workflows](./guides/examples.md): what each one does, how to
   download it, and how to run it.
+- [The terminal](./guides/terminal.md): keys in questions, colors and chips,
+  `--verbose`, and plain output (`--plain`, `NO_COLOR`) for screen readers.
 - [Tab completion](./guides/tab-completion.md): commands, flags, run ids and
   node ids completed in zsh, bash and fish.
 

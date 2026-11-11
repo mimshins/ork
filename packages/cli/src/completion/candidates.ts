@@ -59,6 +59,7 @@ const flagSection = (position: Position): Section => ({
           ]
         : []),
     ]),
+    { value: "--plain", description: "Plain output, no color or redraw" },
     { value: "--help", description: "Show this command's help" },
   ],
 });

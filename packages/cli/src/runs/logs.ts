@@ -13,7 +13,7 @@ import {
 } from "@krapht/ork-core";
 
 import { style } from "../output.ts";
-import { formatRunEvent } from "../run/format.ts";
+import { createView, formatRunEvent } from "../run/format.ts";
 
 export type LogOptions = {
   /** Only this node's events. */
@@ -27,6 +27,7 @@ export type LogOptions = {
 /** Turns stored events into lines, keeping the state a transcript needs. */
 export const createLogPrinter = (options: LogOptions) => {
   const tools = new Map<string, string>();
+  const view = createView();
   let width = 8;
   return (stored: StoredEvent): string[] => {
     const { event } = stored;
@@ -42,6 +43,7 @@ export const createLogPrinter = (options: LogOptions) => {
       tools,
       false,
       options.verbose === true || options.node !== undefined,
+      view,
     );
   };
 };

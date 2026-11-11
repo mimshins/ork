@@ -91,6 +91,9 @@ Plan:
 Go ahead? [y/N]
 ```
 
+On a terminal the last line is a `Go ahead?` with `Yes` and `No` (press `y` or
+`n`); the `[y/N]` form above is what `--plain`, a pipe or `NO_COLOR` print.
+
 It commits nothing: review the result with `git status` and commit it yourself.
 If anything is already where a file would go, or a run of the project is live,
 it moves nothing and says why. `--dry-run` only shows the plan; `--yes` skips

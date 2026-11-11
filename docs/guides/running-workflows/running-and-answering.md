@@ -60,7 +60,13 @@ browser view it is the "Use this machine's Claude setup" box.
 
 ## Reading the transcript
 
-Each line starts with the node's id. A shortened example:
+On a terminal each event starts with a chip for its node, a different color per
+node and the same on every line; a tool call is one short line,
+`Bash  first line`, with `+N lines` when it had more (add `--verbose` for each
+call whole). A path inside the node's worktree shows relative to it, and the
+agent's words wrap under a hanging indent. A shortened example, as you see it
+with `--plain`, in a pipe or with `NO_COLOR`, where each line starts with the
+node's id instead of a chip ([the terminal](../terminal.md)):
 
 ```
 ▸ run 5e0c9b2a of csv-export (starts at builder)
@@ -89,6 +95,9 @@ nodes or handled a failure still `succeeded`; the counts say what it left out. A
 warning names each node that never ran but had messages waiting, which nobody
 read.
 
+The summary starts with an `OK`, `FAIL` or `WAIT` chip (`WAIT` is a run that
+stopped short; its status says why).
+
 The exit code is 0 when the run succeeded and 1 otherwise, so `ork run` works in
 scripts. Ctrl-C stops the run and its sessions.
 
@@ -102,22 +111,30 @@ Four things can ask you something during a run:
 - A **loop** that used all its rounds: stop, one more round, or go on (asked of
   the leader that owns the loop instead, while it is working).
 
-For a question, the options are listed with the recommended one marked: press
-Enter to take it, or type a number or an option's id. For a permission, the
-prompt shows the tool and a preview of its input; type `y` to allow it, anything
-else denies it.
+A question shows a card: an `ASK` chip, the node's chip, the question, and its
+context dimmed. The options are a list with the recommended one marked and
+chosen: press Enter to take it, move with ↑/↓ (or `j`/`k`, `1`–`9`, `Home`,
+`End`) and press Enter to take another, `n` to add a note, `d` to read the whole
+context. Once answered, the card collapses to one line. For a permission, the
+prompt shows the tool and a preview of its input; press `y` to allow it, `n` or
+Esc to deny it. The full key list is in [the terminal](../terminal.md). With
+`--plain`, `NO_COLOR` or no terminal, a question is numbered instead: Enter
+takes the recommended option, or type a number or an option's id, and a
+permission asks `Allow? [y/N]`.
 
-After a choice (or a denial), you can add a **note**: one line that goes to the
-run with your answer, such as what to change when you answer `revise`. Press
-Enter to skip it. A gate passes the note on to the next nodes as
+You can add a **note**: one line that goes to the run with your answer, such as
+what to change when you answer `revise`. Press `n` before you choose (after,
+with `--plain`, where Enter skips it); after a denial the note line comes up by
+itself. A gate passes the note on to the next nodes as
 `{{nodes.<gate>.output.note}}`, and an agent that called `ask_user` reads it
 with your choice. While the note line waits, the question is still open, so
 another terminal or a gate's timeout can still answer it.
 
 You can also answer from **any other terminal** with `ork decide`: it lists the
-open questions of this project's running runs and asks them in turn. Whichever
-answers first wins; the other prompt goes away, and the transcript says who
-answered.
+open questions of this project's running runs and asks them in turn, each as the
+card above (`n of m` says where you are). `q` or Esc leaves a question for
+later, and `--verbose` shows each question's whole context. Whichever answers
+first wins; the other prompt goes away, and the transcript says who answered.
 
 ```sh
 ork decide                          # answer them one by one
@@ -134,10 +151,11 @@ with `--rating`, it notes how that node went, as [feedback](../feedback.md), and
 the run never sees it.
 
 A gate can give a **document** to read beside its question, such as a whole
-spec. A document of 40 lines or fewer is printed before the question. A longer
-one is offered instead: `Document: 120 lines. Type d to read it.` Type `d` at
-the prompt to read it, then answer. It stays plain text in a terminal, and
-`--list` marks these decisions `+document`.
+spec. On a terminal, press `d` to read it, then answer. With `--plain` or no
+terminal, a document of 40 lines or fewer is printed before the question, and a
+longer one is offered instead: `Document: 120 lines. Type d to read it.` Type
+`d` at the prompt to read it, then answer. It stays plain text in a terminal,
+and `--list` marks these decisions `+document`.
 
 `--workflow <name>` keeps only that workflow's decisions, with a run id too if
 you give one. A permission's command shows as you would run it, up to 4,000

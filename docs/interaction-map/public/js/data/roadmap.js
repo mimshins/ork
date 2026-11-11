@@ -1095,6 +1095,18 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "terminal-look",
+        title: "A terminal look: one kit for every command",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). One terminal kit with no dependency: colored chips, a stable color per node, wrap and cut, aligned tables, and select, text and yes-or-no prompts on arrow keys that redraw only their own lines and collapse to one line. `ork decide` is a card, `ork run`'s transcript has node chips and short tool lines (`--verbose` whole), and the listings and checks use chips and columns. Not a terminal, `NO_COLOR`, the new `--plain` and `ORK_PLAIN=1` keep plain output and numbered prompts. Left: only tool lines are cut to the width, a live `ork chat` asks line by line, and a screen-reader pass over `--plain` is not done (L249 to L255).",
+        docs: [
+          "specs/cli/terminal.md",
+          "docs/guides/terminal.md",
+          "specs/gaps.md#limits",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",

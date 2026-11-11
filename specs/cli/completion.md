@@ -26,10 +26,12 @@ and its subcommands, with the ones loaded on use resolved. Each command has its
 name, description, aliases, public flags (name, description, whether it takes a
 value, its aliases, an enum's options, and `--no-<name>` for a boolean on by
 default) and positionals, in the order it defines them. A flag whose description
-starts with `Internal:` is left out of both. A subcommand whose definition is
-the same as one listed before it is an alias of that one (`wt` of `worktrees`);
-a command with `meta.hidden` (`__complete`) is in neither. A new command or flag
-shows up in both with no change to this code.
+starts with `Internal:` is left out of both. The global `--plain` flag
+([terminal](./terminal.md)) is offered with every command's flags, and `--help`
+lists it. A subcommand whose definition is the same as one listed before it is
+an alias of that one (`wt` of `worktrees`); a command with `meta.hidden`
+(`__complete`) is in neither. A new command or flag shows up in both with no
+change to this code.
 
 ## ork completion
 

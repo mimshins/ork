@@ -24,6 +24,7 @@ import {
 } from "@krapht/ork-core";
 
 import { ORK_NAME, ORK_VERSION } from "../__build_info__.ts";
+import { plainEnv } from "../term/mode.ts";
 
 /** Set in the background copy of `ork` that only runs the check. */
 export const UPDATE_CHILD_ENV = "ORK_UPDATE_CHECK_CHILD";
@@ -105,7 +106,7 @@ export const showUpdateNotice = (
     if (cache === null || latest === null) return;
     const text = updateNotice(latest, ORK_VERSION);
     process.stderr.write(
-      `\n${styleText("yellow", text, { stream: process.stderr })}\n`,
+      `\n${plainEnv() ? text : styleText("yellow", text, { stream: process.stderr })}\n`,
     );
     writeUpdateCache(file, {
       ...cache,

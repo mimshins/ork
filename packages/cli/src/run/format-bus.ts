@@ -5,7 +5,9 @@
 
 import type { RunEvent } from "@krapht/ork-core";
 
-import { style } from "../output.ts";
+import { chip, CHIP_LABELS } from "../term/chips.ts";
+import type { Term } from "../term/mode.ts";
+import { createView, styler } from "./view.ts";
 
 /** The first line of a message body, cut to fit one terminal line. */
 export const firstLine = (body: string): string => {
@@ -23,7 +25,9 @@ export const formatBusEvent = (
     | { type: `link.${string}` }
     | { type: `call.${string}` }
   >,
+  term: Term = createView().term,
 ): string[] => {
+  const style = styler(term);
   if (event.type === "claim.taken") {
     return [style("dim", `⚑ claimed ${event.resource}`)];
   }
@@ -52,7 +56,7 @@ export const formatBusEvent = (
   if (event.type === "message.read") return [];
   if (event.type === "owner.asked") {
     return [
-      `${style(["yellow", "bold"], "?")} asked as the owner of ${event.about}: ${event.text} ${style("dim", `(${event.question})`)}`,
+      `${term.rich ? chip(term, CHIP_LABELS.ask, "accent") : style(["yellow", "bold"], "?")} asked as the owner of ${event.about}: ${event.text} ${style("dim", `(${event.question})`)}`,
     ];
   }
   if (event.type === "owner.answered") {

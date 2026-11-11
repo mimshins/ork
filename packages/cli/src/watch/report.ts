@@ -13,6 +13,9 @@ import type {
 import { DEFAULT_RUNS_PER_DAY } from "@krapht/ork-schema";
 
 import { plain, style } from "../output.ts";
+import { CHIP_LABELS, chip } from "../term/chips.ts";
+import { cut, widthOf } from "../term/layout.ts";
+import { type Term, termOf } from "../term/mode.ts";
 
 const STANDING: Readonly<Record<string, string>> = {
   live: "live",
@@ -21,18 +24,40 @@ const STANDING: Readonly<Record<string, string>> = {
   invalid: "off: has an error",
 };
 
-export const brokenLines = (broken: TriggersReport["broken"]): string[] =>
+/** A failure's mark: a `FAIL` chip when rich, else the red `✗`. */
+const failMark = (term: Term): string =>
+  term.rich ? chip(term, CHIP_LABELS.fail, "danger") : style("red", "✗");
+
+/** A warning's mark: a `WARN` chip when rich, else the yellow `!`. */
+const warnMark = (term: Term): string =>
+  term.rich ? chip(term, CHIP_LABELS.warn, "warn") : style("yellow", "!");
+
+/** A trigger's standing, rich: a chip and what it adds. */
+const standingChip = (term: Term, standing: string): string => {
+  const live = standing === "live";
+  const label = live ? "LIVE" : "OFF";
+  const text = STANDING[standing] ?? standing;
+  return `${chip(term, label, live ? "ok" : standing === "invalid" ? "danger" : "warn")}${live ? "" : ` ${text.replace(/^off: /u, "")}`}`;
+};
+
+export const brokenLines = (
+  broken: TriggersReport["broken"],
+  term: Term = termOf(process.stdout),
+): string[] =>
   broken.map(
     ({ file, message }) =>
-      `${style("red", "✗")} ${plain(file)}: ${plain(message)}`,
+      `${failMark(term)} ${plain(file)}: ${plain(message)}`,
   );
 
-export const statusLines = (report: TriggersReport): string[] => {
+export const statusLines = (
+  report: TriggersReport,
+  term: Term = termOf(process.stdout),
+): string[] => {
   const head =
     report.pid === undefined
       ? "ork watch isn't running. Start it with `ork watch`, or `ork watch --detach`."
       : `ork watch is running (process ${String(report.pid)}).`;
-  const broken = brokenLines(report.broken);
+  const broken = brokenLines(report.broken, term);
   if (report.triggers.length === 0) {
     return [head, ...broken, "No triggers in any registered project."];
   }
@@ -40,8 +65,10 @@ export const statusLines = (report: TriggersReport): string[] => {
     head,
     ...broken,
     ...report.triggers.flatMap(status => [
-      `${style("bold", plain(status.trigger))} ${style("dim", plain(`${status.project} → ${status.run}, every ${status.every}`))}`,
-      `  ${STANDING[status.standing] ?? status.standing}${status.lookedAt === undefined ? "" : `, last looked ${status.lookedAt}`}`,
+      term.rich
+        ? `${style("bold", plain(status.trigger))} ${style("dim", cut(plain(`${status.project} → ${status.run}, every ${status.every}`), Math.max(8, term.width - widthOf(status.trigger) - 1)))}`
+        : `${style("bold", plain(status.trigger))} ${style("dim", plain(`${status.project} → ${status.run}, every ${status.every}`))}`,
+      `  ${term.rich ? standingChip(term, status.standing) : (STANDING[status.standing] ?? status.standing)}${status.lookedAt === undefined ? "" : `, last looked ${status.lookedAt}`}`,
       ...(status.error === undefined
         ? []
         : [`  last look: ${plain(status.error)}`]),
@@ -49,7 +76,7 @@ export const statusLines = (report: TriggersReport): string[] => {
         ? []
         : [`  waiting: ${plain(status.held)}`]),
       ...status.problems.map(
-        problem => `  ${style("red", "✗")} ${plain(problem)}`,
+        problem => `  ${failMark(term)} ${plain(problem)}`,
       ),
     ]),
   ];
@@ -117,6 +144,7 @@ const STANDS: Readonly<Partial<Record<TriggerStanding, string>>> = {
 export const acceptLines = (
   item: ProjectTrigger,
   standing: TriggerStanding,
+  term: Term = termOf(process.stdout),
 ): string[] => [
   `${style("bold", plain(item.id))} ${style("dim", plain(item.place.root))}`,
   `  ${STANDS[standing] ?? standing}`,
@@ -125,13 +153,16 @@ export const acceptLines = (
   ...workflowLines(item),
   ...item.diagnostics
     .filter(({ severity }) => severity === "warning")
-    .map(({ message }) => `  ${style("yellow", "!")} ${plain(message)}`),
+    .map(({ message }) => `  ${warnMark(term)} ${plain(message)}`),
 ];
 
 /** The triggers `--accept` can't offer, so they aren't silently left out. */
-export const unacceptableLines = (item: ProjectTrigger): string[] => [
+export const unacceptableLines = (
+  item: ProjectTrigger,
+  term: Term = termOf(process.stdout),
+): string[] => [
   `${style("bold", plain(item.id))} ${style("dim", plain(item.place.root))}`,
   ...item.diagnostics
     .filter(({ severity }) => severity === "error")
-    .map(({ message }) => `  ${style("red", "✗")} ${plain(message)}`),
+    .map(({ message }) => `  ${failMark(term)} ${plain(message)}`),
 ];

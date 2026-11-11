@@ -19,7 +19,7 @@ export const goAhead = async (
     process.exitCode = 1;
     return false;
   }
-  if (await ask("Go ahead? [y/N] ")) return true;
+  if (await ask("Go ahead?")) return true;
   write("Cancelled.");
   return false;
 };

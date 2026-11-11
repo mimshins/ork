@@ -11,7 +11,7 @@ import { hasSkills, writeSkills } from "./init-skills.ts";
 import { formatLinks } from "./link.ts";
 
 const QUESTION =
-  "Add Ork's skills for Claude Code to .ork/skills/, so it writes workflows Ork accepts? Ork's Claude Code plugin has them too. [y/N] ";
+  "Add Ork's skills for Claude Code to .ork/skills/, so it writes workflows Ork accepts? Ork's Claude Code plugin has them too.";
 
 const HINT =
   "Ork's skills for Claude Code: add them here with `ork init --skills`, or install Ork's plugin in Claude Code (/plugin marketplace add mimshins/ork, then /plugin install ork@ork).";
