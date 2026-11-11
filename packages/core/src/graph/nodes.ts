@@ -15,6 +15,7 @@ import {
 
 import { error, warning } from "./diagnostics.ts";
 import { gatherProblems } from "./gather.ts";
+import { checkItemSettings } from "./item-settings.ts";
 import { checkScripts } from "./script.ts";
 import {
   declaredOutputOf,
@@ -56,7 +57,10 @@ export const checkNodes = (
   workflow: Workflow,
   edges: readonly CompiledEdge[],
 ): Diagnostic[] => {
-  const diagnostics: Diagnostic[] = checkScripts(workflow);
+  const diagnostics: Diagnostic[] = [
+    ...checkScripts(workflow),
+    ...checkItemSettings(workflow, edges),
+  ];
   for (const [id, node] of Object.entries(workflow.nodes)) {
     const path = ["nodes", id];
     const incoming = edges.filter(e => e.to === id);

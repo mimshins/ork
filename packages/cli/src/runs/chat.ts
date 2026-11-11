@@ -24,7 +24,7 @@ import {
 } from "@krapht/ork-core";
 import { readyDriver } from "@krapht/ork-integrations";
 import { namedMcpEntries } from "@krapht/ork-nodes";
-import type { Driver } from "@krapht/ork-schema";
+import { type Driver, isClaudeNode } from "@krapht/ork-schema";
 
 import { loadWorkflow } from "../commands/validate.ts";
 import { formatEvent } from "../run/format.ts";
@@ -121,6 +121,15 @@ export const resumeChat = async (
     ...(template === undefined ? {} : { template }),
   });
   if (!plan.ok) return plan.error;
+  // A model from `{{item}}` renders only with the item, which the plan lacks:
+  // the item resumes on the model its session recorded.
+  const declared = workflow.nodes[template ?? node];
+  const itemModel =
+    declared !== undefined &&
+    isClaudeNode(declared) &&
+    declared.model?.includes("{{") === true
+      ? session.model
+      : undefined;
   const servers = namedMcpEntries(run.project, plan.mcp);
   if (!servers.ok) return servers.error;
   // The session's own driver; one recorded without it takes the one ready.
@@ -144,6 +153,7 @@ export const resumeChat = async (
   const started = runtime.start(
     {
       ...plan.spec,
+      ...(itemModel === undefined ? {} : { model: itemModel }),
       ...servers.value,
       resume: session.sessionId,
       prompt: options.body,

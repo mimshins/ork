@@ -290,7 +290,7 @@ nodes:
       Read files with Read and search with Grep. When you do use Bash, keep to cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo, npm view and read-only git, with no awk, no find, no shell variables, no brace expansion and no paths outside this checkout: anything else stops the run to ask the maintainer.
 
       {{inputs.plan}}
-    model: opus
+    model: "{{item.model}}"
     effort: high
     isolation: readonly
     budgetUsd: 2
@@ -304,10 +304,13 @@ nodes:
     forEach:
       items:
         - concern: correctness
+          model: opus
           look: "bugs and behaviour: does the code do what the plan says, including failure paths, races, resume and edge cases."
         - concern: tests
+          model: sonnet
           look: does each acceptance criterion have a test that would fail without the change, and do the tests assert behaviour rather than the implementation.
         - concern: repository rules
+          model: sonnet
           look: "the rules in AGENTS.md: dependency direction, entry points, @file blocks, stale specs and user docs, the interaction map and roadmap, gaps, changesets, secrets, and AI attribution."
       maxParallel: 3
   ratify:

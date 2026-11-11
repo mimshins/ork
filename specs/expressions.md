@@ -50,9 +50,11 @@ path       := name ( "." name | "[" ( number | string ) "]" )*
   node's `env:` also reads `env.*`, and nothing else may
   ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)).
 - `item` and `index` are roots only while an item runs, in that node's own
-  `prompt`, `command`, `arguments`, `inputs`, `env`, `cwd` and `ref`. Everywhere
-  else, as in an edge's `when:`, a bare `item` or `index` stays a field of
-  `output`, so existing conditions read what they read before.
+  `prompt`, `command`, `arguments`, `inputs`, `env`, `cwd` and `ref`, and, on a
+  Claude node, `model` and `effort`, reading only `item`
+  ([an item's own model and effort](./scheduler/for-each.md#an-items-own-model-and-effort)).
+  Everywhere else, as in an edge's `when:`, a bare `item` or `index` stays a
+  field of `output`, so existing conditions read what they read before.
 - A `forEach.from` is a template that is exactly one path, and evaluates to the
   value itself, not to text, so a list stays a list
   ([evaluate.ts](../packages/core/src/expr/evaluate.ts), `templateValue`).

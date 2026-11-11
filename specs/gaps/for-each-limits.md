@@ -64,3 +64,16 @@ what was left simpler. The one real run on each driver is [C12](../gaps.md).
   reruns every item, so `build`'s three reviewers dropped the
   `coverage: partial` round. What a reviewer didn't read is in its `unchecked`,
   at the `ratify` and `decide` gates, and doesn't hold the run back.
+- **L262 · An item's own model is checked by shape, and only `model` and
+  `effort` come from it.** Ork keeps no list of model names, so a written or
+  `from:` item's `model` is checked only to be one word with no space, brace or
+  quote; a name Claude Code doesn't know fails that item when its session
+  starts. `item` is the only thing a `model` or `effort` template reads (not
+  `index`, `inputs` or `nodes`), and `driver`, `budgetUsd`, `maxTurns` and the
+  other fields can't come from an item. Some session plans have no item to
+  render with, so a template there falls back to the defaults: `ork chat` on an
+  item resumes it on the model its session started on (the event records it),
+  but at the default effort, which no event records; `ork run --node` on a
+  fanned node, and an owner's fork that answers a question from an item, plan
+  without the item and take the default model and effort.
+  ([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort))

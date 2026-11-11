@@ -11,6 +11,7 @@ gathering itself, so no model turn is spent on either. The whole example is
 
 - [A list you write, or one a node reports](#a-list-you-write-or-one-a-node-reports)
 - [Reading the item](#reading-the-item)
+- [A model for each item](#a-model-for-each-item)
 - [Pace and failure](#pace-and-failure)
 - [What comes out](#what-comes-out)
 - [A list that is too long](#a-list-that-is-too-long)
@@ -89,6 +90,31 @@ is, anything else as JSON) and `ORK_INDEX`
 shell, so `$ORK_ITEM` is not expanded there, and redirects, pipes and `$( )`
 don't work: write `{{item}}`, which stays one argument. A backslash escapes the
 next character, so `\n` becomes `n`. For shell syntax, use `script:`.
+
+## A model for each item
+
+A Claude node's `model` and `effort` can read the item, so each item runs on its
+own model:
+
+```yaml
+nodes:
+  review:
+    type: claude.worker
+    prompt: "Review for {{item.concern}}."
+    model: "{{item.model}}"
+    forEach:
+      items:
+        - { concern: correctness, model: opus }
+        - { concern: tests, model: sonnet }
+```
+
+Only `{{item.…}}` works there, and only on a node with `forEach`; `ork validate`
+refuses `model: "{{index}}"`, a template on a node without `forEach`, and one in
+`defaults:`. It checks each written item: a model is one word, an `effort` is
+`low`, `medium`, `high`, `xhigh` or `max`. An item from `from:` is checked when
+it runs, and one with a bad value fails on its own. An empty value uses the
+default. `ork usage` shows each item's real model. `driver`, `budgetUsd` and
+`maxTurns` can't come from an item.
 
 ## Pace and failure
 

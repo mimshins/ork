@@ -21,6 +21,8 @@ export type NodeSession = {
   sessionId?: string;
   cwd?: string;
   driver?: Driver;
+  /** The model its session started on (an item's own, on a fanned node). */
+  model?: string;
   /** The node's own worktree, if it had one. */
   checkout?: Checkout;
 };
@@ -71,6 +73,8 @@ export const nodeSession = (
       session.sessionId = inner.sessionId;
       if (inner.cwd !== undefined) session.cwd = inner.cwd;
       if (inner.driver !== undefined) session.driver = inner.driver;
+      // Some drivers record no model (`""`); the plan's applies then.
+      if (inner.model !== "") session.model = inner.model;
     }
     if (inner.type === "session.finished" && inner.outcome.sessionId !== "") {
       session.sessionId = inner.outcome.sessionId;

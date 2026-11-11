@@ -102,8 +102,9 @@ export type Driver = z.infer<typeof DriverSchema>;
 export const ModelSchema = z.string().min(1);
 
 /** How hard the model thinks; Claude Code's own default when unset. */
+export const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
 export const EffortSchema = z
-  .enum(["low", "medium", "high", "xhigh", "max"])
+  .enum(EFFORTS)
   .describe("Reasoning effort. Default: Claude Code's for the model.");
 export type Effort = z.infer<typeof EffortSchema>;
 

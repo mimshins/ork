@@ -5,7 +5,7 @@
  */
 
 import { mkdtempSync, readFileSync } from "node:fs";
-import { getPriority, tmpdir } from "node:os";
+import { constants, getPriority, tmpdir } from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
@@ -63,6 +63,16 @@ const niceOf = async (priority: "low" | "normal"): Promise<number> => {
   return Number(run.stdout.trim());
 };
 
+/**
+ * A `low` child's priority: `PRIORITY_BELOW_NORMAL` below Ork's, held at
+ * `nice`'s lowest (20 on macOS, 19 elsewhere) when Ork already runs low.
+ */
+const lowered = (own: number): number =>
+  Math.min(
+    own + constants.priority.PRIORITY_BELOW_NORMAL,
+    process.platform === "darwin" ? 20 : 19,
+  );
+
 describe("spawnTool", () => {
   it("collects output and the exit code", async () => {
     const run = await spawnTool(
@@ -95,7 +105,7 @@ describe("spawnTool", () => {
 
   it("starts the program below Ork's priority under `low` only", async () => {
     const own = getPriority();
-    expect(await niceOf("low")).toBeGreaterThan(own);
+    expect(await niceOf("low")).toBe(lowered(own));
     expect(await niceOf("normal")).toBe(own);
   });
 

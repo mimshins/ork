@@ -40,13 +40,33 @@ const NotListSchema = z
     { message: LIST_RULE_HINT },
   );
 
+const NODE_EFFORT_HINT =
+  "expected low, medium, high, xhigh or max, or {{item.<field>}}";
+
+/**
+ * A Claude node's effort: a level, or on a `forEach` node a template reading
+ * its item (`{{item.effort}}`), which the compiler checks and each item
+ * renders.
+ */
+const NodeEffortSchema = z
+  .union(
+    [
+      EffortSchema,
+      z.string().regex(/\{\{.*\}\}/su, { error: NODE_EFFORT_HINT }),
+    ],
+    { error: NODE_EFFORT_HINT },
+  )
+  .describe(
+    "Reasoning effort, or {{item.<field>}} on a forEach node. Default: Claude Code's for the model.",
+  );
+
 /**
  * What an agent brings to the node it fills, and what a plain Claude node sets
  * itself. A node's own value wins over its agent's.
  */
 export const agentSettings = {
   model: ModelSchema.optional(),
-  effort: EffortSchema.optional(),
+  effort: NodeEffortSchema.optional(),
   driver: DriverSchema.optional(),
   skills: z
     .array(z.string())

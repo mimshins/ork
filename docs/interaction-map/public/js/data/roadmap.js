@@ -919,7 +919,7 @@ export const MILESTONES = [
         title: "A node once per item",
         status: "done",
         detail:
-          "Running a node for each item of a list from the workflow file (`forEach`, RFC-013, ADR-070), rather than leaving it to a leader's `spawn_worker`. Built: the fan-out and gather in the engine, resume per item, `ork tree` and `ork logs`, a fanned card with its progress and item rows in the Monitor, the Builder's `forEach` group, the guides and `examples/fan-out.ork.yaml`. Left: one real run on each driver (C12). It also settles L61: a resume hands parallel activations their results by position.",
+          "Running a node for each item of a list from the workflow file (`forEach`, RFC-013, ADR-070), rather than leaving it to a leader's `spawn_worker`. Built: the fan-out and gather in the engine, resume per item, `ork tree` and `ork logs`, a fanned card with its progress and item rows in the Monitor, the Builder's `forEach` group, the guides and `examples/fan-out.ork.yaml`. Left: one real run on each driver (C12). It also settles L61: a resume hands parallel activations their results by position. Each item can take its own `model` and `effort` from `{{item}}` (`build`'s review runs one Opus and two Sonnet reviewers).",
         docs: [
           "specs/scheduler/for-each.md",
           "decisions/ADR-070-for-each-field-group.md",

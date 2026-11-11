@@ -30,7 +30,7 @@ import type {
   SessionSpec,
   ToolRules,
 } from "../runtime/types.ts";
-import { AGENT_TOOL, renderBrief, subagentsOf } from "./brief.ts";
+import { AGENT_TOOL, modelOf, renderBrief, subagentsOf } from "./brief.ts";
 import { namedDriver } from "./driver.ts";
 import { harnessInstructions } from "./harness.ts";
 import type { Brief, Checkout, NodeItem, NodeOutput } from "./types.ts";
@@ -179,6 +179,9 @@ export const planNodeSession = (
     };
   }
 
+  const models = modelOf(node, defaults, options);
+  if (!models.ok) return { ok: false, error: models.error };
+
   const warnings: string[] = [];
   const brief = renderBrief(
     node.prompt,
@@ -248,10 +251,8 @@ export const planNodeSession = (
     // A session restricted to some tools still needs the one subagents use.
     spec.tools.only?.push(AGENT_TOOL);
   }
-  const model = node.model ?? defaults.model;
-  if (model !== undefined) spec.model = model;
-  const effort = node.effort ?? defaults.effort;
-  if (effort !== undefined) spec.effort = effort;
+  if (models.model !== undefined) spec.model = models.model;
+  if (models.effort !== undefined) spec.effort = models.effort;
   const maxTurns = node.maxTurns ?? defaults.maxTurns;
   if (maxTurns !== undefined) spec.maxTurns = maxTurns;
   const budgets = [

@@ -16,6 +16,8 @@ import {
   openStore,
   pendingDecisions,
   type RunRecord,
+  type SessionPorts,
+  type SessionSpec,
   tellLiveRun,
 } from "@krapht/ork-core";
 import { createCliRuntime } from "@krapht/ork-runtime";
@@ -47,6 +49,33 @@ const WORKFLOW = [
   "    when: choice == 'ship'",
   "",
 ].join("\n");
+
+/** A fanned reviewer whose items run on their own models. */
+const REVIEW = [
+  "schemaVersion: 1",
+  "name: review",
+  "defaults: { model: haiku }",
+  "nodes:",
+  "  review:",
+  "    type: claude.worker",
+  "    isolation: shared",
+  '    prompt: "Review {{item.concern}}"',
+  '    model: "{{item.model}}"',
+  "    forEach:",
+  "      maxParallel: 1",
+  "      items:",
+  "        - { concern: correctness, model: opus }",
+  "        - { concern: tests, model: sonnet }",
+  "",
+].join("\n");
+
+/** Each session start's node and model, in order. */
+const startedModels = (events: ReturnType<EventStore["events"]>) =>
+  events.flatMap(({ event }) =>
+    event.type === "node.event" && event.event.type === "session.started"
+      ? [[event.id, event.event.model]]
+      : [],
+  );
 
 const fake = () => Promise.resolve(createCliRuntime({ bin: FAKE_CLAUDE }));
 
@@ -164,6 +193,36 @@ describe("ork chat", () => {
     );
   });
 
+  it("resumes a node with no model of its own without naming one", async () => {
+    const run = start();
+    await ship(run);
+    await run.done;
+    const specs: SessionSpec[] = [];
+    const watched = async () => {
+      const runtime = await fake();
+      return {
+        ...runtime,
+        start: (spec: SessionSpec, ports: SessionPorts) => {
+          specs.push(spec);
+          return runtime.start(spec, ports);
+        },
+      };
+    };
+    expect(
+      await resumeChat({
+        store: run.store,
+        run: runOf(run.store),
+        node: "ship",
+        body: "Again",
+        runtime: watched,
+        driverChecks: openCodeReady,
+        human: gateWaits,
+        out: () => {},
+      }),
+    ).toBeNull();
+    expect(specs.map(spec => spec.model)).toEqual([undefined]);
+  });
+
   it("resumes an item of a fanned node as the node it is of", async () => {
     const run = start();
     await ship(run);
@@ -209,5 +268,48 @@ describe("ork chat", () => {
       }),
     ).toBeNull();
     expect(out).toContain("  Working on: Again (resuming fake-1)");
+  });
+
+  it("resumes each item of a fanned node on the model it ran on", async () => {
+    const dir = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-chat-")));
+    writeFileSync(path.join(dir, "review.ork.yaml"), REVIEW);
+    const store: EventStore = openStore(":memory:");
+    const run = await runWorkflowFile({
+      file: "review.ork.yaml",
+      cwd: dir,
+      inputs: [],
+      inPlace: true,
+      json: false,
+      runtime: fake,
+      driverChecks: openCodeReady,
+      drivers: standInDrivers,
+      human: gateWaits,
+      store,
+      home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
+      intervalMs: 60_000,
+      out: () => {},
+      err: () => {},
+    });
+    expect(run.result?.status).toBe("succeeded");
+    const record = runOf(store);
+    const chatTo = (node: string) =>
+      resumeChat({
+        store,
+        run: record,
+        node,
+        body: "Look again",
+        runtime: fake,
+        driverChecks: openCodeReady,
+        human: gateWaits,
+        out: () => {},
+      });
+    expect(await chatTo("review.0")).toBeNull();
+    expect(await chatTo("review.1")).toBeNull();
+    expect(startedModels(store.events(record.id, 0))).toEqual([
+      ["review.0", "opus"],
+      ["review.1", "sonnet"],
+      ["review.0", "opus"],
+      ["review.1", "sonnet"],
+    ]);
   });
 });

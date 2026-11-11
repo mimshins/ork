@@ -142,6 +142,12 @@ hints, only on a fanned node.
 - **Not offered** in `instructions`, `context` or `skills`: their hint says
   nothing of it. Typed there it is `item.outside`.
 - **Not fanned:** no hint mentions `item` or `index`, anywhere.
+- **`model` and `effort`** on a Claude node may read `{{item.<field>}}` only,
+  not `{{index}}`
+  ([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort)).
+  Their hint does not mention it.
+- **A templated `effort`** (`{{item.effort}}`) shows as a text field, kept as
+  typed; a level shows as a choice.
 - **In the group,** under the kind select, one line: "Items are `<id>.0` to
   `<id>.n`. Their results gather into `results`, `statuses` and `count`."
 
@@ -173,6 +179,10 @@ warning").
 | `forEach.undeclared`  | List from                         | warning |
 | `item.outside`        | the field that reads it           | error   |
 | `item.field`          | the field that reads it           | error   |
+| `model.template`      | Model                             | error   |
+| `effort.template`     | Effort                            | error   |
+| `model.item`          | the node's card only              | error   |
+| `effort.item`         | the node's card only              | error   |
 | `forEach.continue`    | Isolation                         | error   |
 | `forEach.unreached`   | Owner                             | error   |
 | `forEach.owner-order` | Owner                             | error   |
@@ -180,10 +190,12 @@ warning").
 | `forEach.channel`     | Messages, with the workflow's own | error   |
 
 `forEach.channel` has the channel's path, not the node's, so no card counts it.
-Each problem keeps its icon and words; color is not the signal. With the
-Builder's choices, `forEach.order`, `forEach.not-list` and `forEach.undeclared`
-can occur only for a path written outside the Builder; an empty `from` shows
-`forEach.from-path` until a list is chosen.
+`model.item` and `effort.item` have the item's path
+(`nodes.<id>.forEach.items.<n>`), so no field shows them: only the node's card
+counts them. Each problem keeps its icon and words; color is not the signal.
+With the Builder's choices, `forEach.order`, `forEach.not-list` and
+`forEach.undeclared` can occur only for a path written outside the Builder; an
+empty `from` shows `forEach.from-path` until a list is chosen.
 
 ## Keys, names and tokens
 

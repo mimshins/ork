@@ -146,8 +146,9 @@ build:
 
 - `forEach: { items: [a, b] }` takes a list written in the file instead.
 - `{{item}}` and `{{index}}` work only in a node with `forEach`, in `prompt`,
-  `command`, `arguments`, `inputs`, `env` and `ref`. A program also gets
-  `ORK_ITEM` and `ORK_INDEX`.
+  `command`, `arguments`, `inputs`, `env` and `ref`, and `{{item.<field>}}` in a
+  Claude node's `model` and `effort`. A program also gets `ORK_ITEM` and
+  `ORK_INDEX`.
 - The next node reads `items`, `results` (each item's output, `summary`,
   `branch`), `statuses` and `count`: `{{nodes.build.output.results}}`,
   `when: "all(statuses, 'pass')"`. Items follow no edges; the node does.

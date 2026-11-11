@@ -181,3 +181,31 @@ describe("the messages for a forEach that is wrong", () => {
     ).toEqual([]);
   });
 });
+
+describe("a Claude node's effort", () => {
+  it.each(['"high"', '"{{item.effort}}"'])("takes %s", effort => {
+    expect(
+      parses(`{ type: claude.worker, prompt: Go, effort: ${effort} }`),
+    ).toBe(true);
+  });
+
+  it("refuses a value that is neither a level nor a template", () => {
+    expect(
+      messages("{ type: claude.worker, prompt: Go, effort: hard }"),
+    ).toEqual([expect.stringContaining("low, medium, high, xhigh or max")]);
+  });
+
+  it("takes only a level in defaults", () => {
+    expect(
+      parseWorkflow(
+        [
+          "schemaVersion: 1",
+          "name: t",
+          'defaults: { effort: "{{item.effort}}" }',
+          "nodes:",
+          "  n: { type: claude.worker, prompt: Go }",
+        ].join("\n"),
+      ).ok,
+    ).toBe(false);
+  });
+});

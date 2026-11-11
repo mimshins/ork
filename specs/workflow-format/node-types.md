@@ -100,7 +100,11 @@ _Part of [Workflow file format](../workflow-format.md)._
 Claude nodes and `defaults` take a `model` (`opus`, `sonnet`, `haiku` or a full
 model id) and an `effort` (`low`, `medium`, `high`, `xhigh`, `max`); a node's
 own value wins, then `defaults`, then Claude Code's default for the model. A
-spawned worker takes its template's.
+spawned worker takes its template's. On a node with `forEach`, either may be a
+template reading the item, such as `model: "{{item.model}}"`, so each item runs
+on its own model; elsewhere, and in `defaults`, a template is refused
+([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort)).
+No `schemaVersion` changed.
 
 Claude nodes and `defaults` (the workflow's or `.ork/project.yaml`'s) take a
 `driver`: `claude-code`, `open-code` or `command-code`

@@ -8,7 +8,7 @@
  */
 
 import { mkdtempSync, readFileSync } from "node:fs";
-import { getPriority, tmpdir } from "node:os";
+import { constants, getPriority, tmpdir } from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
@@ -115,6 +115,16 @@ const priorityOf = async (priority: Priority): Promise<number> => {
   return Number(readFileSync(file, "utf8"));
 };
 
+/**
+ * A `low` child's priority: `PRIORITY_BELOW_NORMAL` below Ork's, held at
+ * `nice`'s lowest (20 on macOS, 19 elsewhere) when Ork already runs low.
+ */
+const lowered = (own: number): number =>
+  Math.min(
+    own + constants.priority.PRIORITY_BELOW_NORMAL,
+    process.platform === "darwin" ? 20 : 19,
+  );
+
 describe("a session's heavy Bash call", () => {
   it("waits for a slot past the window, resumes once it is taken, and frees it after", async () => {
     const ledger = ledgerOf(1);
@@ -182,7 +192,7 @@ describe("the heavy hook", () => {
 
 describe("a session's priority", () => {
   it("starts below Ork's under `low`, and as Ork's under `normal`", async () => {
-    expect(await priorityOf("low")).toBeGreaterThan(getPriority());
+    expect(await priorityOf("low")).toBe(lowered(getPriority()));
     expect(await priorityOf("normal")).toBe(getPriority());
   });
 });

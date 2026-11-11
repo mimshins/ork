@@ -15,7 +15,10 @@ items, [resuming per item](./resuming-and-events.md#resuming-a-run), item
 `ork logs` and the `ork run` transcript show items
 ([CLI](../cli/running-and-runs.md)), and the Monitor and the Builder show fanned
 nodes ([graph](../ui/graph.md), [Monitor](../ui/panels-runs-and-monitor.md),
-[Builder](../ui/panels-builder-for-each.md)). Contract:
+[Builder](../ui/panels-builder-for-each.md)). Each item's own `model` and
+`effort` from `{{item}}` are built
+([item-settings.ts](../../packages/core/src/graph/item-settings.ts),
+[tests](../../packages/nodes/test/item-models.test.ts)). Contract:
 [RFC-013](../../rfcs/archived/RFC-013-for-each.md).
 
 A node with `forEach` runs once per item of a list, with no model turn spent on
@@ -38,6 +41,26 @@ fanning out or gathering.
 - **A loop round** resolves the list again and reruns every item. Item `build.i`
   in round two is round two of that id, so `session: resume` resumes its
   session.
+
+## An item's own model and effort
+
+A Claude node's `model` and `effort` may be a template reading `item`
+(`{{item.model}}`), so one fanned node runs its items on different models, as
+`build`'s `review` runs one Opus reviewer and two Sonnet ones. The plan renders
+them per item, before the budget check and the driver fit check, so those see
+the item's real model; the session and `ork usage` show it too.
+
+- **Only a `forEach` node, reading only `item`.** `ork validate` refuses a
+  template on a node without `forEach`, one reading `index`, `inputs` or
+  `nodes`, and one in `defaults.model` or `defaults.effort`.
+- **A written item is checked when validated:** its model is a non-empty name
+  with no space, brace or quote, and its effort is a level. An item from `from:`
+  is checked when it runs, and one with a bad value fails that item with the
+  message, not the node's other items.
+- **An empty render** (a missing or empty field) falls back to the node's
+  default, then `defaults`, then Claude Code's.
+- **Not from an item:** `driver`, `budgetUsd`, `maxTurns` and every other field
+  ([L262](../gaps/for-each-limits.md)).
 
 ## Pacing and failure
 

@@ -428,15 +428,24 @@
             "minLength": 1
           },
           "effort": {
-            "type": "string",
-            "enum": [
-              "low",
-              "medium",
-              "high",
-              "xhigh",
-              "max"
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "xhigh",
+                  "max"
+                ],
+                "description": "Reasoning effort. Default: Claude Code's for the model."
+              },
+              {
+                "type": "string",
+                "pattern": "\\{\\{.*\\}\\}"
+              }
             ],
-            "description": "Reasoning effort. Default: Claude Code's for the model."
+            "description": "Reasoning effort, or {{item.<field>}} on a forEach node. Default: Claude Code's for the model."
           },
           "driver": {
             "type": "string",
@@ -680,15 +689,24 @@
                 "minLength": 1
               },
               "effort": {
-                "type": "string",
-                "enum": [
-                  "low",
-                  "medium",
-                  "high",
-                  "xhigh",
-                  "max"
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high",
+                      "xhigh",
+                      "max"
+                    ],
+                    "description": "Reasoning effort. Default: Claude Code's for the model."
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "\\{\\{.*\\}\\}"
+                  }
                 ],
-                "description": "Reasoning effort. Default: Claude Code's for the model."
+                "description": "Reasoning effort, or {{item.<field>}} on a forEach node. Default: Claude Code's for the model."
               },
               "driver": {
                 "type": "string",
@@ -1226,15 +1244,24 @@
                 "minLength": 1
               },
               "effort": {
-                "type": "string",
-                "enum": [
-                  "low",
-                  "medium",
-                  "high",
-                  "xhigh",
-                  "max"
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high",
+                      "xhigh",
+                      "max"
+                    ],
+                    "description": "Reasoning effort. Default: Claude Code's for the model."
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "\\{\\{.*\\}\\}"
+                  }
                 ],
-                "description": "Reasoning effort. Default: Claude Code's for the model."
+                "description": "Reasoning effort, or {{item.<field>}} on a forEach node. Default: Claude Code's for the model."
               },
               "driver": {
                 "type": "string",
@@ -1827,15 +1854,24 @@
                 "minLength": 1
               },
               "effort": {
-                "type": "string",
-                "enum": [
-                  "low",
-                  "medium",
-                  "high",
-                  "xhigh",
-                  "max"
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high",
+                      "xhigh",
+                      "max"
+                    ],
+                    "description": "Reasoning effort. Default: Claude Code's for the model."
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "\\{\\{.*\\}\\}"
+                  }
                 ],
-                "description": "Reasoning effort. Default: Claude Code's for the model."
+                "description": "Reasoning effort, or {{item.<field>}} on a forEach node. Default: Claude Code's for the model."
               },
               "driver": {
                 "type": "string",

@@ -48,13 +48,12 @@ with parsed conditions), the entry nodes, and the declared message channels.
   warning when nothing declares it, or, for a tool's field read outside `json`,
   naming `output.json.<field>`) and to a node that runs before
   (`forEach.order`). `{{item}}` and `{{index}}` are read only in a fanned node's
-  `prompt`, `command`, `arguments`, `inputs`, `env` and `ref` (`item.outside`,
-  also for `instructions`, `context`, `skills`, `before:`, `verify:` and
-  `notify:`), and `{{item.<field>}}` must name a field the declared item shape
-  or every static entry has (`item.field`; nothing is checked when the shape is
-  `{ list: {} }`). A `messages` channel can't name a fanned node
-  (`forEach.channel`). Elsewhere, such as a `when:`, a bare `item` is still a
-  field of the node's output.
+  `prompt`, `command`, `arguments`, `inputs`, `env` and `ref`, and a Claude
+  node's `model` and `effort` (`item` only) (`item.outside`, also for
+  `instructions`, `context`, `skills`, `before:`, `verify:` and `notify:`), and
+  `{{item.<field>}}` must name a field the item shape or every static entry has
+  (`item.field`; none is checked for `{ list: {} }`). Elsewhere, as in a
+  `when:`, a bare `item` is a field of `output`.
 - **Values in conditions:** an edge's or a `notify:` rule's `when:` that
   compares a field with `==`, `!=`, or `any`, `all`, `count` or `contains` on a
   join's `statuses`, is checked against
@@ -147,6 +146,10 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `forEach.owner-order`    | error    | a child with `forEach` merges into an owner that starts only after it            |
 | `item.outside`           | error    | `{{item}}` or `{{index}}` outside the templates of a node with `forEach`         |
 | `item.field`             | error    | `{{item.<field>}}` names a field the item shape or static entries lack           |
+| `model.template`         | error    | `model` is a template off a fanned node, or reads more than `item`               |
+| `effort.template`        | error    | `effort` is a template off a fanned node, or reads more than `item`              |
+| `model.item`             | error    | a written item's `model` is empty or has a space, brace or quote                 |
+| `effort.item`            | error    | a written item's `effort` is not `low`, `medium`, `high`, `xhigh` or `max`       |
 | `ref.undeclared`         | warning  | a field of a tool's or MCP call's JSON that no `output.schema` declares          |
 | `ref.json`               | error    | `output.json` of a tool node without `output: { format: json }`                  |
 | `env.reserved`           | error    | an `env:` key starting `ORK_`                                                    |

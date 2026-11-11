@@ -15,7 +15,7 @@ limits:
 nodes:
   plan:
     type: claude.worker
-    prompt: "Split this goal into at most 6 independent tasks, each one a change that can be made without the others: {{inputs.goal}}"
+    prompt: "Split this goal into at most 6 independent tasks, each one a change that can be made without the others: {{inputs.goal}}. Give each task a model: opus for a hard one, sonnet for a routine one."
     isolation: readonly
     output:
       schema:
@@ -23,12 +23,14 @@ nodes:
           list:
             title: string
             detail: string
+            model: string
   build:
     type: claude.worker
     prompt: |-
       Do this one task, and only this one. Others are doing the rest.
       Task {{index}}: {{item.title}}
       {{item.detail}}
+    model: "{{item.model}}"
     isolation: worktree
     forEach:
       from: "{{nodes.plan.output.tasks}}"
