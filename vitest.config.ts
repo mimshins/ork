@@ -1,7 +1,8 @@
 /**
  * @file Vitest configuration: where the packages' and tools' tests live. The
  *   UI's tests (`.tsx`) run in a DOM (jsdom); the rest run in Node. `HOME` is a
- *   temp folder, so no test reaches the developer's own `~/.ork/state.db`.
+ *   temp folder, so no test reaches the developer's own `~/.ork/state.db`, and
+ *   the caller's `ORK_PLAIN` and `NO_COLOR` are dropped.
  */
 
 import { mkdtempSync, rmSync } from "node:fs";
@@ -11,6 +12,11 @@ import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 const HOME = mkdtempSync(path.join(tmpdir(), "ork-test-home-"));
+
+// The caller's terminal settings stay out of the tests: an `ork run --plain`
+// (or NO_COLOR) around `pnpm check` would change what the CLI's tests see.
+delete process.env["ORK_PLAIN"];
+delete process.env["NO_COLOR"];
 process.once("exit", () => {
   rmSync(HOME, { recursive: true, force: true });
 });
