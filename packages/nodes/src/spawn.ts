@@ -81,8 +81,7 @@ export const spawnTool: ToolRunner = (
       env: { ...withoutIdentity(process.env), ...env },
       stdio: ["ignore", "pipe", "pipe", "pipe"],
     });
-    // shortcut: set just after the start, before `sh` starts the program in
-    // practice; a wrapper (`nice`) would close the gap if it ever shows.
+    // Only without `nice` (Windows); `startAt` started it under `nice` otherwise.
     lowerChild(priority, child.pid);
     const fd3 = child.stdio[3];
     if (fd3 instanceof Readable) {

@@ -56,14 +56,16 @@ export const startAt = (
 };
 
 /**
- * Lowers a started child's priority for `low`, best effort; what it starts
- * later inherits it.
+ * Lowers a started child's priority for `low` where {@link startAt} had no
+ * `nice` to start it under (Windows), best effort; what it starts later
+ * inherits it. Under `nice` it does nothing: `nice` lowers relative to the
+ * priority it finds, so lowering here too could land first and the two add up.
  */
 export const lowerChild = (
   priority: Priority | undefined,
   pid: number | undefined,
 ): void => {
-  if (priority !== "low" || pid === undefined) return;
+  if (priority !== "low" || pid === undefined || existsSync(NICE)) return;
   try {
     setPriority(pid, constants.priority.PRIORITY_BELOW_NORMAL);
   } catch {
