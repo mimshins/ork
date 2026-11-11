@@ -1111,7 +1111,7 @@ export const MILESTONES = [
         title: "Smooth runs: less CPU, and a machine that stays cool",
         status: "active",
         detail:
-          "Built, waiting to land (it becomes done with its commit). Projects name their `heavy` commands: a node with `verify:` may not run them in its session, and each takes one of 2 machine-wide slots (`ORK_HEAVY_SLOTS`) around Ork's tool commands and a Claude Code session's Bash calls, with the wait shown in `ork ps`, the logs and the UI. Sessions and tool commands start at a lower priority (`priority: low` by default). Builders verify with `pnpm check:changed`, vitest uses half the cores inside a run, the overview stream stopped re-reading every event, and `ork usage --by node` shows each tool command's CPU. Left: sessions' own CPU, OpenCode's and Command Code's Bash calls, and a re-measured build (L256 to L259, L261).",
+          "Built, waiting to land (it becomes done with its commit). Projects name their `heavy` commands: a node with `verify:` may not run them in its session, and each takes one of 2 machine-wide slots (`ORK_HEAVY_SLOTS`) around Ork's tool commands and a Claude Code session's Bash calls, with the wait shown in `ork ps`, the logs and the UI. Sessions and tool commands start at a lower priority (`priority: low` by default). Builders verify with `pnpm check:changed`, vitest uses half the cores inside a run, the overview stream stopped re-reading every event, and `ork usage --by node` shows each tool command's CPU. A build measured again spent about 75% less on checks. Left: sessions' own CPU, and OpenCode's and Command Code's Bash calls (L256 to L259).",
         docs: [
           "specs/machine.md",
           "docs/guides/running-workflows/several-runs.md",

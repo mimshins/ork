@@ -25,8 +25,3 @@ was left simpler:
 - **L259 · Nothing but a waiter sweeps the slot ledger.** A record whose process
   died is taken over when another command waits for a slot, but `ork doctor`
   doesn't look at `~/.ork/slots` or list its holders.
-- **L261 · The saving is not measured yet.** The plan's check, a build like run
-  `029a5164` measured again (full suites per run from about 25 to the leader's
-  rounds and the publish, and CPU-hours), needs a real run, and is written into
-  the benchmark notes when one is done. Carried, unplanned: it waits on the
-  world.

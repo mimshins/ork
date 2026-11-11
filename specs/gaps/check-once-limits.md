@@ -29,12 +29,13 @@ cheaper suite beside it. What was left simpler:
   real clocks, and the CLI and server fixtures make a repository per test.
 - **L268 · The UI's jsdom setup is not reduced.** Its files still pay jsdom's
   start for each.
-- **L269 · The savings are not fully measured.** On a loaded 12-core machine the
+- **L269 · The suite is not measured idle.** On a loaded 12-core machine the
   full suite went from 571 to 303 CPU-s
-  ([numbers](../../benchmarks/method.md#the-suites-cost)); the target, under 200
-  CPU-s on an idle machine, and a build measured again against the run that
-  motivated this (full checks per run, CPU per tool command) need an idle
-  machine and a real run. Carried, unplanned.
+  ([numbers](../../benchmarks/method.md#the-suites-cost)); the plan's target,
+  under 200 CPU-s on an idle machine, needs an idle machine. A build measured
+  again cut its checks by about 75%
+  ([numbers](../../benchmarks/method.md#a-build-measured-again)). Carried,
+  unplanned.
 - **L270 · A path marked `assume-unchanged` or `skip-worktree` is not hashed
   again.** The key starts from a copy of the real index, so an edit to such a
   path can give a false hit.

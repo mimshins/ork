@@ -2,9 +2,11 @@
 
 Status: **Built**: `ork once`, `once: true` on a `verify:` and on a tool node,
 the `verify.skipped` event, and this repository's `pnpm check` and
-`pnpm check:changed` through it. The suite itself is cheaper (below). Not
-measured yet: the suite under 200 CPU-s on an idle machine, and a build run
-against the one that motivated this ([L269](./gaps/check-once-limits.md)). Code:
+`pnpm check:changed` through it. The suite itself is cheaper (below), and a
+build measured again spent about 75% less on checks
+([numbers](../benchmarks/method.md#a-build-measured-again)). Not measured yet:
+the suite under 200 CPU-s on an idle machine
+([L269](./gaps/check-once-limits.md)). Code:
 [key](../packages/core/src/once/key.ts),
 [run](../packages/core/src/once/run.ts),
 [store](../packages/core/src/once/store.ts),

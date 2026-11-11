@@ -105,13 +105,26 @@ left for other runs, went down by about 47%.
 | `packages/core/test/watch.test.ts` (fake timers)          |  9.7 s | 0.3 s |
 | `packages/core/test/walk-fuzz.test.ts` (100 runs locally) |  7.6 s | 1.4 s |
 
+### A build measured again
+
+Ork's checks in three build runs, from the CPU each tool command records (user
+plus system, children included); agents' own Bash runs record no CPU, so they
+are counted, at about what each check costs:
+
+| Build run                     | Ork's checks | Agents' own checks            |     Total |
+| ----------------------------- | -----------: | ----------------------------- | --------: |
+| `f9d00e18` (before)           |      7,439 s | 11 × `check:changed` (~350 s) | ~11,300 s |
+| `a02a8077` (before)           |      5,826 s | 16 × `check:changed` (~350 s) | ~11,400 s |
+| `7df12f48` (after, 268 files) |      2,326 s | 25 × `check:fast` (~13 s)     |  ~2,650 s |
+
+About 75% less, on the largest change of the three. Three things did it: agents
+in checked nodes run `check:fast` and leave the suites to Ork, a full check
+costs about 280 CPU-s in a run instead of about 600, and the publish hit the
+cache (1 CPU-s), since the same files had passed. `f9d00e18`'s Ork figure
+includes three failed publish attempts.
+
 ### Not measured
 
 - **The idle target.** The plan's target was under 200 CPU-s on an idle machine,
-  from about 330. Nothing here was measured idle.
-- **A build measured again.** The plan's other check, a build like run
-  `f9d00e18` measured again (full checks per run, CPU per tool command), needs a
-  real build run, and has not been done. The figures that motivated the change
-  (about 1.6 CPU-hours of checks in that build) are not repeated here.
-
-Both are in the [gaps register](../specs/gaps/check-once-limits.md) (L269).
+  from about 330. Nothing here was measured idle; it is in the
+  [gaps register](../specs/gaps/check-once-limits.md) (L269).

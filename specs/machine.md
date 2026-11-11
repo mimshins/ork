@@ -2,8 +2,8 @@
 
 Status: **Built** for Ork's tool commands and for a Claude Code session's Bash
 calls; OpenCode and Command Code are not covered yet
-([L257](./gaps/machine-limits.md)). The build run that measures the saving is
-still to do ([L261](./gaps/machine-limits.md)). Code:
+([L257](./gaps/machine-limits.md)). A build measured again spent about 75% less
+on checks ([numbers](../benchmarks/method.md#a-build-measured-again)). Code:
 [slot ledger](../packages/core/src/machine/slot-ledger.ts),
 [heavy rules](../packages/core/src/project/heavy.ts),
 [a node's port](../packages/core/src/run/machine.ts),
