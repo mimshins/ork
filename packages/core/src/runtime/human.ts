@@ -29,6 +29,12 @@ export type HumanQuestion = {
   context?: string;
   /** What to read to answer, apart from the short question; only gates set it. */
   document?: string;
+  /**
+   * Waits for a person: with no one at the terminal it is not answered there
+   * (no recommended choice, no "no one"), and waits for `ork decide` or the UI.
+   * Gates set it; an agent's `ask_user` doesn't, so a session never hangs.
+   */
+  waits?: boolean;
   /** Withdraws the question, e.g. when a gate's timeout answers it. */
   signal?: AbortSignal;
   onNote?: NoteTaker;

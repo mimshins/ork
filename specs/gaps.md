@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L272, and the next chore is
+closes it. Ids are never reused: the next limit is L273, and the next chore is
 C15. At a review, each open entry is closed (built or fixed, then removed), kept
 (moved into its area's spec, then removed here), or carried to a roadmap item,
 or to none yet (unplanned).
@@ -269,6 +269,15 @@ review:
   `call.started`, so nothing starts following it; its questions wait in
   `ork decide` or the UI, and `ork attach <run>` shows the whole tree
   ([calls](./scheduler/calls.md)).
+
+Found resuming build run `cc7c1c29` (2026-11-12), to decide at the next review:
+
+- **L272 · A message queued for a node that won't run again waits silently.**
+  `ork chat` to a node between sessions queues the message "for its next
+  session"; if the run goes on without running that node again, nothing says the
+  message was never read, and a later `ork resume` runs the node again to
+  deliver it ([messaging](./messaging.md)). Telling the sender (and the run's
+  summary) when a queued message's node has finished for good would close it.
 
 ## Chores
 

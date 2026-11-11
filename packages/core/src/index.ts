@@ -137,6 +137,7 @@ export * from "./worktree/manager.ts";
 export * from "./worktree/names.ts";
 export * from "./worktree/patch.ts";
 export * from "./worktree/remove.ts";
+export * from "./worktree/resumed.ts";
 export * from "./worktree/upstream.ts";
 export * from "./worktree/words.ts";
 export * from "./worktree/workspace.ts";

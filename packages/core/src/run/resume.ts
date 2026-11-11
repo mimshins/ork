@@ -59,6 +59,8 @@ export type ResumeState = {
   mail: Mail;
   /** What the run has spent, which its budget and totals go on from. */
   earlier: EarlierSpend;
+  /** Where each node's last session worked, for the resumed workspace. */
+  places: Map<string, string>;
 };
 
 /** How a run ended that cut its working nodes off, rather than failing them. */
@@ -94,6 +96,7 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
   let ended: string | undefined;
   /** Nodes whose last activation did not finish well, and its session. */
   const unfinished = new Map<string, string>();
+  const places = new Map<string, string>();
 
   /** A new run of `id`'s `round` replaces what is recorded there and after. */
   const supersede = (id: string, round: number): void => {
@@ -144,6 +147,7 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
       }
       if (inner.type === "session.started") {
         current.sessionId = inner.sessionId;
+        if (inner.cwd !== undefined) places.set(event.id, inner.cwd);
       }
       if (inner.type === "session.finished" && inner.outcome.sessionId) {
         current.sessionId = inner.outcome.sessionId;
@@ -253,5 +257,6 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
     cutOff: cut ? unfinished : new Map<string, string>(),
     mail: mailOf(events),
     earlier: earlierSpend(events),
+    places,
   };
 };

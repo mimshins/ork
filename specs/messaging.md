@@ -173,8 +173,15 @@ The decision queue ([queue.ts](../packages/core/src/control/queue.ts)):
   and answers it by itself; so does a stopped run.
 - A run with no terminal (`ork run --detach`) waits for `ork decide`. A run
   whose stdin is not a terminal but that is not detached (a pipe, CI) keeps the
-  terminal channel's rule: tools denied, the recommended option taken. That rule
-  is for its own questions only: the runs it calls wait for `ork decide`.
+  terminal channel's rule for an agent's questions: tools denied, the
+  recommended option taken (or "no one", so a session never hangs). A
+  `human.gate`'s question is a person's call (`waits`), so it is never answered
+  there: it waits for `ork decide` or the UI, outside the terminal's
+  one-at-a-time queue. The rule is for a run's own questions only: the runs it
+  calls wait for `ork decide`.
+- A message queued for a node's next session (`ork chat` while it is between
+  sessions) is delivered when the node starts again; if the run never runs it
+  again, a resume does ([L272](./gaps.md)).
 - `ork decide` (in [CLI](./cli/running-and-runs.md#decisions-and-stopping))
   lists the open decisions of live runs and answers them; the UI inbox (M2)
   reads the same table.

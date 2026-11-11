@@ -491,6 +491,50 @@ describe("the terminal channel", () => {
       await human.permit({ nodeId: "n", toolName: "Bash", input: {} }),
     ).toMatchObject({ allow: false });
   });
+
+  it("leaves a gate's question to ork decide when no one is at the terminal", async () => {
+    const { human, said } = terminal([], false);
+    const withdraw = new AbortController();
+    const asked = human.ask({
+      nodeId: "ratify",
+      question: "Ratify?",
+      options: options3,
+      recommended: "a",
+      waits: true,
+      signal: withdraw.signal,
+    });
+    const later = new Promise<string>(resolve => {
+      setTimeout(() => {
+        resolve("still waiting");
+      }, 50);
+    });
+    const first = await Promise.race([asked, later]);
+    expect(first).toBe("still waiting");
+    expect(said.join("")).toContain("ratify waits for ork decide");
+    withdraw.abort(new Error("answered in ork decide"));
+    await expect(asked).rejects.toThrow("answered in ork decide");
+  });
+
+  it("asks the next question while a gate waits elsewhere", async () => {
+    const { human } = terminal([], false);
+    void human
+      .ask({
+        nodeId: "ratify",
+        question: "Ratify?",
+        options: options3,
+        waits: true,
+        signal: new AbortController().signal,
+      })
+      .catch(() => null);
+    expect(
+      await human.ask({
+        nodeId: "n",
+        question: "Which?",
+        options: options3,
+        recommended: "b",
+      }),
+    ).toBe("b");
+  });
 });
 
 const PIPELINE = [

@@ -62,6 +62,8 @@ export const gateExecutor: NodeExecutor = async context => {
     nodeId: context.id,
     question,
     options,
+    // A gate is a person's call: with no terminal it waits for `ork decide`.
+    waits: true,
     signal: withdraw.signal,
     onNote: given => {
       note = given;

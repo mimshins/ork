@@ -102,8 +102,9 @@ const parked = (signal: AbortSignal | undefined): Promise<never> =>
 
 /**
  * Answers permission prompts and `ask_user` questions on the terminal, one at a
- * time. Without a terminal it denies tools and leaves questions to the node. A
- * withdrawn prompt (answered elsewhere) rejects, which frees the turn.
+ * time. Without a terminal it denies tools and leaves questions to the node,
+ * but a gate's question (`waits`) waits for `ork decide` or the UI. A withdrawn
+ * prompt (answered elsewhere) rejects, which frees the turn.
  */
 export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
   let rl: Interface | undefined;
@@ -159,6 +160,18 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
     if (noted.kind === "interrupted") await parked(signal);
     if (noted.kind === "text" && noted.value !== "") onNote(noted.value);
   };
+  /** Says where a waiting question is answered, and waits until withdrawn. */
+  const waitElsewhere = (q: HumanQuestion): Promise<never> => {
+    say(
+      paint(
+        term(),
+        "muted",
+        `  no terminal; ${plain(q.nodeId)} waits for ork decide or ork ui`,
+      ),
+    );
+    return parked(q.signal);
+  };
+
   // Prompts from parallel tool calls wait for each other.
   const oneAtATime = <T>(work: () => Promise<T>): Promise<T> => {
     const result = turn.then(work);
@@ -167,65 +180,72 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
   };
 
   const asking = (q: HumanQuestion, place?: AskPlace): Promise<string | null> =>
-    oneAtATime(async () => {
-      const { signal } = q;
-      if (signal?.aborted === true)
-        throw new Error("the question was withdrawn");
-      const t = term();
-      const documentLines = q.document?.trimEnd().split("\n").length ?? 0;
-      const document = q.document === undefined ? undefined : clean(q.document);
-      const printed =
-        document !== undefined && documentLines <= SHORT_DOCUMENT_LINES;
-      const shownDocument = t.rich || !printed ? undefined : document;
-      const header = (tt: Term): string[] =>
-        cardLines(tt, q, place, io.verbose === true, shownDocument).lines;
-      const options: SelectOption[] = q.options.map(o => ({
-        id: o.id,
-        ...(o.label === undefined ? {} : { label: plain(o.label) }),
-        ...(o.description === undefined
-          ? {}
-          : { description: plain(o.description) }),
-      }));
-      // Plain prints a short document first and offers a long one; a card
-      // offers any document, and the context its lines cut.
-      const { moreContext } = cardLines(t, q, place, io.verbose === true);
-      const details = t.rich
-        ? [moreContext ? clean(q.context ?? "") : undefined, document]
-            .filter(part => part !== undefined)
-            .join("\n\n") || undefined
-        : printed
-          ? undefined
-          : document;
-      if (!io.interactive) {
-        for (const line of header(t)) say(line);
-        for (const line of plainOptions(options, q.recommended)) say(line);
-        const answer = q.recommended ?? NO_ONE_TO_ASK;
-        say(paint(t, "muted", `  no terminal; answered ${answer}`));
-        return answer;
-      }
-      const result = await select(kit, {
-        header,
-        options,
-        ...(q.recommended === undefined ? {} : { recommended: q.recommended }),
-        ...(details === undefined ? {} : { details }),
-        ...(!t.rich && details !== undefined
-          ? {
-              footer: [
-                `  Document: ${String(documentLines)} lines. Type d to read it.`,
-              ],
-            }
-          : {}),
-        note: q.onNote !== undefined,
-        notePrompt: NOTE_MESSAGE,
-        later: place !== undefined,
-        done: (answer, tt) => doneLine(tt, place, q.nodeId, answer),
-        ...(signal === undefined ? {} : { signal }),
-      });
-      if (result.kind === "interrupted") return parked(signal);
-      if (result.kind === "later") return null;
-      if (result.note !== undefined) q.onNote?.(result.note);
-      return result.id;
-    });
+    // A gate waits for `ork decide` or the UI when no one is here, outside the
+    // one-at-a-time queue, so the prompts after it don't wait behind it.
+    !io.interactive && q.waits === true
+      ? waitElsewhere(q)
+      : oneAtATime(async () => {
+          const { signal } = q;
+          if (signal?.aborted === true)
+            throw new Error("the question was withdrawn");
+          const t = term();
+          const documentLines = q.document?.trimEnd().split("\n").length ?? 0;
+          const document =
+            q.document === undefined ? undefined : clean(q.document);
+          const printed =
+            document !== undefined && documentLines <= SHORT_DOCUMENT_LINES;
+          const shownDocument = t.rich || !printed ? undefined : document;
+          const header = (tt: Term): string[] =>
+            cardLines(tt, q, place, io.verbose === true, shownDocument).lines;
+          const options: SelectOption[] = q.options.map(o => ({
+            id: o.id,
+            ...(o.label === undefined ? {} : { label: plain(o.label) }),
+            ...(o.description === undefined
+              ? {}
+              : { description: plain(o.description) }),
+          }));
+          // Plain prints a short document first and offers a long one; a card
+          // offers any document, and the context its lines cut.
+          const { moreContext } = cardLines(t, q, place, io.verbose === true);
+          const details = t.rich
+            ? [moreContext ? clean(q.context ?? "") : undefined, document]
+                .filter(part => part !== undefined)
+                .join("\n\n") || undefined
+            : printed
+              ? undefined
+              : document;
+          if (!io.interactive) {
+            for (const line of header(t)) say(line);
+            for (const line of plainOptions(options, q.recommended)) say(line);
+            const answer = q.recommended ?? NO_ONE_TO_ASK;
+            say(paint(t, "muted", `  no terminal; answered ${answer}`));
+            return answer;
+          }
+          const result = await select(kit, {
+            header,
+            options,
+            ...(q.recommended === undefined
+              ? {}
+              : { recommended: q.recommended }),
+            ...(details === undefined ? {} : { details }),
+            ...(!t.rich && details !== undefined
+              ? {
+                  footer: [
+                    `  Document: ${String(documentLines)} lines. Type d to read it.`,
+                  ],
+                }
+              : {}),
+            note: q.onNote !== undefined,
+            notePrompt: NOTE_MESSAGE,
+            later: place !== undefined,
+            done: (answer, tt) => doneLine(tt, place, q.nodeId, answer),
+            ...(signal === undefined ? {} : { signal }),
+          });
+          if (result.kind === "interrupted") return parked(signal);
+          if (result.kind === "later") return null;
+          if (result.note !== undefined) q.onNote?.(result.note);
+          return result.id;
+        });
 
   return {
     permit: ({ nodeId, toolName, input, signal, onNote }) =>

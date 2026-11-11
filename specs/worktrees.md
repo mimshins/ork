@@ -169,11 +169,14 @@ a node of that declared kind does:
 `ork resume` ([scheduler](./scheduler/resuming-and-events.md#resuming-a-run))
 adopts the worktrees the run left whose folders are still there, merged or not,
 instead of creating them again. An adopted worktree is also where its node
-worked, so a `readonly` or `continue` node after a node the resume replays still
-follows its input there, rather than working in the project root. A node that
-runs again after its worktree was removed checks its `ork/<run>/<node>` branch
-out again and brings it up to its owner's branch; new worktrees of root nodes
-branch from the project's current `HEAD`.
+worked, and a replayed node with no worktree of its own (a `readonly` reviewer,
+a fanned item) worked where its last session ran (its `session.started` `cwd`),
+when that is an adopted worktree. So a `readonly` or `continue` node after a
+node the resume replays still follows its input there, rather than working in
+the project root or a new worktree. A node that runs again after its worktree
+was removed checks its `ork/<run>/<node>` branch out again and brings it up to
+its owner's branch; new worktrees of root nodes branch from the project's
+current `HEAD`.
 
 ## ork worktrees
 

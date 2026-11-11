@@ -152,7 +152,11 @@ export const runIn = async (
       onEvent,
       ...(state === undefined
         ? {}
-        : { adopt: state.worktrees, known: state.branches }),
+        : {
+            adopt: state.worktrees,
+            places: state.places,
+            known: state.branches,
+          }),
     }),
     ...(state === undefined ? {} : { replay: createReplay(state.history) }),
   });

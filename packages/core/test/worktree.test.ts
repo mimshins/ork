@@ -32,6 +32,19 @@ const failingNode =
       ? Promise.resolve({ ok: false, output: { status: "fail" }, error: "no" })
       : executor(context);
 
+/** `executor`, starting a session in its folder first, as a driver does. */
+const sessioned =
+  (executor: NodeExecutor): NodeExecutor =>
+  context => {
+    context.emit({
+      type: "session.started",
+      sessionId: `s-${context.id}`,
+      model: "m",
+      cwd: context.cwd,
+    });
+    return executor(context);
+  };
+
 /** `executor`, except that `check` fails. */
 const failingCheck = (executor: NodeExecutor): NodeExecutor =>
   failingNode("check", executor);
@@ -328,6 +341,36 @@ describe("worktrees", () => {
     expect(again.result.status).toBe("succeeded");
     // lead was replayed, not prepared again: review still follows it.
     expect(cwds).toEqual({ review: worktreePath(root, "r1", "lead") });
+  });
+
+  it("resumes a continue node in the worktree a replayed readonly node used", async () => {
+    const root = repo();
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: review",
+        "nodes:",
+        "  lead: { type: claude.leader }",
+        "  review: { type: claude.worker, isolation: readonly }",
+        "  docs: { type: claude.worker, isolation: continue }",
+        "edges:",
+        "  - lead -> review",
+        "  - review -> docs",
+      ].join("\n"),
+    );
+    const { executor } = working({ lead: { files: { "src/a.ts": "a\n" } } });
+    const first = await runIn(
+      root,
+      graph,
+      sessioned(failingNode("docs", executor)),
+    );
+    expect(first.result.status).toBe("failed");
+
+    const { executor: second, cwds } = working({});
+    const again = await runIn(root, graph, sessioned(second), first.events);
+    expect(again.result.status).toBe("succeeded");
+    // review was replayed: its session's folder says where docs continues.
+    expect(cwds).toEqual({ docs: worktreePath(root, "r1", "lead") });
   });
 
   it("keeps a child whose merge conflicts, and tells the owner which files", async () => {

@@ -22,6 +22,7 @@ import {
   parseInputPairs,
   replayLoopAnswers,
   resolveInputs,
+  resumedOptions,
   placeFiles,
   runDirOf,
   type RunEvent,
@@ -200,12 +201,7 @@ export const runWorkflowFile = async (
           head: options.baseRef ?? options.resume?.settings.baseRef ?? base,
           inputs: inputs.inputs,
           onEvent,
-          ...(options.resume === undefined
-            ? {}
-            : {
-                adopt: options.resume.worktrees,
-                known: options.resume.branches,
-              }),
+          ...resumedOptions(options.resume),
         });
   const maskedNames = maskedNamesOfRun(workflow, place, projects);
   const executorOptions: Parameters<typeof builtinExecutors>[0] = {

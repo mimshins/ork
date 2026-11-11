@@ -10,8 +10,6 @@
  *   declared child it is an instance of.
  */
 
-import { existsSync } from "node:fs";
-
 import { isClaudeNode } from "@krapht/ork-schema";
 
 import type { CompiledGraph } from "../graph/types.ts";
@@ -40,6 +38,7 @@ import {
   type WorktreeEvent,
 } from "./handoff.ts";
 import type { NameInputs } from "./names.ts";
+import { type AdoptedWorktree, seedResumed } from "./resumed.ts";
 import { upstreamPlace } from "./upstream.ts";
 
 export type WorkspaceOptions = {
@@ -52,13 +51,9 @@ export type WorkspaceOptions = {
   inputs?: NameInputs;
   onEvent: (event: RunEvent) => void;
   /** Worktrees a resumed run left whose folders are still there. */
-  adopt?: readonly {
-    id: string;
-    path: string;
-    branch?: string;
-    snapshot?: string;
-    merged: boolean;
-  }[];
+  adopt?: readonly AdoptedWorktree[];
+  /** Where a resumed run's nodes last worked (their sessions' folders). */
+  places?: ReadonlyMap<string, string>;
   /** Branches this run created before (a resumed run), which it may reuse. */
   known?: readonly string[];
 };
@@ -81,14 +76,11 @@ export const createWorkspace = (options: WorkspaceOptions): Workspace => {
   const templateOf = new Map<string, string>();
   /** A `continue` node → the node whose worktree it works in this time. */
   const continued = new Map<string, string>();
-  for (const left of options.adopt ?? []) {
-    if (!existsSync(left.path)) continue;
-    const { id, merged: wasMerged, ...worktree } = left;
-    worktrees.set(id, worktree);
-    // A replayed node is never prepared again, so keep where it worked.
-    placeOf.set(id, worktree.path);
-    if (wasMerged) merged.add(id);
-  }
+  seedResumed(options.adopt ?? [], options.places ?? new Map(), {
+    worktrees,
+    placeOf,
+    merged,
+  });
   const nodeOf = (id: string) =>
     graph.nodes.get(templateOf.get(id) ?? id)?.node;
   const ownerOf = (id: string): string | undefined => nodeOf(id)?.parent;
