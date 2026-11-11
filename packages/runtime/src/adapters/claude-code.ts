@@ -15,7 +15,11 @@ import type { CliAdapter, HoldHook, OrkEndpoint } from "../adapter.ts";
 import type { HoldAnswer } from "../hold.ts";
 import { createSessionRuntime, type RunnerOptions } from "../session-runner.ts";
 import { ORK_SERVER, toolId } from "../tools/tool.ts";
-import { claudeUsage, decodeClaudeLine } from "./claude-code-events.ts";
+import {
+  claudeDecoder,
+  claudeUsage,
+  decodeClaudeLine,
+} from "./claude-code-events.ts";
 
 export type CliRuntimeOptions = RunnerOptions;
 
@@ -215,6 +219,7 @@ export const claudeCodeAdapter: CliAdapter = {
     input: userLine,
   },
   decode: decodeClaudeLine,
+  legDecoder: claudeDecoder,
   // The Command writes `--mcp-config` itself.
   mcp: {
     kind: "flag",

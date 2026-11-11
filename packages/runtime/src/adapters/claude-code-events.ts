@@ -1,7 +1,8 @@
 /**
  * @file The `claude-code` adapter's `EventDecoder` and `UsageReader`: maps the
  *   `claude` CLI's `stream-json` lines to Ork's runtime events, marks the
- *   result of a turn the hold hook deferred, and adds up a session's legs.
+ *   result of a turn the hold hook deferred, and adds up a session's legs. Its
+ *   leg decoder keeps a report the session handed in and then wrote past.
  */
 
 import {
@@ -14,7 +15,7 @@ import {
   type SessionUsage,
 } from "@krapht/ork-core";
 
-import type { Decoded, UsageReader } from "../adapter.ts";
+import type { Decoded, LegDecoder, UsageReader } from "../adapter.ts";
 import { errorEnd, sessionEnd } from "../session-end.ts";
 
 type Json = Record<string, unknown>;
@@ -199,6 +200,45 @@ const parseLine = (line: string): unknown => {
 export const decodeClaudeLine = (line: string): Decoded => {
   const message = parseLine(line);
   return { events: normalize(message), deferred: isDeferredResult(message) };
+};
+
+/** The tool `claude` hands a `--json-schema` report in with. */
+const REPORT_TOOL = "StructuredOutput";
+
+/**
+ * A leg's decoder that keeps the last report `claude` accepted (a
+ * `StructuredOutput` call whose result was not an error). When the session
+ * writes on after it, `claude`'s result can come without `structured_output`;
+ * the kept report is then the result's, so a session that reported is not read
+ * as one that didn't.
+ */
+export const claudeDecoder = (): LegDecoder => {
+  const calls = new Map<string, unknown>();
+  let accepted: unknown;
+  return {
+    decode: line => {
+      const message = parseLine(line);
+      for (const block of blocks(message)) {
+        if (block["type"] === "tool_use" && block["name"] === REPORT_TOOL) {
+          calls.set(str(block["id"]), block["input"]);
+        }
+        const id = str(block["tool_use_id"]);
+        if (block["type"] === "tool_result" && calls.has(id)) {
+          if (block["is_error"] !== true) accepted = calls.get(id);
+          calls.delete(id);
+        }
+      }
+      const kept =
+        isObject(message) &&
+        message["type"] === "result" &&
+        (message["structured_output"] ?? null) === null &&
+        accepted !== undefined
+          ? { ...message, structured_output: accepted }
+          : message;
+      return { events: normalize(kept), deferred: isDeferredResult(message) };
+    },
+    exit: () => [],
+  };
 };
 
 /**

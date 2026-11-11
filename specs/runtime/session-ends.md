@@ -70,6 +70,12 @@ kind. A decoder never leaves `end` unset, and `unknown` is the last resort.
 |                | a start that failed with a provider's words    | the classifier                                                |
 |                | any other failure to run                       | `driver_crashed`                                              |
 
+A `claude-code` session that hands in its report (`StructuredOutput`, accepted)
+and then writes on can end with a result that carries no `structured_output`.
+The adapter's leg decoder keeps the last accepted call's input and gives it to
+such a result, so the session ends with that report, not `no_report`; a call
+`claude` refused is not kept, and a result's own report wins.
+
 Node types that run no driver set their own ends, in the node's own code, with
 Ork's message and the program's (or server's) own text, scrubbed and capped, as
 the detail:
