@@ -39,20 +39,19 @@ export const followEvents = async (
 ): Promise<FollowEnd> => {
   // Changed from the callbacks, so not narrowed by the checks below.
   const seen = { seq: options.after ?? 0, finished: false };
-  // Ends the socket follow once the run has finished, rather than waiting for
-  // the run's process to close its socket.
-  const done = new AbortController();
   const emit = (stored: StoredEvent): void => {
     if (stored.seq <= seen.seq) return;
     seen.seq = stored.seq;
     onEvent(stored);
-    if (stored.event.type === "run.finished") {
-      seen.finished = true;
-      done.abort();
+    const { type } = stored.event;
+    if (type === "run.finished") seen.finished = true;
+    // `ork resume` keeps the run's id: a new go after an earlier end.
+    else if (type === "run.started" || type === "run.resumed") {
+      seen.finished = false;
     }
   };
   const aborted = (): boolean => options.signal?.aborted === true;
-  /** Takes what the store has; true once `run.finished` is among it. */
+  /** Takes what the store has; true once the run's latest go has finished. */
   const drain = (): boolean => {
     for (const stored of store.events(runId, seen.seq)) emit(stored);
     return seen.finished;
@@ -62,11 +61,17 @@ export const followEvents = async (
     if (drain()) return "finished";
     if (!options.follow) return "stored";
     if (aborted()) return "aborted";
+    // Ends the socket follow once the run has finished, rather than waiting
+    // for the run's process to close its socket.
+    const done = new AbortController();
     // oxlint-disable-next-line no-await-in-loop -- the socket, once; then the store catches up
     const via = await followSocket(
       socketPath(runId, options.home),
       seen.seq,
-      emit,
+      stored => {
+        emit(stored);
+        if (seen.finished) done.abort();
+      },
       options.signal === undefined
         ? done.signal
         : AbortSignal.any([options.signal, done.signal]),

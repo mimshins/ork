@@ -135,6 +135,8 @@ open questions of this project's running runs and asks them in turn, each as the
 card above (`n of m` says where you are). `q` or Esc leaves a question for
 later, and `--verbose` shows each question's whole context. Whichever answers
 first wins; the other prompt goes away, and the transcript says who answered.
+`ork attach <run>` asks them for one run and the runs it called
+([attaching to a run](./attaching-to-a-run.md)).
 
 ```sh
 ork decide                          # answer them one by one
@@ -178,12 +180,14 @@ questions take their recommended option, and a gate with a `timeout` takes its
 
 ```sh
 ork run release --detach        # prints the run id and returns
-ork logs 3f2a -f                # watch it live
-ork decide                      # its questions wait here
+ork attach 3f2a                 # follow it here and answer its questions
+ork logs 3f2a -f                # or only watch it live
+ork decide                      # its questions wait here too
 ork stop 3f2a                   # stop it from anywhere
 ```
 
-A detached run has no terminal, so its questions wait for `ork decide` (a gate
-with a `timeout` still takes its `default`). Its own output goes to
-`.ork/runs/<run>/output.log`. `ork stop` works on any running run, detached or
-not, as Ctrl-C does in its terminal.
+A detached run has no terminal, so its questions wait for `ork attach` or
+`ork decide` (a gate with a `timeout` still takes its `default`).
+[`ork attach`](./attaching-to-a-run.md) also follows the runs it called. Its own
+output goes to `.ork/runs/<run>/output.log`. `ork stop` works on any running
+run, detached or not, as Ctrl-C does in its terminal.

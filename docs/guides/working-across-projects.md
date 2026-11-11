@@ -87,8 +87,8 @@ outputs:
 ```
 
 The called run works under its own project's rules, agents and worktrees, keeps
-its own logs, and is an ordinary run: `ork logs`, `ork tree` and `ork decide`
-all take its id, which the caller's log prints.
+its own logs, and is an ordinary run: `ork logs`, `ork tree`, `ork attach` and
+`ork decide` all take its id, which the caller's log prints.
 
 - **`wait`** says when the node finishes: `run` when the run has ended, the
   default; `node` when a node you name has reported; `none` once it has started.
@@ -127,9 +127,12 @@ against the caller.
 finished. A called run that failed gets a retry the same way. Pause does not
 spread.
 
-**Its questions wait.** A called run has no terminal, so what it asks waits in
-`ork decide` or the Decisions panel of `ork ui`, even when the caller is in your
-terminal.
+**Its questions reach your terminal.** A foreground `ork run` shows the runs it
+calls, prefixed by the call (`plan › …`), and asks their questions on the same
+terminal, as `ork attach` does
+([attaching to a run](./running-workflows/attaching-to-a-run.md)). A detached
+caller has no terminal: its called runs' questions wait for `ork attach`,
+`ork decide` or the Decisions panel of `ork ui`.
 
 Calls nest up to 5 deep.
 

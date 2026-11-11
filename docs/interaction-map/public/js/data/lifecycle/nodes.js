@@ -101,7 +101,7 @@ export const NODES = [
       "Starts a run of a workflow file with its inputs, and follows it until it ends or you detach.",
     facts: [
       "Built: `ork run <wf>` runs the whole workflow, and `--node <id>` one Claude node on its own; `--input`, `--driver`, `--in-place` and `--json` work for both.",
-      "Built: `--detach` returns at once; `ork logs --follow`, `ork tree`, `ork decide`, `ork pause`, `ork continue` and `ork stop` reach it later.",
+      "Built: `--detach` returns at once; `ork attach`, `ork logs --follow`, `ork tree`, `ork decide`, `ork pause`, `ork continue` and `ork stop` reach it later.",
       "Built: before anything starts, it checks that the programs a workflow runs are installed, the variables it reads are set, and its MCP servers are in `.mcp.json`; integrations a workflow does not use are never needed.",
       "Built: nor does it start with a quota spent, if the workflow has a session or a call to spend it on.",
       "`--driver <id>` overrides every node's driver for this run. `software-factory` names `claude-code` in its `defaults`; a workflow that names none takes the driver `ork doctor` finds ready here, and says which in one line.",
@@ -237,7 +237,7 @@ export const NODES = [
     summary:
       "Questions waiting for you, from every node of every run, each with its options and a recommended answer.",
     facts: [
-      "Built: answered on the run's terminal, with `ork decide` from any other, or in the UI's Decisions panel; the first answer wins.",
+      "Built: answered on the run's terminal (the runs it called too), with `ork attach` or `ork decide` from any other, or in the UI's Decisions panel; the first answer wins.",
       "A gate with `timeout` and `default` answers itself when the time runs out.",
     ],
     see: [

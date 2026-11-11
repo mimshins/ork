@@ -100,7 +100,8 @@ export const NODES = [
       "Lists every open decision of this project's live runs and lets you answer each with its options; the recommended one is preselected.",
     facts: [
       "`ork decide <run>` limits it to one run, `--all` to every project; `--id … --choose …` answers without a prompt.",
-      "The first answer wins, whether from here or the run's own terminal.",
+      "The first answer wins, whether from here or the run's own terminal, or an `ork attach`.",
+      "`ork attach <run>` is the same card for one run and every run it called, followed live; Ctrl-C detaches and leaves the run going.",
       "`--say <text>` gives the answer a note, which goes to the run with it.",
       "`--note <text>` and `--rating good|bad` note how the node did, as your feedback, once the answer is taken.",
       "`--list` shows a question a leader passed on as `<node> via <leader>`.",
@@ -131,7 +132,7 @@ export const NODES = [
       "Every open decision across runs, answered with a click, a digit, or Enter on the card for the recommended one.",
       "An optional note box sends your words with the answer; keys typed in it stay in it.",
       "A card stays until the stream says it settled, and a refusal stays in it in the server's words.",
-      "Settled lists who answered, in the run's terminal, with `ork decide` or in `ork ui`, and what they said.",
+      "Settled lists who answered, in the run's terminal, with `ork attach` or `ork decide`, or in `ork ui`, and what they said.",
       'A question a leader passed on says "passed on by" the leader; one it answered is settled "by" the leader, "its owner".',
       "A decision reads as Markdown, never raw HTML, with long text folded and code blocks you can copy. A gate's document opens in a dialog.",
       "Filters by workflow and run, kept per browser; a Monitor control opens one run's decisions.",
@@ -307,7 +308,8 @@ export const NODES = [
       "Other processes write answers to the store and wake the run on its socket.",
       "An answer may carry a note, stored masked: a gate outputs it, `ask_user` returns it, a denied tool's message ends with it.",
       "With `questions: owner` on a leader, a child's `ask_user` goes first to a read-only fork of the leader's session, which answers it or passes it on with a note. Gates and permission prompts always come to you.",
-      "Each answer records who gave it: `terminal`, `decide`, `ui`, or `owner`, with the leader that answered named in `owner`.",
+      "Each answer records who gave it: `terminal` (the run's own terminal, a caller's, or `ork attach`), `decide`, `ui`, or `owner`, with the leader that answered named in `owner`.",
+      "A foreground `ork run` shows the runs it calls and asks their decisions on its own terminal, at any depth; a prompt is withdrawn when the decision is answered elsewhere.",
     ],
     see: [
       {

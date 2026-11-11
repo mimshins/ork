@@ -44,3 +44,10 @@ export const continueRefusal = (env = process.env): string | null =>
 /** Whether `ork ui` may print its sign-in link, which acts as the user. */
 export const mayShowSignIn = (env = process.env): boolean =>
   runMarkerIn(env) === null;
+
+/** Why `ork attach` will not answer here, or `null` when it may. */
+export const attachRefusal = (env = process.env): string | null =>
+  refusal(
+    "`ork attach` answers as you, so a program or an agent in a run cannot use it; `ork logs` still shows the run.",
+    env,
+  );

@@ -260,6 +260,15 @@ Found removing the Agent SDK driver
   after `--` to send it as text; reading each command's flags to tell the two
   apart waits for a report.
 
+Found building [`ork attach`](./cli.md) (2026-11-10), to decide at the next
+review:
+
+- **L262 · A foreground `ork resume` does not show or ask its called runs.** A
+  resumed caller adopts the runs it had called, and an adopted call emits no new
+  `call.started`, so nothing starts following it; its questions wait in
+  `ork decide` or the UI, and `ork attach <run>` shows the whole tree
+  ([calls](./scheduler/calls.md)).
+
 ## Chores
 
 - **C2 · Release pull requests run no CI.** Pull requests opened with the

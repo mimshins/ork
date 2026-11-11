@@ -37,6 +37,7 @@ export const HELP_GROUPS: readonly HelpGroup[] = [
     commands: [
       { name: "ps", short: "List this project's runs" },
       { name: "logs", short: "Print a run's transcript" },
+      { name: "attach", short: "Follow a run here and answer its questions" },
       { name: "tree", short: "Show a run's tree, tokens and cost" },
       { name: "usage", short: "Show what runs spent over time" },
       { name: "resume", short: "Continue a run that didn't succeed" },

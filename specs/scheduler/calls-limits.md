@@ -29,9 +29,6 @@ gaps review carried are open work in the [register](../gaps.md#limits).
 - **L58 · An activation cut off by a stop can tell its input twice.** A resumed
   caller gives a live called session the input again, in case it did not arrive.
   ([calls](./calls.md))
-- **L59 · A called run's questions have no terminal.** They wait in `ork decide`
-  or the UI's inbox even when the caller runs in a terminal, because the called
-  run is a background process. ([calls](./calls.md))
 - **L60 · A later activation that resumes a session waits for it.** Whatever its
   `wait`, a call whose node has reported blocks until the resumed session ends,
   since it runs in the caller's process. Its log shows the input as `you:`,

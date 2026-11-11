@@ -207,7 +207,6 @@ export const runWorkflowFile = async (
                 known: options.resume.branches,
               }),
         });
-
   const maskedNames = maskedNamesOfRun(workflow, place, projects);
   const executorOptions: Parameters<typeof builtinExecutors>[0] = {
     runtimeFor: driver => options.runtime(driver, placeFiles(place).runs),
@@ -291,6 +290,7 @@ export const runWorkflowFile = async (
   started.resolve(handle);
   options.onRun?.(handle);
   const result = await handle.done;
+  await ports.shown.end(result.status);
   clearOutputFiles(runDir, options.err);
   // A run that didn't succeed may be resumed, and go on from what was kept.
   if (result.status === "succeeded") clearStateFiles(runDir, options.err);

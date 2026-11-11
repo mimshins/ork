@@ -49,8 +49,9 @@ dependency, or otherwise involves real trade-offs):
 In this repository these steps are workflows in `.ork/workflows/`:
 `ork run start` recommends a route, asks you, and calls `rfc`, `plan` and
 `build`, and each also runs alone
-([ADR-072](./decisions/ADR-072-start-gateway.md)). Their questions wait in
-`ork decide` or the Decisions panel of `ork ui`.
+([ADR-072](./decisions/ADR-072-start-gateway.md)). Their questions are asked in
+the terminal that started `start`, or wait for `ork attach`, `ork decide` or the
+Decisions panel of `ork ui` when it is detached.
 
 The author may waive the RFC for a decision they make directly; the ADR then
 records the waiver and the options considered. Routine work, small changes and

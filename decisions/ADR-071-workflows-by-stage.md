@@ -1,6 +1,7 @@
 # ADR-071 — Ork's own process as staged workflows that ask the maintainer
 
-- **Status:** Accepted; amended by [ADR-072](./ADR-072-start-gateway.md)
+- **Status:** Accepted; amended by [ADR-072](./ADR-072-start-gateway.md),
+  [ADR-081](./ADR-081-attach-and-called-runs-in-the-terminal.md)
 - **Date:** 2026-11-09
 - **Topic:** process
 - **RFC:** waived — the maintainer decided this directly in a design review
@@ -52,7 +53,8 @@ or an RFC, design decisions, and publish gates.
   would move it to the wrong checkout ([L213](../specs/gaps.md#limits)).
 - **Forwarding called runs' questions to the caller's terminal.** Rejected for
   now: it needs a runtime change, and `ork decide` and the Decisions panel
-  already reach them.
+  already reach them. Done later, without a runtime change, by
+  [ADR-081](./ADR-081-attach-and-called-runs-in-the-terminal.md).
 
 ## Rationale
 
@@ -64,8 +66,10 @@ finished document.
 
 ## Consequences
 
-- A called run has no terminal, so `feature`'s questions wait in `ork decide` or
-  the Decisions panel of `ork ui`, even when `ork run feature` is in a terminal.
+- A called run has no terminal of its own, so its questions waited in
+  `ork decide` or the Decisions panel of `ork ui`, even when the caller was in a
+  terminal. A foreground caller now shows and asks them
+  ([ADR-081](./ADR-081-attach-and-called-runs-in-the-terminal.md)).
 - A call's clock keeps running while a called run waits on the maintainer (L55),
   so each call in `feature` sets its own 24-hour `timeout`, over the project's
   45-minute default, and `feature`'s limit is 72 hours.

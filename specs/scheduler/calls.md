@@ -73,3 +73,31 @@ holds no session and no worktree.
   between activations has its run brought back the same way and its links made
   again, since they ended with the caller; what its results already counted is
   not counted twice.
+- **Following a call chain.** `followRunTree`
+  ([code](../../packages/core/src/remote/follow-tree.ts),
+  [tests](../../packages/core/test/follow-tree.test.ts)) follows a run as
+  `ork logs -f` does and, for each `call.started` among its events, stored or
+  live, the called run too, at any depth, each once. Every event comes with its
+  run and its call path, the call node ids from the root (`[]`, `["plan"]`,
+  `["build", "review.1"]`). A called run's stored events come right after the
+  `call.started` that started it; live events come as they arrive. A run
+  attached to again after its caller was resumed is found by the `call.started`
+  stored before the resume. Following ends when the root ends (a run resumed
+  after an end, its own or a called one, is followed to its new end) or the
+  caller's signal aborts: it then reads what the called runs stored before the
+  root ended, unless aborted, and names those still running (a `wait: none`
+  call). No events are added; the reader decides what to show and ask.
+- **On the caller's terminal.** A foreground `ork run` (not `--detach`, not
+  `--json`) shows each run it calls, at any depth, as `ork attach` does
+  ([code](../../packages/cli/src/run/show-calls.ts),
+  [tests](../../packages/cli/test/run-calls-terminal.test.ts)): each
+  `call.started` follows the called run, its lines prefixed by the call path
+  (`plan › spec › …`), and its open decisions asked on the same terminal, one
+  prompt at a time with the caller's own, answered as `terminal`. With no one at
+  the terminal (stdin not a TTY) nothing of a called run is asked: one line says
+  to answer with `ork decide`. Ctrl-C, at any prompt, interrupts the caller,
+  which stops what it called. When the caller ends, a called run that still runs
+  stops being followed and gets `↳ run <id> still running · ork attach <id>`;
+  one the caller stopped (Ctrl-C, `ork stop`, its timeout) is followed up to 5 s
+  more, so its end shows. `ork resume` in the foreground does not show its
+  called runs ([L262](../gaps.md#limits)).

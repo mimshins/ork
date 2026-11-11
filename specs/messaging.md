@@ -141,10 +141,12 @@ The decision queue ([queue.ts](../packages/core/src/control/queue.ts)):
   like events), with `decision.opened` in the run's events, and the asking node
   waits.
 - The **first answer wins**: the run's own terminal (when it has one, with the
-  prompts below) races `ork decide` in any other terminal. The loser's prompt is
-  withdrawn, and `decision.answered` records the answer and who gave it
-  (`terminal`, `decide`, `ui` for the local server, or `owner` for a leader that
-  answered its child's question, named in `owner`).
+  prompts below) races `ork decide` in any other terminal, the UI, `ork attach`
+  and the terminal of a foreground run that called it, at any depth
+  ([calls](./scheduler/calls.md)). The loser's prompt is withdrawn, and
+  `decision.answered` records the answer and who gave it (`terminal`, also for
+  `ork attach` and a caller's terminal; `decide`; `ui` for the local server; or
+  `owner` for a leader that answered its child's question, named in `owner`).
 - **An answer may carry a note**: what the person said with it, trimmed (blank
   is none), masked, kept on the record (`note`; records from before notes have
   none) and in `decision.answered`. It goes back to whoever asked: a gate
@@ -171,7 +173,8 @@ The decision queue ([queue.ts](../packages/core/src/control/queue.ts)):
   and answers it by itself; so does a stopped run.
 - A run with no terminal (`ork run --detach`) waits for `ork decide`. A run
   whose stdin is not a terminal but that is not detached (a pipe, CI) keeps the
-  terminal channel's rule: tools denied, the recommended option taken.
+  terminal channel's rule: tools denied, the recommended option taken. That rule
+  is for its own questions only: the runs it calls wait for `ork decide`.
 - `ork decide` (in [CLI](./cli/running-and-runs.md#decisions-and-stopping))
   lists the open decisions of live runs and answers them; the UI inbox (M2)
   reads the same table.

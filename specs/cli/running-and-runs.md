@@ -85,8 +85,11 @@ with the built-in node types
   a question's prompt too.
 - `--detach` starts the same run in the background with no terminal and prints
   its id once it is recorded; its output goes to `.ork/runs/<run>/output.log`
-  and its questions wait for `ork decide`. Follow it with `ork logs <run> -f`.
-  Works with `--node` too.
+  and its questions wait for `ork decide` or `ork attach`. It prints
+  `ork attach <id> · ork logs <id> -f · ork tree <id> · ork decide · ork stop <id>`
+  as its hint: `ork attach <run>` follows the run and the runs it called and
+  answers their questions on a terminal ([CLI](../cli.md)); `ork logs -f` only
+  reads. Works with `--node` too.
 - A [`workflow.call`](../scheduler/calls.md) starts its run this way, with three
   internal flags: `--called-by`, `--budget-cap` and `--base-ref`, and
   `--machine-claude` when the caller has it. The caller's transcript shows

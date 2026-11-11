@@ -25,6 +25,7 @@ short.
 - [Pause](#pause)
 - [Continue](#continue)
 - [Stopping one node](#stopping-one-node)
+- [Detaching from a run](#detaching-from-a-run)
 - [What a run records](#what-a-run-records)
 - [Limits](#limits)
 
@@ -118,6 +119,19 @@ Nothing is cut short. What happens depends on what the paused part is doing:
   from `ork stop`, Ctrl-C or SIGTERM, ends that wait the same way, in a detached
   run too ([per item](./scheduler/for-each.md#limits-stop-and-pause)).
 - **Only a running node can be stopped:** `N is not running in run X.`
+
+## Detaching from a run
+
+- **`ork attach <run>`** follows a run and the runs it called, and asks their
+  open decisions on the terminal ([CLI](./cli.md)).
+- **Ctrl-C there detaches; it never stops.** The first Ctrl-C, at a prompt too
+  (the kit's `interrupt` hook), ends following and prints
+  `detached; run <id> keeps going · ork attach <id> · ork stop <id>`. No stop
+  command is stored, the run goes on, and the decisions it left open stay open
+  (`ork decide`, the UI or another `ork attach` answers them). It exits 0. A
+  second Ctrl-C kills the command as usual.
+- **`ork run` in the foreground is the opposite:** its Ctrl-C stops the run, as
+  above.
 
 ## What a run records
 

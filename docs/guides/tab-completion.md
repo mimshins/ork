@@ -52,9 +52,10 @@ commands.
 - **Flags** of the command you're typing, with what each does.
 - **Workflows** after `ork run` and `ork validate`: your project's, by name, and
   Ork's own `ork:` ones.
-- **Run ids** after `ork logs`, `tree`, `resume`, `stop`, `pause`, `continue`,
-  `chat` and `decide`, newest first, with each run's workflow and status. The
-  project you're in comes first; type a prefix to reach another project's run.
+- **Run ids** after `ork logs`, `attach`, `tree`, `resume`, `stop`, `pause`,
+  `continue`, `chat` and `decide`, newest first, with each run's workflow and
+  status. The project you're in comes first; type a prefix to reach another
+  project's run.
 - **Node ids** after `--node`: the run's nodes (the newest run's when you give
   none), or the workflow's for `ork run <workflow> --node`.
 - **Open decisions** after `ork decide --id`.

@@ -14,12 +14,17 @@ import { cut, wrap } from "./term/layout.ts";
 import type { Term } from "./term/mode.ts";
 import { bold, paint } from "./term/theme.ts";
 
-/** Where a question sits in `ork decide`: its run, and "n of m". */
+/**
+ * Where a question sits in `ork decide` or `ork attach`: its run, "n of m" when
+ * a list is being worked through, and the call path of a called run.
+ */
 export type AskPlace = {
   run: string;
   decision: string;
-  index: number;
-  total: number;
+  index?: number;
+  total?: number;
+  /** The call node ids from the root to this run, joined for reading. */
+  path?: string;
 };
 
 /** Lines of context a card shows before `d` (or `--verbose`) shows the rest. */
@@ -46,7 +51,9 @@ export const cardLines = (
     const lines = [
       ...(place === undefined
         ? []
-        : [`run ${place.run} · decision ${place.decision}`]),
+        : [
+            `run ${place.run}${place.path === undefined ? "" : ` · ${place.path}`} · decision ${place.decision}`,
+          ]),
       ...(document === undefined ? [] : [document]),
       `? ${plain(q.nodeId)} asks: ${clean(q.question)}`,
       ...(context === undefined
@@ -61,7 +68,7 @@ export const cardLines = (
   const where =
     place === undefined
       ? ""
-      : `  ${paint(t, "muted", `run ${place.run} · ${String(place.index)} of ${String(place.total)}`)}`;
+      : `  ${paint(t, "muted", [`run ${place.run}`, place.path, place.index === undefined || place.total === undefined ? undefined : `${String(place.index)} of ${String(place.total)}`].filter(part => part !== undefined).join(" · "))}`;
   return {
     lines: [
       "",

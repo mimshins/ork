@@ -23,14 +23,19 @@ and at where the run stopped (`? asks: …`); stop it if you want it to end:
 ```sh
 ork decide --list
 ork logs <run>
+ork attach <run>
 ork stop <run>
 ```
 
-A detached run always waits for `ork decide` or the Decisions panel in `ork ui`.
+A detached run always waits for `ork attach`, `ork decide` or the Decisions
+panel in `ork ui`. So does a run that a detached run called. A foreground run
+asks the questions of the runs it calls on its own terminal, unless stdin is not
+a terminal. `ork attach` shows the whole tree and asks all of it; Ctrl-C there
+leaves the run going.
 
-**`ork chat`, `ork continue` or `ork decide --choose` is refused "inside a run",
-in your own terminal.** That shell inherited a run's variables from a program
-the run started, such as a tmux server. Open a new shell
+**`ork chat`, `ork continue`, `ork attach` or `ork decide --choose` is refused
+"inside a run", in your own terminal.** That shell inherited a run's variables
+from a program the run started, such as a tmux server. Open a new shell
 ([scripts](../scripts.md#know-where-it-is-running)).
 
 **A loop used all its rounds.** Ork asks whether to stop (recommended), allow

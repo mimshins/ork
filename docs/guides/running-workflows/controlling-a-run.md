@@ -17,6 +17,18 @@ gate keeps its question open (you can still answer it) while its timeout waits
 with it. A long pause is fine: the session picks up where it waited. `ork ps`
 shows the run as `paused`; `ork tree` marks the nodes that are waiting.
 
+## Follow a run, and leave it going
+
+```sh
+ork attach 3f2a                 # follow a run (and the runs it called), answer here
+```
+
+Ctrl-C in `ork attach` **detaches**: the run keeps going, its questions stay
+open, and the terminal prints
+`detached; run 3f2a keeps going · ork attach 3f2a · ork stop 3f2a`. Stop it with
+`ork stop`. In a foreground `ork run`, Ctrl-C stops the run, and the runs it
+called ([attaching to a run](./attaching-to-a-run.md#leaving-ctrl-c)).
+
 ## Talk to a node
 
 ```sh
@@ -36,7 +48,7 @@ merged and removed cannot be resumed.
 ```sh
 ork resume 3f2a                    # continue a run that didn't succeed
 ork resume 3f2a --input pr=128     # with one input changed
-ork resume 3f2a --detach           # in the background; answer with ork decide
+ork resume 3f2a --detach           # in the background; answer with ork attach or ork decide
 ```
 
 Nodes that finished keep their results and do not run again, even when they

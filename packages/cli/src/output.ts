@@ -38,6 +38,10 @@ export const writeErr = (text: string): void => {
   process.stderr.write(`${text}\n`);
 };
 
+/** What to run to follow, steer or stop the detached run `id` (ADR-081). */
+export const detachHint = (id: string): string =>
+  `ork attach ${id} · ork logs ${id} -f · ork tree ${id} · ork decide · ork stop ${id}`;
+
 /** What a run spent: `$0.0312`, or `$0.00` for nothing. */
 export const cost = (usd: number): string =>
   usd === 0 ? "$0.00" : `$${usd.toFixed(4)}`;

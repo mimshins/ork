@@ -22,14 +22,20 @@ import {
   type ResumeState,
   type RunEvent,
   type RunSettings,
+  type StartOptions,
 } from "@krapht/ork-core";
 import { maskedEnv, maskedNamesOfRun } from "@krapht/ork-nodes";
 import type { Driver } from "@krapht/ork-schema";
 
 import { resumeChat } from "../runs/chat.ts";
 import { runLimits } from "./limits.ts";
+import { showCalls } from "./show-calls.ts";
+import type { RunWorkflowOptions } from "./workflow-options.ts";
 
-export type CallPortsOptions = {
+export type CallPortsOptions = Pick<
+  RunWorkflowOptions,
+  "err" | "json" | "showCalls"
+> & {
   graph: CompiledGraph;
   store: EventStore;
   runId: string;
@@ -46,12 +52,15 @@ export type CallPortsOptions = {
   baseRef?: string | undefined;
   machineClaude?: boolean | undefined;
   resume?: ResumeState | undefined;
+  detach?: StartOptions["detach"];
 };
 
 export type CallPorts = {
   /** The workflow with its budget capped by the caller's. */
   graph: CompiledGraph;
   calls: CallPort;
+  /** The called runs this terminal shows; `end` once the run has ended. */
+  shown: ReturnType<typeof showCalls>;
   relay?: RelayPort;
   /** What the run records, for its own resume. */
   settings: Pick<
@@ -76,6 +85,7 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
   const untrusted = options.untrusted ?? options.resume?.settings.untrusted;
   const machineClaude =
     options.machineClaude ?? options.resume?.settings.machineClaude ?? false;
+  const shown = showCalls(options);
   const own = graph.workflow.limits?.budgetUsd;
   const budgetUsd =
     cap === undefined ? own : Math.min(cap, own ?? Number.POSITIVE_INFINITY);
@@ -94,11 +104,15 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
       store,
       runId,
       place: options.place,
-      emit: options.emit,
+      emit: event => {
+        options.emit(event);
+        shown.onEvent(event);
+      },
       home,
       adopt: adoptedCalls(store, runId),
       newId: () => newRunId(store),
       machineClaude,
+      detach: options.detach,
       env: maskedEnv(
         maskedNamesOfRun(graph.workflow, options.place, store.projects()),
       ),
@@ -125,6 +139,7 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
           : Promise.resolve(`${NOT_STARTED}${blocked}.`);
       },
     }),
+    shown,
     ...(linksOff ? {} : { relay: createRelay({ store, runId, home, human }) }),
     settings: {
       ...(linksOff ? { links: "off" as const } : {}),

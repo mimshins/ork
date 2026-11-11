@@ -69,6 +69,15 @@ const NOTE_MESSAGE = "Note for the run (optional, Enter to skip)";
 const NO_ONE_TO_ASK =
   "no one (nobody is at the terminal; use your best judgment and say so in your report)";
 
+/**
+ * What a foreground caller shows of the runs it calls: their lines always, and
+ * their questions only when stdin is a terminal, so no one is answered for.
+ */
+export const callsShown = (
+  human: TerminalHuman,
+  stdinIsTty?: boolean,
+): { ask?: TerminalHuman } => (stdinIsTty === true ? { ask: human } : {});
+
 /** One line that shows what a tool is about to do. */
 export const previewInput = (
   toolName: string,

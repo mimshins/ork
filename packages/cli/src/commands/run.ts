@@ -16,8 +16,8 @@ import { sessionEnv } from "@krapht/ork-nodes";
 import { type Driver, retiredDriverHint } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
-import { createTerminalHuman } from "../human.ts";
-import { style, write, writeErr } from "../output.ts";
+import { callsShown, createTerminalHuman } from "../human.ts";
+import { detachHint, style, write, writeErr } from "../output.ts";
 import { runNode } from "../run/node.ts";
 import { runWorkflowFile } from "../run/workflow.ts";
 import { refusedBuiltin, workflowArg } from "../workflows.ts";
@@ -77,7 +77,10 @@ export const terminalHuman = () => {
   const detached = process.env[DETACHED_ENV] === "1";
   if (detached) {
     writeErr(
-      style("dim", "detached run: no terminal asks; answer with ork decide"),
+      style(
+        "dim",
+        "detached run: no terminal asks; answer with ork attach or ork decide",
+      ),
     );
   }
   return detached
@@ -208,12 +211,7 @@ export const run = defineCommand({
         });
         if (detached.ok) {
           write(`▸ run ${detached.runId} started in the background`);
-          write(
-            style(
-              "dim",
-              `  ork logs ${detached.runId} -f · ork tree ${detached.runId} · ork decide · ork stop ${detached.runId}`,
-            ),
-          );
+          write(style("dim", `  ${detachHint(detached.runId)}`));
         } else {
           writeErr(detached.error);
           writeErr(style("dim", `(output: ${detached.log})`));
@@ -265,6 +263,10 @@ export const run = defineCommand({
                     trigger: args.trigger,
                     untrusted: flagValues(rawArgs, "--untrusted"),
                   }),
+              // A person at the terminal answers the called runs' questions too.
+              ...(human === undefined
+                ? {}
+                : { showCalls: callsShown(human, process.stdin.isTTY) }),
               onRun: handle => {
                 onInterrupt(handle.interrupt);
               },

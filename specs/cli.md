@@ -3,8 +3,8 @@
 Status: **Built**: every command below. `ork init`, `ork register`,
 `ork projects`, `ork migrate` (with `--from-agents`), `ork link`,
 `ork validate`, `ork doctor`, `ork run` (a whole workflow, or one node with
-`--node`), `ork ps`, `ork logs`, `ork tree`, `ork usage` and `ork prune`
-([usage](./usage.md)), `ork decide`, `ork chat`, `ork relay`
+`--node`), `ork ps`, `ork logs`, `ork attach`, `ork tree`, `ork usage` and
+`ork prune` ([usage](./usage.md)), `ork decide`, `ork chat`, `ork relay`
 ([links](./messaging/links.md)), `ork stop`, `ork pause`, `ork continue`
 ([run control](./run-control.md)), `ork resume`, `ork watch`
 ([watching](./scheduler/watching.md)), `ork worktrees` (`ork wt`),
@@ -17,6 +17,7 @@ Status: **Built**: every command below. `ork init`, `ork register`,
 tool node's program runs ([scripts](./messaging/scripts.md#ork-send))
 ([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts),
+[attach tests](../packages/cli/test/attach-command.test.ts),
 [agents tests](../packages/cli/test/agents.test.ts),
 [link tests](../packages/core/test/links.test.ts),
 [projects tests](../packages/cli/test/projects.test.ts),
@@ -55,6 +56,7 @@ ork run <wf> [--input k=v] [--driver <id>] [--in-place] [--allow-dirty] [--json]
 ork run <wf> --node <id> [--input k=v] [--driver <id>] [--in-place] [--json] [--verbose]
 ork ps [--all] [--limit n] [--json]               # this project's runs, newest first
 ork logs [<run>] [--node n] [--follow] [--json] [--verbose]   # a run's transcript, replayed or live
+ork attach <run>                 # follow a run and the runs it called, and answer their questions here; Ctrl-C detaches ([run control](./run-control.md#detaching-from-a-run))
 ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node
 ork usage [--all] [--since 30d] [--until day] [--by day|workflow|model|…] [--workflow w] [--json]  # what runs spent over time
 ork prune --older-than 90d [--all] [--dry-run] [--yes]  # forget old runs' logs; what they spent stays

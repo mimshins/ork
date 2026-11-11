@@ -7,10 +7,12 @@ import type {
   HumanChannel,
   ResumeState,
   RunHandle,
+  StartOptions,
 } from "@krapht/ork-core";
 import type { ToolRunner } from "@krapht/ork-nodes";
 import type { Driver } from "@krapht/ork-schema";
 
+import type { TerminalHuman } from "../human.ts";
 import type { DriverChecks } from "./ready-driver.ts";
 
 export type RunWorkflowOptions = {
@@ -45,6 +47,14 @@ export type RunWorkflowOptions = {
    * a detached run, whose questions wait for `ork decide`.
    */
   human?: HumanChannel;
+  /**
+   * A foreground `ork run`: show the runs this one calls, at any depth, under
+   * their call paths, and ask their decisions with `ask`, given only when a
+   * person is at the terminal. Ignored with `json`.
+   */
+  showCalls?: { ask?: TerminalHuman };
+  /** Starts a called run; tests pass their own (default: `ork run` detached). */
+  detach?: StartOptions["detach"];
   out: (line: string) => void;
   err: (line: string) => void;
   /** Where the run is recorded (`~/.ork/state.db`; tests pass their own). */

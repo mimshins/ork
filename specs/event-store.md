@@ -127,7 +127,8 @@ Feedback records use the same patterns.
 - **`ork logs [<run>]`** prints the run's transcript, line for line what
   `ork run` printed. `--node <id>` keeps one node's events; `--follow` (`-f`)
   keeps printing a live run's events, pushed over the run's socket (or polled
-  every 250 ms without one), until it finishes or its process is gone; `--json`
+  every 250 ms without one), until it finishes or its process is gone (a run
+  `ork resume` went on with finishes at its latest `run.finished`); `--json`
   prints the stored events.
 - **`ork tree [<run>]`** draws the ownership tree from `run.started`'s declared
   nodes, with spawned workers (`<template>-<n>`) under the leader that spawned

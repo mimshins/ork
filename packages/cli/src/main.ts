@@ -28,6 +28,8 @@ export const main: CommandDef = defineCommand({
     run,
     ps,
     logs,
+    // Loaded on use, like `ork ui`.
+    attach: () => import("./commands/attach.ts").then(module => module.attach),
     tree,
     // Loaded on use, like `ork ui`.
     usage: () => import("./commands/usage.ts").then(module => module.usage),

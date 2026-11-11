@@ -61,9 +61,9 @@ away; Ork never pushes on its own ([worktrees](./guides/worktrees.md)).
 
 When a run needs you, it waits: a gate, an agent asking a question, a tool that
 needs your permission, a loop that used all its rounds. You answer in the
-terminal that started it, in any other terminal with `ork decide`, or in the
-Decisions panel of `ork ui`. Whichever answers first wins. An agent never
-answers for you.
+terminal that started it (the questions of the runs it called too), in any other
+terminal with `ork attach` or `ork decide`, or in the Decisions panel of
+`ork ui`. Whichever answers first wins. An agent never answers for you.
 
 ## What Ork keeps
 

@@ -63,6 +63,7 @@ export * from "./remote/decide.ts";
 export * from "./remote/detach.ts";
 export * from "./remote/find.ts";
 export * from "./remote/follow.ts";
+export * from "./remote/follow-tree.ts";
 export * from "./remote/links.ts";
 export * from "./remote/relay.ts";
 export * from "./remote/resume.ts";

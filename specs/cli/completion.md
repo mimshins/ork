@@ -122,7 +122,7 @@ runs.
 | ------------------- | ------------------------------------------ |
 | Get started         | init, doctor, ui                           |
 | Workflows           | validate, run, agents, context, watch      |
-| Runs                | ps, logs, tree, usage, resume              |
+| Runs                | ps, logs, attach, tree, usage, resume      |
 | Steer a running run | decide, chat, pause, continue, stop, relay |
 | After runs          | feedback, worktrees, prune                 |
 | Projects            | projects, register, migrate, link          |

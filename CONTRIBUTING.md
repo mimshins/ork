@@ -135,8 +135,9 @@ holds its rules, and [.ork/workflows/](./.ork/workflows) its workflows. Each of
 - **`start`** is the way in. It reads your brief, the saved plans and the active
   RFCs, recommends a route, and you choose: a new plan, a new RFC first, a plan
   from an Accepted RFC, or building a saved plan. It then calls the workflows
-  that route needs. Questions from the called runs wait in `ork decide` or the
-  Decisions panel of `ork ui`, not in the terminal that started `start`.
+  that route needs. A foreground `start` shows the called runs and asks their
+  questions on its own terminal; a detached one leaves them for `ork attach`,
+  `ork decide` or the Decisions panel of `ork ui`.
 - **`rfc`** weighs real options against the code, asks you to pick each outcome,
   and ends at a gate that publishes the RFC. Only an RFC on `main` goes on to a
   plan.

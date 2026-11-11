@@ -22,6 +22,7 @@ import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
+import { askStored } from "../runs/ask-stored.ts";
 import { canKey } from "../term/mode.ts";
 import { formatDecisions } from "./decide-list.ts";
 import { decideRefusal } from "./in-a-run.ts";
@@ -223,40 +224,21 @@ export const decide = defineCommand({
       // output needs the answer's line as well.
       const collapses = canKey(process.stdin, process.stdout);
       for (const [index, d] of open.entries()) {
-        const question: Parameters<typeof human.ask>[0] = {
-          nodeId: d.node,
-          question: d.question,
-          options: d.options,
-        };
-        if (d.recommended !== undefined) question.recommended = d.recommended;
-        if (d.context !== undefined) question.context = d.context;
-        if (d.document !== undefined) question.document = d.document;
-        let note: string | undefined;
-        question.onNote = given => {
-          note = given;
-        };
         // oxlint-disable-next-line no-await-in-loop -- one question at a time
-        const choice = await human.askAt(question, {
-          run: d.runId,
-          decision: d.id,
-          index: index + 1,
-          total: open.length,
+        const asked = await askStored(store, human, d, {
+          by: "decide",
+          place: {
+            run: d.runId,
+            decision: d.id,
+            index: index + 1,
+            total: open.length,
+          },
         });
-        // `q` leaves the question open for later.
-        if (choice === null) continue;
-        // oxlint-disable-next-line no-await-in-loop -- answered in order
-        const answered = await answerDecision(
-          store,
-          d.id,
-          choice,
-          undefined,
-          "decide",
-          note,
-        );
-        if (!answered.ok) write(`${style("yellow", "!")} ${answered.error}\n`);
-        else if (!collapses) {
+        if (asked.kind === "refused")
+          write(`${style("yellow", "!")} ${asked.message}\n`);
+        else if (asked.kind === "answered" && !collapses) {
           write(
-            `${style("green", "✓")} ${d.id}: ${choice}${saidLine(store, d.id)}\n`,
+            `${style("green", "✓")} ${d.id}: ${asked.choice}${saidLine(store, d.id)}\n`,
           );
         }
       }

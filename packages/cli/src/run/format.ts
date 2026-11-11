@@ -27,7 +27,7 @@ export { createView, indent };
 const INDENT = /^((?:\u001B\[[0-9;]*m)*) {2}/u;
 
 /** Who answered a decision, as the log says it. */
-const ANSWERED_BY: Record<AnsweredBy, string> = {
+export const ANSWERED_BY: Record<AnsweredBy, string> = {
   terminal: "terminal",
   decide: "ork decide",
   ui: "ork ui",
