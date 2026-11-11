@@ -24,6 +24,8 @@ git:
 permissions:
   allow:
     - Bash(pnpm check)
+    - Bash(pnpm check:fast)
+    - Bash(pnpm run check:fast)
     - Bash(pnpm check:changed)
     - Bash(pnpm run check:changed)
     - Bash(pnpm format)
@@ -79,11 +81,16 @@ permissions:
     - Bash(npx changeset publish *)
     - Bash(ork feedback publish *)
     - Bash(pnpm ork feedback publish *)
-# The full suite: a node with verify: may not run these in its session, as Ork
-# runs its check; a targeted `vitest run <files>` stays allowed.
+# The suites: a node with verify: may not run these in its session, as Ork runs
+# its check; `pnpm check:fast` (format, lint, typecheck, docs) and a targeted
+# `vitest run <files>` stay allowed. Elsewhere each takes a machine slot.
 heavy:
   - pnpm check
+  - pnpm run check
+  - pnpm check:changed
+  - pnpm run check:changed
   - pnpm test
+  - pnpm run test
   - vitest run
   - npx vitest run
 defaults:
