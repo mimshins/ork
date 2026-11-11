@@ -168,21 +168,23 @@ resolver works. The cost accepted is a format change and a scheduler hold.
   shipped `issues` workflow, and `build`'s `publish` moved onto the lock and the
   conflict step are separate tasks of the plan, not decided here.
 
-## Open questions
+## Resolved questions
 
-- **Wait limit.** The brief says the node's `timeout` limits the wait. The slot
-  rule stands the clocks still while a slot is waited for, so a timeout would
-  never fire. Which holds for the lock: the clock stands still and a separate
-  limit ends the wait, or the timeout counts the wait?
-- **Span.** "First node that names it to the last that names it" with a
-  `forEach` node: is the hold per item, or across all items of the node? Per
-  item serialises integration only; across items would also serialise the
-  builders, which the `issues` workflow does not want.
-- **Names and order.** One lock per node, or several? Several raises deadlock
-  between workflows that name them in different orders.
-- **Where the ledger is.** The brief puts it in the project's runs folder.
-  Branches in two clones of one repository are then different locks; is that
-  acceptable?
-- **Resume.** A run stopped while it holds the lock: does it keep the record
-  (its pid is gone, so the sweep frees it) or release it, and what happens to a
-  resumed run's rebase if the branch moved?
+Answered by the maintainer, 2026-11-11:
+
+- **Wait limit.** The clocks stand still while a run waits for a lock, as for
+  the slots: the wait counts toward no `timeout`. There is no separate wait
+  limit for now; the wait is shown with its holder, and the maintainer can stop
+  it.
+- **Span.** On a `forEach` node the hold is per item: each item's integration
+  takes and releases the lock, so the builders still run in parallel and only
+  integration goes in turn.
+- **Names and order.** One lock name per node, so workflows can't take two locks
+  in different orders.
+- **Where the ledger is.** Machine-wide, in `~/.ork`. A branch lock is keyed by
+  the origin's URL and the branch, so two clones (or projects) pushing the same
+  remote branch are ordered too.
+- **Resume.** Stopping a run releases its lock; a crashed holder's record is
+  swept, as the leases' are. A resumed run takes the lock again and reruns the
+  locked nodes from the first one (fetch, rebase, check, push), since the branch
+  may have moved.
