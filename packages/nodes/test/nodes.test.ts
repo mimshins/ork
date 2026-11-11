@@ -726,7 +726,7 @@ const machineOfSpecs = async (machine: { machineClaude?: boolean }) => {
     inPlace: true,
     ...machine,
   });
-  await execute(context("fix", { type: "claude.worker", prompt: "Fix" }));
+  await execute(context("fix", { type: "agent.worker", prompt: "Fix" }));
   return specs.map(spec => spec.machineClaude);
 };
 
@@ -765,7 +765,7 @@ describe("a Claude node's MCP servers", () => {
 
   it("are the named entries, as written, and none of the file's others", async () => {
     const { specs } = await specsWithMcp(
-      { type: "claude.worker", prompt: "Go", mcp: ["browser"] },
+      { type: "agent.worker", prompt: "Go", mcp: ["browser"] },
       file,
     );
     expect(specs[0]?.mcpServers).toEqual({ browser: entry });
@@ -773,7 +773,7 @@ describe("a Claude node's MCP servers", () => {
 
   it("are unset for a node that names none", async () => {
     const { specs } = await specsWithMcp(
-      { type: "claude.worker", prompt: "Go" },
+      { type: "agent.worker", prompt: "Go" },
       file,
     );
     expect(specs[0]?.mcpServers).toBeUndefined();
@@ -781,7 +781,7 @@ describe("a Claude node's MCP servers", () => {
 
   it("keep their definitions out of the events", async () => {
     const { events } = await specsWithMcp(
-      { type: "claude.worker", prompt: "Go", mcp: ["browser"] },
+      { type: "agent.worker", prompt: "Go", mcp: ["browser"] },
       file,
     );
     expect(JSON.stringify(events)).not.toContain("SECRET_TOKEN");
@@ -789,7 +789,7 @@ describe("a Claude node's MCP servers", () => {
 
   it("fail the node when the file lost the server after the checks", async () => {
     const { result, specs } = await specsWithMcp(
-      { type: "claude.worker", prompt: "Go", mcp: ["gone"] },
+      { type: "agent.worker", prompt: "Go", mcp: ["gone"] },
       file,
     );
     expect(result).toMatchObject({
@@ -842,7 +842,7 @@ describe("Claude nodes", () => {
       readyDriver: "open-code",
       inPlace: true,
     });
-    const node: Node = { type: "claude.worker", prompt: "Fix" };
+    const node: Node = { type: "agent.worker", prompt: "Fix" };
 
     // One message is unread when the first session ends, none after.
     const late = mailboxWith(() => unreadAfter(specs.length));
@@ -896,7 +896,7 @@ describe("Claude nodes", () => {
         readyDriver: "open-code",
         inPlace: true,
       });
-      const node: Node = { type: "claude.worker", prompt: "Fix" };
+      const node: Node = { type: "agent.worker", prompt: "Fix" };
       const mailbox = mailboxWith(() => unreadAfter(specs.length));
       const result = await execute(
         context("fix", node, { mailbox, ...overrides }),
@@ -1057,7 +1057,7 @@ describe("Claude nodes", () => {
       driver: "claude-code",
       inPlace: true,
     });
-    const node: Node = { type: "claude.worker", prompt: "Do {{item.title}}" };
+    const node: Node = { type: "agent.worker", prompt: "Do {{item.title}}" };
     await execute(
       context("build.1", node, {
         template: "build",
@@ -1091,7 +1091,7 @@ describe("Claude nodes", () => {
       inPlace: true,
     });
     const node: Node = {
-      type: "claude.worker",
+      type: "agent.worker",
       prompt: "Fix {{nodes.builder.output.branch}}",
       budgetUsd: 3,
       effort: "high",
@@ -1129,7 +1129,7 @@ describe("Claude nodes", () => {
       driver: "claude-code",
       inPlace: true,
     });
-    const node: Node = { type: "claude.worker", prompt: "Fix" };
+    const node: Node = { type: "agent.worker", prompt: "Fix" };
     const input = { findings: "x".repeat(9000) };
     await execute(context("fix", node, { round: 2, input }));
     await execute(context("fix", node, { round: 2, input: { findings: "y" } }));
@@ -1143,7 +1143,7 @@ describe("Claude nodes", () => {
     it("is the node's own, over the one ready", async () => {
       const { execute, drivers } = executing({ readyDriver: "open-code" });
       const node: Node = {
-        type: "claude.worker",
+        type: "agent.worker",
         prompt: "x",
         driver: "claude-code",
       };
@@ -1153,14 +1153,14 @@ describe("Claude nodes", () => {
 
     it("is the one ready, when nothing names one", async () => {
       const { execute, drivers } = executing({ readyDriver: "open-code" });
-      await execute(context("fix", { type: "claude.worker", prompt: "x" }));
+      await execute(context("fix", { type: "agent.worker", prompt: "x" }));
       expect(drivers).toEqual(["open-code"]);
     });
 
     it("leaves the node not started when there is none", async () => {
       const { execute, drivers } = executing({});
       const result = await execute(
-        context("fix", { type: "claude.worker", prompt: "x" }),
+        context("fix", { type: "agent.worker", prompt: "x" }),
       );
       expect(drivers).toEqual([]);
       expect(result.end).toMatchObject({
@@ -1189,14 +1189,14 @@ describe("Claude nodes", () => {
       inPlace: true,
     });
     const ownership: Ownership = {
-      children: [{ id: "fix", type: "claude.worker", description: "fixes" }],
+      children: [{ id: "fix", type: "agent.worker", description: "fixes" }],
       templates: ["fix"],
       workersLeft: () => 2,
       delegate: () => Promise.resolve({ reports: [], notes: [] }),
       spawn: () => Promise.resolve({ reports: [], notes: [] }),
     };
     const lead: Node = {
-      type: "claude.leader",
+      type: "agent.leader",
       prompt: "Ship {{inputs.branch}}",
     };
     const first = await execute(context("lead", lead, { ownership }));
@@ -1239,7 +1239,7 @@ describe("Claude nodes", () => {
       readyDriver: "open-code",
       inPlace: true,
     });
-    const node: Node = { type: "claude.worker", prompt: "You fix bugs." };
+    const node: Node = { type: "agent.worker", prompt: "You fix bugs." };
     await execute(
       context("fix-2", node, {
         template: "fix",
@@ -1256,7 +1256,7 @@ describe("Claude nodes", () => {
       "You fix bugs.\n\n## Task from `lead`\n\nFix the login bug",
     );
     expect(specs[0]?.systemAppend).toContain(
-      "You are the `fix-2` node (claude.worker, an instance of `fix`)",
+      "You are the `fix-2` node (agent.worker, an instance of `fix`)",
     );
     // An instance takes its template's settings, then the defaults.
     expect(specs[0]?.effort).toBe("max");

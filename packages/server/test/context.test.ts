@@ -30,7 +30,7 @@ const WORKFLOW = [
   "  context: [./style.md]",
   "nodes:",
   "  fix:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "  run:",
   "    type: tool.shell",
   '    command: "true"',

@@ -36,7 +36,7 @@ describe("tool commands' CPU", () => {
       entries: ["check"],
       nodes: [
         { id: "check", type: "tool.shell" },
-        { id: "implement", type: "claude.worker" },
+        { id: "implement", type: "agent.worker" },
       ],
     });
     store.append("r1", result("check", { userMs: 2000, systemMs: 500 }));

@@ -5,11 +5,12 @@
 
 import type { Diagnostic } from "@krapht/ork-server/client";
 
-import { problemsAt, problemWords } from "./builder-model.ts";
+import { problemsAt, problemWords, readAt } from "./builder-model.ts";
 import { customControl } from "./custom-controls.tsx";
 import { forEachControl } from "./for-each-control.tsx";
 import { itemHint } from "./for-each-model.ts";
 import { type FormContext, type FormPath, isRecord } from "./form-parts.tsx";
+import { isModelPath, modelClash, modelHint } from "./model-driver.ts";
 import { Field } from "./schema-form.tsx";
 import { type JsonSchema, kindOf } from "./schema-model.ts";
 import type { Builder } from "./use-builder.ts";
@@ -26,15 +27,32 @@ export const contextFor = (
     const document = builder.view?.document;
     const nodes = isRecord(document) ? document["nodes"] : undefined;
     const node = isRecord(nodes) ? nodes[String(path[1])] : undefined;
-    return graph === undefined || !isRecord(node)
-      ? description
-      : itemHint(graph, path, node["forEach"], description);
+    const hint =
+      graph === undefined || !isRecord(node)
+        ? description
+        : itemHint(graph, path, node["forEach"], description);
+    return isModelPath(path) && isRecord(node)
+      ? modelHint(node["model"], hint)
+      : hint;
   },
   change: (path, next) => {
     void builder.change(path, next);
   },
-  problems: path =>
-    problemsAt(problems, path).map(problem => problemWords(problem)),
+  problems: path => {
+    const said = problemsAt(problems, path).map(problem =>
+      problemWords(problem),
+    );
+    const document = builder.view?.document;
+    // The server may already say it; one line is enough.
+    const clash =
+      isModelPath(path) && said.length === 0
+        ? modelClash(
+            readAt(document, path),
+            readAt(document, [...path.slice(0, -1), "driver"]),
+          )
+        : undefined;
+    return clash === undefined ? said : [...said, clash];
+  },
 });
 
 export const TopFields = ({

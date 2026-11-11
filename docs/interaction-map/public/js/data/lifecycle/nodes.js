@@ -100,7 +100,7 @@ export const NODES = [
     summary:
       "Starts a run of a workflow file with its inputs, and follows it until it ends or you detach.",
     facts: [
-      "Built: `ork run <wf>` runs the whole workflow, and `--node <id>` one Claude node on its own; `--input`, `--driver`, `--in-place` and `--json` work for both.",
+      "Built: `ork run <wf>` runs the whole workflow, and `--node <id>` one agent node on its own; `--input`, `--driver`, `--in-place` and `--json` work for both.",
       "Built: `--detach` returns at once; `ork attach`, `ork logs --follow`, `ork tree`, `ork decide`, `ork pause`, `ork continue` and `ork stop` reach it later.",
       "Built: before anything starts, it checks that the programs a workflow runs are installed, the variables it reads are set, and its MCP servers are in `.mcp.json`; integrations a workflow does not use are never needed.",
       "Built: nor does it start with a quota spent, if the workflow has a session or a call to spend it on.",

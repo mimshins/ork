@@ -115,7 +115,7 @@ describe("before:", () => {
   it("runs in the checkout, and its output reaches the prompt", async () => {
     const { result, specs } = await runNode(
       {
-        type: "claude.worker",
+        type: "agent.worker",
         prompt: "Here is the setup: {{before.stdout}}",
         before: { script: "cat seen.txt" },
       },
@@ -130,13 +130,13 @@ describe("before:", () => {
 
   it("gives a prompt its JSON", async () => {
     const { specs } = await runNode({
-      type: "claude.worker",
+      type: "agent.worker",
       prompt: "Fix issue {{before.json.id}}",
       before: { command: "echo 42", output: { format: "json" } },
     });
     expect(specs[0]?.prompt).toBe("Fix issue");
     const { specs: withObject } = await runNode({
-      type: "claude.worker",
+      type: "agent.worker",
       prompt: "Fix issue {{before.json.id}}",
       before: {
         script: `echo '{"id":7}'`,
@@ -148,7 +148,7 @@ describe("before:", () => {
 
   it("spends no model turn when it fails", async () => {
     const { result, specs } = await runNode({
-      type: "claude.worker",
+      type: "agent.worker",
       prompt: "Never sent",
       before: { script: "echo broken >&2\nexit 3" },
     });
@@ -166,7 +166,7 @@ describe("before:", () => {
     const stop = new AbortController();
     const { result, specs } = await runNode(
       {
-        type: "claude.worker",
+        type: "agent.worker",
         prompt: "Go",
         before: { script: "trap 'exit 0' TERM; sleep 5 & wait" },
       },
@@ -185,7 +185,7 @@ describe("before:", () => {
   it("waits out a pause before its session starts", async () => {
     const waits: string[] = [];
     const { specs } = await runNode(
-      { type: "claude.worker", prompt: "Go", before: { command: "true" } },
+      { type: "agent.worker", prompt: "Go", before: { command: "true" } },
       undefined,
       undefined,
       {
@@ -206,13 +206,13 @@ describe("before:", () => {
   it("comes from the defaults, and a node's own wins", async () => {
     const defaults = { before: { script: "echo from-defaults" } };
     const { specs: inherited } = await runNode(
-      { type: "claude.worker", prompt: "{{before.stdout}}" },
+      { type: "agent.worker", prompt: "{{before.stdout}}" },
       defaults,
     );
     expect(inherited[0]?.prompt).toBe("from-defaults");
     const { specs: own } = await runNode(
       {
-        type: "claude.worker",
+        type: "agent.worker",
         prompt: "{{before.stdout}}",
         before: { script: "echo its-own" },
       },
@@ -226,7 +226,7 @@ describe("before:", () => {
       environ: { PROBE_TOKEN: "a-secret-value-1" },
     });
     const node: Node = {
-      type: "claude.worker",
+      type: "agent.worker",
       before: {
         script: 'echo "$T"',
         env: { T: "{{env.PROBE_TOKEN}}" },

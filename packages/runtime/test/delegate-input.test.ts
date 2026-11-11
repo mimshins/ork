@@ -16,8 +16,8 @@ const human: HumanChannel = {
 
 const ownership = (over: Partial<Ownership> = {}): Ownership => ({
   children: [
-    { id: "code", type: "claude.worker" },
-    { id: "tests", type: "claude.worker" },
+    { id: "code", type: "agent.worker" },
+    { id: "tests", type: "agent.worker" },
   ],
   templates: ["code"],
   workersLeft: () => 1,

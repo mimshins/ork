@@ -1,7 +1,7 @@
 /**
  * @file What a Claude node is asked: its brief, rendered against the run's
  *   inputs and outputs, the model and effort it runs on (a fanned node's from
- *   its item), and its `claude.subagent` children as Claude Code subagents of
+ *   its item), and its `agent.subagent` children as Claude Code subagents of
  *   its session (the SDK's `agents`, the CLI's `--agents`). A subagent's role
  *   (its agent's instructions), `instructions` and `prompt` are its system
  *   prompt, and its `description` says when the session hands it work with the
@@ -20,6 +20,7 @@ import {
 import { renderTemplate, parseTemplate } from "../expr/evaluate.ts";
 import { itemEffort, itemSetting } from "../graph/item-settings.ts";
 import type { SubagentSpec } from "../runtime/types.ts";
+import { modelDriver } from "./driver.ts";
 import { runScope } from "./scope.ts";
 import type { NodeItem, NodeOutput } from "./types.ts";
 
@@ -110,7 +111,7 @@ export const subagentsOf = (
   outputs: Record<string, NodeOutput> = {},
 ): Record<string, SubagentSpec> | undefined => {
   const entries = Object.entries(workflow.nodes).flatMap(([id, node]) => {
-    if (node.type !== "claude.subagent" || node.parent !== owner) return [];
+    if (node.type !== "agent.subagent" || node.parent !== owner) return [];
     if (!isClaudeNode(node)) return [];
     const role =
       node.agent === undefined
@@ -127,7 +128,8 @@ export const subagentsOf = (
       description: node.description,
       prompt: prompt === "" ? node.description : prompt,
     };
-    if (node.model !== undefined) spec.model = node.model;
+    // Its driver is its owner's; `driverRefusals` refuses another prefix.
+    if (node.model !== undefined) spec.model = modelDriver(node.model).model;
     if (node.maxTurns !== undefined) spec.maxTurns = node.maxTurns;
     if (node.tools?.only !== undefined) spec.tools = node.tools.only;
     if (node.tools?.deny !== undefined) spec.disallowedTools = node.tools.deny;

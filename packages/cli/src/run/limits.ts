@@ -47,8 +47,8 @@ export const runLimits = (
 const spendsAnything = (workflow: Workflow, history?: History): boolean =>
   Object.entries(workflow.nodes).some(
     ([id, node]) =>
-      (node.type === "claude.leader" ||
-        node.type === "claude.worker" ||
+      (node.type === "agent.leader" ||
+        node.type === "agent.worker" ||
         node.type === "workflow.call") &&
       history?.get(id)?.at(-1)?.ok !== true,
   );

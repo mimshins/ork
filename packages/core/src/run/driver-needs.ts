@@ -15,7 +15,7 @@ import {
 } from "@krapht/ork-schema";
 
 import { driverQueues } from "./driver-queues.ts";
-import { namedDriver, sessionDriver } from "./driver.ts";
+import { modelDriver, nodeDriver } from "./driver.ts";
 
 /** The part of a driver descriptor a refusal reads. */
 export type DriverNeeds = Pick<
@@ -26,8 +26,8 @@ export type DriverNeeds = Pick<
 export type DriverRefusal = { node: string; message: string };
 
 const SESSION_TYPES: ReadonlySet<Node["type"]> = new Set([
-  "claude.leader",
-  "claude.worker",
+  "agent.leader",
+  "agent.worker",
 ]);
 
 /** The node's turn limit and dollar budget, its own or the workflow's default. */
@@ -51,21 +51,114 @@ const askOfTools = (
   node: Node,
   workflow: Workflow,
 ): string | undefined => {
-  if (node.type !== "claude.leader") return undefined;
+  if (node.type !== "agent.leader") return undefined;
   const owns = Object.values(workflow.nodes).some(
     child =>
       child.parent === id &&
-      (child.type === "claude.leader" || child.type === "claude.worker"),
+      (child.type === "agent.leader" || child.type === "agent.worker"),
   );
   return owns ? "delegates to the nodes it owns" : undefined;
 };
 
 /**
- * What stops each session node (or only `only`) from running on its driver:
- * `override` (`--driver`), else what the workflow names, else `ready`. A node
- * with no driver to check is left out; the run refuses that on its own. An
- * owner and a node it owns sharing a checkout on a one-per-checkout driver are
- * refused too: the owner's session holds the checkout while the other waits.
+ * What a session's sub-agents ask of its driver: that it runs subagents at all,
+ * and that a sub-agent's model names no other driver.
+ */
+const subagentRefusals = (
+  id: string,
+  workflow: Workflow,
+  driver: DriverNeeds,
+): DriverRefusal[] =>
+  Object.entries(workflow.nodes).flatMap(([child, node]) => {
+    if (node.type !== "agent.subagent" || node.parent !== id) return [];
+    const runs = `sub-agent \`${child}\` runs in \`${id}\`'s session on driver \`${driver.id}\``;
+    const pinned =
+      node.model === undefined ? undefined : modelDriver(node.model).driver;
+    return [
+      ...(driver.capabilities.subagents
+        ? []
+        : [`${runs}, which does not run subagents`]),
+      ...(pinned === undefined || pinned === driver.id
+        ? []
+        : [
+            `${runs}, but its model \`${node.model ?? ""}\` names driver \`${pinned}\``,
+          ]),
+    ].map(message => ({ node: child, message }));
+  });
+
+/**
+ * What stops one session node from running on `driver`, its sub-agents
+ * included. A run checks each `forEach` item's this way too, when the model it
+ * rendered names the driver.
+ */
+export const sessionRefusals = (
+  id: string,
+  node: Node,
+  workflow: Workflow,
+  driver: DriverNeeds,
+): DriverRefusal[] => {
+  const { maxTurns, budgetUsd } = limitsOf(node, workflow);
+  const refuse = (message: string): DriverRefusal => ({
+    node: id,
+    message: `node \`${id}\` ${message}`,
+  });
+  const refusals: DriverRefusal[] = [];
+  if (!driver.proven) {
+    refusals.push(
+      refuse(
+        `runs on driver \`${driver.id}\`, which is not yet proven on a real session`,
+      ),
+    );
+  }
+  if (maxTurns !== undefined && !driver.capabilities.turnLimit) {
+    refusals.push(
+      refuse(`sets maxTurns, but driver \`${driver.id}\` has no turn limit`),
+    );
+  }
+  if (budgetUsd !== undefined && !driver.capabilities.price) {
+    refusals.push(
+      refuse(
+        `sets budgetUsd, but driver \`${driver.id}\` does not report cost in dollars (a token budget comes with RFC-015)`,
+      ),
+    );
+  } else if (
+    workflow.limits?.budgetUsd !== undefined &&
+    !driver.capabilities.price
+  ) {
+    // The run's budget caps each session too, and this driver spends unseen.
+    refusals.push(
+      refuse(
+        `runs under the workflow's limits.budgetUsd, but driver \`${driver.id}\` does not report cost in dollars, so the budget can't be kept (a token budget comes with RFC-015)`,
+      ),
+    );
+  }
+  const servers =
+    ("mcp" in node ? node.mcp : undefined) ?? workflow.defaults?.mcp ?? [];
+  if (servers.length > 0 && !driver.capabilities.mcpServers) {
+    refusals.push(
+      refuse(
+        `names MCP servers (\`mcp\`), but driver \`${driver.id}\` does not load a node's own MCP servers`,
+      ),
+    );
+  }
+  const ask = askOfTools(id, node, workflow);
+  if (ask !== undefined && !driver.capabilities.questions) {
+    refusals.push(
+      refuse(
+        `${ask}, but driver \`${driver.id}\` does not reach Ork's tools (ask_user, delegate, messages)`,
+      ),
+    );
+  }
+  return [...refusals, ...subagentRefusals(id, workflow, driver)];
+};
+
+/**
+ * What stops each session node (or only `only`) from running on its driver: its
+ * model's prefix, else `override` (`--driver`), else what the workflow names,
+ * else `ready`. A node with no driver to check is left out; the run refuses
+ * that on its own. An owner and a node it owns sharing a checkout on a
+ * one-per-checkout driver are refused too: the owner's session holds the
+ * checkout while the other waits.
  */
 export const driverRefusals = (
   workflow: Workflow,
@@ -79,66 +172,11 @@ export const driverRefusals = (
   ...Object.entries(workflow.nodes).flatMap(([id, node]) => {
     if (!SESSION_TYPES.has(node.type)) return [];
     if (choice.only !== undefined && choice.only !== id) return [];
-    const driverId = sessionDriver({
-      override: choice.override,
-      named: namedDriver(node, workflow),
-      ready: choice.ready,
-    });
+    const driverId = nodeDriver(node, workflow, choice);
     const driver = drivers.find(d => d.id === driverId);
-    if (driver === undefined) return [];
-    const { maxTurns, budgetUsd } = limitsOf(node, workflow);
-    const refuse = (message: string): DriverRefusal => ({
-      node: id,
-      message: `node \`${id}\` ${message}`,
-    });
-    const refusals: DriverRefusal[] = [];
-    if (!driver.proven) {
-      refusals.push(
-        refuse(
-          `runs on driver \`${driver.id}\`, which is not yet proven on a real session`,
-        ),
-      );
-    }
-    if (maxTurns !== undefined && !driver.capabilities.turnLimit) {
-      refusals.push(
-        refuse(`sets maxTurns, but driver \`${driver.id}\` has no turn limit`),
-      );
-    }
-    if (budgetUsd !== undefined && !driver.capabilities.price) {
-      refusals.push(
-        refuse(
-          `sets budgetUsd, but driver \`${driver.id}\` does not report cost in dollars (a token budget comes with RFC-015)`,
-        ),
-      );
-    } else if (
-      workflow.limits?.budgetUsd !== undefined &&
-      !driver.capabilities.price
-    ) {
-      // The run's budget caps each session too, and this driver spends unseen.
-      refusals.push(
-        refuse(
-          `runs under the workflow's limits.budgetUsd, but driver \`${driver.id}\` does not report cost in dollars, so the budget can't be kept (a token budget comes with RFC-015)`,
-        ),
-      );
-    }
-    const servers =
-      ("mcp" in node ? node.mcp : undefined) ?? workflow.defaults?.mcp ?? [];
-    if (servers.length > 0 && !driver.capabilities.mcpServers) {
-      refusals.push(
-        refuse(
-          `names MCP servers (\`mcp\`), but driver \`${driver.id}\` does not load a node's own MCP servers`,
-        ),
-      );
-    }
-    const ask = askOfTools(id, node, workflow);
-    if (ask !== undefined && !driver.capabilities.questions) {
-      refusals.push(
-        refuse(
-          `${ask}, but driver \`${driver.id}\` does not reach Ork's tools (ask_user, delegate, messages)`,
-        ),
-      );
-    }
-    return refusals;
+    return driver === undefined
+      ? []
+      : sessionRefusals(id, node, workflow, driver);
   }),
   ...driverQueues(workflow, drivers, choice).flatMap(
     ({ owner, nodes, message }) =>

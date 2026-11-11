@@ -31,7 +31,7 @@ const sessionsIn = (
     .filter(
       ([id, node]) =>
         isClaudeNode(node) &&
-        node.type !== "claude.subagent" &&
+        node.type !== "agent.subagent" &&
         (members.has(id) || ownedByMember(id)),
     )
     .reduce((sum, [, node]) => sum + itemCountOf(node), 0);

@@ -7,7 +7,7 @@ export const treeNode = (
   over: Partial<TreeNode> = {},
 ): TreeNode => ({
   id,
-  type: "claude.worker",
+  type: "agent.worker",
   state: "waiting",
   runs: 0,
   costUsd: 0,

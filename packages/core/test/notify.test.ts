@@ -51,11 +51,11 @@ const human: HumanChannel = {
 };
 
 const TEAM = graphOf(`nodes:
-  lead: { type: claude.leader }
+  lead: { type: agent.leader }
   check: { type: tool.shell, command: prog, parent: lead }
-  builder: { type: claude.worker, parent: lead }
+  builder: { type: agent.worker, parent: lead }
   ci: { type: tool.shell, command: prog }
-  apart: { type: claude.worker }
+  apart: { type: agent.worker }
 messages:
   - between: [ci, apart]
 `);
@@ -88,7 +88,7 @@ describe("who a tool node may write to", () => {
 
 const ruled = (rule: string, more = "") =>
   codesOf(`nodes:
-  w: { type: claude.worker }
+  w: { type: agent.worker }
   t:
     type: tool.shell
     command: prog
@@ -103,7 +103,7 @@ describe("the compile checks", () => {
   it("takes a tool node on a channel with a session", () => {
     expect(
       codesOf(`nodes:
-  w: { type: claude.worker }
+  w: { type: agent.worker }
   t: { type: tool.shell, command: prog }
 messages:
   - between: [t, w]
@@ -153,13 +153,13 @@ messages:
   });
 
   it.each([
-    ["claude.subagent", "{ type: claude.subagent, parent: w, description: d }"],
+    ["agent.subagent", "{ type: agent.subagent, parent: w, description: d }"],
     ["control.split", "{ type: control.split }"],
   ])("does not take a rule on a %s", (_name, node) => {
     const parsed = parseWorkflow(`schemaVersion: 1
 name: t
 nodes:
-  w: { type: claude.leader }
+  w: { type: agent.leader }
   n: ${node.replace("}", ", notify: [{ to: w }] }")}
 `);
     expect(parsed.ok).toBe(false);
@@ -174,7 +174,7 @@ const FLOW = graphOf(`nodes:
       - { to: builder, when: "!ok", body: "failed: {{nodes.check.output.stderr}}" }
       - { to: builder }
       - { to: builder, when: "exitCode == 99", body: never }
-  builder: { type: claude.worker }
+  builder: { type: agent.worker }
 edges:
   - { from: check, to: builder, when: "exitCode >= 0" }
 `);
@@ -199,7 +199,7 @@ const runFlow = async (
     graph: FLOW,
     inputs: {},
     cwd: import.meta.dirname,
-    executors: { "tool.shell": check, "claude.worker": builder },
+    executors: { "tool.shell": check, "agent.worker": builder },
     human,
     onEvent: event => {
       events.push(event);
@@ -246,7 +246,7 @@ describe("a rule firing", () => {
     command: prog
     notify:
       - { to: later }
-  later: { type: claude.worker }
+  later: { type: agent.worker }
   other: { type: tool.shell, command: prog }
 edges:
   - { from: other, to: later, when: "exitCode == 1" }
@@ -260,7 +260,7 @@ edges:
       executors: {
         "tool.shell": () =>
           Promise.resolve({ ok: true, output: { exitCode: 0 } }),
-        "claude.worker": ({ id }) => {
+        "agent.worker": ({ id }) => {
           started.push(id);
           return Promise.resolve({ ok: true, output: {} });
         },
@@ -321,7 +321,7 @@ const cutOff = async (
     command: prog
     notify:
       - { to: later }
-  later: { type: claude.worker }
+  later: { type: agent.worker }
   other: { type: tool.shell, command: prog }
 edges:
   - { from: other, to: later, when: "exitCode == 99" }
@@ -384,7 +384,7 @@ const KINDS = graphOf(`nodes:
   t: { type: tool.shell, command: prog }
   g: { type: human.gate, question: q, options: [yes, no] }
   c: { type: workflow.call, workflow: other, wait: none }
-  w: { type: claude.worker }
+  w: { type: agent.worker }
 `);
 
 describe("Ork's own line about a result", () => {
@@ -467,9 +467,9 @@ const fired = (
   const graph = graphOf(`inputs:
   tok: { type: string, required: false }
 nodes:
-  lead: { type: claude.leader }
+  lead: { type: agent.leader }
   w:
-    type: claude.worker
+    type: agent.worker
     parent: lead
     notify:
       - to: lead
@@ -492,10 +492,10 @@ nodes:
 const compiledBody = (body: string) =>
   compile(`nodes:
   w:
-    type: claude.worker
+    type: agent.worker
     notify:
       - { to: x, body: ${JSON.stringify(body)} }
-  x: { type: claude.worker }
+  x: { type: agent.worker }
 `).diagnostics;
 
 describe("a rule's body", () => {
@@ -554,11 +554,11 @@ describe("a rule's body", () => {
   it("warns that ok and error mean how the node ended", () => {
     const { diagnostics } = compile(`nodes:
   w:
-    type: claude.worker
+    type: agent.worker
     output: { schema: { ok: { type: boolean } } }
     notify:
       - { to: x, when: "ok" }
-  x: { type: claude.worker }
+  x: { type: agent.worker }
 `);
     expect(diagnostics.map(d => [d.severity, d.code])).toContainEqual([
       "warning",
@@ -577,7 +577,7 @@ describe("before a run finishes", () => {
     const handle = startRun({
       graph: graphOf(`nodes:
   check: { type: tool.shell, command: prog }
-  later: { type: claude.worker }
+  later: { type: agent.worker }
   other: { type: tool.shell, command: prog }
 edges:
   - { from: other, to: later, when: "exitCode == 99" }
@@ -611,7 +611,7 @@ edges:
 
 const harnessOf = (verify: { command?: string; script?: string }): string =>
   harnessInstructions({ schemaVersion: 1, name: "t", nodes: {} }, "w", {
-    type: "claude.worker",
+    type: "agent.worker",
     verify,
   });
 
@@ -640,7 +640,7 @@ describe("what a session is told", () => {
     command: prog
     notify:
       - { to: w }
-  w: { type: claude.worker }
+  w: { type: agent.worker }
 `);
     const bus = createBus({ graph, onEvent: () => {} });
     expect(bus.mailbox("w").hears()).toBe(true);

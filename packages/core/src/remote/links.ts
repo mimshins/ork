@@ -18,7 +18,7 @@ import { flattenTree } from "./commands.ts";
 /** A first value; real use will show whether it is the right one. */
 export const DEFAULT_LINK_MESSAGES = 100;
 
-const SESSION_TYPES = new Set(["claude.leader", "claude.worker"]);
+const SESSION_TYPES = new Set(["agent.leader", "agent.worker"]);
 
 export const addressOf = ({ run, node }: LinkEnd): string => `${run}/${node}`;
 

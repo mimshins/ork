@@ -19,7 +19,7 @@ import { driverArg, driverDiagnostics } from "../src/run/driver-check.ts";
 import { readyOnly, standInDrivers } from "./fixtures/drivers.ts";
 
 const yamlOf = (extra: string): string =>
-  `schemaVersion: 1\nname: notes\nnodes:\n  build:\n    type: claude.worker\n    isolation: shared\n    prompt: go\n${extra}`;
+  `schemaVersion: 1\nname: notes\nnodes:\n  build:\n    type: agent.worker\n    isolation: shared\n    prompt: go\n${extra}`;
 
 const workflowOf = (yaml: string): Workflow => {
   const parsed = parseWorkflow(yaml);
@@ -184,11 +184,11 @@ describe("ork run's driver check", () => {
 
 const shared = (driver: string) =>
   workflowOf(
-    `schemaVersion: 1\nname: notes\nnodes:\n  a:\n    type: claude.worker\n    isolation: shared\n    driver: ${driver}\n    prompt: go\n  b:\n    type: claude.worker\n    isolation: shared\n    driver: ${driver}\n    prompt: go\n`,
+    `schemaVersion: 1\nname: notes\nnodes:\n  a:\n    type: agent.worker\n    isolation: shared\n    driver: ${driver}\n    prompt: go\n  b:\n    type: agent.worker\n    isolation: shared\n    driver: ${driver}\n    prompt: go\n`,
   );
 
 const owning = (driver: string) =>
-  `schemaVersion: 1\nname: notes\nnodes:\n  lead:\n    type: claude.leader\n    driver: ${driver}\n    prompt: go\n  part:\n    type: claude.worker\n    parent: lead\n    isolation: shared\n    driver: ${driver}\n    prompt: go\n`;
+  `schemaVersion: 1\nname: notes\nnodes:\n  lead:\n    type: agent.leader\n    driver: ${driver}\n    prompt: go\n  part:\n    type: agent.worker\n    parent: lead\n    isolation: shared\n    driver: ${driver}\n    prompt: go\n`;
 
 describe("an owner and its child in one checkout on a one-per-checkout driver", () => {
   it("is an error in ork validate, naming the owner and the driver", async () => {

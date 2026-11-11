@@ -20,9 +20,9 @@ const parsed = parseWorkflow(
     "schemaVersion: 1",
     "name: t",
     "nodes:",
-    "  lead: { type: claude.leader, prompt: lead }",
-    "  fix: { type: claude.worker, parent: lead, prompt: fix }",
-    "  alone: { type: claude.worker, prompt: alone }",
+    "  lead: { type: agent.leader, prompt: lead }",
+    "  fix: { type: agent.worker, parent: lead, prompt: fix }",
+    "  alone: { type: agent.worker, prompt: alone }",
   ].join("\n"),
 );
 if (!parsed.ok) throw new Error("bad fixture");
@@ -35,7 +35,7 @@ const human: HumanChannel = {
 };
 
 const ownership: Ownership = {
-  children: [{ id: "fix", type: "claude.worker" }],
+  children: [{ id: "fix", type: "agent.worker" }],
   templates: [],
   workersLeft: () => 0,
   delegate: () => Promise.resolve({ reports: [], notes: [] }),

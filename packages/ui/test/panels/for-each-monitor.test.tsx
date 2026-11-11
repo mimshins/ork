@@ -24,7 +24,7 @@ import { treeNode } from "./monitor-fixtures.ts";
 
 const GRAPH: WorkflowGraph = {
   nodes: [
-    { id: "build", type: "claude.worker" },
+    { id: "build", type: "agent.worker" },
     { id: "after", type: "control.join" },
   ],
   edges: [{ from: "build", to: "after" }],

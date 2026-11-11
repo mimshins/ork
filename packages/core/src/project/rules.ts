@@ -210,13 +210,12 @@ const manyWorktrees = (workflow: Workflow): boolean => {
   let count = 0;
   for (const node of Object.values(workflow.nodes)) {
     if (!isClaudeNode(node)) continue;
-    if (node.type === "claude.leader" && (node.maxWorkers ?? 0) > 0)
-      return true;
+    if (node.type === "agent.leader" && (node.maxWorkers ?? 0) > 0) return true;
     const isolation =
       node.isolation ?? workflow.defaults?.isolation ?? "worktree";
     // A fanned node has a worktree for each item (RFC-013).
     const fanned = "forEach" in node && node.forEach !== undefined;
-    if (node.type !== "claude.subagent" && isolation === "worktree") {
+    if (node.type !== "agent.subagent" && isolation === "worktree") {
       count += fanned ? 2 : 1;
     }
   }

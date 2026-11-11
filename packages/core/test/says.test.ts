@@ -10,11 +10,11 @@ const node = (value: unknown): Node => NodeSchema.parse(value);
 
 const NODES = {
   claude: node({
-    type: "claude.worker",
+    type: "agent.worker",
     output: { schema: { verdict: ["approve", "escalate"], n: "integer" } },
   }),
   narrow: node({
-    type: "claude.worker",
+    type: "agent.worker",
     output: { schema: { status: ["pass"] } },
   }),
   tool: node({
@@ -80,7 +80,7 @@ describe("nodeSays", () => {
     const allowsNull = nodeSays(
       {
         a: node({
-          type: "claude.worker",
+          type: "agent.worker",
           output: { schema: { verdict: ["yes", null] } },
         }),
       },
@@ -186,7 +186,7 @@ describe("nodeSays", () => {
       { from: "r", to: "j" },
       { from: "j", to: "r", maxRounds: 2 },
     ];
-    const a = node({ type: "claude.worker", prompt: "x" });
+    const a = node({ type: "agent.worker", prompt: "x" });
     const j = node({ type: "control.join" });
     const r = node({ type: "control.router" });
     const fieldsOfR = (nodes: Record<string, Node>) =>

@@ -48,15 +48,16 @@ strategies run by one session runner ([architecture](./architecture.md),
 [registry.ts](../packages/runtime/src/registry.ts)), keyed by the id so a
 missing entry does not compile. `claude-code` runs the user's own `claude`. Each
 descriptor has `capabilities` (`questions`, `permissionPrompt`, `price`,
-`midTurnMessages`, `reportSchema`, `turnLimit`, `mcpServers`; false: Ork
-supplies a fallback or refuses the node) and `proven`. `open-code` runs the
-user's own `opencode` ([its page](./runtime/open-code.md)); `command-code` runs
-`cmd` ([its page](./architecture/command-code.md)). Both are `proven: true`,
-since their gate runs (2026-11-10); a descriptor with `proven: false` is refused
-and never counts as ready. The session runner sets `PWD` to the session's
-folder, which OpenCode reads as its own. The ids `sdk` and `cli` are retired:
-naming one is refused ("use `claude-code`"); a stored run's are read as
-`claude-code` ([rows.ts](../packages/core/src/store/rows.ts)), never rewritten.
+`midTurnMessages`, `reportSchema`, `turnLimit`, `mcpServers`, `subagents`;
+false: Ork supplies a fallback or refuses the node) and `proven`. `open-code`
+runs the user's own `opencode` ([its page](./runtime/open-code.md));
+`command-code` runs `cmd` ([its page](./architecture/command-code.md)). Both are
+`proven: true`, since their gate runs (2026-11-10); a descriptor with
+`proven: false` is refused and never counts as ready. The session runner sets
+`PWD` to the session's folder, which OpenCode reads as its own. The ids `sdk`
+and `cli` are retired: naming one is refused ("use `claude-code`"); a stored
+run's are read as `claude-code` ([rows.ts](../packages/core/src/store/rows.ts)),
+never rewritten.
 
 | Concern               | `claude-code` ([claude-code.ts](../packages/runtime/src/adapters/claude-code.ts))                                                                                                                                                                                           |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -79,33 +80,10 @@ naming one is refused ("use `claude-code`"); a stored run's are read as
 ## Which driver a session uses
 
 One rule, for every caller ([driver.ts](../packages/core/src/run/driver.ts)):
-`--driver`, else the node's `driver` (or its agent's), else the workflow's
-`defaults.driver` (the project's `.ork/project.yaml` default included), else the
-driver ready on the machine running it. A workflow is committed, so nothing
-writes one person's driver into it; `ork init`'s starter names none.
-
-- **The one ready** is what `ork doctor`'s own checks find
-  ([ready.ts](../packages/integrations/src/ready.ts)): `claude-code` is ready
-  when `claude` is installed and logged in, or `ANTHROPIC_API_KEY` or
-  `CLAUDE_CODE_USE_BEDROCK`/`_VERTEX`/`_FOUNDRY=1` is set. With more than one
-  ready, a run takes `claude-code`.
-- **`ork run` looks once, before anything starts**, and only when a session node
-  names no driver and `--driver` isn't given
-  ([ready-driver.ts](../packages/cli/src/run/ready-driver.ts)). It says so in
-  one line on stderr:
-  `No driver is named, so the run uses the claude-code driver: the one ready here (…).`,
-  or `review names no driver, so it uses …` when only some name none. With
-  neither ready the run doesn't start: it names the nodes and gives each
-  driver's hint, as `ork doctor` does.
-- **The run records it** (`settings.readyDriver` on `run.started`), and
-  `ork resume` keeps it, without looking again. A run recorded before this has
-  none, and a resume looks.
-- `--node` looks the same way for its node; `ork chat` resumes a session on the
-  driver it ran with. Detached runs, called runs, the server's Run workflow and
-  Propose fix, and the MCP `start_run` all start `ork run`, so they look the
-  same way, on the machine running it.
-- Tests pass their own checks, so no real `claude` runs
-  ([tests](../packages/cli/test/ready-driver.test.ts)).
+the driver the node's `model` names (`claude-code.opus`), else `--driver`, else
+the node's `driver` (or its agent's), else `defaults.driver`, else the driver
+ready on the machine running it. The rule, the model prefix and the ready driver
+are in [which driver a session uses](./runtime/which-driver.md).
 
 ## What a session loads
 
@@ -197,4 +175,5 @@ benchmark ([register](./gaps.md#limits)).
 
 - [The node report](./runtime/node-report.md)
 - [How a session ends](./runtime/session-ends.md)
+- [Which driver a session uses](./runtime/which-driver.md)
 - [The `open-code` driver](./runtime/open-code.md)

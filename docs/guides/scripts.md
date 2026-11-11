@@ -36,7 +36,7 @@ matching nothing. To handle that, or any failure, give an edge `when: "!ok"`.
 `ork validate` and `ork run` stop on a condition that compares a field with a
 value it can't have, such as one outside a declared list
 ([values a condition can't have](./writing-workflows/checking.md#values-a-condition-cant-have)).
-A Claude node's own `status` list can narrow the built-in ones, but can't add
+An agent node's own `status` list can narrow the built-in ones, but can't add
 others; declare another field, such as `verdict`.
 
 A script that logs to stdout writes its result to the file at `$ORK_OUTPUT`

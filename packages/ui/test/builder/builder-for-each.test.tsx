@@ -24,7 +24,7 @@ const TEXT = `schemaVersion: 1
 name: a
 nodes:
   plan:
-    type: claude.worker
+    type: agent.worker
     output:
       schema:
         verdict: [pass, fail]
@@ -36,10 +36,10 @@ nodes:
     output:
       format: json
   build:
-    type: claude.worker
+    type: agent.worker
     prompt: Do it.
   lonely:
-    type: claude.worker
+    type: agent.worker
 edges:
   - plan -> build
   - scan -> build

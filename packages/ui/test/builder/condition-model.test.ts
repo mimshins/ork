@@ -19,8 +19,8 @@ const graphOf = (edges: string) =>
   draftGraph(`schemaVersion: 1
 name: t
 nodes:
-  a: { type: claude.worker }
-  b: { type: claude.worker }
+  a: { type: agent.worker }
+  b: { type: agent.worker }
   c: ${TOOL}
   g: { type: human.gate, question: q, options: [ship, keep] }
   r: { type: control.router }

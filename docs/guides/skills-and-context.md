@@ -1,6 +1,6 @@
 # Skills and context
 
-Each Claude node's session is put together from **layers**: your own skills and
+Each agent node's session is put together from **layers**: your own skills and
 notes, your project's, the workflow's, and the node's. The more local layer
 wins, and nothing is loaded twice. This guide shows where each layer lives and
 how to check what a node gets.
@@ -55,7 +55,7 @@ layers:
     - ./context/house-style.md # appended to every node's system prompt
 nodes:
   security:
-    type: claude.worker
+    type: agent.worker
     skills: [./skills/threat-model] # this node only
     context: [./context/security-notes.md]
     instructions: Flag anything that handles user input.
@@ -78,7 +78,7 @@ skills for Claude Code, from [the Claude Code guide](./claude-code.md).
 
 ## Built-in practices
 
-Two practices are on for every Claude node unless you turn them off:
+Two practices are on for every agent node unless you turn them off:
 
 - **caveman**: a terse voice in chat, reports and messages between nodes, which
   saves tokens. Files, code, commits and questions to you stay in normal prose.
@@ -90,7 +90,7 @@ defaults:
   practices: { caveman: false } # off for the whole workflow
 nodes:
   planner:
-    type: claude.leader
+    type: agent.leader
     practices: { ponytail: ultra } # this node and everything it owns
 ```
 
@@ -110,7 +110,7 @@ ork context explain .ork/workflows/review.ork.yaml security
 ```
 
 ```
-security (claude.worker) in review
+security (agent.worker) in review
 
 Instructions  CLAUDE.md, loaded by Claude Code
 

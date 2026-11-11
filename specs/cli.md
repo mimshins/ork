@@ -46,7 +46,7 @@ Every command takes `--plain` (or `ORK_PLAIN=1`): no color, no redrawn prompts
 ork init [--no-link] [--skills]  # scaffold .ork/, .gitignore entries, a starter workflow that names no driver; link tool folders; record the project; Ork's skills for Claude Code
 ork register [path] [--id <id>] [--json]  # attach a project from outside: its files in ~/.ork/projects/<id>/, nothing in the repo
 ork projects [--json] | forget <id> | move <id> <path>  # the registered projects; follow a moved clone
-ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agents and skills under .ork/, tool folders relinked; commits nothing
+ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agents and skills under .ork/, tool folders relinked; renames old `claude.*` node types to `agent.*` in the project's workflows; commits nothing
 ork migrate --from-agents a,b [--reviewer r] [--name n]  # draft a gated workflow from the project's agents
 ork link [tools…] [--check]      # point tools' agents and skills folders (.claude/agents, …) at .ork/
 ork doctor                       # node, git (and a first commit), every agent driver and integration (its own login check), links

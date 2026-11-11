@@ -43,7 +43,7 @@ const WORKFLOW = [
   "  branch: { type: string, required: true }",
   "nodes:",
   "  approver:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    model: haiku",
   "    isolation: readonly",
   '    prompt: "Review {{inputs.branch}}"',
@@ -66,7 +66,7 @@ const FANNED = [
   "    command: plan",
   "    output: { format: json, schema: { tasks: { list: {} } } }",
   "  approver:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    model: haiku",
   "    isolation: readonly",
   "    forEach: ITEMS",
@@ -100,6 +100,7 @@ const standInDrivers: NonNullable<RunWorkflowOptions["drivers"]> = (
     reportSchema: true,
     turnLimit: true,
     mcpServers: true,
+    subagents: true,
   },
 }));
 
@@ -544,11 +545,11 @@ const PIPELINE = [
   "  branch: { type: string, required: true }",
   "nodes:",
   "  plan:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    isolation: shared",
   '    prompt: "Plan {{inputs.branch}}"',
   "  review:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    isolation: readonly",
   '    prompt: "Review the plan: {{nodes.plan.output.summary}}"',
   "    output: { schema: { verdict: [approve, escalate] } }",
@@ -556,7 +557,7 @@ const PIPELINE = [
   "    type: tool.shell",
   '    command: "echo {{nodes.review.output.verdict}}"',
   "  build:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "edges:",
   "  - plan -> review",
   "  - { from: review, to: ship, when: \"verdict == 'approve'\" }",
@@ -629,6 +630,21 @@ describe("ork run (a whole workflow)", () => {
     expect(run.value.store.runs()).toEqual([]);
     expect(run.commands).toEqual([]);
     expect(run.out).toEqual([]);
+  });
+
+  it("refuses a file that still names a renamed node type, and says how to fix it", async () => {
+    const run = pipeline({});
+    writeFileSync(
+      path.join(run.value.cwd, "pipeline.ork.yaml"),
+      PIPELINE.replaceAll("agent.worker", "claude.worker"),
+    );
+    const { exitCode, result } = await runWorkflowFile(run.value);
+    expect(exitCode).toBe(1);
+    expect(result).toBeNull();
+    expect(run.err.join("\n")).toContain(
+      "`claude.worker` was renamed to `agent.worker`; run `ork migrate`",
+    );
+    expect(run.value.store.runs()).toEqual([]);
   });
 
   it("runs a file that is", async () => {

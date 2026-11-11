@@ -53,7 +53,7 @@ const called = (node: string, run: string): RunEvent => ({
 const nodeStarted = (id: string): RunEvent => ({
   type: "node.started",
   id,
-  nodeType: "claude.worker",
+  nodeType: "agent.worker",
   round: 1,
 });
 

@@ -60,7 +60,7 @@ const review = async (choice: string) => {
     executors: {
       "tool.shell": executor,
       "tool.gh": executor,
-      "claude.worker": executor,
+      "agent.worker": executor,
       "human.gate": executor,
     },
     human,
@@ -144,7 +144,7 @@ const playFanOut = async (
     graph: compile("examples/fan-out.ork.yaml"),
     inputs: { goal: "g" },
     cwd: repoRoot,
-    executors: { "claude.worker": executor, "human.gate": executor },
+    executors: { "agent.worker": executor, "human.gate": executor },
     human,
     onEvent: event => {
       log.push(event);
@@ -212,7 +212,7 @@ describe("the fan-out example", () => {
       graph: compile("examples/fan-out.ork.yaml"),
       inputs: { goal: "g" },
       cwd: repoRoot,
-      executors: { "claude.worker": executor, "human.gate": executor },
+      executors: { "agent.worker": executor, "human.gate": executor },
       human,
       onEvent: () => {
         // What ran is enough here.

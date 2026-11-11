@@ -69,6 +69,16 @@ describe("parseWorkflow", () => {
     expect(said).not.toContain('"');
   });
 
+  it("refuses a renamed node type, naming the new one and `ork migrate`", () => {
+    const [diagnostic] = parseErrors(
+      "schemaVersion: 1\nname: x\nnodes:\n  a:\n    type: claude.worker\n    prompt: hi\n",
+    );
+    expect(diagnostic?.message).toBe(
+      "`claude.worker` was renamed to `agent.worker`; run `ork migrate`",
+    );
+    expect(diagnostic?.line).toBe(5);
+  });
+
   it("names the unknown node type and points at its line", () => {
     const [diagnostic] = parseErrors(
       "schemaVersion: 1\nname: x\nnodes:\n  a:\n    type: claude.boss\n",
@@ -123,7 +133,7 @@ describe("serializeWorkflow", () => {
       parseOk(
         [
           "nodes:",
-          "  b: { prompt: hi, type: claude.worker }",
+          "  b: { prompt: hi, type: agent.worker }",
           "  a: { type: control.split }",
           "edges: ['a->b', { from: a, to: [b] }]",
           "name: x",
@@ -132,7 +142,7 @@ describe("serializeWorkflow", () => {
       ),
     );
     expect(text).toContain(
-      "schemaVersion: 1\nname: x\nnodes:\n  b:\n    type: claude.worker\n    prompt: hi\n",
+      "schemaVersion: 1\nname: x\nnodes:\n  b:\n    type: agent.worker\n    prompt: hi\n",
     );
     expect(text).toContain("edges:\n  - a -> b\n  - a -> b\n");
   });

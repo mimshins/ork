@@ -194,7 +194,7 @@ describe("a tool node's script", () => {
       name: "wf",
       nodes: {
         w: {
-          type: "claude.worker",
+          type: "agent.worker",
           verify: {
             command: "pnpm test",
             env: { T: "{{env.PROBE_SECRET}}" },

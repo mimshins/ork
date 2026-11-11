@@ -81,10 +81,10 @@ export const JOURNEYS = [
   },
   {
     id: "one-node",
-    title: "Run one Claude node",
+    title: "Run one agent node",
     who: "You · a Claude session",
     summary:
-      "One `claude.worker` from start to report: its context is compiled, its worktree created, its session started and fed, and its report routed on.",
+      "One `agent.worker` from start to report: its context is compiled, its worktree created, its session started and fed, and its report routed on.",
     steps: [
       {
         from: "cli",

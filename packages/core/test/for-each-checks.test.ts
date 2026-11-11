@@ -37,7 +37,7 @@ const PLAN = `  plan:
 /** A planner and a fanned `build` after it, with this `forEach` and `prompt`. */
 const fanned = (forEach: string, prompt = "Do it", extra = "") => `nodes:
 ${PLAN}  build:
-    type: claude.worker
+    type: agent.worker
     forEach: ${forEach}
     prompt: "${prompt}"
 ${extra}edges:
@@ -48,24 +48,24 @@ const FROM = '{ from: "{{nodes.plan.output.json.tasks}}", maxItems: 4 }';
 
 /** A fanned node and one that reads this field of it. */
 const reads = (field: string) => `nodes:
-  build: { type: claude.worker, prompt: Go, forEach: { items: [a] } }
-  after: { type: claude.worker, prompt: "{{nodes.build.output.${field}}}" }
+  build: { type: agent.worker, prompt: Go, forEach: { items: [a] } }
+  after: { type: agent.worker, prompt: "{{nodes.build.output.${field}}}" }
 edges:
   - build -> after
 `;
 
 /** A fanned node and an edge out of it with this condition. */
 const edge = (when: string) => `nodes:
-  build: { type: claude.worker, prompt: Go, forEach: { items: [a] } }
-  after: { type: claude.worker, prompt: Go }
+  build: { type: agent.worker, prompt: Go, forEach: { items: [a] } }
+  after: { type: agent.worker, prompt: Go }
 edges:
   - { from: build, to: after, when: "${when}" }
 `;
 
 /** A loop through a worker, which may be fanned. */
 const loop = (each: string) => `nodes:
-  build: { type: claude.worker, prompt: Go${each} }
-  review: { type: claude.worker, prompt: Go }
+  build: { type: agent.worker, prompt: Go${each} }
+  review: { type: agent.worker, prompt: Go }
 edges:
   - build -> review
   - { from: review, to: build, when: "status == 'changes_requested'", maxRounds: 2 }
@@ -75,7 +75,7 @@ edges:
 const rules = (template: string) => `rules:
   git: { worktrees: "${template}", branch: "ork/{run}" }
 nodes:
-  build: { type: claude.worker, prompt: Go, forEach: { items: [a, b] } }
+  build: { type: agent.worker, prompt: Go, forEach: { items: [a, b] } }
 `;
 
 /** The errors about git names. */
@@ -136,7 +136,7 @@ describe("forEach's source", () => {
   it("refuses a source that can't have run before it", () => {
     const body = `nodes:
 ${PLAN}  build:
-    type: claude.worker
+    type: agent.worker
     forEach: ${FROM}
     prompt: Do it
 `;
@@ -186,7 +186,7 @@ ${PLAN}  build:
     const body = `nodes:
   a: { type: tool.shell, command: x, forEach: { items: [1, 2] } }
   b:
-    type: claude.worker
+    type: agent.worker
     prompt: Go
     forEach: { from: "{{nodes.a.output.results}}", maxItems: 3 }
 edges:
@@ -199,7 +199,7 @@ edges:
 describe("{{item}} and {{index}}", () => {
   it("are refused in a node with no forEach", () => {
     const body = `nodes:
-  a: { type: claude.worker, prompt: "{{item}} {{index}}" }
+  a: { type: agent.worker, prompt: "{{item}} {{index}}" }
 `;
     expect(codesOf(body)).toEqual(["error:item.outside", "error:item.outside"]);
     expect(pathOf(body, "item.outside")).toEqual(["nodes", "a", "prompt"]);
@@ -222,12 +222,12 @@ describe("{{item}} and {{index}}", () => {
   it("are refused in a fanned node's before:, verify: and notify body", () => {
     const body = `nodes:
   a:
-    type: claude.worker
+    type: agent.worker
     prompt: Go
     forEach: { items: [a] }
     before: { command: "echo {{item}}" }
     notify: [{ to: b, body: "{{item}}" }]
-  b: { type: claude.worker, prompt: x }
+  b: { type: agent.worker, prompt: x }
 edges:
   - a -> b
 `;
@@ -270,8 +270,8 @@ edges:
 
   it("are not roots of a condition, where item is a field of output", () => {
     const body = `nodes:
-  a: { type: claude.worker, prompt: Go, output: { schema: { item: [x, y] } } }
-  b: { type: claude.worker, prompt: Go }
+  a: { type: agent.worker, prompt: Go, output: { schema: { item: [x, y] } } }
+  b: { type: agent.worker, prompt: Go }
 edges:
   - { from: a, to: b, when: "item == 'x'" }
 `;
@@ -304,7 +304,7 @@ edges:
     command: plan
     output: { format: json, schema: { tasks: { list: {} } } }
   build:
-    type: claude.worker
+    type: agent.worker
     prompt: "{{item.anything}}"
     forEach: ${FROM}
 edges:
@@ -333,7 +333,7 @@ describe("a fanned node's gathered fields", () => {
   it("doesn't take a tool's json for a missing format", () => {
     const body = `nodes:
   build: { type: tool.shell, command: x, forEach: { items: [a] } }
-  after: { type: claude.worker, prompt: "{{nodes.build.output.json.x}}" }
+  after: { type: agent.worker, prompt: "{{nodes.build.output.json.x}}" }
 edges:
   - build -> after
 `;
@@ -344,8 +344,8 @@ edges:
 describe("a messages channel", () => {
   it("refuses a fanned node", () => {
     const body = `nodes:
-  lead: { type: claude.leader, prompt: Go }
-  build: { type: claude.worker, prompt: Go, forEach: { items: [a] } }
+  lead: { type: agent.leader, prompt: Go }
+  build: { type: agent.worker, prompt: Go, forEach: { items: [a] } }
 edges:
   - lead -> build
 messages:
@@ -387,18 +387,18 @@ describe("git names", () => {
 });
 
 const owned = (isolation: string, edges: string) => `nodes:
-  lead: { type: claude.leader, prompt: l, isolation: ${isolation} }
+  lead: { type: agent.leader, prompt: l, isolation: ${isolation} }
   build:
-    type: claude.worker
+    type: agent.worker
     parent: lead
     prompt: Go
     forEach: { items: [a, b] }
 ${edges}`;
 
 const continued = (limit: string) => `nodes:
-  plan: { type: claude.worker, prompt: p }
+  plan: { type: agent.worker, prompt: p }
   build:
-    type: claude.worker
+    type: agent.worker
     prompt: Go
     isolation: continue
     forEach: { items: [a, b]${limit} }
@@ -421,7 +421,7 @@ describe("where a fanned node sits", () => {
   it("refuses items whose owner only starts after them", () => {
     const body = owned(
       "worktree",
-      "  plan: { type: claude.worker, prompt: p }\nedges:\n  - plan -> build\n  - build -> lead\n",
+      "  plan: { type: agent.worker, prompt: p }\nedges:\n  - plan -> build\n  - build -> lead\n",
     );
     expect(codesOf(body)).toContain("error:forEach.owner-order");
   });
@@ -433,7 +433,7 @@ describe("where a fanned node sits", () => {
     );
     const none = owned(
       "readonly",
-      "  plan: { type: claude.worker, prompt: p }\nedges:\n  - plan -> build\n",
+      "  plan: { type: agent.worker, prompt: p }\nedges:\n  - plan -> build\n",
     );
     expect(codesOf(none)).not.toContain("error:forEach.owner-order");
   });
@@ -448,13 +448,13 @@ const watched = (until: string) => `nodes:
 `;
 
 const fromAfter = (edges: string) => `nodes:
-  setup: { type: claude.worker, prompt: s }
+  setup: { type: agent.worker, prompt: s }
   lead:
     type: tool.shell
     command: x
     output: { format: json, schema: { tasks: { list: {} } } }
   build:
-    type: claude.worker
+    type: agent.worker
     prompt: Go
     forEach: { from: "{{nodes.lead.output.json.tasks}}", maxItems: 4 }
 ${edges}`;
@@ -475,7 +475,7 @@ describe("a fanned node's other checks", () => {
 
   it("refuses {{item}} in the workflow's outputs", () => {
     const body = `nodes:
-  build: { type: claude.worker, prompt: Go, forEach: { items: [a] } }
+  build: { type: agent.worker, prompt: Go, forEach: { items: [a] } }
 outputs:
   one: "{{item}}"
 `;
@@ -485,10 +485,10 @@ outputs:
   it("refuses a notify rule to a fanned node", () => {
     const body = `nodes:
   first:
-    type: claude.worker
+    type: agent.worker
     prompt: Go
     notify: [{ to: build, body: done }]
-  build: { type: claude.worker, prompt: Go, forEach: { items: [a] } }
+  build: { type: agent.worker, prompt: Go, forEach: { items: [a] } }
 edges:
   - first -> build
 `;

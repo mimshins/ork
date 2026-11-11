@@ -7,25 +7,25 @@ conversation, and the owner never reads a child's transcript.
 
 ## Owners and children
 
-A node names its owner with `parent`. Only a `claude.leader` can own nodes that
+A node names its owner with `parent`. Only an `agent.leader` can own nodes that
 run on their own:
 
 ```yaml
 nodes:
   builder:
-    type: claude.leader
+    type: agent.leader
     prompt: "Implement: {{inputs.feature}}"
-    model: opus
+    model: claude-code.opus
     maxWorkers: 3
   tests:
-    type: claude.worker
+    type: agent.worker
     parent: builder
     prompt: Write the tests for the part your owner describes.
   docs:
-    type: claude.worker
+    type: agent.worker
     parent: builder
     prompt: Update the docs for the change your owner describes.
-    model: haiku
+    model: claude-code.haiku
 ```
 
 - A child with no incoming edge runs only when its owner delegates to it.
@@ -86,7 +86,7 @@ its prompt cache, which saves tokens on long jobs.
 
 ```yaml
 reviewer:
-  type: claude.worker
+  type: agent.worker
   agent: reviewer
   session: resume # check its own earlier findings in each round
 ```
@@ -141,7 +141,7 @@ on a leader to have it answer its children's questions first:
 
 ```yaml
 lead:
-  type: claude.leader
+  type: agent.leader
   prompt: Build the approved spec in specs/feature.md
   questions: owner
 ```
@@ -163,7 +163,7 @@ line for it. Gates and permission prompts always come to you. Every answer is a
 decision that says who gave it: `ork decide --list` shows the child "via lead",
 the transcript shows the leader's name after an answer it gave, and the
 Decisions panel says "Answered … by `lead`, its owner". A leader with no
-`claude.leader` or `claude.worker` child can't set `questions`.
+`agent.leader` or `agent.worker` child can't set `questions`.
 
 ## Concurrency and budget
 
@@ -175,11 +175,11 @@ Decisions panel says "Answered … by `lead`, its owner". A leader with no
 ## See who did what
 
 The run transcript marks a delegated run with its owner
-(`tests │ claude.worker, for builder`), and the run summary lists spawned
-workers by their instance ids. `ork tree` draws the ownership tree, with spawned
-workers under the leader that spawned them, and `ork logs --node <id>` replays
-one node's part. Messages show as `code │ ✉ to docs: …`, and a question to a
-leader as `lead │ ? asked as the owner of fix: …`.
+(`tests │ agent.worker, for builder`), and the run summary lists spawned workers
+by their instance ids. `ork tree` draws the ownership tree, with spawned workers
+under the leader that spawned them, and `ork logs --node <id>` replays one
+node's part. Messages show as `code │ ✉ to docs: …`, and a question to a leader
+as `lead │ ? asked as the owner of fix: …`.
 
 ## Tips
 

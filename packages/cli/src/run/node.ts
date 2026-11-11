@@ -151,7 +151,11 @@ export const runNode = async (
   const servers = namedMcpEntries(projectRoot, plan.mcp);
   if (!servers.ok) return failed([servers.error]);
   // Before the session starts: the driver ready here, when nothing names one.
-  const named = sessionDriver({ override: options.driver, named: plan.driver });
+  const named = sessionDriver({
+    override: options.driver,
+    named: plan.driver,
+    pinned: plan.pinned,
+  });
   const ready =
     named === undefined
       ? chooseReadyDriver(
@@ -226,7 +230,7 @@ export const runNode = async (
       }
     }
   };
-  const nodeType = workflow.nodes[id]?.type ?? "claude.worker";
+  const nodeType = workflow.nodes[id]?.type ?? "agent.worker";
   record({
     type: "run.started",
     runId,

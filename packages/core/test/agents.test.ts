@@ -158,8 +158,8 @@ describe("agent nodes", () => {
       compile(
         [
           "nodes:",
-          "  a: { type: claude.worker, agent: reviewer, prompt: Review x., model: opus }",
-          "  b: { type: claude.worker, agent: helper, prompt: Help. }",
+          "  a: { type: agent.worker, agent: reviewer, prompt: Review x., model: opus }",
+          "  b: { type: agent.worker, agent: helper, prompt: Help. }",
         ],
         catalog,
       ),
@@ -192,7 +192,7 @@ describe("agent nodes", () => {
           "    instructions: Be quiet.",
           "    practices: { caveman: false, ponytail: lite }",
           "nodes:",
-          "  a: { type: claude.worker, agent: quiet, prompt: Go., practices: { ponytail: ultra } }",
+          "  a: { type: agent.worker, agent: quiet, prompt: Go., practices: { ponytail: ultra } }",
         ],
         catalog,
       ),
@@ -212,8 +212,8 @@ describe("agent nodes", () => {
           "    instructions: Inline.",
           "    output: { schema: { verdict: [approve, escalate] } }",
           "nodes:",
-          "  a: { type: claude.worker, agent: reviewer }",
-          "  b: { type: claude.worker, prompt: go }",
+          "  a: { type: agent.worker, agent: reviewer }",
+          "  b: { type: agent.worker, prompt: go }",
           "edges:",
           "  - { from: a, to: b, when: \"verdict == 'approve'\" }",
         ],
@@ -227,7 +227,7 @@ describe("agent nodes", () => {
   it("fill a node from Ork's built-in agents, which a project agent can shadow", () => {
     const empty = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-home-")));
     const builtin = compile(
-      ["nodes:", "  r: { type: claude.worker, agent: ork-reviewer }"],
+      ["nodes:", "  r: { type: agent.worker, agent: ork-reviewer }"],
       loadAgents({ home: empty }),
     );
     expect(builtin.graph?.workflow.nodes["r"]).toMatchObject({
@@ -248,7 +248,7 @@ describe("agent nodes", () => {
 
   it("fail on an agent no one defines, naming the known ones", () => {
     const result = compile(
-      ["nodes:", "  a: { type: claude.worker, agent: nobody }"],
+      ["nodes:", "  a: { type: agent.worker, agent: nobody }"],
       catalog,
     );
     expect(result.graph).toBeNull();
@@ -268,7 +268,7 @@ describe("agent nodes", () => {
     put(path.join(dir, ".ork/agents/x.agent.yaml"), "skills: [./skills/s]\n");
     const graph = graphOf(
       compile(
-        ["nodes:", "  a: { type: claude.worker, agent: x }"],
+        ["nodes:", "  a: { type: agent.worker, agent: x }"],
         loadAgents({ projectRoot: dir, home: temp("ork-home-") }),
         path.join(dir, ".ork/workflows"),
       ),
@@ -281,10 +281,7 @@ describe("agent nodes", () => {
   it("carry the agent's role into the session, after the shared layers", () => {
     const graph = graphOf(
       compile(
-        [
-          "nodes:",
-          "  a: { type: claude.worker, agent: reviewer, prompt: Go. }",
-        ],
+        ["nodes:", "  a: { type: agent.worker, agent: reviewer, prompt: Go. }"],
         catalog,
       ),
     );
@@ -304,10 +301,7 @@ describe("agent nodes", () => {
   it("are recorded with their agent when they start", async () => {
     const graph = graphOf(
       compile(
-        [
-          "nodes:",
-          "  a: { type: claude.worker, agent: reviewer, prompt: Go. }",
-        ],
+        ["nodes:", "  a: { type: agent.worker, agent: reviewer, prompt: Go. }"],
         catalog,
       ),
     );
@@ -316,7 +310,7 @@ describe("agent nodes", () => {
       graph,
       inputs: {},
       cwd: root,
-      executors: { "claude.worker": executor },
+      executors: { "agent.worker": executor },
       human,
       onEvent: event => {
         events.push(event);

@@ -1,6 +1,6 @@
 # Agents
 
-An **agent** is who does a Claude node's work: its role, its model, the tools it
+An **agent** is who does an agent node's work: its role, its model, the tools it
 may use, what it reports. A **node** is a place in the flow: its task, its
 owner, its edges. Define an agent once, and any node can take it.
 
@@ -9,7 +9,7 @@ owner, its edges. Define an agent once, and any node can take it.
 ```yaml
 nodes:
   approver:
-    type: claude.worker
+    type: agent.worker
     agent: approver # who does the work
     prompt: Decide whether {{nodes.builder.output.branch}} is ready to merge.
 ```
@@ -68,14 +68,14 @@ escalate to a human when anything is doubtful. Say why.
 
 ```yaml
 # approver.agent.yaml: Ork's settings, which other tools never see
-model: opus
+model: claude-code.opus
 isolation: readonly
 output:
   schema:
     verdict: [approve, escalate]
 ```
 
-The settings file takes what a Claude node takes: `model`, `effort`, `driver`,
+The settings file takes what an agent node takes: `model`, `effort`, `driver`,
 `skills`, `context`, `isolation`, `budgetUsd`, `maxTurns`, `practices`, `tools`
 and `output`. Paths in `skills` and `context` are relative to the agent's own
 folder. Claude Code's `model:`, `tools:` and `disallowedTools:` in the markdown
@@ -145,7 +145,7 @@ agents:
   security-reviewer:
     description: Reviews a branch for security issues.
     instructions: You review for security … Report changes_requested or pass.
-    model: opus
+    model: claude-code.opus
     isolation: readonly
 ```
 

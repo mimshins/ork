@@ -4,13 +4,13 @@ _Part of [Workflow file format](../workflow-format.md)._
 
 **Built-in node types in v1:**
 
-- **Agents:** `claude.leader`, `claude.worker`, `claude.subagent`. A
-  `claude.subagent` runs inside its `parent`'s session as a Claude Code subagent
+- **Agents:** `agent.leader`, `agent.worker`, `agent.subagent`. An
+  `agent.subagent` runs inside its `parent`'s session as a Claude Code subagent
   ([brief.ts](../../packages/core/src/run/brief.ts)): its role (its agent's
   instructions), `instructions` and `prompt`, rendered like a brief, are its
   system prompt, `description` says when the session uses it (the Agent tool,
   added to a `tools.only` list), and `model`, `maxTurns` and `tools.only` and
-  `deny` carry over. A `claude.leader` also takes `maxWorkers` and
+  `deny` carry over. An `agent.leader` also takes `maxWorkers` and
   `questions: owner | user` (default `user`), whether its children's questions
   go to it first ([leader questions](../messaging/leader-questions.md)). A
   leader or worker's `output.gather` names fields of its `output.schema`,
@@ -100,7 +100,7 @@ _Part of [Workflow file format](../workflow-format.md)._
   answering; it is shown apart from the question.
 - **Edges:** `input`/`output` artifacts.
 
-Claude nodes and `defaults` take a `model` (`opus`, `sonnet`, `haiku` or a full
+Agent nodes and `defaults` take a `model` (`opus`, `sonnet`, `haiku` or a full
 model id) and an `effort` (`low`, `medium`, `high`, `xhigh`, `max`); a node's
 own value wins, then `defaults`, then Claude Code's default for the model. A
 spawned worker takes its template's. On a node with `forEach`, either may be a
@@ -109,13 +109,22 @@ on its own model; elsewhere, and in `defaults`, a template is refused
 ([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort)).
 No `schemaVersion` changed.
 
-Claude nodes and `defaults` (the workflow's or `.ork/project.yaml`'s) take a
+A `model` may name its driver: `<driver>.<model>` (`claude-code.opus`,
+`open-code.anthropic/claude-sonnet-5-5`,
+`command-code.deepseek/deepseek-v4.1-flash`). The text before the first `.` is
+the driver when it is a registered driver id, and the rest goes to that tool as
+written; any other value is a plain model for the run's driver
+(`deepseek/deepseek-v4.1-flash`). A prefixed node needs no `driver`, and
+`ork run --driver` does not override it
+([the model prefix](../runtime/which-driver.md#the-model-prefix)).
+
+Agent nodes and `defaults` (the workflow's or `.ork/project.yaml`'s) take a
 `driver`: `claude-code`, `open-code` or `command-code`
 ([which driver a session uses](../runtime.md#which-driver-a-session-uses)). The
 ids `sdk` and `cli` of earlier versions are refused with "driver `sdk` was
 retired; use `claude-code`"; no `schemaVersion` changed.
 
-Claude nodes and `defaults` also take `practices` (caveman, ponytail), on unless
+Agent nodes and `defaults` also take `practices` (caveman, ponytail), on unless
 turned off and inherited down the ownership tree; see
 [built-in practices](../context.md#built-in-practices).
 
@@ -130,6 +139,16 @@ Leaders and workers (and agents) take `session: fresh | resume`: whether a node
 that runs again continues its last session; by default a leader resumes and a
 worker starts fresh ([scheduler](../scheduler.md#loops),
 [ADR-033](../../decisions/ADR-033-session-resume-on-any-node.md)).
+
+**Renamed types.** The agent nodes were `claude.leader`, `claude.worker` and
+`claude.subagent` before RFC-015
+([ADR-083](../../decisions/ADR-083-agent-node-types-and-driver-prefixed-models.md)).
+No alias is kept: `ork validate` and `ork run` refuse an old name with
+"`claude.worker` was renamed to `agent.worker`; run `ork migrate`"
+([migrating](../projects.md#migrating)). `schemaVersion` stays 1.
+
+An `agent.subagent` needs a driver that runs subagents (the `subagents`
+capability, [sub-agents](../runtime/which-driver.md#sub-agents)).
 
 A workflow's `rules:` (`git`, `permissions`) override the project's
 `.ork/project.yaml`; see [project rules](../project-rules.md).

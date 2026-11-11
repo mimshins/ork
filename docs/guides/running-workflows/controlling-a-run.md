@@ -67,7 +67,7 @@ of budget counts what it already spent: raise `limits.budgetUsd` first.
 ork run software-factory --node spec --input feature="export to CSV" --in-place
 ```
 
-`--node` runs a single `claude.leader` or `claude.worker` session and prints its
+`--node` runs a single `agent.leader` or `agent.worker` session and prints its
 report: status, summary, branch, artifacts, its `output.schema` fields and
 usage. It is handy for working on one node's prompt.
 

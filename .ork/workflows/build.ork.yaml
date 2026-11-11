@@ -16,7 +16,7 @@ layers:
         - resync-map
         - docs-structure
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
   effort: medium
   budgetUsd: 2
 limits:
@@ -25,7 +25,7 @@ limits:
   timeout: 5h
 nodes:
   build:
-    type: claude.leader
+    type: agent.leader
     prompt: |-
       Build this approved plan through the agents you own. Decide what it needs:
       - UI work (packages/ui): delegate to design first, then the build, then a11y to audit the result.
@@ -36,7 +36,7 @@ nodes:
       Each child already has the plan; your brief says which tasks are theirs. Fix only what integrates their work. Ork runs pnpm check on your checkout before your report counts. The suites (`pnpm check`, `pnpm check:changed`, `pnpm test`, a bare `vitest run`) are denied in this session because Ork runs them; use `pnpm check:fast` (format, lint, typecheck, docs) and targeted `vitest run <files>` while you work. When you run again, your input is either the independent reviews (`results` holds each concern's blocking `findings`, which are yours to fix, and its `notes`, which never block: leave them unless a fix is trivial, and `statuses` its verdict, in the order of `items`; a `fail` is a reviewer that didn't finish, with nothing for you to fix), or the maintainer's answer at the ratify gate (choice revise, and note, their words on what to change): delegate the fixes. If that note is empty, ask with ask_user what to change rather than guessing. When a child asks a question, answer it only when the approved plan or an earlier answer settles it, and say which. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One the plan doesn't settle always takes the pass-on option, so it reaches the maintainer. Never decide one for them. Say in `unchecked` what no child and no check covered (an empty string when nothing). Report pass only when every child you used passed, and gather the entries of the plan's Decided section, copying each one's hardToReverse as written, and every decision your children reported into your own `decisions`, keeping who decided each. Ork keeps the decisions of your earlier rounds, so when you run again, report the ones made in this round.
 
       {{inputs.plan}}
-    model: sonnet
+    model: claude-code.sonnet
     effort: high
     isolation: worktree
     budgetUsd: 4
@@ -91,14 +91,14 @@ nodes:
     maxWorkers: 8
     questions: owner
   design:
-    type: claude.worker
+    type: agent.worker
     parent: build
     agent: ui-designer
     prompt: |-
       Design the UI part of this task before it is coded, as your owner's brief says. Write the design (purpose, states, tokens, keyboard map, accessible names, copy word for word) into specs/ui/ and any new tokens into packages/ui/src/design/, with their pairings in packages/ui/test/pairings.ts. Write no feature code. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. Report every choice you made that the plan didn't settle in `decisions`. The approved plan:
 
       {{inputs.plan}}
-    model: sonnet
+    model: claude-code.sonnet
     effort: high
     isolation: worktree
     budgetUsd: 3
@@ -145,11 +145,11 @@ nodes:
       command: pnpm install --frozen-lockfile --prefer-offline
       timeout: 10m
   a11y:
-    type: claude.worker
+    type: agent.worker
     parent: build
     agent: a11y-auditor
     prompt: Audit the uncommitted UI change in your owner's checkout (git status, git diff HEAD) against WCAG 2.2 AA. Open the changed surfaces in the browser tools for axe, a keyboard pass, zoom and contrast, and audit the changed components' markup, names and roles, focus handling, keyboard map, tokens and their contrast pairings, and run the UI's tests (npx vitest run packages/ui). Report pass, or changes_requested with every finding in `findings` (surface, criterion, how it fails, the fix), and list anything you couldn't check. In Bash keep to plain read commands (cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo, read-only git), the tests and pnpm install --offline, with no awk, find, python, shell variables, brace expansion or paths outside this checkout, and write no files, not even a temporary test. Anything else stops the run to ask the maintainer. What needs more than that goes in the list of what you couldn't check.
-    model: sonnet
+    model: claude-code.sonnet
     isolation: readonly
     budgetUsd: 2
     maxTurns: 40
@@ -163,7 +163,7 @@ nodes:
     mcp:
       - chrome-devtools
   implement:
-    type: claude.worker
+    type: agent.worker
     parent: build
     agent: implementer
     prompt: |-
@@ -220,14 +220,14 @@ nodes:
       timeout: 20m
       attempts: 2
   engine:
-    type: claude.worker
+    type: agent.worker
     parent: build
     agent: engine
     prompt: |-
       Build the tasks your owner's brief gives you from this approved plan. If a design is in your checkout (git status), build to it. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. The engine's semantics are always a design decision. Report every other choice you made that the plan didn't settle in `decisions`. Ork runs `pnpm check:changed` (the static checks and the tests your change reaches) before your report counts. The suites (`pnpm check`, `pnpm check:changed`, `pnpm test`, a bare `vitest run`) are denied in this session because Ork runs them; use `pnpm check:fast` (format, lint, typecheck, docs) and targeted `vitest run <files>` while you work.
 
       {{inputs.plan}}
-    model: opus
+    model: claude-code.opus
     effort: high
     isolation: worktree
     budgetUsd: 8
@@ -278,7 +278,7 @@ nodes:
       timeout: 20m
       attempts: 2
   review:
-    type: claude.worker
+    type: agent.worker
     agent: reviewer
     prompt: |-
       Review the uncommitted change in this checkout (git status, git diff HEAD) against the approved plan below, for one concern only; two other reviewers cover the rest. pnpm check already passed here; don't run it again.
@@ -304,13 +304,13 @@ nodes:
     forEach:
       items:
         - concern: correctness
-          model: opus
+          model: claude-code.opus
           look: "bugs and behaviour: does the code do what the plan says, including failure paths, races, resume and edge cases."
         - concern: tests
-          model: sonnet
+          model: claude-code.sonnet
           look: does each acceptance criterion have a test that would fail without the change, and do the tests assert behaviour rather than the implementation.
         - concern: repository rules
-          model: sonnet
+          model: claude-code.sonnet
           look: "the rules in AGENTS.md: dependency direction, entry points, @file blocks, stale specs and user docs, the interaction map and roadmap, gaps, changesets, secrets, and AI attribution."
       maxParallel: 3
   ratify:
@@ -336,7 +336,7 @@ nodes:
       - revise
       - stop
   docs:
-    type: claude.worker
+    type: agent.worker
     agent: docs-keeper
     prompt: |-
       The change in this checkout (git status, git diff HEAD) passed review. Sync the knowledge with it: run knowledge-drift-sync, resync-map when it changes what the map shows, and docs-structure for any document over 200 lines.

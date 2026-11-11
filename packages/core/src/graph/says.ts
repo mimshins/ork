@@ -164,7 +164,7 @@ export const itemSays = (node: Node): NodeSays => {
       canDeclare: false,
     };
   }
-  if (!node.type.startsWith("claude.")) return NOTHING;
+  if (!node.type.startsWith("agent.")) return NOTHING;
   const declared = declaredFields(node, "").map(field => withFail(field));
   return {
     fields: [

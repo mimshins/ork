@@ -175,7 +175,7 @@ const forkFinished = (id: string, costUsd: number): RunEvent => ({
 describe("a leader's fork", () => {
   /** A leader cut off in `delegate`, after its fork answered a question. */
   const cut: RunEvent[] = [
-    { type: "node.started", id: "lead", nodeType: "claude.leader", round: 1 },
+    { type: "node.started", id: "lead", nodeType: "agent.leader", round: 1 },
     {
       type: "node.event",
       id: "lead",
@@ -213,7 +213,7 @@ describe("a leader's fork", () => {
 
 /** A flow run of `id` that finished ok, with its session. */
 const ok = (id: string, round: number): RunEvent[] => [
-  { type: "node.started", id, nodeType: "claude.worker", round },
+  { type: "node.started", id, nodeType: "agent.worker", round },
   {
     type: "node.event",
     id,
@@ -251,15 +251,15 @@ describe("reading a run's events back", () => {
       {
         type: "node.started",
         id: "kid",
-        nodeType: "claude.worker",
+        nodeType: "agent.worker",
         round: 1,
         owner: "lead",
       },
       { type: "node.finished", id: "kid", round: 1, ok: true, output: {} },
-      { type: "node.started", id: "fix", nodeType: "claude.worker", round: 1 },
+      { type: "node.started", id: "fix", nodeType: "agent.worker", round: 1 },
       { type: "node.finished", id: "fix", round: 1, ok: false, output: {} },
       ...ok("fix", 2),
-      { type: "node.started", id: "cut", nodeType: "claude.worker", round: 1 },
+      { type: "node.started", id: "cut", nodeType: "agent.worker", round: 1 },
     ]);
     expect(state.history.get("lead")?.map(r => r.sessionId)).toEqual([
       "lead-s1",
@@ -272,7 +272,7 @@ describe("reading a run's events back", () => {
 
   it("continues a node's session once when the run was cut off, not when it failed", () => {
     const cutRun: RunEvent[] = [
-      { type: "node.started", id: "cut", nodeType: "claude.worker", round: 1 },
+      { type: "node.started", id: "cut", nodeType: "agent.worker", round: 1 },
       {
         type: "node.event",
         id: "cut",
@@ -311,7 +311,7 @@ describe("reading a run's events back", () => {
       { type: "message.read", node: "b", ids: [1] },
       { type: "user.message", node: "c", body: "hi", delivered: "queued" },
       { type: "user.message", node: "b", body: "seen", delivered: "queued" },
-      { type: "node.started", id: "b", nodeType: "claude.worker", round: 2 },
+      { type: "node.started", id: "b", nodeType: "agent.worker", round: 2 },
     ]);
     expect(state.mail.last).toBe(2);
     expect(state.mail.inboxes.get("b")).toEqual([

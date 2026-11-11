@@ -34,7 +34,7 @@ const review = (settings: string[], items: string[]) => [
   "inputs: { level: { type: string } }",
   "nodes:",
   "  review:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    prompt: Review",
   ...settings.map(line => `    ${line}`),
   "    forEach:",
@@ -68,7 +68,7 @@ describe("model and effort from {{item}}", () => {
       expect(
         found([
           "nodes:",
-          `  solo: { type: claude.worker, prompt: Go, ${field}: "{{item.${field}}}" }`,
+          `  solo: { type: agent.worker, prompt: Go, ${field}: "{{item.${field}}}" }`,
         ]),
       ).toEqual([`error:${field}.template nodes.solo.${field}`]);
     },
@@ -115,12 +115,12 @@ describe("model and effort from {{item}}", () => {
       found([
         "nodes:",
         "  plan:",
-        "    type: claude.worker",
+        "    type: agent.worker",
         "    prompt: Plan",
         "    output:",
         "      schema: { tasks: { list: { effort: string } } }",
         "  build:",
-        "    type: claude.worker",
+        "    type: agent.worker",
         "    prompt: Build",
         '    effort: "{{item.effort}}"',
         "    forEach:",
@@ -137,7 +137,7 @@ describe("model and effort from {{item}}", () => {
       found([
         'defaults: { model: "{{item.model}}" }',
         "nodes:",
-        "  solo: { type: claude.worker, prompt: Go }",
+        "  solo: { type: agent.worker, prompt: Go }",
       ]),
     ).toEqual(["error:model.template defaults.model"]);
   });

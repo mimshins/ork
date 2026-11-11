@@ -16,7 +16,7 @@ fix it at the source.
   a context gap; an account's, provider's or your own stop is a setup hint, not
   filed. A report the `report` tool refuses is the agent's context gap
   (`report.rejected`), not an Ork bug.
-- **The agents**, with the `feedback` tool every Claude node in a run gets. Its
+- **The agents**, with the `feedback` tool every agent node in a run gets. Its
   description asks only for what materially got in the way, in a line and a
   short body, and Ork takes at most 3 reports from a session.
 

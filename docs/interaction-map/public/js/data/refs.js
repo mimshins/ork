@@ -906,7 +906,7 @@ export const ENGINE = {
 };
 
 export const NODE_TYPES = {
-  claude: d("packages/nodes/src/claude.ts", "Code: Claude nodes"),
+  claude: d("packages/nodes/src/claude.ts", "Code: agent nodes"),
   tools: d("packages/nodes/src/tools.ts", "Code: tool nodes"),
   gate: d("packages/nodes/src/gate.ts", "Code: human gates"),
   verify: d("packages/nodes/src/verify.ts", "Code: checks on a report"),
@@ -1298,8 +1298,8 @@ export const ROLES = {
     "Tests: worktrees, merges, readonly nodes",
   ),
   subagent: d(
-    "docs/guides/writing-workflows.md#claude-nodes",
-    "Guide: Claude nodes, sub-agents",
+    "docs/guides/writing-workflows.md#agent-nodes",
+    "Guide: agent nodes, sub-agents",
   ),
   brief: d(
     "packages/core/src/run/brief.ts",

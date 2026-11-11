@@ -29,6 +29,8 @@ export type DriverCapabilities = {
   turnLimit: boolean;
   /** The session loads the node's own MCP servers from `.mcp.json` (`mcp`). */
   mcpServers: boolean;
+  /** The tool runs subagents, so `agent.subagent` nodes can sit under a leader. */
+  subagents: boolean;
 };
 
 export type AgentDriver = {
@@ -111,6 +113,7 @@ const claudeCode: AgentDriver = {
     reportSchema: true,
     turnLimit: true,
     mcpServers: true,
+    subagents: true,
   },
   proven: true,
   onePerCheckout: false,
@@ -213,6 +216,8 @@ const openCode = installedCli("open-code", "opencode", "opencode auth login", {
     reportSchema: false,
     turnLimit: true,
     mcpServers: true,
+    // Not measured on a real session yet: refused until it is.
+    subagents: false,
   },
 });
 
@@ -229,6 +234,7 @@ const commandCode = installedCli("command-code", "cmd", "cmd login", {
     turnLimit: true,
     // Its MCP servers come from a per-folder scope, which holds only Ork's.
     mcpServers: false,
+    subagents: false,
   },
 });
 

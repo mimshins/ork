@@ -24,7 +24,7 @@ const stored = (seq: number, event: RunEvent): StoredEvent => ({
 
 const node = (id: string, over: Partial<TreeNode> = {}): TreeNode => ({
   id,
-  type: "claude.worker",
+  type: "agent.worker",
   state: "failed",
   runs: 1,
   costUsd: 0,
@@ -132,7 +132,7 @@ describe("the tree with each node's latest end", () => {
       stored(3, {
         type: "node.started",
         id: "b",
-        nodeType: "claude.worker",
+        nodeType: "agent.worker",
         round: 2,
       }),
     ];

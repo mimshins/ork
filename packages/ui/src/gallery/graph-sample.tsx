@@ -14,13 +14,13 @@ import styles from "./gallery.module.css";
 
 const LAYOUT = layoutGraph({
   nodes: [
-    { id: "spec", type: "claude.worker" },
-    { id: "builder", type: "claude.leader" },
-    { id: "security", type: "claude.worker", parent: "builder" },
-    { id: "ux", type: "claude.worker", parent: "builder" },
-    { id: "code", type: "claude.worker", parent: "builder" },
+    { id: "spec", type: "agent.worker" },
+    { id: "builder", type: "agent.leader" },
+    { id: "security", type: "agent.worker", parent: "builder" },
+    { id: "ux", type: "agent.worker", parent: "builder" },
+    { id: "code", type: "agent.worker", parent: "builder" },
     { id: "reviews", type: "control.join" },
-    { id: "approver", type: "claude.worker" },
+    { id: "approver", type: "agent.worker" },
     { id: "client-kit", type: "workflow.call" },
     { id: "human", type: "human.gate" },
     { id: "merge", type: "tool.gh" },

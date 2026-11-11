@@ -79,7 +79,7 @@ const session = (
   usage: SessionUsage,
   model = "sonnet",
 ): RunEvent[] => [
-  { type: "node.started", id, nodeType: "claude.worker", round },
+  { type: "node.started", id, nodeType: "agent.worker", round },
   started(id, model),
   finished(id, usage),
   { type: "node.finished", id, round, ok: true, output: {}, usage },
@@ -91,7 +91,7 @@ const RUN_STARTED: RunEvent = {
   workflow: "w",
   entries: ["build"],
   nodes: [
-    { id: "build", type: "claude.worker" },
+    { id: "build", type: "agent.worker" },
     { id: "call", type: "workflow.call" },
   ],
 };
@@ -201,7 +201,7 @@ describe("the usage ledger", () => {
       {
         type: "node.started",
         id: "build-1",
-        nodeType: "claude.worker",
+        nodeType: "agent.worker",
         round: 2,
       },
       started("build-1"),
@@ -226,7 +226,7 @@ describe("the usage ledger", () => {
       {
         type: "node.started",
         id: "build.2",
-        nodeType: "claude.worker",
+        nodeType: "agent.worker",
         round: 1,
       },
       started("build.2"),
@@ -522,7 +522,7 @@ describe("running sessions against the budget", () => {
 
 describe("what a resumed run starts from", () => {
   const cut: RunEvent[] = [
-    { type: "node.started", id: "n", nodeType: "claude.leader", round: 1 },
+    { type: "node.started", id: "n", nodeType: "agent.leader", round: 1 },
     sessionFinished("n", "s", 3),
     {
       type: "node.finished",
@@ -596,8 +596,8 @@ describe("a declared node's name", () => {
           workflow: "w",
           entries: ["build"],
           nodes: [
-            { id: "build", type: "claude.worker" },
-            { id: "build-2", type: "claude.worker" },
+            { id: "build", type: "agent.worker" },
+            { id: "build-2", type: "agent.worker" },
           ],
         },
       },

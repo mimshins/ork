@@ -27,7 +27,7 @@ every run that run called, at any depth, including runs it called before you
 attached. A called run's lines start with the path of the calls that led to it:
 
 ```text
-plan › spec │ claude.worker
+plan › spec │ agent.worker
 plan › spec │ ✓ pass: Drafted the spec
 ```
 

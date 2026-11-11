@@ -34,7 +34,7 @@ const EFFORT = z
   .parse(
     z
       .object({ properties: z.object({ effort: z.unknown() }) })
-      .parse(nodeSchemaOf(ROOT, "claude.worker")).properties.effort,
+      .parse(nodeSchemaOf(ROOT, "agent.worker")).properties.effort,
   );
 
 const draw = (value: unknown) => {

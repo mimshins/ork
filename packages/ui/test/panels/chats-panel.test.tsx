@@ -32,8 +32,8 @@ const EVENTS: StoredEvent[] = [
     workflow: "w",
     entries: ["lead"],
     nodes: [
-      { id: "lead", type: "claude.leader" },
-      { id: "kid", type: "claude.worker", parent: "lead" },
+      { id: "lead", type: "agent.leader" },
+      { id: "kid", type: "agent.worker", parent: "lead" },
       { id: "sh", type: "tool.shell" },
     ],
   }),

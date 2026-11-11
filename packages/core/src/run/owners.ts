@@ -12,7 +12,7 @@ import type { RuntimeEvent, SessionUsage } from "../runtime/types.ts";
 type Seen = NonNullable<ReturnType<OwnerPort["session"]>>;
 
 /** The node types whose sessions can ask (`ask_user`). */
-const ASKING = new Set(["claude.leader", "claude.worker"]);
+const ASKING = new Set(["agent.leader", "agent.worker"]);
 
 export const createOwners = (graph: CompiledGraph) => {
   const sessions = new Map<string, Seen>();
@@ -22,7 +22,7 @@ export const createOwners = (graph: CompiledGraph) => {
     const node = graph.nodes.get(template ?? id)?.node;
     if (node?.parent === undefined || !ASKING.has(node.type)) return undefined;
     const owner = graph.nodes.get(node.parent)?.node;
-    return owner?.type === "claude.leader" && owner.questions === "owner"
+    return owner?.type === "agent.leader" && owner.questions === "owner"
       ? node.parent
       : undefined;
   };

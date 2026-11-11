@@ -32,7 +32,7 @@ const FROM = '{ from: "{{nodes.plan.output.tasks}}", maxItems: 8 }';
 
 describe("forEach", () => {
   it.each([
-    "{ type: claude.worker, prompt: Go, forEach: ITEMS }",
+    "{ type: agent.worker, prompt: Go, forEach: ITEMS }",
     "{ type: tool.shell, command: ls, forEach: ITEMS }",
     "{ type: tool.gh, command: pr list, forEach: ITEMS }",
     "{ type: mcp.call, server: s, tool: t, forEach: ITEMS }",
@@ -46,12 +46,12 @@ describe("forEach", () => {
     const extra = "maxParallel: 2, onFailure: stop";
     expect(
       parses(
-        `{ type: claude.worker, prompt: Go, forEach: { items: [a], ${extra} } }`,
+        `{ type: agent.worker, prompt: Go, forEach: { items: [a], ${extra} } }`,
       ),
     ).toBe(true);
     expect(
       parses(
-        `{ type: claude.worker, prompt: Go, forEach: { from: x, maxItems: 3, ${extra} } }`,
+        `{ type: agent.worker, prompt: Go, forEach: { from: x, maxItems: 3, ${extra} } }`,
       ),
     ).toBe(true);
   });
@@ -66,14 +66,14 @@ describe("forEach", () => {
     ["an unknown onFailure", "{ items: [a], onFailure: retry }"],
   ])("is refused with %s", (_name, value) => {
     expect(
-      parses(`{ type: claude.worker, prompt: Go, forEach: ${value} }`),
+      parses(`{ type: agent.worker, prompt: Go, forEach: ${value} }`),
     ).toBe(false);
   });
 
   it.each([
-    "{ type: claude.leader, prompt: Go, forEach: { items: [a] } }",
+    "{ type: agent.leader, prompt: Go, forEach: { items: [a] } }",
     "{ type: human.gate, question: q, options: [a, b], forEach: { items: [a] } }",
-    "{ type: claude.subagent, parent: p, description: d, forEach: { items: [a] } }",
+    "{ type: agent.subagent, parent: p, description: d, forEach: { items: [a] } }",
     "{ type: control.split, forEach: { items: [a] } }",
     "{ type: control.join, forEach: { items: [a] } }",
     "{ type: control.router, forEach: { items: [a] } }",
@@ -114,12 +114,12 @@ describe("the canonical form", () => {
         "  build:",
         "    prompt: Do {{item.title}}",
         "    forEach: { from: x, maxItems: 4, maxParallel: 2 }",
-        "    type: claude.worker",
+        "    type: agent.worker",
       ].join("\n"),
     );
     expect(text).toContain(
       [
-        "    type: claude.worker",
+        "    type: agent.worker",
         "    prompt: Do {{item.title}}",
         "    forEach:",
         "      from: x",
@@ -140,7 +140,7 @@ const messages = (node: string): string[] => {
 };
 
 const worker = (forEach: string) =>
-  messages(`{ type: claude.worker, prompt: Go, forEach: ${forEach} }`);
+  messages(`{ type: agent.worker, prompt: Go, forEach: ${forEach} }`);
 
 describe("the messages for a forEach that is wrong", () => {
   it.each([
@@ -167,7 +167,7 @@ describe("the messages for a forEach that is wrong", () => {
     rule => {
       expect(
         messages(
-          `{ type: claude.worker, prompt: Go, output: { schema: { tasks: ${rule} } } }`,
+          `{ type: agent.worker, prompt: Go, output: { schema: { tasks: ${rule} } } }`,
         ),
       ).toEqual([expect.stringContaining("`list` takes a map")]);
     },
@@ -176,7 +176,7 @@ describe("the messages for a forEach that is wrong", () => {
   it("still takes JSON Schema and value rules in a Claude node's output", () => {
     expect(
       messages(
-        "{ type: claude.worker, prompt: Go, output: { schema: { a: { type: array }, b: [x, y], c: { list: {} } } } }",
+        "{ type: agent.worker, prompt: Go, output: { schema: { a: { type: array }, b: [x, y], c: { list: {} } } } }",
       ),
     ).toEqual([]);
   });
@@ -185,13 +185,13 @@ describe("the messages for a forEach that is wrong", () => {
 describe("a Claude node's effort", () => {
   it.each(['"high"', '"{{item.effort}}"'])("takes %s", effort => {
     expect(
-      parses(`{ type: claude.worker, prompt: Go, effort: ${effort} }`),
+      parses(`{ type: agent.worker, prompt: Go, effort: ${effort} }`),
     ).toBe(true);
   });
 
   it("refuses a value that is neither a level nor a template", () => {
     expect(
-      messages("{ type: claude.worker, prompt: Go, effort: hard }"),
+      messages("{ type: agent.worker, prompt: Go, effort: hard }"),
     ).toEqual([expect.stringContaining("low, medium, high, xhigh or max")]);
   });
 
@@ -203,7 +203,7 @@ describe("a Claude node's effort", () => {
           "name: t",
           'defaults: { effort: "{{item.effort}}" }',
           "nodes:",
-          "  n: { type: claude.worker, prompt: Go }",
+          "  n: { type: agent.worker, prompt: Go }",
         ].join("\n"),
       ).ok,
     ).toBe(false);

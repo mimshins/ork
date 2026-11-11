@@ -32,7 +32,7 @@ const ports: SessionPorts = {
 };
 
 const schema = reportSchemaFor({
-  type: "claude.worker",
+  type: "agent.worker",
   output: { schema: { verdict: ["approve", "reject"] } },
 });
 

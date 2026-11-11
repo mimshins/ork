@@ -31,7 +31,7 @@ const graphOf = (edges: string) =>
 name: t
 nodes:
   plan:
-    type: claude.worker
+    type: agent.worker
     output:
       schema:
         verdict: [pass, fail]
@@ -44,12 +44,12 @@ nodes:
       schema:
         paths: { list: {} }
   late:
-    type: claude.worker
+    type: agent.worker
     output:
       schema:
         later: { list: {} }
   build:
-    type: claude.worker
+    type: agent.worker
     forEach: { from: "{{nodes.plan.output.tasks}}", maxItems: 5 }
 edges:
 ${edges}
@@ -216,7 +216,7 @@ const FLOW = (nodes: string, edges: string): string =>
   `schemaVersion: 1\nname: t\nnodes:\n${nodes}edges:\n${edges}`;
 
 const WORKER = (id: string, extra = ""): string =>
-  `  ${id}:\n    type: claude.worker\n${extra}`;
+  `  ${id}:\n    type: agent.worker\n${extra}`;
 
 describe("holdersOf", () => {
   it("does not offer a node that only loops back into this one", () => {

@@ -24,7 +24,7 @@ const routes = (): MonitorRoutes => ({
   graph: {
     nodes: ["a", "b", "c", "d", "ok"].map(id => ({
       id,
-      type: "claude.worker",
+      type: "agent.worker",
     })),
     edges: [],
     channels: [],

@@ -80,14 +80,14 @@ its branch afterwards ([worktrees](./worktrees.md)).
   missing field, the wrong type, a value off the list) fails the node, with a
   reason that names all three, as in
   `state is "DRAFT", expected OPEN or CLOSED`. For a tool it's the JSON's
-  fields, for an `mcp.call` the result's, and for a Claude node its report's; a
+  fields, for an `mcp.call` the result's, and for an agent node its report's; a
   Claude field written as JSON Schema stays the driver's to enforce
   ([ADR-052](../decisions/ADR-052-conditions-from-declared-outputs.md)). A
   declared list, `{ list: { <field>: <rule> } }`, is held to being a list
   (`tasks is "fix it", expected a list`), and when it has an item shape each
   item is too; the reason names the first bad item by its index
   (`tasks[1].title is missing, expected text`). Ork checks this itself, on every
-  driver, and a Claude node's report schema carries it as `type: array` with
+  driver, and an agent node's report schema carries it as `type: array` with
   `items`. An item's extra fields are refused by the report schema and ignored
   by a tool's or MCP call's check, as a result's extra fields are
   ([declared.ts](../packages/core/src/run/declared.ts),
@@ -138,11 +138,11 @@ in a later round doesn't wait on a branch the loop didn't go back to.
 
 ## Delegation
 
-A `claude.leader` inside a run gets two blocking tools (ADR-017); both take a
+An `agent.leader` inside a run gets two blocking tools (ADR-017); both take a
 list of tasks, run them in parallel, and return when every child has reported:
 
 - **`delegate([{ child, brief }])`** runs declared children (its own
-  `claude.leader`/`claude.worker` children). The child's session gets its own
+  `agent.leader`/`agent.worker` children). The child's session gets its own
   `prompt` followed by `## Task from \`<leader>\`` and the brief.
 - **`spawn_worker([{ template, brief }])`** runs a new instance of a child
   worker, `<template>-2`, `-3`, …, up to the leader's `maxWorkers` (default 0,
@@ -179,7 +179,7 @@ list of tasks, run them in parallel, and return when every child has reported:
 
 From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 
-- **`claude.leader`, `claude.worker`**: one session through the
+- **`agent.leader`, `agent.worker`**: one session through the
   [runtime](./runtime.md), planned with the run's outputs so
   `{{nodes.<id>.output.*}}` renders. The output is the report: `status`,
   `summary`, `artifacts`, `branch`, `usage` and the `output.schema` fields. A
@@ -264,7 +264,7 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 [tests](../packages/core/test/timeouts.test.ts),
 [ADR-043](../decisions/ADR-043-timeouts.md).
 
-- `timeout` on a tool node, `claude.leader`, `claude.worker`, `mcp.call` or
+- `timeout` on a tool node, `agent.leader`, `agent.worker`, `mcp.call` or
   `workflow.call` limits each activation, from when its executor starts;
   `defaults.timeout` applies to those that set none; `limits.timeout` limits the
   run. None is set unless a workflow sets it.

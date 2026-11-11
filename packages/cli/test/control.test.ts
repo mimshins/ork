@@ -220,7 +220,7 @@ const ONE_ITEM = [
   "name: gated",
   "nodes:",
   "  build:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    prompt: Build",
   "    isolation: shared",
   "    forEach:",
@@ -325,12 +325,12 @@ const oneNodeRun = () => {
     runId: id,
     workflow: "review",
     entries: ["approver"],
-    nodes: [{ id: "approver", type: "claude.worker" }],
+    nodes: [{ id: "approver", type: "agent.worker" }],
   });
   store.append(id, {
     type: "node.started",
     id: "approver",
-    nodeType: "claude.worker",
+    nodeType: "agent.worker",
     round: 1,
   });
   return { home, store, id };

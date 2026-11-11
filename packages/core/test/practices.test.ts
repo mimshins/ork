@@ -36,11 +36,11 @@ const TREE = workflow([
   "defaults:",
   "  practices: { ponytail: lite }",
   "nodes:",
-  "  lead: { type: claude.leader, practices: { caveman: false } }",
-  "  review: { type: claude.worker, parent: lead, practices: { ponytail: ultra } }",
-  "  helper: { type: claude.subagent, parent: review, description: helps }",
-  "  solo: { type: claude.worker }",
-  "  quiet: { type: claude.worker, practices: { caveman: false, ponytail: false } }",
+  "  lead: { type: agent.leader, practices: { caveman: false } }",
+  "  review: { type: agent.worker, parent: lead, practices: { ponytail: ultra } }",
+  "  helper: { type: agent.subagent, parent: review, description: helps }",
+  "  solo: { type: agent.worker }",
+  "  quiet: { type: agent.worker, practices: { caveman: false, ponytail: false } }",
 ]);
 
 /** A node's appended system prompt, planned in `cwd`. */
@@ -54,7 +54,7 @@ describe("practices", () => {
   it("are on by default and cascade from owners, then defaults", () => {
     expect(
       resolvePractices(
-        workflow(["nodes:", "  a: { type: claude.worker }"]),
+        workflow(["nodes:", "  a: { type: agent.worker }"]),
         "a",
       ),
     ).toEqual({

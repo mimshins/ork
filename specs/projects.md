@@ -1,10 +1,11 @@
 # Projects: in the repository, or attached
 
 Status: **Built**: places, `ork register`, `ork projects`, `ork init` recording
-an in-repo project, and `ork migrate`
-([place.ts](../packages/core/src/project/place.ts),
+an in-repo project, and `ork migrate` (its layout move, and the RFC-015 rewrite
+of `claude.*` node types) ([place.ts](../packages/core/src/project/place.ts),
 [register.ts](../packages/cli/src/project/register.ts),
 [migrate.ts](../packages/cli/src/project/migrate.ts),
+[migrate-format.ts](../packages/cli/src/project/migrate-format.ts),
 [move.ts](../packages/core/src/project/move.ts),
 [draft.ts](../packages/cli/src/project/draft.ts),
 [projects.ts](../packages/core/src/store/projects.ts),
@@ -98,6 +99,19 @@ in the working tree to review and commit
   (`.ai/agents`), has its entries moved into `.ork/agents` or `.ork/skills` and
   becomes a link to it; every link to it then points at `.ork/`. Links leaving
   the repository and broken links are kept and listed.
+- **It rewrites the workflow format** (RFC-015,
+  [migrate-format.ts](../packages/cli/src/project/migrate-format.ts)): every
+  `*.ork.yaml` in the project's workflows folder that names `claude.worker`,
+  `claude.leader` or `claude.subagent` is rewritten with `agent.*` in the YAML
+  itself, so comments and layout stay; the result is validated, and the schema
+  line is added only when missing. `model` values are left as they are: a plain
+  model still works. A file that can't be parsed is named and not touched. The
+  plan lists it with the moves, one line per file:
+  `  rename <file>: claude.worker ×1`, or
+  `  skip   <file>: <reason>; left as it is`; with nothing to move or rewrite it
+  says `Nothing to migrate.` The files are rewritten in place, before the folder
+  moves, and a second run finds nothing. Only the workflows folder is scanned
+  ([L273](./gaps/agent-types-limits.md)).
 - **The plan comes first.** It is shown, one line per move and link; a clash
   (something already where a file would go) or a live run of the project refuses
   it, and nothing moves. It asks before applying (`--yes` skips the question and
@@ -109,7 +123,7 @@ in the working tree to review and commit
 
   | Node(s)            | What it does                                                                                    |
   | ------------------ | ----------------------------------------------------------------------------------------------- |
-  | `a`, `b`, …        | a `claude.worker` per agent, in order, in one worktree: the first opens it, the rest `continue` |
+  | `a`, `b`, …        | an `agent.worker` per agent, in order, in one worktree: the first opens it, the rest `continue` |
   | `ready`            | with a reviewer: a gate that sends the last agent's change to it                                |
   | the reviewer       | `readonly`, `session: resume`; `changes_requested` sends it back, `maxRounds: 3`                |
   | `stage`            | `tool.git add -A` in the last agent's worktree                                                  |

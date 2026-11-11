@@ -55,7 +55,7 @@ export const OUTPUT_FIELDS: Record<
   Exclude<NodeType, `tool.${string}`>,
   readonly string[] | null
 > = {
-  "claude.leader": [
+  "agent.leader": [
     "status",
     "summary",
     "artifacts",
@@ -63,7 +63,7 @@ export const OUTPUT_FIELDS: Record<
     "worktree",
     "usage",
   ],
-  "claude.worker": [
+  "agent.worker": [
     "status",
     "summary",
     "artifacts",
@@ -71,7 +71,7 @@ export const OUTPUT_FIELDS: Record<
     "worktree",
     "usage",
   ],
-  "claude.subagent": ["status", "summary", "artifacts"],
+  "agent.subagent": ["status", "summary", "artifacts"],
   "control.split": null,
   "control.join": ["statuses", "results", "count"],
   "control.router": null,

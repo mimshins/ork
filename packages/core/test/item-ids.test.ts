@@ -33,8 +33,8 @@ const WORKFLOW = [
   "schemaVersion: 1",
   "name: t",
   "nodes:",
-  "  build: { type: claude.worker, prompt: go }",
-  "  gate: { type: claude.worker, prompt: after }",
+  "  build: { type: agent.worker, prompt: go }",
+  "  gate: { type: agent.worker, prompt: after }",
   "edges:",
   "  - from: build",
   "    to: gate",
@@ -56,11 +56,11 @@ const EVENTS: RunEvent[] = [
     workflow: "t",
     entries: ["build"],
     nodes: [
-      { id: "build", type: "claude.worker" },
-      { id: "gate", type: "claude.worker" },
+      { id: "build", type: "agent.worker" },
+      { id: "gate", type: "agent.worker" },
     ],
   },
-  { type: "node.started", id: "build.0", nodeType: "claude.worker", round: 1 },
+  { type: "node.started", id: "build.0", nodeType: "agent.worker", round: 1 },
   {
     type: "node.event",
     id: "build.0",
@@ -88,7 +88,7 @@ const EVENTS: RunEvent[] = [
     ok: true,
     output: { summary: "zero" },
   },
-  { type: "node.started", id: "build.2", nodeType: "claude.worker", round: 1 },
+  { type: "node.started", id: "build.2", nodeType: "agent.worker", round: 1 },
 ];
 
 const STORED = EVENTS.map((event, index) => ({

@@ -29,7 +29,7 @@ describe("the registries", () => {
     expect(integrationFor("tool.aws")).toBe(aws);
     expect(integrationFor("tool.git")).toBe(git);
     expect(integrationFor("tool.nope")).toBeUndefined();
-    expect(integrationFor("claude.worker")).toBeUndefined();
+    expect(integrationFor("agent.worker")).toBeUndefined();
   });
 
   it("let an adapter add its own arguments", () => {
@@ -167,6 +167,7 @@ describe("the claude-code driver's check", () => {
       reportSchema: false,
       turnLimit: true,
       mcpServers: true,
+      subagents: false,
     });
     expect(command.capabilities).toEqual({
       questions: true,
@@ -176,6 +177,7 @@ describe("the claude-code driver's check", () => {
       reportSchema: false,
       turnLimit: true,
       mcpServers: false,
+      subagents: false,
     });
   });
 });

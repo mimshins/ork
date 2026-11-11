@@ -26,7 +26,7 @@ tests, read a pull request's state, count what changed, wait for CI.
 
 ## 2. Spend where it pays
 
-- A small model and low effort for a narrow task (`model: haiku`,
+- A small model and low effort for a narrow task (`model: claude-code.haiku`,
   `effort: low`); the large ones where thinking pays.
 - `budgetUsd` on each session and on the run (`limits.budgetUsd`). A loop of
   sessions without a budget or `limits.timeout` gets a warning, for good reason.
@@ -68,9 +68,9 @@ nodes:
     command: pnpm lint
     allow: [pnpm lint]
   review:
-    type: claude.worker
+    type: agent.worker
     prompt: "Review pull request {{inputs.pr}}. The linter passed."
-    model: haiku
+    model: claude-code.haiku
     effort: low
     isolation: readonly
     budgetUsd: 1

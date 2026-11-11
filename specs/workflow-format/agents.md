@@ -2,7 +2,7 @@
 
 _Part of [Workflow file format](../workflow-format.md)._
 
-An **agent** is who does a Claude node's work; the node is its place in the
+An **agent** is who does an agent node's work; the node is its place in the
 flow. A node names one with `agent:`, and its `prompt` is the agent's task:
 
 ```yaml
@@ -15,7 +15,7 @@ agents: # inline agents; they win over the project's and the user's
     output: { schema: { verdict: [approve, escalate] } }
 nodes:
   approver:
-    type: claude.worker
+    type: agent.worker
     agent: approver
     prompt: Decide whether {{nodes.builder.output.branch}} is ready to merge.
 ```

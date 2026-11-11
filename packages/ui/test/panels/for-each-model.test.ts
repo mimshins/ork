@@ -79,7 +79,7 @@ describe("a node with forEach", () => {
     );
     expect(facts).toBeDefined();
     expect(
-      nodeName("build", "claude.worker", { ...facts, status: "running" }),
+      nodeName("build", "agent.worker", { ...facts, status: "running" }),
     ).toBe("build, running, 1 of 8, worker");
   });
 
@@ -109,7 +109,7 @@ describe("a node with forEach", () => {
 
   it("draws one card, not one per item", () => {
     const graph = {
-      nodes: [{ id: "build", type: "claude.worker" }],
+      nodes: [{ id: "build", type: "agent.worker" }],
       edges: [],
       channels: [],
     };
@@ -126,7 +126,7 @@ const event = (seq: number, node: string): StoredEvent => ({
   event: {
     type: "node.started",
     id: node,
-    nodeType: "claude.worker",
+    nodeType: "agent.worker",
     round: 1,
   },
 });

@@ -145,7 +145,7 @@ as before: an agent can fill a node and still be a subagent a session calls.
 ## Built-in practices
 
 Ork ships two practices, vendored from their upstream skills and on for every
-Claude node unless turned off
+agent node unless turned off
 ([ADR-021](../decisions/ADR-021-built-in-practices.md)):
 
 | Practice   | What it does                                                                                                                                                                                                                   | Source                      |
@@ -155,7 +155,7 @@ Claude node unless turned off
 
 - **Settings:**
   `practices: { caveman: true | false, ponytail: true | false | lite | full | ultra }`
-  on `defaults` and on any Claude node; `true` is `full`.
+  on `defaults` and on any agent node; `true` is `full`.
 - **Cascade:** a node takes its own setting, else its agent's, else its nearest
   owner's, else the workflow's `defaults`, else the project's `defaults`, else
   on. Each practice falls through on its own, so setting `ponytail` at one level

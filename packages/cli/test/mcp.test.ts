@@ -60,7 +60,7 @@ const withProject = (): string => {
   mkdirSync(path.join(dir, "workflows"), { recursive: true });
   writeFileSync(
     path.join(dir, "workflows", "w.ork.yaml"),
-    "schemaVersion: 1\nname: w\nnodes:\n  lead: { type: claude.worker, prompt: Plan it }\n",
+    "schemaVersion: 1\nname: w\nnodes:\n  lead: { type: agent.worker, prompt: Plan it }\n",
   );
   const store = openStore(storePath(at));
   store.addProject({ id: "p", root, mode: "in-repo", dir });
@@ -136,7 +136,7 @@ describe("ork mcp", () => {
     });
     expect(JSON.parse(textOf(result))).toMatchObject({
       node: "lead",
-      type: "claude.worker",
+      type: "agent.worker",
     });
   });
 

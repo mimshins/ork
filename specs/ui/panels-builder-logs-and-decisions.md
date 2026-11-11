@@ -28,6 +28,19 @@ editor and `ork validate`.
 - **A node that takes `forEach`** has a For each group: a choice of items
   written here or a list from an earlier node, a dropdown of those lists, and a
   way to declare one ([built](./panels-builder-for-each.md)).
+- **A node's `model`** is a text field that takes a plain model or
+  `<driver>.<model>` (`claude-code.sonnet`,
+  `open-code.anthropic/claude-sonnet-5-5`), read as the format reads it
+  (`driverOf`,
+  [RFC-015](../../rfcs/active/RFC-015-format-for-several-drivers.md)). Its hint
+  teaches the form: "A model for the run's driver, or `<driver>.<model>`, such
+  as `claude-code.sonnet`." A prefixed value adds "Runs on claude-code." Where
+  the prefix is not the node's own `driver` (or the workflow's
+  `defaults.driver`), the field shows the error "Model names claude-code, but
+  this node's driver is open-code. Make them match, or drop the prefix.", with
+  the same icon and words as any field error, unless the server already reports
+  one there. A value with `{{…}}` in it is free text, read at run time, and
+  never parsed here.
 - **A `watch:`'s `until`** is the same choice as an edge's condition, from what
   the node declares, except that waiting for it to fail isn't offered
   ([until-picker.tsx](../../packages/ui/src/builder/until-picker.tsx)).

@@ -71,7 +71,7 @@ describe("project rules under a workflow", () => {
         "  permissions: { deny: ['Bash(rm *)'] }",
         "layers: { context: [./house.md] }",
         "nodes:",
-        "  a: { type: claude.worker, prompt: go, tools: { deny: [WebFetch] } }",
+        "  a: { type: agent.worker, prompt: go, tools: { deny: [WebFetch] } }",
       ]),
       {
         project: PROJECT,
@@ -108,8 +108,8 @@ describe("project rules under a workflow", () => {
     const workflow = applyProject(
       workflowOf([
         "nodes:",
-        "  v: { type: claude.worker, prompt: go, verify: { command: pnpm check } }",
-        "  w: { type: claude.worker, prompt: go, tools: { deny: [WebFetch] } }",
+        "  v: { type: agent.worker, prompt: go, verify: { command: pnpm check } }",
+        "  w: { type: agent.worker, prompt: go, tools: { deny: [WebFetch] } }",
       ]),
       {
         project: {
@@ -139,7 +139,7 @@ describe("project rules under a workflow", () => {
     const workflow = applyProject(
       workflowOf([
         "nodes:",
-        "  v: { type: claude.worker, prompt: go, verify: { command: pnpm check:changed } }",
+        "  v: { type: agent.worker, prompt: go, verify: { command: pnpm check:changed } }",
       ]),
       { project: { schemaVersion: 1, heavy: ["pnpm check"] } },
     );
@@ -162,7 +162,7 @@ describe("project rules under a workflow", () => {
       workflowOf([
         "defaults: { practices: { ponytail: ultra } }",
         "nodes:",
-        "  a: { type: claude.worker, prompt: go }",
+        "  a: { type: agent.worker, prompt: go }",
       ]),
       { project: { ...PROJECT, defaults: { practices: { caveman: false } } } },
     );
@@ -177,7 +177,7 @@ describe("project rules under a workflow", () => {
       workflowOf([
         "defaults: { practices: { caveman: true } }",
         "nodes:",
-        "  a: { type: claude.worker, prompt: go }",
+        "  a: { type: agent.worker, prompt: go }",
       ]),
       { project: { ...PROJECT, defaults: { practices: { caveman: false } } } },
     );
@@ -187,7 +187,7 @@ describe("project rules under a workflow", () => {
   it("let a readonly node read git, and write nothing", () => {
     const workflow = workflowOf([
       "nodes:",
-      "  r: { type: claude.worker, prompt: go, isolation: readonly }",
+      "  r: { type: agent.worker, prompt: go, isolation: readonly }",
     ]);
     const spec = specOf(
       planNodeSession(workflow, "r", { cwd: "/p", inputs: {}, inPlace: true }),
@@ -202,9 +202,9 @@ describe("project rules under a workflow", () => {
     const workflow = workflowOf([
       "inputs: { lang: { type: string } }",
       "nodes:",
-      "  w: { type: claude.worker, prompt: go, tools: { only: [Read] } }",
+      "  w: { type: agent.worker, prompt: go, tools: { only: [Read] } }",
       "  t:",
-      "    type: claude.subagent",
+      "    type: agent.subagent",
       "    parent: w",
       "    description: Writes the tests.",
       "    prompt: Write tests in {{inputs.lang}}.",
@@ -231,8 +231,8 @@ describe("project rules under a workflow", () => {
     const two = [
       "inputs: { slug: { type: string } }",
       "nodes:",
-      "  a: { type: claude.worker }",
-      "  b: { type: claude.worker }",
+      "  a: { type: agent.worker }",
+      "  b: { type: agent.worker }",
     ];
     expect(
       messages([
@@ -257,7 +257,7 @@ describe("project rules under a workflow", () => {
         "rules:",
         "  git: { branch: 'task/{inputs.slug}', worktrees: '/tmp/{node}' }",
         "nodes:",
-        "  a: { type: claude.worker }",
+        "  a: { type: agent.worker }",
       ]),
     ).toEqual([
       "error: git.worktrees is relative to the clone, beside it (e.g. ../{clone}-worktrees/{node})",
@@ -277,7 +277,7 @@ describe("project rules under a workflow", () => {
       expect.stringMatching(/^\.ork\/project\.yaml:3:\d+: /u),
     ]);
     const compiled = compileWorkflow(
-      workflowOf(["nodes:", "  a: { type: claude.worker }"]),
+      workflowOf(["nodes:", "  a: { type: agent.worker }"]),
       { project: PROJECT },
     );
     expect(compiled.graph?.workflow.defaults?.model).toBe("haiku");
@@ -292,8 +292,8 @@ const TEAM = (rules: string[]) =>
       "inputs: { slug: { type: string } }",
       ...rules,
       "nodes:",
-      "  lead: { type: claude.leader }",
-      "  fix: { type: claude.worker, parent: lead }",
+      "  lead: { type: agent.leader }",
+      "  fix: { type: agent.worker, parent: lead }",
       "edges:",
       "  - lead -> fix",
     ].join("\n"),
@@ -458,7 +458,7 @@ describe("git rules at work", () => {
             "rules: { git: { base: '{inputs.slug}' } }",
             "inputs: { slug: { type: string } }",
             "nodes:",
-            "  a: { type: claude.worker }",
+            "  a: { type: agent.worker }",
           ]),
         ),
         { slug: "--all" },

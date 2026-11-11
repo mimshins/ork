@@ -71,7 +71,7 @@ nodes:
     type: tool.shell
     command: git log --oneline -20 # recent only
   build:
-    type: claude.worker
+    type: agent.worker
     # the long part
     prompt: |
       Use {{nodes.gather.output.stdout}}.
@@ -80,7 +80,7 @@ nodes:
     notify:
       - to: review # tell them
   review:
-    type: claude.worker
+    type: agent.worker
     parent: build
     prompt: Look at it.
   # a person says yes
@@ -258,7 +258,7 @@ nodes: {}
 name: a
 nodes:
   a:
-    type: claude.worker
+    type: agent.worker
     skills:
       - first # one
       - second # two
@@ -505,7 +505,7 @@ nodes:
     const one = edited(start, {
       op: "addNode",
       id: "first",
-      node: { type: "claude.worker", prompt: "Go." },
+      node: { type: "agent.worker", prompt: "Go." },
     });
     expect(canonical(one)).toBe(one);
     const two = edited(
@@ -516,7 +516,7 @@ nodes:
         node: {
           prompt: "Check.",
           verify: { command: "pnpm test" },
-          type: "claude.worker",
+          type: "agent.worker",
         },
       },
       { op: "connect", from: "first", to: "second" },

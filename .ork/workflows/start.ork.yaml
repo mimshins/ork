@@ -11,7 +11,7 @@ layers:
   project:
     instructions: inherit
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
   effort: medium
   budgetUsd: 1
 limits:
@@ -20,7 +20,7 @@ limits:
   timeout: 72h
 nodes:
   frame:
-    type: claude.worker
+    type: agent.worker
     prompt: |-
       Find the right way in for this brief. Change nothing. Read files with Read and search with Grep. When you do use Bash, run one plain read command at a time, such as head -8 .ai/plans/*.md rfcs/active/*.md, with no loops, shell variables or redirects: anything else stops the run to ask the maintainer.
 

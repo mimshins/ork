@@ -1,7 +1,8 @@
 /**
  * @file `ork migrate` (ADR-036): moves an attached project's folder into its
- *   repository's `.ork/`, and with `--agents` brings the project's agents and
- *   skills under `.ork/` and points the tools' folders at them. It plans first,
+ *   repository's `.ork/`, with `--agents` brings the project's agents and
+ *   skills under `.ork/` and points the tools' folders at them, and rewrites
+ *   workflow files that name a renamed node type (RFC-015). It plans first,
  *   refusing on any clash or a live run, and commits nothing: the changes are
  *   left for the user to review and commit.
  */
@@ -27,6 +28,7 @@ import {
 import { confirm, style, write, writeErr } from "../output.ts";
 import { ignoreRunState, unignored } from "./init.ts";
 import { formatLinks } from "./link.ts";
+import { applyFormat, formatFormatPlan, planFormat } from "./migrate-format.ts";
 
 export type Migration = AgentMigration & {
   place: ProjectPlace;
@@ -130,8 +132,8 @@ const fail = (message: string): void => {
 export const migrateHere = async (
   cwd: string,
   options: { agents: boolean; dryRun: boolean; yes: boolean },
+  store: EventStore = openStore(),
 ): Promise<void> => {
-  const store = openStore();
   try {
     const plan = planMigration(placeFor(cwd, store.projects()), options);
     const problem = refusal(plan, store);
@@ -139,14 +141,19 @@ export const migrateHere = async (
       fail(problem);
       return;
     }
-    write(plan.steps.length === 0 ? "Nothing to migrate." : "Plan:");
+    const format = planFormat(plan.place);
+    const nothing = plan.steps.length === 0 && format.changes.length === 0;
+    write(nothing ? "Nothing to migrate." : "Plan:");
+    for (const line of formatFormatPlan(format, plan.place)) write(line);
     for (const line of formatMigration(plan)) write(line);
-    if (plan.steps.length === 0 || options.dryRun) return;
+    if (nothing || options.dryRun) return;
     if (!options.yes && !process.stdin.isTTY) {
       fail("Pass --yes to migrate without a terminal.");
       return;
     }
     if (!options.yes && !(await confirm("Go ahead?"))) return;
+    // Before the move, so the files are rewritten where they are now.
+    applyFormat(format);
     applyMigration(plan, store);
     write(`${style("green", "✓")} migrated. ${afterMigration(plan)}`);
   } finally {

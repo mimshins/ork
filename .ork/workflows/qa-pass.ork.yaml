@@ -12,7 +12,7 @@ layers:
     instructions: inherit
     skills: ignore
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
   effort: medium
   budgetUsd: 2
 limits:
@@ -36,12 +36,12 @@ nodes:
       - sh
     timeout: 15m
   split:
-    type: claude.worker
+    type: agent.worker
     prompt: |-
       Split this QA scope into independent surfaces a tester can cover alone: {{inputs.scope}}
 
       Read docs/README.md and the guides the scope names. A surface is one guide or one area of the CLI or `ork ui`, small enough for one session. List at most 8, the ones a user meets first at the top. Give each a short `name` and, in `detail`, the pages to follow and what to exercise. Change nothing.
-    model: haiku
+    model: claude-code.haiku
     isolation: readonly
     budgetUsd: 0.5
     maxTurns: 15
@@ -52,7 +52,7 @@ nodes:
             name: string
             detail: string
   qa:
-    type: claude.worker
+    type: agent.worker
     agent: qa
     prompt: |-
       Test this one surface, as your role says. Other testers cover the rest of "{{inputs.scope}}", so stay on yours.
@@ -64,7 +64,7 @@ nodes:
       Other testers run at the same time: start `ork ui` with `--port 0` and pick free ports for anything you serve. A port clash is not a finding.
 
       Report status done, starting `summary` with the surface's name, with every finding in `findings` (markdown: most severe first, each with its steps, severity and suspected place, then the doc drift, what passed and what you couldn't test), the counts in `blockers` and `majors`, and `verdict` clean only when you found nothing.
-    model: haiku
+    model: claude-code.haiku
     effort: high
     isolation: worktree
     budgetUsd: 1.5

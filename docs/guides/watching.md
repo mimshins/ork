@@ -144,7 +144,7 @@ with narrow tools:
 
 ```yaml
 triage:
-  type: claude.worker
+  type: agent.worker
   prompt: Triage issue {{inputs.issue}}, and only say what it's about.
   tools: { only: [Read] }
 ```

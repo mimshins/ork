@@ -8,7 +8,7 @@ message with `notify:`. Neither takes a model turn.
 ```yaml
 nodes:
   builder:
-    type: claude.worker
+    type: agent.worker
     prompt: Make the change. A check writes to you when it finds something.
   tests:
     type: tool.shell

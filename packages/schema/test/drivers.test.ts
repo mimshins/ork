@@ -10,7 +10,7 @@ import { parseProject, parseWorkflow } from "../src/index.ts";
 
 const workflow = (driver: string) =>
   parseWorkflow(
-    `schemaVersion: 1\nname: x\nnodes:\n  a:\n    type: claude.worker\n    prompt: hi\n    driver: ${driver}\n`,
+    `schemaVersion: 1\nname: x\nnodes:\n  a:\n    type: agent.worker\n    prompt: hi\n    driver: ${driver}\n`,
   );
 
 /** The diagnostics' messages of a parse; none when it loaded. */

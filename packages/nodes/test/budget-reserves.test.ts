@@ -108,7 +108,7 @@ const contextFor = (
   id: string,
   hooks: Partial<ExecuteContext>,
 ): ExecuteContext => {
-  const node: Node = { type: "claude.worker", prompt: "Build", budgetUsd: 3 };
+  const node: Node = { type: "agent.worker", prompt: "Build", budgetUsd: 3 };
   const workflow: Workflow = {
     schemaVersion: 1,
     name: "t",

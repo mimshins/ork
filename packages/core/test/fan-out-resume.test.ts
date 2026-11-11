@@ -35,7 +35,7 @@ const fanned = (forEach: string): CompiledGraph =>
   compile([
     "nodes:",
     "  build:",
-    "    type: claude.worker",
+    "    type: agent.worker",
     "    prompt: do it",
     `    forEach: ${forEach}`,
   ]);
@@ -62,8 +62,8 @@ const play = async (
     inputs: {},
     cwd: process.cwd(),
     executors: {
-      "claude.worker": executor,
-      "claude.leader": executor,
+      "agent.worker": executor,
+      "agent.leader": executor,
       "tool.shell": executor,
     },
     human,
@@ -196,7 +196,7 @@ const planned = (): CompiledGraph =>
     "    type: tool.shell",
     "    command: x",
     "  build:",
-    "    type: claude.worker",
+    "    type: agent.worker",
     "    prompt: do it",
     "    forEach:",
     '      from: "{{nodes.plan.output.tasks}}"',
@@ -214,12 +214,12 @@ const crashedPlan = async (cut: string) => {
 
 /** `build.1` opens a session, then the run crashes inside it. */
 const cutInSession = (): RunEvent[] => [
-  { type: "node.started", id: "build", nodeType: "claude.worker", round: 1 },
+  { type: "node.started", id: "build", nodeType: "agent.worker", round: 1 },
   { type: "each.listed", node: "build", round: 1, count: 2, list: ["a", "b"] },
   {
     type: "node.started",
     id: "build.0",
-    nodeType: "claude.worker",
+    nodeType: "agent.worker",
     round: 1,
     item: { of: "build", index: 0 },
   },
@@ -233,7 +233,7 @@ const cutInSession = (): RunEvent[] => [
   {
     type: "node.started",
     id: "build.1",
-    nodeType: "claude.worker",
+    nodeType: "agent.worker",
     round: 1,
     item: { of: "build", index: 1 },
   },
@@ -281,7 +281,7 @@ const sourced = (): CompiledGraph =>
     "    type: tool.shell",
     "    command: x",
     "  build:",
-    "    type: claude.worker",
+    "    type: agent.worker",
     "    prompt: do it",
     "    forEach:",
     '      from: "{{nodes.plan.output.tasks}}"',
@@ -434,7 +434,7 @@ describe("resuming a fanned node", () => {
       {
         type: "node.started",
         id: "build.1",
-        nodeType: "claude.worker",
+        nodeType: "agent.worker",
         round: 1,
         item: { of: "build", index: 1 },
       },
@@ -487,7 +487,7 @@ describe("resuming a fanned node", () => {
     const graph = compile([
       "nodes:",
       "  build:",
-      "    type: claude.worker",
+      "    type: agent.worker",
       "    session: resume",
       "    prompt: do it",
       "    forEach: { items: [a, b], maxParallel: 1 }",
@@ -509,7 +509,7 @@ describe("resuming a fanned node", () => {
     const graph = compile([
       "nodes:",
       "  write:",
-      "    type: claude.worker",
+      "    type: agent.worker",
       "    prompt: x",
       "  publish:",
       "    type: tool.shell",

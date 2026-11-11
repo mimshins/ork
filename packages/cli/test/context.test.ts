@@ -47,7 +47,7 @@ const project = () => {
       "  context: [./style.md]",
       "nodes:",
       "  fix:",
-      "    type: claude.worker",
+      "    type: agent.worker",
       "",
     ].join("\n"),
   );

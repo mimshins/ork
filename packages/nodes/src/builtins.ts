@@ -33,8 +33,8 @@ export const builtinExecutors = (
   });
   const claude = claudeExecutor({ ...options, steps: tool });
   const executors: NodeExecutors = {
-    "claude.leader": claude,
-    "claude.worker": claude,
+    "agent.leader": claude,
+    "agent.worker": claude,
     "human.gate": gateExecutor,
     "workflow.call": callExecutor,
     "mcp.call": mcpCallExecutor(

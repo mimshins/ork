@@ -10,14 +10,14 @@ import { error } from "./diagnostics.ts";
 /**
  * Ownership rules:
  *
- * - A `claude.subagent` is owned by a `claude.leader` or `claude.worker` (it runs
+ * - An `agent.subagent` is owned by an `agent.leader` or `agent.worker` (it runs
  *   inside that node's session);
- * - Every other owned node is owned by a `claude.leader`;
+ * - Every other owned node is owned by an `agent.leader`;
  * - The tree has no cycles;
  * - A node that sets `isolation: continue` neither owns nor is owned: it works in
  *   the worktree its input came from, outside the tree's merges.
  * - A leader's `questions:` is about its children's questions, so a leader with
- *   no `claude.leader` or `claude.worker` child can't set it.
+ *   no `agent.leader` or `agent.worker` child can't set it.
  */
 export const checkOwnership = (workflow: Workflow): Diagnostic[] => {
   const diagnostics: Diagnostic[] = [];
@@ -33,21 +33,21 @@ export const checkOwnership = (workflow: Workflow): Diagnostic[] => {
       diagnostics.push(
         error("tree.unknown-parent", `unknown parent \`${node.parent}\``, path),
       );
-    } else if (node.type === "claude.subagent") {
-      if (owner.type !== "claude.leader" && owner.type !== "claude.worker") {
+    } else if (node.type === "agent.subagent") {
+      if (owner.type !== "agent.leader" && owner.type !== "agent.worker") {
         diagnostics.push(
           error(
             "tree.owner-kind",
-            `a sub-agent runs inside a \`claude.leader\` or \`claude.worker\` session, not a \`${owner.type}\``,
+            `a sub-agent runs inside an \`agent.leader\` or \`agent.worker\` session, not a \`${owner.type}\``,
             path,
           ),
         );
       }
-    } else if (owner.type !== "claude.leader") {
+    } else if (owner.type !== "agent.leader") {
       diagnostics.push(
         error(
           "tree.owner-kind",
-          `only a claude.leader can own a \`${node.type}\` (\`${node.parent}\` is a \`${owner.type}\`)`,
+          `only an agent.leader can own a \`${node.type}\` (\`${node.parent}\` is a \`${owner.type}\`)`,
           path,
         ),
       );
@@ -69,17 +69,17 @@ export const checkOwnership = (workflow: Workflow): Diagnostic[] => {
   }
 
   for (const [id, node] of Object.entries(nodes)) {
-    if (node.type !== "claude.leader" || node.questions === undefined) continue;
+    if (node.type !== "agent.leader" || node.questions === undefined) continue;
     const asks = Object.values(nodes).some(
       other =>
         other.parent === id &&
-        (other.type === "claude.leader" || other.type === "claude.worker"),
+        (other.type === "agent.leader" || other.type === "agent.worker"),
     );
     if (!asks) {
       diagnostics.push(
         error(
           "questions.no-children",
-          `\`${id}\` sets \`questions\`, but owns no \`claude.leader\` or \`claude.worker\` whose questions it could take`,
+          `\`${id}\` sets \`questions\`, but owns no \`agent.leader\` or \`agent.worker\` whose questions it could take`,
           ["nodes", id, "questions"],
         ),
       );

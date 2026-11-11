@@ -37,12 +37,12 @@ const codes = (lines: string[]) =>
 const LOOP = [
   "nodes:",
   "  build:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    prompt: b",
   "    output:",
   "      schema: { decisions: { type: array }, note: string }",
   "      gather: [decisions]",
-  "  review: { type: claude.worker, prompt: r }",
+  "  review: { type: agent.worker, prompt: r }",
   "edges:",
   "  - build -> review",
   "  - { from: review, to: build, when: \"status != 'pass'\", maxRounds: 3 }",
@@ -99,7 +99,7 @@ const lastBuild = async () => {
     graph: compiled(LOOP),
     inputs: {},
     cwd: repoRoot,
-    executors: { "claude.worker": executor },
+    executors: { "agent.worker": executor },
     human: {
       ask: () => Promise.resolve("stop"),
       permit: () => Promise.resolve({ allow: true }),
@@ -152,7 +152,7 @@ describe("output.gather", () => {
     const lines = [
       "nodes:",
       "  build:",
-      "    type: claude.worker",
+      "    type: agent.worker",
       "    prompt: b",
       "    forEach: { items: [x, y] }",
       "    output:",

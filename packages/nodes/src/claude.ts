@@ -1,5 +1,5 @@
 /**
- * @file The Claude node type: runs a `claude.leader` or `claude.worker` as one
+ * @file The Claude node type: runs an `agent.leader` or `agent.worker` as one
  *   session, planned with the run's outputs (and the brief its owner gave it),
  *   and turns its report into the node's output. A leader gets its children
  *   through the session's ports, and resumes its session on re-entry
@@ -9,12 +9,12 @@
 import {
   type AgentRuntime,
   declaredOutputOf,
+  type DriverNeeds,
   type ExecuteContext,
   type NodeExecutor,
   planNodeSession,
   type SessionOutcome,
   type SessionPorts,
-  sessionDriver,
   type SessionSpec,
   type StepRun,
   stoppedEnd,
@@ -25,6 +25,7 @@ import { planOptionsOf } from "./claude-plan.ts";
 import { resultOf } from "./claude-result.ts";
 import { namedMcpEntries } from "./mcp-servers.ts";
 import { ownerFirst, withdrawnOnStop } from "./owner-asks.ts";
+import { sessionDriverOf } from "./session-driver.ts";
 import {
   afterLateTurn,
   budgetToStart,
@@ -57,6 +58,8 @@ export type ClaudeExecutorOptions = {
   inPlace: boolean;
   /** What runs a node's `verify:`: the tool nodes' executor. */
   steps?: NodeExecutor;
+  /** The descriptors a pinned model's driver is checked against (tests'). */
+  drivers?: readonly DriverNeeds[];
 };
 
 const MAX_INPUT = 8192;
@@ -125,7 +128,7 @@ const specFor = (spec: SessionSpec, context: ExecuteContext): SessionSpec => {
   return spec;
 };
 
-/** Runs a `claude.leader` or `claude.worker` as one session. */
+/** Runs an `agent.leader` or `agent.worker` as one session. */
 export const claudeExecutor =
   (options: ClaudeExecutorOptions): NodeExecutor =>
   async context => {
@@ -161,17 +164,8 @@ export const claudeExecutor =
     if (!servers.ok) return notStarted("invalid_node", servers.error);
     const spec = { ...specFor(plan.spec, context), ...servers.value };
     if (options.machineClaude === true) spec.machineClaude = true;
-    const driver = sessionDriver({
-      override: options.driver,
-      named: plan.driver,
-      ready: options.readyDriver,
-    });
-    if (driver === undefined) {
-      return notStarted(
-        "tool_missing",
-        "no agent driver is ready; see `ork doctor`",
-      );
-    }
+    const driver = sessionDriverOf(context, plan, options);
+    if (typeof driver !== "string") return driver;
     const runtime = await options.runtimeFor(driver);
     const ports: SessionPorts = {
       // A leader that takes its children's questions answers them first.

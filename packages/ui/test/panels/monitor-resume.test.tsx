@@ -20,11 +20,11 @@ import { treeNode } from "./monitor-fixtures.ts";
 
 const ROUTES: MonitorRoutes = {
   graph: {
-    nodes: [{ id: "lead", type: "claude.leader" }],
+    nodes: [{ id: "lead", type: "agent.leader" }],
     edges: [],
     channels: [],
   },
-  tree: [treeNode("lead", { type: "claude.leader", state: "failed" })],
+  tree: [treeNode("lead", { type: "agent.leader", state: "failed" })],
 };
 
 const open = async (run: RunView, monitor: MonitorRoutes = ROUTES) => {

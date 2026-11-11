@@ -40,7 +40,7 @@ const ignore = (): void => {
 const WORKERS: NonNullable<
   Extract<RunEvent, { type: "run.started" }>["nodes"]
 > = [
-  { id: "builder", type: "claude.worker" },
+  { id: "builder", type: "agent.worker" },
   { id: "script", type: "tool.shell" },
 ];
 
@@ -326,7 +326,7 @@ const compile = (lines: string[]): CompiledGraph => {
 
 const worker = compile([
   "nodes:",
-  "  builder: { type: claude.worker, prompt: go }",
+  "  builder: { type: agent.worker, prompt: go }",
 ]);
 
 const withRule = (rule: "" | "on" | "off", project?: "on" | "off") => {
@@ -336,7 +336,7 @@ const withRule = (rule: "" | "on" | "off", project?: "on" | "off") => {
       "name: t",
       ...(rule === "" ? [] : [`rules: { links: ${rule} }`]),
       "nodes:",
-      "  a: { type: claude.worker, prompt: go }",
+      "  a: { type: agent.worker, prompt: go }",
     ].join("\n"),
   );
   if (!parsed.ok) throw new Error("bad fixture");
@@ -641,7 +641,7 @@ describe("two runs, each with its own store connection and socket", () => {
       graph: worker,
       inputs: {},
       cwd: home,
-      executors: { "claude.worker": executor },
+      executors: { "agent.worker": executor },
       human: control.human,
       onEvent: record,
       runId: id,

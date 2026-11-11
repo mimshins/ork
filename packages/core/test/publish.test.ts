@@ -96,7 +96,7 @@ const RECORD: FeedbackRecord = {
       version: "0.4.0",
       driver: "claude-code",
       model: "sonnet",
-      nodeType: "claude.worker",
+      nodeType: "agent.worker",
     },
   },
 };
@@ -107,7 +107,7 @@ describe("the post", () => {
     expect(post.title).toBe("The bash tool crashed in <project>");
     expect(post.body).toBe(
       [
-        "**Ork** 0.4.0 · **driver** claude-code · **model** sonnet · **node** claude.worker · **kind** bug · **seen** 3 time(s) in 2 run(s)",
+        "**Ork** 0.4.0 · **driver** claude-code · **model** sonnet · **node** agent.worker · **kind** bug · **seen** 3 time(s) in 2 run(s)",
         "",
         "> It exited 137 reading <project>/big.log",
         "",

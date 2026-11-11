@@ -18,9 +18,9 @@ const parsed = parseWorkflow(
     "schemaVersion: 1",
     "name: t",
     "nodes:",
-    "  api: { type: claude.worker, prompt: a }",
-    "  ui: { type: claude.worker, prompt: u }",
-    "  review: { type: claude.worker, prompt: r, isolation: readonly }",
+    "  api: { type: agent.worker, prompt: a }",
+    "  ui: { type: agent.worker, prompt: u }",
+    "  review: { type: agent.worker, prompt: r, isolation: readonly }",
   ].join("\n"),
 );
 if (!parsed.ok) throw new Error("bad fixture");

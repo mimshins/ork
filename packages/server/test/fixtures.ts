@@ -128,7 +128,7 @@ export const started = (runId: string): RunEvent => ({
   workflow: "demo",
   entries: ["lead"],
   nodes: [
-    { id: "lead", type: "claude.leader" },
+    { id: "lead", type: "agent.leader" },
     { id: "check", type: "tool.shell", parent: "lead" },
   ],
 });
@@ -136,7 +136,7 @@ export const started = (runId: string): RunEvent => ({
 export const nodeStarted = (id: string): RunEvent => ({
   type: "node.started",
   id,
-  nodeType: id === "lead" ? "claude.leader" : "tool.shell",
+  nodeType: id === "lead" ? "agent.leader" : "tool.shell",
   round: 1,
 });
 

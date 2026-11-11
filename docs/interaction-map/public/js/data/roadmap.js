@@ -117,7 +117,7 @@ export const MILESTONES = [
   {
     id: "m1b",
     title: "M1b · Runtime",
-    goal: "One Claude node runs end to end on the user's own account.",
+    goal: "One agent node runs end to end on the user's own account.",
     items: [
       {
         id: "doctor",
@@ -144,7 +144,7 @@ export const MILESTONES = [
         title: "`ork run --node`",
         status: "done",
         detail:
-          "Runs one Claude node with a live transcript, questions and permission prompts on the terminal.",
+          "Runs one agent node with a live transcript, questions and permission prompts on the terminal.",
         commits: ["a4fb707"],
         date: "2026-10-30",
         docs: ["specs/cli/running-and-runs.md#running-one-node"],
@@ -211,7 +211,7 @@ export const MILESTONES = [
         title: "Per-node effort",
         status: "done",
         detail:
-          "`effort:` next to `model:` on each Claude node and in `defaults`.",
+          "`effort:` next to `model:` on each agent node and in `defaults`.",
         commits: ["d178455"],
         date: "2026-10-30",
         docs: ["specs/workflow-format.md"],
@@ -505,7 +505,7 @@ export const MILESTONES = [
         title: "Agents, registered and assigned to nodes",
         status: "done",
         detail:
-          "An agent is a portable `<name>.md` plus an optional `<name>.agent.yaml`; a Claude node takes `agent:` and its prompt is the task. Sources are layered: built-in, `~/.ork/agents`, the project's (and its tool folders'), the workflow's own.",
+          "An agent is a portable `<name>.md` plus an optional `<name>.agent.yaml`; an agent node takes `agent:` and its prompt is the task. Sources are layered: built-in, `~/.ork/agents`, the project's (and its tool folders'), the workflow's own.",
         commits: ["9a5e215"],
         date: "2026-10-31",
         docs: [
@@ -534,7 +534,7 @@ export const MILESTONES = [
         title: "Project rules",
         status: "done",
         detail:
-          "`.ork/project.yaml` and a workflow's `rules:`: `commit: never` (detached worktrees, work handed over as patches), `merge: patch | never`, branch, worktree and base templates, permissions, defaults and context; `ork worktrees` reads what runs recorded. `session: resume` on any Claude node.",
+          "`.ork/project.yaml` and a workflow's `rules:`: `commit: never` (detached worktrees, work handed over as patches), `merge: patch | never`, branch, worktree and base templates, permissions, defaults and context; `ork worktrees` reads what runs recorded. `session: resume` on any agent node.",
         commits: ["00a2597"],
         date: "2026-10-31",
         docs: [
@@ -657,7 +657,7 @@ export const MILESTONES = [
         date: "2026-11-03",
         commits: ["c7a7e8f"],
         detail:
-          "A `timeout` on tool nodes, Claude nodes and the whole run, whose clock stands still while waiting on the user. An expired node fails with `timedOut`, and a run ends `timed_out`. Tools run in their own process groups, so a stop or a timeout ends what they started.",
+          "A `timeout` on tool nodes, agent nodes and the whole run, whose clock stands still while waiting on the user. An expired node fails with `timedOut`, and a run ends `timed_out`. Tools run in their own process groups, so a stop or a timeout ends what they started.",
         docs: [
           "decisions/ADR-043-timeouts.md",
           "specs/scheduler.md#timeouts",
@@ -949,7 +949,7 @@ export const MILESTONES = [
         title: "Report lists kept across rounds",
         status: "done",
         detail:
-          "A Claude node's `output.gather: [field]` keeps a declared list field across its rounds, each round's entries added to the earlier ones, so a gate after a fix loop sees every decision a leader reported. Joined by the engine, idempotent on resume; `build`'s leader gathers `decisions`. Found when `ratify` in run c1a569ed showed none of the leader's 22.",
+          "An agent node's `output.gather: [field]` keeps a declared list field across its rounds, each round's entries added to the earlier ones, so a gate after a fix loop sees every decision a leader reported. Joined by the engine, idempotent on resume; `build`'s leader gathers `decisions`. Found when `ratify` in run c1a569ed showed none of the leader's 22.",
         docs: [
           "decisions/ADR-073-output-gather.md",
           "specs/workflow-format/node-types.md",
@@ -1046,7 +1046,7 @@ export const MILESTONES = [
         date: "2026-11-08",
         commits: ["2388727"],
         detail:
-          "With `questions: owner` on a `claude.leader`, a child's `ask_user` goes first to a read-only fork of the leader's latest session, which answers when its task settles the question, or passes it on to you with a note; you're asked as before when the fork can't. Every answer records who gave it. Built and tested against stand-in sessions; next, a real leader forked while it waits in `delegate` (G25).",
+          "With `questions: owner` on an `agent.leader`, a child's `ask_user` goes first to a read-only fork of the leader's latest session, which answers when its task settles the question, or passes it on to you with a note; you're asked as before when the fork can't. Every answer records who gave it. Built and tested against stand-in sessions; next, a real leader forked while it waits in `delegate` (G25).",
         docs: [
           "decisions/ADR-063-leader-questions.md",
           "specs/messaging/leader-questions.md",
@@ -1143,6 +1143,20 @@ export const MILESTONES = [
           "docs/guides/running-workflows/attaching-to-a-run.md",
           "specs/scheduler/calls.md",
           "specs/gaps.md#limits",
+        ],
+      },
+      {
+        id: "agent-types",
+        title: "A format for several drivers: `agent.*` and `<driver>.<model>`",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). Part 1 of RFC-015. The node types are `agent.worker`, `agent.leader` and `agent.subagent` (the `claude.*` names are refused with the way out), and a `model` may name its driver, `claude-code.opus` or `open-code.anthropic/claude-sonnet-5-5`, which pins the node to that tool ahead of `--driver`; plain models still work, and `{{item.model}}` is parsed per item. A driver descriptor says whether it runs subagents. `ork migrate` renames the types in old files, keeping comments (`--dry-run` shows it), and this repository's workflows and examples use the new names. Left: `ork migrate` scans only the workflows folder, `open-code` and `command-code` `subagents` are unmeasured, and written item prefixes are caught at run (L273 to L276). Part 2, token budgets, is next (RFC-015).",
+        docs: [
+          "decisions/ADR-083-agent-node-types-and-driver-prefixed-models.md",
+          "specs/runtime/which-driver.md",
+          "specs/workflow-format/node-types.md",
+          "specs/gaps/agent-types-limits.md",
+          "rfcs/active/RFC-015-format-for-several-drivers.md",
         ],
       },
       {
@@ -1252,4 +1266,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-11";
+export const ROADMAP_UPDATED = "2026-11-12";

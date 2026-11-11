@@ -33,7 +33,7 @@ const WORKFLOW = [
   "name: notes",
   "nodes:",
   "  write:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    isolation: shared",
   '    prompt: "Write notes"',
   "",
@@ -95,7 +95,7 @@ describe("feedback in a run", () => {
     expect(store.feedbackRecords(id)[0]?.feedback.origin).toMatchObject({
       ...origin,
       workflow: "notes",
-      nodeType: "claude.worker",
+      nodeType: "agent.worker",
       driver: "claude-code",
     });
 
@@ -134,7 +134,7 @@ describe("a person's feedback", () => {
     store.append("r1", {
       type: "node.started",
       id: "check",
-      nodeType: "claude.worker",
+      nodeType: "agent.worker",
       round: 1,
     });
     expect(

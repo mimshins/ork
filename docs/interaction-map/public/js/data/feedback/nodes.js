@@ -463,11 +463,11 @@ export const NODES = [
     status: "built",
     pkg: "runtime",
     summary:
-      "One of Ork's MCP tools, given to every Claude node, for the friction an agent sees that no event shows. Its description asks for only what materially got in the way, in one line and a short body.",
+      "One of Ork's MCP tools, given to every agent node, for the friction an agent sees that no event shows. Its description asks for only what materially got in the way, in one line and a short body.",
     facts: [
       "`feedback(kind, target?, title, body?, severity?, evidence?)`.",
       "Kinds: `friction`, `bug`, `context-gap`, `skill`, `workflow`, `idea`. Targets: `ork`, `workflow`, `project`.",
-      "Every Claude node inside a run gets it, `ork run --node` too; capped at 3 reports a session.",
+      "Every agent node inside a run gets it, `ork run --node` too; capped at 3 reports a session.",
     ],
     see: [
       { map: "messaging", node: "mcpTools", label: "Ork's MCP tools" },

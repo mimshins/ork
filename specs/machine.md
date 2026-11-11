@@ -42,7 +42,7 @@ heavy:
   - vitest run
 ```
 
-- **Denied to a checked node.** A Claude node with `verify:` gets each pattern
+- **Denied to a checked node.** An agent node with `verify:` gets each pattern
   as a `Bash(…)` deny rule when the project's rules are put under the workflow
   ([precedence](./project-rules.md#precedence)); Ork runs that check, and a
   failed `verify:` goes back to the session with its output. Nodes without

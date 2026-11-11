@@ -14,7 +14,7 @@ layers:
       allow:
         - write-an-rfc
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
   effort: high
   budgetUsd: 4
 limits:
@@ -23,7 +23,7 @@ limits:
   timeout: 12h
 nodes:
   draft:
-    type: claude.worker
+    type: agent.worker
     agent: rfc-writer
     prompt: |-
       Write the RFC for this brief, as your instructions say. Put each decision to the maintainer with ask_user before you write its outcome.

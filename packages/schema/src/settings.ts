@@ -256,7 +256,7 @@ export const nodeBaseFields = {
 /** A message a workflow declares, sent when its node finishes (RFC-005). */
 export const NotifyRuleSchema = z.strictObject({
   to: NodeIdSchema.describe(
-    "The `claude.leader` or `claude.worker` to write to.",
+    "The `agent.leader` or `agent.worker` to write to.",
   ),
   when: z
     .string()

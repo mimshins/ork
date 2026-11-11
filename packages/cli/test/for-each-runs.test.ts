@@ -40,7 +40,7 @@ const item = (index: number, seconds: number): RunEvent[] => [
   {
     type: "node.started",
     id: `build.${String(index)}`,
-    nodeType: "claude.worker",
+    nodeType: "agent.worker",
     round: 1,
     item: { of: "build", index },
   },
@@ -70,11 +70,11 @@ const RUN: RunEvent[] = [
     entries: ["plan"],
     nodes: [
       { id: "plan", type: "tool.shell" },
-      { id: "build", type: "claude.worker" },
+      { id: "build", type: "agent.worker" },
     ],
   },
   { type: "node.started", id: "plan", nodeType: "tool.shell", round: 1 },
-  { type: "node.started", id: "build", nodeType: "claude.worker", round: 1 },
+  { type: "node.started", id: "build", nodeType: "agent.worker", round: 1 },
   LISTED,
   ...item(0, 2),
   ...item(1, 4),
@@ -221,11 +221,11 @@ describe("ork tree", () => {
     ]);
     const lines = formatTree(roots, now).map(text => plain(text));
     expect(lines).toEqual([
-      "plan        tool.shell     ● running",
-      "build       claude.worker  ✓ 3 ran",
-      "├─ build.0  claude.worker  ✓ pass: did 2  2s  100 in / 20 out · $1.0000",
-      "├─ build.1  claude.worker  ✓ pass: did 4  2s  100 in / 20 out · $2.0000",
-      "└─ build.2  claude.worker  ✓ pass: did 6  2s  100 in / 20 out · $3.0000",
+      "plan        tool.shell    ● running",
+      "build       agent.worker  ✓ 3 ran",
+      "├─ build.0  agent.worker  ✓ pass: did 2  2s  100 in / 20 out · $1.0000",
+      "├─ build.1  agent.worker  ✓ pass: did 4  2s  100 in / 20 out · $2.0000",
+      "└─ build.2  agent.worker  ✓ pass: did 6  2s  100 in / 20 out · $3.0000",
     ]);
   });
 });

@@ -22,22 +22,21 @@ with parsed conditions), the entry nodes, and the declared message channels.
   edge except `maxRounds` ones, so a first node can loop back to itself. An
   owned node with no incoming edge runs when its owner delegates to it. There
   must be at least one entry.
-- **Ownership:** a `claude.subagent` is owned by a `claude.leader` or
-  `claude.worker` (it runs in that node's session); every other owned node is
-  owned by a `claude.leader`; the tree has no cycles; a node that sets
+- **Ownership:** an `agent.subagent` is owned by an `agent.leader` or
+  `agent.worker` (it runs in that node's session); every other owned node is
+  owned by an `agent.leader`; the tree has no cycles; a node that sets
   `isolation: continue` neither owns nor is owned.
 - **Loops:** every cycle needs at least one edge with `maxRounds`.
 - **Sub-agents** take no edges.
 - **References** in templates and conditions must resolve (see
   [expressions](./expressions.md)); reading a node that does not run before the
   reader is a warning.
-- **Known report fields** per node type: Claude nodes report `status`,
-  `summary`, `artifacts`, `branch`, `usage` plus their `output.schema` fields;
-  tool nodes `exitCode`, `stdout`, `stderr`, plus `json` with
-  `output: { format: json }`; `control.join` `statuses`, `results`, `count`;
-  `human.gate` `choice`, `answeredBy`, `note`; split and router pass their input
-  through; a `workflow.call`'s fields are not checked, since they depend on what
-  it calls.
+- **Known report fields** per node type: agent nodes report `status`, `summary`,
+  `artifacts`, `branch`, `usage` plus their `output.schema` fields; tool nodes
+  `exitCode`, `stdout`, `stderr`, plus `json` with `output: { format: json }`;
+  `control.join` `statuses`, `results`, `count`; `human.gate` `choice`,
+  `answeredBy`, `note`; split and router pass their input through; a
+  `workflow.call`'s fields are not checked, since they depend on what it calls.
 
 - **For each:** a node with `forEach` (RFC-013) reports `items`, `results`,
   `statuses` and `count`, which replace its type's fields for references and
@@ -95,7 +94,7 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `edge.max-rounds-unused` | warning  | `maxRounds` on an edge outside any cycle                                         |
 | `graph.unbounded-cycle`  | error    | a cycle has no `maxRounds` edge                                                  |
 | `when.value`             | error    | a condition compares a field with a value it can't have (see below)              |
-| `output.status`          | error    | a Claude node declares a `status` a session can't report                         |
+| `output.status`          | error    | an agent node declares a `status` a session can't report                         |
 | `when.never`             | warning  | a condition that reads nothing and is false                                      |
 | `loop.no-condition`      | warning  | no edge of a loop has a `when:`, so only its rounds can end it                   |
 | `loop.beside-edge`       | warning  | a plain edge from the node a loop edge leaves, which fires every round           |
@@ -149,6 +148,7 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `model.template`         | error    | `model` is a template off a fanned node, or reads more than `item`               |
 | `effort.template`        | error    | `effort` is a template off a fanned node, or reads more than `item`              |
 | `model.item`             | error    | a written item's `model` is empty or has a space, brace or quote                 |
+| `model.driver`           | error    | `model` names a driver (`claude-code.opus`) other than the node's own `driver`   |
 | `effort.item`            | error    | a written item's `effort` is not `low`, `medium`, `high`, `xhigh` or `max`       |
 | `ref.undeclared`         | warning  | a field of a tool's or MCP call's JSON that no `output.schema` declares          |
 | `ref.json`               | error    | `output.json` of a tool node without `output: { format: json }`                  |
@@ -157,9 +157,9 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `env.code`               | warning  | a run's data sets a name that changes which code runs (`PATH`)                   |
 | `env.plain`              | warning  | `plainEnv` names what `env:` doesn't read, or looks like a secret                |
 | `template.env`           | error    | `{{env.*}}` outside a tool node's `env:`, or an edge's `when:`                   |
-| `mcp.unknown`            | error    | a Claude node's `mcp:` names a server `.mcp.json` doesn't have                   |
-| `mcp.reserved`           | error    | a Claude node's `mcp:` names `ork`, Ork's own server                             |
-| `mcp.malformed`          | error    | a Claude node's `mcp:` names a `.mcp.json` entry that can't load                 |
+| `mcp.unknown`            | error    | an agent node's `mcp:` names a server `.mcp.json` doesn't have                   |
+| `mcp.reserved`           | error    | an agent node's `mcp:` names `ork`, Ork's own server                             |
+| `mcp.malformed`          | error    | an agent node's `mcp:` names a `.mcp.json` entry that can't load                 |
 | `ref.skill`              | error    | a skill reference that resolves to nothing (context compiler)                    |
 | `ref.context`            | error    | a context file that does not exist (context compiler)                            |
 | `template.syntax`        | error    | a template does not parse                                                        |
@@ -176,12 +176,12 @@ declared `capabilities`, `proven` and `onePerCheckout`
 [driver-needs.ts](../packages/core/src/run/driver-needs.ts)) and refuse, in
 words that name both the node and the driver: `maxTurns` without `turnLimit`;
 `budgetUsd`, or the workflow's `limits.budgetUsd`, without `price` (a token
-budget comes with RFC-015); `mcp` servers without `mcpServers`; a leader that
-delegates to the nodes it owns without `questions`; any node on a driver that is
-not `proven`; an owner and a node it owns in one checkout on a `onePerCheckout`
-driver (below). Not refused, because Ork has a fallback: the report, permission
-rules, a message at the next leg. A node with no driver to check (none ready) is
-left to the run's own refusal.
+budget comes with RFC-015); `mcp` servers without `mcpServers`; a sub-agent on a
+driver without `subagents`; a leader that delegates to the nodes it owns without
+`questions`; any node on a driver that is not `proven`; an owner and a node it
+owns in one checkout on a `onePerCheckout` driver (below). Not refused, because
+Ork has a fallback: the report, permission rules, a message at the next leg. A
+node with no driver to check (none ready) is left to the run's own refusal.
 
 A `onePerCheckout` driver (Command Code: its MCP entry is per folder, so a
 checkout holds one session at a time) gets a warning, `driver.queues`, from

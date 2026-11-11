@@ -17,22 +17,22 @@ layers:
     skills: inherit
 defaults:
   driver: claude-code
-  model: sonnet
+  model: claude-code.sonnet
   isolation: worktree
   budgetUsd: 2
 agents:
   spec-writer:
     description: Turns a feature request into a spec a builder can implement.
     instructions: "You write specs. Say what the change must do, what it must not, and how to tell it works: behavior, edge cases and acceptance criteria. Save the spec as a markdown file and report its path as the `spec` artifact."
-    model: opus
+    model: claude-code.opus
   builder:
     description: Implements a spec and leads its reviewers through a bounded fix loop.
     instructions: You implement specs. Make the smallest complete change that meets the spec, with tests. Delegate review to the reviewers you own, fix what they find, and report pass only when they do.
-    model: opus
+    model: claude-code.opus
   security-reviewer:
     description: Reviews a branch for security issues.
     instructions: "You review for security: injection, secrets, unsafe input handling, permissions and data exposure. Name each problem with its file and line and why it matters. Report changes_requested with the concrete problems, or pass."
-    model: opus
+    model: claude-code.opus
     isolation: readonly
   ux-reviewer:
     description: Reviews a branch for the experience of the people who use it.
@@ -45,7 +45,7 @@ agents:
   approver:
     description: Decides whether a reviewed branch is ready to merge.
     instructions: "You approve merges. Read the branch and its reviews, and decide: approve when it meets its spec and the reviews passed, escalate to a human when anything is doubtful. Say why in your summary."
-    model: opus
+    model: claude-code.opus
     isolation: readonly
     output:
       schema:
@@ -57,26 +57,26 @@ limits:
   concurrency: 4
 nodes:
   spec:
-    type: claude.worker
+    type: agent.worker
     agent: spec-writer
     prompt: "Write a spec for: {{inputs.feature}}"
     isolation: shared
   builder:
-    type: claude.leader
+    type: agent.leader
     agent: builder
     prompt: Implement the spec at {{nodes.spec.output.artifacts.spec}}.
   security:
-    type: claude.worker
+    type: agent.worker
     parent: builder
     agent: security-reviewer
     prompt: Review the builder's branch for security issues.
   ux:
-    type: claude.worker
+    type: agent.worker
     parent: builder
     agent: ux-reviewer
     prompt: Review the builder's branch for UX issues.
   code:
-    type: claude.worker
+    type: agent.worker
     parent: builder
     agent: code-reviewer
     prompt: Review the builder's branch for code quality.
@@ -84,7 +84,7 @@ nodes:
     type: control.join
     mode: all
   approver:
-    type: claude.worker
+    type: agent.worker
     agent: approver
     prompt: Decide whether {{nodes.builder.output.branch}} is ready to merge.
   ship:

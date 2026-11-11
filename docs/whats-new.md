@@ -3,6 +3,18 @@
 Each release in a few lines, newest first, with how to upgrade. Every change, in
 full: the [changelog](../packages/cli/CHANGELOG.md).
 
+## Next release
+
+- **Agent nodes are `agent.*`, and a model can name its driver.**
+  `claude.worker`, `claude.leader` and `claude.subagent` are now `agent.worker`,
+  `agent.leader` and `agent.subagent`, and a `model` may start with its driver:
+  `claude-code.opus`, `open-code.anthropic/claude-sonnet-5-5`. A prefixed node
+  needs no `driver`, and `--driver` doesn't change it. Plain models still work.
+  Upgrading: run `ork migrate` in each project; it rewrites the old type names
+  in your workflows and shows each change (`--dry-run` only shows them).
+  `ork validate` and `ork run` refuse the old names until you do
+  ([drivers](./guides/drivers.md#naming-the-driver-in-the-model)).
+
 ## 1.0.0-alpha.4
 
 - **A node names the MCP servers it needs.** `mcp: [chrome-devtools]` on a node,

@@ -23,7 +23,7 @@ nodes:
       until: json.result != 'pending'
       timeout: 2h
   fix:
-    type: claude.worker
+    type: agent.worker
     prompt: The checks on pull request {{inputs.pr}} failed. Find out why, and fix it.
 edges:
   - { from: ci, to: fix, when: "json.result == 'failed'" }

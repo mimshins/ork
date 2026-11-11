@@ -489,7 +489,7 @@ describe("a watch and the session slots", () => {
   it("holds none, so work goes on beside it at concurrency 1", async () => {
     const graph = graphOf([
       ...watching("json.result != 'pending'"),
-      "  other: { type: claude.worker, prompt: go }",
+      "  other: { type: agent.worker, prompt: go }",
       "limits: { concurrency: 1 }",
     ]);
     const handle = startRun({
@@ -499,7 +499,7 @@ describe("a watch and the session slots", () => {
       runDir: "/nowhere/run",
       executors: {
         "tool.shell": waitsForOther,
-        "claude.worker": () => Promise.resolve({ ok: true, output: {} }),
+        "agent.worker": () => Promise.resolve({ ok: true, output: {} }),
       },
       human: {
         permit: () => Promise.resolve({ allow: true }),
@@ -543,7 +543,7 @@ describe("an owner's clock", () => {
   it("stands still while a node it owns is between looks", async () => {
     const graph = graphOf([
       "  begin: { type: control.split }",
-      "  lead: { type: claude.leader, prompt: go, timeout: 1s }",
+      "  lead: { type: agent.leader, prompt: go, timeout: 1s }",
       "  ci:",
       "    type: tool.shell",
       "    parent: lead",
@@ -563,7 +563,7 @@ describe("an owner's clock", () => {
       runDir: "/nowhere/run",
       executors: {
         "tool.shell": pendingFor(1500),
-        "claude.leader": leadsUntilCiPasses,
+        "agent.leader": leadsUntilCiPasses,
       },
       human: {
         permit: () => Promise.resolve({ allow: true }),

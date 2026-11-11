@@ -58,13 +58,13 @@ export const starterWorkflow = (): Workflow => ({
   limits: { budgetUsd: 5 },
   nodes: {
     lead: {
-      type: "claude.leader",
+      type: "agent.leader",
       prompt: "Plan this task and delegate it to your worker: {{inputs.task}}",
       model: "opus",
       maxWorkers: 2,
     },
     worker: {
-      type: "claude.worker",
+      type: "agent.worker",
       parent: "lead",
       prompt: "Do the part of the task your owner gives you, then report.",
     },

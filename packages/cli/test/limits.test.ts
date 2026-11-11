@@ -25,7 +25,7 @@ const FAKE_CLAUDE = path.resolve(
 const SESSION = `schemaVersion: 1
 name: spends
 nodes:
-  write: { type: claude.worker, isolation: shared, prompt: Write }
+  write: { type: agent.worker, isolation: shared, prompt: Write }
 `;
 
 const TOOLS = `schemaVersion: 1

@@ -9,7 +9,7 @@ a session can't report success past a failing check:
 
 ```yaml
 builder:
-  type: claude.worker
+  type: agent.worker
   prompt: Add the retry logic the issue describes.
   verify:
     command: pnpm test
@@ -50,7 +50,7 @@ worktree, which a tool node can't.
 
 ```yaml
 builder:
-  type: claude.worker
+  type: agent.worker
   before:
     command: pnpm install --frozen-lockfile
   prompt: Add the retry logic the issue describes.

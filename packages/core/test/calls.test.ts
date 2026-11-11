@@ -37,7 +37,7 @@ const request = (over: Partial<CallRequest> = {}): CallRequest => ({
   ...over,
 });
 
-const NODES = [{ id: "builder", type: "claude.worker" }] as const;
+const NODES = [{ id: "builder", type: "agent.worker" }] as const;
 
 const finishedWith = (id: string, over: Partial<RunResult> = {}): RunEvent => ({
   type: "run.finished",
@@ -962,7 +962,7 @@ describe("calling a workflow", () => {
       entries: [],
       nodes: [
         { id: "kit", type: "workflow.call" },
-        { id: "builder", type: "claude.worker" },
+        { id: "builder", type: "agent.worker" },
       ],
     });
     earlierCall(store);

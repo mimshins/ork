@@ -658,7 +658,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "const": "claude.leader"
+                "const": "agent.leader"
               },
               "parent": {
                 "description": "Owner of this node in the ownership tree.",
@@ -897,7 +897,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The `claude.leader` or `claude.worker` to write to."
+                      "description": "The `agent.leader` or `agent.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -1217,7 +1217,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "const": "claude.worker"
+                "const": "agent.worker"
               },
               "parent": {
                 "description": "Owner of this node in the ownership tree.",
@@ -1456,7 +1456,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The `claude.leader` or `claude.worker` to write to."
+                      "description": "The `agent.leader` or `agent.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -1830,7 +1830,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "const": "claude.subagent"
+                "const": "agent.subagent"
               },
               "parent": {
                 "type": "string",
@@ -2254,7 +2254,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The `claude.leader` or `claude.worker` to write to."
+                      "description": "The `agent.leader` or `agent.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -2539,7 +2539,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The `claude.leader` or `claude.worker` to write to."
+                      "description": "The `agent.leader` or `agent.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -2830,7 +2830,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The `claude.leader` or `claude.worker` to write to."
+                      "description": "The `agent.leader` or `agent.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -3123,7 +3123,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The `claude.leader` or `claude.worker` to write to."
+                      "description": "The `agent.leader` or `agent.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -3335,7 +3335,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The `claude.leader` or `claude.worker` to write to."
+                      "description": "The `agent.leader` or `agent.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -3433,7 +3433,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The `claude.leader` or `claude.worker` to write to."
+                      "description": "The `agent.leader` or `agent.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",
@@ -3755,7 +3755,7 @@
                     "to": {
                       "type": "string",
                       "pattern": "^[a-z][a-z0-9_-]*$",
-                      "description": "The `claude.leader` or `claude.worker` to write to."
+                      "description": "The `agent.leader` or `agent.worker` to write to."
                     },
                     "when": {
                       "description": "Send only when this holds. It reads what an edge's when: does, plus ok and error. Default: every finish.",

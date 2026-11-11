@@ -18,6 +18,7 @@ const ABLE = {
   reportSchema: true,
   turnLimit: true,
   mcpServers: true,
+  subagents: true,
 };
 
 const fake = (
@@ -40,7 +41,7 @@ const workflowOf = (nodes: string, defaults = ""): Workflow => {
 };
 
 const BARE = `  build:
-    type: claude.worker
+    type: agent.worker
     prompt: go
 `;
 
@@ -95,10 +96,10 @@ describe("what a node needs of its driver", () => {
 
   it("refuses an owner and a node it owns sharing a one-per-checkout driver's checkout", () => {
     const w = workflowOf(`  lead:
-    type: claude.leader
+    type: agent.leader
     prompt: go
   part:
-    type: claude.worker
+    type: agent.worker
     parent: lead
     isolation: shared
     prompt: go
@@ -125,11 +126,11 @@ describe("what a node needs of its driver", () => {
 
   it("refuses delegation (and so owner questions) without questions", () => {
     const owner = workflowOf(`  lead:
-    type: claude.leader
+    type: agent.leader
     prompt: go
     questions: owner
   part:
-    type: claude.worker
+    type: agent.worker
     parent: lead
     prompt: go
 `);

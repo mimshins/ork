@@ -13,13 +13,13 @@ export const PRE_FOR_EACH_RUN: RunEvent[] = [
     workflow: "t",
     entries: ["write"],
     nodes: [
-      { id: "write", type: "claude.worker" },
+      { id: "write", type: "agent.worker" },
       { id: "publish", type: "tool.shell" },
     ],
     inputs: {},
     settings: { inPlace: true },
   },
-  { type: "node.started", id: "write", nodeType: "claude.worker", round: 1 },
+  { type: "node.started", id: "write", nodeType: "agent.worker", round: 1 },
   {
     type: "node.event",
     id: "write",

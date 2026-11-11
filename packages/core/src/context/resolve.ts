@@ -273,7 +273,7 @@ export const contextDiagnostics = (
 ): Diagnostic[] => {
   const seen = new Map<string, Diagnostic>();
   for (const [nodeId, node] of Object.entries(workflow.nodes)) {
-    if (!isClaudeNode(node) || node.type === "claude.subagent") continue;
+    if (!isClaudeNode(node) || node.type === "agent.subagent") continue;
     const stack = resolveContext({
       ...options,
       workflow,

@@ -29,7 +29,7 @@ const compile = (lines: string[]): CompiledGraph => {
   return graph;
 };
 
-const GRAPH = compile(["nodes:", "  fix: { type: claude.worker, prompt: f }"]);
+const GRAPH = compile(["nodes:", "  fix: { type: agent.worker, prompt: f }"]);
 
 /** The feedback records among `events`. */
 const reports = (events: readonly RunEvent[]): FeedbackReport[] =>
@@ -98,7 +98,7 @@ describe("the agents' port", () => {
       severity: "medium",
       body: "AGENTS.md says nothing; token [masked]",
       evidence: ["AGENTS.md"],
-      origin: { nodeType: "claude.worker" },
+      origin: { nodeType: "agent.worker" },
     });
     // A new session has its own cap; the run still drops duplicates.
     expect(
@@ -122,7 +122,7 @@ const RUN: RunEvent[] = [
     entries: ["fix"],
     nodes: [],
   },
-  { type: "node.started", id: "fix", nodeType: "claude.worker", round: 1 },
+  { type: "node.started", id: "fix", nodeType: "agent.worker", round: 1 },
   {
     type: "node.event",
     id: "fix",
@@ -201,7 +201,7 @@ const RUN: RunEvent[] = [
       body: "",
       evidence: [],
       fingerprint: "f1",
-      origin: { nodeType: "claude.worker" },
+      origin: { nodeType: "agent.worker" },
     },
   },
   {
@@ -257,7 +257,7 @@ describe("system signals", () => {
       origin: {
         workflow: "ship",
         workflowHash: "abc",
-        nodeType: "claude.worker",
+        nodeType: "agent.worker",
         model: "sonnet",
         driver: "claude-code",
         version: "1.2.3",
@@ -266,7 +266,7 @@ describe("system signals", () => {
     expect(recorded[1]?.title).toBe("fix was denied Bash");
     expect(recorded[5]?.origin).toMatchObject({
       model: "sonnet",
-      nodeType: "claude.worker",
+      nodeType: "agent.worker",
     });
   });
 

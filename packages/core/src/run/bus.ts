@@ -45,7 +45,7 @@ export type Bus = {
   unread: () => Map<string, number>;
 };
 
-const SESSION_TYPES = new Set(["claude.leader", "claude.worker"]);
+const SESSION_TYPES = new Set(["agent.leader", "agent.worker"]);
 
 export const createBus = ({
   graph,

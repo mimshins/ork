@@ -56,10 +56,10 @@ const liveRun = (store: EventStore, id: string, cwd: string): void => {
     workflow: "w",
     entries: ["check"],
     nodes: [
-      { id: "lead", type: "claude.leader" },
+      { id: "lead", type: "agent.leader" },
       { id: "check", type: "tool.shell", parent: "lead" },
       { id: "alone", type: "tool.shell" },
-      { id: "peer", type: "claude.worker" },
+      { id: "peer", type: "agent.worker" },
     ],
     edges: [],
     channels: [],
@@ -112,7 +112,7 @@ nodes:
     type: tool.shell
     command: sh -c '"$ORK_BIN" send gone -m hi 2> refused.txt; echo "failed with $T" | "$ORK_BIN" send later --stdin; echo "sent $?"'
     env: { T: "{{env.ORK_TEST_TOKEN}}" }
-  later: { type: claude.worker, prompt: never starts, isolation: readonly, driver: claude-code }
+  later: { type: agent.worker, prompt: never starts, isolation: readonly, driver: claude-code }
 edges:
   - { from: check, to: later, when: "exitCode == 99" }
 messages:
@@ -234,7 +234,7 @@ messages:
           entries: ["alone"],
           nodes: [
             { id: "alone", type: "tool.shell" },
-            { id: "peer", type: "claude.worker" },
+            { id: "peer", type: "agent.worker" },
           ],
           edges: [],
           channels: [["alone", "peer"]],

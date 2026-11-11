@@ -7,8 +7,8 @@
 import type { RunView, StoredEvent } from "@krapht/ork-server/client";
 
 const SESSION_TYPES: ReadonlySet<string> = new Set([
-  "claude.leader",
-  "claude.worker",
+  "agent.leader",
+  "agent.worker",
 ]);
 
 /** The leaders and workers: declared by the run, or seen starting. */

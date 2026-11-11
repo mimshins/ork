@@ -51,23 +51,23 @@ const EVENTS: RunEvent[] = [
     workflow: "team",
     entries: ["lead"],
     nodes: [
-      { id: "lead", type: "claude.leader" },
-      { id: "check", type: "claude.worker", parent: "lead" },
+      { id: "lead", type: "agent.leader" },
+      { id: "check", type: "agent.worker", parent: "lead" },
       { id: "ship", type: "tool.shell" },
     ],
   },
-  { type: "node.started", id: "lead", nodeType: "claude.leader", round: 1 },
+  { type: "node.started", id: "lead", nodeType: "agent.leader", round: 1 },
   {
     type: "node.started",
     id: "check",
-    nodeType: "claude.worker",
+    nodeType: "agent.worker",
     round: 1,
     owner: "lead",
   },
   {
     type: "node.started",
     id: "check-2",
-    nodeType: "claude.worker",
+    nodeType: "agent.worker",
     round: 1,
     owner: "lead",
   },
@@ -182,7 +182,7 @@ describe("the event store", () => {
     first.append("r1", {
       type: "node.started",
       id: "a",
-      nodeType: "claude.worker",
+      nodeType: "agent.worker",
       round: 1,
     });
     first.close();

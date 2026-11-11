@@ -124,9 +124,9 @@ name: t
 description: &who a
 nodes:
   a:
-    type: claude.leader
+    type: agent.leader
   b:
-    type: claude.worker
+    type: agent.worker
     parent: *who
 `;
     expect(refusal(text, rename("a", "z"))).toContain("anchor");
@@ -394,7 +394,7 @@ nodes:
 name: t
 nodes:
   lead:
-    type: claude.leader
+    type: agent.leader
   kid:
     parent: lead
 `;

@@ -78,9 +78,9 @@ const nodeFree = (type: string): string[] => {
 describe("the whole format", () => {
   it("lists every node type", () => {
     expect(nodeTypesOf(ROOT)).toEqual([
-      "claude.leader",
-      "claude.worker",
-      "claude.subagent",
+      "agent.leader",
+      "agent.worker",
+      "agent.subagent",
       "tool.gh",
       "tool.aws",
       "tool.git",
@@ -97,21 +97,21 @@ describe("the whole format", () => {
   it("types only the values the format leaves free", () => {
     const paths = new Set(nodeTypesOf(ROOT).flatMap(type => nodeFree(type)));
     expect([...paths].toSorted()).toEqual([
-      "claude.leader.before.output.schema.*.list.*[]",
-      "claude.leader.before.output.schema.*[]",
-      "claude.leader.output.schema.*",
-      "claude.leader.output.schema.*.list.*[]",
-      "claude.leader.verify.output.schema.*.list.*[]",
-      "claude.leader.verify.output.schema.*[]",
-      "claude.subagent.output.schema.*",
-      "claude.subagent.output.schema.*.list.*[]",
-      "claude.worker.before.output.schema.*.list.*[]",
-      "claude.worker.before.output.schema.*[]",
-      "claude.worker.forEach.items[]",
-      "claude.worker.output.schema.*",
-      "claude.worker.output.schema.*.list.*[]",
-      "claude.worker.verify.output.schema.*.list.*[]",
-      "claude.worker.verify.output.schema.*[]",
+      "agent.leader.before.output.schema.*.list.*[]",
+      "agent.leader.before.output.schema.*[]",
+      "agent.leader.output.schema.*",
+      "agent.leader.output.schema.*.list.*[]",
+      "agent.leader.verify.output.schema.*.list.*[]",
+      "agent.leader.verify.output.schema.*[]",
+      "agent.subagent.output.schema.*",
+      "agent.subagent.output.schema.*.list.*[]",
+      "agent.worker.before.output.schema.*.list.*[]",
+      "agent.worker.before.output.schema.*[]",
+      "agent.worker.forEach.items[]",
+      "agent.worker.output.schema.*",
+      "agent.worker.output.schema.*.list.*[]",
+      "agent.worker.verify.output.schema.*.list.*[]",
+      "agent.worker.verify.output.schema.*[]",
       "mcp.call.arguments.*",
       "mcp.call.forEach.items[]",
       "mcp.call.output.schema.*.list.*[]",
@@ -282,7 +282,7 @@ describe("what the builder means", () => {
   const graph = {
     nodes: [
       { id: "a", type: "tool.gh" },
-      { id: "b", type: "claude.worker" },
+      { id: "b", type: "agent.worker" },
       { id: "c", type: "mcp.call" },
     ],
     edges: [],
@@ -290,8 +290,8 @@ describe("what the builder means", () => {
   };
 
   it("names a new node after its type, and never one that's taken", () => {
-    expect(newNodeId("claude.worker", [])).toBe("worker");
-    expect(newNodeId("claude.worker", ["worker"])).toBe("worker-2");
+    expect(newNodeId("agent.worker", [])).toBe("worker");
+    expect(newNodeId("agent.worker", ["worker"])).toBe("worker-2");
     expect(newNodeId("tool.gh", ["gh", "gh-2"])).toBe("gh-3");
   });
 

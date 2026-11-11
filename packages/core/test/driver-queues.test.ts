@@ -20,7 +20,7 @@ const workflowOf = (body: string): Workflow => {
 };
 
 const worker = (id: string, extra = ""): string =>
-  `  ${id}:\n    type: claude.worker\n    prompt: go\n${extra}`;
+  `  ${id}:\n    type: agent.worker\n    prompt: go\n${extra}`;
 
 const queues = (workflow: Workflow, drivers = [ONE, MANY]) =>
   driverQueues(workflow, drivers, { override: "command-code" });
@@ -63,7 +63,7 @@ describe("sessions that could queue per checkout", () => {
 
   it("names the owner that holds the checkout its shared worker waits in", () => {
     const w = workflowOf(
-      `nodes:\n  lead:\n    type: claude.leader\n    prompt: go\n${worker("w", "    parent: lead\n    isolation: shared\n")}`,
+      `nodes:\n  lead:\n    type: agent.leader\n    prompt: go\n${worker("w", "    parent: lead\n    isolation: shared\n")}`,
     );
     const [only] = queues(w);
     expect(only?.nodes).toEqual(["lead", "w"]);

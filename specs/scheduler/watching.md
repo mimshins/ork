@@ -55,7 +55,7 @@ Tool nodes and `mcp.call` take `watch: { every, until, timeout, misses? }`
   working; the time a look takes does, and so does anything running beside it.
   An owner's clock stands still for a child between looks.
 - **It holds no session slot,** as only a Claude session takes one, so it can't
-  block work at `concurrency: 1`. Only Claude nodes can be delegated to, so a
+  block work at `concurrency: 1`. Only agent nodes can be delegated to, so a
   node that watches is reached by an edge, or is an entry.
 - **Control:** a pause holds it between looks and stops `watch.timeout`'s clock;
   a look under way finishes. `ork stop` ends it. A resumed run looks again from

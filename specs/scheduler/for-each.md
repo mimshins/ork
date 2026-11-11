@@ -44,7 +44,7 @@ fanning out or gathering.
 
 ## An item's own model and effort
 
-A Claude node's `model` and `effort` may be a template reading `item`
+An agent node's `model` and `effort` may be a template reading `item`
 (`{{item.model}}`), so one fanned node runs its items on different models, as
 `build`'s `review` runs one Opus reviewer and two Sonnet ones. The plan renders
 them per item, before the budget check and the driver fit check, so those see

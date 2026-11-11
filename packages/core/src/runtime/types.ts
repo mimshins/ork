@@ -62,7 +62,7 @@ export type ToolRules = {
   strictMcp?: boolean;
 };
 
-/** A Claude Code subagent the session can hand work to (`claude.subagent`). */
+/** A Claude Code subagent the session can hand work to (`agent.subagent`). */
 export type SubagentSpec = {
   description: string;
   /** Its system prompt. */
@@ -92,7 +92,7 @@ export type SessionSpec = {
   budgetUsd?: number;
   /** JSON Schema of the final report (structured output). */
   reportSchema: Record<string, unknown>;
-  /** Its `claude.subagent` children, by node id. */
+  /** Its `agent.subagent` children, by node id. */
   agents?: Record<string, SubagentSpec>;
   /** Local plugin folders to load: Ork's skills for this node. */
   plugins?: string[];

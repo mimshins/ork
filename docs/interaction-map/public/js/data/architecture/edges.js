@@ -206,7 +206,7 @@ export const EDGES = [
     kind: "local",
     label: "a node's session spec",
     detail:
-      "Before starting a Claude node, the scheduler asks for its compiled context: layers, brief, model and limits.",
+      "Before starting an agent node, the scheduler asks for its compiled context: layers, brief, model and limits.",
     docs: [CONTEXT.resolver, DESIGN.context],
   },
   {
@@ -244,7 +244,7 @@ export const EDGES = [
     kind: "local",
     label: "`start(SessionSpec)`",
     detail:
-      "The scheduler starts one session per running Claude node, with its working directory, model, budget and tools.",
+      "The scheduler starts one session per running agent node, with its working directory, model, budget and tools.",
     docs: [DESIGN.runtime],
   },
   {

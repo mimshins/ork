@@ -73,8 +73,8 @@ const planThen =
 
 const allTools = (executor: NodeExecutor) => ({
   "tool.shell": executor,
-  "claude.leader": executor,
-  "claude.worker": executor,
+  "agent.leader": executor,
+  "agent.worker": executor,
 });
 
 const play = async (human: HumanChannel, ran: string[] = []) => {
@@ -140,7 +140,7 @@ const owned = (): CompiledGraph =>
   compile([
     "nodes:",
     "  lead:",
-    "    type: claude.leader",
+    "    type: agent.leader",
     "    prompt: lead",
     "  plan:",
     "    type: tool.shell",

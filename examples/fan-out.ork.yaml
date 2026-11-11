@@ -8,14 +8,14 @@ inputs:
     required: true
     description: What to split into independent tasks.
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
   budgetUsd: 1
 limits:
   budgetUsd: 10
 nodes:
   plan:
-    type: claude.worker
-    prompt: "Split this goal into at most 6 independent tasks, each one a change that can be made without the others: {{inputs.goal}}. Give each task a model: opus for a hard one, sonnet for a routine one."
+    type: agent.worker
+    prompt: "Split this goal into at most 6 independent tasks, each one a change that can be made without the others: {{inputs.goal}}. Give each task a model: claude-code.opus for a hard one, claude-code.sonnet for a routine one."
     isolation: readonly
     output:
       schema:
@@ -25,7 +25,7 @@ nodes:
             detail: string
             model: string
   build:
-    type: claude.worker
+    type: agent.worker
     prompt: |-
       Do this one task, and only this one. Others are doing the rest.
       Task {{index}}: {{item.title}}

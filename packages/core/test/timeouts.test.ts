@@ -81,7 +81,7 @@ const run = async (
     graph,
     inputs: {},
     cwd: process.cwd(),
-    executors: { "tool.shell": counted, "claude.worker": counted },
+    executors: { "tool.shell": counted, "agent.worker": counted },
     human,
     onEvent,
     runDir: "/nonexistent",
@@ -152,7 +152,7 @@ describe("a node's timeout", () => {
     const graph = compile([
       "nodes:",
       tool("slow", ", timeout: 1s"),
-      "  recover: { type: claude.worker, prompt: go }",
+      "  recover: { type: agent.worker, prompt: go }",
       "edges:",
       '  - { from: slow, to: recover, when: "timedOut" }',
     ]);
@@ -225,9 +225,9 @@ describe("timeoutOf", () => {
 describe("the clock", () => {
   const owned = compile([
     "nodes:",
-    "  lead: { type: claude.leader, prompt: go, maxWorkers: 2 }",
-    "  child: { type: claude.worker, prompt: go, parent: lead }",
-    "  other: { type: claude.worker, prompt: go }",
+    "  lead: { type: agent.leader, prompt: go, maxWorkers: 2 }",
+    "  child: { type: agent.worker, prompt: go, parent: lead }",
+    "  other: { type: agent.worker, prompt: go }",
   ]);
   const setup = () => {
     const holds = createHolds({

@@ -19,7 +19,7 @@ layers:
   project:
     instructions: inherit
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
   effort: medium
   budgetUsd: 2
 limits:
@@ -28,7 +28,7 @@ limits:
   timeout: 12h
 nodes:
   spec:
-    type: claude.worker
+    type: agent.worker
     agent: spec-writer
     prompt: |-
       Write the plan for this brief. Before you draft, put each open design decision to the maintainer with ask_user, as your instructions say.
@@ -40,7 +40,7 @@ nodes:
       {{inputs.rfc}}
 
       When you run again, the next message is the maintainer's answer to the approval gate: choice revise, and note, their words on what to change. Revise the plan as they say and report all of it again. If the note is empty, ask with ask_user what to change rather than guessing.
-    model: sonnet
+    model: claude-code.sonnet
     effort: high
     isolation: readonly
     budgetUsd: 2

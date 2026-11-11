@@ -24,13 +24,13 @@ twin is the text editor and `ork validate`; the Builder saves nothing new.
 
 ## What it adds
 
-A node that takes `forEach` (`claude.worker`, every `tool.<id>`, `mcp.call`,
+A node that takes `forEach` (`agent.worker`, every `tool.<id>`, `mcp.call`,
 `workflow.call`) gets one group in its inspector. The group is a custom control
 at `nodes.<id>.forEach`, as `until` and `parent` are
 ([custom-controls.tsx](../../packages/ui/src/builder/custom-controls.tsx)),
 because the schema is a union of two objects the generated "Details / Details"
 choice could not tell apart. A node that can't take it (control nodes,
-`claude.subagent`, `claude.leader`, `human.gate`) shows no group, as the JSON
+`agent.subagent`, `agent.leader`, `human.gate`) shows no group, as the JSON
 Schema has no key. The canvas does not change: a fanned node is one card, as in
 the Monitor.
 
@@ -100,10 +100,10 @@ a field in the condition picker
 `list` kind. The condition picker does not offer lists.
 
 - **Closed:** a button, "Add a list", with the unseen suffix ", for <id>". It is
-  disabled when no earlier node can declare one (a Claude node, tool or MCP call
+  disabled when no earlier node can declare one (an agent node, tool or MCP call
   whose type has an `output.schema`, not a fanned node), and the reason is text
   under it, not a tooltip: "No earlier node can declare a list. A list comes
-  from a Claude node, tool or MCP call that runs before this one."
+  from an agent node, tool or MCP call that runs before this one."
 - **Open:** three fields and two buttons, in this order.
   - "On node": a select of the nodes that can declare, which run before this one
     (no loop edge on the path). Shown only when there are two or more.
@@ -142,7 +142,7 @@ hints, only on a fanned node.
 - **Not offered** in `instructions`, `context` or `skills`: their hint says
   nothing of it. Typed there it is `item.outside`.
 - **Not fanned:** no hint mentions `item` or `index`, anywhere.
-- **`model` and `effort`** on a Claude node may read `{{item.<field>}}` only,
+- **`model` and `effort`** on an agent node may read `{{item.<field>}}` only,
   not `{{index}}`
   ([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort)).
   Their hint does not mention it.

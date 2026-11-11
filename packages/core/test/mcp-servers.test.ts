@@ -47,7 +47,7 @@ const issues = (
 const worker = (mcp: string) =>
   workflowOf(
     "nodes:",
-    `  design: { type: claude.worker, prompt: Go, isolation: shared, mcp: ${mcp} }`,
+    `  design: { type: agent.worker, prompt: Go, isolation: shared, mcp: ${mcp} }`,
   );
 
 /** The message for a name, with a `.mcp.json` that doesn't parse. */
@@ -138,8 +138,8 @@ describe("the servers a node names", () => {
     const workflow = workflowOf(
       "defaults: { mcp: [browser] }",
       "nodes:",
-      "  a: { type: claude.worker, prompt: Go, isolation: shared }",
-      "  b: { type: claude.worker, prompt: Go, isolation: shared, mcp: [] }",
+      "  a: { type: agent.worker, prompt: Go, isolation: shared }",
+      "  b: { type: agent.worker, prompt: Go, isolation: shared, mcp: [] }",
     );
     expect(issues(workflow, mcpFileOptions(fileWith({})))).toMatchObject([
       {
@@ -166,9 +166,9 @@ describe("planning a node's servers", () => {
     const workflow = workflowOf(
       "defaults: { mcp: [a, b] }",
       "nodes:",
-      "  own: { type: claude.worker, prompt: Go, mcp: [c] }",
-      "  off: { type: claude.worker, prompt: Go, mcp: [] }",
-      "  rest: { type: claude.worker, prompt: Go }",
+      "  own: { type: agent.worker, prompt: Go, mcp: [c] }",
+      "  off: { type: agent.worker, prompt: Go, mcp: [] }",
+      "  rest: { type: agent.worker, prompt: Go }",
     );
     expect(planned(workflow, "own").mcp).toEqual(["c"]);
     expect(planned(workflow, "off").mcp).toEqual([]);
@@ -177,7 +177,7 @@ describe("planning a node's servers", () => {
 
   it("names no server for a node with no `mcp` and no default", () => {
     const plan = planned(
-      workflowOf("nodes:", "  n: { type: claude.worker, prompt: Go }"),
+      workflowOf("nodes:", "  n: { type: agent.worker, prompt: Go }"),
       "n",
     );
     expect(plan.mcp).toEqual([]);
@@ -189,7 +189,7 @@ describe("planning a node's servers", () => {
     const { spec } = planned(
       workflowOf(
         "nodes:",
-        "  n: { type: claude.worker, prompt: Go, mcp: [chrome-devtools], tools: { deny: [mcp__chrome-devtools__navigate_page] } }",
+        "  n: { type: agent.worker, prompt: Go, mcp: [chrome-devtools], tools: { deny: [mcp__chrome-devtools__navigate_page] } }",
       ),
       "n",
     );
@@ -201,7 +201,7 @@ describe("planning a node's servers", () => {
     const { spec } = planned(
       workflowOf(
         "nodes:",
-        "  n: { type: claude.worker, prompt: Go, mcp: [my.server] }",
+        "  n: { type: agent.worker, prompt: Go, mcp: [my.server] }",
       ),
       "n",
     );
@@ -212,7 +212,7 @@ describe("planning a node's servers", () => {
     const workflow = workflowOf(
       "defaults: { mcp: [own] }",
       "nodes:",
-      "  n: { type: claude.worker, prompt: Go, isolation: shared }",
+      "  n: { type: agent.worker, prompt: Go, isolation: shared }",
     );
     const { graph } = compileWorkflow(workflow, {
       project: {
@@ -226,7 +226,7 @@ describe("planning a node's servers", () => {
   it("uses the project's when the workflow's has none", () => {
     const workflow = workflowOf(
       "nodes:",
-      "  n: { type: claude.worker, prompt: Go, isolation: shared }",
+      "  n: { type: agent.worker, prompt: Go, isolation: shared }",
     );
     const { graph } = compileWorkflow(workflow, {
       project: { schemaVersion: 1, defaults: { mcp: ["theirs"] } },

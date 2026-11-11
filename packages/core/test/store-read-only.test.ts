@@ -14,8 +14,8 @@ import { describe, expect, it } from "vitest";
 import { openStore, type RunEvent } from "../src/index.ts";
 
 const EVENTS: RunEvent[] = [
-  { type: "node.started", id: "lead", nodeType: "claude.leader", round: 1 },
-  { type: "node.started", id: "check", nodeType: "claude.worker", round: 1 },
+  { type: "node.started", id: "lead", nodeType: "agent.leader", round: 1 },
+  { type: "node.started", id: "check", nodeType: "agent.worker", round: 1 },
   { type: "node.skipped", id: "ship" },
   { type: "node.skipped", id: "lead" },
 ];

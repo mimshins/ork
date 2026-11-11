@@ -71,7 +71,7 @@ export const forkPrompt = (question: HumanQuestion, passOn: string): string =>
 /** The fork's report: one of the options or the pass-on, and a note. */
 const forkReportSchema = (ids: readonly string[]) => {
   const node: ClaudeNode = {
-    type: "claude.worker",
+    type: "agent.worker",
     prompt: "",
     output: { schema: { choice: [...ids], note: "string" } },
   };

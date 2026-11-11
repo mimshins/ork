@@ -37,7 +37,7 @@ const WORKFLOW = [
   "    type: tool.shell",
   '    command: "gather"',
   "  write:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    isolation: shared",
   '    prompt: "Write"',
   "edges:",

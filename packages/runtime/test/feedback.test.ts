@@ -19,7 +19,7 @@ const parsed = parseWorkflow(
     "schemaVersion: 1",
     "name: t",
     "nodes:",
-    "  fix: { type: claude.worker, prompt: f }",
+    "  fix: { type: agent.worker, prompt: f }",
   ].join("\n"),
 );
 if (!parsed.ok) throw new Error("bad fixture");

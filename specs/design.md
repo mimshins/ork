@@ -28,7 +28,7 @@ who use Ork is [How Ork works](../docs/how-ork-works.md). The contracts are the
 | The `.ork.yaml` format                   | [Workflow file format](./workflow-format.md) |
 | `when:` and `{{ }}` templates            | [Expressions](./expressions.md)              |
 | What `ork validate` checks               | [Graph compiler](./graph-compiler.md)        |
-| How a Claude node runs                   | [Runtime](./runtime.md)                      |
+| How an agent node runs                   | [Runtime](./runtime.md)                      |
 | Layers, skills, precedence, token saving | [Context](./context.md)                      |
 | Messages, decisions, the event store     | [Messaging](./messaging.md)                  |
 | Learning from runs                       | [Feedback](./feedback.md)                    |

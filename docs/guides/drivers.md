@@ -2,7 +2,8 @@
 
 A **driver** is how Ork reaches an agent tool: Ork runs that tool's own
 command-line program, headless, and reads what it prints. Ork has three drivers.
-A workflow, a node or `ork run --driver` names one by its id.
+A workflow, a node, a node's `model` (`claude-code.opus`) or `ork run --driver`
+names one by its id.
 
 | Driver         | Runs                | Status                                      |
 | -------------- | ------------------- | ------------------------------------------- |
@@ -20,6 +21,31 @@ Run Claude models on `claude-code`. Through OpenCode's `commandcode` provider
 they fail after their first tool call, an error between OpenCode and that
 provider; other models through it work.
 
+## Naming the driver in the model
+
+A `model` may start with its driver and a dot, so a node's tool and model can't
+disagree:
+
+```yaml
+nodes:
+  planner:
+    type: agent.leader
+    model: claude-code.opus
+  reviewer:
+    type: agent.worker
+    model: command-code.deepseek/deepseek-v4.1-flash
+```
+
+The text before the first `.` is the driver when it is one of the three ids; the
+rest goes to that tool as written. Anything else is a plain model for the run's
+driver, so `deepseek/deepseek-v4.1-flash` still works. A prefixed node needs no
+`driver`, and `ork run --driver` does not change it. `driver: open-code` with
+`model: claude-code.opus` fails `ork validate`. It works in `defaults.model`, in
+an agent file and in `model: "{{item.model}}"`, where each item's value is read
+as it renders. Which driver a session uses, in order: the model's prefix,
+`--driver`, the node's `driver`, `defaults.driver`, the driver ready on your
+machine.
+
 ## What each driver does
 
 Tools differ. Ork writes down what each driver does itself, and a node that
@@ -34,6 +60,7 @@ needs more is refused rather than half-run:
 | Report as structured output                    | yes           | no (Ork's `report` tool) | no (Ork's `report` tool) |
 | Turn limit (`maxTurns`)                        | yes           | yes                      | yes                      |
 | A node's own MCP servers (`mcp`)               | yes           | yes                      | no                       |
+| Sub-agents (`agent.subagent`)                  | yes           | no                       | no                       |
 
 Where Ork has a fallback it uses it, and nothing is refused: a driver without
 structured output reports through Ork's `report` tool, which checks the report
@@ -55,6 +82,7 @@ A node asks for something its driver does not do. Each refusal names both:
 - A leader that delegates, on a driver that can't reach Ork's tools (a worker's
   own `ask_user` and run-time messages are not checked,
   [L234](../../specs/gaps.md)).
+- An `agent.subagent` under a leader whose driver does not run subagents.
 - A driver that is not yet proven.
 
 `ork validate` checks against `--driver` if you give it, else against the driver

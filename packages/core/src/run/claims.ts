@@ -20,7 +20,7 @@ export type ClaimRegistry = {
   releaseAll: (id: string) => void;
 };
 
-const SESSION_TYPES = new Set(["claude.leader", "claude.worker"]);
+const SESSION_TYPES = new Set(["agent.leader", "agent.worker"]);
 const WHOLE = ".";
 
 /**
@@ -69,7 +69,7 @@ const writersOf = (graph: CompiledGraph): Set<string> => {
 const spawnable = (graph: CompiledGraph, writers: Set<string>): number => {
   let count = 0;
   for (const { node, children } of graph.nodes.values()) {
-    if (node.type !== "claude.leader") continue;
+    if (node.type !== "agent.leader") continue;
     if (children.some(child => writers.has(child))) {
       count += node.maxWorkers ?? 0;
     }

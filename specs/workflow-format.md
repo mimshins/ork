@@ -12,8 +12,12 @@ Status: **Built**: the Zod model, edge shorthand, canonical YAML, diagnostics,
 [checks](../packages/core/test/for-each-checks.test.ts)); the Monitor and the
 Builder show and edit it ([Monitor](./ui/panels-runs-and-monitor.md),
 [Builder](./ui/panels-builder-for-each.md)), so `forEach` is built end to end.
-Why: [ADR-006](../decisions/ADR-006-workflow-file-format.md),
-[ADR-030](../decisions/ADR-030-agents-fill-nodes.md).
+The agent node types are `agent.*` and a `model` may carry a `<driver>.` prefix
+(RFC-015 part 1,
+[ADR-083](../decisions/ADR-083-agent-node-types-and-driver-prefixed-models.md)):
+built; the old `claude.*` names are refused, and `ork migrate` rewrites them.
+Why: [ADR-006](../decisions/ADR-006-workflow-file-format.md) (node type names
+superseded by ADR-083), [ADR-030](../decisions/ADR-030-agents-fill-nodes.md).
 
 The format has one file per workflow, plus agent files; this document is the
 hub.

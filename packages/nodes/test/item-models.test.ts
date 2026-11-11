@@ -88,7 +88,7 @@ const run = async (lines: string[], fields?: Record<string, unknown>) => {
     inputs: {},
     cwd: mkdtempSync(path.join(tmpdir(), "ork-item-models-")),
     executors: {
-      "claude.worker": claudeExecutor({
+      "agent.worker": claudeExecutor({
         runtimeFor: () => Promise.resolve(runtime),
         readyDriver: "claude-code",
         inPlace: true,
@@ -114,7 +114,7 @@ const asked = (specs: readonly SessionSpec[]) =>
 const REVIEW = [
   "nodes:",
   "  review:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   '    prompt: "Review for {{item.concern}}"',
   '    model: "{{item.model}}"',
   '    effort: "{{item.effort}}"',
@@ -156,12 +156,12 @@ describe("model and effort from {{item}}", () => {
       [
         "nodes:",
         "  plan:",
-        "    type: claude.worker",
+        "    type: agent.worker",
         "    prompt: Plan",
         "    output:",
         "      schema: { tasks: { list: { name: string, effort: string } } }",
         "  build:",
-        "    type: claude.worker",
+        "    type: agent.worker",
         '    prompt: "Build {{item.name}}"',
         '    effort: "{{item.effort}}"',
         "    forEach:",

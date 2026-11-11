@@ -37,13 +37,13 @@ inputs:
     required: true
     description: What fails.
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
   budgetUsd: 2
 limits:
   budgetUsd: 10
 nodes:
   fix:
-    type: claude.worker
+    type: agent.worker
     prompt: "Fix this, and keep the change small: {{inputs.issue}}"
   tests:
     type: tool.shell
@@ -79,9 +79,9 @@ file: a tool reads one with `env:` and `{{env.NAME}}`.
 
 | Type                              | Does                                                                |
 | --------------------------------- | ------------------------------------------------------------------- |
-| `claude.worker`                   | A Claude session that does one task and reports                     |
-| `claude.leader`                   | A session that plans and delegates to the nodes it owns (`parent:`) |
-| `claude.subagent`                 | A subagent inside its parent's session; it takes no edges           |
+| `agent.worker`                   | An agent session that does one task and reports                     |
+| `agent.leader`                   | A session that plans and delegates to the nodes it owns (`parent:`) |
+| `agent.subagent`                 | A subagent inside its parent's session; it takes no edges           |
 | `tool.shell`                      | Any program, run without a shell; `allow:` lists command prefixes   |
 | `tool.git`, `tool.gh`, `tool.aws` | The person's own `git`, `gh`, `aws`, with an allow list             |
 | `mcp.call`                        | One tool call on an MCP server, with no session                     |
@@ -90,10 +90,15 @@ file: a tool reads one with `env:` and `{{env.NAME}}`.
 | `control.router`, `control.split` | Pass their input on; a router takes its first matching edge         |
 | `workflow.call`                   | Starts another workflow as its own run                              |
 
+A `model` may start with its driver (`claude-code.opus`,
+`open-code.anthropic/claude-sonnet-5-5`); the node then runs on that tool, and
+needs no `driver`. A file with the old `claude.worker`, `claude.leader` or
+`claude.subagent` types needs `ork migrate`.
+
 A worker, tool node, `mcp.call` or `workflow.call` can run once per entry of a
 list: see [One node per item](#one-node-per-item).
 
-- **A Claude node reports** `status` (`pass`, `changes_requested`, `done` or
+- **An agent node reports** `status` (`pass`, `changes_requested`, `done` or
   `fail`), `summary`, `artifacts`, `branch`, and any field its `output.schema`
   declares, such as `verdict: [approve, escalate]`. For another verdict, declare
   a field: `status` can't take other values.
@@ -107,7 +112,7 @@ list: see [One node per item](#one-node-per-item).
 
 - `a -> b`, `a -> b, c`, `b, c -> j` are plain edges, taken when the source
   succeeded. A failed node takes no plain edge: handle a failure with
-  `when: "!ok"`, or `status == 'fail'` on a Claude node.
+  `when: "!ok"`, or `status == 'fail'` on an agent node.
 - `{ from: a, to: b, when: "..." }` is taken when the condition holds. A bare
   name reads the source's output: `when: "verdict == 'approve'"`. Quote any
   condition that starts with `!`, or YAML reads it as a tag.
@@ -127,7 +132,7 @@ gate, a subagent or a control node.
 
 ```yaml
 plan:
-  type: claude.worker
+  type: agent.worker
   prompt: "Split this into at most 6 independent tasks: {{inputs.goal}}"
   isolation: readonly
   output:
@@ -135,7 +140,7 @@ plan:
       tasks:
         list: { title: string, detail: string } # declare the list and its shape
 build:
-  type: claude.worker
+  type: agent.worker
   prompt: "Task {{index}}: {{item.title}}. {{item.detail}}"
   isolation: worktree
   forEach:
@@ -147,7 +152,7 @@ build:
 - `forEach: { items: [a, b] }` takes a list written in the file instead.
 - `{{item}}` and `{{index}}` work only in a node with `forEach`, in `prompt`,
   `command`, `arguments`, `inputs`, `env` and `ref`, and `{{item.<field>}}` in a
-  Claude node's `model` and `effort`. A program also gets `ORK_ITEM` and
+  agent node's `model` and `effort`. A program also gets `ORK_ITEM` and
   `ORK_INDEX`.
 - The next node reads `items`, `results` (each item's output, `summary`,
   `branch`), `statuses` and `count`: `{{nodes.build.output.results}}`,

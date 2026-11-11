@@ -38,7 +38,7 @@ what was left simpler. The one real run on each driver is [C12](../gaps.md).
   line reads `✓ 3 ran`, with no "n of m" while it runs, and item ids can be
   wider than the transcript's id column.
 - **L209 · A Claude node's declared list isn't checked in the file.**
-  `claude.worker`'s `output.schema` stays `record<string, unknown>`, so a `list`
+  `agent.worker`'s `output.schema` stays `record<string, unknown>`, so a `list`
   there is checked by the run, not by the file's schema.
 - **L210 · A cut-off Claude item is tested at core level only.** The kill and
   resume of an item mid-session is covered on stand-ins; no CLI-level test

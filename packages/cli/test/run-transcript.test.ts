@@ -192,7 +192,7 @@ describe("the rich transcript", () => {
           runId: "r-1",
           workflow: "wf",
           entries: ["a"],
-          nodes: [{ id: "a", type: "claude.worker" }],
+          nodes: [{ id: "a", type: "agent.worker" }],
         },
       ]),
     );
@@ -221,7 +221,7 @@ describe("the plain transcript", () => {
       runId: "r-1",
       workflow: "wf",
       entries: ["a"],
-      nodes: [{ id: "a", type: "claude.worker" }],
+      nodes: [{ id: "a", type: "agent.worker" }],
     },
     tool("w", { command: "ls -la" }),
     inner("w", { type: "assistant.text", text: "done" }),

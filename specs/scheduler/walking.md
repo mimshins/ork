@@ -41,7 +41,7 @@ own code.
 | Node                | How it can end                                          |
 | ------------------- | ------------------------------------------------------- |
 | `human.gate`        | Each option                                             |
-| Claude nodes        | Success or failure                                      |
+| Agent nodes         | Success or failure                                      |
 | Tools               | Exit 0, or a failure with any other exit code¹          |
 | `mcp.call`          | Success or failure                                      |
 | `workflow.call`     | Success or failure; the called file walks alone         |
@@ -56,7 +56,7 @@ reads can't change where a run goes:
 
 - A field with a closed list
   ([what a node says](../../packages/core/src/graph/says.ts)) gives each value
-  on it. A Claude node's `status` gives `pass`, `changes_requested` and `done`;
+  on it. An agent node's `status` gives `pass`, `changes_requested` and `done`;
   `fail` is its failure.
 - Any other field takes values from the conditions themselves: each literal and
   a value that isn't it, a number either side of a bound, a text that does and

@@ -116,7 +116,7 @@ export const NODES = [
       "Built: `ork register` attaches a project from outside its repository (its files in `~/.ork/projects/<id>/`, nothing in the repo); `ork projects` lists them, `forget` drops one, and `move` follows a moved or renamed clone with its runs.",
       "Built: `ork migrate` moves an attached project into `.ork/`, and `--agents` its agents and skills, relinking the tools' folders; it shows the plan and commits nothing. `--from-agents` drafts a gated workflow from the project's agents.",
       "Built: `ork init` scaffolds `.ork/` with a starter that names no driver, says which driver runs would use here, and never overwrites a file; `ork validate` prints schema, graph and skill or context reference diagnostics with file, line and column; `ork doctor` reports your own logins and never prints a token or your email.",
-      "Built: `ork run <wf>` runs a whole workflow through the scheduler, and `--node <id>` one Claude node; questions and permission prompts are answered on the terminal. When nothing names a driver, it takes the one `ork doctor` finds ready, says so in one line, and records it for `ork resume`; with none ready, no session starts. `--machine-claude` loads the machine's MCP servers and Claude's memory into the run's sessions, which otherwise start clean.",
+      "Built: `ork run <wf>` runs a whole workflow through the scheduler, and `--node <id>` one agent node; questions and permission prompts are answered on the terminal. When nothing names a driver, it takes the one `ork doctor` finds ready, says so in one line, and records it for `ork resume`; with none ready, no session starts. `--machine-claude` loads the machine's MCP servers and Claude's memory into the run's sessions, which otherwise start clean.",
       "Built: `ork worktrees` lists the worktrees and branches runs recorded creating, whatever the project's rules named them; `clean` removes them, and `remove <branch|path>` one of them, each after showing the plan and asking. Neither touches a worktree whose run is still going, even with `--force`.",
       "Built: `ps`, `logs --follow`, `tree` read runs from the store; `run --detach` runs in the background; `stop` stops a live run from any terminal.",
       "Built: `ork decide` answers open decisions from any terminal, though not from a program or an agent in a run; on a terminal it is a card with an ASK chip and a list moved with the arrow keys, the recommended option preselected. `ork chat` talks to a node, live or by resuming its session; `ork resume` continues a run that didn't succeed, handing back what finished.",
@@ -346,7 +346,7 @@ export const NODES = [
       "Turns a parsed workflow into a run graph and rejects what cannot run: unbounded cycles, unknown parents, missing message targets, bad templates and `when:` predicates.",
     facts: [
       "Every cycle needs an edge with `maxRounds`.",
-      "A `claude.subagent` needs a Claude parent; tool and control nodes own nothing.",
+      "An `agent.subagent` needs a Claude parent; tool and control nodes own nothing.",
       "Templates and predicates use a small expression language: paths, comparisons, `&&`, `||`, `!`, and `any`, `all`, `count`, `len`, `contains`; no arbitrary JavaScript.",
       "Template references must resolve: declared inputs, existing nodes, known report fields; reading a node that does not run first is a warning.",
       "Entry nodes: no incoming flow edge and no parent.",
@@ -384,7 +384,7 @@ export const NODES = [
     summary:
       "The workflow file format: a Zod model of workflows, nodes and edges, a parser that reports errors with line numbers, and a serializer whose output is byte-stable.",
     facts: [
-      "Ten node types, from `claude.leader` to `human.gate`, each a strict object.",
+      "Ten node types, from `agent.leader` to `human.gate`, each a strict object.",
       "Edge shorthand `a, b -> c, d` expands to every pair.",
       "Canonical form: fixed key order, edges as shorthand where possible; comments are not kept.",
       "Publishes `workflow.schema.json` for editor autocomplete; a test fails when it is stale.",
@@ -456,7 +456,7 @@ export const NODES = [
       "Built: a loop out of rounds asks its live owner over the message bus, else you.",
       "Built: with `questions: owner` on a leader, a child's `ask_user` goes first to a read-only fork of the leader's latest session, which answers or passes it on (ADR-063).",
       "Built: in a later round of a loop, an edge whose source can't run any more counts as not taken, so a join behind it fires; a run left with a node still waiting fails with an `ork engine error:` reason rather than succeeding.",
-      "Built: a `claude.subagent` runs in its owner's session as a Claude Code subagent.",
+      "Built: an `agent.subagent` runs in its owner's session as a Claude Code subagent.",
       "Built: pause and continue, of the run or one node: nothing new starts, and a session waits before its next tool call (deferred and resumed past nine minutes); stopping one node fails it, `stopped by the user`, and the run goes on.",
       "Built: timeouts. `timeout` limits each activation of a tool, Claude or call node, `defaults.timeout` those that set none, and `limits.timeout` the run. The clock stands still while waiting on you. An expired node fails with `timedOut`; an expired run ends `timed_out`.",
       "Built: no `workflow.call` starts once the budget is spent, and stopping the run or an expired run timeout stops every run it called.",
@@ -620,7 +620,7 @@ export const NODES = [
     status: "built",
     pkg: "nodes",
     summary:
-      "What each built-in node type does when it runs. Claude nodes run a session through the runtime; tool nodes run your own CLIs; gates ask you; a call starts a workflow as another run. Control nodes are the scheduler's own.",
+      "What each built-in node type does when it runs. Agent nodes run a session through the runtime; tool nodes run your own CLIs; gates ask you; a call starts a workflow as another run. Control nodes are the scheduler's own.",
     facts: [
       "`tool.gh`, `tool.aws`, `tool.git`, `tool.shell` run a program with arguments, no shell, limited to an `allow` list of subcommands.",
       "Built: a program sees `ORK_RUN`, `ORK_NODE` and the like and the node's `env:`, and can return JSON (stdout or `$ORK_OUTPUT`) for a `when:` to read, with no model turn.",
@@ -1001,7 +1001,7 @@ export const NODES = [
       "A driver emits normalized events: started, text, tool called, tool result, finished with the outcome and usage.",
       "A subscription's rate limit reaches the engine as `plan.limit`; only `rejected` stops anything, and it stops the run rather than failing the node.",
       "`Session.send` injects a message between turns; `interrupt()` stops the session.",
-      "A session's driver: `--driver`, else the node's or its agent's, else the workflow's or project's `defaults.driver`, else the one ready on this machine when the run started. A committed workflow needn't name one. The retired ids `sdk` and `cli` are refused; a stored run that recorded one resumes as `claude-code`.",
+      "A session's driver: the one its model names (`claude-code.opus`), else `--driver`, else the node's or its agent's, else the workflow's or project's `defaults.driver`, else the one ready on this machine when the run started. A committed workflow needn't name one. The retired ids `sdk` and `cli` are refused; a stored run that recorded one resumes as `claude-code`.",
       "`SessionSpec.fork` with `resume` starts a copy of a session and leaves the original as it was; a leader's fork answers its children's questions.",
       "Every session starts clean of the machine's Claude setup: no MCP server but Ork's, no auto-memory, the per-machine prompt sections out of the cached prefix. `ork run --machine-claude` loads the machine's MCP servers and memory for a run; the run records it, and resumes, chats and called runs keep it.",
       "A leader or worker, or `defaults`, names the MCP servers it needs (`mcp: [name]`) from the project's `.mcp.json`: only those load beside Ork's, still strict, and their tools are allowed; a question fork loads none.",
@@ -1032,7 +1032,7 @@ export const NODES = [
     status: "built",
     pkg: "runtime",
     summary:
-      "The tools every Claude node gets for working inside the hierarchy: messaging, reporting, delegating, asking you, and claiming files.",
+      "The tools every agent node gets for working inside the hierarchy: messaging, reporting, delegating, asking you, and claiming files.",
     facts: [
       "Built: one registry binds each session's tools, one file per tool: `ask_user`, `permission` (the prompt tool), for leaders `delegate`, `spawn_worker` and `answer`, `send_message`, `read_inbox` and `wait_for_messages` for every leader and worker (with `links: off`, only those with someone to reach), `claim` and `release` for parallel writers, and `read_input` for a node whose sent-back input was too long for its message (ADR-078); arguments are validated with Zod.",
       "Built: `feedback` for every session in a run. The report is structured output on a driver that has it (`claude-code`), and Ork's `report` tool on one that does not.",
@@ -1217,7 +1217,7 @@ export const NODES = [
       "One Claude Code agent loop per running node: it calls the model, uses tools in its working directory, and calls Ork's tools to talk to the rest of the run.",
     facts: [
       "Works in its node's worktree or shared checkout.",
-      "Sub-agents (`claude.subagent`) run inside their parent's session, not as their own process.",
+      "Sub-agents (`agent.subagent`) run inside their parent's session, not as their own process.",
       "Workers start fresh for every task; only leaders live long.",
     ],
     docs: [DESIGN.runtime, DESIGN.concepts],

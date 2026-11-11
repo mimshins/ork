@@ -55,7 +55,7 @@ A script reads nothing: a tool node is one shot, and nothing can write to it.
 ## `notify:`
 
 A message a workflow declares on a node, sent when it finishes. On Claude
-leaders and workers, tool nodes, gates and calls; not `claude.subagent`, which
+leaders and workers, tool nodes, gates and calls; not `agent.subagent`, which
 runs inside its parent's session, nor control nodes, which have no result of
 their own.
 

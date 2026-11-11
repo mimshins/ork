@@ -100,7 +100,7 @@ const run = async (graph: CompiledGraph, executor: NodeExecutor) => {
     graph,
     inputs: {},
     cwd: process.cwd(),
-    executors: { "claude.leader": executor, "claude.worker": executor },
+    executors: { "agent.leader": executor, "agent.worker": executor },
     human: {
       ask: () => Promise.resolve("stop"),
       permit: () => Promise.resolve({ allow: true }),
@@ -151,10 +151,10 @@ const reviewOnce: NodeExecutor = context => {
 const TEAM = [
   "limits: { concurrency: 1 }",
   "nodes:",
-  "  lead: { type: claude.leader, maxWorkers: 2 }",
-  "  fix: { type: claude.worker, parent: lead, description: fixes bugs }",
-  "  check: { type: claude.worker, parent: lead }",
-  "  after: { type: claude.worker }",
+  "  lead: { type: agent.leader, maxWorkers: 2 }",
+  "  fix: { type: agent.worker, parent: lead, description: fixes bugs }",
+  "  check: { type: agent.worker, parent: lead }",
+  "  after: { type: agent.worker }",
   "edges:",
   "  - lead -> after",
 ];
@@ -271,9 +271,9 @@ describe("delegation", () => {
   it("resumes a re-entered leader's session; workers start fresh", async () => {
     const graph = compile([
       "nodes:",
-      "  plan: { type: claude.worker }",
-      "  lead: { type: claude.leader }",
-      "  review: { type: claude.worker }",
+      "  plan: { type: agent.worker }",
+      "  lead: { type: agent.leader }",
+      "  review: { type: agent.worker }",
       "edges:",
       "  - plan -> lead",
       "  - lead -> review",

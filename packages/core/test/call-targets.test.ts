@@ -19,7 +19,7 @@ inputs:
   must: { type: string, required: true }
   may: { type: string }
 nodes:
-  builder: { type: claude.worker, prompt: b }
+  builder: { type: agent.worker, prompt: b }
   tool: { type: tool.shell, command: "true" }
 `;
 

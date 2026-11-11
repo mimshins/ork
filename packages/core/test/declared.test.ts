@@ -7,7 +7,7 @@ import { declaredProblem } from "../src/run/declared.ts";
 import { reportSchemaFor } from "../src/runtime/report.ts";
 
 const claudeNode = (schema: Record<string, unknown>): ClaudeNode => {
-  const node = NodeSchema.parse({ type: "claude.worker", output: { schema } });
+  const node = NodeSchema.parse({ type: "agent.worker", output: { schema } });
   if (!isClaudeNode(node)) throw new Error("not a Claude node");
   return node;
 };

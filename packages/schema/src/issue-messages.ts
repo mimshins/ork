@@ -8,6 +8,7 @@ import type { z } from "zod";
 
 import { markValue } from "./marks.ts";
 import { NodeSchema } from "./nodes.ts";
+import { RETIRED_NODE_TYPES } from "./retired-types.ts";
 import { LIST_RULE_HINT } from "./settings.ts";
 
 const NODE_TYPES = NodeSchema.options.map(o => o.shape.type.value);
@@ -62,6 +63,13 @@ export const nodeTypeMessage = (
 ): string | null => {
   if (issue.code !== "invalid_union" || issue.discriminator !== "type") {
     return null;
+  }
+  const renamed =
+    typeof value === "string" && Object.hasOwn(RETIRED_NODE_TYPES, value)
+      ? RETIRED_NODE_TYPES[value]
+      : undefined;
+  if (renamed !== undefined) {
+    return `${markValue(String(value))} was renamed to ${markValue(renamed)}; run \`ork migrate\``;
   }
   const types = NODE_TYPES.map(type => markValue(type)).join(", ");
   return value === undefined

@@ -28,7 +28,7 @@ git:
   base: HEAD # the commit worktrees without an owner start from
   branch: "ork/{run}/{node}"
   worktrees: "../{clone}-worktrees/ork-{run}-{node}"
-permissions: # tool rules every Claude node gets
+permissions: # tool rules every agent node gets
   allow: []
   deny: ["Bash(git push *)"]
 defaults: # as a workflow's defaults

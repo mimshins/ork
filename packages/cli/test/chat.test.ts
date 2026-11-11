@@ -40,7 +40,7 @@ const WORKFLOW = [
   "    question: Ship it?",
   "    options: [ship, hold]",
   "  ship:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    isolation: shared",
   '    prompt: "Ship it"',
   "edges:",
@@ -57,7 +57,7 @@ const REVIEW = [
   "defaults: { model: haiku }",
   "nodes:",
   "  review:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    isolation: shared",
   '    prompt: "Review {{item.concern}}"',
   '    model: "{{item.model}}"',
@@ -231,7 +231,7 @@ describe("ork chat", () => {
     run.store.append(record.id, {
       type: "node.started",
       id: "ship.2",
-      nodeType: "claude.worker",
+      nodeType: "agent.worker",
       round: 1,
     });
     run.store.append(record.id, {

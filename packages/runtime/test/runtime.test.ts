@@ -204,7 +204,7 @@ const leaderPorts = () => {
   const { human } = recordingHuman();
   const delegated: unknown[] = [];
   const ownership: Ownership = {
-    children: [{ id: "fix", type: "claude.worker" }],
+    children: [{ id: "fix", type: "agent.worker" }],
     templates: ["fix"],
     workersLeft: () => 1,
     delegate: tasks => {
@@ -294,7 +294,7 @@ describe("Ork's tool registry", () => {
 /** The report a planner declaring a list must end with. */
 const listReportSchema = (): Record<string, unknown> => {
   const node = NodeSchema.parse({
-    type: "claude.worker",
+    type: "agent.worker",
     output: { schema: { tasks: { list: { title: "string" } } } },
   });
   if (!isClaudeNode(node)) throw new Error("not a Claude node");

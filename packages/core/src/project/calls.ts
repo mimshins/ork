@@ -152,7 +152,7 @@ export const checkCallTargets = (
     const found: Diagnostic[] = [];
     if (node.node !== undefined) {
       const type = called.nodes[node.node]?.type;
-      if (type !== "claude.leader" && type !== "claude.worker") {
+      if (type !== "agent.leader" && type !== "agent.worker") {
         found.push(
           error(
             "call.node",

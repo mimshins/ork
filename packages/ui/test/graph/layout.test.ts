@@ -283,8 +283,8 @@ describe("the layout", () => {
   it("puts a node with only an owner after its owner, joined by an owner edge", () => {
     const layout = layoutGraph({
       nodes: [
-        { id: "lead", type: "claude.leader" },
-        { id: "worker", type: "claude.worker", parent: "lead" },
+        { id: "lead", type: "agent.leader" },
+        { id: "worker", type: "agent.worker", parent: "lead" },
       ],
       edges: [],
     });
@@ -297,8 +297,8 @@ describe("the layout", () => {
   it("adds no owner edge where a flow edge already joins them", () => {
     const layout = layoutGraph({
       nodes: [
-        { id: "lead", type: "claude.leader" },
-        { id: "worker", type: "claude.worker", parent: "lead" },
+        { id: "lead", type: "agent.leader" },
+        { id: "worker", type: "agent.worker", parent: "lead" },
       ],
       edges: [{ from: "lead", to: "worker" }],
     });
@@ -308,8 +308,8 @@ describe("the layout", () => {
   it("draws channels without letting them change the ranks", () => {
     const layout = layoutGraph({
       nodes: [
-        { id: "a", type: "claude.worker" },
-        { id: "b", type: "claude.worker" },
+        { id: "a", type: "agent.worker" },
+        { id: "b", type: "agent.worker" },
       ],
       edges: [],
       channels: [["a", "b"]],

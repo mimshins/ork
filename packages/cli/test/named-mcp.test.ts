@@ -32,7 +32,7 @@ const WORKFLOW = [
   "name: notes",
   "nodes:",
   "  write:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    isolation: shared",
   "    mcp: [browser]",
   '    prompt: "Write"',

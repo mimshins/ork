@@ -193,7 +193,7 @@ const runEnding = async (outcome: SessionOutcome, verbose: boolean) => {
       "name: w",
       "nodes:",
       "  worker:",
-      "    type: claude.worker",
+      "    type: agent.worker",
       "    model: haiku",
       "    isolation: readonly",
       '    prompt: "Go"',

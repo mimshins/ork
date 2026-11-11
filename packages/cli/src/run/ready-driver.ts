@@ -96,7 +96,7 @@ export const runReadyDriver = async (
     return { ok: true, driver: options.recorded };
   }
   const sessions = Object.values(workflow.nodes).filter(
-    node => node.type === "claude.leader" || node.type === "claude.worker",
+    node => node.type === "agent.leader" || node.type === "agent.worker",
   ).length;
   return chooseReadyDriver(
     names,

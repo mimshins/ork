@@ -22,7 +22,7 @@ import type { Slots } from "./slots.ts";
 import type { Brief, NodeResult } from "./types.ts";
 
 /** Node types a leader can hand work to. */
-const DELEGABLE = new Set(["claude.leader", "claude.worker"]);
+const DELEGABLE = new Set(["agent.leader", "agent.worker"]);
 
 export type DelegationHooks = {
   graph: CompiledGraph;
@@ -112,11 +112,11 @@ export const createOwnership = (hooks: DelegationHooks): Ownership => {
     return [child];
   });
   const templates = children
-    .filter(c => c.type === "claude.worker")
+    .filter(c => c.type === "agent.worker")
     .map(c => c.id);
   const leaderNode = owner?.node;
   const maxWorkers =
-    leaderNode?.type === "claude.leader" ? (leaderNode.maxWorkers ?? 0) : 0;
+    leaderNode?.type === "agent.leader" ? (leaderNode.maxWorkers ?? 0) : 0;
   const spawned: string[] = [];
 
   /** Runs the accepted jobs in parallel; the slot goes to them meanwhile. */

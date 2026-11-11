@@ -148,7 +148,13 @@ writing into the repository:
      allow:
        [Read, Glob, Grep, Write, Edit, "Bash(git status*)", "Bash(git diff*)"]
      deny: ["Bash(git push *)"]
-   defaults: { model: haiku, driver: claude-code, budgetUsd: 0.6, maxTurns: 30 }
+   defaults:
+     {
+       model: claude-code.haiku,
+       driver: claude-code,
+       budgetUsd: 0.6,
+       maxTurns: 30,
+     }
    ```
 
 2. Draft a workflow from the agents:

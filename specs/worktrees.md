@@ -23,7 +23,7 @@ This page describes Ork's default git rules. A project's
 another base, never commit (detached worktrees, work handed over as patches), or
 never merge.
 
-A run of a workflow with `worktree` Claude nodes gives each of them its own git
+A run of a workflow with `worktree` agent nodes gives each of them its own git
 worktree and branch; `ork run --in-place` runs everything in the project
 checkout instead.
 
@@ -40,7 +40,7 @@ reaches Ork's git either.
 
 | Node                                     | Works in                                          |
 | ---------------------------------------- | ------------------------------------------------- |
-| a Claude node with `isolation: worktree` | its own worktree (kept across loop rounds)        |
+| an agent node with `isolation: worktree` | its own worktree (kept across loop rounds)        |
 | `shared` or `readonly`                   | its nearest owner's worktree, or the project root |
 | `readonly` with no owner                 | the worktree its input came from, or the root     |
 | `continue` (no owner, no children)       | the worktree its input came from, or its own      |

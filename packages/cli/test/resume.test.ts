@@ -41,7 +41,7 @@ const WORKFLOW = [
   "  topic: { type: string, required: true }",
   "nodes:",
   "  write:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    isolation: shared",
   '    prompt: "Write about {{inputs.topic}}"',
   "  publish:",
@@ -188,7 +188,7 @@ describe("ork resume", () => {
     const s = setup(
       `${WORKFLOW}  - publish -> check\n`.replace(
         "edges:",
-        "  check:\n    type: claude.worker\n    isolation: shared\n    prompt: check\nedges:",
+        "  check:\n    type: agent.worker\n    isolation: shared\n    prompt: check\nedges:",
       ),
     );
     expect((await s.run(exits(1))).result?.status).toBe("failed");

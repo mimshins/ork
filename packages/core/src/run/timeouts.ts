@@ -45,7 +45,7 @@ export const timeoutOf = (node: Node, workflow: Workflow): string | undefined =>
     isClaudeNode(node) ||
     node.type === "workflow.call" ||
     node.type === "mcp.call") &&
-  node.type !== "claude.subagent"
+  node.type !== "agent.subagent"
     ? (node.timeout ?? workflow.defaults?.timeout)
     : undefined;
 

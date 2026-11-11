@@ -11,8 +11,8 @@ import { readWorkflowGraph, runGraph } from "../src/index.ts";
 const WORKFLOW = `schemaVersion: 1
 name: t
 nodes:
-  lead: { type: claude.leader, prompt: l }
-  a: { type: claude.worker, parent: lead, prompt: a }
+  lead: { type: agent.leader, prompt: l }
+  a: { type: agent.worker, parent: lead, prompt: a }
   b: { type: tool.shell, command: "true" }
 edges:
   - lead -> a, b
@@ -37,8 +37,8 @@ describe("reading a workflow's graph", () => {
   it("gives its nodes, expanded edges and channels", () => {
     expect(readWorkflowGraph(file)).toMatchObject({
       nodes: [
-        { id: "lead", type: "claude.leader" },
-        { id: "a", type: "claude.worker", parent: "lead" },
+        { id: "lead", type: "agent.leader" },
+        { id: "a", type: "agent.worker", parent: "lead" },
         { id: "b", type: "tool.shell" },
       ],
       edges: [
@@ -84,7 +84,7 @@ describe("reading a workflow's graph", () => {
           runId: "r",
           workflow: "t",
           entries: [],
-          nodes: [{ id: "lead", type: "claude.leader" }],
+          nodes: [{ id: "lead", type: "agent.leader" }],
         },
       ],
       file,
@@ -103,7 +103,7 @@ describe("reading a workflow's graph", () => {
             runId: "r",
             workflow: "t",
             entries: [],
-            nodes: [{ id: "lead", type: "claude.leader" }],
+            nodes: [{ id: "lead", type: "agent.leader" }],
           },
         ],
         path.join(dir, "gone.ork.yaml"),

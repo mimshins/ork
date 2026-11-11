@@ -43,7 +43,7 @@ file (use `${VAR}`):
 
 ```yaml
 design:
-  type: claude.worker
+  type: agent.worker
   prompt: Check the page in a browser.
   mcp: [chrome-devtools]
 ```
@@ -70,12 +70,12 @@ node's id instead of a chip ([the terminal](../terminal.md)):
 
 ```
 ▸ run 5e0c9b2a of csv-export (starts at builder)
-builder │ claude.leader
+builder │ agent.leader
 builder │ ⎇ created ork/5e0c9b2a/builder
 builder │ opus, session 3f1c9a…
 builder │ Splitting this into the exporter and its tests.
 builder │ · mcp__ork__delegate {"tasks":[{"child":"tests","brief":"…"}]}
-tests   │ claude.worker, for builder
+tests   │ agent.worker, for builder
 tests   │ ⎇ created ork/5e0c9b2a/tests
 tests   │ · Write file_path: test/csv.test.ts
 tests   │ ✓ pass: 6 tests for the CSV exporter · $0.4120

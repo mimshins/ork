@@ -31,7 +31,7 @@ import type {
   ToolRules,
 } from "../runtime/types.ts";
 import { AGENT_TOOL, modelOf, renderBrief, subagentsOf } from "./brief.ts";
-import { namedDriver } from "./driver.ts";
+import { driverContradiction, modelDriver, namedDriver } from "./driver.ts";
 import { harnessInstructions } from "./harness.ts";
 import type { Brief, Checkout, NodeItem, NodeOutput } from "./types.ts";
 
@@ -92,6 +92,11 @@ export type PlanResult =
       spec: SessionSpec;
       /** What the workflow names (`driver.ts`); else the one ready here. */
       driver: Driver | undefined;
+      /**
+       * The driver the model names (`claude-code.opus`), as an item rendered
+       * it; it wins over `--driver`. `spec.model` is the rest.
+       */
+      pinned: Driver | undefined;
       /** The MCP servers the session loads beside Ork's, by name. */
       mcp: string[];
       warnings: string[];
@@ -157,7 +162,7 @@ export const planNodeSession = (
       error: `\`${id}\` is a \`${node.type}\`, not a Claude node`,
     };
   }
-  if (node.type === "claude.subagent") {
+  if (node.type === "agent.subagent") {
     return {
       ok: false,
       error: `\`${id}\` is a sub-agent; it runs inside \`${node.parent}\`'s session`,
@@ -181,6 +186,12 @@ export const planNodeSession = (
 
   const models = modelOf(node, defaults, options);
   if (!models.ok) return { ok: false, error: models.error };
+  const contradiction = driverContradiction(node, models.model);
+  if (contradiction !== undefined) {
+    return { ok: false, error: `\`${id}\`: ${contradiction}` };
+  }
+  const model =
+    models.model === undefined ? undefined : modelDriver(models.model);
 
   const warnings: string[] = [];
   const brief = renderBrief(
@@ -239,7 +250,7 @@ export const planNodeSession = (
   };
   // A leader is long-lived and waits in `delegate`: an hour's cache keeps its
   // prefix across the wait (specs/context.md, N3).
-  if (node.type === "claude.leader") spec.promptCache = "1h";
+  if (node.type === "agent.leader") spec.promptCache = "1h";
   const agents = subagentsOf(
     workflow,
     declared,
@@ -251,7 +262,7 @@ export const planNodeSession = (
     // A session restricted to some tools still needs the one subagents use.
     spec.tools.only?.push(AGENT_TOOL);
   }
-  if (models.model !== undefined) spec.model = models.model;
+  if (model !== undefined) spec.model = model.model;
   if (models.effort !== undefined) spec.effort = models.effort;
   const maxTurns = node.maxTurns ?? defaults.maxTurns;
   if (maxTurns !== undefined) spec.maxTurns = maxTurns;
@@ -276,6 +287,7 @@ export const planNodeSession = (
     ok: true,
     spec,
     driver: namedDriver(node, workflow),
+    pinned: model?.driver,
     mcp,
     warnings,
     context,

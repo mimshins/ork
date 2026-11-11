@@ -15,3 +15,4 @@ export * from "./contract-feedback.ts";
 export * from "./contract-links.ts";
 export * from "./contract-worktrees.ts";
 export * from "./contract-update.ts";
+export { driverOf } from "@krapht/ork-schema";

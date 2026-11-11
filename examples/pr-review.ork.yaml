@@ -12,7 +12,7 @@ inputs:
     default: main
     description: The branch it goes into.
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
   isolation: readonly
   budgetUsd: 1
 agents:
@@ -25,7 +25,7 @@ agents:
   summarizer:
     description: Turns several reviews into one pull request comment.
     instructions: You write review comments. Lead with what must change, then what could; be specific and kind; no preamble.
-    model: haiku
+    model: claude-code.haiku
     output:
       schema:
         comment: string
@@ -39,14 +39,14 @@ nodes:
     allow:
       - git diff
   security:
-    type: claude.worker
+    type: agent.worker
     agent: security-reviewer
     prompt: |-
       Review this change to the checked-out branch.
 
       {{nodes.diff.output.stdout}}
   correctness:
-    type: claude.worker
+    type: agent.worker
     agent: correctness-reviewer
     prompt: |-
       Review this change to the checked-out branch.
@@ -56,7 +56,7 @@ nodes:
     type: control.join
     mode: all
   summary:
-    type: claude.worker
+    type: agent.worker
     agent: summarizer
     prompt: |-
       Write one review comment for pull request #{{inputs.pr}} from these reviews.

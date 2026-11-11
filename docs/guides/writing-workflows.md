@@ -66,9 +66,9 @@ ork run <workflow> --input feature="dark mode" --input rounds=3
 
 | Type                              | What it does                                                                                                          |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `claude.leader`                   | A Claude session that can plan and delegate to the nodes it owns                                                      |
-| `claude.worker`                   | A Claude session that does one task and reports                                                                       |
-| `claude.subagent`                 | A Claude Code subagent inside its parent's session (see below)                                                        |
+| `agent.leader`                    | A Claude session that can plan and delegate to the nodes it owns                                                      |
+| `agent.worker`                    | A Claude session that does one task and reports                                                                       |
+| `agent.subagent`                  | A Claude Code subagent inside its parent's session (see below)                                                        |
 | `tool.gh`, `tool.aws`, `tool.git` | Your own `gh`, `aws` or `git`, with an allow list ([`git` commits](./project-rules.md#committing-as-a-step))          |
 | `tool.shell`                      | Any program, run without a shell, or a short `script:` ([scripts](./scripts.md#write-a-short-script-in-the-workflow)) |
 | `control.join`                    | Waits for its inputs: `all` (default), `any`, or `n` of them                                                          |
@@ -77,14 +77,14 @@ ork run <workflow> --input feature="dark mode" --input rounds=3
 | `workflow.call`                   | Starts a workflow as a separate run ([calling a workflow](./working-across-projects.md#calling-a-workflow))           |
 | `mcp.call`                        | Calls one tool on an MCP server, with no session ([MCP calls](./scripts/mcp.md))                                      |
 
-### Claude nodes
+### Agent nodes
 
 ```yaml
 builder:
-  type: claude.worker
+  type: agent.worker
   prompt: "Implement: {{inputs.feature}}" # the brief
   instructions: Keep the public API unchanged. # added to its system prompt
-  model: opus
+  model: claude-code.opus
   effort: high
   isolation: worktree # worktree, continue, shared or readonly
   budgetUsd: 2
@@ -96,7 +96,7 @@ builder:
       verdict: [approve, escalate] # an extra field it must report
 ```
 
-Every Claude node ends with a **report**: `status` (`pass`, `changes_requested`,
+Every agent node ends with a **report**: `status` (`pass`, `changes_requested`,
 `fail` or `done`), a short `summary`, `artifacts` (name → path in the
 repository), its `branch`, and the fields of its `output.schema`. Other nodes
 read the report through templates and conditions. When a node runs again in a
@@ -114,7 +114,7 @@ entries.
 - `verify:` and `before:` run a program after or before the session
   ([steps around a session](./scripts/steps.md)).
 
-`claude.subagent` runs inside its parent's session as a Claude Code subagent (no
+`agent.subagent` runs inside its parent's session as a Claude Code subagent (no
 edges): its `prompt` is its role, and `description` says when to use it.
 
 ### Tool nodes
@@ -224,7 +224,7 @@ each entry of a list, in parallel, and gathers the results for the next node:
 
 ```yaml
 build:
-  type: claude.worker
+  type: agent.worker
   prompt: "Do this task: {{item.title}}"
   isolation: worktree
   forEach:

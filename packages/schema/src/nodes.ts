@@ -142,7 +142,7 @@ const claudeFields = {
 };
 
 export const ClaudeLeaderNodeSchema = z.strictObject({
-  type: z.literal("claude.leader"),
+  type: z.literal("agent.leader"),
   ...claudeFields,
   mcp: McpNamesSchema,
   ...notifyFields,
@@ -162,7 +162,7 @@ export const ClaudeLeaderNodeSchema = z.strictObject({
 });
 
 export const ClaudeWorkerNodeSchema = z.strictObject({
-  type: z.literal("claude.worker"),
+  type: z.literal("agent.worker"),
   ...claudeFields,
   mcp: McpNamesSchema,
   ...notifyFields,
@@ -171,7 +171,7 @@ export const ClaudeWorkerNodeSchema = z.strictObject({
 });
 
 export const ClaudeSubagentNodeSchema = z.strictObject({
-  type: z.literal("claude.subagent"),
+  type: z.literal("agent.subagent"),
   ...claudeFields,
   parent: NodeIdSchema.describe(
     "The Claude node whose session hosts this sub-agent.",
@@ -283,16 +283,16 @@ export const NodeSchema = z.discriminatedUnion("type", [
 ]);
 export type Node = z.infer<typeof NodeSchema>;
 export type NodeType = Node["type"];
-export type ClaudeNode = Extract<Node, { type: `claude.${string}` }>;
+export type ClaudeNode = Extract<Node, { type: `agent.${string}` }>;
 export type ToolNode = Extract<Node, { type: `tool.${string}` }>;
 
 export const isToolNode = (node: Node): node is ToolNode =>
   node.type.startsWith(TOOL_PREFIX);
 
 export const CLAUDE_NODE_TYPES: readonly NodeType[] = [
-  "claude.leader",
-  "claude.worker",
-  "claude.subagent",
+  "agent.leader",
+  "agent.worker",
+  "agent.subagent",
 ];
 
 export const isClaudeNode = (node: Node): node is ClaudeNode =>

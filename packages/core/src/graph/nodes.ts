@@ -13,6 +13,7 @@ import {
   markValue,
 } from "@krapht/ork-schema";
 
+import { driverContradiction, writtenModel } from "../run/driver.ts";
 import { error, warning } from "./diagnostics.ts";
 import { gatherProblems } from "./gather.ts";
 import { checkItemSettings } from "./item-settings.ts";
@@ -33,7 +34,7 @@ const optionId = (option: DecisionOption) =>
  */
 const statusProblems = (id: string, node: Node): Diagnostic[] => {
   // A sub-agent runs inside its parent's session, and has no report of its own.
-  if (!isClaudeNode(node) || node.type === "claude.subagent") return [];
+  if (!isClaudeNode(node) || node.type === "agent.subagent") return [];
   const rule = declaredOutputOf(node)?.["status"];
   const list =
     typeof rule === "object" && rule !== null && "enum" in rule
@@ -52,6 +53,30 @@ const statusProblems = (id: string, node: Node): Diagnostic[] => {
     );
 };
 
+/**
+ * A node's `driver` and the driver its model names (`claude-code.opus`) must
+ * agree; the model may be the workflow's `defaults.model`.
+ */
+const modelDriverProblems = (
+  id: string,
+  node: Node,
+  workflow: Workflow,
+): Diagnostic[] => {
+  const own = isClaudeNode(node) ? node.model : undefined;
+  const problem = driverContradiction(node, writtenModel(node, workflow));
+  return problem === undefined
+    ? []
+    : [
+        error(
+          "model.driver",
+          own === undefined
+            ? `${problem} (the model is \`defaults.model\`)`
+            : problem,
+          ["nodes", id, own === undefined ? "driver" : "model"],
+        ),
+      ];
+};
+
 /** Per-type checks that need the rest of the graph. */
 export const checkNodes = (
   workflow: Workflow,
@@ -66,7 +91,7 @@ export const checkNodes = (
     const incoming = edges.filter(e => e.to === id);
     const outgoing = edges.filter(e => e.from === id);
 
-    if (node.type === "claude.subagent" && node.timeout !== undefined) {
+    if (node.type === "agent.subagent" && node.timeout !== undefined) {
       diagnostics.push(
         warning(
           "timeout.subagent",
@@ -76,7 +101,11 @@ export const checkNodes = (
       );
     }
 
-    diagnostics.push(...statusProblems(id, node), ...gatherProblems(id, node));
+    diagnostics.push(
+      ...statusProblems(id, node),
+      ...gatherProblems(id, node),
+      ...modelDriverProblems(id, node, workflow),
+    );
 
     if (node.type === "control.join") {
       const sources = new Set(incoming.map(e => e.from)).size;
@@ -202,8 +231,8 @@ export const checkChannels = (
     const bad = [a, b].filter(id => {
       const node = workflow.nodes[id];
       const talks =
-        node?.type === "claude.leader" ||
-        node?.type === "claude.worker" ||
+        node?.type === "agent.leader" ||
+        node?.type === "agent.worker" ||
         (node !== undefined && isToolNode(node)) ||
         (node?.type === "workflow.call" && node.node !== undefined);
       return !talks;
@@ -212,7 +241,7 @@ export const checkChannels = (
       diagnostics.push(
         error(
           "message.endpoint",
-          `${bad.map(id => `\`${id}\``).join(", ")}: channels connect \`claude.leader\` and \`claude.worker\` nodes, a tool node, and a \`workflow.call\` that names a node`,
+          `${bad.map(id => `\`${id}\``).join(", ")}: channels connect \`agent.leader\` and \`agent.worker\` nodes, a tool node, and a \`workflow.call\` that names a node`,
           path,
         ),
       );
@@ -231,7 +260,7 @@ export const checkChannels = (
       continue;
     }
     const session = (node: typeof nodeA): boolean =>
-      node?.type === "claude.leader" || node?.type === "claude.worker";
+      node?.type === "agent.leader" || node?.type === "agent.worker";
     if (
       ((nodeA !== undefined && isToolNode(nodeA)) ||
         (nodeB !== undefined && isToolNode(nodeB))) &&
@@ -241,7 +270,7 @@ export const checkChannels = (
       diagnostics.push(
         error(
           "message.endpoint",
-          `\`${a}\`, \`${b}\`: a tool node writes to a session, so the other side must be a \`claude.leader\` or \`claude.worker\``,
+          `\`${a}\`, \`${b}\`: a tool node writes to a session, so the other side must be an \`agent.leader\` or \`agent.worker\``,
           path,
         ),
       );

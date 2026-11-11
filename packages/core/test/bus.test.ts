@@ -34,11 +34,11 @@ const compile = (lines: string[]): CompiledGraph => {
 /** A leader owning two workers, a worker on a channel, and a stranger. */
 const TEAM = compile([
   "nodes:",
-  "  lead: { type: claude.leader, prompt: lead, maxWorkers: 2 }",
-  "  security: { type: claude.worker, parent: lead, prompt: s }",
-  "  code: { type: claude.worker, parent: lead, prompt: c }",
-  "  docs: { type: claude.worker, prompt: d }",
-  "  other: { type: claude.worker, prompt: o }",
+  "  lead: { type: agent.leader, prompt: lead, maxWorkers: 2 }",
+  "  security: { type: agent.worker, parent: lead, prompt: s }",
+  "  code: { type: agent.worker, parent: lead, prompt: c }",
+  "  docs: { type: agent.worker, prompt: d }",
+  "  other: { type: agent.worker, prompt: o }",
   "messages:",
   "  - between: [code, docs]",
 ]);
@@ -247,9 +247,9 @@ const work: NodeExecutor = () =>
 describe("a loop out of rounds in a run", () => {
   const graph = compile([
     "nodes:",
-    "  lead: { type: claude.leader, prompt: lead }",
+    "  lead: { type: agent.leader, prompt: lead }",
     "  start: { type: tool.shell, command: echo go }",
-    "  fix: { type: claude.worker, parent: lead, prompt: fix }",
+    "  fix: { type: agent.worker, parent: lead, prompt: fix }",
     "  check: { type: tool.shell, command: echo check }",
     "edges:",
     "  - { from: start, to: fix }",
@@ -272,8 +272,8 @@ describe("a loop out of rounds in a run", () => {
       inputs: {},
       cwd: import.meta.dirname,
       executors: {
-        "claude.leader": answeringLead,
-        "claude.worker": work,
+        "agent.leader": answeringLead,
+        "agent.worker": work,
         "tool.shell": work,
       },
       human,
@@ -336,7 +336,7 @@ const relayed = (refuse = false) => {
 describe("a channel to a workflow.call", () => {
   const graph = compile([
     "nodes:",
-    "  builder: { type: claude.worker, prompt: b }",
+    "  builder: { type: agent.worker, prompt: b }",
     "  kit: { type: workflow.call, workflow: feature, node: builder }",
     "messages:",
     "  - between: [builder, kit]",

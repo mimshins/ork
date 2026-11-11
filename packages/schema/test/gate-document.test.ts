@@ -27,7 +27,7 @@ describe("human.gate document", () => {
     expect(NodeSchema.safeParse({ ...gate, document: 3 }).success).toBe(false);
   });
 
-  it.each([{ type: "tool.shell", command: "true" }, { type: "claude.worker" }])(
+  it.each([{ type: "tool.shell", command: "true" }, { type: "agent.worker" }])(
     "is an unknown field on $type",
     node => {
       expect(NodeSchema.safeParse({ ...node, document: "x" }).success).toBe(

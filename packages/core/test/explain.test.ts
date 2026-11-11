@@ -33,7 +33,7 @@ const WORKFLOW = [
   "  context: [./style.md]",
   "nodes:",
   "  fix:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "  run:",
   "    type: tool.shell",
   '    command: "true"',
@@ -164,8 +164,8 @@ describe("what a node's session loads", () => {
     );
     const result = explainWorkflowText(
       WORKFLOW.replace(
-        "    type: claude.worker",
-        "    type: claude.worker\n    agent: fixer",
+        "    type: agent.worker",
+        "    type: agent.worker\n    agent: fixer",
       ),
       file,
       "fix",
@@ -205,7 +205,7 @@ describe("what a node's session loads", () => {
     expect(explained(WORKFLOW, "fix-2")).toMatchObject({
       node: "fix-2",
       template: "fix",
-      type: "claude.worker",
+      type: "agent.worker",
     });
   });
 
@@ -213,7 +213,7 @@ describe("what a node's session loads", () => {
     expect(explained(WORKFLOW, "fix.2")).toMatchObject({
       node: "fix.2",
       template: "fix",
-      type: "claude.worker",
+      type: "agent.worker",
     });
   });
 

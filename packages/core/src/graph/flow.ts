@@ -43,7 +43,7 @@ export const compileEdges = (workflow: Workflow): FlowResult => {
         continue;
       }
       const subagent = [edge.from, edge.to].find(
-        id => workflow.nodes[id]?.type === "claude.subagent",
+        id => workflow.nodes[id]?.type === "agent.subagent",
       );
       if (subagent !== undefined) {
         diagnostics.push(

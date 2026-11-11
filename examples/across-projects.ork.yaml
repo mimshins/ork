@@ -6,12 +6,12 @@ inputs:
     type: string
     required: true
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
 limits:
   budgetUsd: 5
 nodes:
   backend:
-    type: claude.worker
+    type: agent.worker
     prompt: |
       Build {{inputs.feature}} in this repository. The client for it is being built by `client`, an agent in another repository: tell it what you change, and answer what it asks, with send_message. Use wait_for_messages when you need its reply.
   client:
@@ -25,7 +25,7 @@ nodes:
     type: control.join
     mode: all
   notes:
-    type: claude.worker
+    type: agent.worker
     prompt: |
       Write release notes for {{inputs.feature}}.
       This repository: {{nodes.backend.output.summary}}

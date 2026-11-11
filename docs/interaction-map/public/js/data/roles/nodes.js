@@ -360,7 +360,7 @@ export const NODES = [
     status: "built",
     pkg: "core",
     summary:
-      "A Claude node with `isolation: continue`: the next writer in a chain, such as an implementer after a documenter. It works in the worktree its input came from, sees the earlier edits, and its work is committed on that worktree's branch.",
+      "An agent node with `isolation: continue`: the next writer in a chain, such as an implementer after a documenter. It works in the worktree its input came from, sees the earlier edits, and its work is committed on that worktree's branch.",
     facts: [
       "Found by the same look-back as a readonly reader, through control nodes and gates.",
       "With no one worktree upstream (an entry, or inputs from different places), it gets its own.",
@@ -406,7 +406,7 @@ export const NODES = [
     status: "built",
     pkg: "core",
     summary:
-      "A `claude.leader` is the only node that owns others (besides a worker owning sub-agents). It plans, delegates to its children, gets their reports, and has their work merged into its worktree.",
+      "An `agent.leader` is the only node that owns others (besides a worker owning sub-agents). It plans, delegates to its children, gets their reports, and has their work merged into its worktree.",
     facts: [
       "Before its children start, Ork commits its work, so they branch from it.",
       "A re-entered leader resumes its session, keeping its context.",
@@ -494,7 +494,7 @@ export const NODES = [
     status: "built",
     pkg: "core",
     summary:
-      "A `claude.subagent` lives inside its owner's session, a leader's or a worker's, as a Claude Code subagent: no process, no worktree, no edges of its own.",
+      "An `agent.subagent` lives inside its owner's session, a leader's or a worker's, as a Claude Code subagent: no process, no worktree, no edges of its own.",
     facts: [
       "Passed to its owner's session as a Claude Code subagent (`claude`'s `--agents`); the session hands it work with the Agent tool.",
       "Its role, `instructions` and `prompt` are its system prompt; its `model`, `maxTurns` and `tools.only` carry over.",

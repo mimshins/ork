@@ -111,7 +111,7 @@ const parallel = (count: number): string =>
     "  s: { type: control.split }",
     ...Array.from(
       { length: count },
-      (_, at) => `  n${String(at)}: { type: claude.worker, prompt: x }`,
+      (_, at) => `  n${String(at)}: { type: agent.worker, prompt: x }`,
     ),
     "edges:",
     ...Array.from({ length: count }, (_, at) => `  - s -> n${String(at)}`),
@@ -245,13 +245,25 @@ describe("ork validate", () => {
         "name: x",
         "nodes:",
         "  a:",
-        "    type: claude.worker",
+        "    type: agent.worker",
         '    prompt: "{{inputs.nope}}"',
       ].join("\n"),
     );
     const report = validateFile("x.ork.yaml", dir);
     expect(formatReport(report)).toEqual([
       "x.ork.yaml:6:13 error `inputs.nope` reads an input the workflow does not declare (ref.input)",
+      "✗ x.ork.yaml (1 error, 0 warnings)",
+    ]);
+  });
+
+  it("refuses a renamed node type, naming the new one and `ork migrate`", () => {
+    const dir = tempProject();
+    writeFileSync(
+      path.join(dir, "x.ork.yaml"),
+      "schemaVersion: 1\nname: x\nnodes:\n  a:\n    type: claude.worker\n    prompt: hi\n",
+    );
+    expect(formatReport(validateFile("x.ork.yaml", dir))).toEqual([
+      "x.ork.yaml:5:11 error `claude.worker` was renamed to `agent.worker`; run `ork migrate` (schema.invalid_union)",
       "✗ x.ork.yaml (1 error, 0 warnings)",
     ]);
   });
@@ -265,7 +277,7 @@ describe("ork validate", () => {
         "name: x",
         "nodes:",
         "  a:",
-        "    type: claude.worker",
+        "    type: agent.worker",
         "    prompt: Go",
         '    forEach: { from: "{{nodes.b.output.json.x}}", maxItems: 2 }',
         "  b: { type: tool.shell, command: x, output: { format: json } }",

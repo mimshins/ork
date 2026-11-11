@@ -54,5 +54,6 @@ export const standInDrivers: readonly DriverNeeds[] = (
     reportSchema: true,
     turnLimit: true,
     mcpServers: true,
+    subagents: true,
   },
 }));

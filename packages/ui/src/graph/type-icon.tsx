@@ -18,9 +18,9 @@ import {
 } from "../components/icons.tsx";
 
 const ICONS = new Map<string, ReactElement>([
-  ["claude.leader", <IconLeader key="leader" />],
-  ["claude.worker", <IconWorker key="worker" />],
-  ["claude.subagent", <IconSubagent key="subagent" />],
+  ["agent.leader", <IconLeader key="leader" />],
+  ["agent.worker", <IconWorker key="worker" />],
+  ["agent.subagent", <IconSubagent key="subagent" />],
   ["control.split", <IconSplit key="split" />],
   ["control.join", <IconJoin key="join" />],
   ["control.router", <IconRouter key="router" />],

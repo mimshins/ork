@@ -13,13 +13,13 @@ const parses = (node: string, top = ""): boolean =>
   ).ok;
 
 describe("mcp", () => {
-  it.each(["claude.leader", "claude.worker"])("parses on %s", type => {
+  it.each(["agent.leader", "agent.worker"])("parses on %s", type => {
     expect(parses(`{ type: ${type}, prompt: Go, mcp: [a, b] }`)).toBe(true);
   });
 
   it("parses on a workflow's defaults", () => {
     expect(
-      parses("{ type: claude.worker, prompt: Go }", "defaults: { mcp: [a] }"),
+      parses("{ type: agent.worker, prompt: Go }", "defaults: { mcp: [a] }"),
     ).toBe(true);
   });
 
@@ -30,11 +30,11 @@ describe("mcp", () => {
   });
 
   it("parses as an empty list, which turns defaults off", () => {
-    expect(parses("{ type: claude.worker, prompt: Go, mcp: [] }")).toBe(true);
+    expect(parses("{ type: agent.worker, prompt: Go, mcp: [] }")).toBe(true);
   });
 
   it.each(["[1]", "a", '[""]'])("is rejected as %s", value => {
-    expect(parses(`{ type: claude.worker, prompt: Go, mcp: ${value} }`)).toBe(
+    expect(parses(`{ type: agent.worker, prompt: Go, mcp: ${value} }`)).toBe(
       false,
     );
   });
@@ -42,7 +42,7 @@ describe("mcp", () => {
   it("is rejected on a node that has no session of its own", () => {
     expect(
       parses(
-        "{ type: claude.subagent, parent: p, description: d, prompt: Go, mcp: [a] }",
+        "{ type: agent.subagent, parent: p, description: d, prompt: Go, mcp: [a] }",
       ),
     ).toBe(false);
   });

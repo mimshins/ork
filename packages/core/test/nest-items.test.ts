@@ -31,7 +31,7 @@ const item = (index: number, costUsd: number, owner?: string): RunEvent[] => [
   {
     type: "node.started",
     id: `build.${String(index)}`,
-    nodeType: "claude.worker",
+    nodeType: "agent.worker",
     round: 1,
     item: { of: "build", index },
     ...(owner === undefined ? {} : { owner }),
@@ -59,12 +59,12 @@ const started = (nodes: { id: string; parent?: string }[]): RunEvent => ({
   runId: "r1",
   workflow: "w",
   entries: ["build"],
-  nodes: nodes.map(node => ({ ...node, type: "claude.worker" })),
+  nodes: nodes.map(node => ({ ...node, type: "agent.worker" })),
 });
 
 const FANNED: RunEvent[] = [
   started([{ id: "plan" }, { id: "build" }]),
-  { type: "node.started", id: "build", nodeType: "claude.worker", round: 1 },
+  { type: "node.started", id: "build", nodeType: "agent.worker", round: 1 },
   listed(1, ["a", "b", "c"]),
   ...item(0, 1),
   ...item(1, 2),
@@ -83,11 +83,11 @@ const STORED: StoredEvent[] = FANNED.map((event, at) => ({
 /** A leader's spawned worker, recorded with no `each.listed` anywhere. */
 const SPAWNED: RunEvent[] = [
   started([{ id: "lead" }, { id: "fix" }]),
-  { type: "node.started", id: "lead", nodeType: "claude.leader", round: 1 },
+  { type: "node.started", id: "lead", nodeType: "agent.leader", round: 1 },
   {
     type: "node.started",
     id: "fix-1",
-    nodeType: "claude.worker",
+    nodeType: "agent.worker",
     round: 1,
     owner: "lead",
   },

@@ -20,7 +20,7 @@ const stored = (...events: StoredEvent["event"][]): StoredEvent[] =>
 const started: StoredEvent["event"] = {
   type: "node.started",
   id: "ui",
-  nodeType: "claude.worker",
+  nodeType: "agent.worker",
   round: 1,
 };
 
@@ -138,7 +138,7 @@ describe("the tree with activity", () => {
         workflow: "w",
         entries: ["ui"],
         nodes: [
-          { id: "ui", type: "claude.worker" },
+          { id: "ui", type: "agent.worker" },
           { id: "ship", type: "tool.shell" },
         ],
       },

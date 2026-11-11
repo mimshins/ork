@@ -67,7 +67,7 @@ export const nodeContext = (
       deps.spend.reserve(
         id,
         usd,
-        deps.nodeOf(activation)?.type !== "claude.leader",
+        deps.nodeOf(activation)?.type !== "agent.leader",
       );
     },
     budgetFreed: signal => deps.spend.freed(id, signal),
@@ -105,7 +105,7 @@ export const nodeContext = (
       deps.sessionIds.get(id) ?? options.replay?.previousSession?.(activation),
     );
   if (resume !== undefined) context.resume = resume;
-  if (deps.nodeOf(activation)?.type === "claude.leader") {
+  if (deps.nodeOf(activation)?.type === "agent.leader") {
     context.ownership = createOwnership({
       graph,
       leader: id,
@@ -157,8 +157,8 @@ export const resumeOf = (
   sessionId: string | undefined,
 ): string | undefined => {
   if (node === undefined || !isClaudeNode(node)) return undefined;
-  if (node.type === "claude.subagent") return undefined;
+  if (node.type === "agent.subagent") return undefined;
   const session =
-    node.session ?? (node.type === "claude.leader" ? "resume" : "fresh");
+    node.session ?? (node.type === "agent.leader" ? "resume" : "fresh");
   return session === "resume" ? sessionId : undefined;
 };

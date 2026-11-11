@@ -53,9 +53,9 @@ const fanned = (options: {
         ? []
         : [`rules: { git: ${options.rules} }`]),
       "nodes:",
-      ...(options.owned === true ? ["  lead: { type: claude.leader }"] : []),
+      ...(options.owned === true ? ["  lead: { type: agent.leader }"] : []),
       "  build:",
-      "    type: claude.worker",
+      "    type: agent.worker",
       ...(options.owned === true ? ["    parent: lead"] : []),
       `    forEach: ${options.each ?? `{ items: ${ITEMS}, maxParallel: 1 }`}`,
       '    prompt: "do {{item}}"',

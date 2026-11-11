@@ -33,7 +33,7 @@ const codesOf = (body: string) =>
 const messagesOf = (body: string) =>
   found(`schemaVersion: 1\nname: t\n${body}`).map(({ message }) => message);
 
-const WORKER = "{ type: claude.worker, prompt: p }";
+const WORKER = "{ type: agent.worker, prompt: p }";
 const TOOL = "{ type: tool.shell, command: prog }";
 
 /** A Claude node `a`, a tool `b`, and an edge from one to the other. */
@@ -60,7 +60,7 @@ edges:
 
 const fromSchema = (when: string) => `nodes:
   a:
-    type: claude.worker
+    type: agent.worker
     prompt: p
     output: { schema: { status: [pass, done], verdict: [yes, no] } }
   b: ${TOOL}
@@ -101,7 +101,7 @@ edges:
 const ERROR = ["error:when.value"];
 
 const FROM_SCHEMA =
-  "{ type: claude.worker, prompt: p, output: { schema: { status: [pass, done] } } }";
+  "{ type: agent.worker, prompt: p, output: { schema: { status: [pass, done] } } }";
 
 const loopedRouter = (when: string) => `nodes:
   a: { type: human.gate, question: q, options: [start, cancel] }
@@ -125,7 +125,7 @@ const allCodesOf = (nodes: string): string[] => {
 /** Every code the compiler gives a node declaring this. */
 const statusCodesOf = (schema: string): string[] =>
   allCodesOf(
-    `  a: { type: claude.worker, prompt: p, output: { schema: ${schema} } }`,
+    `  a: { type: agent.worker, prompt: p, output: { schema: ${schema} } }`,
   );
 
 describe("output.status", () => {
@@ -137,9 +137,9 @@ describe("output.status", () => {
   });
 
   it("leaves a sub-agent alone, as it has no report of its own", () => {
-    const codes = allCodesOf(`  lead: { type: claude.leader, prompt: p }
+    const codes = allCodesOf(`  lead: { type: agent.leader, prompt: p }
   helper:
-    type: claude.subagent
+    type: agent.subagent
     parent: lead
     description: d
     prompt: p
@@ -222,7 +222,7 @@ edges:
       codesOf(`nodes:
   lead: ${WORKER}
   a:
-    type: claude.worker
+    type: agent.worker
     prompt: p
     notify:
       - { to: lead, when: "status == 'failed'" }
@@ -361,9 +361,9 @@ describe("loop.uncapped", () => {
   it("counts the sessions a leader in the loop owns", () => {
     expect(
       messagesOf(`nodes:
-  a: { type: claude.leader, prompt: p }
-  w: { type: claude.worker, prompt: p, parent: a }
-  s: { type: claude.subagent, description: d, prompt: p, parent: a }
+  a: { type: agent.leader, prompt: p }
+  w: { type: agent.worker, prompt: p, parent: a }
+  s: { type: agent.subagent, description: d, prompt: p, parent: a }
   b: ${TOOL}
 edges:
   - a -> b

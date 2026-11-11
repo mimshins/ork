@@ -34,11 +34,11 @@ describe("announcing from a panel", () => {
     const { state, overview } = openPanelState({
       monitor: {
         graph: {
-          nodes: [{ id: "lead", type: "claude.leader" }],
+          nodes: [{ id: "lead", type: "agent.leader" }],
           edges: [],
           channels: [],
         },
-        tree: [treeNode("lead", { type: "claude.leader", state: "running" })],
+        tree: [treeNode("lead", { type: "agent.leader", state: "running" })],
       },
     });
     const { container } = renderPanel(state, <Shell workspace={workspace} />);

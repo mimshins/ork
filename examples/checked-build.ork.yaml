@@ -8,11 +8,11 @@ inputs:
     default: main
     description: The branch the check compares with.
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
   budgetUsd: 1
 nodes:
   builder:
-    type: claude.worker
+    type: agent.worker
     prompt: |-
       Make the change you were asked for. The recent history is:
       {{before.stdout}}

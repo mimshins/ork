@@ -17,7 +17,7 @@ import { openPanelState, renderPanel } from "./harness.tsx";
 import { treeNode } from "./monitor-fixtures.ts";
 
 const GRAPH: WorkflowGraph = {
-  nodes: [{ id: "lead", type: "claude.leader" }],
+  nodes: [{ id: "lead", type: "agent.leader" }],
   edges: [],
   channels: [],
 };

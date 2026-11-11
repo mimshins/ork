@@ -37,9 +37,9 @@ const compile = (lines: string[]): CompiledGraph => {
 /** Two writers and a reviewer, side by side. */
 const PAIR = compile([
   "nodes:",
-  "  api: { type: claude.worker, prompt: a }",
-  "  ui: { type: claude.worker, prompt: u }",
-  "  review: { type: claude.worker, prompt: r, isolation: readonly }",
+  "  api: { type: agent.worker, prompt: a }",
+  "  ui: { type: agent.worker, prompt: u }",
+  "  review: { type: agent.worker, prompt: r, isolation: readonly }",
 ]);
 
 const setup = (graph: CompiledGraph = PAIR) => {
@@ -81,7 +81,7 @@ describe("who gets the tools", () => {
     expect(claims.port("api", undefined, "/r").contended()).toBe(true);
     expect(claims.port("review", undefined, "/r").contended()).toBe(false);
     const alone = setup(
-      compile(["nodes:", "  api: { type: claude.worker, prompt: a }"]),
+      compile(["nodes:", "  api: { type: agent.worker, prompt: a }"]),
     );
     expect(alone.claims.port("api", undefined, "/r").contended()).toBe(false);
   });
@@ -90,8 +90,8 @@ describe("who gets the tools", () => {
     const { claims } = setup(
       compile([
         "nodes:",
-        "  lead: { type: claude.leader, prompt: l, maxWorkers: 2, isolation: readonly }",
-        "  fix: { type: claude.worker, parent: lead, prompt: f }",
+        "  lead: { type: agent.leader, prompt: l, maxWorkers: 2, isolation: readonly }",
+        "  fix: { type: agent.worker, parent: lead, prompt: f }",
       ]),
     );
     expect(claims.port("fix-2", "fix", "/r").contended()).toBe(true);
@@ -102,7 +102,7 @@ describe("who gets the tools", () => {
     const { claims } = setup(
       compile([
         "nodes:",
-        "  build: { type: claude.worker, prompt: b, isolation: shared, forEach: { items: [a, b] } }",
+        "  build: { type: agent.worker, prompt: b, isolation: shared, forEach: { items: [a, b] } }",
       ]),
     );
     expect(claims.port("build.0", "build", "/r").contended()).toBe(true);
@@ -208,8 +208,8 @@ describe("claims in a run", () => {
     const graph = compile([
       "nodes:",
       "  start: { type: tool.shell, command: s }",
-      "  api: { type: claude.worker, prompt: a, isolation: shared }",
-      "  ui: { type: claude.worker, prompt: u, isolation: shared }",
+      "  api: { type: agent.worker, prompt: a, isolation: shared }",
+      "  ui: { type: agent.worker, prompt: u, isolation: shared }",
       "edges:",
       "  - start -> api, ui",
     ]);
@@ -221,7 +221,7 @@ describe("claims in a run", () => {
       cwd: import.meta.dirname,
       executors: {
         "tool.shell": () => Promise.resolve({ ok: true, output: {} }),
-        "claude.worker": worker,
+        "agent.worker": worker,
       },
       human,
       onEvent: event => {
@@ -257,11 +257,11 @@ const OWNED = compile([
   "limits: { concurrency: 4 }",
   "nodes:",
   "  start: { type: tool.shell, command: s }",
-  "  lead: { type: claude.leader, maxWorkers: 1 }",
-  "  fix: { type: claude.worker, parent: lead }",
-  "  check: { type: claude.worker, parent: lead }",
-  "  busy: { type: claude.worker, parent: lead }",
-  "  other: { type: claude.worker }",
+  "  lead: { type: agent.leader, maxWorkers: 1 }",
+  "  fix: { type: agent.worker, parent: lead }",
+  "  check: { type: agent.worker, parent: lead }",
+  "  busy: { type: agent.worker, parent: lead }",
+  "  other: { type: agent.worker }",
   "edges:",
   "  - start -> lead, other, busy",
 ]);
@@ -281,8 +281,8 @@ const runOwned = async (behaviors: Record<string, Behavior>) => {
     cwd: import.meta.dirname,
     executors: {
       "tool.shell": () => Promise.resolve({ ok: true, output: {} }),
-      "claude.leader": executor,
-      "claude.worker": executor,
+      "agent.leader": executor,
+      "agent.worker": executor,
     },
     human,
     onEvent: event => {

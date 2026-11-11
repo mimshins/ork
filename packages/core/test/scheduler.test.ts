@@ -77,8 +77,8 @@ const scripted = (
 };
 
 const allTypes = (executor: NodeExecutor): NodeExecutors => ({
-  "claude.leader": executor,
-  "claude.worker": executor,
+  "agent.leader": executor,
+  "agent.worker": executor,
   "tool.gh": executor,
   "tool.shell": executor,
   "human.gate": executor,
@@ -133,8 +133,8 @@ const waiting: NodeExecutor = ({ signal }) =>
 const loopWithExit = () =>
   workflow(
     [
-      "a: { type: claude.worker }",
-      "b: { type: claude.worker }",
+      "a: { type: agent.worker }",
+      "b: { type: agent.worker }",
       "done: { type: tool.shell, command: 'true' }",
     ],
     ["a -> b", "{ from: b, to: a, maxRounds: 1 }", "b -> done"],
@@ -142,13 +142,13 @@ const loopWithExit = () =>
 
 const failureEdge = () =>
   workflow(
-    ["a: { type: claude.worker }", "b: { type: claude.worker }"],
+    ["a: { type: agent.worker }", "b: { type: agent.worker }"],
     ["{ from: a, to: b, when: \"status == 'fail'\" }"],
   );
 
 const twoSessions = () =>
   workflow(
-    ["a: { type: claude.worker }", "b: { type: claude.worker }"],
+    ["a: { type: agent.worker }", "b: { type: agent.worker }"],
     ["a -> b"],
   );
 
@@ -200,9 +200,9 @@ describe("the scheduler", () => {
   it("keeps a run that skipped nodes and handled a failure `succeeded`, and counts both", async () => {
     const graph = workflow(
       [
-        "a: { type: claude.worker }",
-        "cleanup: { type: claude.worker }",
-        "ship: { type: claude.worker }",
+        "a: { type: agent.worker }",
+        "cleanup: { type: agent.worker }",
+        "ship: { type: agent.worker }",
       ],
       [
         "{ from: a, to: cleanup, when: \"status == 'fail'\" }",
@@ -318,7 +318,7 @@ describe("the scheduler", () => {
 
   it("fails the run when a failed node has no edge to take", async () => {
     const graph = workflow(
-      ["a: { type: claude.worker }", "b: { type: claude.worker }"],
+      ["a: { type: agent.worker }", "b: { type: agent.worker }"],
       ["a -> b"],
     );
     const { executor, ran } = scripted({
@@ -335,9 +335,9 @@ describe("the scheduler", () => {
   it("routes a failure along a `when: status == 'fail'` edge", async () => {
     const graph = workflow(
       [
-        "a: { type: claude.worker }",
-        "ok: { type: claude.worker }",
-        "fix: { type: claude.worker }",
+        "a: { type: agent.worker }",
+        "ok: { type: agent.worker }",
+        "fix: { type: agent.worker }",
       ],
       ["a -> ok", "{ from: a, to: fix, when: \"status == 'fail'\" }"],
     );
@@ -353,9 +353,9 @@ describe("the scheduler", () => {
 describe("joins and routers", () => {
   const nodes = [
     "start: { type: control.split }",
-    "a: { type: claude.worker }",
-    "b: { type: claude.worker }",
-    "c: { type: claude.worker }",
+    "a: { type: agent.worker }",
+    "b: { type: agent.worker }",
+    "c: { type: agent.worker }",
   ];
 
   it("a router in `first` mode takes one edge; the join does not wait for the others", async () => {
@@ -364,7 +364,7 @@ describe("joins and routers", () => {
         ...nodes.slice(0, 3),
         "route: { type: control.router }",
         "j: { type: control.join }",
-        "after: { type: claude.worker }",
+        "after: { type: agent.worker }",
       ],
       [
         "start -> route",
@@ -390,7 +390,7 @@ describe("joins and routers", () => {
       [
         ...nodes,
         "j: { type: control.join, mode: any }",
-        "after: { type: claude.worker }",
+        "after: { type: agent.worker }",
       ],
       ["start -> a, b, c", "a, b, c -> j", "j -> after"],
     );
@@ -402,7 +402,7 @@ describe("joins and routers", () => {
       [
         ...nodes,
         "j: { type: control.join, mode: n, n: 2 }",
-        "after: { type: claude.worker }",
+        "after: { type: agent.worker }",
       ],
       ["start -> a, b, c", "a, b, c -> j", "j -> after"],
     );
@@ -421,10 +421,10 @@ describe("limits", () => {
   it("resumes a node's session on re-entry by its session setting", async () => {
     const graph = workflow(
       [
-        "plan: { type: claude.worker }",
-        "lead: { type: claude.leader }",
-        "kept: { type: claude.worker, session: resume }",
-        "check: { type: claude.worker }",
+        "plan: { type: agent.worker }",
+        "lead: { type: agent.leader }",
+        "kept: { type: agent.worker, session: resume }",
+        "check: { type: agent.worker }",
       ],
       [
         "plan -> lead",
@@ -455,7 +455,7 @@ describe("limits", () => {
 
   it("stops starting sessions when the run's budget is spent", async () => {
     const graph = workflow(
-      ["a: { type: claude.worker }", "b: { type: claude.worker }"],
+      ["a: { type: agent.worker }", "b: { type: agent.worker }"],
       ["a -> b"],
       ["limits: { budgetUsd: 1 }"],
     );
@@ -504,7 +504,7 @@ describe("limits", () => {
 
     it("gives a session the least of its run's budget and the quota", async () => {
       const graph = workflow(
-        ["a: { type: claude.worker }", "b: { type: claude.worker }"],
+        ["a: { type: agent.worker }", "b: { type: agent.worker }"],
         ["a -> b"],
         ["limits: { budgetUsd: 2 }"],
       );
@@ -571,7 +571,7 @@ describe("limits", () => {
         });
       };
       const graph = workflow(
-        ["a: { type: claude.worker }", "t: { type: tool.shell, command: x }"],
+        ["a: { type: agent.worker }", "t: { type: tool.shell, command: x }"],
         ["{ from: a, to: t, when: \"status == 'fail'\" }"],
       );
       const { result } = await run(
@@ -586,7 +586,7 @@ describe("limits", () => {
 
     it("tells a node what a quota and its budget each leave", async () => {
       const graph = workflow(
-        ["a: { type: claude.worker }", "b: { type: claude.worker }"],
+        ["a: { type: agent.worker }", "b: { type: agent.worker }"],
         ["a -> b"],
         ["limits: { budgetUsd: 9 }"],
       );
@@ -623,7 +623,7 @@ describe("limits", () => {
 
   it("passes what is left of the budget to each node", async () => {
     const graph = workflow(
-      ["a: { type: claude.worker }", "b: { type: claude.worker }"],
+      ["a: { type: agent.worker }", "b: { type: agent.worker }"],
       ["a -> b"],
       ["limits: { budgetUsd: 2 }"],
     );
@@ -641,7 +641,7 @@ describe("limits", () => {
     const graph = workflow(
       [
         "start: { type: control.split }",
-        ...["a", "b", "c", "d"].map(id => `${id}: { type: claude.worker }`),
+        ...["a", "b", "c", "d"].map(id => `${id}: { type: agent.worker }`),
       ],
       ["start -> a, b, c, d"],
       ["limits: { concurrency: 2 }"],
@@ -664,7 +664,7 @@ describe("limits", () => {
 
   it("stops on interrupt and aborts running nodes", async () => {
     const graph = workflow(
-      ["a: { type: claude.worker }", "b: { type: claude.worker }"],
+      ["a: { type: agent.worker }", "b: { type: agent.worker }"],
       ["a -> b"],
     );
     const handle = startRun({
@@ -754,8 +754,8 @@ describe("a workflow's outputs", () => {
         "schemaVersion: 1",
         "name: t",
         "nodes:",
-        "  a: { type: claude.worker, prompt: a }",
-        "  b: { type: claude.worker, prompt: b }",
+        "  a: { type: agent.worker, prompt: a }",
+        "  b: { type: agent.worker, prompt: b }",
         "  c: { type: tool.shell, command: x }",
         "edges:",
         "  - a -> c",
@@ -772,7 +772,7 @@ describe("a workflow's outputs", () => {
       inputs: {},
       orkVersion: "1.2.3",
       cwd: "/tmp",
-      executors: { "tool.shell": executor, "claude.worker": executor },
+      executors: { "tool.shell": executor, "agent.worker": executor },
       human: {
         ask: () => Promise.resolve(""),
         permit: () => Promise.resolve({ allow: true }),

@@ -13,7 +13,7 @@ ork relay a1b2/builder e5f6/builder
 
 The run's id can be a prefix. Each side is told at its next step who it can now
 write to, and which project that node works in. The nodes must be a
-`claude.leader` or `claude.worker`, and their runs must be live.
+`agent.leader` or `agent.worker`, and their runs must be live.
 
 To have one workflow start the other, and use its result, see
 [Calling a workflow](#calling-a-workflow).
@@ -65,14 +65,14 @@ name: feature
 inputs:
   feature: { type: string, required: true }
 nodes:
-  backend: { type: claude.worker, prompt: "Build {{inputs.feature}}" }
+  backend: { type: agent.worker, prompt: "Build {{inputs.feature}}" }
   client:
     type: workflow.call
     project: client-kit # a registered project; leave it out for this one
     workflow: feature
     inputs: { feature: "{{inputs.feature}}" }
   notes:
-    type: claude.worker
+    type: agent.worker
     prompt: "Write release notes for {{nodes.client.output.outputs.version}}"
 edges:
   - backend -> client

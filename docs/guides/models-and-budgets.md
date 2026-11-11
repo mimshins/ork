@@ -1,6 +1,6 @@
 # Models, effort and budgets
 
-Every Claude node picks its own model and effort, and has its own limits, so a
+Every agent node picks its own model and effort, and has its own limits, so a
 planner can think hard on a large model while reviewers run fast and cheap. The
 run as a whole has a hard budget.
 
@@ -8,24 +8,24 @@ run as a whole has a hard budget.
 
 ```yaml
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
   effort: medium
 nodes:
   planner:
-    type: claude.leader
-    model: opus
+    type: agent.leader
+    model: claude-code.opus
     effort: high
   linter:
-    type: claude.worker
+    type: agent.worker
     parent: planner
-    model: haiku
+    model: claude-code.haiku
     effort: low
 ```
 
 - `model`: `opus`, `sonnet`, `haiku`, or a full model id such as
-  `claude-opus-5-5`.
-- `effort`: how hard the model thinks, `low`, `medium`, `high`, `xhigh` or
-  `max`.
+  `claude-opus-5-5`; prefix a driver (`claude-code.opus`) to pin the tool
+  ([drivers](./drivers.md#naming-the-driver-in-the-model)).
+- `effort`: how hard it thinks: `low`, `medium`, `high`, `xhigh` or `max`.
 - A node's own value wins, then `defaults`, then Claude Code's default for the
   model. A spawned worker (`tests-2`) takes its template's.
 
@@ -34,7 +34,7 @@ nodes:
 ```yaml
 nodes:
   builder:
-    type: claude.worker
+    type: agent.worker
     budgetUsd: 3 # this session's spend cap
     maxTurns: 60 # this session's turn cap
 ```
@@ -129,7 +129,7 @@ nodes:
   started, is killed; a `workflow.call` stops the run it called.
 - A run that runs out ends as `timed_out`, and `ork resume` continues it. The
   clocks start again.
-- A `claude.subagent` runs inside its parent's session, so set the timeout on
+- An `agent.subagent` runs inside its parent's session, so set the timeout on
   the parent. A `human.gate`'s own `timeout` is separate: its `default` answers.
 
 ## The driver

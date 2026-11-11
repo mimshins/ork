@@ -137,5 +137,5 @@ export const actingOutside = (graph: WorkflowGraph): string[] =>
 /** The nodes a message rule can write to. */
 export const messageTargets = (graph: WorkflowGraph): string[] =>
   graph.nodes
-    .filter(({ type }) => type === "claude.leader" || type === "claude.worker")
+    .filter(({ type }) => type === "agent.leader" || type === "agent.worker")
     .map(({ id }) => id);

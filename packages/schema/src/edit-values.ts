@@ -33,7 +33,7 @@ const listAt = (
 };
 
 const fieldNames = (doc: Document, id: string, field: string): string[] =>
-  String(doc.getIn(["nodes", id, "type"])).startsWith("claude.")
+  String(doc.getIn(["nodes", id, "type"])).startsWith("agent.")
     ? [field]
     : [`json.${field}`, field];
 

@@ -65,7 +65,7 @@ const scripted = (statuses: Record<string, string[]>) => {
     return Promise.resolve(result);
   };
   const executors: NodeExecutors = {
-    "claude.worker": executor,
+    "agent.worker": executor,
     "tool.shell": executor,
   };
   return { executors, ran };
@@ -109,7 +109,7 @@ const run = async (
   return { result, ran, asked, skipped };
 };
 
-const WORKER = (prompt: string) => `{ type: claude.worker, prompt: ${prompt} }`;
+const WORKER = (prompt: string) => `{ type: agent.worker, prompt: ${prompt} }`;
 
 /** Two builders, one chosen by an input; `a11y` hangs off both. */
 const BUILDERS = [
@@ -315,7 +315,7 @@ const timed = async (delays: Record<string, number>) => {
     ),
     inputs: {},
     cwd: repoRoot,
-    executors: { "claude.worker": executor },
+    executors: { "agent.worker": executor },
     human: answering("stop").human,
     runId: "r1",
     onEvent: event => {

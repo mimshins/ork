@@ -215,7 +215,7 @@ describe("the read routes", () => {
       runId: "aaa11111",
       workflow: "w",
       entries: ["lead"],
-      nodes: [{ id: "lead", type: "claude.leader" }],
+      nodes: [{ id: "lead", type: "agent.leader" }],
       edges: [{ from: "lead", to: "lead", maxRounds: 2 }],
       channels: [],
     });
@@ -224,7 +224,7 @@ describe("the read routes", () => {
     ).toMatchObject({
       ok: true,
       data: {
-        nodes: [{ id: "lead", type: "claude.leader" }],
+        nodes: [{ id: "lead", type: "agent.leader" }],
         edges: [{ from: "lead", to: "lead", maxRounds: 2 }],
         channels: [],
       },
@@ -274,7 +274,7 @@ describe("the read routes", () => {
     store.append("aaa11111", {
       type: "node.started",
       id: "lead.2",
-      nodeType: "claude.leader",
+      nodeType: "agent.leader",
       round: 1,
     });
     expect(

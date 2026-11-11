@@ -18,7 +18,7 @@ import { stubWindow } from "../dom.ts";
 
 const LAYOUT = layoutGraph({
   nodes: [
-    { id: "start", type: "claude.leader" },
+    { id: "start", type: "agent.leader" },
     { id: "top", type: "tool.shell" },
     { id: "bottom", type: "workflow.call" },
     { id: "end", type: "human.gate" },

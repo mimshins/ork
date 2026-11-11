@@ -50,7 +50,7 @@ export const draftWorkflow = (options: DraftOptions): Workflow => {
   for (const [index, agent] of agents.entries()) {
     const before = agents[index - 1];
     nodes[agent] = {
-      type: "claude.worker",
+      type: "agent.worker",
       agent,
       // The first agent opens the worktree; the others continue in it.
       isolation: before === undefined ? "worktree" : "continue",
@@ -72,7 +72,7 @@ export const draftWorkflow = (options: DraftOptions): Workflow => {
       recommended: "review",
     };
     nodes[reviewer] = {
-      type: "claude.worker",
+      type: "agent.worker",
       agent: reviewer,
       isolation: "readonly",
       session: "resume",

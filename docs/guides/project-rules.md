@@ -23,11 +23,11 @@ git:
 permissions:
   deny: ["Bash(git push *)"]
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
 context: [docs/process.md]
 ```
 
-- **`permissions`** are tool rules every Claude node gets, added to its own
+- **`permissions`** are tool rules every agent node gets, added to its own
   `tools`.
 - **`defaults`** apply to every workflow; a workflow's own `defaults` win.
 - **`context`** files, from the project root, are read by every node, before the

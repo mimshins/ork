@@ -134,7 +134,7 @@ describe("walking a fanned node", () => {
     "count(statuses, 'fail') == 3",
   ])("makes no claim that %s can never hold", async when => {
     await expect(
-      neverRuns(graphWith(FROM, when, "claude.worker")),
+      neverRuns(graphWith(FROM, when, "agent.worker")),
     ).resolves.toBe(false);
   });
 
@@ -172,7 +172,7 @@ describe("walking a fanned node", () => {
   it("tries a status only an item's type can report", async () => {
     const reading = "any(statuses, 'changes_requested')";
     expect(
-      await neverRuns(graphWith("items: [a]", reading, "claude.worker")),
+      await neverRuns(graphWith("items: [a]", reading, "agent.worker")),
     ).toBe(false);
     expect(() => graphWith("items: [a]", reading)).toThrow("when.value");
   });

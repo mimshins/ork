@@ -9,7 +9,7 @@
 import type { CompiledGraph } from "../graph/types.ts";
 import type { RunNodeInfo } from "./types.ts";
 
-const SESSION_TYPES = new Set(["claude.leader", "claude.worker"]);
+const SESSION_TYPES = new Set(["agent.leader", "agent.worker"]);
 
 type Channels = readonly (readonly [string, string])[];
 

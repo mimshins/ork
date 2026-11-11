@@ -25,7 +25,7 @@ with the built-in node types
 - The workflow and its inputs are checked as for `--node`; nothing starts on an
   error, and warnings print before it starts, with what
   [walking it](../scheduler/walking.md) found. `ork resume` doesn't walk.
-- `worktree` Claude nodes get their own worktree beside the clone, and the run
+- `worktree` agent nodes get their own worktree beside the clone, and the run
   first checks the project ([worktrees](../worktrees.md#before-the-run)):
   uncommitted instructions or skills stop it unless `--allow-dirty`.
   `--in-place` runs every node in this checkout instead.
@@ -97,13 +97,13 @@ with the built-in node types
 
 ## Running one node
 
-`ork run <wf> --node <id>` runs one Claude node on its own
+`ork run <wf> --node <id>` runs one agent node on its own
 ([run.ts](../../packages/cli/src/commands/run.ts)):
 
 - `<wf>` is a path, or the name of a workflow in `.ork/workflows/` (`hello` is
   `.ork/workflows/hello.ork.yaml`).
 - The workflow must validate, `--input name=value` (repeatable) must satisfy its
-  inputs, and the node must be a `claude.leader` or `claude.worker`. Nothing
+  inputs, and the node must be an `agent.leader` or `agent.worker`. Nothing
   starts otherwise; the errors go to stderr and the exit code is 1.
 - The session spec comes from `planNodeSession`
   ([plan.ts](../../packages/core/src/run/plan.ts)). A brief that reads

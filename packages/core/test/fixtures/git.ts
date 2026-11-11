@@ -137,7 +137,7 @@ export const runIn = async (
     runId: "r1",
     inputs,
     cwd: root,
-    executors: { "claude.leader": executor, "claude.worker": executor },
+    executors: { "agent.leader": executor, "agent.worker": executor },
     human: {
       ask: () => Promise.resolve("stop"),
       permit: () => Promise.resolve({ allow: true }),

@@ -102,7 +102,7 @@ const verifyCodesOf = (source: string): string[] => {
 
 const verifyDiagnostics = (verify: string, more = "") => {
   const parsed = parseWorkflow(
-    `schemaVersion: 1\nname: t\nnodes:\n  w: { type: claude.worker, verify: ${verify}${more} }\n`,
+    `schemaVersion: 1\nname: t\nnodes:\n  w: { type: agent.worker, verify: ${verify}${more} }\n`,
   );
   return parsed.ok ? compileWorkflow(parsed.workflow).diagnostics : [];
 };
@@ -161,14 +161,14 @@ describe("verify:", () => {
   it("is read as an output field of the node", () => {
     expect(
       verifyCodesOf(
-        `schemaVersion: 1\nname: t\nnodes:\n  w: { type: claude.worker, verify: { command: x } }\n  n: { type: tool.shell, command: "y {{nodes.w.output.verify.exitCode}}" }\nedges:\n  - w -> n\n`,
+        `schemaVersion: 1\nname: t\nnodes:\n  w: { type: agent.worker, verify: { command: x } }\n  n: { type: tool.shell, command: "y {{nodes.w.output.verify.exitCode}}" }\nedges:\n  - w -> n\n`,
       ),
     ).toEqual([]);
   });
 
   it("is only for leaders and workers", () => {
     const parsed = parseWorkflow(
-      "schemaVersion: 1\nname: t\nnodes:\n  l: { type: claude.leader }\n  s: { type: claude.subagent, parent: l, verify: { command: x } }\n",
+      "schemaVersion: 1\nname: t\nnodes:\n  l: { type: agent.leader }\n  s: { type: agent.subagent, parent: l, verify: { command: x } }\n",
     );
     expect(parsed.ok).toBe(false);
   });
@@ -177,7 +177,7 @@ describe("verify:", () => {
 const beforeOf = (fields: string, defaults = "") =>
   compileWorkflow(
     parsedOrThrow(
-      `schemaVersion: 1\nname: t\n${defaults}nodes:\n  w: { type: claude.worker, ${fields} }\n`,
+      `schemaVersion: 1\nname: t\n${defaults}nodes:\n  w: { type: agent.worker, ${fields} }\n`,
     ),
   ).diagnostics;
 
@@ -244,8 +244,8 @@ describe("before:", () => {
     const { diagnostics } = compile(`schemaVersion: 1
 name: t
 nodes:
-  w: { type: claude.worker, prompt: hi, before: { command: x } }
-  n: { type: claude.worker, prompt: hi }
+  w: { type: agent.worker, prompt: hi, before: { command: x } }
+  n: { type: agent.worker, prompt: hi }
 edges:
   - { from: w, to: n, when: "before.exitCode != 0" }
 `);
@@ -377,13 +377,13 @@ edges:
     expect(
       codes(
         workflow(`nodes:
-  lead: { type: claude.leader }
-  w: { type: claude.worker, parent: lead }
-  s: { type: claude.subagent, parent: w, description: helper }
+  lead: { type: agent.leader }
+  w: { type: agent.worker, parent: lead }
+  s: { type: agent.subagent, parent: w, description: helper }
   bad: { type: tool.shell, command: ls, parent: w }
-  lost: { type: claude.worker, parent: ghost }
-  x: { type: claude.leader, parent: y }
-  y: { type: claude.leader, parent: x }
+  lost: { type: agent.worker, parent: ghost }
+  x: { type: agent.leader, parent: y }
+  y: { type: agent.leader, parent: x }
 `),
       ),
     ).toEqual([
@@ -400,9 +400,9 @@ edges:
     expect(
       codes(
         workflow(`nodes:
-  lead: { type: claude.leader, isolation: continue }
-  w: { type: claude.worker, parent: lead, isolation: continue }
-  next: { type: claude.worker, isolation: continue }
+  lead: { type: agent.leader, isolation: continue }
+  w: { type: agent.worker, parent: lead, isolation: continue }
+  next: { type: agent.worker, isolation: continue }
 edges:
   - lead -> next
 `),
@@ -414,10 +414,10 @@ edges:
     expect(
       codes(
         workflow(`nodes:
-  lead: { type: claude.leader, questions: owner }
-  helper: { type: claude.subagent, parent: lead, description: helper }
-  boss: { type: claude.leader, questions: user }
-  w: { type: claude.worker, parent: boss }
+  lead: { type: agent.leader, questions: owner }
+  helper: { type: agent.subagent, parent: lead, description: helper }
+  boss: { type: agent.leader, questions: user }
+  w: { type: agent.worker, parent: boss }
 `),
       ),
     ).toEqual(["error:questions.no-children"]);
@@ -427,8 +427,8 @@ edges:
     expect(
       codes(
         workflow(`nodes:
-  lead: { type: claude.leader }
-  sub: { type: claude.subagent, parent: lead, description: helper }
+  lead: { type: agent.leader }
+  sub: { type: agent.subagent, parent: lead, description: helper }
   end: { type: control.split }
 edges:
   - lead -> nowhere
@@ -451,10 +451,10 @@ edges:
     const diagnostics = compile(
       workflow(`nodes:
   a:
-    type: claude.worker
+    type: agent.worker
     prompt: "{{inputs.feature}} {{inputs.missing}} {{nodes.b.output.summary}}"
   b:
-    type: claude.worker
+    type: agent.worker
     prompt: "{{nodes.a.output.summary}} {{nodes.a.output.nope}} {{nodes.ghost.output.x}} {{nodes.a.summary}} {{verdict}}"
     output: { schema: { verdict: [yes, no] } }
   c: { type: control.split }
@@ -663,8 +663,8 @@ edges:
     expect(
       codes(
         workflow(`nodes:
-  a: { type: claude.leader }
-  b: { type: claude.worker, parent: a }
+  a: { type: agent.leader }
+  b: { type: agent.worker, parent: a }
   t: { type: tool.gh, command: pr list }
   j: { type: control.join, mode: n, n: 3 }
   g:
@@ -709,9 +709,9 @@ edges:
     expect(
       codes(
         workflow(`nodes:
-  lead: { type: claude.leader, prompt: go }
+  lead: { type: agent.leader, prompt: go }
   helper:
-    type: claude.subagent
+    type: agent.subagent
     parent: lead
     description: helps
     timeout: 5m
@@ -751,7 +751,7 @@ edges:
     expect(
       codes(
         workflow(`nodes:
-  lead: { type: claude.leader, prompt: l }
+  lead: { type: agent.leader, prompt: l }
   kit: { type: workflow.call, workflow: other, parent: lead }
 `),
       ),
@@ -784,7 +784,7 @@ edges:
 
   it("allows a channel to a call that names a node, unless links are off", () => {
     const channel = `nodes:
-  builder: { type: claude.worker, prompt: b }
+  builder: { type: agent.worker, prompt: b }
   kit: { type: workflow.call, workflow: other, node: builder }
 messages:
   - between: [builder, kit]
@@ -812,7 +812,7 @@ messages:
     expect(
       compile(
         workflow(`nodes:
-  builder: { type: claude.worker, prompt: b }
+  builder: { type: agent.worker, prompt: b }
   kit: { type: workflow.call, workflow: other }
 messages:
   - between: [builder, kit]

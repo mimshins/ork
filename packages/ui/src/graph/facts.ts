@@ -20,9 +20,9 @@ export type NodeFacts = {
 };
 
 const WORDS: Readonly<Record<string, string>> = {
-  "claude.leader": "leader",
-  "claude.worker": "worker",
-  "claude.subagent": "sub-agent",
+  "agent.leader": "leader",
+  "agent.worker": "worker",
+  "agent.subagent": "sub-agent",
   "control.split": "split",
   "control.join": "join",
   "control.router": "router",

@@ -28,7 +28,7 @@ export type NodeSession = {
 };
 
 const chattable = (type: string): boolean =>
-  type === "claude.leader" || type === "claude.worker";
+  type === "agent.leader" || type === "agent.worker";
 
 /** Reads `node`'s session from a run's events, and every node's last output. */
 export const nodeSession = (

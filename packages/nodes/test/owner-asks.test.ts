@@ -34,8 +34,8 @@ const WORKFLOW = [
   "schemaVersion: 1",
   "name: owned",
   "nodes:",
-  "  lead: { type: claude.leader, prompt: Plan, isolation: shared, questions: owner }",
-  "  work: { type: claude.worker, parent: lead, prompt: Build, isolation: shared }",
+  "  lead: { type: agent.leader, prompt: Plan, isolation: shared, questions: owner }",
+  "  work: { type: agent.worker, parent: lead, prompt: Build, isolation: shared }",
 ].join("\n");
 
 const workflowOf = (): Workflow => {
@@ -88,7 +88,7 @@ const contextOf = (
   return {
     runId: "r1",
     id: "work",
-    node: workflow.nodes["work"] ?? { type: "claude.worker", prompt: "x" },
+    node: workflow.nodes["work"] ?? { type: "agent.worker", prompt: "x" },
     workflow,
     inputs: {},
     outputs: {},

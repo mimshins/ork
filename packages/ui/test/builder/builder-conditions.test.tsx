@@ -31,7 +31,7 @@ const TEXT = `schemaVersion: 1
 name: a
 nodes:
   build:
-    type: claude.worker
+    type: agent.worker
   pr:
     type: tool.gh
     command: pr view

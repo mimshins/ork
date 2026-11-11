@@ -89,7 +89,7 @@ export const migrate = defineCommand({
   meta: {
     name: "migrate",
     description:
-      "Move an attached project into its repository's .ork/ (--agents: also its agents and skills); --from-agents drafts a workflow. Commits nothing",
+      "Move an attached project into its repository's .ork/ (--agents: also its agents and skills) and rewrites workflows that name renamed node types; --from-agents drafts a workflow. Commits nothing",
   },
   args: {
     agents: {

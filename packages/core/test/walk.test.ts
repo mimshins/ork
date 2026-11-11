@@ -52,7 +52,7 @@ const graphOf = (
     ].join("\n"),
   );
 
-const CLAUDE = "{ type: claude.worker, prompt: x }";
+const CLAUDE = "{ type: agent.worker, prompt: x }";
 const SHELL = '{ type: tool.shell, command: "true", allow: ["true"] }';
 const ROUTER = "{ type: control.router }";
 
@@ -205,7 +205,7 @@ describe("what a walk won't claim", () => {
   it("doesn't report what two fields together decide", async () => {
     const graph = graphOf(
       [
-        "a: { type: claude.worker, prompt: x, output: { schema: { kind: [one, two] } } }",
+        "a: { type: agent.worker, prompt: x, output: { schema: { kind: [one, two] } } }",
         `b: ${CLAUDE}`,
       ],
       ["{ from: a, to: b, when: \"!ok && kind == 'one'\" }"],
@@ -225,8 +225,8 @@ describe("what a walk won't claim", () => {
   it("doesn't report owned nodes, or what's behind them", async () => {
     const graph = graphOf(
       [
-        "lead: { type: claude.leader, prompt: x }",
-        "kid: { type: claude.worker, prompt: x, parent: lead }",
+        "lead: { type: agent.leader, prompt: x }",
+        "kid: { type: agent.worker, prompt: x, parent: lead }",
         `after: ${CLAUDE}`,
       ],
       ["kid -> after"],
@@ -240,8 +240,8 @@ describe("what a walk won't claim", () => {
     [
       "a condition reading an owned child",
       [
-        "lead: { type: claude.leader, prompt: x }",
-        "child: { type: claude.worker, prompt: x, parent: lead }",
+        "lead: { type: agent.leader, prompt: x }",
+        "child: { type: agent.worker, prompt: x, parent: lead }",
         `t: ${CLAUDE}`,
       ],
       ["{ from: lead, to: t, when: \"nodes.child.output.status == 'pass'\" }"],
@@ -249,8 +249,8 @@ describe("what a walk won't claim", () => {
     [
       "a loop that a child's report would end",
       [
-        "lead: { type: claude.leader, prompt: x }",
-        "child: { type: claude.worker, prompt: x, parent: lead }",
+        "lead: { type: agent.leader, prompt: x }",
+        "child: { type: agent.worker, prompt: x, parent: lead }",
         `t: ${CLAUDE}`,
       ],
       [
@@ -387,7 +387,7 @@ describe("what a walk won't claim", () => {
     [
       "a field a node declares called ok",
       [
-        "a: { type: claude.worker, prompt: x, output: { schema: { ok: boolean } } }",
+        "a: { type: agent.worker, prompt: x, output: { schema: { ok: boolean } } }",
         `b: ${CLAUDE}`,
       ],
       ['{ from: a, to: a, maxRounds: 2, when: "ok" }', "a -> b"],
@@ -415,7 +415,7 @@ describe("what a walk won't claim", () => {
       [
         `plan: ${CLAUDE}`,
         `impl: ${CLAUDE}`,
-        "review: { type: claude.worker, prompt: x, output: { schema: { verdict: [approved, rework, replan] } } }",
+        "review: { type: agent.worker, prompt: x, output: { schema: { verdict: [approved, rework, replan] } } }",
         `ship: ${CLAUDE}`,
       ],
       [
@@ -443,8 +443,8 @@ describe("what a walk won't claim", () => {
       "what an any join reports, which depends on what finished first",
       [
         "s: { type: control.split }",
-        "a: { type: claude.worker, prompt: x, output: { schema: { status: [pass] } } }",
-        "b: { type: claude.worker, prompt: x, output: { schema: { status: [done] } } }",
+        "a: { type: agent.worker, prompt: x, output: { schema: { status: [pass] } } }",
+        "b: { type: agent.worker, prompt: x, output: { schema: { status: [done] } } }",
         "j: { type: control.join, mode: any }",
         `x: ${CLAUDE}`,
       ],
@@ -458,7 +458,7 @@ describe("what a walk won't claim", () => {
     [
       "a failed node that still carries a value",
       [
-        "a: { type: claude.worker, prompt: x, output: { schema: { verdict: [keep, drop] } } }",
+        "a: { type: agent.worker, prompt: x, output: { schema: { verdict: [keep, drop] } } }",
         `x: ${ROUTER}`,
         `y: ${ROUTER}`,
         "j: { type: control.join, mode: n, n: 2 }",
@@ -486,7 +486,7 @@ describe("what a walk won't claim", () => {
     [
       "a null a list allows",
       [
-        "a: { type: claude.worker, prompt: x, output: { schema: { verdict: [yes, ~] } } }",
+        "a: { type: agent.worker, prompt: x, output: { schema: { verdict: [yes, ~] } } }",
         `h: ${CLAUDE}`,
       ],
       ['{ from: a, to: h, when: "verdict == null" }'],
@@ -502,7 +502,7 @@ describe("what a walk won't claim", () => {
     [
       "values cut at the 32 ways",
       [
-        "a: { type: claude.worker, prompt: x, output: { schema: { p: [a, b, c], q: [a, b, c], r: [a, b, c], s: [a, b, c] } } }",
+        "a: { type: agent.worker, prompt: x, output: { schema: { p: [a, b, c], q: [a, b, c], r: [a, b, c], s: [a, b, c] } } }",
         `t: ${CLAUDE}`,
         `u: ${CLAUDE}`,
       ],
@@ -562,7 +562,7 @@ describe("what a walk won't claim", () => {
       "x",
       [
         "s: { type: control.split }",
-        "a: { type: claude.worker, prompt: x, output: { schema: { status: [pass] } } }",
+        "a: { type: agent.worker, prompt: x, output: { schema: { status: [pass] } } }",
         `b: ${CLAUDE}`,
         "j: { type: control.join }",
         `x: ${CLAUDE}`,
@@ -577,7 +577,7 @@ describe("what a walk won't claim", () => {
       "a session that ends with no report",
       "x",
       [
-        "a: { type: claude.worker, prompt: x, output: { schema: { verdict: [yes, no] } } }",
+        "a: { type: agent.worker, prompt: x, output: { schema: { verdict: [yes, no] } } }",
         `x: ${CLAUDE}`,
       ],
       [
@@ -656,8 +656,8 @@ describe("what a walk won't claim", () => {
   it("ends what a live owner would answer, with no owner live", async () => {
     const graph = graphOf(
       [
-        "lead: { type: claude.leader, prompt: x }",
-        "kid: { type: claude.worker, prompt: x, parent: lead }",
+        "lead: { type: agent.leader, prompt: x }",
+        "kid: { type: agent.worker, prompt: x, parent: lead }",
       ],
       [
         "lead -> kid",
@@ -887,7 +887,7 @@ describe("how a walk goes", () => {
   it("asks a loop edge into a router what the router reads", async () => {
     const graph = graphOf(
       [
-        "a: { type: claude.worker, prompt: x, output: { schema: { status: [pass] } } }",
+        "a: { type: agent.worker, prompt: x, output: { schema: { status: [pass] } } }",
         `r: ${ROUTER}`,
         `b: ${CLAUDE}`,
         `out: ${CLAUDE}`,

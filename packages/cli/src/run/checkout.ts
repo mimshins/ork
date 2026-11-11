@@ -29,7 +29,7 @@ export const worktreeNodes = (workflow: Workflow): string[] =>
     .filter(
       ([, node]) =>
         isClaudeNode(node) &&
-        node.type !== "claude.subagent" &&
+        node.type !== "agent.subagent" &&
         (node.isolation ?? workflow.defaults?.isolation ?? "worktree") ===
           "worktree",
     )

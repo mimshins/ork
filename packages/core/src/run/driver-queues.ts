@@ -11,7 +11,7 @@ import type { AgentDriver } from "@krapht/ork-integrations";
 import type { Driver, Node, Workflow } from "@krapht/ork-schema";
 
 import { ancestorsOf, compileEdges } from "../graph/flow.ts";
-import { namedDriver, sessionDriver } from "./driver.ts";
+import { nodeDriver } from "./driver.ts";
 
 /** The part of a driver descriptor the queue check reads. */
 export type QueueDriver = Pick<AgentDriver, "id" | "onePerCheckout">;
@@ -31,7 +31,7 @@ export type DriverQueue = CheckoutContention & {
 };
 
 const isSession = (node: Node): boolean =>
-  node.type === "claude.leader" || node.type === "claude.worker";
+  node.type === "agent.leader" || node.type === "agent.worker";
 
 const isolationOf = (node: Node, workflow: Workflow): string =>
   ("isolation" in node ? node.isolation : undefined) ??
@@ -137,8 +137,8 @@ const messageOf = (driver: string, found: CheckoutContention): string => {
 
 /**
  * The checkouts where sessions on a one-per-checkout driver could queue: the
- * driver each node takes is as for `driverRefusals` (`override`, else what the
- * workflow names, else `ready`).
+ * driver each node takes is as for `driverRefusals` (its model's prefix, else
+ * `override`, else what the workflow names, else `ready`).
  */
 export const driverQueues = (
   workflow: Workflow,
@@ -151,12 +151,7 @@ export const driverQueues = (
       checkoutContention(workflow, id => {
         const node = workflow.nodes[id];
         return (
-          node !== undefined &&
-          sessionDriver({
-            override: choice.override,
-            named: namedDriver(node, workflow),
-            ready: choice.ready,
-          }) === driver.id
+          node !== undefined && nodeDriver(node, workflow, choice) === driver.id
         );
       }).map(found =>
         Object.assign({}, found, {

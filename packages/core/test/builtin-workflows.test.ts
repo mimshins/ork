@@ -138,7 +138,7 @@ const apply = async (fix: NodeOutput, choice = "keep") => {
     inputs: { item: "ab12", about: "AGENTS.md has no test command." },
     cwd: place.root,
     executors: {
-      "claude.worker": executor,
+      "agent.worker": executor,
       "tool.git": executor,
       "human.gate": executor,
     },

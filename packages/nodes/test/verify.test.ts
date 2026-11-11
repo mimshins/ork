@@ -73,7 +73,7 @@ const runVerified = async (given: {
   checks: readonly NodeResult[];
   verify?: Partial<Verify>;
   over?: Partial<ExecuteContext>;
-  fields?: Partial<Extract<Node, { type: "claude.worker" }>>;
+  fields?: Partial<Extract<Node, { type: "agent.worker" }>>;
   /** The whole check, for one that isn't the default command. */
   program?: Verify;
   steps?: NodeExecutor;
@@ -110,7 +110,7 @@ const runVerified = async (given: {
       }),
   });
   const node: Node = {
-    type: "claude.worker",
+    type: "agent.worker",
     prompt: "Fix",
     verify: given.program ?? { command: "pnpm test", ...given.verify },
     ...given.fields,

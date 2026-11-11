@@ -12,8 +12,8 @@ real session has forked a leader yet ([G25](../gaps.md#gaps))
 
 ## The setting
 
-`questions: owner | user` on a `claude.leader`, for the questions of the
-`claude.leader` and `claude.worker` nodes it owns, spawned instances included.
+`questions: owner | user` on an `agent.leader`, for the questions of the
+`agent.leader` and `agent.worker` nodes it owns, spawned instances included.
 `user`, the default, sends them to the person as before. A leader that sets it
 and owns no such node is the error `questions.no-children`.
 

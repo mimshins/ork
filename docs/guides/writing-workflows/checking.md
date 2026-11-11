@@ -5,7 +5,7 @@ _Part of [Writing workflows](../writing-workflows.md)._
 ## Values a condition can't have
 
 A condition that compares a field with a value its node can't report is an
-error, and the run doesn't start: `status == 'failed'` on a Claude node, whose
+error, and the run doesn't start: `status == 'failed'` on an agent node, whose
 statuses are `pass`, `changes_requested`, `done` and `fail`, or
 `choice == 'aprove'` on a gate offering `approve`. The message names the values
 it can have. A condition that reads nothing and is false, a loop with no

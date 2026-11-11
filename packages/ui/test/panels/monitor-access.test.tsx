@@ -18,8 +18,8 @@ import { treeNode } from "./monitor-fixtures.ts";
 
 const GRAPH: WorkflowGraph = {
   nodes: [
-    { id: "lead", type: "claude.leader" },
-    { id: "kid", type: "claude.worker", parent: "lead" },
+    { id: "lead", type: "agent.leader" },
+    { id: "kid", type: "agent.worker", parent: "lead" },
     { id: "kit", type: "workflow.call" },
   ],
   edges: [{ from: "lead", to: "kit", when: "ok" }],
@@ -30,7 +30,7 @@ const ROUTES: MonitorRoutes = {
   graph: GRAPH,
   tree: [
     treeNode("lead", {
-      type: "claude.leader",
+      type: "agent.leader",
       state: "running",
       children: [treeNode("kid", { parent: "lead", state: "running" })],
     }),

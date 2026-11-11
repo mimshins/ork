@@ -143,7 +143,7 @@ export const checkMcpServers = (
   const known = options.mcpServers;
   if (known === undefined) return [];
   return Object.entries(workflow.nodes).flatMap(([id, node]) => {
-    if (node.type !== "claude.leader" && node.type !== "claude.worker") {
+    if (node.type !== "agent.leader" && node.type !== "agent.worker") {
       return [];
     }
     const own = node.mcp !== undefined;

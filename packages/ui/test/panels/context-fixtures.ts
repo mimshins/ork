@@ -9,7 +9,7 @@ import type { Explanation, NodeContextAnswer } from "@krapht/ork-server/client";
 
 export const EXPLANATION: Explanation = {
   node: "fix",
-  type: "claude.worker",
+  type: "agent.worker",
   workflow: "review",
   agent: {
     name: "reviewer",

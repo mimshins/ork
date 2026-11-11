@@ -60,18 +60,18 @@ inputs:
     required: true
     description: What to do.
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
   isolation: worktree
 limits:
   budgetUsd: 5
 nodes:
   lead:
-    type: claude.leader
+    type: agent.leader
     prompt: "Plan this task and delegate it to your worker: {{inputs.task}}"
-    model: opus
+    model: claude-code.opus
     maxWorkers: 2
   worker:
-    type: claude.worker
+    type: agent.worker
     parent: lead
     prompt: Do the part of the task your owner gives you, then report.
   approve:
@@ -122,7 +122,7 @@ Before you start, two things to know:
 - **The agents ask before they edit a file or run a command.** Each prompt shows
   the tool and its input: type `y` to allow it. To stop being asked, allow those
   tools in the workflow (`tools.allow`, see
-  [writing workflows](../guides/writing-workflows.md#claude-nodes)) or in your
+  [writing workflows](../guides/writing-workflows.md#agent-nodes)) or in your
   project's `.claude/settings.json`.
 - **A run costs money**, billed to your API key or cloud account, or counted
   against your Claude plan. The summary prints it; `ork usage` adds them up

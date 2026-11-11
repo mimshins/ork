@@ -37,7 +37,7 @@ Or take the list from an earlier node, with a cap:
 ```yaml
 nodes:
   plan:
-    type: claude.worker
+    type: agent.worker
     prompt: "Split this goal into at most 6 independent tasks: {{inputs.goal}}"
     isolation: readonly
     output:
@@ -47,7 +47,7 @@ nodes:
             title: string
             detail: string
   build:
-    type: claude.worker
+    type: agent.worker
     prompt: "Task {{index}}: {{item.title}}. {{item.detail}}"
     isolation: worktree
     forEach:
@@ -93,19 +93,19 @@ next character, so `\n` becomes `n`. For shell syntax, use `script:`.
 
 ## A model for each item
 
-A Claude node's `model` and `effort` can read the item, so each item runs on its
+An agent node's `model` and `effort` can read the item, so each item runs on its
 own model:
 
 ```yaml
 nodes:
   review:
-    type: claude.worker
+    type: agent.worker
     prompt: "Review for {{item.concern}}."
     model: "{{item.model}}"
     forEach:
       items:
-        - { concern: correctness, model: opus }
-        - { concern: tests, model: sonnet }
+        - { concern: correctness, model: claude-code.opus }
+        - { concern: tests, model: claude-code.sonnet }
 ```
 
 Only `{{item.…}}` works there, and only on a node with `forEach`; `ork validate`

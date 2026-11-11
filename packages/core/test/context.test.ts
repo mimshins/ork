@@ -75,7 +75,7 @@ const LAYERED = [
   "  context: [./context/style.md]",
   "nodes:",
   "  fix:",
-  "    type: claude.worker",
+  "    type: agent.worker",
   "    skills: [./node-skills/gamma]",
   "    context: [./context/fix.md]",
 ];
@@ -105,7 +105,7 @@ describe("the layer resolver", () => {
   it("loads Ork's built-in skills by name, written into the run's plugin", () => {
     const { stack, root } = resolve([
       "nodes:",
-      "  fix: { type: claude.worker, skills: [ork:review, ork:report] }",
+      "  fix: { type: agent.worker, skills: [ork:review, ork:report] }",
     ]);
     const builtins = stack.skills.filter(s => s.dir.startsWith("ork:"));
     expect(builtins.map(s => [s.layer, s.name])).toEqual([
@@ -155,7 +155,7 @@ describe("the layer resolver", () => {
       "layers:",
       "  project: { skills: { allow: [alpha, missing] } }",
       "nodes:",
-      "  fix: { type: claude.worker }",
+      "  fix: { type: agent.worker }",
     ]);
     expect(allow.stack.projectOff).toEqual(["beta", "gamma"]);
     expect(
@@ -165,7 +165,7 @@ describe("the layer resolver", () => {
       "layers:",
       "  project: { skills: ignore, instructions: ignore }",
       "nodes:",
-      "  fix: { type: claude.worker }",
+      "  fix: { type: agent.worker }",
     ]);
     expect(ignore.stack.projectOff).toEqual(["alpha", "beta", "gamma"]);
     // With the project's alpha ignored, the user's alpha is live again.
@@ -191,7 +191,7 @@ describe("the layer resolver", () => {
       "  skills: [review, ork:nope, ./skills/none, ../../../outside, ./skills/beta, ./skills/beta]",
       "  context: [./context/missing.md]",
       "nodes:",
-      "  fix: { type: claude.worker }",
+      "  fix: { type: agent.worker }",
     ]);
     expect(
       stack.diagnostics.map(d => `${d.code} ${d.path.join(".")}: ${d.message}`),
@@ -211,8 +211,8 @@ describe("the layer resolver", () => {
       "layers:",
       "  context: [./context/missing.md]",
       "nodes:",
-      "  a: { type: claude.worker }",
-      "  b: { type: claude.worker }",
+      "  a: { type: agent.worker }",
+      "  b: { type: agent.worker }",
     ]);
     const found = contextDiagnostics(workflow, {
       workflowDir: f.workflowDir,
@@ -236,8 +236,8 @@ describe("a planned session", () => {
     const f = fixture();
     const workflow = workflowOf([
       "nodes:",
-      "  lead: { type: claude.leader }",
-      "  fix: { type: claude.worker }",
+      "  lead: { type: agent.leader }",
+      "  fix: { type: agent.worker }",
     ]);
     const planned = (id: string) =>
       plannedSpec(workflow, id, {
@@ -303,7 +303,7 @@ describe("a planned session", () => {
     const plan = planNodeSession(
       workflowOf([
         "nodes:",
-        "  fix: { type: claude.worker, skills: [ork:nope] }",
+        "  fix: { type: agent.worker, skills: [ork:nope] }",
       ]),
       "fix",
       {

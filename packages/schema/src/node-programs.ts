@@ -31,7 +31,7 @@ export const beforeOf = (
   node: Node,
   defaults: { before?: Step | undefined } | undefined,
 ): Step | undefined =>
-  node.type === "claude.leader" || node.type === "claude.worker"
+  node.type === "agent.leader" || node.type === "agent.worker"
     ? (node.before ?? defaults?.before)
     : undefined;
 

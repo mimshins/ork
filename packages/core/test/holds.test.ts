@@ -48,8 +48,8 @@ const twoWorkers = (chained: boolean): CompiledGraph =>
       "schemaVersion: 1",
       "name: t",
       "nodes:",
-      "  a: { type: claude.worker, prompt: a }",
-      "  b: { type: claude.worker, prompt: b }",
+      "  a: { type: agent.worker, prompt: a }",
+      "  b: { type: agent.worker, prompt: b }",
       ...(chained ? ["edges:", "  - from: a", "    to: b"] : ["edges: []"]),
     ].join("\n"),
   );
@@ -104,7 +104,7 @@ const start = (graph: CompiledGraph, executor: NodeExecutor) => {
     graph,
     inputs: {},
     cwd: mkdtempSync(path.join(tmpdir(), "ork-hold-")),
-    executors: { "claude.worker": executor },
+    executors: { "agent.worker": executor },
     human: NO_HUMAN,
     onEvent: event => {
       events.push(event);
@@ -185,9 +185,9 @@ describe("two activations released together", () => {
         "schemaVersion: 1",
         "name: t",
         "nodes:",
-        "  a: { type: claude.worker, prompt: a }",
-        "  b: { type: claude.worker, prompt: b }",
-        "  c: { type: claude.worker, prompt: c }",
+        "  a: { type: agent.worker, prompt: a }",
+        "  b: { type: agent.worker, prompt: b }",
+        "  c: { type: agent.worker, prompt: c }",
         "edges:",
         "  - { from: a, to: c }",
         "  - { from: b, to: c }",
@@ -322,14 +322,14 @@ const liveStore = () => {
     workflow: "t",
     entries: ["a"],
     nodes: [
-      { id: "a", type: "claude.worker" },
-      { id: "b", type: "claude.worker" },
+      { id: "a", type: "agent.worker" },
+      { id: "b", type: "agent.worker" },
     ],
   });
   store.append("r1", {
     type: "node.started",
     id: "a",
-    nodeType: "claude.worker",
+    nodeType: "agent.worker",
     round: 1,
   });
   return { store, run, home: mkdtempSync(path.join(tmpdir(), "ork-hold-")) };

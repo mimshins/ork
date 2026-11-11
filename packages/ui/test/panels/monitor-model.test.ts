@@ -111,7 +111,7 @@ describe("the Monitor's model", () => {
     const input = graphInputOf(
       {
         nodes: [
-          { id: "lead", type: "claude.leader" },
+          { id: "lead", type: "agent.leader" },
           { id: "after", type: "tool.shell" },
         ],
         edges: [],

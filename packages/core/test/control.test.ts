@@ -332,7 +332,7 @@ describe("commands and the socket", () => {
     const started: RunEvent = {
       type: "node.started",
       id: "a",
-      nodeType: "claude.worker",
+      nodeType: "agent.worker",
       round: 1,
     };
     store.append("r1", started);

@@ -94,7 +94,7 @@ heavy:
   - vitest run
   - npx vitest run
 defaults:
-  model: sonnet
+  model: claude-code.sonnet
   effort: high
   budgetUsd: 2
   maxTurns: 60

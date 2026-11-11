@@ -26,7 +26,7 @@ contract suite and Ork's MCP tools; the Claude session and the model providers.
 The bottom row is `ork watch`, from outside any run: the command, the watcher
 and its guards, accepting a trigger, and the trigger files. Rows 3–5 of "Your
 machine" stay empty as a corridor for the engine–runtime edges. Journeys:
-validating a file, one Claude node from start to report, a workflow calling a
+validating a file, one agent node from start to report, a workflow calling a
 workflow, and a trigger starting a run.
 
 ### `lifecycle`

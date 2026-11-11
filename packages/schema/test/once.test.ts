@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { NodeSchema } from "../src/index.ts";
 
 const worker = (once: unknown) => ({
-  type: "claude.worker",
+  type: "agent.worker",
   verify: { command: "pnpm check", once },
 });
 const shell = (once: unknown) => ({
@@ -33,7 +33,7 @@ describe("once", () => {
 
   it("is not taken by before:", () => {
     const node = {
-      type: "claude.worker",
+      type: "agent.worker",
       before: { command: "x", once: true },
     };
     expect(NodeSchema.safeParse(node).success).toBe(false);

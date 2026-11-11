@@ -52,15 +52,15 @@ type Kind = (typeof KINDS)[number];
 
 const nodeOf = (kind: Kind, random: Random): string => {
   const shapes: Record<Kind, readonly string[]> = {
-    claude: ["{ type: claude.worker, prompt: x }"],
+    claude: ["{ type: agent.worker, prompt: x }"],
     declaring: [
-      "{ type: claude.worker, prompt: x, output: { schema: { status: [pass, fail], verdict: [a, b] } } }",
+      "{ type: agent.worker, prompt: x, output: { schema: { status: [pass, fail], verdict: [a, b] } } }",
     ],
     tool: ['{ type: tool.shell, command: "true", allow: ["true"] }'],
     fanned: [
-      "{ type: claude.worker, prompt: x, forEach: { items: [a, b] } }",
-      "{ type: claude.worker, prompt: x, forEach: { items: [a, b], onFailure: stop } }",
-      "{ type: claude.worker, prompt: x, forEach: { items: [a, b], maxParallel: 1, onFailure: stop } }",
+      "{ type: agent.worker, prompt: x, forEach: { items: [a, b] } }",
+      "{ type: agent.worker, prompt: x, forEach: { items: [a, b], onFailure: stop } }",
+      "{ type: agent.worker, prompt: x, forEach: { items: [a, b], maxParallel: 1, onFailure: stop } }",
       '{ type: tool.shell, command: "true", allow: ["true"], forEach: { items: [a] } }',
     ],
     gate: ["{ type: human.gate, question: q, options: [a, b] }"],

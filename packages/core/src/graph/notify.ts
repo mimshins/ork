@@ -23,7 +23,7 @@ export type CompiledRule = {
   bodySource?: string;
 };
 
-const RECEIVERS = new Set(["claude.leader", "claude.worker"]);
+const RECEIVERS = new Set(["agent.leader", "agent.worker"]);
 
 export const compileRules = (
   workflow: Workflow,
@@ -59,7 +59,7 @@ export const compileRules = (
         diagnostics.push(
           error(
             "notify.target",
-            `\`${rule.to}\`: a rule goes to a \`claude.leader\` or \`claude.worker\`, which has a session to read it`,
+            `\`${rule.to}\`: a rule goes to an \`agent.leader\` or \`agent.worker\`, which has a session to read it`,
             [...path, "to"],
           ),
         );

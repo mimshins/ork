@@ -14,7 +14,7 @@ describe("timeout", () => {
   it("is taken by tool nodes and Claude nodes", () => {
     expect(NodeSchema.safeParse(shell("5m")).success).toBe(true);
     expect(
-      NodeSchema.safeParse({ type: "claude.worker", timeout: "2h" }).success,
+      NodeSchema.safeParse({ type: "agent.worker", timeout: "2h" }).success,
     ).toBe(true);
   });
 

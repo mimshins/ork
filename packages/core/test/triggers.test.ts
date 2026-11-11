@@ -449,7 +449,7 @@ const reading = (tools: string): Workflow =>
     "  issue: { type: string, required: true }",
     "nodes:",
     "  a:",
-    "    type: claude.worker",
+    "    type: agent.worker",
     '    prompt: "Triage {{inputs.issue}}"',
     ...(tools === "" ? [] : [`    tools: ${tools}`]),
     "limits: { budgetUsd: 1 }",

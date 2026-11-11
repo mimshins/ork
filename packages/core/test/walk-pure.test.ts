@@ -126,7 +126,7 @@ nodes:
     watch: { every: 30s, until: "json.state == 'go'", timeout: 1h }
   mcp: { type: mcp.call, server: s, tool: t }
   called: { type: workflow.call, workflow: other }
-  worker: { type: claude.worker, prompt: x }
+  worker: { type: agent.worker, prompt: x }
   ask: { type: human.gate, question: q, options: [a, b] }
 edges:
   - sh -> git

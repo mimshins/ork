@@ -153,14 +153,14 @@ export const canDeclareList = (
   type: string,
   canDeclare: boolean,
   hasOutput: boolean,
-): boolean => hasOutput && (canDeclare || type.startsWith("claude."));
+): boolean => hasOutput && (canDeclare || type.startsWith("agent."));
 
 /**
  * What a node's list field is called in a condition: tools put theirs under
  * `json`.
  */
 export const listField = (type: string, name: string): string =>
-  type.startsWith("claude.") ? name : `json.${name}`;
+  type.startsWith("agent.") ? name : `json.${name}`;
 
 /** The keys the entries of a static list all have, as `{{item.<key>}}`. */
 const sharedKeys = (items: unknown): readonly string[] => {
