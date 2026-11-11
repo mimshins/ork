@@ -43,6 +43,10 @@ export default defineConfig({
       {
         test: {
           name: "ui",
+          // The Builder's tests drive a whole form: 2-3 s alone, past the 5 s
+          // default when a run's check shares the machine with another's (at
+          // lower priority, on half the cores).
+          testTimeout: 15_000,
           include: ["packages/ui/test/**/*.test.{ts,tsx}"],
           environment: "jsdom",
         },
