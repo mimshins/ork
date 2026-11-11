@@ -1107,6 +1107,19 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "smooth-runs",
+        title: "Smooth runs: less CPU, and a machine that stays cool",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). Projects name their `heavy` commands: a node with `verify:` may not run them in its session, and each takes one of 2 machine-wide slots (`ORK_HEAVY_SLOTS`) around Ork's tool commands and a Claude Code session's Bash calls, with the wait shown in `ork ps`, the logs and the UI. Sessions and tool commands start at a lower priority (`priority: low` by default). Builders verify with `pnpm check:changed`, vitest uses half the cores inside a run, the overview stream stopped re-reading every event, and `ork usage --by node` shows each tool command's CPU. Left: sessions' own CPU, OpenCode's and Command Code's Bash calls, and a re-measured build (L256 to L261).",
+        docs: [
+          "specs/machine.md",
+          "docs/guides/running-workflows/several-runs.md",
+          "decisions/ADR-080-machine-slots-and-lower-priority.md",
+          "specs/gaps/machine-limits.md",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",
@@ -1213,4 +1226,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-10";
+export const ROADMAP_UPDATED = "2026-11-11";

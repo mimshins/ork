@@ -165,12 +165,20 @@ export const openStore = (
   const eventsAfter = db.prepare(
     "SELECT seq, at, data FROM events WHERE run_id = ? AND seq > ? ORDER BY seq",
   );
+  const controlEvents = db.prepare(
+    "SELECT seq, at, data FROM events WHERE run_id = ? AND type IN ('run.command', 'run.started', 'run.finished') ORDER BY seq",
+  );
   const runNodes = db.prepare(
     "SELECT node FROM events WHERE run_id = ? AND node IS NOT NULL GROUP BY node ORDER BY MIN(seq)",
   );
 
-  const { insertFeedback, recordUsage, recordPlanLimit, ...queries } =
-    storeQueries(db);
+  const {
+    insertFeedback,
+    recordUsage,
+    recordToolCpu,
+    recordPlanLimit,
+    ...queries
+  } = storeQueries(db);
 
   return {
     ...queries,
@@ -228,6 +236,13 @@ export const openStore = (
         ) {
           recordUsage(runId);
         }
+        if (
+          event.type === "node.event" &&
+          event.event.type === "tool.result" &&
+          event.event.cpu !== undefined
+        ) {
+          recordToolCpu(runId);
+        }
         if (event.type === "node.event" && event.event.type === "plan.limit") {
           recordPlanLimit(event.event, at);
         }
@@ -262,6 +277,13 @@ export const openStore = (
     },
     events: (runId, after = 0) =>
       eventsAfter.all(runId, after).map(r => ({
+        runId,
+        seq: Number(r["seq"]),
+        at: text(r, "at"),
+        event: eventOf(text(r, "data")),
+      })),
+    controlEvents: runId =>
+      controlEvents.all(runId).map(r => ({
         runId,
         seq: Number(r["seq"]),
         at: text(r, "at"),

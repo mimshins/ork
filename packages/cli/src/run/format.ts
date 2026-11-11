@@ -4,7 +4,12 @@
  *   `format-tool.ts`'s and the run summary `format-result.ts`'s.
  */
 
-import type { AnsweredBy, RunEvent, RuntimeEvent } from "@krapht/ork-core";
+import {
+  type AnsweredBy,
+  type RunEvent,
+  type RuntimeEvent,
+  slotWaitLine,
+} from "@krapht/ork-core";
 
 import { chip, CHIP_LABELS, nodeChip } from "../term/chips.ts";
 import { widthOf } from "../term/layout.ts";
@@ -238,6 +243,14 @@ export const formatRunEvent = (
   }
   if (event.type === "node.released") {
     return [`${tag(event.id)} ${style("dim", "▸ continues")}`];
+  }
+  if (event.type === "slot.waiting") {
+    return [
+      `${tag(event.id)} ${style("yellow", `‖ ${slotWaitLine(event.holders)}`)}`,
+    ];
+  }
+  if (event.type === "slot.taken") {
+    return [`${tag(event.id)} ${style("dim", "▸ got a check slot")}`];
   }
   if (event.type === "each.listed") {
     const round = event.round > 1 ? ` (round ${String(event.round)})` : "";

@@ -15,6 +15,7 @@ import type {
   NoteTaker,
   OwnerPort,
 } from "./human.ts";
+import type { CpuTime, MachinePort } from "./machine-port.ts";
 import type {
   InboxMessage,
   Mailbox,
@@ -162,7 +163,13 @@ export type RuntimeEvent = (
       name: string;
       input: Record<string, unknown>;
     }
-  | { type: "tool.result"; id: string; isError: boolean }
+  | {
+      type: "tool.result";
+      id: string;
+      isError: boolean;
+      /** For an Ork tool command: the CPU it used, its children's included. */
+      cpu?: CpuTime;
+    }
   | ({ type: "plan.limit" } & PlanReport)
   | {
       type: "session.finished";
@@ -272,6 +279,8 @@ export type SessionPorts = {
   feedback?: FeedbackPort;
   /** What the workflow sent back to the node, whole, when its note was cut. */
   input?: string;
+  /** Only inside a run: its priority, and slots for heavy Bash calls. */
+  machine?: MachinePort;
 };
 
 export type AgentRuntime = {

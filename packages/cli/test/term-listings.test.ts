@@ -11,6 +11,7 @@ import { stripVTControlCharacters } from "node:util";
 import {
   type FeedbackItem,
   type ProjectRecord,
+  type RunEvent,
   type RunRecord,
   usageReport,
 } from "@krapht/ork-core";
@@ -22,6 +23,7 @@ import {
   formatProjects,
   formatReport,
   formatRuns,
+  listedStatus,
 } from "../src/index.ts";
 import { formatLimits, formatUsage } from "../src/runs/usage.ts";
 import { statusChip } from "../src/term/chips.ts";
@@ -37,6 +39,10 @@ const bare = (lines: readonly string[]): string[] =>
   lines.map(line => stripVTControlCharacters(line));
 
 const statusOf = (r: RunRecord): string => r.status;
+const statusWith =
+  (events: RunEvent[]) =>
+  (r: RunRecord): string =>
+    listedStatus(r, events);
 
 const project = (id: string, root: string): ProjectRecord => ({
   id,
@@ -103,6 +109,20 @@ describe("ork ps", () => {
     run({}),
     run({ id: "b1", status: "budget_exhausted", parent: "509da722" }),
   ];
+
+  it("reads a running run with a command waiting for a slot as waiting", () => {
+    const live = run({ status: "running", pid: process.pid });
+    const waiting: RunEvent[] = [
+      { type: "slot.waiting", id: "check", holders: ["a1/build"] },
+    ];
+    const taken: RunEvent[] = [...waiting, { type: "slot.taken", id: "check" }];
+    expect(
+      formatRuns([live], false, NOW, statusWith(waiting), plainTerm).join("\n"),
+    ).toContain("waiting for slot");
+    expect(
+      formatRuns([live], false, NOW, statusWith(taken), plainTerm).join("\n"),
+    ).not.toContain("waiting for slot");
+  });
 
   it("keeps today's table plain, with no escape codes", () => {
     const lines = formatRuns(runs, false, NOW, statusOf, plainTerm);

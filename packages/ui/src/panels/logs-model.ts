@@ -176,10 +176,14 @@ export const lineOf = (event: Event): string => {
     case "feedback.recorded": {
       return oneLine(event.feedback.title);
     }
+    case "slot.waiting": {
+      return `held by ${event.holders.join(", ")}`;
+    }
     case "message.read": {
       return `${String(event.ids.length)} messages`;
     }
     case "decision.withdrawn":
+    case "slot.taken":
     case "node.held":
     case "node.released":
     case "node.skipped":

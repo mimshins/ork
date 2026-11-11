@@ -95,10 +95,26 @@ const TITLES: Record<UsageDimension, string> = {
   project: "By project",
 };
 
-const usageTable = (term: Term, groups: readonly UsageGroup[]): string[] => {
-  return table(
+/** Seconds of CPU, `12.3 s`; empty with none. */
+const cpuText = (ms: number): string =>
+  ms === 0 ? "" : `${(ms / 1000).toFixed(1)} s`;
+
+/** `cpu`: a column for the CPU Ork's tool commands used. */
+const usageTable = (
+  term: Term,
+  groups: readonly UsageGroup[],
+  cpu = false,
+): string[] =>
+  table(
     term,
-    [{ flex: true }, { align: "right" }, { align: "right" }, {}, {}],
+    [
+      { flex: true },
+      { align: "right" },
+      { align: "right" },
+      {},
+      {},
+      ...(cpu ? [{ align: "right" as const }] : []),
+    ],
     [
       [
         header(""),
@@ -106,6 +122,7 @@ const usageTable = (term: Term, groups: readonly UsageGroup[]): string[] => {
         header("SESSIONS"),
         header("TOKENS"),
         header("CACHE"),
+        ...(cpu ? [header("TOOL CPU")] : []),
       ],
       ...groups.map(group => [
         { text: group.key },
@@ -115,11 +132,11 @@ const usageTable = (term: Term, groups: readonly UsageGroup[]): string[] => {
           text: `${tokens(group.inputTokens + group.cacheReadTokens + group.cacheWriteTokens)} in / ${tokens(group.outputTokens)} out`,
         },
         { text: percent(group.cacheHitRate) },
+        ...(cpu ? [{ text: cpuText(group.cpuMs) }] : []),
       ]),
     ],
     "  ",
   );
-};
 
 /** What `ork usage` prints without `--by`. */
 const OVERVIEW: readonly UsageDimension[] = [
@@ -195,7 +212,7 @@ export const formatUsage = (
     lines.push(
       "",
       style("bold", TITLES[dimension]),
-      ...usageTable(term, shown),
+      ...usageTable(term, shown, dimension === "node"),
     );
     if (shown.length < groups.length) {
       lines.push(

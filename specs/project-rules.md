@@ -158,6 +158,18 @@ The opt-in adds no event and isn't stored with a run: it is read each time a
 workflow is checked, a resume included, on either driver alike. Nothing promotes
 or removes an experiment yet ([G28](./gaps.md#gaps)).
 
+## Machine rules
+
+```yaml
+heavy: [pnpm check, pnpm test, vitest run] # the full-suite commands
+priority: low # low (the default) | normal
+```
+
+`heavy` lists the project's full-suite commands: a node with `verify:` may not
+run them in its session, and each takes a machine-wide slot. `priority` is the
+OS priority of what a run starts. Both are the project's alone: a workflow's
+`rules:` doesn't carry them ([machine](./machine.md)).
+
 ## Triggers
 
 What starts a run with nobody there isn't a rule: it's in `triggers.yaml`,

@@ -6,6 +6,7 @@
 import type { DatabaseSync } from "node:sqlite";
 
 import { inTransaction } from "./rows.ts";
+import { backfillToolCpu } from "./tool-cpu.ts";
 import { backfillUsage } from "./usage.ts";
 
 export const MIGRATIONS: readonly (string | ((db: DatabaseSync) => void))[] = [
@@ -224,6 +225,23 @@ export const MIGRATIONS: readonly (string | ((db: DatabaseSync) => void))[] = [
   `ALTER TABLE decisions ADD COLUMN owner TEXT;`,
   // 18: what a gate gives to read beside its question (ADR-068).
   `ALTER TABLE decisions ADD COLUMN document TEXT;`,
+  // 19: the CPU each of Ork's tool commands used, filled from the runs so far.
+  db => {
+    db.exec(`CREATE TABLE tool_cpu (
+       run_id TEXT NOT NULL,
+       seq INTEGER NOT NULL,
+       at TEXT NOT NULL,
+       project TEXT NOT NULL,
+       workflow TEXT NOT NULL,
+       node TEXT NOT NULL,
+       template TEXT,
+       user_ms INTEGER NOT NULL,
+       system_ms INTEGER NOT NULL,
+       PRIMARY KEY (run_id, seq)
+     ) WITHOUT ROWID;
+     CREATE INDEX tool_cpu_by_time ON tool_cpu (at);`);
+    backfillToolCpu(db);
+  },
 ];
 
 const versionOf = (db: DatabaseSync): number =>

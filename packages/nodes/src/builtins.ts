@@ -12,7 +12,8 @@ import { type ClaudeExecutorOptions, claudeExecutor } from "./claude.ts";
 import { gateExecutor } from "./gate.ts";
 import { mcpCallExecutor } from "./mcp-call.ts";
 import { spawnTool } from "./spawn.ts";
-import { toolExecutor, type ToolRunner } from "./tools.ts";
+import type { ToolRunner } from "./tool-command.ts";
+import { toolExecutor } from "./tools.ts";
 
 /** Every built-in node type that does work; control nodes are the scheduler's. */
 export const builtinExecutors = (

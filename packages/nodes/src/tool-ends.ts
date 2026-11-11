@@ -15,7 +15,7 @@ import {
   type NodeResult,
 } from "@krapht/ork-core";
 
-import type { ToolRun } from "./tools.ts";
+import type { ToolRun } from "./tool-command.ts";
 
 /** A node that could not run its command: its own definition is wrong. */
 export const failed = (

@@ -8,7 +8,7 @@
 import { setTimeout as sleep } from "node:timers/promises";
 
 import { serveRun, socketPath } from "@krapht/ork-core";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   finished,
@@ -147,5 +147,58 @@ describe("the overview stream", () => {
       .toEqual(["runs", "decisions", "version"]);
     expect(stream.seen[0]?.data).toMatchObject([{ id: "r5" }]);
     expect(stream.seen[1]?.data).toEqual([]);
+  });
+
+  it("shows paused and live runs without reading their events", async () => {
+    const server = await serve();
+    const ids = ["r6", "r7", "r8"];
+    for (const id of ids) {
+      liveRun(server, id);
+      for (let i = 0; i < 3000; i++) {
+        server.store.append(id, nodeStarted(`n${i}`));
+      }
+    }
+    server.store.append("r7", { type: "run.command", command: "pause" });
+    server.store.append("r8", {
+      type: "run.command",
+      command: "pause",
+      node: "n1",
+    });
+    const read = vi.spyOn(server.store, "events");
+    const stream = await open(server, "/api/stream");
+    await expect.poll(() => stream.seen.map(e => e.event)).toContain("runs");
+    await sleep(1200);
+    expect(read).not.toHaveBeenCalled();
+    expect(stream.seen[0]?.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "r6",
+          live: "running",
+          paused: { run: false, nodes: [] },
+        }),
+        expect.objectContaining({
+          id: "r7",
+          live: "paused",
+          paused: { run: true, nodes: [] },
+        }),
+        expect.objectContaining({
+          id: "r8",
+          live: "running",
+          paused: { run: false, nodes: ["n1"] },
+        }),
+      ]),
+    );
+  });
+
+  it("reads a run as live again once it is continued", async () => {
+    const server = await serve();
+    liveRun(server, "r9");
+    server.store.append("r9", { type: "run.command", command: "pause" });
+    server.store.append("r9", { type: "run.command", command: "continue" });
+    const stream = await open(server, "/api/stream");
+    await expect.poll(() => stream.seen.map(e => e.event)).toContain("runs");
+    expect(stream.seen[0]?.data).toMatchObject([
+      { id: "r9", live: "running", paused: { run: false, nodes: [] } },
+    ]);
   });
 });

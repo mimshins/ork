@@ -92,7 +92,13 @@ const executeOne = async (
       })
     ).catch((error: unknown) => thrown(error, "invalid_node"));
     if ("ok" in place) return place;
-    const context = nodeContext(contextDeps, activation, place.cwd, round);
+    const context = nodeContext(
+      contextDeps,
+      activation,
+      place.cwd,
+      round,
+      clock,
+    );
     const once = (
       signal: AbortSignal,
       emit: ExecuteContext["emit"],

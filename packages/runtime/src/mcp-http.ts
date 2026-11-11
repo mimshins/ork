@@ -3,7 +3,8 @@
  *   `claude` CLI driver. It answers with plain JSON (no SSE stream), which the
  *   transport allows, and implements only what Ork needs: `initialize`, `ping`,
  *   `tools/list` and `tools/call`. Beside it, `/hold` answers the session's
- *   `PreToolUse` HTTP hook, which waits while the node is paused (ADR-041).
+ *   `PreToolUse` HTTP hook, which waits while the node is paused (ADR-041) or
+ *   for a heavy command's slot, and its `PostToolUse` hook, which frees it.
  */
 
 import { randomBytes, timingSafeEqual } from "node:crypto";
@@ -25,9 +26,13 @@ export type OrkMcpEndpoint = {
   close: () => Promise<void>;
 };
 
-/** Answers a held tool call: the hook's JSON output, once it may go on. */
+/**
+ * Answers a hook on a tool call, before or after it, given the hook's input:
+ * its JSON output, once the call may go on.
+ */
 export type HoldHandler = (
   signal: AbortSignal,
+  input: unknown,
 ) => Promise<Record<string, unknown>>;
 
 const PATH = "/mcp";
@@ -141,15 +146,22 @@ const serveHold = async (
     respond(res, 405);
     return;
   }
-  if ((await readBody(req)) === null) {
+  const body = await readBody(req);
+  if (body === null) {
     respond(res, 413);
     return;
+  }
+  let input: unknown;
+  try {
+    input = JSON.parse(body);
+  } catch {
+    input = undefined;
   }
   const gone = new AbortController();
   res.once("close", () => {
     gone.abort();
   });
-  const output = await hold(gone.signal);
+  const output = await hold(gone.signal, input);
   if (!gone.signal.aborted) respond(res, 200, output);
 };
 

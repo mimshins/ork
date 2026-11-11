@@ -351,6 +351,22 @@
       "items": {
         "type": "string"
       }
+    },
+    "heavy": {
+      "description": "The project's full-suite commands, as Bash permission patterns without Bash(…), e.g. pnpm check. A node with verify: may not run them in its session; vitest run does not cover vitest run <files>.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "priority": {
+      "description": "Default: low, sessions and tool commands start at a lower OS priority. normal: as the ork process.",
+      "type": "string",
+      "enum": [
+        "low",
+        "normal"
+      ]
     }
   },
   "required": [

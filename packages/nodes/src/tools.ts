@@ -18,9 +18,9 @@ import {
   runScope,
 } from "@krapht/ork-core";
 import { integrationFor } from "@krapht/ork-integrations";
-import { isToolNode, type ToolNode, markValue } from "@krapht/ork-schema";
+import { isToolNode, markValue, type ToolNode } from "@krapht/ork-schema";
 
-import { commandLineOf, tokenize } from "./tool-command.ts";
+import { commandLineOf, tokenize, type ToolRunner } from "./tool-command.ts";
 import { exitEnd, failed, invalidOutput } from "./tool-ends.ts";
 import {
   type Environ,
@@ -42,20 +42,6 @@ import {
 } from "./tool-output.ts";
 import { scrubberOf } from "./tool-scrub.ts";
 import { prepareStateFile } from "./tool-state.ts";
-
-export type ToolRun = { exitCode: number; stdout: string; stderr: string };
-
-/** Starts a program with arguments, never through a shell. */
-export type ToolRunner = (
-  program: string,
-  args: readonly string[],
-  options: {
-    cwd: string;
-    signal: AbortSignal;
-    /** Set for this program, over what it inherits. */
-    env?: Readonly<Record<string, string>>;
-  },
-) => Promise<ToolRun>;
 
 /** How much of stdout and stderr a node's output keeps. */
 export const OUTPUT_LIMIT = 64 * 1024;
@@ -202,6 +188,11 @@ export const toolExecutor =
         : { [STATE_ENV]: prepareStateFile(context.runDir, context.id) }),
     };
     const names = Object.keys(nodeEnv.values);
+    // A heavy command waits for a machine-wide slot first; its timeout waits too.
+    const release = await context.machine?.slot(
+      [command.program, ...command.args].join(" "),
+      context.signal,
+    );
     context.emit({
       type: "tool.called",
       id: context.id,
@@ -226,11 +217,17 @@ export const toolExecutor =
             context.round,
             node.script,
           );
+    const priority = context.machine?.priority;
     const raw = await runner(
       command.program,
       scriptFile === undefined ? command.args : [...command.args, scriptFile],
-      { cwd, signal: context.signal, env },
-    );
+      {
+        cwd,
+        signal: context.signal,
+        env,
+        ...(priority === undefined ? {} : { priority }),
+      },
+    ).finally(() => release?.());
     if (scriptFile !== undefined) removeOutputFile(scriptFile);
     const run = {
       exitCode: raw.exitCode,
@@ -277,6 +274,7 @@ export const toolExecutor =
       type: "tool.result",
       id: context.id,
       isError: run.exitCode !== 0 || json?.ok === false || declared !== null,
+      ...(raw.cpu === undefined ? {} : { cpu: raw.cpu }),
     });
     if (json?.ok === false) return invalidOutput(output, json.error);
     // What it didn't declare isn't its output, so no condition can read it.

@@ -62,10 +62,10 @@ export const projectOf = (
 
 /** A run as the API shows it: with its live status and what is paused. */
 export const viewOf = (context: ServerContext, run: RunRecord): RunView => {
-  // Only a running run can be paused; the others' events are not read.
+  // Only a running run can be paused; its other events are not read.
   const events =
     run.status === "running"
-      ? context.store.events(run.id).map(stored => stored.event)
+      ? context.store.controlEvents(run.id).map(stored => stored.event)
       : [];
   return { ...run, live: runStatus(run, events), paused: pausedOf(events) };
 };

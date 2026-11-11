@@ -5,7 +5,7 @@
  *   these numbers.
  */
 
-import type { UsageRow } from "../store/types.ts";
+import type { ToolCpuRow, UsageRow } from "../store/usage-types.ts";
 
 export type UsageTotals = {
   costUsd: number;
@@ -25,6 +25,8 @@ export type UsageTotals = {
   chatUsd: number;
   /** The share of input tokens read from the prompt cache, 0 to 1. */
   cacheHitRate: number;
+  /** CPU Ork's tool commands used (user and system), not sessions'. */
+  cpuMs: number;
 };
 
 export type UsageGroup = UsageTotals & { key: string };
@@ -67,7 +69,12 @@ const weekOf = (date: Date): string => {
   return dayOf(monday);
 };
 
-const KEYS: Record<UsageDimension, (row: UsageRow) => string> = {
+type Keyed = Pick<
+  UsageRow,
+  "at" | "workflow" | "node" | "template" | "model" | "driver" | "project"
+>;
+
+const KEYS: Record<UsageDimension, (row: Keyed) => string> = {
   day: row => dayOf(new Date(row.at)),
   week: row => weekOf(new Date(row.at)),
   month: row => dayOf(new Date(row.at)).slice(0, 7),
@@ -80,7 +87,13 @@ const KEYS: Record<UsageDimension, (row: UsageRow) => string> = {
 
 const TIMES: ReadonlySet<UsageDimension> = new Set(["day", "week", "month"]);
 
-const totalsOf = (rows: readonly UsageRow[]): UsageTotals => {
+/** Dimensions a tool command has no value in. */
+const SESSION_ONLY: ReadonlySet<UsageDimension> = new Set(["model", "driver"]);
+
+const totalsOf = (
+  rows: readonly UsageRow[],
+  cpu: readonly ToolCpuRow[],
+): UsageTotals => {
   const totals: UsageTotals = {
     costUsd: 0,
     inputTokens: 0,
@@ -95,6 +108,7 @@ const totalsOf = (rows: readonly UsageRow[]): UsageTotals => {
     reworkUsd: 0,
     chatUsd: 0,
     cacheHitRate: 0,
+    cpuMs: cpu.reduce((sum, row) => sum + row.userMs + row.systemMs, 0),
   };
   for (const row of rows) {
     totals.costUsd += row.costUsd;
@@ -116,17 +130,24 @@ const totalsOf = (rows: readonly UsageRow[]): UsageTotals => {
 
 const groupBy = (
   rows: readonly UsageRow[],
+  cpu: readonly ToolCpuRow[],
   dimension: UsageDimension,
 ): UsageGroup[] => {
-  const buckets = new Map<string, UsageRow[]>();
-  for (const row of rows) {
+  const buckets = new Map<string, { rows: UsageRow[]; cpu: ToolCpuRow[] }>();
+  const bucketOf = (row: Keyed) => {
     const key = KEYS[dimension](row);
-    const bucket = buckets.get(key);
-    if (bucket === undefined) buckets.set(key, [row]);
-    else bucket.push(row);
+    const found = buckets.get(key);
+    if (found !== undefined) return found;
+    const fresh = { rows: [], cpu: [] };
+    buckets.set(key, fresh);
+    return fresh;
+  };
+  for (const row of rows) bucketOf(row).rows.push(row);
+  if (!SESSION_ONLY.has(dimension)) {
+    for (const row of cpu) bucketOf(row).cpu.push(row);
   }
   const groups = [...buckets].map(([key, bucket]) =>
-    Object.assign(totalsOf(bucket), { key }),
+    Object.assign(totalsOf(bucket.rows, bucket.cpu), { key }),
   );
   return TIMES.has(dimension)
     ? groups.toSorted((a, b) => a.key.localeCompare(b.key))
@@ -185,18 +206,22 @@ const hintsOf = (
   return hints;
 };
 
-/** Everything a report shows, from the ledger's rows. */
-export const usageReport = (rows: readonly UsageRow[]): UsageReport => {
-  const totals = totalsOf(rows);
+/** Everything a report shows, from the ledger's rows and tool commands' CPU. */
+export const usageReport = (
+  rows: readonly UsageRow[],
+  cpu: readonly ToolCpuRow[] = [],
+): UsageReport => {
+  const totals = totalsOf(rows, cpu);
+  const by = (dimension: UsageDimension) => groupBy(rows, cpu, dimension);
   const groups: UsageReport["groups"] = {
-    day: groupBy(rows, "day"),
-    week: groupBy(rows, "week"),
-    month: groupBy(rows, "month"),
-    workflow: groupBy(rows, "workflow"),
-    node: groupBy(rows, "node"),
-    model: groupBy(rows, "model"),
-    driver: groupBy(rows, "driver"),
-    project: groupBy(rows, "project"),
+    day: by("day"),
+    week: by("week"),
+    month: by("month"),
+    workflow: by("workflow"),
+    node: by("node"),
+    model: by("model"),
+    driver: by("driver"),
+    project: by("project"),
   };
   return { totals, groups, hints: hintsOf(totals, groups.node) };
 };

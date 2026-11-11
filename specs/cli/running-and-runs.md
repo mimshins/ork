@@ -233,7 +233,8 @@ filter serves `GET /api/runs/<id>/events?node=` in `ork ui`, and
   one node, and let it go on: nothing new starts, and a running session waits
   before its next tool call; nothing is cut short
   ([run control](../run-control.md)). `ork ps` shows `paused`, and `ork tree`
-  marks each held node.
+  marks each held node. A run whose command waits for a machine-wide slot reads
+  `waiting for slot` in `ork ps` ([machine](../machine.md#a-wait-is-shown)).
 
 ## Resuming a run
 

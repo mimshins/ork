@@ -6,6 +6,8 @@
  */
 
 import type { CompiledGraph } from "../graph/types.ts";
+import type { SlotLedger } from "../machine/slot-ledger.ts";
+import type { MachineRules } from "../project/heavy.ts";
 import type { HumanChannel, RelayPort } from "../runtime/types.ts";
 import type { RunLimits } from "../usage/quota.ts";
 import type { EarlierSpend } from "../usage/spend.ts";
@@ -73,6 +75,11 @@ export type RunOptions = {
   watchEveryMs?: number;
   /** Masks what the run was told to in a message a `notify:` writes. */
   scrub?: (text: string) => string;
+  /**
+   * The machine the run shares: the project's `heavy` and `priority`, and the
+   * slots.
+   */
+  machine?: { rules: MachineRules; ledger?: SlotLedger };
   /** Called last before `run.finished`, to take what is still on its way. */
   beforeFinish?: () => Promise<void>;
 };

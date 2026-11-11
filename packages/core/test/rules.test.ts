@@ -20,6 +20,7 @@ import {
   gitRulesOf,
   listOrkWorktrees,
   loadProject,
+  machineRulesOf,
   type NodeExecutor,
   planNodeSession,
   type PlanResult,
@@ -101,6 +102,59 @@ describe("project rules under a workflow", () => {
       allow: ["Read"],
       deny: ["Bash(git push *)", "Bash(rm *)", "WebFetch"],
     });
+  });
+
+  it("deny the heavy commands to a node with verify:, and only to it", () => {
+    const workflow = applyProject(
+      workflowOf([
+        "nodes:",
+        "  v: { type: claude.worker, prompt: go, verify: { command: pnpm check } }",
+        "  w: { type: claude.worker, prompt: go, tools: { deny: [WebFetch] } }",
+      ]),
+      {
+        project: {
+          schemaVersion: 1,
+          permissions: { deny: ["Bash(git push *)"] },
+          heavy: ["pnpm check", "pnpm test", "vitest run"],
+        },
+      },
+    );
+    const plan = (id: string) =>
+      specOf(
+        planNodeSession(workflow, id, { cwd: "/p", inputs: {}, inPlace: true }),
+      );
+    const verified = plan("v");
+    expect(verified.tools.deny).toEqual([
+      "Bash(git push *)",
+      "Bash(pnpm check)",
+      "Bash(pnpm test)",
+      "Bash(vitest run)",
+    ]);
+    expect(verified.systemAppend).toContain("Ork runs the full check");
+    const plain = plan("w");
+    expect(plain.tools.deny).toEqual(["Bash(git push *)", "WebFetch"]);
+  });
+
+  it("tell a verify: node to run its check when the project lets it", () => {
+    const workflow = applyProject(
+      workflowOf([
+        "nodes:",
+        "  v: { type: claude.worker, prompt: go, verify: { command: pnpm check:changed } }",
+      ]),
+      { project: { schemaVersion: 1, heavy: ["pnpm check"] } },
+    );
+    const spec = specOf(
+      planNodeSession(workflow, "v", { cwd: "/p", inputs: {}, inPlace: true }),
+    );
+    expect(spec.tools.deny).toContain("Bash(pnpm check)");
+    expect(spec.systemAppend).toContain("so run it yourself first if you can");
+  });
+
+  it("default to no heavy commands and low priority", () => {
+    expect(machineRulesOf()).toEqual({ heavy: [], priority: "low" });
+    expect(
+      machineRulesOf({ ...PROJECT, heavy: ["pnpm check"], priority: "normal" }),
+    ).toEqual({ heavy: ["pnpm check"], priority: "normal" });
   });
 
   it("keep a project's practice when the workflow sets only the other", () => {

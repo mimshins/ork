@@ -1,9 +1,11 @@
 /**
  * @file A tool node's command line, split without a shell: Ork starts programs
- *   directly, so nothing in a rendered value can run as a command.
+ *   directly, so nothing in a rendered value can run as a command. And the
+ *   contract of what runs it, and what a run of it gives back.
  */
 
-import type { ToolNode } from "@krapht/ork-schema";
+import type { CpuTime } from "@krapht/ork-core";
+import type { Priority, ToolNode } from "@krapht/ork-schema";
 
 /** What runs a `script:` with no `interpreter:`: it stops at the first failure. */
 export const DEFAULT_INTERPRETER = "sh -eu";
@@ -73,3 +75,25 @@ export const tokenize = (
   if (current !== null) args.push(current);
   return { ok: true, args };
 };
+
+export type ToolRun = {
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+  /** What it used, its children included, when the runner can tell. */
+  cpu?: CpuTime;
+};
+
+/** Starts a program with arguments, never through a shell. */
+export type ToolRunner = (
+  program: string,
+  args: readonly string[],
+  options: {
+    cwd: string;
+    signal: AbortSignal;
+    /** Set for this program, over what it inherits. */
+    env?: Readonly<Record<string, string>>;
+    /** `low`: the program starts at a lower OS priority than Ork. */
+    priority?: Priority;
+  },
+) => Promise<ToolRun>;

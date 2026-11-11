@@ -31,6 +31,7 @@ where each part is specified.
 | [Scheduler: running a workflow](./scheduler.md)   | Built     | M1c       |
 | [Worktrees: where nodes work](./worktrees.md)     | Built     | M1c       |
 | [Project rules](./project-rules.md)               | Built     | M1e       |
+| [The machine: slots, priority, CPU](./machine.md) | Built     | M2        |
 | [Projects: in-repo or attached](./projects.md)    | Built     | M1e       |
 | [Context, skills and precedence](./context.md)    | Built     | M1c       |
 | [Messaging, decisions and logs](./messaging.md)   | Built     | M1d       |

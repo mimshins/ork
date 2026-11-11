@@ -7,6 +7,7 @@
 
 import type { ClaudeNode, Workflow } from "@krapht/ork-schema";
 
+import { heavyRule } from "../project/heavy.ts";
 import type { Claims, Mailbox, Ownership } from "../runtime/types.ts";
 import type { Checkout } from "./types.ts";
 
@@ -114,8 +115,11 @@ const verifyInstructions = (node: ClaudeNode): string[] => {
     command === undefined || command.includes("{{")
       ? "a check the workflow defines"
       : `\`${command}\``;
+  // The project's `heavy` rule may deny the check itself to the session.
+  const denied =
+    command !== undefined && node.tools?.deny?.includes(heavyRule(command));
   return [
-    `- A report that is not \`fail\` or \`changes_requested\` is accepted only if ${check} passes when you report. If it fails, you are told why and asked to fix it, so run it yourself first if you can.`,
+    `- A report that is not \`fail\` or \`changes_requested\` is accepted only if ${check} passes when you report. If it fails, you are told why and asked to fix it, ${denied === true ? "so run targeted checks (such as the tests you changed) first: Ork runs the full check, and this session may not." : "so run it yourself first if you can."}`,
   ];
 };
 

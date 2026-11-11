@@ -11,12 +11,13 @@ import { feedbackQueries } from "./feedback.ts";
 import { linkQueries } from "./links.ts";
 import { planLimitQueries } from "./plan-limits.ts";
 import { projectQueries } from "./projects.ts";
+import { toolCpuQueries } from "./tool-cpu.ts";
 import { triggerQueries } from "./triggers.ts";
 import { usageQueries } from "./usage.ts";
 
 /**
- * Every query set on `db`; `insertFeedback` and `recordUsage` are the store's
- * own.
+ * Every query set on `db`; `insertFeedback`, `recordUsage` and `recordToolCpu`
+ * are the store's own.
  */
 export const storeQueries = (db: DatabaseSync) => ({
   ...decisionQueries(db),
@@ -24,6 +25,7 @@ export const storeQueries = (db: DatabaseSync) => ({
   ...feedbackQueries(db),
   ...projectQueries(db),
   ...usageQueries(db),
+  ...toolCpuQueries(db),
   ...planLimitQueries(db),
   ...triggerQueries(db),
   ...draftQueries(db),

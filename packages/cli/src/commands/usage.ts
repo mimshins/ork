@@ -86,16 +86,15 @@ export const usage = defineCommand({
     const store = openStore();
     try {
       if (args["clear-plan-limits"]) store.clearPlanLimits();
-      const report = usageReport(
-        store.usage({
-          ...(args.all
-            ? {}
-            : { project: placeFor(process.cwd(), store.projects()).root }),
-          ...(args.workflow === undefined ? {} : { workflow: args.workflow }),
-          ...(since === undefined ? {} : { since }),
-          ...(until === undefined ? {} : { until }),
-        }),
-      );
+      const filter = {
+        ...(args.all
+          ? {}
+          : { project: placeFor(process.cwd(), store.projects()).root }),
+        ...(args.workflow === undefined ? {} : { workflow: args.workflow }),
+        ...(since === undefined ? {} : { since }),
+        ...(until === undefined ? {} : { until }),
+      };
+      const report = usageReport(store.usage(filter), store.toolCpu(filter));
       const limits = limitsHere(
         store,
         args.all ? undefined : placeFor(process.cwd(), store.projects()),

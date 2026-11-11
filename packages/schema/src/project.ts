@@ -110,6 +110,12 @@ export const RulesSchema = z.strictObject({
 });
 export type Rules = z.infer<typeof RulesSchema>;
 
+/** The OS priority Ork starts a run's sessions and tool commands at. */
+export const PrioritySchema = z.enum(["low", "normal"]);
+export type Priority = z.infer<typeof PrioritySchema>;
+
+export const DEFAULT_PRIORITY: Priority = "low";
+
 export const ProjectSchema = z.strictObject({
   schemaVersion: z.literal(PROJECT_SCHEMA_VERSION),
   ...RulesSchema.shape,
@@ -139,6 +145,15 @@ export const ProjectSchema = z.strictObject({
     .array(z.string())
     .optional()
     .describe("Experimental features this project turns on."),
+  heavy: z
+    .array(z.string().min(1))
+    .optional()
+    .describe(
+      "The project's full-suite commands, as Bash permission patterns without Bash(…), e.g. pnpm check. A node with verify: may not run them in its session; vitest run does not cover vitest run <files>.",
+    ),
+  priority: PrioritySchema.optional().describe(
+    "Default: low, sessions and tool commands start at a lower OS priority. normal: as the ork process.",
+  ),
 });
 export type Project = z.infer<typeof ProjectSchema>;
 

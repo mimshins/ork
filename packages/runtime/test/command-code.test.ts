@@ -206,6 +206,18 @@ describe("the command-code session mod", () => {
     expect(decide("mcp__github__issue", {})).toBeUndefined();
     expect(decide("web_fetch", {})).toBeDefined();
   });
+
+  it("refuses a verify: node's full check, but not its targeted tests", async () => {
+    const decide = await decideOf({
+      allow: ["Bash(pnpm check)", "Bash(pnpm test)", "Bash(vitest run *)"],
+      deny: ["Bash(pnpm check)", "Bash(pnpm test)", "Bash(vitest run)"],
+    });
+    expect(decide("shell", { command: "pnpm check" })).toBeDefined();
+    expect(decide("shell", { command: "pnpm test" })).toBeDefined();
+    expect(decide("shell", { command: "vitest run" })).toBeDefined();
+    const targeted = { command: "vitest run packages/cli/test/x.test.ts" };
+    expect(decide("shell", targeted)).toBeUndefined();
+  });
 });
 
 describe("the command-code session mod's reads", () => {

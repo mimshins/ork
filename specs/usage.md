@@ -138,6 +138,9 @@ are exact. A report's `runs` counts runs with a session, not those that only ran
 tools. Without `--by` it prints the totals, the latest 10 days and the costliest
 10 of each of workflow, model and node, then any hints; with it, that one table
 in full. Any limits go first. `--json` prints the whole report, with `limits`.
+`--by node` also has a `TOOL CPU` column: the seconds of CPU (user and system,
+children included) that Ork's tool commands of the node used, from the
+`tool_cpu` table ([machine](./machine.md#cpu)); the other tables don't show it.
 
 ## `ork prune`
 

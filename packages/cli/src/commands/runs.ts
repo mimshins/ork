@@ -13,7 +13,7 @@ import {
 import { defineCommand } from "citty";
 
 import { style, write, writeErr } from "../output.ts";
-import { cost, formatRuns, formatTree } from "../runs/format.ts";
+import { cost, formatRuns, formatTree, listedStatus } from "../runs/format.ts";
 import { followRun, unknownNode } from "../runs/logs.ts";
 import { withStore } from "../store.ts";
 
@@ -40,7 +40,7 @@ export const ps = defineCommand({
           : { project: placeFor(process.cwd(), store.projects()).root }),
       });
       const statusOf = (run: (typeof runs)[number]) =>
-        runStatus(
+        listedStatus(
           run,
           run.status === "running"
             ? store.events(run.id).map(s => s.event)

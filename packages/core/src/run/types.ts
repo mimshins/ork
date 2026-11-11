@@ -18,6 +18,7 @@ import type {
   Ownership,
   RuntimeEvent,
   SessionEnd,
+  SessionPorts,
   SessionUsage,
 } from "../runtime/types.ts";
 import type { RunLimits } from "../usage/quota.ts";
@@ -127,6 +128,8 @@ export type ExecuteContext = {
   signal: AbortSignal;
   /** A Claude node's `before:` or `verify:` step and try: its own files. */
   step?: StepRun;
+  /** The machine the run shares: its priority and the slots of heavy commands. */
+  machine?: NonNullable<SessionPorts["machine"]>;
 };
 
 /** A node's `before:` or `verify:` step, and which try of it this is. */
@@ -277,6 +280,10 @@ export type RunEvent =
   | { type: "node.held"; id: string; at: HoldPoint }
   /** A held node goes on. */
   | { type: "node.released"; id: string }
+  /** A heavy command waits for a machine-wide slot, held by `<run>/<node>`s. */
+  | { type: "slot.waiting"; id: string; holders: string[] }
+  /** The command that waited got its slot. */
+  | { type: "slot.taken"; id: string }
   | BusEvent
   /** A feedback record: an agent's report, or a signal Ork derived. */
   | { type: "feedback.recorded"; node?: string; feedback: FeedbackReport }

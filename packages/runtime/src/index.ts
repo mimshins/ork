@@ -13,6 +13,7 @@ export * from "./adapters/command-code-mod.ts";
 export * from "./adapters/open-code.ts";
 export * from "./adapters/open-code-config.ts";
 export * from "./secret-file.ts";
+export * from "./heavy-hook.ts";
 export * from "./hold.ts";
 export * from "./lease.ts";
 export * from "./mcp-http.ts";

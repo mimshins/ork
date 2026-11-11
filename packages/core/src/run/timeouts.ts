@@ -120,6 +120,8 @@ export const createClock = (options: {
       else resting.delete(id);
       changed();
     },
+    /** Stands the node's clock (and its owners' and the run's) still for `wait`. */
+    waitFor: asking,
     /** The same channel, noting who waits on the user for how long. */
     human: (channel: HumanChannel): HumanChannel => ({
       permit: request => asking(request.nodeId, () => channel.permit(request)),

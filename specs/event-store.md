@@ -77,7 +77,9 @@ all views over the same events.
   repository, and forgetting a project takes its rows with it.
 - **The usage ledger** has a table of its own: one row per finished Claude
   session, written as its event is appended, which outlives the run
-  ([usage](./usage.md)).
+  ([usage](./usage.md)). `tool_cpu` (migration 19, filled from the runs already
+  stored) is the same for the CPU each of Ork's tool commands used, from their
+  `tool.result` events ([machine](./machine.md#cpu)).
 - **Links** between nodes of live runs have a table of their own
   ([messaging](./messaging/links.md)); `relay` and `notice` commands carry what
   crosses them.

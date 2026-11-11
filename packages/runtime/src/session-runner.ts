@@ -24,7 +24,7 @@ import type {
 } from "@krapht/ork-core";
 
 import type { CliAdapter, OrkEndpoint, Wired } from "./adapter.ts";
-import { holdAtTool } from "./hold.ts";
+import { heavyHook, toolHook } from "./heavy-hook.ts";
 import { startOrkMcpHttp } from "./mcp-http.ts";
 import { driverFailure, type EndScope, failureKind } from "./session-end.ts";
 import { type LegInput, runLeg } from "./session-leg.ts";
@@ -134,6 +134,15 @@ export const createSessionRuntime = (
     let reported: NodeReport | null = null;
     const { hold } = ports;
     const hook = hold === undefined ? undefined : adapter.hold;
+    const heavy = heavyHook(ports.machine);
+    // A stop or a timeout ends a wait for a slot, so a deferred call can't hold it.
+    ended.signal.addEventListener(
+      "abort",
+      () => {
+        heavy.release();
+      },
+      { once: true },
+    );
     const bin = options.bin ?? adapter.command.bin;
     const scope = scopeOf(spec, bin, options.env ?? process.env);
 
@@ -155,15 +164,16 @@ export const createSessionRuntime = (
         tools,
         hold === undefined || hook === undefined
           ? undefined
-          : async gone => {
-              const answer = await holdAtTool(
-                hold,
-                AbortSignal.any([gone, ended.signal]),
-                options.holdWindowMs ?? hook.windowMs,
-              );
-              if (answer === "defer") deferring = true;
-              return hook.answer(answer);
-            },
+          : toolHook({
+              hold,
+              heavy,
+              answer: hook.answer,
+              windowMs: options.holdWindowMs ?? hook.windowMs,
+              ended: ended.signal,
+              onDefer: () => {
+                deferring = true;
+              },
+            }),
       );
       const endpoint: OrkEndpoint =
         hook === undefined ? { url: mcp.url, token: mcp.token } : mcp;
@@ -202,6 +212,9 @@ export const createSessionRuntime = (
           env,
           scope,
           cwd: spec.cwd,
+          ...(ports.machine === undefined
+            ? {}
+            : { priority: ports.machine.priority }),
           args: [
             ...adapter.command.args(legSpec, { endpoint, allowed }),
             ...(wired?.args ?? []),
@@ -240,6 +253,9 @@ export const createSessionRuntime = (
           if (leg.kind === "deferred") {
             // Wait for the node to continue, then resume the session with no
             // new message; the pending call's hook then lets it run.
+            // A call deferred for a slot waits for it too.
+            // oxlint-disable-next-line eslint/no-await-in-loop -- one leg at a time
+            await heavy.ready();
             // oxlint-disable-next-line eslint/no-await-in-loop -- one leg at a time
             await hold?.wait("tool", ended.signal);
           }
@@ -256,6 +272,7 @@ export const createSessionRuntime = (
               : resumed(spec, leg.sessionId);
         }
       } finally {
+        heavy.release();
         await wired?.release();
         await mcp.close();
       }

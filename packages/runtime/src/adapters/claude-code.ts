@@ -83,7 +83,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 /**
  * The node's `--settings` with Ork's `PreToolUse` HTTP hook added: before every
  * tool call, pre-approved ones included, the session asks whether its node may
- * go on.
+ * go on. Its `PostToolUse` hook after a Bash call frees the call's slot.
  */
 export const withHoldHook = (
   settings: Record<string, unknown> | undefined,
@@ -91,10 +91,10 @@ export const withHoldHook = (
   token: string,
 ): Record<string, unknown> => {
   const hooks = isRecord(settings?.["hooks"]) ? settings["hooks"] : {};
-  const listed: unknown = hooks["PreToolUse"];
-  const before: unknown[] = Array.isArray(listed)
-    ? [...(listed as unknown[])]
-    : [];
+  const listed = (event: string): unknown[] => {
+    const own: unknown = hooks[event];
+    return Array.isArray(own) ? [...(own as unknown[])] : [];
+  };
   const hook = {
     type: "http",
     url: holdUrl,
@@ -105,7 +105,12 @@ export const withHoldHook = (
     ...settings,
     hooks: {
       ...hooks,
-      PreToolUse: [...before, { matcher: "*", hooks: [hook] }],
+      PreToolUse: [...listed("PreToolUse"), { matcher: "*", hooks: [hook] }],
+      // Frees a heavy Bash call's slot once the call is done.
+      PostToolUse: [
+        ...listed("PostToolUse"),
+        { matcher: "Bash", hooks: [hook] },
+      ],
     },
   };
 };

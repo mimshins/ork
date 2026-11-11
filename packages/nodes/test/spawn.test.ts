@@ -1,16 +1,17 @@
 /**
  * @file Tests for the real tool runner: aborting it ends the program and what
- *   it started, even when they ignore SIGTERM.
+ *   it started, even when they ignore SIGTERM; the CPU it used, and the
+ *   priority it starts at.
  */
 
 import { mkdtempSync, readFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { getPriority, tmpdir } from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
 import { describe, expect, it, vi } from "vitest";
 
-import { KILL_AFTER_MS, spawnTool } from "../src/index.ts";
+import { KILL_AFTER_MS, spawnTool, type ToolRun } from "../src/index.ts";
 
 const isAlive = (pid: number): boolean => {
   try {
@@ -48,6 +49,20 @@ const abortedRun = async (ignoreTerm: boolean) => {
   return { run, pids };
 };
 
+/** All the CPU a run used, or 0 when the runner said none. */
+const cpuMs = (run: ToolRun): number =>
+  (run.cpu?.userMs ?? 0) + (run.cpu?.systemMs ?? 0);
+
+/** The priority a program started at, as it reads its own. */
+const niceOf = async (priority: "low" | "normal"): Promise<number> => {
+  const run = await spawnTool(
+    process.execPath,
+    ["-e", "console.log(require('node:os').getPriority())"],
+    { cwd: tmpdir(), signal: new AbortController().signal, priority },
+  );
+  return Number(run.stdout.trim());
+};
+
 describe("spawnTool", () => {
   it("collects output and the exit code", async () => {
     const run = await spawnTool(
@@ -58,7 +73,30 @@ describe("spawnTool", () => {
         signal: new AbortController().signal,
       },
     );
-    expect(run).toEqual({ exitCode: 3, stdout: "out\n", stderr: "err\n" });
+    expect(run).toMatchObject({
+      exitCode: 3,
+      stdout: "out\n",
+      stderr: "err\n",
+    });
+  });
+
+  it("says the CPU the program and its children used", async () => {
+    // A child of the program spins until it has used 300 ms of CPU.
+    const spin =
+      "const s = process.cpuUsage(); while (process.cpuUsage(s).user < 300000) {}";
+    const run = await spawnTool(
+      "sh",
+      ["-c", `${JSON.stringify(process.execPath)} -e '${spin}'`],
+      { cwd: tmpdir(), signal: new AbortController().signal },
+    );
+    expect(run.exitCode).toBe(0);
+    expect(cpuMs(run)).toBeGreaterThanOrEqual(250);
+  });
+
+  it("starts the program below Ork's priority under `low` only", async () => {
+    const own = getPriority();
+    expect(await niceOf("low")).toBeGreaterThan(own);
+    expect(await niceOf("normal")).toBe(own);
   });
 
   it("reports a program that cannot start", async () => {

@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { resultCommits, summarize, usageCsv } from "../summary.ts";
+import { resultCommits, summarize, toolCpuOf, usageCsv } from "../summary.ts";
 import { type Activation, activations, workingMs } from "../timing.ts";
 import type { Decision, StoredEvent } from "../tree.ts";
 
@@ -174,6 +174,48 @@ const usage = (node: string, costUsd: number) => ({
   turns: 5,
   durationMs: 6,
   at: "2026-11-10T00:00:00.000Z",
+});
+
+describe("tool commands' CPU", () => {
+  it("adds up each node's tool commands, children included", () => {
+    const result = (id: string, userMs: number, systemMs: number) =>
+      event("node.event", 1, {
+        id,
+        event: {
+          type: "tool.result",
+          id,
+          isError: false,
+          cpu: { userMs, systemMs },
+        },
+      });
+    const run = {
+      id: "r1",
+      workflow: "build",
+      file: "",
+      parent: null,
+      status: "succeeded",
+      startedAt: "",
+      finishedAt: null,
+      costUsd: 0,
+    };
+    expect(
+      toolCpuOf({
+        runs: [run],
+        events: [
+          result("check", 30_000, 5_000),
+          result("check", 10_000, 0),
+          result("implement-1", 1_000, 500),
+          event("node.event", 2, {
+            id: "lead",
+            event: { type: "tool.result" },
+          }),
+        ],
+      }),
+    ).toEqual({
+      seconds: 46.5,
+      by_node: { "build.check": 45, "build.implement-1": 1.5 },
+    });
+  });
 });
 
 describe("summary", () => {

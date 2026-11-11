@@ -45,6 +45,7 @@ const group = (key: string, costUsd: number): Group => ({
   reworkUsd: 0,
   chatUsd: 0,
   cacheHitRate: 0.75,
+  cpuMs: 0,
 });
 
 const report = (extra: Partial<UsageAnswer> = {}): UsageAnswer => ({

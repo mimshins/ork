@@ -186,6 +186,7 @@ export const claudeExecutor =
             }),
     };
     if (context.hold !== undefined) ports.hold = context.hold;
+    if (context.machine !== undefined) ports.machine = context.machine;
     if (context.ownership !== undefined) ports.ownership = context.ownership;
     if (context.mailbox !== undefined) ports.mailbox = context.mailbox;
     if (context.claims !== undefined) ports.claims = context.claims;

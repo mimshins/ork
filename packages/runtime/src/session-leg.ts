@@ -11,13 +11,15 @@ import { createInterface } from "node:readline";
 
 import {
   type EndKind,
+  lowerChild,
   maskSecrets,
   type NodeReport,
   type RuntimeEvent,
   type SessionOutcome,
   type SessionUsage,
+  startAt,
 } from "@krapht/ork-core";
-import type { Driver } from "@krapht/ork-schema";
+import type { Driver, Priority } from "@krapht/ork-schema";
 
 import type { CliAdapter, Decoded, LegDecoder } from "./adapter.ts";
 import { classifyProviderError } from "./provider-errors.ts";
@@ -51,6 +53,8 @@ export type LegInput = {
   adapter: CliAdapter;
   bin: string;
   env: Readonly<Record<string, string | undefined>>;
+  /** `low`: the process starts below Ork's priority (`machine/priority.ts`). */
+  priority?: Priority;
   cwd: string;
   args: string[];
   /** What the legs before this one spent; none for the first. */
@@ -173,11 +177,13 @@ const failureReason = (
 export const runLeg = async function* (
   input: LegInput,
 ): AsyncGenerator<RuntimeEvent, Leg> {
-  const child = spawn(input.bin, input.args, {
+  const [bin, args] = startAt(input.priority, input.bin, input.args, input.env);
+  const child = spawn(bin, args, {
     cwd: input.cwd,
     env: { ...input.env },
     stdio: ["pipe", "pipe", "pipe"],
   });
+  lowerChild(input.priority, child.pid);
   const exited = new Promise<{
     code: number | null;
     signal: NodeJS.Signals | null;

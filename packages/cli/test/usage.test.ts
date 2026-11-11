@@ -58,6 +58,26 @@ describe("ork usage", () => {
     expect(text).toContain("Claude Code's own estimates");
   });
 
+  it("shows the CPU seconds of each node's tool commands by node", () => {
+    const cpu = {
+      runId: "r1",
+      seq: 2,
+      at: "2026-11-03T10:00:00.000Z",
+      project: "/p",
+      workflow: "ship",
+      node: "check",
+      userMs: 30_000,
+      systemMs: 4500,
+    };
+    const text = formatUsage(
+      usageReport([row()], [cpu]),
+      "this project",
+      "node",
+    ).join("\n");
+    expect(text).toContain("TOOL CPU");
+    expect(text).toMatch(/ship\/check .*34\.5 s/u);
+  });
+
   it("keeps the costliest rows and the latest days in the overview", () => {
     const rows = Array.from({ length: 12 }, (_, index) =>
       row({

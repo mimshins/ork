@@ -18,7 +18,8 @@ import {
   type Row,
   text,
 } from "./rows.ts";
-import type { RunRecord, UsageFilter, UsageRow, UsageStore } from "./types.ts";
+import type { RunRecord, UsageStore } from "./types.ts";
+import type { UsageFilter, UsageRow } from "./usage-types.ts";
 import { templateOf } from "./view.ts";
 
 type RunOf = Pick<RunRecord, "id" | "project" | "workflow">;
@@ -178,7 +179,9 @@ const rowOf = (r: Row): UsageRow => {
   };
 };
 
-const whereOf = (filter: UsageFilter): { sql: string; values: string[] } => {
+export const whereOf = (
+  filter: UsageFilter,
+): { sql: string; values: string[] } => {
   const clauses: string[] = [];
   const values: string[] = [];
   const add = (clause: string, value: string | undefined) => {
@@ -207,7 +210,7 @@ const alive = (row: Row): boolean => {
 /** The ledger's queries; `recordUsage` is the store's own, called on append. */
 export const usageQueries = (
   db: DatabaseSync,
-): Omit<UsageStore, "planLimits" | "clearPlanLimits"> & {
+): Omit<UsageStore, "planLimits" | "clearPlanLimits" | "toolCpu"> & {
   recordUsage: (runId: string) => void;
 } => {
   const insert = db.prepare(INSERT);

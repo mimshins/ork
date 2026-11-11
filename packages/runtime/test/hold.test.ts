@@ -155,7 +155,7 @@ describe("the CLI driver's hold", () => {
 describe("wiring the hold hook", () => {
   const mcp = { url: "http://127.0.0.1:1/mcp", token: "tok" };
 
-  it("adds Ork's PreToolUse HTTP hook to the CLI's settings, after any others", () => {
+  it("adds Ork's PreToolUse and PostToolUse HTTP hooks to the CLI's settings, after any others", () => {
     expect(
       withHoldHook(
         { skillOverrides: { x: "off" }, hooks: { PreToolUse: ["theirs"] } },
@@ -169,6 +169,19 @@ describe("wiring the hold hook", () => {
           "theirs",
           {
             matcher: "*",
+            hooks: [
+              {
+                type: "http",
+                url: "http://127.0.0.1:1/hold",
+                headers: { Authorization: "Bearer tok" },
+                timeout: 600,
+              },
+            ],
+          },
+        ],
+        PostToolUse: [
+          {
+            matcher: "Bash",
             hooks: [
               {
                 type: "http",

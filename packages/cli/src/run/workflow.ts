@@ -15,6 +15,9 @@ import {
   createWorkspace,
   endLinksOf,
   inside,
+  loadProject,
+  machineRulesOf,
+  machineSlotLedger,
   newRunId,
   parseInputPairs,
   replayLoopAnswers,
@@ -274,6 +277,14 @@ export const runWorkflowFile = async (
     ...(workspace === undefined ? {} : { workspace }),
     scrub: runScrubber(maskedNames, process.env),
     limits: ready.limits,
+    machine: {
+      rules: machineRulesOf(
+        loadProject(place.root, placeFiles(place).rules).project,
+      ),
+      ledger: machineSlotLedger(
+        options.home === undefined ? {} : { home: options.home },
+      ),
+    },
     beforeFinish: takeLastCommands(control, started.promise),
   });
   live.handle = handle;

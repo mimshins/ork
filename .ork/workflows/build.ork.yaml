@@ -33,7 +33,7 @@ nodes:
 
       Build in waves, following each task's dependencies and files in the plan. Shared contracts (schema, types) go first, as their own wave. Then send each wave as exactly one tool call, so its tasks run at once: your calls run one after another, so a `delegate` and a `spawn_worker` sent together do not overlap. Use `delegate` when each builder in the wave has one task, and otherwise one `spawn_worker` call for the whole wave, naming each task's builder as its template, since a child that is already running refuses another task. Tasks in one wave must not touch the same files, and each must pass pnpm check without another task of its wave. Files everyone appends to (index.ts exports, generated schemas, specs, gaps ids, roadmap data) belong to one task or a last wave. Run tasks together in one builder when they are small or share files: every builder is a new session and a full pnpm check, so split only substantial work. A merge conflict in a child's report is yours to resolve.
 
-      Each child already has the plan; your brief says which tasks are theirs. Fix only what integrates their work. Ork runs pnpm check on your checkout before your report counts. When you run again, your input is either the independent reviews (`results` holds each concern's blocking `findings`, which are yours to fix, and its `notes`, which never block: leave them unless a fix is trivial, and `statuses` its verdict, in the order of `items`; a `fail` is a reviewer that didn't finish, with nothing for you to fix), or the maintainer's answer at the ratify gate (choice revise, and note, their words on what to change): delegate the fixes. If that note is empty, ask with ask_user what to change rather than guessing. When a child asks a question, answer it only when the approved plan or an earlier answer settles it, and say which. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One the plan doesn't settle always takes the pass-on option, so it reaches the maintainer. Never decide one for them. Say in `unchecked` what no child and no check covered (an empty string when nothing). Report pass only when every child you used passed, and gather the entries of the plan's Decided section, copying each one's hardToReverse as written, and every decision your children reported into your own `decisions`, keeping who decided each. Ork keeps the decisions of your earlier rounds, so when you run again, report the ones made in this round.
+      Each child already has the plan; your brief says which tasks are theirs. Fix only what integrates their work. Ork runs pnpm check on your checkout before your report counts. The full check (`pnpm check`, `pnpm test`, a bare `vitest run`) is denied in this session because Ork runs it; a targeted `vitest run <files>` is fine. When you run again, your input is either the independent reviews (`results` holds each concern's blocking `findings`, which are yours to fix, and its `notes`, which never block: leave them unless a fix is trivial, and `statuses` its verdict, in the order of `items`; a `fail` is a reviewer that didn't finish, with nothing for you to fix), or the maintainer's answer at the ratify gate (choice revise, and note, their words on what to change): delegate the fixes. If that note is empty, ask with ask_user what to change rather than guessing. When a child asks a question, answer it only when the approved plan or an earlier answer settles it, and say which. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One the plan doesn't settle always takes the pass-on option, so it reaches the maintainer. Never decide one for them. Say in `unchecked` what no child and no check covered (an empty string when nothing). Report pass only when every child you used passed, and gather the entries of the plan's Decided section, copying each one's hardToReverse as written, and every decision your children reported into your own `decisions`, keeping who decided each. Ork keeps the decisions of your earlier rounds, so when you run again, report the ones made in this round.
 
       {{inputs.plan}}
     model: sonnet
@@ -167,7 +167,7 @@ nodes:
     parent: build
     agent: implementer
     prompt: |-
-      Build the tasks your owner's brief gives you from this approved plan. If a design is in your checkout (git status), build to it. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. Report every other choice you made that the plan didn't settle in `decisions`. Ork runs pnpm check before your report counts.
+      Build the tasks your owner's brief gives you from this approved plan. If a design is in your checkout (git status), build to it. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. Report every other choice you made that the plan didn't settle in `decisions`. Ork runs `pnpm check:changed` (the static checks and the tests your change reaches) before your report counts. The full check (`pnpm check`, `pnpm test`, a bare `vitest run`) is denied in this session because Ork runs it; a targeted `vitest run <files>` is fine.
 
       {{inputs.plan}}
     effort: high
@@ -216,7 +216,7 @@ nodes:
       command: pnpm install --frozen-lockfile --prefer-offline
       timeout: 10m
     verify:
-      command: pnpm check
+      command: pnpm check:changed
       timeout: 20m
       attempts: 2
   engine:
@@ -224,7 +224,7 @@ nodes:
     parent: build
     agent: engine
     prompt: |-
-      Build the tasks your owner's brief gives you from this approved plan. If a design is in your checkout (git status), build to it. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. The engine's semantics are always a design decision. Report every other choice you made that the plan didn't settle in `decisions`. Ork runs pnpm check before your report counts.
+      Build the tasks your owner's brief gives you from this approved plan. If a design is in your checkout (git status), build to it. A design decision is anything AGENTS.md says needs an ADR (a package boundary, the workflow format, the runtime port, a cross-cutting pattern, a new runtime dependency) or anything that changes what users see. One this plan doesn't settle goes to ask_user, with options and a recommendation, before you build it; never choose it yourself. The engine's semantics are always a design decision. Report every other choice you made that the plan didn't settle in `decisions`. Ork runs `pnpm check:changed` (the static checks and the tests your change reaches) before your report counts. The full check (`pnpm check`, `pnpm test`, a bare `vitest run`) is denied in this session because Ork runs it; a targeted `vitest run <files>` is fine.
 
       {{inputs.plan}}
     model: opus
@@ -274,7 +274,7 @@ nodes:
       command: pnpm install --frozen-lockfile --prefer-offline
       timeout: 10m
     verify:
-      command: pnpm check
+      command: pnpm check:changed
       timeout: 20m
       attempts: 2
   review:
@@ -344,7 +344,7 @@ nodes:
 
       Make sure the change has a changeset in .changeset/ (a Markdown file naming the bump for @krapht/ork and a changelog line; `pnpm changesets:empty` for internal-only work), and add one if it doesn't. A commit step refuses a change without one.
 
-      Then write the commit message for the whole change: `commitSubject`, a short imperative subject with no prefix (like "Let Claude nodes name the MCP servers they load"), and `commitBody`, what changed and why in a few lines. No AI or agent attribution. Ork runs pnpm check before your report counts.
+      Then write the commit message for the whole change: `commitSubject`, a short imperative subject with no prefix (like "Let Claude nodes name the MCP servers they load"), and `commitBody`, what changed and why in a few lines. No AI or agent attribution. Ork runs pnpm check before your report counts. The full check (`pnpm check`, `pnpm test`, a bare `vitest run`) is denied in this session because Ork runs it; a targeted `vitest run <files>` is fine.
 
       The build's decisions: {{nodes.build.output.decisions}}
 

@@ -5,7 +5,7 @@
  */
 
 import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { availableParallelism, tmpdir } from "node:os";
 import path from "node:path";
 
 import { defineConfig } from "vitest/config";
@@ -15,8 +15,14 @@ process.once("exit", () => {
   rmSync(HOME, { recursive: true, force: true });
 });
 
+// Inside an Ork run, several suites share the machine: use half the cores.
+const inRun = process.env["ORK_RUN"] !== undefined;
+
 export default defineConfig({
   test: {
+    ...(inRun
+      ? { maxWorkers: Math.max(1, Math.floor(availableParallelism() / 2)) }
+      : {}),
     env: { HOME },
     projects: [
       {

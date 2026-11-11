@@ -22,8 +22,8 @@ import {
 
 import { type Environ, readEnv } from "./environ.ts";
 import { mcpVariablesOf } from "./mcp-servers.ts";
+import type { ToolRunner } from "./tool-command.ts";
 import { scrubberOf } from "./tool-scrub.ts";
-import type { ToolRunner } from "./tools.ts";
 
 export { type Environ, readEnv };
 

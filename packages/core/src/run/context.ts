@@ -2,8 +2,8 @@
  * @file One activation's execute context: what the scheduler hands a node's
  *   executor. Its inputs and the outputs so far, where it works, the budget
  *   left, the human, its hold and its own stop signal (ADR-041), its ports on
- *   the bus, the session it resumes, and, for a leader, its ownership of its
- *   children.
+ *   the bus, the session it resumes, its share of the machine, and, for a
+ *   leader, its ownership of its children.
  */
 
 import { isClaudeNode, type Node } from "@krapht/ork-schema";
@@ -11,6 +11,7 @@ import { isClaudeNode, type Node } from "@krapht/ork-schema";
 import { createOwnership, type DelegationHooks } from "./delegation.ts";
 import type { Activation, RunOptions } from "./handle.ts";
 import type { Holds, Stops } from "./holds.ts";
+import { machinePort, type SlotWaitClock } from "./machine.ts";
 import type { createRunPorts } from "./ports.ts";
 import { foldersOf } from "./scope.ts";
 import type { Slots } from "./slots.ts";
@@ -43,6 +44,7 @@ export const nodeContext = (
   activation: Activation,
   cwd: string,
   round: number,
+  clock?: SlotWaitClock,
 ): Omit<ExecuteContext, "node" | "checkout"> => {
   const { options, runId } = deps;
   const { graph } = options;
@@ -88,6 +90,9 @@ export const nodeContext = (
   const owner = ownerPort(deps, id, template);
   if (owner !== undefined) context.owner = owner;
   if (template !== undefined) context.template = template;
+  const machine =
+    clock === undefined ? undefined : machinePort(options, runId, id, clock);
+  if (machine !== undefined) context.machine = machine;
   if (activation.brief !== undefined) context.brief = activation.brief;
   if (activation.item !== undefined) context.item = activation.item;
   const resume =

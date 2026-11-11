@@ -135,6 +135,22 @@ rules:
 
 Its `git` keys win; permissions add up.
 
+## What a run asks of the machine
+
+Two rules keep several runs from heating your machine
+([running several runs at once](./running-workflows/several-runs.md)):
+
+```yaml
+heavy: [pnpm check, pnpm test, vitest run] # your full-suite commands
+priority: low # low (the default) | normal
+```
+
+`heavy` names the commands that load the machine. Each takes one of 2 shared
+slots (`ORK_HEAVY_SLOTS` changes the count), and a node with `verify:` may not
+run them in its session, since Ork runs that check. `priority: low` starts
+sessions and tool commands below your own programs; `normal` doesn't. A
+workflow's `rules:` doesn't change either: they are the project's.
+
 ## Trying an experiment
 
 Features that aren't ready for everyone ship turned off. To try one, name it in

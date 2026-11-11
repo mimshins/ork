@@ -16,6 +16,7 @@ import {
   type NodeExecutor,
   type NodeResult,
   type SessionOutcome,
+  slotClock,
   type StepRun,
 } from "@krapht/ork-core";
 import { type Step, timeoutMs, type Verify } from "@krapht/ork-schema";
@@ -65,15 +66,21 @@ export const runStep = async (
   step: StepRun,
 ): Promise<NodeResult> => {
   const node = { type: "tool.shell" as const, ...fields };
-  const context = { ...given, step };
   const ms = timeoutMs(timeout);
-  if (ms === undefined) return tool({ ...context, node });
+  if (ms === undefined) return tool({ ...given, step, node });
+  // The step's timeout counts from when its command got a slot.
+  const { clock, machine } = slotClock(given.hold, given.machine);
+  const context = {
+    ...given,
+    step,
+    ...(machine === undefined ? {} : { machine }),
+  };
   const limit = new AbortController();
   const finished = new AbortController();
   let expired = false;
   const watch = async (): Promise<void> => {
     const elapsed = await heldTimeout(
-      context.hold,
+      clock,
       ms,
       AbortSignal.any([context.signal, finished.signal]),
     );

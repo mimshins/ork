@@ -708,6 +708,29 @@ export const CALLS = {
   ),
 };
 
+export const MACHINE = {
+  spec: d(
+    "specs/machine.md",
+    "Spec: slots, priority and CPU for runs on one machine",
+  ),
+  ledger: d(
+    "packages/core/src/machine/slot-ledger.ts",
+    "Code: the machine-wide slot ledger",
+  ),
+  tests: d(
+    "packages/nodes/test/heavy-slots.test.ts",
+    "Tests: heavy commands wait for a slot",
+  ),
+  guide: d(
+    "docs/guides/running-workflows/several-runs.md",
+    "Guide: running several runs at once",
+  ),
+  adr: d(
+    "decisions/ADR-080-machine-slots-and-lower-priority.md",
+    "ADR-080: slots, and a lower priority by default",
+  ),
+};
+
 export const TIMEOUTS = {
   code: d(
     "packages/core/src/run/timeouts.ts",

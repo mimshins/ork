@@ -5,6 +5,7 @@
  *   keeps a screen's one-line answer to "what is it doing" in one place.
  */
 
+import { slotWaitLine } from "../run/machine.ts";
 import type { RuntimeEvent } from "../runtime/types.ts";
 import type { StoredEvent } from "./types.ts";
 import { runTree, type TreeNode } from "./view.ts";
@@ -86,6 +87,10 @@ export const runActivity = (
       if (event.event.type === "tool.called") {
         of(event.id).now = toolLine(event.event);
       }
+    } else if (event.type === "slot.waiting") {
+      of(event.id).now = oneLine(slotWaitLine(event.holders));
+    } else if (event.type === "slot.taken") {
+      delete of(event.id).now;
     } else if (event.type === "decision.opened") {
       of(event.node).now = oneLine(`Asked: ${event.question}`);
     } else if (event.type === "decision.answered") {

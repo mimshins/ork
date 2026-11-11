@@ -8,7 +8,10 @@ import {
   isItem,
   liveStatus,
   type NodeState,
+  type RunEvent,
   type RunRecord,
+  runStatus,
+  slotWaitsOf,
   type TreeNode,
 } from "@krapht/ork-core";
 
@@ -54,6 +57,21 @@ export const duration = (ms: number): string => {
 export { cost };
 
 const dim = (s: string): string => style("dim", s);
+
+/**
+ * A run's status as `ork ps` reads it: `waiting for slot` for a running run
+ * with a command waiting for a machine-wide slot; `events` are a running
+ * run's.
+ */
+export const listedStatus = (
+  run: RunRecord,
+  events: readonly RunEvent[],
+): string => {
+  const status = runStatus(run, events);
+  return status === "running" && slotWaitsOf(events).length > 0
+    ? "waiting for slot"
+    : status;
+};
 
 /**
  * The `ork ps` table; `withProject` adds each run's project. A called run's

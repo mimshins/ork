@@ -10,7 +10,10 @@
  *   folder), and a `--resume` with that marker fires the hook again without
  *   reading a new message. With `FAKE_CLAUDE_ENV_FILE` set it writes there
  *   the `ENABLE_PROMPT_CACHING_1H` it was started with, and with
- *   `FAKE_CLAUDE_MEMORY_FILE` the `CLAUDE_CODE_DISABLE_AUTO_MEMORY`. With
+ *   `FAKE_CLAUDE_MEMORY_FILE` the `CLAUDE_CODE_DISABLE_AUTO_MEMORY`, and with
+ *   `FAKE_CLAUDE_PRIORITY_FILE` its own OS priority. `FAKE_CLAUDE_BASH` makes
+ *   the hooked call a Bash call of that command, with a `PostToolUse` hook
+ *   after it unless `FAKE_CLAUDE_NO_POST=1`. With
  *   `--resume <id> --fork-session` it is a fork: a new session (`fork-of-<id>`) that asks
  *   nothing and reports the first value its `--json-schema` allows for
  *   `choice` (or `FAKE_CLAUDE_FORK_CHOICE`), with a `note`;
@@ -50,16 +53,27 @@ const rpc = async (method, params) => {
   return response.json();
 };
 
+const bash = process.env.FAKE_CLAUDE_BASH;
+const call = bash === undefined
+  ? { tool_name: "mcp__ork__ask_user", tool_input: {} }
+  : { tool_name: "Bash", tool_input: { command: bash } };
+
 /** The hook's answer for the tool call, or none without a hook. */
-const preToolUse = async () => {
+const toolHook = async event => {
   if (hook === undefined) return {};
   const response = await fetch(hook.url, {
     method: "POST",
     headers: { ...hook.headers, "content-type": "application/json" },
-    body: JSON.stringify({ hook_event_name: "PreToolUse", tool_name: "mcp__ork__ask_user", tool_input: {} }),
+    body: JSON.stringify({ hook_event_name: event, ...call }),
   });
   return response.json();
 };
+const preToolUse = () => toolHook("PreToolUse");
+
+if (process.env.FAKE_CLAUDE_PRIORITY_FILE !== undefined) {
+  const { getPriority } = await import("node:os");
+  writeFileSync(process.env.FAKE_CLAUDE_PRIORITY_FILE, String(getPriority()));
+}
 
 const asks = process.env.FAKE_CLAUDE_NO_ASK !== "1";
 const cost = Number(process.env.FAKE_CLAUDE_COST ?? 0.0123);
@@ -245,6 +259,9 @@ const answer = asks
     })
   : undefined;
 const failed = answer?.result.isError === true;
+if (bash !== undefined && process.env.FAKE_CLAUDE_NO_POST !== "1") {
+  await toolHook("PostToolUse");
+}
 if (asks) {
   out({ type: "user", message: { content: [{ type: "tool_result", tool_use_id: "t1", is_error: failed }] } });
 }

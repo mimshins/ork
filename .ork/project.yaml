@@ -74,6 +74,13 @@ permissions:
     - Bash(npx changeset publish *)
     - Bash(ork feedback publish *)
     - Bash(pnpm ork feedback publish *)
+# The full suite: a node with verify: may not run these in its session, as Ork
+# runs its check; a targeted `vitest run <files>` stays allowed.
+heavy:
+  - pnpm check
+  - pnpm test
+  - vitest run
+  - npx vitest run
 defaults:
   model: sonnet
   effort: high

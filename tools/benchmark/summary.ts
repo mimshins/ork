@@ -1,10 +1,11 @@
 /**
  * @file A benchmark's numbers from a run tree: cost and tokens in total and by
  *   node, turns, working and waiting minutes, decisions, the agents its nodes
- *   used, the commits its tool nodes printed, and one CSV row per session.
+ *   used, the commits its tool nodes printed, the CPU seconds Ork's tool
+ *   commands used, and one CSV row per session.
  */
 
-import { type Json, r1, r4, rec, text } from "./json.ts";
+import { count, type Json, r1, r4, rec, text } from "./json.ts";
 import { activations, WAITS, workingMs } from "./timing.ts";
 import type { StoredEvent, Tree, Usage } from "./tree.ts";
 
@@ -76,6 +77,35 @@ export const resultCommits = (events: readonly StoredEvent[]): string[] => {
   return [...shas];
 };
 
+const seconds = (ms: number): number => r1(ms / 1000);
+
+/**
+ * CPU seconds Ork's tool commands used (tool nodes, `verify:` and `before:`
+ * steps), children included, by `<workflow>.<node>`; sessions' own is not.
+ */
+export const toolCpuOf = (tree: Pick<Tree, "runs" | "events">) => {
+  const workflows = new Map(tree.runs.map(r => [r.id, r.workflow]));
+  const byNode = new Map<string, number>();
+  for (const e of tree.events) {
+    const inner = rec(e.data["event"]);
+    if (e.type !== "node.event" || text(inner["type"]) !== "tool.result") {
+      continue;
+    }
+    const cpu = rec(inner["cpu"]);
+    const key = `${workflows.get(e.run) ?? ""}.${e.node ?? ""}`;
+    const ms = count(cpu["userMs"]) + count(cpu["systemMs"]);
+    byNode.set(key, (byNode.get(key) ?? 0) + ms);
+  }
+  return {
+    seconds: seconds([...byNode.values()].reduce((s, ms) => s + ms, 0)),
+    by_node: Object.fromEntries(
+      [...byNode]
+        .filter(([, ms]) => ms > 0)
+        .map(([key, ms]) => [key, seconds(ms)]),
+    ),
+  };
+};
+
 /** The numbers of `summary.json`. */
 export const summarize = (tree: Tree) => {
   const ends = tree.runs.map(r =>
@@ -136,6 +166,7 @@ export const summarize = (tree: Tree) => {
         minutes: minutes(a.end - a.start),
       })),
     agents: agentsOf(tree.events),
+    tool_cpu_seconds: toolCpuOf(tree),
   };
 };
 

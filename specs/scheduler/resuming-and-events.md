@@ -99,7 +99,9 @@ under the same run id, with a `Replay` built from the run's events:
 The decision queue adds `decision.opened`, `decision.answered`,
 `decision.withdrawn` and `run.command` ([messaging](../messaging.md)); a pause
 adds `node.held` and `node.released`
-([run control](../run-control.md#what-a-run-records)).
+([run control](../run-control.md#what-a-run-records)); a heavy command that
+waits for a machine-wide slot adds `slot.waiting` (with who holds the slots) and
+`slot.taken` ([machine](../machine.md#a-wait-is-shown)).
 
 The run result lists each node (runs, ok, last output, cost), the total cost,
 the reasons the run did not succeed, and the worktrees it left for the user. It

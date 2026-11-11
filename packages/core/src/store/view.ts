@@ -187,6 +187,18 @@ export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
   return roots;
 };
 
+/** The nodes of a run waiting for a machine-wide slot now. */
+export const slotWaitsOf = (events: readonly RunEvent[]): string[] => {
+  const waiting = new Set<string>();
+  for (const event of events) {
+    if (event.type === "slot.waiting") waiting.add(event.id);
+    else if (event.type === "slot.taken" || event.type === "node.finished") {
+      waiting.delete(event.id);
+    }
+  }
+  return [...waiting];
+};
+
 /** What is paused in a run: the whole run, and the nodes paused by name. */
 export type Paused = { run: boolean; nodes: string[] };
 
