@@ -86,6 +86,9 @@ export const nodeContext = (
       options.onEvent({ type: "node.event", id, event });
     },
     signal: deps.stops.signalFor(id, template),
+    skipped: (check, { at, who }) => {
+      options.onEvent({ type: "verify.skipped", id, check, at, who });
+    },
   };
   const owner = ownerPort(deps, id, template);
   if (owner !== undefined) context.owner = owner;

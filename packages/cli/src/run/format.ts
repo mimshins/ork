@@ -84,6 +84,14 @@ export const formatEvent = (
 const items = (count: number): string =>
   `${String(count)} ${count === 1 ? "item" : "items"}`;
 
+/** A `once: true` check that did not run, and the pass it stands on. */
+const skippedLine = ({
+  check,
+  at,
+  who,
+}: Extract<RunEvent, { type: "verify.skipped" }>): string =>
+  `${check}: already passed on these files · ${at} · ${who}`;
+
 /** Transcript lines for one run event, prefixed with the node they are from. */
 export const formatRunEvent = (
   event: RunEvent,
@@ -251,6 +259,9 @@ export const formatRunEvent = (
   }
   if (event.type === "slot.taken") {
     return [`${tag(event.id)} ${style("dim", "▸ got a check slot")}`];
+  }
+  if (event.type === "verify.skipped") {
+    return [`${tag(event.id)} ${style("dim", `✓ ${skippedLine(event)}`)}`];
   }
   if (event.type === "each.listed") {
     const round = event.round > 1 ? ` (round ${String(event.round)})` : "";

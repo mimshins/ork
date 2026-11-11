@@ -2,7 +2,8 @@
  * @file Vitest configuration: where the packages' and tools' tests live. The
  *   UI's tests (`.tsx`) run in a DOM (jsdom); the rest run in Node. `HOME` is a
  *   temp folder, so no test reaches the developer's own `~/.ork/state.db`, and
- *   the caller's `ORK_PLAIN` and `NO_COLOR` are dropped.
+ *   the caller's `ORK_PLAIN` and `NO_COLOR` are dropped. The Node tests' child
+ *   Node processes share one compile cache, so a CLI start costs half.
  */
 
 import { mkdtempSync, rmSync } from "node:fs";
@@ -12,6 +13,8 @@ import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 const HOME = mkdtempSync(path.join(tmpdir(), "ork-test-home-"));
+// The Node tests' children share one compile cache (tools/vitest/compile-cache.ts).
+process.env["ORK_TEST_COMPILE_CACHE"] = path.join(HOME, "compile-cache");
 
 // The caller's terminal settings stay out of the tests: an `ork run --plain`
 // (or NO_COLOR) around `pnpm check` would change what the CLI's tests see.
@@ -27,20 +30,22 @@ process.once("exit", () => {
  */
 const expect = { poll: { timeout: 5000 } };
 
-// Inside an Ork run, several suites share the machine: use half the cores.
-const inRun = process.env["ORK_RUN"] !== undefined;
+// A third of the cores, in a run or not: more workers than that spend more CPU
+// for the same tests (cores shared, caches cold; measured on 12 cores: 4 workers
+// used about 310 CPU-s for the suite, the default 11 used about 500), and
+// several runs' suites share the machine.
+const workers = Math.max(1, Math.floor(availableParallelism() / 3));
 
 export default defineConfig({
   test: {
-    ...(inRun
-      ? { maxWorkers: Math.max(1, Math.floor(availableParallelism() / 2)) }
-      : {}),
+    maxWorkers: workers,
     env: { HOME },
     projects: [
       {
         test: {
           name: "node",
           expect,
+          setupFiles: ["tools/vitest/compile-cache.ts"],
           // Many tests start the CLI, git or a child process: 2.5-3.5 s in a
           // full run, past Vitest's 5 s default on a busy machine (a pre-push
           // check while a run's sessions work). A test that needs longer still

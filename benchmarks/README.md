@@ -72,6 +72,9 @@ leaves out every minute a run waited on the maintainer. The manual estimate is a
 rate from this repository's own history, applied to each change's size, with a
 wide range. [Method and caveats](./method.md).
 
+[The suite's cost](./method.md#the-suites-cost): what the test suite costs in
+CPU, before and after it was made cheaper.
+
 ## In each benchmark
 
 - `README.md`: what was built, the numbers, how the run went and what went

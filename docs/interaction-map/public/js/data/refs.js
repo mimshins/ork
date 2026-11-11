@@ -731,6 +731,29 @@ export const MACHINE = {
   ),
 };
 
+export const CHECK_ONCE = {
+  spec: d(
+    "specs/check-once.md",
+    "Spec: a check runs once per set of files, and a cheaper suite",
+  ),
+  key: d(
+    "packages/core/src/once/key.ts",
+    "Code: the key of a check, the working tree's files",
+  ),
+  tests: d(
+    "packages/cli/test/once.test.ts",
+    "Tests: `ork once` skips a passed check",
+  ),
+  guide: d(
+    "docs/guides/running-workflows/several-runs.md#run-a-check-once-ork-once",
+    "Guide: run a check once",
+  ),
+  adr: d(
+    "decisions/ADR-082-check-once-keyed-by-files.md",
+    "ADR-082: checks keyed by the files, passes in the git folder",
+  ),
+};
+
 export const TIMEOUTS = {
   code: d(
     "packages/core/src/run/timeouts.ts",

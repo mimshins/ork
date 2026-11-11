@@ -179,6 +179,11 @@ export const lineOf = (event: Event): string => {
     case "slot.waiting": {
       return `held by ${event.holders.join(", ")}`;
     }
+    case "verify.skipped": {
+      return oneLine(
+        `${event.check}: already passed on these files · ${event.at} · ${event.who}`,
+      );
+    }
     case "message.read": {
       return `${String(event.ids.length)} messages`;
     }

@@ -101,7 +101,9 @@ The decision queue adds `decision.opened`, `decision.answered`,
 adds `node.held` and `node.released`
 ([run control](../run-control.md#what-a-run-records)); a heavy command that
 waits for a machine-wide slot adds `slot.waiting` (with who holds the slots) and
-`slot.taken` ([machine](../machine.md#a-wait-is-shown)).
+`slot.taken` ([machine](../machine.md#a-wait-is-shown)); a `once: true` check
+that did not run adds `verify.skipped` with the command, the time of the earlier
+pass and who ran it ([check once](../check-once.md#in-a-workflow)).
 
 The run result lists each node (runs, ok, last output, cost), the total cost,
 the reasons the run did not succeed, and the worktrees it left for the user. It

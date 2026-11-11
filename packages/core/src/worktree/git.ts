@@ -29,14 +29,18 @@ const inTurn = <T>(cwd: string, task: () => Promise<T>): Promise<T> => {
   return next;
 };
 
-const runGit = (cwd: string, args: readonly string[]): Promise<GitResult> =>
+const runGit = (
+  cwd: string,
+  args: readonly string[],
+  env: NodeJS.ProcessEnv,
+): Promise<GitResult> =>
   new Promise(resolve => {
     execFile(
       "git",
       args,
       {
         cwd,
-        env: withoutGitLocalEnv(process.env),
+        env: { ...withoutGitLocalEnv(process.env), ...env },
         maxBuffer: 32 * 1024 * 1024,
         encoding: "utf8",
       },
@@ -55,16 +59,23 @@ const runGit = (cwd: string, args: readonly string[]): Promise<GitResult> =>
     );
   });
 
-/** Runs `git` with arguments (no shell) in `cwd`. Never throws. */
-export const git = (cwd: string, args: readonly string[]): Promise<GitResult> =>
-  inTurn(cwd, () => runGit(cwd, args));
+/**
+ * Runs `git` with arguments (no shell) in `cwd`. Never throws. `env` adds
+ * variables, such as a temporary `GIT_INDEX_FILE`.
+ */
+export const git = (
+  cwd: string,
+  args: readonly string[],
+  env: NodeJS.ProcessEnv = {},
+): Promise<GitResult> => inTurn(cwd, () => runGit(cwd, args, env));
 
 /** Like `git`, but rejects with git's message when the command fails. */
 export const gitOk = async (
   cwd: string,
   args: readonly string[],
+  env: NodeJS.ProcessEnv = {},
 ): Promise<string> => {
-  const result = await git(cwd, args);
+  const result = await git(cwd, args, env);
   if (result.code !== 0) {
     const reason = result.stderr.trim().split("\n").at(-1) ?? "";
     throw new Error(`git ${args[0] ?? ""} failed: ${reason}`);

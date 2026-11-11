@@ -9,11 +9,12 @@
  *   flag is taken out of the arguments and set as `ORK_PLAIN=1`. `--help`
  *   leaves out the flags only Ork passes to itself. `ork __complete`, which tab
  *   completion runs on every Tab, goes first: no update check, and no citty, so
- *   a typed `--help` is a word to complete.
+ *   a typed `--help` is a word to complete. `ork once -- <command>` skips
+ *   citty's help scan, so a `--help` or `-h` of the command is the command's.
  */
 
 import { clearGitLocalEnv } from "@krapht/ork-core";
-import { runMain } from "citty";
+import { runCommand, runMain } from "citty";
 
 import { COMPLETE_COMMAND } from "./completion/scripts.ts";
 import { showHelp } from "./help.ts";
@@ -44,5 +45,21 @@ if (argv[0] === COMPLETE_COMMAND) {
       showUpdateNotice();
     });
   }
-  await runMain(main, { rawArgs: argv, showUsage: showHelp });
+  const dash = argv.indexOf("--");
+  const askedHelp = argv
+    .slice(1, dash === -1 ? 0 : dash)
+    .some(arg => arg === "--help" || arg === "-h");
+  if (argv[0] === "once" && dash !== -1 && !askedHelp) {
+    // runMain shows help for a `--help` or `-h` anywhere, even in the command
+    // after `--`, and the wrapped check would never run.
+    try {
+      const { once } = await import("./commands/once.ts");
+      await runCommand(once, { rawArgs: argv.slice(1) });
+    } catch (error) {
+      console.error(error);
+      process.exitCode = 1;
+    }
+  } else {
+    await runMain(main, { rawArgs: argv, showUsage: showHelp });
+  }
 }

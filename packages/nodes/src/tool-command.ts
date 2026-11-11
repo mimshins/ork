@@ -1,11 +1,17 @@
 /**
  * @file A tool node's command line, split without a shell: Ork starts programs
  *   directly, so nothing in a rendered value can run as a command. And the
- *   contract of what runs it, and what a run of it gives back.
+ *   contract of what runs it, what a run of it gives back, and, with `once:
+ *   true` (a tool node or a `verify:`), whether it runs: a check that passed on
+ *   identical files is skipped (`runOnce`) and the run records
+ *   `verify.skipped`; a failure records nothing; `ORK_ONCE=off` always runs
+ *   it.
  */
 
-import type { CpuTime } from "@krapht/ork-core";
+import { type CpuTime, type ExecuteContext, runOnce } from "@krapht/ork-core";
 import type { Priority, ToolNode } from "@krapht/ork-schema";
+
+import type { Environ } from "./environ.ts";
 
 /** What runs a `script:` with no `interpreter:`: it stops at the first failure. */
 export const DEFAULT_INTERPRETER = "sh -eu";
@@ -97,3 +103,42 @@ export type ToolRunner = (
     priority?: Priority;
   },
 ) => Promise<ToolRun>;
+
+/**
+ * Runs `execute`, or, with `once: true`, skips it after a pass on these files:
+ * `null` then, and `verify.skipped` is recorded. `shown` is the scrubbed
+ * command.
+ */
+export const runUnlessPassed = async ({
+  node,
+  context,
+  cwd,
+  shown,
+  environ,
+  execute,
+}: {
+  node: Pick<ToolNode, "once" | "script">;
+  context: Pick<ExecuteContext, "runId" | "id" | "skipped">;
+  cwd: string;
+  shown: string;
+  environ: Environ;
+  execute: () => Promise<ToolRun>;
+}): Promise<ToolRun | null> => {
+  if (node.once !== true) return execute();
+  const done: { run?: ToolRun } = {};
+  const once = await runOnce({
+    cwd,
+    // A script's text is the check too, not only what runs it.
+    name: node.script === undefined ? shown : `${shown}\n${node.script}`,
+    who: `${context.runId}/${context.id}`,
+    env: environ,
+    run: async () => {
+      done.run = await execute();
+      return done.run.exitCode;
+    },
+  });
+  // Not skipped, `runOnce` ran it.
+  if (!once.skipped) return done.run ?? execute();
+  context.skipped?.(shown, once.pass);
+  return null;
+};

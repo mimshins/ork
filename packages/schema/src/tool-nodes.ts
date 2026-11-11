@@ -19,7 +19,7 @@ import {
   toolProgramFields,
   WatchSchema,
 } from "./settings.ts";
-import { runFields } from "./steps.ts";
+import { onceField, runFields } from "./steps.ts";
 
 const toolFields = {
   ...nodeBaseFields,
@@ -35,6 +35,7 @@ const toolFields = {
   watch: WatchSchema.optional().describe(
     "Run the command again and again until a condition holds, with no model turn.",
   ),
+  once: onceField,
   ...toolProgramFields,
   ...notifyFields,
   ...forEachFields,

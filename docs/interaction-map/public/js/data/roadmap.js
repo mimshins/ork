@@ -1120,6 +1120,19 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "check-once",
+        title: "Check once: never re-run a passed check on the same files",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). `ork once -- <command>` runs a command unless the same check already passed on identical files (a hash of the working tree, the check's name, Node's version, optionally `HEAD`), and records a pass in the repository's git folder, shared by its worktrees. `once: true` on a `verify:` or a tool node does the same, with a `verify.skipped` event in `ork logs` and the UI. This repository's `pnpm check` and `pnpm check:changed` go through it, the docs node verifies with `check:changed`, and the suite is cheaper: a third of the cores, fake timers, a smaller local fuzz, shared fixture repositories (571 to 303 CPU-s on a loaded machine). Left: the idle target and a re-measured build are not measured, and a skipped tool node has no `json` (L263 to L269).",
+        docs: [
+          "specs/check-once.md",
+          "docs/guides/running-workflows/several-runs.md",
+          "decisions/ADR-082-check-once-keyed-by-files.md",
+          "specs/gaps/check-once-limits.md",
+        ],
+      },
+      {
         id: "attach",
         title: "`ork attach`, and called runs in the terminal",
         status: "active",

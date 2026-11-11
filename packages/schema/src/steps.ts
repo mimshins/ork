@@ -31,6 +31,14 @@ export const runFields = {
     ),
 };
 
+/** `once:` on a `verify:` and on a tool node. */
+export const onceField = z
+  .boolean()
+  .optional()
+  .describe(
+    "Skip the command when the same check already passed on identical files (a hash of the working tree, the command, Node's version); a pass is recorded. Default: false.",
+  );
+
 export const StepSchema = z.strictObject({
   ...runFields,
   ...toolProgramFields,
@@ -50,6 +58,7 @@ export const VerifySchema = StepSchema.extend({
     .describe(
       "How many times a failed check resumes the session to fix it before the node fails. Default: 1.",
     ),
+  once: onceField,
 }).describe(
   "A program that must pass before the node's report is accepted. It runs in the node's checkout.",
 );

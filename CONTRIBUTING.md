@@ -49,7 +49,8 @@ Requirements: Node.js `>= 24.20` and pnpm (the exact version is pinned in
 
 ```sh
 pnpm install          # install dependencies and the git hooks
-pnpm check            # format check, lint, typecheck, tests, docs and map checks
+pnpm check            # format check, lint, typecheck, tests, docs and map checks (skipped when they already passed on the same files)
+pnpm check:fast       # format, lint, typecheck and docs only
 pnpm format           # fix formatting (oxfmt)
 pnpm lint:fix         # fix what oxlint can fix
 pnpm test             # unit tests (vitest)
@@ -61,8 +62,12 @@ directly.
 
 `pnpm install` sets `git config core.hooksPath .githooks`:
 
-- `pre-push` runs `pnpm check` and aborts the push on failure. CI runs the same
-  gates; bypass only in an emergency with `git push --no-verify`.
+- `pre-push` runs `pnpm check` and aborts the push on failure. `pnpm check` and
+  `pnpm check:changed` go through [`ork once`](./specs/check-once.md): a check
+  that already passed on identical files is skipped
+  (`pnpm ork once --force -- …` or `ORK_ONCE=off` runs it anyway;
+  `pnpm check:all` always runs). CI has no cache and runs the same gates; bypass
+  only in an emergency with `git push --no-verify`.
 - `commit-msg` rejects AI or agent attribution lines (see below).
 
 ## Project structure
@@ -89,7 +94,9 @@ their public entry point. oxlint enforces this.
   `type` aliases, no `any`, no non-null assertions.
 - Add tests next to the package (`packages/<name>/test/*.test.ts`) for every
   behaviour change. Tests never call real services or real accounts: use the
-  fakes the package provides.
+  fakes the package provides. A test that waits on time uses a fake clock, not a
+  real wait, and one that needs a git repository copies a shared fixture where
+  there is one ([check once](./specs/check-once.md#a-cheaper-suite)).
 - A behavior change updates its spec in [specs/](./specs/README.md) and the user
   guide that covers it; a hard-to-reverse choice gets an ADR.
 - After a schema change, run `pnpm --dir packages/schema gen:json-schema` and

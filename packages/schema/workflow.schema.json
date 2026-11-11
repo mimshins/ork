@@ -1183,6 +1183,10 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 5
+                  },
+                  "once": {
+                    "description": "Skip the command when the same check already passed on identical files (a hash of the working tree, the command, Node's version); a pass is recorded. Default: false.",
+                    "type": "boolean"
                   }
                 },
                 "additionalProperties": false,
@@ -1806,6 +1810,10 @@
                     "type": "integer",
                     "minimum": 0,
                     "maximum": 5
+                  },
+                  "once": {
+                    "description": "Skip the command when the same check already passed on identical files (a hash of the working tree, the command, Node's version); a pass is recorded. Default: false.",
+                    "type": "boolean"
                   }
                 },
                 "additionalProperties": false,
@@ -2123,6 +2131,10 @@
                 ],
                 "additionalProperties": false
               },
+              "once": {
+                "description": "Skip the command when the same check already passed on identical files (a hash of the working tree, the command, Node's version); a pass is recorded. Default: false.",
+                "type": "boolean"
+              },
               "env": {
                 "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
                 "type": "object",
@@ -2403,6 +2415,10 @@
                   "timeout"
                 ],
                 "additionalProperties": false
+              },
+              "once": {
+                "description": "Skip the command when the same check already passed on identical files (a hash of the working tree, the command, Node's version); a pass is recorded. Default: false.",
+                "type": "boolean"
               },
               "env": {
                 "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
@@ -2690,6 +2706,10 @@
                   "timeout"
                 ],
                 "additionalProperties": false
+              },
+              "once": {
+                "description": "Skip the command when the same check already passed on identical files (a hash of the working tree, the command, Node's version); a pass is recorded. Default: false.",
+                "type": "boolean"
               },
               "env": {
                 "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",
@@ -2979,6 +2999,10 @@
                   "timeout"
                 ],
                 "additionalProperties": false
+              },
+              "once": {
+                "description": "Skip the command when the same check already passed on identical files (a hash of the working tree, the command, Node's version); a pass is recorded. Default: false.",
+                "type": "boolean"
               },
               "env": {
                 "description": "Environment variables for the program. Values are templates, and may read the user's own variables as {{env.NAME}}.",

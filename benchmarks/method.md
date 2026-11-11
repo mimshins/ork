@@ -68,3 +68,50 @@ quartiles, never a session, a window or a date.
 - **Few runs, one codebase, one maintainer.** These are early alpha runs on Ork
   itself. They show where Ork's costs come from, not what every project will
   see.
+
+## The suite's cost
+
+What `vitest run` over the whole repository costs in CPU, before and after the
+change that made the suite cheaper and let a passed check be skipped
+([check once](../specs/check-once.md),
+[ADR-082](../decisions/ADR-082-check-once-keyed-by-files.md)). CPU is user plus
+system time of the process and its children (`/usr/bin/time`), not wall time:
+wall time depends on how many cores are free.
+
+Measured on a 12-core laptop that was **loaded** with other work, so every
+number is higher than an idle machine would give and the wall times are noisy.
+
+### The whole suite
+
+| What ran                                     | CPU-s | User | System | Wall |
+| -------------------------------------------- | ----: | ---: | -----: | ---: |
+| Before: default workers (11)                 |   571 |  478 |     93 | 59 s |
+| Default workers, with the other changes      |   502 |      |        |      |
+| 4 workers alone                              |   314 |      |        |      |
+| 3 workers alone                              |   318 |      |        |      |
+| After: a third of the cores (4), all changes |   303 |  254 |     49 | 71 s |
+
+More workers than a third of the cores spent more CPU for the same tests (the
+cores are shared and caches are cold), so the cap is now always a third, in a
+run or not. Wall time went up a little; the CPU, and so the heat and the room
+left for other runs, went down by about 47%.
+
+### Files that changed most
+
+| Files                                                     | Before | After |
+| --------------------------------------------------------- | -----: | ----: |
+| `packages/cli` tests (compile cache, shared fixtures)     |  156 s | 114 s |
+| `packages/core/test/timeouts.test.ts` (fake timers)       |  9.9 s | 0.3 s |
+| `packages/core/test/watch.test.ts` (fake timers)          |  9.7 s | 0.3 s |
+| `packages/core/test/walk-fuzz.test.ts` (100 runs locally) |  7.6 s | 1.4 s |
+
+### Not measured
+
+- **The idle target.** The plan's target was under 200 CPU-s on an idle machine,
+  from about 330. Nothing here was measured idle.
+- **A build measured again.** The plan's other check, a build like run
+  `f9d00e18` measured again (full checks per run, CPU per tool command), needs a
+  real build run, and has not been done. The figures that motivated the change
+  (about 1.6 CPU-hours of checks in that build) are not repeated here.
+
+Both are in the [gaps register](../specs/gaps/check-once-limits.md) (L269).

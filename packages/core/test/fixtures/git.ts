@@ -6,7 +6,14 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -34,12 +41,22 @@ export const write = (root: string, file: string, text: string) => {
   writeFileSync(path.join(root, file), text);
 };
 
+const freshFolder = (): string =>
+  path.join(realpathSync(mkdtempSync(path.join(tmpdir(), "ork-wt-"))), "app");
+
+/** Built once per worker: `git init` and a commit cost more than a copy. */
+let template: string | undefined;
+
 /** A repo shaped like se-backend: skills in `.ai`, linked from `.claude`. */
 export const repo = (): string => {
-  const root = path.join(
-    realpathSync(mkdtempSync(path.join(tmpdir(), "ork-wt-"))),
-    "app",
-  );
+  template ??= buildRepo();
+  const root = freshFolder();
+  cpSync(template, root, { recursive: true, verbatimSymlinks: true });
+  return root;
+};
+
+const buildRepo = (): string => {
+  const root = freshFolder();
   mkdirSync(root);
   sh(root, "init", "-q", "-b", "main");
   sh(root, "config", "user.email", "dev@example.com");

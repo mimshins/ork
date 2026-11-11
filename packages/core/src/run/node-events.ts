@@ -39,4 +39,18 @@ export type NodeEvent =
       /** How it ended; absent on runs from before, which `endOf` reads. */
       end?: SessionEnd;
     }
-  | { type: "node.skipped"; id: string };
+  | { type: "node.skipped"; id: string }
+  | VerifySkipped;
+
+/**
+ * A check with `once: true` (a `verify:` or a tool node) that did not run: it
+ * passed `at` on identical files, run by `who` (`<run>/<node>` or `you`).
+ */
+export type VerifySkipped = {
+  type: "verify.skipped";
+  id: string;
+  /** The command, as `tool.called` shows it. */
+  check: string;
+  at: string;
+  who: string;
+};

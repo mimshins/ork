@@ -120,9 +120,12 @@ already stored) keeps one row per command beside the
 Quick changes that go with these, in this repository's own process:
 
 - `pnpm check:changed` runs the static checks and `vitest run --changed`; the
-  `implement` and `engine` nodes of `build` verify with it, and the leader and
-  the publish keep `pnpm check`.
-- `vitest.config.ts` caps `maxWorkers` at half the cores when `ORK_RUN` is set.
+  `implement`, `engine` and `docs` nodes of `build` verify with it, and the
+  leader and the publish keep `pnpm check`. Both skip when they already passed
+  on the same files ([check once](./check-once.md)).
+- `vitest.config.ts` caps `maxWorkers` at a third of the cores, in a run or not:
+  more workers used more CPU for the same tests
+  ([check once](./check-once.md#a-cheaper-suite)).
 - The overview stream reads a running run's live and paused state from
   `EventStore.controlEvents` (its pause, continue, start and finish events), not
   from every event.

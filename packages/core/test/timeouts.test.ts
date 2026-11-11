@@ -3,10 +3,8 @@
  *   still while the user is waited on, and a run's own timeout.
  */
 
-import { setTimeout as sleep } from "node:timers/promises";
-
 import { type Node, parseWorkflow, type Workflow } from "@krapht/ork-schema";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   type CompiledGraph,
@@ -47,6 +45,14 @@ const stuck: NodeExecutor = () =>
     // Never settles.
   });
 
+/** The fake clock's time, in ms, after which every timer here has fired. */
+const SETTLED = 10_000;
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
+
 const answersAfter = (ms: number): HumanChannel => ({
   permit: () => Promise.resolve({ allow: true }),
   ask: async () => {
@@ -60,7 +66,7 @@ const asksThenEnds: NodeExecutor = async ({ human, id }) => {
   return OK;
 };
 
-const run = (
+const run = async (
   graph: CompiledGraph,
   executor: NodeExecutor,
   human: HumanChannel = answersAfter(0),
@@ -81,7 +87,10 @@ const run = (
     runDir: "/nonexistent",
     timeoutGraceMs: 20,
   });
-  return handle.done.then(result => ({ result, ran }));
+  const settled = handle.done.then(result => ({ result, ran }));
+  // The clock is fake: timeouts and answers come due by moving it, not waiting.
+  await vi.advanceTimersByTimeAsync(SETTLED);
+  return settled;
 };
 
 /** `slow` works until aborted; `recover` keeps the input it was given. */
@@ -129,6 +138,14 @@ const limited = (node: string) =>
 
 const tool = (id: string, extra = ""): string =>
   `  ${id}: { type: tool.shell, command: "true"${extra} }`;
+
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("a node's timeout", () => {
   it("fails the node, keeps what it had, and lets an edge handle it", async () => {
@@ -265,17 +282,19 @@ describe("the clock", () => {
   it("does not expire while it stands still", async () => {
     const { holds, clock } = setup();
     holds.pause();
-    const ended = await Promise.race([
-      withTimeout({
-        timeout: "1s",
-        clock: clock.forNode("other"),
-        signal: new AbortController().signal,
-        graceMs: 0,
-        start: untilAbortedAlone,
-      }),
-      sleep(1200, "still running"),
-    ]);
-    expect(ended).toBe("still running");
+    const outcome = { ended: false };
+    void withTimeout({
+      timeout: "1s",
+      clock: clock.forNode("other"),
+      signal: new AbortController().signal,
+      graceMs: 0,
+      start: untilAbortedAlone,
+    }).then(() => {
+      outcome.ended = true;
+      return true;
+    });
+    await vi.advanceTimersByTimeAsync(1200);
+    expect(outcome.ended).toBe(false);
   });
 });
 

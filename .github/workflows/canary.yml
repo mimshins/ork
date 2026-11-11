@@ -38,7 +38,7 @@ jobs:
         with:
           registry-url: https://registry.npmjs.org
       # The same gates as CI, so nothing unchecked is ever published.
-      - run: pnpm run check
+      - run: pnpm run check:all
       # Changesets refuses a snapshot in pre mode. This checkout is thrown away
       # and nothing is committed, so main stays in pre mode.
       - name: Leave pre mode in this checkout

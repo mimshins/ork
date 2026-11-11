@@ -1,8 +1,9 @@
 /**
  * @file Holds what a walk claims to what the real scheduler does (RFC-009), on
  *   small random workflows: no node it says never runs may run, and no loop it
- *   says only its rounds can end may be left another way. `ORK_FUZZ_COUNT`
- *   tries more of them, and `ORK_FUZZ_SEED` others.
+ *   says only its rounds can end may be left another way. It tries 100 locally
+ *   and 500 in CI (where `CI` is set); `ORK_FUZZ_COUNT` sets another number,
+ *   and `ORK_FUZZ_SEED` others.
  */
 
 import { parseWorkflow } from "@krapht/ork-schema";
@@ -20,7 +21,10 @@ import {
   randomWorkflow,
 } from "./fixtures/walk-fuzz.ts";
 
-const COUNT = Number(process.env["ORK_FUZZ_COUNT"] ?? 500);
+const COUNT = Number(
+  process.env["ORK_FUZZ_COUNT"] ??
+    (process.env["CI"] === undefined ? 100 : 500),
+);
 const SEED = Number(process.env["ORK_FUZZ_SEED"] ?? 2026);
 const ORDERS = [0, 1, 2, 3];
 const MOST_PATHS = 1500;

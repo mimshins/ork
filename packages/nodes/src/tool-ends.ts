@@ -16,6 +16,7 @@ import {
 } from "@krapht/ork-core";
 
 import type { ToolRun } from "./tool-command.ts";
+import { removeOutputFile } from "./tool-output.ts";
 
 /** A node that could not run its command: its own definition is wrong. */
 export const failed = (
@@ -66,4 +67,13 @@ export const exitEnd = (
   );
   // Only a transient kind is `transient`; a `watch:` looks again by kind.
   return endedWith({ ok: false, output }, end);
+};
+
+/** The result of a skipped check: it passed, and printed nothing this time. */
+export const skippedCheck = (outputFile: string | undefined): NodeResult => {
+  if (outputFile !== undefined) removeOutputFile(outputFile);
+  return endedWith(
+    { ok: true, output: { exitCode: 0, stdout: "", stderr: "" } },
+    endFor("done"),
+  );
 };

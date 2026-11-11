@@ -18,6 +18,7 @@ For the full rules: [the machine spec](../../../specs/machine.md).
 - [What waits](#what-waits)
 - [Lower priority](#lower-priority)
 - [Agents don't repeat your check](#agents-dont-repeat-your-check)
+- [Run a check once: `ork once`](#run-a-check-once-ork-once)
 - [Seeing where the CPU went](#seeing-where-the-cpu-went)
 
 ## Slots for heavy commands
@@ -84,9 +85,38 @@ and a failed `verify:` comes back to it with the output. It can still run
 targeted tests such as `vitest run packages/cli/test/usage.test.ts`. Nodes
 without `verify:` are not limited.
 
-In this repository, builders verify with `pnpm check:changed` (formatting, lint,
-types, docs and `vitest run --changed`), and the leader and the publish step run
-the full `pnpm check`. Inside a run, vitest also uses at most half your cores.
+In this repository, builders and the docs node verify with `pnpm check:changed`
+(formatting, lint, types, docs and `vitest run --changed`), and the leader and
+the publish step run the full `pnpm check`. Both go through `ork once` (below),
+so a check that already passed on the same files doesn't run again. Vitest uses
+at most a third of your cores, in a run or not.
+
+## Run a check once: `ork once`
+
+`ork once -- <command>` runs the command unless the same check already passed on
+identical files, and records a pass when it exits 0. It works in any git
+repository, from a terminal or a hook:
+
+```
+ork once --as check --covers check:changed -- pnpm check
+```
+
+- The key is your working tree's files (tracked and untracked, not ignored), the
+  check's name, and Node's version. A commit or a no-op rebase keeps a hit; any
+  edit, a new file or another Node version runs the check again.
+- `--as <name>` names the check (default: the command's text). `--covers <name>`
+  (repeatable) records the pass for other names too: a full check covers a
+  quicker one. `--with-head` adds `HEAD` to the key, for checks relative to it,
+  such as `vitest --changed`.
+- A hit prints one line and exits 0:
+  `✓ check already passed on these files · 5m ago · you`. The last part is `you`
+  from a terminal, or the run and node that ran it.
+- In a workflow, `once: true` on a `verify:` or a tool node does the same, and
+  the run logs a `verify.skipped` line (`ork logs` and the UI show it).
+- `--force`, or `ORK_ONCE=off`, runs the command anyway. A failing command exits
+  with its own code and records nothing.
+- Passes are kept in the repository's git folder (`ork-once/`), shared by every
+  worktree of it, and pruned past 7 days or 500 entries.
 
 ## Seeing where the CPU went
 

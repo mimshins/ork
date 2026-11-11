@@ -13,7 +13,7 @@ import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 
 import { parseWorkflow } from "@krapht/ork-schema";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   type CompiledGraph,
@@ -270,7 +270,12 @@ describe("a node whose executor threw", () => {
 });
 
 describe("a gate's timer", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("counts only while its node is not held", async () => {
+    vi.useFakeTimers();
     const holds = createHolds({
       onEvent: () => {
         // Not under test.
@@ -287,10 +292,10 @@ describe("a gate's timer", () => {
       outcome.elapsed = value;
       return value;
     });
-    await sleep(120);
+    await vi.advanceTimersByTimeAsync(120);
     expect(outcome.elapsed).toBeUndefined();
     holds.proceed();
-    await sleep(120);
+    await vi.advanceTimersByTimeAsync(120);
     expect(outcome.elapsed).toBe(true);
   });
 

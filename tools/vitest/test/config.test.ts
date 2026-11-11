@@ -1,7 +1,7 @@
 /**
- * @file Tests for the root `vitest.config.ts`: inside an Ork run (`ORK_RUN`
- *   set) the workers are capped at half the cores, so several runs' suites
- *   share the machine; outside, Vitest's own default stays.
+ * @file Tests for the root `vitest.config.ts`: the workers are capped at a
+ *   third of the cores, in an Ork run (`ORK_RUN` set) or not, so a suite spends
+ *   less CPU and several runs' suites share the machine.
  */
 
 import { availableParallelism } from "node:os";
@@ -21,14 +21,14 @@ const loadedWith = async (run?: string) => {
   return config.test;
 };
 
+const THIRD = Math.max(1, Math.floor(availableParallelism() / 3));
+
 describe("vitest.config.ts", () => {
-  it("caps the workers at half the cores inside a run", async () => {
-    expect((await loadedWith("a1b2c3d4"))?.maxWorkers).toBe(
-      Math.max(1, Math.floor(availableParallelism() / 2)),
-    );
+  it("caps the workers at a third of the cores inside a run", async () => {
+    expect((await loadedWith("a1b2c3d4"))?.maxWorkers).toBe(THIRD);
   });
 
-  it("leaves the workers alone outside a run", async () => {
-    expect((await loadedWith())?.maxWorkers).toBeUndefined();
+  it("caps them the same outside a run", async () => {
+    expect((await loadedWith())?.maxWorkers).toBe(THIRD);
   });
 });

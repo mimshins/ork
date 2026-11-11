@@ -77,6 +77,7 @@ export const HELP_GROUPS: readonly HelpGroup[] = [
       { name: "upgrade", short: "Upgrade Ork, the way it was installed" },
       { name: "mcp", short: "Serve Ork's tools to Claude Code (MCP)" },
       { name: "send", short: "Write to a session from a tool node's program" },
+      { name: "once", short: "Run a check unless it passed on these files" },
       { name: "completion", short: "Print a tab-completion script" },
     ],
   },

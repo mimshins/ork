@@ -1,6 +1,7 @@
 /**
  * @file Tests that the Logs and Chats panels say how a message came when no
- *   session wrote it: a script's `ork send`, or a workflow's `notify:`.
+ *   session wrote it: a script's `ork send`, or a workflow's `notify:`; and the
+ *   Logs panel's line for a check `once: true` skipped.
  */
 
 import type { StoredEvent } from "@krapht/ork-server/client";
@@ -41,6 +42,22 @@ const FROM_SESSION: StoredEvent["event"] = {
   message: 3,
   body: "done",
 };
+
+describe("a check skipped by once", () => {
+  it("says so in the Logs panel's line, with the pass it stands on", () => {
+    expect(
+      lineOf({
+        type: "verify.skipped",
+        id: "docs",
+        check: "pnpm check:changed",
+        at: "2026-11-11T10:00:00.000Z",
+        who: "r0/build",
+      }),
+    ).toBe(
+      "pnpm check:changed: already passed on these files · 2026-11-11T10:00:00.000Z · r0/build",
+    );
+  });
+});
 
 describe("a message's via", () => {
   it("shows in the Logs panel's line", () => {

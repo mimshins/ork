@@ -42,6 +42,8 @@ export const main: CommandDef = defineCommand({
       import("./commands/pause.ts").then(module => module.continueRun),
     stop,
     chat,
+    // Loaded on use: it needs only git and the core.
+    once: () => import("./commands/once.ts").then(module => module.once),
     // Loaded on use: a program may call it many times in a run.
     send: () => import("./commands/send.ts").then(module => module.send),
     resume,

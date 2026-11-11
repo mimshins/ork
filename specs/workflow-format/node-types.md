@@ -54,13 +54,16 @@ _Part of [Workflow file format](../workflow-format.md)._
   `watch: { every, until, timeout, misses? }`, repeating the look until `until`
   holds, with no model turn ([watching a source](../scheduler/watching.md)).
 - **Before a session:** leaders and workers take `before:`, a program run in
-  their checkout first, with what `verify:` takes but `attempts`. Their `prompt`
-  reads its result as `{{before.*}}`, and `defaults:` may set it
+  their checkout first, with what `verify:` takes but `attempts` and `once`.
+  Their `prompt` reads its result as `{{before.*}}`, and `defaults:` may set it
   ([steps](../scheduler/steps.md#before-a-session)).
 - **Checks on a report:** leaders and workers take `verify:`, a program that
   must pass before their report is accepted, with `command` or `script`, `env`,
   `plainEnv`, `output`, `timeout` and `attempts` (default 1), and report it as
   `output.verify` ([scheduler](../scheduler/steps.md#checks-on-a-report)).
+- **Checks run once:** a `verify:` and a tool node take `once: true`, which
+  skips the command when the same check already passed on identical files and
+  records `verify.skipped` ([check once](../check-once.md#in-a-workflow)).
 - **Messages on finishing:** leaders, workers, tool nodes, gates and calls take
   `notify:`, a list of `{ to, when?, body? }` sent through the bus when the node
   finishes, starting no session; `when:` and `body:` also read `ok` and `error`

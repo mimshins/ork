@@ -245,6 +245,19 @@ describe("the plain transcript", () => {
     for (const line of out) expect(line).not.toContain("\u001B");
   });
 
+  it("says a check run once was skipped, and the pass it stands on", () => {
+    const skipped: RunEvent = {
+      type: "verify.skipped",
+      id: "w",
+      check: "pnpm check",
+      at: "2026-11-11T10:00:00.000Z",
+      who: "r-0/docs",
+    };
+    expect(lines(viewOf({ tty: false }), [skipped])).toEqual([
+      "w      │ ✓ pnpm check: already passed on these files · 2026-11-11T10:00:00.000Z · r-0/docs",
+    ]);
+  });
+
   it("shows a call whole with --verbose, still without escape codes", () => {
     const out = lines(
       viewOf({ tty: false }),

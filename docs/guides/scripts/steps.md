@@ -34,6 +34,11 @@ builder:
   and often save the extra turn.
 - **Read the result** as `{{nodes.builder.output.verify.exitCode}}`, or
   `verify.resumes` for how many tries it took.
+- **Skip it when it already passed.** `once: true` on a `verify:` skips the
+  command when the same check (the command, Node's version) already passed on
+  identical files, and the run logs a `verify.skipped` line naming the earlier
+  pass. A failure records nothing. `once` is also a tool node's field; see
+  [`ork once`](../running-workflows/several-runs.md#run-a-check-once-ork-once).
 - **`ork run --node`** doesn't run it, and says so.
 
 A check also reaches a delegated child, which follows no edges, and a worker's

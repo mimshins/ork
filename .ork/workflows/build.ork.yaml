@@ -383,7 +383,7 @@ nodes:
               path:
                 type: string
     verify:
-      command: pnpm check
+      command: pnpm check:changed
       timeout: 20m
       attempts: 1
   stage:

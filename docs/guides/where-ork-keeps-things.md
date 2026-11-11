@@ -27,6 +27,12 @@ A project you attached with `ork register` keeps the same files in
 Runs also leave git branches `ork/<run>/<node>`, and worktrees beside your clone
 (`../<clone>-worktrees/`) ([worktrees](./worktrees.md)).
 
+`ork once` keeps its passes in your repository's git folder,
+`<git-dir>/ork-once/`: outside `.ork/` and `~/.ork/`, shared by every worktree
+of the repository, and pruned past 7 days or 500 entries. Each holds a hash of
+the files, the check's name, a time and who ran it
+([run a check once](./running-workflows/several-runs.md#run-a-check-once-ork-once)).
+
 ## In your home folder: `~/.ork/`
 
 | Path                             | What it holds                                                                              |

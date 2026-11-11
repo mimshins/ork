@@ -130,6 +130,8 @@ export type ExecuteContext = {
   step?: StepRun;
   /** The machine the run shares: its priority and the slots of heavy commands. */
   machine?: NonNullable<SessionPorts["machine"]>;
+  /** Records that a `once: true` check was skipped (`verify.skipped`). */
+  skipped?: (check: string, pass: { at: string; who: string }) => void;
 };
 
 /** A node's `before:` or `verify:` step, and which try of it this is. */

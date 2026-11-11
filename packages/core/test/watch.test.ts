@@ -4,10 +4,8 @@
  *   what's recorded, and that waiting isn't work.
  */
 
-import { setTimeout as sleep } from "node:timers/promises";
-
 import { parseWorkflow } from "@krapht/ork-schema";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   type CompiledGraph,
@@ -19,6 +17,25 @@ import {
   startRun,
 } from "../src/index.ts";
 import { runTree } from "../src/store/view.ts";
+
+// The clock is fake: looks, timeouts and pauses move by advancing it, not by
+// waiting.
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+/** More fake time than any test here needs to run out its timers. */
+const SETTLED = 10_000;
+
+/** Moves the fake clock on until every timer has come due, then the result. */
+const endsWith = async (handle: RunHandle) => {
+  await vi.advanceTimersByTimeAsync(SETTLED);
+  return handle.done;
+};
 
 const HEADER = ["schemaVersion: 1", "name: t", "nodes:"];
 
@@ -198,7 +215,7 @@ describe("a watch", () => {
       graphOf(watching("json.result != 'pending'")),
       executor,
     );
-    const result = await handle.done;
+    const result = await endsWith(handle);
     expect(result.status).toBe("succeeded");
     expect(executor.calls()).toBe(3);
     expect(result.nodes[0]?.output).toMatchObject({
@@ -218,7 +235,7 @@ describe("a watch", () => {
       graphOf(watching("json.result != 'pending'")),
       executor,
     );
-    await handle.done;
+    await endsWith(handle);
     expect(ofType(events, "watch.changed").map(event => event.looks)).toEqual([
       1, 4,
     ]);
@@ -235,7 +252,7 @@ describe("a watch", () => {
       graphOf(watching("json.result != 'pending'")),
       executor,
     );
-    await handle.done;
+    await endsWith(handle);
     expect(ofType(events, "watch.changed")).toHaveLength(2);
   });
 
@@ -245,7 +262,7 @@ describe("a watch", () => {
       graphOf(watching("json.result != 'pending'")),
       both,
     );
-    await handle.done;
+    await endsWith(handle);
     expect(
       ofType(events, "node.event").filter(
         ({ event }) => event.type === "tool.called",
@@ -266,7 +283,7 @@ describe("a watch", () => {
       graphOf(watching("json.result != 'pending'")),
       executor,
     );
-    expect((await handle.done).status).toBe("succeeded");
+    expect((await endsWith(handle)).status).toBe("succeeded");
     expect(executor.calls()).toBe(6);
   });
 
@@ -276,7 +293,7 @@ describe("a watch", () => {
       graphOf(watching("json.result != 'pending'")),
       executor,
     );
-    expect((await handle.done).status).toBe("succeeded");
+    expect((await endsWith(handle)).status).toBe("succeeded");
     expect(executor.calls()).toBe(2);
   });
 
@@ -286,7 +303,7 @@ describe("a watch", () => {
       graphOf(watching("json.result != 'pending'", ", misses: 2")),
       executor,
     );
-    const result = await handle.done;
+    const result = await endsWith(handle);
     expect(executor.calls()).toBe(2);
     expect(result.status).toBe("failed");
     expect(result.nodes[0]?.error).toContain("2 looks in a row failed");
@@ -300,7 +317,7 @@ describe("a watch", () => {
       graphOf(watching("json.result != 'pending'")),
       executor,
     );
-    const result = await handle.done;
+    const result = await endsWith(handle);
     expect(executor.calls()).toBe(1);
     expect(result.nodes[0]?.error).toContain("result is maybe");
     expect(ofType(events, "watch.ended")[0]?.outcome).toBe("failed");
@@ -315,7 +332,7 @@ describe("a watch", () => {
       '  - { from: ci, to: fix, when: "!ok" }',
     ]);
     const { handle, events } = started(timingOutIn("1s", graph), executor, 5);
-    const result = await handle.done;
+    const result = await endsWith(handle);
     const ci = result.nodes.find(({ id }) => id === "ci");
     expect(ci?.ok).toBe(false);
     expect(ci?.end?.detail).toContain("never held");
@@ -332,7 +349,7 @@ describe("a watch", () => {
       timingOutIn("1s", graphOf(watching("json.result != 'pending'"))),
       stuck,
     );
-    const result = await handle.done;
+    const result = await endsWith(handle);
     expect(result.nodes[0]?.end?.detail).toContain("never held");
   });
 
@@ -343,9 +360,9 @@ describe("a watch", () => {
       executor,
       5,
     );
-    await sleep(30);
+    await vi.advanceTimersByTimeAsync(30);
     handle.stopNode("ci");
-    const result = await handle.done;
+    const result = await endsWith(handle);
     expect(result.nodes[0]?.end?.kind).toBe("interrupted");
     expect(ofType(events, "watch.ended")[0]?.outcome).toBe("stopped");
   });
@@ -365,18 +382,18 @@ describe("a watch", () => {
       executor,
       2,
     );
-    await sleep(20);
+    await vi.advanceTimersByTimeAsync(20);
     handle.pause();
-    await sleep(10);
+    await vi.advanceTimersByTimeAsync(10);
     const paused = executor.calls();
-    await sleep(30);
+    await vi.advanceTimersByTimeAsync(30);
     expect(executor.calls()).toBe(paused);
     expect(ofType(events, "node.held")).toHaveLength(1);
     handle.proceed();
-    await sleep(30);
+    await vi.advanceTimersByTimeAsync(30);
     expect(executor.calls()).toBeGreaterThan(paused);
     handle.interrupt();
-    await handle.done;
+    await endsWith(handle);
   });
 
   it("doesn't run out of its timeout while paused, and goes on waiting after", async () => {
@@ -386,14 +403,14 @@ describe("a watch", () => {
       executor,
       5,
     );
-    await sleep(50);
+    await vi.advanceTimersByTimeAsync(50);
     handle.pause();
     // Well past the timeout, which would end the wait if its clock ran on.
-    await sleep(1300);
+    await vi.advanceTimersByTimeAsync(1300);
     expect(ofType(events, "watch.ended")).toEqual([]);
     tell();
     handle.proceed();
-    const result = await handle.done;
+    const result = await endsWith(handle);
     expect(result.status).toBe("succeeded");
     expect(ofType(events, "watch.ended")[0]?.outcome).toBe("met");
   });
@@ -404,11 +421,11 @@ describe("a watch", () => {
       scripted([said("pending")]),
       5,
     );
-    await sleep(50);
+    await vi.advanceTimersByTimeAsync(50);
     handle.pause();
-    await sleep(1100);
+    await vi.advanceTimersByTimeAsync(1100);
     handle.proceed();
-    const result = await handle.done;
+    const result = await endsWith(handle);
     expect(result.nodes[0]?.end?.detail).toContain("never held");
     expect(ofType(events, "watch.ended")[0]?.outcome).toBe("timed_out");
   });
@@ -431,7 +448,7 @@ describe("a watch", () => {
     ]);
     // Longer between looks than the whole run may work.
     const { handle } = started(graph, executor, 700);
-    expect((await handle.done).status).toBe("succeeded");
+    expect((await endsWith(handle)).status).toBe("succeeded");
   });
 
   it("still counts other work against limits.timeout", async () => {
@@ -448,14 +465,14 @@ describe("a watch", () => {
     ]);
     const executor = byNode(pendingOrBusy());
     const { handle } = started(graph, executor, 5);
-    expect((await handle.done).status).toBe("timed_out");
+    expect((await endsWith(handle)).status).toBe("timed_out");
   });
 
   it("shows what it's waiting for only while it waits", async () => {
     const executor = scripted([said("pending"), said("passed")]);
     const graph = graphOf(watching("json.result != 'pending'"));
     const { handle, events } = started(graph, executor);
-    await handle.done;
+    await endsWith(handle);
     const last = events.findIndex(event => event.type === "node.finished");
     const during = runTree(events.slice(0, last))[0]?.watching;
     expect(during).toMatchObject({
@@ -494,7 +511,7 @@ describe("a watch and the session slots", () => {
       watchEveryMs: 2,
     });
     // It passes only once `other` has run, which needs the only slot.
-    expect((await handle.done).status).toBe("succeeded");
+    expect((await endsWith(handle)).status).toBe("succeeded");
   });
 });
 
@@ -505,11 +522,16 @@ const printed = (stdout: string): NodeResult => ({
 
 /** Stays until `ci` has said it passed. */
 const leadsUntilCiPasses: NodeExecutor = async context => {
-  await vi.waitFor(() => {
-    expect(context.outputs["ci"]).toBeDefined();
-  }, 5000);
+  await untilCi(context.outputs);
   return { ok: true, output: {} };
 };
+
+const untilCi = (outputs: Record<string, unknown>): Promise<void> =>
+  outputs["ci"] === undefined
+    ? new Promise<void>(resolve => {
+        setTimeout(resolve, 10);
+      }).then(() => untilCi(outputs))
+    : Promise.resolve();
 
 /** Says it's pending for this long, looking often enough to rest in between. */
 const pendingFor = (ms: number): NodeExecutor => {
@@ -553,7 +575,7 @@ describe("an owner's clock", () => {
       watchEveryMs: 50,
       timeoutGraceMs: 10,
     });
-    expect((await handle.done).status).toBe("succeeded");
+    expect((await endsWith(handle)).status).toBe("succeeded");
   });
 });
 
@@ -568,7 +590,7 @@ describe("a watch with no output: declared", () => {
   it("still waits, rather than taking one look and moving on", async () => {
     const executor = scripted([printed("not yet"), printed("done")]);
     const { handle, events } = started(graphOf(bare), executor);
-    expect((await handle.done).status).toBe("succeeded");
+    expect((await endsWith(handle)).status).toBe("succeeded");
     expect(executor.calls()).toBe(2);
     expect(events.map(({ type }) => type)).toContain("watch.ended");
   });

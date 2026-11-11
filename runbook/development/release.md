@@ -123,7 +123,7 @@ The workflow's steps, in order:
 
 1. Run only for `mimshins/ork` and only from `main`, in the `release`
    concurrency group, so it never races a release.
-2. `pnpm run check`, the same gates as CI.
+2. `pnpm run check:all` (`pnpm check` without the cache), the same gates as CI.
 3. Delete `.changeset/pre.json` in the throwaway checkout: Changesets refuses a
    snapshot in pre mode. Nothing is committed, so `main` stays in pre mode.
 4. `changeset version --snapshot canary`. The `snapshot` block in

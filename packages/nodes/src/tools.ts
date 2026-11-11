@@ -4,7 +4,8 @@
  *   without a shell, checked against `allow` (or the integration's default),
  *   its arguments and observed output fields from the integration's adapter,
  *   long output kept in run files. It sees who it is and the node's `env:`
- *   (`tool-env.ts`), and may return JSON (`tool-output.ts`).
+ *   (`tool-env.ts`), may return JSON (`tool-output.ts`), and may run once per
+ *   set of files (`runUnlessPassed` in `tool-command.ts`).
  */
 
 import path from "node:path";
@@ -20,8 +21,14 @@ import {
 import { integrationFor } from "@krapht/ork-integrations";
 import { isToolNode, markValue, type ToolNode } from "@krapht/ork-schema";
 
-import { commandLineOf, tokenize, type ToolRunner } from "./tool-command.ts";
-import { exitEnd, failed, invalidOutput } from "./tool-ends.ts";
+import {
+  commandLineOf,
+  runUnlessPassed,
+  tokenize,
+  type ToolRun,
+  type ToolRunner,
+} from "./tool-command.ts";
+import { exitEnd, failed, invalidOutput, skippedCheck } from "./tool-ends.ts";
 import {
   type Environ,
   identityOf,
@@ -188,47 +195,55 @@ export const toolExecutor =
         : { [STATE_ENV]: prepareStateFile(context.runDir, context.id) }),
     };
     const names = Object.keys(nodeEnv.values);
-    // A heavy command waits for a machine-wide slot first; its timeout waits too.
-    const release = await context.machine?.slot(
-      [command.program, ...command.args].join(" "),
-      context.signal,
+    const shown = scrub(
+      [
+        command.program,
+        ...command.args,
+        ...(node.script === undefined ? [] : ["<script>"]),
+      ].join(" "),
     );
-    context.emit({
-      type: "tool.called",
-      id: context.id,
-      name: scrub(command.program),
-      input: {
-        command: scrub(
-          [
-            command.program,
-            ...command.args,
-            ...(node.script === undefined ? [] : ["<script>"]),
-          ].join(" "),
-        ),
-        ...(names.length === 0 ? {} : { env: names }),
-      },
-    });
-    const scriptFile =
-      node.script === undefined
-        ? undefined
-        : writeScriptFile(
-            context.runDir,
-            context.id,
-            context.round,
-            node.script,
-          );
-    const priority = context.machine?.priority;
-    const raw = await runner(
-      command.program,
-      scriptFile === undefined ? command.args : [...command.args, scriptFile],
-      {
-        cwd,
-        signal: context.signal,
-        env,
-        ...(priority === undefined ? {} : { priority }),
-      },
-    ).finally(() => release?.());
-    if (scriptFile !== undefined) removeOutputFile(scriptFile);
+    const execute = async (): Promise<ToolRun> => {
+      // A heavy command waits for a machine-wide slot first; its timeout waits too.
+      const release = await context.machine?.slot(
+        [command.program, ...command.args].join(" "),
+        context.signal,
+      );
+      context.emit({
+        type: "tool.called",
+        id: context.id,
+        name: scrub(command.program),
+        input: {
+          command: shown,
+          ...(names.length === 0 ? {} : { env: names }),
+        },
+      });
+      const scriptFile =
+        node.script === undefined
+          ? undefined
+          : writeScriptFile(
+              context.runDir,
+              context.id,
+              context.round,
+              node.script,
+            );
+      const priority = context.machine?.priority;
+      return runner(
+        command.program,
+        scriptFile === undefined ? command.args : [...command.args, scriptFile],
+        {
+          cwd,
+          signal: context.signal,
+          env,
+          ...(priority === undefined ? {} : { priority }),
+        },
+      ).finally(() => {
+        release?.();
+        if (scriptFile !== undefined) removeOutputFile(scriptFile);
+      });
+    };
+    const check = { node, context, cwd, shown, environ, execute };
+    const raw = await runUnlessPassed(check);
+    if (raw === null) return skippedCheck(outputFile);
     const run = {
       exitCode: raw.exitCode,
       stdout: scrub(raw.stdout),

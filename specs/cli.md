@@ -13,8 +13,9 @@ Status: **Built**: every command below. `ork init`, `ork register`,
 ([feedback](./feedback.md)), `ork upgrade` and the new-version notice
 ([updates](./cli/updates.md)), `ork ui` ([server](./server.md)), `ork mcp`
 ([mcp](./cli/mcp.md)), `ork completion zsh|bash|fish` and the hidden
-`ork __complete` ([completion](./cli/completion.md)), and `ork send`, which a
-tool node's program runs ([scripts](./messaging/scripts.md#ork-send))
+`ork __complete` ([completion](./cli/completion.md)), `ork once`
+([check once](./check-once.md)), and `ork send`, which a tool node's program
+runs ([scripts](./messaging/scripts.md#ork-send))
 ([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts),
 [attach tests](../packages/cli/test/attach-command.test.ts),
@@ -64,6 +65,7 @@ ork decide [<run>] [--all] [--list] [--json] [--workflow <name>] [--id <d> --doc
 ork chat <run> <node> [-m <text>] [--driver <id>]  # talk to a node, live or by resuming its session
 ork relay <run>/<node> <run>/<node> [--max-messages n]  # let two running nodes of different runs message each other
 ork relay end <a> <b> | ork relay list [run] [--all] [--json]
+ork once [--as <name>] [--covers <name>]… [--with-head] [--force] -- <command…>  # run a command unless the same check already passed on these files ([check once](./check-once.md))
 ork stop [<run>] [--node n]      # stop a live run from any terminal, or one node (it fails; the run goes on)
 ork pause [<run>] [--node n]     # nothing new starts; sessions wait before their next tool call
 ork continue [<run>] [--node n]  # let a paused run, or one paused node, go on
