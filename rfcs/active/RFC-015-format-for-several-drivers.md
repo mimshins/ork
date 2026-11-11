@@ -1,6 +1,6 @@
 # RFC-015 — A workflow format for several drivers
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-10
 - **Supersedes:** —
 - **Superseded by:** —
@@ -65,12 +65,14 @@ The maintainer chose **Option A** on 2026-11-10:
   `examples/` name models by alias (`claude-code.sonnet`), not by full id, so
   they follow each tool's newest model. The resolved model is logged per
   session.
-- **Node types are renamed:** `claude.worker` becomes `agent.worker`, and
-  `claude.leader` becomes `agent.leader`, matching the `<family>.<kind>` names
-  of every other node type. A command rewrites old files (`ork migrate` today
-  moves projects into `.ork/`,
-  [ADR-036](../../decisions/ADR-036-ork-migrate.md), so this is a new mode or a
-  new command), and `ork validate` names the new type when it reads an old one.
+- **Node types are renamed:** `claude.worker` becomes `agent.worker`,
+  `claude.leader` becomes `agent.leader`, and `claude.subagent` becomes
+  `agent.subagent` (a driver whose tool has no subagents is refused for it
+  through its declared capabilities), matching the `<family>.<kind>` names of
+  every other node type. A command rewrites old files (`ork migrate` today moves
+  projects into `.ork/`, [ADR-036](../../decisions/ADR-036-ork-migrate.md), so
+  this is a new mode or a new command), and `ork validate` names the new type
+  when it reads an old one.
 - **Budgets in tokens as well as dollars.** `budgetTokens` sits wherever
   `budgetUsd` does: on a node, in `defaults`, in `limits`. It works on every
   driver, and counts input, output and cache-write tokens; cache reads don't
@@ -92,10 +94,18 @@ come after RFC-014's SDK removal, so the driver ids exist.
   registered drivers and the budget fields against each driver's declared
   capabilities (RFC-014).
 
-## Open questions
+## Resolved questions
 
-1. **A token quota.** Does `quotas.dayUsd` get a `dayTokens` beside it, for
-   projects whose drivers report no price?
-2. **Mixed budgets on one run.** A run with nodes on drivers with and without
-   prices has a dollar total that misses some sessions. Is `ork usage` enough to
-   say so, or should a run's dollar limit refuse such a mix?
+Answered by the maintainer, 2026-11-11:
+
+1. **A token quota.** Yes: `quotas.dayTokens` sits beside `dayUsd`, counting
+   what `budgetTokens` counts (input, output and cache-write tokens), so a
+   project on a driver without prices still has a daily cap.
+2. **Mixed budgets on one run.** Warn and show it: `ork validate` warns when a
+   run's dollar limit can't see some of its nodes, and `ork usage`, `ork ps` and
+   the UI mark such a dollar total as partial, with tokens beside it. The mix is
+   not refused.
+
+Built in two changes, in the RFC's order: the node rename, the model prefix and
+the migration first; then `budgetTokens`, `dayTokens` and the mixed-run
+warnings.
