@@ -15,6 +15,12 @@ process.once("exit", () => {
   rmSync(HOME, { recursive: true, force: true });
 });
 
+/**
+ * A test that polls (`expect.poll`) gives up after 5 s, not Vitest's 1 s: a
+ * check in a run shares the machine with another run's at lower priority.
+ */
+const expect = { poll: { timeout: 5000 } };
+
 // Inside an Ork run, several suites share the machine: use half the cores.
 const inRun = process.env["ORK_RUN"] !== undefined;
 
@@ -28,6 +34,7 @@ export default defineConfig({
       {
         test: {
           name: "node",
+          expect,
           // Many tests start the CLI, git or a child process: 2.5-3.5 s in a
           // full run, past Vitest's 5 s default on a busy machine (a pre-push
           // check while a run's sessions work). A test that needs longer still
@@ -43,6 +50,7 @@ export default defineConfig({
       {
         test: {
           name: "ui",
+          expect,
           // The Builder's tests drive a whole form: 2-3 s alone, past the 5 s
           // default when a run's check shares the machine with another's (at
           // lower priority, on half the cores).
