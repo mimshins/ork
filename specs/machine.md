@@ -92,14 +92,14 @@ the slot; so does the session's next call, and its end.
 ## Priority
 
 `priority: low` (the default) or `normal`. Under `low`, a session and a tool
-command start below the `ork` process: `os.setPriority` with
-`PRIORITY_BELOW_NORMAL` on the child, and on macOS `taskpolicy` utility QoS, so
-the user's editor and browser come first. `normal` leaves them. The `ork`
-process itself always stays normal, so prompts and the UI answer quickly.
+command start below the `ork` process: under `nice -n 10`
+(`PRIORITY_BELOW_NORMAL`), and on macOS under `taskpolicy` utility QoS too, so
+they and what they start run lower from the first instruction, and the user's
+editor and browser come first. `normal` leaves them. The `ork` process itself
+always stays normal, so prompts and the UI answer quickly.
 
-The priority is set just after the process is spawned
-([L260](./gaps/machine-limits.md)). Windows gets only what Node's
-`os.setPriority` gives.
+Without `nice` (Windows), Ork lowers the child with `os.setPriority` just after
+it starts, which is all Windows gets.
 
 ## CPU
 

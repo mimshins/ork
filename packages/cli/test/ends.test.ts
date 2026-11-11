@@ -20,6 +20,7 @@ import {
 import { describe, expect, it } from "vitest";
 
 import { createLogPrinter, formatRunEvent, runNode } from "../src/index.ts";
+import { readyOnly } from "./fixtures/drivers.ts";
 
 /** Colors off: lines compare as plain text. */
 const plain = (line: string): string =>
@@ -210,6 +211,8 @@ const runEnding = async (outcome: SessionOutcome, verbose: boolean) => {
     json: false,
     verbose,
     runtime: () => Promise.resolve(endingAs(outcome)),
+    // Not the machine's own `claude`: CI has none.
+    driverChecks: readyOnly("claude-code"),
     store,
     home: mkdtempSync(path.join(tmpdir(), "ork-home-")),
     out: line => {
