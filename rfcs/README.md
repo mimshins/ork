@@ -79,3 +79,4 @@ and carries an RFC through this lifecycle. `ork run rfc` drafts one with you and
 | [013](./archived/RFC-013-for-each.md)                          | Running a node once per item of a list                             | Implemented |
 | [014](./archived/RFC-014-cli-drivers-only.md)                  | CLI drivers only: claude, OpenCode and Command Code                | Implemented |
 | [015](./active/RFC-015-format-for-several-drivers.md)          | A workflow format for several drivers                              | Proposed    |
+| [016](./active/RFC-016-integration-lock.md)                    | A lock that orders integration into a branch                       | Accepted    |
