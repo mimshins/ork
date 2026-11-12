@@ -1,9 +1,9 @@
 /**
  * @file Tests for tab completion's live values, read from a project and a store
  *   in a temporary home: workflows, runs newest first with workflow and status,
- *   a run's or a workflow's nodes, open decisions; the store is only read
- *   (never created, never changed, refused at another version), errors print
- *   nothing, and 500 runs don't slow it down.
+ *   a run's or a workflow's nodes and inputs, open decisions; the store is only
+ *   read (never created, never changed, refused at another version), errors
+ *   print nothing, and 500 runs don't slow it down.
  */
 
 import { spawnSync } from "node:child_process";
@@ -101,6 +101,25 @@ describe("completion values", () => {
     expect(
       valuesOf(await offered(seeded, "context", "explain", "hello", "")),
     ).toEqual(["plan", "build"]);
+  });
+
+  it("offers a workflow's inputs as name=, once the workflow is given", async () => {
+    const seeded = seedStore();
+    expect(await offered(seeded, "run", "hello", "--input", "")).toEqual([
+      "topic=\tWhat to say hello about (required)",
+      "loud=\tboolean",
+    ]);
+    expect(
+      valuesOf(await offered(seeded, "run", "hello", "--input", "t")),
+    ).toEqual(["topic="]);
+    expect(await offered(seeded, "run", "--input", "")).toEqual([]);
+  });
+
+  it("offers a run's inputs to ork resume --input", async () => {
+    const seeded = seedStore();
+    expect(
+      valuesOf(await offered(seeded, "resume", "done1", "--input", "")),
+    ).toEqual(["topic=", "loud="]);
   });
 
   it("offers open decisions by id, never their question", async () => {

@@ -58,6 +58,10 @@ commands.
   project's run.
 - **Node ids** after `--node`: the run's nodes (the newest run's when you give
   none), or the workflow's for `ork run <workflow> --node`.
+- **Input names** after `--input`: `ork run <workflow> --input` offers the
+  workflow's inputs as `name=`, with each one's description, and
+  `ork resume <run> --input` the run's. No space follows the `=`, so you type
+  the value next (in bash 4 and later; macOS's bash 3.2 adds one).
 - **Open decisions** after `ork decide --id`.
 - **Drivers** after `--driver`: `claude-code`, `open-code` or `command-code`.
 

@@ -3,7 +3,9 @@
  *   shell. Each is thin: it runs `ork __complete -- <words…>` with the word
  *   under the cursor last, and offers the lines it prints, `value<TAB>
  *   description`. A line `:group <title>` starts a group (zsh labels the menu
- *   with it); `:files` asks for file names too. A new shell is one more entry.
+ *   with it); `:files` asks for file names too. A value ending in `=` (an
+ *   input's `name=`) takes no space after it, so its value is typed next. A new
+ *   shell is one more entry.
  */
 
 /** The hidden command the scripts run. */
@@ -14,9 +16,11 @@ const ZSH = `#compdef ork
 # (ork completion zsh > ~/.zsh/completions/_ork), or source it.
 
 _ork() {
-  local -a lines cands
+  local -a lines cands opens
   local line group=commands files=0 n=0 ret=1
   lines=("\${(@f)$("\${words[1]}" ${COMPLETE_COMMAND} -- "\${(@)words[2,CURRENT]}" 2>/dev/null)}")
+  # A last group line offers what the last group gathered.
+  lines+=(":group end")
   for line in "\${lines[@]}"; do
     case $line in
       (:files) files=1 ;;
@@ -24,15 +28,17 @@ _ork() {
         if (( \${#cands} )); then
           _describe -V -t "ork-$(( ++n ))" "$group" cands && ret=0
         fi
-        cands=()
+        # name= is followed by its value, not a space.
+        if (( \${#opens} )); then
+          _describe -V -t "ork-$(( ++n ))" "$group" opens -S '' && ret=0
+        fi
+        cands=() opens=()
         group=\${line#:group }
         ;;
+      (*=$'\\t'*) opens+=("\${\${line%%$'\\t'*}//:/\\\\:}:\${line#*$'\\t'}") ;;
       (?*) cands+=("\${\${line%%$'\\t'*}//:/\\\\:}:\${line#*$'\\t'}") ;;
     esac
   done
-  if (( \${#cands} )); then
-    _describe -V -t "ork-$(( ++n ))" "$group" cands && ret=0
-  fi
   if (( files )); then
     _files && ret=0
   fi
@@ -71,6 +77,10 @@ _ork() {
       *)
         line="\${line%%$'\\t'*}"
         COMPREPLY+=("\${line#"$strip"}")
+        # name= is followed by its value, not a space (bash 4 and later).
+        if [[ "$line" == *= ]] && type compopt &>/dev/null; then
+          compopt -o nospace
+        fi
         ;;
     esac
   done <<< "$out"

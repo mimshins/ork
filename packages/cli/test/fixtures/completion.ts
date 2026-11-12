@@ -1,7 +1,7 @@
 /**
  * @file A project and a store for the tab-completion tests: a folder that is a
- *   project (a `.git` marker and one workflow, `hello`, of nodes `plan` and
- *   `build`), and a store in a temporary home with its runs, a live one with
+ *   project (a `.git` marker and one workflow, `hello`, of inputs `topic` and
+ *   `loud` and nodes `plan` and `build`), and a store in a temporary home with its runs, a live one with
  *   an open decision, and another project's run.
  */
 
@@ -16,6 +16,14 @@ export type Seeded = { home: string; project: string; storeFile: string };
 const WORKFLOW = [
   "schemaVersion: 1",
   "name: hello",
+  "inputs:",
+  "  topic:",
+  "    type: string",
+  "    required: true",
+  "    description: What to say hello about",
+  "  loud:",
+  "    type: boolean",
+  "    default: false",
   "nodes:",
   "  plan:",
   "    type: tool.shell",
@@ -53,7 +61,8 @@ export const seedStore = (extra = 0): Seeded => {
   const storeFile = storePath(home);
   const store = openStore(storeFile);
   const begin = (id: string, root: string): void => {
-    store.begin({ id, workflow: "hello", file: "hello.ork.yaml", project: root });
+    const file = path.join(root, ".ork", "workflows", "hello.ork.yaml");
+    store.begin({ id, workflow: "hello", file, project: root });
   };
   for (let n = 0; n < extra; n += 1) begin(`old${String(n)}`, project);
   begin("done1", project);

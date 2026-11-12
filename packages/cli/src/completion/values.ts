@@ -15,8 +15,10 @@ import {
   decisionCandidates,
   placeOf,
   runCandidates,
+  runInputs,
   runNodes,
   workflowCandidates,
+  workflowInputs,
   workflowNodes,
 } from "./sources.ts";
 
@@ -81,6 +83,29 @@ const nodes: ValueProvider = {
   },
 };
 
+/**
+ * `name=` for each input, for `--input`: the workflow given's when the command
+ * takes a workflow (none before it is), else the run given's (`ork resume`).
+ */
+const inputs: ValueProvider = {
+  group: "inputs",
+  values: context => {
+    const workflow = context.given["workflow"];
+    if (context.positionals.includes("workflow")) {
+      return workflow === undefined
+        ? []
+        : workflowInputs(
+            workflow,
+            context.cwd,
+            placeOf(context.cwd, context.store()),
+          );
+    }
+    return withStore(context, store =>
+      runInputs(store, context.given["run"], context.cwd),
+    );
+  },
+};
+
 const decisions: ValueProvider = {
   group: "decisions",
   values: context =>
@@ -116,6 +141,7 @@ export const VALUE_PROVIDERS: Readonly<Record<string, ValueProvider>> = {
   workflow: workflows,
   files: { ...workflows, files: true },
   node: nodes,
+  input: inputs,
   "decide id": decisions,
   "completion shell": shells,
   driver: drivers,

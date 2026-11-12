@@ -88,15 +88,20 @@ A provider gives an argument's values, found by the argument's name, or by the
 command's path and the name for one command only. A new command whose argument
 has one of these names gets its values with no change.
 
-| Argument                      | Group     | Values                                                                                                                                            |
-| ----------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `run` (positional, `--run`)   | runs      | Run ids newest first, with workflow and status: the project's, else any project's starting with the prefix, else the newest of any; at most 50    |
-| `workflow`, `files`           | workflows | The project's workflows by name, then Ork's own `ork:` ones; `files` also asks for file names                                                     |
-| `node` (positional, `--node`) | nodes     | With a `workflow` positional, the nodes of the workflow given (none before it is); else the nodes of the run given, or the project's newest run's |
-| `decide id`                   | decisions | Open decisions of live runs: the run given, else the project's; described by kind, run and node                                                   |
-| `driver`                      | drivers   | The agent drivers' ids, with their labels                                                                                                         |
-| `completion shell`            | shells    | The shells there is a script for                                                                                                                  |
-| `path`, `file`, `output`      | files     | File names, from the shell                                                                                                                        |
+| Argument                      | Group     | Values                                                                                                                                                                                                                                    |
+| ----------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `run` (positional, `--run`)   | runs      | Run ids newest first, with workflow and status: the project's, else any project's starting with the prefix, else the newest of any; at most 50                                                                                            |
+| `workflow`, `files`           | workflows | The project's workflows by name, then Ork's own `ork:` ones; `files` also asks for file names                                                                                                                                             |
+| `node` (positional, `--node`) | nodes     | With a `workflow` positional, the nodes of the workflow given (none before it is); else the nodes of the run given, or the project's newest run's                                                                                         |
+| `input` (`--input`)           | inputs    | `name=` for each input: with a `workflow` positional, the workflow given's (none before it is); else the workflow of the run given, or of the project's newest run; described by the input's description, else its type, and `(required)` |
+| `decide id`                   | decisions | Open decisions of live runs: the run given, else the project's; described by kind, run and node                                                                                                                                           |
+| `driver`                      | drivers   | The agent drivers' ids, with their labels                                                                                                                                                                                                 |
+| `completion shell`            | shells    | The shells there is a script for                                                                                                                                                                                                          |
+| `path`, `file`, `output`      | files     | File names, from the shell                                                                                                                                                                                                                |
+
+A value ending in `=` takes no space after it: zsh offers it with `-S ''`, and
+bash 4 and later sets `nospace` (bash 3.2 has no `compopt`, so it adds one); the
+fish script is unchanged, and whether fish adds a space after `=` is untested.
 
 A run's nodes are the nodes its events are about, in the order they first appear
 (the store's `nodes` query). A workflow's are the keys of its `nodes`, read from

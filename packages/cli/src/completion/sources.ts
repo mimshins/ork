@@ -1,9 +1,10 @@
 /**
  * @file What tab completion reads to offer values: the store opened read-only
  *   (never created or migrated; one at another version gives nothing), the
- *   project the folder is in, its workflows and Ork's own, a workflow's nodes,
- *   runs newest first, a run's nodes, and open decisions. Only ids, names and
- *   statuses: never a prompt, an output or a secret.
+ *   project the folder is in, its workflows and Ork's own, a workflow's nodes
+ *   and inputs, runs newest first, a run's nodes and its workflow's inputs, and
+ *   open decisions. Only ids, names, statuses and inputs' descriptions: never a
+ *   prompt, an output or a secret.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -89,24 +90,75 @@ const workflowText = (
     : undefined;
 };
 
+/** A mapping's entries, or none when `value` is not an object. */
+const entriesOf = (value: unknown): [string, unknown][] =>
+  value !== null && typeof value === "object" && !Array.isArray(value)
+    ? Object.entries(value)
+    : [];
+
+/** One top-level field of a workflow's text, read without validating it. */
+const fieldOf = (text: string | undefined, field: string): unknown => {
+  const parsed: unknown = text === undefined ? undefined : parse(text);
+  return Object.fromEntries(entriesOf(parsed))[field];
+};
+
 /** The node ids of the workflow `arg` names; none when it can't be read. */
 export const workflowNodes = (
   arg: string,
   cwd: string,
   place: ProjectPlace,
 ): Candidate[] => {
-  const text = workflowText(arg, cwd, place);
-  const parsed: unknown = text === undefined ? undefined : parse(text);
-  const nodes =
-    parsed !== null && typeof parsed === "object" && "nodes" in parsed
-      ? parsed.nodes
-      : undefined;
-  const keys =
-    nodes !== null && typeof nodes === "object" ? Object.keys(nodes) : [];
+  const keys = entriesOf(fieldOf(workflowText(arg, cwd, place), "nodes")).map(
+    ([key]) => key,
+  );
   // Only real node ids: a key is the file's text, not a value to type.
   return keys
     .filter(key => NodeIdSchema.safeParse(key).success)
     .map(value => ({ value, description: arg }));
+};
+
+/** What a menu says of an input: its description, else its type. */
+const inputDescription = (definition: unknown): string => {
+  const fields = Object.fromEntries(entriesOf(definition));
+  const said = fields["description"] ?? fields["type"];
+  const what = typeof said === "string" ? said : "";
+  const required = fields["required"] === true && !("default" in fields);
+  return required ? `${what} (required)` : what;
+};
+
+/**
+ * `name=` for each input a workflow's text declares, for `--input`; a name that
+ * isn't a valid id is left out, as a node's is.
+ */
+const inputsOf = (text: string | undefined, workflow: string): Candidate[] =>
+  entriesOf(fieldOf(text, "inputs"))
+    .filter(([name]) => NodeIdSchema.safeParse(name).success)
+    .map(([name, definition]) => ({
+      value: `${name}=`,
+      description: inputDescription(definition) || workflow,
+    }));
+
+/** The inputs of the workflow `arg` names; none when it can't be read. */
+export const workflowInputs = (
+  arg: string,
+  cwd: string,
+  place: ProjectPlace,
+): Candidate[] => inputsOf(workflowText(arg, cwd, place), arg);
+
+/** The inputs of the run `arg` names (else the project's newest run). */
+export const runInputs = (
+  store: EventStore,
+  arg: string | undefined,
+  cwd: string,
+): Candidate[] => {
+  const found = findRun(store, arg, cwd);
+  if (!found.ok) return [];
+  const { file, workflow } = found.run;
+  const text =
+    existsSync(file) && statSync(file).isFile()
+      ? readFileSync(file, "utf8")
+      : undefined;
+  return inputsOf(text, workflow);
 };
 
 /**
