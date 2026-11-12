@@ -65,9 +65,12 @@ raise `maxTurns`, or give the node a smaller task.
 
 ## Budget limit
 
-The node reached its `budgetUsd`, or the run's `limits.budgetUsd`, or none was
-left when it started. **Who acts:** the workflow. **What to do:** raise the
-budget, then `ork resume`.
+The node reached its `budgetUsd` or `budgetTokens`, or the run's
+`limits.budgetUsd` or `limits.budgetTokens`, or none was left when it started. A
+token cap counts input, output and cache-write tokens, not cache reads, and
+stops the session at the next usage report, so it can pass the cap by one step
+([budgets in tokens](./models-and-budgets/models-and-limits.md#budgets-in-tokens)).
+**Who acts:** the workflow. **What to do:** raise the budget, then `ork resume`.
 
 ## Timed out
 

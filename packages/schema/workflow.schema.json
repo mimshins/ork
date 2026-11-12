@@ -145,6 +145,11 @@
           "type": "number",
           "exclusiveMinimum": 0
         },
+        "budgetTokens": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
         "maxTurns": {
           "type": "integer",
           "exclusiveMinimum": 0,
@@ -482,6 +487,11 @@
             "type": "number",
             "exclusiveMinimum": 0
           },
+          "budgetTokens": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
           "maxTurns": {
             "type": "integer",
             "exclusiveMinimum": 0,
@@ -631,6 +641,12 @@
           "type": "number",
           "exclusiveMinimum": 0
         },
+        "budgetTokens": {
+          "description": "Hard cap for the whole run in tokens (input, output, cache-write).",
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
         "concurrency": {
           "description": "Max sessions running at once.",
           "type": "integer",
@@ -742,6 +758,11 @@
               "budgetUsd": {
                 "type": "number",
                 "exclusiveMinimum": 0
+              },
+              "budgetTokens": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
               },
               "maxTurns": {
                 "type": "integer",
@@ -1301,6 +1322,11 @@
               "budgetUsd": {
                 "type": "number",
                 "exclusiveMinimum": 0
+              },
+              "budgetTokens": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
               },
               "maxTurns": {
                 "type": "integer",
@@ -1915,6 +1941,11 @@
               "budgetUsd": {
                 "type": "number",
                 "exclusiveMinimum": 0
+              },
+              "budgetTokens": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
               },
               "maxTurns": {
                 "type": "integer",

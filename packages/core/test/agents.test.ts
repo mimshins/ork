@@ -326,6 +326,45 @@ describe("agent nodes", () => {
   });
 });
 
+/** The `budgetTokens` node `a` plans with, beside a `frugal` agent file. */
+const planned = (lines: string[], budgetLeftTokens?: number) => {
+  const root = temp("ork-tokens-");
+  const home = temp("ork-home-");
+  put(path.join(root, ".ork/agents/frugal.md"), agentMd("frugal", "Save."));
+  put(path.join(root, ".ork/agents/frugal.agent.yaml"), "budgetTokens: 5000\n");
+  const graph = graphOf(
+    compile(lines, loadAgents({ projectRoot: root, home })),
+  );
+  return specOf(
+    planNodeSession(graph.workflow, "a", {
+      cwd: root,
+      inputs: {},
+      inPlace: true,
+      home,
+      ...(budgetLeftTokens === undefined ? {} : { budgetLeftTokens }),
+    }),
+  ).budgetTokens;
+};
+
+describe("a session's budgetTokens", () => {
+  const worker = ["nodes:", "  a: { type: agent.worker, prompt: Go. }"];
+
+  it("comes from the node's agent file", () => {
+    const lines = ["nodes:", "  a: { type: agent.worker, agent: frugal }"];
+    expect(planned(lines)).toBe(5000);
+    expect(planned(lines, 300)).toBe(300);
+  });
+
+  it("comes from the workflow's defaults", () => {
+    expect(planned(["defaults:", "  budgetTokens: 700", ...worker])).toBe(700);
+  });
+
+  it("is what is left of the run's, for a node with no cap of its own", () => {
+    expect(planned(worker, 400)).toBe(400);
+    expect(planned(worker)).toBeUndefined();
+  });
+});
+
 describe("the agent registry's writes", () => {
   it("create, update and delete agents in Ork's folders only", () => {
     const root = temp("ork-write-");

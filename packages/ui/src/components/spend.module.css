@@ -1,0 +1,10 @@
+/**
+ * @file How a spend reads beside its tokens: the tokens in the muted color, so
+ *   the dollars stay the first thing the eye lands on.
+ */
+
+.tokens {
+  --spend-tokens-text: var(--color-text-muted);
+
+  color: var(--spend-tokens-text);
+}

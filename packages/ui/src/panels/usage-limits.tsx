@@ -4,9 +4,11 @@
  */
 
 import type { LimitsReport } from "@krapht/ork-server/client";
+import { Fragment } from "react";
 
 import { CodeText } from "../components/code-text.tsx";
 import { Meter } from "../components/meter.tsx";
+import { formatTokenCap, formatTokens } from "../graph/facts.ts";
 
 import styles from "./usage.module.css";
 
@@ -21,10 +23,27 @@ const when = (iso: string): string =>
     timeStyle: "short",
   });
 
-export const UsageLimits = ({ limits }: { limits: LimitsReport }) =>
-  limits.problems.length === 0 &&
-  limits.caps.length === 0 &&
-  limits.plan.length === 0 ? null : (
+type TokenCap = NonNullable<LimitsReport["tokenCaps"]>[number];
+
+const keyOf = (cap: { project?: string | undefined; window: string }): string =>
+  `${cap.project ?? "all"}-${cap.window}`;
+
+const TokenMeter = ({ cap }: { cap: TokenCap }) => (
+  <Meter
+    label={`${WHOSE(cap.project)}, this ${cap.window}, in tokens`}
+    max={cap.capTokens}
+    text={`${formatTokens(cap.spentTokens)} of ${formatTokenCap(cap.capTokens)} tokens, resets ${when(cap.resetsAt)}${cap.spentTokens >= cap.capTokens ? ", reached" : ""}`}
+    value={Math.min(cap.spentTokens, cap.capTokens)}
+  />
+);
+
+export const UsageLimits = ({ limits }: { limits: LimitsReport }) => {
+  const tokenCaps = limits.tokenCaps ?? [];
+  const paired = new Set(limits.caps.map(keyOf));
+  return limits.problems.length === 0 &&
+    limits.caps.length === 0 &&
+    tokenCaps.length === 0 &&
+    limits.plan.length === 0 ? null : (
     <section
       aria-label="Limits"
       className={styles["limits"]}
@@ -38,14 +57,37 @@ export const UsageLimits = ({ limits }: { limits: LimitsReport }) =>
         </p>
       ))}
       {limits.caps.map(cap => (
-        <Meter
-          key={`${cap.project ?? "all"}-${cap.window}`}
-          label={`${WHOSE(cap.project)}, this ${cap.window}`}
-          max={cap.capUsd}
-          text={`${usd(cap.spentUsd)} of ${usd(cap.capUsd)}, resets ${when(cap.resetsAt)}`}
-          value={Math.min(cap.spentUsd, cap.capUsd)}
-        />
+        <Fragment key={keyOf(cap)}>
+          <Meter
+            label={`${WHOSE(cap.project)}, this ${cap.window}`}
+            max={cap.capUsd}
+            text={`${usd(cap.spentUsd)} of ${usd(cap.capUsd)}, resets ${when(cap.resetsAt)}`}
+            value={Math.min(cap.spentUsd, cap.capUsd)}
+          />
+          {tokenCaps
+            .filter(token => keyOf(token) === keyOf(cap))
+            .map(token => (
+              <TokenMeter
+                cap={token}
+                key={`${keyOf(token)}-tokens`}
+              />
+            ))}
+        </Fragment>
       ))}
+      {tokenCaps
+        .filter(token => !paired.has(keyOf(token)))
+        .map(token => (
+          <TokenMeter
+            cap={token}
+            key={`${keyOf(token)}-tokens`}
+          />
+        ))}
+      {tokenCaps.length === 0 ? null : (
+        <p className={styles["note"]}>
+          Tokens counted: input, output and cache write. Cache reads are not
+          counted.
+        </p>
+      )}
       {limits.plan.map(limit => (
         <p
           className={styles["note"]}
@@ -56,3 +98,4 @@ export const UsageLimits = ({ limits }: { limits: LimitsReport }) =>
       ))}
     </section>
   );
+};

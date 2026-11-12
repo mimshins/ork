@@ -16,7 +16,8 @@ view show it; and [why a node stopped](../../docs/guides/why-a-node-stopped.md)
 lists every kind (a core test fails when a kind has no section there). Why a
 closed set: [ADR-079](../../decisions/ADR-079-closed-set-of-end-kinds.md). What
 is left is in [the register](../gaps/end-kinds-limits.md) (L241 and L243 to
-L248).
+L248). The token cap of RFC-015 ends `budget_limit` too
+([below](#the-token-cap)).
 
 ## The kinds
 
@@ -31,7 +32,7 @@ the typecheck and a test.
 | `no_report`            | agent    | no        | Ended without handing in a report                                                                                 |
 | `invalid_report`       | agent    | no        | Its report broke the node's declared output                                                                       |
 | `turn_limit`           | workflow | no        | Reached `maxTurns`                                                                                                |
-| `budget_limit`         | workflow | no        | Reached its or the run's `budgetUsd`, or none was left                                                            |
+| `budget_limit`         | workflow | no        | Reached its or the run's `budgetUsd` or `budgetTokens`, or none was left                                          |
 | `timed_out`            | workflow | no        | Reached its `timeout`                                                                                             |
 | `context_too_long`     | workflow | no        | The conversation outgrew the model's context                                                                      |
 | `plan_limit`           | account  | yes       | A subscription window is used up (stops the run, RFC-007)                                                         |
@@ -58,6 +59,7 @@ kind. A decoder never leaves `end` unset, and `unknown` is the last resort.
 | Driver         | Signal                                         | Kind                                                          |
 | -------------- | ---------------------------------------------- | ------------------------------------------------------------- |
 | `claude-code`  | `error_max_turns`, `error_max_budget_usd`      | `turn_limit`, `budget_limit`                                  |
+|                | counted tokens reach `budgetTokens`            | `budget_limit` (Ork stops it, below)                          |
 |                | `error_max_structured_output_retries`          | `invalid_report`                                              |
 |                | any other error result                         | the classifier, else `unknown`                                |
 | `command-code` | exit 8, 5, 10, 130                             | `turn_limit`, `rate_limited`, `out_of_credits`, `interrupted` |
@@ -66,7 +68,8 @@ kind. A decoder never leaves `end` unset, and `unknown` is the last resort.
 |                | any other exit or `error`                      | the classifier, else `unknown`                                |
 | `open-code`    | every `steps` step used and no report          | `turn_limit` (closes L239)                                    |
 |                | an `error` line (name, status, body); exit 130 | the classifier; `interrupted`                                 |
-| every driver   | the program is not installed (`ENOENT`)        | `tool_missing`                                                |
+| every driver   | counted tokens reach `budgetTokens`            | `budget_limit` (Ork stops it, below)                          |
+|                | the program is not installed (`ENOENT`)        | `tool_missing`                                                |
 |                | a start that failed with a provider's words    | the classifier                                                |
 |                | any other failure to run                       | `driver_crashed`                                              |
 
@@ -151,6 +154,39 @@ budget, timeout, turn limit, provider error, report problems, crash, unknown. A
 run-level stop ends the nodes still running: the run's `limits.timeout` as
 `timed_out`, and a stop by the user as `interrupted`. The run's own status and
 reason name the limit as well.
+
+## The token cap
+
+RFC-015, [ADR-084](../../decisions/ADR-084-budgets-and-quotas-in-tokens.md).
+Every driver can be capped in tokens, whether or not it reports a price. The
+shared session runner
+([session-leg.ts](../../packages/runtime/src/session-leg.ts),
+[session-end.ts](../../packages/runtime/src/session-end.ts)) keeps the session's
+counted tokens (input, output and cache write, never cache reads, its earlier
+legs' included) and checks them at each per-request usage report the driver's
+decoder hands it. Once they reach (`>=`) the node's `budgetTokens`, the runner
+sends the process SIGINT, ignores whatever it prints after, and ends the session
+`budget_limit` with the subtype `error_max_budget_tokens` and a message such as
+`reached its budget ($100, 300 tokens)`, naming the caps the node had. The end
+kind is the existing one, so no new kind joins the closed set
+([ADR-079](../../decisions/ADR-079-closed-set-of-end-kinds.md)). A report the
+session already handed in through Ork's `report` tool still decides its end.
+
+A tool can't be stopped between its reports, so a session can pass the cap by up
+to one report:
+
+| Driver         | Checked at                                       | Can pass the cap by                                                       |
+| -------------- | ------------------------------------------------ | ------------------------------------------------------------------------- |
+| `claude-code`  | each `assistant` message's usage, per message id | one model response; its output count may lag a little; result lines exact |
+| `open-code`    | each `step_finish`                               | one step                                                                  |
+| `command-code` | each `model_request_end`                         | one model request                                                         |
+
+None of the three prints a cost mid-session, so a session stopped at its token
+cap records $0 and a run's dollar limit under-counts it
+([L280](../gaps/budget-tokens-limits.md)). Claude Code's own `--max-budget-usd`
+stays, so on `claude-code` both caps bind. Stand-in sessions in
+[the contract tests](../../packages/runtime/test/contract/contract.test.ts)
+cover each driver.
 
 ## Runs from before
 

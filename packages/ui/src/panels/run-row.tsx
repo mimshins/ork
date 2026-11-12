@@ -11,6 +11,7 @@ import { memo } from "react";
 import { EmptyState } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
 import { IconPlay } from "../components/icons.tsx";
+import { Dollars, TokenCount } from "../components/spend.tsx";
 import { type Status, StatusBadge } from "../components/status-badge.tsx";
 import { formatCost } from "../graph/facts.ts";
 import type { AppState } from "../state/app-state.ts";
@@ -67,7 +68,21 @@ export const RunRow = memo(
           <span className={styles["rowMeta"]}>
             <span>{run.id}</span>
             <time dateTime={run.startedAt}>{timeOf(run.startedAt)}</time>
-            <span>{formatCost(run.costUsd)}</span>
+            <span>
+              <Dollars
+                partial={run.partial === true}
+                text={formatCost(run.costUsd)}
+              />
+              {run.tokens === undefined || run.tokens === 0 ? null : (
+                <>
+                  {" · "}
+                  <TokenCount
+                    count={run.tokens}
+                    unit="tok"
+                  />
+                </>
+              )}
+            </span>
             {held === null ? null : <span>{held}</span>}
           </span>
         </button>

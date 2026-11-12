@@ -47,6 +47,28 @@ export const cost = (usd: number): string =>
   usd === 0 ? "$0.00" : `$${usd.toFixed(4)}`;
 
 /**
+ * A dollar total that misses sessions on a driver with no dollars (RFC-015),
+ * said so, with the counted tokens beside it: `$1.2000 (partial) · 3.0k
+ * tokens`. A complete total reads as `cost` does.
+ */
+export const costOf = (
+  usd: number,
+  partial: boolean | undefined,
+  tokens: number | undefined,
+): string => {
+  if (partial !== true) return cost(usd);
+  const units = tokens === undefined ? "" : ` · ${shortCount(tokens)} tokens`;
+  return `${cost(usd)} (partial)${units}`;
+};
+
+/** `950`, `12.3k`, `1.2M`. */
+export const shortCount = (n: number): string => {
+  if (n < 1000) return String(n);
+  if (n < 1_000_000) return `${(n / 1000).toFixed(1)}k`;
+  return `${(n / 1_000_000).toFixed(1)}M`;
+};
+
+/**
  * Asks a yes-or-no question on the terminal (stderr), through the kit's confirm
  * prompt; anything but yes is no. A trailing `[y/N]` in `question` is dropped:
  * the prompt adds its own.

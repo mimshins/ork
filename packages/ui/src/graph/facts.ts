@@ -9,7 +9,10 @@ import { type Status, statusWord } from "../components/status-badge.tsx";
 export type NodeFacts = {
   status: Status;
   model?: string | undefined;
+  /** Counted tokens: input, output and cache write (RFC-015). */
   tokens?: number | undefined;
+  /** Its sessions ran on a driver that reports no dollars. */
+  unpriced?: boolean | undefined;
   costUsd?: number | undefined;
   /** Says this in place of the status's word: the builder's problems. */
   word?: string | undefined;
@@ -59,8 +62,22 @@ export const formatCost = (
   return `${costUsd < 0 ? "-" : ""}$${size.toFixed(small ? 4 : 2)}`;
 };
 
-export const formatTokens = (tokens: number): string =>
-  tokens < 1000 ? String(tokens) : `${(tokens / 1000).toFixed(1)}k`;
+/** `950`, `12.3k`, `4.5M`: one decimal, rounded up at a unit's edge. */
+export const formatTokens = (tokens: number): string => {
+  if (tokens < 1000) return String(tokens);
+  const thousands = Math.round(tokens / 100) / 10;
+  return thousands < 1000
+    ? `${thousands.toFixed(1)}k`
+    : `${(Math.round(tokens / 100_000) / 10).toFixed(1)}M`;
+};
+
+/** A cap in tokens: `50k`, `2M`, with no `.0`. */
+export const formatTokenCap = (tokens: number): string =>
+  formatTokens(tokens).replace(/\.0(?=[kM]$)/u, "");
+
+/** A sum that misses some sessions reads as a floor: `≥ $1.20`. */
+export const atLeast = (text: string, partial: boolean): string =>
+  partial ? `≥ ${text}` : text;
 
 const pad = (part: number): string => String(part).padStart(2, "0");
 
@@ -84,5 +101,6 @@ export const nodeName = (id: string, type: string, facts: NodeFacts): string =>
       ? []
       : [`${formatTokens(facts.tokens)} tokens`]),
     ...(facts.model === undefined ? [] : [facts.model]),
+    ...(facts.unpriced === true ? ["no price"] : []),
     typeWord(type),
   ].join(", ");

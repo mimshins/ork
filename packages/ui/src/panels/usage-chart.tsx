@@ -7,7 +7,15 @@
 
 import { useState } from "react";
 
-import { type Bar, money, moneyOf, type Series } from "./usage-model.ts";
+import { Dollars, TokenCount } from "../components/spend.tsx";
+import { formatTokens } from "../graph/facts.ts";
+import {
+  type Bar,
+  money,
+  moneyOf,
+  partialMoney,
+  type Series,
+} from "./usage-model.ts";
 
 import styles from "./usage.module.css";
 
@@ -65,6 +73,7 @@ const ChartTable = ({ series }: { series: Series }) => {
     .toReversed();
   const idle = bars.length - spent.length;
   const cost = moneyOf(spent.map(bar => bar.costUsd));
+  const withTokens = spent.some(bar => (bar.tokens ?? 0) > 0);
   return (
     <details className={styles["details"]}>
       <summary>Show as a table</summary>
@@ -78,6 +87,14 @@ const ChartTable = ({ series }: { series: Series }) => {
             >
               Cost
             </th>
+            {withTokens ? (
+              <th
+                className={styles["number"]}
+                scope="col"
+              >
+                Tokens
+              </th>
+            ) : null}
             <th
               className={styles["number"]}
               scope="col"
@@ -95,7 +112,17 @@ const ChartTable = ({ series }: { series: Series }) => {
               >
                 {bar.key}
               </th>
-              <td className={styles["number"]}>{cost(bar.costUsd)}</td>
+              <td className={styles["number"]}>
+                <Dollars
+                  partial={bar.partial === true}
+                  text={cost(bar.costUsd)}
+                />
+              </td>
+              {withTokens ? (
+                <td className={styles["number"]}>
+                  {formatTokens(bar.tokens ?? 0)}
+                </td>
+              ) : null}
               <td className={styles["number"]}>{bar.sessions}</td>
             </tr>
           ))}
@@ -124,7 +151,7 @@ export const UsageChart = ({ series }: { series: Series }) => {
   const summary =
     peak === undefined
       ? heading
-      : `${heading}, ${String(bars.length)} ${unit}s. The peak was ${money(peak.costUsd)} ${unit === "day" ? "on" : "in the week of"} ${peak.key}.`;
+      : `${heading}, ${String(bars.length)} ${unit}s. The peak was ${partialMoney(peak.costUsd, peak.partial === true)} ${unit === "day" ? "on" : "in the week of"} ${peak.key}${bars.some(bar => bar.partial === true) ? `, some ${unit}s partial` : ""}.`;
   return (
     <section
       aria-label={heading}
@@ -137,8 +164,18 @@ export const UsageChart = ({ series }: { series: Series }) => {
             {pointed === null ? "Peak: " : ""}
             {when}
             {shown.key}
-            {shown.key === last ? " so far" : ""} · {money(shown.costUsd)} ·{" "}
-            {sessionsOf(shown.sessions)}
+            {shown.key === last ? " so far" : ""} ·{" "}
+            <Dollars
+              partial={shown.partial === true}
+              text={money(shown.costUsd)}
+            />
+            {(shown.tokens ?? 0) > 0 ? (
+              <>
+                {" · "}
+                <TokenCount count={shown.tokens ?? 0} />
+              </>
+            ) : null}{" "}
+            · {sessionsOf(shown.sessions)}
           </p>
         )}
       </div>
@@ -162,11 +199,11 @@ export const UsageChart = ({ series }: { series: Series }) => {
               setPointedKey(bar.key);
             }}
           >
-            {bar.costUsd === 0 ? null : (
+            {bar.costUsd === 0 && bar.partial !== true ? null : (
               <div
                 className={styles["bar"]}
                 style={{
-                  height: `${String(Math.max(MIN_HEIGHT, (bar.costUsd / maxUsd) * 100))}%`,
+                  height: `${String(Math.max(MIN_HEIGHT, maxUsd === 0 ? 0 : (bar.costUsd / maxUsd) * 100))}%`,
                 }}
               />
             )}

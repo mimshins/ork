@@ -661,7 +661,7 @@ export const MILESTONES = [
         docs: [
           "decisions/ADR-043-timeouts.md",
           "specs/scheduler.md#timeouts",
-          "docs/guides/models-and-budgets.md#timeouts",
+          "docs/guides/models-and-budgets/across-runs-and-time.md#timeouts",
         ],
       },
       {
@@ -704,7 +704,7 @@ export const MILESTONES = [
         docs: [
           "decisions/ADR-046-usage-ledger-and-prune.md",
           "specs/usage.md",
-          "docs/guides/models-and-budgets.md#what-you-spent",
+          "docs/guides/models-and-budgets/driver-and-usage.md#what-you-spent",
         ],
       },
       {
@@ -742,7 +742,7 @@ export const MILESTONES = [
         docs: [
           "decisions/ADR-050-limits-across-runs.md",
           "specs/usage.md#limits-across-runs",
-          "docs/guides/models-and-budgets.md#limits-across-runs",
+          "docs/guides/models-and-budgets/across-runs-and-time.md#limits-across-runs",
         ],
       },
       {
@@ -1150,13 +1150,28 @@ export const MILESTONES = [
         title: "A format for several drivers: `agent.*` and `<driver>.<model>`",
         status: "active",
         detail:
-          "Built, waiting to land (it becomes done with its commit). Part 1 of RFC-015. The node types are `agent.worker`, `agent.leader` and `agent.subagent` (the `claude.*` names are refused with the way out), and a `model` may name its driver, `claude-code.opus` or `open-code.anthropic/claude-sonnet-5-5`, which pins the node to that tool ahead of `--driver`; plain models still work, and `{{item.model}}` is parsed per item. A driver descriptor says whether it runs subagents. `ork migrate` renames the types in old files, keeping comments (`--dry-run` shows it), and this repository's workflows and examples use the new names. Left: `ork migrate` scans only the workflows folder, `open-code` and `command-code` `subagents` are unmeasured, and written item prefixes are caught at run (L273 to L276). Part 2, token budgets, is next (RFC-015).",
+          "Built, waiting to land (it becomes done with its commit). Part 1 of RFC-015. The node types are `agent.worker`, `agent.leader` and `agent.subagent` (the `claude.*` names are refused with the way out), and a `model` may name its driver, `claude-code.opus` or `open-code.anthropic/claude-sonnet-5-5`, which pins the node to that tool ahead of `--driver`; plain models still work, and `{{item.model}}` is parsed per item. A driver descriptor says whether it runs subagents. `ork migrate` renames the types in old files, keeping comments (`--dry-run` shows it), and this repository's workflows and examples use the new names. Left: `ork migrate` scans only the workflows folder, `open-code` and `command-code` `subagents` are unmeasured, and written item prefixes are caught at run (L273 to L276). Part 2, token budgets, is its own item below.",
         docs: [
           "decisions/ADR-083-agent-node-types-and-driver-prefixed-models.md",
           "specs/runtime/which-driver.md",
           "specs/workflow-format/node-types.md",
           "specs/gaps/agent-types-limits.md",
-          "rfcs/active/RFC-015-format-for-several-drivers.md",
+          "rfcs/archived/RFC-015-format-for-several-drivers.md",
+        ],
+      },
+      {
+        id: "token-budgets",
+        title: "Budgets and quotas in tokens",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). Part 2 of RFC-015, which is now Implemented. `budgetTokens` sits beside `budgetUsd` on a node, in `defaults`, in `limits` and in agent files, and counts input, output and cache-write tokens (never cache reads) on any driver: the session runner stops a session at its cap, ending `budget_limit`, at most one usage report past it, and a run's `limits.budgetTokens` is set aside per session as dollars are. `quotas.dayTokens` caps a project's day, shown in `ork usage`. A dollar limit on a driver with no price is warned about, not refused, and a dollar total that misses such sessions reads partial with tokens beside it (the CLI says `(partial)`, the browser view `≥`). Left: no token budget across a `workflow.call`, `run.started` does not record it, a stopped session records $0, no per-row partial mark, and two checks still read only dollars (L278 to L280, L282 to L285).",
+        docs: [
+          "decisions/ADR-084-budgets-and-quotas-in-tokens.md",
+          "docs/guides/models-and-budgets/models-and-limits.md#budgets-in-tokens",
+          "specs/usage/tokens.md",
+          "specs/runtime/session-ends.md#the-token-cap",
+          "specs/gaps/budget-tokens-limits.md",
+          "rfcs/archived/RFC-015-format-for-several-drivers.md",
         ],
       },
       {

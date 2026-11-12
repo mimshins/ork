@@ -8,6 +8,7 @@
 
 import {
   type DriverNeeds,
+  budgetWarnings,
   driverRefusals,
   namingNoDriver,
 } from "@krapht/ork-core";
@@ -120,5 +121,23 @@ export const unfitLines = (
   },
 ): string[] =>
   driverRefusals(workflow, drivers ?? AGENT_DRIVERS, choice).map(
+    ({ message }) => message,
+  );
+
+/**
+ * What a dollar budget can't see on a session node's driver, one line each
+ * (RFC-015): warnings, never a reason to refuse. Same arguments as
+ * `unfitLines`.
+ */
+export const budgetWarningLines = (
+  workflow: Workflow,
+  drivers: readonly DriverNeeds[] | undefined,
+  choice: {
+    override?: Driver | undefined;
+    ready?: Driver | undefined;
+    only?: string;
+  },
+): string[] =>
+  budgetWarnings(workflow, drivers ?? AGENT_DRIVERS, choice).map(
     ({ message }) => message,
   );

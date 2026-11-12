@@ -4,10 +4,14 @@
  *   was given as it starts, and what the next session is offered leaves the
  *   reserves out. A reserve never ends a run; it only shrinks what others are
  *   offered. A node with nothing left to it waits for a worker's reserve to
- *   free, never a leader's, which may be waiting on that very node.
+ *   free, never a leader's, which may be waiting on that very node. A cap in
+ *   tokens (RFC-015) is set aside the same way, beside the one in dollars.
  */
 
-type Reserve = { usd: number; waitable: boolean };
+/** What a reserve is counted in: dollars, or counted tokens. */
+export type ReserveUnit = "usd" | "tokens";
+
+type Reserve = Record<ReserveUnit, number> & { waitable: boolean };
 
 export const createReserves = () => {
   const held = new Map<string, Reserve>();
@@ -18,18 +22,25 @@ export const createReserves = () => {
     for (const resolve of woken) resolve();
   };
   return {
-    /** All that is set aside now. */
-    total: (): number =>
-      [...held.values()].reduce((sum, reserve) => sum + reserve.usd, 0),
+    /** All that is set aside now, in `unit`. */
+    total: (unit: ReserveUnit = "usd"): number =>
+      [...held.values()].reduce((sum, reserve) => sum + reserve[unit], 0),
     /**
-     * `id` sets aside `usd` (nothing, or 0, lets it go). `waitable` is false
-     * for a leader, whose children must never wait on it.
+     * `id` sets aside `amount` of `unit` (nothing, or 0, lets it go).
+     * `waitable` is false for a leader, whose children must never wait on it.
      */
-    reserve: (id: string, usd: number | undefined, waitable: boolean): void => {
-      const before = held.get(id)?.usd ?? 0;
-      if (usd === undefined || usd <= 0) held.delete(id);
-      else held.set(id, { usd, waitable });
-      if ((usd ?? 0) < before) wake();
+    reserve: (
+      id: string,
+      amount: number | undefined,
+      waitable: boolean,
+      unit: ReserveUnit = "usd",
+    ): void => {
+      const now = held.get(id) ?? { usd: 0, tokens: 0, waitable };
+      const before = now[unit];
+      const next = { ...now, waitable, [unit]: Math.max(amount ?? 0, 0) };
+      if (next.usd === 0 && next.tokens === 0) held.delete(id);
+      else held.set(id, next);
+      if ((amount ?? 0) < before) wake();
     },
     /** The node ended: whatever it still held is let go. */
     drop: (id: string): void => {

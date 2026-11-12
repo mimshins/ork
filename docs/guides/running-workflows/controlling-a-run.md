@@ -59,7 +59,8 @@ continues the session it had, so its earlier turns are not paid for again. A
 question left open when the run stopped is asked again. The run keeps its id,
 its inputs and its flags, and picks up the worktrees it left. It reads the
 workflow file again, so you can fix a step before resuming. A run that ran out
-of budget counts what it already spent: raise `limits.budgetUsd` first.
+of budget counts what it already spent: raise `limits.budgetUsd` (or
+`limits.budgetTokens`) first.
 
 ## One node on its own
 

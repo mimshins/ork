@@ -12,6 +12,7 @@ import { DefaultsSchema, RulesSchema } from "./project.ts";
 import {
   AgentNameSchema,
   BudgetSchema,
+  TokenBudgetSchema,
   NodeIdSchema,
   TimeoutSchema,
 } from "./settings.ts";
@@ -92,6 +93,9 @@ export const WorkflowSchema = z.strictObject({
     .strictObject({
       budgetUsd: BudgetSchema.optional().describe(
         "Hard cap for the whole run.",
+      ),
+      budgetTokens: TokenBudgetSchema.optional().describe(
+        "Hard cap for the whole run in tokens (input, output, cache-write).",
       ),
       concurrency: z
         .number()

@@ -68,8 +68,9 @@ export const CONTRACT: readonly ContractEntry[] = [
     fakeTool: fixture("fake-claude.mjs"),
     capabilities: capabilitiesOf("claude-code"),
     // `--max-budget-usd`: only Claude Code caps a session's spending itself.
-    // `ork validate` refuses `budgetUsd` on Command Code (no dollars), and Ork
-    // checks OpenCode's only before a session or a late turn, not within one.
+    // `ork validate` warns that `budgetUsd` alone can't bind Command Code (no
+    // dollars; `budgetTokens` does), and Ork checks OpenCode's dollars only
+    // before a session or a late turn, not within one.
     ends: [...TOOL_ENDS, "budget_limit"],
   },
   {

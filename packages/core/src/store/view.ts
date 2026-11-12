@@ -7,6 +7,7 @@
 import type { NodeType } from "@krapht/ork-schema";
 
 import type { RunEvent } from "../run/types.ts";
+import { unpriced } from "../usage/spend.ts";
 import { isItem } from "./nest-items.ts";
 import { type ProcessStartReader, runProcessAlive } from "./process-age.ts";
 import type { RunRecord, StoredRunStatus } from "./types.ts";
@@ -24,6 +25,13 @@ export type TreeNode = {
   costUsd: number;
   inputTokens: number;
   outputTokens: number;
+  /**
+   * Cache-write tokens, which a token budget counts beside input and output;
+   * absent with none.
+   */
+  cacheWriteTokens?: number;
+  /** A session ran on a driver that reports no dollars: `costUsd` misses it. */
+  unpriced?: true;
   /** The last result's one-line verdict fields. */
   output?: Record<string, unknown>;
   /** Paused, and waiting at a hold point (ADR-041). */
@@ -155,6 +163,9 @@ export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
       node.costUsd += event.usage?.costUsd ?? 0;
       node.inputTokens += event.usage?.inputTokens ?? 0;
       node.outputTokens += event.usage?.outputTokens ?? 0;
+      const written = event.usage?.cacheWriteTokens ?? 0;
+      if (written > 0)
+        node.cacheWriteTokens = (node.cacheWriteTokens ?? 0) + written;
     } else if (event.type === "node.skipped") {
       const node = nodes.get(event.id);
       if (node !== undefined) node.state = "skipped";
@@ -174,7 +185,10 @@ export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
       event.event.type === "session.started"
     ) {
       const node = nodes.get(event.id);
-      if (node !== undefined) node.model = event.event.model;
+      if (node !== undefined) {
+        node.model = event.event.model;
+        if (unpriced(event.event.driver)) node.unpriced = true;
+      }
     }
   }
   const roots: TreeNode[] = [];

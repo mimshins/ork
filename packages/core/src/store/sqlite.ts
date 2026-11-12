@@ -16,58 +16,15 @@ import { DatabaseSync } from "node:sqlite";
 import { maskReplacer } from "./mask.ts";
 import { ownProcessStart } from "./process-age.ts";
 import { storeQueries } from "./queries.ts";
-import { eventOf, inTransaction, type Row, text } from "./rows.ts";
+import { eventOf, inTransaction, recordOf, RUN_COLUMNS, text } from "./rows.ts";
 import { migrate, requireCurrent } from "./schema.ts";
-import type {
-  EventStore,
-  RunRecord,
-  StoredEvent,
-  StoredRunStatus,
-} from "./types.ts";
+import type { EventStore, StoredEvent } from "./types.ts";
 
 type RunEvent = StoredEvent["event"];
 
 /** `~/.ork/state.db`; `home` is `~` (tests pass a folder). */
 export const storePath = (home: string = homedir()): string =>
   path.join(home, ".ork", "state.db");
-
-const STATUSES: readonly StoredRunStatus[] = [
-  "running",
-  "succeeded",
-  "failed",
-  "budget_exhausted",
-  "quota_exhausted",
-  "timed_out",
-  "interrupted",
-];
-
-const statusOf = (value: string): StoredRunStatus =>
-  STATUSES.find(s => s === value) ?? "failed";
-
-const recordOf = (row: Row): RunRecord => {
-  const record: RunRecord = {
-    id: text(row, "id"),
-    workflow: text(row, "workflow"),
-    file: text(row, "file"),
-    project: text(row, "project"),
-    status: statusOf(text(row, "status")),
-    pid: Number(row?.["pid"]),
-    startedAt: text(row, "started_at"),
-    costUsd: Number(row?.["cost_usd"]),
-    depth: Number(row?.["depth"] ?? 0),
-  };
-  const processStart = text(row, "process_start");
-  if (processStart !== "") record.processStart = processStart;
-  const parent = text(row, "parent");
-  if (parent !== "") record.parent = parent;
-  const finished = text(row, "finished_at");
-  if (finished !== "") record.finishedAt = finished;
-  const skipped = row?.["skipped"];
-  if (typeof skipped === "number") record.skipped = skipped;
-  const handled = row?.["failures_handled"];
-  if (typeof handled === "number") record.failuresHandled = handled;
-  return record;
-};
 
 /** The node an event is about, for filtering. */
 export const nodeOf = (event: RunEvent): string | null => {
@@ -152,15 +109,15 @@ export const openStore = (
   const addCost = db.prepare(
     "UPDATE runs SET cost_usd = cost_usd + ? WHERE id = ?",
   );
-  const byId = db.prepare("SELECT * FROM runs WHERE id = ?");
+  const byId = db.prepare(`SELECT ${RUN_COLUMNS} FROM runs WHERE id = ?`);
   const byPrefix = db.prepare(
-    "SELECT * FROM runs WHERE substr(id, 1, ?) = ? ORDER BY started_at DESC, rowid DESC",
+    `SELECT ${RUN_COLUMNS} FROM runs WHERE substr(id, 1, ?) = ? ORDER BY started_at DESC, rowid DESC`,
   );
   const allRuns = db.prepare(
-    "SELECT * FROM runs ORDER BY started_at DESC, rowid DESC LIMIT ?",
+    `SELECT ${RUN_COLUMNS} FROM runs ORDER BY started_at DESC, rowid DESC LIMIT ?`,
   );
   const projectRuns = db.prepare(
-    "SELECT * FROM runs WHERE project = ? ORDER BY started_at DESC, rowid DESC LIMIT ?",
+    `SELECT ${RUN_COLUMNS} FROM runs WHERE project = ? ORDER BY started_at DESC, rowid DESC LIMIT ?`,
   );
   const eventsAfter = db.prepare(
     "SELECT seq, at, data FROM events WHERE run_id = ? AND seq > ? ORDER BY seq",

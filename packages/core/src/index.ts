@@ -130,6 +130,7 @@ export * from "./update/version.ts";
 export * from "./usage/caps.ts";
 export * from "./usage/quota.ts";
 export * from "./usage/report.ts";
+export * from "./usage/spend.ts";
 export * from "./worktree/clean.ts";
 export * from "./worktree/git-env.ts";
 export * from "./worktree/list.ts";

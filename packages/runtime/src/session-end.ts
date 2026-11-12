@@ -4,10 +4,15 @@
  *   it can see (a turn cap, an exit code, a provider's error), and the report
  *   the session handed in decides the rest. The runner then writes the end in
  *   the node's numbers, its detail scrubbed with the feedback redactor. A
- *   session the driver could not run ends as `driverFailure` says.
+ *   session the driver could not run ends as `driverFailure` says, and one that
+ *   reached its token cap as `tokenCapOutcome` says.
  */
 
+import { homedir } from "node:os";
+import path from "node:path";
+
 import {
+  countedTokens,
   type EndFacts,
   type EndKind,
   endFor,
@@ -17,6 +22,8 @@ import {
   type RuntimeEvent,
   type SessionEnd,
   type SessionOutcome,
+  type SessionSpec,
+  type SessionUsage,
 } from "@krapht/ork-core";
 
 import { classifyProviderError } from "./provider-errors.ts";
@@ -68,6 +75,50 @@ export const settleEnd = (
 
 /** The node's numbers and the scrubbing a session's end is written with. */
 export type EndScope = { facts: EndFacts; scrub?: RedactOptions };
+
+/**
+ * What a session's end is written with: the node's limits and program, and its
+ * folder and the home folder taken out of the detail.
+ */
+export const scopeOf = (
+  spec: SessionSpec,
+  bin: string,
+  env: Readonly<Record<string, string | undefined>>,
+): EndScope => ({
+  facts: {
+    ...(spec.maxTurns === undefined ? {} : { maxTurns: spec.maxTurns }),
+    ...(spec.budgetUsd === undefined ? {} : { budgetUsd: spec.budgetUsd }),
+    ...(spec.budgetTokens === undefined
+      ? {}
+      : { budgetTokens: spec.budgetTokens }),
+    program: path.basename(bin),
+  },
+  scrub: { roots: [spec.cwd], home: env["HOME"] ?? homedir() },
+});
+
+/**
+ * The outcome of a session stopped once its counted tokens (RFC-015) reach
+ * `budgetTokens`: `budget_limit`, with what it used so far; `undefined` under
+ * the cap, or with none.
+ */
+export const tokenCapOutcome = (
+  { budgetTokens }: EndFacts,
+  usage: SessionUsage | undefined,
+  sessionId: string,
+): SessionOutcome | undefined =>
+  budgetTokens === undefined ||
+  usage === undefined ||
+  countedTokens(usage) < budgetTokens
+    ? undefined
+    : {
+        subtype: "error_max_budget_tokens",
+        end: endFor("budget_limit"),
+        sessionId,
+        report: null,
+        text: "",
+        usage,
+        errors: [`Reached the token budget (${String(budgetTokens)})`],
+      };
 
 /**
  * The kind of a failure to run the driver: its program missing, else what a

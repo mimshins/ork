@@ -204,7 +204,7 @@ export const openCodeDecoder = (spec: SessionSpec): LegDecoder => {
       switch (message["type"]) {
         case "step_finish": {
           usage = sumUsage(usage, stepUsage(message["part"]));
-          break;
+          return { events, usage };
         }
         case "error": {
           errors.push(errorText(message["error"]));

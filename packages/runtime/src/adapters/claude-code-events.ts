@@ -215,9 +215,22 @@ const REPORT_TOOL = "StructuredOutput";
 export const claudeDecoder = (): LegDecoder => {
   const calls = new Map<string, unknown>();
   let accepted: unknown;
+  /** Each model response's usage, by message id: its blocks repeat it. */
+  const responses = new Map<string, SessionUsage>();
+  /** The leg's usage so far, when `message` is a model response. */
+  const usageSoFar = (message: unknown): SessionUsage | undefined => {
+    const inner = get(message, "message");
+    const id = get(inner, "id");
+    if (get(message, "type") !== "assistant" || typeof id !== "string") {
+      return undefined;
+    }
+    responses.set(id, { ...usageOf({ usage: get(inner, "usage") }), turns: 1 });
+    return [...responses.values()].reduce((a, b) => addUsage(a, b));
+  };
   return {
     decode: line => {
       const message = parseLine(line);
+      const usage = usageSoFar(message);
       for (const block of blocks(message)) {
         if (block["type"] === "tool_use" && block["name"] === REPORT_TOOL) {
           calls.set(str(block["id"]), block["input"]);
@@ -235,7 +248,11 @@ export const claudeDecoder = (): LegDecoder => {
         accepted !== undefined
           ? { ...message, structured_output: accepted }
           : message;
-      return { events: normalize(kept), deferred: isDeferredResult(message) };
+      return {
+        events: normalize(kept),
+        deferred: isDeferredResult(message),
+        ...(usage === undefined ? {} : { usage }),
+      };
     },
     exit: () => [],
   };

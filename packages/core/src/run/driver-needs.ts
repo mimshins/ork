@@ -3,7 +3,8 @@
  *   `capabilities` and `proven` alone (RFC-014), so `ork validate` and `ork
  *   run` refuse a node the driver can't serve before anything is spent. Where
  *   Ork has a fallback (the report, permission rules, a message at the next
- *   leg) a missing capability is not a refusal.
+ *   leg) a missing capability is not a refusal. A dollar budget a driver can't
+ *   keep is a warning, not a refusal (RFC-015): `budgetWarnings`.
  */
 
 import type { AgentDriver } from "@krapht/ork-integrations";
@@ -30,15 +31,20 @@ const SESSION_TYPES: ReadonlySet<Node["type"]> = new Set([
   "agent.worker",
 ]);
 
-/** The node's turn limit and dollar budget, its own or the workflow's default. */
+/** The node's turn limit and budgets, its own or the workflow's default. */
 const limitsOf = (
   node: Node,
   workflow: Workflow,
-): { maxTurns: number | undefined; budgetUsd: number | undefined } => {
+): {
+  maxTurns: number | undefined;
+  budgetUsd: number | undefined;
+  budgetTokens: number | undefined;
+} => {
   const own = isClaudeNode(node) ? node : undefined;
   return {
     maxTurns: own?.maxTurns ?? workflow.defaults?.maxTurns,
     budgetUsd: own?.budgetUsd ?? workflow.defaults?.budgetUsd,
+    budgetTokens: own?.budgetTokens ?? workflow.defaults?.budgetTokens,
   };
 };
 
@@ -97,7 +103,7 @@ export const sessionRefusals = (
   workflow: Workflow,
   driver: DriverNeeds,
 ): DriverRefusal[] => {
-  const { maxTurns, budgetUsd } = limitsOf(node, workflow);
+  const { maxTurns } = limitsOf(node, workflow);
   const refuse = (message: string): DriverRefusal => ({
     node: id,
     message: `node \`${id}\` ${message}`,
@@ -113,23 +119,6 @@ export const sessionRefusals = (
   if (maxTurns !== undefined && !driver.capabilities.turnLimit) {
     refusals.push(
       refuse(`sets maxTurns, but driver \`${driver.id}\` has no turn limit`),
-    );
-  }
-  if (budgetUsd !== undefined && !driver.capabilities.price) {
-    refusals.push(
-      refuse(
-        `sets budgetUsd, but driver \`${driver.id}\` does not report cost in dollars (a token budget comes with RFC-015)`,
-      ),
-    );
-  } else if (
-    workflow.limits?.budgetUsd !== undefined &&
-    !driver.capabilities.price
-  ) {
-    // The run's budget caps each session too, and this driver spends unseen.
-    refusals.push(
-      refuse(
-        `runs under the workflow's limits.budgetUsd, but driver \`${driver.id}\` does not report cost in dollars, so the budget can't be kept (a token budget comes with RFC-015)`,
-      ),
     );
   }
   const servers =
@@ -151,6 +140,64 @@ export const sessionRefusals = (
   }
   return [...refusals, ...subagentRefusals(id, workflow, driver)];
 };
+
+/**
+ * What a dollar budget can't see on `driver`, which reports no dollars
+ * (RFC-015): the node's own `budgetUsd` with no `budgetTokens` beside it, or
+ * the run's `limits.budgetUsd`, which this node's sessions spend unseen.
+ */
+export const sessionBudgetWarnings = (
+  id: string,
+  node: Node,
+  workflow: Workflow,
+  driver: DriverNeeds,
+): DriverRefusal[] => {
+  if (driver.capabilities.price) return [];
+  const { budgetUsd, budgetTokens } = limitsOf(node, workflow);
+  const warn = (message: string): DriverRefusal => ({
+    node: id,
+    message: `node \`${id}\` ${message}`,
+  });
+  return [
+    ...(budgetUsd !== undefined && budgetTokens === undefined
+      ? [
+          warn(
+            `sets only budgetUsd, but driver \`${driver.id}\` reports no dollars: only budgetTokens applies on ${driver.id}`,
+          ),
+        ]
+      : []),
+    ...(workflow.limits?.budgetUsd === undefined
+      ? []
+      : [
+          warn(
+            `runs under the workflow's limits.budgetUsd, but driver \`${driver.id}\` reports no dollars, so that limit can't see its sessions`,
+          ),
+        ]),
+  ];
+};
+
+/**
+ * The warnings `sessionBudgetWarnings` gives each session node (or only
+ * `only`), on the driver it takes as for `driverRefusals`. Never a refusal.
+ */
+export const budgetWarnings = (
+  workflow: Workflow,
+  drivers: readonly DriverNeeds[],
+  choice: {
+    override?: Driver | undefined;
+    ready?: Driver | undefined;
+    only?: string | undefined;
+  },
+): DriverRefusal[] =>
+  Object.entries(workflow.nodes).flatMap(([id, node]) => {
+    if (!SESSION_TYPES.has(node.type)) return [];
+    if (choice.only !== undefined && choice.only !== id) return [];
+    const driverId = nodeDriver(node, workflow, choice);
+    const driver = drivers.find(d => d.id === driverId);
+    return driver === undefined
+      ? []
+      : sessionBudgetWarnings(id, node, workflow, driver);
+  });
 
 /**
  * What stops each session node (or only `only`) from running on its driver: its

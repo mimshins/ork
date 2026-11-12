@@ -90,6 +90,11 @@ export type SessionSpec = {
   permissionMode: "default" | "acceptEdits" | "plan";
   maxTurns?: number;
   budgetUsd?: number;
+  /**
+   * The most counted tokens (input, output, cache-write; RFC-015) the session
+   * may use; the runner stops it at the first usage report that reaches it.
+   */
+  budgetTokens?: number;
   /** JSON Schema of the final report (structured output). */
   reportSchema: Record<string, unknown>;
   /** Its `agent.subagent` children, by node id. */

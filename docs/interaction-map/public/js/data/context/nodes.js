@@ -166,7 +166,7 @@ export const NODES = [
     facts: [
       "`skills` and `context` take the same references as the workflow's; the context goes last, under `# Context for this node`.",
       "`instructions` end Ork's harness text.",
-      "Also sets the limits: `model`, `effort`, `maxTurns`, `budgetUsd`, `tools`, `isolation`.",
+      "Also sets the limits: `model`, `effort`, `maxTurns`, `budgetUsd`, `budgetTokens`, `tools`, `isolation`.",
     ],
     docs: [CONTEXT.resolver, CONTEXT.tests, SCHEMA.nodes],
   },
@@ -385,7 +385,7 @@ export const NODES = [
     summary:
       "The node's model and effort, turn and budget limits, and its tool rules, from the node or the workflow's `defaults`.",
     facts: [
-      "Built: `model`, `effort`, `maxTurns`, `budgetUsd` (capped by what is left of the run's) and `tools` go into the session spec, from the node or `defaults`.",
+      "Built: `model`, `effort`, `maxTurns`, `budgetUsd` and `budgetTokens` (each capped by what is left of the run's) and `tools` go into the session spec, from the node or `defaults`.",
       "A session out of turns or budget ends without a report: a `fail` for its edges, or for the leader that delegated it.",
       "`readonly` adds the write tools to the deny list; read-only git (`diff`, `log`, `show`, `status`) runs without asking, other commands ask.",
       "Built: `tools.only` leaves the session only those built-in tools (`--tools`); Ork's own tools stay. An agent's Claude Code `tools:` and `disallowedTools:` become `tools.only` and `tools.deny`.",

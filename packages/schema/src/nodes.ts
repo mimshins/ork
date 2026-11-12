@@ -11,6 +11,7 @@ import { McpCallNodeSchema } from "./mcp-node.ts";
 import {
   AgentNameSchema,
   BudgetSchema,
+  TokenBudgetSchema,
   DriverSchema,
   DurationSchema,
   EffortSchema,
@@ -29,8 +30,6 @@ import {
 } from "./settings.ts";
 import { stepFields } from "./steps.ts";
 import { TOOL_NODE_SCHEMAS } from "./tool-nodes.ts";
-
-const base = nodeBaseFields;
 
 /** A Claude node's output field that is not a list: a rule or JSON Schema. */
 const NotListSchema = z
@@ -75,6 +74,7 @@ export const agentSettings = {
   context: z.array(z.string()).optional().describe("Node-layer context files."),
   isolation: IsolationSchema.optional(),
   budgetUsd: BudgetSchema.optional(),
+  budgetTokens: TokenBudgetSchema.optional(),
   maxTurns: TurnsSchema.optional(),
   timeout: TimeoutSchema.optional().describe(
     "How long the node may work, e.g. 30m; time waiting on the user does not count.",
@@ -115,6 +115,7 @@ export const AGENT_SETTING_KEYS = [
   "context",
   "isolation",
   "budgetUsd",
+  "budgetTokens",
   "maxTurns",
   "timeout",
   "practices",
@@ -124,7 +125,7 @@ export const AGENT_SETTING_KEYS = [
 ] as const satisfies readonly (keyof typeof agentSettings)[];
 
 const claudeFields = {
-  ...base,
+  ...nodeBaseFields,
   agent: AgentNameSchema.optional().describe(
     "The agent that fills this node; its settings apply where the node sets none, and the prompt is its task.",
   ),
@@ -183,19 +184,19 @@ export const ClaudeSubagentNodeSchema = z.strictObject({
 
 export const SplitNodeSchema = z.strictObject({
   type: z.literal("control.split"),
-  ...base,
+  ...nodeBaseFields,
 });
 
 export const JoinNodeSchema = z.strictObject({
   type: z.literal("control.join"),
-  ...base,
+  ...nodeBaseFields,
   mode: z.enum(["all", "any", "n"]).optional().describe("Default: all."),
   n: z.number().int().positive().optional(),
 });
 
 export const RouterNodeSchema = z.strictObject({
   type: z.literal("control.router"),
-  ...base,
+  ...nodeBaseFields,
   mode: z
     .enum(["first", "all"])
     .optional()
@@ -214,7 +215,7 @@ export type DecisionOption = z.infer<typeof DecisionOptionSchema>;
 
 export const HumanGateNodeSchema = z.strictObject({
   type: z.literal("human.gate"),
-  ...base,
+  ...nodeBaseFields,
   ...notifyFields,
   question: z.string(),
   document: z.string().optional(),
@@ -229,7 +230,7 @@ export const HumanGateNodeSchema = z.strictObject({
 
 export const WorkflowCallNodeSchema = z.strictObject({
   type: z.literal("workflow.call"),
-  ...base,
+  ...nodeBaseFields,
   ...notifyFields,
   ...forEachFields,
   workflow: z

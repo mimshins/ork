@@ -126,7 +126,7 @@ Before you start, two things to know:
   project's `.claude/settings.json`.
 - **A run costs money**, billed to your API key or cloud account, or counted
   against your Claude plan. The summary prints it; `ork usage` adds them up
-  ([what you spent](../guides/models-and-budgets.md#what-you-spent)).
+  ([what you spent](../guides/models-and-budgets/driver-and-usage.md#what-you-spent)).
 
 ```sh
 ork run hello --input task="add a README that explains what this project is"

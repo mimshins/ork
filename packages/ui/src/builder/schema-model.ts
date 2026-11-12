@@ -197,6 +197,7 @@ export const choiceKey = (value: unknown): string =>
 
 const LABELS: Readonly<Record<string, string>> = {
   budgetUsd: "Budget (USD)",
+  budgetTokens: "Budget (tokens)",
   plainEnv: "Plain environment",
   env: "Environment",
   cwd: "Working folder",
@@ -204,6 +205,7 @@ const LABELS: Readonly<Record<string, string>> = {
   maxTurns: "Max turns",
   maxMessages: "Max messages",
   dayUsd: "Per day (USD)",
+  dayTokens: "Per day (tokens)",
   weekUsd: "Per week (USD)",
   monthUsd: "Per month (USD)",
 };

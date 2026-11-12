@@ -15,6 +15,12 @@
           "type": "number",
           "exclusiveMinimum": 0
         },
+        "dayTokens": {
+          "description": "Most tokens (input, output, cache-write) to use in a calendar day.",
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
         "weekUsd": {
           "description": "Most to spend in a calendar week, from Monday.",
           "type": "number",

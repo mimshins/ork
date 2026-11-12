@@ -19,7 +19,7 @@ one descriptor and one factory.
 The maintainer wants two changes: stop supporting the SDK driver, and let Ork
 run OpenCode and Command Code, all through their CLIs. What that does to the
 workflow file (node names, models, token budgets) is
-[RFC-015](../active/RFC-015-format-for-several-drivers.md).
+[RFC-015](../archived/RFC-015-format-for-several-drivers.md).
 
 **The SDK driver has a cost and no user here.** It brings the runtime dependency
 `@anthropic-ai/claude-agent-sdk`, a second path through every session feature,
@@ -105,7 +105,7 @@ supplies it the same way for every driver or refuses:
 - **Messages:** delivered at the next leg by resuming the session, as `cli.ts`
   does between legs.
 - **Budget:** enforced from what each driver reports, in dollars or tokens
-  ([RFC-015](../active/RFC-015-format-for-several-drivers.md)).
+  ([RFC-015](../archived/RFC-015-format-for-several-drivers.md)).
 
 `claude` stays the full-featured driver. Adapters ship one at a time, each only
 after a real run shows it works.

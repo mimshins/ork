@@ -26,6 +26,7 @@ export type Scenario =
   | "try-denied"
   | "wait-message"
   | "hang"
+  | "spend"
   | "report-tool"
   | `end:${EndKind}`;
 
@@ -57,6 +58,7 @@ export const start = (
   entry: ContractEntry,
   scenario: Scenario,
   bin: string = entry.fakeTool,
+  spec: Partial<SessionSpec> = {},
 ): Started => {
   const cwd = mkdtempSync(path.join(tmpdir(), "ork-contract-"));
   const endpointFile = path.join(cwd, ".endpoint");
@@ -72,7 +74,7 @@ export const start = (
       FAKE_ENDPOINT_FILE: endpointFile,
     },
     runs: path.join(home, "runs"),
-  }).start(specIn(cwd), { human });
+  }).start({ ...specIn(cwd), ...spec }, { human });
   return { session, endpoint: () => readFileSync(endpointFile, "utf8") };
 };
 

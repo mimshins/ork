@@ -1,6 +1,6 @@
 # RFC-015 — A workflow format for several drivers
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-10
 - **Supersedes:** —
 - **Superseded by:** —
@@ -107,5 +107,7 @@ Answered by the maintainer, 2026-11-11:
    not refused.
 
 Built in two changes, in the RFC's order: the node rename, the model prefix and
-the migration first; then `budgetTokens`, `dayTokens` and the mixed-run
-warnings.
+the migration first
+([ADR-083](../../decisions/ADR-083-agent-node-types-and-driver-prefixed-models.md));
+then `budgetTokens`, `dayTokens` and the mixed-run warnings
+([ADR-084](../../decisions/ADR-084-budgets-and-quotas-in-tokens.md)).

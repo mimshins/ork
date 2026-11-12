@@ -25,7 +25,8 @@
  *   `FAKE_SCENARIO` plays one case: `invalid-report` (a report outside the
  *   schema), `try-denied` (calls `Bash`, refused when `--disallowedTools` names
  *   it), `wait-message` (answers the next stdin message), `hang` (starts and
- *   waits to be interrupted) or `report-tool` (hands in a report through
+ *   waits to be interrupted), `spend` (three model responses, each in two
+ *   lines that repeat its usage, then waits to be stopped) or `report-tool` (hands in a report through
  *   Ork's `report` tool, first one outside the schema, then one inside, and
  *   ends with no structured output). `end:<kind>` ends the session the way
  *   Claude Code says that cause (`end:turn_limit` is `error_max_turns`,
@@ -141,6 +142,14 @@ if (scenario.startsWith("end:")) {
   process.exit(1);
 } else if (scenario === "hang") {
   init();
+  await new Promise(() => setInterval(() => {}, 1000));
+} else if (scenario === "spend") {
+  init();
+  for (const id of ["s1", "s2", "s3"]) {
+    for (const text of ["thinking", "more"]) {
+      out({ type: "assistant", message: { id, usage: USAGE, content: [{ type: "text", text }] } });
+    }
+  }
   await new Promise(() => setInterval(() => {}, 1000));
 } else if (scenario === "try-denied") {
   init();

@@ -265,6 +265,8 @@ describe("a field", () => {
   it("has words a person would use", () => {
     expect(labelOf("maxTurns")).toBe("Max turns");
     expect(labelOf("budgetUsd")).toBe("Budget (USD)");
+    expect(labelOf("budgetTokens")).toBe("Budget (tokens)");
+    expect(labelOf("dayTokens")).toBe("Per day (tokens)");
     expect(isMultiline("prompt", "")).toBe(true);
     expect(isMultiline("label", "one\ntwo")).toBe(true);
     expect(isMultiline("label", "one")).toBe(false);

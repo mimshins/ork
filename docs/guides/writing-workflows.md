@@ -87,7 +87,7 @@ builder:
   model: claude-code.opus
   effort: high
   isolation: worktree # worktree, continue, shared or readonly
-  budgetUsd: 2
+  budgetUsd: 2 # or budgetTokens: 400000, on any driver
   maxTurns: 40
   tools:
     deny: [WebFetch]

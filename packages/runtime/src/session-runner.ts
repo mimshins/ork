@@ -11,9 +11,6 @@
  *   running process.
  */
 
-import { homedir } from "node:os";
-import path from "node:path";
-
 import type {
   AgentRuntime,
   NodeReport,
@@ -26,7 +23,7 @@ import type {
 import type { CliAdapter, OrkEndpoint, Wired } from "./adapter.ts";
 import { heavyHook, toolHook } from "./heavy-hook.ts";
 import { startOrkMcpHttp } from "./mcp-http.ts";
-import { driverFailure, type EndScope, failureKind } from "./session-end.ts";
+import { driverFailure, failureKind, scopeOf } from "./session-end.ts";
 import { type LegInput, runLeg } from "./session-leg.ts";
 import { orkTools, preapprovedTools } from "./tools/registry.ts";
 import { REPORT_TOOL } from "./tools/report.ts";
@@ -40,23 +37,6 @@ export type RunnerOptions = {
   /** The project's runs folder: a `lease` wiring keeps its ledger there. */
   runs?: string;
 };
-
-/**
- * What a session's end is written with: the node's limits and program, and its
- * folder and the home folder taken out of the detail.
- */
-const scopeOf = (
-  spec: SessionSpec,
-  bin: string,
-  env: Readonly<Record<string, string | undefined>>,
-): EndScope => ({
-  facts: {
-    ...(spec.maxTurns === undefined ? {} : { maxTurns: spec.maxTurns }),
-    ...(spec.budgetUsd === undefined ? {} : { budgetUsd: spec.budgetUsd }),
-    program: path.basename(bin),
-  },
-  scrub: { roots: [spec.cwd], home: env["HOME"] ?? homedir() },
-});
 
 /** A spec that resumes `sessionId`; a fork's later legs continue the fork. */
 const resumed = (spec: SessionSpec, sessionId: string): SessionSpec => ({

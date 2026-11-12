@@ -12,7 +12,8 @@
  *   through Ork's `ask_user`, then reports through Ork's `report` tool),
  *   `invalid-report` (a report outside the schema), `try-denied` (a shell call),
  *   `wait-message` (a slow first leg; `--resume` ends with `got: <the
- *   message>`), `hang` (starts and waits to be interrupted), `report-tool`
+ *   message>`), `hang` (starts and waits to be interrupted), `spend` (three
+ *   `model_request_end` frames, then waits as `hang` does), `report-tool`
  *   (Ork's `report` tool, first with a report outside the schema, then with
  *   one inside), `max-turns` (a `max_turns` result, exit code 8) and `end:<kind>`
  *   (the error result and exit code Command Code gives that cause; `ENDS`). It loads
@@ -174,6 +175,11 @@ if (scenario === "end:turn_limit") {
   out({ type: "result", subtype: "error", sessionId: session, usage: USAGE, durationMs: 1, finalText: "", error });
   process.exit(code);
 } else if (scenario === "hang") {
+  await new Promise(() => setInterval(() => {}, 1000));
+} else if (scenario === "spend") {
+  for (let i = 0; i < 3; i += 1) {
+    event({ type: "model_request_end", model: flag("--model") ?? "fake", usage: USAGE, stopReason: "tool_use" });
+  }
   await new Promise(() => setInterval(() => {}, 1000));
 } else if (scenario === "max-turns") {
   finish("", "max_turns", 8);

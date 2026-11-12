@@ -247,7 +247,7 @@ export const NODES = [
       "Built: Notifications, items worked out from the overview stream with a read state per browser, a bell with the unread count, a polite live region, and opt-in desktop notifications.",
       "Checked in a real browser and on a real session: axe, keyboard only, 200% zoom, both themes, reduced motion and forced colors. Not yet with a real screen reader or by touch.",
       "Built: Usage, what runs spent over a period from the usage ledger, with a chart, the costliest workflows, models and nodes, and hints from thresholds.",
-      "Built: limits across runs. `quotas` per day, week or month, for all projects or one, read from the ledger, with each cap's meter on the Usage panel. A plan's refusal stops every run here until it resets.",
+      "Built: limits across runs. `quotas` per day, week or month in dollars, and per day in tokens (`dayTokens`, on any driver), for all projects or one, read from the ledger, with each cap's meter on the Usage panel. A plan's refusal stops every run here until it resets.",
       "Built: Resume… in the Monitor, on a run that ended without succeeding: it asks, shows `ork resume <run> --detach`, and picks the run up in the background.",
       "Built: the Builder's conditions are a field, a test and a value from what a node declares it can say, and they write the same `when:` a person would.",
       "Built: Context, the context inspector: the latest chosen node's stack (agent, project instructions, skills live or off and why, context files, practices, the appended prompt) with each piece's words a click away, from a run's files as they are now, naming any that changed since it started, or from the Builder's draft as it's edited.",
@@ -1171,7 +1171,7 @@ export const NODES = [
       "Proven on its gate run (2026-11-10): `cmd` runs with `--dangerously-skip-permissions`, since its own `-p` gate otherwise refuses shell and edits, and Ork's mod is the only gate.",
       "The lease adds the `ork` entry before the session and removes it after, a crash included (the next session or `ork doctor` sweeps), leaving the user's other entries. A second session in the checkout waits, logged as `session.waiting`.",
       "`ork validate` warns where nodes could queue, and refuses an owner and a node it owns in one checkout, as they would deadlock.",
-      "Deny by default: a session mod blocks every call the node did not allow. Reports only tokens, so `budgetUsd` is refused; exit 8 is a `turn_limit` end, and its other exit codes read as auth, rate limit, outage, credits or interrupt.",
+      "Deny by default: a session mod blocks every call the node did not allow. Reports only tokens, so `budgetUsd` alone is warned about (only `budgetTokens` binds it: Ork stops the session at its token cap, at most one model request past it) rather than refused; exit 8 is a `turn_limit` end, and its other exit codes read as auth, rate limit, outage, credits or interrupt.",
       "The mod lets Command Code's tool loader (`search_tools`) through, which loads the `report` schema, and allows reads inside the worktree without a rule.",
     ],
     docs: [
@@ -1197,7 +1197,7 @@ export const NODES = [
     facts: [
       "Proven on its gate run (2026-11-10). OpenCode takes its folder from `PWD`, which the session runner sets, and matches path rules relative to the worktree.",
       "The bearer token lives in a 0600 config file under the system's temporary folder, outside the checkout, and goes when the session ends.",
-      "Deny by default: the whole rule set is written every session, since OpenCode runs a shell call with no rules. It reports dollars, so `budgetUsd` works; `maxTurns` is the agent's `steps`.",
+      "Deny by default: the whole rule set is written every session, since OpenCode runs a shell call with no rules. It reports dollars and tokens, so `budgetUsd` and `budgetTokens` both work (a token cap can be passed by one step); `maxTurns` is the agent's `steps`.",
       "No result line: the last text is the final text and the process exit ends the session. The machine's own OpenCode setup and MCP servers stay out.",
       "At its `steps` cap it prints nothing and the model has no tools, so the decoder counts steps: all used and no report is a `turn_limit` end (L239, closed).",
       "Claude models through OpenCode's `commandcode` provider fail after a tool call (L240); the node ends as model unavailable, the provider's text under Details. Run Claude on `claude-code`.",

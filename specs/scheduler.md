@@ -17,7 +17,10 @@ Status: **Built**: the scheduler, delegation, the built-in node types and
 ([RFC-013](../rfcs/archived/RFC-013-for-each.md)), holding a node to a declared
 list, [the fan-out](./scheduler/for-each.md), resuming per item, item worktrees,
 the question about a list over `maxItems` and the walk are built, as are the
-Monitor's and the Builder's views of it: `forEach` is built end to end.
+Monitor's and the Builder's views of it: `forEach` is built end to end. The
+run's token budget, `limits.budgetTokens`
+([RFC-015](../rfcs/archived/RFC-015-format-for-several-drivers.md),
+[ADR-084](../decisions/ADR-084-budgets-and-quotas-in-tokens.md)), is built.
 
 `startRun({ graph, inputs, cwd, executors, human, onEvent, workspace })` runs a
 compiled workflow ([graph compiler](./graph-compiler.md)) and returns
@@ -247,8 +250,16 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   running together are never offered the same part; one with nothing left waits
   for a worker beside it to finish, never for a leader
   ([ADR-077](../decisions/ADR-077-reserve-session-caps.md)).
+- `limits.budgetTokens` caps the run in counted tokens (input, output and cache
+  write) on any driver, the same way and beside the dollars: reserves hold both,
+  a session that doesn't fit is refused ("nothing is left of the run's tokens"),
+  and a resumed run starts from the tokens already used. Neither unit converts
+  to the other; whichever is reached first ends the run
+  ([tokens](./usage/tokens.md#where-a-token-cap-applies)). A `workflow.call`
+  passes no token budget to its run ([L278](./gaps/budget-tokens-limits.md)).
 - [Quotas](./usage.md#limits-across-runs) cap what runs spend together: a
-  session also gets no more than what is left of them, and at one a run ends
+  session also gets no more than what is left of them (`quotas.dayTokens` too,
+  [tokens](./usage/tokens.md#the-token-quota)), and at one a run ends
   `quota_exhausted`.
 - `limits.concurrency` (default 4) caps the Claude sessions running at once;
   other nodes are not limited, except

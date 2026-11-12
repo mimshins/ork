@@ -70,6 +70,15 @@ export const nodeContext = (
         deps.nodeOf(activation)?.type !== "agent.leader",
       );
     },
+    tokensLeftNow: deps.spend.tokensLeft,
+    reserveTokens: tokens => {
+      deps.spend.reserve(
+        id,
+        tokens,
+        deps.nodeOf(activation)?.type !== "agent.leader",
+        "tokens",
+      );
+    },
     budgetFreed: signal => deps.spend.freed(id, signal),
     quota: deps.spend.quota,
     ownSpend: (sessionId, total) => deps.spend.ownOf(id, sessionId, total),
@@ -79,9 +88,10 @@ export const nodeContext = (
     ...(options.calls === undefined ? {} : { calls: options.calls }),
     emit: event => {
       deps.ports.owners.seen(id, event, cwd);
+      if (event.type === "session.started") deps.spend.started(event.driver);
       if (event.type === "session.finished" && event.fork !== true) {
         const { sessionId, usage } = event.outcome;
-        deps.spend.report(id, sessionId, usage.costUsd);
+        deps.spend.reported(id, sessionId, usage);
       }
       options.onEvent({ type: "node.event", id, event });
     },

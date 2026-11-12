@@ -25,6 +25,7 @@ export const RunHeader = ({
   waiting,
   facts,
   budgetUsd,
+  budgetTokens,
   now,
 }: {
   run: RunView;
@@ -33,6 +34,8 @@ export const RunHeader = ({
   facts: ReadonlyMap<string, NodeFacts>;
   /** What it may spend, if there's a limit. */
   budgetUsd: number | undefined;
+  /** The same in counted tokens. */
+  budgetTokens?: number | undefined;
   now: number;
 }) => {
   const state = useAppState();
@@ -58,6 +61,7 @@ export const RunHeader = ({
         </span>
       </div>
       <RunStats
+        budgetTokens={budgetTokens}
         budgetUsd={budgetUsd}
         facts={facts}
         now={now}

@@ -41,6 +41,13 @@ export type RunRecord = {
   startedAt: string;
   finishedAt?: string;
   costUsd: number;
+  /**
+   * Its nodes' counted tokens (input, output, cache-write; RFC-015), from the
+   * usage ledger; absent with none.
+   */
+  tokens?: number;
+  /** A session ran on a driver that reports no dollars: `costUsd` misses it. */
+  partial?: true;
   /** The run whose `workflow.call` started this one. */
   parent?: string;
   /** How many calls deep it is; 0 for a run the user started. */
@@ -221,8 +228,15 @@ export type UsageStore = {
   usage: (filter?: UsageFilter) => UsageRow[];
   /** Ork's tool commands' CPU in the filter, oldest first. */
   toolCpu: (filter?: UsageFilter) => ToolCpuRow[];
-  /** What was spent since an ISO time, in one project or all. */
-  spentSince: (since: string, project?: string) => number;
+  /**
+   * What was spent since an ISO time, in one project or all: dollars, or
+   * counted tokens (input, output, cache-write; RFC-015).
+   */
+  spentSince: (
+    since: string,
+    project?: string,
+    unit?: "usd" | "tokens",
+  ) => number;
   /** Each of a plan's limits, as last reported. */
   planLimits: () => PlanLimit[];
   /** Forgets them, for one that has lifted early; a session reports them anew. */

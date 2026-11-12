@@ -60,6 +60,8 @@ export type PlanOptions = {
   before?: NodeOutput;
   /** What is left of the run's budget; caps the node's own `budgetUsd`. */
   budgetLeftUsd?: number;
+  /** What is left of the run's tokens; caps the node's own `budgetTokens`. */
+  budgetLeftTokens?: number;
   /** The worktree the node works in, set up by the run (ADR-020). */
   checkout?: Checkout;
   /** The task the node's owner delegated; it follows the node's own prompt. */
@@ -271,6 +273,9 @@ export const planNodeSession = (
     options.budgetLeftUsd,
   ].filter(b => b !== undefined);
   if (budgets.length > 0) spec.budgetUsd = Math.min(...budgets);
+  const own = node.budgetTokens ?? defaults.budgetTokens;
+  const left = options.budgetLeftTokens ?? own;
+  if (left !== undefined) spec.budgetTokens = Math.min(left, own ?? left);
   const plugin =
     options.pluginDir === undefined
       ? null

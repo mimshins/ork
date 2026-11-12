@@ -137,13 +137,15 @@ export const factsOf = (
 ): Map<string, NodeFacts> =>
   new Map(
     rowsOf(roots).map(({ node }) => {
-      const tokens = node.inputTokens + node.outputTokens;
+      const tokens =
+        node.inputTokens + node.outputTokens + (node.cacheWriteTokens ?? 0);
       return [
         node.id,
         {
           status: statusOf(node, asking.has(node.id), runEnded),
           model: node.model,
           tokens: tokens === 0 ? undefined : tokens,
+          unpriced: node.unpriced === true ? true : undefined,
           costUsd: node.costUsd === 0 ? undefined : node.costUsd,
           progress: progressOf(node),
           cli: `ork logs ${runId} --node ${node.id}`,

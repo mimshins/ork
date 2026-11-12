@@ -469,6 +469,36 @@ describe("limits", () => {
     });
   });
 
+  it("stops starting sessions when the run's tokens are spent, counting no cache reads", async () => {
+    const graph = workflow(
+      ["a: { type: agent.worker }", "b: { type: agent.worker }"],
+      ["a -> b"],
+      ["limits: { budgetTokens: 100 }"],
+    );
+    const { executor, ran } = scripted({
+      a: [
+        {
+          usage: {
+            costUsd: 0,
+            inputTokens: 60,
+            outputTokens: 30,
+            cacheReadTokens: 500,
+            cacheWriteTokens: 20,
+            turns: 1,
+            durationMs: 0,
+          },
+        },
+      ],
+    });
+    const { result } = await run(graph, allTypes(executor));
+    expect(ran).toEqual(["a"]);
+    expect(result).toMatchObject({
+      status: "budget_exhausted",
+      tokens: 110,
+      reasons: ["the run's budget of 100 tokens is spent"],
+    });
+  });
+
   describe("limits across runs", () => {
     it("starts no session while a quota is spent", async () => {
       const { executor, ran } = scripted({});
@@ -598,6 +628,24 @@ describe("limits", () => {
       };
       await run(graph, allTypes(watching), undefined, () => ({ leftUsd: 2 }));
       expect(seen[0]).toEqual([9, 2]);
+    });
+
+    it("tells a node what a token quota and its token budget each leave", async () => {
+      const graph = workflow(
+        ["a: { type: agent.worker }", "b: { type: agent.worker }"],
+        ["a -> b"],
+        ["limits: { budgetTokens: 900 }"],
+      );
+      const seen: unknown[] = [];
+      const { executor } = scripted({});
+      const watching: NodeExecutor = context => {
+        seen.push([context.tokensLeftNow?.(), context.quota?.().leftTokens]);
+        return executor(context);
+      };
+      await run(graph, allTypes(watching), undefined, () => ({
+        leftTokens: 200,
+      }));
+      expect(seen[0]).toEqual([900, 200]);
     });
 
     it("goes on after a warning", async () => {

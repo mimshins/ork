@@ -72,6 +72,16 @@ name show their parent folder too.
 - **Where it went:** by workflow, model and node, and by project when showing
   all, the costliest 10 of each, one precision per table. What does not fit
   names its `ork usage --by` command. A project shows its path beneath its name.
+- **Tokens and partial totals** (RFC-015,
+  [ADR-084](../../decisions/ADR-084-budgets-and-quotas-in-tokens.md)): a dollar
+  total that leaves out sessions on a driver with no prices reads `≥ $1.20`,
+  with a tip saying why, and the counted tokens (`12.3k tokens`) beside it. The
+  totals gain "Tokens counted"; the note reads "Tokens counted: input, output
+  and cache write. Cache reads are not counted." The Limits show a token meter,
+  "This project, this day, in tokens", beside the dollar ones when
+  `quotas.dayTokens` is set. The chart stays in dollars. The CLI words the same
+  total `(partial)` ([L283](../gaps/budget-tokens-limits.md),
+  [partial totals](../usage/tokens.md#partial-totals)).
 - **Words:** the empty state gives the next step and its CLI twin, a refusal
   offers **Try again** and `ork usage` above the last good report, if there is
   one, and the foot has the same report's command.

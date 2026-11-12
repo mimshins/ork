@@ -5,6 +5,7 @@
  */
 
 import {
+  budgetWarnings,
   type DriverNeeds,
   driverQueues,
   driverRefusals,
@@ -67,6 +68,10 @@ export const driverDiagnostics = async (
   return [
     ...driverRefusals(workflow, drivers, choice).map(({ node, message }) =>
       at(node, "error", "driver.unfit", message),
+    ),
+    // A dollar budget a driver can't keep is a warning, not a refusal.
+    ...budgetWarnings(workflow, drivers, choice).map(({ node, message }) =>
+      at(node, "warning", "driver.budget", message),
     ),
     // An owner's queue is a refusal above; siblings only wait.
     ...driverQueues(workflow, drivers, choice)

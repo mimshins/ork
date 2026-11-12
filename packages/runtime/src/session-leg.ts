@@ -23,7 +23,12 @@ import type { Driver, Priority } from "@krapht/ork-schema";
 
 import type { CliAdapter, Decoded, LegDecoder } from "./adapter.ts";
 import { classifyProviderError } from "./provider-errors.ts";
-import { type EndScope, failureKind, settleEnd } from "./session-end.ts";
+import {
+  type EndScope,
+  failureKind,
+  settleEnd,
+  tokenCapOutcome,
+} from "./session-end.ts";
 
 /** How much of the end of a process's stderr is kept to explain its death. */
 const STDERR_TAIL = 16_384;
@@ -90,6 +95,22 @@ const settled = (outcome: SessionOutcome, input: LegInput): SessionOutcome =>
     input.scope.facts,
     input.scope.scrub,
   );
+
+/** The session's end at its token cap, its earlier legs' usage included. */
+const tokenCapEnd = (
+  input: LegInput,
+  used: SessionUsage | undefined,
+  sessionId: string,
+): RuntimeEvent | undefined => {
+  const usage =
+    used === undefined || input.carried === undefined
+      ? used
+      : input.adapter.usage.combine(input.carried, used);
+  const capped = tokenCapOutcome(input.scope.facts, usage, sessionId);
+  return capped === undefined
+    ? undefined
+    : { type: "session.finished", outcome: settled(capped, input) };
+};
 
 /** The kinds of a session that ended well, so a queued message continues it. */
 const wentWell = (kind: EndKind | undefined): boolean =>
@@ -215,16 +236,32 @@ export const runLeg = async function* (
   if (input.adapter.command.input === undefined) child.stdin.end();
 
   let outcome: Leg | undefined;
+  let sessionId = "";
   const { decoder } = input;
   const decode = decoder?.decode ?? input.adapter.decode;
   try {
     for await (const line of createInterface({ input: child.stdout })) {
-      const { events, ended } = legStep(decode(line), input);
+      const decoded = decode(line);
+      const { events, ended } = legStep(decoded, input);
+      for (const event of decoded.events) {
+        if (event.type === "session.started") sessionId = event.sessionId;
+      }
       yield* events;
       if (ended !== undefined) {
         // The first result ends the process; a resume continues the session.
         child.stdin.end();
         outcome = ended;
+      }
+      const capped =
+        outcome === undefined
+          ? tokenCapEnd(input, decoded.usage, sessionId)
+          : undefined;
+      if (capped !== undefined) {
+        // Nothing the tool prints after it is the session's.
+        stopped = true;
+        child.kill("SIGINT");
+        yield capped;
+        return { kind: "finished" };
       }
     }
     const end = await Promise.race([exited, spawnError.then(error => error)]);

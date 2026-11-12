@@ -175,12 +175,12 @@ declared `capabilities`, `proven` and `onePerCheckout`
 ([drivers.ts](../packages/integrations/src/drivers.ts),
 [driver-needs.ts](../packages/core/src/run/driver-needs.ts)) and refuse, in
 words that name both the node and the driver: `maxTurns` without `turnLimit`;
-`budgetUsd`, or the workflow's `limits.budgetUsd`, without `price` (a token
-budget comes with RFC-015); `mcp` servers without `mcpServers`; a sub-agent on a
-driver without `subagents`; a leader that delegates to the nodes it owns without
-`questions`; any node on a driver that is not `proven`; an owner and a node it
-owns in one checkout on a `onePerCheckout` driver (below). Not refused, because
-Ork has a fallback: the report, permission rules, a message at the next leg. A
+`mcp` servers without `mcpServers`; a sub-agent on a driver without `subagents`;
+a leader that delegates to the nodes it owns without `questions`; any node on a
+driver that is not `proven`; an owner and a node it owns in one checkout on a
+`onePerCheckout` driver (below). Not refused, because Ork has a fallback: the
+report, permission rules, a message at the next leg, and a dollar budget it
+can't see ([`driver.budget`](./usage/tokens.md#budget-warnings), a warning). A
 node with no driver to check (none ready) is left to the run's own refusal.
 
 A `onePerCheckout` driver (Command Code: its MCP entry is per folder, so a

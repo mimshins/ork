@@ -96,7 +96,11 @@ export const Report = ({
       </div>
       <p className={styles["note"]}>
         Costs are Claude Code&apos;s own estimates. On a subscription they are
-        not what you are billed. On a terminal:
+        not what you are billed.
+        {report.totals.partial === true
+          ? " Dollars miss sessions on drivers with no price; tokens count all of them."
+          : ""}{" "}
+        On a terminal:
       </p>
       <CopyCommand command={command()} />
     </>

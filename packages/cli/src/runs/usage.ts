@@ -11,7 +11,7 @@ import {
   usd,
 } from "@krapht/ork-core";
 
-import { style } from "../output.ts";
+import { costOf, shortCount, style } from "../output.ts";
 import { CHIP_LABELS, chip } from "../term/chips.ts";
 import { type Term, termOf } from "../term/mode.ts";
 import { header, table } from "../term/table.ts";
@@ -72,11 +72,7 @@ export const sinceTime = (text: string, now: number): string | null => {
 export const untilTime = (text: string): string | null => dayTime(text, 1);
 
 /** `950`, `12.3k`, `4.5M`. */
-export const tokens = (count: number): string => {
-  if (count < 1000) return String(count);
-  if (count < 1_000_000) return `${(count / 1000).toFixed(1)}k`;
-  return `${(count / 1_000_000).toFixed(1)}M`;
-};
+export const tokens = shortCount;
 
 const percent = (share: number): string =>
   `${String(Math.round(share * 100))}%`;
@@ -162,10 +158,15 @@ const warned = (term: Term, text: string): string =>
 
 /** The limits across runs, above a report; nothing with none set. */
 export const formatLimits = (
-  { problems, caps, plan }: LimitsReport,
+  { problems, caps, tokenCaps = [], plan }: LimitsReport,
   term: Term = termOf(process.stdout),
 ): string[] => {
-  if (problems.length === 0 && caps.length === 0 && plan.length === 0) {
+  if (
+    problems.length === 0 &&
+    caps.length === 0 &&
+    tokenCaps.length === 0 &&
+    plan.length === 0
+  ) {
     return [];
   }
   return [
@@ -175,6 +176,11 @@ export const formatLimits = (
       const whose = cap.project === undefined ? "all projects" : "this project";
       const line = `  ${whose}, this ${cap.window}: ${usd(cap.spentUsd)} of ${usd(cap.capUsd)}, resets ${shortTime(cap.resetsAt)}`;
       return cap.leftUsd <= 0 ? warned(term, line.trimStart()) : line;
+    }),
+    ...tokenCaps.map(cap => {
+      const whose = cap.project === undefined ? "all projects" : "this project";
+      const line = `  ${whose}, this ${cap.window}: ${tokens(cap.spentTokens)} of ${tokens(cap.capTokens)} tokens, resets ${shortTime(cap.resetsAt)}`;
+      return cap.leftTokens <= 0 ? warned(term, line.trimStart()) : line;
     }),
     ...plan.map(limit =>
       warned(
@@ -196,7 +202,7 @@ export const formatUsage = (
   const { totals } = report;
   if (totals.sessions === 0) return [`No Claude sessions in ${scope}.`];
   const head = [
-    `${style("bold", cost(totals.costUsd))} in ${scope}`,
+    `${style("bold", costOf(totals.costUsd, totals.partial, totals.tokens))} in ${scope}`,
     `${counted(totals.runs, "run")} · ${counted(totals.sessions, "session")} · ${counted(totals.turns, "turn")} · ${tokens(totals.inputTokens + totals.cacheReadTokens + totals.cacheWriteTokens)} in / ${tokens(totals.outputTokens)} out · ${percent(totals.cacheHitRate)} from cache`,
   ];
   const lines = head;

@@ -8,9 +8,12 @@ Status: **Built**: the ledger, reports, `ork usage`, `ork prune`,
 [commands](../packages/cli/src/commands/usage.ts),
 [panel](../packages/ui/src/panels/usage-panel.tsx),
 [tests](../packages/core/test/usage.test.ts)), with the items of a fanned node
-grouped under their node (built; the Monitor doesn't show them yet). Why:
-[ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md) and
-[ADR-050](../decisions/ADR-050-limits-across-runs.md).
+grouped under their node (built; the Monitor doesn't show them yet), and the
+token side of RFC-015
+([counted tokens, the day quota in tokens and partial totals](./usage/tokens.md),
+built). Why: [ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md) and
+[ADR-050](../decisions/ADR-050-limits-across-runs.md) and
+[ADR-084](../decisions/ADR-084-budgets-and-quotas-in-tokens.md).
 
 Usage answers where the money went and what to improve. No model is involved:
 the ledger is folded from a run's events, and a report is a pure function of it.
@@ -56,7 +59,8 @@ way: a chat's spend has a ledger row, and is left out of the run's budget.
 
 ## Reports
 
-A report has the **totals**: cost, tokens, cache hit rate, turns, duration,
+A report has the **totals**: cost, tokens (and the counted ones,
+[RFC-015](./usage/tokens.md#counted-tokens)), cache hit rate, turns, duration,
 sessions and runs, and the cost of failed sessions, of rounds after the first
 and of chats. It has the same totals **grouped** by day, week, month, workflow,
 node, model, driver and project. Times are oldest first in the machine's time
@@ -84,12 +88,14 @@ user is billed ([L74](./usage/limits.md)).
 [caps.ts](../packages/core/src/usage/caps.ts),
 [tests](../packages/core/test/quota.test.ts).
 
-`quotas` takes `dayUsd`, `weekUsd` and `monthUsd`, in `~/.ork/settings.yaml` for
-every project on this machine and `.ork/project.yaml` for one. All that apply
-are enforced, so a project can't raise the user's. A window is the calendar day,
-week from Monday or month in the machine's time zone, as in a report. What
-counts is the ledger in it, so `ork chat` and called runs do, and a call into
-another project counts there and against the user's caps.
+`quotas` takes `dayUsd`, `weekUsd` and `monthUsd`, and `dayTokens` in counted
+tokens ([the token quota](./usage/tokens.md#the-token-quota)), in
+`~/.ork/settings.yaml` for every project on this machine and `.ork/project.yaml`
+for one. All that apply are enforced, so a project can't raise the user's. A
+window is the calendar day, week from Monday or month in the machine's time
+zone, as in a report. What counts is the ledger in it, so `ork chat` and called
+runs do, and a call into another project counts there and against the user's
+caps.
 
 - **`ork run`** refuses a workflow with a session or a call while a limit is
   spent, or while it can't read its settings, and so does a resume with one of
@@ -137,10 +143,13 @@ weeks in `--since` are whole days counting today, as in the Usage panel; hours
 are exact. A report's `runs` counts runs with a session, not those that only ran
 tools. Without `--by` it prints the totals, the latest 10 days and the costliest
 10 of each of workflow, model and node, then any hints; with it, that one table
-in full. Any limits go first. `--json` prints the whole report, with `limits`.
-`--by node` also has a `TOOL CPU` column: the seconds of CPU (user and system,
-children included) that Ork's tool commands of the node used, from the
-`tool_cpu` table ([machine](./machine.md#cpu)); the other tables don't show it.
+in full. Any limits go first, token caps after the dollar ones. `--json` prints
+the whole report, with `limits`. A dollar total that misses sessions on a driver
+without prices reads `(partial)`, with tokens beside it
+([partial totals](./usage/tokens.md#partial-totals)). `--by node` also has a
+`TOOL CPU` column: the seconds of CPU (user and system, children included) that
+Ork's tool commands of the node used, from the `tool_cpu` table
+([machine](./machine.md#cpu)); the other tables don't show it.
 
 ## `ork prune`
 
@@ -177,5 +186,6 @@ say there is no such run.
 
 ## Contents
 
+- [Counted tokens, the token quota and partial totals](./usage/tokens.md)
 - [Limits: usage and quotas](./usage/limits.md)
 - [Limits: the usage ledger and pruning](./usage/ledger-limits.md)

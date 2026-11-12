@@ -4,7 +4,7 @@
   [ADR-006](./ADR-006-workflow-file-format.md)
 - **Date:** 2026-11-11
 - **Topic:** workflow format, runtime drivers, CLI
-- **RFC:** [RFC-015](../rfcs/active/RFC-015-format-for-several-drivers.md)
+- **RFC:** [RFC-015](../rfcs/archived/RFC-015-format-for-several-drivers.md)
   (option A, accepted 2026-11-10); the RFC stays active until its part 2, the
   token budgets, ships
 

@@ -15,12 +15,11 @@ of earlier versions are gone. Change `driver:` in the workflow or
 ready; on the command line, use `--driver claude-code`. Runs recorded with the
 old ids still resume.
 
-**`node … sets maxTurns, but driver … has no turn limit`** (or `budgetUsd`, the
-workflow's `limits.budgetUsd`, MCP servers in `mcp`, or delegates to the nodes
-it owns). The node asks for something its driver does not do. Remove the
-setting, name a driver that has it, or run `ork validate --driver claude-code`
-to see each node against that driver
-([models and budgets](../models-and-budgets.md#the-driver)).
+**`node … sets maxTurns, but driver … has no turn limit`** (or MCP servers in
+`mcp`, or delegates to the nodes it owns). The node asks for something its
+driver does not do. Remove the setting, name a driver that has it, or run
+`ork validate --driver claude-code` to see each node against that driver
+([models and budgets](../models-and-budgets/driver-and-usage.md#the-driver)).
 
 **`driver command-code runs one session per checkout, but … could run at once`**
 (a warning from `ork validate`). Command Code holds one session per checkout at

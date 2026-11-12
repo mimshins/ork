@@ -41,6 +41,12 @@ export type Decoded = {
   events: RuntimeEvent[];
   /** The line ends a turn whose tool call the hold hook deferred. */
   deferred?: boolean;
+  /**
+   * What the leg has used so far, when the line reports a model request's
+   * usage: the runner stops the session once its counted tokens reach
+   * `budgetTokens` (RFC-015).
+   */
+  usage?: SessionUsage;
 };
 
 /** Reads the tool's output, one line at a time. */

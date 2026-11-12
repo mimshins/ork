@@ -946,6 +946,23 @@ describe("Claude nodes", () => {
       expect(lateLimits({}, { spent: 6, turns: 0 }, undefined, 0)).toBeNull();
     });
 
+    it("has only the tokens its cap, the run's and a quota's leave", () => {
+      const used = { spent: 0, turns: 0, tokens: 400 };
+      expect(lateLimits({ budgetTokens: 1000 }, used)).toEqual({
+        budgetTokens: 600,
+      });
+      expect(
+        lateLimits({ budgetTokens: 1000 }, used, undefined, undefined, {
+          run: 700,
+          quota: 250,
+        }),
+      ).toEqual({ budgetTokens: 250 });
+      expect(lateLimits({ budgetTokens: 400 }, used)).toBeNull();
+      expect(
+        lateLimits({ budgetUsd: 1, budgetTokens: 1000 }, { ...used, spent: 1 }),
+      ).toBeNull();
+    });
+
     it("has only the turns its node has left", () => {
       const spec = { maxTurns: 10 };
       expect(lateLimits(spec, { spent: 0, turns: 4 })).toEqual({

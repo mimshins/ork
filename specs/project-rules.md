@@ -105,10 +105,12 @@ and refuses links to the run. The default is on
 quotas:
   dayUsd: 5
   monthUsd: 50
+  dayTokens: 5000000 # counted tokens: input, output and cache write
 ```
 
-The most this project may spend on this machine, across runs. The user's own
-caps in `~/.ork/settings.yaml` apply too, so these can only lower what is spent
+The most this project may spend on this machine, across runs, in dollars or
+(`dayTokens`, on any driver) in counted tokens. The user's own caps in
+`~/.ork/settings.yaml` apply too, so these can only lower what is spent
 ([limits across runs](./usage.md#limits-across-runs)).
 
 ## Calls

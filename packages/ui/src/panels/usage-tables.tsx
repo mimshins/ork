@@ -5,11 +5,13 @@
  */
 
 import type { LimitsReport, UsageReport } from "@krapht/ork-server/client";
+import type { ReactNode } from "react";
 
 import { EmptyState } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
 import { CodeText } from "../components/code-text.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
+import { CountedTerm, Dollars } from "../components/spend.tsx";
 import { UsageLimits } from "./usage-limits.tsx";
 import { isAllTime, money, moneyOf, percent, tokens } from "./usage-model.ts";
 
@@ -40,6 +42,7 @@ export const Breakdown = ({
   const more = groups.length - MOST_ROWS;
   const shown = groups.slice(0, MOST_ROWS);
   const cost = moneyOf(shown.map(group => group.costUsd));
+  const withTokens = shown.some(group => (group.tokens ?? 0) > 0);
   return (
     <section
       aria-label={title}
@@ -56,6 +59,14 @@ export const Breakdown = ({
             >
               Cost
             </th>
+            {withTokens ? (
+              <th
+                className={styles["number"]}
+                scope="col"
+              >
+                Tokens
+              </th>
+            ) : null}
             <th
               className={styles["number"]}
               scope="col"
@@ -89,7 +100,17 @@ export const Breakdown = ({
                   <span className={styles["path"]}>{group.key}</span>
                 )}
               </th>
-              <td className={styles["number"]}>{cost(group.costUsd)}</td>
+              <td className={styles["number"]}>
+                <Dollars
+                  partial={group.partial === true}
+                  text={cost(group.costUsd)}
+                />
+              </td>
+              {withTokens ? (
+                <td className={styles["number"]}>
+                  {tokens(group.tokens ?? 0)}
+                </td>
+              ) : null}
               <td className={styles["number"]}>
                 {percent(total === 0 ? 0 : group.costUsd / total)}
               </td>
@@ -164,13 +185,24 @@ export const Totals = ({ report }: { report: UsageReport }) => {
   const { totals } = report;
   const read =
     totals.inputTokens + totals.cacheReadTokens + totals.cacheWriteTokens;
-  const items: readonly (readonly [string, string])[] = [
-    ["Spend", money(totals.costUsd)],
+  const items: readonly (readonly [string, ReactNode])[] = [
+    [
+      "Spend",
+      <Dollars
+        focusable
+        key="spend"
+        partial={totals.partial === true}
+        text={money(totals.costUsd)}
+      />,
+    ],
     ["Runs with sessions", String(totals.runs)],
     ["Sessions", String(totals.sessions)],
     ["Tokens in", tokens(read)],
     ["Tokens out", tokens(totals.outputTokens)],
     ["From cache", percent(totals.cacheHitRate)],
+    ...(totals.tokens === undefined || totals.tokens === 0
+      ? []
+      : ([["Tokens counted", tokens(totals.tokens)]] as const)),
   ];
   return (
     <dl className={styles["totals"]}>
@@ -179,7 +211,7 @@ export const Totals = ({ report }: { report: UsageReport }) => {
           className={styles["total"]}
           key={term}
         >
-          <dt>{term}</dt>
+          <dt>{term === "Tokens counted" ? <CountedTerm /> : term}</dt>
           <dd>{value}</dd>
         </div>
       ))}

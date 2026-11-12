@@ -49,6 +49,7 @@ import {
   checksHere,
   chooseReadyDriver,
   type DriverChecks,
+  budgetWarningLines,
   unfitLines,
 } from "./ready-driver.ts";
 
@@ -168,14 +169,12 @@ export const runNode = async (
   if (ready?.line !== undefined) options.err(ready.line);
   const driver = named ?? ready?.driver;
   if (driver === undefined) return failed(["No agent driver is ready here."]);
-  const unfit = unfitLines(workflow, options.drivers, {
-    override: driver,
-    only: options.nodeId,
-  });
+  const only = { override: driver, only: options.nodeId };
+  const unfit = unfitLines(workflow, options.drivers, only);
   if (unfit.length > 0) return failed(unfit);
-  for (const line of noteLines([...notes.warnings, ...plan.warnings])) {
-    options.err(line);
-  }
+  const budget = budgetWarningLines(workflow, options.drivers, only);
+  const warnings = [...budget, ...notes.warnings, ...plan.warnings];
+  for (const line of noteLines(warnings)) options.err(line);
 
   const id = options.nodeId;
   const recorder = createRecorder(

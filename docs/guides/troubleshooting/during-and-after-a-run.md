@@ -54,18 +54,19 @@ tool or provider text is behind `ork run --verbose`, or
 `ork logs <run> --node <id>`.
 
 **A node fails as `Turn limit` or `Budget limit`.** It used all of its
-`maxTurns` or `budgetUsd`. Raise the limit, or narrow the node's brief
-([turn limit](../why-a-node-stopped.md#turn-limit),
+`maxTurns`, `budgetUsd` or `budgetTokens`. Raise the limit, or narrow the node's
+brief ([turn limit](../why-a-node-stopped.md#turn-limit),
 [budget limit](../why-a-node-stopped.md#budget-limit)).
 
-**The run ends `budget_exhausted`.** `limits.budgetUsd` is spent; no new session
-starts. Raise it, or use cheaper models for checks
+**The run ends `budget_exhausted`.** `limits.budgetUsd` or `limits.budgetTokens`
+is spent; no new session starts. Raise it, or use cheaper models for checks
 ([models, effort and budgets](../models-and-budgets.md)).
 
 **A node fails as `Timed out`, or the run ends `timed_out`.** It used all of its
 `timeout`; time waiting on you doesn't count. Raise it, or handle it with
-`when: timedOut` ([timeouts](../models-and-budgets.md#timeouts)). `ork resume`
-continues a run that timed out.
+`when: timedOut`
+([timeouts](../models-and-budgets/across-runs-and-time.md#timeouts)).
+`ork resume` continues a run that timed out.
 
 **A node fails because a git hook refused its commit.** Ork commits each node's
 work with your repository's hooks. The node's message shows the hook's output,

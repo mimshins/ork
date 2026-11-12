@@ -112,6 +112,24 @@ export const commandCodeDecoder = (): LegDecoder => {
   let sessionId = "";
   let turns = 0;
   let held: Json | undefined;
+  /** The leg's tokens so far, from each `model_request_end` frame. */
+  let used: SessionUsage | undefined;
+
+  /** A model request's usage, added to the leg's so far. */
+  const requestEnded = (usage: unknown): SessionUsage => {
+    const said = isObject(usage) ? usage : {};
+    const own: SessionUsage = {
+      costUsd: 0,
+      inputTokens: num(said["inputTokens"]),
+      outputTokens: num(said["outputTokens"]),
+      cacheReadTokens: num(said["cacheReadTokens"]),
+      cacheWriteTokens: num(said["cacheWriteTokens"]),
+      turns,
+      durationMs: 0,
+    };
+    used = used === undefined ? own : { ...addUsage(used, own), turns };
+    return used;
+  };
 
   const frame = (event: Json): RuntimeEvent[] => {
     const type = event["type"];
@@ -188,9 +206,13 @@ export const commandCodeDecoder = (): LegDecoder => {
         return { events: [] };
       }
       const event = message["event"];
+      if (message["type"] !== "event" || !isObject(event))
+        return { events: [] };
       return {
-        events:
-          message["type"] === "event" && isObject(event) ? frame(event) : [],
+        events: frame(event),
+        ...(event["type"] === "model_request_end"
+          ? { usage: requestEnded(event["usage"]) }
+          : {}),
       };
     },
     exit: code => {

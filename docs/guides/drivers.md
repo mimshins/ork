@@ -56,28 +56,25 @@ needs more is refused rather than half-run:
 | Ork's tools (`ask_user`, `delegate`, messages) | yes           | yes                      | yes                      |
 | Permission prompts mid-session                 | yes           | no                       | no                       |
 | Cost in dollars (`budgetUsd`)                  | yes           | yes                      | no, tokens only          |
+| Cap in tokens (`budgetTokens`)                 | yes           | yes                      | yes                      |
 | A message mid-turn                             | yes           | no (next leg)            | no (next leg)            |
 | Report as structured output                    | yes           | no (Ork's `report` tool) | no (Ork's `report` tool) |
 | Turn limit (`maxTurns`)                        | yes           | yes                      | yes                      |
 | A node's own MCP servers (`mcp`)               | yes           | yes                      | no                       |
 | Sub-agents (`agent.subagent`)                  | yes           | no                       | no                       |
 
-Where Ork has a fallback it uses it, and nothing is refused: a driver without
-structured output reports through Ork's `report` tool, which checks the report
-against the node's schema and sends the violations back to the model; a message
-to a driver that can't take one mid-turn arrives when the session next resumes;
-permissions are handled as below.
+A dollar budget on a driver that reports no dollars is not refused, but warned
+about (below). Where Ork has a fallback it uses it, and nothing is refused: a
+driver without structured output reports through Ork's `report` tool, which
+checks the report against the node's schema and sends the violations back to the
+model; a message to a driver that can't take one mid-turn arrives when the
+session next resumes; permissions are handled as below.
 
 ## What `ork validate` and `ork run` refuse
 
 A node asks for something its driver does not do. Each refusal names both:
 
 - `maxTurns` on a driver with no turn limit.
-- `budgetUsd` on the node, or `limits.budgetUsd` on the workflow, on a driver
-  that does not report dollars. The run's budget caps each session too, and a
-  driver that spends unseen can't keep it. A token budget is a later change. The
-  starter workflow `ork init` writes sets `limits.budgetUsd`, so `command-code`
-  refuses it until you remove that.
 - `mcp` servers on a driver that does not load a node's own servers.
 - A leader that delegates, on a driver that can't reach Ork's tools (a worker's
   own `ask_user` and run-time messages are not checked,
@@ -96,6 +93,21 @@ ork validate --driver claude-code
 A workflow that uses a feature only one driver has runs only on that driver;
 `ork validate` says so before a run. More:
 [troubleshooting](./troubleshooting/setup.md).
+
+## What `ork validate` warns about
+
+`budgetUsd` on a node, or `limits.budgetUsd` on the workflow, can't see a
+session on a driver that reports no dollars (`command-code` today). Each is a
+warning, and the run goes on:
+
+- A node with only `budgetUsd`: "only budgetTokens applies on command-code". Add
+  `budgetTokens`, which every driver can keep
+  ([budgets in tokens](./models-and-budgets/models-and-limits.md#budgets-in-tokens)).
+- A node under the workflow's `limits.budgetUsd`: "that limit can't see its
+  sessions". Add `limits.budgetTokens`. The starter workflow `ork init` writes
+  sets `limits.budgetUsd`, so on `command-code` it warns until you add one.
+
+`ork run` prints the same warnings on stderr and starts anyway.
 
 ## Permissions: denied unless allowed
 

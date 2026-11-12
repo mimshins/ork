@@ -19,12 +19,29 @@ const FIELDS = {
   month: "monthUsd",
 } as const;
 
+/** The windows a quota in counted tokens (RFC-015) has, and their fields. */
+const TOKEN_FIELDS: Partial<Record<QuotaWindow, "dayTokens">> = {
+  day: "dayTokens",
+};
+
 /** A cap on one window; with no `project`, on every project here. */
 export type QuotaCap = {
   window: QuotaWindow;
   capUsd: number;
   project?: string;
 };
+
+/** A cap in counted tokens on one window (`quotas.dayTokens`). */
+export type TokenCap = {
+  window: QuotaWindow;
+  capTokens: number;
+  project?: string;
+};
+
+/** Any cap across runs, in dollars or in tokens. */
+export type AnyCap = QuotaCap | TokenCap;
+
+const inTokens = (cap: AnyCap): cap is TokenCap => "capTokens" in cap;
 
 export type QuotaStanding = QuotaCap & {
   spentUsd: number;
@@ -33,13 +50,31 @@ export type QuotaStanding = QuotaCap & {
   resetsAt: string;
 };
 
-/** What a run may do now: how much it may spend, and why it may not start. */
-export type RunLimits = { leftUsd?: number; blocked?: string };
+export type TokenStanding = TokenCap & {
+  spentTokens: number;
+  leftTokens: number;
+  resetsAt: string;
+};
+
+/**
+ * What a run may do now: how much it may spend, in dollars and in counted
+ * tokens, and why it may not start.
+ */
+export type RunLimits = {
+  leftUsd?: number;
+  leftTokens?: number;
+  blocked?: string;
+};
 
 export type LimitsReport = {
   /** Settings that could not be read, so the caps here may not be all there are. */
   problems: string[];
   caps: QuotaStanding[];
+  /**
+   * The caps in counted tokens, beside `caps` (RFC-015); `limitsReport` sets
+   * it.
+   */
+  tokenCaps?: TokenStanding[];
   /** The plan limits Claude Code last reported that are not plain `allowed`. */
   plan: PlanLimit[];
 };
@@ -69,39 +104,83 @@ export const windowOf = (
   };
 };
 
-/** The caps that apply: the user's on everything, and the project's on itself. */
+/**
+ * The caps that apply: the user's on everything, and the project's on itself;
+ * those in dollars, then those in tokens.
+ */
 export const capsOf = (
   user: Quotas | undefined,
   project?: Quotas,
   root?: string,
-): QuotaCap[] =>
-  WINDOWS.flatMap((window): QuotaCap[] => {
-    const field = FIELDS[window];
+): AnyCap[] => {
+  const whose = <C extends AnyCap>(
+    field: keyof Quotas,
+    cap: (amount: number) => C,
+  ): C[] => {
     const everywhere = user?.[field];
     const here = project?.[field];
-    const caps: QuotaCap[] = [];
-    if (everywhere !== undefined) caps.push({ window, capUsd: everywhere });
-    if (here !== undefined && root !== undefined) {
-      caps.push({ window, capUsd: here, project: root });
-    }
-    return caps;
-  });
+    return [
+      ...(everywhere === undefined ? [] : [cap(everywhere)]),
+      ...(here === undefined || root === undefined
+        ? []
+        : [Object.assign(cap(here), { project: root })]),
+    ];
+  };
+  return [
+    ...WINDOWS.flatMap(window =>
+      whose(FIELDS[window], capUsd => ({ window, capUsd })),
+    ),
+    ...WINDOWS.flatMap(window => {
+      const field = TOKEN_FIELDS[window];
+      return field === undefined
+        ? []
+        : whose(field, capTokens => ({ window, capTokens }));
+    }),
+  ];
+};
 
-/** Each cap with what has been spent against it. */
+/** Each cap in dollars with what has been spent against it. */
 export const standingOf = (
   store: Pick<UsageStore, "spentSince">,
-  caps: readonly QuotaCap[],
+  caps: readonly AnyCap[],
   now: Date,
 ): QuotaStanding[] =>
-  caps.map(cap => {
+  caps.flatMap(cap => {
+    if (inTokens(cap)) return [];
     const { since, until } = windowOf(cap.window, now);
     const spentUsd = store.spentSince(since.toISOString(), cap.project);
-    return {
-      ...cap,
-      spentUsd,
-      leftUsd: cap.capUsd - spentUsd,
-      resetsAt: until.toISOString(),
-    };
+    return [
+      {
+        ...cap,
+        spentUsd,
+        leftUsd: cap.capUsd - spentUsd,
+        resetsAt: until.toISOString(),
+      },
+    ];
+  });
+
+/** Each cap in tokens with the counted tokens used against it. */
+export const tokenStandingOf = (
+  store: Pick<UsageStore, "spentSince">,
+  caps: readonly AnyCap[],
+  now: Date,
+): TokenStanding[] =>
+  caps.flatMap(cap => {
+    if (!inTokens(cap)) return [];
+    const { since, until } = windowOf(cap.window, now);
+    const spentTokens = store.spentSince(
+      since.toISOString(),
+      cap.project,
+      "tokens",
+    );
+    return [
+      {
+        ...cap,
+        spentTokens,
+        leftTokens: cap.capTokens - spentTokens,
+        resetsAt: until.toISOString(),
+      },
+    ];
   });
 
 /** Dollars: cents, or more digits for an amount under a dollar. */
@@ -114,8 +193,13 @@ const at = (iso: string): string =>
     timeStyle: "short",
   });
 
-const capReason = (spent: QuotaStanding): string =>
-  `${spent.project === undefined ? "your" : "this project's"} ${spent.window} quota of ${usd(spent.capUsd)} is spent (${usd(spent.spentUsd)}); it lifts on ${at(spent.resetsAt)}, or raise it in ${spent.project === undefined ? "~/.ork/settings.yaml" : ".ork/project.yaml"}`;
+const capReason = (spent: QuotaStanding | TokenStanding): string => {
+  const [cap, used] =
+    "capTokens" in spent
+      ? [`${String(spent.capTokens)} tokens`, String(spent.spentTokens)]
+      : [usd(spent.capUsd), usd(spent.spentUsd)];
+  return `${spent.project === undefined ? "your" : "this project's"} ${spent.window} quota of ${cap} is spent (${used}); it lifts on ${at(spent.resetsAt)}, or raise it in ${spent.project === undefined ? "~/.ork/settings.yaml" : ".ork/project.yaml"}`;
+};
 
 /** What a run or a call refused at its start says first, for its caller to read. */
 export const NOT_STARTED = "Not started: ";
@@ -157,12 +241,15 @@ const SHOWN_MS = 24 * 60 * 60 * 1000;
 /** What the caps and the plan allow a run now. */
 export const limitsNow = (
   store: Pick<UsageStore, "spentSince" | "planLimits">,
-  caps: readonly QuotaCap[],
+  caps: readonly AnyCap[],
   now: Date,
 ): RunLimits => {
   const standing = standingOf(store, caps, now);
+  const tokens = tokenStandingOf(store, caps, now);
   const [plan] = refusing(store.planLimits(), now);
-  const spent = standing.find(cap => cap.leftUsd <= 0);
+  const spent =
+    standing.find(cap => cap.leftUsd <= 0) ??
+    tokens.find(cap => cap.leftTokens <= 0);
   const blocked =
     plan === undefined
       ? spent === undefined
@@ -173,6 +260,9 @@ export const limitsNow = (
     ...(standing.length === 0
       ? {}
       : { leftUsd: Math.min(...standing.map(cap => cap.leftUsd)) }),
+    ...(tokens.length === 0
+      ? {}
+      : { leftTokens: Math.min(...tokens.map(cap => cap.leftTokens)) }),
     ...(blocked === undefined ? {} : { blocked }),
   };
 };
@@ -180,11 +270,12 @@ export const limitsNow = (
 /** What `ork usage` and the panel show. */
 export const limitsReport = (
   store: Pick<UsageStore, "spentSince" | "planLimits">,
-  { caps, problems }: { caps: readonly QuotaCap[]; problems: string[] },
+  { caps, problems }: { caps: readonly AnyCap[]; problems: string[] },
   now: Date,
 ): LimitsReport => ({
   problems,
   caps: standingOf(store, caps, now),
+  tokenCaps: tokenStandingOf(store, caps, now),
   plan: store.planLimits().filter(limit => {
     if (limit.status === "allowed") return false;
     const until =

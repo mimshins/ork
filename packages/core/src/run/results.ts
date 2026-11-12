@@ -193,6 +193,9 @@ export const runResult = (run: {
   runId: string;
   stopped: RunStatus | null;
   costUsd: number;
+  /** Counted tokens (RFC-015), and whether `costUsd` misses some sessions. */
+  tokens?: number;
+  partial?: boolean;
   nodes: NodeSummary[];
   reasons: string[];
   worktrees: KeptWorktree[];
@@ -204,6 +207,10 @@ export const runResult = (run: {
   runId: run.runId,
   status: run.stopped ?? (run.reasons.length > 0 ? "failed" : "succeeded"),
   costUsd: run.costUsd,
+  ...(run.tokens === undefined || run.tokens === 0
+    ? {}
+    : { tokens: run.tokens }),
+  ...(run.partial === true ? { partial: true } : {}),
   nodes: run.nodes,
   reasons: run.reasons,
   worktrees: run.worktrees,

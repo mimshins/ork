@@ -2,13 +2,18 @@
  * @file Tests for what a node needs of its driver (RFC-014): `maxTurns`,
  *   `budgetUsd`, delegation and owner questions against a driver's declared
  *   capabilities, and an unproven driver. Where Ork has a fallback (report,
- *   permissions, mid-turn messages) nothing is refused. Descriptors are fakes.
+ *   permissions, mid-turn messages) nothing is refused. A dollar budget on a
+ *   driver with no dollars is a warning (RFC-015). Descriptors are fakes.
  */
 
 import { parseWorkflow, type Workflow } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
-import { type DriverNeeds, driverRefusals } from "../src/index.ts";
+import {
+  budgetWarnings,
+  type DriverNeeds,
+  driverRefusals,
+} from "../src/index.ts";
 
 const ABLE = {
   questions: true,
@@ -56,6 +61,11 @@ const messages = (workflow: Workflow, driver: DriverNeeds): string[] =>
     r => r.message,
   );
 
+const warnings = (workflow: Workflow, driver: DriverNeeds): string[] =>
+  budgetWarnings(workflow, [driver], { override: driver.id }).map(
+    w => w.message,
+  );
+
 describe("what a node needs of its driver", () => {
   it("refuses maxTurns on a driver with no turn limit, naming both", () => {
     const w = workflowOf(`${BARE}    maxTurns: 5\n`);
@@ -65,21 +75,33 @@ describe("what a node needs of its driver", () => {
     expect(messages(w, fake("open-code", { turnLimit: true }))).toEqual([]);
   });
 
-  it("refuses budgetUsd on a driver that reports no dollars, and says RFC-015", () => {
-    const w = workflowOf(`${BARE}    budgetUsd: 2\n`);
-    const [only, ...rest] = messages(w, fake("command-code", { price: false }));
-    expect(rest).toEqual([]);
-    expect(only).toContain("node `build` sets budgetUsd");
-    expect(only).toContain("driver `command-code`");
-    expect(only).toContain("RFC-015");
+  it("refuses no budget on a driver that reports no dollars", () => {
+    const w = workflowOf(
+      `${BARE}    budgetUsd: 2\n`,
+      "limits:\n  budgetUsd: 5\n",
+    );
+    expect(messages(w, fake("command-code", { price: false }))).toEqual([]);
   });
 
-  it("refuses the run's limits.budgetUsd on a driver that reports no dollars", () => {
-    const w = workflowOf(BARE, "limits:\n  budgetUsd: 5\n");
-    expect(messages(w, fake("command-code", { price: false }))).toEqual([
-      "node `build` runs under the workflow's limits.budgetUsd, but driver `command-code` does not report cost in dollars, so the budget can't be kept (a token budget comes with RFC-015)",
+  it("warns that only budgetTokens applies when a node sets budgetUsd alone on a driver with no dollars", () => {
+    const unpriced = fake("command-code", { price: false });
+    const only = workflowOf(`${BARE}    budgetUsd: 2\n`);
+    expect(warnings(only, unpriced)).toEqual([
+      "node `build` sets only budgetUsd, but driver `command-code` reports no dollars: only budgetTokens applies on command-code",
     ]);
-    expect(messages(w, fake("command-code"))).toEqual([]);
+    const both = workflowOf(
+      `${BARE}    budgetUsd: 2\n    budgetTokens: 50000\n`,
+    );
+    expect(warnings(both, unpriced)).toEqual([]);
+    expect(warnings(only, fake("command-code"))).toEqual([]);
+  });
+
+  it("warns that the run's limits.budgetUsd can't see a driver with no dollars", () => {
+    const w = workflowOf(BARE, "limits:\n  budgetUsd: 5\n");
+    expect(warnings(w, fake("command-code", { price: false }))).toEqual([
+      "node `build` runs under the workflow's limits.budgetUsd, but driver `command-code` reports no dollars, so that limit can't see its sessions",
+    ]);
+    expect(warnings(w, fake("command-code"))).toEqual([]);
   });
 
   it("refuses a node's own MCP servers on a driver that does not load them", () => {
@@ -121,7 +143,8 @@ describe("what a node needs of its driver", () => {
 
   it("reads a default turn limit and budget as the node's own", () => {
     const w = workflowOf(BARE, "defaults:\n  maxTurns: 3\n  budgetUsd: 1\n");
-    expect(messages(w, none)).toHaveLength(2);
+    expect(messages(w, none)).toHaveLength(1);
+    expect(warnings(w, none)).toHaveLength(1);
   });
 
   it("refuses delegation (and so owner questions) without questions", () => {

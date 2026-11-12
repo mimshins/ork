@@ -68,7 +68,8 @@ makes your browser ask.
 
 **Usage** shows what runs spent over a period, for a project or all of them:
 totals, spend per day, and the costliest workflows, models and nodes, with what
-is worth a look. See [what you spent](../models-and-budgets.md#what-you-spent).
+is worth a look. See
+[what you spent](../models-and-budgets/driver-and-usage.md#what-you-spent).
 
 **Context** shows what the node you chose last is told, and where each piece
 comes from: its agent, the project's instructions, its skills (live, or off and

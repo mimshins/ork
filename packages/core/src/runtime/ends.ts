@@ -58,6 +58,7 @@ export type SessionEnd = {
 export type EndFacts = {
   maxTurns?: number;
   budgetUsd?: number;
+  budgetTokens?: number;
   /** As written, e.g. `10m`. */
   timeout?: string;
   /** A plan's window, e.g. `five_hour`. */
@@ -150,8 +151,15 @@ export const END_KINDS: Readonly<Record<EndKind, EndKindInfo>> = {
     "Budget limit",
     "workflow",
     f =>
-      `reached its budget${paren(f.budgetUsd === undefined ? undefined : usd(f.budgetUsd))}`,
-    "Raise `budgetUsd` on the node or `limits.budgetUsd` on the workflow, then `ork resume`.",
+      `reached its budget${paren(
+        [
+          ...(f.budgetUsd === undefined ? [] : [usd(f.budgetUsd)]),
+          ...(f.budgetTokens === undefined
+            ? []
+            : [`${String(f.budgetTokens)} tokens`]),
+        ].join(", ") || undefined,
+      )}`,
+    "Raise `budgetUsd` or `budgetTokens` on the node, or the same in the workflow's `limits`, then `ork resume`.",
   ),
   timed_out: info(
     "Timed out",

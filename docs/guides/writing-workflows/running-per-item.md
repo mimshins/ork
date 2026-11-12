@@ -113,8 +113,8 @@ refuses `model: "{{index}}"`, a template on a node without `forEach`, and one in
 `defaults:`. It checks each written item: a model is one word, an `effort` is
 `low`, `medium`, `high`, `xhigh` or `max`. An item from `from:` is checked when
 it runs, and one with a bad value fails on its own. An empty value uses the
-default. `ork usage` shows each item's real model. `driver`, `budgetUsd` and
-`maxTurns` can't come from an item.
+default. `ork usage` shows each item's real model. `driver`, `budgetUsd`,
+`budgetTokens` and `maxTurns` can't come from an item.
 
 ## Pace and failure
 

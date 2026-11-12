@@ -6,8 +6,9 @@
  *   interrupt ending the session, a message sent mid-session arriving, and,
  *   where the driver cannot hold the report to its schema, a report handed in
  *   through Ork's `report` tool. The same cause ends as the same kind on every
- *   driver (specs/runtime/session-ends.md). Every adapter registered in
- *   `registry.ts` must have an entry.
+ *   driver (specs/runtime/session-ends.md), and every driver stops at its token
+ *   cap (RFC-015). Every adapter registered in `registry.ts` must have an
+ *   entry.
  */
 
 import { tmpdir } from "node:os";
@@ -176,6 +177,49 @@ describe.each(CONTRACT)("the $driver adapter's ends", entry => {
     const { end } = outcomeOf(await collect(start(entry, "plain").session));
     expect(end).toEqual({ kind: "done", message: "finished" });
   });
+});
+
+describe.each(CONTRACT)("the $driver adapter's token cap", entry => {
+  // Each fake request uses 100 input, 80 cache-read and about 25 other tokens.
+  const capped = (spec: { budgetTokens: number; budgetUsd?: number }) =>
+    collect(start(entry, "spend", entry.fakeTool, spec).session).then(
+      outcomeOf,
+    );
+
+  it("stops the session at the request that reaches it, ending budget_limit", async () => {
+    const outcome = await capped({ budgetTokens: 300 });
+    expect(outcome.end).toEqual({
+      kind: "budget_limit",
+      message: "reached its budget (300 tokens)",
+    });
+    expect(outcome.report).toBeNull();
+  });
+
+  it("never counts cache reads: three requests fit where two would not", async () => {
+    const { usage } = await capped({ budgetTokens: 300 });
+    expect(usage.inputTokens).toBe(300);
+    expect(usage.cacheReadTokens).toBe(240);
+  });
+
+  it("stops at the token cap with a dollar cap beside it", async () => {
+    const { end } = await capped({ budgetTokens: 300, budgetUsd: 100 });
+    expect(end?.message).toBe("reached its budget ($100, 300 tokens)");
+  });
+
+  it.runIf(entry.ends.includes("budget_limit"))(
+    "stops at the dollar cap first when the tool reaches it first",
+    async () => {
+      const { end } = outcomeOf(
+        await collect(
+          start(entry, "end:budget_limit", entry.fakeTool, {
+            budgetUsd: 0.5,
+            budgetTokens: 1_000_000,
+          }).session,
+        ),
+      );
+      expect(end?.kind).toBe("budget_limit");
+    },
+  );
 });
 
 describe.each(CONTRACT)("the $driver contract entry", entry => {

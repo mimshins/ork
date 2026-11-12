@@ -6,9 +6,14 @@
  */
 
 import type { ToolCpuRow, UsageRow } from "../store/usage-types.ts";
+import { countedTokens, unpriced } from "./spend.ts";
 
 export type UsageTotals = {
   costUsd: number;
+  /** Counted tokens: input, output and cache-write (RFC-015); a report sets it. */
+  tokens?: number;
+  /** Some sessions ran on a driver with no dollars: `costUsd` misses them. */
+  partial?: boolean;
   inputTokens: number;
   outputTokens: number;
   cacheReadTokens: number;
@@ -94,8 +99,10 @@ const totalsOf = (
   rows: readonly UsageRow[],
   cpu: readonly ToolCpuRow[],
 ): UsageTotals => {
-  const totals: UsageTotals = {
+  const totals: Required<UsageTotals> = {
     costUsd: 0,
+    tokens: 0,
+    partial: false,
     inputTokens: 0,
     outputTokens: 0,
     cacheReadTokens: 0,
@@ -112,6 +119,8 @@ const totalsOf = (
   };
   for (const row of rows) {
     totals.costUsd += row.costUsd;
+    totals.tokens += countedTokens(row);
+    totals.partial ||= unpriced(row.driver);
     totals.inputTokens += row.inputTokens;
     totals.outputTokens += row.outputTokens;
     totals.cacheReadTokens += row.cacheReadTokens;

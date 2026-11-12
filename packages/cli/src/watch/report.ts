@@ -128,8 +128,13 @@ const workflowLines = ({
 }: ProjectTrigger): string[] => {
   if (workflow === null) return [];
   const budget = workflow.limits?.budgetUsd;
+  const tokens = workflow.limits?.budgetTokens;
+  const caps = [
+    ...(budget === undefined ? [] : [`$${String(budget)}`]),
+    ...(tokens === undefined ? [] : [`${String(tokens)} tokens`]),
+  ];
   return [
-    `  workflow: ${plain(workflowFile)}${budget === undefined ? "" : `, up to $${String(budget)} a run`}`,
+    `  workflow: ${plain(workflowFile)}${caps.length === 0 ? "" : `, up to ${caps.join(" and ")} a run`}`,
     ...Object.entries(workflow.nodes).map(
       ([id, node]) => `    ${plain(id)}: ${plain(node.type)}`,
     ),

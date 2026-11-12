@@ -17,23 +17,27 @@ A failed node says why in one line, as a kind and a message; `--verbose` (on
 `ork run` too) and `ork logs --node` add what to do and the raw text, scrubbed.
 [Why a node stopped](../why-a-node-stopped.md) lists every kind.
 
+A cost with `(partial)` after it leaves out a session on a driver that reports
+no dollars, and the tokens counted are shown beside it
+([what you spent](../models-and-budgets/driver-and-usage.md#what-you-spent)).
+
 A run a `workflow.call` started shows its cost as `$0.42 in <caller>`, since the
 caller's cost already counts it. `ork ps --json` adds each finished run's
 `skipped` and `failuresHandled`.
 
 What `ork ps` shows for a run, and whether `ork resume` picks it up:
 
-| Status             | What it means                              | Resume? |
-| ------------------ | ------------------------------------------ | ------- |
-| `running`          | still going                                | no      |
-| `paused`           | waiting for `ork continue`                 | no      |
-| `succeeded`        | finished                                   | no      |
-| `failed`           | a node failed and nothing handled it       | yes     |
-| `interrupted`      | you stopped it                             | yes     |
-| `crashed`          | its process ended without finishing        | yes     |
-| `budget_exhausted` | its `limits.budgetUsd` ran out             | yes     |
-| `quota_exhausted`  | a limit across runs, or your plan, ran out | yes     |
-| `timed_out`        | its `limits.timeout` ran out               | yes     |
+| Status             | What it means                                    | Resume? |
+| ------------------ | ------------------------------------------------ | ------- |
+| `running`          | still going                                      | no      |
+| `paused`           | waiting for `ork continue`                       | no      |
+| `succeeded`        | finished                                         | no      |
+| `failed`           | a node failed and nothing handled it             | yes     |
+| `interrupted`      | you stopped it                                   | yes     |
+| `crashed`          | its process ended without finishing              | yes     |
+| `budget_exhausted` | its `limits.budgetUsd` or `budgetTokens` ran out | yes     |
+| `quota_exhausted`  | a limit across runs, or your plan, ran out       | yes     |
+| `timed_out`        | its `limits.timeout` ran out                     | yes     |
 
 ## What a run leaves behind
 

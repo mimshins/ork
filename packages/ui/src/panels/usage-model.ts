@@ -7,7 +7,7 @@
 import type { UsageReport } from "@krapht/ork-server/client";
 
 import type { Option } from "../components/select.tsx";
-import { formatCost } from "../graph/facts.ts";
+import { atLeast, formatCost, formatTokens } from "../graph/facts.ts";
 
 const ALL_TIME = "all";
 
@@ -48,7 +48,15 @@ export const usageCommand = (
     ...(by === undefined ? [] : [`--by ${by}`]),
   ].join(" ");
 
-export type Bar = { key: string; costUsd: number; sessions: number };
+export type Bar = {
+  key: string;
+  costUsd: number;
+  sessions: number;
+  /** Counted tokens (RFC-015). */
+  tokens?: number | undefined;
+  /** Some sessions ran on a driver with no price: `costUsd` misses them. */
+  partial?: boolean | undefined;
+};
 
 export type Series = {
   /** What one bar is. */
@@ -144,12 +152,11 @@ export const moneyOf = (sums: readonly number[]): ((usd: number) => string) => {
   return usd => formatCost(usd, among);
 };
 
-/** `950`, `12.3k`, `4.5M`. */
-export const tokens = (count: number): string => {
-  if (count < 1000) return String(count);
-  if (count < 1_000_000) return `${(count / 1000).toFixed(1)}k`;
-  return `${(count / 1_000_000).toFixed(1)}M`;
-};
+export const tokens = formatTokens;
+
+/** One sum, a floor when some sessions' dollars are missing from it. */
+export const partialMoney = (usd: number, partial: boolean): string =>
+  atLeast(money(usd), partial);
 
 export const percent = (share: number): string =>
   `${String(Math.round(share * 100))}%`;

@@ -8,6 +8,7 @@
 
 import {
   type AgentRuntime,
+  countedTokens,
   declaredOutputOf,
   type DriverNeeds,
   type ExecuteContext,
@@ -28,12 +29,12 @@ import { ownerFirst, withdrawnOnStop } from "./owner-asks.ts";
 import { sessionDriverOf } from "./session-driver.ts";
 import {
   afterLateTurn,
-  budgetToStart,
   lateLimits,
   limitWatch,
   notStarted,
   type TurnLimits,
 } from "./session-turns.ts";
+import { startBudgets } from "./start-budgets.ts";
 import {
   checkedResult,
   checkFailedMessage,
@@ -153,11 +154,8 @@ export const claudeExecutor =
     const blocked = context.quota?.().blocked;
     if (blocked !== undefined)
       return notStarted("plan_limit", blocked, blocked);
-    const budget = await budgetToStart(context);
-    if (budget !== undefined && budget <= 0) {
-      return notStarted("budget_limit", "nothing is left of the run's budget");
-    }
-    if (budget !== undefined) planOptions.budgetLeftUsd = budget;
+    const refused = await startBudgets(context, planOptions);
+    if (refused !== null) return refused;
     const plan = planNodeSession(context.workflow, context.id, planOptions);
     if (!plan.ok) return notStarted("invalid_node", plan.error);
     const servers = namedMcpEntries(context.projectRoot, plan.mcp);
@@ -191,6 +189,7 @@ export const claudeExecutor =
     const run = async (asked: SessionSpec): Promise<SessionOutcome | null> => {
       const watching = watch.session(asked);
       context.reserveBudget?.(asked.budgetUsd);
+      context.reserveTokens?.(asked.budgetTokens);
       const session = runtime.start(asked, ports);
       const stop = () => {
         void session.interrupt();
@@ -211,6 +210,7 @@ export const claudeExecutor =
         }
       } finally {
         context.reserveBudget?.(0);
+        context.reserveTokens?.(0);
         disconnect?.();
         context.signal.removeEventListener("abort", stop);
       }
@@ -233,9 +233,12 @@ export const claudeExecutor =
           // A re-entered session reports what it spent in earlier activations.
           spent: context.ownSpend?.(sessionId, usage.costUsd) ?? usage.costUsd,
           turns: usage.turns,
+          // Tokens are each process's own: this activation's already.
+          tokens: countedTokens(usage),
         },
         context.budgetLeftNow?.(),
         quota?.leftUsd,
+        { run: context.tokensLeftNow?.(), quota: quota?.leftTokens },
       );
     };
     const resumeWith = (

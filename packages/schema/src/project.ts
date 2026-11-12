@@ -10,6 +10,7 @@ import { z } from "zod";
 
 import {
   BudgetSchema,
+  TokenBudgetSchema,
   DriverSchema,
   EffortSchema,
   IsolationSchema,
@@ -32,6 +33,7 @@ export const DefaultsSchema = z.strictObject({
   effort: EffortSchema.optional(),
   isolation: IsolationSchema.optional(),
   budgetUsd: BudgetSchema.optional(),
+  budgetTokens: TokenBudgetSchema.optional(),
   maxTurns: TurnsSchema.optional(),
   timeout: TimeoutSchema.optional().describe(
     "For tool and Claude nodes that set none; a gate's own timeout is separate.",

@@ -13,6 +13,7 @@ import type { TreeNode, WorkflowGraph } from "@krapht/ork-server/client";
 import { type KeyboardEvent, useMemo, useState } from "react";
 
 import { IconChevronDown, IconChevronRight } from "../components/icons.tsx";
+import { UnpricedTokens } from "../components/spend.tsx";
 import { StatusBadge } from "../components/status-badge.tsx";
 import { cliDescription } from "../components/tip.tsx";
 import { formatCost, type NodeFacts, nodeName } from "../graph/facts.ts";
@@ -235,7 +236,13 @@ export const OwnershipTree = ({
                 {timeLine(node, runFinishedAt, now)}
               </span>
               <span className={styles["treeCost"]}>
-                {fact.costUsd === undefined ? "–" : formatCost(fact.costUsd)}
+                {fact.unpriced === true && fact.tokens !== undefined ? (
+                  <UnpricedTokens count={fact.tokens} />
+                ) : fact.costUsd === undefined ? (
+                  "–"
+                ) : (
+                  formatCost(fact.costUsd)
+                )}
               </span>
             </div>
           );

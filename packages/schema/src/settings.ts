@@ -120,9 +120,15 @@ export type Isolation = z.infer<typeof IsolationSchema>;
 
 export const BudgetSchema = z.number().positive();
 
+/** A cap in tokens: input, output and cache-write; cache reads don't count. */
+export const TokenBudgetSchema = z.number().int().positive();
+
 /** Caps across runs (RFC-007), in Claude Code's estimated dollars. */
 export const QuotasSchema = z.strictObject({
   dayUsd: BudgetSchema.optional().describe("Most to spend in a calendar day."),
+  dayTokens: TokenBudgetSchema.optional().describe(
+    "Most tokens (input, output, cache-write) to use in a calendar day.",
+  ),
   weekUsd: BudgetSchema.optional().describe(
     "Most to spend in a calendar week, from Monday.",
   ),

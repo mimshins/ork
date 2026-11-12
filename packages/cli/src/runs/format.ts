@@ -15,7 +15,7 @@ import {
   type TreeNode,
 } from "@krapht/ork-core";
 
-import { cost, style } from "../output.ts";
+import { cost, costOf, shortCount, style } from "../output.ts";
 import { nodeVerdict } from "../run/verdict.ts";
 import { statusChip } from "../term/chips.ts";
 import { type Term, termOf } from "../term/mode.ts";
@@ -96,8 +96,8 @@ export const formatRuns = (
       // A called run's spend is in its caller's too (L54): said, not added.
       cost:
         run.parent === undefined
-          ? cost(run.costUsd)
-          : `${cost(run.costUsd)} in ${run.parent}`,
+          ? costOf(run.costUsd, run.partial, run.tokens)
+          : `${costOf(run.costUsd, run.partial, run.tokens)} in ${run.parent}`,
       called: run.parent !== undefined,
       project: run.project,
     };
@@ -136,11 +136,7 @@ const STATE_MARK: Record<NodeState, () => string> = {
 };
 
 /** `950`, `12.3k`, `1.2M`. */
-export const count = (n: number): string => {
-  if (n < 1000) return String(n);
-  if (n < 1_000_000) return `${(n / 1000).toFixed(1)}k`;
-  return `${(n / 1_000_000).toFixed(1)}M`;
-};
+export const count = shortCount;
 
 const stateText = (node: TreeNode): string => {
   if (node.state === "running") {

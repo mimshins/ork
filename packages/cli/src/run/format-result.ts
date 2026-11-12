@@ -6,7 +6,7 @@
 
 import type { RunResult } from "@krapht/ork-core";
 
-import { cost } from "../output.ts";
+import { costOf } from "../output.ts";
 import { chip, CHIP_LABELS } from "../term/chips.ts";
 import type { Term } from "../term/mode.ts";
 import { createView, styler } from "./view.ts";
@@ -51,7 +51,7 @@ export const formatRunResult = (
     "",
     `${mark} run ${result.runId} ${result.status.replace("_", " ")} ${style(
       "dim",
-      `· ${cost(result.costUsd)} · ${String(ran)} ran, ${String(skipped)} skipped${handled === 0 ? "" : `, ${failuresHandled(handled)}`}`,
+      `· ${costOf(result.costUsd, result.partial, result.tokens)} · ${String(ran)} ran, ${String(skipped)} skipped${handled === 0 ? "" : `, ${failuresHandled(handled)}`}`,
     )}`,
   ];
   for (const kept of result.worktrees) {

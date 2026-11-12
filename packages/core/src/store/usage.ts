@@ -214,12 +214,19 @@ export const usageQueries = (
   recordUsage: (runId: string) => void;
 } => {
   const insert = db.prepare(INSERT);
-  const spentAll = db.prepare(
-    "SELECT COALESCE(SUM(cost_usd), 0) AS spent FROM usage WHERE at >= ?",
-  );
-  const spentHere = db.prepare(
-    "SELECT COALESCE(SUM(cost_usd), 0) AS spent FROM usage WHERE at >= ? AND project = ?",
-  );
+  // Counted tokens: input, output and cache writes, as `countedTokens` adds.
+  const spentOf = (column: string) => ({
+    all: db.prepare(
+      `SELECT COALESCE(SUM(${column}), 0) AS spent FROM usage WHERE at >= ?`,
+    ),
+    here: db.prepare(
+      `SELECT COALESCE(SUM(${column}), 0) AS spent FROM usage WHERE at >= ? AND project = ?`,
+    ),
+  });
+  const spent = {
+    usd: spentOf("cost_usd"),
+    tokens: spentOf("input_tokens + output_tokens + cache_write_tokens"),
+  };
   const runById = db.prepare(
     "SELECT id, project, workflow FROM runs WHERE id = ?",
   );
@@ -251,11 +258,11 @@ export const usageQueries = (
       });
       for (const row of rows) writeRow(insert, row);
     },
-    spentSince: (since, project) =>
+    spentSince: (since, project, unit = "usd") =>
       Number(
         (project === undefined
-          ? spentAll.get(since)
-          : spentHere.get(since, project))?.["spent"] ?? 0,
+          ? spent[unit].all.get(since)
+          : spent[unit].here.get(since, project))?.["spent"] ?? 0,
       ),
     usage: (filter = {}) => {
       const { sql, values } = whereOf(filter);

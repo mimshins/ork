@@ -27,6 +27,8 @@ export type WorkflowGraph = {
   channels: (readonly [string, string])[];
   /** What a run may spend, when it recorded a limit; only a run's graph has it. */
   budgetUsd?: number | undefined;
+  /** What the workflow file limits in counted tokens (RFC-015). */
+  budgetTokens?: number | undefined;
   /** What each node can say; only a draft's graph has it. */
   says?: Readonly<Record<string, NodeSays>> | undefined;
   /** Each `watch.until` as choices, for a draft (RFC-011). */

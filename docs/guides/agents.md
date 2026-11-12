@@ -76,11 +76,12 @@ output:
 ```
 
 The settings file takes what an agent node takes: `model`, `effort`, `driver`,
-`skills`, `context`, `isolation`, `budgetUsd`, `maxTurns`, `practices`, `tools`
-and `output`. Paths in `skills` and `context` are relative to the agent's own
-folder. Claude Code's `model:`, `tools:` and `disallowedTools:` in the markdown
-are used too: `tools: Read, Grep` leaves the agent only those built-in tools
-(`tools.only`), and Ork's own tools stay. The settings file wins.
+`skills`, `context`, `isolation`, `budgetUsd`, `budgetTokens`, `maxTurns`,
+`practices`, `tools` and `output`. Paths in `skills` and `context` are relative
+to the agent's own folder. Claude Code's `model:`, `tools:` and
+`disallowedTools:` in the markdown are used too: `tools: Read, Grep` leaves the
+agent only those built-in tools (`tools.only`), and Ork's own tools stay. The
+settings file wins.
 
 Ork's settings live in their own file, so other tools never see them.
 

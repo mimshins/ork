@@ -50,6 +50,18 @@ describe("reading a workflow's graph", () => {
     });
   });
 
+  it("gives the file's token limit, which a run's graph reads from it", () => {
+    writeFileSync(
+      file,
+      WORKFLOW.replace(
+        "name: t\n",
+        "name: t\nlimits: { budgetTokens: 50000 }\n",
+      ),
+    );
+    expect(readWorkflowGraph(file)?.budgetTokens).toBe(50_000);
+    expect(runGraph([], file).budgetTokens).toBe(50_000);
+  });
+
   it("says when there is no workflow to read", () => {
     expect(readWorkflowGraph(path.join(dir, "gone.ork.yaml"))).toBeNull();
     writeFileSync(file, "nodes: 3");

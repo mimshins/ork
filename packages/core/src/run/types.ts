@@ -111,6 +111,10 @@ export type ExecuteContext = {
   budgetLeftNow?: () => number | undefined;
   /** Sets aside its session's cap from the run's budget; 0 lets it go. */
   reserveBudget?: (usd: number | undefined) => void;
+  /** What is left of the run's `limits.budgetTokens` now (RFC-015). */
+  tokensLeftNow?: () => number | undefined;
+  /** Sets aside its session's token cap from the run's; 0 lets it go. */
+  reserveTokens?: (tokens: number | undefined) => void;
   /** Waits until another node's reserve frees; `false` when none can. */
   budgetFreed?: (signal: AbortSignal) => Promise<boolean>;
   /** What the limits across runs allow now. */
@@ -166,6 +170,10 @@ export type RunResult = {
   runId: string;
   status: RunStatus;
   costUsd: number;
+  /** Counted tokens (RFC-015) beside `costUsd`; absent with none. */
+  tokens?: number;
+  /** `costUsd` misses a session on a driver that reports no dollars. */
+  partial?: true;
   /** Nodes that ran or were skipped, in the order they first finished. */
   nodes: NodeSummary[];
   /** Why the run did not succeed. */

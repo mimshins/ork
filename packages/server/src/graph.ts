@@ -31,6 +31,9 @@ export const workflowGraph = (workflow: Workflow): WorkflowGraph => ({
   channels: (workflow.messages ?? []).map(
     ({ between: [a, b] }) => [a, b] as const,
   ),
+  ...(workflow.limits?.budgetTokens === undefined
+    ? {}
+    : { budgetTokens: workflow.limits.budgetTokens }),
 });
 
 /** The graph of a workflow file, or `null` if it is gone or does not parse. */
@@ -65,5 +68,9 @@ export const runGraph = (
     ...(started?.type === "run.started" && started.budgetUsd !== undefined
       ? { budgetUsd: started.budgetUsd }
       : {}),
+    // The event records only dollars, so a token limit is the file's as it is now.
+    ...(onFile?.budgetTokens === undefined
+      ? {}
+      : { budgetTokens: onFile.budgetTokens }),
   };
 };

@@ -7,6 +7,7 @@
 
 import { memo } from "react";
 
+import { TokenCount } from "../components/spend.tsx";
 import {
   StatusBadge,
   statusTone,
@@ -98,11 +99,19 @@ export const NodeCard = memo(
             <TypeIcon type={type} />
           </span>
           <span className={styles["cardId"]}>{id}</span>
-          {facts.costUsd === undefined ? null : (
+          {facts.unpriced === true && facts.tokens !== undefined ? (
+            <span className={styles["cardCost"]}>
+              <TokenCount
+                count={facts.tokens}
+                unit="tok"
+              />
+            </span>
+          ) : null}
+          {facts.unpriced !== true && facts.costUsd !== undefined ? (
             <span className={styles["cardCost"]}>
               {formatCost(facts.costUsd)}
             </span>
-          )}
+          ) : null}
         </span>
         <StatusBadge
           status={facts.status}

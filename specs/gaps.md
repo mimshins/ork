@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L278, and the next chore is
+closes it. Ids are never reused: the next limit is L286, and the next chore is
 C15. At a review, each open entry is closed (built or fixed, then removed), kept
 (moved into its area's spec, then removed here), or carried to a roadmap item,
 or to none yet (unplanned).
@@ -48,6 +48,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 - [Limits found building the machine rules](./gaps/machine-limits.md)
 - [Limits found building check once](./gaps/check-once-limits.md)
 - [Limits found building the `agent.*` types](./gaps/agent-types-limits.md)
+- [Limits found building budgets in tokens](./gaps/budget-tokens-limits.md)
 
 ## Gaps
 
@@ -189,13 +190,6 @@ Found building [clean sessions](./runtime.md#what-a-session-loads) (ADR-065):
 Found removing the Agent SDK driver
 ([RFC-014](../rfcs/archived/RFC-014-cli-drivers-only.md)):
 
-- **L233 · `budgetUsd` is refused on a driver that reports no dollars.**
-  `command-code` reports tokens only, so `ork validate` and `ork run` refuse a
-  node with `budgetUsd` on it, and every session node of a workflow with
-  `limits.budgetUsd` (the run's budget caps each session too). The starter
-  workflow `ork init` writes sets `limits.budgetUsd: 5`, so it is refused on
-  `command-code` until then. A token budget (`budgetTokens`) comes with
-  [RFC-015](../rfcs/active/RFC-015-format-for-several-drivers.md).
 - **L234 · No mid-session permission prompts off `claude-code`.** A driver
   without `permissionPrompt` gets the node's allow and deny lists as its tool's
   own rules, deny by default, so what `claude` would have asked about is refused

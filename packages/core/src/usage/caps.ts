@@ -6,13 +6,13 @@
 
 import { placeFiles, type ProjectPlace } from "../project/place.ts";
 import { loadProject, loadUserSettings } from "../project/rules.ts";
-import { capsOf, type QuotaCap } from "./quota.ts";
+import { type AnyCap, capsOf } from "./quota.ts";
 
 /** The caps that apply in `place`, or only the user's without one. */
 export const capsHere = (
   home: string | undefined,
   place?: ProjectPlace,
-): { problems: string[]; caps: QuotaCap[] } => {
+): { problems: string[]; caps: AnyCap[] } => {
   const user = loadUserSettings(home);
   try {
     const rules =

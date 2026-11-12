@@ -41,6 +41,7 @@ export const RunMonitor = ({ run }: { run: RunView }) => {
   return (
     <div className={styles["monitor"]}>
       <RunHeader
+        budgetTokens={graph?.budgetTokens}
         budgetUsd={graph?.budgetUsd}
         facts={facts}
         now={now}

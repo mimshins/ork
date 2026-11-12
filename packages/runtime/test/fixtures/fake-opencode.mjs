@@ -18,7 +18,8 @@
  *   reports through `ork_report`), `invalid-report`, `try-denied` (a `shell`
  *   call, run unless a rule refuses it), `wait-message` (a slow first leg;
  *   a continued one ends with `got: <the message>`), `hang` (starts and waits
- *   for SIGINT, then exits 130 as the real one does), `report-tool` (an
+ *   for SIGINT, then exits 130 as the real one does), `spend` (three
+ *   `step_finish` lines, then waits as `hang` does), `report-tool` (an
  *   `ork_report` outside the schema, then one inside, and nothing else) and
  *   `fail` (an `error` line, exit 1). `end:<kind>` ends the session the way
  *   OpenCode says that cause: `end:turn_limit` uses every step the `ork`
@@ -151,8 +152,9 @@ if (scenario === "end:turn_limit") {
 }
 
 const PASS = { status: "pass", summary: "done", artifacts: {} };
-if (scenario === "hang") {
+if (scenario === "hang" || scenario === "spend") {
   process.on("SIGINT", () => process.exit(130));
+  if (scenario === "spend") for (let i = 0; i < 3; i += 1) step();
   await new Promise(() => setInterval(() => {}, 1000));
 } else if (scenario === "fail") {
   line("error", { error: { name: "APIError", data: { message: "model not found" } } });

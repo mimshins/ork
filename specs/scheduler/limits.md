@@ -7,7 +7,7 @@ How a run is [scheduled](../scheduler.md), resumed and
 are open work in the [register](../gaps.md#limits).
 
 - **L2 · A resumed run's budget counts what it spent.** Raise `limits.budgetUsd`
-  to resume a run that ran out.
+  (or `limits.budgetTokens`) to resume a run that ran out.
   ([ADR-026](../../decisions/ADR-026-resume-by-replay.md))
 - **L3 · Resume keeps finished results as they were.** The workflow file is read
   again, but a finished node keeps its result even if its definition changed,

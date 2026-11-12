@@ -53,7 +53,7 @@ export const startRun = (options: RunOptions): RunHandle => {
   const outputs: Record<string, NodeOutput> = {};
   const rounds = new Map<string, number>();
   const sessionIds = new Map<string, string>();
-  const spend = spendOf(limits.budgetUsd, options);
+  const spend = spendOf(limits.budgetUsd, options, limits.budgetTokens);
   const running = new Set<string>();
   const { summaries, summary } = createSummaries(options.replay?.earlier);
   const queue: Activation[] = [];
@@ -140,7 +140,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     const result = runResult({
       runId,
       stopped,
-      costUsd: spend.total(),
+      ...spend.sums(),
       nodes: [...summaries.values()],
       reasons,
       worktrees,

@@ -18,7 +18,6 @@ import {
   type SessionSpec,
   type SessionUsage,
 } from "@krapht/ork-core";
-import { isClaudeNode } from "@krapht/ork-schema";
 
 /**
  * The later outcome, with the tokens of both processes. Its cost is already the
@@ -64,82 +63,64 @@ export const afterLateTurn = (
   };
 };
 
-export type TurnLimits = { budgetUsd?: number; maxTurns?: number };
-
-/**
- * What another turn of a session may use. `spent` and `turns` are this
- * activation's, which neither the node's cap nor the run's budget has counted.
- * The quota has: the ledger took it as the session finished, so what it says is
- * left is left. `null` when nothing is, and the turn does not start.
- */
-export const lateLimits = (
-  spec: Pick<SessionSpec, "budgetUsd" | "maxTurns">,
-  { spent, turns }: { spent: number; turns: number },
-  runLeft?: number,
-  quotaLeft?: number,
-): TurnLimits | null => {
-  const budgets = [
-    ...[spec.budgetUsd, runLeft].flatMap(limit =>
-      limit === undefined ? [] : [limit - spent],
-    ),
-    ...(quotaLeft === undefined ? [] : [quotaLeft]),
-  ];
-  const budgetUsd = budgets.length === 0 ? undefined : Math.min(...budgets);
-  if (budgetUsd !== undefined && budgetUsd <= 0) return null;
-  const maxTurns =
-    spec.maxTurns === undefined ? undefined : spec.maxTurns - turns;
-  if (maxTurns !== undefined && maxTurns <= 0) return null;
-  return {
-    ...(budgetUsd === undefined ? {} : { budgetUsd }),
-    ...(maxTurns === undefined ? {} : { maxTurns }),
-  };
+export type TurnLimits = {
+  budgetUsd?: number;
+  budgetTokens?: number;
+  maxTurns?: number;
 };
 
-/** What a session may spend as it starts: the least of the budget and any quota. */
-export const budgetNow = (
-  context: Pick<ExecuteContext, "budgetLeftUsd" | "budgetLeftNow" | "quota">,
+/** The least of the limits that are set; `undefined` with none. */
+export const least = (
+  ...limits: (number | undefined)[]
 ): number | undefined => {
-  if (context.budgetLeftNow === undefined) return context.budgetLeftUsd;
-  const known = [context.budgetLeftNow(), context.quota?.().leftUsd].flatMap(
-    left => (left === undefined ? [] : [left]),
-  );
+  const known = limits.filter(limit => limit !== undefined);
   return known.length === 0 ? undefined : Math.min(...known);
 };
 
-type StartContext = Pick<
-  ExecuteContext,
-  | "budgetLeftUsd"
-  | "budgetLeftNow"
-  | "quota"
-  | "budgetFreed"
-  | "reserveBudget"
-  | "node"
-  | "workflow"
-  | "signal"
->;
+/** A cap less what this activation used, beside what a quota says is left. */
+const leftOf = (
+  caps: (number | undefined)[],
+  used: number,
+  quotaLeft: number | undefined,
+): number | undefined =>
+  least(
+    ...caps.map(cap => (cap === undefined ? undefined : cap - used)),
+    quotaLeft,
+  );
 
 /**
- * What a node's first session may spend, set aside from the run's budget in the
- * same step that reads it (ADR-077), so a node starting beside it is never
- * offered the same part: the least of what is left and the node's own
- * `budgetUsd`. With nothing left, it waits for a worker running beside it to
- * finish, as long as one may.
+ * What another turn of a session may use. `spent`, `tokens` (counted, RFC-015)
+ * and `turns` are this activation's, which neither the node's cap nor the run's
+ * budget has counted. The quota has: the ledger took it as the session
+ * finished, so what it says is left is left. The run's tokens left have too:
+ * only the node's own `budgetTokens` takes `tokens` off. `null` when nothing
+ * is, and the turn does not start.
  */
-export const budgetToStart = async (
-  context: StartContext,
-): Promise<number | undefined> => {
-  const left = budgetNow(context);
-  if (left !== undefined && left <= 0) {
-    const freed = await context.budgetFreed?.(context.signal);
-    return freed === true ? budgetToStart(context) : left;
-  }
-  const own = isClaudeNode(context.node)
-    ? (context.node.budgetUsd ?? context.workflow.defaults?.budgetUsd)
-    : undefined;
-  context.reserveBudget?.(
-    own === undefined || left === undefined ? left : Math.min(own, left),
+export const lateLimits = (
+  spec: Pick<SessionSpec, "budgetUsd" | "budgetTokens" | "maxTurns">,
+  used: { spent: number; turns: number; tokens?: number },
+  runLeft?: number,
+  quotaLeft?: number,
+  tokensLeft: { run?: number | undefined; quota?: number | undefined } = {},
+): TurnLimits | null => {
+  const budgetUsd = leftOf([spec.budgetUsd, runLeft], used.spent, quotaLeft);
+  // The run's tokens left already count this activation's (its sessions
+  // reported them as they finished), as a quota's do.
+  const budgetTokens = leftOf(
+    [spec.budgetTokens],
+    used.tokens ?? 0,
+    least(tokensLeft.run, tokensLeft.quota),
   );
-  return left;
+  const maxTurns =
+    spec.maxTurns === undefined ? undefined : spec.maxTurns - used.turns;
+  if ([budgetUsd, budgetTokens, maxTurns].some(left => (left ?? 1) <= 0)) {
+    return null;
+  }
+  return {
+    ...(budgetUsd === undefined ? {} : { budgetUsd }),
+    ...(budgetTokens === undefined ? {} : { budgetTokens }),
+    ...(maxTurns === undefined ? {} : { maxTurns }),
+  };
 };
 
 /**
@@ -153,8 +134,8 @@ export const limitWatch = (context: Pick<ExecuteContext, "quota">) => {
     stoppedBy: (reason: string): void => {
       why = reason;
     },
-    session: (asked: Pick<SessionSpec, "budgetUsd">) => {
-      const left = context.quota?.().leftUsd;
+    session: (asked: Pick<SessionSpec, "budgetUsd" | "budgetTokens">) => {
+      const { leftUsd: left, leftTokens } = context.quota?.() ?? {};
       let refused: string | undefined;
       return {
         saw: (event: RuntimeEvent): void => {
@@ -167,9 +148,12 @@ export const limitWatch = (context: Pick<ExecuteContext, "quota">) => {
             why = refused;
           }
           const capped =
-            left !== undefined &&
-            asked.budgetUsd !== undefined &&
-            asked.budgetUsd >= left;
+            (left !== undefined &&
+              asked.budgetUsd !== undefined &&
+              asked.budgetUsd >= left) ||
+            (leftTokens !== undefined &&
+              asked.budgetTokens !== undefined &&
+              asked.budgetTokens >= leftTokens);
           const spent =
             outcome !== null && outcomeEnd(outcome).kind === "budget_limit";
           if (capped && spent) {
