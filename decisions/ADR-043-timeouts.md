@@ -1,6 +1,7 @@
 # ADR-043 — Timeouts measure work, and an expired node is an ordinary failure
 
-- **Status:** Accepted
+- **Status:** Accepted; §6 amended by
+  [ADR-087](./ADR-087-node-processes-end-with-ork.md)
 - **Date:** 2026-11-03
 - **Topic:** engine / workflow format / run control
 - **RFC:** waived. The author chose these options over the others below, after a
@@ -68,7 +69,9 @@ loops, reports and resume need nothing new.
 - A session left behind after the grace may still spend, and its cost is unknown
   to the run ([L46](../specs/scheduler/limits.md)).
 - A tool in its own group does not get a terminal's Ctrl-C directly, so Ork
-  passes the stop on. A second Ctrl-C during the 2 seconds, or a crash of Ork
-  itself, leaves the tool running ([L47](../specs/scheduler/limits.md)).
+  passes the stop on. A second Ctrl-C during the 2 seconds leaves the tool
+  running ([L47](../specs/scheduler/limits.md)). A crash of Ork itself no longer
+  does: a watcher ends the group
+  ([ADR-087](./ADR-087-node-processes-end-with-ork.md)).
 - Timeouts are checked by tests and on real tools. On a real Claude session they
   use the same interrupt as `ork stop`, and have not been run on one.

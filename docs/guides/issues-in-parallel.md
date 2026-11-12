@@ -100,6 +100,11 @@ The lock is held by the whole machine, by remote and branch: another clone of
 the same repository, or another project that pushes the same remote branch,
 waits the same way.
 
+A `branch:` lock is keyed by the origin of the repository that holds the
+workflow file (for an attached project, the project's own repository), not by
+the folder `ork run` was started from. A workflow file in no repository has no
+origin, so its `branch:` lock is shared with no other run; `ork run` says so.
+
 ## A conflict
 
 If an issue's change conflicts with what the branch already has, an agent
@@ -123,6 +128,8 @@ You do not have to use `issues`. Any workflow can take the same lock on the
 nodes that integrate:
 
 ```yaml
+schemaVersion: 1
+name: integrate
 inputs:
   branch:
     type: string
@@ -131,6 +138,8 @@ nodes:
   fetch:
     type: tool.shell
     script: git fetch origin "$BRANCH" && git rebase FETCH_HEAD
+    env:
+      BRANCH: "{{inputs.branch}}"
     lock: "branch:{{inputs.branch}}"
   check:
     type: tool.shell
@@ -139,12 +148,18 @@ nodes:
   push:
     type: tool.shell
     script: git push origin "HEAD:refs/heads/$BRANCH"
+    env:
+      BRANCH: "{{inputs.branch}}"
     lock: "branch:{{inputs.branch}}"
+edges:
+  - fetch -> check
+  - check -> push
 ```
 
 The run takes the lock before the first node that names it and keeps it until
 the last one ends (or the run does). So `fetch`, `check` and `push` happen with
-no other run integrating the same branch in between. Rules:
+no other run integrating the same branch in between. The edges order the three
+nodes; without them all three are roots and run at once. Rules:
 
 - One `lock:` name per node, and it may read only `{{inputs.*}}`.
 - A name starting `branch:` is shared across clones of the same origin. Any
@@ -162,6 +177,13 @@ no other run integrating the same branch in between. Rules:
 If an `ork` process is killed, its lock may be left. The next run that waits
 takes it over when it sees the holder is gone, and `ork doctor` lists and clears
 them too: it names each stale lock or check-slot record it removed.
+
+A killed `ork` takes its nodes with it. On macOS and Linux each command and each
+agent session runs beside a small watcher; when `ork` dies, even by `kill -9`,
+the watcher ends what the node started within about 2 seconds, so nothing keeps
+working after the lock is handed on. A program that starts its own session (a
+daemon) escapes this, and native Windows has no such guard (use WSL 2). What a
+node leaves running after it ends normally is left alone.
 
 ## Limits
 

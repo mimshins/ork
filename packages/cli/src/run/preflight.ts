@@ -16,6 +16,7 @@ import type { Driver, Workflow } from "@krapht/ork-schema";
 
 import { prepareCheckout } from "./checkout.ts";
 import { limitsRefusal, runLimits } from "./limits.ts";
+import { localLockNotes } from "./lock-notes.ts";
 import { noteLines } from "./node-notes.ts";
 import {
   budgetWarningLines,
@@ -91,6 +92,13 @@ export const preflight = async (
     given.inputs,
   );
   if (!checkout.ok) return { ok: false, lines: checkout.lines };
+  // The repo the run's locks are keyed by (workflow.ts: `root ?? place.root`).
+  const local = await localLockNotes(
+    workflow,
+    given.inputs,
+    checkout.root ?? place.root,
+  );
+  for (const line of noteLines(local)) options.err(line);
   return {
     ...checkout,
     limits: limits.now,

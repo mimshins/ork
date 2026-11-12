@@ -7,6 +7,7 @@
 import {
   isItem,
   liveStatus,
+  type LockWait,
   lockWaitLine,
   lockWaitsOf,
   type NodeState,
@@ -154,10 +155,15 @@ const stateText = (node: TreeNode): string => {
   return node.state;
 };
 
-/** The ownership tree, one line per node, children under their owner. */
+/**
+ * The ownership tree, one line per node, children under their owner. A node in
+ * `waits` (a live run's `lockWaitsOf`) reads `waiting for <lock>`, an item
+ * too.
+ */
 export const formatTree = (
   roots: readonly TreeNode[],
   now: number = Date.now(),
+  waits: readonly LockWait[] = [],
 ): string[] => {
   const lines: { label: string; node: TreeNode }[] = [];
   const walk = (node: TreeNode, lead: string, branch: string) => {
@@ -178,10 +184,13 @@ export const formatTree = (
             "dim",
             `  ${count(node.inputTokens)} in / ${count(node.outputTokens)} out · ${cost(node.costUsd)}`,
           );
+    const lock = waits.find(wait => wait.id === node.id)?.lock;
     const state =
       node.held === true
         ? `${style("yellow", "‖")} paused`
-        : `${STATE_MARK[node.state]()} ${stateText(node)}`;
+        : lock === undefined
+          ? `${STATE_MARK[node.state]()} ${stateText(node)}`
+          : `${STATE_MARK.waiting()} waiting for ${lock}`;
     const spent =
       isItem(node) && node.startedAt !== undefined
         ? style(
@@ -191,4 +200,22 @@ export const formatTree = (
         : "";
     return `${text.padEnd(label)}  ${style("dim", node.type.padEnd(type))}  ${state}${spent}${usage}`;
   });
+};
+
+/**
+ * What `ork tree` prints: the run's header (its status as `ork ps` reads it)
+ * and the tree. A finished run's lock waits are stale, so only a live run's
+ * show; `events` are the run's, `roots` its nested tree.
+ */
+export const formatTreeView = (
+  run: RunRecord,
+  events: readonly RunEvent[],
+  roots: readonly TreeNode[],
+  now: number = Date.now(),
+): string[] => {
+  const waits = runStatus(run, events) === "running" ? lockWaitsOf(events) : [];
+  return [
+    `${style("bold", `run ${run.id}`)} ${dim(`of ${run.workflow} · ${listedStatus(run, events)} · ${cost(run.costUsd)}`)}`,
+    ...formatTree(roots, now, waits),
+  ];
 };

@@ -3,10 +3,11 @@
  *   stdin lines, yields the adapter's decoded events, and says how it ended. A
  *   session is one leg, or several when a paused node's tool call was deferred
  *   or a message waits for a tool that takes none mid-session; a resumed leg
- *   carries what the legs before it spent, and its start is not news.
+ *   carries what the legs before it spent, and its start is not news. Off
+ *   Windows the process ends with `ork`, whatever ends `ork` (the orphan
+ *   guard).
  */
 
-import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 
 import {
@@ -17,11 +18,11 @@ import {
   type RuntimeEvent,
   type SessionOutcome,
   type SessionUsage,
-  startAt,
 } from "@krapht/ork-core";
 import type { Driver, Priority } from "@krapht/ork-schema";
 
 import type { CliAdapter, Decoded, LegDecoder } from "./adapter.ts";
+import { spawnLeg } from "./leg-spawn.ts";
 import { classifyProviderError } from "./provider-errors.ts";
 import {
   type EndScope,
@@ -198,12 +199,7 @@ const failureReason = (
 export const runLeg = async function* (
   input: LegInput,
 ): AsyncGenerator<RuntimeEvent, Leg> {
-  const [bin, args] = startAt(input.priority, input.bin, input.args, input.env);
-  const child = spawn(bin, args, {
-    cwd: input.cwd,
-    env: { ...input.env },
-    stdio: ["pipe", "pipe", "pipe"],
-  });
+  const child = spawnLeg(input);
   lowerChild(input.priority, child.pid);
   const exited = new Promise<{
     code: number | null;

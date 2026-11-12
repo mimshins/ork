@@ -64,6 +64,16 @@ export const lockKey = async (
     ? `${BRANCH}${(await originOf(place.repo)) ?? path.resolve(place.repo)}#${name.slice(BRANCH.length)}`
     : `${path.resolve(place.project)}#${name}`;
 
+/**
+ * Whether a lock's key falls back to the repo's own path: a `branch:` lock in a
+ * repo with no origin, which no other clone shares.
+ */
+export const lockIsLocal = async (
+  name: string,
+  place: { repo: string },
+): Promise<boolean> =>
+  name.startsWith(BRANCH) && (await originOf(place.repo)) === undefined;
+
 /** A key's folder name: a hash, so no URL or path is written as a name. */
 const folderOf = (key: string): string =>
   createHash("sha256").update(key).digest("hex").slice(0, 32);

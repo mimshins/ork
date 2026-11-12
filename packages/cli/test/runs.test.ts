@@ -12,8 +12,10 @@ import path from "node:path";
 import {
   findRun,
   type HumanChannel,
+  nestItems,
   openStore,
   type RunEvent,
+  type RunRecord,
   runTree,
 } from "@krapht/ork-core";
 import { createCliRuntime } from "@krapht/ork-runtime";
@@ -26,6 +28,7 @@ import {
   formatRuns,
   formatRunEvent,
   formatTree,
+  formatTreeView,
   runWorkflowFile,
   type RunWorkflowOptions,
 } from "../src/index.ts";
@@ -118,6 +121,10 @@ const logLines = async (s: ReturnType<typeof setup>, node?: string) => {
   return { run: found.run, lines };
 };
 
+/** What `ork tree` prints for a run, as one text. */
+const view = (run: RunRecord, events: RunEvent[]) =>
+  formatTreeView(run, events, nestItems(runTree(events))).join("\n");
+
 describe("a recorded run", () => {
   it("is in the store, and `ork logs` prints what `ork run` printed", async () => {
     const s = setup();
@@ -155,6 +162,63 @@ describe("a recorded run", () => {
     const table = formatRuns(s.store.runs(), false);
     expect(table).toHaveLength(2);
     expect(table[1]).toContain("succeeded");
+  });
+
+  describe("`ork tree`'s view of a lock wait", () => {
+    const live: RunRecord = {
+      id: "r2",
+      workflow: "issues",
+      file: "/p/w.ork.yaml",
+      project: "/p",
+      status: "running",
+      pid: process.pid,
+      startedAt: "2026-11-10T11:00:00.000Z",
+      costUsd: 0,
+      depth: 0,
+    };
+    const started: RunEvent = {
+      type: "run.started",
+      runId: "r2",
+      workflow: "issues",
+      entries: [],
+      nodes: [
+        { id: "push", type: "tool.shell" },
+        { id: "build", type: "tool.shell" },
+      ],
+    };
+    const waiting = (id: string): RunEvent[] => [
+      started,
+      { type: "node.started", id, nodeType: "tool.shell", round: 1 },
+      {
+        type: "lock.waiting",
+        id,
+        lock: "branch:main",
+        holders: ["r1/push"],
+      },
+    ];
+    it("says in the header and the row that a live run waits", () => {
+      const text = view(live, waiting("push"));
+      expect(text).toContain("waiting for branch:main, held by r1/push");
+      expect(text).toMatch(/push .*waiting for branch:main/u);
+    });
+
+    it("says neither once the lock is taken", () => {
+      const events: RunEvent[] = [
+        ...waiting("push"),
+        { type: "lock.taken", id: "push", lock: "branch:main" },
+      ];
+      expect(view(live, events)).not.toContain("waiting for");
+    });
+
+    it("says neither for a finished run's stale wait", () => {
+      const finished: RunRecord = { ...live, status: "failed" };
+      expect(view(finished, waiting("push"))).not.toContain("waiting for");
+    });
+
+    it("shows an item's wait on its row under the fanned node", () => {
+      const text = view(live, waiting("build.0"));
+      expect(text).toMatch(/build\.0 .*waiting for branch:main/u);
+    });
   });
 
   it("does not start when a tool node's program is not installed", async () => {

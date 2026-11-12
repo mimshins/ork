@@ -56,4 +56,22 @@ describe("lock checks", () => {
     );
     expect(found?.path).toEqual(["nodes", "push", "lock"]);
   });
+
+  it("refuses reading the run, which orders nothing", () => {
+    const { diagnostics } = compiled("'branch:{{run.id}}'");
+    expect(diagnostics.map(d => d.code)).toEqual(["lock.scope"]);
+    expect(diagnostics[0]?.path).toEqual(["nodes", "push", "lock"]);
+  });
+
+  it("reports a node's output once", () => {
+    const codes = compiled("'a:{{nodes.plan.output.x}}'").diagnostics.map(
+      d => d.code,
+    );
+    expect(codes.filter(code => code === "lock.scope")).toHaveLength(1);
+  });
+
+  it.each(["item", "index"])("leaves {{%s}} to item.outside alone", name => {
+    const codes = compiled(`'a:{{${name}}}'`).diagnostics.map(d => d.code);
+    expect(codes).toEqual(["item.outside"]);
+  });
 });

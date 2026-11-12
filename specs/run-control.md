@@ -97,6 +97,8 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 - **What happens.** `ork stop --node n` interrupts the running node's session,
   or kills its tool's process group: SIGTERM, then SIGKILL after 2 seconds, so
   what the tool started ends too ([spawn.ts](../packages/nodes/src/spawn.ts)).
+  If `ork` itself is killed, a watcher ends the node's group the same way
+  ([ADR-087](../decisions/ADR-087-node-processes-end-with-ork.md)).
 - **Its outcome.** The node finishes `failed`, with the reason
   `stopped by the user`, and the run's own rules take it from there:
   - its owner gets the failed report;

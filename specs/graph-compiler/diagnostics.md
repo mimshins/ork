@@ -95,7 +95,7 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `template.syntax`        | error    | a template does not parse                                                        |
 | `template.scope`         | error    | a template reads outside `inputs`, `nodes` and `run`                             |
 | `template.not-upstream`  | warning  | a template reads a node that does not run first                                  |
-| `lock.scope`             | error    | a node's `lock` name reads a node's output, not only `inputs` or `run`           |
+| `lock.scope`             | error    | a node's `lock` name reads a node's output or `run`, not only `inputs`           |
 
 ## Driver fit
 

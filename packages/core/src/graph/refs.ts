@@ -118,7 +118,9 @@ export const checkReferences = (
             : checkTemplate(id, [...at, "command"], program.command, context),
         ),
   );
-  // A lock is taken before its node runs, so its name reads only the inputs.
+  // A lock is taken before its node runs, so its name reads only the inputs
+  // (ADR-085). `nodes` and `run` are reported here; `item`, `index` and `env`
+  // by `checkTemplate`, and an unknown root as `template.scope`.
   const fromLocks = Object.entries(workflow.nodes).flatMap(([id, node]) => {
     const parsed = "lock" in node ? parseTemplate(node.lock ?? "") : undefined;
     return parsed?.ok === true
@@ -126,7 +128,7 @@ export const checkReferences = (
           typeof part === "string"
             ? []
             : collectPaths(part.expr)
-                .filter(([root]) => root === "nodes")
+                .filter(([root]) => root === "nodes" || root === "run")
                 .map(segments =>
                   error(
                     "lock.scope",

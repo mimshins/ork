@@ -792,7 +792,7 @@ export const TIMEOUTS = {
   ),
   spawn: d(
     "packages/nodes/src/spawn.ts",
-    "Code: a tool in its own process group",
+    "Code: a tool in its own process group, with the orphan guard",
   ),
   tests: d("packages/core/test/timeouts.test.ts", "Tests: timeouts"),
   spawnTests: d(
@@ -801,6 +801,14 @@ export const TIMEOUTS = {
   ),
   spec: d("specs/scheduler.md#timeouts", "Spec: timeouts"),
   adr: d("decisions/ADR-043-timeouts.md", "ADR-043: timeouts"),
+  guard: d(
+    "packages/core/src/machine/orphan-guard.ts",
+    "Code: the orphan guard, a node's processes end with ork",
+  ),
+  guardAdr: d(
+    "decisions/ADR-087-node-processes-end-with-ork.md",
+    "ADR-087: a node's processes end with ork",
+  ),
 };
 
 export const WATCH = {

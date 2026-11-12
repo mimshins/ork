@@ -40,3 +40,34 @@ held across nodes, on the same ledger):
 - **L293 · Lock folders stay.** Each lock has a folder under `~/.ork/locks`;
   `ork doctor` sweeps the records of dead processes but never removes a folder,
   which a run may be about to take.
+
+Found fixing the lock after a QA pass
+([ADR-087](../../decisions/ADR-087-node-processes-end-with-ork.md), a node's
+processes end with `ork`):
+
+- **L317 · A reused pid holds a dead holder's lock or slot.** A ledger record is
+  alive while its pid is, so a process that takes a dead holder's pid keeps its
+  lock or heavy-check slot held. A run's own liveness also checks the process's
+  start time (`process-age.ts`); the slot ledger does not (`slot-ledger.ts`).
+- **L318 · A window of up to 2 seconds between a sweep and the orphan's end.**
+  When `ork` is killed, a waiter's sweep sees the dead pid within one poll (500
+  ms), while the node's watcher gives the group 2 seconds of SIGTERM before
+  SIGKILL. A push in flight may land in that window. The shipped pushes are
+  fast-forward only, so the next holder's is rejected and nothing is lost; a
+  workflow that force-pushes could lose work.
+- **L319 · Native Windows nodes outlive a killed `ork`.** The guard needs `sh`
+  and POSIX process groups. WSL 2 is the supported path; native Windows would
+  need Job Objects, a native dependency and its own ADR.
+- **L320 · Claude Code's own children may escape the group.** A session's group
+  is ended with `ork`, and a fake-driver test shows its children go too. What
+  Claude Code does with its own background Bash children is unchecked; it needs
+  a real session (a paid run).
+- **L321 · A stop's SIGTERM also kills the watcher.** The group's SIGTERM from a
+  stop reaches the `sh` watcher too, so a program that ignores SIGTERM survives
+  if `ork` is SIGKILLed before its own SIGKILL follows.
+- **L322 · The guard's spawn errors read oddly.** A missing `cwd` reads
+  `spawn /bin/sh ENOENT`, and a driver that is not executable exits 126 and
+  fails as `driver_crashed`, not as a missing program.
+- **L323 · Ctrl-Z no longer pauses running sessions.** A session is `detached`,
+  in its own process group, so the terminal's SIGTSTP does not reach it. Use
+  `ork pause`.

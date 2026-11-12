@@ -657,7 +657,7 @@ export const MILESTONES = [
         date: "2026-11-03",
         commits: ["c7a7e8f"],
         detail:
-          "A `timeout` on tool nodes, agent nodes and the whole run, whose clock stands still while waiting on the user. An expired node fails with `timedOut`, and a run ends `timed_out`. Tools run in their own process groups, so a stop or a timeout ends what they started.",
+          "A `timeout` on tool nodes, agent nodes and the whole run, whose clock stands still while waiting on the user. An expired node fails with `timedOut`, and a run ends `timed_out`. Tools run in their own process groups, so a stop or a timeout ends what they started; since ADR-087 off Windows the group also ends with `ork`, however `ork` dies.",
         docs: [
           "decisions/ADR-043-timeouts.md",
           "specs/scheduler.md#timeouts",
@@ -1180,7 +1180,7 @@ export const MILESTONES = [
           "Parallel issues: a lock on integration, a resolver, and `issues`",
         status: "active",
         detail:
-          "Built, waiting to land (it becomes done with its commit). RFC-016, which is now Implemented. A node's `lock: <name>` is held by the run across the nodes that name it, on a machine-wide ledger (`~/.ork/locks`, a `branch:` lock keyed by the origin and the branch): the next run waits, shown with its holder in `ork ps`, the logs and the UI, and rebases onto what the first pushed. A resume takes the lock again. `ork doctor` clears stale lock and slot records (L259). `examples/resolve-conflict.ork.yaml` is a node group where an agent resolves a rebase conflict and asks you only when it changes behaviour; `examples/issues.ork.yaml` (`ork init --issues`) builds and reviews each issue in its own worktree, integrates them in turn into one branch and opens one pull request that closes them; `build`'s publish holds `branch:main`. Left: L286 to L299, L313 to L316.",
+          "Built, waiting to land (it becomes done with its commit). RFC-016, which is now Implemented. A node's `lock: <name>` is held by the run across the nodes that name it, on a machine-wide ledger (`~/.ork/locks`, a `branch:` lock keyed by the origin and the branch): the next run waits, shown with its holder in `ork ps`, `ork tree`, the logs and the UI, and rebases onto what the first pushed. A resume takes the lock again. `ork doctor` clears stale lock and slot records (L259). `examples/resolve-conflict.ork.yaml` is a node group where an agent resolves a rebase conflict and asks you only when it changes behaviour; `examples/issues.ork.yaml` (`ork init --issues`) builds and reviews each issue in its own worktree, integrates them in turn into one branch and opens one pull request that closes them; `build`'s publish holds `branch:main`. Left: L286 to L299 and L313 to L323.",
         docs: [
           "decisions/ADR-085-lock-field-and-hold.md",
           "specs/integration.md",

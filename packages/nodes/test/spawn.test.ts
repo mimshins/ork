@@ -1,9 +1,11 @@
 /**
  * @file Tests for the real tool runner: aborting it ends the program and what
- *   it started, even when they ignore SIGTERM; the CPU it used, and the
- *   priority it starts at.
+ *   it started, even when they ignore SIGTERM; so does `ork` dying, while a
+ *   normal end leaves leftovers alone; the CPU it used, and the priority it
+ *   starts at.
  */
 
+import { spawn } from "node:child_process";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { constants, getPriority, tmpdir } from "node:os";
 import path from "node:path";
@@ -12,6 +14,14 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { describe, expect, it, vi } from "vitest";
 
 import { KILL_AFTER_MS, spawnTool, type ToolRun } from "../src/index.ts";
+
+const posix = process.platform !== "win32";
+
+/** A stand-in for `ork run` that a tool runs under. */
+const HOST = path.join(import.meta.dirname, "fixtures/orphan-host.ts");
+
+/** Whether any process is left in group `pgid`. */
+const groupAlive = (pgid: number): boolean => isAlive(-pgid);
 
 const isAlive = (pid: number): boolean => {
   try {
@@ -149,5 +159,49 @@ describe("spawnTool", () => {
       });
     },
     KILL_AFTER_MS + 5000,
+  );
+
+  it.skipIf(!posix)(
+    "ends the program's whole group when ork is SIGKILLed",
+    async () => {
+      const file = path.join(
+        mkdtempSync(path.join(tmpdir(), "ork-spawn-")),
+        "pgid",
+      );
+      const host = spawn(process.execPath, [HOST, file], { stdio: "ignore" });
+      await vi.waitFor(
+        () => {
+          expect(readFileSync(file, "utf8")).toMatch(/\d+/u);
+        },
+        { timeout: 5000 },
+      );
+      const pgid = Number(readFileSync(file, "utf8").trim());
+      expect(groupAlive(pgid)).toBe(true);
+      host.kill("SIGKILL");
+      await vi.waitFor(
+        () => {
+          expect(groupAlive(pgid)).toBe(false);
+        },
+        { timeout: 3000 },
+      );
+    },
+    10_000,
+  );
+
+  it.skipIf(!posix)(
+    "leaves a leftover alone when the program ends",
+    async () => {
+      const run = await spawnTool(
+        "sh",
+        ["-c", "nohup sleep 30 >/dev/null 2>&1 & echo $!"],
+        { cwd: tmpdir(), signal: new AbortController().signal },
+      );
+      const leftover = Number(run.stdout.trim());
+      await sleep(300);
+      const alive = isAlive(leftover);
+      process.kill(leftover, "SIGKILL");
+      expect(run.exitCode).toBe(0);
+      expect(alive).toBe(true);
+    },
   );
 });

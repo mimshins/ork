@@ -292,7 +292,15 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   `when: timedOut` edge ran.
 - A tool runs in its own process group: an abort, from a timeout or a stop,
   sends it SIGTERM, then SIGKILL after 2 seconds
-  ([spawn.ts](../packages/nodes/src/spawn.ts)).
+  ([spawn.ts](../packages/nodes/src/spawn.ts)). Off Windows the group also ends
+  with `ork`: a watcher in it reads a pipe from `ork`, and when `ork` dies by
+  any cause (SIGKILL, the OOM killer, a crash) it sends the group SIGTERM, then
+  SIGKILL after 2 seconds, so a node never runs on after the lock or slot of its
+  run is handed on. When the node ends normally the watcher is stopped first, so
+  background processes it leaves behind are left alone
+  ([orphan-guard.ts](../packages/core/src/machine/orphan-guard.ts),
+  [ADR-087](../decisions/ADR-087-node-processes-end-with-ork.md); sessions:
+  [runtime](./runtime.md#how-a-session-is-spawned)).
 
 ## Contents
 

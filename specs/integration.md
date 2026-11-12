@@ -3,7 +3,7 @@
 Status: **Built.** A node's `lock:` is held across nodes (the ledger, the wait,
 the release, the resume), `ork doctor` sweeps stale records, and two workflows
 use it: the `issues` example and `build`'s `publish`. Left simpler on purpose:
-[L286–L299, L313–L316](./gaps.md). Code:
+[L286–L299, L313–L323](./gaps.md). Code:
 [the hold](../packages/core/src/run/locks.ts),
 [the ledger](../packages/core/src/machine/lock-ledger.ts),
 [doctor](../packages/cli/src/doctor/ledger-checks.ts),
@@ -54,9 +54,13 @@ lock's key, so no URL is stored on disk:
 
 - **A key.** `branch:<name>` is keyed by the origin's URL (no scheme, no user
   part, no `.git`, so `git@host:org/repo` and `https://host/org/repo` read the
-  same) and the branch: `branch:<origin>#<branch>`. With no origin, the
-  repository's own path stands in. Any other name is keyed by the project's root
-  and the name.
+  same) and the branch: `branch:<origin>#<branch>`. The repository is the one
+  holding the workflow file (an attached project's own repository), not the
+  folder `ork run` started in. With no origin, the repository's own path stands
+  in. A file in no repository makes its folder the project, with no origin, so
+  its `branch:` lock is keyed by that folder's path and shared with no other
+  run; `ork run` prints one note saying so. Any other name is keyed by the
+  project's root and the name.
 - **First come, first served.** A waiter takes a ticket; the lock goes in order.
 - **A record** holds a run id, a node id and a pid, made with a hard link, so it
   is atomic and fails when it exists.
@@ -103,6 +107,22 @@ or crashed) hands back nothing its locked nodes did under it, so a resume
 **takes the lock again and runs those nodes again from the first one** (fetch,
 rebase, check, push): the branch may have moved since. A crashed holder's record
 is swept as above. Replay: [resuming](./scheduler/resuming-and-events.md).
+
+A killed `ork` does not leave its nodes working outside the lock
+([ADR-087](../decisions/ADR-087-node-processes-end-with-ork.md)). Off Windows,
+each tool program and each session runs in its own process group beside a
+watcher on a pipe from `ork`; when `ork` dies the watcher ends the group
+(SIGTERM, then SIGKILL after 2 seconds). The limits:
+
+- **A window of up to 2 seconds.** A waiter's sweep sees the dead pid within one
+  poll (500 ms) while the orphan is still ending. A push in flight may land in
+  it; the shipped pushes are fast-forward only, so the next holder's is rejected
+  and nothing is lost ([L318](./gaps/machine-limits.md)).
+- **Escapes.** A program that calls `setsid` leaves the group; native Windows
+  has no guard ([L319](./gaps/machine-limits.md)); Claude Code's own children
+  are unchecked ([L320](./gaps/machine-limits.md)).
+- A record is alive while its pid is, so a reused pid holds a dead holder's lock
+  ([L317](./gaps/machine-limits.md)).
 
 ## The conflict resolver
 

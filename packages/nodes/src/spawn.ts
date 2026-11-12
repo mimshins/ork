@@ -4,32 +4,45 @@
  *   whatever it started: SIGTERM, then SIGKILL for what ignores that. A stop or
  *   a timeout therefore leaves nothing running, and an escaped process that
  *   keeps the output pipes open cannot hold the node. Off Windows it runs under
- *   `sh`, whose `times` says the CPU the program and its children used, and at
- *   the project's priority: `low` starts it below Ork's own (nice, and on macOS
+ *   `sh`, whose `times` says the CPU the program and its children used, beside
+ *   the orphan guard, which ends the group when `ork` dies, and at the
+ *   project's priority: `low` starts it below Ork's own (nice, and on macOS
  *   utility QoS).
  */
 
 import { spawn } from "node:child_process";
 import { Readable } from "node:stream";
 
-import { type CpuTime, lowerChild, startAt } from "@krapht/ork-core";
+import {
+  type CpuTime,
+  holdGuard,
+  KILL_AFTER_MS,
+  lowerChild,
+  orphanGuard,
+  startAt,
+} from "@krapht/ork-core";
 import type { Priority } from "@krapht/ork-schema";
 
 import type { ToolRun, ToolRunner } from "./tool-command.ts";
 import { withoutIdentity } from "./tool-env.ts";
 
 /** How long a program may take to end after SIGTERM. */
-export const KILL_AFTER_MS = 2000;
+export { KILL_AFTER_MS };
 
 /** How long to wait for the pipes to close after SIGKILL. */
 const CLOSE_AFTER_MS = 500;
 
+/** The fd of the orphan guard's pipe from `ork`. */
+const WATCH_FD = 4;
+
 /**
- * Runs `$0 "$@"`, then writes the shell's `times` to fd 3: its children's user
- * and system time, the program's whole tree that it waited for. A program that
+ * Runs `$0 "$@"` beside the orphan guard, which ends the group if `ork` dies,
+ * and stops the guard once the program ends, so its leftovers live on as
+ * before. Then writes the shell's `times` to fd 3: its children's user and
+ * system time, the program's whole tree that it waited for. A program that
  * isn't there says so on fd 3, as spawn's ENOENT would.
  */
-const TIMED = String.raw`command -v "$0" >/dev/null 2>&1 || { echo ork-missing >&3; exit 127; }; "$0" "$@" 3>&-; s=$?; times >&3; exit $s`;
+const TIMED = String.raw`command -v "$0" >/dev/null 2>&1 || { echo ork-missing >&3; exit 127; }; ${orphanGuard(WATCH_FD)}w=$!; "$0" "$@" 3>&- ${String(WATCH_FD)}<&-; s=$?; kill -s KILL $w 2>/dev/null; times >&3; exit $s`;
 
 const MISSING = "ork-missing";
 
@@ -79,10 +92,11 @@ export const spawnTool: ToolRunner = (
       detached: true,
       // An `ork` running in another run's node has that run's identity.
       env: { ...withoutIdentity(process.env), ...env },
-      stdio: ["ignore", "pipe", "pipe", "pipe"],
+      stdio: ["ignore", "pipe", "pipe", "pipe", "pipe"],
     });
     // Only without `nice` (Windows); `startAt` started it under `nice` otherwise.
     lowerChild(priority, child.pid);
+    holdGuard(child.stdio[WATCH_FD]);
     const fd3 = child.stdio[3];
     if (fd3 instanceof Readable) {
       fd3.setEncoding("utf8").on("data", (chunk: string) => {

@@ -3,17 +3,11 @@
  *   recorded in `~/.ork/state.db` (specs/event-store.md).
  */
 
-import {
-  activeTree,
-  findRun,
-  nestItems,
-  placeFor,
-  runStatus,
-} from "@krapht/ork-core";
+import { activeTree, findRun, nestItems, placeFor } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
-import { style, write, writeErr } from "../output.ts";
-import { cost, formatRuns, formatTree, listedStatus } from "../runs/format.ts";
+import { write, writeErr } from "../output.ts";
+import { formatRuns, formatTreeView, listedStatus } from "../runs/format.ts";
 import { followRun, unknownNode } from "../runs/logs.ts";
 import { withStore } from "../store.ts";
 
@@ -144,9 +138,6 @@ export const tree = defineCommand({
         write(JSON.stringify(roots, undefined, 2));
         return;
       }
-      write(
-        `${style("bold", `run ${run.id}`)} ${style("dim", `of ${run.workflow} · ${runStatus(run, events)} · ${cost(run.costUsd)}`)}`,
-      );
-      for (const line of formatTree(roots)) write(line);
+      for (const line of formatTreeView(run, events, roots)) write(line);
     }),
 });

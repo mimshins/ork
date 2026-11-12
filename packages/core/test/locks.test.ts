@@ -21,6 +21,7 @@ import {
   compileWorkflow,
   fileLockLedgers,
   type LockLedgers,
+  lockIsLocal,
   lockWaitsOf,
   type NodeExecutor,
   remoteKey,
@@ -459,5 +460,16 @@ describe("a lock on resume and in views", () => {
     ].map(url => remoteKey(url));
     expect(new Set(keys)).toEqual(new Set(["github.com/o/r"]));
     expect(remoteKey("/tmp/origin.git")).toBe("/tmp/origin");
+  });
+});
+
+describe("a lock keyed by a path", () => {
+  it("is local for a branch lock in a repo with no origin only", async () => {
+    const bare = temp("local");
+    git(tmpdir(), "init", bare);
+    const { clones } = remoteWithClones();
+    expect(await lockIsLocal("branch:main", { repo: bare })).toBe(true);
+    expect(await lockIsLocal("deploy", { repo: bare })).toBe(false);
+    expect(await lockIsLocal("branch:main", { repo: clones[0] })).toBe(false);
   });
 });

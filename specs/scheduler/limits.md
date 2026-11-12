@@ -50,10 +50,12 @@ are open work in the [register](../gaps.md#limits).
 - **L46 · A node left behind may still spend.** An executor that has not ended
   10 seconds after a timeout is abandoned, and a session's cost from then on is
   unknown to the run. ([ADR-043](../../decisions/ADR-043-timeouts.md))
-- **L47 · A tool can outlive Ork.** Tools run in their own process groups, so a
-  second Ctrl-C within 2 seconds, or Ork being killed, leaves one running. A
-  program that starts its own session escapes a stop altogether.
-  ([ADR-043](../../decisions/ADR-043-timeouts.md))
+- **L47 · A tool can outlive Ork on Windows, or by starting its own session.**
+  Off Windows a node's process group ends with Ork, however Ork dies. On native
+  Windows there is no guard ([L319](../gaps/machine-limits.md)), and a program
+  that calls `setsid` (a daemon) leaves the group and escapes a stop and the
+  guard alike. ([ADR-043](../../decisions/ADR-043-timeouts.md),
+  [ADR-087](../../decisions/ADR-087-node-processes-end-with-ork.md))
 - **L166 · A process id reused within a second can pass for a run's.** Off Linux
   the start is read to the second, so a same-user process given a crashed run's
   id that second still reads as the run's. A start that can't be read falls back

@@ -24,7 +24,7 @@ const NICE_STEP = String(constants.priority.PRIORITY_BELOW_NORMAL);
  * Whether `bin` is a program `spawn` would find, so a wrapper can't hide its
  * absence.
  */
-const found = (
+export const programFound = (
   bin: string,
   env: Readonly<Record<string, string | undefined>>,
 ) =>
@@ -46,7 +46,7 @@ export const startAt = (
   args: readonly string[],
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): [string, string[]] => {
-  if (priority !== "low" || !found(bin, env)) return [bin, [...args]];
+  if (priority !== "low" || !programFound(bin, env)) return [bin, [...args]];
   const niced = existsSync(NICE) ? [NICE, "-n", NICE_STEP, bin] : [bin];
   const [first = bin, ...rest] =
     process.platform === "darwin" && existsSync(TASKPOLICY)

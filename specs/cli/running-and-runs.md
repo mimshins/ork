@@ -242,7 +242,8 @@ filter serves `GET /api/runs/<id>/events?node=` in `ork ui`, and
   marks each held node. A run whose command waits for a machine-wide slot reads
   `waiting for slot` in `ork ps` ([machine](../machine.md#a-wait-is-shown)); a
   run whose node waits for a `lock:` reads
-  `waiting for <lock>, held by <run>/<node>`
+  `waiting for <lock>, held by <run>/<node>`, in `ork tree`'s header too, where
+  each waiting node's row reads `waiting for <lock>`
   ([listedStatus](../../packages/cli/src/runs/format.ts),
   [integration](../integration.md#a-wait-is-shown)).
 

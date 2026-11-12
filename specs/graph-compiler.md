@@ -55,9 +55,9 @@ with parsed conditions), the entry nodes, and the declared message channels.
   `when:`, a bare `item` is a field of `output`.
 - **Lock:** a node's `lock: <name>` (RFC-016) is a template like the others
   (`template.syntax`, `ref.input`), but it is taken before its node runs, so it
-  may read only `inputs` and `run`: `{{nodes.*}}` is `lock.scope`, and
-  `{{item}}` is `item.outside`. The compiled node carries it as `node.lock`; the
-  hold is [the scheduler's](./integration.md#the-hold).
+  may read only `inputs` (ADR-085): `{{nodes.*}}` and `{{run.*}}` are
+  `lock.scope`, and `{{item}}` is `item.outside`. The compiled node carries it
+  as `node.lock`; the hold is [the scheduler's](./integration.md#the-hold).
 - **Values in conditions:** an edge's or a `notify:` rule's `when:` that
   compares a field with `==`, `!=`, or `any`, `all`, `count` or `contains` on a
   join's `statuses`, is checked against

@@ -159,6 +159,27 @@ total so far, when its transcript saved one, while its tokens, turns and
 duration are that process's own; a crash's result may carry zero
 ([usage](./usage.md#what-a-resumed-session-spent)).
 
+## How a session is spawned
+
+([session-leg.ts](../packages/runtime/src/session-leg.ts),
+[leg-spawn.ts](../packages/runtime/src/leg-spawn.ts),
+[ADR-087](../decisions/ADR-087-node-processes-end-with-ork.md)) On POSIX a
+session leg runs in its own process group, `detached`, beside a small `sh`
+watcher that holds a pipe from `ork`
+([orphan-guard.ts](../packages/core/src/machine/orphan-guard.ts)). The command
+is `sh -c '<watch> & exec "$0" "$@"'`, so the driver's pid, and the SIGINT that
+`interrupt()` and a stop send it, stay the driver's own. If `ork` dies by any
+cause, including SIGKILL, the pipe reads EOF, and the watcher sends the group
+SIGTERM, then SIGKILL after 2 seconds, so a session never outlives the lock or
+slot its run held. When the session ends normally the watcher is stopped first.
+A program not found on `PATH` is spawned bare, so a missing driver fails as
+before.
+
+- **Ctrl-C, Ctrl-Z.** `ork`'s SIGINT handler stops the run's sessions; Ctrl-Z no
+  longer pauses them ([L323](./gaps/machine-limits.md)).
+- **Windows.** There is no `sh` and no POSIX group; the session is spawned as
+  before and may outlive a killed `ork` ([L319](./gaps/machine-limits.md)).
+
 ## Limits
 
 What the driver does for now, by choice. L171's threshold waits on the cost

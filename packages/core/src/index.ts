@@ -65,6 +65,7 @@ export * from "./project/heavy.ts";
 export * from "./machine/slot-ledger.ts";
 export * from "./machine/lock-ledger.ts";
 export * from "./machine/priority.ts";
+export * from "./machine/orphan-guard.ts";
 export * from "./run/machine.ts";
 export { lockWaitLine } from "./run/locks.ts";
 export * from "./project/templates.ts";
