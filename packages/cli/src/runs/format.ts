@@ -185,7 +185,9 @@ export const formatTree = (
 ): string[] => {
   const lines: { label: string; node: TreeNode }[] = [];
   const walk = (node: TreeNode, lead: string, branch: string) => {
-    lines.push({ label: `${lead}${branch}${node.id}`, node });
+    // The description is part of the label column, so its width counts.
+    const named = node.description === undefined ? "" : `  ${node.description}`;
+    lines.push({ label: `${lead}${branch}${node.id}${named}`, node });
     const next = lead + (branch === "├─ " ? "│  " : branch === "" ? "" : "   ");
     node.children.forEach((child, index) => {
       walk(child, next, index === node.children.length - 1 ? "└─ " : "├─ ");
@@ -210,7 +212,12 @@ export const formatTree = (
             `  ${duration((node.finishedAt === undefined ? now : Date.parse(node.finishedAt)) - Date.parse(node.startedAt))}`,
           )
         : "";
-    return `${text.padEnd(label)}  ${style("dim", node.type.padEnd(type))}  ${state}${spent}${usage}`;
+    // Dim only the description, after padding by the plain width.
+    const shown =
+      node.description === undefined
+        ? text
+        : `${text.slice(0, text.length - node.description.length)}${dim(node.description)}`;
+    return `${shown}${" ".repeat(label - text.length)}  ${style("dim", node.type.padEnd(type))}  ${state}${spent}${usage}`;
   });
 };
 

@@ -156,6 +156,12 @@
   color: var(--logs-node-text);
 }
 
+.label {
+  --logs-label-text: var(--color-text-muted);
+
+  color: var(--logs-label-text);
+}
+
 .node,
 .type,
 .line {

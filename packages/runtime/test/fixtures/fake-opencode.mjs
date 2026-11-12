@@ -39,6 +39,10 @@ const message = args.at(-1);
 const resumed = flag("--session");
 const session = resumed === undefined ? "ses_fake1" : args.includes("--fork") ? `fork-of-${resumed}` : resumed;
 const scenario = process.env.FAKE_SCENARIO ?? "";
+// `spend` marks, in FAKE_SPENT_FILE, that its usage lines are written.
+const spent = () => {
+  if (process.env.FAKE_SPENT_FILE !== undefined) writeFileSync(process.env.FAKE_SPENT_FILE, "");
+};
 
 if (process.env.FAKE_OPENCODE_RECORD !== undefined) {
   writeFileSync(
@@ -154,7 +158,10 @@ if (scenario === "end:turn_limit") {
 const PASS = { status: "pass", summary: "done", artifacts: {} };
 if (scenario === "hang" || scenario === "spend") {
   process.on("SIGINT", () => process.exit(130));
-  if (scenario === "spend") for (let i = 0; i < 3; i += 1) step();
+  if (scenario === "spend") {
+    for (let i = 0; i < 3; i += 1) step();
+    spent();
+  }
   await new Promise(() => setInterval(() => {}, 1000));
 } else if (scenario === "fail") {
   line("error", { error: { name: "APIError", data: { message: "model not found" } } });

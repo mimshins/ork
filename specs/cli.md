@@ -62,7 +62,7 @@ ork run <wf> --node <id> [--input k=v] [--driver <id>] [--in-place] [--json] [--
 ork ps [--all] [--limit n] [--json]               # this project's runs, newest first
 ork logs [<run>] [--node n] [--follow] [--json] [--verbose]   # a run's transcript, replayed or live
 ork attach <run>                 # follow a run and the runs it called, and answer their questions here; Ctrl-C detaches ([run control](./run-control.md#detaching-from-a-run))
-ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node
+ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node; a delegated node's task description after its id
 ork usage [--all] [--since 30d] [--until day] [--by day|workflow|model|…] [--workflow w] [--json]  # what runs spent over time
 ork prune --older-than 90d [--all] [--dry-run] [--yes]  # forget old runs' logs; what they spent stays
 ork decide [<run>] [--all] [--list] [--json] [--workflow <name>] [--id <d> --document] [--id <d> --choose <option> [--say <text>] [--note <text>] [--rating good|bad]] [--verbose]  # answer open decisions (a card with arrow keys on a terminal; --verbose shows each question's whole context); --say gives the answer a note for the run, --note notes the decision's node as feedback

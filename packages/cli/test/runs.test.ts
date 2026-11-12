@@ -136,6 +136,10 @@ const spentNode = (id: string, extra: Partial<TreeNode>): TreeNode => ({
   ...extra,
 });
 
+/** A finished node, with a leader's description when one is given. */
+const named = (id: string, description?: string): TreeNode =>
+  spentNode(id, description === undefined ? {} : { description });
+
 /** What `ork tree` prints for a run, as one text. */
 const view = (run: RunRecord, events: RunEvent[]) =>
   formatTreeView(run, events, nestItems(runTree(events))).join("\n");
@@ -199,6 +203,40 @@ describe("a recorded run", () => {
       }),
     ]);
     expect(line).not.toMatch(/tok|\$/u);
+  });
+
+  describe("a delegated task's description", () => {
+    it("follows the id in the label column, aligning the rest", () => {
+      const [first, second] = formatTree([
+        named("a", "fix the parser"),
+        named("bb"),
+      ]);
+      expect(first).toContain("a  fix the parser  agent.worker");
+      expect(second).toContain("bb              ");
+      expect(second?.indexOf("agent.worker")).toBe(
+        first?.indexOf("agent.worker"),
+      );
+    });
+
+    it("leaves a node without one exactly as before", () => {
+      const [line] = formatTree([named("a")]);
+      expect(line).toMatch(/^a {2}agent\.worker {2}/u);
+    });
+
+    it("is a field of `ork tree --json` when node.started has one", () => {
+      const events: RunEvent[] = [
+        {
+          type: "node.started",
+          id: "w",
+          nodeType: "agent.worker",
+          round: 1,
+          description: "fix the parser",
+        },
+      ];
+      expect(runTree(events).map(node => node.description)).toEqual([
+        "fix the parser",
+      ]);
+    });
   });
 
   describe("`ork tree`'s view of a lock wait", () => {

@@ -156,6 +156,8 @@ export type Activation = {
   brief?: Brief;
   /** For a spawned worker, the declared node it is an instance of. */
   template?: string;
+  /** For a delegated run, the leader's few words naming the task, clipped. */
+  description?: string;
   /** For an item of a fanned node, which entry of the list it runs. */
   item?: NodeItem;
   /** For an item: its node's round, which is the item's too. */

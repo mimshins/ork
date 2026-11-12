@@ -36,8 +36,8 @@ export const Draft = ({
   const post = detail?.actions.post;
   // One reason at a time: the draft's first, since Ork can't fix it, then gh.
   const ghReason = "`gh` isn't signed in";
-  // Core's status refusals read "it is <status>"; copying helps only a draft's.
-  const statusRefusal = post?.ok === false && post.why.startsWith("it is ");
+  // Copying helps only a draft's refusal, not a status one.
+  const statusRefusal = post?.ok === false && post.kind === "status";
   const label = post?.ok === false ? `Post to GitHub…: ${post.why}` : null;
   return (
     <div className={styles["draft"]}>

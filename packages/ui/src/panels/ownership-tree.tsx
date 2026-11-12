@@ -169,7 +169,11 @@ export const OwnershipTree = ({
               )}
               aria-expanded={canOpen ? isOpen : undefined}
               aria-label={[
-                nodeName(node.id, node.type, { ...fact, progress: undefined }),
+                nodeName(node.id, node.type, {
+                  ...fact,
+                  progress: undefined,
+                  description: node.description,
+                }),
                 ...(doing === "" ? [] : [doing]),
               ].join(", ")}
               aria-level={depth}
@@ -226,6 +230,12 @@ export const OwnershipTree = ({
                   </span>
                 ) : null}
                 <span className={styles["treeId"]}>{node.id}</span>
+                {node.description === undefined ||
+                node.description === "" ? null : (
+                  <span className={styles["treeLabel"]}>
+                    {node.description}
+                  </span>
+                )}
               </span>
               <span className={styles["treeType"]}>{node.type}</span>
               <span className={styles["treeStatus"]}>

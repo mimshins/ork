@@ -9,6 +9,7 @@ import type { Driver, Effort } from "@krapht/ork-schema";
 import type { FeedbackPort } from "../feedback/types.ts";
 import type { FollowUpPort, FollowUpSink } from "../follow-ups/types.ts";
 import type { REPORT_STATUSES } from "../graph/types.ts";
+import type { Described } from "./description.ts";
 import type {
   DecisionChoice,
   HumanChannel,
@@ -195,10 +196,10 @@ export type Session = {
 };
 
 /** One piece of work a leader hands to a declared child (ADR-017). */
-export type DelegateTask = { child: string; brief: string };
+export type DelegateTask = { child: string; brief: string } & Described;
 
 /** One piece of work a leader hands to a new instance of a child worker. */
-export type SpawnTask = { template: string; brief: string };
+export type SpawnTask = { template: string; brief: string } & Described;
 
 /** What came back from one delegated or spawned child. */
 export type ChildReport = {

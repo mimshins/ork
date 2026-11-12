@@ -26,3 +26,14 @@ AI or agent attribution line. Do not bypass it with `--no-verify`.
   check) passes before every push; the `pre-push` hook runs it.
 - Commit messages: a short imperative subject line, a blank line, then what
   changed and why.
+
+## Traps
+
+- A zod field that core types as optional (such as `description` against core's
+  `Described`) uses `.exactOptional()`, not `.optional()`: `.optional()` does
+  not compile under `exactOptionalPropertyTypes`. The JSON Schema still lists it
+  as optional.
+- The 300-line lint limit bites `packages/core/src/runtime/types.ts`,
+  `packages/nodes/src/claude.ts` and `packages/ui/src/panels/logs-model.ts`: a
+  change there goes into a new module (`description.ts`, `claude-plan.ts`,
+  `session-line.ts`), not the file.

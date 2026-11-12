@@ -131,8 +131,10 @@ export const formatRunEvent = (
   if (event.type === "node.started") {
     const round = event.round > 1 ? ` (round ${String(event.round)})` : "";
     const owner = event.owner === undefined ? "" : `, for ${event.owner}`;
+    const named =
+      event.description === undefined ? "" : ` · ${event.description}`;
     return [
-      `${tag(event.id)} ${style("dim", `${event.nodeType}${round}${owner}`)}`,
+      `${tag(event.id)} ${style("dim", `${event.nodeType}${round}${owner}${named}`)}`,
     ];
   }
   if (event.type === "node.event") {

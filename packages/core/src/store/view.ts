@@ -20,6 +20,8 @@ export type TreeNode = {
   parent?: string;
   /** For a spawned worker, the declared node it is an instance of. */
   template?: string;
+  /** The leader's few words naming its latest delegated task, if it gave any. */
+  description?: string;
   state: NodeState;
   runs: number;
   costUsd: number;
@@ -128,6 +130,7 @@ export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
       }
       node.state = "running";
       node.runs += 1;
+      if (event.description !== undefined) node.description = event.description;
     } else if (event.type === "node.held") {
       const node = nodes.get(event.id);
       if (node !== undefined) node.held = true;

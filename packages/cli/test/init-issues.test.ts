@@ -16,6 +16,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DriverChecks } from "../src/index.ts";
 import {
   ISSUES_FILE,
+  issuesDriverLine,
   issuesStep,
   writeIssuesWorkflow,
 } from "../src/project/issues-step.ts";
@@ -91,6 +92,12 @@ describe("ork init's issues workflow", () => {
     const text = await printed(project(), true, readyOnly("open-code"));
     expect(text).toContain(
       "issues runs on claude-code (its model, claude-code.sonnet): not ready: Get the claude-code driver ready.",
+    );
+  });
+
+  it("says unknown, not ready, when the driver was not checked", async () => {
+    expect(await issuesDriverLine(() => Promise.resolve([]))).toBe(
+      "issues runs on claude-code (its model, claude-code.sonnet): unknown (not checked)",
     );
   });
 

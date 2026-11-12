@@ -170,10 +170,9 @@ A confirm dialog, wide, opening on **Cancel**, that only posts what it shows.
     status reason ("it is done"), only "Can't post: <the reason>." Then the CLI
     twin, as for any button. Because the reason is code-shaped, the tip is shown
     through `CodeText` like the note beside it.
-  - **Marker:** the panel tells a status refusal from a draft refusal by whether
-    core's `why` starts with "it is ". Core's status wording is therefore a
-    contract with the panel until a structured marker exists; change one with
-    the other.
+  - **Marker:** the panel tells a status refusal from a draft refusal by core's
+    `kind` on the refusal (`actions.post.kind`: `status` or `draft`). `why` is
+    display text only; changing its wording changes nothing else.
   - **One reason at a time,** the draft's first (Ork can't fix it, so the user
     needs to know before they sign `gh` in), then `gh`: "`gh` isn't signed in.
     Run `gh auth login` in a terminal." The server's `why` stays the source for

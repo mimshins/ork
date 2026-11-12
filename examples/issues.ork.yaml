@@ -86,6 +86,12 @@ nodes:
               exit 1
               ;;
           esac
+          raw="$n"
+          n=$(printf '%s' "$n" | sed 's/^0*//')
+          if [ -z "$n" ]; then
+            echo "'$raw' is not an issue number." >&2
+            exit 1
+          fi
           case ",$numbers," in
             *",$n,"*) ;;
             *) numbers="${numbers:+$numbers,}$n" ;;
@@ -110,6 +116,13 @@ nodes:
         issues=$(gh issue list --label "$LABEL" --search "-label:in-progress" --state open --limit 10 --json number,title,body --jq "[.[] | $view]")
       fi
       if [ "$issues" = "[]" ]; then
+        if [ -n "$LABEL" ] && [ -z "$ISSUES" ]; then
+          taken=$(gh issue list --label "$LABEL" --state open --limit 100 --json number --jq '.[].number' 2> /dev/null | wc -l | tr -d ' ')
+          if [ "$taken" -gt 0 ]; then
+            echo "All $taken open issues labelled $LABEL are already in progress (another Ork run took them); name them with --input issues=… to take them anyway." >&2
+            exit 1
+          fi
+        fi
         echo "No open issue found." >&2
         exit 1
       fi

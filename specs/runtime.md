@@ -20,15 +20,15 @@ by [`ork run --node`](./cli/running-and-runs.md#running-one-node). Why:
 ([runtime/types.ts](../packages/core/src/runtime/types.ts));
 `@krapht/ork-runtime` implements it; tests implement it with a fake.
 
-| Type             | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AgentRuntime`   | `{ driver: "claude-code" \| "open-code" \| "command-code"; start(spec, ports): Session }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `SessionPorts`   | what the session reaches besides its spec: the `HumanChannel`, for a leader in a run its `Ownership` (children, worker templates, `delegate`, `spawn`; [scheduler](./scheduler.md#delegation)), for a leader or worker in a run its `Mailbox` on the [message bus](./messaging.md#message-bus), and in a run its `HoldPort` ([run control](./run-control.md#pause)) and its `MachinePort` (priority, slots for heavy Bash calls; [machine](./machine.md))                                                                                                                                                                                                                                                           |
-| `SessionSpec`    | node id, `cwd`, `model`, `effort`, Ork's `plugins` and extra `settings` ([context](./context.md#how-a-nodes-session-is-compiled)), the rendered brief (`prompt`), `systemAppend`, `settingSources` (`project`, `local`; never `user`), tool rules (`allow`, `deny`, `only`: the only built-in tools, `strictMcp`: no MCP server but Ork's, `--strict-mcp-config`), permission mode, `maxTurns`, `budgetUsd`, the report schema, `resume`, `fork` (with `resume`, a copy of that session: `--fork-session`; [leader questions](./messaging/leader-questions.md)), `promptCache` (`1h` for a leader), `machineClaude` (load the machine's MCP servers and auto-memory; [what a session loads](#what-a-session-loads)) |
-| `Session`        | `events` (an async iterable of `RuntimeEvent`), `send(text)` (a user message with `priority: "next"`: Claude Code shows it at the session's next step, mid-turn or not), `interrupt()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `RuntimeEvent`   | `session.started` (with the session's `cwd` and `driver`, so `ork chat` can resume it), `session.waiting` (with a `reason`: the session waits before its tool starts, e.g. for its checkout on `command-code`; nothing derives from it), `assistant.text`, `tool.called`, `tool.result` (with the CPU it used, for an Ork tool command), `session.finished` (with the outcome)                                                                                                                                                                                                                                                                                                                                      |
-| `SessionOutcome` | `end` (how the session ended: one closed kind, Ork's message and the scrubbed detail; [how a session ends](./runtime/session-ends.md)), `subtype` (`success` or the driver's error subtype, kept one release for stored events), session id, the report or `null`, the final text, usage, errors                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `HumanChannel`   | `permit(tool request)` and `ask(question, options, recommended, context, document)`, each with an optional `onNote` that takes the person's [note](./messaging.md#decisions) before the answer resolves; in a run it is the decision queue, where the terminal ([CLI](./cli/running-and-runs.md#questions-and-permissions-on-the-terminal)) races `ork decide` ([messaging](./messaging.md))                                                                                                                                                                                                                                                                                                                        |
+| Type             | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AgentRuntime`   | `{ driver: "claude-code" \| "open-code" \| "command-code"; start(spec, ports): Session }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `SessionPorts`   | what the session reaches besides its spec: the `HumanChannel`, for a leader in a run its `Ownership` (children, worker templates, `delegate`, `spawn`; [scheduler](./scheduler.md#delegation)), for a leader or worker in a run its `Mailbox` on the [message bus](./messaging.md#message-bus), and in a run its `HoldPort` ([run control](./run-control.md#pause)) and its `MachinePort` (priority, slots for heavy Bash calls; [machine](./machine.md))                                                                                                                                                                                                                                                                       |
+| `SessionSpec`    | node id, `cwd`, `model`, `effort`, Ork's `plugins` and extra `settings` ([context](./context.md#how-a-nodes-session-is-compiled)), the rendered brief (`prompt`), `systemAppend`, `settingSources` (`project`, `local`; never `user`), tool rules (`allow`, `deny`, `only`: the only built-in tools, `strictMcp`: no MCP server but Ork's, `--strict-mcp-config`), permission mode, `maxTurns`, `budgetUsd`, the report schema, `resume`, `fork` (with `resume`, a copy of that session: `--fork-session`; [leader questions](./messaging/leader-questions.md)), `promptCache` (`1h` for a leader), `machineClaude` (load the machine's MCP servers and auto-memory; [what a session loads](./runtime/what-a-session-loads.md)) |
+| `Session`        | `events` (an async iterable of `RuntimeEvent`), `send(text)` (a user message with `priority: "next"`: Claude Code shows it at the session's next step, mid-turn or not), `interrupt()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `RuntimeEvent`   | `session.started` (with the session's `cwd` and `driver`, so `ork chat` can resume it), `session.waiting` (with a `reason`: the session waits before its tool starts, e.g. for its checkout on `command-code`; nothing derives from it), `assistant.text`, `tool.called`, `tool.result` (with the CPU it used, for an Ork tool command), `session.finished` (with the outcome)                                                                                                                                                                                                                                                                                                                                                  |
+| `SessionOutcome` | `end` (how the session ended: one closed kind, Ork's message and the scrubbed detail; [how a session ends](./runtime/session-ends.md)), `subtype` (`success` or the driver's error subtype, kept one release for stored events), session id, the report or `null`, the final text, usage, errors                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `HumanChannel`   | `permit(tool request)` and `ask(question, options, recommended, context, document)`, each with an optional `onNote` that takes the person's [note](./messaging.md#decisions) before the answer resolves; in a run it is the decision queue, where the terminal ([CLI](./cli/running-and-runs.md#questions-and-permissions-on-the-terminal)) races `ork decide` ([messaging](./messaging.md))                                                                                                                                                                                                                                                                                                                                    |
 
 **Holding a session** ([hold.ts](../packages/runtime/src/hold.ts),
 [tests](../packages/runtime/test/hold.test.ts), ADR-041): with a `HoldPort`, the
@@ -87,46 +87,10 @@ are in [which driver a session uses](./runtime/which-driver.md).
 
 ## What a session loads
 
-Every Claude session of a run (workers, leaders, a leader's question fork)
-starts **clean of the machine's Claude setup**
-([claude-code.ts](../packages/runtime/src/adapters/claude-code.ts),
-[tests](../packages/runtime/test/clean.test.ts), ADR-065):
-
-- **The repository's setup loads**: `settingSources` stays `project`, `local`,
-  so `CLAUDE.md`, `AGENTS.md` and `.claude/`'s agents, skills and settings load,
-  with Ork's own plugins and context. User-level `~/.claude` settings never do.
-- **No MCP server but Ork's**: `--strict-mcp-config`, so neither
-  `~/.claude.json`'s servers, nor those registered for the folder, nor a
-  project's `.mcp.json` or plugins' servers load. Their set changing mid-session
-  rewrote the prompt cache: the same 4-turn task on `claude` 2.1.319 cost $0.113
-  loose and $0.032 strict. The servers a node names load too (below).
-- **No auto-memory**: `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` in the session's
-  environment, so the machine user's notes under
-  `~/.claude/projects/<folder>/memory/` stay out.
-- **The per-machine prompt sections leave the cached prefix**:
-  `--exclude-dynamic-system-prompt-sections` moves the working directory, memory
-  path and git status into the first user message. It changes no content, so it
-  stays on either way.
-
-**`ork run --machine-claude`** turns the first two back: the run's sessions load
-the machine's MCP servers and auto-memory as `claude` would. The run records it
-once (`settings.machineClaude` on `run.started`, beside `readyDriver`), and
-`ork resume`, `ork chat` and every run it calls (`workflow.call`, which starts
-`ork run --machine-claude`) keep it; `ork resume` takes no flag of its own. A
-run recorded before it resumes clean. `--node` takes it too. The Run workflow
-form's "Use this machine's Claude setup" box adds it ([server](./server.md)). A
-leader's question fork stays strict either way: it sets `strictMcp` itself
-([leader questions](./messaging/leader-questions.md)).
-
-**A node names the servers it needs** (`mcp:` on a leader, a worker or
-`defaults`, [ADR-067](../decisions/ADR-067-nodes-name-mcp-servers.md),
-[tests](../packages/runtime/test/mcp-servers.test.ts)). `SessionSpec`'s
-`mcpServers` holds those entries of the project's `.mcp.json`, as written, and
-the driver adds them beside Ork's in `--mcp-config`. Strict stays on, so nothing
-else loads. Naming a server adds `mcp__<name>` to the node's allow list (deny
-rules win). `${VAR}` stays text: `claude` expands it. The sessions the CLI
-starts itself (`ork run --node`, `ork chat`) load them too. A leader's question
-fork loads none.
+Every Claude session of a run starts clean of the machine's Claude setup: the
+repository's setup loads, no MCP server but Ork's (and the ones a node names),
+no auto-memory. `ork run --machine-claude` turns the machine's back on. The
+rules are in [what a session loads](./runtime/what-a-session-loads.md).
 
 ## Ork's MCP server
 
@@ -139,11 +103,12 @@ fork loads none.
   `GET` and other methods get `405`; bodies over 1 MiB get `413`;
 - tools: what the registry binds for the session ([messaging](./messaging.md)):
   `ask_user`, `permission` (the CLI's permission-prompt contract, answering
-  `{"behavior":"allow"|"deny", …}`), for leaders `delegate` and `spawn_worker`,
-  and `report` on a driver without `reportSchema`
-  ([node report](./runtime/node-report.md)); a tool's arguments may depend on
-  its session; they are validated with Zod, and a failure is an error result
-  naming the field ([delegation](./scheduler.md#delegation));
+  `{"behavior":"allow"|"deny", …}`), for leaders `delegate` and `spawn_worker`
+  (each task takes an optional `description`, a few words that label the child;
+  [delegation](./scheduler.md#delegation)), and `report` on a driver without
+  `reportSchema` ([node report](./runtime/node-report.md)); a tool's arguments
+  may depend on its session; they are validated with Zod, and a failure is an
+  error result naming the field ([delegation](./scheduler.md#delegation));
 - a per-server `timeout` of 24 hours in `--mcp-config`: the CLI otherwise ends
   an HTTP request after 60 seconds and drops a call silent for 5 minutes, and
   `delegate` waits for whole child sessions. `MCP_TOOL_TIMEOUT` (about 28 hours
@@ -197,4 +162,5 @@ benchmark ([register](./gaps.md#limits)).
 - [The node report](./runtime/node-report.md)
 - [How a session ends](./runtime/session-ends.md)
 - [Which driver a session uses](./runtime/which-driver.md)
+- [What a session loads](./runtime/what-a-session-loads.md)
 - [The `open-code` driver](./runtime/open-code.md)

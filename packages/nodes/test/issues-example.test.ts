@@ -14,10 +14,10 @@ import { serializeWorkflow } from "@krapht/ork-schema";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  allInProgress,
   body,
   git,
   ghLog,
-  labelled,
   ONE,
   open,
   outputOf,
@@ -103,14 +103,69 @@ describe("working issues in parallel", () => {
     expect(body(w)).toContain("Closes #1\nCloses #2");
   });
 
-  it("takes an issue named by number even when it is already in progress", async () => {
+  it("takes an issue named by number without listing, whatever labels it has", async () => {
     const w = world();
     open(w, 1);
-    labelled(w, 1, "in-progress");
+    allInProgress(w);
     const { result } = await run(w, { builds: { 1: ONE } }, { issues: "1" });
     expect(result.reasons).toEqual([]);
     expect(result.status).toBe("succeeded");
-    expect(ghLog(w)).toContain("issue edit 1 --add-label in-progress");
+    const log = ghLog(w);
+    expect(log.filter(line => line.startsWith("issue list"))).toEqual([]);
+    expect(log.filter(line => line.startsWith("issue view 1 "))).toHaveLength(
+      1,
+    );
+    expect(log).toContain("issue edit 1 --add-label in-progress");
+  });
+
+  it("takes an issue named with leading zeros or twice once", async () => {
+    const w = world();
+    open(w, 1);
+    const { result, ran } = await run(
+      w,
+      { builds: { 1: ONE } },
+      { issues: "01,1" },
+    );
+    expect(result.reasons).toEqual([]);
+    expect(result.status).toBe("succeeded");
+    expect(
+      ghLog(w).filter(line => line.startsWith("issue view 1 ")),
+    ).toHaveLength(1);
+    expect(ran.filter(id => id.startsWith("build."))).toHaveLength(1);
+  });
+
+  it("refuses 0 as not an issue number, before any gh call", async () => {
+    const w = world();
+    open(w, 1);
+    const { result, events } = await run(
+      w,
+      { builds: { 1: ONE } },
+      { issues: "0" },
+    );
+    expect(result.status).toBe("failed");
+    expect(stderrOf(events, "list")).toContain("'0' is not an issue number.");
+    expect(ghLog(w)).toEqual([]);
+  });
+
+  it("says when every open issue of the label is already in progress", async () => {
+    const w = world();
+    open(w, 1, 2);
+    allInProgress(w);
+    const { result, events } = await run(w, { builds: {} }, { label: "ready" });
+    expect(result.status).toBe("failed");
+    expect(stderrOf(events, "list")).toContain(
+      "All 2 open issues labelled ready are already in progress",
+    );
+    expect(stderrOf(events, "list")).toContain("--input issues=");
+    expect(ghLog(w).filter(line => line.startsWith("issue edit"))).toEqual([]);
+  });
+
+  it("keeps the plain message for a label with no open issue", async () => {
+    const w = world();
+    open(w);
+    const { result, events } = await run(w, { builds: {} }, { label: "ready" });
+    expect(result.status).toBe("failed");
+    expect(stderrOf(events, "list")).toContain("No open issue found.");
   });
 
   it("leaves out an issue whose builder failed or whose review didn't pass, unlabelled and named", async () => {

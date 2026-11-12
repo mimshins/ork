@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L333, and the next chore is
+closes it. Ids are never reused: the next limit is L337, and the next chore is
 C15 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -203,7 +203,7 @@ the next review:
   `commandline -o` for `-x`, which fish 3 lacks, so the script tries
   `commandline -xpc` and falls back to `-opc`.
 
-Found building [clean sessions](./runtime.md#what-a-session-loads) (ADR-065):
+Found building [clean sessions](./runtime/what-a-session-loads.md) (ADR-065):
 
 - **L180 · Only strict MCP is measured.** The $0.113 to $0.032 probe (CLI
   driver) measured `--strict-mcp-config`; the other two switches are unmeasured
@@ -307,6 +307,30 @@ Found resuming build run `cc7c1c29` (2026-11-12), to decide at the next review:
   of tool nodes only
   ([ready-driver.ts](../packages/cli/src/run/ready-driver.ts)). Scoping the
   check to the drivers the run's agent nodes use would close it.
+
+Found closing nine follow-ups (2026-11-13), to decide at the next review:
+
+- **L333 · A session re-entered across activations has a first-turn cost
+  baseline problem.** Its first turn in the new activation passes
+  `priorCostUsd = 0` to `limitWatch`, but claude-code reports the session's
+  cumulative cost ([ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md)),
+  so that first turn can still blame the run's dollar budget when the node's
+  token cap stopped it (`ownSpend`). On a driver that reports each process's own
+  cost (open-code), a resumed turn whose own cost is at least the prior total is
+  under-counted, so a turn that did reach the run's dollar cap may not stop the
+  run as `budget_exhausted` ([budget](./scheduler.md#budget-and-concurrency)).
+- **L334 · The issues example undercounts taken issues past 100.** The
+  all-in-progress message counts taken issues with `--limit 100`, so it
+  undercounts past 100 labelled issues
+  ([guide](../docs/guides/issues-in-parallel.md)).
+- **L335 · The `ork stop` end-to-end test checks tokens and status only.**
+  Dollars are 0 in that fixture, as the fake spend has no cost, so the ledger
+  row, `ork ps` and `ork usage` are not compared on dollars.
+- **L336 · A delegated child's `description` shows only in `ork tree`,
+  `ork logs` and the Logs and Monitor panels.** It is not shown in chats, usage,
+  notifications or graph cards, by design
+  ([delegation](./scheduler.md#delegation)); showing it there would be a new
+  change.
 
 ## Chores
 

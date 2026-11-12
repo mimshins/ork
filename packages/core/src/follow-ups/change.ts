@@ -67,10 +67,14 @@ const refusal = (f: FollowUp, action: FollowUpAction): string | undefined => {
     : `${f.id} is ${f.status}, so it can't be ${rule.note}.`;
 };
 
-/** Whether an action is allowed, and if not, why, short and whole. */
+/**
+ * Whether an action is allowed, and if not, why, short and whole. `kind` says
+ * what refused it: the follow-up's `status`, or its `draft` (which a copy can
+ * work around).
+ */
 export type FollowUpActionCheck =
   | { ok: true }
-  | { ok: false; why: string; error: string };
+  | { ok: false; kind: "status" | "draft"; why: string; error: string };
 
 /** What can be done to a follow-up now: each action, or why not. */
 export type FollowUpActions = Record<
@@ -82,7 +86,7 @@ const check = (f: FollowUp, action: FollowUpAction): FollowUpActionCheck => {
   const error = refusal(f, action);
   return error === undefined
     ? { ok: true }
-    : { ok: false, why: `it is ${f.status}`, error };
+    : { ok: false, kind: "status", why: `it is ${f.status}`, error };
 };
 
 /** Whether `to` names one GitHub issue or pull request by its URL. */
@@ -114,11 +118,12 @@ export const githubDraftRefusal = (
 const postCheck = (f: FollowUp): FollowUpActionCheck => {
   const open = f.status === "waiting" || f.status === "due";
   const refused = githubDraftRefusal(f);
-  if (refused !== undefined) return { ok: false, ...refused };
+  if (refused !== undefined) return { ok: false, kind: "draft", ...refused };
   return open
     ? { ok: true }
     : {
         ok: false,
+        kind: "status",
         why: `it is ${f.status}`,
         error: `${f.id} is ${f.status}, so it is not posted.`,
       };

@@ -140,7 +140,7 @@ Leaders, workers and `defaults` take `mcp: [name]`: the MCP servers from the
 project's `.mcp.json` the node's sessions load, beside Ork's own (none by
 default). A node's list wins over `defaults` as a whole, so `mcp: []` turns the
 defaults off; a spawned worker takes its template's; agents and sub-agents take
-none ([what a session loads](../runtime.md#what-a-session-loads),
+none ([what a session loads](../runtime/what-a-session-loads.md),
 [ADR-067](../../decisions/ADR-067-nodes-name-mcp-servers.md)).
 
 Leaders and workers (and agents) take `session: fresh | resume`: whether a node

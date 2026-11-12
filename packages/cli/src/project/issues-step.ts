@@ -65,9 +65,11 @@ export const issuesDriverLine = async (
   if (driver === undefined) return null;
   const result = (await checks()).find(({ id }) => id === driver)?.result;
   const state =
-    result === undefined || result.status === "ok"
-      ? (result?.detail ?? "ready")
-      : `not ready: ${result.hint ?? result.detail}`;
+    result === undefined
+      ? "unknown (not checked)"
+      : result.status === "ok"
+        ? result.detail
+        : `not ready: ${result.hint ?? result.detail}`;
   return `issues runs on ${driver} (its model, ${model}): ${state}`;
 };
 

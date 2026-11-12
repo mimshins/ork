@@ -146,19 +146,31 @@ in a later round doesn't wait on a branch the loop didn't go back to.
 An `agent.leader` inside a run gets two blocking tools (ADR-017); both take a
 list of tasks, run them in parallel, and return when every child has reported:
 
-- **`delegate([{ child, brief }])`** runs declared children (its own
-  `agent.leader`/`agent.worker` children). The child's session gets its own
+- **`delegate([{ child, brief, description? }])`** runs declared children (its
+  own `agent.leader`/`agent.worker` children). The child's session gets its own
   `prompt` followed by `## Task from \`<leader>\`` and the brief.
-- **`spawn_worker([{ template, brief }])`** runs a new instance of a child
-  worker, `<template>-2`, `-3`, …, up to the leader's `maxWorkers` (default 0,
-  and then the tool is not offered). An instance works like its template: same
-  settings, its own worktree, owned by the leader.
+- **`spawn_worker([{ template, brief, description? }])`** runs a new instance of
+  a child worker, `<template>-2`, `-3`, …, up to the leader's `maxWorkers`
+  (default 0, and then the tool is not offered). An instance works like its
+  template: same settings, its own worktree, owned by the leader.
 - The tools' arguments are bound to the leader: `child` is an enum of its child
   leaders and workers, `template` of its child workers, and a task object takes
   no other key. A wrong argument is an error and no task runs: `path: message`
   per issue, and a stray key as
   ``tasks[0]: unknown field `node`; the field is `child`, one of: code, tests``,
   field and ids read from the schema.
+- **`description`** is an optional few words naming a task, in either tool. A
+  blank one counts as absent; runs of whitespace and control characters fold to
+  one space; one over 80 characters is accepted and clipped to 80, once, when
+  Ownership takes the task
+  ([`DESCRIPTION_MAX`](../packages/core/src/runtime/description.ts)). It rides
+  on the child's `node.started` and is shown as its label beside the id in
+  `ork tree`, `ork logs` and the browser view, and nowhere else. It does not
+  change the child's own workflow `description`, and the child's session never
+  sees it. Core's `jobOf` is the one place that normalizes it (fold, trim,
+  clip), so a surface shows the clipped text as is. A tree node's label is
+  replaced only by a `node.started` that carries a description; a later start
+  without one keeps the earlier label.
 - A task is refused, with the reason in its report, when its child is already
   running (in the flow or for another call), or no workers are left. A child the
   leader does not own is not a refused task: it is a wrong argument, so the
@@ -177,8 +189,8 @@ list of tasks, run them in parallel, and return when every child has reported:
 - **Claims.** Once a call accepts a task, the leader's claims are released so
   its children can take them, and the result's notes name them; the leader
   claims again before it edits ([messaging](./messaging.md#claims)).
-- `node.started` carries `owner` for a delegated run; the run summary lists
-  spawned workers by their instance id.
+- `node.started` carries `owner` and the task's `description` for a delegated
+  run; the run summary lists spawned workers by their instance id.
 
 ## Built-in node types
 
@@ -260,11 +272,13 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
   other. A $0 `costUsd` means unreported
   ([L280](./gaps/budget-tokens-limits.md)), not spent, so a token-capped session
   never reads as reaching a dollar cap; claude-code's `costUsd` is cumulative
-  across a resume ([ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md)). A
-  session sets its cap aside as it starts, so sessions running together are
-  never offered the same part; one with nothing left waits for a worker beside
-  it to finish, never for a leader
-  ([ADR-077](../decisions/ADR-077-reserve-session-caps.md)).
+  across a resume ([ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md)),
+  so a resumed turn blames the run's dollar budget only for its own spend, the
+  total minus what the session had spent before the turn
+  ([`limitWatch`](../packages/nodes/src/session-turns.ts)). A session sets its
+  cap aside as it starts, so sessions running together are never offered the
+  same part; one with nothing left waits for a worker beside it to finish, never
+  for a leader ([ADR-077](../decisions/ADR-077-reserve-session-caps.md)).
 - `limits.budgetTokens` caps the run in counted tokens (input, output and cache
   write) on any driver, the same way and beside the dollars: reserves hold both,
   a session that doesn't fit is refused ("nothing is left of the run's tokens"),

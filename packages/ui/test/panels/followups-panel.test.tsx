@@ -328,13 +328,15 @@ describe("Post to GitHub", () => {
   });
 
   it("gives only the reason, without the copy advice, when the item is closed", async () => {
-    await openFollowUps({ badDraft: "it is done" });
+    await openFollowUps({ badStatus: "closed by a teammate" });
     await choose(MESSAGE);
     const post = screen.getByRole("button", {
-      name: "Post to GitHub…: it is done",
+      name: "Post to GitHub…: closed by a teammate",
     });
     post.focus();
-    expect(await screen.findByText("Can't post: it is done.")).toBeDefined();
+    expect(
+      await screen.findByText("Can't post: closed by a teammate."),
+    ).toBeDefined();
     expect(document.body.textContent).not.toContain(
       "Copy the message and post it yourself.",
     );

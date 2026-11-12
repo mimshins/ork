@@ -43,7 +43,7 @@ run shouldn't see. Ork already left user-level settings out
    `ork resume`, `ork chat` and the runs it calls keep it. A leader's question
    fork stays strict either way ([ADR-063](./ADR-063-leader-questions.md)).
 
-The detail is in the [runtime spec](../specs/runtime.md#what-a-session-loads).
+The detail is in the [runtime spec](../specs/runtime/what-a-session-loads.md).
 
 ## Options considered
 

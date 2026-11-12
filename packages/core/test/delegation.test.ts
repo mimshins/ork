@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import {
   compileWorkflow,
   type CompiledGraph,
+  DESCRIPTION_MAX,
   type Delegation,
   type NodeExecutor,
   type NodeResult,
@@ -124,6 +125,12 @@ const started = (events: RunEvent[]): string[] =>
       : [],
   );
 
+/** Each `node.started`'s id and description. */
+const described = (events: RunEvent[]) =>
+  events.flatMap(e =>
+    e.type === "node.started" ? [[e.id, e.description]] : [],
+  );
+
 /** TEAM with other limits. */
 const limited = (limits: string): CompiledGraph =>
   compile(TEAM.map(l => (l.startsWith("limits") ? `limits: ${limits}` : l)));
@@ -188,6 +195,31 @@ describe("delegation", () => {
       "after",
     ]);
     expect(result.costUsd).toBe(3);
+  });
+
+  it("carries each task's description, clipped to 80, on its child's node.started", async () => {
+    const long = `${"x".repeat(DESCRIPTION_MAX)}cut`;
+    const { executor } = team(async own => {
+      await own.delegate([
+        { child: "fix", brief: "a", description: `  ${long}` },
+        { child: "check", brief: "b", description: "   " },
+      ]);
+      return own.spawn([
+        { template: "fix", brief: "c", description: "spawned\n\u001B[31m fix" },
+        { template: "fix", brief: "d", description: long },
+      ]);
+    });
+    const { result, events } = await run(compile(TEAM), executor);
+
+    expect(result.status).toBe("succeeded");
+    expect(described(events)).toEqual([
+      ["lead", undefined],
+      ["fix", "x".repeat(DESCRIPTION_MAX)],
+      ["check", undefined],
+      ["fix-2", "spawned [31m fix"],
+      ["fix-3", "x".repeat(DESCRIPTION_MAX)],
+      ["after", undefined],
+    ]);
   });
 
   it("runs the children of one call in parallel", async () => {

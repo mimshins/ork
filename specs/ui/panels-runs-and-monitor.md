@@ -49,7 +49,7 @@ closed.
 - **Use this machine's Claude setup** is a checkbox, off by default, described
   as "Your MCP servers and Claude's memory". Checked, it adds `--machine-claude`
   to the CLI twin and `machineClaude: true` to the request; unchecked, the run's
-  sessions start clean ([runtime](../runtime.md#what-a-session-loads)).
+  sessions start clean ([runtime](../runtime/what-a-session-loads.md)).
 - **The CLI twin** is shown as it is filled in, ready to copy. It leaves out
   inputs at their default and quotes what a shell would split.
 - **Start run** is disabled until the form can start, and the reason is shown
@@ -96,7 +96,12 @@ Its CLI twin is `ork tree <run>`.
   child, left closes it or goes to its owner, `Home` and `End` reach its ends,
   and `Enter` selects. A chevron opens and closes a row with a click, and a node
   selected in the graph becomes the row Tab reaches. A narrow panel drops the
-  type and time columns.
+  type and time columns. A node started by a task that named it (`description`,
+  at most 80 characters) shows that after its id, small and muted, clipped with
+  an ellipsis before the id is; the strip shows it under the id in full, the
+  Logs line for `node.started` ends with `· <description>` in muted text, and
+  the row's accessible name is `id, description, status, …`. The id always
+  shows; a node without one reads as before.
 - **Now** says what a node is doing or last did, in a line: its last tool and
   what that tool is working on, what it asked and was told, its summary when it
   ends, or why it failed. The server folds this from recorded events

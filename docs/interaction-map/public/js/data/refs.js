@@ -1241,7 +1241,7 @@ export const RUNTIME = {
     "Tests: clean sessions, and `--machine-claude`",
   ),
   loads: d(
-    "specs/runtime.md#what-a-session-loads",
+    "specs/runtime/what-a-session-loads.md",
     "Spec: what a session loads",
   ),
   cleanAdr: d(

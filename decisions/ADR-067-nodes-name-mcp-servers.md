@@ -82,7 +82,7 @@ in review.
 
 ## Specs
 
-[runtime.md](../specs/runtime.md#what-a-session-loads),
+[runtime.md](../specs/runtime/what-a-session-loads.md),
 [workflow-format.md](../specs/workflow-format.md),
 [project-rules.md](../specs/project-rules.md),
 [graph-compiler.md](../specs/graph-compiler.md).

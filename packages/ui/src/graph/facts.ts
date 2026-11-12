@@ -20,6 +20,8 @@ export type NodeFacts = {
   progress?: string | undefined;
   /** The `ork` command that shows this node, for its tooltip. */
   cli?: string | undefined;
+  /** What the task that started this node called it; named second. */
+  description?: string | undefined;
 };
 
 const WORDS: Readonly<Record<string, string>> = {
@@ -94,6 +96,9 @@ export const formatElapsed = (ms: number): string => {
 export const nodeName = (id: string, type: string, facts: NodeFacts): string =>
   [
     id,
+    ...(facts.description === undefined || facts.description === ""
+      ? []
+      : [facts.description]),
     facts.word ?? statusWord(facts.status),
     ...(facts.progress === undefined ? [] : [facts.progress]),
     ...(facts.costUsd === undefined ? [] : [formatCost(facts.costUsd)]),

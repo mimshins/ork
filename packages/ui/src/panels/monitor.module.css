@@ -266,6 +266,23 @@
   white-space: nowrap;
 }
 
+.treeLabel {
+  --monitor-tree-label-text: var(--color-text-muted);
+  --monitor-tree-label-text-size: var(--text-small);
+  --monitor-tree-label-weight: var(--weight-regular);
+  --monitor-tree-label-gap: var(--gap-tight);
+
+  color: var(--monitor-tree-label-text);
+  flex: 1 1 0;
+  font-size: var(--monitor-tree-label-text-size);
+  font-weight: var(--monitor-tree-label-weight);
+  margin-inline-start: var(--monitor-tree-label-gap);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .treeType {
   --monitor-tree-type-display: block;
   --monitor-tree-type-text: var(--color-text-muted);
@@ -341,6 +358,19 @@
   font-size: var(--monitor-side-title-text-size);
   font-weight: var(--monitor-side-title-weight);
   margin: 0;
+}
+
+.sideLabel {
+  --monitor-side-label-text: var(--color-text-muted);
+  --monitor-side-label-text-size: var(--text-ui);
+  --monitor-side-label-margin: 0;
+
+  color: var(--monitor-side-label-text);
+  flex: 1 1 12rem;
+  font-size: var(--monitor-side-label-text-size);
+  margin: var(--monitor-side-label-margin);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .node {

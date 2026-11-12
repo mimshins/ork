@@ -50,6 +50,31 @@ const finished = (
     verbose,
   ).map(line => plain(line));
 
+const started = (extra: { description?: string }): string[] =>
+  formatRunEvent(
+    {
+      type: "node.started",
+      id: "w",
+      nodeType: "agent.worker",
+      round: 1,
+      ...extra,
+    },
+    4,
+    new Map(),
+  ).map(line => plain(line));
+
+describe("a node's start line in the transcript", () => {
+  it("shows the task's description after the node's type", () => {
+    expect(started({ description: "fix the parser" })).toEqual([
+      "w    │ agent.worker · fix the parser",
+    ]);
+  });
+
+  it("is the same as before without one", () => {
+    expect(started({})).toEqual(["w    │ agent.worker"]);
+  });
+});
+
 describe("a failed node's end in the transcript", () => {
   it("says the kind and Ork's message, never the raw text", () => {
     const end = endFor("turn_limit", { maxTurns: 8 }, RAW);

@@ -4,18 +4,19 @@
  *   waited on, so its workers are refused).
  */
 
-import { parseWorkflow } from "@krapht/ork-schema";
+import { parseWorkflow, type Project } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
 import { compileWorkflow } from "../src/index.ts";
 
 /** The `budget.leader` diagnostics of a workflow with a leader `lead`. */
-const found = (top: string, lead = "", child = true) => {
+const found = (top: string, lead = "", child = true, project?: Project) => {
   const parsed = parseWorkflow(
     `schemaVersion: 1\nname: t\n${top}nodes:\n  lead:\n    type: agent.leader\n    prompt: p\n${lead}${child ? "  w:\n    type: agent.worker\n    parent: lead\n    prompt: p\n" : ""}`,
   );
   if (!parsed.ok) throw new Error(JSON.stringify(parsed.diagnostics));
-  return compileWorkflow(parsed.workflow).diagnostics.filter(
+  const options = project === undefined ? {} : { project };
+  return compileWorkflow(parsed.workflow, options).diagnostics.filter(
     d => d.code === "budget.leader",
   );
 };
@@ -40,6 +41,18 @@ describe("budget.leader", () => {
     expect(
       found("defaults:\n  budgetUsd: 1\nlimits:\n  budgetUsd: 5\n"),
     ).toEqual([]);
+  });
+
+  it("counts the project's defaults as the leader's cap, in their unit only", () => {
+    const project: Project = {
+      schemaVersion: 1,
+      defaults: { budgetUsd: 1 },
+    };
+    const top = "limits:\n  budgetUsd: 5\n  budgetTokens: 400\n";
+    expect(found(top, "", true).map(d => d.message)).toHaveLength(2);
+    expect(found(top, "", true, project).map(d => d.message)).toEqual([
+      expect.stringContaining("no budgetTokens of its own"),
+    ]);
   });
 
   it("warns only in the unit the leader leaves open", () => {

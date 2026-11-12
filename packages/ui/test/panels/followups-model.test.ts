@@ -176,7 +176,12 @@ describe("the buttons", () => {
   });
 
   it("ends a disabled button's name with the server's reason", () => {
-    const refused = { ok: false, why: "it is locked", error: "x" } as const;
+    const refused = {
+      ok: false,
+      kind: "status",
+      why: "it is locked",
+      error: "x",
+    } as const;
     const [, done] = actsFor(asRow(MIGRATION, { status: "waiting" }), {
       done: refused,
       drop: { ok: true },
@@ -186,7 +191,12 @@ describe("the buttons", () => {
     });
     expect(done?.check).toEqual(refused);
     expect(
-      labelOf("Reopen", { ok: false, why: "it is done", error: "x" }),
+      labelOf("Reopen", {
+        ok: false,
+        kind: "status",
+        why: "it is done",
+        error: "x",
+      }),
     ).toBe("Reopen: it is done");
   });
 

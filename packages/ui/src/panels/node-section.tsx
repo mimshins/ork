@@ -98,6 +98,9 @@ export const NodeSection = ({
       ref={sectionRef}
     >
       <h3 className={styles["sideTitle"]}>{node.id}</h3>
+      {node.description === undefined || node.description === "" ? null : (
+        <p className={styles["sideLabel"]}>{node.description}</p>
+      )}
       <dl className={styles["nodeFacts"]}>
         <div>
           <dt>Type</dt>

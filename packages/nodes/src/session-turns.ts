@@ -146,13 +146,18 @@ const reached = (cap: number | undefined, used: number): boolean =>
  * Why the run's budget stopped a session that reached its cap, if it did. A
  * unit blames the run when the session reached it, or when it is the only cap
  * the session had; otherwise the node's own cap in the other unit may have
- * stopped it.
+ * stopped it. A resumed turn's dollars are its own: its cost is the session's
+ * total (ADR-046) while its cap is what was left, so `priorCostUsd` comes off,
+ * read as `ownSpend` reads it (a lower total counted again from zero).
  */
 const runSpent = (
   run: RunCaps,
   asked: Pick<SessionSpec, "budgetUsd" | "budgetTokens">,
   outcome: SessionOutcome,
+  priorCostUsd: number,
 ): string | undefined => {
+  const total = outcome.usage.costUsd;
+  const turnCostUsd = total < priorCostUsd ? total : total - priorCostUsd;
   const tokens =
     run.tokens !== undefined &&
     (reached(asked.budgetTokens, countedTokens(outcome.usage)) ||
@@ -161,8 +166,7 @@ const runSpent = (
     return `the run's budget of ${String(run.tokens)} tokens is spent`;
   const usd =
     run.usd !== undefined &&
-    (reached(asked.budgetUsd, outcome.usage.costUsd) ||
-      asked.budgetTokens === undefined);
+    (reached(asked.budgetUsd, turnCostUsd) || asked.budgetTokens === undefined);
   return usd ? `the run's budget of $${String(run.usd)} is spent` : undefined;
 };
 
@@ -183,7 +187,11 @@ export const limitWatch = (
     stoppedBy: (reason: string): void => {
       why = reason;
     },
-    session: (asked: Pick<SessionSpec, "budgetUsd" | "budgetTokens">) => {
+    // `priorCostUsd`: what the session it resumes had reported, 0 for a first turn.
+    session: (
+      asked: Pick<SessionSpec, "budgetUsd" | "budgetTokens">,
+      priorCostUsd = 0,
+    ) => {
       const { leftUsd: left, leftTokens } = context.quota?.() ?? {};
       let refused: string | undefined;
       return {
@@ -210,7 +218,7 @@ export const limitWatch = (
               context.quota?.().blocked ??
               "a session reached what was left of a quota";
           } else if (spent) {
-            runWhy = runSpent(run, asked, outcome);
+            runWhy = runSpent(run, asked, outcome, priorCostUsd);
           }
         },
       };

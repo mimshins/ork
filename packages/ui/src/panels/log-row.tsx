@@ -12,7 +12,14 @@ import { memo } from "react";
 
 import { EndBadge } from "../components/end-badge.tsx";
 import { EndNote } from "../components/end-note.tsx";
-import { endedOf, endLineOf, lineOf, nodeOf, timeOf } from "./logs-model.ts";
+import {
+  descriptionOf,
+  endedOf,
+  endLineOf,
+  lineOf,
+  nodeOf,
+  timeOf,
+} from "./logs-model.ts";
 
 import styles from "./logs.module.css";
 
@@ -28,6 +35,7 @@ export const LogRow = memo(
   ({ stored, open, tabbable, onToggle }: LogRowProps) => {
     const { seq, at, event } = stored;
     const ended = endedOf(event);
+    const description = descriptionOf(event);
     return (
       <li className={styles["item"]}>
         <button
@@ -45,7 +53,15 @@ export const LogRow = memo(
           <span className={styles["type"]}>{event.type}</span>
           <span className={styles["line"]}>
             {ended === undefined ? (
-              lineOf(event)
+              <>
+                {lineOf(event)}
+                {description === undefined ? null : (
+                  <>
+                    {" "}
+                    <span className={styles["label"]}>· {description}</span>
+                  </>
+                )}
+              </>
             ) : (
               <>
                 <EndBadge end={ended.end} /> {endLineOf(ended)}

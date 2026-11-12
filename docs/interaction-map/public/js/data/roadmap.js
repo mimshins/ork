@@ -330,7 +330,7 @@ export const MILESTONES = [
           "In 1.0.0-alpha.1: a run's sessions load no MCP server but Ork's and no auto-memory, and keep the per-machine prompt sections out of the cached prefix, on both drivers; `ork run --machine-claude` (or the Run workflow box) loads the machine's setup for a run, recorded for its resumes and called runs. A probe measured $0.113 loose against $0.032 strict for the same task (ADR-065).",
         docs: [
           "decisions/ADR-065-clean-claude-sessions.md",
-          "specs/runtime.md#what-a-session-loads",
+          "specs/runtime/what-a-session-loads.md",
         ],
       },
       {
@@ -343,7 +343,7 @@ export const MILESTONES = [
           "A leader, a worker or `defaults` takes `mcp: [name]`: those servers from the project's `.mcp.json` load beside Ork's, still under strict MCP, on both drivers, and every other node stays clean. A name the file lacks is a validate error. `feature`'s design and a11y and `qa-pass`'s qa get `chrome-devtools` (ADR-067).",
         docs: [
           "decisions/ADR-067-nodes-name-mcp-servers.md",
-          "specs/runtime.md#what-a-session-loads",
+          "specs/runtime/what-a-session-loads.md",
         ],
       },
       {

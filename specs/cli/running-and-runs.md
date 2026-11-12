@@ -79,7 +79,7 @@ with the built-in node types
 - **The machine's Claude setup:** sessions start clean of the machine's MCP
   servers and Claude Code's auto-memory; `--machine-claude` loads them for this
   run, which records it for `ork resume`, `ork chat` and the runs it calls
-  ([what a session loads](../runtime.md#what-a-session-loads)).
+  ([what a session loads](../runtime/what-a-session-loads.md)).
 - Every event is recorded in the [event store](../event-store.md) before it is
   printed; `ork ps`, `ork logs` and `ork tree` read it back.
 - Tool nodes run as declared (their `allow` list is checked first); gates and
@@ -163,6 +163,12 @@ first (then the prompt is withdrawn and the transcript shows
 `ork ps`, `ork logs` and `ork tree` read the runs every project recorded; see
 [Event store: reading runs](../event-store.md#reading-runs). A run of one node
 (`--node`) is recorded too, as a run with that one node.
+
+A delegated node whose task had a `description`
+([delegation](../scheduler.md#delegation)) shows it dim after the id: in
+`ork tree`'s label column, and on the node's start line in `ork logs` (after the
+type, as ` · <description>`); `--json` carries it as the tree node's
+`description`. A node without one prints as before.
 
 For a node with `forEach`, `ork tree` lists its items under it, in list order,
 each with its state, time and cost, and `--json` carries them as the node's

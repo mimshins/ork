@@ -96,6 +96,10 @@ if (process.env.FAKE_ENDPOINT_FILE !== undefined) {
 }
 
 const scenario = process.env.FAKE_SCENARIO ?? "";
+// `spend` marks, in FAKE_SPENT_FILE, that its usage lines are written.
+const spent = () => {
+  if (process.env.FAKE_SPENT_FILE !== undefined) writeFileSync(process.env.FAKE_SPENT_FILE, "");
+};
 const init = () =>
   out({ type: "system", subtype: "init", session_id: "fake-1", model: flag("--model") ?? "fake", cwd: process.cwd() });
 const finish = (text, report) =>
@@ -150,6 +154,7 @@ if (scenario.startsWith("end:")) {
       out({ type: "assistant", message: { id, usage: USAGE, content: [{ type: "text", text }] } });
     }
   }
+  spent();
   await new Promise(() => setInterval(() => {}, 1000));
 } else if (scenario === "try-denied") {
   init();

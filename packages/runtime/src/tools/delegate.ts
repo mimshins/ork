@@ -16,6 +16,12 @@ const BRIEF = z
     "Self-contained: the goal, the files that matter, and what done looks like. The child does not see your conversation.",
   );
 
+// Optional label; core trims, drops blank and clips to DESCRIPTION_MAX.
+const DESCRIPTION = z
+  .string()
+  .exactOptional()
+  .describe("A few words naming this task; shown as the child's label.");
+
 /** What the leader reads back: each report without the usage details. */
 const reportLine = (report: ChildReport): Record<string, unknown> => {
   const { usage, ...output } = report.output;
@@ -65,6 +71,7 @@ export const delegateTool = defineTool({
               .enum(ids)
               .describe(`The id of a node you own: ${ids.join(", ")}.`),
             brief: BRIEF,
+            description: DESCRIPTION,
           }),
         )
         .min(1),
@@ -91,6 +98,7 @@ export const spawnWorkerTool = defineTool({
               .enum(ids)
               .describe(`The id of a child worker you own: ${ids.join(", ")}.`),
             brief: BRIEF,
+            description: DESCRIPTION,
           }),
         )
         .min(1),

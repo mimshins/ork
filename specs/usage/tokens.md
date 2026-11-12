@@ -72,7 +72,11 @@ the driver, and keeps its words.
   Once spent, the run ends `budget_exhausted`, also when a session whose cap was
   the run's remainder reaches it: no failure edge fires, and `ork resume`
   continues that session ([budget](../scheduler.md#budget-and-concurrency)). A
-  resumed run starts from the tokens already used.
+  resumed run starts from the tokens already used. A resumed turn blames the
+  run's dollar budget only for its own spend, as claude-code's cost is
+  cumulative across a resume
+  ([ADR-046](../../decisions/ADR-046-usage-ledger-and-prune.md),
+  [budget](../scheduler.md#budget-and-concurrency)).
 - **A day:** `quotas.dayTokens`, below.
 
 ## The token quota

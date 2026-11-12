@@ -145,11 +145,16 @@ describe("what can be done, and why a follow-up is due", () => {
     const open = followUpActions(made("aa11"));
     expect(open.done).toEqual({ ok: true });
     expect(open.due).toEqual({ ok: true });
-    expect(open.reopen).toMatchObject({ ok: false, why: "it is waiting" });
+    expect(open.reopen).toMatchObject({
+      ok: false,
+      kind: "status",
+      why: "it is waiting",
+    });
     const closed = followUpActions(made("aa11", { status: "done" }));
     expect(closed.reopen).toEqual({ ok: true });
     expect(closed.done).toEqual({
       ok: false,
+      kind: "status",
       why: "it is done",
       error: "aa11 is done, so it can't be done.",
     });
@@ -169,10 +174,12 @@ describe("what can be done, and why a follow-up is due", () => {
     });
     expect(followUpActions(slack).post).toMatchObject({
       ok: false,
+      kind: "draft",
       why: "not drafted for the github channel",
     });
     expect(followUpActions({ ...github, status: "done" }).post).toMatchObject({
       ok: false,
+      kind: "status",
       why: "it is done",
     });
   });
@@ -186,6 +193,7 @@ describe("what can be done, and why a follow-up is due", () => {
       });
       expect(followUpActions(github).post).toMatchObject({
         ok: false,
+        kind: "draft",
         why: "its `to` isn't a GitHub issue or pull request URL",
       });
     },

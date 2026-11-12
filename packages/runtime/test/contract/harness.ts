@@ -4,7 +4,7 @@
  *   reads what came of it, so each case stays a few lines with no branches.
  */
 
-import { mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -51,6 +51,8 @@ export type Started = {
   session: Session;
   /** The URL of Ork's endpoint, once the tool has started. */
   endpoint: () => string;
+  /** Whether a `spend` scenario has written all its usage lines. */
+  spent: () => boolean;
 };
 
 /** Starts a session of `entry` on its fake tool (or `bin`), playing `scenario`. */
@@ -62,6 +64,7 @@ export const start = (
 ): Started => {
   const cwd = mkdtempSync(path.join(tmpdir(), "ork-contract-"));
   const endpointFile = path.join(cwd, ".endpoint");
+  const spentFile = path.join(cwd, ".spent");
   // A throwaway home and runs folder: a tool may keep config per user (Command
   // Code's MCP entries) and Ork keeps leases in the runs folder.
   const home = mkdtempSync(path.join(tmpdir(), "ork-contract-home-"));
@@ -72,10 +75,15 @@ export const start = (
       HOME: home,
       FAKE_SCENARIO: scenario === "plain" ? "" : scenario,
       FAKE_ENDPOINT_FILE: endpointFile,
+      FAKE_SPENT_FILE: spentFile,
     },
     runs: path.join(home, "runs"),
   }).start({ ...specIn(cwd), ...spec }, { human });
-  return { session, endpoint: () => readFileSync(endpointFile, "utf8") };
+  return {
+    session,
+    endpoint: () => readFileSync(endpointFile, "utf8"),
+    spent: () => existsSync(spentFile),
+  };
 };
 
 const drain = async (

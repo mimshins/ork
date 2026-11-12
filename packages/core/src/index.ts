@@ -114,6 +114,7 @@ export * from "./runtime/ends.ts";
 export * from "./runtime/ends-legacy.ts";
 export * from "./runtime/report.ts";
 export type * from "./runtime/types.ts";
+export * from "./runtime/description.ts";
 export type * from "./runtime/machine-port.ts";
 export * from "./store/drafts.ts";
 export * from "./store/mask.ts";

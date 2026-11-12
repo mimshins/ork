@@ -5,6 +5,8 @@
 
 import type { EndView, StoredEvent } from "@krapht/ork-server/client";
 
+import { innerLine, oneLine } from "./session-line.ts";
+
 type Event = StoredEvent["event"];
 type Of<T extends Event["type"]> = Extract<Event, { type: T }>;
 
@@ -15,48 +17,9 @@ export const nodeOf = (event: Event): string | undefined => {
   return "from" in event ? event.from : undefined;
 };
 
-const oneLine = (text: string): string => text.replaceAll(/\s+/gu, " ").trim();
-
 /** How a message came, when no session wrote it. */
 const viaOf = (via: string | undefined): string =>
   via === undefined ? "" : ` (${via})`;
-
-const sessionLine = ({ event }: Of<"node.event">): string => {
-  switch (event.type) {
-    case "session.started": {
-      return `session on ${event.model}`;
-    }
-    case "assistant.text": {
-      return oneLine(event.text);
-    }
-    case "session.waiting": {
-      return oneLine(event.reason);
-    }
-    case "tool.called": {
-      return `${event.name} ${oneLine(JSON.stringify(event.input))}`;
-    }
-    case "tool.result": {
-      return event.isError ? "tool failed" : "tool done";
-    }
-    case "plan.limit": {
-      return event.status === "allowed"
-        ? ""
-        : `plan: ${event.window.replaceAll("_", " ")} limit ${event.status === "rejected" ? "reached" : "is close"}`;
-    }
-    case "session.finished": {
-      return "session finished";
-    }
-    default: {
-      return "";
-    }
-  }
-};
-
-/** A fork answering a child's question (ADR-063) says it is one. */
-const innerLine = (event: Of<"node.event">): string => {
-  const line = sessionLine(event);
-  return event.event.fork === true && line !== "" ? `fork: ${line}` : line;
-};
 
 /** A node that did not end well: which, in which round, and how. */
 type Ended = { id: string; round: number; end: EndView };
@@ -81,6 +44,13 @@ const finishedLine = (event: Of<"node.finished">): string => {
     round,
     `ok${typeof summary === "string" ? `: ${oneLine(summary)}` : ""}`,
   );
+};
+
+/** What a task called the node that starts here, if it said. */
+export const descriptionOf = (event: Event): string | undefined => {
+  if (event.type !== "node.started") return undefined;
+  const text = event.description?.trim();
+  return text === undefined || text === "" ? undefined : text;
 };
 
 /** The event in a line; empty when its type says it all. */

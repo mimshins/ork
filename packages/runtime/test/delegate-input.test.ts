@@ -3,7 +3,13 @@
  *   ids it knows as enums, and errors a model can act on.
  */
 
-import type { HumanChannel, Ownership, SessionPorts } from "@krapht/ork-core";
+import type {
+  DelegateTask,
+  HumanChannel,
+  Ownership,
+  SessionPorts,
+  SpawnTask,
+} from "@krapht/ork-core";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
@@ -80,6 +86,39 @@ const called = async (name: string, tasks: unknown): Promise<string> =>
     }),
   );
 
+/** Calls a tool and records the tasks that reached core's Ownership. */
+const reached = async (tasks: unknown, name = "delegate") => {
+  const delegated: DelegateTask[] = [];
+  const spawned: SpawnTask[] = [];
+  const base = ownership();
+  const tools = orkTools({
+    nodeId: "lead",
+    driver: "claude-code",
+    ports: {
+      human,
+      ownership: ownership({
+        delegate: given => {
+          delegated.push(...given);
+          return base.delegate(given);
+        },
+        spawn: given => {
+          spawned.push(...given);
+          return base.spawn(given);
+        },
+      }),
+    },
+  });
+  const reply = JSON.stringify(
+    await handleRpc(tools, {
+      jsonrpc: "2.0",
+      id: 3,
+      method: "tools/call",
+      params: { name, arguments: { tasks } },
+    }),
+  );
+  return { delegated, spawned, reply };
+};
+
 const described = (fanned: string[]) =>
   orkTools({
     nodeId: "lead",
@@ -120,6 +159,24 @@ describe("delegate's and spawn_worker's arguments", () => {
     expect(await called("delegate", [{ child: "code", brief: "b" }])).toContain(
       String.raw`\"child\":\"code\",\"ok\":true`,
     );
+  });
+
+  it("accept a task's description, long or blank, and pass it to core", async () => {
+    const long = "x".repeat(120);
+    const seen = await reached([
+      { child: "code", brief: "b", description: long },
+      { child: "tests", brief: "b", description: "  " },
+    ]);
+    expect(seen.delegated.map(task => task.description)).toEqual([long, "  "]);
+    expect(seen.reply).not.toContain("unknown field");
+    const spawned = await reached(
+      [{ template: "code", brief: "b", description: "fix the parser" }],
+      "spawn_worker",
+    );
+    expect(spawned.spawned.map(task => task.description)).toEqual([
+      "fix the parser",
+    ]);
+    expect(spawned.reply).not.toContain("unknown field");
   });
 
   it("say why a fanned child isn't listed, and only when there is one", () => {

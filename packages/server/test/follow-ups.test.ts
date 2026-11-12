@@ -250,9 +250,13 @@ describe("GET /api/projects/:id/follow-ups/:followUp", () => {
         actions: {
           done: { ok: true },
           drop: { ok: true },
-          reopen: { ok: false, why: "it is due" },
-          due: { ok: false, why: "it is due" },
-          post: { ok: false, why: "not drafted for the github channel" },
+          reopen: { ok: false, kind: "status", why: "it is due" },
+          due: { ok: false, kind: "status", why: "it is due" },
+          post: {
+            ok: false,
+            kind: "draft",
+            why: "not drafted for the github channel",
+          },
         },
         keptIn: { place: "store", rule: "store" },
         draftDigest: text(),
@@ -386,6 +390,7 @@ describe("what a detail says of a follow-up", () => {
         actions: {
           done: {
             ok: false,
+            kind: "status",
             why: "it is done",
             error: `${one.id} is done, so it can't be done.`,
           },

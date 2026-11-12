@@ -82,6 +82,10 @@ const resumed = flag("--resume");
 const session = resumed === undefined ? "fake-cmd-1" : args.includes("--fork-session") ? `fork-of-${resumed}` : resumed;
 const brief = flag("-p") ?? "";
 const scenario = process.env.FAKE_SCENARIO ?? "";
+// `spend` marks, in FAKE_SPENT_FILE, that its usage lines are written.
+const spent = () => {
+  if (process.env.FAKE_SPENT_FILE !== undefined) writeFileSync(process.env.FAKE_SPENT_FILE, "");
+};
 const USAGE = { inputTokens: 100, outputTokens: 20, cacheReadTokens: 80, cacheWriteTokens: 5 };
 const started = Date.now();
 
@@ -180,6 +184,7 @@ if (scenario === "end:turn_limit") {
   for (let i = 0; i < 3; i += 1) {
     event({ type: "model_request_end", model: flag("--model") ?? "fake", usage: USAGE, stopReason: "tool_use" });
   }
+  spent();
   await new Promise(() => setInterval(() => {}, 1000));
 } else if (scenario === "max-turns") {
   finish("", "max_turns", 8);

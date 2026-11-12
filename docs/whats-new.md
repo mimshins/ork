@@ -5,6 +5,14 @@ full: the [changelog](../packages/cli/CHANGELOG.md).
 
 ## Next release
 
+- **A leader can label its tasks.** `delegate` and `spawn_worker` tasks take an
+  optional `description`, a few words that Ork clips to 80 characters and shows
+  beside the child's id in `ork tree`, `ork logs` and the browser view. Before,
+  a model that added one had its first turn rejected. Also: `issues=01,1` counts
+  one issue, a label whose open issues are all taken says so instead of "No open
+  issue found", and a resumed session no longer blames the run's dollar budget
+  for what it spent before the turn
+  ([guide](./guides/leaders-and-delegation.md)).
 - **Follow-ups: what a change leaves for later.** A message to a partner, work
   for another project's agent, infra steps and a check after deploy are kept as
   follow-ups, apart from feedback: sessions leave them with a new `follow_up`

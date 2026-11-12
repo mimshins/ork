@@ -13,11 +13,10 @@
 
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { setTimeout } from "node:timers/promises";
 
 import { countedTokens } from "@krapht/ork-core";
 import type { DriverCapabilities } from "@krapht/ork-integrations";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ADAPTERS } from "../../src/index.ts";
 import { CONTRACT, TOOL_ENDS } from "./entries.ts";
@@ -120,11 +119,13 @@ describe.each(CONTRACT)("the $driver adapter", entry => {
   });
 
   it("keeps the tokens it used, and its session, when interrupted", async () => {
-    const { session } = start(entry, "spend");
+    const { session, spent } = start(entry, "spend");
     const outcome = outcomeOf(
       await collectActing(session, async () => {
-        // Let the three requests' usage lines reach the decoder first.
-        await setTimeout(300);
+        // The tool has written its three requests' usage lines to its pipe.
+        await vi.waitFor(() => {
+          expect(spent()).toBe(true);
+        });
         await session.interrupt();
       }),
     );

@@ -90,6 +90,18 @@ const EVENTS: RunEvent[] = [
   { type: "node.skipped", id: "ship" },
 ];
 
+/** EVENTS with `id`'s `node.started` carrying a task description. */
+const labelled = (id: string, description: string): RunEvent[] =>
+  EVENTS.map(event =>
+    event.type === "node.started" && event.id === id
+      ? { ...event, description }
+      : event,
+  );
+
+/** The lead's children in the folded tree, with their descriptions. */
+const children = (events: RunEvent[]) =>
+  runTree(events)[0]?.children.map(c => [c.id, c.description]);
+
 /** A stand-in record, for lookups that come back empty. */
 const RUN: RunRecord = {
   depth: 0,
@@ -272,6 +284,17 @@ describe("views over a run", () => {
     ]);
     expect(lead?.state).toBe("running");
     expect(roots[1]?.state).toBe("skipped");
+  });
+
+  it("labels a child with its task's description; a run from before folds without one", () => {
+    expect(children(labelled("check-2", "check the parser"))).toEqual([
+      ["check", undefined],
+      ["check-2", "check the parser"],
+    ]);
+    expect(children(EVENTS)).toEqual([
+      ["check", undefined],
+      ["check-2", undefined],
+    ]);
   });
 
   it("reports a running run whose process is gone as crashed", () => {

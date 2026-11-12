@@ -72,7 +72,9 @@ The selected run's events, live
   `End` move through it, and `Enter` opens a row. An opened event is one more
   stop, so the keys can scroll it. A `node.finished` that did not end well shows
   its end kind as a badge and Ork's sentence, and opened, its end note
-  ([design](./design-components-and-copy.md#how-a-node-ended)) over the event.
+  ([design](./design-components-and-copy.md#how-a-node-ended)) over the event. A
+  `node.started` of a delegated node ends its line with the task's `description`
+  in muted text (`· fix login redirect`); the node column stays the id.
 - **Filters** are by node, by event type and by text anywhere in the event. The
   node filter is the shared selection, so choosing a node in the Monitor opens
   it here and the other way round. They look through what is loaded

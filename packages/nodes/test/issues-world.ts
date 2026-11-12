@@ -65,15 +65,13 @@ d="$GH_DIR"
 echo "$*" >> "$d/log"
 case "$1 $2" in
   "label create") exit 0 ;;
-  "issue view")
+  "issue view") cat "$d/issue-$3.json" ;;
+  "issue list")
     case "$*" in
-      *"--json labels"*)
-        if [ -f "$d/labels-$3.json" ]; then cat "$d/labels-$3.json"; else echo '{"labels":[]}'; fi
-        ;;
-      *) cat "$d/issue-$3.json" ;;
+      *"--search"*) cat "$d/list.json" ;;
+      *) cat "$d/list-all" ;;
     esac
     ;;
-  "issue list") cat "$d/list.json" ;;
   "issue edit")
     [ -f "$d/edit-fails-$3" ] && exit 1
     exit 0
@@ -160,14 +158,19 @@ export const open = (w: World, ...numbers: number[]) => {
     );
   }
   writeFileSync(path.join(w.gh, "list.json"), JSON.stringify(issues));
+  writeFileSync(
+    path.join(w.gh, "list-all"),
+    numbers.map(number => `${String(number)}\n`).join(""),
+  );
 };
 
-/** Gives an issue labels, as `gh issue view --json labels` prints them. */
-export const labelled = (w: World, number: number, ...names: string[]) => {
-  writeFileSync(
-    path.join(w.gh, `labels-${String(number)}.json`),
-    JSON.stringify({ labels: names.map(name => ({ name })) }),
-  );
+/**
+ * Marks every issue `open` made as in progress: the list that leaves them out
+ * (`--search -label:in-progress`) is empty, the one that doesn't still has
+ * them.
+ */
+export const allInProgress = (w: World) => {
+  writeFileSync(path.join(w.gh, "list.json"), "[]");
 };
 
 /** Makes the fake `gh pr create` fail. */

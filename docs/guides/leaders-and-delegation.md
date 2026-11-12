@@ -56,6 +56,9 @@ let it use `spawn_worker` on a plain worker, up to `maxWorkers`. A task is
 refused, with the reason in its report, when its child is already running or no
 workers are left.
 
+A task may carry a `description`, a few words that label the child: the first 80
+characters show beside its id in `ork tree`, `ork logs` and the browser view.
+
 ## What comes back
 
 Each child returns its report (status, summary, artifacts, branch) and its cost.
@@ -170,7 +173,9 @@ Decisions panel says "Answered … by `lead`, its owner". A leader with no
 - While a leader waits for its children, its session slot goes to them, so a run
   never deadlocks even at `limits.concurrency: 1`.
 - Children count against the run's `limits.budgetUsd`, after what the leader's
-  own session set aside. Once it is spent, no new child starts.
+  own session set aside. Once it is spent, no new child starts. A resumed turn
+  blames this budget only for its own spend
+  ([the rule](../../specs/scheduler.md#budget-and-concurrency)).
 
 ## See who did what
 

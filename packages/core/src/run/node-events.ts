@@ -23,6 +23,8 @@ export type NodeEvent =
       round: number;
       /** The leader that delegated this run, if one did. */
       owner?: string;
+      /** The leader's few words naming a delegated task; absent before. */
+      description?: string;
       /** The agent that fills the node, if one does. */
       agent?: AgentRef;
       /** For an item of a fanned node, which node and which entry. */

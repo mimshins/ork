@@ -6,6 +6,7 @@
  */
 
 import type { CompiledGraph } from "../graph/types.ts";
+import { DESCRIPTION_MAX } from "../runtime/description.ts";
 import type {
   ChildReport,
   DelegateTask,
@@ -29,7 +30,7 @@ export type DelegationHooks = {
   leader: string;
   /** Runs one child to its end, outside the flow; it reports to the leader. */
   runChild: (
-    child: { id: string; template?: string },
+    child: { id: string; template?: string; description?: string },
     brief: Brief,
   ) => Promise<NodeResult>;
   /** Whether a node is running now (in the flow or for another leader). */
@@ -94,7 +95,31 @@ const reportOf = (child: string, result: NodeResult): ChildReport => {
   return report;
 };
 
-type Job = { id: string; template?: string; brief: string };
+type Job = {
+  id: string;
+  template?: string;
+  brief: string;
+  description?: string;
+};
+
+/** A job with the task's description clipped once; blank is none. */
+const jobOf = (
+  id: string,
+  task: DelegateTask | SpawnTask,
+  template?: string,
+): Job => {
+  const job: Job = { id, brief: task.brief };
+  if (template !== undefined) job.template = template;
+  // Whitespace and control characters (newline, ANSI escape) fold to one space so a label stays on one line.
+  const description = task.description
+    ?.replaceAll(/[\s\p{Cc}]+/gu, " ")
+    .trim()
+    .slice(0, DESCRIPTION_MAX);
+  if (description !== undefined && description !== "") {
+    job.description = description;
+  }
+  return job;
+};
 
 export const createOwnership = (hooks: DelegationHooks): Ownership => {
   const { graph, leader } = hooks;
@@ -142,11 +167,10 @@ export const createOwnership = (hooks: DelegationHooks): Ownership => {
       const results = await Promise.all(
         jobs.map(async job => {
           if (!("brief" in job)) return job;
-          const child: { id: string; template?: string } = { id: job.id };
-          if (job.template !== undefined) child.template = job.template;
+          const { brief, ...child } = job;
           const result = await hooks.runChild(child, {
             from: leader,
-            text: job.brief,
+            text: brief,
           });
           return reportOf(job.id, result);
         }),
@@ -176,7 +200,7 @@ export const createOwnership = (hooks: DelegationHooks): Ownership => {
         );
       }
       seen.add(task.child);
-      return { id: task.child, brief: task.brief };
+      return jobOf(task.child, task);
     });
     return runJobs(jobs);
   };
@@ -205,7 +229,7 @@ export const createOwnership = (hooks: DelegationHooks): Ownership => {
       }
       const id = nextInstance(task.template);
       spawned.push(id);
-      return { id, template: task.template, brief: task.brief };
+      return jobOf(id, task, task.template);
     });
     return runJobs(jobs);
   };

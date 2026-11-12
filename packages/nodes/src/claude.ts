@@ -22,7 +22,13 @@ import {
 } from "@krapht/ork-core";
 import { beforeOf, type Driver } from "@krapht/ork-schema";
 
-import { planOptionsOf } from "./claude-plan.ts";
+import {
+  lateMessage,
+  planOptionsOf,
+  reentryNote,
+  resumeMessage,
+  wholeInput,
+} from "./claude-plan.ts";
 import { resultOf } from "./claude-result.ts";
 import { namedMcpEntries } from "./mcp-servers.ts";
 import { ownerFirst, withdrawnOnStop } from "./owner-asks.ts";
@@ -46,7 +52,7 @@ import {
   noSteps,
 } from "./verify.ts";
 
-export { resultOf };
+export { lateMessage, reentryNote, resumeMessage, resultOf, wholeInput };
 
 export type ClaudeExecutorOptions = {
   runtimeFor: (driver: Driver) => Promise<AgentRuntime>;
@@ -63,54 +69,6 @@ export type ClaudeExecutorOptions = {
   /** The descriptors a pinned model's driver is checked against (tests'). */
   drivers?: readonly DriverNeeds[];
 };
-
-const MAX_INPUT = 8192;
-
-const inputJson = (input: unknown): string =>
-  JSON.stringify(input ?? {}, undefined, 2);
-
-/** What a sent-back input is whole, for `read_input`, when its note cuts it. */
-export const wholeInput = (input: unknown): string | undefined => {
-  const json = inputJson(input);
-  return json.length > MAX_INPUT ? json : undefined;
-};
-
-/** A re-entry's note of what was sent back; `read_input` has a cut rest. */
-export const reentryNote = (round: number, input: unknown): string => {
-  const json = inputJson(input);
-  const cut = json.length > MAX_INPUT;
-  const body = cut ? `${json.slice(0, MAX_INPUT)}\n…` : json;
-  const rest = cut
-    ? `\n\nThat is the first ${String(MAX_INPUT)} of its ${String(json.length)} characters. Call read_input for all of it before you act on it.`
-    : "";
-  return `\n\n## Round ${String(round)}\n\nThe workflow sent this task back to you with:\n\n\`\`\`json\n${body}\n\`\`\`${rest}`;
-};
-
-/**
- * What a resumed leader is told: it already has its brief and its earlier work,
- * so only the new round, and the new task when its owner sent one.
- */
-export const resumeMessage = (
-  round: number,
-  input: unknown,
-  brief?: { from: string; text: string },
-): string =>
-  [
-    brief === undefined
-      ? sentBack(round, input)
-      : `## New task from \`${brief.from}\`\n\n${brief.text}`,
-    "End with a new structured report.",
-  ].join("\n\n");
-
-/** A first-round resume is a session the run was cut off in (`ork resume`). */
-const sentBack = (round: number, input: unknown): string =>
-  round === 1
-    ? "Ork was stopped while you worked on this task, and the run is resumed. Your earlier turns are above: check what you finished, and carry on from there."
-    : `The workflow sent your task back to you.${reentryNote(round, input)}`;
-
-/** What a session is told when messages came in as it finished. */
-export const lateMessage = (count: number): string =>
-  `[ork] ${String(count)} message${count === 1 ? "" : "s"} came in while you finished. Call read_inbox, act on ${count === 1 ? "it" : "them"} if needed, and end with a new structured report.`;
 
 /** A re-entered leader resumes; anyone else starts with the full brief. */
 const specFor = (spec: SessionSpec, context: ExecuteContext): SessionSpec => {
@@ -188,8 +146,11 @@ export const claudeExecutor =
     const whole = context.round > 1 ? wholeInput(context.input) : undefined;
     if (whole !== undefined) ports.input = whole;
     const watch = limitWatch(context, runCapsOf(context, planOptions));
-    const run = async (asked: SessionSpec): Promise<SessionOutcome | null> => {
-      const watching = watch.session(asked);
+    const run = async (
+      asked: SessionSpec,
+      prior = 0,
+    ): Promise<SessionOutcome | null> => {
+      const watching = watch.session(asked, prior);
       context.reserveBudget?.(asked.budgetUsd);
       context.reserveTokens?.(asked.budgetTokens);
       const session = runtime.start(asked, ports);
@@ -248,7 +209,11 @@ export const claudeExecutor =
       outcome: SessionOutcome,
       prompt: string,
       limits: TurnLimits,
-    ) => run({ ...spec, ...limits, resume: outcome.sessionId, prompt });
+    ) =>
+      run(
+        { ...spec, ...limits, resume: outcome.sessionId, prompt },
+        outcome.usage.costUsd,
+      );
     // A message that came while it wrote its report: one more turn to read it.
     const lateTurn = (
       current: SessionOutcome,

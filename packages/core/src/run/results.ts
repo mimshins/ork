@@ -79,6 +79,9 @@ export const startedEvent = (
     round,
   };
   if (activation.brief !== undefined) event.owner = activation.brief.from;
+  if (activation.description !== undefined) {
+    event.description = activation.description;
+  }
   if (agent !== undefined) event.agent = agent;
   const { item } = activation;
   if (item !== undefined) event.item = { of: item.of, index: item.index };

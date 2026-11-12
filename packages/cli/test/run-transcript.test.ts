@@ -54,6 +54,23 @@ const summary = (status: RunResult["status"]): RunEvent => ({
   },
 });
 
+/** A summary of a run whose node `w` ran once and whose node `q` never did. */
+const finishedWith = (extra: Partial<RunResult>): RunEvent => ({
+  type: "run.finished",
+  result: {
+    runId: "r-1",
+    status: "succeeded",
+    costUsd: 0,
+    nodes: [
+      { id: "w", runs: 1, ok: true, output: {}, costUsd: 0 },
+      { id: "q", runs: 0, ok: false, output: {}, costUsd: 0 },
+    ],
+    worktrees: [],
+    reasons: [],
+    ...extra,
+  },
+});
+
 describe("the rich transcript", () => {
   it("gives a node's lines the node's chip, in the same color every time", () => {
     const view = viewOf({ columns: 60 });
@@ -243,6 +260,18 @@ describe("the plain transcript", () => {
     const out = lines(viewOf(options), events);
     expect(out).toEqual(expected);
     for (const line of out) expect(line).not.toContain("\u001B");
+  });
+
+  it("lists a node that never ran as skipped in the run summary, and in its own line", () => {
+    const view = viewOf({ tty: false });
+    const line = (event: RunEvent) => lines(view, [event]).at(-1);
+    expect(line(finishedWith({}))).toBe(
+      "✓ run r-1 succeeded · $0.00 · 1 ran, 1 skipped",
+    );
+    expect(line(finishedWith({ skipped: 2 }))).toBe(
+      "✓ run r-1 succeeded · $0.00 · 1 ran, 2 skipped",
+    );
+    expect(line({ type: "node.skipped", id: "q" })).toBe("q      │ - skipped");
   });
 
   it("says a check run once was skipped, and the pass it stands on", () => {
