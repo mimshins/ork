@@ -125,6 +125,14 @@ review:
   `5546557f` (2026-11-12) waited five times, once for 58 minutes, on commands
   its prompts had ruled out. A node setting that refuses such a call with a
   message, so the session retries with an allowed command, would close it.
+- **G30 · A session at its turn limit hands in nothing.** A worker that reaches
+  `maxTurns` ends `turn_limit` with no report, and its round fails, though its
+  work is in its checkout. With `session: resume`, the owner sends it back and
+  the resumed session re-reads everything to hand in a report: engine's round 3
+  in run `c93e5bd3` (2026-11-12) took 3 turns to do that. Each of the last three
+  builds hit the limit once or twice. At the limit, Ork could resume the session
+  once, briefly, asking only for its report (what is done, what is not), and end
+  the round with that.
 
 ## Limits
 
