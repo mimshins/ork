@@ -3,8 +3,10 @@
 _Part of [Graph compiler](../graph-compiler.md)._
 
 Each diagnostic has a severity, a code, a message and a path into the workflow,
-which `ork validate` maps to `file:line:column`. Errors stop compilation;
-warnings do not. Schema problems come first, from
+which `ork validate` maps to `file:line:column`. A diagnostic with a `file` is
+in that file instead (such as `.ork/project.yaml`), and its `line` and `column`
+are positions there; `diagnosticText` prints it as `file:line:col: message`.
+Errors stop compilation; warnings do not. Schema problems come first, from
 [yaml.ts](../../packages/schema/src/yaml.ts): `yaml.syntax` and `schema.<code>`,
 and `schema.newer_version` alone for a file a newer Ork made.
 
@@ -63,7 +65,7 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `timeout.subagent`       | warning  | a `timeout` on a sub-agent, which runs inside its parent's session               |
 | `ref.input`              | error    | a reference to an undeclared input                                               |
 | `ref.node`               | error    | a reference to an unknown node, or not through `.output`                         |
-| `ref.field`              | warning  | a field the node type does not report (an error on a node with `forEach`)        |
+| `ref.field`              | warning  | a field the node type does not report, nor `timedOut` (an error with `forEach`)  |
 | `forEach.from-path`      | error    | `forEach.from` is not exactly one `{{ path }}`                                   |
 | `forEach.not-list`       | error    | `from` reads a field its source declares as something other than a list          |
 | `forEach.order`          | error    | `from` reads a node that can't have run before this one                          |

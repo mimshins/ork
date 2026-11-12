@@ -135,7 +135,19 @@ export const itemNodeOf = (node: Node): Node => {
   return item;
 };
 
+/**
+ * What any node reports when its `timeout` expires; known on every type, since
+ * the timeout may come from `defaults` or the project.
+ */
+export const TIMED_OUT_FIELD = "timedOut";
+
+/** The fields a node reports, or null when they can't be known ahead. */
 export const outputFieldsOf = (node: Node): readonly string[] | null => {
+  const fields = typeFieldsOf(node);
+  return fields === null ? null : [...fields, TIMED_OUT_FIELD];
+};
+
+const typeFieldsOf = (node: Node): readonly string[] | null => {
   if (forEachOf(node) !== undefined) return GATHERED_FIELDS;
   if (isToolNode(node)) {
     return [

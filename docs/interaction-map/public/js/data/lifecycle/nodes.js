@@ -104,7 +104,7 @@ export const NODES = [
       "Built: `--detach` returns at once; `ork attach`, `ork logs --follow`, `ork tree`, `ork decide`, `ork pause`, `ork continue` and `ork stop` reach it later.",
       "Built: before anything starts, it checks that the programs a workflow runs are installed, the variables it reads are set, and its MCP servers are in `.mcp.json`; integrations a workflow does not use are never needed.",
       "Built: nor does it start with a quota spent, if the workflow has a session or a call to spend it on.",
-      "`--driver <id>` overrides every node's driver for this run. `software-factory` names `claude-code` in its `defaults`; a workflow that names none takes the driver `ork doctor` finds ready here, and says which in one line.",
+      "`--driver <id>` overrides every node's driver for this run. `software-factory` names `claude-code` in its `defaults`; `--driver` is refused up front when that driver's tool isn't found; a workflow that names none takes the driver `ork doctor` finds ready here, and says which in one line.",
       "`ork watch` can start a run too, as `ork run --expect-workflow`, which refuses a file whose text has changed since it was accepted.",
     ],
     see: [

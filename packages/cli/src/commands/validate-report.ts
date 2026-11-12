@@ -19,8 +19,8 @@ const plural = (count: number, word: string) =>
   `${count} ${word}${count === 1 ? "" : "s"}`;
 
 const diagnosticLine = (file: string, d: Diagnostic, term: Term): string[] => {
-  const where =
-    d.line === undefined ? file : `${file}:${d.line}:${d.column ?? 1}`;
+  const at = d.file ?? file;
+  const where = d.line === undefined ? at : `${at}:${d.line}:${d.column ?? 1}`;
   if (term.rich) {
     const error = d.severity === "error";
     const mark = error

@@ -34,6 +34,11 @@ export const Draft = ({
   if (draft === undefined) return null;
   const channel = draft.channel;
   const post = detail?.actions.post;
+  // One reason at a time: the draft's first, since Ork can't fix it, then gh.
+  const ghReason = "`gh` isn't signed in";
+  // Core's status refusals read "it is <status>"; copying helps only a draft's.
+  const statusRefusal = post?.ok === false && post.why.startsWith("it is ");
+  const label = post?.ok === false ? `Post to GitHub…: ${post.why}` : null;
   return (
     <div className={styles["draft"]}>
       <h4 className={styles["heading"]}>Draft message</h4>
@@ -58,16 +63,18 @@ export const Draft = ({
       {channel === "github" ? (
         <Button
           aria-label={
-            gh ? "Post to GitHub…" : "Post to GitHub…: `gh` isn't signed in"
+            label ?? (gh ? "Post to GitHub…" : `Post to GitHub…: ${ghReason}`)
           }
           cli={`ork follow-ups post ${short(row.id)}`}
           disabled={post?.ok !== true || !gh}
           focusableWhenDisabled
           onClick={onPost}
           tip={
-            gh
-              ? undefined
-              : "`gh` isn't signed in. Run gh auth login in a terminal."
+            post?.ok === false
+              ? `Can't post: ${post.why}.${statusRefusal ? "" : " Copy the message and post it yourself."}`
+              : gh
+                ? undefined
+                : `${ghReason}. Run gh auth login in a terminal.`
           }
         >
           Post to GitHub…

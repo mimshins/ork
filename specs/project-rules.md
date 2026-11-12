@@ -70,7 +70,8 @@ rules:
 The project's rules are put under the workflow when it compiles, so
 `ork validate`, `ork context explain` and the run all see the effective
 workflow. An invalid `project.yaml` is an error on every workflow in the
-project, located in the file (`.ork/project.yaml:3:11: …`).
+project, located in the file (`file`, `line`, `column` in `--json`), as is an
+unknown experiment it names: `ork validate` prints `.ork/project.yaml:3:11 …`.
 
 ## Git rules
 

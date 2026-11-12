@@ -13,6 +13,7 @@ import {
   type RunRecord,
   tellLiveRun,
 } from "@krapht/ork-core";
+import { DRIVER_IDS } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
@@ -119,8 +120,7 @@ export const chat = defineCommand({
     },
     driver: {
       type: "string",
-      description:
-        "For a finished run: claude-code (default: the one it ran with)",
+      description: `For a finished run: ${DRIVER_IDS.join(", ")} (default: the one it ran with)`,
     },
   },
   run: async ({ args }) => {

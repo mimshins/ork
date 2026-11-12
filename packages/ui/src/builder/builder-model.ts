@@ -4,7 +4,11 @@
  *   beyond their worktree, which a real run has to name first.
  */
 
-import type { Diagnostic, WorkflowGraph } from "@krapht/ork-server/client";
+import {
+  type Diagnostic,
+  diagnosticText,
+  type WorkflowGraph,
+} from "@krapht/ork-server/client";
 
 import type { NodeFacts } from "../graph/facts.ts";
 import { labelOf } from "./schema-model.ts";
@@ -25,7 +29,7 @@ export const problemWords = (problem: Diagnostic): string => {
   return problem.message.endsWith("received undefined") &&
     typeof last === "string"
     ? `${labelOf(last)} is required.`
-    : problem.message;
+    : diagnosticText(problem);
 };
 
 /** The errors and warnings on each node. */

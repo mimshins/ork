@@ -26,7 +26,12 @@ saying why ([due.ts](../../packages/core/src/follow-ups/due.ts)):
 Each ref is read once per check, however many follow-ups wait on it. A `gh` that
 is missing, not signed in or failing is **not an error**: the check reports it
 (`errors`), the follow-ups wait, and the CLI, the server and the panel say
-"Can't check PRs" with what to do. Ork reads no token.
+"Can't check PRs" with what to do. The CLI prints one line per call: for a `gh`
+that isn't signed in (its "not logged in" or "gh auth login" text), "Can't check
+PRs: `gh` isn't signed in. After-merge follow-ups stay waiting; run
+`gh auth login` yourself."; for any other failure,
+`Can't check PRs: <first error>. After-merge follow-ups stay waiting.` Ork reads
+no token.
 
 **When it checks.** On every `ork follow-ups` call, and on every read of a
 project's list by the server; and on a schedule, every 10 minutes, while
@@ -40,7 +45,7 @@ Ork sends no desktop notification of its own
 
 ([deliver.ts](../../packages/core/src/follow-ups/deliver.ts)) Before anything is
 kept, a follow-up is checked: a title, a `for` of one of the four forms, a `due`
-Ork knows, and a draft for a `message`. Then:
+Ork knows, a draft for a `message`, and text in every step. Then:
 
 - **`agent`**: kept in this project's list. A later run takes it as its brief
   ([below](#taking-them-as-a-runs-brief)).
@@ -55,7 +60,13 @@ Ork knows, and a draft for a `message`. Then:
   `ork follow-ups post <id> --confirm`, or **Post to GitHub…** in the panel,
   which sends the draft's digest so a draft that changed meanwhile is refused.
   The text is scrubbed with the feedback redactor first, and the follow-up is
-  `done` once `gh` printed no error. Any other channel is only drafted.
+  `done` once `gh` printed no error. Any other channel is only drafted. A github
+  draft whose `to` isn't `https://github.com/<owner>/<repo>/(issues|pull)/<n>`
+  (a bare `142` or `#142` names neither the repo nor which it is) is refused
+  before any `gh` runs, with the reason "its `to` isn't a GitHub issue or pull
+  request URL" (`followUpActions(f).post`, the same check in
+  [post.ts](../../packages/core/src/follow-ups/post.ts)); a draft can't be
+  edited, so the maintainer copies that text and sends it themselves.
 - **`project:<name>`**: kept in **that registered project's** list, through that
   project's own `followUps` rule, not this one's. An unknown name is refused,
   naming the registered projects. When a run of that project is **live**, the

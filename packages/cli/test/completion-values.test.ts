@@ -167,7 +167,7 @@ describe("the store, for completion", () => {
       "--dr",
     ]);
     expect(result.stdout).toBe(
-      ":group flags\n--driver\tclaude-code (default: the driver ready here)\n",
+      ":group flags\n--driver\tclaude-code, open-code, command-code (default: the driver ready here)\n",
     );
     expect(result.stderr).toBe("");
   });

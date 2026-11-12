@@ -11,7 +11,7 @@ import {
   newRunId,
   openStore,
 } from "@krapht/ork-core";
-import { AGENT_DRIVERS } from "@krapht/ork-integrations";
+import { AGENT_DRIVERS, DRIVER_IDS } from "@krapht/ork-integrations";
 import { sessionEnv } from "@krapht/ork-nodes";
 import { type Driver, retiredDriverHint } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
@@ -123,7 +123,7 @@ export const run = defineCommand({
     },
     driver: {
       type: "string",
-      description: "claude-code (default: the driver ready here)",
+      description: `${DRIVER_IDS.join(", ")} (default: the driver ready here)`,
     },
     "in-place": {
       type: "boolean",

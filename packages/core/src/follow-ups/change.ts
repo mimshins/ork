@@ -85,16 +85,36 @@ const check = (f: FollowUp, action: FollowUpAction): FollowUpActionCheck => {
     : { ok: false, why: `it is ${f.status}`, error };
 };
 
-const postCheck = (f: FollowUp): FollowUpActionCheck => {
-  const open = f.status === "waiting" || f.status === "due";
+/** Whether `to` names one GitHub issue or pull request by its URL. */
+export const isGithubIssueUrl = (to: string): boolean =>
+  /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/(?:issues|pull)\/\d+$/u.test(to);
+
+/**
+ * Why `f`'s draft can't be posted to GitHub whatever its status, or
+ * `undefined`.
+ */
+export const githubDraftRefusal = (
+  f: FollowUp,
+): { why: string; error: string } | undefined => {
   if (f.kind !== "message" || f.draft?.channel !== "github") {
     return {
-      ok: false,
       why: "not drafted for the github channel",
       error:
         "only a message drafted for the github channel is posted; send the others yourself",
     };
   }
+  return isGithubIssueUrl(f.draft.to)
+    ? undefined
+    : {
+        why: "its `to` isn't a GitHub issue or pull request URL",
+        error: `${f.id}'s \`to\` (${f.draft.to}) isn't a GitHub issue or pull request URL, so it is not posted; copy the text and send it yourself.`,
+      };
+};
+
+const postCheck = (f: FollowUp): FollowUpActionCheck => {
+  const open = f.status === "waiting" || f.status === "due";
+  const refused = githubDraftRefusal(f);
+  if (refused !== undefined) return { ok: false, ...refused };
   return open
     ? { ok: true }
     : {

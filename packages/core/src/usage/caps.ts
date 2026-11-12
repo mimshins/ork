@@ -4,6 +4,8 @@
  *   the user may raise one while it does.
  */
 
+import { diagnosticText } from "@krapht/ork-schema";
+
 import { placeFiles, type ProjectPlace } from "../project/place.ts";
 import { loadProject, loadUserSettings } from "../project/rules.ts";
 import { type AnyCap, capsOf } from "./quota.ts";
@@ -21,7 +23,7 @@ export const capsHere = (
         : loadProject(place.root, placeFiles(place).rules);
     return {
       problems: [...user.diagnostics, ...(rules?.diagnostics ?? [])].map(
-        found => found.message,
+        found => diagnosticText(found),
       ),
       caps: capsOf(user.settings?.quotas, rules?.project?.quotas, place?.root),
     };

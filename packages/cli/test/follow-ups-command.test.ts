@@ -181,7 +181,16 @@ describe("ork follow-ups add", () => {
   });
 
   it.each([
-    [["add", "Tell Dana", "--for", "person:Dana"], "needs its `draft`"],
+    [["add", "Tell Dana", "--for", "person:Dana"], "a message needs --text"],
+    [
+      ["add", "x", "--for", "person:a", "--text", "Hi", "--channel", "github"],
+      "--channel github needs --to",
+    ],
+    [
+      "add x --for person:a --text Hi --channel github --to #142".split(" "),
+      "--channel github needs --to",
+    ],
+    [["add", "x", "--step", " :: "], "each step needs its text"],
     [["add", "x", "--for", "somebody"], "--for is agent, me"],
     [["add", "x", "--due", "someday"], "--due is now, after-merge"],
     [["add", "x", "--kind", "chore"], "--kind is change, message"],
@@ -331,7 +340,7 @@ describe("a message on the github channel", () => {
     const s = setup();
     const id = await draft(s);
     const ran = await ork("post", id);
-    expect(ran.code).toBe(1);
+    expect(ran.code).toBe(0);
     expect(ran.out).toContain(
       "Would post to https://github.com/acme/app/pull/7",
     );
@@ -412,9 +421,59 @@ describe("what is due", () => {
     );
     const listed = await ork("list");
     expect(listed.code).toBe(0);
-    expect(listed.err).toContain("couldn't check a ref");
+    expect(listed.err.trim().split("\n")).toEqual([
+      "Can't check PRs: `gh` isn't signed in. After-merge follow-ups stay waiting; run `gh auth login` yourself.",
+    ]);
     expect(listed.out).toContain("Waiting (1)");
     expect(first(s).status).toBe("waiting");
+  });
+
+  it("names the first error, in one line, when gh fails another way", async () => {
+    setup(`#!/bin/sh\necho "gh: rate limited" >&2\nexit 1\n`);
+    await ork(
+      "add",
+      "A",
+      "--for",
+      "agent",
+      "--due",
+      "after-merge",
+      "--ref",
+      "x",
+    );
+    await ork(
+      "add",
+      "B",
+      "--for",
+      "agent",
+      "--due",
+      "after-merge",
+      "--ref",
+      "y",
+    );
+    const listed = await ork("list");
+    expect(listed.err.trim().split("\n")).toEqual([
+      "Can't check PRs: gh failed: gh: rate limited. After-merge follow-ups stay waiting.",
+    ]);
+  });
+
+  it("keeps a multi-line gh error to its first line, without its period", async () => {
+    setup(
+      `#!/bin/sh\nprintf 'gh: rate limited.\\nTry again later.\\n' >&2\nexit 1\n`,
+    );
+    await ork(
+      "add",
+      "A",
+      "--for",
+      "agent",
+      "--due",
+      "after-merge",
+      "--ref",
+      "x",
+    );
+    const listed = await ork("list");
+    expect(listed.err.trim().split("\n")).toEqual([
+      "Can't check PRs: gh failed: gh: rate limited. After-merge follow-ups stay waiting.",
+    ]);
   });
 });
 

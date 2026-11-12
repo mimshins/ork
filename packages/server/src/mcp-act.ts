@@ -89,10 +89,12 @@ const checkTool = (context: ServerContext): McpTool =>
         errors: count("error"),
         warnings: count("warning"),
         diagnostics: diagnostics.map(
-          ({ severity, code, message, line, column }) =>
-            line === undefined
-              ? { severity, code, message }
-              : { severity, code, message, line, column },
+          ({ severity, code, message, file, line, column }) =>
+            Object.assign(
+              { severity, code, message },
+              file === undefined ? {} : { file },
+              line === undefined ? {} : { line, column },
+            ),
         ),
         walk: walk === undefined ? null : walkSummary(walk),
         ...(args.paths === true && walk !== undefined

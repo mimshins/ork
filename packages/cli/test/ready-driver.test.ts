@@ -209,12 +209,46 @@ describe("the driver for nodes that name none", () => {
     );
   });
 
-  it("isn't looked for when --driver names one", async () => {
+  it("isn't looked for when --driver names one, only that one is checked", async () => {
     const { run } = setup(text("driver: open-code"));
-    const done = await run(unasked, { driver: "claude-code" });
+    const asked: (string | undefined)[] = [];
+    const done = await run(
+      only => {
+        asked.push(only);
+        return readyOnly("claude-code")();
+      },
+      { driver: "claude-code" },
+    );
 
     expect(done.exitCode).toBe(0);
     expect(done.drivers).toEqual(["claude-code", "claude-code"]);
+    expect(asked).toEqual(["claude-code"]);
+  });
+
+  it("stops before any session when --driver's tool isn't ready", async () => {
+    const { run } = setup(text());
+    const done = await run(readyOnly("open-code"), { driver: "claude-code" });
+
+    expect(done.exitCode).toBe(1);
+    expect(done.drivers).toEqual([]);
+    expect(done.err).toEqual([
+      "--driver claude-code: claude-code isn't ready here (claude-code is not ready).",
+      "Get the claude-code driver ready.",
+      "See `ork doctor`.",
+    ]);
+  });
+
+  it("stops a resume on --driver the same way", async () => {
+    const { run, store } = setup(text());
+    const first = await run(readyOnly("claude-code"), {}, 1);
+    const runId = String(first.result?.runId);
+    const again = await run(readyOnly("open-code"), {
+      runId,
+      resume: resumeOf(store, runId),
+      driver: "claude-code",
+    });
+    expect(again.exitCode).toBe(1);
+    expect(again.err.join("\n")).toContain("--driver claude-code:");
   });
 
   it("stays the one the run recorded when it resumes", async () => {

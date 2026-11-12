@@ -17,6 +17,12 @@ real session. A driver added later is refused by `ork validate` and `ork run`
 whose tool it can't find as `skip`, with how to install it. Logins, and what
 each tool needs: [Accounts and credentials](./accounts.md).
 
+`ork run --driver <id>` (also `ork resume` and `ork feedback apply`) looks at
+that one driver's tool before any session starts. If `ork doctor` wouldn't call
+it ready (the tool isn't found, or it isn't signed in), the run stops with the
+driver's detail and hint. A driver named on a node, or in a model's prefix, is
+checked when its session starts instead, since that node may never run.
+
 Run Claude models on `claude-code`. Through OpenCode's `commandcode` provider
 they fail after their first tool call, an error between OpenCode and that
 provider; other models through it work.

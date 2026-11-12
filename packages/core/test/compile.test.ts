@@ -487,8 +487,23 @@ edges:
 `),
     ).diagnostics;
     expect(diagnostics.map(d => `${d.code} ${d.message}`)).toEqual([
-      "ref.field `nodes.stage.output.nope`: a `tool.git` reports `exitCode`, `stdout`, `stderr`, `staged`, `diff`, `head`",
+      "ref.field `nodes.stage.output.nope`: a `tool.git` reports `exitCode`, `stdout`, `stderr`, `staged`, `diff`, `head`, `timedOut`",
     ]);
+  });
+
+  it("knows `timedOut` on every node type, a fanned one too", () => {
+    expect(
+      codesOf(`nodes:
+  sh: { type: tool.shell, command: "true" }
+  work: { type: agent.worker, prompt: go }
+  fan: { type: tool.shell, command: "echo {{item}}", forEach: { items: [a, b] } }
+  end: { type: tool.shell, command: "true" }
+edges:
+  - { from: sh, to: work, when: timedOut }
+  - { from: work, to: fan, when: "!timedOut" }
+  - { from: fan, to: end, when: timedOut }
+`),
+    ).toEqual([]);
   });
 
   it("checks a gate's document like its question", () => {

@@ -28,7 +28,7 @@ import {
   project,
   withFollowUp,
 } from "../follow-ups/command.ts";
-import { plain, style, write } from "../output.ts";
+import { plain, style, write, writeErr } from "../output.ts";
 import { withStore } from "../store.ts";
 
 /** `done`, `drop` or `reopen`: one change of status, or why it can't be. */
@@ -112,7 +112,8 @@ export const post = defineCommand({
       if (!args.confirm && draft !== undefined) {
         write(`Would post to ${plain(draft.to)} through your gh:`);
         for (const line of draft.text.split("\n")) write(`  ${plain(line)}`);
-        fail("Run again with --confirm to post it.");
+        // A preview is what was asked for: not a failure.
+        writeErr("Run again with --confirm to post it.");
         return;
       }
       const posted = await postFollowUpMessage(followUp, {

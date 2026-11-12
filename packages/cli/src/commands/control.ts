@@ -15,6 +15,7 @@ import {
   requestStop,
   resumable,
 } from "@krapht/ork-core";
+import { DRIVER_IDS } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
 import { style, write, writeErr } from "../output.ts";
@@ -106,7 +107,7 @@ export const resume = defineCommand({
     },
     driver: {
       type: "string",
-      description: "claude-code (default: the one the run used)",
+      description: `${DRIVER_IDS.join(", ")} (default: the one the run used)`,
     },
     "in-place": {
       type: "boolean",

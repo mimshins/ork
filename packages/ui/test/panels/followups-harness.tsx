@@ -99,6 +99,8 @@ export type FollowUpsServer = {
   /** The server's refusal of a change, or of a post, if it refuses. */
   refuseChange?: string;
   refusePost?: string;
+  /** Why the server says a github draft can't be posted, if it says so. */
+  badDraft?: string;
 };
 
 const json = (body: unknown, status = 200): Response =>
@@ -108,7 +110,7 @@ const CHECK_OK = { ok: true } as const;
 
 const closed = (why: string) => ({ ok: false, why, error: why }) as const;
 
-const detailOf = (f: FollowUp): FollowUpDetail => {
+const detailOf = (f: FollowUp, badDraft?: string): FollowUpDetail => {
   const open = f.status === "due" || f.status === "waiting";
   return {
     followUp: f,
@@ -118,9 +120,11 @@ const detailOf = (f: FollowUp): FollowUpDetail => {
       reopen: open ? closed(`it is ${f.status}`) : CHECK_OK,
       due: f.status === "waiting" ? CHECK_OK : closed(`it is ${f.status}`),
       post:
-        f.draft?.channel === "github" && open
-          ? CHECK_OK
-          : closed("not drafted for the github channel"),
+        f.draft?.channel !== "github" || !open
+          ? closed("not drafted for the github channel")
+          : badDraft === undefined
+            ? CHECK_OK
+            : closed(badDraft),
     },
     ...(f.status === "due" && f.note?.endsWith(" merged") === true
       ? { cause: "merged" as const }
@@ -179,9 +183,9 @@ export const followUpsRoute =
       fake.rows = fake.rows.map(f =>
         f.id === one.id ? { ...f, status: "done" } : f,
       );
-      return json({ url: `${PR}#c1`, followUp: detailOf(one) });
+      return json({ url: `${PR}#c1`, followUp: detailOf(one, fake.badDraft) });
     }
-    if (body === undefined) return json(detailOf(one));
+    if (body === undefined) return json(detailOf(one, fake.badDraft));
     fake.asked.push({ route: "change", path, body });
     if (fake.refuseChange !== undefined) {
       return json({ error: fake.refuseChange }, 409);
@@ -192,7 +196,7 @@ export const followUpsRoute =
     if (action === undefined) return json({ error: "Bad action." }, 400);
     const changed = { ...one, status: STATUS_AFTER[action] };
     fake.rows = fake.rows.map(f => (f.id === one.id ? changed : f));
-    return json(detailOf(changed));
+    return json(detailOf(changed, fake.badDraft));
   };
 
 export const openFollowUps = async (server: Partial<FollowUpsServer> = {}) => {

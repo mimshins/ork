@@ -42,6 +42,9 @@ export const followUpProblem = (input: NewFollowUp): string | null => {
   if (input.kind === "message" && input.draft === undefined) {
     return "a message needs its `draft` (to, channel, text), which the maintainer sends";
   }
+  if (input.steps?.some(step => step.text.trim() === "") === true) {
+    return "each step needs its text";
+  }
   return null;
 };
 

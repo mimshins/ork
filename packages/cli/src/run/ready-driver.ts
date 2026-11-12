@@ -3,7 +3,9 @@
  *   `driver.ts` has the whole rule): the one `ork doctor`'s own checks find
  *   ready on this machine, said in one line. With none ready, the run stops
  *   before any session starts, with the hints `ork doctor` gives. A resumed run
- *   keeps the driver it recorded.
+ *   keeps the driver it recorded. `--driver <id>` skips that look but checks
+ *   that one driver's tool, and stops the run the same way when it isn't
+ *   ready.
  */
 
 import {
@@ -22,11 +24,41 @@ import type { Driver, Workflow } from "@krapht/ork-schema";
 
 import { exec } from "../doctor/checks.ts";
 
-/** The drivers' checks; tests pass their own, so no real tool runs. */
-export type DriverChecks = () => Promise<DriverCheck[]>;
+/**
+ * The drivers' checks, or only `only`'s when given; tests pass their own, so no
+ * real tool runs (a fake may ignore `only`: the caller picks its driver out).
+ */
+export type DriverChecks = (only?: Driver) => Promise<DriverCheck[]>;
 
 /** The real checks: the tools on this machine and its environment. */
-export const checksHere: DriverChecks = () => driverChecks(exec, process.env);
+export const checksHere: DriverChecks = only =>
+  only === undefined
+    ? driverChecks(exec, process.env)
+    : Promise.all(
+        AGENT_DRIVERS.filter(({ id }) => id === only).map(async driver => ({
+          id: driver.id,
+          result: await driver.doctor(exec, process.env),
+        })),
+      );
+
+/**
+ * What stops a run on `--driver <id>`: its own doctor check isn't `ok`, so its
+ * tool isn't found or isn't signed in. Empty when it is ready. Drivers named on
+ * nodes aren't looked at here; they can sit on a branch that never runs.
+ */
+export const overrideRefusal = async (
+  id: Driver,
+  checks: DriverChecks | undefined,
+): Promise<string[]> => {
+  const found = (await (checks ?? checksHere)(id)).find(c => c.id === id);
+  if (found === undefined || found.result.status === "ok") return [];
+  const { detail, hint } = found.result;
+  return [
+    `--driver ${id}: ${id} isn't ready here (${detail}).`,
+    ...(hint === undefined ? [] : [hint]),
+    "See `ork doctor`.",
+  ];
+};
 
 export type ReadyChoice =
   | {
@@ -90,7 +122,10 @@ export const runReadyDriver = async (
     checks?: DriverChecks | undefined;
   },
 ): Promise<ReadyChoice> => {
-  if (options.override !== undefined) return { ok: true };
+  if (options.override !== undefined) {
+    const lines = await overrideRefusal(options.override, options.checks);
+    return lines.length === 0 ? { ok: true } : { ok: false, lines };
+  }
   const names = namingNoDriver(workflow);
   if (names.length === 0) return { ok: true };
   if (options.recorded !== undefined) {

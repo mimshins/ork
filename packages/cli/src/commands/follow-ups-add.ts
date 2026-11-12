@@ -9,6 +9,7 @@ import {
   deliverFollowUp,
   followUpProblem,
   type FollowUpStep,
+  isGithubIssueUrl,
   type NewFollowUp,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
@@ -65,7 +66,11 @@ export const add = defineCommand({
     body: { type: "string", description: "What and why" },
     where: { type: "string", description: "A file it is about (repeatable)" },
     ref: { type: "string", description: "The PR or branch it waits on" },
-    to: { type: "string", description: "A message: who it is to" },
+    to: {
+      type: "string",
+      description:
+        "A message: who it is to (default: the person); for --channel github, the issue or PR URL",
+    },
     channel: {
       type: "string",
       description: "A message: slack, email, github…",
@@ -93,6 +98,16 @@ export const add = defineCommand({
           isFor(recipient)
             ? "--due is now, after-merge, after-deploy or a YYYY-MM-DD date."
             : "--for is agent, me, project:<name> or person:<name>.",
+        );
+        return;
+      }
+      if (kind === "message" && args.text === undefined) {
+        fail("a message needs --text.");
+        return;
+      }
+      if (args.channel === "github" && !isGithubIssueUrl(args.to ?? "")) {
+        fail(
+          "--channel github needs --to <the issue or pull request URL>, https://github.com/<owner>/<repo>/(issues|pull)/<n>.",
         );
         return;
       }

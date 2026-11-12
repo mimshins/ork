@@ -16,6 +16,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { diagnosticText } from "@krapht/ork-schema";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -50,12 +51,21 @@ const projectWith = (text: string): string => {
   return root;
 };
 
-const errorsIn = (root: string): string[] =>
+const checked = (root: string) =>
   checkWorkflowText(WORKFLOW, {
     place: inRepoPlace(root),
     workflowDir: root,
     registered: [],
-  }).diagnostics.map(d => `${d.code}: ${d.message}`);
+  }).diagnostics;
+
+const errorsIn = (root: string): string[] =>
+  checked(root).map(d => `${d.code}: ${diagnosticText(d)}`);
+
+/** Each diagnostic's severity, file, line and column. */
+const placesIn = (root: string): string[] =>
+  checked(root).map(
+    d => `${d.severity} ${d.file ?? "-"} ${String(d.line)} ${String(d.column)}`,
+  );
 
 const orkSources = (): string[] =>
   globSync("packages/*/src/**/*.{ts,tsx}", { cwd: REPO }).filter(file =>
@@ -154,6 +164,15 @@ describe("experiments", () => {
       "experiment.unknown: .ork/project.yaml:3:5: names an unknown experiment `typo`; known: none",
     ]);
     expect(loadProject(root).project?.experimental).toEqual(["typo"]);
+    expect(placesIn(root)).toEqual(["error .ork/project.yaml 3 5"]);
+  });
+
+  it("locates a broken project file in it, not in the workflow", () => {
+    const root = projectWith("schemaVersion: 1\nquotas:\n  dayTokens: 1.5\n");
+    expect(placesIn(root)).toEqual(["error .ork/project.yaml 3 14"]);
+    expect(errorsIn(root)[0]).toMatch(
+      /^schema\.\w+: \.ork\/project\.yaml:3:14: Invalid input/u,
+    );
   });
 
   it("is an error on a workflow from the environment", () => {

@@ -35,10 +35,12 @@ export const PROJECT_FILE = ".ork/project.yaml";
 export type LoadedProject = {
   /** The project's rules, or `undefined` when it has no (valid) file. */
   project?: Project;
-  /** Problems in the file, located in it (`.ork/project.yaml:3:5: …`). */
+  /** Problems in the file, with `file` (and `line`, `column`) set to it. */
   diagnostics: Diagnostic[];
   /** Says where a key of a valid file is (`.ork/project.yaml:3:5`). */
   where?: (path: DiagnosticPath) => string;
+  /** The same place, as a diagnostic's `file`, `line` and `column`. */
+  at?: (path: DiagnosticPath) => Pick<Diagnostic, "file" | "line" | "column">;
 };
 
 /**
@@ -53,22 +55,31 @@ export const loadProject = (
   const parsed = parseProject(readFileSync(file, "utf8"));
   const label = shownPath(file, projectRoot);
   if (parsed.ok) {
+    const at = (key: DiagnosticPath) => ({
+      file: label,
+      ...parsed.locate(key),
+    });
     return {
       project: parsed.project,
       diagnostics: [],
-      where: at => {
-        const position = parsed.locate(at);
+      where: key => {
+        const position = parsed.locate(key);
         return position === null
           ? label
           : `${label}:${position.line}:${position.column}`;
       },
+      at,
     };
   }
   return {
-    diagnostics: parsed.diagnostics.map(d => {
-      const at = d.line === undefined ? "" : `:${d.line}:${d.column ?? 1}`;
-      return error(d.code, `${label}${at}: ${d.message}`, []);
-    }),
+    // The path stays empty: it is the project file's, not the workflow's.
+    diagnostics: parsed.diagnostics.map(d =>
+      Object.assign(
+        error(d.code, d.message, []),
+        { file: label },
+        d.line === undefined ? {} : { line: d.line, column: d.column ?? 1 },
+      ),
+    ),
   };
 };
 

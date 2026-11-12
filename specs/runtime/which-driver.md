@@ -76,6 +76,14 @@ model names another driver than its leader's is refused too.
   or `review names no driver, so it uses …` when only some name none. With
   neither ready the run doesn't start: it names the nodes and gives each
   driver's hint, as `ork doctor` does.
+- **`--driver <id>` looks at that driver only.** `ork run`, `--node`,
+  `ork resume` and `ork feedback apply` run that driver's own doctor check
+  (`checksHere(id)`: that one driver's doctor check) before any session starts,
+  and stop when its status isn't `ok`, as the "no driver is ready" stop does:
+  `--driver <id>: <id> isn't ready here (<detail>).`, its hint, then
+  ``See `ork doctor`.`` Drivers named on nodes or in a model prefix are not
+  checked up front (a node may sit on a branch that never runs); they fail at
+  their session, as before.
 - **The run records it** (`settings.readyDriver` on `run.started`), and
   `ork resume` keeps it, without looking again. A run recorded before this has
   none, and a resume looks.

@@ -84,6 +84,7 @@ export const checkWorkflowText = (
     ...experimentDiagnostics({
       project: loaded.project,
       where: loaded.where,
+      at: loaded.at,
     }),
     ...compiled.diagnostics,
     ...checkCallTargets(parsed.workflow, place, registered),
@@ -91,7 +92,9 @@ export const checkWorkflowText = (
       ? []
       : contextDiagnostics(graph.workflow, { workflowDir, projectRoot })),
   ]) {
-    const position = parsed.locate(diagnostic.path);
+    // One in another file (the project's) is located there already.
+    const position =
+      diagnostic.file === undefined ? parsed.locate(diagnostic.path) : null;
     diagnostics.push(
       position === null ? diagnostic : { ...diagnostic, ...position },
     );

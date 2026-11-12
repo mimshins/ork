@@ -7,9 +7,11 @@
 
 import { stripVTControlCharacters } from "node:util";
 
+import { DRIVER_IDS } from "@krapht/ork-integrations";
 import type { ArgsDef, CommandDef } from "citty";
 import { describe, expect, it } from "vitest";
 
+import { chat } from "../src/commands/chat.ts";
 import { apply } from "../src/commands/feedback-loop.ts";
 import {
   feedback,
@@ -80,6 +82,19 @@ describe("ork --help", () => {
     expect(await help(resume, main)).toContain(
       "Continue a run that didn't succeed (stopped, failed or crashed)",
     );
+  });
+
+  it("lists every driver in --driver of run, resume, chat and feedback apply", async () => {
+    const texts = await Promise.all([
+      help(run, main),
+      help(resume, main),
+      help(chat, main),
+      help(apply, main),
+    ]);
+    for (const text of texts) {
+      expect(text.replaceAll(/\s+/gu, " ")).toContain(DRIVER_IDS.join(", "));
+    }
+    expect(DRIVER_IDS).toEqual(["claude-code", "open-code", "command-code"]);
   });
 
   it("names every feedback subcommand in its summary", async () => {

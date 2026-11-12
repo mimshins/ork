@@ -10,7 +10,11 @@
 import { homedir } from "node:os";
 import path from "node:path";
 
-import { AGENT_FILE_SUFFIX, AGENT_SIDECAR_SUFFIX } from "@krapht/ork-schema";
+import {
+  AGENT_FILE_SUFFIX,
+  AGENT_SIDECAR_SUFFIX,
+  diagnosticText,
+} from "@krapht/ork-schema";
 
 import { SKILL_FILE } from "../context/skills.ts";
 import { type Explanation, explainSession } from "../run/explain.ts";
@@ -104,7 +108,7 @@ export const explainWorkflowText = (
     const first = diagnostics.find(d => d.severity === "error");
     return {
       ok: false,
-      error: `The workflow has errors, so it can't be planned${first === undefined ? "." : `: ${first.message}`}`,
+      error: `The workflow has errors, so it can't be planned${first === undefined ? "." : `: ${diagnosticText(first)}`}`,
     };
   }
   const result = explainSession(

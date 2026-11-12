@@ -80,7 +80,7 @@ current folder's project's `workflows/`.
   works in the project: worktree nodes in worktrees beside the clone, the others
   at its root.
 - **Rules** come from `~/.ork/projects/<id>/project.yaml`; problems are located
-  as `~/.ork/projects/<id>/project.yaml:3:5`.
+  in it (a diagnostic's `file`), as `~/.ork/projects/<id>/project.yaml:3:5`.
 - **Agents** from the attached folder's `agents/` take the place of
   `.ork/agents`; the tools' folders in the repository are still read.
 - **Not available:** `ork link` (nothing is linked into the repository) and its

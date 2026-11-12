@@ -446,7 +446,7 @@ export const EDGES = [
     kind: "local",
     label: "`driver: claude-code`",
     detail:
-      "Named per node or in `defaults.driver`, or with `ork run --driver claude-code`; with none named, the one ready here.",
+      "Named per node or in `defaults.driver`, or with `ork run --driver claude-code`; with none named, the one ready here (`--driver` is checked before the run starts).",
     status: "built",
     docs: [DESIGN.runtime],
   },

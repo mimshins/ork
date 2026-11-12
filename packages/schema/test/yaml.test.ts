@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
+  diagnosticText,
   expandEdge,
   parseTriggers,
   parseWorkflow,
@@ -188,4 +189,26 @@ describe("the other committed JSON Schemas", () => {
       expect(committed).toBe(render());
     },
   );
+});
+
+describe("diagnosticText", () => {
+  const base = { severity: "error", code: "project.rules", path: [] } as const;
+
+  it("is the message alone for the file being checked", () => {
+    expect(diagnosticText({ ...base, message: "Invalid input", line: 3 })).toBe(
+      "Invalid input",
+    );
+  });
+
+  it("leads with the place when the problem is in another file", () => {
+    expect(
+      diagnosticText({
+        ...base,
+        message: "Invalid input",
+        file: ".ork/project.yaml",
+        line: 3,
+        column: 14,
+      }),
+    ).toBe(".ork/project.yaml:3:14: Invalid input");
+  });
 });

@@ -25,13 +25,16 @@ ork follow-ups published <ref>                        # inside a run: what it le
 - **`add`** defaults to `--for me`, `--due now`, and a kind by `--for`
   (`message` for a person, `change` for an agent or a project, `task`
   otherwise). `--text` with `--to` (default: the person's name) makes a
-  message's draft; each `--step` is `text` or `text :: command`. A follow-up for
-  another project goes to that project and, when a run is live there, to its
-  session.
+  message's draft, and a message without `--text` is refused ("a message needs
+  --text"). With `--channel github`, `--to` must be an issue or pull request URL
+  and has no default. Each `--step` is `text` or `text :: command`, and a step
+  without text is refused. A follow-up for another project goes to that project
+  and, when a run is live there, to its session.
 - **`list`** groups by status (due, waiting, then done and dropped with
   `--all`), then by who it is for.
 - **`post`** without `--confirm` prints what would be posted and where, and
-  exits 1; with it, posts through `gh` and marks the follow-up done. It refuses
+  exits 0 (the preview on stdout, the "Run again with --confirm" hint on
+  stderr); with it, posts through `gh` and marks the follow-up done. It refuses
   a message that is not drafted for `github`, or is already closed.
 - **`published`** needs `ORK_RUN`; it is what `build`'s `published` step runs.
 - **`ork run <workflow> --follow-ups <ids>`** takes `agent` follow-ups as the

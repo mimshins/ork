@@ -6,6 +6,7 @@
  */
 
 import { openStore } from "@krapht/ork-core";
+import { DRIVER_IDS } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
 import { confirm, style, write, writeErr } from "../output.ts";
@@ -42,7 +43,7 @@ export const apply = defineCommand({
     item: itemArg,
     driver: {
       type: "string",
-      description: "claude-code (default: the driver ready here)",
+      description: `${DRIVER_IDS.join(", ")} (default: the driver ready here)`,
     },
     "run-id": {
       type: "string",

@@ -49,6 +49,7 @@ import {
   checksHere,
   chooseReadyDriver,
   type DriverChecks,
+  overrideRefusal,
   budgetWarningLines,
   unfitLines,
 } from "./ready-driver.ts";
@@ -157,6 +158,10 @@ export const runNode = async (
     named: plan.driver,
     pinned: plan.pinned,
   });
+  if (options.driver !== undefined && named === options.driver) {
+    const refusal = await overrideRefusal(options.driver, options.driverChecks);
+    if (refusal.length > 0) return failed(refusal);
+  }
   const ready =
     named === undefined
       ? chooseReadyDriver(

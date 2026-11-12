@@ -1,7 +1,8 @@
 /**
  * @file Tests for what a person does to a follow-up: finding one by an id
  *   prefix, and the done, drop, reopen and due actions with the statuses each
- *   starts from.
+ *   starts from, and when a github draft can be posted (its `to` an issue or
+ *   pull request URL).
  */
 
 import { describe, expect, it } from "vitest";
@@ -13,6 +14,7 @@ import {
   followUpActions,
   type FollowUp,
   type FollowUpAction,
+  isGithubIssueUrl,
   openStore,
 } from "../src/index.ts";
 
@@ -154,7 +156,11 @@ describe("what can be done, and why a follow-up is due", () => {
   });
 
   it("allows a post only for an open github-channel message", () => {
-    const draft = { to: "x/y#1", channel: "github", text: "Hi" };
+    const draft = {
+      to: "https://github.com/x/y/issues/1",
+      channel: "github",
+      text: "Hi",
+    };
     const github = made("aa11", { kind: "message", draft });
     expect(followUpActions(github).post).toEqual({ ok: true });
     const slack = made("aa11", {
@@ -169,6 +175,31 @@ describe("what can be done, and why a follow-up is due", () => {
       ok: false,
       why: "it is done",
     });
+  });
+
+  it.each(["142", "#142", "x/y#1", "https://github.com/x/y/pull/7/files"])(
+    "refuses a post whose github `to` is %j",
+    to => {
+      const github = made("aa11", {
+        kind: "message",
+        draft: { to, channel: "github", text: "Hi" },
+      });
+      expect(followUpActions(github).post).toMatchObject({
+        ok: false,
+        why: "its `to` isn't a GitHub issue or pull request URL",
+      });
+    },
+  );
+
+  it.each([
+    ["https://github.com/x/y/issues/1", true],
+    ["https://github.com/x/y/pull/7", true],
+    ["https://github.com/x/y/pull/7#issuecomment-1", false],
+    ["http://github.com/x/y/pull/7", false],
+    ["https://gitlab.com/x/y/issues/1", false],
+    ["#142", false],
+  ] as const)("reads %j as an issue or PR URL: %s", (to, ok) => {
+    expect(isGithubIssueUrl(to)).toBe(ok);
   });
 
   it.each([

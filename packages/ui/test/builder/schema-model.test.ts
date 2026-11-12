@@ -323,6 +323,15 @@ describe("what the builder means", () => {
         message: "Invalid input: expected string, received undefined",
       }),
     ).toBe("Question is required.");
+    expect(
+      problemWords({
+        ...error([]),
+        file: ".ork/project.yaml",
+        line: 3,
+        column: 14,
+        message: "Invalid input",
+      }),
+    ).toBe(".ork/project.yaml:3:14: Invalid input");
     expect(facts.get("c")?.word).toBe("1 warning");
   });
 

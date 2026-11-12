@@ -81,6 +81,23 @@ const validateText = (text: string, ...args: string[]) => {
   });
 };
 
+/** `ork validate` for real, on one file, in a project with this `project.yaml`. */
+const validateInProject = (project: string, ...args: string[]) => {
+  const dir = tempProject();
+  mkdirSync(path.join(dir, ".ork"));
+  writeFileSync(path.join(dir, ".ork/project.yaml"), project);
+  writeFileSync(path.join(dir, "w.ork.yaml"), TRIAGE);
+  return spawnSync(process.execPath, [BIN, "validate", "w.ork.yaml", ...args], {
+    cwd: dir,
+    encoding: "utf8",
+    env: {
+      PATH: process.env["PATH"] ?? "",
+      HOME: dir,
+      ORK_NO_UPDATE_CHECK: "1",
+    },
+  });
+};
+
 const GATED = [
   "schemaVersion: 1",
   "name: gated",
@@ -137,6 +154,23 @@ describe("ork validate without a project", () => {
     const { status, stdout } = validateBare();
     expect(status).toBe(1);
     expect(stdout).toContain("Run `ork init`");
+  });
+});
+
+describe("ork validate with a broken project file", () => {
+  const BROKEN = "schemaVersion: 1\nquotas:\n  dayTokens: 1.5\n";
+
+  it("reports the problem at its line in the project file", () => {
+    const { status, stdout } = validateInProject(BROKEN);
+    expect(status).toBe(1);
+    expect(stdout).toMatch(/^\.ork\/project\.yaml:3:14 error Invalid input/mu);
+    expect(stdout).not.toContain("w.ork.yaml:1:1");
+  });
+
+  it("carries the file, line and column in its JSON", () => {
+    const { stdout } = validateInProject(BROKEN, "--json");
+    expect(stdout).toContain('"file": ".ork/project.yaml"');
+    expect(stdout).toMatch(/"line": 3,\s+"column": 14/u);
   });
 });
 

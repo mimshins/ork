@@ -32,9 +32,17 @@ export type Diagnostic = {
   code: string;
   message: string;
   path: DiagnosticPath;
+  /** A file other than the one checked; `line` and `column` are in it. */
+  file?: string;
   line?: number;
   column?: number;
 };
+
+/** The message, led by `file:line:col: ` when it is in another file. */
+export const diagnosticText = (d: Diagnostic): string =>
+  d.file === undefined
+    ? d.message
+    : `${d.file}:${d.line ?? 1}:${d.column ?? 1}: ${d.message}`;
 
 /** Maps a path inside the workflow to a position in the source text. */
 export type Locate = (

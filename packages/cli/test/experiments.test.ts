@@ -85,10 +85,11 @@ const watchedEnv = () => {
   return { env, reads };
 };
 
+const diagnosed = (root: string) =>
+  loadWorkflow("tools.ork.yaml", root, undefined, []).report.diagnostics;
+
 const validated = (root: string): string[] =>
-  loadWorkflow("tools.ork.yaml", root, undefined, []).report.diagnostics.map(
-    d => d.message,
-  );
+  diagnosed(root).map(d => d.message);
 
 const ran = async (root: string) => {
   const said: string[] = [];
@@ -165,8 +166,14 @@ describe("ork doctor's experiments line", () => {
 
 describe("an unknown experiment name", () => {
   it("fails ork validate, naming it, its source and the known names", () => {
-    expect(validated(project(TYPO))).toEqual([
-      ".ork/project.yaml:3:5: names an unknown experiment `typo`; known: none",
+    expect(diagnosed(project(TYPO))).toEqual([
+      expect.objectContaining({
+        code: "experiment.unknown",
+        file: ".ork/project.yaml",
+        line: 3,
+        column: 5,
+        message: "names an unknown experiment `typo`; known: none",
+      }),
     ]);
     vi.stubEnv("ORK_EXPERIMENTAL", "nope");
     expect(validated(project())).toEqual([

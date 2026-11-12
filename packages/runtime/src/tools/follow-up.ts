@@ -66,7 +66,7 @@ export const followUpTool = defineTool({
     steps: z
       .array(
         z.strictObject({
-          text: z.string().min(1),
+          text: z.string().trim().min(1),
           command: z
             .string()
             .optional()

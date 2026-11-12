@@ -9,6 +9,7 @@
 import type { GhRunner } from "../feedback/discussions.ts";
 import { redact } from "../feedback/redact.ts";
 import type { FollowUpRows } from "../store/follow-ups.ts";
+import { githubDraftRefusal } from "./change.ts";
 import type { FollowUp } from "./types.ts";
 
 export type FollowUpPosted =
@@ -28,12 +29,9 @@ export const postFollowUpMessage = async (
   },
 ): Promise<FollowUpPosted> => {
   const draft = f.draft;
-  if (f.kind !== "message" || draft?.channel !== "github") {
-    return {
-      ok: false,
-      error:
-        "only a message drafted for the github channel is posted; send the others yourself",
-    };
+  const refused = githubDraftRefusal(f);
+  if (refused !== undefined || draft === undefined) {
+    return { ok: false, error: refused?.error ?? "it has no draft" };
   }
   if (!options.confirmed) {
     return {

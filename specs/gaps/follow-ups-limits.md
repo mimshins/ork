@@ -61,3 +61,8 @@ Found building follow-ups ([follow-ups](../follow-ups.md),
   looks at this project's follow-ups only, so a `project:<name>` one with
   `due: after-merge` stays without a `ref` in that project's list, and waits
   until someone runs `ork follow-ups due`.
+- **L325 · A follow-up's draft can't be edited.** There is no command or button
+  to change a draft's `to`, so a `github` draft whose `to` isn't an issue or
+  pull request URL (one a session left, for instance) is refused by
+  `ork follow-ups post` and the panel's **Post to GitHub…**, and is only copied.
+  Add it again with the URL in `--to`, or post the text yourself.

@@ -73,6 +73,11 @@ lessons or `ork feedback publish`, and feedback never appears here.
 | `draft`  | For a `message`: `to`, a `channel` hint (`github`, `slack`, `email`…) and the `text` the maintainer sends. A message needs one. |
 | `steps`  | For a `task` or `check`: each step's text and, optionally, a command. Ork shows the commands and never runs them.               |
 
+A step whose text is blank (only spaces) is refused, as an empty title is
+(`followUpProblem`). For the `github` channel, the draft's `to` is the issue or
+pull request URL it is posted on
+([due-and-delivery](./follow-ups/due-and-delivery.md)).
+
 Also kept: `place` (where it was written out, and its `url`: the issue's, or the
 file), a `note` saying why its status last changed, `takenBy` (the run that took
 it as its brief) and the times it was added and last changed. A follow-up starts

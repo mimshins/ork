@@ -4,6 +4,9 @@
  *   which import nothing from Node, so the UI's bundle can use them.
  */
 
+// Imported, then exported: oxlint takes a re-export of two names as a duplicate.
+import { diagnosticText, driverOf } from "@krapht/ork-schema";
+
 export * from "./client.ts";
 export * from "./condition-text.ts";
 export * from "./contract.ts";
@@ -16,4 +19,4 @@ export * from "./contract-follow-ups.ts";
 export * from "./contract-links.ts";
 export * from "./contract-worktrees.ts";
 export * from "./contract-update.ts";
-export { driverOf } from "@krapht/ork-schema";
+export { diagnosticText, driverOf };

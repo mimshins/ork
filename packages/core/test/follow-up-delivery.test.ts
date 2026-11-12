@@ -190,6 +190,14 @@ describe("followUpProblem", () => {
     [{ ...change, due: "tomorrow" }, /`due` is now/u],
     [{ ...change, due: "2026-13-45" }, /`due` is now/u],
     [{ ...change, kind: "message", for: "person:Dana" }, /needs its `draft`/u],
+    [
+      { ...change, kind: "task", steps: [{ text: "ok" }, { text: " " }] },
+      "each step needs its text",
+    ],
+    [
+      { ...change, kind: "task", steps: [{ text: "", command: "" }] },
+      "each step needs its text",
+    ],
   ] as const)("refuses %o", (input, error) => {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- deliberately wrong values
     expect(followUpProblem(input as NewFollowUp)).toMatch(error);
@@ -596,4 +604,21 @@ describe("postFollowUpMessage", () => {
     );
     expect(result).toMatchObject({ ok: false });
   });
+
+  it.each(["142", "#142", "Dana", "https://github.com/acme/web"])(
+    "runs no gh for a github draft whose `to` is %j",
+    async to => {
+      const { store, f } = await kept();
+      const { gh, calls } = ghFrom({});
+      const result = await postFollowUpMessage(
+        { ...f, draft: { to, channel: "github", text: "Hi" } },
+        { rows: store, gh, confirmed: true, home: HOME },
+      );
+      expect(result.ok).toBe(false);
+      expect(JSON.stringify(result)).toMatch(
+        /isn't a GitHub issue or pull request URL/u,
+      );
+      expect(calls).toEqual([]);
+    },
+  );
 });

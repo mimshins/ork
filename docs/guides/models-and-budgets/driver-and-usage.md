@@ -11,9 +11,10 @@ defaults:
 
 `driver` picks how Ork reaches Claude, per workflow or per node, and
 `ork run --driver` overrides both. With none named, a run uses the driver that's
-ready on the machine running it. Today that is `claude-code`, your own `claude`;
-`open-code` and `command-code` are built but not proven yet, so they are refused
-([Drivers](../drivers.md), [Accounts and credentials](../accounts.md)).
+ready on the machine running it, and `claude-code` (your own `claude`) when more
+than one is ready. `claude-code`, `open-code` and `command-code` are all proven
+on real sessions ([Drivers](../drivers.md),
+[Accounts and credentials](../accounts.md)).
 
 `ork validate` and `ork run` refuse a node its driver can't serve, naming both
 ([troubleshooting](../troubleshooting/setup.md)).

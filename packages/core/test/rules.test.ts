@@ -14,10 +14,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyProject,
+  capsHere,
   checkRules,
   compileWorkflow,
   createdWorktrees,
   gitRulesOf,
+  inRepoPlace,
   listOrkWorktrees,
   loadProject,
   machineRulesOf,
@@ -273,7 +275,16 @@ describe("project rules under a workflow", () => {
       path.join(root, ".ork/project.yaml"),
       "schemaVersion: 1\ngit:\n  commit: sometimes\n",
     );
-    expect(loadProject(root).diagnostics.map(d => d.message)).toEqual([
+    const [found] = loadProject(root).diagnostics;
+    expect([found?.file, found?.line, found?.column, found?.path]).toEqual([
+      ".ork/project.yaml",
+      3,
+      11,
+      [],
+    ]);
+    expect(found?.message).not.toContain("project.yaml");
+    // `ork usage` and a run's refusal keep the place in their text.
+    expect(capsHere(root, inRepoPlace(root)).problems).toEqual([
       expect.stringMatching(/^\.ork\/project\.yaml:3:\d+: /u),
     ]);
     const compiled = compileWorkflow(

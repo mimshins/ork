@@ -117,14 +117,29 @@ export const experimentOn = (
 
 /** Unknown names as errors, for the checks every workflow goes through. */
 export const experimentDiagnostics = (
-  options?: ExperimentsOptions,
+  options?: ExperimentsOptions & {
+    /** Where a key of the project file is, so its names are located there. */
+    at?:
+      | ((path: DiagnosticPath) => Pick<Diagnostic, "file" | "line" | "column">)
+      | undefined;
+  },
 ): Diagnostic[] => {
   const state = experimentsOn(options);
-  return state.ok
-    ? []
-    : state.unknown.map(({ message }) =>
-        error("experiment.unknown", message, []),
-      );
+  if (state.ok) return [];
+  const at = options?.at;
+  const inProject = options?.project?.experimental ?? [];
+  return state.unknown.map(({ name, source, message }) =>
+    source === "project" && at !== undefined
+      ? Object.assign(
+          error(
+            "experiment.unknown",
+            `names an unknown experiment \`${name}\`; known: ${knownExperiments(options?.registry)}`,
+            [],
+          ),
+          at(["experimental", inProject.indexOf(name)]),
+        )
+      : error("experiment.unknown", message, []),
+  );
 };
 
 /** What a gate says of something used while its experiment is off. */

@@ -72,7 +72,7 @@ with the built-in node types
   ([L98](../messaging/scripts-limits.md)).
 - **The driver:** a session node that names no driver, when `--driver` isn't
   given, takes the one ready on this machine, from `ork doctor`'s own checks
-  (today `claude-code`, the only one built). The run says so in one line on
+  (`claude-code` when more than one is ready). The run says so in one line on
   stderr before it starts, records it for `ork resume`, and doesn't start when
   none is ready, with `ork doctor`'s hints
   ([which driver](../runtime.md#which-driver-a-session-uses)).
@@ -119,9 +119,11 @@ with the built-in node types
   `items` of its own, or run the whole workflow.
 - `--driver` overrides the node's and the workflow's driver. A node that names
   none takes the one ready here, said in one line, and none ready stops it
-  before the session starts
-  ([which driver](../runtime.md#which-driver-a-session-uses)). The drivers load
-  only when a run starts.
+  before the session starts. `--driver <id>` is refused before any session when
+  that driver's tool isn't ready here
+  ([which driver](../runtime.md#which-driver-a-session-uses),
+  [the `--driver` check](../runtime/which-driver.md)). The drivers load only
+  when a run starts.
 - stdout gets the transcript (session start, assistant text, one line per tool
   call, failed tool results) and then the report: status, summary, branch,
   artifacts, the `output.schema` fields, and usage (cost, tokens, turns, time).

@@ -45,9 +45,20 @@ export const followUpSink =
     });
   };
 
+/** Gh's own words when it has no login. */
+const SIGNED_OUT = /not logged in|gh auth login/iu;
+
+/**
+ * A gh error's first line, without a trailing period, so the notice is one
+ * line.
+ */
+const oneLine = (error: string): string =>
+  (error.trim().split("\n")[0] ?? "").trim().replace(/\.$/u, "");
+
 /**
  * Moves the project's follow-ups whose time has come to due, as every `ork
- * follow-ups` call does first. `gh` failing only warns, through `warn`.
+ * follow-ups` call does first. `gh` failing only warns, through `warn`: one
+ * line per call, however many refs failed.
  */
 export const refreshDue = async (
   store: EventStore,
@@ -57,7 +68,14 @@ export const refreshDue = async (
 ): Promise<FollowUp[]> => {
   try {
     const checked = await checkFollowUpsDue({ rows: store, project, gh });
-    for (const error of checked.errors) warn(`couldn't check a ref: ${error}`);
+    const [first] = checked.errors;
+    if (first !== undefined) {
+      warn(
+        checked.errors.some(error => SIGNED_OUT.test(error))
+          ? "Can't check PRs: `gh` isn't signed in. After-merge follow-ups stay waiting; run `gh auth login` yourself."
+          : `Can't check PRs: ${oneLine(first)}. After-merge follow-ups stay waiting.`,
+      );
+    }
     return checked.due;
   } catch (error) {
     warn(

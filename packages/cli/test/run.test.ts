@@ -216,7 +216,17 @@ describe("ork run --node", () => {
   });
 
   it("streams events as JSON lines with a driver override", async () => {
-    const run = options({ json: true, driver: "claude-code" });
+    const run = options({
+      json: true,
+      driver: "claude-code",
+      driverChecks: () =>
+        Promise.resolve([
+          {
+            id: "claude-code",
+            result: { name: "claude", status: "ok", detail: "ready" },
+          },
+        ]),
+    });
     await runNode(run.value);
     expect(run.drivers).toEqual(["claude-code"]);
     expect(run.out.map(line => /^\{"type":"([^"]+)"/u.exec(line)?.[1])).toEqual(
@@ -227,6 +237,34 @@ describe("ork run --node", () => {
         "tool.result",
         "session.finished",
       ],
+    );
+  });
+
+  it("refuses a --driver whose tool isn't ready, before any session", async () => {
+    const run = options({
+      driver: "claude-code",
+      driverChecks: () =>
+        Promise.resolve([
+          {
+            id: "claude-code",
+            result: {
+              name: "claude",
+              status: "warn",
+              detail: "claude-code is not ready",
+              hint: "Sign in to claude.",
+            },
+          },
+          {
+            id: "open-code",
+            result: { name: "open-code", status: "ok", detail: "ready" },
+          },
+        ]),
+    });
+    const result = await runNode(run.value);
+    expect(result.exitCode).toBe(1);
+    expect(run.drivers).toEqual([]);
+    expect(run.err[0]).toBe(
+      "--driver claude-code: claude-code isn't ready here (claude-code is not ready).",
     );
   });
 

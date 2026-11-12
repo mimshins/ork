@@ -158,6 +158,30 @@ A confirm dialog, wide, opening on **Cancel**, that only posts what it shows.
 - **Disabled reasons for Post to GitHub…:** "`gh` isn't signed in. Run
   `gh auth login` in a terminal." and, for a channel Ork can't send to, no
   button: "Ork can't send to `slack`. Copy the message and send it yourself."
+- **Disabled because of the draft:** when the server's `actions.post` is not ok
+  (today: "its `to` isn't a GitHub issue or pull request URL"), the button is
+  disabled, stays focusable (`focusableWhenDisabled`) and gives that `why`, the
+  same way every other disabled action does. No new pattern, no extra element:
+  - **Name** (`aria-label`): `labelOf("Post to GitHub…", post)`, so "Post to
+    GitHub…: its `to` isn't a GitHub issue or pull request URL". The reason is
+    the server's words, never reworded in the client.
+  - **Tooltip:** "Can't post: <the reason>. Copy the message and post it
+    yourself." for the draft's reason, since copying is the way out there; for a
+    status reason ("it is done"), only "Can't post: <the reason>." Then the CLI
+    twin, as for any button. Because the reason is code-shaped, the tip is shown
+    through `CodeText` like the note beside it.
+  - **Marker:** the panel tells a status refusal from a draft refusal by whether
+    core's `why` starts with "it is ". Core's status wording is therefore a
+    contract with the panel until a structured marker exists; change one with
+    the other.
+  - **One reason at a time,** the draft's first (Ork can't fix it, so the user
+    needs to know before they sign `gh` in), then `gh`: "`gh` isn't signed in.
+    Run `gh auth login` in a terminal." The server's `why` stays the source for
+    the first; the `gh` one stays the client's.
+  - **Nothing else changes:** the draft's **To** fact still shows the stored
+    value as given, the **Copy message** button stays the way out, and the
+    button never shows an error colour: disabled is the default look, and the
+    reason is words (not colour alone).
 
 ## States and copy
 

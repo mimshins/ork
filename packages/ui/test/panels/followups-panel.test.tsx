@@ -307,6 +307,39 @@ describe("Post to GitHub", () => {
     ).toBeDefined();
   });
 
+  it("stays focusable but disabled, naming why, for a draft Ork can't post", async () => {
+    const why = "its `to` isn't a GitHub issue or pull request URL";
+    const opened = await openFollowUps({ badDraft: why });
+    await choose(MESSAGE);
+    const post = screen.getByRole("button", {
+      name: `Post to GitHub…: ${why}`,
+    });
+    expect(post.getAttribute("aria-disabled")).toBe("true");
+    post.focus();
+    expect(document.activeElement).toBe(post);
+    await userEvent.click(post);
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(asked(opened, "post")).toEqual([]);
+    expect(
+      await screen.findByText(
+        /Can't post: .*Copy the message and post it yourself\./u,
+      ),
+    ).toBeDefined();
+  });
+
+  it("gives only the reason, without the copy advice, when the item is closed", async () => {
+    await openFollowUps({ badDraft: "it is done" });
+    await choose(MESSAGE);
+    const post = screen.getByRole("button", {
+      name: "Post to GitHub…: it is done",
+    });
+    post.focus();
+    expect(await screen.findByText("Can't post: it is done.")).toBeDefined();
+    expect(document.body.textContent).not.toContain(
+      "Copy the message and post it yourself.",
+    );
+  });
+
   it("has no button for a channel Ork can't send to", async () => {
     await openFollowUps();
     await choose("Tell Dana the API moved");

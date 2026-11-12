@@ -77,8 +77,9 @@ button, and **Mark due**, **Mark done** or **Mark sent**, **Drop** and
 
 Ork never sends a message to a person. Open it with `show`, copy the text, send
 it yourself, then `ork follow-ups done 4f2a1c`. If its channel is `github` and
-it names an issue or a pull request, Ork can post it as a comment with your own
-`gh`, once you confirm exactly this text:
+its `to` is an issue or a pull request URL
+(`https://github.com/<owner>/<repo>/(issues|pull)/<n>`), Ork can post it as a
+comment with your own `gh`, once you confirm exactly this text:
 
 ```sh
 ork follow-ups post 4f2a1c            # shows what it would post, and where
@@ -127,10 +128,11 @@ it).
 - **`after-deploy`** is due when you say so: `ork follow-ups due 5a6b7c22`, or
   `ork follow-ups due <run>` for everything a run left.
 
-If `gh` isn't signed in, the follow-ups simply wait, and the command, the panel
-and `ork ui` say "Can't check PRs", with `gh auth login` to fix it. Ork checks
-on every `ork follow-ups` call, every 10 minutes while `ork watch` or `ork ui`
-runs, and never otherwise. It does not send a desktop notification.
+If `gh` isn't signed in, the follow-ups simply wait, and the command (one line
+per call), the panel and `ork ui` say "Can't check PRs", with `gh auth login` to
+fix it; any other `gh` failure is named in the same line. Ork checks on every
+`ork follow-ups` call, every 10 minutes while `ork watch` or `ork ui` runs, and
+never otherwise. It does not send a desktop notification.
 
 ## Adding one yourself
 
@@ -142,9 +144,11 @@ ork follow-ups add "Tell Dana the API moved" --for person:Dana --channel slack \
   --text "The API moved to v2; the old one stops on the 20th."
 ```
 
-A message needs `--text` (its draft). `--step` is `text` or `text :: command`.
-Without `--kind`, a person's is a message, an agent's or a project's a change,
-and the rest a task.
+A message needs `--text` (its draft), and `--to` says who it is to (default: the
+person). For `--channel github`, `--to` is the issue or pull request URL, and
+`add` refuses one without it. `--step` is `text` or `text :: command`, and a
+step needs its text. Without `--kind`, a person's is a message, an agent's or a
+project's a change, and the rest a task.
 
 ## What Ork keeps, and where
 
@@ -159,10 +163,11 @@ each one to a **file** in the repository or a **GitHub issue**.
 > it for what only you should read. The same holds for the issues a `github`
 > store creates in a public repository.
 
-Text a session leaves is scrubbed first with the same redactor feedback uses
-(secrets, paths, emails and hosts), so an address or a host in a draft or a
-command may be taken out; check a draft before you send it. Ork stores no
-credential: `gh` is your own login ([accounts](./accounts.md)).
+The text of every follow-up, from a session or added by hand, is scrubbed first
+with the same redactor feedback uses (secrets, paths, emails and hosts), so an
+address or a host in a draft or a command may be taken out; check a draft before
+you send it. Ork stores no credential: `gh` is your own login
+([accounts](./accounts.md)).
 
 ## In `build`
 

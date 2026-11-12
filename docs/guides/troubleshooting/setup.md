@@ -44,6 +44,13 @@ such as logging in with `claude` or setting `ANTHROPIC_API_KEY`, then
 ``See `ork doctor`.`` Do what one hint says, or run `ork doctor` for the same
 ([accounts](../accounts.md)).
 
+**`--driver command-code: command-code isn't ready here (…).`** You named a
+driver with `--driver`, and its tool isn't found or isn't signed in, so the run
+doesn't start. The message gives the driver's hint, then ``See `ork doctor`.``
+Install or sign in to that tool (an older `claude`, or one not signed in, also
+refuses `--driver claude-code`), or leave `--driver` off to use the driver that
+is ready ([drivers](../drivers.md)).
+
 **`claude` is older than 2.1.281.** Update Claude Code. Older versions may not
 read `AGENTS.md`, so a project with only `AGENTS.md` would run without its
 instructions.

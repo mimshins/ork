@@ -37,6 +37,8 @@ with parsed conditions), the entry nodes, and the declared message channels.
   `control.join` `statuses`, `results`, `count`; `human.gate` `choice`,
   `answeredBy`, `note`; split and router pass their input through; a
   `workflow.call`'s fields are not checked, since they depend on what it calls.
+  Every other node, one with `forEach` too, also reports `timedOut`, since a
+  timeout may come from `defaults` or the project.
 
 - **For each:** a node with `forEach` (RFC-013) reports `items`, `results`,
   `statuses` and `count`, which replace its type's fields for references and
