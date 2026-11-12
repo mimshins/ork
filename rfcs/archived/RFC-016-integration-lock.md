@@ -1,6 +1,6 @@
 # RFC-016 — A lock that orders integration into a branch
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-11
 - **Supersedes:** —
 - **Superseded by:** —

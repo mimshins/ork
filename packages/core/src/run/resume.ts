@@ -7,7 +7,9 @@
  *   more than once reads as one history: a later result replaces the earlier
  *   one at its place. Also: the run's inputs and settings, its worktrees, the
  *   answers to its loops, and a fanned node's lists and its items' results by
- *   round (RFC-013). `replay.ts` hands them back.
+ *   round (RFC-013). A lock the run ended holding (RFC-016) hands back nothing
+ *   its nodes did under it, so they run again under the lock. `replay.ts` hands
+ *   them back.
  */
 
 import { type EarlierSpend, earlierSpend } from "../usage/spend.ts";
@@ -97,6 +99,11 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
   /** Nodes whose last activation did not finish well, and its session. */
   const unfinished = new Map<string, string>();
   const places = new Map<string, string>();
+  /**
+   * Locks held at the end so far, each node that ran under it and how many of
+   * its results came before (RFC-016).
+   */
+  const spans = new Map<string, Map<string, number>>();
 
   /** A new run of `id`'s `round` replaces what is recorded there and after. */
   const supersede = (id: string, round: number): void => {
@@ -180,6 +187,22 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
       }
       continue;
     }
+    if (event.type === "lock.taken") {
+      // Items hold their own lock, which goes when they end.
+      if (open.get(event.id)?.item === true) continue;
+      const span = spans.get(event.lock) ?? new Map<string, number>();
+      if (!span.has(event.id)) {
+        span.set(event.id, history.get(event.id)?.length ?? 0);
+      }
+      spans.set(event.lock, span);
+      continue;
+    }
+    if (event.type === "lock.released") {
+      // An item's own release ends its own hold, not the run's.
+      if (open.get(event.id)?.item === true) continue;
+      if (event.end === "span") spans.delete(event.lock);
+      continue;
+    }
     if (event.type === "worktree") {
       const known = worktrees.get(event.id);
       if (event.action === "created" || known === undefined) {
@@ -234,6 +257,14 @@ export const resumeState = (events: readonly RunEvent[]): ResumeState => {
       succeeded = event.result.status === "succeeded";
       ended = event.result.status;
       continue;
+    }
+  }
+  // A lock the run ended holding: what ran under it runs again, under it anew.
+  for (const span of spans.values()) {
+    for (const [id, kept] of span) {
+      const results = history.get(id)?.slice(0, kept) ?? [];
+      if (results.length === 0) history.delete(id);
+      else history.set(id, results);
     }
   }
   // A node still open never finished: it runs again, and nothing after it.

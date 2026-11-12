@@ -7,6 +7,8 @@
 import {
   isItem,
   liveStatus,
+  lockWaitLine,
+  lockWaitsOf,
   type NodeState,
   type RunEvent,
   type RunRecord,
@@ -59,7 +61,8 @@ export { cost };
 const dim = (s: string): string => style("dim", s);
 
 /**
- * A run's status as `ork ps` reads it: `waiting for slot` for a running run
+ * A run's status as `ork ps` reads it: for a running run, `waiting for <lock>,
+ * held by <run>/<node>` with a node waiting for a lock, or `waiting for slot`
  * with a command waiting for a machine-wide slot; `events` are a running
  * run's.
  */
@@ -68,9 +71,10 @@ export const listedStatus = (
   events: readonly RunEvent[],
 ): string => {
   const status = runStatus(run, events);
-  return status === "running" && slotWaitsOf(events).length > 0
-    ? "waiting for slot"
-    : status;
+  if (status !== "running") return status;
+  const [lock] = lockWaitsOf(events);
+  if (lock !== undefined) return lockWaitLine(lock.lock, lock.holders);
+  return slotWaitsOf(events).length > 0 ? "waiting for slot" : status;
 };
 
 /**

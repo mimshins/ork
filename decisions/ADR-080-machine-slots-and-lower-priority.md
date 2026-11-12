@@ -67,7 +67,8 @@ line turns it off.
   `cpu`. Older runs are filled in by the migration.
 - Not covered, tracked in the [gaps register](../specs/gaps.md): sessions' own
   CPU, only Claude Code taking slots for a session's Bash calls (L257), CPU on
-  Windows, no `ork doctor` sweep of the slot ledger (L259), priority set just
-  after the spawn, a re-measured build.
+  Windows, no `ork doctor` sweep of the slot ledger (L259, since done:
+  [ADR-085](./ADR-085-lock-field-and-hold.md)), priority set just after the
+  spawn, a re-measured build.
 
 Spec: [machine](../specs/machine.md).

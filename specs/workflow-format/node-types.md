@@ -83,6 +83,14 @@ _Part of [Workflow file format](../workflow-format.md)._
   read the item and its place; a later node reads what it gathers (`items`,
   `results`, `statuses`, `count`). What `ork validate` checks is in the
   [graph compiler](../graph-compiler.md#rules).
+- **A lock:** workers, tool nodes and `mcp.call` take `lock: <name>`, one
+  non-blank string per node, so one run at a time holds a shared resource such
+  as a branch ([RFC-016](../../rfcs/archived/RFC-016-integration-lock.md)). The
+  name may read `{{inputs.*}}` (`lock: "branch:{{inputs.branch}}"`) and nothing
+  else a node produces: `ork validate` refuses `{{nodes.*}}`, and `{{item}}`.
+  The field sits after `notify` and before `forEach`. **Status:** built: the run
+  holds the lock across the nodes that name it
+  ([integration](../integration.md)).
 - **MCP calls:** `mcp.call` calls one `tool` on a `server` in the project's
   `.mcp.json`, with `arguments`, `output: { schema }`, `env`, `plainEnv` and
   `timeout`, and no session ([steps](../scheduler/steps.md#mcp-calls)).

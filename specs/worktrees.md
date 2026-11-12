@@ -107,7 +107,9 @@ reaches Ork's git either.
 
 - Ork commits what the session left uncommitted, as `ork: <node> (run <id>)`,
   with no attribution. The repository's hooks run; if they refuse, the node
-  fails with the hook's message and the worktree keeps the changes.
+  fails with the hook's message and the worktree keeps the changes. While a
+  rebase, merge, cherry-pick or revert is underway in the worktree (a conflict
+  resolver's), Ork commits nothing and leaves it exactly as it is.
 - A child that passes is merged into its owner's worktree with `--no-ff`, one
   merge per owner at a time. A conflict aborts the merge; the child's output
   gets `merge: { ok: false, conflicts, into }` and its worktree is kept. A child

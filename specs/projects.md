@@ -45,7 +45,10 @@ Both folders hold the same things:
   in-repo, then scaffolds `.ork/`; it refuses an attached project, so Ork never
   writes into it. It offers Ork's skills for Claude Code (`--skills`,
   `--no-skills`, or asked once on a terminal):
-  [Ork for Claude Code](./claude-code.md#copies-in-a-project).
+  [Ork for Claude Code](./claude-code.md#copies-in-a-project), and the `issues`
+  workflow, which works GitHub issues in parallel into one pull request
+  (`--issues`, `--no-issues`, or asked once on a terminal; it never overwrites
+  `.ork/workflows/issues.ork.yaml`).
 - **`ork projects [--json]`** lists registered projects: id, mode, root (marked
   missing when it is gone), and Ork's folder. **`ork projects forget <id>`**
   drops the record; the files and runs stay. **`ork projects move <id> <path>`**

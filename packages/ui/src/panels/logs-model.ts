@@ -179,6 +179,9 @@ export const lineOf = (event: Event): string => {
     case "slot.waiting": {
       return `held by ${event.holders.join(", ")}`;
     }
+    case "lock.waiting": {
+      return `${event.lock}, held by ${event.holders.join(", ")}`;
+    }
     case "verify.skipped": {
       return oneLine(
         `${event.check}: already passed on these files · ${event.at} · ${event.who}`,
@@ -189,6 +192,8 @@ export const lineOf = (event: Event): string => {
     }
     case "decision.withdrawn":
     case "slot.taken":
+    case "lock.taken":
+    case "lock.released":
     case "node.held":
     case "node.released":
     case "node.skipped":

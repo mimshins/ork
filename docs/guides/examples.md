@@ -161,3 +161,35 @@ ork run fan-out --input goal="Add a farewell(name) function and a test for it"
 
 Sonnet, within a run budget of $10. Each task is a session, so lower `maxItems`
 for a first try.
+
+## issues
+
+[`issues.ork.yaml`](../../examples/issues.ork.yaml) works GitHub issues in
+parallel: a builder and a reviewer per issue, then the ones that pass are
+integrated one at a time into one branch under its lock, with one pull request
+that closes them. `ork init --issues` adds it to a project. The whole flow is in
+[Working on issues in parallel](./issues-in-parallel.md).
+
+```sh
+v=$(ork --version)
+curl -fsSL --create-dirs -o .ork/workflows/issues.ork.yaml \
+  "https://raw.githubusercontent.com/mimshins/ork/@krapht/ork@$v/examples/issues.ork.yaml"
+ork run issues --input label=ready --input check="pnpm run check"
+```
+
+Sonnet, within a run budget of $40; at most 10 issues. It needs `gh` signed in.
+
+## resolve-conflict
+
+[`resolve-conflict.ork.yaml`](../../examples/resolve-conflict.ork.yaml) resolves
+a rebase that stopped on conflicts, in the checkout where it stopped: an agent
+edits only the conflicted files, you are asked only when the resolution changes
+what a reviewed change does, then the rebase finishes and your check runs. Run
+it alone, or copy its nodes into a workflow that integrates, as `issues` does.
+
+```sh
+v=$(ork --version)
+curl -fsSL --create-dirs -o .ork/workflows/resolve-conflict.ork.yaml \
+  "https://raw.githubusercontent.com/mimshins/ork/@krapht/ork@$v/examples/resolve-conflict.ork.yaml"
+ork run resolve-conflict --input check="pnpm run check"
+```

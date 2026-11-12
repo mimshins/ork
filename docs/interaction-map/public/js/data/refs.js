@@ -731,6 +731,33 @@ export const MACHINE = {
   ),
 };
 
+export const INTEGRATION = {
+  spec: d(
+    "specs/integration.md",
+    "Spec: locks, the conflict resolver and issues in parallel",
+  ),
+  hold: d(
+    "packages/core/src/run/locks.ts",
+    "Code: a run's hold on a lock, across nodes",
+  ),
+  ledger: d(
+    "packages/core/src/machine/lock-ledger.ts",
+    "Code: the machine-wide lock ledger",
+  ),
+  tests: d(
+    "packages/core/test/locks.test.ts",
+    "Tests: two runs, one lock, a bare remote",
+  ),
+  guide: d(
+    "docs/guides/issues-in-parallel.md",
+    "Guide: working on issues in parallel",
+  ),
+  adr: d(
+    "decisions/ADR-085-lock-field-and-hold.md",
+    "ADR-085: a node's lock field, held by the run across nodes",
+  ),
+};
+
 export const CHECK_ONCE = {
   spec: d(
     "specs/check-once.md",
@@ -1261,7 +1288,7 @@ export const RUNTIME = {
 export const ROLES = {
   rules: d("specs/graph-compiler.md#rules", "Spec: entries, ownership, loops"),
   diagnostics: d(
-    "specs/graph-compiler.md#diagnostics",
+    "specs/graph-compiler/diagnostics.md#diagnostics",
     "Spec: what `ork validate` reports",
   ),
   activations: d(

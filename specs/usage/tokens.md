@@ -88,8 +88,9 @@ $0 to a dollar total. A total that leaves some out is **partial**:
 
 `ork validate` and `ork run` read `budgetWarnings`
 ([driver-needs.ts](../../packages/core/src/run/driver-needs.ts)) beside the
-driver-fit refusals ([graph compiler](../graph-compiler.md#driver-fit)), and
-they are never refusals. For a session node on a driver without `price`:
+driver-fit refusals
+([graph compiler](../graph-compiler/diagnostics.md#driver-fit)), and they are
+never refusals. For a session node on a driver without `price`:
 
 - Only `budgetUsd` (its own or `defaults`') and no `budgetTokens`: "node `x`
   sets only budgetUsd, but driver `command-code` reports no dollars: only

@@ -1111,7 +1111,7 @@ export const MILESTONES = [
         title: "Smooth runs: less CPU, and a machine that stays cool",
         status: "active",
         detail:
-          "Built, waiting to land (it becomes done with its commit). Projects name their `heavy` commands: a node with `verify:` may not run them in its session, and each takes one of 2 machine-wide slots (`ORK_HEAVY_SLOTS`) around Ork's tool commands and a Claude Code session's Bash calls, with the wait shown in `ork ps`, the logs and the UI. Sessions and tool commands start at a lower priority (`priority: low` by default). Builders verify with `pnpm check:changed`, vitest uses half the cores inside a run, the overview stream stopped re-reading every event, and `ork usage --by node` shows each tool command's CPU. A build measured again spent about 75% less on checks. Left: sessions' own CPU, and OpenCode's and Command Code's Bash calls (L256 to L259).",
+          "Built, waiting to land (it becomes done with its commit). Projects name their `heavy` commands: a node with `verify:` may not run them in its session, and each takes one of 2 machine-wide slots (`ORK_HEAVY_SLOTS`) around Ork's tool commands and a Claude Code session's Bash calls, with the wait shown in `ork ps`, the logs and the UI. Sessions and tool commands start at a lower priority (`priority: low` by default). Builders verify with `pnpm check:changed`, vitest uses half the cores inside a run, the overview stream stopped re-reading every event, and `ork usage --by node` shows each tool command's CPU. A build measured again spent about 75% less on checks. Left: sessions' own CPU, CPU on Windows, and OpenCode's and Command Code's Bash calls (L256 to L258). `ork doctor` now sweeps the slot ledger too (L259 closed by the integration lock).",
         docs: [
           "specs/machine.md",
           "docs/guides/running-workflows/several-runs.md",
@@ -1172,6 +1172,23 @@ export const MILESTONES = [
           "specs/runtime/session-ends.md#the-token-cap",
           "specs/gaps/budget-tokens-limits.md",
           "rfcs/archived/RFC-015-format-for-several-drivers.md",
+        ],
+      },
+      {
+        id: "parallel-issues",
+        title:
+          "Parallel issues: a lock on integration, a resolver, and `issues`",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). RFC-016, which is now Implemented. A node's `lock: <name>` is held by the run across the nodes that name it, on a machine-wide ledger (`~/.ork/locks`, a `branch:` lock keyed by the origin and the branch): the next run waits, shown with its holder in `ork ps`, the logs and the UI, and rebases onto what the first pushed. A resume takes the lock again. `ork doctor` clears stale lock and slot records (L259). `examples/resolve-conflict.ork.yaml` is a node group where an agent resolves a rebase conflict and asks you only when it changes behaviour; `examples/issues.ork.yaml` (`ork init --issues`) builds and reviews each issue in its own worktree, integrates them in turn into one branch and opens one pull request that closes them; `build`'s publish holds `branch:main`. Left: L286 to L299.",
+        docs: [
+          "decisions/ADR-085-lock-field-and-hold.md",
+          "specs/integration.md",
+          "docs/guides/issues-in-parallel.md",
+          "specs/gaps/conflict-resolver-limits.md",
+          "specs/gaps/issues-limits.md",
+          "specs/gaps/machine-limits.md",
+          "rfcs/archived/RFC-016-integration-lock.md",
         ],
       },
       {

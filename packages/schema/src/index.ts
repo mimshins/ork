@@ -6,6 +6,7 @@
 export * from "./agents.ts";
 export * from "./edges.ts";
 export * from "./for-each.ts";
+export * from "./lock.ts";
 export * from "./json-schema.ts";
 export * from "./marks.ts";
 export * from "./model-driver.ts";

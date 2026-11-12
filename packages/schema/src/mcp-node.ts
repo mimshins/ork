@@ -7,6 +7,7 @@
 import { z } from "zod";
 
 import { forEachFields } from "./for-each.ts";
+import { lockFields } from "./lock.ts";
 import {
   DeclaredOutputSchema,
   nodeBaseFields,
@@ -46,5 +47,6 @@ export const McpCallNodeSchema = z.strictObject({
     "Call the tool again and again until a condition holds, with no model turn.",
   ),
   ...notifyFields,
+  ...lockFields,
   ...forEachFields,
 });

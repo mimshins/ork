@@ -43,7 +43,7 @@ driver.
   when they don't, the compiler reports an error, `model.driver`: "model
   `claude-code.opus` names driver `claude-code`, but the node sets
   `driver: open-code`; remove one, or make them agree"
-  ([graph compiler](../graph-compiler.md#diagnostics)).
+  ([graph compiler](../graph-compiler/diagnostics.md#diagnostics)).
 - **A driver that is not installed** is reported as `ork run`'s driver check
   reports a missing tool.
 - **A written item value** (`forEach.items` text) is parsed at run, not when

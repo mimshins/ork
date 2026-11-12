@@ -22,6 +22,21 @@ was left simpler:
 - **L258 · CPU time is not recorded on Windows.** It comes from `times`, which
   Windows lacks; a tool command there has no `cpu`, and its `TOOL CPU` cell is
   empty. Priority gets only what Node's `os.setPriority` gives.
-- **L259 · Nothing but a waiter sweeps the slot ledger.** A record whose process
-  died is taken over when another command waits for a slot, but `ork doctor`
-  doesn't look at `~/.ork/slots` or list its holders.
+
+Found building the integration lock
+([RFC-016](../../rfcs/archived/RFC-016-integration-lock.md), a node's `lock:`
+held across nodes, on the same ledger):
+
+- **L290 · A lock is held to the run's end when its last naming node is
+  skipped.** The run lets a lock go when a node naming it ends and no node the
+  graph can still reach from there names it. A later naming node on a branch the
+  run does not take keeps the lock until the run ends.
+- **L291 · Items join a hold the run already has.** A fanned node's items take
+  the lock one at a time, unless the run already holds the same lock from an
+  earlier node; then they join that hold and run side by side.
+- **L292 · A lock's waiters see the node that took it.** `lock.waiting` names
+  the `<run>/<node>` whose record holds the lock, the first node of the hold,
+  not the node now running under it.
+- **L293 · Lock folders stay.** Each lock has a folder under `~/.ork/locks`;
+  `ork doctor` sweeps the records of dead processes but never removes a folder,
+  which a run may be about to take.

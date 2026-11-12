@@ -133,6 +133,14 @@ with `cmd mcp remove --scope local ork` as the fix when it can't. It reads the
 lease records in the project's runs folder
 ([architecture](../architecture/command-code.md)).
 
+A ledger check
+([ledger-checks.ts](../../packages/cli/src/doctor/ledger-checks.ts)) sweeps the
+stale records and tickets of processes that are gone from the machine's
+heavy-command slots (`~/.ork/slots`) and its locks (`~/.ork/locks`), and names
+each one it removed (`run/node (pid …)`). It is silent when there are none, and
+never fails the doctor ([machine](../machine.md#slots),
+[integration](../integration.md#the-ledger)).
+
 A `sockets` check warns when the longest run socket path under `~`
 (`~/.ork/sockets/node-<8>.sock`) is past what the system allows (103 bytes on
 macOS, 107 on Linux): runs still work, but answers, commands and followers wait

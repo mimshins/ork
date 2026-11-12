@@ -36,6 +36,7 @@ import {
 } from "../doctor/checks.ts";
 import { formatCheck } from "../doctor/format.ts";
 import { leaseChecks } from "../doctor/lease-checks.ts";
+import { ledgerChecks } from "../doctor/ledger-checks.ts";
 import { projectChecks } from "../doctor/project-checks.ts";
 import { confirm, style, write, writeErr } from "../output.ts";
 import { projectAt } from "../project/place.ts";
@@ -70,6 +71,7 @@ export const doctor = defineCommand({
       socketCheck(),
       ...triggerChecks(),
       ...(await leaseChecks(place)),
+      ...ledgerChecks(),
       experiments,
     ]) {
       for (const line of formatCheck(result)) write(line);

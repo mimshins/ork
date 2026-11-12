@@ -213,6 +213,23 @@ export const slotWaitsOf = (events: readonly RunEvent[]): string[] => {
   return [...waiting];
 };
 
+/** A node of a run waiting for a lock now, and who held it when it asked. */
+export type LockWait = { id: string; lock: string; holders: string[] };
+
+/** The nodes of a run waiting for a lock now (RFC-016). */
+export const lockWaitsOf = (events: readonly RunEvent[]): LockWait[] => {
+  const waiting = new Map<string, LockWait>();
+  for (const event of events) {
+    if (event.type === "lock.waiting") {
+      const { id, lock, holders } = event;
+      waiting.set(id, { id, lock, holders });
+    } else if (event.type === "lock.taken" || event.type === "node.finished") {
+      waiting.delete(event.id);
+    }
+  }
+  return [...waiting.values()];
+};
+
 /** What is paused in a run: the whole run, and the nodes paused by name. */
 export type Paused = { run: boolean; nodes: string[] };
 

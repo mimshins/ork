@@ -43,7 +43,7 @@ Every command takes `--plain` (or `ORK_PLAIN=1`): no color, no redrawn prompts
 ([terminal](./cli/terminal.md)).
 
 ```
-ork init [--no-link] [--skills]  # scaffold .ork/, .gitignore entries, a starter workflow that names no driver; link tool folders; record the project; Ork's skills for Claude Code
+ork init [--no-link] [--skills] [--issues]  # scaffold .ork/, .gitignore entries, a starter workflow that names no driver; link tool folders; record the project; Ork's skills for Claude Code; the issues workflow
 ork register [path] [--id <id>] [--json]  # attach a project from outside: its files in ~/.ork/projects/<id>/, nothing in the repo
 ork projects [--json] | forget <id> | move <id> <path>  # the registered projects; follow a moved clone
 ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agents and skills under .ork/, tool folders relinked; renames old `claude.*` node types to `agent.*` in the project's workflows; commits nothing

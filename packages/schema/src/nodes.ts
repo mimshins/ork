@@ -7,6 +7,7 @@ import { TOOL_PREFIX } from "@krapht/ork-integrations";
 import { z } from "zod";
 
 import { forEachFields } from "./for-each.ts";
+import { lockFields } from "./lock.ts";
 import { McpCallNodeSchema } from "./mcp-node.ts";
 import {
   AgentNameSchema,
@@ -167,6 +168,7 @@ export const ClaudeWorkerNodeSchema = z.strictObject({
   ...claudeFields,
   mcp: McpNamesSchema,
   ...notifyFields,
+  ...lockFields,
   ...forEachFields,
   ...stepFields,
 });
@@ -290,11 +292,5 @@ export type ToolNode = Extract<Node, { type: `tool.${string}` }>;
 export const isToolNode = (node: Node): node is ToolNode =>
   node.type.startsWith(TOOL_PREFIX);
 
-export const CLAUDE_NODE_TYPES: readonly NodeType[] = [
-  "agent.leader",
-  "agent.worker",
-  "agent.subagent",
-];
-
 export const isClaudeNode = (node: Node): node is ClaudeNode =>
-  CLAUDE_NODE_TYPES.includes(node.type);
+  node.type.startsWith("agent.");

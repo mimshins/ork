@@ -123,3 +123,11 @@ ork once --as check --covers check:changed -- pnpm check
 `ork usage --by node` has a `TOOL CPU` column: the seconds of CPU that each
 node's tool commands used. It doesn't include the agent sessions' own CPU, and
 isn't measured on Windows.
+
+## Runs that push to one branch
+
+Runs never share a worktree, but two that push the same branch race. A node's
+`lock:` makes them go in turn, and the second one shows
+`waiting for <lock>, held by <run>/<node>` in `ork ps`. How, with the `issues`
+workflow that uses it:
+[Working on issues in parallel](../issues-in-parallel.md).

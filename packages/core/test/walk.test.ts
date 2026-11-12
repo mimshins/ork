@@ -1032,7 +1032,8 @@ describe("what a walk comes to", () => {
 describe("every example", () => {
   it.each(exampleFiles)("%s walks to the end, with no finding", async file => {
     const graph = compile(readFileSync(path.join(examples, file), "utf8"));
-    const result = await walkWorkflow(graph);
+    // `issues` has about 5,600 ways through: more than a walk's default caps.
+    const result = await walkWorkflow(graph, { cap: 20_000, maxMs: 30_000 });
     expect(result.complete).toBe(true);
     expect(found(result)).toEqual([]);
     expect(result.paths).toBe(result.succeeded + result.failed);

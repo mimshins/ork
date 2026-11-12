@@ -19,6 +19,34 @@ defaults:
   model: claude-code.sonnet
   effort: medium
   budgetUsd: 2
+agents:
+  conflict-resolver:
+    description: Resolves the conflicts of a stopped rebase.
+    instructions: |-
+      You resolve the conflicts of a git rebase that has stopped, in the checkout you are in.
+      - Edit only the files you are told are conflicted. Do not touch any other file, create files, run git, or finish the rebase: Ork stages your files and finishes it.
+      - Never drop one side silently. Keep what each side meant to do; when you drop part of one, say which part and why. If the change you are replaying is already in the upstream, say so.
+      - Remove every conflict marker (`<<<<<<<`, `=======`, `>>>>>>>`).
+      - Report `behaviour: changed` when the result does something other than what the change you are replaying did, or other than what upstream did: the same logic was edited on both sides and you chose, merged or rewrote it. Report `unchanged` when you only kept both sides' separate additions, or took one side's edit of what the other side left alone.
+      - In `kept`, say for each file what you kept from the upstream and from the change.
+    model: claude-code.sonnet
+    effort: medium
+    isolation: shared
+    budgetUsd: 2
+    maxTurns: 30
+    tools:
+      only:
+        - Read
+        - Grep
+        - Glob
+        - Edit
+        - Write
+    output:
+      schema:
+        behaviour:
+          - unchanged
+          - changed
+        kept: string
 limits:
   budgetUsd: 50
   concurrency: 4
@@ -462,33 +490,212 @@ nodes:
         echo "Choose main to push to main; branch opens a pull request from another branch." >&2
         exit 1
       fi
+      # A try that stopped in the resolver left its rebase open: start the rebase over.
+      gitdir="$(git -C "$WORKTREE" rev-parse --absolute-git-dir)"
+      if [ -d "$gitdir/rebase-merge" ] || [ -d "$gitdir/rebase-apply" ]; then
+        git -C "$WORKTREE" rebase --abort
+      fi
       # Already committed when an earlier try stopped at the rebase or the push.
       if ! git -C "$WORKTREE" diff --cached --quiet; then
         if ! git -C "$WORKTREE" diff --cached --name-only --diff-filter=AM -- .changeset | grep -q '\.md$'; then
           echo "No changeset in this change. Add one in $WORKTREE (pnpm changesets:create or changesets:empty), stage it, and resume." >&2
           exit 1
         fi
-        printf '%s\n\n%s\n' "$SUBJECT" "$BODY" | git -C "$WORKTREE" commit -F -
+        printf '%s\n\n%s\n' "$SUBJECT" "$BODY" | git -C "$WORKTREE" commit -F - > /dev/null
       fi
       base=main
       if git -C "$WORKTREE" ls-remote --exit-code --heads origin "$branch" > /dev/null 2>&1; then
         base="$branch"
       fi
       git -C "$WORKTREE" fetch origin "$base"
-      if ! git -C "$WORKTREE" rebase FETCH_HEAD; then
-        git -C "$WORKTREE" rebase --abort
-        echo "The change conflicts with origin/$base. It is committed in $WORKTREE; rebase it there and push." >&2
+      # Left open on a conflict: the resolver below continues it.
+      if git -C "$WORKTREE" rebase FETCH_HEAD > /dev/null 2>&1; then
+        outcome=clean
+      elif [ -n "$(git -C "$WORKTREE" diff --name-only --diff-filter=U)" ]; then
+        outcome=conflict
+      else
+        git -C "$WORKTREE" rebase --abort || true
+        echo "The rebase onto origin/$base failed without a conflict. The change is committed in $WORKTREE; rebase it there and push." >&2
         exit 1
       fi
-      # The check runs here, not in the pre-push hook: git connects before the hook,
-      # and GitHub drops the idle connection while the hook runs (exit 141).
-      pnpm -C "$WORKTREE" run check
-      git -C "$WORKTREE" push --no-verify origin "HEAD:refs/heads/$branch"
+      printf '{"outcome":"%s","branch":"%s"}\n' "$outcome" "$branch"
+    allow:
+      - sh
+    env:
+      CHOICE: "{{nodes.decide.output.choice}}"
+      NOTE: "{{nodes.decide.output.note}}"
+      RUN: "{{run.id}}"
+      SUBJECT: "{{nodes.docs.output.commitSubject}}"
+      BODY: "{{nodes.docs.output.commitBody}}"
+      WORKTREE: "{{nodes.docs.output.worktree}}"
+    output:
+      format: json
+      schema:
+        outcome:
+          - clean
+          - conflict
+        branch: string
+    lock: branch:main
+  inspect:
+    type: tool.shell
+    script: |-
+      gitdir=$(git rev-parse --absolute-git-dir)
+      if [ ! -d "$gitdir/rebase-merge" ] && [ ! -d "$gitdir/rebase-apply" ]; then
+        echo "No rebase is in progress here, so there is nothing to resolve." >&2
+        exit 1
+      fi
+      files=$(git diff --name-only --diff-filter=U)
+      if [ -z "$files" ]; then
+        echo "The rebase has no conflicted files: finish it with git rebase --continue." >&2
+        exit 1
+      fi
+      tmp=$(mktemp -d)
+      trap 'rm -rf "$tmp"' EXIT
+      stage() { git show ":$1:$2" > "$3" 2> /dev/null || : > "$3"; }
+      change=$(git log -1 --format=%s REBASE_HEAD 2> /dev/null || echo "the commit being replayed")
+      printf '%s\n' "$files" > "$tmp/files"
+      : > "$tmp/sides"
+      while IFS= read -r f; do
+        stage 1 "$f" "$tmp/base"
+        stage 2 "$f" "$tmp/upstream"
+        stage 3 "$f" "$tmp/change"
+        {
+          printf '== %s ==\n-- what the upstream changed --\n' "$f"
+          diff -u -L base -L upstream "$tmp/base" "$tmp/upstream" || true
+          printf -- '-- what the change (%s) did --\n' "$change"
+          diff -u -L base -L change "$tmp/base" "$tmp/change" || true
+          printf '\n'
+        } >> "$tmp/sides"
+      done < "$tmp/files"
+      esc() { tr '\000-\011\013-\037' ' ' | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | awk 'BEGIN { ORS = "\\n" } { print }'; }
+      printf '{"files":"%s","sides":"%s"}\n' "$(esc < "$tmp/files")" "$(esc < "$tmp/sides")"
+    allow:
+      - sh
+    cwd: "{{nodes.docs.output.worktree}}"
+    output:
+      format: json
+      schema:
+        files: string
+        sides: string
+    lock: branch:main
+  resolve:
+    type: agent.worker
+    agent: conflict-resolver
+    prompt: |-
+      A rebase stopped on conflicts. Resolve them in this checkout.
+
+      The conflicted files, and only these may be edited:
+      {{nodes.inspect.output.json.files}}
+
+      What each side did to them. The upstream is what the rebase is going onto; the change is the commit being replayed:
+      {{nodes.inspect.output.json.sides}}
+    isolation: continue
+    lock: branch:main
+  settle:
+    type: tool.shell
+    script: |-
+      tmp=$(mktemp -d)
+      trap 'rm -rf "$tmp"' EXIT
+      printf '%s\n' "$FILES" | sed '/^$/d' > "$tmp/files"
+      while IFS= read -r f; do
+        if [ -f "$f" ] && grep -Eq '^(<<<<<<<|>>>>>>>) ' "$f"; then
+          echo "$f still has conflict markers." >&2
+          exit 1
+        fi
+      done < "$tmp/files"
+      { git diff --name-only; git ls-files --others --exclude-standard -- . ':!.ork'; } > "$tmp/touched"
+      while IFS= read -r f; do
+        if ! grep -Fxq -- "$f" "$tmp/files"; then
+          echo "$f was changed but is not in the conflict. The resolver may edit only the conflicted files." >&2
+          exit 1
+        fi
+      done < "$tmp/touched"
+      while IFS= read -r f; do
+        git add -A -- "$f"
+      done < "$tmp/files"
+      esc() { tr '\000-\011\013-\037' ' ' | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | awk 'BEGIN { ORS = "\\n" } { print }'; }
+      : > "$tmp/result"
+      while IFS= read -r f; do
+        git diff --cached -- "$f" >> "$tmp/result"
+      done < "$tmp/files"
+      printf '{"behaviour":"%s","result":"%s"}\n' "$BEHAVIOUR" "$(esc < "$tmp/result")"
+    allow:
+      - sh
+    cwd: "{{nodes.docs.output.worktree}}"
+    env:
+      BEHAVIOUR: "{{nodes.resolve.output.behaviour}}"
+      FILES: "{{nodes.inspect.output.json.files}}"
+    output:
+      format: json
+      schema:
+        behaviour:
+          - unchanged
+          - changed
+        result: string
+    lock: branch:main
+  ask:
+    type: human.gate
+    question: "The resolution changes what a reviewed change does: the same logic was edited on both sides. Keep it and finish the rebase, or stop with the work left in the checkout?"
+    document: |-
+      What each side did:
+      {{nodes.inspect.output.json.sides}}
+      What the resolver kept from each side:
+      {{nodes.resolve.output.kept}}
+
+      The result:
+      {{nodes.settle.output.json.result}}
+    options:
+      - keep
+      - stop
+    recommended: stop
+  stop:
+    type: tool.shell
+    script: |-
+      echo "Stopped at your answer. The rebase is still in progress in this checkout, with the resolution staged." >&2
+      exit 1
+    allow:
+      - sh
+    cwd: "{{nodes.docs.output.worktree}}"
+    lock: branch:main
+  finish:
+    type: tool.shell
+    script: |-
+      export GIT_EDITOR=true
+      # A resolution that leaves nothing to commit means the change is already upstream.
+      if git diff --cached --quiet; then
+        git rebase --skip || true
+      else
+        git rebase --continue || true
+      fi
+      gitdir=$(git rev-parse --absolute-git-dir)
+      if [ -d "$gitdir/rebase-merge" ] || [ -d "$gitdir/rebase-apply" ]; then
+        echo "The rebase stopped again, on the next commit. Its conflict is in this checkout." >&2
+        exit 1
+      fi
+    allow:
+      - sh
+    cwd: "{{nodes.docs.output.worktree}}"
+    lock: branch:main
+  check:
+    type: tool.shell
+    script: pnpm run check
+    allow:
+      - sh
+    cwd: "{{nodes.docs.output.worktree}}"
+    timeout: 30m
+    lock: branch:main
+  push:
+    type: tool.shell
+    script: |-
+      set -eu
+      # The check ran in the step before, not in the pre-push hook: git connects
+      # before the hook, and GitHub drops the idle connection while the hook runs (exit 141).
+      git -C "$WORKTREE" push --no-verify origin "HEAD:refs/heads/$BRANCH"
       if [ "$CHOICE" = branch ]; then
-        if gh pr view "$branch" > /dev/null 2>&1; then
-          echo "$branch already has a pull request; it is updated."
+        if gh pr view "$BRANCH" > /dev/null 2>&1; then
+          echo "$BRANCH already has a pull request; it is updated."
         else
-          gh pr create --base main --head "$branch" --title "$SUBJECT" --body "$BODY"
+          gh pr create --base main --head "$BRANCH" --title "$SUBJECT" --body "$BODY"
         fi
       elif [ "$(git branch --show-current)" = main ] && [ -z "$(git status --porcelain)" ]; then
         git fetch origin main
@@ -499,12 +706,12 @@ nodes:
     allow:
       - sh
     env:
+      BRANCH: "{{nodes.publish.output.json.branch}}"
       CHOICE: "{{nodes.decide.output.choice}}"
-      NOTE: "{{nodes.decide.output.note}}"
-      RUN: "{{run.id}}"
       SUBJECT: "{{nodes.docs.output.commitSubject}}"
       BODY: "{{nodes.docs.output.commitBody}}"
       WORKTREE: "{{nodes.docs.output.worktree}}"
+    lock: branch:main
   apply:
     type: tool.shell
     script: |-
@@ -542,3 +749,28 @@ edges:
   - from: decide
     to: apply
     when: choice == 'keep-uncommitted'
+  - from: publish
+    to: check
+    when: json.outcome == 'clean'
+  - from: publish
+    to: inspect
+    when: json.outcome == 'conflict'
+  - inspect -> resolve
+  - from: docs
+    to: resolve
+    when: ok && !ok
+  - resolve -> settle
+  - from: settle
+    to: ask
+    when: json.behaviour == 'changed'
+  - from: settle
+    to: finish
+    when: json.behaviour == 'unchanged'
+  - from: ask
+    to: finish
+    when: choice == 'keep'
+  - from: ask
+    to: stop
+    when: choice == 'stop'
+  - finish -> check
+  - check -> push

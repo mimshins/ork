@@ -4,17 +4,13 @@
  *   `format-tool.ts`'s and the run summary `format-result.ts`'s.
  */
 
-import {
-  type AnsweredBy,
-  type RunEvent,
-  type RuntimeEvent,
-  slotWaitLine,
-} from "@krapht/ork-core";
+import type { AnsweredBy, RunEvent, RuntimeEvent } from "@krapht/ork-core";
 
 import { chip, CHIP_LABELS, nodeChip } from "../term/chips.ts";
 import { widthOf } from "../term/layout.ts";
 import { firstLine, formatBusEvent } from "./format-bus.ts";
 import { formatFinished } from "./format-end.ts";
+import { isMachineEvent, machineLine } from "./format-machine.ts";
 import { formatOutcome } from "./format-outcome.ts";
 import { formatRunResult } from "./format-result.ts";
 import { indent, toolLines, wrapped } from "./format-tool.ts";
@@ -252,13 +248,8 @@ export const formatRunEvent = (
   if (event.type === "node.released") {
     return [`${tag(event.id)} ${style("dim", "▸ continues")}`];
   }
-  if (event.type === "slot.waiting") {
-    return [
-      `${tag(event.id)} ${style("yellow", `‖ ${slotWaitLine(event.holders)}`)}`,
-    ];
-  }
-  if (event.type === "slot.taken") {
-    return [`${tag(event.id)} ${style("dim", "▸ got a check slot")}`];
+  if (isMachineEvent(event)) {
+    return [`${tag(event.id)} ${machineLine(event, style)}`];
   }
   if (event.type === "verify.skipped") {
     return [`${tag(event.id)} ${style("dim", `✓ ${skippedLine(event)}`)}`];

@@ -22,6 +22,7 @@ import { defineCommand } from "citty";
 import { addAgent, formatAgent, formatAgents } from "../agents/manage.ts";
 import { exec, headWarning } from "../doctor/checks.ts";
 import { style, write, writeErr } from "../output.ts";
+import { initSteps } from "../project/init-steps.ts";
 import {
   initDriverLineHere,
   initRecorded,
@@ -29,7 +30,6 @@ import {
 } from "../project/init.ts";
 import { formatLinks } from "../project/link.ts";
 import { projectAt } from "../project/place.ts";
-import { skillsStep } from "../project/skills-step.ts";
 import { WORKFLOW_DIR } from "../workflows.ts";
 
 export const init = defineCommand({
@@ -49,6 +49,11 @@ export const init = defineCommand({
       type: "boolean",
       description:
         "Write Ork's skills for Claude Code into .ork/skills/ (--no-skills: don't; asked otherwise)",
+    },
+    issues: {
+      type: "boolean",
+      description:
+        "Write the issues workflow (GitHub issues in parallel, one pull request) into .ork/workflows/ (--no-issues: don't; asked otherwise)",
     },
   },
   run: async ({ args }) => {
@@ -75,7 +80,11 @@ export const init = defineCommand({
     for (const line of formatLinks(links.filter(l => l.state !== "linked"))) {
       write(line);
     }
-    await skillsStep(cwd, { skills: args.skills, link: args.link });
+    await initSteps(cwd, {
+      skills: args.skills,
+      issues: args.issues,
+      link: args.link,
+    });
     const noCommit = await headWarning(exec);
     if (noCommit !== null) write(style("yellow", `\n! git: ${noCommit}`));
     write(

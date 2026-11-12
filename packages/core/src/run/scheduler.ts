@@ -135,6 +135,7 @@ export const startRun = (options: RunOptions): RunHandle => {
 
   const close = async (): Promise<void> => {
     cancelTimeout();
+    locks.end();
     const worktrees = await closeWorkspace(options.workspace, reasons);
     await options.beforeFinish?.();
     const result = runResult({
@@ -195,7 +196,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     summary,
   };
 
-  const execute = createExecute({
+  const { execute, locks } = createExecute({
     options,
     contextDeps,
     clock,
@@ -227,9 +228,8 @@ export const startRun = (options: RunOptions): RunHandle => {
       ),
     );
     // A limit cut it off: no edge acts on its failure, and a resume goes on.
-    if (result.limited !== undefined) {
+    if (result.limited !== undefined)
       stop(result.stopsAs ?? "quota_exhausted", result.limited);
-    }
     spend.settled(id);
     holds.finished(id);
     ports.finished(id);

@@ -34,6 +34,9 @@ runs and worktrees in plain words.
   and the command that does the same as each action.
 - [Worktrees and isolation](./guides/worktrees.md): where each node works, and
   `ork worktrees`.
+- [Working on issues in parallel](./guides/issues-in-parallel.md): GitHub issues
+  built at once, integrated in turn into one branch and one pull request, and
+  the lock that orders runs onto a branch.
 - [Models, effort and budgets](./guides/models-and-budgets.md): picking models
   per node, limits, and what you spent.
 - [The example workflows](./guides/examples.md): what each one does, how to

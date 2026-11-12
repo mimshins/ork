@@ -5,6 +5,14 @@ full: the [changelog](../packages/cli/CHANGELOG.md).
 
 ## Next release
 
+- **Work GitHub issues in parallel.** `ork run issues --input label=ready`
+  builds and reviews each issue in its own worktree, integrates the ones that
+  pass one at a time into one branch, and opens one pull request that closes
+  them. A node's new `lock: <name>` is what orders runs onto a branch: a run
+  that waits says "waiting for <lock>, held by <run>/<node>", and an agent
+  resolves a rebase conflict, asking you only when it changes what a reviewed
+  change does. `ork init --issues` adds the workflow; `ork doctor` clears stale
+  locks ([guide](./guides/issues-in-parallel.md)).
 - **Agent nodes are `agent.*`, and a model can name its driver.**
   `claude.worker`, `claude.leader` and `claude.subagent` are now `agent.worker`,
   `agent.leader` and `agent.subagent`, and a `model` may start with its driver:

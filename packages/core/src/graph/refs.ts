@@ -17,7 +17,12 @@ import { checkConditionRefs, type NotifyRules } from "./condition-refs.ts";
 import { error } from "./diagnostics.ts";
 import { checkToolEnv } from "./env.ts";
 import { checkItemRead, isItemRoot, itemScopes } from "./for-each.ts";
-import { checkAbsolute, type Context, envOutsideEnv } from "./ref-paths.ts";
+import {
+  checkAbsolute,
+  type Context,
+  describePath,
+  envOutsideEnv,
+} from "./ref-paths.ts";
 import {
   beforeFields,
   checkDefaultsBefore,
@@ -35,6 +40,7 @@ const TEMPLATE_FIELDS = [
   "workflow",
   "project",
   "ref",
+  "lock",
 ] as const;
 
 /**
@@ -112,6 +118,25 @@ export const checkReferences = (
             : checkTemplate(id, [...at, "command"], program.command, context),
         ),
   );
+  // A lock is taken before its node runs, so its name reads only the inputs.
+  const fromLocks = Object.entries(workflow.nodes).flatMap(([id, node]) => {
+    const parsed = "lock" in node ? parseTemplate(node.lock ?? "") : undefined;
+    return parsed?.ok === true
+      ? parsed.parts.flatMap(part =>
+          typeof part === "string"
+            ? []
+            : collectPaths(part.expr)
+                .filter(([root]) => root === "nodes")
+                .map(segments =>
+                  error(
+                    "lock.scope",
+                    `\`${describePath(segments)}\`: a lock's name reads only \`inputs\`, since it is taken before the node runs`,
+                    ["nodes", id, "lock"],
+                  ),
+                ),
+        )
+      : [];
+  });
   const fromOutputs = Object.entries(workflow.outputs ?? {}).flatMap(
     ([name, value]) => {
       const parsed = parseTemplate(value);
@@ -140,6 +165,7 @@ export const checkReferences = (
     ...fromEnv,
     ...fromSteps,
     ...fromMcp,
+    ...fromLocks,
     ...checkToolEnv(workflow),
     ...fromOutputs,
     ...checkConditionRefs(workflow, edges, rules, context),

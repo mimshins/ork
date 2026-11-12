@@ -17,6 +17,7 @@ import {
   inside,
   loadProject,
   machineRulesOf,
+  machineLockLedgers,
   machineSlotLedger,
   newRunId,
   parseInputPairs,
@@ -280,6 +281,7 @@ export const runWorkflowFile = async (
         options.home === undefined ? {} : { home: options.home },
       ),
     },
+    locks: machineLockLedgers(root ?? place.root, place.root, options.home),
     beforeFinish: takeLastCommands(control, started.promise),
   });
   live.handle = handle;

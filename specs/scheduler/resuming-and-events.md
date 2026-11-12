@@ -101,7 +101,12 @@ The decision queue adds `decision.opened`, `decision.answered`,
 adds `node.held` and `node.released`
 ([run control](../run-control.md#what-a-run-records)); a heavy command that
 waits for a machine-wide slot adds `slot.waiting` (with who holds the slots) and
-`slot.taken` ([machine](../machine.md#a-wait-is-shown)); a `once: true` check
+`slot.taken` ([machine](../machine.md#a-wait-is-shown)); a node that names a
+`lock:` ([RFC-016](../../rfcs/archived/RFC-016-integration-lock.md)) adds
+`lock.waiting` (`lock`, `holders` as `<run>/<node>`) while another run holds it,
+`lock.taken` (`lock`) when it runs under it, and `lock.released` (`lock`, `end`:
+`span` when the last node naming it ended, `run` when the run ended holding it,
+whose locked nodes a resume runs again under the lock); a `once: true` check
 that did not run adds `verify.skipped` with the command, the time of the earlier
 pass and who ran it ([check once](../check-once.md#in-a-workflow)).
 

@@ -6,6 +6,7 @@
  */
 
 import type { CompiledGraph } from "../graph/types.ts";
+import type { LockLedgers } from "../machine/lock-ledger.ts";
 import type { SlotLedger } from "../machine/slot-ledger.ts";
 import type { MachineRules } from "../project/heavy.ts";
 import type { HumanChannel, RelayPort } from "../runtime/types.ts";
@@ -80,6 +81,8 @@ export type RunOptions = {
    * slots.
    */
   machine?: { rules: MachineRules; ledger?: SlotLedger };
+  /** The machine's locks (RFC-016); without them a node's `lock` is not taken. */
+  locks?: LockLedgers;
   /** Called last before `run.finished`, to take what is still on its way. */
   beforeFinish?: () => Promise<void>;
 };

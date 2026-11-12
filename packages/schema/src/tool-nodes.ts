@@ -12,6 +12,7 @@ import {
 import { z } from "zod";
 
 import { forEachFields } from "./for-each.ts";
+import { lockFields } from "./lock.ts";
 import {
   nodeBaseFields,
   notifyFields,
@@ -38,6 +39,7 @@ const toolFields = {
   once: onceField,
   ...toolProgramFields,
   ...notifyFields,
+  ...lockFields,
   ...forEachFields,
 };
 

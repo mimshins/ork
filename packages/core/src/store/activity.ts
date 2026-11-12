@@ -5,6 +5,7 @@
  *   keeps a screen's one-line answer to "what is it doing" in one place.
  */
 
+import { lockWaitLine } from "../run/locks.ts";
 import { slotWaitLine } from "../run/machine.ts";
 import type { RuntimeEvent } from "../runtime/types.ts";
 import type { StoredEvent } from "./types.ts";
@@ -90,6 +91,10 @@ export const runActivity = (
     } else if (event.type === "slot.waiting") {
       of(event.id).now = oneLine(slotWaitLine(event.holders));
     } else if (event.type === "slot.taken") {
+      delete of(event.id).now;
+    } else if (event.type === "lock.waiting") {
+      of(event.id).now = oneLine(lockWaitLine(event.lock, event.holders));
+    } else if (event.type === "lock.taken") {
       delete of(event.id).now;
     } else if (event.type === "decision.opened") {
       of(event.node).now = oneLine(`Asked: ${event.question}`);

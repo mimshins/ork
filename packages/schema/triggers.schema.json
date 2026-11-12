@@ -223,6 +223,11 @@
                       "additionalProperties": false
                     }
                   },
+                  "lock": {
+                    "type": "string",
+                    "pattern": "\\S",
+                    "description": "The lock this node holds, e.g. `branch:{{inputs.branch}}`. Held from the first node that names it to the last, or the run's end; one run at a time holds it, the others wait. One name per node."
+                  },
                   "forEach": {
                     "description": "Run this node once per item of a list, with no model turn to fan out or gather. Items are `<id>.0`, `<id>.1`, ….",
                     "anyOf": [
@@ -509,6 +514,11 @@
                       "additionalProperties": false
                     }
                   },
+                  "lock": {
+                    "type": "string",
+                    "pattern": "\\S",
+                    "description": "The lock this node holds, e.g. `branch:{{inputs.branch}}`. Held from the first node that names it to the last, or the run's end; one run at a time holds it, the others wait. One name per node."
+                  },
                   "forEach": {
                     "description": "Run this node once per item of a list, with no model turn to fan out or gather. Items are `<id>.0`, `<id>.1`, ….",
                     "anyOf": [
@@ -793,6 +803,11 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "lock": {
+                    "type": "string",
+                    "pattern": "\\S",
+                    "description": "The lock this node holds, e.g. `branch:{{inputs.branch}}`. Held from the first node that names it to the last, or the run's end; one run at a time holds it, the others wait. One name per node."
                   },
                   "forEach": {
                     "description": "Run this node once per item of a list, with no model turn to fan out or gather. Items are `<id>.0`, `<id>.1`, ….",
@@ -1084,6 +1099,11 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "lock": {
+                    "type": "string",
+                    "pattern": "\\S",
+                    "description": "The lock this node holds, e.g. `branch:{{inputs.branch}}`. Held from the first node that names it to the last, or the run's end; one run at a time holds it, the others wait. One name per node."
                   },
                   "forEach": {
                     "description": "Run this node once per item of a list, with no model turn to fan out or gather. Items are `<id>.0`, `<id>.1`, ….",
@@ -1377,6 +1397,11 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "lock": {
+                    "type": "string",
+                    "pattern": "\\S",
+                    "description": "The lock this node holds, e.g. `branch:{{inputs.branch}}`. Held from the first node that names it to the last, or the run's end; one run at a time holds it, the others wait. One name per node."
                   },
                   "forEach": {
                     "description": "Run this node once per item of a list, with no model turn to fan out or gather. Items are `<id>.0`, `<id>.1`, ….",

@@ -38,7 +38,7 @@
     "provenance": true
   },
   "scripts": {
-    "build": "pnpm --filter @krapht/ork-ui build && node ../../tools/release/build-info.ts && node ../../tools/release/plugin-skills.ts && node ../../tools/release/builtin-workflows.ts && tsdown && cp ../../LICENSE ../../THIRD_PARTY_NOTICES.md . && cp -R ../ui/dist dist/ui"
+    "build": "pnpm --filter @krapht/ork-ui build && node ../../tools/release/build-info.ts && node ../../tools/release/plugin-skills.ts && node ../../tools/release/builtin-workflows.ts && node ../../tools/release/issues-workflow.ts && tsdown && cp ../../LICENSE ../../THIRD_PARTY_NOTICES.md . && cp -R ../ui/dist dist/ui"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",

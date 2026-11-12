@@ -290,10 +290,6 @@ export type RunEvent =
   | { type: "node.held"; id: string; at: HoldPoint }
   /** A held node goes on. */
   | { type: "node.released"; id: string }
-  /** A heavy command waits for a machine-wide slot, held by `<run>/<node>`s. */
-  | { type: "slot.waiting"; id: string; holders: string[] }
-  /** The command that waited got its slot. */
-  | { type: "slot.taken"; id: string }
   | BusEvent
   /** A feedback record: an agent's report, or a signal Ork derived. */
   | { type: "feedback.recorded"; node?: string; feedback: FeedbackReport }

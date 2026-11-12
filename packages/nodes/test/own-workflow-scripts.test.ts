@@ -131,12 +131,18 @@ describe("start's load programs", () => {
 });
 
 describe("publishing", () => {
-  it.each(["build", "rfc"])("checks %s before it connects to push", name => {
-    const script = scriptOf(name, "publish");
+  it("checks rfc before it connects to push", () => {
+    const script = scriptOf("rfc", "publish");
     expect(script.indexOf("run check")).toBeGreaterThan(-1);
     expect(script.indexOf("run check")).toBeLessThan(
       script.indexOf("push --no-verify"),
     );
+  });
+
+  it("checks build in its own step, before the only step that pushes", () => {
+    expect(scriptOf("build", "check")).toContain("run check");
+    expect(scriptOf("build", "push")).toContain("push --no-verify");
+    expect(scriptOf("build", "publish")).not.toContain("push --no-verify");
   });
 });
 

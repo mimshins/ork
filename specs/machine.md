@@ -64,8 +64,14 @@ integer is the default, 2.
   if the slot exists, as the [lease ledger](../packages/runtime/src/lease.ts)
   does.
 - **A dead holder frees its slot.** A record or ticket whose process is gone is
-  swept by the next waiter, and its slot taken over. Nothing else sweeps: there
-  is no `ork doctor` check yet ([L259](./gaps/machine-limits.md)).
+  swept by the next waiter, and its slot taken over. `ork doctor` sweeps them
+  too, and those of the locks (`~/.ork/locks`), naming each record it removed
+  ([ledger checks](../packages/cli/src/doctor/ledger-checks.ts)).
+- **Locks share the mechanism.** A node's `lock:`
+  ([RFC-016](../rfcs/archived/RFC-016-integration-lock.md)) is a one-slot ledger
+  per lock in `~/.ork/locks/<hash of its key>`
+  ([lock ledger](../packages/core/src/machine/lock-ledger.ts)); its wait is
+  `lock.waiting`, shown as `waiting for <lock>, held by <run>/<node>`.
 - **A record holds** a run id, a node id and a pid, and nothing else.
 
 ### A wait is shown

@@ -207,14 +207,38 @@ export const carryFiles = (
     files.filter(f => !path.isAbsolute(f) && !f.split(/[\\/]/u).includes("..")),
   );
 
+/** What git keeps in a worktree's git dir while a rebase, merge or pick runs. */
+const UNDERWAY = [
+  "rebase-merge",
+  "rebase-apply",
+  "MERGE_HEAD",
+  "CHERRY_PICK_HEAD",
+  "REVERT_HEAD",
+];
+
+/** Whether a rebase, merge, cherry-pick or revert is underway in `worktree`. */
+export const gitOperationUnderway = async (
+  worktree: string,
+): Promise<boolean> => {
+  // `--git-path` is the linked worktree's own git dir, relative to `worktree`.
+  const paths = await gitOk(worktree, [
+    "rev-parse",
+    ...UNDERWAY.flatMap(name => ["--git-path", name]),
+  ]);
+  return lines(paths).some(file => existsSync(path.resolve(worktree, file)));
+};
+
 /**
  * Commits what a session left uncommitted. The repo's hooks run; when they
- * refuse, the error says why and the worktree keeps the changes.
+ * refuse, the error says why and the worktree keeps the changes. A worktree
+ * mid-rebase (or merge, cherry-pick, revert) is left exactly as it is: its
+ * changes are the operation's to finish, as a conflict resolver's are.
  */
 export const commitLeftovers = async (
   worktree: string,
   message: string,
 ): Promise<boolean> => {
+  if (await gitOperationUnderway(worktree)) return false;
   const status = await gitOk(worktree, ["status", "--porcelain"]);
   if (lines(status).length === 0) return false;
   await gitOk(worktree, ["add", "-A"]);

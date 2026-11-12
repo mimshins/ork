@@ -124,6 +124,28 @@ describe("ork ps", () => {
     ).not.toContain("waiting for slot");
   });
 
+  it("reads a running run with a node waiting for a lock as waiting for it", () => {
+    const live = run({ status: "running", pid: process.pid });
+    const waiting: RunEvent[] = [
+      {
+        type: "lock.waiting",
+        id: "push",
+        lock: "branch:main",
+        holders: ["r1/push"],
+      },
+    ];
+    const taken: RunEvent[] = [
+      ...waiting,
+      { type: "lock.taken", id: "push", lock: "branch:main" },
+    ];
+    expect(
+      formatRuns([live], false, NOW, statusWith(waiting), plainTerm).join("\n"),
+    ).toContain("waiting for branch:main, held by r1/push");
+    expect(
+      formatRuns([live], false, NOW, statusWith(taken), plainTerm).join("\n"),
+    ).not.toContain("waiting for");
+  });
+
   it("keeps today's table plain, with no escape codes", () => {
     const lines = formatRuns(runs, false, NOW, statusOf, plainTerm);
     expect(lines.join("\n")).not.toContain(ESC);
