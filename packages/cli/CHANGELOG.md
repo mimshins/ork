@@ -1,5 +1,54 @@
 # @krapht/ork
 
+## 1.0.0-alpha.14
+
+### Patch Changes
+
+- [`4abfbbf`](https://github.com/mimshins/ork/commit/4abfbbf64e24a06754c9d60b150d32bef0d1ff5c) Thanks [@mimshins](https://github.com/mimshins)! - Every driver can now be capped in tokens. `budgetTokens` sits beside `budgetUsd`
+  on a node, in `defaults`, in a workflow's `limits` and in agent files, and
+  counts input, output and cache-write tokens (cache reads never count). A session
+  stops once it reaches its cap and ends `budget_limit`, at most one usage report
+  past it; a run's `limits.budgetTokens` is set aside per session as dollars are,
+  and `quotas.dayTokens` caps a project's day, shown in `ork usage`. A dollar
+  budget on a driver that reports no price (`command-code`) is no longer refused:
+  `ork validate` and `ork run` warn that only `budgetTokens` applies, and a dollar
+  total that misses such sessions reads `(partial)` in `ork usage`, `ork ps` and
+  the run summary, and `≥` in the browser view, with the counted tokens beside it.
+
+- [`88c1262`](https://github.com/mimshins/ork/commit/88c1262bddeea97d278b0dc5ee8e364bfffbcf23) Thanks [@mimshins](https://github.com/mimshins)! - Tab completion offers a workflow's input names after `--input`, as `name=` with
+  each input's description, for `ork run <workflow>` and `ork resume <run>`; zsh
+  and bash leave no space after the `=`.
+
+- [`7bb910c`](https://github.com/mimshins/ork/commit/7bb910c339f55743aaffea3901d7d561674bc7b1) Thanks [@mimshins](https://github.com/mimshins)! - A node's `lock` is now held. One run at a time on the machine holds a lock: a
+  `branch:<name>` lock is shared by every clone of the same origin. The run takes
+  it before the first node naming it and lets it go after the last one, or when
+  the run ends; a fanned node's items take it one at a time. A run that waits says
+  so in `ork ps`, `ork logs`, `ork tree` and the UI ("waiting for <lock>, held by
+  <run>/<node>"), and its timeouts don't count the wait. A resumed run that ended
+  holding a lock takes it again and reruns its locked nodes. `ork doctor` removes
+  the lock and check-slot records of processes that are gone.
+
+- [`7bb910c`](https://github.com/mimshins/ork/commit/7bb910c339f55743aaffea3901d7d561674bc7b1) Thanks [@mimshins](https://github.com/mimshins)! - A new `issues` workflow works GitHub issues in parallel, in `examples/` and
+  offered by `ork init --issues` (or asked once on a terminal).
+  `ork run issues --input label=ready` (or `--input issues=12,15,18`) labels each
+  issue `in-progress`, builds each in its own worktree, reviews each, integrates
+  the ones that pass one at a time into the branch you name under its lock (an
+  agent resolves a rebase conflict, and you are asked only when its resolution
+  changes what a reviewed change does), runs your check after each, pushes, and
+  opens or updates one pull request that closes them. An issue that failed is left
+  out, unlabelled and named in the run's summary; a second run naming the same
+  branch adds to the same pull request.
+
+- [`7bb910c`](https://github.com/mimshins/ork/commit/7bb910c339f55743aaffea3901d7d561674bc7b1) Thanks [@mimshins](https://github.com/mimshins)! - Ork no longer commits what a node left in its worktree while a rebase, merge,
+  cherry-pick or revert is underway there. A node that resolves a rebase conflict
+  keeps its edits uncommitted for the step that finishes the rebase, instead of
+  having them committed before that step runs.
+
+- [`7bb910c`](https://github.com/mimshins/ork/commit/7bb910c339f55743aaffea3901d7d561674bc7b1) Thanks [@mimshins](https://github.com/mimshins)! - A node can name a `lock`. Workers, tool nodes and `mcp.call` take `lock: <name>`
+  (one name per node, which may read `{{inputs.*}}`, for example
+  `branch:{{inputs.branch}}`), parsed and checked by `ork validate`. The run holds
+  it across the nodes that name it, as a later entry of this release says.
+
 ## 1.0.0-alpha.13
 
 ### Minor Changes
