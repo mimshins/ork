@@ -1,0 +1,138 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: qa-pass
+description: One tester per surface tests the package built from main as a user would, each in a throwaway HOME and prefix with a fake claude and gh, so nothing is paid; you read the findings and decide what happens next.
+inputs:
+  scope:
+    type: string
+    required: true
+    description: What to test, e.g. "the quickstart and the worktrees guide", or "everything a 1.0.0-alpha.0 user meets".
+layers:
+  project:
+    instructions: inherit
+    skills: ignore
+defaults:
+  model: claude-code.sonnet
+  effort: medium
+  budgetUsd: 2
+limits:
+  budgetUsd: 14
+  timeout: 2h
+nodes:
+  pack:
+    type: tool.shell
+    script: |-
+      set -eu
+      src="$(mktemp -d)"
+      out="$(mktemp -d)"
+      trap 'rm -rf "$src"' EXIT
+      # A program runs in your checkout, so build main from a clean copy of it.
+      git clone --quiet --local --branch main . "$src" >&2
+      pnpm -C "$src" install --frozen-lockfile --prefer-offline >&2
+      pnpm -C "$src" build >&2
+      (cd "$src/packages/cli" && npm pack --pack-destination "$out" >&2)
+      ls "$out"/*.tgz
+    allow:
+      - sh
+    timeout: 15m
+  split:
+    type: agent.worker
+    prompt: |-
+      Split this QA scope into independent surfaces a tester can cover alone: {{inputs.scope}}
+
+      Read docs/README.md and the guides the scope names. A surface is one guide or one area of the CLI or `ork ui`, small enough for one session. List at most 8, the ones a user meets first at the top. Give each a short `name` and, in `detail`, the pages to follow and what to exercise. Change nothing.
+    model: claude-code.haiku
+    isolation: readonly
+    budgetUsd: 0.5
+    maxTurns: 15
+    output:
+      schema:
+        surfaces:
+          list:
+            name: string
+            detail: string
+  qa:
+    type: agent.worker
+    agent: qa
+    prompt: |-
+      Test this one surface, as your role says. Other testers cover the rest of "{{inputs.scope}}", so stay on yours.
+
+      {{item.name}}: {{item.detail}}
+
+      The package is already built from main and packed; install this tarball, don't build again:
+      {{nodes.pack.output.stdout}}
+      Other testers run at the same time: start `ork ui` with `--port 0` and pick free ports for anything you serve. A port clash is not a finding.
+
+      Report status done, starting `summary` with the surface's name, with every finding in `findings` (markdown: most severe first, each with its steps, severity and suspected place, then the doc drift, what passed and what you couldn't test), the counts in `blockers` and `majors`, and `verdict` clean only when you found nothing.
+    model: claude-code.haiku
+    effort: high
+    isolation: worktree
+    budgetUsd: 1.5
+    maxTurns: 80
+    timeout: 45m
+    tools:
+      allow:
+        - Bash
+        - Write
+        - Edit
+    output:
+      schema:
+        verdict:
+          - clean
+          - findings
+        blockers: integer
+        majors: integer
+        findings: string
+    mcp:
+      - chrome-devtools
+    forEach:
+      from: "{{nodes.split.output.surfaces}}"
+      maxItems: 8
+      maxParallel: 3
+  decide:
+    type: human.gate
+    question: |-
+      QA of {{inputs.scope}}. Status of each surface, in the order the document lists them:
+
+      {{nodes.qa.output.statuses}}
+
+      A surface that failed shows only why it stopped; ork logs {{run.id}} has the rest. Read the document for each surface's verdict, counts and findings.
+
+      save writes these findings to .ai/plans/qa-{{run.id}}.md (local, never committed), to turn into plans for ork run start or into issues. drop keeps them only in this run's record (ork logs {{run.id}}).
+    document: |-
+      ## Surfaces
+
+      {{nodes.qa.output.items}}
+
+      ## Results, in the same order
+
+      {{nodes.qa.output.results}}
+    options:
+      - save
+      - drop
+    recommended: save
+  save:
+    type: tool.shell
+    script: |-
+      mkdir -p .ai/plans
+      out=".ai/plans/qa-$RUN.md"
+      printf '# QA findings: %s\n\nFrom run %s.\n\n' "$SCOPE" "$RUN" > "$out"
+      # A gathered list arrives as JSON; write each surface as markdown.
+      node -e 'const items = JSON.parse(process.env.ITEMS); JSON.parse(process.env.FINDINGS).forEach((r, i) => console.log("## " + items[i].name + "\n\n" + (r.findings ?? "No report: " + (r.summary ?? "not started") + ".") + "\n"))' >> "$out"
+      echo "$out"
+    allow:
+      - sh
+    env:
+      RUN: "{{run.id}}"
+      SCOPE: "{{inputs.scope}}"
+      FINDINGS: "{{nodes.qa.output.results}}"
+      ITEMS: "{{nodes.qa.output.items}}"
+edges:
+  - pack -> split
+  - split -> qa
+  - from: qa
+    to: decide
+    when: count > 0
+  - from: decide
+    to: save
+    when: choice == 'save'

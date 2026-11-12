@@ -1,0 +1,273 @@
+{
+  "benchmark": "qa-alpha-14",
+  "ork": {
+    "versions": ["1.0.0-alpha.14"],
+    "from": "run events"
+  },
+  "run": "c9c908b9",
+  "status": "succeeded",
+  "runs": [
+    {
+      "id": "c9c908b9",
+      "workflow": "qa-pass",
+      "parent": null,
+      "status": "succeeded",
+      "started": "2026-11-12T14:36:35.147Z",
+      "finished": "2026-11-12T15:05:18.376Z",
+      "cost_usd": 2.2553
+    }
+  ],
+  "started": "2026-11-12T14:36:35.147Z",
+  "finished": "2026-11-12T15:05:18.376Z",
+  "cost_usd": 2.2553,
+  "tokens": {
+    "input_tokens": 1120,
+    "output_tokens": 476410,
+    "cache_read_tokens": 44529215,
+    "cache_write_tokens": 983595,
+    "all_tokens": 45990340
+  },
+  "turns": 581,
+  "sessions": 9,
+  "failed_sessions": 2,
+  "minutes": {
+    "working": 28.3,
+    "waiting_on_maintainer": 0.4,
+    "wall": 28.7
+  },
+  "decisions": 2,
+  "permission_requests": 1,
+  "by_node": {
+    "qa-pass.split": {
+      "model": "claude-haiku-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 7,
+      "input_tokens": 10,
+      "output_tokens": 4691,
+      "cache_read_tokens": 134150,
+      "cache_write_tokens": 41955,
+      "cost_usd": 0.0121
+    },
+    "qa-pass.qa.2": {
+      "model": "claude-haiku-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 72,
+      "input_tokens": 136,
+      "output_tokens": 55438,
+      "cache_read_tokens": 5591792,
+      "cache_write_tokens": 115295,
+      "cost_usd": 0.2947
+    },
+    "qa-pass.qa.1": {
+      "model": "claude-haiku-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 72,
+      "input_tokens": 140,
+      "output_tokens": 72429,
+      "cache_read_tokens": 6194929,
+      "cache_write_tokens": 146521,
+      "cost_usd": 0.3853
+    },
+    "qa-pass.qa.0": {
+      "model": "claude-haiku-5-5",
+      "sessions": 1,
+      "failed": 1,
+      "turns": 81,
+      "input_tokens": 160,
+      "output_tokens": 58159,
+      "cache_read_tokens": 6130805,
+      "cache_write_tokens": 115702,
+      "cost_usd": 0.2872
+    },
+    "qa-pass.qa.3": {
+      "model": "claude-haiku-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 63,
+      "input_tokens": 118,
+      "output_tokens": 56127,
+      "cache_read_tokens": 4936447,
+      "cache_write_tokens": 118280,
+      "cost_usd": 0.2889
+    },
+    "qa-pass.qa.4": {
+      "model": "claude-haiku-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 53,
+      "input_tokens": 100,
+      "output_tokens": 55409,
+      "cache_read_tokens": 3856749,
+      "cache_write_tokens": 104378,
+      "cost_usd": 0.1804
+    },
+    "qa-pass.qa.6": {
+      "model": "claude-haiku-5-5",
+      "sessions": 1,
+      "failed": 1,
+      "turns": 81,
+      "input_tokens": 160,
+      "output_tokens": 60059,
+      "cache_read_tokens": 6202712,
+      "cache_write_tokens": 111444,
+      "cost_usd": 0.2756
+    },
+    "qa-pass.qa.5": {
+      "model": "claude-haiku-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 80,
+      "input_tokens": 156,
+      "output_tokens": 66593,
+      "cache_read_tokens": 6132667,
+      "cache_write_tokens": 118771,
+      "cost_usd": 0.3101
+    },
+    "qa-pass.qa.7": {
+      "model": "claude-haiku-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 72,
+      "input_tokens": 140,
+      "output_tokens": 47505,
+      "cache_read_tokens": 5348964,
+      "cache_write_tokens": 111249,
+      "cost_usd": 0.2209
+    }
+  },
+  "activations": [
+    {
+      "run": "c9c908b9",
+      "node": "pack",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-12T14:36:35.156Z",
+      "minutes": 0.1
+    },
+    {
+      "run": "c9c908b9",
+      "node": "split",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-12T14:36:43.587Z",
+      "minutes": 0.5
+    },
+    {
+      "run": "c9c908b9",
+      "node": "qa.2",
+      "round": 1,
+      "agent": "qa",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-12T14:37:11.317Z",
+      "minutes": 6.4
+    },
+    {
+      "run": "c9c908b9",
+      "node": "qa.1",
+      "round": 1,
+      "agent": "qa",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-12T14:37:11.316Z",
+      "minutes": 7.8
+    },
+    {
+      "run": "c9c908b9",
+      "node": "qa.0",
+      "round": 1,
+      "agent": "qa",
+      "owner": null,
+      "ok": false,
+      "start": "2026-11-12T14:37:11.314Z",
+      "minutes": 11.9
+    },
+    {
+      "run": "c9c908b9",
+      "node": "qa.3",
+      "round": 1,
+      "agent": "qa",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-12T14:43:35.360Z",
+      "minutes": 5.6
+    },
+    {
+      "run": "c9c908b9",
+      "node": "qa.4",
+      "round": 1,
+      "agent": "qa",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-12T14:44:59.865Z",
+      "minutes": 6.3
+    },
+    {
+      "run": "c9c908b9",
+      "node": "qa.6",
+      "round": 1,
+      "agent": "qa",
+      "owner": null,
+      "ok": false,
+      "start": "2026-11-12T14:49:08.883Z",
+      "minutes": 5.8
+    },
+    {
+      "run": "c9c908b9",
+      "node": "qa.5",
+      "round": 1,
+      "agent": "qa",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-12T14:49:04.364Z",
+      "minutes": 13.3
+    },
+    {
+      "run": "c9c908b9",
+      "node": "qa.7",
+      "round": 1,
+      "agent": "qa",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-12T14:51:18.659Z",
+      "minutes": 13.6
+    },
+    {
+      "run": "c9c908b9",
+      "node": "qa",
+      "round": 1,
+      "agent": "qa",
+      "owner": null,
+      "ok": false,
+      "start": "2026-11-12T14:37:11.312Z",
+      "minutes": 27.7
+    },
+    {
+      "run": "c9c908b9",
+      "node": "save",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-12T15:05:18.335Z",
+      "minutes": 0
+    }
+  ],
+  "agents": [
+    {
+      "name": "qa",
+      "source": "project",
+      "where": ".ai/agents/qa.md",
+      "hash": "afc592c201ce"
+    }
+  ],
+  "workflow_commit": "b31eb38c2e012830cf7db157387d0de94f94d8e5",
+  "result_commits": []
+}

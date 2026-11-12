@@ -14,8 +14,10 @@ Code by hand, are here too.
 
 ## What they show so far
 
-Seven runs, 2026-11-08 to 2026-11-12, Ork 1.0.0-alpha.1 to alpha.14, together
-37,476 changed lines:
+Eight runs, 2026-11-08 to 2026-11-12, Ork 1.0.0-alpha.1 to alpha.14: seven that
+built a change, together 37,476 changed lines, and one QA pass that changed none
+($2.26 for eight surfaces in 28 minutes). The figures below are the seven
+builds':
 
 - **Large changes cost less, or the same.** Of the four changes over 4,000
   lines, three cost 32–45% less than the same change is estimated to cost in a
@@ -59,6 +61,7 @@ side.
 | [for-each-run-1](./for-each-run-1/README.md)         | 1.0.0-alpha.6  | succeeded |         8,065 |   $20.07 |        $36.50 ($23.87–$54.97) |              61 |                 112 (71–292) |
 | [cli-drivers-only](./cli-drivers-only/README.md)     | 1.0.0-alpha.9  | failed    |        11,097 |   $50.32 |        $50.22 ($32.84–$75.63) |             150 |                 154 (97–401) |
 | [follow-ups](./follow-ups/README.md)                 | 1.0.0-alpha.14 | succeeded |        11,190 |   $34.26 |        $50.64 ($33.12–$76.27) |              98 |                 155 (98–405) |
+| [qa-alpha-14](./qa-alpha-14/README.md)               | 1.0.0-alpha.14 | succeeded |             — |    $2.26 |                             — |              28 |                            — |
 
 The manual columns apply a rate measured over 111 pushes in 4 plain Claude Code
 sessions on this repository (178 commits, 185,087 changed lines): $4.53

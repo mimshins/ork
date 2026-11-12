@@ -133,6 +133,24 @@
       "changed_lines": 11190,
       "manual_usd": [33.12, 50.64, 76.27],
       "manual_working_min": [97.8, 155.3, 404.6]
+    },
+    {
+      "benchmark": "qa-alpha-14",
+      "run": "c9c908b9",
+      "ork": ["1.0.0-alpha.14"],
+      "status": "succeeded",
+      "started": "2026-11-12T14:36:35.147Z",
+      "cost_usd": 2.2553,
+      "working_min": 28.3,
+      "waiting_min": 0.4,
+      "wall_min": 28.7,
+      "sessions": 9,
+      "failed_sessions": 2,
+      "permission_requests": 1,
+      "result_commits": [],
+      "changed_lines": null,
+      "manual_usd": null,
+      "manual_working_min": null
     }
   ]
 }
