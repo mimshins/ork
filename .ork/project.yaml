@@ -99,5 +99,3 @@ defaults:
   budgetUsd: 2
   maxTurns: 60
   timeout: 45m
-quotas:
-  dayUsd: 100
