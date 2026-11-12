@@ -15,7 +15,9 @@ import {
 
 import type { TerminalHuman } from "../human.ts";
 import { ANSWERED_BY } from "../run/format.ts";
-import { createView, styler } from "../run/view.ts";
+import { createView, styler, type View } from "../run/view.ts";
+import { widthOf } from "../term/layout.ts";
+import { MIN_WIDTH } from "../term/mode.ts";
 import { paint } from "../term/theme.ts";
 import { askStored } from "./ask-stored.ts";
 import { createLogPrinter } from "./logs.ts";
@@ -33,6 +35,8 @@ export type AttachOptions = {
   intervalMs?: number;
   /** Stops following (Ctrl-C): nothing is stopped and no decision is closed. */
   signal?: AbortSignal;
+  /** How lines are drawn (default: stdout's), for tests. */
+  view?: View;
 };
 
 export type Attached = {
@@ -43,6 +47,10 @@ export type Attached = {
 };
 
 const where = (path: readonly string[]): string => path.join(" › ");
+
+/** The gutter before a called run's lines: its call path, then ` › `. */
+const gutterOf = (path: readonly string[]): string =>
+  path.length === 0 ? "" : `${where(path)} › `;
 
 /** A prompt in flight, and the event that closed its decision elsewhere. */
 type Prompt = {
@@ -64,7 +72,7 @@ export const attachRun = async (
   options: AttachOptions = {},
 ): Promise<Attached> => {
   const { human, basePath = [] } = options;
-  const { term } = createView();
+  const { term } = options.view ?? createView();
   const say = styler(term);
   const printers = new Map<string, ReturnType<typeof createLogPrinter>>();
   const prompts = new Map<string, Prompt>();
@@ -79,10 +87,27 @@ export const attachRun = async (
   } = { hinted: false, succeeded: false };
 
   const show = (path: readonly string[], lines: readonly string[]): void => {
-    const prefix =
-      path.length === 0 ? "" : paint(term, "muted", `${where(path)} › `);
+    const gutter = gutterOf(path);
+    const prefix = gutter === "" ? "" : paint(term, "muted", gutter);
     for (const line of lines) out(line === "" ? line : `${prefix}${line}`);
   };
+
+  /**
+   * A run's printer, laid out in the columns its gutter leaves, so a line fits
+   * the terminal with the gutter before it and a wrapped line goes on under its
+   * own text, not at the terminal's first column.
+   */
+  const printerFor = (path: readonly string[]) =>
+    createLogPrinter({
+      json: false,
+      view: {
+        term: {
+          ...term,
+          width: Math.max(MIN_WIDTH, term.width - widthOf(gutterOf(path))),
+        },
+        roots: new Map(),
+      },
+    });
 
   const ask = (run: string, path: readonly string[], id: string): void => {
     const decision = store.decision(id);
@@ -173,7 +198,7 @@ export const attachRun = async (
       }
       let print = printers.get(run);
       if (print === undefined) {
-        print = createLogPrinter({ json: false });
+        print = printerFor(path);
         printers.set(run, print);
       }
       show(path, print(stored));

@@ -92,12 +92,14 @@ holds no session and no worktree.
   ([code](../../packages/cli/src/run/show-calls.ts),
   [tests](../../packages/cli/test/run-calls-terminal.test.ts)): each
   `call.started` follows the called run, its lines prefixed by the call path
-  (`plan › spec › …`), and its open decisions asked on the same terminal, one
-  prompt at a time with the caller's own, answered as `terminal`. With no one at
-  the terminal (stdin not a TTY) nothing of a called run is asked: one line says
-  to answer with `ork decide`. Ctrl-C, at any prompt, interrupts the caller,
-  which stops what it called. When the caller ends, a called run that still runs
-  stops being followed and gets `↳ run <id> still running · ork attach <id>`;
-  one the caller stopped (Ctrl-C, `ork stop`, its timeout) is followed up to 5 s
-  more, so its end shows. `ork resume` in the foreground does not show its
-  called runs ([L324](../gaps.md#limits)).
+  (`plan › spec › …`) as a fixed gutter: they are laid out in the columns it
+  leaves, so a long line wraps under its own text, not at the terminal's first
+  column. Its open decisions are asked on the same terminal, one prompt at a
+  time with the caller's own, answered as `terminal`. With no one at the
+  terminal (stdin not a TTY) nothing of a called run is asked: one line says to
+  answer with `ork decide`. Ctrl-C, at any prompt, interrupts the caller, which
+  stops what it called. When the caller ends, a called run that still runs stops
+  being followed and gets `↳ run <id> still running · ork attach <id>`; one the
+  caller stopped (Ctrl-C, `ork stop`, its timeout) is followed up to 5 s more,
+  so its end shows. `ork resume` in the foreground does not show its called runs
+  ([L324](../gaps.md#limits)).

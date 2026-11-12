@@ -14,6 +14,7 @@ import {
 
 import { style } from "../output.ts";
 import { createView, formatRunEvent } from "../run/format.ts";
+import type { View } from "../run/view.ts";
 
 export type LogOptions = {
   /** Only this node's events. */
@@ -22,12 +23,14 @@ export type LogOptions = {
   json: boolean;
   /** A failed node's hint and scrubbed detail; on when `node` names one. */
   verbose?: boolean;
+  /** How lines are drawn (default: stdout's); `ork attach` narrows its width. */
+  view?: View;
 };
 
 /** Turns stored events into lines, keeping the state a transcript needs. */
 export const createLogPrinter = (options: LogOptions) => {
   const tools = new Map<string, string>();
-  const view = createView();
+  const view = options.view ?? createView();
   let width = 8;
   return (stored: StoredEvent): string[] => {
     const { event } = stored;

@@ -139,6 +139,50 @@ describe("attachRun", () => {
     store.close();
   });
 
+  it("fits a called run's lines beside its call path, wrapping under its text", async () => {
+    begin("root0000");
+    store.append("root0000", called("build", "bld00000"));
+    store.begin({ id: "bld00000", workflow: "w", file: "f", project: "/p" });
+    store.append("bld00000", {
+      type: "run.started",
+      runId: "bld00000",
+      workflow: "w",
+      entries: [],
+      nodes: [{ id: "implement-5", type: "agent.worker" }],
+    });
+    const words = Array.from({ length: 40 }, (_, i) => `word${String(i)}`);
+    for (const event of [
+      { type: "assistant.text", text: words.join(" ") },
+      {
+        type: "tool.called",
+        id: "t1",
+        name: "Bash",
+        input: { command: `ls ${words.join("/")}` },
+      },
+    ] as const) {
+      store.append("bld00000", {
+        type: "node.event",
+        id: "implement-5",
+        event,
+      });
+    }
+    store.append("bld00000", finished("bld00000"));
+    store.append("root0000", finished("root0000"));
+    const width = 60;
+    await attach({
+      view: { term: { rich: true, width, rows: 24 }, roots: new Map() },
+    });
+
+    // The node's text and tool lines: each fits, and a wrapped one goes on
+    // under the text, behind the same gutter.
+    const body = lines.filter(line => line.includes("word"));
+    expect(body.length).toBeGreaterThan(3);
+    expect(body.every(line => line.startsWith("build › "))).toBe(true);
+    expect(Math.max(...body.map(line => line.length))).toBeLessThanOrEqual(
+      width,
+    );
+  });
+
   it("prints a whole ended chain under call paths and asks nothing", async () => {
     chain();
     endAll();
