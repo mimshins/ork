@@ -1,5 +1,70 @@
 # @krapht/ork
 
+## 1.0.0-alpha.15
+
+### Minor Changes
+
+- [`dedea75`](https://github.com/mimshins/ork/commit/dedea757d7db159b23886495e8a7dfaf9d43a5d0) Thanks [@mimshins](https://github.com/mimshins)! - Follow-ups keep what a change leaves for later, apart from feedback: a message
+  to a partner, work for another project's agent, infra steps, a check after
+  deploy. Sessions leave them with a new `follow_up` tool (30 a session,
+  duplicates merged),
+  `ork follow-ups list | show | add | done | drop | reopen | due | post | published`
+  manages them, and the Follow-ups panel in `ork ui` does the same, with a due
+  count on its tab. A project's new `followUps` rule keeps them in Ork's store
+  (the default), in a file in your repository, or as GitHub issues through your
+  own `gh`. An `after-merge` follow-up becomes due when `gh` shows its pull
+  request merged, checked on every call and every 10 minutes under `ork watch` and
+  `ork ui`. A follow-up for another registered project goes into its list and,
+  when a run is live there, to its session. Ork drafts messages and never sends
+  them: you send them, or confirm a comment on an issue with
+  `ork follow-ups post --confirm`. `ork run <workflow> --follow-ups <ids>` takes
+  an agent's changes as a run's `brief`, and `build` asks you once what to do with
+  the follow-ups it finds, does the small ones in one more round, and records the
+  rest once the change is published.
+
+### Patch Changes
+
+- [`f031e5d`](https://github.com/mimshins/ork/commit/f031e5d83409a52b71cafcc61bc00622567b5e50) Thanks [@mimshins](https://github.com/mimshins)! - The `issues` workflow is safer by default. A run that fails before its pull
+  request takes `in-progress` off every issue it listed (and still ends `failed`);
+  `list` refuses more than 10 issue numbers, a checkout with no commit or no
+  `origin`, and takes a number named twice once; a label run skips issues already
+  `in-progress`; and `gather` says whether a builder failed or left no branch. A
+  failed tool step shows the last line of its stderr without `--verbose`;
+  `ork init --issues` names the driver `issues` runs on and whether it is ready;
+  the no-commit hint says to make a first commit; and the walk summary reads "N
+  end succeeded, M end failed" instead of "M fail".
+
+- [`b8609a2`](https://github.com/mimshins/ork/commit/b8609a2e048d4c6d481772d024f44bc153b0521e) Thanks [@mimshins](https://github.com/mimshins)! - `ork run` prints a note at the start when a `branch:` lock has no origin to key
+  by: `branch:x is local to <folder>: no origin, so no other clone shares it`.
+
+- [`b8609a2`](https://github.com/mimshins/ork/commit/b8609a2e048d4c6d481772d024f44bc153b0521e) Thanks [@mimshins](https://github.com/mimshins)! - A node's `lock:` name reads only `{{inputs.*}}`, as ADR-085 says: `ork validate`
+  now refuses `{{run.*}}` in it with `lock.scope`, as it already did
+  `{{nodes.*}}`.
+
+- [`b8609a2`](https://github.com/mimshins/ork/commit/b8609a2e048d4c6d481772d024f44bc153b0521e) Thanks [@mimshins](https://github.com/mimshins)! - `ork tree` shows a run waiting for a `lock:` as `ork ps` does: its header reads
+  `waiting for <lock>, held by <run>/<node>`, and each waiting node's row reads
+  `waiting for <lock>`.
+
+- [`efa3d7a`](https://github.com/mimshins/ork/commit/efa3d7a6ff03dde2e384693ba7fa2285acc9769d) Thanks [@mimshins](https://github.com/mimshins)! - The conflict resolver in the `issues` workflow (`ork init --issues`) and in
+  `examples/resolve-conflict.ork.yaml` edits without asking: `Edit` and `Write`
+  are now in its `tools.allow`, not only in `tools.only`, so a conflict no longer
+  stops the run on a permission prompt per file. Its `stage` step still refuses an
+  edit outside the conflicted files.
+
+- [`b8609a2`](https://github.com/mimshins/ork/commit/b8609a2e048d4c6d481772d024f44bc153b0521e) Thanks [@mimshins](https://github.com/mimshins)! - An agent session, and everything it started, now ends when `ork` dies by any
+  cause (SIGKILL, the OOM killer, a crash), on macOS and Linux: the session runs
+  in its own process group beside a small watcher that sends the group SIGTERM,
+  then SIGKILL after 2 s. Ctrl-C reaches the session through `ork`, which stops it
+  as before. A session that ends normally leaves its background processes as
+  before.
+
+- [`b8609a2`](https://github.com/mimshins/ork/commit/b8609a2e048d4c6d481772d024f44bc153b0521e) Thanks [@mimshins](https://github.com/mimshins)! - A tool node's program, and everything it started, now ends when `ork` dies by
+  any cause (SIGKILL, the OOM killer, a crash), on macOS and Linux: a small
+  watcher in its process group sends the group SIGTERM, then SIGKILL after 2 s.
+  Before, a killed `ork run` left the program running after its integration lock
+  or heavy-check slot had been handed on. A program that ends normally leaves its
+  background processes as before.
+
 ## 1.0.0-alpha.14
 
 ### Patch Changes
