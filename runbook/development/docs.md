@@ -64,7 +64,9 @@ tests in [tools/docs/test](../../tools/docs/test/check.test.ts)) and verifies:
 - under `specs/`, `docs/` and `runbook/`: a document over 200 lines has
   `## Contents` and chunks; every chunk has a hub beside its folder, starts with
   its `_Part of […]._` line, is listed in that hub's contents, and stays under
-  280 lines.
+  280 lines;
+- a gap id (an entry opening `- **L123 · …`) is defined once: two changes made
+  at once can each take the next id, and the later one takes a new id.
 
 It runs in `pnpm check`, the `pre-push` hook, and the CI `docs` job. It skips
 `node_modules`, symlinks (checked at their target), local plans (`.ai/plans/`),

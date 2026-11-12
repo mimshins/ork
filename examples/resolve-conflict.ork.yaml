@@ -23,6 +23,9 @@ agents:
     budgetUsd: 2
     maxTurns: 30
     tools:
+      allow:
+        - Edit
+        - Write
       only:
         - Read
         - Grep

@@ -137,9 +137,10 @@ nor sit under its lock ([L286](./gaps/conflict-resolver-limits.md)). The steps:
    conflicted files, and shows what each side did: the upstream's diff against
    the base, and the replayed change's.
 2. **`resolve`** (an agent `conflict-resolver`, tools `Read`, `Grep`, `Glob`,
-   `Edit`, `Write`) edits only those files, never drops one side silently, and
-   reports `behaviour` (`unchanged` or `changed`) and `kept` (what it kept from
-   each side). It runs no git and does not finish the rebase.
+   `Edit`, `Write`; its edits need no prompt, as `stage` checks them) edits only
+   those files, never drops one side silently, and reports `behaviour`
+   (`unchanged` or `changed`) and `kept` (what it kept from each side). It runs
+   no git and does not finish the rebase.
 3. **`stage`** (a script) fails on a conflict marker left, or on a file changed
    that is not conflicted, then stages the files and shows the result.
 4. **`ask`**, only when `behaviour` is `changed`: a `human.gate` shows both
@@ -214,9 +215,9 @@ integration worktree's git folder, so a resume starts it over
 and the resolver group. Its `publish` commits, fetches and rebases the change in
 the `docs` worktree, and reports `outcome: clean` or `conflict`; the nodes
 `inspect`, `resolve`, `settle` (the group's `stage`), `ask`, `stop`, `finish`,
-`check` and `push` follow, all with `lock: branch:main`, so the hold spans from
-`publish` to `push` and two builds publishing go in turn (the one that waits
-shows it, [a wait is shown](#a-wait-is-shown)).
+`check`, `repair`, `amend` and `push` follow, all with `lock: branch:main`, so
+the hold spans from `publish` to `push` and two builds publishing go in turn
+(the one that waits shows it, [a wait is shown](#a-wait-is-shown)).
 
 - A clean rebase goes to `check` (`pnpm run check`, once), then `push`, which
   pushes the branch and opens or updates the pull request.
@@ -224,6 +225,13 @@ shows it, [a wait is shown](#a-wait-is-shown)).
   resolver group runs on it, `ask` only when the resolution changes behaviour
   (`stop` fails the run with the rebase open and nothing pushed), then `finish`
   and `check` on the resolved tree before `push`.
+- A failed `check` goes to `repair`, an agent that fixes the rebased checkout
+  (often two builds that were each fine alone: a gap id both took, a document
+  the two push over 200 lines), with the end of the check's output. It may not
+  change what the reviewed change does (it reports `fail` instead). `amend`
+  folds its edits into the commit and `check` runs again, at most twice
+  (`maxRounds: 2`), then the run asks as any exhausted loop does. Like
+  `resolve`, `repair` gets the inert edge from `docs`.
 - `resolve` is `isolation: continue`, which finds a worktree only through an
   agent node's incoming edges, never a tool node's
   ([L288](./gaps/conflict-resolver-limits.md)). So `docs -> resolve` is an

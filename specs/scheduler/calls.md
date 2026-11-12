@@ -100,4 +100,4 @@ holds no session and no worktree.
   stops being followed and gets `↳ run <id> still running · ork attach <id>`;
   one the caller stopped (Ctrl-C, `ork stop`, its timeout) is followed up to 5 s
   more, so its end shows. `ork resume` in the foreground does not show its
-  called runs ([L262](../gaps.md#limits)).
+  called runs ([L324](../gaps.md#limits)).

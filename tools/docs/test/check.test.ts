@@ -70,6 +70,18 @@ describe("checkDocs", () => {
     ]);
   });
 
+  it("reports a gap id defined in two entries", () => {
+    const root = repo({
+      "specs/gaps.md":
+        "# Gaps\n\n- **L7 · One.** Body.\n- **G2 · Two.** Body.\n",
+      "specs/area/limits.md": "# Limits\n\n- **L7 · Other.** Body.\n",
+      "notes.md": "- **G2 · Outside the structured folders.**\n",
+    });
+    expect(checkDocs(root)).toEqual([
+      "specs/area/limits.md:3, specs/gaps.md:3: gap id L7 is defined 2 times; give the later one the next id",
+    ]);
+  });
+
   it("requires long documents to be hubs", () => {
     const root = repo({ "specs/long.md": `# Long\n${lines(220)}\n` });
     expect(checkDocs(root)).toEqual([

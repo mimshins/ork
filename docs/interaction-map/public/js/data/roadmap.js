@@ -1137,7 +1137,7 @@ export const MILESTONES = [
         title: "`ork attach`, and called runs in the terminal",
         status: "active",
         detail:
-          "Built, waiting to land (it becomes done with its commit). `ork attach <run>` follows a run and every run it called, at any depth, each line under its call path, and asks their decisions on the terminal (stored as `terminal`; first answer wins, and a prompt answered elsewhere is withdrawn). Ctrl-C detaches and leaves the run going. A foreground `ork run` does the same for the runs it calls, so `start`'s plan gate is answered where it was started; Ctrl-C there still stops. `ork logs -f` stays read-only. Left: a foreground `ork resume` does not show its called runs (L262). Closes L59 (ADR-081).",
+          "Built, waiting to land (it becomes done with its commit). `ork attach <run>` follows a run and every run it called, at any depth, each line under its call path, and asks their decisions on the terminal (stored as `terminal`; first answer wins, and a prompt answered elsewhere is withdrawn). Ctrl-C detaches and leaves the run going. A foreground `ork run` does the same for the runs it calls, so `start`'s plan gate is answered where it was started; Ctrl-C there still stops. `ork logs -f` stays read-only. Left: a foreground `ork resume` does not show its called runs (L324). Closes L59 (ADR-081).",
         docs: [
           "decisions/ADR-081-attach-and-called-runs-in-the-terminal.md",
           "docs/guides/running-workflows/attaching-to-a-run.md",

@@ -1,7 +1,7 @@
 /**
- * @file The docs check: links, anchors, and the hub/chunk structure of long
- *   documents. Run with `pnpm docs:check`; the procedure is
- *   `runbook/development/docs.md`.
+ * @file The docs check: links, anchors, the hub/chunk structure of long
+ *   documents, and gap ids defined once. Run with `pnpm docs:check`; the
+ *   procedure is `runbook/development/docs.md`.
  */
 
 import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
@@ -91,6 +91,31 @@ const inStructured = (file: string): boolean =>
   STRUCTURED.some(top => under(file, top)) &&
   !UNSTRUCTURED.some(prefix => under(file, prefix));
 
+/** A gap entry's opening, `- **L123 · Title.**`: its id is the first group. */
+const GAP_ENTRY = /^- \*\*([A-Z]+\d+) ·/u;
+
+/**
+ * Gap ids (`L…`, `G…`, `C…`) defined in more than one entry: two changes made
+ * at once can each take the next id (specs/gaps.md).
+ */
+const duplicateGapIds = (texts: ReadonlyMap<string, string>): string[] => {
+  const where = new Map<string, string[]>();
+  for (const [file, text] of texts) {
+    if (!inStructured(file)) continue;
+    text.split("\n").forEach((line, index) => {
+      const id = GAP_ENTRY.exec(line)?.[1];
+      if (id === undefined) return;
+      where.set(id, [...(where.get(id) ?? []), `${file}:${String(index + 1)}`]);
+    });
+  }
+  return [...where]
+    .filter(([, places]) => places.length > 1)
+    .map(
+      ([id, places]) =>
+        `${places.join(", ")}: gap id ${id} is defined ${String(places.length)} times; give the later one the next id`,
+    );
+};
+
 /**
  * Checks the documents under `root` and returns one message per problem.
  *
@@ -100,6 +125,7 @@ const inStructured = (file: string): boolean =>
  *   deep, starts with `_Part of [Hub](…)._` under its H1, is listed in that
  *   hub's contents, and stays under 280 lines (or becomes a section hub in the
  *   same folder).
+ * - A gap id (`- **L123 · …`) is defined in one entry only.
  */
 export const checkDocs = (root: string): string[] => {
   const errors: string[] = [];
@@ -192,6 +218,7 @@ export const checkDocs = (root: string): string[] => {
       );
     }
   }
+  errors.push(...duplicateGapIds(texts));
   return errors;
 };
 

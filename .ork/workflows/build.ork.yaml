@@ -35,6 +35,9 @@ agents:
     budgetUsd: 2
     maxTurns: 30
     tools:
+      allow:
+        - Edit
+        - Write
       only:
         - Read
         - Grep
@@ -905,11 +908,53 @@ nodes:
     lock: branch:main
   check:
     type: tool.shell
-    script: pnpm run check
+    script: |-
+      # On a failure, the end of the output goes to stderr for repair.
+      log=$(mktemp)
+      trap 'rm -f "$log"' EXIT
+      if pnpm run check > "$log" 2>&1; then
+        exit 0
+      fi
+      grep -v -e "HTMLCanvasElement's getContext" -e "not configured to support act" "$log" | tail -n 150 >&2
+      exit 1
     allow:
       - sh
     cwd: "{{nodes.docs.output.worktree}}"
     timeout: 30m
+    lock: branch:main
+  repair:
+    type: agent.worker
+    prompt: |-
+      The reviewed change was rebased onto main and committed in this checkout, and then `pnpm check` failed on it. Fix what fails, and nothing else.
+
+      Most such failures come from two changes that were each fine alone: a gap id that both took (give this change's entries the next free ids, update every link to them and the next id in specs/gaps.md), a document the two together push over 200 lines (tighten it, or split it into a hub and chunks), or a test the other change broke. What main already has stays as it is: change this change's side. Keep what the reviewed change does; when a fix would change that, report fail and say why, and the maintainer decides.
+
+      The suites (`pnpm check`, `pnpm check:changed`, `pnpm test`, a bare `vitest run`) are denied in this session because Ork runs the check again after you; use `pnpm check:fast` (format, lint, typecheck, docs) and targeted `vitest run <files>`. Change files with Edit and Write, never with a python, node or sed -i script or a heredoc: claude asks about those even with Bash allowed, and the run waits for the maintainer. Run no git: Ork amends the commit with what you change.
+
+      The end of the check's output:
+      {{nodes.check.output.stderr}}
+    isolation: continue
+    budgetUsd: 3
+    maxTurns: 60
+    tools:
+      allow:
+        - Edit
+        - Write
+        - Bash
+    lock: branch:main
+  amend:
+    type: tool.shell
+    script: |-
+      git add -A -- . ':!.ork'
+      if git diff --cached --quiet; then
+        echo "The repair changed nothing, so the check would fail the same way." >&2
+        exit 1
+      fi
+      git commit -q --amend --no-edit
+      git show --stat --format= HEAD | tail -n 1
+    allow:
+      - sh
+    cwd: "{{nodes.docs.output.worktree}}"
     lock: branch:main
   push:
     type: tool.shell
@@ -1068,6 +1113,16 @@ edges:
     when: choice == 'stop'
   - finish -> check
   - check -> push
+  - from: check
+    to: repair
+    when: "!ok"
+  - from: docs
+    to: repair
+    when: ok && !ok
+  - repair -> amend
+  - from: amend
+    to: check
+    maxRounds: 2
   - push -> published
   - published -> declare
   - apply -> declare

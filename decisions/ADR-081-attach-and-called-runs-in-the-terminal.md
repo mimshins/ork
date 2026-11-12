@@ -91,6 +91,6 @@ also gets a way back to a terminal.
   `ork logs <run>` stays for one run; `--tail`, `--node` and `--json` for attach
   are not built.
 - **A foreground `ork resume` does not show its called runs.** An adopted call
-  emits no new `call.started` (a gap, [L262](../specs/gaps.md)).
+  emits no new `call.started` (a gap, [L324](../specs/gaps.md)).
 - ADR-071's consequence that a called run has no terminal no longer holds for a
   foreground caller; for a detached one it still does.
