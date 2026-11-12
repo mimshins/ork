@@ -133,6 +133,14 @@ review:
   builds hit the limit once or twice. At the limit, Ork could resume the session
   once, briefly, asking only for its report (what is done, what is not), and end
   the round with that.
+- **G31 · A tool error is filed without its reason.** When a call to one of
+  Ork's tools fails, Ork files `ork/bug` feedback at medium severity, saying
+  "the node's events show the call". The event keeps only `isError`, not the
+  error text, so nobody can tell an Ork failure from an input Ork refused. Two
+  items on 2026-11-12 were refusals of the model's own input: `child` passed to
+  `spawn_worker`, and a `report` with a field of the wrong type. Keeping the
+  refusal's text (scrubbed) in the evidence, and filing a refused input against
+  the workflow rather than against Ork, would close it.
 
 ## Limits
 

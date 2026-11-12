@@ -68,7 +68,7 @@ nodes:
     effort: high
     isolation: worktree
     budgetUsd: 1.5
-    maxTurns: 80
+    maxTurns: 120
     timeout: 45m
     tools:
       allow:
