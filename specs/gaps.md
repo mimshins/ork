@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L332, and the next chore is
+closes it. Ids are never reused: the next limit is L333, and the next chore is
 C15 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -300,6 +300,13 @@ Found resuming build run `cc7c1c29` (2026-11-12), to decide at the next review:
   message was never read, and a later `ork resume` runs the node again to
   deliver it ([messaging](./messaging.md)). Telling the sender (and the run's
   summary) when a queued message's node has finished for good would close it.
+
+- **L332 · `--driver` checks a driver no node will use.**
+  `ork run --driver <id>` runs that driver's readiness check and refuses when it
+  isn't ready, even when no agent node of the run would use it, as in a workflow
+  of tool nodes only
+  ([ready-driver.ts](../packages/cli/src/run/ready-driver.ts)). Scoping the
+  check to the drivers the run's agent nodes use would close it.
 
 ## Chores
 
