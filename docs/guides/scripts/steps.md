@@ -22,9 +22,10 @@ builder:
   tool node takes: `command` or `script`, `env:`, `plainEnv`, and a `timeout`.
 - **A failure goes back to the same session.** It's told what failed, up to
   `attempts` times (1 by default, 0 to fail at once), and then the node fails.
-  Each try is another turn, and stays within what's left of the budgets and the
-  node's `maxTurns`. The session gets the last 8 KiB of what it printed and the
-  path of a file with all of it.
+  Each try is another turn, and stays within what's left of the budgets. It gets
+  what's left of the node's `maxTurns`, but at least 20 turns, so a session that
+  used its turns still gets to fix what failed. The session gets the last 8 KiB
+  of what it printed and the path of a file with all of it.
 - **A message that comes during a check that passes** gets one more turn, and
   the check then runs again.
 - **What it writes counts.** A check runs in the node's checkout, and a file it

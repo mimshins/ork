@@ -26,6 +26,7 @@ import { describe, expect, it } from "vitest";
 
 import { claudeExecutor } from "../src/claude.ts";
 import { spawnTool, toolExecutor } from "../src/index.ts";
+import { CHECK_RETRY_TURNS } from "../src/session-turns.ts";
 
 const USAGE = {
   costUsd: 0.5,
@@ -412,16 +413,26 @@ describe("verify:", () => {
     const { specs } = await runVerified({
       reports: [PASS, PASS],
       checks: [FAILED, PASSED],
-      fields: { maxTurns: 10 },
+      fields: { maxTurns: 40 },
     });
-    expect(specs.map(spec => spec.maxTurns)).toEqual([10, 9]);
+    expect(specs.map(spec => spec.maxTurns)).toEqual([40, 39]);
   });
 
-  it("fails rather than resuming with no turns left", async () => {
+  it("resumes with CHECK_RETRY_TURNS when the session used its turns", async () => {
+    const { specs, result } = await runVerified({
+      reports: [PASS, PASS],
+      checks: [FAILED, PASSED],
+      fields: { maxTurns: 1 },
+    });
+    expect(specs.map(spec => spec.maxTurns)).toEqual([1, CHECK_RETRY_TURNS]);
+    expect(result.ok).toBe(true);
+  });
+
+  it("fails rather than resuming with no budget left", async () => {
     const { specs, result } = await runVerified({
       reports: [PASS],
       checks: [FAILED],
-      fields: { maxTurns: 1 },
+      over: { ownSpend: () => 1, budgetLeftNow: () => 1 },
     });
     expect(specs).toHaveLength(1);
     expect(result.ok).toBe(false);

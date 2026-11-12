@@ -89,12 +89,21 @@ const leftOf = (
   );
 
 /**
+ * The turns a failed check's resume gets at least, even past the node's
+ * `maxTurns`: a session that used its turns finding the fix still gets to make
+ * the check pass. Dollars and tokens stay capped; `verify.attempts` bounds how
+ * often.
+ */
+export const CHECK_RETRY_TURNS = 20;
+
+/**
  * What another turn of a session may use. `spent`, `tokens` (counted, RFC-015)
  * and `turns` are this activation's, which neither the node's cap nor the run's
  * budget has counted. The quota has: the ledger took it as the session
  * finished, so what it says is left is left. The run's tokens left have too:
  * only the node's own `budgetTokens` takes `tokens` off. `null` when nothing
- * is, and the turn does not start.
+ * is, and the turn does not start. `turnsAtLeast` lifts the turns left to that
+ * many (a failed check's resume: `CHECK_RETRY_TURNS`).
  */
 export const lateLimits = (
   spec: Pick<SessionSpec, "budgetUsd" | "budgetTokens" | "maxTurns">,
@@ -102,6 +111,7 @@ export const lateLimits = (
   runLeft?: number,
   quotaLeft?: number,
   tokensLeft: { run?: number | undefined; quota?: number | undefined } = {},
+  turnsAtLeast = 0,
 ): TurnLimits | null => {
   const budgetUsd = leftOf([spec.budgetUsd, runLeft], used.spent, quotaLeft);
   // The run's tokens left already count this activation's (its sessions
@@ -112,7 +122,9 @@ export const lateLimits = (
     least(tokensLeft.run, tokensLeft.quota),
   );
   const maxTurns =
-    spec.maxTurns === undefined ? undefined : spec.maxTurns - used.turns;
+    spec.maxTurns === undefined
+      ? undefined
+      : Math.max(spec.maxTurns - used.turns, turnsAtLeast);
   if ([budgetUsd, budgetTokens, maxTurns].some(left => (left ?? 1) <= 0)) {
     return null;
   }

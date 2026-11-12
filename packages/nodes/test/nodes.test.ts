@@ -971,6 +971,15 @@ describe("Claude nodes", () => {
       expect(lateLimits(spec, { spent: 0, turns: 10 })).toBeNull();
     });
 
+    it("lifts the turns left to turnsAtLeast, and nothing else", () => {
+      const used = { spent: 1, turns: 12 };
+      const lift = (cap: { budgetUsd?: number; maxTurns: number }) =>
+        lateLimits(cap, used, undefined, undefined, {}, 5);
+      expect(lift({ maxTurns: 10 })).toEqual({ maxTurns: 5 });
+      expect(lift({ maxTurns: 20 })).toEqual({ maxTurns: 8 });
+      expect(lift({ budgetUsd: 1, maxTurns: 10 })).toBeNull();
+    });
+
     it("keeps a later report when it gives one", () => {
       const first = outcome(PASSED);
       const later = outcome({ ...PASSED, summary: "read it" });

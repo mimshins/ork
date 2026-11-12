@@ -30,9 +30,13 @@ show in the node's events.
   all of it in `<run>/<node>.<round>.verify-<try>.txt` when there is more (each
   try its own file, so a path a session was given keeps its text). It gives a
   new report, up to `attempts` times. A resume may use only what is left of the
-  node's cap, the run's budget and `maxTurns`, counting from this activation,
-  and does not start with nothing left, or while the node is paused. Then the
-  node fails with `its check failed: <reason>`.
+  node's cap and the run's budget, counting from this activation, and does not
+  start with nothing left, or while the node is paused. Its turns are what is
+  left of `maxTurns`, but at least `CHECK_RETRY_TURNS` (20,
+  [session-turns.ts](../../packages/nodes/src/session-turns.ts)): a session that
+  used its turns finding the fix still gets to make the check pass, and
+  `attempts` bounds how often. Then the node fails with
+  `its check failed: <reason>`.
 - **A message during a check that passes** gets one turn, and the check runs
   again, with its failures sent back as above. Later messages wait for the
   node's next session ([L96](../messaging/scripts-limits.md)).

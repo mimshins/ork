@@ -29,6 +29,7 @@ import { ownerFirst, withdrawnOnStop } from "./owner-asks.ts";
 import { sessionDriverOf } from "./session-driver.ts";
 import {
   afterLateTurn,
+  CHECK_RETRY_TURNS,
   lateLimits,
   limitWatch,
   notStarted,
@@ -219,10 +220,10 @@ export const claudeExecutor =
       return outcome;
     };
     const first = await run(spec);
-    const limitsAfter = ({
-      sessionId,
-      usage,
-    }: SessionOutcome): TurnLimits | null => {
+    const limitsAfter = (
+      { sessionId, usage }: SessionOutcome,
+      turnsAtLeast = 0,
+    ): TurnLimits | null => {
       const quota = context.quota?.();
       if (quota?.blocked !== undefined) {
         watch.stoppedBy(quota.blocked);
@@ -240,6 +241,7 @@ export const claudeExecutor =
         context.budgetLeftNow?.(),
         quota?.leftUsd,
         { run: context.tokensLeftNow?.(), quota: quota?.leftTokens },
+        turnsAtLeast,
       );
     };
     const resumeWith = (
@@ -279,7 +281,7 @@ export const claudeExecutor =
       },
       late: lateTurn,
       resume: async (current, check) => {
-        const limits = limitsAfter(current);
+        const limits = limitsAfter(current, CHECK_RETRY_TURNS);
         if (limits === null) return null;
         // A paused node spends no model turn until it continues.
         await context.hold?.wait("start", context.signal);
