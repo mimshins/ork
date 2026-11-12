@@ -115,6 +115,24 @@
       "changed_lines": 11097,
       "manual_usd": [32.84, 50.22, 75.63],
       "manual_working_min": [97, 154, 401.2]
+    },
+    {
+      "benchmark": "follow-ups",
+      "run": "c93e5bd3",
+      "ork": ["1.0.0-alpha.14"],
+      "status": "succeeded",
+      "started": "2026-11-12T12:38:14.291Z",
+      "cost_usd": 34.2604,
+      "working_min": 97.7,
+      "waiting_min": 2.3,
+      "wall_min": 100,
+      "sessions": 28,
+      "failed_sessions": 3,
+      "permission_requests": 2,
+      "result_commits": ["dedea75"],
+      "changed_lines": 11190,
+      "manual_usd": [33.12, 50.64, 76.27],
+      "manual_working_min": [97.8, 155.3, 404.6]
     }
   ]
 }
