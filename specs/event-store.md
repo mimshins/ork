@@ -121,9 +121,11 @@ Feedback records use the same patterns.
 - **`ork ps`** lists this project's runs, newest first: id, workflow, status,
   when it started and for how long, and cost. A called run's cost is dimmed and
   says `in <caller>`: the caller's cost already counts it, so the column adds up
-  to what was spent. `--all` lists every project's, with the project;
-  `--limit n` (default 20); `--json` prints the run records, `skipped`,
-  `failuresHandled` and `parent` included.
+  to what was spent. `--project all` lists every project's, with the project
+  (`--all` is the deprecated spelling); `--limit n` (default 20), `--status`,
+  `--workflow`, `--since`, `--until` and `--ids`
+  ([list filters](./cli/list-filters.md)); `--json` prints the run records,
+  `skipped`, `failuresHandled` and `parent` included.
 - **`ork logs [<run>]`** prints the run's transcript, line for line what
   `ork run` printed. `--node <id>` keeps one node's events; `--follow` (`-f`)
   keeps printing a live run's events, pushed over the run's socket (or polled

@@ -5,25 +5,24 @@
  */
 
 import {
+  agoTime,
+  ALL,
   applyPrune,
   openStore,
   placeFor,
   planPrune,
   USAGE_DIMENSIONS,
   type UsageDimension,
+  usageListTable,
   usageReport,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
+import { allAlias } from "../list/all-alias.ts";
+import { filterArgs, projectScope, readListArgs } from "../list/flags.ts";
 import { confirm, style, write, writeErr } from "../output.ts";
 import { limitsHere } from "../run/limits.ts";
-import {
-  agoTime,
-  formatLimits,
-  formatUsage,
-  sinceTime,
-  untilTime,
-} from "../runs/usage.ts";
+import { formatLimits, formatUsage } from "../runs/usage.ts";
 
 const isDimension = (value: string): value is UsageDimension =>
   USAGE_DIMENSIONS.some(dimension => dimension === value);
@@ -38,83 +37,80 @@ export const usage = defineCommand({
     name: "usage",
     description: "Show what this project's runs spent over time",
   },
-  args: {
-    all: {
-      type: "boolean",
-      description: "Every project's runs",
-      default: false,
+  args: filterArgs(usageListTable, {
+    ids: false,
+    limit: false,
+    extra: {
+      ...allAlias,
+      "clear-plan-limits": {
+        type: "boolean",
+        description:
+          "Forget what Claude Code last said of your plan's limits, for one that has lifted",
+        default: false,
+      },
+      by: { type: "string", description: USAGE_DIMENSIONS.join(", ") },
     },
-    "clear-plan-limits": {
-      type: "boolean",
-      description:
-        "Forget what Claude Code last said of your plan's limits, for one that has lifted",
-      default: false,
-    },
-    since: {
-      type: "string",
-      description:
-        "Whole days counting today (30d, 12w), exact hours (24h), a day (2026-11-01), or all",
-      default: "30d",
-    },
-    until: { type: "string", description: "The last day to include" },
-    by: { type: "string", description: USAGE_DIMENSIONS.join(", ") },
-    workflow: { type: "string", description: "Only this workflow" },
-    json: { type: "boolean", description: "Print JSON", default: false },
-  },
+  }),
   run: ({ args }) => {
-    const since =
-      args.since === "all" ? undefined : sinceTime(args.since, Date.now());
-    const until = args.until === undefined ? undefined : untilTime(args.until);
-    if (since === null) {
+    // Thirty days unless `--since` says otherwise.
+    const asked: unknown = args["since"];
+    const since = typeof asked === "string" ? asked : "30d";
+    const request = readListArgs(
+      usageListTable,
+      { ...args, since },
+      { all: "project" },
+    );
+    if (request === undefined) return;
+    const rawBy: unknown = args["by"];
+    const given = typeof rawBy === "string" ? rawBy : undefined;
+    if (given !== undefined && !isDimension(given)) {
       refuse(
-        `--since takes an age (30d), a day (2026-11-01) or all, not \`${args.since}\`.`,
+        `--by takes one of ${USAGE_DIMENSIONS.join(", ")}, not \`${given}\`.`,
       );
       return;
     }
-    if (until === null) {
-      refuse(
-        `--until takes a day (2026-11-01), not \`${String(args.until)}\`.`,
-      );
-      return;
-    }
-    if (args.by !== undefined && !isDimension(args.by)) {
-      refuse(
-        `--by takes one of ${USAGE_DIMENSIONS.join(", ")}, not \`${args.by}\`.`,
-      );
-      return;
-    }
+    const by = given;
     const store = openStore();
     try {
-      if (args["clear-plan-limits"]) {
+      const scope = projectScope(request.filter, store.projects());
+      if (scope === undefined) return;
+      // `projectScope` found a named project among these, so the lookup hits.
+      const named = typeof scope === "object" ? scope.root : undefined;
+      const place =
+        scope === "here"
+          ? placeFor(process.cwd(), store.projects())
+          : store.projects().find(p => p.root === named);
+      const { workflow, until, since: from } = request.filter;
+      if (args["clear-plan-limits"] === true) {
         const cleared = store.clearPlanLimits();
         const said =
           cleared === 0
             ? "No plan limit was recorded."
             : `Cleared ${String(cleared)} plan limit(s).`;
         // Stdout is the JSON report under --json.
-        (args.json ? writeErr : write)(said);
+        (args["json"] === true ? writeErr : write)(said);
       }
       const filter = {
-        ...(args.all
-          ? {}
-          : { project: placeFor(process.cwd(), store.projects()).root }),
-        ...(args.workflow === undefined ? {} : { workflow: args.workflow }),
-        ...(since === undefined ? {} : { since }),
+        ...(place === undefined ? {} : { project: place.root }),
+        ...(workflow === undefined ? {} : { workflow }),
+        ...(from === undefined || from === ALL ? {} : { since: from }),
         ...(until === undefined ? {} : { until }),
       };
       const report = usageReport(store.usage(filter), store.toolCpu(filter));
-      const limits = limitsHere(
-        store,
-        args.all ? undefined : placeFor(process.cwd(), store.projects()),
-      );
-      if (args.json) {
+      const limits = limitsHere(store, place);
+      if (args["json"] === true) {
         write(JSON.stringify({ ...report, limits }, undefined, 2));
         return;
       }
       for (const line of formatLimits(limits)) write(line);
-      const place = args.all ? "every project" : "this project";
-      const period = args.since === "all" ? "" : `, since ${args.since}`;
-      for (const line of formatUsage(report, `${place}${period}`, args.by)) {
+      const where =
+        scope === "here"
+          ? "this project"
+          : scope === "all"
+            ? "every project"
+            : `project ${String(request.filter["project"])}`;
+      const period = since === "all" ? "" : `, since ${since}`;
+      for (const line of formatUsage(report, `${where}${period}`, by)) {
         write(line);
       }
     } finally {

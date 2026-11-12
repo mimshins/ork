@@ -13,20 +13,25 @@ import path from "node:path";
 import {
   applyClean,
   applyRemove,
+  applyFilters,
   inspectProject,
   keyOf,
   labelOf,
   lostWork,
   openStore,
+  type OrkWorktree,
   planClean,
   planRemove,
   type ProjectWorktrees,
   readWorktrees,
   repoRoot,
   stepActs,
+  worktreeListTable,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
+import { filterArgs, projectScope, readListArgs } from "../list/flags.ts";
+import { printList } from "../list/print.ts";
 import { style, write, writeErr } from "../output.ts";
 import { goAhead } from "../project/go-ahead.ts";
 import {
@@ -34,7 +39,9 @@ import {
   formatLosses,
   formatPlan,
   formatWorktrees,
+  inProjects,
 } from "../project/worktrees.ts";
+import { withStore } from "./project-records.ts";
 
 type Found = { root: string; runs: string[] } & ProjectWorktrees;
 
@@ -79,22 +86,40 @@ const done = (lines: readonly string[]): void => {
   for (const line of lines) write(`${style("green", "✓")} ${line}`);
 };
 
-const show = async (json: boolean): Promise<void> => {
-  const found = await here(true);
-  if (found === null) return;
-  if (json) write(JSON.stringify(found.items, undefined, 2));
-  else for (const line of formatWorktrees(found.items)) write(line);
+const show = async (args: Readonly<Record<string, unknown>>): Promise<void> => {
+  const request = readListArgs(worktreeListTable, args);
+  if (request === undefined) return;
+  const projects = withStore(store => store.projects());
+  const scope = projectScope(request.filter, projects);
+  if (scope === undefined) return;
+  let items: OrkWorktree[];
+  if (scope === "here") {
+    const found = await here(true);
+    if (found === null) return;
+    items = found.items;
+  } else {
+    items = await inProjects(
+      scope === "all" ? projects.map(p => p.root) : [scope.root],
+    );
+  }
+  const shown = applyFilters(worktreeListTable, items, request.filter).slice(
+    0,
+    request.limit,
+  );
+  printList(shown, worktreeListTable, args, rows => {
+    for (const line of formatWorktrees(rows)) write(line);
+  });
 };
+
+const listArgs = filterArgs(worktreeListTable);
 
 const list = defineCommand({
   meta: {
     name: "list",
     description: "List Ork's worktrees and branches (the default)",
   },
-  args: {
-    json: { type: "boolean", description: "Print JSON", default: false },
-  },
-  run: ({ args }) => show(args.json),
+  args: listArgs,
+  run: ({ args }) => show(args),
 });
 
 const yes = {
@@ -246,11 +271,12 @@ export const worktrees = defineCommand({
     name: "worktrees",
     description: "Track and clean up the git worktrees Ork creates for runs",
   },
+  args: listArgs,
   subCommands: { list, clean, remove },
-  run: async ({ rawArgs }) => {
+  run: async ({ args, rawArgs }) => {
     // citty runs this after a subcommand too; only list on a bare call.
     const [first] = rawArgs;
     if (first === "list" || first === "clean" || first === "remove") return;
-    await show(rawArgs.includes("--json"));
+    await show(args);
   },
 });

@@ -1,22 +1,26 @@
 /**
- * @file What `ork worktrees` prints: each worktree or branch a run left, with
- *   its state read from git, the plan `ork worktrees clean` or `remove` would
- *   carry out, and what a forced remove would lose. The words are core's
- *   (worktree/words.ts), which the Worktrees panel says too; this only colors
- *   them.
+ * @file What `ork worktrees` reads across projects, and prints: each worktree
+ *   or branch a run left, with its state read from git, the plan `ork worktrees
+ *   clean` or `remove` would carry out, and what a forced remove would lose.
+ *   The words are core's (worktree/words.ts), which the Worktrees panel says
+ *   too; this only colors them.
  */
+
+import { existsSync } from "node:fs";
 
 import {
   type CleanStep,
   type LostWork,
   labelOf,
   mergeStateOf,
+  openStore,
   type OrkWorktree,
   planLine,
+  readWorktrees,
   stateParts,
 } from "@krapht/ork-core";
 
-import { style } from "../output.ts";
+import { style, writeErr } from "../output.ts";
 import { chip } from "../term/chips.ts";
 import { cut } from "../term/layout.ts";
 import { type Term, termOf } from "../term/mode.ts";
@@ -93,3 +97,30 @@ export const formatLosses = (
     const lines = formatLost(lost);
     return lines.length === 0 ? [] : [`Loses in ${labelOf(item)}:`, ...lines];
   });
+
+/** What Ork created in each registered project's repository still on disk. */
+export const inProjects = async (
+  roots: readonly string[],
+): Promise<OrkWorktree[]> => {
+  const store = openStore();
+  try {
+    // shortcut: a project whose folder is gone is skipped, not reported.
+    const found = await Promise.all(
+      [...new Set(roots)]
+        .filter(root => existsSync(root))
+        .map(async root => {
+          try {
+            return (await readWorktrees(store, root)).items;
+          } catch (error) {
+            writeErr(
+              `Skipped ${root}: ${error instanceof Error ? error.message : String(error)}`,
+            );
+            return [];
+          }
+        }),
+    );
+    return found.flat();
+  } finally {
+    store.close();
+  }
+};

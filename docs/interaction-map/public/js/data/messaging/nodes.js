@@ -99,7 +99,7 @@ export const NODES = [
     summary:
       "Lists every open decision of this project's live runs and lets you answer each with its options; the recommended one is preselected.",
     facts: [
-      "`ork decide <run>` limits it to one run, `--all` to every project; `--id … --choose …` answers without a prompt.",
+      "`ork decide <run>` limits it to one run, `--project all` to every project; `--id … --choose …` answers without a prompt.",
       "The first answer wins, whether from here or the run's own terminal, or an `ork attach`.",
       "`ork attach <run>` is the same card for one run and every run it called, followed live; Ctrl-C detaches and leaves the run going.",
       "`--say <text>` gives the answer a note, which goes to the run with it.",

@@ -16,6 +16,7 @@ its live values, and the grouped `ork --help`
 [tests](../../packages/cli/test/completion.test.ts),
 [value tests](../../packages/cli/test/completion-values.test.ts),
 [help tests](../../packages/cli/test/help.test.ts),
+[list flag tests](../../packages/cli/test/list-flags.test.ts),
 [read-only store tests](../../packages/core/test/store-read-only.test.ts)). The
 user guide: [tab completion](../../docs/guides/tab-completion.md).
 
@@ -96,8 +97,19 @@ has one of these names gets its values with no change.
 | `input` (`--input`)           | inputs    | `name=` for each input: with a `workflow` positional, the workflow given's (none before it is); else the workflow of the run given, or of the project's newest run; described by the input's description, else its type, and `(required)` |
 | `decide id`                   | decisions | Open decisions of live runs: the run given, else the project's; described by kind, run and node                                                                                                                                           |
 | `driver`                      | drivers   | The agent drivers' ids, with their labels                                                                                                                                                                                                 |
+| `project` (`--project`)       | projects  | `all`, then the registered projects' ids, described by their root                                                                                                                                                                         |
+| `for` (`--for`)               | for       | `agent`, `me`, and `project:<id>` for each registered project; `person:<name>` is typed                                                                                                                                                   |
 | `completion shell`            | shells    | The shells there is a script for                                                                                                                                                                                                          |
 | `path`, `file`, `output`      | files     | File names, from the shell                                                                                                                                                                                                                |
+
+The values of a list's filters ([list filters](./list-filters.md)) come two
+ways: `--status`, `--kind`, `--severity`, `--due` and `--source` are citty enum
+flags made from the list's field table, so their values are its `options`, with
+no provider (`all` is one of them where the field takes it); `--project` and
+`--for` are the providers above, and `--workflow` and `--run` the ones already
+there. The hidden `--all` of those lists is an `Internal:` flag, so Tab never
+offers it. A test walks every list's table and checks each of its fields is
+completed. The answer is the same for bash, zsh and fish, which only show it.
 
 A value ending in `=` takes no space after it: zsh offers it with `-S ''`, and
 bash 4 and later sets `nospace` (bash 3.2 has no `compopt`, so it adds one); the

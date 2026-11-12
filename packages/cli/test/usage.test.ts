@@ -1,20 +1,12 @@
 /**
- * @file Tests for `ork usage`'s terminal output and the times it takes: an age,
- *   a day, and what is neither.
+ * @file Tests for `ork usage`'s terminal output; the times it takes are tested
+ *   with core's list filters.
  */
 
 import { usageReport, type UsageRow } from "@krapht/ork-core";
 import { describe, expect, it } from "vitest";
 
-import {
-  agoTime,
-  formatUsage,
-  sinceTime,
-  tokens,
-  untilTime,
-} from "../src/runs/usage.ts";
-
-const NOW = Date.parse("2026-11-03T12:00:00.000Z");
+import { formatUsage, tokens } from "../src/runs/usage.ts";
 
 const row = (extra: Partial<UsageRow> = {}): UsageRow => ({
   runId: "r1",
@@ -105,36 +97,6 @@ describe("ork usage", () => {
     expect(text).not.toContain("By workflow");
     expect(text).toContain("Worth a look");
     expect(text).toContain("loop rounds");
-  });
-
-  it("reads an age or a day, and refuses anything else", () => {
-    expect(agoTime("7d", NOW)).toBe("2026-10-27T12:00:00.000Z");
-    expect(agoTime("2w", NOW)).toBe("2026-10-20T12:00:00.000Z");
-    expect(agoTime("24h", NOW)).toBe("2026-11-02T12:00:00.000Z");
-    expect(agoTime("soon", NOW)).toBeNull();
-    expect(sinceTime("2026-11-01", NOW)).toBe(
-      new Date(2026, 10, 1).toISOString(),
-    );
-    expect(sinceTime("nope", NOW)).toBeNull();
-    const today = new Date(NOW);
-    const daysAgo = (days: number) =>
-      new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate() - days,
-      ).toISOString();
-    expect(sinceTime("7d", NOW)).toBe(daysAgo(6));
-    expect(sinceTime("2w", NOW)).toBe(daysAgo(13));
-    expect(sinceTime("24h", NOW)).toBe("2026-11-02T12:00:00.000Z");
-    expect(agoTime("0d", NOW)).toBeNull();
-    expect(agoTime("99999999999d", NOW)).toBeNull();
-    expect(sinceTime("2026-13-45", NOW)).toBeNull();
-    expect(sinceTime("2026-02-30", NOW)).toBeNull();
-  });
-
-  it("takes --until's day whole", () => {
-    expect(untilTime("2026-11-01")).toBe(new Date(2026, 10, 2).toISOString());
-    expect(untilTime("7d")).toBeNull();
   });
 
   it("shortens large counts", () => {

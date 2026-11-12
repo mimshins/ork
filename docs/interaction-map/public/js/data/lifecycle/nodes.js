@@ -217,7 +217,7 @@ export const NODES = [
     facts: [
       "`ork logs` replays the transcript `ork run` printed; `--node` keeps one node, `--follow` tails a live run.",
       "`ork tree` shows the ownership tree with status, tokens and cost per node, spawned workers under their leader.",
-      "`ork ps` lists this project's runs (`--all`: every project's).",
+      "`ork ps` lists this project's runs (`--project all`: every project's).",
     ],
     see: [
       { map: "architecture", node: "eventStore", label: "The event store" },

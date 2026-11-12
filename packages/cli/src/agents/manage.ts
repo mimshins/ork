@@ -8,13 +8,17 @@ import {
   type AgentCatalog,
   type AgentFolderOptions,
   type AgentWrite,
+  applyFilters,
   type CatalogAgent,
   createAgent,
 } from "@krapht/ork-core";
 import { type Agent, type AgentSettings, settingsOf } from "@krapht/ork-schema";
 import { stringify } from "yaml";
 
-import { style } from "../output.ts";
+import { filterArgs, readListArgs } from "../list/flags.ts";
+import { printList } from "../list/print.ts";
+import { style, write } from "../output.ts";
+import { agentListTable } from "./table.ts";
 
 const whereOf = (agent: CatalogAgent): string =>
   agent.via.length === 0
@@ -34,6 +38,34 @@ export const formatAgents = (catalog: AgentCatalog): string[] => {
     return agent.shadowedBy === undefined
       ? `${head}${agent.agent.description === undefined ? "" : style("dim", `  ${agent.agent.description}`)}`
       : style("dim", `${head}  shadowed by ${agent.shadowedBy}`);
+  });
+};
+
+/** `ork agents list`'s flags: `--source`, `--ids`, `--limit`, `--json`. */
+export const agentListArgs = filterArgs(agentListTable);
+
+/**
+ * Prints the catalog's agents as `args` ask (filter, then `--limit`, then
+ * `--ids`, `--json` or the lines); a refused flag is said, exit code set.
+ */
+export const listAgents = (
+  catalog: AgentCatalog,
+  args: Readonly<Record<string, unknown>>,
+): void => {
+  const request = readListArgs(agentListTable, args);
+  if (request === undefined) return;
+  const shown = applyFilters(
+    agentListTable,
+    catalog.agents,
+    request.filter,
+  ).slice(0, request.limit);
+  printList(shown, agentListTable, args, rows => {
+    if (rows.length === 0 && catalog.agents.length > 0) {
+      write("No agents match.");
+    } else {
+      for (const line of formatAgents({ ...catalog, agents: [...rows] }))
+        write(line);
+    }
   });
 };
 

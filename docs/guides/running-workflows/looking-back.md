@@ -5,10 +5,12 @@ _Part of [Running workflows](../running-workflows.md)._
 ## Look back at runs
 
 ```sh
-ork ps                 # this project's runs, newest first (--all: every project)
+ork ps                 # this project's runs, newest first, 20 (--project all: every project)
+ork ps --status failed --since 7d --limit 5   # filter; --ids prints just the ids
 ork logs               # the newest run's transcript; or ork logs <run-id>
 ork logs 3f2a -f       # follow a run that is still going, by an id prefix
 ork logs --node review # one node's events, with why it stopped and its details
+ork logs 3f2a --since 1h --limit 50   # recent events; --limit keeps the last 50
 ork logs 3f2a --verbose # every failed node's hint and scrubbed details
 ork tree               # the ownership tree: each node's state, tokens and cost
 ```

@@ -19,7 +19,12 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
-import { addAgent, formatAgent, formatAgents } from "../agents/manage.ts";
+import {
+  addAgent,
+  agentListArgs,
+  formatAgent,
+  listAgents,
+} from "../agents/manage.ts";
 import { exec, headWarning } from "../doctor/checks.ts";
 import { style, write, writeErr } from "../output.ts";
 import { initSteps } from "../project/init-steps.ts";
@@ -189,11 +194,10 @@ export const agents = defineCommand({
         name: "list",
         description: "Every agent, and where it comes from",
       },
-      args: { json },
+      args: agentListArgs,
       run: ({ args }) => {
         const catalog = catalogHere();
-        if (args.json) write(JSON.stringify(catalog.agents, undefined, 2));
-        else for (const line of formatAgents(catalog)) write(line);
+        listAgents(catalog, args);
         for (const d of catalog.diagnostics) writeErr(d.message);
       },
     }),

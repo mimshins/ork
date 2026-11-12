@@ -3,49 +3,112 @@
  *   recorded in `~/.ork/state.db` (specs/event-store.md).
  */
 
-import { activeTree, findRun, nestItems, placeFor } from "@krapht/ork-core";
+import {
+  activeTree,
+  ALL,
+  applyFilters,
+  findRun,
+  nestItems,
+  placeFor,
+  type ProjectRecord,
+  type RunListRow,
+  runListTable,
+  type RunRecord,
+  runStatus,
+} from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
+import { allAlias } from "../list/all-alias.ts";
+import {
+  filterArgs,
+  type ProjectScope,
+  projectScope,
+  readListArgs,
+} from "../list/flags.ts";
+import { printList } from "../list/print.ts";
 import { write, writeErr } from "../output.ts";
 import { formatRuns, formatTreeView, listedStatus } from "../runs/format.ts";
-import { followRun, unknownNode } from "../runs/logs.ts";
+import { followRun, logListTable, unknownNode } from "../runs/logs.ts";
 import { withStore } from "../store.ts";
 
 export { feedback } from "./feedback.ts";
 
+/** How many runs `ork ps` shows without `--limit`. */
+const PS_LIMIT = 20;
+
+/** The project root a scope other than `all` names. */
+const rootOf = (
+  scope: Exclude<ProjectScope, "all">,
+  projects: readonly ProjectRecord[],
+): string =>
+  scope === "here" ? placeFor(process.cwd(), projects).root : scope.root;
+
 export const ps = defineCommand({
   meta: { name: "ps", description: "List this project's runs, newest first" },
   args: {
-    all: {
-      type: "boolean",
-      description: "Every project's runs",
-      default: false,
-    },
-    limit: { type: "string", description: "How many (default 20)" },
-    json: { type: "boolean", description: "Print JSON", default: false },
+    ...filterArgs(runListTable, {
+      extra: {
+        limit: {
+          type: "string",
+          description: `Show at most this many, a positive whole number (default ${String(PS_LIMIT)})`,
+        },
+      },
+    }),
+    ...allAlias,
   },
   run: ({ args }) =>
     withStore(store => {
-      const limit = Number(args.limit ?? 20);
-      const runs = store.runs({
-        limit: Number.isInteger(limit) && limit > 0 ? limit : 20,
-        ...(args.all
-          ? {}
-          : { project: placeFor(process.cwd(), store.projects()).root }),
-      });
-      const statusOf = (run: (typeof runs)[number]) =>
+      const req = readListArgs(runListTable, args, { all: "project" });
+      if (req === undefined) return;
+      const scope = projectScope(req.filter, store.projects());
+      if (scope === undefined) return;
+      const stored = store.runs(
+        scope === ALL ? {} : { project: rootOf(scope, store.projects()) },
+      );
+      // A running run's events are read only when `--status` needs them.
+      const rows: RunListRow[] =
+        req.filter["status"] === undefined
+          ? stored
+          : stored.map(run =>
+              run.status === "running"
+                ? {
+                    ...run,
+                    listed: runStatus(
+                      run,
+                      store.events(run.id).map(s => s.event),
+                    ),
+                  }
+                : run,
+            );
+      const shown = applyFilters(runListTable, rows, req.filter).slice(
+        0,
+        req.limit ?? PS_LIMIT,
+      );
+      const byId = new Map(stored.map(run => [run.id, run]));
+      const statusOf = (run: RunRecord) =>
         listedStatus(
           run,
           run.status === "running"
             ? store.events(run.id).map(s => s.event)
             : [],
         );
-      if (args.json) write(JSON.stringify(runs, undefined, 2));
-      else {
-        for (const line of formatRuns(runs, args.all, Date.now(), statusOf)) {
-          write(line);
-        }
-      }
+      printList(
+        shown,
+        runListTable,
+        { ids: args["ids"], json: args["json"] },
+        runs => {
+          for (const line of formatRuns(
+            runs,
+            scope === ALL,
+            Date.now(),
+            statusOf,
+          )) {
+            write(line);
+          }
+        },
+        // The stored records, without the `listed` the filter added.
+        runs => runs.map(run => byId.get(run.id) ?? run),
+      );
     }),
 });
 
@@ -59,6 +122,12 @@ export const logs = defineCommand({
   meta: { name: "logs", description: "Print a run's transcript" },
   args: {
     run: runArg,
+    ...filterArgs(logListTable, { ids: false, json: false, limit: false }),
+    limit: {
+      type: "string",
+      description:
+        "Print only the last this many stored events, a positive whole number (a live follow goes on past it)",
+    },
     node: { type: "string", description: "Only this node's events" },
     follow: {
       type: "boolean",
@@ -80,6 +149,8 @@ export const logs = defineCommand({
   },
   run: ({ args }) =>
     withStore(async store => {
+      const req = readListArgs(logListTable, args);
+      if (req === undefined) return;
       const found = findRun(store, args.run, process.cwd());
       if (!found.ok) {
         writeErr(found.error);
@@ -107,6 +178,8 @@ export const logs = defineCommand({
         follow: args.follow,
         json: args.json,
         verbose: args.verbose,
+        filter: req.filter,
+        ...(req.limit === undefined ? {} : { limit: req.limit }),
         signal: abort.signal,
         ...(args.node === undefined ? {} : { node: args.node }),
       });

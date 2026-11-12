@@ -83,10 +83,16 @@ signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
 - An item records its count, first and last seen, and the runs, workflows and
   models it was seen in. A thousand records become a short list.
 - **Reading them:** `ork feedback list` prints the items, most recently seen
-  first (id, count, target and kind, title, when last seen); `--all` adds
-  dismissed ones, `--json` prints them. `ork feedback show <item>` prints an
-  item and each of its records; `ork feedback dismiss <item>` dismisses it, and
-  `ork feedback restore <item>` brings it back as `new`.
+  first (id, count, target and kind, title, when last seen); with no flag it
+  hides the dismissed ones, and `--status` (`new`, `triaged`, `accepted`,
+  `dismissed`, `published`, `resolved`, or `all`), `--kind`, `--severity`,
+  `--workflow` and `--run` filter it ([list filters](../cli/list-filters.md));
+  `--status all` adds the dismissed ones (`--all` still does, deprecated,
+  [L336](../gaps.md#limits)), `--ids` prints the item ids on one line,
+  `--limit n` keeps the first N, and `--json` prints them.
+  `ork feedback show <item>` prints an item and each of its records;
+  `ork feedback dismiss <item>` dismisses it, and `ork feedback restore <item>`
+  brings it back as `new`.
 - **Human notes:** `ork feedback note <run> [<node>] -m <text>` records a
   person's note on a run, or one node of it, as a `feedback.recorded` event of
   that run with source `human` (a run that ended takes it too). Its first line

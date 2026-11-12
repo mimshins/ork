@@ -34,7 +34,7 @@ itself, and the README's account of what happened.
 
 ## Steps
 
-1. **Check that it ended.** Run `pnpm ork ps --all` and find the run. If it is
+1. **Check that it ended.** Run `pnpm ork ps --project all` and find the run. If it is
    still `running` (or waiting at a gate), say so and stop; benchmark it once it
    ends.
 2. **Name it.** Use the name given. Otherwise take a short kebab-case name for

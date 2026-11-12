@@ -10,21 +10,21 @@
 import {
   answerDecision,
   checkNote,
+  decisionListTable,
   type EventStore,
-  findRun,
   type Noted,
   openStore,
-  pendingDecisions,
-  placeFor,
   recordNote,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
+import { allAlias } from "../list/all-alias.ts";
+import { filterArgs } from "../list/flags.ts";
 import { style, write, writeErr } from "../output.ts";
 import { askStored } from "../runs/ask-stored.ts";
 import { canKey } from "../term/mode.ts";
-import { formatDecisions } from "./decide-list.ts";
+import { asksForList, printDecisions, selectDecisions } from "./decide-list.ts";
 import { decideRefusal } from "./in-a-run.ts";
 
 const failed = (message: string): void => {
@@ -82,26 +82,22 @@ export const decide = defineCommand({
     description: "Answer the open decisions of this project's live runs",
   },
   args: {
-    run: {
+    // Not `run`: a positional of that name would clear the `--run` flag.
+    "run-id": {
       type: "positional",
       description: "Only this run's decisions (an id or a prefix)",
       required: false,
     },
-    all: {
-      type: "boolean",
-      description: "Every project's decisions",
-      default: false,
-    },
-    list: {
-      type: "boolean",
-      description: "List them without answering",
-      default: false,
-    },
-    json: { type: "boolean", description: "List them as JSON", default: false },
-    workflow: {
-      type: "string",
-      description: "Only the decisions of this workflow's runs",
-    },
+    ...filterArgs(decisionListTable, {
+      extra: {
+        ...allAlias,
+        list: {
+          type: "boolean",
+          description: "List them without answering",
+          default: false,
+        },
+      },
+    }),
     document: {
       type: "boolean",
       description: "Print the document of the decision --id names",
@@ -127,11 +123,14 @@ export const decide = defineCommand({
     },
   },
   run: async ({ args }) => {
+    // Any flag that shapes a list means listing, so a terminal never starts
+    // answering by accident.
+    const listing = asksForList(args);
     const answers =
       !args.document &&
       (args.id !== undefined ||
         args.choose !== undefined ||
-        (process.stdin.isTTY && !args.list && !args.json));
+        (process.stdin.isTTY && !listing));
     const refusal = answers ? decideRefusal() : null;
     if (refusal !== null) {
       failed(refusal);
@@ -198,26 +197,11 @@ export const decide = defineCommand({
         );
         return;
       }
-      const filter: { runId?: string; project?: string; workflow?: string } =
-        {};
-      if (args.workflow !== undefined) filter.workflow = args.workflow;
-      if (args.run !== undefined && args.run !== "") {
-        const found = findRun(store, args.run, process.cwd());
-        if (!found.ok) {
-          failed(found.error);
-          return;
-        }
-        filter.runId = found.run.id;
-      } else if (!args.all) {
-        filter.project = placeFor(process.cwd(), store.projects()).root;
-      }
-      const open = pendingDecisions(store, filter);
-      if (args.json) {
-        write(JSON.stringify(open, undefined, 2));
-        return;
-      }
-      if (args.list || !process.stdin.isTTY || open.length === 0) {
-        for (const line of formatDecisions(open, args.workflow)) write(line);
+      const selected = selectDecisions(store, args);
+      if (selected === undefined) return;
+      const { open, workflow } = selected;
+      if (asksForList(args) || !process.stdin.isTTY || open.length === 0) {
+        printDecisions(open, args, workflow);
         return;
       }
       // A card collapses to the line that says what was chosen; only plain

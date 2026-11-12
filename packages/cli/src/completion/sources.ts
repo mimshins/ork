@@ -223,3 +223,20 @@ export const decisionCandidates = (
         description: `${decision.kind} of ${decision.runId}/${decision.node}`,
       }));
 };
+
+/** The registered projects, by id, with their root. */
+export const projectCandidates = (store: EventStore): Candidate[] =>
+  store.projects().map(p => ({ value: p.id, description: p.root }));
+
+/**
+ * Whom a follow-up is for (`--for`): `agent`, `me`, a registered project as
+ * `project:<id>`; a person has no list, so `person:` is left to be typed.
+ */
+export const forCandidates = (store: EventStore | undefined): Candidate[] => [
+  { value: "agent", description: "an agent picks it up" },
+  { value: "me", description: "you do" },
+  ...(store?.projects() ?? []).map(p => ({
+    value: `project:${p.id}`,
+    description: p.root,
+  })),
+];

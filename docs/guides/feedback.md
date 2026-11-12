@@ -35,7 +35,7 @@ about, then what kind it is. What it is about decides who should act on it:
 ## Reading it
 
 ```sh
-ork feedback list            # items, most recently seen first
+ork feedback list            # items, most recently seen first (filters: --kind, --severity, …)
 ork feedback show 9fae0      # one item and every record of it
 ork feedback dismiss 9fae0   # done with it: it leaves the list (restore brings it back)
 ork feedback note 3f2a check -m "Missed the failing test" --rating bad
@@ -58,7 +58,7 @@ Records about the same thing, from any run of any project, form one **item**, so
 what it is about, and when it was last seen. `show` adds the runs, workflows and
 models it came from, and each record's details. An item is named by its id or
 the first few characters of it. A dismissed item stays dismissed when it happens
-again; `list --all` still shows it.
+again; `list --status all` still shows it.
 
 ## Merging the same problem
 

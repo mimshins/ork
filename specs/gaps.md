@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L337, and the next chore is
+closes it. Ids are never reused: the next limit is L342, and the next chore is
 C15 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -331,6 +331,35 @@ Found closing nine follow-ups (2026-11-13), to decide at the next review:
   notifications or graph cards, by design
   ([delegation](./scheduler.md#delegation)); showing it there would be a new
   change.
+
+Found building the list filters ([list filters](./cli/list-filters.md),
+RFC-017):
+
+- **L337 · A list can't take a condition.** Each list filters by its table's
+  fields, equal or since/until; there is no generic `--where` and no `!=`, `>`
+  or `~`. RFC-017 weighed it and left it for when a field table is not enough. A
+  `--where` over the same tables would add it with no new flag per field.
+- **L338 · Filters apply after the store read.** A list reads its rows, then
+  keeps the ones a filter matches, then cuts to `--limit`. Nothing has measured
+  a store large enough for that to be slow. Passing a filter into the store's
+  query would close it.
+- **L339 · The UI and `ork mcp` don't read the field tables.** The tables are
+  core's so they could, but the UI's list views and the `ork mcp` tools filter
+  as they did, so they don't offer the CLI's fields. Reading the tables would
+  close it.
+- **L340 · The deprecated `--all` is still there.** `ps`, `usage`, `decide`,
+  `follow-ups list` and `feedback list` still take `--all`, which warns on
+  stderr and stands for `--project all` or `--status all`. It is removed one
+  release after the one that carries the warning. `prune --all` stays. Still
+  using `--all`, to change with its removal: the UI's feedback tools
+  (`packages/ui/src/panels/feedback-tools.tsx`, `feedback list --all`) and usage
+  panel (`usage-panel.tsx` and its test, `usage --all`), the plugin tests
+  (`packages/cli/test/plugin.test.ts`, lines 91 and 110) and the UI test that
+  runs `ps --all` (`packages/cli/test/ui.test.ts`).
+- **L341 · `ps --ids` is limited to 20 by default.** `ork ps` shows 20 runs
+  unless `--limit` says more, `--ids` included, so a script that wants every id
+  passes a larger `--limit`. A default that only a terminal list has would close
+  it.
 
 ## Chores
 

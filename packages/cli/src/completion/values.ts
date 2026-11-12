@@ -13,7 +13,9 @@ import { SHELLS } from "./scripts.ts";
 import {
   type Candidate,
   decisionCandidates,
+  forCandidates,
   placeOf,
+  projectCandidates,
   runCandidates,
   runInputs,
   runNodes,
@@ -112,11 +114,26 @@ const decisions: ValueProvider = {
     withStore(context, store =>
       decisionCandidates(
         store,
-        context.given["run"],
+        // `ork decide`'s run positional is `run-id`, not `run`.
+        context.given["run"] ?? context.given["run-id"],
         context.cwd,
         placeOf(context.cwd, store),
       ),
     ),
+};
+
+/** A registered project's id, for `--project`; `all` too (RFC-017). */
+const projects: ValueProvider = {
+  group: "projects",
+  values: context => [
+    { value: "all", description: "every project" },
+    ...withStore(context, projectCandidates),
+  ],
+};
+
+const forWhom: ValueProvider = {
+  group: "for",
+  values: context => forCandidates(context.store()),
 };
 
 const drivers: ValueProvider = {
@@ -138,6 +155,7 @@ const shells: ValueProvider = {
 /** Providers by argument name, or by command path and name. */
 export const VALUE_PROVIDERS: Readonly<Record<string, ValueProvider>> = {
   run: runs,
+  "decide run-id": runs,
   workflow: workflows,
   files: { ...workflows, files: true },
   node: nodes,
@@ -145,6 +163,8 @@ export const VALUE_PROVIDERS: Readonly<Record<string, ValueProvider>> = {
   "decide id": decisions,
   "completion shell": shells,
   driver: drivers,
+  project: projects,
+  for: forWhom,
   path: files,
   file: files,
   output: files,

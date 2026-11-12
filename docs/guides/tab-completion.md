@@ -63,6 +63,9 @@ commands.
   `ork resume <run> --input` the run's. No space follows the `=`, so you type
   the value next (in bash 4 and later; macOS's bash 3.2 adds one).
 - **Open decisions** after `ork decide --id`.
+- **List filters**: each list's flags, the values of `--status`, `--kind`,
+  `--severity`, `--due` and `--source`, and your registered projects after
+  `--project` and `--for` ([filtering lists](./filtering-lists.md)).
 - **Drivers** after `--driver`: `claude-code`, `open-code` or `command-code`.
 
 Values are read from your project and Ork's store on your machine. Completing

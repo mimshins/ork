@@ -37,6 +37,8 @@ runs and worktrees in plain words.
 - [Working on issues in parallel](./guides/issues-in-parallel.md): GitHub issues
   built at once, integrated in turn into one branch and one pull request, and
   the lock that orders runs onto a branch.
+- [Filtering lists](./guides/filtering-lists.md): one set of flags (`--status`,
+  `--since`, `--limit`, `--ids`, `--project all`) on every `ork` list.
 - [Models, effort and budgets](./guides/models-and-budgets.md): picking models
   per node, limits, and what you spent.
 - [The example workflows](./guides/examples.md): what each one does, how to

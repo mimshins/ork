@@ -7,8 +7,11 @@
  *   and commits nothing. `ork worktrees` is worktrees.ts.
  */
 
+import type { ListTable, ProjectRecord } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
+import { filterArgs, readListArgs } from "../list/flags.ts";
+import { printList } from "../list/print.ts";
 import { write, writeErr } from "../output.ts";
 import { draftHere } from "../project/draft.ts";
 import { migrateHere } from "../project/migrate.ts";
@@ -65,23 +68,37 @@ export const register = defineCommand({
   },
 });
 
+/** `ork projects`: no fields to filter by; `--ids` prints the project ids. */
+export const projectListTable: ListTable<ProjectRecord> = {
+  fields: [],
+  id: project => project.id,
+};
+
 export const projects = defineCommand({
   meta: {
     name: "projects",
     description: "List the registered projects, in-repo and attached",
   },
-  args: { json },
+  args: filterArgs(projectListTable),
   subCommands: { forget, move },
   run: ({ args, rawArgs }) => {
     // citty runs this after a subcommand too; only list on a bare call.
     if (rawArgs[0] === "forget" || rawArgs[0] === "move") return;
-    const all = withStore(store => store.projects());
-    if (args.json) write(JSON.stringify(all, undefined, 2));
-    else if (all.length === 0) {
-      write(
-        "No projects registered yet: ork init (in-repo) or ork register (attached).",
-      );
-    } else for (const line of formatProjects(all)) write(line);
+    const request = readListArgs(projectListTable, args);
+    if (request === undefined) return;
+    const shown = withStore(store => store.projects()).slice(0, request.limit);
+    printList(
+      shown,
+      projectListTable,
+      { ids: args["ids"], json: args["json"] },
+      rows => {
+        if (rows.length === 0) {
+          write(
+            "No projects registered yet: ork init (in-repo) or ork register (attached).",
+          );
+        } else for (const line of formatProjects(rows)) write(line);
+      },
+    );
   },
 });
 

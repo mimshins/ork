@@ -142,6 +142,7 @@ first wins; the other prompt goes away, and the transcript says who answered.
 ork decide                          # answer them one by one
 ork decide --list                   # just look
 ork decide --list --workflow feature  # only that workflow's runs
+ork decide --ids                    # just the ids, one line (lists, never answers)
 ork decide --id 3f2a91c0-1 --document # read the document of a gate
 ork decide --id 3f2a91c0-1 --choose ship
 ork decide --id 3f2a91c0-1 --choose revise --say "Split the API section in two"

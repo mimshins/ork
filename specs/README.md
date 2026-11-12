@@ -43,6 +43,7 @@ where each part is specified.
 | [Feedback and self-improvement](./feedback.md)                | Built     | M1d, M2   |
 | [Follow-ups: what a change leaves for later](./follow-ups.md) | Built     | M2        |
 | [The ork CLI](./cli.md)                                       | Built     | M1        |
+| [CLI list filters: one table per list](./cli/list-filters.md) | Built     | M2        |
 | [The local server](./server.md)                               | Built     | M2        |
 | [Ork for Claude Code](./claude-code.md)                       | Built     | M2        |
 | [The UI](./ui.md)                                             | Built     | M2        |

@@ -6,19 +6,42 @@
  *   pull requests through the person's own `gh`; a `gh` that fails only warns.
  */
 
+import {
+  applyFilters,
+  followUpListTable,
+  type FollowUpStatus,
+} from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import {
   idArg,
-  inProject,
+  inProjects,
   json,
   project,
   withFollowUp,
 } from "../follow-ups/command.ts";
-import { formatFollowUp, formatFollowUps } from "../follow-ups/format.ts";
+import {
+  byFor,
+  formatFollowUp,
+  formatFollowUps,
+} from "../follow-ups/format.ts";
+import { allAlias } from "../list/all-alias.ts";
+import { filterArgs, readListArgs } from "../list/flags.ts";
+import { printList } from "../list/print.ts";
 import { write } from "../output.ts";
 import { closing, due, post, published } from "./follow-ups-act.ts";
 import { add } from "./follow-ups-add.ts";
+
+/** What a list with no `--status` shows. */
+const OPEN: ReadonlySet<FollowUpStatus> = new Set(["due", "waiting"]);
+
+/** The list's own order: due first, then waiting, done, dropped; then `byFor`. */
+const RANK: Record<FollowUpStatus, number> = {
+  due: 0,
+  waiting: 1,
+  done: 2,
+  dropped: 3,
+};
 
 export const followUps = defineCommand({
   meta: {
@@ -32,32 +55,26 @@ export const followUps = defineCommand({
         name: "list",
         description: "List the follow-ups, due first, then by who they are for",
       },
-      args: {
-        all: {
-          type: "boolean",
-          description: "Done and dropped ones too",
-          default: false,
-        },
-        for: {
-          type: "string",
-          description:
-            "Only those for agent, me, project:<name> or person:<name>",
-        },
-        project,
-        json,
+      args: { ...filterArgs(followUpListTable), ...allAlias },
+      run: async ({ args }) => {
+        const given: Readonly<Record<string, unknown>> = args;
+        const asked = readListArgs(followUpListTable, given, { all: "status" });
+        if (asked === undefined) return;
+        const { filter, limit } = asked;
+        // No --status shows only the open ones; one given shows what it names.
+        const status = filter["status"];
+        await inProjects(filter["project"], (store, places) => {
+          const stored = places.flatMap(place => store.followUps(place.root));
+          const shown = applyFilters(followUpListTable, stored, filter)
+            .filter(f => status !== undefined || OPEN.has(f.status))
+            .toSorted((a, b) => RANK[a.status] - RANK[b.status] || byFor(a, b))
+            .slice(0, limit);
+          printList(shown, followUpListTable, given, rows => {
+            for (const line of formatFollowUps(rows, status !== undefined))
+              write(line);
+          });
+        });
       },
-      run: ({ args }) =>
-        inProject(args.project, (store, place) => {
-          const shown = store
-            .followUps(place.root)
-            .filter(
-              f =>
-                (args.all || f.status === "due" || f.status === "waiting") &&
-                (args.for === undefined || f.for === args.for),
-            );
-          if (args.json) write(JSON.stringify(shown, undefined, 2));
-          else for (const line of formatFollowUps(shown, args.all)) write(line);
-        }),
     }),
     show: defineCommand({
       meta: {

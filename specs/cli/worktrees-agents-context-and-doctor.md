@@ -5,10 +5,12 @@ _Part of [The ork CLI](../cli.md)._
 ## Projects
 
 `ork register` attaches a project from outside its repository, `ork init`
-records an in-repo one, and `ork projects` lists them or forgets one; see
-[Projects](../projects.md#registering). `ork migrate` moves an attached project
-into `.ork/`, brings agents and skills under it (`--agents`), or drafts a
-workflow from the project's agents (`--from-agents`); see
+records an in-repo one, and `ork projects` lists them or forgets one (`--ids`
+prints the project ids on one line, `--limit n` keeps the first N, `--json`
+prints them; it has no fields to filter by, [list filters](./list-filters.md));
+see [Projects](../projects.md#registering). `ork migrate` moves an attached
+project into `.ork/`, brings agents and skills under it (`--agents`), or drafts
+a workflow from the project's agents (`--from-agents`); see
 [Projects: migrating](../projects.md#migrating). A workflow given by name is
 found in the current folder's project: `.ork/workflows/`, or the attached
 project's `workflows/`.
@@ -42,6 +44,14 @@ marked "not created by Ork"; `clean --force` shows what it would lose and
 `--run` takes a run of the project; see
 [Worktrees: ork worktrees](../worktrees.md#ork-worktrees).
 
+`ork worktrees list` filters as every list does
+([list filters](./list-filters.md)): `--run <id>` keeps one run's worktrees,
+`--project <id>|all` takes a registered project's id or root, or every project's
+(default: the one you are in), `--limit n` keeps the first N, `--ids` prints
+what `ork worktrees remove` takes (the branch, or the path for one with none),
+comma-separated on one line, and `--json` prints them. `clean`'s own `--run` and
+`--all` are unchanged.
+
 ## Agents
 
 `ork agents` manages the agents nodes can take
@@ -49,7 +59,10 @@ marked "not created by Ork"; `clean --force` shows what it would lose and
 
 - `list` prints every agent: name, source (`user`, `project`), its file, the
   linked folders it was reached through, and what shadows it. Invalid agent
-  files are reported on stderr and skipped.
+  files are reported on stderr and skipped. `--source builtin|user|project`
+  keeps the agents from one source, `--limit n` the first N, `--ids` prints the
+  names on one line, and `--json` prints them
+  ([list filters](./list-filters.md)).
 - `show <name>` prints the winning agent: description, source and hash,
   settings, and role.
 - `add <name>` writes `.ork/agents/<name>.md` (and `<name>.agent.yaml` when it

@@ -23,7 +23,8 @@ const FOR_ORDER = ["agent", "me", "project:", "person:"] as const;
 const forOrder = (value: string): number =>
   FOR_ORDER.findIndex(prefix => value.startsWith(prefix));
 
-const byFor = (a: FollowUp, b: FollowUp): number =>
+/** The list's order within a status: by who it is for. */
+export const byFor = (a: FollowUp, b: FollowUp): number =>
   forOrder(a.for) - forOrder(b.for) || a.for.localeCompare(b.for);
 
 /** A multi-line text, each line safe to print. */

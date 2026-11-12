@@ -1206,6 +1206,19 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "list-filters",
+        title: "One way to filter every list command",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). RFC-017, now Implemented. `ork ps`, `usage`, `decide --list`, `follow-ups list`, `feedback list`, `worktrees list`, `agents list` and `projects` each list by one field table, and the flags, their checks and Tab completion's values are made from it: `--status`, `--kind`, `--severity`, `--for`, `--due`, `--workflow`, `--run`, `--project`, `--since`, `--until`, with `--ids` (comma-separated, for `$(...)`), a strict `--limit` and `--json`, and one time parser (age or day) shared with `ork usage` and `ork logs`. The machinery and the core record types' tables are in `@krapht/ork-core`. `--all` is deprecated for `--project all` and `--status all`, kept one release. Covers follow-up cc84367e. Left: L333 to L337.",
+        docs: [
+          "decisions/ADR-088-list-filters.md",
+          "specs/cli/list-filters.md",
+          "docs/guides/filtering-lists.md",
+          "rfcs/archived/RFC-017-list-filters.md",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",
@@ -1312,4 +1325,4 @@ export const OFF_ROADMAP = [
 ];
 
 /** The day the roadmap was last brought up to date. */
-export const ROADMAP_UPDATED = "2026-11-12";
+export const ROADMAP_UPDATED = "2026-11-13";

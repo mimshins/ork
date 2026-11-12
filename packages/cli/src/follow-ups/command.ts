@@ -5,6 +5,7 @@
  */
 
 import {
+  ALL,
   type EventStore,
   findFollowUp,
   type FollowUp,
@@ -69,6 +70,32 @@ export const inProject = (
       writeErr(style("dim", line));
     });
     await body(store, place);
+  });
+
+/**
+ * Like `inProject`, for a list: `key` may be `all`, which gives every
+ * registered project's place. The due check runs for each.
+ */
+export const inProjects = (
+  key: string | undefined,
+  body: (store: EventStore, places: ProjectPlace[]) => Promise<void> | void,
+): Promise<void> =>
+  withStore(async store => {
+    const projects = store.projects();
+    const places =
+      key === ALL
+        ? projects.map(p => placeFor(p.root, projects))
+        : [placeOf(store, key)];
+    if (places.includes(undefined)) return;
+    const found = places.filter(place => place !== undefined);
+    await Promise.all(
+      found.map(place =>
+        refreshDue(store, place.root, line => {
+          writeErr(style("dim", line));
+        }),
+      ),
+    );
+    await body(store, found);
   });
 
 /** Runs `body` on the follow-up `id` names, or says why there is none. */

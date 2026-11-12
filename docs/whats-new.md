@@ -13,6 +13,18 @@ full: the [changelog](../packages/cli/CHANGELOG.md).
   issue found", and a resumed session no longer blames the run's dollar budget
   for what it spent before the turn
   ([guide](./guides/leaders-and-delegation.md)).
+- **One way to filter every list.** `ork ps`, `usage`, `decide --list`,
+  `follow-ups list`, `feedback list`, `worktrees list`, `agents list`,
+  `projects` and `logs` share their filter flags: `--status`, `--workflow`,
+  `--project`, `--since` and `--until` (an age like `30d` or a day like
+  `2026-11-01`) where they fit, `--limit`, `--json`, and a new `--ids` that
+  prints ids on one line for scripts (`ork ps --status failed --ids`). Wrong
+  values are refused with the allowed ones, and Tab completion offers them.
+  `--all` meant three things and is deprecated: use `--project all` on `ps`,
+  `usage` and `decide`, and `--status all` on `follow-ups list` and
+  `feedback list`. It still works for one release and warns on stderr;
+  `prune --all` is unchanged ([guide](./guides/filtering-lists.md)). Upgrade:
+  change scripts that use `--all`.
 - **Follow-ups: what a change leaves for later.** A message to a partner, work
   for another project's agent, infra steps and a check after deploy are kept as
   follow-ups, apart from feedback: sessions leave them with a new `follow_up`

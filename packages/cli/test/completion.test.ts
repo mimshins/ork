@@ -19,6 +19,7 @@ import {
   subcommandsOf,
 } from "../src/index.ts";
 import { tempDir } from "./fixtures/completion.ts";
+import { listRoot } from "./fixtures/list-root.ts";
 
 /** The candidates (values only) for `words`, outside any project. */
 const values = async (...words: string[]): Promise<string[]> =>
@@ -153,5 +154,64 @@ describe("ork completion", () => {
 
   it("says the shell it takes", async () => {
     expect(await descriptionOf(completion)).toContain("zsh, bash, fish");
+  });
+});
+
+const flagsOf = async (...words: string[]): Promise<string[]> =>
+  (
+    await completionLines(
+      listRoot,
+      [...words, "--"],
+      tempDir("ork-list-"),
+      "/none",
+    )
+  )
+    .filter(line => !line.startsWith(":"))
+    .map(line => line.split("\t")[0] ?? "");
+const valuesOf = async (...words: string[]): Promise<string[]> =>
+  (await completionLines(listRoot, words, tempDir("ork-list-"), "/none"))
+    .filter(line => !line.startsWith(":"))
+    .map(line => line.split("\t")[0] ?? "");
+
+describe("a list's flags", () => {
+  it("offers the table's flags, --ids, --limit and --json, never --all", async () => {
+    const flags = await flagsOf("ps");
+    expect(flags).toEqual(
+      expect.arrayContaining([
+        "--status",
+        "--workflow",
+        "--project",
+        "--since",
+        "--until",
+        "--ids",
+        "--limit",
+        "--json",
+      ]),
+    );
+    expect(flags).not.toContain("--all");
+    expect(await flagsOf("follow-ups", "list")).not.toContain("--all");
+  });
+
+  it("offers an enum flag's values from the table, `all` where it takes it", async () => {
+    expect(await valuesOf("ps", "--status", "")).toEqual(
+      expect.arrayContaining(["running", "failed", "all"]),
+    );
+    expect(await valuesOf("follow-ups", "list", "--status", "d")).toEqual([
+      "due",
+      "done",
+      "dropped",
+    ]);
+    expect(await valuesOf("follow-ups", "list", "--due", "a")).toEqual([
+      "after-merge",
+      "after-deploy",
+    ]);
+    expect(await valuesOf("follow-ups", "list", "--kind", "")).toContain(
+      "task",
+    );
+  });
+
+  it("knows --limit and --since take a free value", async () => {
+    expect(await valuesOf("ps", "--limit", "")).toEqual([]);
+    expect(await valuesOf("ps", "--ids", "--st")).toEqual(["--status"]);
   });
 });

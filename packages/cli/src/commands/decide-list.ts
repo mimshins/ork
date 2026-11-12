@@ -1,8 +1,20 @@
-/** @file The list `ork decide --list` prints: one line per open decision. */
+/**
+ * @file The list `ork decide --list` prints: one line per open decision, and
+ *   the filters (RFC-017) that choose which.
+ */
 
-import type { DecisionRecord } from "@krapht/ork-core";
+import {
+  type DecisionRecord,
+  decisionListTable,
+  type EventStore,
+  findRun,
+  pendingDecisions,
+  placeFor,
+} from "@krapht/ork-core";
 
-import { plain } from "../output.ts";
+import { projectScope, readListArgs, fail } from "../list/flags.ts";
+import { printList } from "../list/print.ts";
+import { plain, write } from "../output.ts";
 import { chip, CHIP_LABELS, nodeChip } from "../term/chips.ts";
 import { cut } from "../term/layout.ts";
 import { type Term, termOf } from "../term/mode.ts";
@@ -40,5 +52,66 @@ export const formatDecisions = (
     const room = Math.max(20, t.width - (7 + nodeWidth + 2 + idWidth + 2));
     const tail = cut(`${plain(d.question)}${document} ${options}${via}`, room);
     return `${lead}${tail}`;
+  });
+};
+
+type DecideArgs = Readonly<Record<string, unknown>>;
+
+/**
+ * Whether the flags ask for a list: any flag that shapes one means listing, so
+ * a terminal never starts answering by accident.
+ */
+export const asksForList = (args: DecideArgs): boolean =>
+  args["list"] === true ||
+  args["json"] === true ||
+  args["ids"] === true ||
+  args["limit"] !== undefined;
+
+/**
+ * The open decisions `args` ask for (filter, then the store's order, then
+ * `--limit`), and the workflow filter given. `undefined` when a flag was
+ * refused (said, exit code set).
+ */
+export const selectDecisions = (
+  store: EventStore,
+  args: DecideArgs,
+): { open: DecisionRecord[]; workflow: string | undefined } | undefined => {
+  const request = readListArgs(decisionListTable, args, { all: "project" });
+  if (request === undefined) return undefined;
+  const scope = projectScope(request.filter, store.projects());
+  if (scope === undefined) return undefined;
+  const filter: { runId?: string; project?: string; workflow?: string } = {};
+  const { workflow } = request.filter;
+  if (workflow !== undefined) filter.workflow = workflow;
+  const positional = args["run-id"];
+  const run =
+    request.filter["run"] ??
+    (typeof positional === "string" ? positional : undefined);
+  if (run !== undefined && run !== "") {
+    const found = findRun(store, run, process.cwd());
+    if (!found.ok) {
+      fail(found.error);
+      return undefined;
+    }
+    filter.runId = found.run.id;
+  } else if (scope === "here") {
+    filter.project = placeFor(process.cwd(), store.projects()).root;
+  } else if (scope !== "all") {
+    filter.project = scope.root;
+  }
+  const pending = pendingDecisions(store, filter);
+  const open =
+    request.limit === undefined ? pending : pending.slice(0, request.limit);
+  return { open, workflow };
+};
+
+/** Prints `open` as `--ids`, `--json` or the lines of `formatDecisions`. */
+export const printDecisions = (
+  open: readonly DecisionRecord[],
+  args: DecideArgs,
+  workflow: string | undefined,
+): void => {
+  printList(open, decisionListTable, args, shown => {
+    for (const line of formatDecisions(shown, workflow)) write(line);
   });
 };

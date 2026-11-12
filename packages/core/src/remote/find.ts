@@ -26,7 +26,10 @@ export const findRun = (
       limit: 1,
     });
     return latest === undefined
-      ? { ok: false, error: "No runs in this project yet; see `ork ps --all`." }
+      ? {
+          ok: false,
+          error: "No runs in this project yet; see `ork ps --project all`.",
+        }
       : { ok: true, run: latest };
   }
   const found = store.lookup(arg);

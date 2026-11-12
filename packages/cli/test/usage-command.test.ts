@@ -7,6 +7,7 @@
 import { mkdtempSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 
 import { openStore, storePath } from "@krapht/ork-core";
 import { runCommand } from "citty";
@@ -67,6 +68,123 @@ const ork = async (...args: string[]): Promise<Ran> => {
 afterEach(() => {
   vi.unstubAllEnvs();
   process.exitCode = undefined;
+});
+
+/**
+ * A home whose ledger holds a session of workflow `alpha` today and one of
+ * `beta` on 2026-01-15.
+ */
+const seedSessions = (): void => {
+  const home = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-usage-")));
+  vi.stubEnv("HOME", home);
+  vi.stubEnv("ORK_PLAIN", "1");
+  const store = openStore(storePath(home));
+  for (const workflow of ["alpha", "beta"]) {
+    const id = `run-${workflow}`;
+    store.begin({ id, workflow, file: "/p/w.ork.yaml", project: "/p" });
+    store.append(id, {
+      type: "node.event",
+      id: "a",
+      event: {
+        type: "session.finished",
+        outcome: {
+          subtype: "success",
+          sessionId: `s-${workflow}`,
+          report: { status: "pass", summary: "", artifacts: {}, fields: {} },
+          text: "",
+          usage: {
+            costUsd: workflow === "alpha" ? 2 : 1,
+            inputTokens: 1,
+            outputTokens: 1,
+            cacheReadTokens: 0,
+            cacheWriteTokens: 0,
+            turns: 1,
+            durationMs: 1,
+          },
+          errors: [],
+        },
+      },
+    });
+  }
+  store.close();
+  const db = new DatabaseSync(storePath(home));
+  db.exec(
+    "UPDATE usage SET at = '2026-01-15T12:00:00.000Z' WHERE workflow = 'beta'",
+  );
+  db.close();
+};
+
+/** The report `ork usage <args> --json` prints, for every project. */
+const reported = async (...args: string[]): Promise<unknown> =>
+  JSON.parse((await ork("--project", "all", ...args, "--json")).out);
+
+/** What a report says of workflows: alpha costs more, so it comes first. */
+const workflows = (...keys: string[]): object => ({
+  groups: { workflow: keys.map(key => ({ key })) },
+});
+
+describe("ork usage filters reach the store", () => {
+  it("--workflow, --since and --until choose the sessions", async () => {
+    seedSessions();
+    expect(await reported("--since", "all")).toMatchObject(
+      workflows("alpha", "beta"),
+    );
+    expect(
+      await reported("--since", "all", "--workflow", "beta"),
+    ).toMatchObject(workflows("beta"));
+    expect(
+      await reported("--since", "2026-01-01", "--until", "2026-02-01"),
+    ).toMatchObject(workflows("beta"));
+    expect(await reported("--since", "2026-02-01")).toMatchObject(
+      workflows("alpha"),
+    );
+    expect(
+      await reported("--since", "all", "--until", "2025-01-01"),
+    ).toMatchObject(workflows());
+  });
+});
+
+describe("ork usage filters", () => {
+  it("reads --project all, with no warning", async () => {
+    setup(0);
+    const { out, err } = await ork("--project", "all", "--since", "all");
+    expect(out).toContain("No Claude sessions in every project.");
+    expect(err).toBe("");
+  });
+
+  it("keeps --all as a deprecated --project all", async () => {
+    setup(0);
+    const { out, err } = await ork("--all");
+    expect(out).toContain("No Claude sessions in every project, since 30d.");
+    expect(err).toContain("--all is deprecated; use --project all.");
+  });
+
+  it("lets a given --project win over --all, and still warns", async () => {
+    setup(0);
+    const { out, err } = await ork("--all", "--project", "nope");
+    expect(out).toBe("");
+    expect(err).toContain("--all is deprecated; use --project all.");
+    expect(err).toContain("No registered project `nope`");
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("refuses a bad --since and --until naming the flag", async () => {
+    setup(0);
+    const since = await ork("--since", "soon");
+    expect(since.err).toContain("--since takes an age (30d)");
+    const until = await ork("--until", "2026-13-99");
+    expect(until.err).toContain("--until takes a day");
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("has no --ids and no --limit, and hides --all", () => {
+    for (const flag of ["workflow", "project", "since", "until", "json"]) {
+      expect(usage.args).toHaveProperty(flag);
+    }
+    expect(usage.args).not.toHaveProperty("ids");
+    expect(usage.args).not.toHaveProperty("limit");
+    expect(JSON.stringify(usage.args)).toContain("Internal:");
+  });
 });
 
 describe("ork usage --clear-plan-limits", () => {

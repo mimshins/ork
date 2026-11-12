@@ -67,8 +67,8 @@ const setup = (gh: string = FAKE_GH): Setup => {
 
 type Ran = { out: string; err: string; code: number };
 
-/** Runs `ork follow-ups <args>` and what it printed. */
-const ork = async (...args: string[]): Promise<Ran> => {
+/** Runs `ork follow-ups <args>` as given and what it printed. */
+const orkRaw = async (...args: string[]): Promise<Ran> => {
   let out = "";
   let err = "";
   const stdout = vi.spyOn(process.stdout, "write").mockImplementation(text => {
@@ -81,7 +81,7 @@ const ork = async (...args: string[]): Promise<Ran> => {
   });
   process.exitCode = undefined;
   try {
-    await runCommand(followUps, { rawArgs: [...args, "--project", "app"] });
+    await runCommand(followUps, { rawArgs: args });
   } finally {
     stdout.mockRestore();
     stderr.mockRestore();
@@ -90,6 +90,10 @@ const ork = async (...args: string[]): Promise<Ran> => {
   process.exitCode = undefined;
   return { out, err, code };
 };
+
+/** Runs `ork follow-ups <args> --project app`. */
+const ork = (...args: string[]): Promise<Ran> =>
+  orkRaw(...args, "--project", "app");
 
 const kept = (s: Setup): FollowUp[] => {
   const store = openStore(storePath(s.home));
@@ -235,6 +239,109 @@ describe("ork follow-ups list and show", () => {
     const listed = await ork("list", "--for", "agent");
     expect(listed.out).toContain("Theirs");
     expect(listed.out).not.toContain("Mine");
+  });
+
+  it("filters by --status, --kind and --due, and --status all shows closed ones", async () => {
+    const s = setup();
+    await ork("add", "Mine", "--for", "me", "--kind", "check");
+    await ork("add", "Theirs", "--for", "agent", "--due", "after-merge");
+    await ork("drop", idAt(s, 0));
+    expect((await ork("list")).out).not.toContain("Mine");
+    expect((await ork("list", "--status", "all")).out).toContain("Dropped (1)");
+    const dropped = await ork("list", "--status", "dropped");
+    expect(dropped.out).toContain("Mine");
+    expect(dropped.out).not.toContain("Theirs");
+    const waiting = await ork(
+      "list",
+      "--status",
+      "waiting",
+      "--kind",
+      "change",
+    );
+    expect(waiting.out).toContain("Theirs");
+    expect((await ork("list", "--kind", "check")).out).toContain(
+      "No follow-ups.",
+    );
+    expect((await ork("list", "--due", "after-merge")).out).toContain("Theirs");
+    expect((await ork("list", "--due", "now")).out).toContain("No follow-ups.");
+  });
+
+  it("orders due first, then cuts with --limit, and prints --ids on one line", async () => {
+    const s = setup();
+    await ork("add", "Later", "--for", "agent", "--due", "after-merge");
+    await ork("add", "Now", "--for", "me");
+    await ork("add", "Now too", "--for", "me");
+    const [later, now, nowToo] = [idAt(s, 0), idAt(s, 1), idAt(s, 2)];
+    const ids = await ork("list", "--ids");
+    expect(ids.out.trim()).toBe(`${now},${nowToo},${later}`);
+    const one = await ork("list", "--ids", "--limit", "1");
+    expect(one.out.trim()).toBe(now);
+    expect(
+      JSON.parse((await ork("list", "--json", "--limit", "2")).out),
+    ).toHaveLength(2);
+    expect((await ork("list", "--ids", "--for", "person:nobody")).out).toBe("");
+  });
+
+  it("--ids and --json order rows as the human list does: status, then who it is for", async () => {
+    const s = setup();
+    await ork("add", "For Dana", "--for", "person:Dana", "--text", "Hi");
+    await ork("add", "For me", "--for", "me");
+    await ork("add", "For agent", "--for", "agent");
+    const [dana, me, agent] = [idAt(s, 0), idAt(s, 1), idAt(s, 2)];
+    expect((await ork("list", "--ids")).out.trim()).toBe(
+      `${agent},${me},${dana}`,
+    );
+    expect((await ork("list", "--ids", "--limit", "1")).out.trim()).toBe(agent);
+    expect(JSON.parse((await ork("list", "--json")).out)).toMatchObject([
+      { title: "For agent" },
+      { title: "For me" },
+      { title: "For Dana" },
+    ]);
+  });
+
+  it("does not cap --ids: only ps has a default limit", async () => {
+    setup();
+    for (let n = 0; n < 25; n += 1) {
+      // oxlint-disable-next-line no-await-in-loop -- one add at a time
+      await ork("add", `Check ${String(n)}`, "--for", "me");
+    }
+    expect((await ork("list", "--ids")).out.trim().split(",")).toHaveLength(25);
+  });
+
+  it.each(["0", "-1", "abc", "2.5"])("refuses --limit %s", async limit => {
+    setup();
+    const bad = await ork("list", "--limit", limit);
+    expect(bad.code).toBe(1);
+    expect(bad.err).toContain("--limit takes a positive whole number");
+  });
+
+  it("refuses a bad value, and --ids with --json", async () => {
+    setup();
+    // citty refuses an enum value itself, naming the flag and the choices.
+    await expect(ork("list", "--kind", "chore")).rejects.toThrow(
+      "--kind (chore). Expected one of: change, message, task, check",
+    );
+    expect((await ork("list", "--for", "somebody")).code).toBe(1);
+    const both = await ork("list", "--ids", "--json");
+    expect(both.code).toBe(1);
+    expect(both.err).toContain("--ids and --json can't be used together");
+    const ghost = await orkRaw("list", "--project", "ghost");
+    expect(ghost.code).toBe(1);
+    expect(ghost.err).toContain("registered: app");
+  });
+
+  it("takes --project all, and keeps --all as a deprecated --status all", async () => {
+    const s = setup();
+    await ork("add", "Mine", "--for", "me");
+    await ork("drop", idAt(s, 0));
+    const all = await orkRaw("list", "--project", "all", "--status", "all");
+    expect(all.out).toContain("Dropped (1)");
+    const old = await ork("list", "--all");
+    expect(old.out).toContain("Dropped (1)");
+    expect(old.err).toContain("--all is deprecated; use --status all.");
+    const wins = await ork("list", "--all", "--status", "due");
+    expect(wins.out).toContain("No follow-ups.");
+    expect(wins.err).toContain("--all is deprecated");
   });
 
   it("shows a draft and steps whole, to copy", async () => {

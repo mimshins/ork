@@ -60,7 +60,7 @@ in `~/.ork/projects/<id>/agents/`.
 ## Listing, moving and forgetting
 
 ```sh
-ork projects                # every registered project, in-repo and attached
+ork projects                # every registered project, in-repo and attached (--ids, --limit, --json)
 ork projects forget app     # forget it; its files and runs are kept
 ork projects move app ~/src/app  # you moved or renamed the clone
 ```

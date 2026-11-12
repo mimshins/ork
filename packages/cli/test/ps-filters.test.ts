@@ -1,0 +1,256 @@
+/**
+ * @file Tests for `ork ps` and `ork logs` run through their real commands
+ *   against a store in a throwaway home (RFC-017): `ps` filters by status,
+ *   workflow, project and start, keeps its limit of 20, prints `--ids`, and
+ *   refuses a bad value; `--all` still works with its warning; `logs` filters
+ *   events by time and keeps the last `--limit` of them.
+ */
+
+import { mkdtempSync, realpathSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+import { openStore, placeFor, storePath } from "@krapht/ork-core";
+import { runCommand } from "citty";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { logs, ps } from "../src/commands/runs.ts";
+
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
+/** The real now, taken before a test fakes the clock. */
+let base = Date.now();
+const here = placeFor(process.cwd(), []).root;
+
+type Seed = {
+  id: string;
+  workflow: string;
+  /** How long before now the run started. */
+  ago: number;
+  status?: "succeeded" | "failed";
+  project?: string;
+};
+
+/** Begins `seed` as if `ago` ago, and finishes it unless it has no status. */
+const seedRun = (store: ReturnType<typeof openStore>, seed: Seed): void => {
+  vi.setSystemTime(base - seed.ago);
+  store.begin({
+    id: seed.id,
+    workflow: seed.workflow,
+    file: "/p/w.ork.yaml",
+    project: seed.project ?? here,
+  });
+  if (seed.status !== undefined) {
+    store.append(seed.id, {
+      type: "run.finished",
+      result: {
+        runId: seed.id,
+        status: seed.status,
+        costUsd: 0,
+        nodes: [],
+        reasons: [],
+        worktrees: [],
+      },
+    });
+  }
+};
+
+/** A throwaway home whose store holds `seeds`, oldest listed last. */
+const setup = (seeds: readonly Seed[]) => {
+  const home = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-ps-")));
+  vi.stubEnv("HOME", home);
+  vi.stubEnv("ORK_PLAIN", "1");
+  const store = openStore(storePath(home));
+  base = Date.now();
+  vi.useFakeTimers({ toFake: ["Date"] });
+  for (const seed of seeds) seedRun(store, seed);
+  vi.useRealTimers();
+  return store;
+};
+
+const RUNS: Seed[] = [
+  { id: "a1", workflow: "build", ago: 10 * DAY, status: "succeeded" },
+  { id: "b2", workflow: "build", ago: 2 * HOUR, status: "failed" },
+  { id: "c3", workflow: "lint", ago: HOUR, status: "failed" },
+  { id: "d4", workflow: "build", ago: HOUR / 2 },
+  {
+    id: "z9",
+    workflow: "build",
+    ago: HOUR / 4,
+    status: "succeeded",
+    project: "/elsewhere",
+  },
+];
+
+type Ran = { out: string; err: string; code: number | string | undefined };
+
+/** Runs `ork <command> <args>` and what it printed. */
+const ork = async (command: "ps" | "logs", ...args: string[]): Promise<Ran> => {
+  let out = "";
+  let err = "";
+  const stdout = vi.spyOn(process.stdout, "write").mockImplementation(text => {
+    out += String(text);
+    return true;
+  });
+  const stderr = vi.spyOn(process.stderr, "write").mockImplementation(text => {
+    err += String(text);
+    return true;
+  });
+  process.exitCode = undefined;
+  try {
+    await (command === "ps"
+      ? runCommand(ps, { rawArgs: args })
+      : runCommand(logs, { rawArgs: args }));
+  } finally {
+    stdout.mockRestore();
+    stderr.mockRestore();
+  }
+  const code = process.exitCode;
+  process.exitCode = undefined;
+  return { out, err, code };
+};
+
+/** The ids `ork ps <args> --ids` prints. */
+const ids = async (...args: string[]): Promise<string> =>
+  (await ork("ps", ...args, "--ids")).out.trim();
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllEnvs();
+  process.exitCode = undefined;
+});
+
+describe("ork ps", () => {
+  it("lists this project's runs newest first, ids on one line", async () => {
+    setup(RUNS).close();
+    expect(await ids()).toBe("d4,c3,b2,a1");
+  });
+
+  it("filters by status, the live one included", async () => {
+    setup(RUNS).close();
+    expect(await ids("--status", "failed")).toBe("c3,b2");
+    expect(await ids("--status", "running")).toBe("d4");
+    expect(await ids("--status", "all")).toBe("d4,c3,b2,a1");
+  });
+
+  it("filters by workflow and by start", async () => {
+    setup(RUNS).close();
+    expect(await ids("--workflow", "lint")).toBe("c3");
+    expect(await ids("--since", "7d")).toBe("d4,c3,b2");
+    expect(await ids("--since", "all")).toBe("d4,c3,b2,a1");
+    const day = new Date(Date.now() - 5 * DAY).toLocaleDateString("en-CA");
+    expect(await ids("--until", day)).toBe("a1");
+  });
+
+  it("combines filters, then limits", async () => {
+    setup(RUNS).close();
+    expect(
+      await ids(
+        "--status",
+        "failed",
+        "--workflow",
+        "build",
+        "--since",
+        "7d",
+        "--limit",
+        "5",
+        "--project",
+        "all",
+      ),
+    ).toBe("b2");
+    expect(await ids("--limit", "2")).toBe("d4,c3");
+  });
+
+  it("takes --project all, or --all with a warning", async () => {
+    setup(RUNS).close();
+    expect(await ids("--project", "all")).toBe("z9,d4,c3,b2,a1");
+    const old = await ork("ps", "--all", "--ids");
+    expect(old.out.trim()).toBe("z9,d4,c3,b2,a1");
+    expect(old.err).toContain("--all is deprecated; use --project all.");
+  });
+
+  it("shows nothing for --ids on an empty result", async () => {
+    setup(RUNS).close();
+    const ran = await ork("ps", "--workflow", "none", "--ids");
+    expect(ran).toEqual({ out: "", err: "", code: undefined });
+  });
+
+  it("shows only 20 runs unless --limit says more", async () => {
+    setup(
+      Array.from({ length: 22 }, (_, i) => ({
+        id: `r${String(i).padStart(2, "0")}`,
+        workflow: "build",
+        ago: (22 - i) * 60_000,
+        status: "succeeded" as const,
+      })),
+    ).close();
+    expect((await ids()).split(",")).toHaveLength(20);
+    expect((await ids("--limit", "21")).split(",")).toHaveLength(21);
+  });
+
+  it("prints the stored records as JSON, without a listed status", async () => {
+    setup(RUNS).close();
+    const { out } = await ork("ps", "--status", "running", "--json");
+    expect(JSON.parse(out)).toEqual([expect.objectContaining({ id: "d4" })]);
+    expect(out).not.toContain('"listed"');
+  });
+
+  it.each([
+    [["--limit", "0"], "--limit takes a positive whole number, not `0`."],
+    [["--limit", "2.5"], "--limit takes a positive whole number, not `2.5`."],
+    [["--since", "soon"], "--since takes"],
+    [["--ids", "--json"], "--ids and --json can't be used together."],
+    [["--project", "nope"], "No registered project `nope`"],
+  ])("refuses %j", async (args, message) => {
+    setup(RUNS).close();
+    const ran = await ork("ps", ...args);
+    expect(ran.err).toContain(message);
+    expect(ran.out).toBe("");
+    expect(ran.code).toBe(1);
+  });
+});
+
+/** A run whose events were stored 3 days, 2 days, 1 hour and now ago. */
+const seedLogs = (): void => {
+  const store = setup([{ id: "L1", workflow: "w", ago: 4 * DAY }]);
+  vi.useFakeTimers({ toFake: ["Date"] });
+  for (const ago of [3 * DAY, 2 * DAY, HOUR, 0]) {
+    vi.setSystemTime(base - ago);
+    store.append("L1", {
+      type: "worktree",
+      id: "n",
+      action: "created",
+      path: "/w",
+    });
+  }
+  vi.useRealTimers();
+  store.close();
+};
+
+/** The sequence numbers `ork logs L1 --json <args>` prints. */
+const seqs = async (...args: string[]): Promise<number[]> =>
+  (await ork("logs", "L1", "--json", ...args)).out
+    .trim()
+    .split("\n")
+    .filter(line => line !== "")
+    .map(line => Number(/"seq":(\d+)/u.exec(line)?.[1]));
+
+describe("ork logs", () => {
+  it("filters events by time and keeps the last --limit", async () => {
+    seedLogs();
+    expect(await seqs()).toEqual([1, 2, 3, 4]);
+    expect(await seqs("--since", "24h")).toEqual([3, 4]);
+    const day = new Date(Date.now() - 2 * DAY).toLocaleDateString("en-CA");
+    expect(await seqs("--until", day)).toEqual([1, 2]);
+    expect(await seqs("--limit", "3")).toEqual([2, 3, 4]);
+    expect(await seqs("--since", "7d", "--limit", "1")).toEqual([4]);
+  });
+
+  it("refuses a bad --limit, and has no --ids", async () => {
+    seedLogs();
+    const bad = await ork("logs", "L1", "--limit", "-1");
+    expect(bad.err).toContain("--limit takes a positive whole number");
+    expect(bad.code).toBe(1);
+    expect(JSON.stringify(logs.args)).not.toContain('"ids"');
+  });
+});

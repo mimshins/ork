@@ -11,11 +11,13 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
+import { openStore } from "@krapht/ork-core";
 import type { CommandDef } from "citty";
 import { describe, expect, it, vi } from "vitest";
 
 import { completionLines, main, printCompletions } from "../src/index.ts";
 import { seedStore, tempDir } from "./fixtures/completion.ts";
+import { listRoot } from "./fixtures/list-root.ts";
 
 const BIN = path.resolve(import.meta.dirname, "../src/bin.ts");
 
@@ -128,6 +130,24 @@ describe("completion values", () => {
     expect(lines).toEqual(["live1-1\tquestion of live1/build"]);
     expect(lines.join("\n")).not.toContain("never shows");
   });
+
+  it("offers the project's runs for decide's run positional", async () => {
+    const seeded = seedStore();
+    expect(valuesOf(await offered(seeded, "decide", ""))).toEqual(
+      expect.arrayContaining(["live1", "done1"]),
+    );
+    expect(valuesOf(await offered(seeded, "decide", "d"))).toEqual(["done1"]);
+  });
+
+  it("narrows decide --id to the run given as the positional", async () => {
+    const seeded = seedStore();
+    expect(
+      valuesOf(await offered(seeded, "decide", "live1", "--id", "")),
+    ).toEqual(["live1-1"]);
+    expect(
+      valuesOf(await offered(seeded, "decide", "done1", "--id", "")),
+    ).toEqual([]);
+  });
 });
 
 describe("the store, for completion", () => {
@@ -188,5 +208,84 @@ describe("the store, for completion", () => {
     // query that grows with the store, not a slow machine.
     expect(performance.now() - started).toBeLessThan(2000);
     expect(lines).toHaveLength(50);
+  });
+});
+
+/** The seeded store with two registered projects. */
+const withProjects = (): ReturnType<typeof seedStore> => {
+  const seeded = seedStore();
+  const store = openStore(seeded.storeFile);
+  store.addProject({
+    id: "ork",
+    root: seeded.project,
+    mode: "in-repo",
+    dir: path.join(seeded.project, ".ork"),
+  });
+  store.addProject({
+    id: "web",
+    root: "/code/web",
+    mode: "in-repo",
+    dir: "/d/web",
+  });
+  store.close();
+  return seeded;
+};
+const listed = async (
+  seeded: { project: string; storeFile: string },
+  ...words: string[]
+): Promise<string[]> =>
+  (await completionLines(listRoot, words, seeded.project, seeded.storeFile))
+    .filter(line => !line.startsWith(":"))
+    .map(line => line.split("\t")[0] ?? "");
+
+describe("a list's dynamic values", () => {
+  it("offers all and the registered projects for --project", async () => {
+    const seeded = withProjects();
+    expect(await listed(seeded, "ps", "--project", "")).toEqual([
+      "all",
+      "ork",
+      "web",
+    ]);
+    expect(
+      await listed(seeded, "follow-ups", "list", "--project", "w"),
+    ).toEqual(["web"]);
+  });
+
+  it("offers agent, me and project:<id> for --for", async () => {
+    const seeded = withProjects();
+    expect(await listed(seeded, "follow-ups", "list", "--for", "")).toEqual([
+      "agent",
+      "me",
+      "project:ork",
+      "project:web",
+    ]);
+    expect(await listed(seeded, "follow-ups", "list", "--for", "p")).toEqual([
+      "project:ork",
+      "project:web",
+    ]);
+  });
+
+  it("offers the project's workflows for --workflow, and its runs for --run", async () => {
+    const seeded = withProjects();
+    expect(await listed(seeded, "ps", "--workflow", "h")).toEqual(["hello"]);
+    expect(await listed(seeded, "worktrees", "list", "--run", "d")).toEqual([
+      "done1",
+    ]);
+  });
+
+  it("offers nothing dynamic when the store can't be read, but the rest still", async () => {
+    const seeded = seedStore();
+    expect(
+      await listed({ ...seeded, storeFile: "/none" }, "ps", "--project", ""),
+    ).toEqual(["all"]);
+    expect(
+      await listed(
+        { ...seeded, storeFile: "/none" },
+        "follow-ups",
+        "list",
+        "--for",
+        "",
+      ),
+    ).toEqual(["agent", "me"]);
   });
 });

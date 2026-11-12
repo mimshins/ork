@@ -25,13 +25,15 @@ on real sessions ([Drivers](../drivers.md),
 
 ```sh
 ork usage                     # totals, by day, workflow, model and costliest node
-ork usage --all --since 90d   # every project, further back
+ork usage --project all --since 90d   # every project, further back
 ork usage --by node           # one table, in full
 ork usage --json
 ```
 
-`--since` and `--until` set the period; `--by` is `day`, `week`, `month`,
-`workflow`, `node`, `model`, `driver` or `project`. The **Usage** panel in
+`--since` and `--until` set the period (an age such as `30d`, or a day such as
+`2026-11-01`; [filtering lists](../filtering-lists.md#times)), and `--workflow`
+and `--project` narrow it; `--by` is `day`, `week`, `month`, `workflow`, `node`,
+`model`, `driver` or `project`. The **Usage** panel in
 [the browser view](../browser-view/panels-and-workspace.md#the-panels) shows the
 same, with a chart. Both point at what is worth a look: spend on loop rounds, on
 failed sessions, on one costly node, or a cold prompt cache.

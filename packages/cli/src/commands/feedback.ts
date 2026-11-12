@@ -19,10 +19,10 @@ import { registeredProjects } from "../project/place.ts";
 import {
   findFeedbackItem,
   formatFeedbackItem,
-  formatFeedbackItems,
   noteRun,
 } from "../runs/feedback.ts";
 import { withStore } from "../store.ts";
+import { list } from "./feedback-list.ts";
 import { apply, split, triage } from "./feedback-loop.ts";
 import { exportFeedback, importFeedback, publish } from "./feedback-share.ts";
 
@@ -60,23 +60,7 @@ export const feedback = defineCommand({
       "What got in the way in your runs, grouped: list, show, note, dismiss, restore, accept, apply, triage, split, publish, export, import",
   },
   subCommands: {
-    list: defineCommand({
-      meta: { name: "list", description: "List feedback items, newest first" },
-      args: {
-        all: {
-          type: "boolean",
-          description: "Dismissed items too",
-          default: false,
-        },
-        json,
-      },
-      run: ({ args }) =>
-        withStore(store => {
-          const items = store.feedbackItems({ all: args.all });
-          if (args.json) write(JSON.stringify(items, undefined, 2));
-          else for (const line of formatFeedbackItems(items)) write(line);
-        }),
-    }),
+    list,
     show: defineCommand({
       meta: { name: "show", description: "Show an item and its records" },
       args: { item: itemArg, json },

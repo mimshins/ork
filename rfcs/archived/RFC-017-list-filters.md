@@ -1,6 +1,6 @@
 # RFC-017 — One way to filter every list command
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-13
 - **Supersedes:** —
 - **Superseded by:** —

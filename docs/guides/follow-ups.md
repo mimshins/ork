@@ -61,17 +61,19 @@ Every follow-up has an id; the first six characters are enough (`4f2a1c`).
 ## Reading and closing them
 
 ```sh
-ork follow-ups list            # due first, then waiting; --all adds done and dropped
+ork follow-ups list            # due first, then waiting; --status all adds done and dropped
 ork follow-ups show 4f2a1c     # one whole, with its draft or its steps to copy
 ork follow-ups done 4f2a1c     # a message: you sent it. Use drop when it no longer applies
 ork follow-ups reopen 4f2a1c   # bring a done or dropped one back
 ```
 
-`list` takes `--for agent` (or `me`, `project:se-frontend`) and `--json`. In the
-browser view, the **Follow-ups** panel does the same: the list by due and by who
-it is for, filters, the draft with **Copy message**, each command with a copy
-button, and **Mark due**, **Mark done** or **Mark sent**, **Drop** and
-**Reopen**. Each button names the command it stands for.
+`list` takes `--for agent` (or `me`, `project:se-frontend`), `--status`,
+`--kind`, `--due`, `--project`, `--ids`, `--limit` and `--json`
+([filtering lists](./filtering-lists.md)). In the browser view, the
+**Follow-ups** panel does the same: the list by due and by who it is for,
+filters, the draft with **Copy message**, each command with a copy button, and
+**Mark due**, **Mark done** or **Mark sent**, **Drop** and **Reopen**. Each
+button names the command it stands for.
 
 ### A message for a person
 

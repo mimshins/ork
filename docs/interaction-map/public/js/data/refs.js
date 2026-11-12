@@ -272,6 +272,14 @@ export const CLI = {
     "packages/cli/test/completion-values.test.ts",
     "Tests: completion's live values, read-only",
   ),
+  listFilters: d(
+    "specs/cli/list-filters.md",
+    "Spec: one field table per list, and the flags made from it",
+  ),
+  listFlags: d(
+    "packages/cli/src/list/flags.ts",
+    "Code: the flags, checks and `--ids` every list shares",
+  ),
   run: d("packages/cli/src/commands/run.ts", "Code: the `ork run` command"),
   human: d(
     "packages/cli/src/human.ts",

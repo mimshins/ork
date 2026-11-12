@@ -103,6 +103,7 @@ The project must be a git repository with at least one commit.
 ```sh
 ork worktrees                     # or `ork wt`: what runs created, and its state
 ork worktrees clean               # merged branches' worktrees; asks first
+ork worktrees list --run <id> --ids # filter the list (--project, --limit, --json too)
 ork worktrees clean --run <id>    # one run only, by its full id
 ork worktrees clean --all         # unmerged ones too
 ork worktrees clean --branches    # delete the branches as well

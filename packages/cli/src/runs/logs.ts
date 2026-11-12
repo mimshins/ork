@@ -5,9 +5,12 @@
  */
 
 import {
+  applyFilters,
   type EventStore,
   followEvents,
   isNodeEvent,
+  type ListFilter,
+  type ListTable,
   type RunRecord,
   type StoredEvent,
 } from "@krapht/ork-core";
@@ -69,7 +72,34 @@ export const unknownNode = (
   return named || declared || live ? null : `Run has no node ${node}.`;
 };
 
+/** `ork logs`'s filter flags (RFC-017): an event's time; no ids. */
+export const logListTable: ListTable<StoredEvent> = {
+  fields: [
+    {
+      name: "since",
+      description:
+        "Only events since an age (24h, 30d, 12w), a day (2026-11-01), or all",
+      type: "since",
+      all: true,
+      get: stored => stored.at,
+    },
+    {
+      name: "until",
+      description: "Only events on or before this day (2026-11-01)",
+      type: "until",
+      get: stored => stored.at,
+    },
+  ],
+};
+
 export type FollowOptions = LogOptions & {
+  /** `--since` and `--until`, checked: only the events they match print. */
+  filter?: ListFilter;
+  /**
+   * Print only the last this many of the stored events (after the filter and
+   * `node`); events stored after the replay always print.
+   */
+  limit?: number;
   /** Keep printing new events while the run is live. */
   follow: boolean;
   /** How often to poll when the run's socket is not there. */
@@ -94,11 +124,26 @@ export const followRun = async (
   options: FollowOptions,
 ): Promise<void> => {
   const print = createLogPrinter(options);
+  const matches = (stored: StoredEvent): boolean =>
+    applyFilters(logListTable, [stored], options.filter ?? {}).length > 0 &&
+    (options.node === undefined || isNodeEvent(stored.event, options.node));
+  // The replayed events past the last `limit`; every event still goes through
+  // the printer, which keeps the state later lines need.
+  const replayed =
+    options.limit === undefined
+      ? []
+      : store
+          .events(run.id, options.after ?? 0)
+          .filter(stored => matches(stored))
+          .slice(0, -options.limit);
+  const dropped = new Set(replayed.map(stored => stored.seq));
   const end = await followEvents(
     store,
     run.id,
     stored => {
-      for (const line of print(stored)) out(line);
+      const lines = print(stored);
+      if (!matches(stored) || dropped.has(stored.seq)) return;
+      for (const line of lines) out(line);
     },
     {
       follow: options.follow,

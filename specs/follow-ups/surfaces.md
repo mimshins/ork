@@ -7,10 +7,12 @@ _Part of [Follow-ups](../follow-ups.md)._
 ([command](../../packages/cli/src/commands/follow-ups.ts),
 [tests](../../packages/cli/test/follow-ups-command.test.ts)) The project is the
 one you are in, or `--project <id>`. Every call first runs the due check; a `gh`
-that fails only warns on stderr.
+that fails only warns on stderr. `list` filters as every list does
+([list filters](../cli/list-filters.md)).
 
 ```
-ork follow-ups list [--all] [--for <for>] [--json]   # due first, then waiting; grouped by who it is for
+ork follow-ups list [--status s|all] [--for <for>] [--kind k] [--due d] [--project p|all]
+                    [--limit n] [--ids] [--json]      # due first, then waiting; grouped by who it is for
 ork follow-ups show <id> [--json]                     # one whole: its draft and its steps, to copy
 ork follow-ups add <title> [--for …] [--kind …] [--due …] [--body …] [--where <file>]… [--ref …]
                    [--to … --channel … --text …] [--step "text :: command"]… [--json]
@@ -30,8 +32,17 @@ ork follow-ups published <ref>                        # inside a run: what it le
   and has no default. Each `--step` is `text` or `text :: command`, and a step
   without text is refused. A follow-up for another project goes to that project
   and, when a run is live there, to its session.
-- **`list`** groups by status (due, waiting, then done and dropped with
-  `--all`), then by who it is for.
+- **`list`** with no flags shows the `due` and `waiting` ones, grouped by status
+  (due, then waiting), then by who it is for. `--status` takes `due`, `waiting`,
+  `done`, `dropped` or `all` and shows what it names (`--status all` adds the
+  done and dropped ones); `--for` takes `agent`, `me`, `project:<name>` or
+  `person:<name>`; `--kind` `change`, `message`, `task` or `check`; `--due`
+  `now`, `after-merge`, `after-deploy` or `date` (any dated one); `--project` a
+  registered project's id or root, or `all`, and refuses one not registered,
+  listing those that are. A filter narrows, so `--for agent --kind change` lists
+  the agent's changes. `--ids` prints the follow-up ids on one line, and
+  `--limit` keeps the first N after the grouping. `--all` still works, as
+  `--status all`, with a warning on stderr ([L336](../gaps.md#limits)).
 - **`post`** without `--confirm` prints what would be posted and where, and
   exits 0 (the preview on stdout, the "Run again with --confirm" hint on
   stderr); with it, posts through `gh` and marks the follow-up done. It refuses
