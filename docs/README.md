@@ -1,8 +1,8 @@
 # Ork documentation
 
-Ork runs workflows of Claude agents and tools on your own machine, with your own
-accounts. Start with the getting-started pages, then read the guides as you need
-them.
+Ork runs workflows of coding agents (Claude Code, OpenCode, Command Code) and
+tools on your own machine, with your own accounts. Start with the
+getting-started pages, then read the guides as you need them.
 
 > **Alpha.** Everything in Getting started and Guides works today, unless a page
 > marks it as coming later. Coming back after an upgrade? See

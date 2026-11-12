@@ -1,7 +1,7 @@
 {
   "name": "Ork",
   "short_name": "Ork",
-  "description": "Orchestrate Claude agents on your machine",
+  "description": "Orchestrate coding agents on your machine",
   "icons": [
     {
       "src": "icon-192.png",

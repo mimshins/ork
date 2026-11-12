@@ -1,14 +1,18 @@
 {
   "name": "@krapht/ork",
   "version": "1.0.0-alpha.15",
-  "description": "Orchestrate Claude agents on your machine: hierarchical, serializable workflows with a CLI and a localhost UI.",
+  "description": "Orchestrate coding agents (Claude Code, OpenCode, Command Code) on your machine: hierarchical, serializable workflows with a CLI and a localhost UI.",
   "keywords": [
-    "claude",
     "agents",
+    "coding-agents",
     "orchestration",
     "workflow",
     "cli",
-    "ai-engineering"
+    "ai-engineering",
+    "claude",
+    "claude-code",
+    "opencode",
+    "command-code"
   ],
   "license": "MIT",
   "repository": {

@@ -1,11 +1,11 @@
 # AGENTS.md
 
-Ork is a local, open-source orchestration harness for Claude agents: a workflow
-of hierarchical agent and tool nodes, designed in a CLI or a localhost UI,
-serialized to git-friendly YAML, and run on the user's own machine with the
-user's own accounts. See [README.md](./README.md), the overview in
-[specs/design.md](./specs/design.md), and the contracts in
-[specs/](./specs/README.md).
+Ork is a local, open-source orchestration harness for coding agents (Claude
+Code, OpenCode, Command Code): a workflow of hierarchical agent and tool nodes,
+designed in a CLI or a localhost UI, serialized to git-friendly YAML, and run on
+the user's own machine with the user's own accounts. See
+[README.md](./README.md), the overview in [specs/design.md](./specs/design.md),
+and the contracts in [specs/](./specs/README.md).
 
 AI knowledge layer: [.ai/README.md](./.ai/README.md).
 
@@ -157,7 +157,7 @@ when an item ships or new work is planned, update
   and it only re-exports the public pieces; logic lives in named modules, and a
   folder inside a package has no barrel (`pnpm lint` checks it:
   `tools/lint/entry-points.ts`).
-- Extensible by design: a new integration (a CLI such as GitLab or GCP, a Claude
+- Extensible by design: a new integration (a CLI such as GitLab or GCP, an agent
   driver, a node type) is an adapter behind an interface, found through a
   registry, not a new branch in shared code.
 

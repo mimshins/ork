@@ -114,7 +114,7 @@ describe("ork --help, grouped", () => {
     expect(at.every(index => index > 0)).toBe(true);
     expect(at).toEqual(at.toSorted((a, b) => a - b));
     expect(text).toMatch(
-      /^Orchestrate Claude agents on your machine\.\nDocs: https:/u,
+      /^Orchestrate coding agents on your machine\.\nDocs: https:/u,
     );
     expect(text).toContain("Usage: ork <command> [flags]");
     expect(text).toContain(

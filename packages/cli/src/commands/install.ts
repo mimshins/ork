@@ -47,7 +47,7 @@ export { formatCheck };
 export const ORK_META = {
   name: "ork",
   version: ORK_VERSION,
-  description: "Orchestrate Claude agents on your machine",
+  description: "Orchestrate coding agents on your machine",
 };
 
 export const doctor = defineCommand({

@@ -7,10 +7,10 @@ last-verified: 2026-11-09 (commit f93117d and its working tree)
 
 # Ork overview
 
-Ork is a local, open-source orchestration harness for Claude agents: workflows
-of hierarchical agent and tool nodes, designed in a CLI or a localhost UI, saved
-as git-friendly YAML, and run on the user's machine with the user's own
-accounts. Ork never handles credentials
+Ork is a local, open-source orchestration harness for coding agents (Claude
+Code, OpenCode, Command Code): workflows of hierarchical agent and tool nodes,
+designed in a CLI or a localhost UI, saved as git-friendly YAML, and run on the
+user's machine with the user's own accounts. Ork never handles credentials
 ([ADR-004](../../decisions/ADR-004-no-credentials.md)).
 
 ## Packages

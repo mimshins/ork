@@ -1,6 +1,6 @@
 # How Ork works
 
-Ork runs a team of Claude agents and your own tools on your machine, in the
+Ork runs a team of coding agents and your own tools on your machine, in the
 order you give it, and stops to ask you where it matters. This page says what
 the parts are, in plain words.
 
@@ -16,8 +16,9 @@ anything runs ([writing workflows](./guides/writing-workflows.md)).
 
 Each node is one step, of one of these kinds:
 
-- **Leaders and workers:** Claude agents. A leader plans and hands parts of the
-  job to the nodes it owns; a worker does one task and reports back.
+- **Leaders and workers:** agents, each a session of Claude Code, OpenCode or
+  Command Code. A leader plans and hands parts of the job to the nodes it owns;
+  a worker does one task and reports back.
 - **Tools:** a program of yours, such as `git`, `gh`, `aws`, your tests or a
   short script, run without a model.
 - **Gates:** a question for you, with options and a recommended answer.
@@ -32,12 +33,14 @@ context small, so runs cost less
 
 ## Agent sessions
 
-A leader or worker runs as a **session**: a Claude Code conversation that Ork
-starts for that step, with only what the step needs: its brief, your
-repository's `CLAUDE.md` or `AGENTS.md` and skills, and what the workflow adds
+A leader or worker runs as a **session**: a conversation in your agent tool
+(Claude Code, OpenCode or Command Code, the node's
+[driver](./guides/drivers.md)) that Ork starts for that step, with only what the
+step needs: its brief, your repository's `CLAUDE.md` or `AGENTS.md` and skills,
+and what the workflow adds
 ([skills and context](./guides/skills-and-context.md)). A worker starts a fresh
-session each time; a leader picks its own up again. Ork reaches Claude through
-your own `claude` login or your API key, and never stores either
+session each time; a leader picks its own up again. Ork reaches each tool
+through your own login or API key, and never stores either
 ([accounts](./guides/accounts.md)).
 
 ## Runs

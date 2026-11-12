@@ -1,9 +1,9 @@
 # @krapht/ork
 
-The `ork` command: orchestrate Claude agents on your machine with hierarchical,
-serializable workflows.
+The `ork` command: orchestrate coding agents (Claude Code, OpenCode, Command
+Code) on your machine with hierarchical, serializable workflows.
 
-> **Alpha.** Workflows of Claude agents and tools, run from the terminal or the
+> **Alpha.** Workflows of coding agents and tools, run from the terminal or the
 > browser (`ork ui`). Expect changes until 1.0.0. See the
 > [project README](https://github.com/mimshins/ork#readme), the
 > [guides](https://github.com/mimshins/ork/tree/main/docs#readme) and
@@ -28,7 +28,13 @@ ork upgrade             # a newer version? upgrade the way you installed Ork
 
 A workflow that names no agent driver runs on the one that's ready. Today that
 is `claude-code`: your own `claude`, logged in or with `ANTHROPIC_API_KEY` or a
-cloud provider set. `--driver claude-code` names it.
+cloud provider set. Your own `opencode` (`open-code`) and Command Code's `cmd`
+(`command-code`) work too: `--driver <id>`, or a driver per node
+([Drivers](https://github.com/mimshins/ork/blob/main/docs/guides/drivers.md)).
+
+Ork is built with Ork: its own workflows plan, build, review and document its
+features, and each run is measured against a manual session in
+[Benchmarks: Ork building Ork](https://github.com/mimshins/ork/blob/main/benchmarks/README.md).
 
 Ork never stores or asks for credentials: it uses the tools you already have,
 signed in with your own accounts. Once a day it asks the npm registry whether a

@@ -103,7 +103,7 @@ const packIco = (pngs, out) => {
 const MANIFEST = {
   name: "Ork",
   short_name: "Ork",
-  description: "Orchestrate Claude agents on your machine",
+  description: "Orchestrate coding agents on your machine",
   icons: [
     { src: "icon-192.png", sizes: "192x192", type: "image/png" },
     { src: "icon-512.png", sizes: "512x512", type: "image/png" },

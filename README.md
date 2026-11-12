@@ -2,7 +2,8 @@
 
 # Ork
 
-**An orchestration harness for Claude agents that runs on your machine.**
+**An orchestration harness for coding agents (Claude Code, OpenCode, Command
+Code) that runs on your machine.**
 
 <p align="center"><img src="./assets/demo/ork-demo.gif" alt="An Ork run: the Monitor's live graph above, ork logs -f below" width="800"></p>
 
@@ -18,8 +19,11 @@ for agents and engineering tasks:
 - **Context-engineered.** Fresh sessions per task, briefs instead of
   transcripts, cache-friendly prompts, a model and effort per node, budgets, and
   bounded loops.
+- **Your agent tools.** Each agent node runs a session of Claude Code, OpenCode
+  or Command Code, under your own login, and one workflow can mix them
+  ([Drivers](./docs/guides/drivers.md)).
 - **Yours.** Your repository's `CLAUDE.md`, `AGENTS.md` and skills load as they
-  do in Claude Code, and Ork never stores a credential.
+  do in your agent tool, and Ork never stores a credential.
 
 > **Alpha.** Ork works today, from the terminal and in the browser (`ork ui`),
 > but the workflow format and commands can still change until 1.0.0. What
@@ -54,6 +58,15 @@ ork worktrees                                # the branches it left
 ork worktrees clean                          # removes the merged ones; asks first
 ork ui                                       # your runs in the browser
 ```
+
+## Built with Ork
+
+Ork is its own proof of concept and its own first user: Ork's features are
+planned, built in parallel worktrees, reviewed and documented by Ork's own
+workflows ([`.ork/workflows/`](./.ork/workflows/)), with the maintainer deciding
+at the gates. Each of those runs is measured in
+[Benchmarks: Ork building Ork](./benchmarks/README.md), failures included, and
+compared with the same change made by hand in a plain Claude Code session.
 
 ## Documentation
 

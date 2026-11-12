@@ -109,7 +109,7 @@ their public entry point. oxlint enforces this.
   other module a name for what it does (`pnpm lint` checks it).
 - Something you find missing, or build a simpler way for now, goes in
   [specs/gaps.md](./specs/gaps.md).
-- A new integration (a CLI, a Claude driver, a node type) is an adapter behind
+- A new integration (a CLI, an agent driver, a node type) is an adapter behind
   an interface, found through a registry, not a new branch in shared code.
 
 ## Docs, the interaction map and the roadmap
