@@ -18,6 +18,9 @@
 # - The driver is left to each contributor: a run takes the one ready on the
 #   machine (today `claude-code`), or `ork run --driver <id>`.
 schemaVersion: 1
+# Files every node of every workflow here reads, before the node's own prompt.
+context:
+  - .ork/context/sessions.md
 git:
   commit: never
   base: main
