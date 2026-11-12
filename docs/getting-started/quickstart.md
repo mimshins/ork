@@ -106,7 +106,7 @@ ork validate
 
 ```
  OK  .ork/workflows/hello.ork.yaml (3 nodes, 1 edge, starts at lead)
-Walked 3 ways through: 2 succeed, 1 fails. See each with `ork validate --paths`.
+Walked 3 ways through: 2 end succeeded, 1 end failed (every way a node can fail is one). See each with `ork validate --paths`.
 ```
 
 `ork validate` checks every workflow in `.ork/workflows/` (or the files you

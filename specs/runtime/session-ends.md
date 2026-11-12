@@ -144,6 +144,10 @@ quotes the provider. The detail is the raw provider or tool text:
 project's roots and home, runs the feedback redactor) and caps it at
 `END_DETAIL_LIMIT` (4096 characters) before anything stores it.
 
+- A tool's stderr is the workflow's own program, not the provider, so for
+  `command_failed` the CLI shows the last non-empty line of the detail (cut to
+  200 characters) under the headline without `--verbose`; every other kind keeps
+  its detail behind `--verbose` ([the terminal](../cli/running-and-runs.md)).
 - `SessionOutcome.end`: how the session ended. `subtype` stays one release for
   stored events and is no longer read for decisions.
 - `NodeResult.end`: how the node ended; `error` is its message.

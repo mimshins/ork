@@ -6,9 +6,10 @@ one branch, with one pull request that closes them. Ork's `issues` workflow does
 this, and a **lock** is what lets many runs, or many agents, work toward one
 branch without their pushes colliding.
 
-You need the `gh` command signed in (`gh auth status`) and a git remote named
-`origin`. Ork reads no token: labels, pull requests and pushes go through your
-own `gh` and git.
+You need the `gh` command signed in (`gh auth status`), Claude Code signed in
+(the builders and reviewers run on `claude-code.sonnet`), a project with at
+least one commit, and a git remote named `origin`. Ork reads no token: labels,
+pull requests and pushes go through your own `gh` and git.
 
 ## Take the workflow
 
@@ -26,15 +27,20 @@ which runs in a fresh worktree after each integration:
 ork run issues --input label=ready --input check="pnpm install --frozen-lockfile && pnpm run check"
 ```
 
-Or name them: `--input issues=12,15,18`. At most 10 are taken, since each costs
-a builder and a reviewer. The branch they go into is `ork/issues` unless you
-pass `--input branch=<name>`; the pull request goes to `main` unless you pass
-`--input base=<name>`.
+Or name them: `--input issues=12,15,18`. A run takes at most 10, since each
+costs a builder and a reviewer. A label with more than 10 open issues takes the
+first 10. A list of more than 10 numbers is **refused** before anything is
+labelled ("11 issues named; a run takes at most 10 …"): name 10 or fewer and run
+again for the rest. A number named twice counts once. The branch they go into is
+`ork/issues` unless you pass `--input branch=<name>`; the pull request goes to
+`main` unless you pass `--input base=<name>`.
 
 What happens:
 
 1. Each issue gets the `in-progress` label, so you and your team see it is
-   taken.
+   taken. By label, issues that already have it are skipped, so two runs over
+   one label do not build the same issue. An issue you name by number is taken
+   even if it has the label (to take one again after a run stopped, say).
 2. A builder takes each issue in its own worktree (three at a time) and makes
    the change with its tests.
 3. A reviewer reads each change. One that is not approved is left out.
@@ -44,10 +50,29 @@ What happens:
 5. One pull request is opened (or updated) with `Closes #12`, `Closes #15`, … in
    its body. The labels come off.
 
-An issue whose builder failed, whose review asked for changes, or whose
-integration could not finish is **left out**: it loses its label, its work stays
-on its own branch, and the run's summary names it and why. The rest still go in.
-The run's outputs are `integrated`, `leftOut` and `url`.
+An issue whose builder failed (or passed and left no branch), whose review asked
+for changes, or whose integration could not finish is **left out**: it loses its
+label, its work stays on its own branch, and the run's summary names it and why.
+The rest still go in. The run's outputs are `integrated`, `leftOut` and `url`.
+
+If the run fails before its pull request (no builder passes, no review passes,
+no integration finishes, `gh pr create` fails, and so on), an `unmark` step
+takes `in-progress` off every issue it listed and says so: "The run stopped
+before its pull request; took in-progress off #12, #13." The run still ends
+`failed`, and its first `✗` in the transcript is the cause.
+
+### If a run stops
+
+A run that is stopped (`ork stop`), times out, crashes or runs out of budget
+fires no failure step, so its labels stay. List them and take them off:
+
+```sh
+gh issue list --label in-progress
+gh issue edit 12 --remove-label in-progress
+```
+
+A label run skips issues that still have the label, so remove it first, or name
+the issues by number.
 
 ### Adding to the same pull request
 
@@ -142,8 +167,11 @@ them too: it names each stale lock or check-slot record it removed.
 
 The `issues` workflow takes at most 10 issues, builds and reviews each once, and
 keeps its queue in files, so a resumed run starts the integrations over (an
-issue already pushed is rebased again and finds nothing new). The register has
-the rest: [conflict resolver](../../specs/gaps/conflict-resolver-limits.md),
+issue already pushed is rebased again and finds nothing new). The `in-progress`
+label is only a sign: two runs that start at the same moment can both take an
+issue. It needs a checkout with a commit; `--in-place` runs the builders in one
+checkout, which `issues` cannot work with. The register has the rest:
+[conflict resolver](../../specs/gaps/conflict-resolver-limits.md),
 [`issues`](../../specs/gaps/issues-limits.md) and
 [locks](../../specs/gaps/machine-limits.md).
 

@@ -1,8 +1,9 @@
 /**
  * @file How a node's end reads on the terminal (specs/runtime/session-ends.md):
  *   its kind's label and Ork's own message, a note for a kind that may pass,
- *   the setup hint for an account or provider end, and the scrubbed raw detail
- *   only when asked for. Never the provider's own words first.
+ *   the setup hint for an account or provider end, the last line of a failed
+ *   tool's own stderr, and the scrubbed raw detail only when asked for. Never
+ *   the provider's own words first.
  */
 
 import {
@@ -26,11 +27,24 @@ export const endHeadline = (end: SessionEnd): string => {
   return `${label}: ${end.message}${transient ? ` ${MAY_PASS}` : ""}`;
 };
 
+/** The longest a script's last stderr line is shown on the log line. */
+const LAST_LINE_LIMIT = 200;
+
+/** The last non-empty line of a scrubbed detail, cut; "" when there is none. */
+const lastLine = (detail: string | undefined): string =>
+  (detail ?? "")
+    .split("\n")
+    .map(line => line.trim())
+    .findLast(line => line !== "")
+    ?.slice(0, LAST_LINE_LIMIT) ?? "";
+
 /**
  * The lines under a headline: the hint for an account or provider end (what to
  * set up) or whenever `full` (`--verbose`, one node's log), and the detail only
  * when `full`. A transient kind's hint is its retry wording, which the headline
- * already says, so it is not printed twice.
+ * already says, so it is not printed twice. A failed tool (`command_failed`)
+ * also shows the last line of its detail without `full`: a script's stderr is
+ * the workflow's own message, not the provider's.
  */
 export const endLines = (
   end: SessionEnd,
@@ -49,6 +63,9 @@ export const endLines = (
       style("dim", "  details:"),
       ...end.detail.split("\n").map(line => style("dim", `    ${line}`)),
     );
+  } else if (end.kind === "command_failed") {
+    const last = lastLine(end.detail);
+    if (last !== "") lines.push(`  ${style("dim", last)}`);
   }
   return lines;
 };

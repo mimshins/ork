@@ -77,3 +77,18 @@ what was left simpler. The one real run on each driver is [C12](../gaps.md).
   fanned node, and an owner's fork that answers a question from an item, plan
   without the item and take the default model and effort.
   ([an item's own model and effort](../scheduler/for-each.md#an-items-own-model-and-effort))
+- **L315 · `--in-place` runs parallel `worktree` items in one checkout.** The
+  flag makes every `worktree` node work in the project checkout
+  ([worktrees](../worktrees.md)), so the items of a fanned `isolation: worktree`
+  node (`issues`' `build`, three at a time) share one working tree and branch.
+  The engine does not refuse it; `issues` can only say, in `gather`, that a
+  builder left no branch. Refusing the flag for a workflow whose fanned nodes
+  need their own worktrees would be an engine rule.
+- **L316 · An over-`maxItems` `stop` ends as `invalid_node`.** When the answer
+  to the question about a list over `maxItems` is `stop` (with no terminal, the
+  recommended answer), the end is `invalid_node` and its hint reads "Fix the
+  node in the workflow file", though the workflow may be fine and only its input
+  long ([fan-out.ts](../../packages/core/src/run/fan-out.ts),
+  [ends.ts](../../packages/core/src/runtime/ends.ts)). A node that asks twice
+  for the same list (`issues`' `mark` and `build`) asks the same question twice.
+  `issues` refuses a long list in `list`, so it never gets here.

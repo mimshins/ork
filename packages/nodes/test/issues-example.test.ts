@@ -6,279 +6,29 @@
  *   them, an issue whose builder failed or whose review didn't pass is left out
  *   and unlabelled, a conflict goes through the resolver (and a changed
  *   behaviour through the question), and a second run adds to the same pull
- *   request.
+ *   request. `list` refuses what it can't work with before it labels anything.
  */
 
-import { execFileSync } from "node:child_process";
-import {
-  chmodSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  realpathSync,
-  writeFileSync,
-} from "node:fs";
-import { tmpdir } from "node:os";
-import path from "node:path";
-
-import {
-  compileWorkflow,
-  fileLockLedgers,
-  type NodeExecutor,
-  type NodeOutput,
-  type RunEvent,
-  type RunResult,
-  startRun,
-} from "@krapht/ork-core";
-import { parseWorkflow, serializeWorkflow } from "@krapht/ork-schema";
+import { compileWorkflow } from "@krapht/ork-core";
+import { serializeWorkflow } from "@krapht/ork-schema";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { gateExecutor, spawnTool, toolExecutor } from "../src/index.ts";
-
-const TEXT = readFileSync(
-  new URL("../../../examples/issues.ork.yaml", import.meta.url),
-  "utf8",
-);
-
-const parsedOrThrow = () => {
-  const parsed = parseWorkflow(TEXT);
-  if (!parsed.ok) throw new Error(JSON.stringify(parsed.diagnostics));
-  return parsed.workflow;
-};
-
-const graph = () => {
-  const compiled = compileWorkflow(parsedOrThrow());
-  if (compiled.graph === null) {
-    throw new Error(JSON.stringify(compiled.diagnostics));
-  }
-  return compiled.graph;
-};
-
-const git = (cwd: string, ...args: string[]): string =>
-  execFileSync("git", args, { cwd, encoding: "utf8", stdio: "pipe" });
-
-/** A `gh` that keeps its issues, labels and pull request in `$GH_DIR`. */
-const FAKE_GH = `#!/bin/sh
-d="$GH_DIR"
-echo "$*" >> "$d/log"
-case "$1 $2" in
-  "label create") exit 0 ;;
-  "issue view") cat "$d/issue-$3.json" ;;
-  "issue list") cat "$d/list.json" ;;
-  "issue edit") exit 0 ;;
-  "pr view")
-    [ -f "$d/pr" ] || exit 1
-    case "$*" in
-      *"--jq .body"*) cat "$d/pr-body" ;;
-      *"--jq .url"*) echo https://example.test/pull/1 ;;
-    esac
-    ;;
-  "pr create"|"pr edit")
-    shift 2
-    while [ $# -gt 0 ]; do
-      case "$1" in --body) printf '%s\\n' "$2" > "$d/pr-body"; shift ;; esac
-      shift
-    done
-    touch "$d/pr"
-    echo https://example.test/pull/1
-    ;;
-  *) exit 1 ;;
-esac
-`;
-
-type World = { base: string; project: string; remote: string; gh: string };
-
-const world = (): World => {
-  const base = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-issues-")));
-  const remote = path.join(base, "remote.git");
-  const project = path.join(base, "app");
-  const gh = path.join(base, "gh");
-  mkdirSync(path.join(base, "bin"));
-  mkdirSync(gh);
-  git(base, "init", "-q", "--bare", "-b", "main", remote);
-  git(base, "init", "-q", "-b", "main", project);
-  for (const [key, value] of [
-    ["user.name", "t"],
-    ["user.email", "t@example.com"],
-    ["commit.gpgsign", "false"],
-  ] as const) {
-    git(project, "config", key, value);
-  }
-  writeFileSync(path.join(project, "app.txt"), "base\n");
-  git(project, "add", "app.txt");
-  git(project, "commit", "-q", "-m", "base");
-  git(project, "remote", "add", "origin", remote);
-  git(project, "push", "-q", "-u", "origin", "main");
-  const bin = path.join(base, "bin", "gh");
-  writeFileSync(bin, FAKE_GH);
-  chmodSync(bin, 0o755);
-  return { base, project, remote, gh };
-};
-
-/** The issues the fake `gh` knows, as `gh` would print them. */
-const open = (w: World, ...numbers: number[]) => {
-  const issues = numbers.map(number => ({
-    number,
-    title: `Issue ${String(number)}`,
-    body: `Do ${String(number)}`,
-  }));
-  for (const issue of issues) {
-    writeFileSync(
-      path.join(w.gh, `issue-${String(issue.number)}.json`),
-      JSON.stringify(issue),
-    );
-  }
-  writeFileSync(path.join(w.gh, "list.json"), JSON.stringify(issues));
-};
-
-/** What a fake builder does for an issue: a file it writes, or a failure. */
-type Build = { file: string; text: string } | "fail";
-
-type Script = {
-  builds: Record<number, Build>;
-  /** The issues whose review doesn't pass. */
-  rejected?: number[];
-  /** What the resolver leaves in `app.txt`, and what it says of it. */
-  resolution?: { text: string; behaviour: string };
-  answer?: string;
-  /** The `prepare` session reports a failure. */
-  prepareFails?: boolean;
-};
-
-const numberOf = (value: unknown): number =>
-  typeof value === "object" &&
-  value !== null &&
-  "number" in value &&
-  typeof value.number === "number"
-    ? value.number
-    : -1;
-
-const outputOf = (result: RunResult, name: string): string | undefined =>
-  result.outputs?.[name];
-
-const report = (output: NodeOutput) =>
-  Promise.resolve({ ok: true as const, output });
-
-const run = async (
-  w: World,
-  script: Script,
-  inputs: Record<string, string>,
-) => {
-  const events: RunEvent[] = [];
-  const asked: string[] = [];
-  // The fake `gh` first on the PATH the tool nodes' programs start with.
-  vi.stubEnv(
-    "PATH",
-    `${path.join(w.base, "bin")}:${process.env["PATH"] ?? ""}`,
-  );
-  vi.stubEnv("GH_DIR", w.gh);
-  const tool = toolExecutor(spawnTool, { environ: process.env });
-  let prepared = "";
-  /** A worktree of the project on a branch of this run, as Ork makes one. */
-  const worktree = (runId: string, id: string) => {
-    const dir = path.join(w.base, `wt-${runId}-${id}`);
-    const branch = `ork/${runId}/${id}`;
-    git(w.project, "worktree", "add", "-q", "-b", branch, dir, "HEAD");
-    return { dir, branch };
-  };
-  const agent: NodeExecutor = context => {
-    const { id, runId } = context;
-    if (id === "prepare" && script.prepareFails === true) {
-      return Promise.resolve({
-        ok: false as const,
-        error: "could not prepare",
-        output: { status: "fail", summary: "could not prepare" },
-      });
-    }
-    if (id === "prepare") {
-      const made = worktree(runId, id);
-      prepared = made.dir;
-      return report({
-        status: "pass",
-        summary: "ready",
-        worktree: made.dir,
-        branch: made.branch,
-      });
-    }
-    if (id.startsWith("build.")) {
-      const issue = numberOf(context.item?.value);
-      const build = script.builds[issue];
-      if (build === undefined || build === "fail") {
-        return report({ status: "fail", summary: "could not build it" });
-      }
-      const made = worktree(runId, id);
-      writeFileSync(path.join(made.dir, build.file), build.text);
-      git(made.dir, "add", "-A");
-      git(made.dir, "commit", "-q", "-m", `ork: ${id}`);
-      return report({
-        status: "pass",
-        summary: "built",
-        worktree: made.dir,
-        branch: made.branch,
-      });
-    }
-    if (id.startsWith("review.")) {
-      const issue = numberOf(context.item?.value);
-      return script.rejected?.includes(issue) === true
-        ? report({ status: "changes_requested", summary: "misses a case" })
-        : report({ status: "pass", summary: "fine" });
-    }
-    if (id === "resolve") {
-      const { text, behaviour } = script.resolution ?? {
-        text: "base\n",
-        behaviour: "unchanged",
-      };
-      writeFileSync(path.join(prepared, "app.txt"), text);
-      // Ork commits what a `continue` session leaves, here in the middle of the rebase.
-      git(prepared, "add", "-A");
-      git(prepared, "commit", "-q", "-m", `ork: ${id} (run ${runId})`);
-      return report({ status: "pass", summary: "x", kept: "both", behaviour });
-    }
-    throw new Error(`Unexpected agent ${id}`);
-  };
-  const ran: string[] = [];
-  const result = await startRun({
-    graph: graph(),
-    inputs: { check: "true", branch: "feature", base: "main", ...inputs },
-    cwd: w.project,
-    executors: {
-      "tool.shell": tool,
-      "tool.gh": tool,
-      "agent.worker": agent,
-      "human.gate": gateExecutor,
-    },
-    human: {
-      ask: question => {
-        asked.push(question.document ?? "");
-        return Promise.resolve(script.answer ?? "keep");
-      },
-      permit: () => Promise.resolve({ allow: true }),
-    },
-    locks: fileLockLedgers({
-      dir: path.join(w.base, "locks"),
-      repo: w.project,
-      project: w.project,
-      pollMs: 10,
-    }),
-    onEvent: event => {
-      events.push(event);
-      if (event.type === "node.started") ran.push(event.id);
-    },
-  }).done;
-  return { result, ran, asked, events };
-};
-
-const ghLog = (w: World): string[] =>
-  readFileSync(path.join(w.gh, "log"), "utf8").trim().split("\n");
-
-const subjects = (w: World, branch = "feature"): string[] =>
-  git(w.remote, "log", "--format=%s", branch).trim().split("\n");
-
-const body = (w: World): string =>
-  readFileSync(path.join(w.gh, "pr-body"), "utf8");
-
-const ONE: Build = { file: "one.txt", text: "1\n" };
-const TWO: Build = { file: "two.txt", text: "2\n" };
+import {
+  body,
+  git,
+  ghLog,
+  labelled,
+  ONE,
+  open,
+  outputOf,
+  parsedOrThrow,
+  run,
+  stderrOf,
+  subjects,
+  TEXT,
+  TWO,
+  world,
+} from "./issues-world.ts";
 
 describe("the issues example", () => {
   it("is in canonical form and checks with no finding", () => {
@@ -334,9 +84,10 @@ describe("working issues in parallel", () => {
       expect(ran).not.toContain(id);
     }
     expect(events.filter(event => event.type === "lock.taken")).toEqual([]);
+    expect(ghLog(w)).toContain("issue edit 1 --remove-label in-progress");
   });
 
-  it("takes the open issues of a label", async () => {
+  it("takes the open issues of a label that no run has taken", async () => {
     const w = world();
     open(w, 1, 2);
     const { result } = await run(
@@ -347,9 +98,19 @@ describe("working issues in parallel", () => {
     expect(result.reasons).toEqual([]);
     expect(result.status).toBe("succeeded");
     expect(ghLog(w)).toContain(
-      'issue list --label ready --state open --limit 10 --json number,title,body --jq [.[] | {number, title, body: ((.body // "")[:4000])}]',
+      'issue list --label ready --search -label:in-progress --state open --limit 10 --json number,title,body --jq [.[] | {number, title, body: ((.body // "")[:4000])}]',
     );
     expect(body(w)).toContain("Closes #1\nCloses #2");
+  });
+
+  it("takes an issue named by number even when it is already in progress", async () => {
+    const w = world();
+    open(w, 1);
+    labelled(w, 1, "in-progress");
+    const { result } = await run(w, { builds: { 1: ONE } }, { issues: "1" });
+    expect(result.reasons).toEqual([]);
+    expect(result.status).toBe("succeeded");
+    expect(ghLog(w)).toContain("issue edit 1 --add-label in-progress");
   });
 
   it("leaves out an issue whose builder failed or whose review didn't pass, unlabelled and named", async () => {
@@ -447,5 +208,92 @@ describe("working issues in parallel", () => {
     expect(subjects(w)).toEqual(["Resolve #1: Issue 1", "base"]);
     expect(outputOf(result, "leftOut")).toContain("#2: its integration failed");
     expect(body(w)).not.toContain("#2");
+  });
+});
+
+describe("`list` refuses what the run can't work with, before it labels anything", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("refuses more than 10 issues, asks nothing and edits no issue", async () => {
+    const w = world();
+    const numbers = Array.from({ length: 11 }, (_, index) => index + 1);
+    open(w, ...numbers);
+    const { result, ran, asked, events } = await run(
+      w,
+      { builds: {} },
+      { issues: numbers.join(",") },
+    );
+    expect(result.status).toBe("failed");
+    expect(ran).not.toContain("mark");
+    expect(asked).toEqual([]);
+    expect(stderrOf(events, "list")).toContain(
+      "11 issues named; a run takes at most 10 (each costs a builder and a reviewer). Name 10 or fewer, and run again for the rest.",
+    );
+    expect(ghLog(w).filter(line => line.startsWith("issue edit"))).toEqual([]);
+  });
+
+  it("takes an issue named twice once", async () => {
+    const w = world();
+    open(w, 1);
+    const { result, ran } = await run(
+      w,
+      { builds: { 1: ONE } },
+      { issues: "1,1" },
+    );
+    expect(result.reasons).toEqual([]);
+    expect(result.status).toBe("succeeded");
+    const log = ghLog(w);
+    expect(
+      log.filter(line => line.startsWith("issue edit 1 --add-label")),
+    ).toHaveLength(1);
+    expect(log.filter(line => line.startsWith("issue view 1"))).toHaveLength(1);
+    expect(ran.filter(id => id.startsWith("build."))).toHaveLength(1);
+  });
+
+  it("counts the distinct numbers, so 10 with a repeat still go through", async () => {
+    const w = world();
+    const numbers = Array.from({ length: 10 }, (_, index) => index + 1);
+    open(w, ...numbers);
+    const { events } = await run(
+      w,
+      { builds: { 1: ONE } },
+      { issues: `${numbers.join(",")},1` },
+    );
+    expect(stderrOf(events, "list")).toBe("");
+    expect(
+      ghLog(w).filter(line => line.includes("--add-label in-progress")),
+    ).toHaveLength(10);
+  });
+
+  it("refuses a checkout with no origin, before any gh call", async () => {
+    const w = world({ noOrigin: true });
+    open(w, 1);
+    const { result, events } = await run(
+      w,
+      { builds: { 1: ONE } },
+      { issues: "1" },
+    );
+    expect(result.status).toBe("failed");
+    expect(stderrOf(events, "list")).toContain(
+      "issues needs a commit and a remote named origin",
+    );
+    expect(ghLog(w)).toEqual([]);
+  });
+
+  it("refuses a checkout with no commit, before any gh call", async () => {
+    const w = world({ noCommit: true });
+    open(w, 1);
+    const { result, events } = await run(
+      w,
+      { builds: { 1: ONE } },
+      { label: "ready" },
+    );
+    expect(result.status).toBe("failed");
+    expect(stderrOf(events, "list")).toContain(
+      "issues needs a commit and a remote named origin",
+    );
+    expect(ghLog(w)).toEqual([]);
   });
 });

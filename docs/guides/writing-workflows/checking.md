@@ -17,8 +17,8 @@ time limit are warnings.
 Then it tries every way through the workflow, without running a session, a tool
 or a script: each status, each gate answer, each value a condition asks about,
 success and failure. It ends with a line such as
-`Walked 14 ways through: 2 succeed, 12 fail.` To see how a run can end, and the
-choices that lead there:
+`Walked 14 ways through: 2 end succeeded, 12 end failed (every way a node can fail is one).`
+To see how a run can end, and the choices that lead there:
 
 ```sh
 ork validate path/to/file.ork.yaml --paths

@@ -4,7 +4,8 @@ _Part of [Troubleshooting](../troubleshooting.md)._
 
 **`… need a git worktree, but … is not in a git repository with a commit`.**
 Nodes with `isolation: worktree` need a repository with at least one commit.
-Make one, or pass `--in-place` to run in the current folder:
+Make a first commit, or pass `--in-place` to run in the current folder (a
+workflow that builds in parallel, like `issues`, needs the commit):
 
 ```sh
 git init && git commit --allow-empty -m "Start"

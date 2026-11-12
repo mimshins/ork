@@ -63,7 +63,7 @@ export const prepareCheckout = async (
     return {
       ok: false,
       lines: [
-        `${isolated.join(", ")} need a git worktree, but ${options.cwd} is not in a git repository with a commit; pass --in-place to run them here`,
+        `${isolated.join(", ")} need a git worktree, but ${options.cwd} is not in a git repository with a commit; make a first commit (\`git commit --allow-empty -m "Start"\`) first, or pass --in-place to run them here`,
       ],
     };
   }

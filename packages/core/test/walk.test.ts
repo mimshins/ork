@@ -1012,13 +1012,13 @@ const summary = (parts: Partial<WalkResult>): string =>
 describe("what a walk comes to", () => {
   it("counts the ways through", () => {
     expect(summary({ paths: 73, succeeded: 5, failed: 68 })).toBe(
-      "Walked 73 ways through: 5 succeed, 68 fail.",
+      "Walked 73 ways through: 5 end succeeded, 68 end failed (every way a node can fail is one).",
     );
   });
 
   it("reads right for one", () => {
     expect(summary({ paths: 1, succeeded: 1, failed: 1 })).toBe(
-      "Walked 1 way through: 1 succeeds, 1 fails.",
+      "Walked 1 way through: 1 end succeeded, 1 end failed (every way a node can fail is one).",
     );
   });
 
@@ -1032,7 +1032,7 @@ describe("what a walk comes to", () => {
 describe("every example", () => {
   it.each(exampleFiles)("%s walks to the end, with no finding", async file => {
     const graph = compile(readFileSync(path.join(examples, file), "utf8"));
-    // `issues` has about 5,600 ways through: more than a walk's default caps.
+    // `issues` has about 1,750 ways through: a walk's default caps stop a slow machine short of them.
     const result = await walkWorkflow(graph, { cap: 20_000, maxMs: 30_000 });
     expect(result.complete).toBe(true);
     expect(found(result)).toEqual([]);

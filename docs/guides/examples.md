@@ -177,7 +177,8 @@ curl -fsSL --create-dirs -o .ork/workflows/issues.ork.yaml \
 ork run issues --input label=ready --input check="pnpm run check"
 ```
 
-Sonnet, within a run budget of $40; at most 10 issues. It needs `gh` signed in.
+Sonnet, within a run budget of $40; at most 10 issues. It needs `gh` and Claude
+Code signed in.
 
 ## resolve-conflict
 

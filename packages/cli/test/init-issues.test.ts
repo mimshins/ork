@@ -13,11 +13,13 @@ import { compileWorkflow } from "@krapht/ork-core";
 import { parseWorkflow } from "@krapht/ork-schema";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { DriverChecks } from "../src/index.ts";
 import {
   ISSUES_FILE,
   issuesStep,
   writeIssuesWorkflow,
 } from "../src/project/issues-step.ts";
+import { readyOnly } from "./fixtures/drivers.ts";
 
 const project = (): string => mkdtempSync(path.join(tmpdir(), "ork-issues-"));
 
@@ -33,9 +35,13 @@ const findings = (text: string): unknown[] => {
 };
 
 /** What `issuesStep` printed, without colour. */
-const printed = async (root: string, issues?: boolean): Promise<string> => {
+const printed = async (
+  root: string,
+  issues?: boolean,
+  checks: DriverChecks = readyOnly("claude-code"),
+): Promise<string> => {
   const out = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-  await issuesStep(root, { issues });
+  await issuesStep(root, { issues }, checks);
   const text = out.mock.calls.map(call => String(call[0])).join("");
   out.mockRestore();
   return text;
@@ -72,6 +78,28 @@ describe("ork init's issues workflow", () => {
     const refused = project();
     expect(await printed(refused, false)).toBe("");
     expect(() => written(refused)).toThrow("ENOENT");
+  });
+
+  it("names the driver it runs on, and that it is ready", async () => {
+    const text = await printed(project(), true);
+    expect(text).toContain(
+      "issues runs on claude-code (its model, claude-code.sonnet): claude-code is ready",
+    );
+  });
+
+  it("says how to get the driver ready when it is not", async () => {
+    const text = await printed(project(), true, readyOnly("open-code"));
+    expect(text).toContain(
+      "issues runs on claude-code (its model, claude-code.sonnet): not ready: Get the claude-code driver ready.",
+    );
+  });
+
+  it("says nothing of the driver for a file that is already there", async () => {
+    const root = project();
+    mkdirSync(path.join(root, ".ork", "workflows"), { recursive: true });
+    writeFileSync(path.join(root, ISSUES_FILE), "mine\n");
+    const text = await printed(root, true);
+    expect(text).not.toContain("issues runs on");
   });
 
   it("only says how to add it when there is no terminal and no flag", async () => {

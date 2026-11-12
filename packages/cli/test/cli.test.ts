@@ -144,7 +144,9 @@ describe("ork validate's walk", () => {
   it("says how many ways it walked", () => {
     const { status, stdout } = validateText(GATED);
     expect(status).toBe(0);
-    expect(stdout).toContain("Walked 3 ways through: 2 succeed, 1 fails.");
+    expect(stdout).toContain(
+      "Walked 3 ways through: 2 end succeeded, 1 end failed (every way a node can fail is one).",
+    );
     expect(stdout).toContain("See each with `ork validate --paths`.");
     expect(validateText(GATED, "--paths").stdout).not.toContain(
       "See each with",

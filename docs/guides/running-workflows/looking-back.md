@@ -13,8 +13,9 @@ ork logs 3f2a --verbose # every failed node's hint and scrubbed details
 ork tree               # the ownership tree: each node's state, tokens and cost
 ```
 
-A failed node says why in one line, as a kind and a message; `--verbose` (on
-`ork run` too) and `ork logs --node` add what to do and the raw text, scrubbed.
+A failed node says why in one line, as a kind and a message (for a failed tool,
+the last line of its stderr); `--verbose` (on `ork run` too) and
+`ork logs --node` add what to do and the raw text, scrubbed.
 [Why a node stopped](../why-a-node-stopped.md) lists every kind.
 
 A cost with `(partial)` after it leaves out a session on a driver that reports

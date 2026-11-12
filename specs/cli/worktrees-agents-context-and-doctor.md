@@ -25,7 +25,13 @@ runs no check. With none ready, it passes on the claude-code driver's hint
 starter that is already there is left as it is, and nothing is said or checked
 ([code](../../packages/cli/src/project/init.ts)). In a git repository with no
 commit, `ork init` still writes everything and exits 0, then warns that worktree
-runs branch from `HEAD`, so a first commit is needed.
+runs branch from `HEAD`, so a first commit is needed. When `ork init` writes the
+`issues` workflow (`--issues`), it also says which driver that workflow runs on
+and whether it is ready here:
+`issues runs on claude-code (its model, claude-code.sonnet): <ready detail | not ready: hint>`.
+The driver and model come from the bundled workflow's `defaults.model`, and
+readiness from the same driver checks; a file that is already there is left
+alone and says nothing.
 
 ## Worktrees
 

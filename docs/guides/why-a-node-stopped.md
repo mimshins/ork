@@ -137,7 +137,9 @@ it (`ork doctor` checks the drivers), then `ork resume`.
 
 A tool node's command exited with a non-zero code. **Who acts:** the workflow.
 **What to do:** read its output under Details; fix the command or let a
-condition handle the failure. Ork files no feedback, since this is its answer.
+condition handle the failure. The one-line reason ends with the command's last
+stderr line, without `--verbose`. Ork files no feedback, since this is its
+answer.
 
 ## Invalid output
 

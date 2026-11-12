@@ -473,7 +473,9 @@ describe("saving", () => {
     const { data } = await answer(
       fixture.client.call("builderView", { params: PARAMS }),
     );
-    expect(data.walk).toBe("Walked 2 ways through: 1 succeeds, 1 fails.");
+    expect(data.walk).toBe(
+      "Walked 2 ways through: 1 end succeeded, 1 end failed (every way a node can fail is one).",
+    );
     expect(data.diagnostics).toContainEqual(
       expect.objectContaining({
         code: "walk.never-runs",

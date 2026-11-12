@@ -6,7 +6,7 @@ inputs:
   label:
     type: string
     default: ""
-    description: Take the open issues with this label, e.g. ready (the first 10).
+    description: Take the open issues with this label that no run has taken, e.g. ready (the first 10).
   issues:
     type: string
     default: ""
@@ -70,10 +70,12 @@ nodes:
         echo "The branch to integrate into must differ from the pull request's base ($BASE)." >&2
         exit 1
       fi
-      gh label create in-progress --color FBCA04 --description "An Ork run is working on it" > /dev/null 2>&1 || true
-      view='{number, title, body: ((.body // "")[:4000])}'
+      if ! git rev-parse --verify -q HEAD > /dev/null 2>&1 || ! git remote get-url origin > /dev/null 2>&1; then
+        echo "issues needs a commit and a remote named origin: make a first commit and add the remote, then run again." >&2
+        exit 1
+      fi
+      numbers=""
       if [ -n "$ISSUES" ]; then
-        found=""
         for n in $(printf '%s' "$ISSUES" | tr ',' ' '); do
           case "$n" in
             *[!0-9]*)
@@ -81,12 +83,28 @@ nodes:
               exit 1
               ;;
           esac
+          case ",$numbers," in
+            *",$n,"*) ;;
+            *) numbers="${numbers:+$numbers,}$n" ;;
+          esac
+        done
+        set -- $(printf '%s' "$numbers" | tr ',' ' ')
+        if [ "$#" -gt 10 ]; then
+          echo "$# issues named; a run takes at most 10 (each costs a builder and a reviewer). Name 10 or fewer, and run again for the rest." >&2
+          exit 1
+        fi
+      fi
+      gh label create in-progress --color FBCA04 --description "An Ork run is working on it" > /dev/null 2>&1 || true
+      view='{number, title, body: ((.body // "")[:4000])}'
+      if [ -n "$ISSUES" ]; then
+        found=""
+        for n in $(printf '%s' "$numbers" | tr ',' ' '); do
           one=$(gh issue view "$n" --json number,title,body --jq "$view")
           found="${found:+$found,}$one"
         done
         issues="[$found]"
       else
-        issues=$(gh issue list --label "$LABEL" --state open --limit 10 --json number,title,body --jq "[.[] | $view]")
+        issues=$(gh issue list --label "$LABEL" --search "-label:in-progress" --state open --limit 10 --json number,title,body --jq "[.[] | $view]")
       fi
       if [ "$issues" = "[]" ]; then
         echo "No open issue found." >&2
@@ -144,8 +162,12 @@ nodes:
       issues.forEach((issue, index) => {
         const built = results[index] ?? {};
         const skip = reason => skipped.push({ number: issue.number, reason });
-        if (statuses[index] !== "pass" || !built.branch) {
+        if (statuses[index] !== "pass") {
           skip("its builder failed: " + String(built.summary ?? built.error ?? "no report").replace(/\s+/g, " ").slice(0, 300));
+          return;
+        }
+        if (!built.branch) {
+          skip("its builder left no branch (a run with --in-place makes none)");
           return;
         }
         const diff = git("diff", git("merge-base", "HEAD", built.branch), built.branch);
@@ -544,6 +566,25 @@ nodes:
         leftOut: string
         url: string
     lock: branch:{{inputs.branch}}
+  unmark:
+    type: tool.shell
+    script: |-
+      const { execFileSync } = require("node:child_process");
+      const numbers = JSON.parse(process.env.ISSUES).map(issue => issue.number);
+      for (const number of numbers) {
+        try {
+          execFileSync("gh", ["issue", "edit", String(number), "--remove-label", "in-progress"], { stdio: "ignore" });
+        } catch {
+          // The label may be gone already: go on with the others.
+        }
+      }
+      process.stderr.write("The run stopped before its pull request; took in-progress off " + numbers.map(number => "#" + number).join(", ") + ".\n");
+      process.exit(1);
+    interpreter: node
+    allow:
+      - node
+    env:
+      ISSUES: "{{nodes.list.output.json.issues}}"
 edges:
   - list -> mark
   - mark -> build
@@ -617,6 +658,33 @@ edges:
   - from: drop
     to: next
     maxRounds: 10
+  - from: mark
+    to: unmark
+    when: "!ok"
+  - from: build
+    to: unmark
+    when: "!any(statuses, 'pass')"
+  - from: gather
+    to: unmark
+    when: "!ok"
+  - from: review
+    to: unmark
+    when: "!any(statuses, 'pass')"
+  - from: prepare
+    to: unmark
+    when: "!ok"
+  - from: plan
+    to: unmark
+    when: "!ok"
+  - from: next
+    to: unmark
+    when: "!ok"
+  - from: drop
+    to: unmark
+    when: "!ok"
+  - from: pr
+    to: unmark
+    when: "!ok"
 outputs:
   integrated: "{{nodes.pr.output.json.integrated}}"
   leftOut: "{{nodes.pr.output.json.leftOut}}"

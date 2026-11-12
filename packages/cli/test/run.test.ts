@@ -714,7 +714,7 @@ describe("ork run (a whole workflow)", () => {
     const run = pipeline({ inPlace: false });
     expect((await runWorkflowFile(run.value)).exitCode).toBe(1);
     expect(run.err.at(-1)).toMatch(
-      /^build need a git worktree, but .+ is not in a git repository/u,
+      /^build need a git worktree, but .+ is not in a git repository with a commit; make a first commit/u,
     );
   });
 });

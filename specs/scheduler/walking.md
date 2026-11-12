@@ -148,8 +148,9 @@ stand-ins differ from real nodes in places: a failed commit keeps the node's
 it without paying for a walk. `walkChecks` adds a walk to what it returned:
 
 - `ork validate` prints the findings with its other diagnostics, then one line,
-  `walkSummary`'s: `Walked 73 ways through: 5 succeed, 68 fail.`, or
-  `Walked 4,096 ways through and stopped; not every way was tried.` `--paths`
+  `walkSummary`'s:
+  `Walked 73 ways through: 5 end succeeded, 68 end failed (every way a node can fail is one).`,
+  or `Walked 4,096 ways through and stopped; not every way was tried.` `--paths`
   lists each ending, and `--json` carries the walk on each file's report. A file
   with errors isn't walked. Findings don't change its exit code.
 - `ork run` prints the findings before it starts, and they don't stop it. It

@@ -3,13 +3,18 @@
  *   workflow (many issues built in parallel, integrated into one branch, one
  *   pull request) into `.ork/workflows/`, with `--no-issues` it doesn't, and
  *   otherwise it asks on a terminal, once, or says how to add it later. It
- *   never overwrites a file.
+ *   never overwrites a file. A file it writes comes with a line naming the
+ *   driver the workflow runs on and whether it is ready here.
  */
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import { modelDriver } from "@krapht/ork-core";
+import { parseWorkflow } from "@krapht/ork-schema";
+
 import { confirm, style, write } from "../output.ts";
+import { checksHere, type DriverChecks } from "../run/ready-driver.ts";
 import { WORKFLOW_DIR, WORKFLOW_SUFFIX } from "../workflows.ts";
 import { ISSUES_WORKFLOW } from "./issues-workflow.ts";
 
@@ -44,9 +49,32 @@ const wanted = (root: string, asked: boolean | undefined) => {
     : Promise.resolve(null);
 };
 
+/**
+ * Which driver the bundled workflow runs on and whether it is ready here, in
+ * one line. It reads the workflow's `defaults.model` (`claude-code.sonnet`:
+ * driver, then model) and the readiness from `checks`, so nothing is
+ * hard-coded.
+ */
+export const issuesDriverLine = async (
+  checks: DriverChecks,
+): Promise<string | null> => {
+  const parsed = parseWorkflow(ISSUES_WORKFLOW);
+  const model = parsed.ok ? parsed.workflow.defaults?.model : undefined;
+  if (model === undefined) return null;
+  const { driver } = modelDriver(model);
+  if (driver === undefined) return null;
+  const result = (await checks()).find(({ id }) => id === driver)?.result;
+  const state =
+    result === undefined || result.status === "ok"
+      ? (result?.detail ?? "ready")
+      : `not ready: ${result.hint ?? result.detail}`;
+  return `issues runs on ${driver} (its model, ${model}): ${state}`;
+};
+
 export const issuesStep = async (
   root: string,
   options: { issues: boolean | undefined },
+  checks: DriverChecks = checksHere,
 ): Promise<void> => {
   const choice = await wanted(root, options.issues);
   if (choice === null) {
@@ -54,9 +82,11 @@ export const issuesStep = async (
     return;
   }
   if (!choice) return;
-  write(
-    writeIssuesWorkflow(root)
-      ? `${style("green", "created")} ${ISSUES_FILE}`
-      : `${style("dim", "exists")}  ${ISSUES_FILE}`,
-  );
+  if (!writeIssuesWorkflow(root)) {
+    write(`${style("dim", "exists")}  ${ISSUES_FILE}`);
+    return;
+  }
+  write(`${style("green", "created")} ${ISSUES_FILE}`);
+  const line = await issuesDriverLine(checks);
+  if (line !== null) write(line);
 };

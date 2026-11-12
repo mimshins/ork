@@ -86,6 +86,26 @@ describe("a failed node's end in the transcript", () => {
     expect(finished(end, true).join("\n")).toContain("overloaded_error");
   });
 
+  it("shows a failed tool's last stderr line without --verbose, cut to 200", () => {
+    const stderr = `starting\n${"x".repeat(300)}\nno such issue: #12\n\n`;
+    const end = endFor(
+      "command_failed",
+      { program: "sh", exitCode: 1 },
+      stderr,
+    );
+    expect(finished(end, false)).toEqual([
+      "w    │ ✗ Command failed: sh exited with 1",
+      "w    │   no such issue: #12",
+    ]);
+    const long = endFor("command_failed", {}, `${"y".repeat(300)}\n`);
+    expect(finished(long, false)[1]).toBe(`w    │   ${"y".repeat(200)}`);
+  });
+
+  it("shows no line for a failed tool with no stderr", () => {
+    const end = endFor("command_failed", { program: "sh", exitCode: 1 });
+    expect(finished(end, false)).toHaveLength(1);
+  });
+
   it("keeps the agent's own summary for a failure it reported", () => {
     const end = endFor("reported_failure");
     expect(

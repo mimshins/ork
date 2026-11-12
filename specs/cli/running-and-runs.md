@@ -27,8 +27,9 @@ with the built-in node types
   [walking it](../scheduler/walking.md) found. `ork resume` doesn't walk.
 - `worktree` agent nodes get their own worktree beside the clone, and the run
   first checks the project ([worktrees](../worktrees.md#before-the-run)):
-  uncommitted instructions or skills stop it unless `--allow-dirty`.
-  `--in-place` runs every node in this checkout instead.
+  uncommitted instructions or skills stop it unless `--allow-dirty`. A project
+  with no commit stops it too, saying to make a first commit or pass
+  `--in-place`. `--in-place` runs every node in this checkout instead.
 - stdout gets one transcript line per event, prefixed with the node id
   (`builder │ …`): each start (with its round), session text and tool calls,
   each result (`✓ pass: …`, `✓ exit 0`, `✓ merge (user)`; a node that failed
@@ -47,10 +48,12 @@ with the built-in node types
   [run events](../scheduler/resuming-and-events.md#run-events) as JSON lines. A
   failed node's line is `<node> │ ✗ <Label>: <message>`, its kind and Ork's own
   sentence, with `(may pass; ork resume retries)` after a transient kind; never
-  the provider's words. **`--verbose`** adds, under each failed node, the kind's
-  hint and the scrubbed detail
-  ([how a session ends](../runtime/session-ends.md)), and shows each tool call
-  whole.
+  the provider's words. A failed tool (`command_failed`) also shows, dim under
+  that line, the last non-empty line of its scrubbed stderr (cut to 200
+  characters): a script's stderr is the workflow's own message, not the
+  provider's. **`--verbose`** adds, under each failed node, the kind's hint and
+  the scrubbed detail ([how a session ends](../runtime/session-ends.md)), and
+  shows each tool call whole.
 - **On a terminal** (rich, [the kit](terminal.md)) the transcript draws a `RUN`
   chip on the header (then a blank line), a node chip in a color stable for its
   id (in place of the `<node> │` tag, padded to the widest id) on the first line

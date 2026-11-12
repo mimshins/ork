@@ -3,7 +3,8 @@
 Status: **Built.** A node's `lock:` is held across nodes (the ledger, the wait,
 the release, the resume), `ork doctor` sweeps stale records, and two workflows
 use it: the `issues` example and `build`'s `publish`. Left simpler on purpose:
-[L286–L299](./gaps.md). Code: [the hold](../packages/core/src/run/locks.ts),
+[L286–L299, L313–L316](./gaps.md). Code:
+[the hold](../packages/core/src/run/locks.ts),
 [the ledger](../packages/core/src/machine/lock-ledger.ts),
 [doctor](../packages/cli/src/doctor/ledger-checks.ts),
 [the field](../packages/schema/src/lock.ts)
@@ -143,13 +144,19 @@ the review of the pull request.
 git (Ork reads no token). Inputs: `label` or `issues` (numbers), `branch`
 (default `ork/issues`), `base` (default `main`) and `check` (required).
 
-1. **`list`** reads the open issues by label (the first 10) or by number, and
-   creates an `in-progress` label if the repository has none. **`mark`** adds it
+1. **`list`** checks its inputs before any `gh` write, and refuses with one
+   sentence on stderr: no `label` or `issues`, `branch` equal to `base`, a
+   checkout with no commit or no `origin`, a non-numeric number, or more than 10
+   distinct numbers (a number named twice counts once, the first kept). It reads
+   the open issues by label that are not already `in-progress` (the first 10;
+   `--search "-label:in-progress"`) or by number (an `in-progress` one is taken
+   anyway), and creates the label if the repository has none. **`mark`** adds it
    to each, per item.
 2. **`build`** is a worker per issue in its own worktree, three at a time;
-   **`gather`** drops the ones whose builder failed or changed nothing, and
-   **`review`** (readonly) checks each diff. A review that is not `pass` leaves
-   the issue out ([L295](./gaps/issues-limits.md)).
+   **`gather`** drops the ones whose builder failed ("its builder failed: …"),
+   passed but left no branch (a run with `--in-place` makes none), or changed
+   nothing, and **`review`** (readonly) checks each diff. A review that is not
+   `pass` leaves the issue out ([L295](./gaps/issues-limits.md)).
 3. **Integration** is a loop of nodes under `lock: branch:<branch>`, one issue
    per round: `next` picks the following issue, `integrate` fetches the branch
    (or the base when the branch is new) and rebases the issue's branch onto it,
@@ -164,6 +171,16 @@ git (Ork reads no token). Inputs: `label` or `issues` (numbers), `branch`
    existing one**: its body lists `Closes #n` for every integrated issue,
    earlier runs' included. It removes `in-progress` from each issue it touched,
    integrated or not. The run's outputs are `integrated`, `leftOut` and `url`.
+6. **`unmark`** (a `tool.shell` on `node`) takes `in-progress` off every listed
+   issue, ignoring failures, prints "The run stopped before its pull request;
+   took in-progress off #1, #2." on stderr and **exits 1**, so the run ends
+   `failed`. It is reached by `!ok` from `mark`, `gather`, `prepare`, `plan`,
+   `next`, `drop` and `pr`, and by `!any(statuses, 'pass')` from `build` and
+   `review` (every review `changes_requested` ends the run here, not as
+   `succeeded`). A failed node that takes an edge counts as handled, so the
+   run's reasons name `unmark`; the transcript still shows the first `✗`. A run
+   that stops (`ork stop`, timeout, crash, budget) fires no edge, so its labels
+   stay ([L313](./gaps/issues-limits.md)).
 
 A **second run naming the same branch** therefore adds to the same pull request,
 and **many runs** (of `issues` or any workflow whose publish names the same

@@ -44,9 +44,6 @@ const SETTLE_MS = 1000;
 /** How long a walk holds the process before others get a turn. */
 const TURN_MS = 16;
 
-const verbed = (number: number, verb: string): string =>
-  `${number.toLocaleString("en-US")} ${verb}${number === 1 ? "s" : ""}`;
-
 /** What a walk comes to, in the words every place shows it in. */
 export const walkSummary = ({
   paths,
@@ -57,7 +54,7 @@ export const walkSummary = ({
   const ways = `${paths.toLocaleString("en-US")} ${paths === 1 ? "way" : "ways"}`;
   if (!complete)
     return `Walked ${ways} through and stopped; not every way was tried.`;
-  return `Walked ${ways} through: ${verbed(succeeded, "succeed")}, ${verbed(failed, "fail")}.`;
+  return `Walked ${ways} through: ${succeeded.toLocaleString("en-US")} end succeeded, ${failed.toLocaleString("en-US")} end failed (every way a node can fail is one).`;
 };
 
 /** One way a run can end: how, what didn't run, and one way to get there. */
