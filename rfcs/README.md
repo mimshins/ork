@@ -80,3 +80,4 @@ and carries an RFC through this lifecycle. `ork run rfc` drafts one with you and
 | [014](./archived/RFC-014-cli-drivers-only.md)                  | CLI drivers only: claude, OpenCode and Command Code                | Implemented |
 | [015](./archived/RFC-015-format-for-several-drivers.md)        | A workflow format for several drivers                              | Implemented |
 | [016](./archived/RFC-016-integration-lock.md)                  | A lock that orders integration into a branch                       | Implemented |
+| [017](./active/RFC-017-list-filters.md)                        | One way to filter every list command                               | Accepted    |
