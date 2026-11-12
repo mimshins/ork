@@ -3,17 +3,19 @@
  *   `entries.ts` on its fake tool through the shared session runner: events
  *   normalized, a valid report kept and an invalid one rejected, a denied tool
  *   still denied, Ork's endpoint reached and then gone, usage counted, an
- *   interrupt ending the session, a message sent mid-session arriving, and,
- *   where the driver cannot hold the report to its schema, a report handed in
- *   through Ork's `report` tool. The same cause ends as the same kind on every
- *   driver (specs/runtime/session-ends.md), and every driver stops at its token
- *   cap (RFC-015). Every adapter registered in `registry.ts` must have an
- *   entry.
+ *   interrupt ending the session with the tokens it used, a message sent
+ *   mid-session arriving, and, where the driver cannot hold the report to its
+ *   schema, a report handed in through Ork's `report` tool. The same cause ends
+ *   as the same kind on every driver (specs/runtime/session-ends.md), and every
+ *   driver stops at its token cap (RFC-015). Every adapter registered in
+ *   `registry.ts` must have an entry.
  */
 
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { setTimeout } from "node:timers/promises";
 
+import { countedTokens } from "@krapht/ork-core";
 import type { DriverCapabilities } from "@krapht/ork-integrations";
 import { describe, expect, it } from "vitest";
 
@@ -117,6 +119,21 @@ describe.each(CONTRACT)("the $driver adapter", entry => {
     });
   });
 
+  it("keeps the tokens it used, and its session, when interrupted", async () => {
+    const { session } = start(entry, "spend");
+    const outcome = outcomeOf(
+      await collectActing(session, async () => {
+        // Let the three requests' usage lines reach the decoder first.
+        await setTimeout(300);
+        await session.interrupt();
+      }),
+    );
+    expect(outcome.end?.kind).toBe("interrupted");
+    expect(outcome.usage.inputTokens).toBe(300);
+    expect(outcome.usage.cacheReadTokens).toBe(240);
+    expect(outcome.sessionId).not.toBe("");
+  });
+
   it(`takes a message sent mid-session ${when(entry.capabilities)}`, async () => {
     const { session } = start(entry, "wait-message");
     const events = await collectActing(session, () => {
@@ -190,7 +207,7 @@ describe.each(CONTRACT)("the $driver adapter's token cap", entry => {
     const outcome = await capped({ budgetTokens: 300 });
     expect(outcome.end).toEqual({
       kind: "budget_limit",
-      message: "reached its budget (300 tokens)",
+      message: `reached its budget (used ${String(countedTokens(outcome.usage))} of 300 tokens)`,
     });
     expect(outcome.report).toBeNull();
   });
@@ -202,8 +219,13 @@ describe.each(CONTRACT)("the $driver adapter's token cap", entry => {
   });
 
   it("stops at the token cap with a dollar cap beside it", async () => {
-    const { end } = await capped({ budgetTokens: 300, budgetUsd: 100 });
-    expect(end?.message).toBe("reached its budget ($100, 300 tokens)");
+    const { end, usage } = await capped({ budgetTokens: 300, budgetUsd: 100 });
+    expect(end?.message).toMatch(
+      /^reached its budget \((used \$\S+ of )?\$100, /u,
+    );
+    expect(end?.message).toContain(
+      `used ${String(countedTokens(usage))} of 300 tokens)`,
+    );
   });
 
   it.runIf(entry.ends.includes("budget_limit"))(

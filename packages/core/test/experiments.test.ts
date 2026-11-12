@@ -171,7 +171,7 @@ describe("experiments", () => {
     const root = projectWith("schemaVersion: 1\nquotas:\n  dayTokens: 1.5\n");
     expect(placesIn(root)).toEqual(["error .ork/project.yaml 3 14"]);
     expect(errorsIn(root)[0]).toMatch(
-      /^schema\.\w+: \.ork\/project\.yaml:3:14: Invalid input/u,
+      /^schema\.\w+: \.ork\/project\.yaml:3:14: must be a whole number above 0/u,
     );
   });
 

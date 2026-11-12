@@ -13,7 +13,6 @@ import { createInterface } from "node:readline";
 import {
   type EndKind,
   lowerChild,
-  maskSecrets,
   type NodeReport,
   type RuntimeEvent,
   type SessionOutcome,
@@ -27,13 +26,14 @@ import { classifyProviderError } from "./provider-errors.ts";
 import {
   type EndScope,
   failureKind,
+  failureReason,
   settleEnd,
+  type Spent,
   tokenCapOutcome,
 } from "./session-end.ts";
 
 /** How much of the end of a process's stderr is kept to explain its death. */
 const STDERR_TAIL = 16_384;
-const REASON_LIMIT = 500;
 
 /** Marks a session's start with the driver that runs it. */
 export const withDriver = (event: RuntimeEvent, driver: Driver): RuntimeEvent =>
@@ -53,7 +53,13 @@ export type Leg =
       /** Its result, yielded only if the session never resumes. */
       last: RuntimeEvent;
     }
-  | { kind: "failed"; reason: string; end: EndKind };
+  | {
+      kind: "failed";
+      reason: string;
+      end: EndKind;
+      /** What the session had spent when it stopped, earlier legs included. */
+      spent?: Spent;
+    };
 
 export type LegInput = {
   adapter: CliAdapter;
@@ -97,17 +103,26 @@ const settled = (outcome: SessionOutcome, input: LegInput): SessionOutcome =>
     input.scope.scrub,
   );
 
+/** What this leg `used`, with what the legs before it spent. */
+const withCarried = (
+  input: LegInput,
+  used: SessionUsage | undefined,
+): SessionUsage | undefined =>
+  used === undefined || input.carried === undefined
+    ? (used ?? input.carried)
+    : input.adapter.usage.combine(input.carried, used);
+
 /** The session's end at its token cap, its earlier legs' usage included. */
 const tokenCapEnd = (
   input: LegInput,
   used: SessionUsage | undefined,
   sessionId: string,
 ): RuntimeEvent | undefined => {
-  const usage =
-    used === undefined || input.carried === undefined
-      ? used
-      : input.adapter.usage.combine(input.carried, used);
-  const capped = tokenCapOutcome(input.scope.facts, usage, sessionId);
+  const capped = tokenCapOutcome(
+    input.scope.facts,
+    used === undefined ? undefined : withCarried(input, used),
+    sessionId,
+  );
   return capped === undefined
     ? undefined
     : { type: "session.finished", outcome: settled(capped, input) };
@@ -132,67 +147,33 @@ const legStep = (
   const events: RuntimeEvent[] = [];
   let ended: Leg | undefined;
   for (const said of decoded.events) {
-    const event =
-      said.type === "session.finished"
-        ? { ...said, outcome: settled(said.outcome, input) }
-        : said;
-    if (event.type === "session.started" && carried !== undefined) continue;
-    if (event.type !== "session.finished") {
-      events.push(withDriver(event, adapter.driver));
-    } else if (deferred) {
-      ended = {
-        kind: "deferred",
-        sessionId: event.outcome.sessionId,
-        usage: event.outcome.usage,
-        last: event,
-      };
+    if (said.type === "session.started" && carried !== undefined) continue;
+    if (said.type !== "session.finished") {
+      events.push(withDriver(said, adapter.driver));
+      continue;
+    }
+    // The end is written with the whole session's spend; the leg's own goes
+    // back to the runner to add up.
+    const own = said.outcome.usage;
+    const usage =
+      carried === undefined ? own : adapter.usage.combine(carried, own);
+    const last = {
+      ...said,
+      outcome: settled({ ...said.outcome, usage }, input),
+    };
+    const { sessionId, end } = last.outcome;
+    // A queued message continues only a session that ended well; an error
+    // (a turn limit, a failed run) ends it, so no limit is overrun or hidden.
+    if (deferred) {
+      ended = { kind: "deferred", sessionId, usage: own, last };
+    } else if (input.withhold() && wentWell(end?.kind)) {
+      ended = { kind: "continued", sessionId, usage: own, last };
     } else {
-      const usage =
-        carried === undefined
-          ? event.outcome.usage
-          : adapter.usage.combine(carried, event.outcome.usage);
-      const last = { ...event, outcome: { ...event.outcome, usage } };
-      // A queued message continues only a session that ended well; an error
-      // (a turn limit, a failed run) ends it, so no limit is overrun or hidden.
-      if (input.withhold() && wentWell(event.outcome.end?.kind)) {
-        ended = {
-          kind: "continued",
-          sessionId: event.outcome.sessionId,
-          usage: event.outcome.usage,
-          last,
-        };
-      } else {
-        events.push(last);
-        ended = { kind: "finished" };
-      }
+      events.push(last);
+      ended = { kind: "finished" };
     }
   }
   return ended === undefined ? { events } : { events, ended };
-};
-
-/** Noise a Node crash ends stderr with, or a stack frame: never the reason. */
-const isNoise = (line: string): boolean =>
-  /^Node\.js v\d/u.test(line) || /^\s+at /u.test(line);
-
-/**
- * Why a process ended without a result: the last block of its stderr as one
- * masked, capped line (the reason reaches the terminal, which is not masked).
- */
-const failureReason = (
-  name: string,
-  stderr: string,
-  code: number | null,
-): string => {
-  const block = stderr
-    .split("\n")
-    .filter(line => !isNoise(line))
-    .join("\n")
-    .split(/\n\s*\n/u)
-    .map(text => text.trim().replaceAll(/\s*\n\s*/gu, " "))
-    .findLast(text => text !== "");
-  return block === undefined
-    ? `${name} exited with code ${String(code)}`
-    : maskSecrets(block).slice(0, REASON_LIMIT);
 };
 
 /** Runs one process of a session, yielding its events; returns how it ended. */
@@ -233,11 +214,14 @@ export const runLeg = async function* (
 
   let outcome: Leg | undefined;
   let sessionId = "";
+  /** What this leg has used so far, as the last usage step said. */
+  let used: SessionUsage | undefined;
   const { decoder } = input;
   const decode = decoder?.decode ?? input.adapter.decode;
   try {
     for await (const line of createInterface({ input: child.stdout })) {
       const decoded = decode(line);
+      used = decoded.usage ?? used;
       const { events, ended } = legStep(decoded, input);
       for (const event of decoded.events) {
         if (event.type === "session.started") sessionId = event.sessionId;
@@ -280,7 +264,13 @@ export const runLeg = async function* (
       };
     }
     if (stopped || end.signal !== null) {
-      return { kind: "failed", reason: "interrupted", end: "interrupted" };
+      const usage = withCarried(input, used);
+      return {
+        kind: "failed",
+        reason: "interrupted",
+        end: "interrupted",
+        ...(usage === undefined ? {} : { spent: { usage, sessionId } }),
+      };
     }
     const reason = failureReason(input.adapter.command.bin, stderr, end.code);
     return {

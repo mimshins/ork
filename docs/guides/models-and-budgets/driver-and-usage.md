@@ -46,6 +46,17 @@ cache reads are not), and `ork usage`'s Limits line shows a token cap beside the
 dollar ones. The chart stays in dollars. The two tools word "partial"
 differently for now.
 
+Token figures have one name each. **prompt** is the whole prompt (input, cache
+read and cache write), what "from cache" is a share of; **out** is output; and
+**counted** is what a budget spends (input, output and cache write). `ork usage`
+reads `4.0k prompt / 500 out (1.5k counted)`, the Usage panel "Prompt tokens",
+"Output tokens" and "Tokens counted", and `ork tree` shows only the counted
+figure (`125 tok`).
+
+A session's tokens show once it ends or is stopped: one stopped by `ork stop` or
+its cap keeps the tokens its tool reported before the stop. While it runs, its
+tokens are not shown yet, and if Ork itself is killed they are lost.
+
 These are Claude Code's estimates, so on a subscription they are not your bill.
 They can differ from adding up `ork ps`: usage counts `ork chat` sessions, and
 counts a called workflow once.

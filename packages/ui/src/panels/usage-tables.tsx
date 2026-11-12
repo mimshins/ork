@@ -11,7 +11,7 @@ import { EmptyState } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
 import { CodeText } from "../components/code-text.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
-import { CountedTerm, Dollars } from "../components/spend.tsx";
+import { CountedTerm, Dollars, PromptTerm } from "../components/spend.tsx";
 import { UsageLimits } from "./usage-limits.tsx";
 import { isAllTime, money, moneyOf, percent, tokens } from "./usage-model.ts";
 
@@ -197,8 +197,8 @@ export const Totals = ({ report }: { report: UsageReport }) => {
     ],
     ["Runs with sessions", String(totals.runs)],
     ["Sessions", String(totals.sessions)],
-    ["Tokens in", tokens(read)],
-    ["Tokens out", tokens(totals.outputTokens)],
+    ["Prompt tokens", tokens(read)],
+    ["Output tokens", tokens(totals.outputTokens)],
     ["From cache", percent(totals.cacheHitRate)],
     ...(totals.tokens === undefined || totals.tokens === 0
       ? []
@@ -211,7 +211,15 @@ export const Totals = ({ report }: { report: UsageReport }) => {
           className={styles["total"]}
           key={term}
         >
-          <dt>{term === "Tokens counted" ? <CountedTerm /> : term}</dt>
+          <dt>
+            {term === "Tokens counted" ? (
+              <CountedTerm />
+            ) : term === "Prompt tokens" ? (
+              <PromptTerm />
+            ) : (
+              term
+            )}
+          </dt>
           <dd>{value}</dd>
         </div>
       ))}

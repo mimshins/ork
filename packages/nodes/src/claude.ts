@@ -35,7 +35,7 @@ import {
   notStarted,
   type TurnLimits,
 } from "./session-turns.ts";
-import { startBudgets } from "./start-budgets.ts";
+import { runCapsOf, startBudgets } from "./start-budgets.ts";
 import {
   checkedResult,
   checkFailedMessage,
@@ -187,7 +187,7 @@ export const claudeExecutor =
     if (context.followUps !== undefined) ports.followUps = context.followUps;
     const whole = context.round > 1 ? wholeInput(context.input) : undefined;
     if (whole !== undefined) ports.input = whole;
-    const watch = limitWatch(context);
+    const watch = limitWatch(context, runCapsOf(context, planOptions));
     const run = async (asked: SessionSpec): Promise<SessionOutcome | null> => {
       const watching = watch.session(asked);
       context.reserveBudget?.(asked.budgetUsd);

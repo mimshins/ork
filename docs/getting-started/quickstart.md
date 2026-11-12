@@ -69,6 +69,7 @@ nodes:
     type: agent.leader
     prompt: "Plan this task and delegate it to your worker: {{inputs.task}}"
     model: claude-code.opus
+    budgetUsd: 2
     maxWorkers: 2
   worker:
     type: agent.worker
@@ -86,11 +87,10 @@ edges:
 ```
 
 - `lead` plans and hands work to `worker` (its child, through `parent: lead`),
-  and may start up to two more copies of it (`maxWorkers: 2`).
-- `approve` asks whether to accept the leader's branch, read from its `branch`
-  output (with none, it reads `Accept the result on ?`).
-- `limits.budgetUsd: 5` caps the run at five dollars. No new session starts once
-  that is spent, a running session counting at its last reported cost.
+  may start two more copies of it (`maxWorkers: 2`), and caps its own session
+  (`budgetUsd: 2`) so its workers get the rest of the run's budget.
+- `approve` asks whether to accept the leader's branch (its `branch` output).
+- `limits.budgetUsd: 5` caps the run: no new session starts once it is spent.
 
 The file names no driver, as it's meant to be committed and your teammates may
 log in another way. `ork run` uses the driver that's ready on the machine

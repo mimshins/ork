@@ -72,6 +72,16 @@ export const UnpricedTokens = ({ count }: { count: number }) => (
 const COUNTED_TIP =
   "Input, output and cache-write tokens, as budgetTokens counts them. Cache reads are not counted.";
 
+const PROMPT_TIP =
+  "Everything sent to the model: input, cache-read and cache-write tokens. From cache is the share of it read from the cache.";
+
+/** The term "Prompt tokens", with the tip that says what it holds. */
+export const PromptTerm = () => (
+  <Tip label={PROMPT_TIP}>
+    <span {...FOCUSABLE}>Prompt tokens</span>
+  </Tip>
+);
+
 /** The term "Tokens counted", with the tip that says what counts. */
 export const CountedTerm = () => (
   <Tip label={COUNTED_TIP}>

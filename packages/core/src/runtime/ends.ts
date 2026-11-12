@@ -59,6 +59,10 @@ export type EndFacts = {
   maxTurns?: number;
   budgetUsd?: number;
   budgetTokens?: number;
+  /** What the session spent, when its outcome reports it: "used N of M". */
+  usedUsd?: number;
+  /** The session's counted tokens (RFC-015), when its outcome has them. */
+  usedTokens?: number;
   /** As written, e.g. `10m`. */
   timeout?: string;
   /** A plan's window, e.g. `five_hour`. */
@@ -102,6 +106,10 @@ const paren = (value: string | undefined): string =>
 
 const colon = (reason: string | undefined): string =>
   reason === undefined ? "" : `: ${reason}`;
+
+/** A cap as `used N of M`, or `M` alone when the spend is not known. */
+const usedOf = (cap: string, used: string | undefined): string =>
+  used === undefined ? cap : `used ${used} of ${cap}`;
 
 const info = (
   label: string,
@@ -153,10 +161,22 @@ export const END_KINDS: Readonly<Record<EndKind, EndKindInfo>> = {
     f =>
       `reached its budget${paren(
         [
-          ...(f.budgetUsd === undefined ? [] : [usd(f.budgetUsd)]),
+          ...(f.budgetUsd === undefined
+            ? []
+            : [
+                usedOf(
+                  usd(f.budgetUsd),
+                  f.usedUsd === undefined ? undefined : usd(f.usedUsd),
+                ),
+              ]),
           ...(f.budgetTokens === undefined
             ? []
-            : [`${String(f.budgetTokens)} tokens`]),
+            : [
+                `${usedOf(
+                  String(f.budgetTokens),
+                  f.usedTokens === undefined ? undefined : String(f.usedTokens),
+                )} tokens`,
+              ]),
         ].join(", ") || undefined,
       )}`,
     "Raise `budgetUsd` or `budgetTokens` on the node, or the same in the workflow's `limits`, then `ork resume`.",

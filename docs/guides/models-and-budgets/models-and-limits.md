@@ -57,9 +57,14 @@ limits:
   less what sessions running beside it were given, and with none left waits for
   one to finish. A session that doesn't fit is refused ("nothing is left of the
   run's tokens", or dollars). Once the budget is spent, no new session starts
-  and the run ends as `budget_exhausted`. Dollars and tokens are set aside side
-  by side, each against its own limit, and `ork resume` goes on from what was
-  already used.
+  and the run ends as `budget_exhausted`, also when a session reaches the run's
+  budget mid-way: no `when: status == 'fail'` edge fires, and `ork resume`
+  continues that session. Dollars and tokens are set aside side by side, each
+  against its own limit, and `ork resume` goes on from what was already used.
+- **Give a leader a cap of its own.** A leader with none sets aside all that is
+  left of the run's budget as it starts, and holds it while it delegates, so the
+  nodes it owns are refused. `ork validate` and `ork run` warn about it
+  (`budget.leader`).
 - A `workflow.call` shares this budget with the run it starts
   ([calling a workflow](../working-across-projects.md#calling-a-workflow)).
 - `concurrency` limits only Claude sessions; tools and gates are not limited. A
@@ -69,8 +74,9 @@ limits:
 
 Costs come from Claude Code's own estimate, reported at the end of each turn and
 in each session's final result. The run summary shows the total, and `--json`
-gives each node's usage: cost, tokens (including cache reads and writes), turns
-and time. To see them over time, see
+gives each node's usage: cost, input, output, cache-read and cache-write tokens
+apart, turns and time; the run's `tokens` is the counted total (input, output
+and cache write). To see them over time, see
 [what you spent](./driver-and-usage.md#what-you-spent).
 
 ## Budgets in tokens
@@ -94,13 +100,19 @@ limits:
   model request on `command-code`. A report the node had already handed in still
   decides how it ended.
 - **A run's** `limits.budgetTokens` sets each session's cap aside, as the
-  dollars do. A node's cap, `defaults.budgetTokens` and what is left of the
-  run's: the least of them applies.
+  dollars do. A node's own cap wins over `defaults.budgetTokens`, then the
+  smaller of that and what is left of the run's applies.
+- **Caps are per activation.** A node's `budgetUsd`, `budgetTokens` and
+  `maxTurns` count one activation: raise one, then `ork resume`, and the node
+  gets the whole new cap. Only the run's spend carries over.
 - **Tokens and dollars never convert.** There is no price table: a cap in one
   does not stop the other, and whichever is reached first ends the session or
   the run. Claude Code's own dollar cap stays in force on `claude-code`.
-- **A stopped session's dollars read $0,** since none of the tools prints a cost
-  until it finishes, so a dollar limit on the run under-counts it.
+- **A stopped session keeps its tokens** (by its token cap or `ork stop`): the
+  ones the tool reported before the stop count toward the run, the day quota and
+  `ork usage`. **Its dollars read $0** on `claude-code` and `command-code`,
+  which print a cost only when they finish, so a dollar limit under-counts it. A
+  session whose tool crashed records nothing.
 - **On a driver with no price** (`command-code` today), a node with only
   `budgetUsd`, or under a `limits.budgetUsd` it can't see, is not refused.
   `ork validate` and `ork run` warn: "only budgetTokens applies on

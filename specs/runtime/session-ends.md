@@ -171,7 +171,11 @@ legs' included) and checks them at each per-request usage report the driver's
 decoder hands it. Once they reach (`>=`) the node's `budgetTokens`, the runner
 sends the process SIGINT, ignores whatever it prints after, and ends the session
 `budget_limit` with the subtype `error_max_budget_tokens` and a message such as
-`reached its budget ($100, 300 tokens)`, naming the caps the node had. The end
+`reached its budget ($100, used 375 of 300 tokens)`, naming the caps the node
+had. `settleEnd` passes the session's spend into the end's facts (`usedTokens`,
+its counted tokens, and `usedUsd` when the outcome reports a cost above $0), so
+each cap reads `used N of M`; a cap whose spend is unknown reads `M` alone, as
+an end Ork wrote before this did, and a stored end is never rewritten. The end
 kind is the existing one, so no new kind joins the closed set
 ([ADR-079](../../decisions/ADR-079-closed-set-of-end-kinds.md)). A report the
 session already handed in through Ork's `report` tool still decides its end.
@@ -188,7 +192,16 @@ to one report:
 None of the three prints a cost mid-session, so a session stopped at its token
 cap records $0 and a run's dollar limit under-counts it
 ([L280](../gaps/budget-tokens-limits.md)). Claude Code's own `--max-budget-usd`
-stays, so on `claude-code` both caps bind. Stand-in sessions in
+stays, so on `claude-code` both caps bind.
+
+A stopped session keeps what it used. The leg holds the last usage its decoder
+read, with the earlier legs' added, and an `interrupted` end (`driverFailure`)
+puts that usage and the session id the leg saw into its `session.finished`; an
+interrupt between legs keeps the earlier legs'. So the ledger, `ork ps`, the day
+quota and resume's earlier spend count it. Its dollars are what the decoded
+steps carried: $0 where the tool prints no cost mid-session. Other driver
+failures still record no usage. No event carries usage while a session runs:
+totals change when it ends or is stopped. Stand-in sessions in
 [the contract tests](../../packages/runtime/test/contract/contract.test.ts)
 cover each driver.
 

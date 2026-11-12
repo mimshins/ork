@@ -5,6 +5,7 @@
  */
 
 import {
+  countedTokens,
   endedWith,
   endFor,
   type EndKind,
@@ -135,13 +136,49 @@ export const lateLimits = (
   };
 };
 
+/** The run's budget, by unit, where it (not the node's own cap) caps a session. */
+export type RunCaps = { usd?: number; tokens?: number };
+
+const reached = (cap: number | undefined, used: number): boolean =>
+  cap !== undefined && used >= cap;
+
+/**
+ * Why the run's budget stopped a session that reached its cap, if it did. A
+ * unit blames the run when the session reached it, or when it is the only cap
+ * the session had; otherwise the node's own cap in the other unit may have
+ * stopped it.
+ */
+const runSpent = (
+  run: RunCaps,
+  asked: Pick<SessionSpec, "budgetUsd" | "budgetTokens">,
+  outcome: SessionOutcome,
+): string | undefined => {
+  const tokens =
+    run.tokens !== undefined &&
+    (reached(asked.budgetTokens, countedTokens(outcome.usage)) ||
+      asked.budgetUsd === undefined);
+  if (tokens)
+    return `the run's budget of ${String(run.tokens)} tokens is spent`;
+  const usd =
+    run.usd !== undefined &&
+    (reached(asked.budgetUsd, outcome.usage.costUsd) ||
+      asked.budgetTokens === undefined);
+  return usd ? `the run's budget of $${String(run.usd)} is spent` : undefined;
+};
+
 /**
  * Whether a limit across runs, rather than the node's work, ended a node: a
  * session whose cap was a quota's and that ran into it, or one its plan refused
- * and that gave no report. A node that still succeeded is left alone.
+ * and that gave no report. A session whose cap was the run's budget and that
+ * ran into it stops the run as `budget_exhausted` (`run`, from `runCapsOf`). A
+ * node that still succeeded is left alone.
  */
-export const limitWatch = (context: Pick<ExecuteContext, "quota">) => {
+export const limitWatch = (
+  context: Pick<ExecuteContext, "quota">,
+  run: RunCaps = {},
+) => {
   let why: string | undefined;
+  let runWhy: string | undefined;
   return {
     stoppedBy: (reason: string): void => {
       why = reason;
@@ -172,6 +209,8 @@ export const limitWatch = (context: Pick<ExecuteContext, "quota">) => {
             why =
               context.quota?.().blocked ??
               "a session reached what was left of a quota";
+          } else if (spent) {
+            runWhy = runSpent(run, asked, outcome);
           }
         },
       };
@@ -185,6 +224,10 @@ export const limitWatch = (context: Pick<ExecuteContext, "quota">) => {
           ...endedWith(result, endFor("plan_limit", {}, why)),
           limited: why,
         };
+      }
+      // The session keeps its own end; the run stops, as it would before a start.
+      if (runWhy !== undefined) {
+        return { ...result, limited: runWhy, stopsAs: "budget_exhausted" };
       }
       const { end } = result;
       return end?.kind === "plan_limit"

@@ -22,9 +22,7 @@ export const planLimitQueries = (
   );
   const clear = db.prepare("DELETE FROM plan_limits");
   return {
-    clearPlanLimits: () => {
-      clear.run();
-    },
+    clearPlanLimits: () => Number(clear.run().changes),
     recordPlanLimit: ({ window, status, resetsAt }, at) => {
       put.run(window, status, resetsAt ?? null, at);
     },

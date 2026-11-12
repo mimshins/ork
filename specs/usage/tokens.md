@@ -26,21 +26,53 @@ definition: the session runner's cap, the run's reserves, the day quota and
 every report use it. The ledger already stores the four kinds apart, so the
 token quota needs no migration ([the ledger](../usage.md#the-ledger)).
 
+A stopped session (by `ork stop` or its token cap) counts the tokens its driver
+reported before the stop: they reach its `session.finished`, so the ledger,
+`ork ps`, the day quota and resume's earlier spend all see them
+([session ends](../runtime/session-ends.md#the-token-cap)). A running session's
+tokens show only once it ends or is stopped
+([gaps](../gaps/budget-tokens-limits.md)).
+
+### Prompt, output and counted on screen
+
+Three figures, each with one name in `ork usage`, `ork tree` and the browser UI:
+
+- **prompt** is the whole prompt: input + cache read + cache write. It is what
+  "from cache" is a share of. It is never called "in" ("in" read as uncached
+  input in `ork tree` and as the whole prompt elsewhere).
+- **out** is output tokens.
+- **counted** is input + output + cache write, as above: what a budget spends.
+
+`ork usage`'s totals line reads
+`1 run · 1 session · 4 turns · 4.0k prompt / 500 out (1.5k counted) · 75% from cache`;
+each table row, under the `TOKENS` header, reads `4.0k prompt / 500 out` with no
+counted figure (the tables' width). `ork tree` shows only the counted figure,
+`125 tok`, then ` · $0.0123` for a priced node (an unpriced node's `125 tok` is
+its cost slot, so nothing follows). The Usage panel's totals read "Prompt
+tokens", "Output tokens" and "Tokens counted"
+([panels](../ui/panels-chats-notifications-and-usage.md)). The run summary's
+`100 in / 20 out (80 cached)` is a different line, a session's own figures from
+the driver, and keeps its words.
+
 ## Where a token cap applies
 
 - **A session:** `budgetTokens` on a node, in `defaults` or in an agent file (a
   positive integer). The shared session runner stops it once its counted tokens
   reach the cap, and it ends `budget_limit`
   ([how it stops, driver by driver](../runtime/session-ends.md#the-token-cap)).
-- **A run:** `limits.budgetTokens`. Each session's cap is the least of the
-  node's, `defaults`', what is left of the run's, and what is left of the day
-  quota, and is set aside as the session starts, as dollars are
-  ([budget](../scheduler.md#budget-and-concurrency),
+  The cap counts one activation, as `budgetUsd` and `maxTurns` do: a resumed
+  node gets the whole cap again.
+- **A run:** `limits.budgetTokens`. Each session's cap is the node's own
+  (`defaults`' when the node sets none), then the least of that, what is left of
+  the run's, and what is left of the day quota; it is set aside as the session
+  starts, as dollars are ([budget](../scheduler.md#budget-and-concurrency),
   [ADR-077](../../decisions/ADR-077-reserve-session-caps.md)): reserves hold
   dollars and tokens side by side. A session that doesn't fit waits for a
   reserve to free, or is refused with "nothing is left of the run's tokens".
-  Once spent, the run ends `budget_exhausted`. A resumed run starts from the
-  tokens already used.
+  Once spent, the run ends `budget_exhausted`, also when a session whose cap was
+  the run's remainder reaches it: no failure edge fires, and `ork resume`
+  continues that session ([budget](../scheduler.md#budget-and-concurrency)). A
+  resumed run starts from the tokens already used.
 - **A day:** `quotas.dayTokens`, below.
 
 ## The token quota
@@ -103,3 +135,12 @@ never refusals. For a session node on a driver without `price`:
 `driver.budget`, path `nodes/<id>`); `ork run` prints `warning <message>` on
 stderr and goes on. The exit code is unchanged. Declined in RFC-015: refusing a
 mixed run.
+
+The compiler adds `budget.leader`
+([leader-budget.ts](../../packages/core/src/graph/leader-budget.ts),
+[diagnostics](../graph-compiler/diagnostics.md)), on every driver: the workflow
+has `limits.budgetTokens` (or `limits.budgetUsd`), and a leader with children
+sets no cap of its own in that unit, nor does `defaults`. Its session would set
+aside all that is left of the run's budget, and a leader's reserve is never
+waited on ([ADR-077](../../decisions/ADR-077-reserve-session-caps.md)), so the
+nodes it owns are refused. It is a warning: give the leader a cap.

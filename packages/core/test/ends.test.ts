@@ -15,6 +15,7 @@ import {
   END_KINDS,
   endFor,
   endOf,
+  type EndFacts,
   type EndKind,
   type EndKindInfo,
   outcomeEnd,
@@ -139,6 +140,9 @@ describe("the end kinds", () => {
   });
 });
 
+const budgetMessage = (facts: EndFacts): string =>
+  endFor("budget_limit", facts).message;
+
 describe("endFor", () => {
   it("writes Ork's sentence with the node's numbers", () => {
     expect(endFor("turn_limit", { maxTurns: 8 }).message).toBe(
@@ -150,6 +154,18 @@ describe("endFor", () => {
     expect(
       endFor("command_failed", { program: "sh", exitCode: 2 }).message,
     ).toBe("sh exited with 2");
+  });
+
+  it("names what a budget's session used, when its outcome says", () => {
+    expect(budgetMessage({ budgetTokens: 200, usedTokens: 250 })).toBe(
+      "reached its budget (used 250 of 200 tokens)",
+    );
+    expect(
+      budgetMessage({ budgetUsd: 0.1, usedUsd: 0.12, budgetTokens: 200 }),
+    ).toBe("reached its budget (used $0.12 of $0.10, 200 tokens)");
+    expect(budgetMessage({ budgetTokens: 200 })).toBe(
+      "reached its budget (200 tokens)",
+    );
   });
 
   it("leaves the detail out when there is none", () => {

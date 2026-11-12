@@ -76,7 +76,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     if (stopped !== null) return;
     stopped = status;
     reasons.push(reason);
-    queue.length = 0;
+    for (const { id } of queue.splice(0)) summary(id);
   };
 
   // A route still going when the run stops can't queue what nothing would run.

@@ -466,7 +466,13 @@ describe("limits", () => {
       status: "budget_exhausted",
       costUsd: 1.5,
       reasons: ["the run's budget of $1 is spent"],
+      // `b` was queued when the run stopped: it counts as skipped.
+      skipped: 1,
     });
+    expect(result.nodes.map(node => [node.id, node.runs])).toEqual([
+      ["a", 1],
+      ["b", 0],
+    ]);
   });
 
   it("stops starting sessions when the run's tokens are spent, counting no cache reads", async () => {
@@ -512,6 +518,7 @@ describe("limits", () => {
       expect(result).toMatchObject({
         status: "quota_exhausted",
         reasons: ["your day quota is spent"],
+        skipped: 1,
       });
     });
 

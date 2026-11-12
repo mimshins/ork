@@ -240,8 +240,11 @@ export type UsageStore = {
   ) => number;
   /** Each of a plan's limits, as last reported. */
   planLimits: () => PlanLimit[];
-  /** Forgets them, for one that has lifted early; a session reports them anew. */
-  clearPlanLimits: () => void;
+  /**
+   * Forgets them, for one that has lifted early; a session reports them anew.
+   * Returns how many it forgot.
+   */
+  clearPlanLimits: () => number;
   /** When a run's last event was written; `undefined` with no events. */
   lastEventAt: (runId: string) => string | undefined;
   /** Forgets a run and its transcript, but not its spending; false if it's live. */

@@ -118,10 +118,16 @@ const ISOLATIONS = ["worktree", "continue", "shared", "readonly"] as const;
 export const IsolationSchema = z.enum(ISOLATIONS);
 export type Isolation = z.infer<typeof IsolationSchema>;
 
-export const BudgetSchema = z.number().positive();
+const MONEY_MESSAGE = "must be a number above 0";
+const TOKENS_MESSAGE = "must be a whole number above 0";
+
+export const BudgetSchema = z.number(MONEY_MESSAGE).positive(MONEY_MESSAGE);
 
 /** A cap in tokens: input, output and cache-write; cache reads don't count. */
-export const TokenBudgetSchema = z.number().int().positive();
+export const TokenBudgetSchema = z
+  .number(TOKENS_MESSAGE)
+  .int(TOKENS_MESSAGE)
+  .positive(TOKENS_MESSAGE);
 
 /** Caps across runs (RFC-007), in Claude Code's estimated dollars. */
 export const QuotasSchema = z.strictObject({

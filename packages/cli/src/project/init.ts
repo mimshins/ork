@@ -61,6 +61,8 @@ export const starterWorkflow = (): Workflow => ({
       type: "agent.leader",
       prompt: "Plan this task and delegate it to your worker: {{inputs.task}}",
       model: "opus",
+      // Its own cap: a leader with none sets aside the whole run budget and its workers are refused (`budget.leader`).
+      budgetUsd: 2,
       maxWorkers: 2,
     },
     worker: {

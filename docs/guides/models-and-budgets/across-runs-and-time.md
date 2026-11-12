@@ -41,7 +41,8 @@ quotas:
   bill. What stops you there is your plan's rate limit: when Claude Code says
   the plan has refused a session, every run here stops starting sessions until
   the time it gives, and `ork resume` goes on. If the limit lifts sooner, make
-  Ork forget it with `ork usage --clear-plan-limits`.
+  Ork forget it with `ork usage --clear-plan-limits`, which says how many it
+  cleared (`Cleared 1 plan limit(s).`).
 
 `ork usage` and the Usage panel show each cap, what it has left and when it
 resets; the token cap shows beside the dollar ones.

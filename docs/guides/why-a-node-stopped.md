@@ -61,7 +61,8 @@ asks for every field the schema declares.
 
 The node used all of its `maxTurns` (OpenCode's `steps`, Command Code's exit 8,
 Claude Code's `error_max_turns`). **Who acts:** the workflow. **What to do:**
-raise `maxTurns`, or give the node a smaller task.
+raise `maxTurns`, or give the node a smaller task. After `ork resume` the node
+has the whole new `maxTurns` again.
 
 ## Budget limit
 
@@ -71,6 +72,10 @@ token cap counts input, output and cache-write tokens, not cache reads, and
 stops the session at the next usage report, so it can pass the cap by one step
 ([budgets in tokens](./models-and-budgets/models-and-limits.md#budgets-in-tokens)).
 **Who acts:** the workflow. **What to do:** raise the budget, then `ork resume`.
+A node's caps (`budgetUsd`, `budgetTokens`, `maxTurns`) count one activation, so
+the resumed node gets the whole new cap; only the run's spend carries over. When
+the run's own budget stopped it, the run ends `budget_exhausted`, no failure
+edge fires, and `ork resume` continues its session.
 
 ## Timed out
 

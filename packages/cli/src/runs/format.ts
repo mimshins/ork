@@ -155,6 +155,24 @@ const stateText = (node: TreeNode): string => {
   return node.state;
 };
 
+/** A node's counted tokens: input, output and cache write. */
+const countedOf = (node: TreeNode): number =>
+  node.inputTokens + node.outputTokens + (node.cacheWriteTokens ?? 0);
+
+/**
+ * What a node spent: its counted tokens, then dollars unless its driver reports
+ * none, where `$0.00` would be false. Blank with no tokens.
+ */
+const worth = (node: TreeNode): string => {
+  const counted = countedOf(node);
+  if (counted === 0) return "";
+  const tok = `${count(counted)} tok`;
+  return style(
+    "dim",
+    `  ${node.unpriced === true ? tok : `${tok} · ${cost(node.costUsd)}`}`,
+  );
+};
+
 /**
  * The ownership tree, one line per node, children under their owner. A node in
  * `waits` (a live run's `lockWaitsOf`) reads `waiting for <lock>`, an item
@@ -177,13 +195,7 @@ export const formatTree = (
   const label = Math.max(...lines.map(l => l.label.length));
   const type = Math.max(...lines.map(l => l.node.type.length));
   return lines.map(({ label: text, node }) => {
-    const usage =
-      node.inputTokens + node.outputTokens === 0
-        ? ""
-        : style(
-            "dim",
-            `  ${count(node.inputTokens)} in / ${count(node.outputTokens)} out · ${cost(node.costUsd)}`,
-          );
+    const usage = worth(node);
     const lock = waits.find(wait => wait.id === node.id)?.lock;
     const state =
       node.held === true

@@ -8,7 +8,7 @@
 import type { ExecuteContext, NodeResult, PlanOptions } from "@krapht/ork-core";
 import { isClaudeNode } from "@krapht/ork-schema";
 
-import { least, notStarted } from "./session-turns.ts";
+import { least, notStarted, type RunCaps } from "./session-turns.ts";
 
 /** What a session may spend as it starts: the least of the budget and any quota. */
 export const budgetNow = (
@@ -74,11 +74,56 @@ export const budgetToStart = (
   startWith(
     context,
     () => budgetNow(context),
-    isClaudeNode(context.node)
-      ? (context.node.budgetUsd ?? context.workflow.defaults?.budgetUsd)
-      : undefined,
+    ownCaps(context).usd,
     context.reserveBudget,
   );
+
+/** The node's own caps: its `budgetUsd` and `budgetTokens`, else the defaults'. */
+const ownCaps = (
+  context: Pick<StartContext, "node" | "workflow">,
+): { usd?: number | undefined; tokens?: number | undefined } =>
+  isClaudeNode(context.node)
+    ? {
+        usd: context.node.budgetUsd ?? context.workflow.defaults?.budgetUsd,
+        tokens:
+          context.node.budgetTokens ?? context.workflow.defaults?.budgetTokens,
+      }
+    : {};
+
+/**
+ * Where the run's budget, not the node's own cap, caps the node's first
+ * session: the run has a budget in that unit, and what `startBudgets` left the
+ * session is below the node's own cap, or it has none. A later turn of the
+ * session keeps them: both its caps go down by what it used, and the run's by
+ * what others used too.
+ */
+export const runCapsOf = (
+  context: StartContext,
+  planOptions: Pick<PlanOptions, "budgetLeftUsd" | "budgetLeftTokens">,
+): RunCaps => {
+  const own = ownCaps(context);
+  const limits = context.workflow.limits;
+  const caps: RunCaps = {};
+  const usd = planOptions.budgetLeftUsd;
+  if (
+    context.budgetLeftNow?.() !== undefined &&
+    limits?.budgetUsd !== undefined &&
+    usd !== undefined &&
+    usd < (own.usd ?? Infinity)
+  ) {
+    caps.usd = limits.budgetUsd;
+  }
+  const tokens = planOptions.budgetLeftTokens;
+  if (
+    context.tokensLeftNow?.() !== undefined &&
+    limits?.budgetTokens !== undefined &&
+    tokens !== undefined &&
+    tokens < (own.tokens ?? Infinity)
+  ) {
+    caps.tokens = limits.budgetTokens;
+  }
+  return caps;
+};
 
 /** `budgetToStart` in counted tokens: the run's `budgetTokens` and a quota's. */
 export const tokensToStart = (
@@ -87,9 +132,7 @@ export const tokensToStart = (
   startWith(
     context,
     () => tokensNow(context),
-    isClaudeNode(context.node)
-      ? (context.node.budgetTokens ?? context.workflow.defaults?.budgetTokens)
-      : undefined,
+    ownCaps(context).tokens,
     context.reserveTokens,
   );
 

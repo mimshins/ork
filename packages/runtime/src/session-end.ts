@@ -4,8 +4,10 @@
  *   it can see (a turn cap, an exit code, a provider's error), and the report
  *   the session handed in decides the rest. The runner then writes the end in
  *   the node's numbers, its detail scrubbed with the feedback redactor. A
- *   session the driver could not run ends as `driverFailure` says, and one that
- *   reached its token cap as `tokenCapOutcome` says.
+ *   session the driver could not run (or that was stopped, with what it had
+ *   spent) ends as `driverFailure` says, one whose process died as
+ *   `failureReason` explains, and one that reached its token cap as
+ *   `tokenCapOutcome` says.
  */
 
 import { homedir } from "node:os";
@@ -16,6 +18,7 @@ import {
   type EndFacts,
   type EndKind,
   endFor,
+  maskSecrets,
   type NodeReport,
   outcomeEnd,
   type RedactOptions,
@@ -70,7 +73,14 @@ export const settleEnd = (
     outcome.report === null
       ? (outcome.end ?? outcomeEnd(outcome))
       : reportEnd(outcome.report);
-  return { ...outcome, end: endFor(end.kind, facts, end.detail, scrub) };
+  const { usage } = outcome;
+  const used: EndFacts = {
+    ...facts,
+    usedTokens: countedTokens(usage),
+    // A cost of 0 is one the tool did not report (L280), not a spend.
+    ...(usage.costUsd > 0 ? { usedUsd: usage.costUsd } : {}),
+  };
+  return { ...outcome, end: endFor(end.kind, used, end.detail, scrub) };
 };
 
 /** The node's numbers and the scrubbing a session's end is written with. */
@@ -120,6 +130,33 @@ export const tokenCapOutcome = (
         errors: [`Reached the token budget (${String(budgetTokens)})`],
       };
 
+const REASON_LIMIT = 500;
+
+/** Noise a Node crash ends stderr with, or a stack frame: never the reason. */
+const isNoise = (line: string): boolean =>
+  /^Node\.js v\d/u.test(line) || /^\s+at /u.test(line);
+
+/**
+ * Why a process ended without a result: the last block of its stderr as one
+ * masked, capped line (the reason reaches the terminal, which is not masked).
+ */
+export const failureReason = (
+  name: string,
+  stderr: string,
+  code: number | null,
+): string => {
+  const block = stderr
+    .split("\n")
+    .filter(line => !isNoise(line))
+    .join("\n")
+    .split(/\n\s*\n/u)
+    .map(text => text.trim().replaceAll(/\s*\n\s*/gu, " "))
+    .findLast(text => text !== "");
+  return block === undefined
+    ? `${name} exited with code ${String(code)}`
+    : maskSecrets(block).slice(0, REASON_LIMIT);
+};
+
 /**
  * The kind of a failure to run the driver: its program missing, else what a
  * provider's words in it say, else a crash.
@@ -133,14 +170,32 @@ export const failureKind = (error: unknown): EndKind => {
   return classifyProviderError(text)?.kind ?? "driver_crashed";
 };
 
+/** What a session had spent when it stopped, and the id it ran under. */
+export type Spent = { usage: SessionUsage; sessionId: string };
+
+const NOTHING_SPENT: Spent = {
+  usage: {
+    costUsd: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheReadTokens: 0,
+    cacheWriteTokens: 0,
+    turns: 0,
+    durationMs: 0,
+  },
+  sessionId: "",
+};
+
 /**
  * A finished event for a session the driver could not run, ended as `kind` with
- * `message` (Ork's words or the tool's, masked) as its detail.
+ * `message` (Ork's words or the tool's, masked) as its detail; a stopped one
+ * keeps what it had `spent` (its tokens decoded so far, dollars $0).
  */
 export const driverFailure = (
   message: string,
   kind: EndKind,
   scope: EndScope,
+  spent: Spent = NOTHING_SPENT,
 ): RuntimeEvent => ({
   type: "session.finished",
   outcome: {
@@ -151,18 +206,10 @@ export const driverFailure = (
       kind === "interrupted" ? undefined : message,
       scope.scrub,
     ),
-    sessionId: "",
+    sessionId: spent.sessionId,
     report: null,
     text: "",
-    usage: {
-      costUsd: 0,
-      inputTokens: 0,
-      outputTokens: 0,
-      cacheReadTokens: 0,
-      cacheWriteTokens: 0,
-      turns: 0,
-      durationMs: 0,
-    },
+    usage: spent.usage,
     errors: [message],
   },
 });

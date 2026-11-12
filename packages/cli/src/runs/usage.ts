@@ -3,12 +3,11 @@
  *   times its `--since`, `--until` and `ork prune --older-than` take.
  */
 
-import {
-  type LimitsReport,
-  type UsageDimension,
-  type UsageGroup,
-  type UsageReport,
-  usd,
+import type {
+  LimitsReport,
+  UsageDimension,
+  UsageGroup,
+  UsageReport,
 } from "@krapht/ork-core";
 
 import { costOf, shortCount, style } from "../output.ts";
@@ -125,7 +124,7 @@ const usageTable = (
         { text: cost(group.costUsd) },
         { text: String(group.sessions) },
         {
-          text: `${tokens(group.inputTokens + group.cacheReadTokens + group.cacheWriteTokens)} in / ${tokens(group.outputTokens)} out`,
+          text: `${tokens(group.inputTokens + group.cacheReadTokens + group.cacheWriteTokens)} prompt / ${tokens(group.outputTokens)} out`,
         },
         { text: percent(group.cacheHitRate) },
         ...(cpu ? [{ text: cpuText(group.cpuMs) }] : []),
@@ -156,6 +155,16 @@ const warned = (term: Term, text: string): string =>
     ? `  ${chip(term, CHIP_LABELS.warn, "warn")} ${text}`
     : style("yellow", `  ${text}`);
 
+/**
+ * `$0.0000 of $0.0100`: both sides of a dollar cap with the same digits, four
+ * when either is under a dollar, else cents (`usd` alone gives `$0.00 of
+ * $0.0100`).
+ */
+const capAmounts = (spent: number, cap: number): string => {
+  const places = cap < 1 || (spent > 0 && spent < 1) ? 4 : 2;
+  return `$${spent.toFixed(places)} of $${cap.toFixed(places)}`;
+};
+
 /** The limits across runs, above a report; nothing with none set. */
 export const formatLimits = (
   { problems, caps, tokenCaps = [], plan }: LimitsReport,
@@ -174,7 +183,7 @@ export const formatLimits = (
     ...problems.map(problem => warned(term, problem)),
     ...caps.map(cap => {
       const whose = cap.project === undefined ? "all projects" : "this project";
-      const line = `  ${whose}, this ${cap.window}: ${usd(cap.spentUsd)} of ${usd(cap.capUsd)}, resets ${shortTime(cap.resetsAt)}`;
+      const line = `  ${whose}, this ${cap.window}: ${capAmounts(cap.spentUsd, cap.capUsd)}, resets ${shortTime(cap.resetsAt)}`;
       return cap.leftUsd <= 0 ? warned(term, line.trimStart()) : line;
     }),
     ...tokenCaps.map(cap => {
@@ -203,7 +212,7 @@ export const formatUsage = (
   if (totals.sessions === 0) return [`No Claude sessions in ${scope}.`];
   const head = [
     `${style("bold", costOf(totals.costUsd, totals.partial, totals.tokens))} in ${scope}`,
-    `${counted(totals.runs, "run")} · ${counted(totals.sessions, "session")} · ${counted(totals.turns, "turn")} · ${tokens(totals.inputTokens + totals.cacheReadTokens + totals.cacheWriteTokens)} in / ${tokens(totals.outputTokens)} out · ${percent(totals.cacheHitRate)} from cache`,
+    `${counted(totals.runs, "run")} · ${counted(totals.sessions, "session")} · ${counted(totals.turns, "turn")} · ${tokens(totals.inputTokens + totals.cacheReadTokens + totals.cacheWriteTokens)} prompt / ${tokens(totals.outputTokens)} out${totals.tokens === undefined ? "" : ` (${tokens(totals.tokens)} counted)`} · ${percent(totals.cacheHitRate)} from cache`,
   ];
   const lines = head;
   for (const dimension of by === undefined ? OVERVIEW : [by]) {

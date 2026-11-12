@@ -223,9 +223,9 @@ describe("ork tree", () => {
     expect(lines).toEqual([
       "plan        tool.shell    ● running",
       "build       agent.worker  ✓ 3 ran",
-      "├─ build.0  agent.worker  ✓ pass: did 2  2s  100 in / 20 out · $1.0000",
-      "├─ build.1  agent.worker  ✓ pass: did 4  2s  100 in / 20 out · $2.0000",
-      "└─ build.2  agent.worker  ✓ pass: did 6  2s  100 in / 20 out · $3.0000",
+      "├─ build.0  agent.worker  ✓ pass: did 2  2s  120 tok · $1.0000",
+      "├─ build.1  agent.worker  ✓ pass: did 4  2s  120 tok · $2.0000",
+      "└─ build.2  agent.worker  ✓ pass: did 6  2s  120 tok · $3.0000",
     ]);
   });
 });

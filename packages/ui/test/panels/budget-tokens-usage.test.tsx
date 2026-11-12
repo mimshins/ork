@@ -6,6 +6,7 @@
 
 import type { LimitsReport, UsageReport } from "@krapht/ork-server/client";
 import { cleanup, render, screen } from "@testing-library/react";
+import { userEvent } from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { TipProvider } from "../../src/components/tip.tsx";
@@ -83,6 +84,30 @@ describe("the Usage totals", () => {
       screen.getByText("Tokens counted", { selector: "span" }).closest("div")
         ?.textContent,
     ).toContain("48.2k");
+  });
+
+  it("names the prompt and output tokens, and the prompt tip opens on focus", async () => {
+    render(
+      <TipProvider>
+        <Totals report={reportOf(group(""))} />
+      </TipProvider>,
+    );
+    expect(
+      screen.getByText("Prompt tokens", { selector: "span" }).closest("div")
+        ?.textContent,
+    ).toContain("400");
+    expect(
+      screen.getByText("Output tokens", { selector: "dt" }).closest("div")
+        ?.textContent,
+    ).toContain("50");
+    expect(screen.queryByText("Tokens in")).toBeNull();
+    await userEvent.tab();
+    expect(document.activeElement?.textContent).toBe("Prompt tokens");
+    expect(
+      await screen.findByText(
+        "Everything sent to the model: input, cache-read and cache-write tokens. From cache is the share of it read from the cache.",
+      ),
+    ).toBeDefined();
   });
 
   it("hides the tokens counted when there are none", () => {

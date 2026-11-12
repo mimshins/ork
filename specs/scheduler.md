@@ -78,7 +78,9 @@ its branch afterwards ([worktrees](./worktrees.md)).
 - A node that failed and took no edge fails the run (its reason is in the run
   summary); other branches still finish. One that failed and took an edge (a
   handled failure), and a skipped node, leave the run `succeeded`, and the
-  result counts both (`failuresHandled`, `skipped`).
+  result counts both (`failuresHandled`, `skipped`). When the run stops (a
+  budget, a quota, a timeout, a stop), an activation still queued never runs: it
+  gets a summary entry with `runs: 0`, so it counts in `skipped` too.
 - **What a node declares holds.** A value that doesn't fit an `output.schema` (a
   missing field, the wrong type, a value off the list) fails the node, with a
   reason that names all three, as in
@@ -246,9 +248,22 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
 - `limits.budgetUsd` caps the run: each session starts with
   `min(node budget, what is left)` ([L73](./usage/ledger-limits.md)), and once
   it is spent no session or [call](./scheduler/calls.md) starts and the run ends
-  `budget_exhausted`. A session sets its cap aside as it starts, so sessions
-  running together are never offered the same part; one with nothing left waits
-  for a worker beside it to finish, never for a leader
+  `budget_exhausted`. A session whose cap was the run's remainder (the node has
+  no cap of its own in that unit, or the remainder was below it) and that ends
+  `budget_limit` stops the run the same way, as a quota does: the node keeps its
+  `budget_limit` end, the run ends `budget_exhausted` ("the run's budget of $N
+  is spent", or "N tokens"), no failure edge fires, and `ork resume` continues
+  the session. A stop by the node's own, lower cap is still a failure that edges
+  can route. A unit (tokens or dollars) blames the run's cap only when the
+  session reached that unit's cap, or when it was the session's only cap: a
+  node's own cap in one unit stays a node failure even under a run budget in the
+  other. A $0 `costUsd` means unreported
+  ([L280](./gaps/budget-tokens-limits.md)), not spent, so a token-capped session
+  never reads as reaching a dollar cap; claude-code's `costUsd` is cumulative
+  across a resume ([ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md)). A
+  session sets its cap aside as it starts, so sessions running together are
+  never offered the same part; one with nothing left waits for a worker beside
+  it to finish, never for a leader
   ([ADR-077](../decisions/ADR-077-reserve-session-caps.md)).
 - `limits.budgetTokens` caps the run in counted tokens (input, output and cache
   write) on any driver, the same way and beside the dollars: reserves hold both,

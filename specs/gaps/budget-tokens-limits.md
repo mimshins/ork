@@ -45,3 +45,38 @@ left simpler:
   late turn is offered less than is left. The token twin is fixed. No test runs
   a resumed session's earlier legs under a token cap either
   ([session ends](../runtime/session-ends.md)).
+
+Found fixing QA run c9c908b9's budget findings:
+
+- **L326 · A running session's tokens show only once it ends.** No runtime event
+  carries usage mid-session, so the ledger, `ork ps`, the view and the day quota
+  see a session's tokens when it ends or is stopped; if Ork itself is killed, a
+  running session's tokens are lost. A throttled `session.usage` event would fix
+  both, and changes the runtime port: RFC first
+  ([counted tokens](../usage/tokens.md#counted-tokens)).
+- **L327 · A leader with no cap of its own sets aside the whole run budget.**
+  Its reserve is never waited on and is held while it delegates
+  ([ADR-077](../../decisions/ADR-077-reserve-session-caps.md)), so the nodes it
+  owns are refused. The `budget.leader` warning makes the setup visible before a
+  run; lending the reserve while it waits, as its slot is lent, would amend
+  ADR-077 ([budget warnings](../usage/tokens.md#budget-warnings)).
+- **L328 · A node's caps count one activation.** `budgetUsd`, `budgetTokens` and
+  `maxTurns` restart on each activation, so `ork resume` gives a node its whole
+  cap again; only the run's spend carries over. A cap per node per run would
+  change workflow semantics
+  ([where a token cap applies](../usage/tokens.md#where-a-token-cap-applies)).
+- **L329 · Whether the run capped a session is decided at its first leg.** The
+  run's remainder `startBudgets` returned decides it; a session capped by its
+  own lower cap whose later legs are cut by the run's remainder (a sibling spent
+  meanwhile) still ends as a node failure that edges route, not
+  `budget_exhausted` ([budget](../scheduler.md#budget-and-concurrency)).
+- **L330 · The run summary's `in` is a fourth meaning.** `ork usage`, `ork tree`
+  and the UI now say prompt, out and counted, but a session's summary line still
+  reads `100 in / 20 out (80 cached)`, its `in` being uncached input. Word it as
+  the rest do
+  ([on screen](../usage/tokens.md#prompt-output-and-counted-on-screen)).
+- **L331 · Only an interrupted session keeps its usage.** A session stopped by
+  `ork stop` or its cap keeps the tokens decoded so far; one whose driver
+  crashed, or that a provider error ended without a result, still records zero
+  usage, though the steps it ran were decoded
+  ([session ends](../runtime/session-ends.md#the-token-cap)).

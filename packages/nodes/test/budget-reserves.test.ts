@@ -178,17 +178,46 @@ const heldRuntime = () => {
   return { runtime, specs, finish };
 };
 
+/** A runtime whose every session ends at its cap, with `asked` its specs. */
+const usedUp = (asked: SessionSpec[], used = usage): AgentRuntime => ({
+  driver: "claude-code",
+  start: spec => {
+    asked.push(spec);
+    return {
+      events: (async function* () {
+        await Promise.resolve();
+        yield {
+          type: "session.finished" as const,
+          outcome: {
+            subtype: "error_max_budget_tokens",
+            end: { kind: "budget_limit" as const, message: "spent" },
+            sessionId: "s",
+            report: null,
+            text: "",
+            usage: used,
+            errors: [],
+          },
+        };
+      })(),
+      send: () => {},
+      interrupt: () => Promise.resolve(),
+    };
+  },
+});
+
 const WORKER: Node = { type: "agent.worker", prompt: "Build", budgetUsd: 3 };
 
 const contextFor = (
   id: string,
   hooks: Partial<ExecuteContext>,
   node: Node = WORKER,
+  limits?: Workflow["limits"],
 ): ExecuteContext => {
   const workflow: Workflow = {
     schemaVersion: 1,
     name: "t",
     nodes: { [id]: node },
+    ...(limits === undefined ? {} : { limits }),
   };
   const cwd = mkdtempSync(path.join(tmpdir(), "ork-reserves-"));
   return {
@@ -335,33 +364,8 @@ describe("nodes waiting on a run's budget in dollars and tokens", () => {
 
   it("caps a session at what a token quota leaves, and blames the quota when it runs out", async () => {
     const asked: SessionSpec[] = [];
-    const usedUp: AgentRuntime = {
-      driver: "claude-code",
-      start: spec => {
-        asked.push(spec);
-        return {
-          events: (async function* () {
-            await Promise.resolve();
-            yield {
-              type: "session.finished" as const,
-              outcome: {
-                subtype: "error_max_budget_tokens",
-                end: { kind: "budget_limit" as const, message: "spent" },
-                sessionId: "s",
-                report: null,
-                text: "",
-                usage,
-                errors: [],
-              },
-            };
-          })(),
-          send: () => {},
-          interrupt: () => Promise.resolve(),
-        };
-      },
-    };
     const execute = claudeExecutor({
-      runtimeFor: () => Promise.resolve(usedUp),
+      runtimeFor: () => Promise.resolve(usedUp(asked)),
       readyDriver: "claude-code",
       inPlace: true,
     });
@@ -374,5 +378,75 @@ describe("nodes waiting on a run's budget in dollars and tokens", () => {
       end: { kind: "plan_limit" },
       limited: "a session reached what was left of a quota",
     });
+  });
+});
+
+/** Runs node `a` under the run's `limits`, its one session ending at its cap. */
+const capped = (
+  hooks: Partial<ExecuteContext>,
+  node: Node,
+  limits: Workflow["limits"],
+  used = usage,
+) =>
+  claudeExecutor({
+    runtimeFor: () => Promise.resolve(usedUp([], used)),
+    readyDriver: "claude-code",
+    inPlace: true,
+  })(contextFor("a", hooks, node, limits));
+
+describe("a session that reaches the run's budget", () => {
+  const worker: Node = { type: "agent.worker", prompt: "Build" };
+
+  it("stops the run budget_exhausted in tokens, keeping its own end", async () => {
+    const result = await capped(tokenBook(200).hooks("a"), worker, {
+      budgetTokens: 200,
+    });
+    expect(result).toMatchObject({
+      ok: false,
+      end: { kind: "budget_limit" },
+      limited: "the run's budget of 200 tokens is spent",
+      stopsAs: "budget_exhausted",
+    });
+  });
+
+  it("stops the run budget_exhausted in dollars", async () => {
+    const result = await capped(budgetBook(2).hooks("a"), worker, {
+      budgetUsd: 2,
+    });
+    expect(result).toMatchObject({
+      limited: "the run's budget of $2 is spent",
+      stopsAs: "budget_exhausted",
+    });
+  });
+
+  it("leaves a stop by the node's own, lower cap a failure", async () => {
+    const own: Node = { ...worker, budgetTokens: 50, budgetUsd: 1 };
+    const tokens = await capped(tokenBook(200).hooks("a"), own, {
+      budgetTokens: 200,
+    });
+    const usd = await capped(budgetBook(2).hooks("a"), own, { budgetUsd: 2 });
+    expect([tokens.limited, usd.limited]).toEqual([undefined, undefined]);
+    expect(tokens.end?.kind).toBe("budget_limit");
+  });
+
+  it("does not blame the run's dollars for a node's own token cap", async () => {
+    const result = await capped(
+      bothBook(200, 1000).hooks("a"),
+      { ...worker, budgetTokens: 50 },
+      { budgetUsd: 2 },
+      { ...usage, inputTokens: 50 },
+    );
+    expect([result.limited, result.stopsAs]).toEqual([undefined, undefined]);
+    expect(result.end?.kind).toBe("budget_limit");
+  });
+
+  it("does not blame the run's tokens for a node's own dollar cap", async () => {
+    const result = await capped(
+      bothBook(200, 1000).hooks("a"),
+      { ...worker, budgetUsd: 0.5 },
+      { budgetTokens: 1000 },
+    );
+    expect([result.limited, result.stopsAs]).toEqual([undefined, undefined]);
+    expect(result.end?.kind).toBe("budget_limit");
   });
 });

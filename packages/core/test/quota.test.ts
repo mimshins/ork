@@ -229,8 +229,9 @@ describe("the store", () => {
     ]);
     limit("allowed");
     expect(store.planLimits()).toMatchObject([{ status: "allowed" }]);
-    store.clearPlanLimits();
+    expect(store.clearPlanLimits()).toBe(1);
     expect(store.planLimits()).toEqual([]);
+    expect(store.clearPlanLimits()).toBe(0);
     store.close();
   });
 });

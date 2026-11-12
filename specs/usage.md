@@ -120,7 +120,8 @@ caps.
   session it refused. A `rejected` with extra usage to draw on (`overageStatus`)
   counts as `allowed_warning`, which is shown and changes nothing. A session
   that goes on to succeed is left alone. `ork usage --clear-plan-limits` forgets
-  them, for one that has lifted early.
+  them, for one that has lifted early, and says how many it forgot, or that none
+  was recorded (on stderr under `--json`).
 - **`ork chat`** counts, and says when a limit is spent. It isn't stopped.
 - **A call that activates a finished run again** is held as any session, as a
   workflow did it and not a person.

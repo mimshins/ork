@@ -85,7 +85,15 @@ export const usage = defineCommand({
     }
     const store = openStore();
     try {
-      if (args["clear-plan-limits"]) store.clearPlanLimits();
+      if (args["clear-plan-limits"]) {
+        const cleared = store.clearPlanLimits();
+        const said =
+          cleared === 0
+            ? "No plan limit was recorded."
+            : `Cleared ${String(cleared)} plan limit(s).`;
+        // Stdout is the JSON report under --json.
+        (args.json ? writeErr : write)(said);
+      }
       const filter = {
         ...(args.all
           ? {}

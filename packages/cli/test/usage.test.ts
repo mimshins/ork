@@ -48,7 +48,7 @@ describe("ork usage", () => {
     const text = formatUsage(usageReport([row()]), "this project").join("\n");
     expect(text).toContain("$2.0000");
     expect(text).toContain(
-      "1 run · 1 session · 4 turns · 4.0k in / 500 out · 75% from cache",
+      "1 run · 1 session · 4 turns · 4.0k prompt / 500 out (1.5k counted) · 75% from cache",
     );
     expect(text).toContain("By day");
     expect(text).toContain("By workflow");

@@ -17,6 +17,7 @@ import { driverContradiction, writtenModel } from "../run/driver.ts";
 import { error, warning } from "./diagnostics.ts";
 import { gatherProblems } from "./gather.ts";
 import { checkItemSettings } from "./item-settings.ts";
+import { leaderBudgetWarnings } from "./leader-budget.ts";
 import { checkScripts } from "./script.ts";
 import {
   declaredOutputOf,
@@ -85,6 +86,7 @@ export const checkNodes = (
   const diagnostics: Diagnostic[] = [
     ...checkScripts(workflow),
     ...checkItemSettings(workflow, edges),
+    ...leaderBudgetWarnings(workflow),
   ];
   for (const [id, node] of Object.entries(workflow.nodes)) {
     const path = ["nodes", id];

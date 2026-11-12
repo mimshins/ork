@@ -9,7 +9,9 @@ import {
   AgentSettingsSchema,
   DefaultsSchema,
   NodeSchema,
+  ProjectSchema,
   QuotasSchema,
+  UserSettingsSchema,
   WorkflowSchema,
 } from "../src/index.ts";
 
@@ -38,6 +40,58 @@ describe("budgetTokens", () => {
     expect(DefaultsSchema.safeParse({ budgetTokens: value }).success).toBe(
       false,
     );
+  });
+});
+
+/** The messages a parse refused with, one per issue. */
+const messages = (result: {
+  success: boolean;
+  error?: { issues: { message: string }[] };
+}): string[] => (result.error?.issues ?? []).map(issue => issue.message);
+
+const workflow = (budget: unknown) => ({
+  schemaVersion: 1,
+  name: "t",
+  limits: { budgetTokens: budget },
+  nodes: { a: { type: "tool.shell", command: "true" } },
+});
+
+describe("a refused budget", () => {
+  const WHOLE = "must be a whole number above 0";
+  const place: Record<string, (budget: unknown) => string[]> = {
+    node: budget =>
+      messages(
+        NodeSchema.safeParse({ type: "agent.worker", budgetTokens: budget }),
+      ),
+    agent: budget =>
+      messages(AgentSettingsSchema.safeParse({ budgetTokens: budget })),
+    workflow: budget => messages(WorkflowSchema.safeParse(workflow(budget))),
+    project: budget =>
+      messages(
+        ProjectSchema.safeParse({
+          schemaVersion: 1,
+          defaults: { budgetTokens: budget },
+        }),
+      ),
+    settings: budget =>
+      messages(
+        UserSettingsSchema.safeParse({
+          schemaVersion: 1,
+          quotas: { dayTokens: budget },
+        }),
+      ),
+  };
+
+  it.each(Object.keys(place))("says what a token cap takes, in %s", where => {
+    for (const budget of [-5, 0, 1.5, "10"]) {
+      expect(place[where]?.(budget)).toEqual([WHOLE]);
+    }
+  });
+
+  it("says what a dollar cap takes", () => {
+    expect(messages(DefaultsSchema.safeParse({ budgetUsd: -1 }))).toEqual([
+      "must be a number above 0",
+    ]);
   });
 });
 

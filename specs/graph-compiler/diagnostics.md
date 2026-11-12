@@ -31,6 +31,7 @@ and `schema.newer_version` alone for a file a newer Ork made.
 | `loop.no-condition`      | warning  | no edge of a loop has a `when:`, so only its rounds can end it                   |
 | `loop.beside-edge`       | warning  | a plain edge from the node a loop edge leaves, which fires every round           |
 | `loop.uncapped`          | warning  | a loop of sessions with no `limits.budgetUsd` or `limits.timeout`                |
+| `budget.leader`          | warning  | a run budget, and a leader with children and no cap of its own in that unit      |
 | `graph.no-entry`         | error    | no node can start                                                                |
 | `graph.unreachable`      | warning  | a node no entry reaches through edges or ownership                               |
 | `join.inputs`            | warning  | a join has fewer than two inputs                                                 |

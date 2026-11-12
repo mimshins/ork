@@ -214,14 +214,20 @@ export const createSessionRuntime = (
         let legSpec = spec;
         let spent: SessionUsage | undefined;
         for (;;) {
-          // Interrupted while wiring (no process yet to stop) or between legs.
+          // Interrupted while wiring (no process yet to stop); one between
+          // legs ends below, with the last leg's result.
           if (ended.signal.aborted) {
             yield driverFailure("interrupted", "interrupted", scope);
             return;
           }
           const leg = yield* runLeg(legOf(legSpec, spent));
           if (leg.kind === "failed") {
-            yield driverFailure(leg.reason, leg.end, scope);
+            // A resumed leg stopped before it printed its start ran as before.
+            const { spent: stopped } = leg;
+            if (stopped?.sessionId === "") {
+              stopped.sessionId = legSpec.resume ?? "";
+            }
+            yield driverFailure(leg.reason, leg.end, scope, stopped);
             return;
           }
           if (leg.kind === "finished") return;

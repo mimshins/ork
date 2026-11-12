@@ -82,6 +82,16 @@ name show their parent folder too.
   `quotas.dayTokens` is set. The chart stays in dollars. The CLI words the same
   total `(partial)` ([L283](../gaps/budget-tokens-limits.md),
   [partial totals](../usage/tokens.md#partial-totals)).
+- **Totals' token terms**
+  ([prompt, output and counted](../usage/tokens.md#prompt-output-and-counted-on-screen)):
+  "Tokens in" reads **"Prompt tokens"** (input + cache read + cache write) and
+  "Tokens out" reads **"Output tokens"**. "Prompt tokens" is a focusable term
+  with the tip "Everything sent to the model: input, cache-read and cache-write
+  tokens. From cache is the share of it read from the cache." The order stays:
+  Spend, Runs with sessions, Sessions, Prompt tokens, Output tokens, From cache,
+  then Tokens counted (shown when above 0, with its tip). Same type, tokens and
+  tabular numerals as the other totals; no new token, no new color. The tables'
+  "Tokens" column is the counted tokens and keeps its name.
 - **Words:** the empty state gives the next step and its CLI twin, a refusal
   offers **Try again** and `ork usage` above the last good report, if there is
   one, and the foot has the same report's command.

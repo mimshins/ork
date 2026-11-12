@@ -17,6 +17,7 @@ import {
   type RunEvent,
   type RunRecord,
   runTree,
+  type TreeNode,
 } from "@krapht/ork-core";
 import { createCliRuntime } from "@krapht/ork-runtime";
 import { describe, expect, it } from "vitest";
@@ -121,6 +122,20 @@ const logLines = async (s: ReturnType<typeof setup>, node?: string) => {
   return { run: found.run, lines };
 };
 
+/** A finished node that used 100 + 20 + 5 counted tokens and cost nothing. */
+const spentNode = (id: string, extra: Partial<TreeNode>): TreeNode => ({
+  id,
+  type: "agent.worker",
+  state: "ok",
+  runs: 1,
+  costUsd: 0,
+  inputTokens: 100,
+  outputTokens: 20,
+  cacheWriteTokens: 5,
+  children: [],
+  ...extra,
+});
+
 /** What `ork tree` prints for a run, as one text. */
 const view = (run: RunRecord, events: RunEvent[]) =>
   formatTreeView(run, events, nestItems(runTree(events))).join("\n");
@@ -162,6 +177,28 @@ describe("a recorded run", () => {
     const table = formatRuns(s.store.runs(), false);
     expect(table).toHaveLength(2);
     expect(table[1]).toContain("succeeded");
+  });
+
+  it("shows counted tokens, not `$0.00`, for a node whose driver reports no dollars", () => {
+    const [priced, unpriced] = formatTree([
+      spentNode("a", {}),
+      spentNode("b", { unpriced: true }),
+    ]);
+    expect(priced).toContain("  125 tok · $0.00");
+    expect(unpriced).toMatch(/ {2}125 tok$/u);
+    expect(unpriced).not.toContain("$");
+    expect(priced).not.toMatch(/ in \/ | out/u);
+  });
+
+  it("leaves a node's tokens blank in `ork tree` when it counted none", () => {
+    const [line] = formatTree([
+      spentNode("a", {
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheWriteTokens: 0,
+      }),
+    ]);
+    expect(line).not.toMatch(/tok|\$/u);
   });
 
   describe("`ork tree`'s view of a lock wait", () => {

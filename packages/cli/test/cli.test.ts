@@ -163,7 +163,9 @@ describe("ork validate with a broken project file", () => {
   it("reports the problem at its line in the project file", () => {
     const { status, stdout } = validateInProject(BROKEN);
     expect(status).toBe(1);
-    expect(stdout).toMatch(/^\.ork\/project\.yaml:3:14 error Invalid input/mu);
+    expect(stdout).toMatch(
+      /^\.ork\/project\.yaml:3:14 error must be a whole number above 0/mu,
+    );
     expect(stdout).not.toContain("w.ork.yaml:1:1");
   });
 
