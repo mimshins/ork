@@ -48,6 +48,9 @@ export const main: CommandDef = defineCommand({
     send: () => import("./commands/send.ts").then(module => module.send),
     resume,
     feedback,
+    // Loaded on use, like `ork ui`.
+    "follow-ups": () =>
+      import("./commands/follow-ups.ts").then(module => module.followUps),
     context,
     // Loaded on use, like `ork ui`.
     worktrees: () =>

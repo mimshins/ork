@@ -183,6 +183,7 @@ export const claudeExecutor =
     if (context.mailbox !== undefined) ports.mailbox = context.mailbox;
     if (context.claims !== undefined) ports.claims = context.claims;
     if (context.feedback !== undefined) ports.feedback = context.feedback;
+    if (context.followUps !== undefined) ports.followUps = context.followUps;
     const whole = context.round > 1 ? wholeInput(context.input) : undefined;
     if (whole !== undefined) ports.input = whole;
     const watch = limitWatch(context);

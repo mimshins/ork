@@ -32,6 +32,7 @@ who use Ork is [How Ork works](../docs/how-ork-works.md). The contracts are the
 | Layers, skills, precedence, token saving | [Context](./context.md)                      |
 | Messages, decisions, the event store     | [Messaging](./messaging.md)                  |
 | Learning from runs                       | [Feedback](./feedback.md)                    |
+| Work a change leaves for later           | [Follow-ups](./follow-ups.md)                |
 | Commands                                 | [CLI](./cli.md)                              |
 | Panels                                   | [UI](./ui.md)                                |
 

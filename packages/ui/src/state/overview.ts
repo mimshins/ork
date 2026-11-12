@@ -8,12 +8,21 @@
 import {
   type Client,
   type DecisionRecord,
+  type FollowUpsDue,
   type OverviewEvents,
+  type OverviewFollowUpEvents,
   type RunView,
   STREAMS,
 } from "@krapht/ork-server/client";
-import type { Container } from "react-containerized-state";
+import { Container } from "react-containerized-state";
 
+import {
+  createFollowUpsFilter,
+  NONE_DUE,
+  readFollowUps,
+} from "./follow-ups.ts";
+import { ALL_PROJECTS } from "./preferences.ts";
+import { createRead } from "./read.ts";
 import { reconcile } from "./reconcile.ts";
 import {
   type LinkStatus,
@@ -37,14 +46,20 @@ export const createOverview = ({
   decisions: Container<readonly DecisionRecord[] | null>;
 }) => {
   const version = createVersion({ client, open, pageVersion });
+  /** The due follow-ups the stream sends, for the tab's count. */
+  const followUpsDue = Container.create<FollowUpsDue>(NONE_DUE);
   return {
     version,
+    followUpsDue,
+    /** Every project's follow-ups, done ones too: only the due count streams. */
+    followUps: createRead(() => readFollowUps(client)),
+    followUpsFilter: createFollowUpsFilter(ALL_PROJECTS),
     /** Follows the stream until the link is closed. */
     follow: (handlers: {
       onStatus: (status: LinkStatus) => void;
       onFailure: () => void;
     }): StreamLink =>
-      openLink<OverviewEvents>({
+      openLink<OverviewEvents & OverviewFollowUpEvents>({
         url: () => STREAMS.overview,
         open,
         on: {
@@ -55,6 +70,9 @@ export const createOverview = ({
             void decisions.setValue(reconcile(decisions.getValue(), next));
           },
           version: version.receive,
+          followUps: next => {
+            void followUpsDue.setValue(next);
+          },
         },
         ...handlers,
       }),

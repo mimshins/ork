@@ -222,3 +222,8 @@ is an ordinary run.
 say what's live and when each last looked. `ork doctor` warns of a live trigger
 that hasn't looked for twice its `every`, when nothing is watching, and of a
 file it can't read.
+
+While it runs, `ork watch` also checks every registered project's `after-merge`
+[follow-ups](../follow-ups/surfaces.md#the-cli) through the user's `gh` every 10
+minutes, and prints a `follow-up due` line for each one that came due
+([watch.ts](../../packages/cli/src/commands/watch.ts)).

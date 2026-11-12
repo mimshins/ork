@@ -7,6 +7,7 @@
 import type { Driver, Effort } from "@krapht/ork-schema";
 
 import type { FeedbackPort } from "../feedback/types.ts";
+import type { FollowUpPort, FollowUpSink } from "../follow-ups/types.ts";
 import type { REPORT_STATUSES } from "../graph/types.ts";
 import type {
   DecisionChoice,
@@ -26,6 +27,7 @@ import type {
 import type { SessionOutcome, SessionUsage } from "./outcome.ts";
 
 export type { InboxMessage, Mailbox, MessageVia, RelayPort, SendResult };
+export type { FollowUpPort, FollowUpSink };
 export type { SessionEnd } from "./ends.ts";
 export type { SessionOutcome, SessionUsage };
 export type {
@@ -282,6 +284,8 @@ export type SessionPorts = {
   claims?: Claims;
   /** Only for a leader or worker inside a run. */
   feedback?: FeedbackPort;
+  /** Only for a leader or worker inside a run that keeps follow-ups. */
+  followUps?: FollowUpPort;
   /** What the workflow sent back to the node, whole, when its note was cut. */
   input?: string;
   /** Only inside a run: its priority, and slots for heavy Bash calls. */

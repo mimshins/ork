@@ -378,6 +378,35 @@
         "low",
         "normal"
       ]
+    },
+    "followUps": {
+      "description": "Where follow-ups (work a change leaves for later) are kept. Default: Ork's local store.",
+      "type": "object",
+      "properties": {
+        "store": {
+          "type": "string",
+          "enum": [
+            "store",
+            "file",
+            "github"
+          ],
+          "description": "store: Ork's local store, never committed (the default). file: appended to a markdown file in the run's worktree, committed with the change. github: an issue through your own gh, falling back to store when gh isn't signed in."
+        },
+        "file": {
+          "description": "For store: file, the markdown file, relative to the project root. Default: .ork/follow-ups.md.",
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "description": "For store: github, the issues' label. Default: ork-follow-up.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "store"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [

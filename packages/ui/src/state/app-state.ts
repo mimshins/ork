@@ -143,7 +143,7 @@ export const createAppState = ({
     runs,
     decisions,
   });
-  const { version } = overview;
+  const { version, followUps, followUpsFilter, followUpsDue } = overview;
 
   const askServer = async (): Promise<void> => {
     const answer = await client.call("health");
@@ -175,6 +175,9 @@ export const createAppState = ({
     usageFilter,
     feedback,
     feedbackFilter,
+    followUps,
+    followUpsFilter,
+    followUpsDue,
     worktrees,
     worktreesFilter,
     triggers,

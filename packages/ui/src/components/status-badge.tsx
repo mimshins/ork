@@ -163,3 +163,33 @@ export const WorktreeBadge = ({ state }: { state: WorktreeState }) => (
     pill={false}
   />
 );
+
+/** A follow-up's place, as `ork follow-ups list` says it. */
+export type FollowUpBadgeStatus = "waiting" | "due" | "done" | "dropped";
+
+/** `due` needs the person (amber); `due` and `waiting` share no glyph shape. */
+const FOLLOW_UP_LOOKS: Record<FollowUpBadgeStatus, Look> = {
+  due: { Icon: GlyphWaiting, word: "due", tone: "waiting" },
+  waiting: { Icon: GlyphQueued, word: "waiting", tone: "queued" },
+  done: { Icon: GlyphSucceeded, word: "done", tone: "succeeded" },
+  dropped: { Icon: GlyphSkipped, word: "dropped", tone: "skipped" },
+};
+
+export const FollowUpStatusBadge = ({
+  status,
+  sent = false,
+  pill = false,
+}: {
+  status: FollowUpBadgeStatus;
+  /** A done message says `sent`: it was sent, not just finished. */
+  sent?: boolean;
+  pill?: boolean;
+}) => (
+  <Badge
+    look={{
+      ...FOLLOW_UP_LOOKS[status],
+      ...(sent && status === "done" ? { word: "sent" } : {}),
+    }}
+    pill={pill}
+  />
+);

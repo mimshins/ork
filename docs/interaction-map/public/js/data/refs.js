@@ -15,6 +15,10 @@ export const DESIGN = {
   messaging: d("specs/messaging.md", "Spec: messaging, decisions and logs"),
   eventStore: d("specs/event-store.md", "Spec: the event store"),
   feedback: d("specs/feedback.md", "Spec: feedback and self-improvement"),
+  followUps: d(
+    "specs/follow-ups.md",
+    "Spec: follow-ups, what a change leaves for later",
+  ),
   cli: d("specs/cli.md", "Spec: the CLI commands"),
   scheduler: d("specs/scheduler.md", "Spec: running a workflow"),
   worktrees: d("specs/worktrees.md", "Spec: worktrees, where nodes work"),

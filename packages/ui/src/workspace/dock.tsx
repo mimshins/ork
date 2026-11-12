@@ -17,6 +17,7 @@ import "dockview-react/dist/styles/dockview.css";
 import { useCallback, useEffect } from "react";
 
 import { EmptyState } from "../components/bits.tsx";
+import { FollowUpsCount } from "../panels/followups-count.tsx";
 import { DockButtons } from "./dock-buttons.tsx";
 import { isPanelId, PANELS, panelOf } from "./panels.tsx";
 import type { Workspace } from "./workspace.ts";
@@ -31,6 +32,7 @@ const Tab = ({ api }: IDockviewPanelHeaderProps) => {
     <span className={styles["tab"]}>
       {Icon === null ? null : <Icon />}
       {api.title}
+      {api.id === "followups" ? <FollowUpsCount /> : null}
     </span>
   );
 };

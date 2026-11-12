@@ -35,7 +35,14 @@ defaults: # as a workflow's defaults
   model: sonnet
 context: [docs/process.md] # context files every node reads, from the project root
 experimental: [] # experiments this project turns on
+followUps: { store: store } # where follow-ups are kept: store | file | github
 ```
+
+`followUps` says where a new [follow-up](./follow-ups.md#keeping-them) is also
+written out: `store` (Ork's store only, the default), `file` (appended to
+`file`, default `.ork/follow-ups.md`, in the session's worktree, committed with
+the change) or `github` (an issue labelled `label`, default `ork-follow-up`,
+through your `gh`).
 
 The JSON Schema is
 [project.schema.json](../packages/schema/project.schema.json).

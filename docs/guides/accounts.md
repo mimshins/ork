@@ -10,13 +10,13 @@ What the agents use is billed to your API key or cloud account, or counts
 against your Claude plan's limits; a budget caps each run
 ([models and budgets](./models-and-budgets.md)).
 
-| Integration  | How Ork reaches it                                                            | You log in with                                                          |
-| ------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Claude       | the `claude-code` driver, running your own `claude`                           | `claude`'s own login, `ANTHROPIC_API_KEY`, or Bedrock / Vertex / Foundry |
-| OpenCode     | the `open-code` driver, running your own `opencode`                           | `opencode auth login`                                                    |
-| Command Code | the `command-code` driver, running your own `cmd`                             | `cmd login`                                                              |
-| GitHub       | optional: your `gh` CLI, for `tool.gh` nodes and `ork feedback publish`       | `gh auth login`                                                          |
-| AWS          | optional: your `aws` CLI, for `tool.aws` nodes (`profile`, `region` per node) | `aws sso login`, or a profile                                            |
+| Integration  | How Ork reaches it                                                                                                           | You log in with                                                          |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Claude       | the `claude-code` driver, running your own `claude`                                                                          | `claude`'s own login, `ANTHROPIC_API_KEY`, or Bedrock / Vertex / Foundry |
+| OpenCode     | the `open-code` driver, running your own `opencode`                                                                          | `opencode auth login`                                                    |
+| Command Code | the `command-code` driver, running your own `cmd`                                                                            | `cmd login`                                                              |
+| GitHub       | optional: your `gh` CLI, for `tool.gh` nodes, `ork feedback publish` and [follow-ups](./follow-ups.md) kept or checked there | `gh auth login`                                                          |
+| AWS          | optional: your `aws` CLI, for `tool.aws` nodes (`profile`, `region` per node)                                                | `aws sso login`, or a profile                                            |
 
 `ork doctor` runs each tool's own status check and prints whether it is ready,
 never a token.

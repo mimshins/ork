@@ -189,11 +189,12 @@ Restart=on-failure
 WantedBy=default.target
 ```
 
-We haven't yet tried either on a real machine, so check `ork watch --status`
-after you set one up.
+Neither is tried on a real machine: check `ork watch --status` after setup.
 
-A machine that's asleep isn't looking. On waking it looks again, and anything
-new still on the list starts then, up to the daily cap. `ork doctor` warns when
-a trigger hasn't looked when it should have.
+A machine that's asleep looks again on waking; anything new starts then, up to
+the daily cap. `ork doctor` warns of a trigger that hasn't looked.
+
+While it runs, `ork watch` also checks every project's `after-merge`
+[follow-ups](../../specs/follow-ups/surfaces.md#the-cli) every 10 minutes.
 
 For the full rules: [watching a source](../../specs/scheduler/watching.md).

@@ -79,6 +79,9 @@ runs and worktrees in plain words.
 
 ### Help
 
+- [Follow-ups](./guides/follow-ups.md): what a change leaves for later (a
+  message to send, another project's work, infra steps), when it comes due, and
+  `ork follow-ups`.
 - [Feedback from your runs](./guides/feedback.md): what Ork and the agents note
   as runs go, and `ork feedback`.
 - [Drivers](./guides/drivers.md): the agent tools Ork can run, what each does

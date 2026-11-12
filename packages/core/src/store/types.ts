@@ -14,6 +14,7 @@ import type {
   FeedbackStatus,
   FeedbackStore,
 } from "./feedback-types.ts";
+import type { FollowUpRows } from "./follow-ups.ts";
 import type { TriggerStore } from "./trigger-types.ts";
 import type { ToolCpuRow, UsageFilter, UsageRow } from "./usage-types.ts";
 
@@ -255,6 +256,7 @@ export type EventStore = DecisionStore &
   ProjectStore &
   UsageStore &
   DraftStore &
+  FollowUpRows &
   TriggerStore & {
     /** Records a new run as `running` in this process. */
     begin: (run: NewRun) => RunRecord;

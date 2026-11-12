@@ -193,6 +193,7 @@ export const NODES = [
       "Closing it stops no run, and the CLI never goes through it.",
       "`GET /api/triggers`, what `ork watch --status` says. It only reads: no route accepts a trigger.",
       "Built: the feedback routes, on the same core functions as `ork feedback`: items and their records, dismiss and restore, accept and a lesson, split, a note on a run, a fix started as `ork feedback apply` in the background, and a publish sent only when it's still what its preview showed.",
+      "Built: the follow-ups routes, on the same core functions as `ork follow-ups`: a project's list after the due check, one follow-up with what each action allows and why not, done, drop, reopen and due, and a github-channel post sent only when it's still the draft the person confirmed. The overview stream also sends the due count for the tab.",
       "Built: the worktrees routes, on core's plans, as `ork worktrees` uses them: the list for every project Ork knows, then Remove… and Clean merged…, each read first and carried out only with the digest of the plan shown. Clean merged… never forces, a live run's worktree is always kept, and a project takes one write at a time.",
       "Built: new versions. `GET /api/version` and the overview stream's `version` read the CLI's record, which the server keeps fresh itself while `ork ui` stays open, at most once a day, under the CLI's switches. `POST /api/upgrade/plan` asks the registry now; `POST /api/upgrade` runs the server's own command for that plan, streamed on `GET /api/upgrade/stream`; `POST /api/restart` hands the restart to `ork ui`.",
     ],
@@ -211,6 +212,7 @@ export const NODES = [
       WATCH.route,
       FEEDBACK.routes,
       FEEDBACK.routeTests,
+      DESIGN.followUps,
       WORKTREES.routes,
       WORKTREES.routeTests,
       SERVER.updates,
@@ -1043,6 +1045,7 @@ export const NODES = [
       "The tools every agent node gets for working inside the hierarchy: messaging, reporting, delegating, asking you, and claiming files.",
     facts: [
       "Built: one registry binds each session's tools, one file per tool: `ask_user`, `permission` (the prompt tool), for leaders `delegate`, `spawn_worker` and `answer`, `send_message`, `read_inbox` and `wait_for_messages` for every leader and worker (with `links: off`, only those with someone to reach), `claim` and `release` for parallel writers, and `read_input` for a node whose sent-back input was too long for its message (ADR-078); arguments are validated with Zod.",
+      "Built: `follow_up` for every session in a run that keeps follow-ups: work a change leaves for later, kept where the project's `followUps` rule says, apart from feedback.",
       "Built: `feedback` for every session in a run. The report is structured output on a driver that has it (`claude-code`), and Ork's `report` tool on one that does not.",
       "A local MCP server on 127.0.0.1 behind a per-session bearer token, passed to `claude` with `--mcp-config`.",
     ],
@@ -1061,6 +1064,7 @@ export const NODES = [
       LINKS.tools,
       DESIGN.messaging,
       DESIGN.runtime,
+      DESIGN.followUps,
     ],
   },
   {

@@ -33,7 +33,8 @@ export type PanelId =
   | "builder"
   | "context"
   | "feedback"
-  | "worktrees";
+  | "worktrees"
+  | "followups";
 
 export type PanelSpec = {
   id: PanelId;
@@ -87,6 +88,8 @@ const SPECS: Record<PanelId, PanelSpec> = {
   feedback: { id: "feedback", ...REVIEW_PANELS.feedback },
   // After Feedback, so no Go to digit moves; it has none either.
   worktrees: { id: "worktrees", ...REVIEW_PANELS.worktrees },
+  // After Worktrees, so no Go to digit moves; it has none either.
+  followups: { id: "followups", ...REVIEW_PANELS.followups },
 };
 
 export const PANELS: readonly PanelSpec[] = Object.values(SPECS);

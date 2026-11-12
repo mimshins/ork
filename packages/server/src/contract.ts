@@ -20,17 +20,17 @@ import type {
 import { z } from "zod";
 
 import {
+  AFTER_API,
+  type AfterResponses,
+  DriverIdSchema,
+} from "./contract-after.ts";
+import {
   BUILDER_API,
   type BuilderResponses,
   type InputDef,
 } from "./contract-builder.ts";
 import { CONTEXT_API, type ContextResponses } from "./contract-context.ts";
 import type { StoredEvent, TreeNode } from "./contract-ends.ts";
-import {
-  DriverIdSchema,
-  FEEDBACK_API,
-  type FeedbackResponses,
-} from "./contract-feedback.ts";
 import type { WorkflowGraph } from "./contract-graph.ts";
 import { LINKS_API } from "./contract-links.ts";
 import {
@@ -161,7 +161,7 @@ export const API = {
   health: { method: "GET", path: "/api/health" },
   ...BUILDER_API,
   ...CONTEXT_API,
-  ...FEEDBACK_API,
+  ...AFTER_API,
   ...WORKTREES_API,
   ...UPDATE_API,
   projects: { method: "GET", path: "/api/projects" },
@@ -208,7 +208,7 @@ export const API = {
 /** What each route answers with, on success. */
 export type Responses = BuilderResponses &
   ContextResponses &
-  FeedbackResponses &
+  AfterResponses &
   WorktreesResponses &
   UpdateResponses & {
     health: Health;

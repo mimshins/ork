@@ -4,8 +4,8 @@
  *   sends its stored events after `Last-Event-ID`, then each new one as the run
  *   stores it, over the run's socket or by polling the store (core's
  *   `followEvents`, as `ork logs -f`), and ends with `end`. The overview stream
- *   sends the runs, the open decisions and what is known of versions whenever
- *   they change, comparing every second.
+ *   sends the runs, the open decisions, what is known of versions and the due
+ *   follow-ups whenever they change, comparing every second.
  */
 
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -14,6 +14,7 @@ import { followEvents, pendingDecisions } from "@krapht/ork-core";
 
 import { projectOf, runOf, type ServerContext, viewOf } from "./context.ts";
 import { servedEvent } from "./end-view.ts";
+import { dueOf } from "./follow-up-routes.ts";
 import { openEventStream, sendError } from "./http.ts";
 
 /** How often the overview stream compares the store. */
@@ -82,7 +83,13 @@ export const overviewStream = (
     key === null ? undefined : (projectOf(context, key)?.root ?? key);
   const workflow = url.searchParams.get("workflow");
   const stream = openEventStream(res);
-  const last = { runs: "", decisions: "", version: "" };
+  // followUps starts at "none due": a page assumes that until told otherwise.
+  const last = {
+    runs: "",
+    decisions: "",
+    version: "",
+    followUps: JSON.stringify({ count: 0, items: [] }),
+  };
   const tick = (): void => {
     const filter = root === undefined ? {} : { project: root };
     const runs = context.store
@@ -96,6 +103,15 @@ export const overviewStream = (
       ["runs", runs],
       ["decisions", decisions],
       ["version", context.updates.info()],
+      [
+        "followUps",
+        dueOf(
+          context.store,
+          root === undefined
+            ? context.store.projects().map(p => p.root)
+            : [root],
+        ),
+      ],
     ] as const) {
       const text = JSON.stringify(value);
       if (text === last[name]) continue;

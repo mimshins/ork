@@ -18,6 +18,7 @@ import {
   mdiArrowUpCircleOutline,
   mdiAws,
   mdiBellOutline,
+  mdiClipboardCheckOutline,
   mdiCallMerge,
   mdiCallSplit,
   mdiCheck,
@@ -111,6 +112,7 @@ export const IconFeedback = icon(mdiMessageAlertOutline);
 export const IconNote = icon(mdiNoteEditOutline);
 export const IconExternal = icon(mdiOpenInNew);
 export const IconWorktrees = icon(mdiSourceRepositoryMultiple);
+export const IconFollowUps = icon(mdiClipboardCheckOutline);
 
 export const IconLeader = icon(mdiAccountStarOutline);
 export const IconWorker = icon(mdiRobotOutline);

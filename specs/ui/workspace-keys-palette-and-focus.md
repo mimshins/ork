@@ -22,8 +22,8 @@ Alt, ⇧ reads Shift and ⌃ reads Ctrl.
 | `⌥⇧]` and `⌥⇧[` | Focus the next or previous group           |
 
 The digits follow the panels' order; a panel past the ninth (Feedback,
-Worktrees) has none, and is reached by **Go to Feedback** or **Go to Worktrees**
-in the palette and the Window menu.
+Worktrees, Follow-ups) has none, and is reached by **Go to Feedback**, **Go to
+Worktrees** or **Go to Follow-ups** in the palette and the Window menu.
 
 Moving a docked panel takes it into the neighboring group as a tab, or to that
 edge of the workspace when there is no neighbor. Moving a floating one shifts

@@ -87,7 +87,7 @@ export const startRun = (options: RunOptions): RunHandle => {
   };
 
   const stopping = abort.signal;
-  const ports = createRunPorts({ options, slots, scope, stopping });
+  const ports = createRunPorts({ options, runId, slots, scope, stopping });
   const holds = createHolds({
     onEvent,
     onChange: () => {

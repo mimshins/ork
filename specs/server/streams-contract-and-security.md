@@ -17,7 +17,9 @@ _Part of [The local server](../server.md)._
   `/api/version`), each sent first and then whenever it changes; they are
   compared every second, the update record read at most once a minute.
   `?project=` narrows the runs and decisions; `?workflow=` narrows the decisions
-  only.
+  only. It also sends `event: followUps`, `{ count, items }`, the due
+  [follow-ups](../follow-ups/surfaces.md#the-server) of the projects it covers,
+  when they change and never before one is due; `?project=` narrows it too.
 - **The upgrade's stream** (`/api/upgrade/stream`): `event: output` per line of
   the package manager's output (`id:` its seq) after `Last-Event-ID` (or
   `?after=`), then each new line, then `event: end`

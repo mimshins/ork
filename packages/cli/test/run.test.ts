@@ -182,7 +182,7 @@ describe("ork run --node", () => {
     expect(run.drivers).toEqual(["open-code"]);
     expect(result.outcome?.report).toEqual({
       status: "pass",
-      summary: "tools: ask_user,permission,feedback",
+      summary: "tools: ask_user,permission,feedback,follow_up",
       artifacts: { notes: "notes.md" },
       fields: { verdict: "approve" },
     });
@@ -190,7 +190,7 @@ describe("ork run --node", () => {
       "▸ approver (haiku, session fake-1)",
       "  Working on: Review feat/x",
       "  · mcp__ork__ask_user {}",
-      "✓ approver pass: tools: ask_user,permission,feedback",
+      "✓ approver pass: tools: ask_user,permission,feedback,follow_up",
       "  notes: notes.md",
       '  verdict: "approve"',
       "  $0.0123 · 100 in / 20 out (80 cached) · 2 turns · 1.5s",
@@ -664,7 +664,7 @@ describe("ork run (a whole workflow)", () => {
     expect(result?.status).toBe("succeeded");
     expect(run.commands).toEqual(["echo approve"]);
     expect(run.out).toContain(
-      "review │ ✓ pass: tools: ask_user,permission,send_message,read_inbox,wait_for_messages,feedback · $0.0123",
+      "review │ ✓ pass: tools: ask_user,permission,send_message,read_inbox,wait_for_messages,feedback,follow_up · $0.0123",
     );
     expect(run.out).toContain("ship   │ ✓ exit 0");
     expect(run.out).toContain("plan   │ Working on: Plan feat/x");

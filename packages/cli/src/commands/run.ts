@@ -116,6 +116,11 @@ export const run = defineCommand({
       type: "string",
       description: "A workflow input, name=value (repeatable)",
     },
+    "follow-ups": {
+      type: "string",
+      description:
+        "Follow-up ids an agent does (repeatable or comma-separated): they become the run's brief, done when it publishes",
+    },
     driver: {
       type: "string",
       description: "claude-code (default: the driver ready here)",
@@ -222,11 +227,17 @@ export const run = defineCommand({
       }
       return;
     }
+    const { prepareFollowUps } = await import("../follow-ups/brief.ts");
+    const taking = prepareFollowUps(store, rawArgs, args["run-id"], target);
+    if (taking === undefined) {
+      store.close();
+      return;
+    }
     const human = terminalHuman();
     const common = {
       file: target.file,
       cwd,
-      inputs: flagValues(rawArgs, "--input"),
+      inputs: taking.inputs,
       inPlace: args["in-place"],
       ...(args["machine-claude"] ? { machineClaude: true } : {}),
       json: args.json,
@@ -234,7 +245,7 @@ export const run = defineCommand({
       runtime: loadRuntime,
       store,
       ...(human === undefined ? {} : { human }),
-      ...(args["run-id"] === undefined ? {} : { runId: args["run-id"] }),
+      ...(taking.runId === undefined ? {} : { runId: taking.runId }),
       out: write,
       err: writeErr,
       ...(args.driver === undefined ? {} : { driver: args.driver }),

@@ -22,6 +22,13 @@ Why: [ADR-013](../decisions/ADR-013-feedback-loop.md),
 [ADR-028](../decisions/ADR-028-feedback-capture.md), amended by
 [ADR-059](../decisions/ADR-059-closing-the-feedback-loop.md).
 
+Feedback is about the **process**. What a shipped change leaves for later, such
+as a message to a partner or work for another project, is a
+[follow-up](./follow-ups.md): it is never a feedback item, never in a lesson and
+never in `ork feedback publish`, and feedback never appears among follow-ups.
+The two share only the redactor that scrubs text before it is stored or posted
+([ADR-086](../decisions/ADR-086-follow-ups.md)).
+
 Every run teaches something: a tool that got in the way, a brief that missed
 context, an `AGENTS.md` that is out of date. Ork captures that feedback locally,
 groups it, turns accepted feedback into fixes and lessons, and lets you publish

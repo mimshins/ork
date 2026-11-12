@@ -4,6 +4,7 @@ import type {
   AgentRuntime,
   DriverNeeds,
   EventStore,
+  GhRunner,
   HumanChannel,
   ResumeState,
   RunHandle,
@@ -85,5 +86,7 @@ export type RunWorkflowOptions = {
   intervalMs?: number;
   /** `ork resume`: continue the run `runId` from its recorded state. */
   resume?: ResumeState;
+  /** The person's `gh`, for follow-ups kept in GitHub (default: the real one). */
+  gh?: GhRunner;
   onRun?: (handle: RunHandle) => void;
 };

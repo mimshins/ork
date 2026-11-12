@@ -9,7 +9,11 @@ import type { CompiledGraph } from "../graph/types.ts";
 import type { LockLedgers } from "../machine/lock-ledger.ts";
 import type { SlotLedger } from "../machine/slot-ledger.ts";
 import type { MachineRules } from "../project/heavy.ts";
-import type { HumanChannel, RelayPort } from "../runtime/types.ts";
+import type {
+  FollowUpSink,
+  HumanChannel,
+  RelayPort,
+} from "../runtime/types.ts";
 import type { RunLimits } from "../usage/quota.ts";
 import type { EarlierSpend } from "../usage/spend.ts";
 import type { Mail } from "./bus-events.ts";
@@ -83,6 +87,11 @@ export type RunOptions = {
   machine?: { rules: MachineRules; ledger?: SlotLedger };
   /** The machine's locks (RFC-016); without them a node's `lock` is not taken. */
   locks?: LockLedgers;
+  /**
+   * Where sessions' follow-ups are kept (`deliverFollowUp` with the project's
+   * rule); without one, sessions get no `follow_up` tool.
+   */
+  followUps?: FollowUpSink;
   /** Called last before `run.finished`, to take what is still on its way. */
   beforeFinish?: () => Promise<void>;
 };

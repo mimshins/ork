@@ -5,6 +5,18 @@ full: the [changelog](../packages/cli/CHANGELOG.md).
 
 ## Next release
 
+- **Follow-ups: what a change leaves for later.** A message to a partner, work
+  for another project's agent, infra steps and a check after deploy are kept as
+  follow-ups, apart from feedback: sessions leave them with a new `follow_up`
+  tool, `ork follow-ups` lists, shows, adds and closes them, and the Follow-ups
+  panel does the same with a due count on its tab. Your project's new
+  `followUps` rule keeps them in Ork's store, in a file in your repository, or
+  as GitHub issues. An `after-merge` one becomes due when your own `gh` shows
+  its pull request merged. Ork drafts messages and never sends them: you send
+  them, or confirm a comment on an issue.
+  `ork run <workflow> --follow-ups <ids>` takes the agent ones as a run's brief,
+  and `build` asks you once what to do with the ones it finds
+  ([guide](./guides/follow-ups.md)).
 - **Work GitHub issues in parallel.** `ork run issues --input label=ready`
   builds and reviews each issue in its own worktree, integrates the ones that
   pass one at a time into one branch, and opens one pull request that closes

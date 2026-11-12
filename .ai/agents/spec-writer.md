@@ -38,6 +38,15 @@ applicable" that don't apply:
   changes and the tasks it depends on, so the leader can run independent ones
   at once. Put shared contracts (schema, types) in tasks of their own, first.
 
+- **Follow-ups:** what the change will leave for later that the brief or your
+  reading already shows (a message to a partner, work for an agent in another
+  project, infra only the maintainer can do, a check after deploy), one line
+  each as the template says: `for`, `kind` and `due`, then the title and what
+  it needs. These are about the product; feedback about Ork or its workflows
+  and things learned that aren't work do not belong here. Leave the section out
+  when there are none. The build workflow records them after the change is
+  published.
+
 Respect the rules the plan will be built under: the dependency direction,
 mechanism not policy, prevention over detection, every built driver or a gap, and no
 credentials.

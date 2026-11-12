@@ -54,6 +54,7 @@ its top-right corner.
 | Read, dismiss or accept feedback                | `ork feedback list`, `dismiss`, `accept`    |
 | Make an item a lesson, or a fix                 | `ork feedback accept --lesson`, `apply`     |
 | Share an item about Ork itself                  | `ork feedback publish <item>`               |
+| Read, close or post a follow-up                 | `ork follow-ups list`, `done`, `post`       |
 | Remove or clean up worktrees                    | `ork worktrees remove`, `clean`             |
 | Upgrade Ork                                     | `ork upgrade`, then restart `ork ui`        |
 

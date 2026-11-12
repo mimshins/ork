@@ -56,4 +56,15 @@ _What could go wrong, and the options considered. Real alternatives mean an RFC
 _Ordered, actionable steps, each small enough to review on its own._
 
 1. …
+
+## 10. Follow-ups (if applicable)
+
+_Work this change leaves for later that is already known: about the product, not
+feedback about Ork or its workflows. One line each: `for` (`agent`,
+`project:<name>`, `me` or `person:<name>`), `kind` (`change`, `message`, `task`
+or `check`), `due` (`now`, `after-merge`, `after-deploy` or a date), then the
+title and what it needs. `ork run build` records them once the change is
+published, with the PR or branch it waits on._
+
+- `for: me`, `kind: check`, `due: after-deploy` — Check …
 ```

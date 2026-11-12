@@ -44,6 +44,10 @@ driver that can't hold its answer to a schema
 - ✓ `feedback(kind, target?, title, body?, severity?, evidence?)`: every session
   in a run, capped at 3 per session; see
   [Feedback and self-improvement](./feedback.md).
+- ✓ `follow_up(title, body?, for, kind, due, where?, draft?, steps?)`: every
+  session in a run that keeps follow-ups, capped at 30 per session; one `for` a
+  registered project is also told to that project's live session as an Ork
+  notice ([follow-ups](./follow-ups.md)).
 - ✓ `permission`: the claude-code driver's `--permission-prompt-tool`.
 - ✓ `report(<the node's report>)`: sessions on a driver without `reportSchema`;
   it refuses a report outside the node's schema with what to fix

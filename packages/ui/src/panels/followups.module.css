@@ -1,0 +1,573 @@
+/**
+ * @file The look of the Follow-ups panel and its dialog: a frame of cards (the
+ *   tools, the list, an item's detail), the list beside the detail when the
+ *   panel is wide and one in the other's place when it's narrow. The chosen
+ *   row has an outline as well as its color, so it reads without color; a
+ *   post's text sits in a sunken well, wrapped, exactly as it will be sent.
+ */
+
+.panel {
+  --followups-panel-bg: var(--surface-frame);
+  --followups-panel-gap: var(--space-3);
+
+  background: var(--followups-panel-bg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--followups-panel-gap);
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
+}
+
+.panel:focus-visible {
+  --focus-ring-offset: calc(var(--focus-width) * -1);
+}
+
+.tools,
+.card {
+  --followups-card-bg: var(--surface-panel);
+  --followups-card-radius: var(--radius-panel);
+  --followups-card-padding: var(--inset-tools);
+  --followups-card-gap: var(--gap);
+
+  background: var(--followups-card-bg);
+  border-radius: var(--followups-card-radius);
+  display: flex;
+  gap: var(--followups-card-gap);
+  padding: var(--followups-card-padding);
+}
+
+.tools {
+  align-items: flex-end;
+  flex: none;
+  flex-wrap: wrap;
+}
+
+.card {
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
+}
+
+/* Below the list's least height the whole panel scrolls, as one column. */
+.body {
+  --followups-columns: 1fr;
+  --followups-list-min-height: 8rem;
+  --followups-body-gap: var(--space-3);
+
+  display: grid;
+  flex: 1 1 auto;
+  gap: var(--followups-body-gap);
+  grid-template-columns: var(--followups-columns);
+  min-height: var(--followups-list-min-height);
+}
+
+.panel[data-layout="wide"] .body {
+  --followups-columns: minmax(16rem, 2fr) minmax(22rem, 3fr);
+}
+
+.toolsEnd {
+  --followups-tools-end-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: var(--followups-tools-end-gap);
+  justify-content: flex-end;
+}
+
+.count,
+.updating {
+  --followups-count-text: var(--color-text-muted);
+  --followups-count-font: var(--font-mono);
+  --followups-count-text-size: var(--text-small);
+
+  color: var(--followups-count-text);
+  font-family: var(--followups-count-font);
+  font-size: var(--followups-count-text-size);
+}
+
+.list {
+  --followups-list-gap: var(--gap-hair);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--followups-list-gap);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  --followups-row-bg: transparent;
+  --followups-row-text: var(--color-text);
+  --followups-row-border-width: var(--hairline);
+  --followups-row-border-style: solid;
+  --followups-row-border-color: transparent;
+  --followups-row-radius: var(--radius-control);
+  --followups-row-min-height: 2.75rem;
+  --followups-row-padding: var(--space-4) var(--space-6);
+  --followups-row-gap: var(--gap-hair);
+
+  background: var(--followups-row-bg);
+  border-color: var(--followups-row-border-color);
+  border-radius: var(--followups-row-radius);
+  border-style: var(--followups-row-border-style);
+  border-width: var(--followups-row-border-width);
+  color: var(--followups-row-text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  gap: var(--followups-row-gap);
+  min-height: var(--followups-row-min-height);
+  padding: var(--followups-row-padding);
+  text-align: start;
+  width: 100%;
+}
+
+.row:hover {
+  --followups-row-bg: var(--surface-hover);
+}
+
+.row:focus-visible {
+  --focus-ring-offset: calc(var(--focus-width) * -1);
+}
+
+.row[aria-current="true"] {
+  --followups-row-bg: var(--surface-current);
+  --followups-row-border-color: var(--color-border-strong);
+}
+
+.rowTop {
+  --followups-row-top-gap: var(--gap);
+
+  align-items: flex-start;
+  display: flex;
+  gap: var(--followups-row-top-gap);
+  justify-content: space-between;
+  width: 100%;
+}
+
+.rowTitle {
+  --followups-row-title-weight: var(--weight-medium);
+  --followups-row-title-lines: 2;
+  --followups-row-title-box-orient: vertical;
+
+  -webkit-box-orient: var(--followups-row-title-box-orient);
+  display: -webkit-box;
+  font-weight: var(--followups-row-title-weight);
+  -webkit-line-clamp: var(--followups-row-title-lines);
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.rowMeta {
+  --followups-row-meta-text: var(--color-text-muted);
+  --followups-row-meta-font: var(--font-mono);
+  --followups-row-meta-text-size: var(--text-mono);
+  --followups-row-meta-leading: var(--leading-tight);
+  --followups-row-meta-column-gap: var(--gap);
+
+  color: var(--followups-row-meta-text);
+  column-gap: var(--followups-row-meta-column-gap);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--followups-row-meta-font);
+  font-size: var(--followups-row-meta-text-size);
+  line-height: var(--followups-row-meta-leading);
+  overflow-wrap: anywhere;
+}
+
+.high {
+  --followups-high-weight: var(--weight-strong);
+  --followups-high-text: var(--color-text);
+
+  color: var(--followups-high-text);
+  font-weight: var(--followups-high-weight);
+}
+
+.detail {
+  --followups-detail-gap: var(--gap);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--followups-detail-gap);
+  min-width: 0;
+}
+
+.head {
+  --followups-head-gap: var(--gap);
+
+  align-items: flex-start;
+  display: flex;
+  gap: var(--followups-head-gap);
+  justify-content: space-between;
+}
+
+.title {
+  --followups-title-text-size: var(--text-title);
+  --followups-title-weight: var(--weight-strong);
+  --followups-title-leading: var(--leading-tight);
+
+  font-size: var(--followups-title-text-size);
+  font-weight: var(--followups-title-weight);
+  line-height: var(--followups-title-leading);
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.facts {
+  --followups-facts-column-gap: var(--gap-loose);
+  --followups-facts-row-gap: var(--gap-tight);
+
+  column-gap: var(--followups-facts-column-gap);
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  row-gap: var(--followups-facts-row-gap);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.factName,
+.caption {
+  --followups-fact-name-text: var(--color-text-muted);
+  --followups-fact-name-font: var(--font-caption);
+  --followups-fact-name-text-size: var(--text-caption);
+  --followups-fact-name-tracking: var(--tracking-caption);
+  --followups-fact-name-case: var(--case-caption);
+  --followups-fact-name-weight: var(--weight-regular);
+
+  color: var(--followups-fact-name-text);
+  font-family: var(--followups-fact-name-font);
+  font-size: var(--followups-fact-name-text-size);
+  font-weight: var(--followups-fact-name-weight);
+  letter-spacing: var(--followups-fact-name-tracking);
+  margin: 0;
+  text-transform: var(--followups-fact-name-case);
+}
+
+.factValue {
+  --followups-fact-value-font: var(--font-mono);
+  --followups-fact-value-text-size: var(--text-ui);
+  --followups-fact-value-gap: var(--gap-tight);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--followups-fact-value-font);
+  font-size: var(--followups-fact-value-text-size);
+  gap: var(--followups-fact-value-gap);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.actions,
+.line {
+  --followups-actions-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--followups-actions-gap);
+}
+
+.note,
+.message {
+  --followups-note-text: var(--color-text-muted);
+  --followups-note-text-size: var(--text-small);
+
+  color: var(--followups-note-text);
+  font-size: var(--followups-note-text-size);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.lineIcon {
+  --followups-line-icon-text: var(--color-action-text);
+  --followups-line-icon-size: var(--icon-size-small);
+
+  color: var(--followups-line-icon-text);
+  display: inline-flex;
+  font-size: var(--followups-line-icon-size);
+}
+
+.alert[data-tone="failed"] .lineIcon {
+  --followups-line-icon-text: var(--color-danger-text);
+}
+
+.alert {
+  --followups-alert-text: var(--color-danger-text);
+  --followups-alert-text-size: var(--text-small);
+  --followups-alert-gap: var(--gap-tight);
+
+  align-items: flex-start;
+  color: var(--followups-alert-text);
+  display: flex;
+  font-size: var(--followups-alert-text-size);
+  gap: var(--followups-alert-gap);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.section {
+  --followups-section-border-block-start: var(--hairline) solid
+    var(--color-border);
+  --followups-section-padding-block-start: var(--gap);
+  --followups-section-gap: var(--gap-tight);
+
+  border-block-start: var(--followups-section-border-block-start);
+  display: flex;
+  flex-direction: column;
+  gap: var(--followups-section-gap);
+  padding-block-start: var(--followups-section-padding-block-start);
+}
+
+.place {
+  --followups-place-font: var(--font-mono);
+  --followups-place-text-size: var(--text-small);
+
+  font-family: var(--followups-place-font);
+  font-size: var(--followups-place-text-size);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.wellHead {
+  --followups-well-head-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  gap: var(--followups-well-head-gap);
+  justify-content: space-between;
+}
+
+.wellCopy {
+  --followups-well-copy-gap: var(--gap-tight);
+
+  align-items: center;
+  display: inline-flex;
+  gap: var(--followups-well-copy-gap);
+}
+
+.preview {
+  --followups-preview-bg: var(--surface-sunken);
+  --followups-preview-text: var(--color-text);
+  --followups-preview-font: var(--font-mono);
+  --followups-preview-text-size: var(--text-mono);
+  --followups-preview-padding: var(--inset-control);
+  --followups-preview-radius: var(--radius-control);
+  --followups-preview-max-height: none;
+  --followups-preview-min-height: auto;
+  --followups-preview-border-color: transparent;
+  --followups-preview-border-width: var(--hairline);
+  --followups-preview-border-style: solid;
+
+  background: var(--followups-preview-bg);
+  border-color: var(--followups-preview-border-color);
+  border-radius: var(--followups-preview-radius);
+  border-style: var(--followups-preview-border-style);
+  border-width: var(--followups-preview-border-width);
+  color: var(--followups-preview-text);
+  font-family: var(--followups-preview-font);
+  font-size: var(--followups-preview-text-size);
+  margin: 0;
+  max-height: var(--followups-preview-max-height);
+  min-height: var(--followups-preview-min-height);
+  overflow-wrap: anywhere;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  position: relative;
+  padding: var(--followups-preview-padding);
+  white-space: pre-wrap;
+}
+
+.preview[data-scrolls] {
+  --followups-preview-max-height: 16rem;
+  /* Room for a short post, so the first read's text doesn't jump the dialog. */
+  --followups-preview-min-height: 6rem;
+}
+
+/* The preview before, while the new one is read: dimmed, never moved. */
+.preview[data-stale] {
+  --followups-preview-text: var(--color-text-muted);
+}
+
+.preview:focus-visible {
+  --focus-ring-offset: calc(var(--focus-width) * -1);
+}
+
+.link {
+  --followups-link-text: var(--color-link);
+  --followups-link-gap: var(--gap-hair);
+
+  align-items: center;
+  color: var(--followups-link-text);
+  display: inline-flex;
+  gap: var(--followups-link-gap);
+  overflow-wrap: anywhere;
+}
+
+.result {
+  --followups-result-text-size: var(--text-title);
+  --followups-result-weight: var(--weight-strong);
+
+  font-size: var(--followups-result-text-size);
+  font-weight: var(--followups-result-weight);
+  margin: 0;
+}
+
+.dialogFoot {
+  --followups-dialog-foot-gap: var(--gap);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--followups-dialog-foot-gap);
+  justify-content: space-between;
+}
+
+@media (prefers-contrast: more) {
+  .preview {
+    --followups-preview-border-color: var(--color-border);
+  }
+}
+
+/*
+ * Forced colors take the fills away: only the chosen row keeps an outline, and
+ * the preview's well keeps its edge.
+ */
+@media (forced-colors: active) {
+  .row {
+    --followups-row-border-color: Canvas;
+  }
+
+  .row[aria-current="true"] {
+    --followups-row-border-color: Highlight;
+  }
+
+  .preview {
+    --followups-preview-border-color: CanvasText;
+  }
+}
+
+.group {
+  --followups-group-gap: var(--gap-tight);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--followups-group-gap);
+}
+
+.groupCaption {
+  --followups-group-caption-text: var(--color-text-muted);
+  --followups-group-caption-font: var(--font-mono);
+  --followups-group-caption-text-size: var(--text-caption);
+  --followups-group-caption-tracking: var(--tracking-caption);
+  --followups-group-caption-case: var(--case-caption);
+  --followups-group-caption-weight: var(--weight-regular);
+
+  color: var(--followups-group-caption-text);
+  font-family: var(--followups-group-caption-font);
+  font-size: var(--followups-group-caption-text-size);
+  font-weight: var(--followups-group-caption-weight);
+  letter-spacing: var(--followups-group-caption-tracking);
+  margin: 0;
+  text-transform: var(--followups-group-caption-case);
+}
+
+/* The words are upper case; a date in a caption is a value, so it is not. */
+.captionValue {
+  --followups-caption-value-case: none;
+
+  text-transform: var(--followups-caption-value-case);
+}
+
+.forLine {
+  --followups-for-text: var(--color-text-muted);
+  --followups-for-font: var(--font-mono);
+  --followups-for-text-size: var(--text-small);
+
+  color: var(--followups-for-text);
+  font-family: var(--followups-for-font);
+  font-size: var(--followups-for-text-size);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.rowDone {
+  --followups-row-text: var(--color-text-muted);
+}
+
+.steps {
+  --followups-steps-gap: var(--gap);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--followups-steps-gap);
+  margin: 0;
+  padding-inline-start: var(--space-6);
+}
+
+.step {
+  --followups-step-gap: var(--gap-tight);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--followups-step-gap);
+}
+
+.draft {
+  --followups-draft-bg: var(--surface-sunken);
+  --followups-draft-radius: var(--radius-panel);
+  --followups-draft-padding: var(--inset-control);
+  --followups-draft-gap: var(--gap);
+
+  background: var(--followups-draft-bg);
+  border-radius: var(--followups-draft-radius);
+  display: flex;
+  flex-direction: column;
+  gap: var(--followups-draft-gap);
+  padding: var(--followups-draft-padding);
+}
+
+.heading {
+  --followups-heading-text-size: var(--text-ui);
+  --followups-heading-weight: var(--weight-strong);
+
+  font-size: var(--followups-heading-text-size);
+  font-weight: var(--followups-heading-weight);
+  margin: 0;
+}
+
+.tabCount {
+  --followups-tab-count-text: var(--color-action-text);
+  --followups-tab-count-font: var(--font-mono);
+  --followups-tab-count-text-size: var(--text-small);
+  --followups-tab-count-weight: var(--weight-medium);
+  --followups-tab-count-margin: var(--gap-hair);
+
+  color: var(--followups-tab-count-text);
+  font-family: var(--followups-tab-count-font);
+  font-size: var(--followups-tab-count-text-size);
+  font-weight: var(--followups-tab-count-weight);
+  margin-inline-start: var(--followups-tab-count-margin);
+}
+
+/* The last read, while a newer one failed: muted, never hidden. */
+.stale .row {
+  --followups-row-text: var(--color-text-muted);
+}

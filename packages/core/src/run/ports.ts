@@ -1,28 +1,30 @@
 /**
  * @file What a run shares between its nodes' sessions, reached through each
  *   session's ports: the message bus (`bus.ts`), claims (`claims.ts`), the
- *   agents' feedback (`feedback/agent.ts`), and whose questions go to their
- *   leader first (`owners.ts`).
+ *   agents' feedback and follow-ups (`reports.ts`), and whose questions go to
+ *   their leader first (`owners.ts`).
  */
 
 import type { Scope } from "../expr/evaluate.ts";
-import { createFeedback } from "../feedback/agent.ts";
 import { createBus } from "./bus.ts";
 import { createClaims } from "./claims.ts";
 import type { RunHandle, RunOptions } from "./handle.ts";
 import type { Holds, Stops } from "./holds.ts";
 import { createOwners } from "./owners.ts";
+import { createSessionReports } from "./reports.ts";
 import { createRules } from "./rules.ts";
 import type { Slots } from "./slots.ts";
 import type { ExecuteContext } from "./types.ts";
 
 export const createRunPorts = ({
   options,
+  runId,
   slots,
   scope,
   stopping,
 }: {
   options: RunOptions;
+  runId: string;
   slots?: Slots | undefined;
   /** What a `notify:` reads, once its node's output is recorded. */
   scope: () => Scope;
@@ -33,7 +35,12 @@ export const createRunPorts = ({
   const mail = options.replay?.mail;
   const bus = createBus({ graph, onEvent, mail, relay, slots });
   const claims = createClaims({ graph, onEvent, notify: bus.notify });
-  const feedback = createFeedback({ graph, onEvent });
+  const reports = createSessionReports({
+    graph,
+    runId,
+    sink: options.followUps,
+    onEvent,
+  });
   const send = bus.rule;
   const rules = createRules({ graph, send, scope, stopping, scrub });
   return {
@@ -45,10 +52,13 @@ export const createRunPorts = ({
       id: string,
       template: string | undefined,
       cwd: string,
-    ): Pick<ExecuteContext, "mailbox" | "claims" | "feedback"> => ({
+    ): Pick<
+      ExecuteContext,
+      "mailbox" | "claims" | "feedback" | "followUps"
+    > => ({
       mailbox: bus.mailbox(id, template),
       claims: claims.port(id, template, cwd),
-      feedback: feedback.port(id, template),
+      ...reports.port(id, template, cwd),
     }),
     /** Sends what a node's fresh result declares (`notify:`). */
     fireRules: rules.fire,

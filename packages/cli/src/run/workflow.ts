@@ -265,6 +265,7 @@ export const runWorkflowFile = async (
         : { readyDriver: ready.readyDriver }),
       ...ports.settings,
     },
+    followUps: ports.followUps,
     ...(ports.relay === undefined ? {} : { relay: ports.relay }),
     ...(replay === undefined ? {} : { replay }),
     workflowDir,

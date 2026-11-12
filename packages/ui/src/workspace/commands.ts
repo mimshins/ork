@@ -73,6 +73,24 @@ const panelCommands = (workspace: Workspace): Command[] =>
     return command;
   });
 
+const followUpCommands = (workspace: Workspace, state: AppState): Command[] => [
+  {
+    id: "follow-ups-due",
+    title: "Follow-ups: show due",
+    group: "Panels",
+    run: () => {
+      void state.followUpsFilter.setValue({
+        ...state.followUpsFilter.getValue(),
+        status: "due",
+      });
+      workspace.goTo("followups");
+      requestAnimationFrame(() => {
+        document.querySelector<HTMLElement>("[data-followups-list]")?.focus();
+      });
+    },
+  },
+];
+
 const runCommands = (state: AppState): Command[] => [
   {
     id: "run-workflow",
@@ -257,6 +275,7 @@ export const commandsFor = (
   chosen: Preferences,
 ): Command[] => [
   ...panelCommands(workspace),
+  ...followUpCommands(workspace, state),
   ...runCommands(state),
   ...windowCommands(workspace, view),
   ...layoutCommands(workspace, view),

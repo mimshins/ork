@@ -7,8 +7,8 @@ build, its license list and its tests ([ui](../packages/ui/src/app/app.tsx),
 components ([design system](./ui/design-system.md)); and the workspace that
 holds the panels ([workspace](./ui/workspace.md)). Its panels are built: Runs,
 the Monitor, Logs, Decisions, Chats, Notifications, Usage, Context, the context
-inspector, Feedback and Worktrees ([panels](./ui/panels.md)), with a user guide
-([the browser view](../docs/guides/browser-view.md)). So is the
+inspector, Feedback, Worktrees and Follow-ups ([panels](./ui/panels.md)), with a
+user guide ([the browser view](../docs/guides/browser-view.md)). So is the
 [workflow builder](#workflow-builder). The stack is React, Base UI, dockview,
 containerized-state and an in-house graph
 ([ADR-040](../decisions/ADR-040-ui-stack.md)), with Material Design Icons
@@ -33,6 +33,7 @@ through its typed client.
   - [Chats, Notifications and Usage](./ui/panels-chats-notifications-and-usage.md)
   - [Context and Feedback](./ui/panels-context-and-feedback.md)
   - [Worktrees](./ui/panels-worktrees.md)
+  - [Follow-ups](./ui/panels-follow-ups.md)
   - [Limits: the context inspector](./ui/panels-context-limits.md)
 - [Graph](./ui/graph.md): the layout, its edges in the interaction map's style,
   pan and zoom, and the keys and names that make it accessible.
@@ -65,6 +66,10 @@ through its typed client.
   restore, accept, accept as a lesson, apply (going to the Monitor), split, and
   publish after a preview; a note on a run or a node is written in the Monitor.
   Merging stays `ork feedback triage`'s.
+- **Follow-ups** (built, [Follow-ups](./ui/panels-follow-ups.md)): what
+  `ork follow-ups list` shows, grouped by due and by who it is for, with the
+  draft to copy and post, the steps to copy, and Mark due, done or sent, Drop
+  and Reopen; the tab carries how many are due.
 - **New version** (built,
   [the banner](./ui/workspace-frame-and-banner.md#the-new-version-banner)): the
   CLI's notice as a banner, read from the same record, with an upgrade that runs

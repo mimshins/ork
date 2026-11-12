@@ -4,6 +4,7 @@ import { builderRoutes } from "./builder-routes.ts";
 import { contextRoutes } from "./context-routes.ts";
 import type { ServerContext } from "./context.ts";
 import { feedbackRoutes } from "./feedback-routes.ts";
+import { followUpRoutes } from "./follow-up-routes.ts";
 import { readRoutes } from "./read-routes.ts";
 import type { Handlers } from "./router.ts";
 import { updateRoutes } from "./update-routes.ts";
@@ -19,6 +20,7 @@ export const apiRoutes = (
   ...builderRoutes(context),
   ...contextRoutes(context),
   ...feedbackRoutes(context),
+  ...followUpRoutes(context),
   ...worktreesRoutes(context),
   ...updateRoutes(context, port),
 });

@@ -80,9 +80,10 @@ describe("the commands", () => {
 
   it("reach every panel, the first nine with a digit key", () => {
     const reached = commands().filter(command => command.group === "Panels");
-    expect(reached.map(command => command.title)).toEqual(
-      PANELS.map(panel => `Go to ${panel.title}`),
-    );
+    expect(reached.map(command => command.title)).toEqual([
+      ...PANELS.map(panel => `Go to ${panel.title}`),
+      "Follow-ups: show due",
+    ]);
     expect(reached.map(command => command.shortcut?.key)).toEqual([
       "1",
       "2",
@@ -93,6 +94,8 @@ describe("the commands", () => {
       "7",
       "8",
       "9",
+      undefined,
+      undefined,
       undefined,
       undefined,
     ]);

@@ -32,16 +32,19 @@ export const THREADS_SEARCHED = 1000;
 
 export type GhResult = { ok: boolean; stdout: string; stderr: string };
 
-/** Runs the person's `gh` with these arguments. */
-export type GhRunner = (args: readonly string[]) => Promise<GhResult>;
+/** Runs the person's `gh` with these arguments, in `cwd` when given. */
+export type GhRunner = (
+  args: readonly string[],
+  options?: { cwd?: string },
+) => Promise<GhResult>;
 
 /** The real `gh`, on `PATH`. */
-export const runGh: GhRunner = args =>
+export const runGh: GhRunner = (args, options = {}) =>
   new Promise(resolve => {
     execFile(
       "gh",
       [...args],
-      { maxBuffer: 16 * 1024 * 1024 },
+      { maxBuffer: 16 * 1024 * 1024, cwd: options.cwd },
       (error, stdout, stderr) => {
         const missing =
           error !== null && "code" in error && error.code === "ENOENT";

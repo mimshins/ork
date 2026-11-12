@@ -469,6 +469,7 @@ export const NODES = [
       "Built: `claim(resource)` and `release(resource)` for nodes that may write while another does; an overlapping claim is refused with who holds it, and the claimant hears when it is released. A leader's claims are released when `delegate` or `spawn_worker` starts its children, and it claims again before it edits. The report is structured output, not a tool.",
       "Built, for leaders: `delegate([{ child, brief }])` and `spawn_worker([{ template, brief }])`, blocking until every child has reported.",
       "Built: `feedback(kind, target, …)` reports what got in the way, capped at 3 per session.",
+      "Built: `follow_up(title, for, kind, due, …)` leaves work the change leaves for later (a message for a person, a note for another project, a task for you), not feedback; capped at 30 per session, duplicates merged. One for a registered project also reaches that project's live run as an Ork notice, and Ork sends nothing to a person.",
     ],
     see: [
       {
@@ -489,6 +490,7 @@ export const NODES = [
       BUS.claimAdr,
       LINKS.tools,
       DESIGN.messaging,
+      DESIGN.followUps,
     ],
   },
   {

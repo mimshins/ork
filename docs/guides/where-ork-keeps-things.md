@@ -35,16 +35,16 @@ the files, the check's name, a time and who ran it
 
 ## In your home folder: `~/.ork/`
 
-| Path                             | What it holds                                                                                        |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `state.db`                       | every run's record, your feedback, usage, the Builder's drafts, and the projects Ork knows           |
-| `settings.yaml`                  | your own settings, such as [quotas](./models-and-budgets/across-runs-and-time.md#limits-across-runs) |
-| `agents/`, `skills/`, `context/` | your own agents, skills and notes, for every project                                                 |
-| `projects/`                      | projects attached with `ork register`                                                                |
-| `ui.json`                        | `ork ui`'s address and sign-in token while it runs, readable only by you                             |
-| `update-check.json`              | when Ork last asked for a newer version, and the answer                                              |
-| `sockets/`                       | one socket per live run, so commands reach it at once                                                |
-| `watch/`                         | `ork watch`'s own files, when you use it                                                             |
+| Path                             | What it holds                                                                                                                |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `state.db`                       | every run's record, your feedback and [follow-ups](./follow-ups.md), usage, the Builder's drafts, and the projects Ork knows |
+| `settings.yaml`                  | your own settings, such as [quotas](./models-and-budgets/across-runs-and-time.md#limits-across-runs)                         |
+| `agents/`, `skills/`, `context/` | your own agents, skills and notes, for every project                                                                         |
+| `projects/`                      | projects attached with `ork register`                                                                                        |
+| `ui.json`                        | `ork ui`'s address and sign-in token while it runs, readable only by you                                                     |
+| `update-check.json`              | when Ork last asked for a newer version, and the answer                                                                      |
+| `sockets/`                       | one socket per live run, so commands reach it at once                                                                        |
+| `watch/`                         | `ork watch`'s own files, when you use it                                                                                     |
 
 The browser keeps its own few things for `ork ui`: your layout, theme, what
 you've read, and a banner you dismissed.

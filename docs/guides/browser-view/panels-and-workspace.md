@@ -91,6 +91,13 @@ at once. **Remove…** takes one away and **Clean merged…** tidies what's merg
 each shows its plan and its command, and asks, twice if work would be lost
 ([worktrees in the browser](../worktrees.md#in-the-browser)).
 
+**Follow-ups** lists what your changes left for later, by when it is due and who
+it is for. The tab shows how many are due. Choose one to read it, copy a drafted
+message or a step's command, and mark it due, done (sent, for a message),
+dropped or reopened; a message drafted for GitHub can be posted from a dialog
+that shows exactly what it will post. Ork never sends a message or runs a
+command itself ([follow-ups](../follow-ups.md)).
+
 ### Builder
 
 Creates or edits a workflow, with no YAML to write. Choose a project, then a

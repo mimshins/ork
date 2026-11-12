@@ -341,6 +341,213 @@ nodes:
           model: claude-code.sonnet
           look: "the rules in AGENTS.md: dependency direction, entry points, @file blocks, stale specs and user docs, the interaction map and roadmap, gaps, changesets, secrets, and AI attribution."
       maxParallel: 3
+  followups:
+    type: agent.worker
+    prompt: |-
+      The change in this checkout passed review. List what it leaves for later: follow-ups (work about the product, apart from feedback about Ork or its workflows) and insights (things learned that are not work). Read, never edit.
+
+      Sources: the reviewers' `notes` and `unchecked` below, the build leader's `unchecked`, and the decisions. Read the changed code only to judge an item. Merge duplicates into one item. Leave out what the change already did and what a blocking finding covered.
+
+      Each item: `title`, `body` (what and why, short), `for` (`agent`: a later run of this project; `project:<name>`: an agent in another registered project; `me`: the maintainer; `person:<name>`), `kind` (`change`, `message`, `task` or `check`), `due` (`now`, `after-merge`, `after-deploy` or a date as YYYY-MM-DD), `where` (the files, empty when none), `size` (`trivial`, `real` or `not-worth-it`) and `recommend`:
+      - `do`: only for `for: agent`, `kind: change`, `due: now`, and `size` trivial or real: the run can do it now.
+      - `drop`: for `not-worth-it` items (style nits, a taste, a nice-to-have).
+      - `defer`: everything else.
+
+      `itemCount` is how many items you report, and `doCount` how many recommend `do`. `insights` is what the docs node should write into the specs and memories (a trap found, how something really behaves, a convention); never an item, and an empty string when there are none. Report an empty `items` when nothing is left: the maintainer is then not asked.
+
+      Review, concern by concern (`notes` and `unchecked` are yours to read; `findings` are already fixed):
+      {{nodes.review.output.results}}
+
+      The build leader's `unchecked`:
+      {{nodes.build.output.unchecked}}
+
+      The decisions:
+      {{nodes.build.output.decisions}}
+    effort: medium
+    isolation: readonly
+    budgetUsd: 0.5
+    maxTurns: 20
+    output:
+      schema:
+        items:
+          type: array
+          description: What the change leaves for later; an empty list when nothing.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - title
+              - body
+              - for
+              - kind
+              - due
+              - size
+              - recommend
+            properties:
+              title:
+                type: string
+              body:
+                type: string
+              for:
+                type: string
+                description: agent, project:<name>, me or person:<name>.
+              kind:
+                type: string
+                enum:
+                  - change
+                  - message
+                  - task
+                  - check
+              due:
+                type: string
+                description: now, after-merge, after-deploy or a date.
+              where:
+                type: string
+              size:
+                type: string
+                enum:
+                  - trivial
+                  - real
+                  - not-worth-it
+              recommend:
+                type: string
+                enum:
+                  - do
+                  - defer
+                  - drop
+        itemCount: integer
+        doCount: integer
+        insights: string
+  followup-gate:
+    type: human.gate
+    question: |-
+      The change leaves follow-ups. What should happen to them? Nothing is deferred or dropped until you choose.
+
+      - take-recommended: do the ones marked do now in this run, defer the ones marked defer (they are added to the project's follow-ups once the change is published) and drop the ones marked drop.
+      - defer-all: defer every one.
+      - choose-each: decide item by item.
+
+      Only agent follow-ups due now can be done in this run. Read the document for each item.
+    document: |-
+      ## Follow-ups
+
+      {{nodes.followups.output.items}}
+
+      ## Insights for the docs
+
+      {{nodes.followups.output.insights}}
+    options:
+      - take-recommended
+      - defer-all
+      - choose-each
+    recommended: take-recommended
+  followup-pick:
+    type: agent.worker
+    prompt: |-
+      Ask the maintainer what to do with each follow-up below, one `ask_user` per item, in order. Give the question the item's title, body, `for`, `kind`, `due` and `size`. The options are `defer` and `drop`, and `do` first when the item is `for: agent` with `due: now`; `recommended` is the item's `recommend`. Never answer for the maintainer, and never skip an item. Write nothing.
+
+      Report `decisions` (each item's `title` and the maintainer's `choice`) and `doCount`, how many are `do`.
+
+      {{nodes.followups.output.items}}
+    effort: low
+    isolation: readonly
+    budgetUsd: 0.3
+    maxTurns: 30
+    output:
+      schema:
+        decisions:
+          type: array
+          description: The maintainer's choice for each item, in order.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - title
+              - choice
+            properties:
+              title:
+                type: string
+              choice:
+                type: string
+                enum:
+                  - do
+                  - defer
+                  - drop
+        doCount: integer
+  polish:
+    type: agent.worker
+    agent: implementer
+    prompt: |-
+      Do the follow-ups the maintainer chose to do now, in this checkout, in one round: only the items below, with the smallest change that fully does each. Do not defer, drop or send anything yourself. An item you cannot do goes in `skipped` with the reason; the maintainer sees it. Ork runs `pnpm check` on your checkout before your report counts. The suites (`pnpm check`, `pnpm check:changed`, `pnpm test`, a bare `vitest run`) are denied in this session because Ork runs them; use `pnpm check:fast` (format, lint, typecheck, docs) and targeted `vitest run <files>` while you work. Change files with Edit and Write, never with a python, node or sed -i script or a heredoc: claude asks about those even with Bash allowed, and the run waits for the maintainer.
+
+      Report `done` (the title and `size` of each item you did), `realDone` (true when any item you did is `real`) and `fixedReview` (true only when you ran again to fix the correctness review's findings, false on your first run).
+
+      The maintainer chose "{{nodes.followup-gate.output.choice}}". On take-recommended, the items to do are those below with `recommend: do`. On choose-each, they are those the answers below mark `do`.
+
+      The items:
+      {{nodes.followups.output.items}}
+
+      The answers, item by item:
+      {{nodes.followup-pick.output.decisions}}
+
+      When you run again, the next message is the correctness review of your work: fix what it blocks on, and report `done`, `realDone` and `fixedReview: true`.
+    effort: medium
+    isolation: continue
+    budgetUsd: 3
+    maxTurns: 40
+    tools:
+      allow:
+        - Edit
+        - Write
+        - Bash
+    session: resume
+    output:
+      schema:
+        done:
+          type: array
+          description: Each item you did.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - title
+              - size
+            properties:
+              title:
+                type: string
+              size:
+                type: string
+                enum:
+                  - trivial
+                  - real
+        realDone: boolean
+        fixedReview: boolean
+        skipped: string
+    verify:
+      command: pnpm check
+      timeout: 20m
+      attempts: 1
+  polish-review:
+    type: agent.worker
+    agent: reviewer
+    prompt: |-
+      Review, for correctness only (bugs and behaviour, failure paths and edge cases), the follow-ups just done in this checkout (git status, git diff HEAD). Look only at the code those items changed; the rest passed review already. pnpm check already passed here; don't run it again.
+
+      The items done: {{nodes.polish.output.done}}
+
+      A finding is blocking when it is a bug. Put those in `findings` (file:line, what is wrong, the smallest fix) and report changes_requested; put everything else in `notes` and report pass. List in `unchecked` what you didn't read or couldn't check (an empty string when nothing).
+
+      Read files with Read and search with Grep. When you do use Bash, keep to cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo and read-only git, one command per call, with no cd, no awk, no find, no loops, no shell variables, no brace expansion, no redirects or files and no paths outside this checkout: anything else stops the run to ask the maintainer.
+    effort: high
+    isolation: readonly
+    budgetUsd: 1.5
+    maxTurns: 30
+    session: resume
+    output:
+      schema:
+        findings: string
+        notes: string
+        unchecked: string
   ratify:
     type: human.gate
     question: |-
@@ -359,6 +566,22 @@ nodes:
       ## Review
 
       {{nodes.review.output.results}}
+
+      ## Follow-ups
+
+      What the change leaves for later, as reported (empty when nothing):
+
+      {{nodes.followups.output.items}}
+
+      Your choice: {{nodes.followup-gate.output.choice}}. take-recommended did the items marked do, deferred those marked defer and dropped those marked drop; defer-all defers every one; choose-each follows your answers: {{nodes.followup-pick.output.decisions}}
+
+      Done in this run: {{nodes.polish.output.done}}
+
+      Chosen to do and not done: {{nodes.polish.output.skipped}}
+
+      Correctness review of those: {{nodes.polish-review.output.summary}}
+
+      Deferred items are added to the project's follow-ups once the change is published, and dropped ones are not kept.
     options:
       - continue
       - revise
@@ -372,6 +595,10 @@ nodes:
       Then write an ADR in decisions/ for each decision below with hardToReverse true, from .ai/templates/adr.md: the next free number, a row in decisions/README.md's index, and links to the specs under specs/ that carry it (the plan is gitignored, so don't link it). Related decisions may share one ADR; a decision listed twice is one. List every ADR you wrote in `adrs`, an empty list when none.
 
       If the plan has a line `Closes RFC: RFC-NNN`, run `pnpm rfc:close RFC-NNN` first: it marks the RFC Implemented, moves it to rfcs/archived/ and updates the index. Then write one ADR for that RFC and link the two both ways. If the script says the RFC isn't in rfcs/active/, leave it, and say so in your summary so the maintainer can close it later. Without that line, leave RFCs alone: an RFC can span several runs.
+
+      The follow-ups review found these insights (empty when none): things learned that are not work. Write each into the spec or memory it belongs to, and never as a follow-up.
+
+      {{nodes.followups.output.insights}}
 
       Make sure the change has a changeset in .changeset/ (a Markdown file naming the bump for @krapht/ork and a changelog line; `pnpm changesets:empty` for internal-only work), and add one if it doesn't. A commit step refuses a change without one.
 
@@ -725,6 +952,39 @@ nodes:
       - sh
     env:
       WORKTREE: "{{nodes.docs.output.worktree}}"
+  published:
+    type: tool.shell
+    script: |-
+      # The change is already pushed: a failure here only means the follow-ups don't know it yet.
+      ork follow-ups published "$BRANCH" || echo "Could not record $BRANCH for the follow-ups; run: ork follow-ups published $BRANCH" >&2
+    allow:
+      - sh
+    env:
+      BRANCH: "{{nodes.publish.output.json.branch}}"
+  declare:
+    type: agent.worker
+    prompt: |-
+      The change is published (or kept for the maintainer). Record what it leaves for later with the `follow_up` tool, one call per follow-up, and nothing else. Never run a command, edit a file or send anything.
+
+      Add:
+      1. Each follow-up under the plan's `Follow-ups` section, if it has one.
+      2. Each item below the maintainer chose to defer: with take-recommended, the items marked `recommend: defer`; with defer-all, every item; with choose-each, the items their answers mark `defer`. Never add an item marked drop or one that was done.
+
+      Give each its `title`, `body`, `for`, `kind`, `due` and `where` as written. The maintainer chose "{{nodes.decide.output.choice}}": on branch, set `ref` to `{{nodes.publish.output.json.branch}}` so an `after-merge` follow-up becomes due when it merges; on main the change is already merged, so set `due` to `now` for an `after-merge` follow-up; on keep-uncommitted set no `ref`. Say in your summary how many you added and how many merged into one already there.
+
+      The items:
+      {{nodes.followups.output.items}}
+
+      The maintainer chose "{{nodes.followup-gate.output.choice}}" for them. The answers, item by item:
+      {{nodes.followup-pick.output.decisions}}
+
+      The approved plan:
+
+      {{inputs.plan}}
+    effort: low
+    isolation: readonly
+    budgetUsd: 0.5
+    maxTurns: 30
 edges:
   - build -> review
   - from: review
@@ -732,8 +992,42 @@ edges:
     when: "!all(statuses, 'pass')"
     maxRounds: 3
   - from: review
-    to: ratify
+    to: followups
     when: all(statuses, 'pass')
+  - from: followups
+    to: ratify
+    when: "!(itemCount > 0)"
+  - from: followups
+    to: followup-gate
+    when: itemCount > 0
+  - from: followup-gate
+    to: polish
+    when: choice == 'take-recommended' && nodes.followups.output.doCount > 0
+  - from: followup-gate
+    to: ratify
+    when: choice == 'defer-all' || (choice == 'take-recommended' && !(nodes.followups.output.doCount > 0))
+  - from: followup-gate
+    to: followup-pick
+    when: choice == 'choose-each'
+  - from: followup-pick
+    to: polish
+    when: doCount > 0
+  - from: followup-pick
+    to: ratify
+    when: "!(doCount > 0)"
+  - from: polish
+    to: polish-review
+    when: realDone
+  - from: polish
+    to: ratify
+    when: "!realDone"
+  - from: polish-review
+    to: polish
+    when: status == 'changes_requested' && !nodes.polish.output.fixedReview
+    maxRounds: 1
+  - from: polish-review
+    to: ratify
+    when: status != 'changes_requested' || nodes.polish.output.fixedReview
   - from: ratify
     to: docs
     when: choice == 'continue'
@@ -774,3 +1068,6 @@ edges:
     when: choice == 'stop'
   - finish -> check
   - check -> push
+  - push -> published
+  - published -> declare
+  - apply -> declare

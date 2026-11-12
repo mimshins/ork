@@ -10,12 +10,15 @@ Status: **Built**: every command below. `ork init`, `ork register`,
 ([watching](./scheduler/watching.md)), `ork worktrees` (`ork wt`),
 `ork context explain`, `ork agents list | show | add | rm`,
 `ork feedback list | show | note | dismiss | restore | accept | apply | triage | split | publish | export | import`
-([feedback](./feedback.md)), `ork upgrade` and the new-version notice
-([updates](./cli/updates.md)), `ork ui` ([server](./server.md)), `ork mcp`
-([mcp](./cli/mcp.md)), `ork completion zsh|bash|fish` and the hidden
-`ork __complete` ([completion](./cli/completion.md)), `ork once`
-([check once](./check-once.md)), and `ork send`, which a tool node's program
-runs ([scripts](./messaging/scripts.md#ork-send))
+([feedback](./feedback.md)),
+`ork follow-ups list | show | add | done | drop | reopen | due | post | published`
+([follow-ups](./follow-ups/surfaces.md#the-cli)), `ork upgrade` and the
+new-version notice ([updates](./cli/updates.md)), `ork ui`
+([server](./server.md)), `ork mcp` ([mcp](./cli/mcp.md)),
+`ork completion zsh|bash|fish` and the hidden `ork __complete`
+([completion](./cli/completion.md)), `ork once` ([check once](./check-once.md)),
+and `ork send`, which a tool node's program runs
+([scripts](./messaging/scripts.md#ork-send))
 ([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts),
 [attach tests](../packages/cli/test/attach-command.test.ts),
@@ -54,6 +57,7 @@ ork validate [<wf>…] [--paths] [--json] [--driver <id>]   # schema, graph, pro
 ork agents list [--json] | show <name> [--json]   # the agents nodes can take, and where each comes from
 ork agents add <name> [--description d] [--model m] [--from <agent>] [--user] | rm <name> [--user]
 ork run <wf> [--input k=v] [--driver <id>] [--in-place] [--allow-dirty] [--json] [--detach] [--verbose]  # <wf>: a file, a name in .ork/workflows/, or ork:<name>
+ork run <wf> --follow-ups <ids>  # take open agent follow-ups as the run's `brief` input; done when it publishes
 ork run <wf> --node <id> [--input k=v] [--driver <id>] [--in-place] [--json] [--verbose]
 ork ps [--all] [--limit n] [--json]               # this project's runs, newest first
 ork logs [<run>] [--node n] [--follow] [--json] [--verbose]   # a run's transcript, replayed or live
@@ -79,6 +83,8 @@ ork feedback apply <item> [--driver <id>]  # Ork's own workflow proposes a fix o
 ork feedback triage [--yes] | split <item>   # merge items about the same problem, by rules, asking each time; split one back
 ork feedback publish <item> [--hide-names]   # share an item about Ork with its maintainers: redacted, previewed, then y/N, with your own gh
 ork feedback export [--all] [-o <file>] | import <file>  # move feedback records as JSON lines
+ork follow-ups list [--all] [--for <for>] [--json] | show <id> | add <title> [--for --kind --due --body --where --ref --to --channel --text --step]  # what shipped changes left for later
+ork follow-ups done <id> | drop <id> | reopen <id> | due <id|run> | post <id> --confirm | published <ref>  # close, drop, bring back, make due, post a github draft, record a publish
 ork upgrade [--check] [--yes]    # a newer version? upgrade the way Ork was installed, after asking
 ork ui [--port <n>] [--no-open]  # the local server (127.0.0.1:4417) and its page; opens the running one
 ork mcp [--expects <version>]    # Ork's tools for Claude Code over stdio (MCP): read, check, start; never decide

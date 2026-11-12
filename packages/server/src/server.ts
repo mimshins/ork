@@ -8,7 +8,12 @@
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 
-import { openStore, storePath } from "@krapht/ork-core";
+import {
+  openStore,
+  runGh,
+  startFollowUpChecks,
+  storePath,
+} from "@krapht/ork-core";
 
 import { hasUi } from "./assets.ts";
 import type { ServerContext } from "./context.ts";
@@ -70,6 +75,11 @@ export type RunningServer = {
   upgrading: () => Promise<void> | null;
   /** Stops the streams and the server, and removes `ui.json`. */
   close: () => Promise<void>;
+};
+
+/** The overview stream sends the due follow-ups itself; nothing more here. */
+const noticed = (): void => {
+  /* no-op */
 };
 
 const listen = (
@@ -150,6 +160,17 @@ export const startServer = async (
   if (options.record !== false) {
     writeUiFile(file, { port, pid: process.pid, token, startedAt });
   }
+  // Follow-ups waiting on a merge come due while the UI runs; the overview
+  // stream sends the due ones to the badge.
+  const stopChecks = startFollowUpChecks({
+    rows: store,
+    gh: options.gh ?? runGh,
+    projects: () => store.projects().map(project => project.root),
+    onDue: noticed,
+    onError: error => {
+      log(`ork ui: follow-ups: ${error}`);
+    },
+  });
   let closed: Promise<void> | undefined;
   return {
     port,
@@ -162,6 +183,7 @@ export const startServer = async (
     close: () => {
       closed ??= new Promise<void>(resolve => {
         shutdown.abort();
+        stopChecks();
         updates.close();
         server.close(() => {
           store.close();

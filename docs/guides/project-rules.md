@@ -151,6 +151,24 @@ run them in its session, since Ork runs that check. `priority: low` starts
 sessions and tool commands below your own programs; `normal` doesn't. A
 workflow's `rules:` doesn't change either: they are the project's.
 
+## Where follow-ups are kept
+
+[Follow-ups](./follow-ups.md) are always listed in Ork's own store. Say where
+each new one is also written out:
+
+```yaml
+followUps:
+  store: store # store (the default), file or github
+  file: .ork/follow-ups.md # for file, from the project root
+  label: ork-follow-up # for github
+```
+
+- **`store`**: nowhere else.
+- **`file`**: appended to the file, in the worktree the session works in, so it
+  is **committed with the change** and public in a public repository.
+- **`github`**: an issue through your own `gh`, labelled `ork-follow-up` (or
+  your `label`); without a signed-in `gh` it stays in Ork's store, and says so.
+
 ## Trying an experiment
 
 Features that aren't ready for everyone ship turned off. To try one, name it in

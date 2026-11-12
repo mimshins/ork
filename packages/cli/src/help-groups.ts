@@ -58,6 +58,10 @@ export const HELP_GROUPS: readonly HelpGroup[] = [
     title: "After runs",
     commands: [
       { name: "feedback", short: "What got in the way in your runs" },
+      {
+        name: "follow-ups",
+        short: "What shipped changes left for later",
+      },
       { name: "worktrees", short: "Track and clean up Ork's worktrees" },
       { name: "prune", short: "Forget old runs' transcripts" },
     ],

@@ -149,3 +149,7 @@ Feedback records use the same patterns.
   a row in the `feedback` table, grouped by fingerprint into `feedback_items`,
   which triage can merge into one another (`merged_into`, migration 13)
   ([feedback](./feedback.md)); `ork feedback` reads them.
+- **Follow-ups** are rows of the `follow_ups` table (migration 20): the record
+  as JSON with its project, status and ref beside it, whatever place the
+  project's rule also writes it to; apart from feedback
+  ([follow-ups](./follow-ups.md)).

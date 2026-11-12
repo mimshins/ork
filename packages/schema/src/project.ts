@@ -118,6 +118,32 @@ export type Priority = z.infer<typeof PrioritySchema>;
 
 export const DEFAULT_PRIORITY: Priority = "low";
 
+/** Where a project's follow-ups are kept. */
+export const FollowUpPlaceSchema = z.enum(["store", "file", "github"]);
+export type FollowUpPlace = z.infer<typeof FollowUpPlaceSchema>;
+
+export const DEFAULT_FOLLOW_UPS_FILE = ".ork/follow-ups.md";
+export const DEFAULT_FOLLOW_UPS_LABEL = "ork-follow-up";
+
+export const FollowUpsRuleSchema = z.strictObject({
+  store: FollowUpPlaceSchema.describe(
+    "store: Ork's local store, never committed (the default). file: appended to a markdown file in the run's worktree, committed with the change. github: an issue through your own gh, falling back to store when gh isn't signed in.",
+  ),
+  file: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "For store: file, the markdown file, relative to the project root. Default: .ork/follow-ups.md.",
+    ),
+  label: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("For store: github, the issues' label. Default: ork-follow-up."),
+});
+export type FollowUpsRule = z.infer<typeof FollowUpsRuleSchema>;
+
 export const ProjectSchema = z.strictObject({
   schemaVersion: z.literal(PROJECT_SCHEMA_VERSION),
   ...RulesSchema.shape,
@@ -155,6 +181,9 @@ export const ProjectSchema = z.strictObject({
     ),
   priority: PrioritySchema.optional().describe(
     "Default: low, sessions and tool commands start at a lower OS priority. normal: as the ork process.",
+  ),
+  followUps: FollowUpsRuleSchema.optional().describe(
+    "Where follow-ups (work a change leaves for later) are kept. Default: Ork's local store.",
   ),
 });
 export type Project = z.infer<typeof ProjectSchema>;

@@ -468,6 +468,7 @@ export const NODES = [
       "`feedback(kind, target?, title, body?, severity?, evidence?)`.",
       "Kinds: `friction`, `bug`, `context-gap`, `skill`, `workflow`, `idea`. Targets: `ork`, `workflow`, `project`.",
       "Every agent node inside a run gets it, `ork run --node` too; capped at 3 reports a session.",
+      "Not for work the change leaves for later: that is a follow-up (`follow_up`), kept apart from feedback and never published or made a lesson.",
     ],
     see: [
       { map: "messaging", node: "mcpTools", label: "Ork's MCP tools" },
@@ -477,7 +478,7 @@ export const NODES = [
         label: "The tools in the architecture",
       },
     ],
-    docs: [DESIGN.feedback, DESIGN.messaging, FEEDBACK.tool],
+    docs: [DESIGN.feedback, DESIGN.messaging, FEEDBACK.tool, DESIGN.followUps],
   },
 
   // ── GitHub ───────────────────────────────────────────────────────────────

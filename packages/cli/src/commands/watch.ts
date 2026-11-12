@@ -20,6 +20,8 @@ import {
   openStore,
   type ProjectTrigger,
   readProjectTriggers,
+  runGh,
+  startFollowUpChecks,
   stillTheSameProcess,
   takeWatchLock,
   triggersReport,
@@ -34,6 +36,7 @@ import { lookAt } from "../watch/look.ts";
 import {
   acceptLines,
   brokenLines,
+  dueLines,
   statusLines,
   unacceptableLines,
 } from "../watch/report.ts";
@@ -103,7 +106,20 @@ const watchLoop = async (store: EventStore): Promise<number> => {
   const timer = setInterval(() => {
     watcher.tick();
   }, TICK_MS);
+  // Follow-ups waiting on a merge come due while ork watch runs.
+  const stopChecks = startFollowUpChecks({
+    rows: store,
+    gh: runGh,
+    projects: () => store.projects().map(project => project.root),
+    onDue: due => {
+      for (const line of dueLines(due)) write(line);
+    },
+    onError: error => {
+      writeErr(`follow-ups: ${error}`);
+    },
+  });
   await stopped;
+  stopChecks();
   clearInterval(timer);
   stopping.abort();
   await watcher.settled();

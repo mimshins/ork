@@ -4,7 +4,7 @@ _Part of [The UI](../ui.md)._
 
 Status: **Built:** the Runs panel, the Run workflow dialog, the Monitor (with a
 note on a run or a node, and Resume), the Builder, Logs, Decisions, Chats,
-Notifications, Usage, Context, Feedback and Worktrees
+Notifications, Usage, Context, Feedback, Worktrees and Follow-ups
 ([panels](../../packages/ui/src/panels/),
 [tests](../../packages/ui/test/panels/)).
 
@@ -29,4 +29,5 @@ Notifications, Usage, Context, Feedback and Worktrees
   - [Context](./panels-context-and-feedback.md#context)
   - [Feedback](./panels-context-and-feedback.md#feedback)
 - [Worktrees](./panels-worktrees.md)
+- [Follow-ups](./panels-follow-ups.md)
 - [Limits: the context inspector](./panels-context-limits.md)

@@ -18,6 +18,7 @@ const ALL = [
   "Context",
   "Decisions",
   "Feedback",
+  "Follow-ups",
   "Logs",
   "Monitor",
   "Notifications",
@@ -66,6 +67,7 @@ describe("the dock", () => {
       "Usage",
       "Feedback",
       "Worktrees",
+      "Follow-ups",
     ]);
     expect(tabsBeside("Decisions")).toEqual(["Decisions", "Notifications"]);
     expect(tabsBeside("Context")).toEqual(["Context"]);
@@ -108,6 +110,7 @@ describe("the dock", () => {
       "Usage",
       "Feedback",
       "Worktrees",
+      "Follow-ups",
     ]);
     expect(railNames()).toEqual(["Restore Logs"]);
     expect(workspace.announcement.getValue()).toBe("Logs minimized.");
@@ -118,6 +121,7 @@ describe("the dock", () => {
       "Usage",
       "Feedback",
       "Worktrees",
+      "Follow-ups",
     ]);
     expect(railNames()).toEqual([]);
     await vi.waitFor(
@@ -166,6 +170,7 @@ describe("the dock", () => {
         "usage",
         "feedback",
         "worktrees",
+        "followups",
       ] as const) {
         workspace.minimize(id);
       }
@@ -173,7 +178,7 @@ describe("the dock", () => {
     expect(tabNames()).toEqual([]);
     await waitFor(() => {
       expect(document.activeElement?.getAttribute("aria-label")).toBe(
-        "Restore Worktrees",
+        "Restore Follow-ups",
       );
     });
     expect(screen.getByText("No panels open.")).toBeDefined();
@@ -205,6 +210,7 @@ describe("the dock", () => {
       "Usage",
       "Feedback",
       "Worktrees",
+      "Follow-ups",
     ]);
     expect(railNames()).toEqual([]);
   });
@@ -242,6 +248,7 @@ describe("the dock", () => {
       "Usage",
       "Feedback",
       "Worktrees",
+      "Follow-ups",
     ]);
   });
 
@@ -289,6 +296,7 @@ describe("the saved layout", () => {
       "Context",
       "Decisions",
       "Feedback",
+      "Follow-ups",
       "Monitor",
       "Notifications",
       "Usage",
@@ -312,6 +320,7 @@ describe("the saved layout", () => {
       "Usage",
       "Feedback",
       "Worktrees",
+      "Follow-ups",
     ]);
   });
 

@@ -242,6 +242,17 @@ export const MIGRATIONS: readonly (string | ((db: DatabaseSync) => void))[] = [
      CREATE INDEX tool_cpu_by_time ON tool_cpu (at);`);
     backfillToolCpu(db);
   },
+  // 20: follow-ups, work a change leaves for later, wherever they're written out.
+  `CREATE TABLE follow_ups (
+     id TEXT PRIMARY KEY,
+     project TEXT NOT NULL,
+     status TEXT NOT NULL,
+     ref TEXT,
+     created_at TEXT NOT NULL,
+     data TEXT NOT NULL
+   );
+   CREATE INDEX follow_ups_by_project ON follow_ups (project, created_at);
+   CREATE INDEX follow_ups_by_status ON follow_ups (status);`,
 ];
 
 const versionOf = (db: DatabaseSync): number =>

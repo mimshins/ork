@@ -136,6 +136,15 @@ caller has no terminal: its called runs' questions wait for `ork attach`,
 
 Calls nest up to 5 deep.
 
+## Leaving work for another project
+
+A session that finds work for another registered project (an SDK to update after
+an API change) can leave it as a [follow-up](./follow-ups.md)
+`for: project:<name>`. It goes into that project's own list, under that
+project's `followUps` rule, and, when a run of that project is live, its leading
+agent is told as a notice and acts only if it fits its task. An unknown project
+is refused, with the names of the registered ones.
+
 ## Turning links off
 
 Every leader and worker gets the message tools, so it can be linked later. That

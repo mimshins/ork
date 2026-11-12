@@ -44,7 +44,7 @@ import {
   oneNodeNotes,
   oneNodeResult,
 } from "./node-notes.ts";
-import { feedbackOrigin } from "./origin.ts";
+import { feedbackOrigin, nodeFollowUps } from "./origin.ts";
 import {
   checksHere,
   chooseReadyDriver,
@@ -251,6 +251,7 @@ export const runNode = async (
       ...(graph === null
         ? {}
         : { feedback: createFeedback({ graph, onEvent: record }).port(id) }),
+      followUps: nodeFollowUps({ ...options, place, runId, id, cwd }),
     },
   );
   started.resolve(session);

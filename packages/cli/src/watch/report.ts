@@ -6,6 +6,7 @@
  */
 
 import type {
+  FollowUp,
   ProjectTrigger,
   TriggersReport,
   TriggerStanding,
@@ -171,3 +172,10 @@ export const unacceptableLines = (
     .filter(({ severity }) => severity === "error")
     .map(({ message }) => `  ${failMark(term)} ${plain(message)}`),
 ];
+
+/** What `ork watch` says when follow-ups come due. */
+export const dueLines = (due: readonly FollowUp[]): string[] =>
+  due.map(
+    f =>
+      `▸ follow-up due (${plain(f.for)}): ${plain(f.title)}${f.note === undefined ? "" : ` (${plain(f.note)})`}, \`ork follow-ups show ${f.id}\``,
+  );

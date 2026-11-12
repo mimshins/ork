@@ -14,6 +14,8 @@ import {
   createCalls,
   createRelay,
   type EventStore,
+  type FollowUpSink,
+  type GhRunner,
   type HumanChannel,
   newRunId,
   type ProjectPlace,
@@ -27,6 +29,7 @@ import {
 import { maskedEnv, maskedNamesOfRun } from "@krapht/ork-nodes";
 import type { Driver } from "@krapht/ork-schema";
 
+import { followUpSink } from "../follow-ups/context.ts";
 import { resumeChat } from "../runs/chat.ts";
 import { runLimits } from "./limits.ts";
 import { showCalls } from "./show-calls.ts";
@@ -45,6 +48,8 @@ export type CallPortsOptions = Pick<
   runtime: (driver: Driver, runs?: string) => Promise<AgentRuntime>;
   out: (line: string) => void;
   home?: string | undefined;
+  /** The person's `gh` for follow-ups kept in GitHub (default: the real one). */
+  gh?: GhRunner | undefined;
   calledBy?: string | undefined;
   trigger?: string | undefined;
   untrusted?: string[] | undefined;
@@ -59,6 +64,8 @@ export type CallPorts = {
   /** The workflow with its budget capped by the caller's. */
   graph: CompiledGraph;
   calls: CallPort;
+  /** Keeps what a session's `follow_up` call leaves, as the project's rule says. */
+  followUps: FollowUpSink;
   /** The called runs this terminal shows; `end` once the run has ended. */
   shown: ReturnType<typeof showCalls>;
   relay?: RelayPort;
@@ -140,6 +147,12 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
       },
     }),
     shown,
+    followUps: followUpSink({
+      store,
+      place: options.place,
+      home,
+      gh: options.gh,
+    }),
     ...(linksOff ? {} : { relay: createRelay({ store, runId, home, human }) }),
     settings: {
       ...(linksOff ? { links: "off" as const } : {}),

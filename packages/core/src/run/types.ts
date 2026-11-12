@@ -10,6 +10,7 @@ import type { Driver, Node, NodeType, Workflow } from "@krapht/ork-schema";
 import type { FeedbackPort, FeedbackReport } from "../feedback/types.ts";
 import type {
   Claims,
+  FollowUpPort,
   HoldPoint,
   HoldPort,
   HumanChannel,
@@ -92,6 +93,8 @@ export type ExecuteContext = {
   claims?: Claims;
   /** Where the node's session reports feedback (the `feedback` tool). */
   feedback?: FeedbackPort;
+  /** Where the node's session leaves follow-ups (the `follow_up` tool). */
+  followUps?: FollowUpPort;
   /** How a `workflow.call` node starts and waits on a workflow. */
   calls?: CallPort;
   cwd: string;

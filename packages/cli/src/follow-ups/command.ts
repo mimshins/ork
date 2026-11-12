@@ -1,0 +1,90 @@
+/**
+ * @file What the `ork follow-ups` subcommands share: the flags, the project a
+ *   call is about, and the due check every call runs first, in the user's
+ *   store. A `gh` that fails only warns.
+ */
+
+import {
+  type EventStore,
+  findFollowUp,
+  type FollowUp,
+  placeFor,
+  type ProjectPlace,
+} from "@krapht/ork-core";
+
+import { style, writeErr } from "../output.ts";
+import { withStore } from "../store.ts";
+import { refreshDue } from "./context.ts";
+
+export const json = {
+  type: "boolean",
+  description: "Print JSON",
+  default: false,
+} as const;
+
+export const project = {
+  type: "string",
+  description: "A registered project's id (default: the one you are in)",
+} as const;
+
+export const idArg = {
+  type: "positional",
+  description: "A follow-up's id, or a prefix of one",
+  required: true,
+} as const;
+
+/** Says why, and makes the command exit 1. */
+export const fail = (message: string): void => {
+  writeErr(message);
+  process.exitCode = 1;
+};
+
+/** The project a command is about, from `--project` or the folder. */
+const placeOf = (
+  store: EventStore,
+  key: string | undefined,
+): ProjectPlace | undefined => {
+  const projects = store.projects();
+  if (key === undefined) return placeFor(process.cwd(), projects);
+  const found = projects.find(p => p.id === key || p.root === key);
+  if (found === undefined) {
+    const names = projects.map(p => p.id);
+    fail(
+      `No registered project \`${key}\`; registered: ${names.length === 0 ? "none" : names.join(", ")}.`,
+    );
+    return undefined;
+  }
+  return placeFor(found.root, projects);
+};
+
+/** Runs `body` in the project, after the due check, in the user's store. */
+export const inProject = (
+  key: string | undefined,
+  body: (store: EventStore, place: ProjectPlace) => Promise<void> | void,
+): Promise<void> =>
+  withStore(async store => {
+    const place = placeOf(store, key);
+    if (place === undefined) return;
+    await refreshDue(store, place.root, line => {
+      writeErr(style("dim", line));
+    });
+    await body(store, place);
+  });
+
+/** Runs `body` on the follow-up `id` names, or says why there is none. */
+export const withFollowUp = (
+  args: { id: string; project?: string | undefined },
+  body: (
+    store: EventStore,
+    place: ProjectPlace,
+    followUp: FollowUp,
+  ) => Promise<void> | void,
+): Promise<void> =>
+  inProject(args.project, async (store, place) => {
+    const found = findFollowUp(store, place.root, args.id);
+    if (!found.ok) {
+      fail(found.error);
+      return;
+    }
+    await body(store, place, found.followUp);
+  });

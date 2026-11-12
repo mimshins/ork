@@ -21,10 +21,10 @@ export const SOURCES = {
     short: "ork",
     github: "https://github.com/mimshins/ork",
     branch: "main",
-    synced: "9463d8f",
+    synced: "8bdbf29",
     isPublic: true,
   },
 };
 
 /** The day the map was last synced with the repository. */
-export const SYNCED_ON = "2026-11-11";
+export const SYNCED_ON = "2026-11-12";
