@@ -115,6 +115,13 @@ review:
 - **G27 · A permission is answered one call at a time.** Each Bash command asks
   again (six in run 0427fb01); nothing allows a tool for the rest of a node.
 - **G28 · An experiment has no way out.** Nothing promotes or removes one.
+- **G29 · A node can't refuse what its rules don't allow.** A tool call outside
+  a node's allow rules always stops the run to ask the maintainer, even on a
+  read-only node such as a reviewer, and Claude Code asks about some commands (a
+  heredoc script, a loop, `cd` then `git`) even when `Bash` is allowed. Run
+  `5546557f` (2026-11-12) waited five times, once for 58 minutes, on commands
+  its prompts had ruled out. A node setting that refuses such a call with a
+  message, so the session retries with an allowed command, would close it.
 
 ## Limits
 
