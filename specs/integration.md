@@ -225,6 +225,11 @@ the hold spans from `publish` to `push` and two builds publishing go in turn
   resolver group runs on it, `ask` only when the resolution changes behaviour
   (`stop` fails the run with the rebase open and nothing pushed), then `finish`
   and `check` on the resolved tree before `push`.
+- A `push` that git rejects because the branch moved since the rebase (another
+  push came between, as a person's push can, outside the lock) is not a failure:
+  `push` reports `outcome: behind` and goes back to `publish`, which rebases
+  again, and `check` runs again, at most 3 times (`maxRounds: 3`). Any other
+  push failure fails the run.
 - A failed `check` goes to `repair`, an agent that fixes the rebased checkout
   (often two builds that were each fine alone: a gap id both took, a document
   the two push over 200 lines), with the end of the check's output. It may not

@@ -964,7 +964,20 @@ nodes:
       set -eu
       # The check ran in the step before, not in the pre-push hook: git connects
       # before the hook, and GitHub drops the idle connection while the hook runs (exit 141).
-      git -C "$WORKTREE" push --no-verify origin "HEAD:refs/heads/$BRANCH"
+      if ! out=$(git -C "$WORKTREE" push --no-verify origin "HEAD:refs/heads/$BRANCH" 2>&1); then
+        printf '%s\n' "$out" >&2
+        case "$out" in
+          *"[rejected]"* | *non-fast-forward* | *"fetch first"*)
+            # The branch moved since the rebase: publish rebases again, and the check runs again.
+            echo "origin/$BRANCH moved since the rebase; rebasing again."
+            printf '{"outcome":"behind"}\n' > "$ORK_OUTPUT"
+            exit 0
+            ;;
+        esac
+        exit 1
+      fi
+      printf '%s\n' "$out"
+      printf '{"outcome":"pushed"}\n' > "$ORK_OUTPUT"
       if [ "$CHOICE" = branch ]; then
         if gh pr view "$BRANCH" > /dev/null 2>&1; then
           echo "$BRANCH already has a pull request; it is updated."
@@ -985,6 +998,12 @@ nodes:
       SUBJECT: "{{nodes.docs.output.commitSubject}}"
       BODY: "{{nodes.docs.output.commitBody}}"
       WORKTREE: "{{nodes.docs.output.worktree}}"
+    output:
+      format: json
+      schema:
+        outcome:
+          - pushed
+          - behind
     lock: branch:main
   apply:
     type: tool.shell
@@ -1125,6 +1144,12 @@ edges:
   - from: amend
     to: check
     maxRounds: 2
-  - push -> published
+  - from: push
+    to: published
+    when: json.outcome == 'pushed'
+  - from: push
+    to: publish
+    when: json.outcome == 'behind'
+    maxRounds: 3
   - published -> declare
   - apply -> declare
