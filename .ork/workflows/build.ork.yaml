@@ -803,8 +803,13 @@ nodes:
           printf '\n'
         } >> "$tmp/sides"
       done < "$tmp/files"
+      # The whole of it goes in a file (gitignored): a node's output holds at most 64 KB, so it carries an excerpt.
+      keep="$PWD/.ork/runs/conflict"
+      mkdir -p "$keep"
+      cp "$tmp/sides" "$keep/sides.diff"
+      excerpt() { awk -v max=20000 -v file="$2" '{ n += length($0) + 1; if (n > max) { printf "... cut here; the whole is in %s\n", file; exit } print }' "$1"; }
       esc() { tr '\000-\011\013-\037' ' ' | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | awk 'BEGIN { ORS = "\\n" } { print }'; }
-      printf '{"files":"%s","others":"%s","sides":"%s"}\n' "$(esc < "$tmp/files")" "$(esc < "$tmp/others")" "$(esc < "$tmp/sides")"
+      printf '{"files":"%s","others":"%s","sides":"%s","sidesFile":"%s"}\n' "$(esc < "$tmp/files")" "$(esc < "$tmp/others")" "$(excerpt "$tmp/sides" "$keep/sides.diff" | esc)" "$keep/sides.diff"
     allow:
       - sh
     cwd: "{{nodes.docs.output.worktree}}"
@@ -814,6 +819,7 @@ nodes:
         files: string
         others: string
         sides: string
+        sidesFile: string
     lock: branch:main
   resolve:
     type: agent.worker
@@ -829,7 +835,7 @@ nodes:
       The change also touched:
       {{nodes.inspect.output.json.others}}
 
-      What each side did to them. The upstream is what the rebase is going onto; the change is the commit being replayed:
+      What each side did to them. The upstream is what the rebase is going onto; the change is the commit being replayed. When it is long it is cut below: read the whole of it in {{nodes.inspect.output.json.sidesFile}} before you resolve anything.
       {{nodes.inspect.output.json.sides}}
     isolation: continue
     lock: branch:main
@@ -868,7 +874,12 @@ nodes:
       while IFS= read -r f; do
         git diff --cached -- "$f" >> "$tmp/result"
       done < "$tmp/files"
-      printf '{"behaviour":"%s","result":"%s"}\n' "$BEHAVIOUR" "$(esc < "$tmp/result")"
+      # As inspect's sides: the whole in a file, an excerpt in the output.
+      keep="$PWD/.ork/runs/conflict"
+      mkdir -p "$keep"
+      cp "$tmp/result" "$keep/result.diff"
+      excerpt() { awk -v max=20000 -v file="$2" '{ n += length($0) + 1; if (n > max) { printf "... cut here; the whole is in %s\n", file; exit } print }' "$1"; }
+      printf '{"behaviour":"%s","result":"%s","resultFile":"%s"}\n' "$BEHAVIOUR" "$(excerpt "$tmp/result" "$keep/result.diff" | esc)" "$keep/result.diff"
     allow:
       - sh
     cwd: "{{nodes.docs.output.worktree}}"
@@ -883,17 +894,18 @@ nodes:
           - unchanged
           - changed
         result: string
+        resultFile: string
     lock: branch:main
   ask:
     type: human.gate
     question: "The resolution changes what a reviewed change does: the same logic was edited on both sides. Keep it and finish the rebase, or stop with the work left in the checkout?"
     document: |-
-      What each side did:
+      What each side did (cut when long; the whole is in {{nodes.inspect.output.json.sidesFile}}):
       {{nodes.inspect.output.json.sides}}
       What the resolver kept from each side:
       {{nodes.resolve.output.kept}}
 
-      The result:
+      The result (cut when long; the whole is in {{nodes.settle.output.json.resultFile}}):
       {{nodes.settle.output.json.result}}
     options:
       - keep

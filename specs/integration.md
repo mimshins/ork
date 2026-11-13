@@ -242,6 +242,12 @@ the hold spans from `publish` to `push` and two builds publishing go in turn
   the conflict), and `settle` stages those it edited and still refuses any other
   file. Before, those citations were left pointing at the upstream's entry,
   which `pnpm docs:check` can't see.
+- `inspect`'s two sides of each conflict and `settle`'s resolution go whole into
+  files of the checkout's gitignored `.ork/runs/conflict/` (`sides.diff`,
+  `result.diff`); their outputs carry the first 20,000 characters and the file's
+  path, which the resolver reads and the `ask` gate names. A node's output holds
+  at most 64 KB: run b59c209a's seven conflicted files, after three other runs
+  had published, came to 80 KB and failed the run before the resolver started.
 - A failed `check` goes to `repair`, an agent that fixes the rebased checkout
   (often two builds that were each fine alone: a gap id both took, a document
   the two push over 200 lines), with the end of the check's output. It may not
