@@ -1,5 +1,43 @@
 # @krapht/ork
 
+## 1.0.0-alpha.17
+
+### Minor Changes
+
+- [`6387404`](https://github.com/mimshins/ork/commit/638740405cb36b3ada9e59db0c5ecfdcee789b28) Thanks [@mimshins](https://github.com/mimshins)! - The browser view and `ork mcp` filter lists by the same fields as the CLI. The
+  server's list routes (`runs`, `usage`, `decisions`, a project's `follow-ups`,
+  `feedback` and `worktrees`) take each list's fields by their flag names
+  (`status`, `workflow`, `project`, `since`, `until`, `kind`, `severity`, `due`,
+  `for`, `run`) with the CLI's value forms and words (a wrong value is a 400), and
+  `GET /api/list-fields` serves their descriptions. All six list panels share one
+  filter bar built from them, with the matching `ork` command and **Clear
+  filter**, and `ork mcp`'s `runs`, `usage` and `decisions` tools take the same
+  fields. `GET /api/runs` matches `status=paused` and `crashed` by the live status
+  a run shows, as `ork ps` does. The old parameters keep working (`usage`'s ISO
+  times, follow-ups' `open`). The Usage panel's period is now the bar's `since`
+  (default `30d`) instead of a 7, 30, 90 days or all select.
+
+### Patch Changes
+
+- [`b40be8d`](https://github.com/mimshins/ork/commit/b40be8deca357ea9edb62fae6235f7fdb8e444b9) Thanks [@mimshins](https://github.com/mimshins)! - Claude Code sessions give each Bash command up to ten minutes before moving it
+  to the background (`BASH_DEFAULT_TIMEOUT_MS=600000`). At Claude Code's default
+  of two minutes, a long check went to the background and the agent polled it with
+  `until` or `Monitor`, asking the maintainer to approve each wait.
+
+- [`6387404`](https://github.com/mimshins/ork/commit/638740405cb36b3ada9e59db0c5ecfdcee789b28) Thanks [@mimshins](https://github.com/mimshins)! - `ork run <workflow> --follow-ups due` takes every due agent follow-up of the
+  project as the run's brief, alone or beside ids (each once). With nothing due it
+  exits 1 and starts no run. A bare `--follow-ups`, `--follow-ups ""` or one
+  followed by another flag now says it needs follow-up ids or `due` and names
+  `ork follow-ups list`, instead of "missing required input brief". Tab after
+  `--follow-ups` offers `due` and the project's open agent follow-ups, with their
+  titles.
+
+- [`cb76a79`](https://github.com/mimshins/ork/commit/cb76a79f9d7d087d3de2f1579b369e99b67b63c0) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` and `ork decide` now work under a different store than the run that
+  started the process: sessions and programs carry `ORK_GUARDED_STORES`, the
+  stores their runs guard, and the commands that act as the user refuse only in
+  those. A nested run adds its store to the list, and a marker with no list still
+  refuses everywhere.
+
 ## 1.0.0-alpha.16
 
 ### Minor Changes
