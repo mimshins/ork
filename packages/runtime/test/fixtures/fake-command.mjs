@@ -26,6 +26,7 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { request } from "node:http";
 import { homedir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -109,14 +110,18 @@ if (ork === undefined) {
 }
 if (process.env.FAKE_ENDPOINT_FILE !== undefined) writeFileSync(process.env.FAKE_ENDPOINT_FILE, ork.url);
 
-const rpc = async (method, params) => {
-  const response = await fetch(ork.url, {
-    method: "POST",
-    headers: { ...ork.headers, "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-  });
-  return response.json();
-};
+// node:http, not fetch: fetch gives up after 300 s with no response headers,
+// and an ask_user waits as long as the user takes to answer.
+const post = (url, headers, body) =>
+  new Promise((resolve, reject) => {
+    const req = request(url, { method: "POST", headers: { ...headers, "content-type": "application/json" } }, res => {
+      let text = "";
+      res.setEncoding("utf8").on("data", chunk => (text += chunk)).on("error", reject).on("end", () => resolve(text));
+    });
+    req.on("error", reject).end(JSON.stringify(body));
+  }).then(JSON.parse);
+
+const rpc = (method, params) => post(ork.url, ork.headers, { jsonrpc: "2.0", id: 1, method, params });
 
 // `--mod`: the session's mod, loaded as Command Code loads one (a default
 // export taking the mod API); its `beforeToolCall` hooks may block a call.

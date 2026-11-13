@@ -6,7 +6,46 @@
 
 import { describe, expect, it } from "vitest";
 
-import { cleanTwin, removeTwin } from "../../src/panels/worktrees-model.ts";
+import {
+  cleanTwin,
+  countSaid,
+  countWords,
+  removeTwin,
+} from "../../src/panels/worktrees-model.ts";
+import { BUILD, DOCS, LEAD, project, row } from "./worktrees-fixtures.ts";
+
+const many = (label: string, count: number, over = {}) =>
+  Array.from({ length: count }, (_, i) => row(`${label}${String(i)}`, over));
+
+describe("the Worktrees panel's counts", () => {
+  it("say a branch has no worktree when worktrees are counted beside it", () => {
+    const items = [
+      ...many("ork/a/w", 2),
+      ...many("ork/b/x", 4, { path: null }),
+    ];
+    expect(countWords(items)).toBe(
+      "2 worktrees · 4 branches without a worktree",
+    );
+    expect(countSaid([project("app", items)], "app")).toBe(
+      "2 worktrees and 4 branches without a worktree in app.",
+    );
+  });
+
+  it("say just the branches when there are no worktrees", () => {
+    const items = many("ork/b/x", 3, { path: null });
+    expect(countWords(items)).toBe("3 branches");
+  });
+
+  it("word a filter's result as a sentence", () => {
+    const items = [...many("ork/a/w", 4), DOCS];
+    expect(countSaid([project("app", items)], "app")).toBe(
+      "4 worktrees and 1 branch without a worktree in app.",
+    );
+    expect(countSaid([project("app", [BUILD, LEAD])], "app")).toBe(
+      "2 worktrees in app.",
+    );
+  });
+});
 
 const ROOT = "/code/Jo's app";
 const QUOTED_ROOT = String.raw`'/code/Jo'\''s app'`;

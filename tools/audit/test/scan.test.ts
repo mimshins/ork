@@ -92,6 +92,22 @@ describe("scanSecrets", () => {
     expect(JSON.stringify(records)).not.toContain(token);
   });
 
+  it("reports an sk-ant key once, and still reports sk- and sk-proj- keys as OpenAI's", () => {
+    // Built at run time so no source line looks like a credential.
+    const body = "a1B2".repeat(12);
+    const lines = [
+      `k = "${["sk", "ant", "api03", body].join("-")}"`,
+      `k = "${["sk", body].join("-")}"`,
+      `k = "${["sk", "proj", body].join("-")}"`,
+    ];
+    const records = scanSecrets([{ path: "src/a.ts", text: lines.join("\n") }]);
+    expect(records.map(record => [record.line, record.pattern])).toEqual([
+      [1, "anthropic-api-key"],
+      [2, "openai-api-key"],
+      [3, "openai-api-key"],
+    ]);
+  });
+
   it("leaves out a test's placeholders, and a key block's header with no key", () => {
     const fixtures = [
       '"token ghp_abcdefghijklmnopqrstuvwxyz0123456789"',

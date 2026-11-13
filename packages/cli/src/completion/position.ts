@@ -3,7 +3,8 @@
  *   words before it reach, what was given so far, and what the last word is (a
  *   subcommand or positional, a flag, or a flag's value). Words are parsed the
  *   way citty parses them: a flag that takes a value takes the next word,
- *   unless it is written `--flag=value`.
+ *   unless it is written `--flag=value`; a last word written that way is that
+ *   flag's value, with `--flag=` kept as its prefix.
  */
 
 import type { CommandDef } from "citty";
@@ -23,8 +24,11 @@ export type Slot =
   | { kind: "word"; positional?: PositionalInfo }
   /** A flag's name. */
   | { kind: "flag" }
-  /** The value of `flag`. */
-  | { kind: "value"; flag: FlagInfo };
+  /**
+   * The value of `flag`. `prefix` is the `--flag=` already typed, when the
+   * value is written in that form; each candidate then carries it.
+   */
+  | { kind: "value"; flag: FlagInfo; prefix?: string };
 
 /** The command reached, what was given, and the word under the cursor. */
 export type Position = {
@@ -95,9 +99,27 @@ const step = async (walk: Walk, word: string): Promise<Walk> => {
   return { ...walk, given, index: walk.index + 1 };
 };
 
-const slotOf = (walk: Walk, current: string): Slot => {
+/** `--flag=` of a typed `--flag=text` whose flag takes a value, else nothing. */
+const valuePrefixOf = (walk: Walk, typed: string): string | undefined => {
+  if (walk.pending !== undefined || walk.rest || !typed.startsWith("-")) {
+    return undefined;
+  }
+  const at = typed.indexOf("=");
+  const flag = at < 0 ? undefined : flagNamed(walk.flags, typed);
+  return flag?.takesValue === true ? typed.slice(0, at + 1) : undefined;
+};
+
+const slotOf = (
+  walk: Walk,
+  typed: string,
+  prefix: string | undefined,
+): Slot => {
   if (walk.pending !== undefined) return { kind: "value", flag: walk.pending };
-  if (!walk.rest && current.startsWith("-")) return { kind: "flag" };
+  if (prefix !== undefined) {
+    const flag = flagNamed(walk.flags, prefix);
+    if (flag !== undefined) return { kind: "value", flag, prefix };
+  }
+  if (!walk.rest && typed.startsWith("-")) return { kind: "flag" };
   const positional = walk.positionals[walk.index];
   return positional === undefined
     ? { kind: "word" }
@@ -113,7 +135,7 @@ export const positionOf = async (
   words: readonly string[],
 ): Promise<Position> => {
   const before = words.slice(0, -1);
-  const current = words.at(-1) ?? "";
+  const typed = words.at(-1) ?? "";
   const start: Walk = {
     ...(await argInfoOf(root)),
     path: [],
@@ -128,5 +150,7 @@ export const positionOf = async (
     Promise.resolve(start),
   );
   const { pending: _pending, rest: _rest, ...reached } = walk;
-  return { ...reached, current, slot: slotOf(walk, current) };
+  const prefix = valuePrefixOf(walk, typed);
+  const current = prefix === undefined ? typed : typed.slice(prefix.length);
+  return { ...reached, current, slot: slotOf(walk, typed, prefix) };
 };

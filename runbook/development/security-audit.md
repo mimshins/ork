@@ -86,12 +86,18 @@ no OS-enforced sandbox yet, so a lead that needs execution is recorded as
    list a trace in order and Ork labels each entry's kind from its place (the
    first `entrypoint`, the last `sink`), so a mislabelled trace costs nothing. A
    verifier record that is missing or invalid is kept out and listed as
-   unverified.
+   unverified. Every candidate past the verifier cap is also validated alone: a
+   malformed one lands in `unverified.json` and not in `findings.json`.
+   `findings` never rewrites `unreviewed.json`, so a rerun or resume does not
+   lose that candidate; `finalize` and `report` skip the rows of
+   `unreviewed.json` whose fingerprint `unverified.json` holds. Otherwise a
+   rerun would drop the malformed candidate and mark the run `complete`.
 7. `recheck` (`standard` only): a fresh agent per confirmed record. A record it
    does not verify is removed and listed as disputed. Under `quick` the verifier
    already did this check.
-8. `finalize` applies that, `report` writes the posture and notes, and `write`
-   writes the three reports.
+8. `finalize` applies that (a rerun unions the existing `disputed.json`, so it
+   gives the same counts and never marks the audit `complete`), `report` writes
+   the posture and notes, and `write` writes the three reports.
 9. `review`, a gate: `done` keeps the folder, `discard` deletes it.
 
 A run stops if a validator fails, with its message. `ork resume` goes on from

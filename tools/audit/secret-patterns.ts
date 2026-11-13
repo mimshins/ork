@@ -16,7 +16,10 @@ export const SECRET_PATTERNS: readonly SecretPattern[] = [
     pattern: /\bgithub_pat_[A-Za-z0-9_]{50,}\b/u,
   },
   { name: "anthropic-api-key", pattern: /\bsk-ant-[A-Za-z0-9_-]{20,}/u },
-  { name: "openai-api-key", pattern: /\bsk-(?:proj-)?[A-Za-z0-9_-]{40,}/u },
+  {
+    name: "openai-api-key",
+    pattern: /\bsk-(?!ant-)(?:proj-)?[A-Za-z0-9_-]{40,}/u,
+  },
   { name: "npm-token", pattern: /\bnpm_[A-Za-z0-9]{36}\b/u },
   { name: "slack-token", pattern: /\bxox[abprs]-[A-Za-z0-9-]{10,}/u },
   { name: "google-api-key", pattern: /\bAIza[0-9A-Za-z_-]{35}\b/u },

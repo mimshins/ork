@@ -77,8 +77,10 @@ The project must be a git repository with at least one commit.
 ## After each node
 
 - Ork commits what the session left uncommitted, as `ork: <node> (run <id>)`.
-  Your repository's git hooks run; if they refuse, the node fails with the
-  hook's message (`✗ fail: …`) and keeps its changes.
+  Your repository's git hooks run. If one refuses, the run prints
+  `✗ Command failed: git commit exited with an error`, then
+  `git commit failed: <hook output>` (the hook's last line); the node fails and
+  keeps its changes in its worktree.
 - A leader's work is committed before it delegates, as
   `ork: <node> before delegating (run <id>)`, so its children branch from it.
 - A child that passes is merged into its owner's worktree, as
@@ -130,7 +132,9 @@ so delete it with git if it's yours to delete.
 - git's record of a worktree of your own whose folder you deleted; Ork drops
   only its own.
 
-A detached worktree (`commit: never`) is cleaned only with `--all`, and one
+A detached worktree (`commit: never`) counts as merged when its HEAD is already
+part of your current branch, so a clean one is removed without `--all`. One
+whose HEAD the current branch lacks is cleaned only with `--all`, and one
 holding a commit no branch has (a `tool.git` commit) only with `--force` too.
 
 `clean` shows its plan and asks; `n` prints `Cancelled.` and removes nothing.

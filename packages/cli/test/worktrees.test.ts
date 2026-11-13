@@ -168,6 +168,20 @@ describe("a detached worktree", () => {
   });
 });
 
+describe("a clean detached worktree on the current branch", () => {
+  it("is planned for removal by clean without --all", () => {
+    const where = place();
+    const build = path.join(path.dirname(where.root), "ork-r5-build");
+    git(where.root, "worktree", "add", "--quiet", "--detach", build);
+    recordRun(where.home, where.root, "r5", [{ node: "build", path: build }]);
+    const out = ork(where, "clean", "--run", "r5", "--yes");
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain("r5/build (detached): remove worktree");
+    expect(out.stdout).not.toContain("Nothing to clean");
+    expect(existsSync(build)).toBe(false);
+  });
+});
+
 describe("a fanned node's item worktrees", () => {
   it("are listed by item id, and one is removed by its listed name", () => {
     const where = place();

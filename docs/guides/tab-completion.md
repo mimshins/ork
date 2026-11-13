@@ -33,8 +33,14 @@ Or load the script each time instead, after `compinit`, in `~/.zshrc`:
 eval "$(ork completion bash)"
 ```
 
-(The bash that comes with macOS, 3.2, can't `source <(…)`. Saving the script to
-a file and adding `source` of that file works in every version.)
+The bash that comes with macOS, 3.2, loads nothing from
+`source <(ork completion bash)`, and prints no error. Save the script to a file
+and `source` that file instead, which works in every version:
+
+```sh
+ork completion bash > ~/.ork-completion.bash
+echo 'source ~/.ork-completion.bash' >> ~/.bashrc
+```
 
 **fish.** Save the script where fish looks for completions:
 
@@ -49,7 +55,9 @@ commands.
 
 - **Commands**, nested ones too (`ork worktrees remove`, `ork feedback apply`).
   zsh labels the menu with the groups `ork --help` shows them in.
-- **Flags** of the command you're typing, with what each does.
+- **Flags** of the command you're typing, with what each does. A flag's value
+  completes written `--flag value` or `--flag=value` (`--input=`, `--node=`,
+  `--driver=`).
 - **Workflows** after `ork run` and `ork validate`: your project's, by name, and
   Ork's own `ork:` ones.
 - **Run ids** after `ork logs`, `attach`, `tree`, `resume`, `stop`, `pause`,
@@ -74,4 +82,5 @@ commands.
 
 Values are read from your project and Ork's store on your machine. Completing
 never changes either, never shows a prompt or an output, and offers nothing
-rather than an error when it can't read them.
+rather than an error when it can't read them. `ork completion zsh | head -1`
+exits quietly too: a reader that closes the pipe early is not an error.

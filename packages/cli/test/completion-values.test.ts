@@ -41,6 +41,15 @@ const spawnComplete = (home: string, cwd: string, words: string[]) =>
     env: { PATH: process.env["PATH"] ?? "", HOME: home },
   });
 
+/** `ork <args…>` piped into `true`, which quits at once: its exit and stderr. */
+const intoClosedPipe = (home: string, args: string[]) => {
+  const run = 'node "$1" "${@:2}" | true; echo "${PIPESTATUS[0]}"';
+  return spawnSync("/bin/bash", ["-c", run, "_", BIN, ...args], {
+    encoding: "utf8",
+    env: { PATH: process.env["PATH"] ?? "", HOME: home },
+  });
+};
+
 /** What printCompletions writes to stdout. */
 const printed = async (root: CommandDef, words: string[]): Promise<string> => {
   const chunks: string[] = [];
@@ -117,6 +126,22 @@ describe("completion values", () => {
     expect(await offered(seeded, "run", "--input", "")).toEqual([]);
   });
 
+  it("completes `--input=` and `--node=` like `--input ` and `--node `", async () => {
+    const seeded = seedStore();
+    expect(await offered(seeded, "run", "hello", "--input=")).toEqual(
+      (await offered(seeded, "run", "hello", "--input", "")).map(
+        line => `--input=${line}`,
+      ),
+    );
+    expect(
+      valuesOf(await offered(seeded, "run", "hello", "--input=t")),
+    ).toEqual(["--input=topic="]);
+    expect(valuesOf(await offered(seeded, "run", "hello", "--node="))).toEqual([
+      "--node=plan",
+      "--node=build",
+    ]);
+  });
+
   it("offers a run's inputs to ork resume --input", async () => {
     const seeded = seedStore();
     expect(
@@ -190,6 +215,18 @@ describe("the store, for completion", () => {
       ":group flags\n--driver\tclaude-code, open-code, command-code (default: the driver ready here)\n",
     );
     expect(result.stderr).toBe("");
+  });
+
+  it("exits 0 with no trace when the reader closes the pipe", () => {
+    const home = tempDir("ork-complete-pipe-");
+    for (const args of [
+      ["completion", "zsh"],
+      ["__complete", "--", "run", ""],
+    ]) {
+      const result = intoClosedPipe(home, args);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toBe("0\n");
+    }
   });
 
   it("prints nothing when completing fails", async () => {

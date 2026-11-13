@@ -22,26 +22,29 @@ so it has no Go to digit; its tab sits after Feedback in the bottom group.
   **Reload** keeps its name after a failed read, which an alert says once, and
   Clean merged… then says why it waits.
 - **A row** is the item's name (its branch, or its run and node when detached),
-  a merge badge (`merged`, `not merged`, `detached`: a glyph and a word), then
-  its run and node, path, and state as core words it; work removing would lose
-  (uncommitted changes, commits on no branch) is a heavier weight, never a
-  color. A merged row that Clean merged… would keep says why. **Open run** is
-  named for its run and node, and disabled when Ork has no records of the run;
-  **Remove…** (or **Delete branch…** for a branch with no worktree) is named for
-  the row, described by its state and its CLI twin, and disabled, with its
-  reason in its name and tooltip, for the main checkout's branch or a run still
-  going: the reasons come with the list, by the rule the remove route keeps. ↑ ↓
-  Home End move between rows' same buttons; Tab reaches each.
+  a merge badge (`merged`, `not merged`, `detached`: a glyph and a word; a
+  detached worktree whose commit is already on the current branch reads
+  `merged`), then its run and node, path, and state as core words it; work
+  removing would lose (uncommitted changes, commits on no branch) is a heavier
+  weight, never a color. A merged row that Clean merged… would keep says why.
+  **Open run** is named for its run and node, and disabled when Ork has no
+  records of the run; **Remove…** (or **Delete branch…** for a branch with no
+  worktree) is named for the row, described by its state and its CLI twin, and
+  disabled, with its reason in its name and tooltip, for the main checkout's
+  branch or a run still going: the reasons come with the list, by the rule the
+  remove route keeps. ↑ ↓ Home End move between rows' same buttons; Tab reaches
+  each.
 - **Filter:** the shared [filter bar](./design-filter-bar.md) on the `worktrees`
   list: **Run** and **Project** (once there are two to choose from, suggesting
   the registered projects by id). The panel lists every project when none is
   set; a filter is read from `GET /api/worktrees` with the table's fields (the
   server filters), keeps the last list while a refused value shows the server's
   words, and lasts for the page's life. The bar's status line counts "2
-  worktrees · 1 branch", says "3 worktrees match." aloud, and shows the matching
-  `ork worktrees list` command and **Clear filter** while one is set; a filter
-  that leaves none shows "No worktrees match the filter." Clean merged… still
-  plans by project, not by run ([L351](../gaps.md#limits)).
+  worktrees · 1 branch without a worktree" (with no worktrees, "3 branches"),
+  says "3 worktrees match." aloud, and shows the matching `ork worktrees list`
+  command and **Clear filter** while one is set; a filter that leaves none shows
+  "No worktrees match the filter." Clean merged… still plans by project, not by
+  run ([L351](../gaps.md#limits)).
 - **Remove…** opens on Cancel and only reads: the facts (project, run with
   **Open run**, path as text to select, and state as the plan read it), **Also
   delete the branch** (off; described by what deleting it loses), the plan in a

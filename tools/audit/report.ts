@@ -83,8 +83,11 @@ export const runReport = (
     item => item["verdict"] === "needs_validation",
   );
   const ledger = read("coverage-ledger.json");
-  const unreviewed = read("unreviewed.json");
   const unverified = read("unverified.json");
+  // A past-cap candidate the validator refused is unverified, not unreviewed.
+  const unreviewed = read("unreviewed.json").filter(
+    row => !unverified.some(item => item["fingerprint"] === row["fingerprint"]),
+  );
   const disputed = read("disputed.json");
   const metadata = readObject(path.join(dir, "run-metadata.json"));
 

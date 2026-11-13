@@ -5,6 +5,8 @@
  *   project's `git.base` must name a commit, which root worktrees start from.
  */
 
+import path from "node:path";
+
 import {
   gitRulesOf,
   inspectProject,
@@ -14,6 +16,7 @@ import {
 import { isClaudeNode, type Workflow } from "@krapht/ork-schema";
 
 import { style } from "../output.ts";
+import { WORKFLOW_DIR } from "../workflows.ts";
 
 /** Why a run refuses to start with uncommitted agent files. */
 export const dirtyAgentMessage = (files: readonly string[]): string[] => [
@@ -34,6 +37,16 @@ export const worktreeNodes = (workflow: Workflow): string[] =>
           "worktree",
     )
     .map(([id]) => id);
+
+/**
+ * The project's folder for a message. Outside git, the place's root is the
+ * folder of the workflow file, which is `<project>/.ork/workflows` for a
+ * project's own workflow.
+ */
+const projectFolder = (root: string): string => {
+  const tail = path.sep + WORKFLOW_DIR;
+  return root.endsWith(tail) ? root.slice(0, -tail.length) : root;
+};
 
 export type PreparedCheckout =
   | {
@@ -63,7 +76,7 @@ export const prepareCheckout = async (
     return {
       ok: false,
       lines: [
-        `${isolated.join(", ")} need a git worktree, but ${options.cwd} is not in a git repository with a commit; make a first commit (\`git commit --allow-empty -m "Start"\`) first, or pass --in-place to run them here`,
+        `${isolated.join(", ")} ${isolated.length === 1 ? "needs" : "need"} a git worktree, but ${projectFolder(options.cwd)} is not in a git repository with a commit; make a first commit (\`git commit --allow-empty -m "Start"\`) first, or pass --in-place to run them here`,
       ],
     };
   }

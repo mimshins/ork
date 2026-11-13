@@ -52,7 +52,7 @@ export const runFinalize = (
   const rechecks = (input.rechecks ?? []).filter(item => isObject(item));
   const records = readRows(path.join(dir, "findings.json"));
 
-  const disputed: FinalizeResult["disputed"] = [];
+  const fresh: FinalizeResult["disputed"] = [];
   const kept = records.filter(record => {
     if (profile !== "standard" || record["verdict"] !== "confirmed")
       return true;
@@ -60,7 +60,7 @@ export const runFinalize = (
       item => str(item["fingerprint"]) === str(record["fingerprint"]),
     );
     if (answer?.["decision"] === "verified") return true;
-    disputed.push({
+    fresh.push({
       fingerprint: str(record["fingerprint"]),
       title: str(record["title"]),
       reason:
@@ -70,11 +70,29 @@ export const runFinalize = (
     });
     return false;
   });
+  // A rerun finds those records already gone from findings.json, so the ones
+  // disputed before stay: union by fingerprint, this run's reason winning.
+  const earlier = readRows(path.join(dir, "disputed.json")).map(item => ({
+    fingerprint: str(item["fingerprint"]),
+    title: str(item["title"]),
+    reason: str(item["reason"]),
+  }));
+  const disputed = [
+    ...earlier.filter(
+      item => !fresh.some(now => now.fingerprint === item.fingerprint),
+    ),
+    ...fresh,
+  ];
   writeJson(path.join(dir, "findings.json"), kept);
   writeJson(path.join(dir, "disputed.json"), disputed);
 
-  const unreviewed = readRows(path.join(dir, "unreviewed.json")).length;
-  const unverified = readRows(path.join(dir, "unverified.json")).length;
+  const unverifiedRows = readRows(path.join(dir, "unverified.json"));
+  const unverified = unverifiedRows.length;
+  // A past-cap candidate the validator refused is unverified, not unreviewed.
+  const unreviewed = readRows(path.join(dir, "unreviewed.json")).filter(
+    row =>
+      !unverifiedRows.some(item => item["fingerprint"] === row["fingerprint"]),
+  ).length;
   const incompleteReason =
     unreviewed > 0
       ? "validation_budget_exhausted"

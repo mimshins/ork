@@ -37,6 +37,7 @@
  */
 
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { request } from "node:http";
 import path from "node:path";
 import { createInterface } from "node:readline";
 
@@ -61,14 +62,18 @@ const hook = settings.hooks?.PreToolUse?.[0]?.hooks?.[0];
 const out = message => process.stdout.write(`${JSON.stringify(message)}\n`);
 const pending = path.join(process.cwd(), ".fake-deferred");
 
-const rpc = async (method, params) => {
-  const response = await fetch(mcp.url, {
-    method: "POST",
-    headers: { ...mcp.headers, "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-  });
-  return response.json();
-};
+// node:http, not fetch: fetch gives up after 300 s with no response headers,
+// and an ask_user waits as long as the user takes to answer.
+const post = (url, headers, body) =>
+  new Promise((resolve, reject) => {
+    const req = request(url, { method: "POST", headers: { ...headers, "content-type": "application/json" } }, res => {
+      let text = "";
+      res.setEncoding("utf8").on("data", chunk => (text += chunk)).on("error", reject).on("end", () => resolve(text));
+    });
+    req.on("error", reject).end(JSON.stringify(body));
+  }).then(JSON.parse);
+
+const rpc = (method, params) => post(mcp.url, mcp.headers, { jsonrpc: "2.0", id: 1, method, params });
 
 const bash = process.env.FAKE_CLAUDE_BASH;
 const call = bash === undefined
@@ -78,12 +83,7 @@ const call = bash === undefined
 /** The hook's answer for the tool call, or none without a hook. */
 const toolHook = async event => {
   if (hook === undefined) return {};
-  const response = await fetch(hook.url, {
-    method: "POST",
-    headers: { ...hook.headers, "content-type": "application/json" },
-    body: JSON.stringify({ hook_event_name: event, ...call }),
-  });
-  return response.json();
+  return post(hook.url, hook.headers, { hook_event_name: event, ...call });
 };
 const preToolUse = () => toolHook("PreToolUse");
 

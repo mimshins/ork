@@ -21,6 +21,7 @@ import {
   listOrkWorktrees,
   liveRunIds,
   lostWork,
+  mergeStateOf,
   openStore,
   type OrkWorktree,
   planClean,
@@ -319,6 +320,75 @@ describe("cleaning beside the user's own worktrees", () => {
     expect(items.map(i => [i.path, i.inMainCheckout, i.heldBy])).toEqual([
       [null, true, undefined],
     ]);
+  });
+});
+
+/** A recorded worktree created detached (`commit: never`), at the repo's HEAD. */
+const detached = (root: string, node: string): string => {
+  const place = path.join(path.dirname(root), `ork-r1-${node}`);
+  sh(root, "worktree", "add", "--quiet", "--detach", place);
+  recorded.set(root, [
+    ...(recorded.get(root) ?? []),
+    { runId: "r1", nodeId: node, path: place },
+  ]);
+  return place;
+};
+
+describe("a detached worktree", () => {
+  it("is merged when its HEAD is already in the current branch, so clean removes it", async () => {
+    const root = repo();
+    detached(root, "check");
+    const { items } = await read(root);
+    expect(items.map(i => [i.merged, i.ahead, mergeStateOf(i)])).toEqual([
+      [true, 0, "merged"],
+    ]);
+    const steps = planClean(
+      items,
+      { merged: true },
+      { branches: false, force: false },
+    );
+    expect(steps.map(s => [s.removeWorktree, s.skip])).toEqual([
+      [true, undefined],
+    ]);
+  });
+
+  it("is not merged with a commit on no branch", async () => {
+    const root = repo();
+    commitIn(detached(root, "check"), "done.ts");
+    const { items } = await read(root);
+    expect(items.map(i => [i.merged, i.ahead, mergeStateOf(i)])).toEqual([
+      [false, 1, "detached"],
+    ]);
+    expect(
+      planClean(
+        items,
+        { merged: false },
+        { branches: false, force: false },
+      ).map(s => s.skip),
+    ).toEqual(["commits on no branch"]);
+  });
+
+  it("is not merged when its HEAD is not in the current branch, even if another branch has it", async () => {
+    const root = repo();
+    const place = detached(root, "check");
+    commitIn(place, "done.ts");
+    sh(root, "branch", "kept", sh(place, "rev-parse", "HEAD").trim());
+    const { items } = await read(root);
+    expect(items.map(i => [i.merged, i.ahead, mergeStateOf(i)])).toEqual([
+      [false, 0, "detached"],
+    ]);
+  });
+
+  it("is merged but kept for uncommitted changes when dirty", async () => {
+    const root = repo();
+    write(detached(root, "check"), "wip.ts", "wip\n");
+    const { items } = await read(root);
+    expect(items.map(i => [i.merged, i.dirty])).toEqual([[true, true]]);
+    expect(
+      planClean(items, { merged: true }, { branches: false, force: false }).map(
+        s => [s.removeWorktree, s.skip],
+      ),
+    ).toEqual([[false, "uncommitted changes"]]);
   });
 });
 

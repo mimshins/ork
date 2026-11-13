@@ -30,7 +30,9 @@ afterEach(() => {
 describe("the Worktrees panel's list", () => {
   it("shows a card per project, its rows in core's words, and counts the rest", async () => {
     const { view } = await openWorktrees();
-    expect(screen.getByText("2 worktrees · 1 branch")).toBeDefined();
+    expect(
+      screen.getByText("2 worktrees · 1 branch without a worktree"),
+    ).toBeDefined();
     const app = screen.getByRole("list", { name: "Worktrees in app" });
     expect(within(app).getAllByRole("listitem")).toHaveLength(3);
     expect(rowOf(LEAD.key).textContent).toContain(

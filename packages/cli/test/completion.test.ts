@@ -120,6 +120,20 @@ describe("ork __complete", () => {
     expect(await values("ps", "--limit", "")).toEqual([]);
   });
 
+  it("completes `--flag=value` like `--flag value`, keeping the prefix", async () => {
+    expect(await values("run", "--driver=")).toEqual([
+      "--driver=claude-code",
+      "--driver=open-code",
+      "--driver=command-code",
+    ]);
+    expect(await values("chat", "--driver=cl")).toEqual([
+      "--driver=claude-code",
+    ]);
+    // A boolean flag, `--flag` or `--flag=`, is still a flag.
+    expect(await values("logs", "--follow")).toEqual(["--follow"]);
+    expect(await values("logs", "--follow=")).toEqual([]);
+  });
+
   it("knows a value flag takes the next word, and a boolean doesn't", async () => {
     expect(await values("run", "--driver", "claude-code", "--d")).toEqual([
       "--driver",

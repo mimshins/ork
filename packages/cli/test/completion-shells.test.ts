@@ -160,6 +160,23 @@ describe.skipIf(!existsSync(BASH))("the bash script", () => {
     ]);
   });
 
+  it("offers nothing to repeat after a typed `name=`, as bash breaks words at `=`", () => {
+    const printed = String.raw`:group inputs\nplan=\tThe plan\n`;
+    expect(bashCompletes("ork run build --input pl", printed)).toEqual([
+      "plan=",
+    ]);
+    // bash replaces only what follows the last `=`: an empty word is no repeat.
+    expect(bashCompletes("ork run build --input plan=", printed)).toEqual([]);
+  });
+
+  it("offers what follows `--input=` once", () => {
+    const printed = String.raw`:group inputs\n--input=plan=\tThe plan\n--input=loud=\tbool\n`;
+    expect(bashCompletes("ork run build --input=", printed)).toEqual([
+      "loud=",
+      "plan=",
+    ]);
+  });
+
   it("offers several plain candidates as several", () => {
     const printed = String.raw`:group commands\nlist\tone\nclean\ttwo\nremove\tthree\n`;
     expect(bashCompletes("ork worktrees ", printed)).toEqual([

@@ -105,13 +105,14 @@ const verifiedRecords = (
 
 /**
  * Writes `findings.json`: the verifiers' records (`records`, or `results` read
- * against `unique`) plus `unreviewed.json`, one per fingerprint (a verifier's
- * record wins), sorted by fingerprint. A candidate with no usable verifier
- * record goes to `unverified.json`, and any of those or of the unreviewed ones
- * marks `run-metadata.json` incomplete. The skill's SKILL.md says an
- * unvalidated candidate must not be relabelled `needs_validation`; the plan
- * decides otherwise for the ones past the cap, so the metadata and the report
- * say the run is incomplete and why.
+ * against `unique`) plus the well-formed `unreviewed.json` ones, one per
+ * fingerprint (a verifier's record wins), sorted by fingerprint. A candidate
+ * with no usable verifier record, or a past-cap one the validator refuses (left
+ * in `unreviewed.json`, so a rerun finds it again), goes to `unverified.json`,
+ * and any of those or of the unreviewed ones marks `run-metadata.json`
+ * incomplete. The skill's SKILL.md says an unvalidated candidate must not be
+ * relabelled `needs_validation`; the plan decides otherwise for the ones past
+ * the cap, so the metadata and the report say the run is incomplete and why.
  */
 export const runFindings = (
   cwd: string,
@@ -129,7 +130,23 @@ export const runFindings = (
     input.unique ?? [],
     input.results ?? [],
   );
-  const unreviewed = readRows(path.join(dir, "unreviewed.json"));
+  // A past-cap candidate no verifier saw is checked alone too: one malformed
+  // one must not fail the whole file (and the step that paid for the rest).
+  const unreviewed: Json[] = [];
+  for (const record of readRows(path.join(dir, "unreviewed.json"))) {
+    const error = validatorError(dir, env, [record]);
+    if (error === "") {
+      unreviewed.push(record);
+    } else {
+      verified.unverified.push({
+        fingerprint: record["fingerprint"],
+        title: record["title"],
+        reason: `the record fails the skill's validator: ${error}`,
+      });
+    }
+  }
+  // unreviewed.json stays as written: a rerun must still see the bad ones.
+  // finalize and report skip the rows that unverified.json holds.
   const byFingerprint = new Map<string, Json>();
   for (const record of [
     ...objects(input.records ?? []),

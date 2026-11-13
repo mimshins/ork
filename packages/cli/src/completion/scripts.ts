@@ -54,9 +54,10 @@ fi
 
 const BASH = `# Tab completion for ork, in bash. Add to your ~/.bashrc:
 #   eval "$(ork completion bash)"
-# (macOS's bash 3.2 can't source <(…); saving it to a file and sourcing that
-# works too.) Every expansion is quoted and lines are read with read -r, so a
-# candidate is never split or glob-expanded.
+# (macOS's bash 3.2 loads nothing from source <(…), and prints no error;
+# saving it to a file and sourcing that works in every version.) Every
+# expansion is quoted and lines are read with read -r, so a candidate is never
+# split or glob-expanded.
 
 _ork() {
   local line="\${COMP_LINE:0:COMP_POINT}" cur files=0 strip="" out
@@ -65,10 +66,15 @@ _ork() {
   if [[ "$line" == *[[:space:]] ]]; then words+=(""); fi
   cur="\${words[\${#words[@]}-1]}"
   COMPREPLY=()
-  # bash splits a word at ":" (ork:feature); offer only what follows it.
-  if [[ "$cur" == *:* && "$COMP_WORDBREAKS" == *:* ]]; then
-    strip="\${cur%"\${cur##*:}"}"
-  fi
+  # bash splits a word at ":" and "=" (ork:feature, --input=plan=); offer only
+  # what follows the last of them that is a word break.
+  local brk pre
+  for brk in : =; do
+    if [[ "$cur" == *"$brk"* && "$COMP_WORDBREAKS" == *"$brk"* ]]; then
+      pre="\${cur%"\${cur##*"$brk"}"}"
+      if (( \${#pre} > \${#strip} )); then strip="$pre"; fi
+    fi
+  done
   out="$("\${words[0]}" ${COMPLETE_COMMAND} -- "\${words[@]:1}" 2>/dev/null)"
   while IFS= read -r line; do
     case "$line" in

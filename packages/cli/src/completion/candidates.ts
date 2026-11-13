@@ -1,7 +1,8 @@
 /**
  * @file What `ork __complete` offers at a position: subcommands (the root's in
  *   `ork --help`'s groups), a command's public flags, an argument's values from
- *   its provider, or an enum flag's values; filtered by what was typed, and
+ *   its provider, or an enum flag's values (also when written `--flag=value`,
+ *   each candidate then keeping `--flag=`); filtered by what was typed, and
  *   printed one per line as `value<TAB>description`, with `:group <title>`
  *   before each group and `:files` when file names fit too.
  */
@@ -115,12 +116,19 @@ export const offerFor = (
   context: ValueContext,
 ): Offer => {
   const offer = offerAt(position, providers, context);
+  // A value typed as `--flag=text` keeps `--flag=`, so a shell that replaces
+  // the whole word (zsh, fish) gets it back.
+  const prefix =
+    position.slot.kind === "value" ? (position.slot.prefix ?? "") : "";
   const sections = offer.sections
     .map(section => ({
       ...section,
-      candidates: section.candidates.filter(c =>
-        c.value.startsWith(position.current),
-      ),
+      candidates: section.candidates
+        .filter(c => c.value.startsWith(position.current))
+        .map(c => ({
+          value: `${prefix}${c.value}`,
+          description: c.description,
+        })),
     }))
     .filter(section => section.candidates.length > 0);
   return { sections, files: offer.files };

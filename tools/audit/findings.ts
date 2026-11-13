@@ -2,10 +2,12 @@
  * @file The audit's `consolidate` and `findings` steps. `consolidate` dedupes
  *   the hunters' candidates by fingerprint and passes on at most the profile's
  *   number to the verifiers; the others become `needs_validation` records that
- *   say they were not looked at, and a coverage gap the critic accepted is
- *   recorded as `deferred` in the ledger. `findings` writes `findings.json`
- *   (sorted by fingerprint, as `validate-findings.cjs` requires) from the
- *   verifiers' records and those unreviewed ones (in `verdicts.ts`).
+ *   say they were not looked at (`findings` keeps one the validator refuses out
+ *   of `findings.json`, as `unverified`), and a coverage gap the critic
+ *   accepted is recorded as `deferred` in the ledger. `findings` writes
+ *   `findings.json` (sorted by fingerprint, as `validate-findings.cjs`
+ *   requires) from the verifiers' records and those unreviewed ones (in
+ *   `verdicts.ts`).
  */
 
 import path from "node:path";

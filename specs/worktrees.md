@@ -95,7 +95,10 @@ reaches Ork's git either.
 
 `ork run` checks the project when the workflow has `worktree` nodes:
 
-- It must be a git repository with a commit, or the run does not start.
+- It must be a git repository with a commit, or the run does not start. Outside
+  git the project root is the workflow file's folder, so the message strips a
+  trailing `.ork/workflows` to name the project folder; it says "needs" for one
+  isolated node and "need" for several.
 - **Uncommitted instructions, skills or agents stop the run**: `CLAUDE.md` and
   `AGENTS.md` at any depth, `.claude/`, `.agents/`, and the targets of their
   `skills`, `agents`, `commands` and `rules` symlinks. Worktrees only get
@@ -197,12 +200,16 @@ deletes a branch it did not create. Delete it with git.
 - `ork worktrees [list] [--json]`: each branch (or, for a detached worktree, its
   run and node), its worktree path (or none, or missing), uncommitted changes,
   and how many commits are not merged into the current branch. A detached
-  worktree is never "merged", so `clean` takes it only with `--all`, and with
-  `--force` when it has changes or holds commits no branch, tag or remote has (a
-  [`tool.git`](../decisions/ADR-034-tool-git.md) commit). A worktree created
-  detached that is now on a branch the workflow made (`switch -c`) shows that
-  branch and counts its commits like an Ork branch's; `clean` never deletes that
-  branch, so removing the worktree loses nothing.
+  worktree is "merged" when its HEAD is an ancestor of the project checkout's
+  HEAD (`git merge-base --is-ancestor`), so `clean` takes a clean one without
+  `--all`; one with a commit the current branch lacks is not merged, so `clean`
+  takes it only with `--all`, and with `--force` when it has changes or holds
+  commits no branch, tag or remote has (a
+  [`tool.git`](../decisions/ADR-034-tool-git.md) commit). A merged one with
+  uncommitted changes is still kept ("uncommitted changes") unless `--force`. A
+  worktree created detached that is now on a branch the workflow made
+  (`switch -c`) shows that branch and counts its commits like an Ork branch's;
+  `clean` never deletes that branch, so removing the worktree loses nothing.
 - `ork worktrees clean`: by default only branches merged into the current
   branch; `--run <id>` limits it to one run; `--all` includes unmerged ones;
   `--branches` also deletes the branches. A worktree with uncommitted changes,

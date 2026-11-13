@@ -40,7 +40,10 @@ export type OrkWorktree = {
    * commit).
    */
   ahead: number;
-  /** Fully merged into the current branch (never, for a detached worktree). */
+  /**
+   * Fully merged into the current branch; for a detached worktree, its HEAD is
+   * already part of the current branch's history.
+   */
   merged: boolean;
   /** Checked out in the main checkout itself, which clean never removes. */
   inMainCheckout: boolean;
@@ -124,6 +127,25 @@ const onNoBranch = async (entry: Entry | undefined): Promise<string> =>
         ])
       ).stdout;
 
+/**
+ * Whether a detached worktree's HEAD is already in the current branch's
+ * history.
+ */
+const headIsMerged = async (root: string, path: string): Promise<boolean> => {
+  const head = await git(path, ["rev-parse", "HEAD"]);
+  return (
+    head.code === 0 &&
+    (
+      await git(root, [
+        "merge-base",
+        "--is-ancestor",
+        head.stdout.trim(),
+        "HEAD",
+      ])
+    ).code === 0
+  );
+};
+
 /** One created worktree or branch, with its state read from git. */
 const stateOf = async (
   root: string,
@@ -162,6 +184,12 @@ const stateOf = async (
       : (await git(root, ["rev-list", "--count", `HEAD..${on}`])).stdout;
   const ahead = Number(counted);
   const changes = lines(status).length;
+  const merged =
+    on === undefined
+      ? entry !== undefined &&
+        !missing &&
+        (await headIsMerged(root, entry.path))
+      : ahead === 0;
   return {
     ...(branch === undefined ? {} : { branch }),
     ...(checkedOut === undefined ? {} : { checkedOut }),
@@ -173,7 +201,7 @@ const stateOf = async (
     dirty: changes > 0,
     changes,
     ahead: Number.isNaN(ahead) ? 0 : ahead,
-    merged: on !== undefined && ahead === 0,
+    merged,
     inMainCheckout: entry?.path === root || holder?.path === root,
     ...(holder === undefined || holder.path === root
       ? {}

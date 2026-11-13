@@ -44,10 +44,13 @@ refuses another name, saying which there are. Ork never installs it.
   of candidates is one `_describe` call labelled with the group's title, in the
   order given; a `:files` answer adds `_files`.
 - **bash:** `complete -F _ork ork`, loaded with `eval "$(ork completion bash)"`
-  (macOS's bash 3.2 can't `source <(…)`). It splits the line up to the cursor
-  itself, so `ork:feature` stays one word, and trims what bash's `:` word break
-  would repeat. It reads candidates line by line with every expansion quoted, so
-  none is joined, split or globbed. No descriptions (bash shows none).
+  (macOS's bash 3.2 loads nothing from `source <(…)`, and prints no error; a
+  file that is sourced works). It splits the line up to the cursor itself, so
+  `ork:feature` stays one word, and trims what bash's word breaks would repeat:
+  the word up to and including its last `:` or `=`, each only when it is in
+  `COMP_WORDBREAKS`, also for file names. It reads candidates line by line with
+  every expansion quoted, so none is joined, split or globbed. No descriptions
+  (bash shows none).
 - **fish:** `complete -c ork -f -a '(__ork_complete)'`; fish shows the
   descriptions as they come. It reads the words with `commandline -xpc` (fish
   4), falling back to `-opc` (fish 3). A `:files` answer adds
@@ -78,10 +81,17 @@ character, quote or `$(…)`. A description is kept to one line.
   `--help`.
 - **After a flag that takes a value:** an enum flag's options, else the values
   of the flag's provider, else nothing.
+- **At a word `--flag=text`** whose flag takes a value: the same values,
+  filtered by `text`, each printed with the `--flag=` as typed (so zsh and fish,
+  which replace the whole word, get it back; bash strips through the last `=`).
+  A boolean or unknown flag written `--flag=…` stays a flag word.
 
 `bin.ts` runs `__complete` before citty and before the update check, so a typed
 `--help` is a word to complete, and Tab never starts the daily check. Anything
-that goes wrong prints nothing, with exit status 0.
+that goes wrong prints nothing, with exit status 0. A reader that closes the
+pipe early (`ork completion zsh | head -1`, `ork __complete … | true`) is not an
+error: `EPIPE` on stdout is ignored, with exit status 0 and no trace; any other
+stdout error is not swallowed.
 
 ### Values
 

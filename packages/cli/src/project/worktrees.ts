@@ -11,6 +11,7 @@ import { existsSync } from "node:fs";
 import {
   type CleanStep,
   type LostWork,
+  isDetached,
   labelOf,
   mergeStateOf,
   openStore,
@@ -46,9 +47,7 @@ export const worktreeState = (
 
 /** A name as the list shows it, saying when it's detached. */
 const nameOf = (item: OrkWorktree): string =>
-  mergeStateOf(item) === "detached"
-    ? `${labelOf(item)} (detached)`
-    : labelOf(item);
+  isDetached(item) ? `${labelOf(item)} (detached)` : labelOf(item);
 
 export const formatWorktrees = (
   items: readonly OrkWorktree[],

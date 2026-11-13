@@ -52,6 +52,20 @@ export const completionLines = async (
   }
 };
 
+const guard = (error: NodeJS.ErrnoException): void => {
+  if (error.code !== "EPIPE") throw error;
+};
+
+/**
+ * Writes `text` to stdout. A reader that quits early (`ork completion zsh |
+ * head -1`) closes the pipe: that EPIPE is ignored, any other error is not.
+ */
+const writeOut = (text: string): void => {
+  process.stdout.off("error", guard);
+  process.stdout.on("error", guard);
+  process.stdout.write(text);
+};
+
 /** `ork __complete`'s whole job: print the candidates, or nothing. */
 export const printCompletions = async (
   root: CommandDef,
@@ -61,7 +75,7 @@ export const printCompletions = async (
   try {
     const words = args[0] === "--" ? args.slice(1) : args;
     const lines = await completionLines(root, words, cwd);
-    process.stdout.write(lines.map(line => `${line}\n`).join(""));
+    writeOut(lines.map(line => `${line}\n`).join(""));
   } catch {
     // A completion that fails offers nothing, rather than noise in the prompt.
   }
@@ -99,6 +113,6 @@ export const completion = defineCommand({
       process.exitCode = 1;
       return;
     }
-    process.stdout.write(script);
+    writeOut(script);
   },
 });

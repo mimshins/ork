@@ -26,7 +26,14 @@ Read [AGENTS.md](../../AGENTS.md), then the user docs you're testing
   probes), a fake `cmd`, and a fake `gh` that logs its arguments to
   `<root>/gh.log` and exits 1 (so `ork doctor` reports gh as a warning, which is
   expected). It also unsets `ANTHROPIC_API_KEY` and the Bedrock, Vertex and
-  Foundry variables. Check `command -v claude gh` before any run. A real run
+  Foundry variables. Check `command -v claude gh` before any run. A wrapper you
+  put in front of the fake `claude` (to log or change its arguments) must stream
+  stdin through to it (`exec`, or a pipe), never read stdin to the end first:
+  Ork's driver keeps stdin open until the first result, so a wrapper that waits
+  for end of input hangs the session. A fake `claude` that asks a question and
+  waits past 300 s fails in its own `fetch` (the client's headers timeout, seen
+  as "Provider unavailable"); Ork's MCP endpoint does not drop a long ask, and
+  the fixtures post through `node:http` to avoid it. A real run
   happens only when the maintainer has approved it in the brief, with a budget
   cap.
 - **Nothing outward.** No `ork feedback publish` to the real repository, no

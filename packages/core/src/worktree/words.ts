@@ -15,13 +15,21 @@ export const labelOf = (item: OrkWorktree): string =>
 
 export type MergeState = "merged" | "unmerged" | "detached";
 
-/** Merged into the current branch, not, or detached on no branch at all. */
+/**
+ * Merged into the current branch (a detached worktree too, when its HEAD is
+ * already there), not, or detached on no branch with work the current branch
+ * lacks.
+ */
 export const mergeStateOf = (item: OrkWorktree): MergeState => {
-  if (item.branch === undefined && item.checkedOut === undefined) {
-    return "detached";
-  }
-  return item.merged ? "merged" : "unmerged";
+  if (item.merged) return "merged";
+  return item.branch === undefined && item.checkedOut === undefined
+    ? "detached"
+    : "unmerged";
 };
+
+/** On no branch at all: created detached and not on a branch since. */
+export const isDetached = (item: OrkWorktree): boolean =>
+  item.branch === undefined && item.checkedOut === undefined;
 
 export const MERGE_WORDS: Record<MergeState, string> = {
   merged: "merged",
@@ -58,7 +66,7 @@ export const stateParts = (item: OrkWorktree, into?: string): StatePart[] => {
     const where = into === undefined ? "" : ` into ${into}`;
     part(`${counted(item.ahead, "commit")} not merged${where}`);
   }
-  if (state === "detached") {
+  if (isDetached(item)) {
     if (item.ahead > 0)
       part(`${counted(item.ahead, "commit")} on no branch`, true);
     else if (item.path !== null && !item.missing) part("nothing committed");
@@ -85,10 +93,7 @@ export const planWhat = (step: CleanStep): string => {
 /** `ork/r1/lead: remove worktree`, `r1/check (detached): keep (…)`. */
 export const planLine = (step: CleanStep): PlanLine => {
   const { item } = step;
-  const name =
-    item.branch === undefined && item.checkedOut === undefined
-      ? `${labelOf(item)} (detached)`
-      : labelOf(item);
+  const name = isDetached(item) ? `${labelOf(item)} (detached)` : labelOf(item);
   return {
     text: `${name}: ${planWhat(step)}`,
     ...(step.skip === undefined ? {} : { reason: step.skip }),

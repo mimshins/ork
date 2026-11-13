@@ -29,6 +29,7 @@
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
+import { request } from "node:http";
 import { homedir } from "node:os";
 
 const args = process.argv.slice(2);
@@ -74,14 +75,18 @@ const glob = pattern =>
 const allowed = (action, resource) =>
   [{ action: "*", resource: "*", effect: "allow" }, ...rules].findLast(r => glob(r.action).test(action) && glob(r.resource).test(resource))?.effect === "allow";
 
-const rpc = async (method, params) => {
-  const response = await fetch(ork.url, {
-    method: "POST",
-    headers: { ...ork.headers, "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-  });
-  return response.json();
-};
+// node:http, not fetch: fetch gives up after 300 s with no response headers,
+// and an ask_user waits as long as the user takes to answer.
+const post = (url, headers, body) =>
+  new Promise((resolve, reject) => {
+    const req = request(url, { method: "POST", headers: { ...headers, "content-type": "application/json" } }, res => {
+      let text = "";
+      res.setEncoding("utf8").on("data", chunk => (text += chunk)).on("error", reject).on("end", () => resolve(text));
+    });
+    req.on("error", reject).end(JSON.stringify(body));
+  }).then(JSON.parse);
+
+const rpc = (method, params) => post(ork.url, ork.headers, { jsonrpc: "2.0", id: 1, method, params });
 
 let calls = 0;
 /** One tool call, printed once it is done, as `run` prints it. */

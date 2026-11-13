@@ -47,7 +47,9 @@ describe("the Worktrees panel's filter bar", () => {
     expect(screen.getByRole("combobox", { name: "Run" })).toBeDefined();
     expect(screen.getByRole("combobox", { name: "Project" })).toBeDefined();
     expect(screen.queryByRole("button", { name: "Clear filter" })).toBeNull();
-    expect(screen.getByText("2 worktrees · 1 branch")).toBeDefined();
+    expect(
+      screen.getByText("2 worktrees · 1 branch without a worktree"),
+    ).toBeDefined();
   });
 
   it("reads again with the project, shows its card and the command", async () => {

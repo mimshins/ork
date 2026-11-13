@@ -11,7 +11,10 @@
  *   `ORK_NO_UPDATE_CHECK=1`, unsets the paid-provider variables; start every
  *   Bash call with `. <root>/env.sh &&`). Each subcommand is one entry of
  *   `COMMANDS`: it returns the text to print or throws an `Error` whose message
- *   is printed. The subcommands:
+ *   is printed. A wrapper a tester puts in front of a stand-in must stream
+ *   stdin through, never read it to the end: Ork's driver keeps stdin open
+ *   until the first result (`STDIN_NOTE`, printed with the usage). The
+ *   subcommands:
  *
  *   - `setup <tarball> <name>` (`setup.ts`): builds a root.
  *   - `commit <repo> [message]` (`commit.ts`): commits everything in a repo with
@@ -31,8 +34,10 @@ import { stopKit, sweepDir } from "./stop.ts";
 
 type Command = (args: readonly string[]) => string;
 
-const USAGE =
-  "Usage: kit.ts setup <tarball> <name> | commit <repo> [message] | stop <root> | sweep <dir>";
+const STDIN_NOTE =
+  "A wrapper around bin/claude or bin/cmd must stream stdin through (exec it, or pipe), never read stdin to the end: Ork's driver keeps stdin open until the first result.";
+
+const USAGE = `Usage: kit.ts setup <tarball> <name> | commit <repo> [message] | stop <root> | sweep <dir>\n${STDIN_NOTE}`;
 
 const setup: Command = ([tarball, name]) => {
   if (tarball === undefined || name === undefined) {

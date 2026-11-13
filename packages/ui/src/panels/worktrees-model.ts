@@ -22,19 +22,29 @@ const tally = (items: readonly WorktreeRow[]) => ({
   branches: items.filter(item => item.path === null).length,
 });
 
-/** `6 worktrees · 2 branches`, a branch being one with no worktree. */
+const WITHOUT = " without a worktree";
+
+/**
+ * `6 worktrees · 2 branches without a worktree`; with no worktrees, just `2
+ * branches`.
+ */
 export const countWords = (items: readonly WorktreeRow[]): string => {
   const { worktrees, branches } = tally(items);
   const parts = [
     ...(worktrees > 0 || branches === 0
       ? [counted(worktrees, "worktree")]
       : []),
-    ...(branches > 0 ? [counted(branches, "branch")] : []),
+    ...(branches > 0
+      ? [`${counted(branches, "branch")}${worktrees > 0 ? WITHOUT : ""}`]
+      : []),
   ];
   return parts.join(" · ");
 };
 
-/** What a filter change says: `4 worktrees and 1 branch in app.` */
+/**
+ * What a filter change says: `4 worktrees and 1 branch without a worktree in
+ * app.`
+ */
 export const countSaid = (
   projects: readonly WorktreesProject[],
   scope: string | null,
@@ -47,7 +57,7 @@ export const countSaid = (
   if (items.length === 0) return `No Ork worktrees or branches in ${where}.`;
   const what = [
     ...(worktrees > 0 ? [counted(worktrees, "worktree")] : []),
-    ...(branches > 0 ? [counted(branches, "branch")] : []),
+    ...(branches > 0 ? [`${counted(branches, "branch")}${WITHOUT}`] : []),
   ].join(" and ");
   return `${what} in ${where}.`;
 };

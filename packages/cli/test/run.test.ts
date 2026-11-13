@@ -752,7 +752,29 @@ describe("ork run (a whole workflow)", () => {
     const run = pipeline({ inPlace: false });
     expect((await runWorkflowFile(run.value)).exitCode).toBe(1);
     expect(run.err.at(-1)).toMatch(
-      /^build need a git worktree, but .+ is not in a git repository with a commit; make a first commit/u,
+      /^build needs a git worktree, but .+ is not in a git repository with a commit; make a first commit/u,
+    );
+  });
+
+  it("says need for several worktree nodes, and names the project, not its workflows folder", async () => {
+    const run = pipeline({ inPlace: false });
+    const dir = realpathSync(run.value.cwd);
+    const folder = path.join(dir, ".ork", "workflows");
+    mkdirSync(folder, { recursive: true });
+    writeFileSync(
+      path.join(folder, "pipeline.ork.yaml"),
+      PIPELINE.replace(
+        "edges:\n",
+        "  deploy:\n    type: agent.worker\nedges:\n",
+      ),
+    );
+    run.value.file = path.join(".ork", "workflows", "pipeline.ork.yaml");
+    expect((await runWorkflowFile(run.value)).exitCode).toBe(1);
+    expect(run.err.at(-1)).toMatch(
+      new RegExp(
+        `^build, deploy need a git worktree, but ${dir} is not in a git repository with a commit`,
+        "u",
+      ),
     );
   });
 });
