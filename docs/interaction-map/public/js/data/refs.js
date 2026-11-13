@@ -1353,3 +1353,10 @@ export const ROLES = {
     "Code: a node's brief, and its sub-agents",
   ),
 };
+
+export const RUN_IDENTITY = {
+  adr: d(
+    "decisions/ADR-089-guarded-stores-in-run-identity.md",
+    "ADR-089: the stores a run guards, in run identity",
+  ),
+};

@@ -23,10 +23,13 @@ export const builtinExecutors = (
     orkBin?: string;
     /** Variables to mask besides those the workflow reads. */
     maskedNames?: readonly string[];
+    /** The run's store file, which its programs are guarded in. */
+    store?: string;
   },
 ): NodeExecutors => {
   const tool = toolExecutor(options.tools ?? spawnTool, {
     ...(options.orkBin === undefined ? {} : { orkBin: options.orkBin }),
+    ...(options.store === undefined ? {} : { store: options.store }),
     ...(options.maskedNames === undefined
       ? {}
       : { maskedNames: options.maskedNames }),

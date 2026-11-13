@@ -12,29 +12,51 @@ Read [AGENTS.md](../../AGENTS.md), then the user docs you're testing
 
 ## The ground rules
 
-- **Throwaway everything.** A temp `HOME` (`HOME=$(mktemp -d)`), temp git
-  repos, a temp npm prefix. Never touch the real `~/.ork`, the user's repos, or
-  this repository's own git state; run no git command from a hook's
+- **Throwaway everything, from the kit.** Set up with the QA kit, in one call
+  and never by hand: `node tools/qa/kit.ts setup <tarball> <name>`. It makes a
+  root beside the tarball with a temp `HOME`, an install prefix with the tarball
+  installed, a starter git repo (`repos/starter`, one commit) and an `env.sh`;
+  start EVERY Bash call with `. <root>/env.sh && `, because your Bash keeps no
+  exported variables between calls and a call without it uses the real `HOME`
+  and `PATH` (the real, paid `claude`; the real store). Never touch the real `~/.ork`, the user's
+  repos, or this repository's own git state; run no git command from a hook's
   environment.
-- **Nothing paid.** Put a fake `claude` first on `PATH`: the claude-code
-  driver's stand-in, `packages/runtime/test/fixtures/fake-claude.mjs`, behind a
-  `claude` shim. Put a fake `gh` that logs its arguments and exits 1 first on
-  `PATH` too. Check `command -v claude gh` before any run. Unset
-  `ANTHROPIC_API_KEY` and the Bedrock and Vertex variables. A real run happens
-  only when the maintainer has approved it in the brief, with a budget cap.
+- **Nothing paid.** The kit's `env.sh` puts the stand-ins first on `PATH`: a
+  fake `claude` (the claude-code driver's stand-in, which answers `ork doctor`'s
+  probes), a fake `cmd`, and a fake `gh` that logs its arguments to
+  `<root>/gh.log` and exits 1 (so `ork doctor` reports gh as a warning, which is
+  expected). It also unsets `ANTHROPIC_API_KEY` and the Bedrock, Vertex and
+  Foundry variables. Check `command -v claude gh` before any run. A real run
+  happens only when the maintainer has approved it in the brief, with a budget
+  cap.
 - **Nothing outward.** No `ork feedback publish` to the real repository, no
   real registry for upgrades (serve a fake dist-tags endpoint and set
   `ORK_UPDATE_REGISTRY`), no real package manager (a fake `npm` first on
-  `PATH`). Set `ORK_NO_UPDATE_CHECK=1` unless the update check is under test.
-- **Clean up:** stop every process you started, and remove the temp folders.
+  `PATH`); the kit makes neither, so make them yourself if you need them.
+  `env.sh` sets `ORK_NO_UPDATE_CHECK=1`; unset it only when the update check is
+  under test.
+- **Commit through the kit.** A throwaway repo needs a commit only after
+  `ork init --issues` or the like; run `node tools/qa/kit.ts commit <repo>
+  [message]`, never `git commit` or `git -c … commit` (the project denies
+  both). It refuses a repo outside a kit root under the temp folder.
+- **Keep the markers.** Never unset `ORK_RUN` or `ORK_SESSION`. They guard the
+  real `ork` store; the store under your temp `HOME` is not guarded, so
+  `ork ui` and `ork decide` work there.
+- **Clean up:** run `node tools/qa/kit.ts stop <root>` as your last step before
+  you report. It stops the live runs in your store, ends every process started
+  from your root, and removes the root. Stop anything you started elsewhere
+  yourself.
+- **Report before your turns run out.** Your turns are limited, so write your
+  findings while you still have some; a partial report beats none.
 
 ## How to test
 
-1. **Test what ships.** `pnpm build`, then `npm pack` in `packages/cli`, and
-   install that tarball into a temp prefix (`npm install -g --prefix <tmp>`),
-   with that prefix's `bin` first on `PATH`. The source tree (`pnpm ork`) is
-   for comparison only: a bug that appears only in the installed package is
-   still a bug.
+1. **Test what ships.** Install the packed tarball the kit way (`kit.ts setup`
+   does it), never the source tree. Under `qa-pass` the package is already built
+   from `main` and packed, so don't build again. Outside it, `pnpm build`, then
+   `npm pack` in `packages/cli`, and give the tarball to `kit.ts setup`. The
+   source tree (`pnpm ork`) is for comparison only: a bug that appears only in
+   the installed package is still a bug.
 2. **Follow the docs literally.** Getting started, then each guide in scope,
    running every command exactly as printed. Each step either works as the page
    says or is a finding: a wrong command, a missing step, an output that
@@ -45,8 +67,9 @@ Read [AGENTS.md](../../AGENTS.md), then the user docs you're testing
      continue and resume, a detached run;
    - decisions (`ork decide`), worktrees (`ork worktrees`, `clean`, `remove`),
      feedback (`note`, `list`, `accept`, `export`, `import`);
-   - `ork ui`: start it, sign in with the printed link, and use each panel's
-     main action once with the browser tools;
+   - `ork ui`: start it in your temp `HOME` (`--port 0`), sign in with the
+     printed link, and use each panel's main action once with the browser tools;
+     answer a decision of your own throwaway run with `ork decide` the same way;
    - `ork upgrade --check` against the fake registry;
    - the plugin's skills and `ork mcp` where the brief includes them.
 4. **Then try to break it:** wrong inputs, missing files, a repo with

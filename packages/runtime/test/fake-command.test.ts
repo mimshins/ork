@@ -53,6 +53,12 @@ const run = (
 };
 
 describe("the fake cmd", () => {
+  it("answers --version before it reads any scenario", () => {
+    const done = spawnSync(FAKE, ["--version"], { encoding: "utf8" });
+    expect(done.status).toBe(0);
+    expect(done.stdout).toBe("1.88.5\n");
+  });
+
   it("ends a session out of turns with a max_turns result and exit code 8", () => {
     const { status, lines } = run("max-turns");
     expect(status).toBe(8);

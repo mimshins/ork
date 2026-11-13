@@ -80,8 +80,9 @@ never asks: it says once `no terminal: answer with ork decide`. A foreground
 `ork run` with no terminal does not answer a called run's questions either; they
 wait in `ork decide` and the Decisions panel of `ork ui`.
 
-A program or an agent inside a run cannot use `ork attach` on a terminal: it
-answers as you, so it refuses there as `ork decide` does.
+A program or an agent inside a run cannot use `ork attach` on a terminal in a
+store that run guards: it answers as you, so it refuses there as `ork decide`
+does.
 
 For the full rules: [the CLI spec](../../../specs/cli.md),
 [calling workflows](../../../specs/scheduler/calls.md) and

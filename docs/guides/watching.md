@@ -131,8 +131,8 @@ doesn't turn it off. If a stranger can get a branch onto this checkout, pulling
 it can still change what runs.
 
 Accepting takes a terminal, so a browser tab can't do it, and a program in a run
-is refused. That stops accidents, but it isn't a wall: a program determined to,
-with a terminal of its own, could answer the question.
+is refused in a store that run guards. That stops accidents, not a wall: a
+program determined to, with a terminal of its own, could answer the question.
 
 ### Don't let a stranger talk to a session
 

@@ -40,8 +40,10 @@ nodes:
     prompt: |-
       Split this QA scope into independent surfaces a tester can cover alone: {{inputs.scope}}
 
-      Read docs/README.md and the guides the scope names. A surface is one guide or one area of the CLI or `ork ui`, small enough for one session. List at most 8, the ones a user meets first at the top. Give each a short `name` and, in `detail`, the pages to follow and what to exercise. Change nothing.
+      Read docs/README.md and the guides the scope names. A surface is one guide page or one command family, with at most about 10 documented commands to follow plus the tries to break them; a guide of more than two pages is split into several surfaces. List at most 8, the ones a user meets first at the top. Give each a short `name` and, in `detail`, the pages to follow and what to exercise. For anything that needs a real terminal, say how a tester exercises it without one (tab completion: `ork __complete`, see packages/cli/src/main.ts:72). Change nothing.
     model: claude-code.haiku
+    context:
+      - ../context/read-only-bash.md
     isolation: readonly
     budgetUsd: 0.5
     maxTurns: 15
@@ -59,9 +61,11 @@ nodes:
 
       {{item.name}}: {{item.detail}}
 
-      The package is already built from main and packed; install this tarball, don't build again:
-      {{nodes.pack.output.stdout}}
+      The package is already built from main and packed. Set up your world with the QA kit, in one call and never by hand: `node tools/qa/kit.ts setup {{nodes.pack.output.stdout}} <a short name for your surface>`. It installs this tarball (don't build again) into a throwaway prefix, makes a throwaway HOME, puts a fake claude, cmd and gh first on PATH, and commits a starter repo. Your Bash keeps no exported variables between calls, so start EVERY Bash call with `. <root>/env.sh && ` (the root is in the kit's output); without it a call uses the real HOME and PATH (the real, paid claude and the real store). Run `command -v claude gh` in the same call, before any run.
+      Commit in a throwaway repo only with `node tools/qa/kit.ts commit <repo> [message]`, never with `git -c … commit`. Never unset `ORK_RUN` or `ORK_SESSION`.
+      Test `ork ui` and `ork decide` in your temp HOME: with that HOME they work, since your throwaway store is not the one guarded.
       Other testers run at the same time: start `ork ui` with `--port 0` and pick free ports for anything you serve. A port clash is not a finding.
+      Your last step before you report: run `node tools/qa/kit.ts stop <root>`, which stops your runs and processes and removes your root. Your turns are limited, so start your report while you still have turns left; a partial report beats none.
 
       Report status done, starting `summary` with the surface's name, with every finding in `findings` (markdown: most severe first, each with its steps, severity and suspected place, then the doc drift, what passed and what you couldn't test), the counts in `blockers` and `majors`, and `verdict` clean only when you found nothing.
     model: claude-code.haiku
@@ -111,6 +115,15 @@ nodes:
       - save
       - drop
     recommended: save
+  sweep:
+    type: tool.shell
+    script: |-
+      set -eu
+      node tools/qa/kit.ts sweep "$(dirname "$TARBALL")"
+    allow:
+      - sh
+    env:
+      TARBALL: "{{nodes.pack.output.stdout}}"
   save:
     type: tool.shell
     script: |-
@@ -133,6 +146,9 @@ edges:
   - from: qa
     to: decide
     when: count > 0
+  - from: qa
+    to: sweep
+    when: ok || !ok
   - from: decide
     to: save
     when: choice == 'save'

@@ -13,8 +13,8 @@ gaps review carried are open work in the [register](../gaps.md#limits).
   `ork decide` another way (a script it wrote, an alias, `ork ui`'s API with the
   token from `~/.ork/ui.json`) isn't stopped. It runs on the `node` on `PATH`,
   which must run TypeScript, as Node 24 does and Ork needs; an older one fails
-  the hook, and Claude Code goes ahead. `ork decide` itself refuses inside a
-  run, and the skills say not to answer.
+  the hook, and Claude Code goes ahead. `ork decide` itself refuses inside a run
+  in a guarded store, and the skills say not to answer.
 - **L144 · The plugin needs `ork` on `PATH`.** It runs the person's own `ork`,
   so one Ork reads one store. Without it, or with an Ork before 0.3.0, which has
   no `ork mcp`, Claude Code shows the server as failed; an `ork` too old for the

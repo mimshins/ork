@@ -152,5 +152,12 @@ program you start, so a session can read the variable behind
 `{{env.STAGING_GH_TOKEN}}`, and masking doesn't apply to its transcript. Their
 Bash also has `ORK_SESSION=1`, so an agent can't use those commands either.
 
+Both also carry `ORK_GUARDED_STORES`, a list of the stores whose runs started
+them, and those commands refuse only in a store on that list. A run you start
+from inside one, under another `HOME`, adds its store to the list and keeps the
+outer one on it. Under that `HOME` its own programs can answer its decisions and
+open `ork ui`; your real store stays refused. A marker with no list, from an
+older `ork`, refuses everywhere. The variable is not settable by `env:`.
+
 If your own terminal gets such a refusal, it inherited a run's variables, from a
 tmux server a run started for example. Open a new shell.

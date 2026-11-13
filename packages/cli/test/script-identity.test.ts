@@ -289,6 +289,25 @@ edges:
     expect(done.stderr).toContain("ORK_RUN is set here");
   });
 
+  it("refuses to answer from a run that guards this store", () => {
+    const place = project();
+    const done = ork(place, ["decide", "--id", "d1", "--choose", "yes"], {
+      ORK_RUN: "r1",
+      ORK_GUARDED_STORES: JSON.stringify([storePath(place.home)]),
+    });
+    expect(done.status).toBe(1);
+    expect(done.stderr).toContain("answers as you");
+  });
+
+  it("answers in a store that no enclosing run guards", () => {
+    const place = project();
+    const done = ork(place, ["decide", "--id", "d1", "--choose", "yes"], {
+      ORK_RUN: "r1",
+      ORK_GUARDED_STORES: JSON.stringify(["/elsewhere/.ork/state.db"]),
+    });
+    expect(done.stderr).not.toContain("answers as you");
+  });
+
   it("still lists decisions for a program in a run", () => {
     const place = project();
     const done = ork(place, ["decide", "--list"], { ORK_SESSION: "1" });

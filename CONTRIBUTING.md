@@ -170,7 +170,17 @@ holds its rules, and [.ork/workflows/](./.ork/workflows) its workflows. Each of
   leaves it in the worktree. The commit refuses a change with no changeset.
 - **`qa-pass`** splits the scope into up to 8 surfaces and has one qa agent test
   each, on the package built from `main`, as a user would, with a fake `claude`
-  and `gh`. It shows you what every surface found, and says which failed.
+  and `gh`. Each tester sets itself up with the QA kit
+  (`node tools/qa/kit.ts setup <tarball> <name>`: a temp root with its own
+  `HOME`, an install prefix, the stand-ins and a committed starter repo),
+  commits in a throwaway repo only through `kit.ts commit`, and ends with
+  `kit.ts stop`. Because the `ork` store of its `HOME` is not one the run
+  guards, a tester can open `ork ui` and answer `ork decide` on its own
+  throwaway runs (the real store stays guarded). A `sweep` step then stops
+  anything left, in every tester's root, and removes pack's folder (only a
+  folder under the temp dir that holds a kit root or a `.tgz`, so it still goes
+  when every tester failed before setup), whether the testers passed or failed.
+  It shows you what every surface found, and says which failed.
 
 Run them with a released Ork installed globally (`1.0.0-alpha.0` or later), not
 with `pnpm ork` from this checkout. A run starts more `ork` processes as it goes

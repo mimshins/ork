@@ -320,11 +320,13 @@ nodes:
 
       Start `summary` with your concern's name. A finding is blocking when it is a bug, an acceptance criterion with no test that would fail without the change, or a rule AGENTS.md makes mandatory; put those in `findings` (file:line, what is wrong, the smallest fix), most severe first, and report changes_requested. Put everything else (style, naming, a better way, a nice-to-have) in `notes`, and report pass when only notes remain: notes never send the work back. Read every changed source file and test body your concern touches, in full; your limits allow it, so don't stop to economise. List in `unchecked` what your concern touches that you didn't read or couldn't check (an empty string when nothing). When you run again, don't review the whole change again: check each of your earlier blocking findings at its place and in what was changed for it, then read what your last `unchecked` listed; re-read other files only where those fixes reach.
 
-      Read files with Read and search with Grep. When you do use Bash, keep to cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo, npm view and read-only git, one command per call, with no cd (you are already in the checkout), no awk, no find, no loops, no shell variables, no brace expansion, no redirects or files (not even in /tmp) and no paths outside this checkout: anything else stops the run to ask the maintainer.
+      In Bash you may also run npm view.
 
       {{inputs.plan}}
     model: "{{item.model}}"
     effort: high
+    context:
+      - ../context/read-only-bash.md
     isolation: readonly
     budgetUsd: 2
     maxTurns: 40
@@ -541,9 +543,9 @@ nodes:
       The items done: {{nodes.polish.output.done}}
 
       A finding is blocking when it is a bug. Put those in `findings` (file:line, what is wrong, the smallest fix) and report changes_requested; put everything else in `notes` and report pass. List in `unchecked` what you didn't read or couldn't check (an empty string when nothing).
-
-      Read files with Read and search with Grep. When you do use Bash, keep to cat, head, tail, wc, ls, grep, rg, sed -n, cut, sort, uniq, echo and read-only git, one command per call, with no cd, no awk, no find, no loops, no shell variables, no brace expansion, no redirects or files and no paths outside this checkout: anything else stops the run to ask the maintainer.
     effort: high
+    context:
+      - ../context/read-only-bash.md
     isolation: readonly
     budgetUsd: 1.5
     maxTurns: 30

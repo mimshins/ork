@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /**
  * @file A stand-in for `claude -p` in stream-json mode, for the CLI driver's
- *   tests. It reads the brief from stdin, asks the user through Ork's MCP
+ *   tests. `--version` prints a version that passes `ork doctor`'s minimum, and
+ *   `auth status --json` says it is logged in; both answer before anything
+ *   else is read. A session started without `--model` reports the model
+ *   `fake`. It reads the brief from stdin, asks the user through Ork's MCP
  *   server (as the real CLI would call the ask_user tool), and ends with a
  *   structured report, like the real CLI's first result in print mode. With
  *   `--resume` it says which session it resumed. With a `PreToolUse` HTTP hook
@@ -38,7 +41,18 @@ import path from "node:path";
 import { createInterface } from "node:readline";
 
 const args = process.argv.slice(2);
-const flag = name => args[args.indexOf(name) + 1];
+const flag = name => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
+
+// The probes `ork doctor` runs; they answer before any session flag is read.
+if (args[0] === "--version") {
+  process.stdout.write("2.1.314 (Claude Code)\n");
+  process.exit(0);
+}
+if (args[0] === "auth" && args[1] === "status") {
+  process.stdout.write(`${JSON.stringify({ loggedIn: true, authMethod: "claude.ai", apiProvider: "firstParty" })}\n`);
+  process.exit(0);
+}
+
 const mcp = JSON.parse(flag("--mcp-config")).mcpServers.ork;
 const settings = args.includes("--settings") ? JSON.parse(flag("--settings")) : {};
 const hook = settings.hooks?.PreToolUse?.[0]?.hooks?.[0];

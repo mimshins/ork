@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * @file A stand-in for Command Code's `cmd` (1.88.5), for the `command-code`
- *   driver's tests. `cmd mcp add|get|remove|list` keep MCP entries per folder
+ *   driver's tests. `cmd --version` prints `1.88.5`, as `ork doctor` probes
+ *   it. `cmd mcp add|get|remove|list` keep MCP entries per folder
  *   in `$HOME/.commandcode/projects/<slug>/mcp.json`, as the real one does
  *   (measured; specs/architecture.md, "Command Code"). `cmd -p <brief>
  *   --output-format json` finds Ork's endpoint in the `ork` entry of its
@@ -73,6 +74,11 @@ const mcp = () => {
   }
   process.exit(0);
 };
+
+if (args[0] === "--version") {
+  process.stdout.write("1.88.5\n");
+  process.exit(0);
+}
 
 if (args[0] === "mcp") mcp();
 

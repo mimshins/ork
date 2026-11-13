@@ -22,6 +22,12 @@ import {
 
 import { type Environ, readEnv } from "./environ.ts";
 import { mcpVariablesOf } from "./mcp-servers.ts";
+import {
+  GUARDED_STORES_ENV,
+  guardOf,
+  RUN_ENV,
+  SESSION_ENV,
+} from "./run-marker.ts";
 import type { ToolRunner } from "./tool-command.ts";
 import { scrubberOf } from "./tool-scrub.ts";
 
@@ -33,12 +39,6 @@ export const OUTPUT_ENV = "ORK_OUTPUT";
 /** A file a `watch:` node's program keeps between looks (RFC-011). */
 export const STATE_ENV = "ORK_STATE";
 
-/** Set for a program in a run. */
-export const RUN_ENV = "ORK_RUN";
-
-/** Set for a Claude session. It says no more than that: no run, no node. */
-const SESSION_ENV = "ORK_SESSION";
-
 /** The variables a caller's run reads, for a run it calls to mask too. */
 const MASKED_ENV = "ORK_MASKED";
 
@@ -46,6 +46,7 @@ const MASKED_ENV = "ORK_MASKED";
 const IDENTITY_KEYS = new Set([
   RUN_ENV,
   SESSION_ENV,
+  GUARDED_STORES_ENV,
   MASKED_ENV,
   "ORK_NODE",
   "ORK_ROUND",
@@ -73,29 +74,42 @@ export const withoutIdentity = (env: Environ): Record<string, string> =>
   );
 
 /**
- * What a Claude session runs with: no identity, only the marker that stops its
- * Bash from speaking as the user through `ork chat`.
+ * What a Claude session of a run in `store` (default: the user's) runs with: no
+ * identity, only the marker that stops its Bash from speaking as the user
+ * through `ork chat`, and the stores it must not do that in.
  */
-export const sessionEnv = (env: Environ): Record<string, string> => ({
+export const sessionEnv = (
+  env: Environ,
+  store?: string,
+): Record<string, string> => ({
   ...withoutIdentity(env),
   [SESSION_ENV]: "1",
+  ...guardOf(env, store),
 });
 
-/**
- * The variable that says a program in a run or a session started this process,
- * or `null` when none does.
- */
-export const runMarkerIn = (env: Environ): string | null =>
-  [RUN_ENV, SESSION_ENV].find(name => env[name] !== undefined) ?? null;
+/** What the tool executor needs besides the program runner. */
+export type ToolOptions = {
+  orkBin?: string;
+  environ?: Environ;
+  maskedNames?: readonly string[];
+  /** The run's store file; without it, a program is guarded everywhere. */
+  store?: string;
+};
 
-/** Who a node's program is. It is attribution, not a security boundary. */
+/**
+ * Who a node's program is, and the stores its run guards (none listed without
+ * `store`, which guards every one). It is attribution, not a boundary.
+ */
 export const identityOf = (
   context: Pick<
     ExecuteContext,
     "runId" | "id" | "round" | "runDir" | "projectRoot" | "workflow" | "item"
   >,
   orkBin: string | undefined,
+  environ: Environ = {},
+  store?: string,
 ): Record<string, string> => ({
+  ...(store === undefined ? {} : guardOf(environ, store)),
   [RUN_ENV]: context.runId,
   ORK_NODE: context.id,
   ORK_ROUND: String(context.round),

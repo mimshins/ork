@@ -1,6 +1,7 @@
 # ADR-047 — Tool nodes know who they are, take an environment, and return JSON
 
-- **Status:** Accepted
+- **Status:** Accepted; the marker and where the guards refuse amended by
+  [ADR-089](./ADR-089-guarded-stores-in-run-identity.md)
 - **Date:** 2026-11-04
 - **Topic:** workflow format / node executors / CLI
 - **RFC:** waived by the author; the options are below
@@ -52,7 +53,8 @@ clean run the scrubbed value is the only copy
 **`ork chat`, `ork continue` and answering with `ork decide` refuse when
 `ORK_RUN` or `ORK_SESSION` is set,** and `ork ui` withholds its sign-in link,
 since they act as the user, and a program or an agent in a run must not. Listing
-decisions and `ork stop` stay open.
+decisions and `ork stop` stay open. (They refuse only in the stores the marker
+lists: [ADR-089](./ADR-089-guarded-stores-in-run-identity.md).)
 
 ## Options considered
 

@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L342, and the next chore is
+closes it. Ids are never reused: the next limit is L350, and the next chore is
 C15 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -53,6 +53,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 - [Limits found building the conflict resolver](./gaps/conflict-resolver-limits.md)
 - [Limits found building the `issues` workflow](./gaps/issues-limits.md)
 - [Limits found building follow-ups](./gaps/follow-ups-limits.md)
+- [Limits found closing the blind spots of QA run c9c908b9](./gaps/qa-c9c908b9-limits.md)
 
 ## Gaps
 
@@ -71,7 +72,10 @@ review:
   and one `--input` argument, which Linux limits to 128 KiB each.
 - **G14 · A session's permissions are broad.** Sessions run in Claude Code's
   default mode; a bare `Edit` or `Write` allow isn't held to the node's
-  worktree, and a deny rule matches by prefix, so `HOME=… ork …` gets past it.
+  worktree, and a deny rule matches by prefix, so `HOME=… ork …` and
+  `git -c … commit` get past it. The project denies the `git -c * commit *` and
+  `git -C * commit *` forms since the QA kit change; other prefixes still get
+  past.
 - **G15 · A session server's program isn't checked before the run.** A node gets
   a browser by naming it (`mcp:`,
   [ADR-067](../decisions/ADR-067-nodes-name-mcp-servers.md)), but the pre-flight

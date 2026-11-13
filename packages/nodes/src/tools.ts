@@ -30,7 +30,6 @@ import {
 } from "./tool-command.ts";
 import { exitEnd, failed, invalidOutput, skippedCheck } from "./tool-ends.ts";
 import {
-  type Environ,
   identityOf,
   maskedEnv,
   namesToMask,
@@ -39,6 +38,7 @@ import {
   safeRunner,
   secretsOf,
   STATE_ENV,
+  type ToolOptions,
 } from "./tool-env.ts";
 import {
   keepFile,
@@ -139,14 +139,7 @@ export const clipError = (text: string): string =>
 
 /** Runs a user's CLI through its integration's adapter, with its own login. */
 export const toolExecutor =
-  (
-    given: ToolRunner,
-    options: {
-      orkBin?: string;
-      environ?: Environ;
-      maskedNames?: readonly string[];
-    } = {},
-  ): NodeExecutor =>
+  (given: ToolRunner, options: ToolOptions = {}): NodeExecutor =>
   async context => {
     const { node } = context;
     if (!isToolNode(node))
@@ -187,7 +180,7 @@ export const toolExecutor =
         : undefined;
     const env = {
       ...nodeEnv.values,
-      ...identityOf(context, options.orkBin),
+      ...identityOf(context, options.orkBin, environ, options.store),
       ...maskedEnv(namesToMask(context.workflow, environ, options.maskedNames)),
       ...(outputFile === undefined ? {} : { [OUTPUT_ENV]: outputFile }),
       ...(node.watch === undefined

@@ -11,10 +11,12 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   type EventStore,
@@ -29,6 +31,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   checkNode,
+  exec,
   formatCheck,
   headWarning,
   leaseChecks,
@@ -326,5 +329,48 @@ describe("ork doctor on Command Code leases", () => {
   it("says nothing when no lease was left", async () => {
     const place = inRepoPlace(mkdtempSync(path.join(tmpdir(), "ork-doctor-")));
     expect(await leaseChecks(place, {})).toEqual([]);
+  });
+});
+
+/** A fixture of the runtime package: the stand-ins QA puts on `PATH`. */
+const fixture = (name: string): string =>
+  fileURLToPath(
+    new URL(`../../runtime/test/fixtures/${name}`, import.meta.url),
+  );
+
+/**
+ * Runs `body` with `PATH` set to `dir` (and node's own folder), then restores
+ * it.
+ */
+const withPath = async <T>(dir: string, body: () => Promise<T>): Promise<T> => {
+  const saved = process.env["PATH"];
+  process.env["PATH"] = [dir, path.dirname(process.execPath)].join(
+    path.delimiter,
+  );
+  try {
+    return await body();
+  } finally {
+    process.env["PATH"] = saved;
+  }
+};
+
+describe("ork doctor with the QA stand-ins", () => {
+  it("reports the claude-code driver ok with only fake claude and fake cmd on PATH", async () => {
+    const bin = mkdtempSync(path.join(tmpdir(), "ork-doctor-bin-"));
+    symlinkSync(fixture("fake-claude.mjs"), path.join(bin, "claude"));
+    symlinkSync(fixture("fake-command.mjs"), path.join(bin, "cmd"));
+    const { results } = await withPath(bin, () =>
+      runChecks(exec, {}, "24.20.0"),
+    );
+    rmSync(bin, { recursive: true, force: true });
+    expect(
+      results
+        .map(r => `${r.name}: ${r.status}`)
+        .filter(l => /driver\)/u.test(l)),
+    ).toEqual([
+      "claude (claude-code driver): ok",
+      "opencode (open-code driver): skip",
+      "cmd (command-code driver): ok",
+    ]);
   });
 });

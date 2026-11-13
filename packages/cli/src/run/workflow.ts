@@ -31,6 +31,7 @@ import {
   type RunResult,
   startControl,
   startRun,
+  storePath,
   walkSummary,
   type Workspace,
 } from "@krapht/ork-core";
@@ -209,6 +210,7 @@ export const runWorkflowFile = async (
     runtimeFor: driver => options.runtime(driver, placeFiles(place).runs),
     inPlace: options.inPlace,
     maskedNames,
+    store: storePath(options.home),
   };
   if (options.driver !== undefined) executorOptions.driver = options.driver;
   if (ready.readyDriver !== undefined) {
@@ -217,7 +219,6 @@ export const runWorkflowFile = async (
   if (options.tools !== undefined) executorOptions.tools = options.tools;
   const script = process.argv[1];
   if (script !== undefined && onPath(script)) executorOptions.orkBin = script;
-
   const replay =
     options.resume === undefined
       ? undefined

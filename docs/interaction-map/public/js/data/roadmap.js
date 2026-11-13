@@ -1219,6 +1219,17 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "qa-blind-spots",
+        title: "Close the QA workflow's blind spots",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). The commands that act as you (`ork ui`'s sign-in link, `ork decide`, `attach`, `chat`, `continue`, `watch --accept`) refuse in a run only in the stores that run guards, so a tester can try them under a temp HOME (ADR-089); the fake CLIs answer `ork doctor`'s probes; `tools/qa/kit.ts` sets a tester up (HOME, prefix, stand-ins, a committed starter repo), commits in a throwaway repo, and stops and sweeps; `qa-pass` gets a size rule for surfaces, a `sweep` step and a shared read-only Bash rule. Left: the re-run of QA, on the maintainer's go.",
+        docs: [
+          "decisions/ADR-089-guarded-stores-in-run-identity.md",
+          "specs/gaps/qa-c9c908b9-limits.md",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",

@@ -8,12 +8,15 @@ review carried are open work in the [register](../gaps.md#limits).
 
 - **L80 · The guards on acting as the user are not a boundary.** `ork chat`,
   `ork continue`, answering with `ork decide` and the sign-in link of `ork ui`
-  all refuse when `ORK_RUN` or `ORK_SESSION` is set. But a program or an agent's
-  Bash runs as the same user with the same store: it can unset those, read the
-  server's token from `~/.ork/ui.json` and call its routes. They stop accidents
-  and a prompt-injected "answer your own gate". `ork decide --list` and
-  `ork stop` stay open: neither speaks as the user. A real boundary needs
-  per-run capabilities.
+  all refuse when `ORK_RUN` or `ORK_SESSION` is set and the current store is one
+  `ORK_GUARDED_STORES` lists (a marker with no list refuses everywhere;
+  [ADR-089](../../decisions/ADR-089-guarded-stores-in-run-identity.md)). But a
+  program or an agent's Bash runs as the same user with the same store: it can
+  unset those, point `HOME` at another store, read the server's token from
+  `~/.ork/ui.json` and call its routes. They stop accidents and a
+  prompt-injected "answer your own gate". `ork decide --list` and `ork stop`
+  stay open: neither speaks as the user. A real boundary needs per-run
+  capabilities.
 - **L81 · Only values read from the environment are scrubbed.** That is
   `{{env.*}}` and what `.mcp.json` reads, from tool nodes, steps, `mcp.call` and
   messages. What `.mcp.json` holds as written, a default included, is not, and

@@ -237,7 +237,7 @@ export const JOURNEYS = [
         to: "watchCmd",
         title: "You accept it, with `ork watch --accept`",
         detail:
-          "It shows what the trigger looks with and what the run does, and asks. It needs a terminal, and refuses inside a run. It takes this machine only: the hash isn't in the repository.",
+          "It shows what the trigger looks with and what the run does, and asks. It needs a terminal, and refuses inside a run in a store that run guards (ADR-089). It takes this machine only: the hash isn't in the repository.",
         docs: [WATCH.command, WATCH.report],
       },
       {

@@ -229,7 +229,12 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
     writes them, including JSON keys and numbers
     ([L81](./messaging/scripts-limits.md)). A Claude session inherits the user's
     variables like any program, without these, and also gets `ORK_SESSION=1`. A
-    detached run's programs and sessions also see `ORK_DETACHED=1`.
+    detached run's programs and sessions also see `ORK_DETACHED=1`. Both also
+    get `ORK_GUARDED_STORES`, a JSON array of the real paths of the stores of
+    the runs that started them: the guards on acting as the user refuse only in
+    those, a nested run adds its own store to the list it inherited, and `env:`
+    can't set it
+    ([ADR-089](../decisions/ADR-089-guarded-stores-in-run-identity.md)).
   - **Watching:** with [`watch:`](./scheduler/watching.md) it also gets
     `ORK_STATE`, a file kept between looks.
   - **JSON:** with `output: { format: json }` it also gets `ORK_OUTPUT`, a file

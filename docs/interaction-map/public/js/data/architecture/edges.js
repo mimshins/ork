@@ -641,7 +641,7 @@ export const EDGES = [
     kind: "human",
     label: "`ork watch` · `--accept`",
     detail:
-      "You start and stop it, and accept each trigger in a terminal on this machine. Without a terminal, or inside a run, `--accept` refuses.",
+      "You start and stop it, and accept each trigger in a terminal on this machine. Without a terminal, or inside a run in a store that run guards (ADR-089), `--accept` refuses.",
     status: "built",
     via: [[150, 1356]],
     docs: [WATCH.command, WATCH.guide],

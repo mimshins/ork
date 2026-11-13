@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * @file A stand-in for `opencode run --format json` (2.1.0), for the
- *   `open-code` driver's tests. It reads its config from the file
+ *   `open-code` driver's tests. `--version` prints `2.1.0` and exits before any
+ *   config is read, as `ork doctor` probes it. It reads its config from the file
  *   `OPENCODE_CONFIG` names: Ork's endpoint (`mcp.servers.ork`) and the
  *   permission rules, which it applies as OpenCode does (the last matching
  *   rule wins, `*` matches anything, and a call no rule matches runs, so only
@@ -32,6 +33,10 @@ import { homedir } from "node:os";
 
 const args = process.argv.slice(2);
 const flag = name => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
+if (args[0] === "--version") {
+  process.stdout.write("2.1.0\n");
+  process.exit(0);
+}
 const config = JSON.parse(readFileSync(process.env.OPENCODE_CONFIG, "utf8"));
 const ork = config.mcp.servers.ork;
 const rules = config.permissions ?? [];

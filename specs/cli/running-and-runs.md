@@ -202,9 +202,9 @@ filter serves `GET /api/runs/<id>/events?node=` in `ork ui`, and
   not words for the run. An option that is not one of the decision's, or a
   decision already answered or withdrawn, is refused with the reason. Decisions
   of crashed runs are not listed. A program or an agent in a run (`ORK_RUN` or
-  `ORK_SESSION` is set) may list them but not answer, since an answer speaks as
-  the user, and `ork continue` refuses there too, and `ork ui` withholds its
-  sign-in link ([L80](../messaging/scripts-limits.md)). `--workflow <name>`
+  `ORK_SESSION` is set) may list them but not answer in a guarded store (it
+  speaks as the user); `ork continue` refuses there too, and `ork ui` withholds
+  its sign-in link ([L80](../messaging/scripts-limits.md)). `--workflow <name>`
   keeps only the decisions of that workflow's live runs, ANDed with `<run>` (or
   the project, or `--all`), for `--list`, `--json` and asking in turn; a
   workflow with none lists none and says so. `--list` marks a decision with a
@@ -212,14 +212,14 @@ filter serves `GET /api/runs/<id>/events?node=` in `ork ui`, and
   [document](../messaging.md#decisions) of 40 lines or fewer before the question
   and otherwise says `Document: N lines. Type d to read it.`; `d` at the choose
   prompt prints it and asks again, and an option whose id is `d` wins. Output is
-  plain text, the Markdown source. `--id <decision> --document` prints that
-  decision's document, open or settled, and exits 0, or says it has none and
-  exits 1; it only reads, so a process in a run may use it.
+  the Markdown source. `--id <decision> --document` prints that decision's
+  document, open or settled, and exits 0, or says it has none and exits 1; it
+  only reads, so a run's process may use it.
 - **`ork chat <run> <node>`**
   ([chat.ts](../../packages/cli/src/commands/chat.ts),
   [tests](../../packages/cli/test/chat.test.ts)) talks to a leader or worker;
   any other node is refused, and so is a program or an agent in a run (`ORK_RUN`
-  or `ORK_SESSION` is set), since it speaks as the user
+  or `ORK_SESSION` is set) in a guarded store, since it speaks as the user
   ([L80](../messaging/scripts-limits.md)). Each line typed is a message
   (`-m <text>` sends one and exits; Ctrl-D leaves):
   - **In a live run**, the message goes to the store and the run is woken; the

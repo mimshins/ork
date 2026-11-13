@@ -8,7 +8,10 @@
 #   (commit: never): its work stays uncommitted in a detached worktree started
 #   from main, and a workflow's last step is a gate where the person chooses
 #   where it goes. Sessions can't commit, push or open a pull request (the deny
-#   rules); only the script behind that gate does.
+#   rules, which also cover the `git -c … commit` and `git -C … commit` forms);
+#   only the script behind that gate does. The one exception is
+#   `tools/qa/kit.ts commit`, which a QA tester uses on a throwaway repo under
+#   the temp folder and which refuses anything else.
 # - The commit message is a short imperative subject, a blank line, what changed
 #   and why, and no AI or agent attribution. build's docs node drafts it and
 #   the last gate shows it. The commit-msg hook enforces the no-attribution rule
@@ -76,6 +79,8 @@ permissions:
     - Bash(git push *)
     - Bash(git worktree *)
     - Bash(git -C * worktree *)
+    - Bash(git -c * commit *)
+    - Bash(git -C * commit *)
     - Bash(gh *)
     - Bash(npm publish *)
     - Bash(pnpm publish *)

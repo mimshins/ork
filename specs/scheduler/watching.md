@@ -177,11 +177,13 @@ The hash can't cover all a run reads: skills, agents in their own files, scripts
 the workflow calls, workflows it calls and `project.yaml` aren't in it
 ([L119](./watching-limits.md)).
 
-Accepting takes a terminal: it refuses without one and inside a run, and the UI
-only shows how things stand. The marker for "inside a run" is an environment
-variable ([ADR-047](../../decisions/ADR-047-script-identity-env-json.md)), so
-this stops accidents rather than a determined program. Accepted hashes aren't in
-the repository. All of what `--accept` and `--status` print from a project or a
+Accepting takes a terminal: it refuses without one and inside a run, in a store
+that run guards, and the UI only shows how things stand. The marker for "inside
+a run" is an environment variable
+([ADR-047](../../decisions/ADR-047-script-identity-env-json.md),
+[ADR-089](../../decisions/ADR-089-guarded-stores-in-run-identity.md)), so this
+stops accidents rather than a determined program. Accepted hashes aren't in the
+repository. All of what `--accept` and `--status` print from a project or a
 check has its escape sequences and line breaks taken out first.
 
 ### Inputs from a source

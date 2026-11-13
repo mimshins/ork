@@ -11,6 +11,7 @@ import {
   mkdtempSync,
   readFileSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -28,14 +29,17 @@ import { describe, expect, it } from "vitest";
 import {
   calledEnvWarning,
   clearOutputFiles,
+  guardedStoresIn,
   maskedEnv,
   maskedNamesOfRun,
   missingEnv,
   OUTPUT_LIMIT,
+  realStore,
   scrubberOf,
   sessionEnv,
   spawnTool,
   runMarkerIn,
+  storeGuarded,
   toolExecutor,
   type ToolRun,
   type ToolRunner,
@@ -231,20 +235,118 @@ describe("a tool node's environment", () => {
     expect(envReadsOf("{{env.A}}-{{inputs.b}}")).toEqual(["A"]);
   });
 
-  it("gives a Claude session only the marker", () => {
-    expect(sessionEnv({ ORK_RUN: "r", ORK_NODE: "n", KEEP: "1" })).toEqual({
+  it("gives a Claude session only the marker and its run's store", () => {
+    const { store } = stores();
+    expect(
+      sessionEnv(
+        { ORK_RUN: "r", ORK_NODE: "n", ORK_GUARDED_STORES: "[]", KEEP: "1" },
+        store,
+      ),
+    ).toEqual({
       KEEP: "1",
       ORK_SESSION: "1",
+      ORK_GUARDED_STORES: JSON.stringify([store]),
     });
-    expect(runMarkerIn(sessionEnv({}))).toBe("ORK_SESSION");
+    expect(runMarkerIn(sessionEnv({}, store))).toBe("ORK_SESSION");
     expect(runMarkerIn({ ORK_RUN: "r" })).toBe("ORK_RUN");
     expect(runMarkerIn({ KEEP: "1" })).toBeNull();
   });
 
   it("does not pass one run's identity on to the next", () => {
     expect(
-      withoutIdentity({ ORK_RUN: "r", ORK_OUTPUT: "f", KEEP: "1" }),
+      withoutIdentity({
+        ORK_RUN: "r",
+        ORK_OUTPUT: "f",
+        ORK_GUARDED_STORES: "[]",
+        KEEP: "1",
+      }),
     ).toEqual({ KEEP: "1" });
+  });
+});
+
+/** A real store file, a symlink to its folder, and another store. */
+const stores = () => {
+  const root = realStore(mkdtempSync(path.join(tmpdir(), "ork-guard-")));
+  mkdirSync(path.join(root, "home", ".ork"), { recursive: true });
+  const store = path.join(root, "home", ".ork", "state.db");
+  writeFileSync(store, "");
+  symlinkSync(path.join(root, "home", ".ork"), path.join(root, "linked"));
+  return {
+    store,
+    linked: path.join(root, "linked", "state.db"),
+    other: path.join(root, "other", "state.db"),
+  };
+};
+
+describe("the stores a run guards", () => {
+  it("guards nothing when no run started the process", () => {
+    const { store } = stores();
+    expect(guardedStoresIn({ ORK_GUARDED_STORES: "[]" })).toBeNull();
+    expect(storeGuarded({}, store)).toBe(false);
+  });
+
+  it("guards every store under a marker with no list, as an older ork sets", () => {
+    const { other } = stores();
+    expect(guardedStoresIn({ ORK_SESSION: "1" })).toBe("all");
+    expect(storeGuarded({ ORK_RUN: "r" }, other)).toBe(true);
+    expect(
+      storeGuarded({ ORK_RUN: "r", ORK_GUARDED_STORES: "not json" }, other),
+    ).toBe(true);
+  });
+
+  it("guards only the listed stores, by real path", () => {
+    const { store, linked, other } = stores();
+    const env = sessionEnv({}, linked);
+    expect(guardedStoresIn(env)).toEqual([store]);
+    expect(storeGuarded(env, store)).toBe(true);
+    expect(storeGuarded(env, linked)).toBe(true);
+    expect(storeGuarded(env, other)).toBe(false);
+  });
+
+  it("adds a nested run's store to the list it inherited, never replacing it", () => {
+    const { store, other } = stores();
+    const outer = sessionEnv({}, store);
+    const inner = sessionEnv(outer, other);
+    expect(guardedStoresIn(inner)).toEqual([store, path.resolve(other)]);
+    expect(guardedStoresIn(sessionEnv(inner, store))).toEqual([
+      store,
+      path.resolve(other),
+    ]);
+  });
+
+  it("keeps an inherited marker with no list guarding every store", () => {
+    const { store, other } = stores();
+    expect(guardedStoresIn(sessionEnv({ ORK_RUN: "r" }, store))).toBe("all");
+    expect(storeGuarded(sessionEnv({ ORK_SESSION: "1" }, store), other)).toBe(
+      true,
+    );
+  });
+
+  it("tells a program its run's stores, added to what the run inherited", async () => {
+    const { store, other } = stores();
+    const run = context(shell());
+    const { runner, seen } = runnerOf({});
+    const inherited = { ORK_RUN: "outer", ORK_GUARDED_STORES: `["${store}"]` };
+    await toolExecutor(runner, { environ: inherited, store: other })(run);
+    expect(seen.map(env => guardedStoresIn(env))).toEqual([
+      [store, path.resolve(other)],
+    ]);
+  });
+
+  it("guards a program everywhere when its run names no store", async () => {
+    const run = context(shell());
+    const { runner, seen } = runnerOf({});
+    await toolExecutor(runner, { environ: {} })(run);
+    expect(seen.map(env => guardedStoresIn(env))).toEqual(["all"]);
+  });
+
+  it("reaches a real program", async () => {
+    const { store } = stores();
+    const run = context(
+      shell({ command: `sh -c 'printf %s "$ORK_GUARDED_STORES"'` }),
+    );
+    const result = await toolExecutor(spawnTool, { environ: {}, store })(run);
+    expect(result.output["stdout"]).toBe(JSON.stringify([store]));
   });
 });
 
