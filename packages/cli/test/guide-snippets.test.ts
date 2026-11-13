@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 const GUIDE = path.resolve(
   import.meta.dirname,
-  "../../../docs/guides/issues-in-parallel.md",
+  "../../../docs/guides/issues-in-parallel/locks-and-conflicts.md",
 );
 
 /** The first yaml block under a heading of the guide. */

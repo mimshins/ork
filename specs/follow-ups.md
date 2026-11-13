@@ -107,8 +107,9 @@ answer for every action (`followUpActions`).
 - **Duplicates merge.** One with the same `for`, the same files and a title
   whose words are at least 80% the same (Jaccard) as an **open** follow-up's
   merges into it: its body is added if new, and it takes a draft or steps the
-  kept one lacked. The result says it merged. A closed one never absorbs a new
-  one.
+  kept one lacked. The result says it merged, and when a different `--text` was
+  given, that the new text was not kept (the first draft stays). A closed one
+  never absorbs a new one.
 - **Text is scrubbed first** with the feedback redactor
   ([redact.ts](../packages/core/src/feedback/redact.ts)): secrets masked, a home
   folder written `~`, the project's paths `<project>/…`, and emails, hosts and

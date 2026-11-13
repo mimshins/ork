@@ -5,6 +5,7 @@
  *   owner questions read well in the transcript.
  */
 
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -296,6 +297,48 @@ describe("a recorded run", () => {
     });
   });
 
+  describe("`ork tree` after a crash", () => {
+    // a ended, b was cut off mid-run, c never started.
+    const events: RunEvent[] = [
+      {
+        type: "run.started",
+        runId: "r3",
+        workflow: "w",
+        entries: ["a"],
+        nodes: ["a", "b", "c"].map(id => ({ id, type: "tool.shell" })),
+      },
+      { type: "node.started", id: "a", nodeType: "tool.shell", round: 1 },
+      { type: "node.finished", id: "a", round: 1, ok: true, output: {} },
+      { type: "node.started", id: "b", nodeType: "tool.shell", round: 1 },
+    ];
+    const run: RunRecord = {
+      id: "r3",
+      workflow: "w",
+      file: "/p/w.ork.yaml",
+      project: "/p",
+      status: "running",
+      // A process that has exited: `ork ps` reads the run as crashed.
+      pid: spawnSync("true").pid ?? 0,
+      startedAt: "2026-11-10T11:00:00.000Z",
+      costUsd: 0,
+      depth: 0,
+    };
+
+    it("shows the cut-off node as cut off and the rest as not run", () => {
+      const [header, a, b, c] = view(run, events).split("\n");
+      expect(header).toContain("crashed");
+      expect(a).toMatch(/^a .*✓/u);
+      expect(b).toMatch(/^b .*✗ cut off$/u);
+      expect(c).toMatch(/^c .*- not run$/u);
+    });
+
+    it("still shows a live run's node as running", () => {
+      const text = view({ ...run, pid: process.pid }, events);
+      expect(text).toMatch(/b .*● running/u);
+      expect(text).not.toContain("cut off");
+    });
+  });
+
   it("does not start when a tool node's program is not installed", async () => {
     const s = setup({ installed: program => program !== "gh" });
     const { exitCode } = await runWorkflowFile(s.value);
@@ -395,6 +438,31 @@ describe("run lookup and formatting", () => {
     expect(warning).toContain(
       "warning ship never ran, so 2 messages to it went unread",
     );
+  });
+
+  it("counts what a resume kept apart from what ran", () => {
+    const [, last] = formatRunEvent(
+      {
+        type: "run.finished",
+        result: {
+          runId: "r1",
+          status: "succeeded",
+          costUsd: 0,
+          nodes: [
+            { id: "a", runs: 1, ok: true, output: null, costUsd: 0 },
+            { id: "b", runs: 1, ok: true, output: null, costUsd: 0 },
+          ],
+          reasons: [],
+          worktrees: [],
+          skipped: 0,
+          kept: 1,
+          failuresHandled: 0,
+        },
+      },
+      4,
+      new Map(),
+    );
+    expect(last).toContain("run r1 succeeded · $0.00 · 1 ran, 1 kept");
   });
 
   it("says how a message came when no session wrote it", () => {

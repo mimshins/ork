@@ -67,6 +67,33 @@ export const matchesPattern = (pattern: string, command: string): boolean => {
 export const isHeavy = (heavy: readonly string[], command: string): boolean =>
   heavy.some(pattern => matchesPattern(pattern, command));
 
+/**
+ * The commands of a shell script, as far as a heavy check can tell without a
+ * shell: comments dropped, split at newlines, `;`, `&&`, `||`, `|` and `&` (not
+ * the `&` of a redirect such as `2>&1`), each trimmed, without a leading
+ * `VAR=value` or `then`/`do`/`else`. shortcut: it splits inside quotes too and
+ * cannot see `eval`, variables, heredocs or called scripts (specs/gaps).
+ */
+export const scriptCommands = (script: string): string[] =>
+  script
+    .split("\n")
+    .map(line => line.replace(/(?:^|\s)#.*$/u, ""))
+    .flatMap(line => line.split(/&&|\|\||;|\||(?<![<>])&(?!>)/u))
+    .map(part =>
+      part
+        .trim()
+        .replace(/^(?:(?:then|do|else)(?:\s+|$))?(?:\w+=\S*\s+)*/u, ""),
+    )
+    .filter(part => part !== "");
+
+/** Whether any command of a shell script is one of the project's heavy ones. */
+export const isHeavyScript = (
+  heavy: readonly string[],
+  script: string,
+): boolean =>
+  heavy.length > 0 &&
+  scriptCommands(script).some(command => isHeavy(heavy, command));
+
 /** A project's rules for the machine a run shares, with Ork's defaults. */
 export type MachineRules = { heavy: string[]; priority: Priority };
 

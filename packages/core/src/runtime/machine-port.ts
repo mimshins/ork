@@ -13,8 +13,13 @@ export type CpuTime = { userMs: number; systemMs: number };
 export type MachinePort = {
   priority: Priority;
   /**
-   * Takes a slot when `command` is heavy, first come; resolves with its
-   * release.
+   * Takes a slot when `command` is heavy, or any command of the shell `script`
+   * it runs is (`isHeavyScript`), first come; resolves with its release. One
+   * slot covers the whole script.
    */
-  slot: (command: string, signal: AbortSignal) => Promise<() => void>;
+  slot: (
+    command: string,
+    signal: AbortSignal,
+    run?: { script?: string },
+  ) => Promise<() => void>;
 };

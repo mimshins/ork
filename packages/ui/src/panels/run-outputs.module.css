@@ -1,0 +1,110 @@
+/**
+ * @file The run outputs card's look: a panel after the run summary, each output
+ *   a unit with its name (code, case kept) above its value, wrapped anywhere so
+ *   a narrow panel or 200% zoom needs no sideways scroll.
+ */
+
+.outputs {
+  --run-outputs-bg: var(--surface-panel);
+  --run-outputs-radius: var(--radius-panel);
+  --run-outputs-padding: var(--gap-tight) var(--gap);
+  --run-outputs-gap: var(--gap);
+
+  background: var(--run-outputs-bg);
+  border-radius: var(--run-outputs-radius);
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--run-outputs-gap);
+  overflow-wrap: anywhere;
+  padding: var(--run-outputs-padding);
+}
+
+.heading {
+  --run-outputs-heading-text: var(--color-text-muted);
+  --run-outputs-heading-font: var(--font-caption);
+  --run-outputs-heading-size: var(--text-caption);
+  --run-outputs-heading-tracking: var(--tracking-caption);
+  --run-outputs-heading-case: var(--case-caption);
+  --run-outputs-heading-weight: inherit;
+  --run-outputs-heading-margin: 0;
+
+  color: var(--run-outputs-heading-text);
+  font-family: var(--run-outputs-heading-font);
+  font-size: var(--run-outputs-heading-size);
+  font-weight: var(--run-outputs-heading-weight);
+  letter-spacing: var(--run-outputs-heading-tracking);
+  margin: var(--run-outputs-heading-margin);
+  text-transform: var(--run-outputs-heading-case);
+}
+
+.list {
+  --run-outputs-list-margin: 0;
+  --run-outputs-list-padding: 0;
+  --run-outputs-list-gap: var(--gap);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--run-outputs-list-gap);
+  list-style: none;
+  margin: var(--run-outputs-list-margin);
+  padding: var(--run-outputs-list-padding);
+}
+
+.entry {
+  --run-outputs-entry-gap: var(--gap-tight);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--run-outputs-entry-gap);
+}
+
+.name {
+  --run-outputs-name-text: var(--color-text);
+  --run-outputs-name-font: var(--font-mono);
+  --run-outputs-name-size: var(--text-small);
+
+  color: var(--run-outputs-name-text);
+  font-family: var(--run-outputs-name-font);
+  font-size: var(--run-outputs-name-size);
+}
+
+.muted {
+  --run-outputs-muted-text: var(--color-text-muted);
+
+  color: var(--run-outputs-muted-text);
+}
+
+.note {
+  --run-outputs-note-text: var(--color-text-muted);
+  --run-outputs-note-margin: 0;
+
+  color: var(--run-outputs-note-text);
+  margin: var(--run-outputs-note-margin);
+}
+
+.error {
+  --run-outputs-error-text: var(--color-status-failed);
+  --run-outputs-error-margin: 0;
+
+  color: var(--run-outputs-error-text);
+  margin: var(--run-outputs-error-margin);
+}
+
+.bar {
+  --run-outputs-bar-gap: var(--gap-tight);
+
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--run-outputs-bar-gap);
+  justify-content: space-between;
+}
+
+.copy {
+  --run-outputs-copy-gap: var(--gap-tight);
+
+  align-items: center;
+  display: inline-flex;
+  gap: var(--run-outputs-copy-gap);
+}

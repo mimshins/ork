@@ -100,6 +100,13 @@ nodes or handled a failure still `succeeded`; the counts say what it left out. A
 warning names each node that never ran but had messages waiting, which nobody
 read.
 
+A workflow that declares `outputs:` has them printed under the summary line, one
+per key (`integrated: #1`); `ork logs` and `ork attach` print the same, and the
+run's page in `ork ui` shows them in a card. A value of more than 20 lines or
+2,000 characters is cut, with `… cut; full value: ork logs <run> --json`. A
+resumed run's line counts the nodes it kept from the earlier run on their own:
+`1 ran, 1 kept, 0 skipped`.
+
 The summary starts with an `OK`, `FAIL` or `WAIT` chip (`WAIT` is a run that
 stopped short; its status says why).
 
@@ -123,9 +130,10 @@ chosen: press Enter to take it, move with ↑/↓ (or `j`/`k`, `1`–`9`, `Home`
 context. Once answered, the card collapses to one line. For a permission, the
 prompt shows the tool and a preview of its input; press `y` to allow it, `n` or
 Esc to deny it. The full key list is in [the terminal](../terminal.md). With
-`--plain`, `NO_COLOR` or no terminal, a question is numbered instead: Enter
+`--plain` or `NO_COLOR` on a terminal, a question is numbered instead: Enter
 takes the recommended option, or type a number or an option's id, and a
-permission asks `Allow? [y/N]`.
+permission asks `Allow? [y/N]`. With no terminal at all, nothing is asked (see
+below).
 
 You can add a **note**: one line that goes to the run with your answer, such as
 what to change when you answer `revise`. Press `n` before you choose (after,
@@ -178,9 +186,12 @@ remembers your choice in this browser. A run in the Monitor with open decisions
 has a control that opens them, filtered to that run. See
 [the browser view](../browser-view/panels-and-workspace.md).
 
-When nobody is at the terminal (stdin is not a TTY, as in CI), tools are denied,
-questions take their recommended option, and a gate with a `timeout` takes its
-`default`.
+When nobody is at the terminal (stdin is not a TTY, as in CI), tools are denied
+and an agent's question takes its recommended option at once, or fails with
+`no one to ask` when it has none. A gate does not: it waits for `ork decide` or
+`ork ui` (a gate with a `timeout` takes its `default` then), and the foreground
+run says `use --detach and answer with ork decide`. Only a terminal's Enter
+takes the recommended option, and that is your choice.
 
 ## In the background
 

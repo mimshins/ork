@@ -7,6 +7,7 @@
  */
 
 import {
+  availableDue,
   type EventStore,
   type GhRunner,
   newRunId,
@@ -17,7 +18,7 @@ import {
 import { flagValues } from "../commands/run.ts";
 import { loadWorkflow } from "../commands/validate.ts";
 import { writeErr } from "../output.ts";
-import { briefOf, checkTakeable, refreshDue } from "./context.ts";
+import { briefOf, checkTakeable, refreshDue, runIsLive } from "./context.ts";
 
 /** What `ork run` starts with: its inputs, and the id its run is given. */
 export type PreparedRun = { inputs: readonly string[]; runId?: string };
@@ -91,7 +92,9 @@ const problemsOf = (
 /**
  * The inputs and run id `ork run` starts with: those it was given and, for
  * `--follow-ups`, a `brief` made of the follow-ups with the id of the run that
- * takes them. `undefined` after saying why it can't start.
+ * takes them. `undefined` after saying why it can't start. With `mark` false
+ * nothing is marked taken: a `--detach` parent checks before it makes the run
+ * folder, and the run it starts marks them.
  */
 export const prepareFollowUps = async (
   store: EventStore,
@@ -99,6 +102,7 @@ export const prepareFollowUps = async (
   runId: string | undefined,
   target: { file: string },
   gh: GhRunner = runGh,
+  mark = true,
 ): Promise<PreparedRun | undefined> => {
   const inputs = flagValues(rawArgs, "--input");
   const plain: PreparedRun = {
@@ -120,15 +124,23 @@ export const prepareFollowUps = async (
   const named = values.filter(value => value !== DUE);
   // `refreshDue` answers only those that just came due; every due one counts.
   if (values.includes(DUE)) await refreshDue(store, project, writeErr, gh);
-  const due = values.includes(DUE)
-    ? store
-        .followUps(project)
-        .filter(f => f.for === "agent" && f.status === "due")
-        .map(f => f.id)
-    : [];
-  if (named.length === 0 && due.length === 0) {
+  const isLive = runIsLive(store);
+  const { ids: due, held } = values.includes(DUE)
+    ? availableDue(store, project, isLive, runId)
+    : { ids: [], held: [] };
+  // Two `--follow-ups due` runs at once: the second leaves what the first took.
+  for (const f of held) {
     writeErr(
-      `${FLAG} ${DUE}: no agent follow-ups are due. \`ork follow-ups list\` shows them.`,
+      `${FLAG} ${DUE}: skipped ${f.id}, taken by run ${f.takenBy}, still running.`,
+    );
+  }
+  if (named.length === 0 && due.length === 0) {
+    const reason =
+      held.length > 0
+        ? ` ${held.length} due ${held.length === 1 ? "one is" : "ones are"} taken by a run still running.`
+        : "";
+    writeErr(
+      `${FLAG} ${DUE}: no agent follow-ups are due.${reason} \`ork follow-ups list\` shows them.`,
     );
     process.exitCode = 1;
     return undefined;
@@ -147,11 +159,13 @@ export const prepareFollowUps = async (
   const followUps = [
     ...new Map(takeable.followUps.map(f => [f.id, f])).values(),
   ];
+  if (!mark) return plain;
   const taker = runId ?? newRunId(store);
   takeFollowUps(store, {
     project,
     run: taker,
     ids: followUps.map(f => f.id),
+    isLive,
   });
   return {
     inputs: [...inputs, `brief=${briefOf(followUps)}`],

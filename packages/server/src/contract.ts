@@ -9,6 +9,7 @@
 import type {
   DecisionRecord,
   LinkRecord,
+  OutputText,
   Paused,
   ProjectRecord,
   RunRecord,
@@ -56,6 +57,7 @@ export type UsageAnswer = UsageReport & { limits: LimitsReport };
 export type {
   DecisionRecord,
   LinkRecord,
+  OutputText,
   ProjectRecord,
   TriggersReport,
   LimitsReport,
@@ -110,11 +112,15 @@ export const ControlSchema = z.strictObject({
 
 /**
  * A stored run with its live status: `crashed` when its process is gone,
- * `paused` when it is paused as a whole; and what is paused in it.
+ * `paused` when it is paused as a whole; and what is paused in it. `GET
+ * /api/runs/:id` adds a finished run's declared `outputs` (scrubbed, cut when
+ * long), none while it runs or when it declares none; the list leaves them
+ * out.
  */
 export type RunView = RunRecord & {
   live: StoredRunStatus | "crashed" | "paused";
   paused: Paused;
+  outputs?: OutputText[];
 };
 
 /** A workflow in a project's workflows folder, for starting a run. */

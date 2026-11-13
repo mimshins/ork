@@ -22,6 +22,18 @@ was left simpler:
 - **L258 · CPU time is not recorded on Windows.** It comes from `times`, which
   Windows lacks; a tool command there has no `cpu`, and its `TOOL CPU` cell is
   empty. Priority gets only what Node's `os.setPriority` gives.
+- **L363 · A script's heavy command is found by reading it, not by running it.**
+  A shell `script:` takes a slot when one of its lines, split at `;`, `&&`,
+  `||`, `|` and `&`, matches `heavy`. The split ignores quotes, and so does the
+  strip of an inline comment (`echo "a # b" && pnpm check` hides `pnpm check`).
+  It cannot see a command run through `eval` or a variable (the issues
+  workflow's `check` node, `eval "$CHECK"`), a heredoc, or a called script; a
+  script with a non-shell `interpreter:` (`node`) takes no slot, and neither
+  does `interpreter: "/usr/bin/env bash"`. A line that starts with `if`,
+  `while`, `!`, `time`, `exec`, `(` or `{` is not matched either (only
+  `then`/`do`/`else` and a `VAR=value` prefix are dropped). Such a command runs
+  without a slot. Refusing or warning in `ork validate` was ruled out (QA
+  bd542734).
 
 Found building the integration lock
 ([RFC-016](../../rfcs/archived/RFC-016-integration-lock.md), a node's `lock:`

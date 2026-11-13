@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import {
   diagnosticText,
   expandEdge,
+  parseProject,
   parseTriggers,
   parseWorkflow,
   renderJsonSchema,
@@ -41,6 +42,11 @@ const expandOk = (input: string) => {
   const result = expandEdge(input, 0);
   if (!result.ok) throw new Error(result.message);
   return result.edges;
+};
+
+const projectDiagnostics = (text: string) => {
+  const parsed = parseProject(text);
+  return parsed.ok ? [] : parsed.diagnostics;
 };
 
 const messagesOf = (text: string): string => {
@@ -118,6 +124,18 @@ describe("parseWorkflow", () => {
     // An older or made-up one is only wrong.
     expect(messagesOf("schemaVersion: 0\nname: x\nnodes: {}\n")).toContain(
       "expected 1",
+    );
+  });
+
+  it("says a missing schemaVersion is missing, for a project and a workflow", () => {
+    expect(projectDiagnostics("priority: normal\n")).toMatchObject([
+      {
+        message: "schemaVersion is missing: write schemaVersion: 1",
+        path: ["schemaVersion"],
+      },
+    ]);
+    expect(messagesOf("name: x\nnodes: {}\n")).toContain(
+      "schemaVersion is missing: write schemaVersion: 1",
     );
   });
 });

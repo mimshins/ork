@@ -55,6 +55,9 @@ export const OUTPUT_LIMIT = 64 * 1024;
 
 const ERROR_LIMIT = 1024;
 
+/** The interpreters whose script's commands a heavy check reads. */
+const SHELLS = new Set(["sh", "bash", "zsh"]);
+
 /** Whether `args` starts with one of the allowed prefixes (`"pr merge"`). */
 export const isAllowed = (
   args: readonly string[],
@@ -200,6 +203,9 @@ export const toolExecutor =
       const release = await context.machine?.slot(
         [command.program, ...command.args].join(" "),
         context.signal,
+        node.script !== undefined && SHELLS.has(path.basename(command.program))
+          ? { script: node.script }
+          : {},
       );
       context.emit({
         type: "tool.called",

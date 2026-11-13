@@ -57,6 +57,23 @@ describe("ork doctor's ledger checks", () => {
     ]);
   });
 
+  it("removes the queue folders its sweep emptied, and keeps a live waiter's", () => {
+    const home = mkdtempSync(path.join(tmpdir(), "ork-doctor-"));
+    const pid = deadPid();
+    const stale = path.join(home, ".ork", "slots", "queue");
+    const lockQueue = path.join(home, ".ork", "locks", "abc", "queue");
+    const busy = path.join(home, ".ork", "locks", "def", "queue");
+    record(stale, "r1", pid);
+    record(lockQueue, "r2", pid);
+    record(busy, "r3", process.pid);
+    ledgerChecks(home);
+    expect([
+      existsSync(stale),
+      existsSync(lockQueue),
+      existsSync(busy),
+    ]).toEqual([false, false, true]);
+  });
+
   it("says nothing when nothing is stale", () => {
     const home = mkdtempSync(path.join(tmpdir(), "ork-doctor-"));
     expect(ledgerChecks(home)).toEqual([]);

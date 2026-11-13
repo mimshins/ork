@@ -30,7 +30,7 @@ Any answer may carry an optional **note**
   at its limit only records it (G22).
 - `ork decide --id … --choose … --say <text>` gives it. `--note` and `--rating`
   keep their meaning: feedback on the node
-  ([CLI](../specs/cli/running-and-runs.md#decisions-and-stopping)).
+  ([CLI](../specs/cli/decisions-and-stopping.md)).
 - The run's terminal offers one optional line after the choice (after a denial,
   for a permission), which Enter skips; the decision stays open while it waits.
   The Decisions panel has a labelled, optional note box; the server's answer

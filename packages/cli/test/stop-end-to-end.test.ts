@@ -103,7 +103,8 @@ describe("ork stop, end to end", () => {
     const live = spendingRun();
     await expect.poll(() => wordsStored(live.store)).toBe(6);
     const record = theOne(live.store.runs());
-    await ork(live.home, live.dir, "stop", record.id);
+    const stopped = await ork(live.home, live.dir, "stop", record.id);
+    expect(stopped).toContain(`! run ${record.id} interrupted`);
     const { result } = await live.done;
     expect(result?.status).toBe("interrupted");
 

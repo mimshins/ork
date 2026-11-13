@@ -11,7 +11,6 @@ import type { NodeType } from "@krapht/ork-schema";
 import type { AgentRef } from "../agents/apply.ts";
 import { parseTemplate, renderTemplate, type Scope } from "../expr/evaluate.ts";
 import type { CompiledGraph } from "../graph/types.ts";
-import type { EarlierSpend } from "../usage/spend.ts";
 import { declaredNodes } from "./contacts.ts";
 import {
   endedWith,
@@ -23,7 +22,7 @@ import {
   scrubbedEnd,
   stoppedEnd,
 } from "./ended.ts";
-import type { Activation, RunOptions } from "./handle.ts";
+import type { Activation, Replay, RunOptions } from "./handle.ts";
 import type {
   KeptWorktree,
   NodeOutput,
@@ -131,14 +130,31 @@ export const summaryOf = (
   return created;
 };
 
-/** A run's summary; a resumed run's leaders keep their forks' spend (ADR-063). */
-export const createSummaries = (earlier: EarlierSpend | undefined) => {
+/**
+ * A run's summary; a resumed run's leaders keep their forks' spend (ADR-063).
+ * `record` counts a result, `replayed` when a resume handed it back; `counted`
+ * gives the nodes and, on a resumed run, how many were `kept`: handed back
+ * whole, with no result of their own this time.
+ */
+export const createSummaries = (replay: Replay | undefined) => {
   const summaries = new Map<string, NodeSummary>();
+  /** Nodes with a result of this run's own: they ran, not kept. */
+  const anew = new Set<string>();
   const summary = (id: string): NodeSummary => summaryOf(summaries, id);
-  for (const [id, costUsd] of earlier?.forks ?? []) {
+  for (const [id, costUsd] of replay?.earlier?.forks ?? []) {
     summary(id).costUsd += costUsd;
   }
-  return { summaries, summary };
+  const record = (id: string, result: NodeResult, replayed: boolean): void => {
+    if (!replayed) anew.add(id);
+    recordRun(summary(id), result);
+  };
+  const counted = (): { nodes: NodeSummary[]; kept?: number } => {
+    const nodes = [...summaries.values()];
+    if (replay === undefined) return { nodes };
+    const kept = nodes.filter(n => n.runs > 0 && !anew.has(n.id)).length;
+    return { nodes, kept };
+  };
+  return { summary, record, counted };
 };
 
 /** The tighter of the workflow's budget and what a caller left it, if any. */
@@ -206,6 +222,8 @@ export const runResult = (run: {
   failuresHandled: number;
   /** Each node's unread messages, from the bus. */
   unread?: ReadonlyMap<string, number>;
+  /** A resumed run's nodes handed back whole (`createSummaries`). */
+  kept?: number | undefined;
 }): RunResult => ({
   runId: run.runId,
   status: run.stopped ?? (run.reasons.length > 0 ? "failed" : "succeeded"),
@@ -219,6 +237,7 @@ export const runResult = (run: {
   worktrees: run.worktrees,
   ...(run.outputs === undefined ? {} : { outputs: run.outputs }),
   skipped: run.nodes.filter(node => node.runs === 0).length,
+  ...(run.kept === undefined ? {} : { kept: run.kept }),
   failuresHandled: run.failuresHandled,
   ...unreadOf(run.nodes, run.unread),
 });

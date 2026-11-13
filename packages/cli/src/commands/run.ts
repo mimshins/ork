@@ -4,20 +4,14 @@
  *   on the terminal.
  */
 
-import {
-  type AgentRuntime,
-  DETACHED_ENV,
-  detachRun,
-  newRunId,
-  openStore,
-} from "@krapht/ork-core";
+import { type AgentRuntime, DETACHED_ENV, openStore } from "@krapht/ork-core";
 import { AGENT_DRIVERS, DRIVER_IDS } from "@krapht/ork-integrations";
 import { sessionEnv } from "@krapht/ork-nodes";
 import { type Driver, retiredDriverHint } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
 import { callsShown, createTerminalHuman } from "../human.ts";
-import { detachHint, style, write, writeErr } from "../output.ts";
+import { style, write, writeErr } from "../output.ts";
 import { runNode } from "../run/node.ts";
 import { runWorkflowFile } from "../run/workflow.ts";
 import { refusedBuiltin, workflowArg } from "../workflows.ts";
@@ -202,28 +196,13 @@ export const run = defineCommand({
     const store = openStore();
     if (args.detach) {
       try {
-        const single = args.node !== undefined && args.node !== "";
-        const runId = newRunId(store, single ? "node-" : "");
-        const detached = await detachRun({
-          store,
-          runId,
-          args: [
-            "run",
-            ...rawArgs.filter(arg => arg !== "--detach"),
-            "--run-id",
-            runId,
-          ],
+        const { startDetached } = await import("../run/detached.ts");
+        await startDetached(store, {
+          rawArgs,
           cwd,
-          runDir: target.runDir(runId),
+          target,
+          node: args.node,
         });
-        if (detached.ok) {
-          write(`▸ run ${detached.runId} started in the background`);
-          write(style("dim", `  ${detachHint(detached.runId)}`));
-        } else {
-          writeErr(detached.error);
-          writeErr(style("dim", `(output: ${detached.log})`));
-          process.exitCode = 1;
-        }
       } finally {
         store.close();
       }

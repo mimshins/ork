@@ -64,6 +64,8 @@ export type MonitorRoutes = {
   tree: TreeNode[];
   graph: WorkflowGraph;
   links?: LinkRecord[];
+  /** What `GET /api/runs/:id` says, with the outputs; a string is its refusal. */
+  run?: RunView | string;
   /** The server's refusal of a pause, continue or stop, if it refuses. */
   refuse?: string;
 };
@@ -123,6 +125,11 @@ export const openPanelState = (routes: FakeRoutes = {}) => {
     }
     if (/^\/api\/runs\/[^/]+\/events$/u.test(path)) {
       return json(routes.events ?? []);
+    }
+    if (/^\/api\/runs\/[^/]+$/u.test(path) && monitor?.run !== undefined) {
+      return typeof monitor.run === "string"
+        ? json({ error: monitor.run }, 500)
+        : json(monitor.run);
     }
     if (path === "/api/links") return json(monitor?.links ?? []);
     const [, run = "", kind = ""] =

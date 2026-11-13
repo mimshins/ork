@@ -31,7 +31,6 @@ import {
   createGatherer,
   renderOutputs,
   spendOf,
-  recordRun,
   runResult,
   runStartedEvent,
   runTimedOut,
@@ -55,7 +54,7 @@ export const startRun = (options: RunOptions): RunHandle => {
   const sessionIds = new Map<string, string>();
   const spend = spendOf(limits.budgetUsd, options, limits.budgetTokens);
   const running = new Set<string>();
-  const { summaries, summary } = createSummaries(options.replay?.earlier);
+  const { summary, record, counted } = createSummaries(options.replay);
   const queue: Activation[] = [];
   const reasons: string[] = [];
   const stops = createStops(abort.signal);
@@ -142,7 +141,7 @@ export const startRun = (options: RunOptions): RunHandle => {
       runId,
       stopped,
       ...spend.sums(),
-      nodes: [...summaries.values()],
+      ...counted(),
       reasons,
       worktrees,
       outputs: renderOutputs(graph.workflow.outputs, scope()),
@@ -236,7 +235,7 @@ export const startRun = (options: RunOptions): RunHandle => {
     clock.leave(id);
     outputs[id] = result.output;
     if (result.sessionId !== undefined) sessionIds.set(id, result.sessionId);
-    recordRun(summary(id), result);
+    record(id, result, recorded !== null);
     if (recorded === null) {
       options.replay?.ran(result);
       onEvent(finishedEvent(id, round, result));

@@ -23,7 +23,13 @@ import {
   usageReport,
 } from "@krapht/ork-core";
 
-import { projectOf, runOf, type ServerContext, viewOf } from "./context.ts";
+import {
+  projectOf,
+  runOf,
+  type ServerContext,
+  viewOf,
+  viewWithOutputs,
+} from "./context.ts";
 import type { RunView } from "./contract.ts";
 import { servedEvent, treeWithEnds } from "./end-view.ts";
 import { runGraph } from "./graph.ts";
@@ -133,7 +139,7 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
 
   run: ({ params }) => {
     const found = runOf(context, params.id);
-    return found.ok ? ok(viewOf(context, found.run)) : found.refusal;
+    return found.ok ? ok(viewWithOutputs(context, found.run)) : found.refusal;
   },
 
   tree: ({ params }) => {

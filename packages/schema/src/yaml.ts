@@ -14,11 +14,7 @@ import type { z } from "zod";
 
 import { AgentSchema } from "./agents.ts";
 import { formatEdge } from "./edges.ts";
-import {
-  forEachMessage,
-  listRuleMessage,
-  nodeTypeMessage,
-} from "./issue-messages.ts";
+import { knownMessage } from "./issue-messages.ts";
 import { newerVersion } from "./newer-version.ts";
 import { NodeSchema, type NodeType } from "./nodes.ts";
 import { type Project, ProjectSchema, UserSettingsSchema } from "./project.ts";
@@ -98,10 +94,7 @@ const describeIssue = (
     };
   }
   const value = valueAt(raw, path);
-  const said =
-    forEachMessage(issue, path, value) ??
-    listRuleMessage(issue, value) ??
-    nodeTypeMessage(issue, value);
+  const said = knownMessage(issue, path, value);
   if (said !== null) return { message: said, path };
   // Zod quotes the values it names, where Ork's messages mark them.
   return {

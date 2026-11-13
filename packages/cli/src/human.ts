@@ -11,6 +11,7 @@
 import { createInterface, type Interface } from "node:readline/promises";
 
 import {
+  DETACHED_ENV,
   type HumanChannel,
   type HumanQuestion,
   TOOL_INPUT_KEYS,
@@ -160,13 +161,19 @@ export const createTerminalHuman = (io: TerminalIO): TerminalHuman => {
     if (noted.kind === "interrupted") await parked(signal);
     if (noted.kind === "text" && noted.value !== "") onNote(noted.value);
   };
-  /** Says where a waiting question is answered, and waits until withdrawn. */
+  /**
+   * Says where a waiting question is answered, and waits until withdrawn. A
+   * foreground run has no one at `ork decide` yet, so it says to start over
+   * detached.
+   */
   const waitElsewhere = (q: HumanQuestion): Promise<never> => {
+    const detached = (io.env ?? process.env)[DETACHED_ENV] === "1";
     say(
       paint(
         term(),
         "muted",
-        `  no terminal; ${plain(q.nodeId)} waits for ork decide or ork ui`,
+        `  no terminal; ${plain(q.nodeId)} waits for ork decide or ork ui` +
+          (detached ? "" : ": use --detach and answer with ork decide"),
       ),
     );
     return parked(q.signal);

@@ -15,6 +15,7 @@ import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  availableDue,
   checkFollowUpsDue,
   createFollowUps,
   deliverFollowUp,
@@ -463,6 +464,9 @@ describe("checkFollowUpsDue", () => {
   });
 });
 
+/** No run is live. */
+const never = (): boolean => false;
+
 describe("markDue, recordPublished and takeFollowUps", () => {
   it("makes one due by its id, or all a run left", async () => {
     const store = openStore(":memory:");
@@ -488,8 +492,12 @@ describe("markDue, recordPublished and takeFollowUps", () => {
     await keep(store, change, { ...change, title: "Taken", from: {} });
     const taken = idAt(store, 1);
     expect(
-      takeFollowUps(store, { project: HERE, run: "r2", ids: [taken] }).taken
-        .length,
+      takeFollowUps(store, {
+        project: HERE,
+        run: "r2",
+        ids: [taken],
+        isLive: never,
+      }).taken.length,
     ).toBe(1);
     const published = recordPublished(store, {
       project: HERE,
@@ -514,6 +522,7 @@ describe("markDue, recordPublished and takeFollowUps", () => {
       project: HERE,
       run: "start1",
       ids: [idAt(store, 0)],
+      isLive: never,
     });
     const published = recordPublished(store, {
       project: HERE,
@@ -532,12 +541,90 @@ describe("markDue, recordPublished and takeFollowUps", () => {
       project: HERE,
       run: "r2",
       ids: [mine, "nope"],
+      isLive: never,
     });
     expect(result.taken).toEqual([]);
     expect(result.refused).toEqual([
       `${mine}: it is for me`,
       "nope: there is no such follow-up",
     ]);
+  });
+});
+
+const heldByLive1 = async () => {
+  const store = openStore(":memory:");
+  await keep(
+    store,
+    { ...change, due: "now" },
+    { ...change, due: "now", title: "Second" },
+  );
+  const [one, two] = [idAt(store, 0), idAt(store, 1)];
+  takeFollowUps(store, {
+    project: HERE,
+    run: "live1",
+    ids: [one],
+    isLive: never,
+  });
+  return { store, one, two };
+};
+
+const live1 = (id: string): boolean => id === "live1";
+
+/** A run the store has no record of, and the clock a minute or three on. */
+const unknown = (): undefined => undefined;
+const soon = (): string => new Date(Date.now() + 60_000).toISOString();
+const later = (): string => new Date(Date.now() + 3 * 60_000).toISOString();
+
+describe("a follow-up a live run took", () => {
+  it("is refused by an explicit take, until that run is no longer live", async () => {
+    const { store, one } = await heldByLive1();
+    const refused = takeFollowUps(store, {
+      project: HERE,
+      run: "r2",
+      ids: [one],
+      isLive: live1,
+    });
+    expect(refused.taken).toEqual([]);
+    expect(refused.refused).toEqual([
+      `${one}: taken by run live1, still running`,
+    ]);
+    const again = takeFollowUps(store, {
+      project: HERE,
+      run: "r2",
+      ids: [one],
+      isLive: never,
+    });
+    expect(again.taken.map(f => f.takenBy)).toEqual(["r2"]);
+  });
+
+  it("is left out of the due ones, and named as held", async () => {
+    const { store, one, two } = await heldByLive1();
+    const found = availableDue(store, HERE, live1);
+    expect(found.ids).toEqual([two]);
+    expect(found.held.map(f => f.id)).toEqual([one]);
+    expect(availableDue(store, HERE, never).ids).toEqual([one, two]);
+  });
+
+  it("is held for two minutes by a run the store does not know yet", async () => {
+    const { store, one, two } = await heldByLive1();
+    expect(availableDue(store, HERE, unknown, "", soon).ids).toEqual([two]);
+    expect(availableDue(store, HERE, unknown, "", later).ids).toEqual([
+      one,
+      two,
+    ]);
+    const refused = takeFollowUps(
+      store,
+      { project: HERE, run: "r2", ids: [one], isLive: unknown },
+      soon,
+    );
+    expect(refused.refused).toEqual([
+      `${one}: taken by run live1, still running`,
+    ]);
+  });
+
+  it("is not held against the run that took it", async () => {
+    const { store, one } = await heldByLive1();
+    expect(availableDue(store, HERE, () => true, "live1").ids).toContain(one);
   });
 });
 

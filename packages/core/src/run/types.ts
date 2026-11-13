@@ -186,12 +186,13 @@ export type RunResult = {
   /** The workflow's `outputs`, rendered when the run ended. */
   outputs?: Record<string, string>;
   /**
-   * How many nodes were skipped, and how many failed results had an edge to
-   * take, so the run went on: a `succeeded` run says what it left out (G8).
-   * Absent from results recorded before they were counted.
+   * Nodes skipped, failed results an edge took (a `succeeded` run says what it
+   * left out, G8), and a resume's nodes `kept` whole (in `nodes`, not run
+   * again; only on a resumed run). Absent from results from before they were.
    */
   skipped?: number;
   failuresHandled?: number;
+  kept?: number;
   /**
    * Nodes that never ran, with how many messages to them nobody read: a branch
    * not taken leaves its mail unread (L91). Absent when there are none.

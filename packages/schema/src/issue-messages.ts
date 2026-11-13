@@ -76,3 +76,30 @@ export const nodeTypeMessage = (
     ? `node needs a \`type\`: one of ${types}`
     : `unknown node type ${markValue(typeof value === "string" ? value : (JSON.stringify(value) ?? ""))}: expected one of ${types}`;
 };
+
+/**
+ * The text for a file without `schemaVersion`, else `null`: Zod's own words
+ * ("Invalid input: expected 1") don't say the key is missing.
+ */
+export const versionMessage = (
+  issue: z.core.$ZodIssue,
+  path: readonly (string | number)[],
+  value: unknown,
+): string | null =>
+  issue.code === "invalid_value" &&
+  path.length === 1 &&
+  path[0] === "schemaVersion" &&
+  value === undefined
+    ? `schemaVersion is missing: write schemaVersion: ${String(issue.values[0])}`
+    : null;
+
+/** The text Ork has for an issue instead of Zod's, else `null`. */
+export const knownMessage = (
+  issue: z.core.$ZodIssue,
+  path: readonly (string | number)[],
+  value: unknown,
+): string | null =>
+  forEachMessage(issue, path, value) ??
+  listRuleMessage(issue, value) ??
+  nodeTypeMessage(issue, value) ??
+  versionMessage(issue, path, value);

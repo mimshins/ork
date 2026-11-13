@@ -81,16 +81,16 @@ Ork never sends a message to a person. Open it with `show`, copy the text, send
 it yourself, then `ork follow-ups done 4f2a1c`. If its channel is `github` and
 its `to` is an issue or a pull request URL
 (`https://github.com/<owner>/<repo>/(issues|pull)/<n>`), Ork can post it as a
-comment with your own `gh`, once you confirm exactly this text:
+comment with your own `gh`, once you confirm:
 
 ```sh
 ork follow-ups post 4f2a1c            # shows what it would post, and where
 ork follow-ups post 4f2a1c --confirm  # posts it, and marks it sent
 ```
 
-In the panel, that is **Post to GitHub…**, a dialog that posts only what it
-shows. A draft that changed since you opened it is refused, and nothing is
-posted.
+`post --confirm` posts the draft **as stored when you run it**, not what an
+earlier `post` printed, so `ork follow-ups show 4f2a1c` it first. The panel's
+**Post to GitHub…** posts exactly the text it shows and refuses a changed draft.
 
 ### Steps and checks
 
@@ -115,18 +115,20 @@ ork run start --follow-ups 6b7c8d,9c1e07
 ```
 
 Each id is checked first: one that isn't an `agent` follow-up, or is closed,
-stops the run before it starts and changes nothing. The run is recorded as the
-one that took them, and they are done when it publishes. `--follow-ups` fills
-the workflow's `brief` input, so the workflow needs one (`start` and `plan` have
-it).
+stops the run and changes nothing. The run is recorded as the one that took them
+(`show` and `list` say `taken by` which), and they are done when it publishes.
+`--follow-ups` fills the workflow's `brief` input, so the workflow needs one:
+`start` and `plan` have it, a fresh `ork init` project has none. One that a run
+still going has taken is refused ("taken by run 3f9a, still running"), and `due`
+skips it; one a finished, failed or crashed run took can be taken again.
 
 To take every agent follow-up due in this project, use
 `ork run start --follow-ups due`. It checks pull requests first, as
 `ork follow-ups list` does, and skips follow-ups for someone else. With nothing
-due, the run does not start. Mix it with ids (`--follow-ups due,6b7c8d`): each
-is taken once. A bare `--follow-ups` says it needs ids or `due`. Tab after it
-offers `due` and the open agent follow-ups with their titles
-([tab completion](./tab-completion.md)).
+due, the run does not start (with `--detach` too). Mix it with ids
+(`--follow-ups due,6b7c8d`): each is taken once. A bare `--follow-ups` says it
+needs ids or `due`. Tab after it offers `due` and the open agent follow-ups with
+their titles ([tab completion](./tab-completion.md)).
 
 ## When one comes due
 

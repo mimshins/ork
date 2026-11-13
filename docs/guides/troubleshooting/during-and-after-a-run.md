@@ -33,6 +33,21 @@ asks the questions of the runs it calls on its own terminal, unless stdin is not
 a terminal. `ork attach` shows the whole tree and asks all of it; Ctrl-C there
 leaves the run going.
 
+**`no terminal; <node> waits for ork decide or ork ui: use --detach and answer with ork decide`.**
+A foreground `ork run` with no terminal (a pipe, CI) reached a gate. A gate is a
+person's call, so it waits. Start the run again with `--detach` and answer with
+`ork decide` or in `ork ui`. An agent's question does not wait: it takes its
+recommended option at once, or fails with `no one to ask` when it has none
+([running and answering](../running-workflows/running-and-answering.md#answering-questions)).
+
+**`<id> is a decision id, not a run`.** `ork decide` takes a run first. To
+answer a decision by its id, write `ork decide --id <id> --choose <option>`.
+
+**`ork tree` shows a crashed run's nodes as `✗ cut off` and `- not run`.** The
+run's process ended (`ork ps` says `crashed`). A node that had started but not
+ended is `cut off`; one that never started is `not run`. `ork resume <run>`
+keeps what finished and runs the rest.
+
 **`ork chat`, `ork continue`, `ork attach` or `ork decide --choose` is refused
 "inside a run", in your own terminal.** That shell inherited a run's variables
 from a program the run started, such as a tmux server. Open a new shell

@@ -174,14 +174,26 @@ const worth = (node: TreeNode): string => {
 };
 
 /**
+ * A crashed run's node that never ended: cut off when it had started, not run
+ * when it had not; `null` for one that ended.
+ */
+const crashedState = (node: TreeNode): string | null => {
+  if (node.state === "running") return `${STATE_MARK.failed()} cut off`;
+  if (node.state === "waiting") return `${STATE_MARK.skipped()} not run`;
+  return null;
+};
+
+/**
  * The ownership tree, one line per node, children under their owner. A node in
- * `waits` (a live run's `lockWaitsOf`) reads `waiting for <lock>`, an item
- * too.
+ * `waits` (a live run's `lockWaitsOf`) reads `waiting for <lock>`, an item too.
+ * In a `crashed` run, a node started but not ended reads `cut off` and one not
+ * started `not run`: nothing will end them.
  */
 export const formatTree = (
   roots: readonly TreeNode[],
   now: number = Date.now(),
   waits: readonly LockWait[] = [],
+  crashed = false,
 ): string[] => {
   const lines: { label: string; node: TreeNode }[] = [];
   const walk = (node: TreeNode, lead: string, branch: string) => {
@@ -199,14 +211,17 @@ export const formatTree = (
   return lines.map(({ label: text, node }) => {
     const usage = worth(node);
     const lock = waits.find(wait => wait.id === node.id)?.lock;
+    const cut = crashed ? crashedState(node) : null;
     const state =
-      node.held === true
+      cut ??
+      (node.held === true
         ? `${style("yellow", "‖")} paused`
         : lock === undefined
           ? `${STATE_MARK[node.state]()} ${stateText(node)}`
-          : `${STATE_MARK.waiting()} waiting for ${lock}`;
+          : `${STATE_MARK.waiting()} waiting for ${lock}`);
+    // A cut-off item has no end: its time would grow on every look.
     const spent =
-      isItem(node) && node.startedAt !== undefined
+      isItem(node) && node.startedAt !== undefined && cut === null
         ? style(
             "dim",
             `  ${duration((node.finishedAt === undefined ? now : Date.parse(node.finishedAt)) - Date.parse(node.startedAt))}`,
@@ -232,9 +247,10 @@ export const formatTreeView = (
   roots: readonly TreeNode[],
   now: number = Date.now(),
 ): string[] => {
-  const waits = runStatus(run, events) === "running" ? lockWaitsOf(events) : [];
+  const status = runStatus(run, events);
+  const waits = status === "running" ? lockWaitsOf(events) : [];
   return [
     `${style("bold", `run ${run.id}`)} ${dim(`of ${run.workflow} · ${listedStatus(run, events)} · ${cost(run.costUsd)}`)}`,
-    ...formatTree(roots, now, waits),
+    ...formatTree(roots, now, waits, status === "crashed"),
   ];
 };

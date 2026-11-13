@@ -13,6 +13,7 @@ import {
   type FollowUp,
   type FollowUpSink,
   type GhRunner,
+  liveStatus,
   loadProject,
   placeFiles,
   type ProjectPlace,
@@ -97,6 +98,18 @@ export const briefOf = (followUps: readonly FollowUp[]): string =>
     ]),
   ].join("\n");
 
+/**
+ * Whether a run is going, as `ork ps` decides: running with its process alive.
+ * `undefined` for a run the store does not know yet: core holds its mark for a
+ * short while, as the run may be about to begin.
+ */
+export const runIsLive =
+  (store: EventStore) =>
+  (runId: string): boolean | undefined => {
+    const [run] = store.lookup(runId);
+    return run === undefined ? undefined : liveStatus(run) === "running";
+  };
+
 export type FollowUpsTaken =
   | { ok: true; followUps: FollowUp[] }
   | { ok: false; lines: string[] };
@@ -128,7 +141,7 @@ export const checkTakeable = (
       followUps: p => store.followUps(p),
       putFollowUp: nothing,
     },
-    { project, run: "", ids: full },
+    { project, run: "", ids: full, isLive: runIsLive(store) },
   );
   const all = [...lines, ...refused];
   return all.length > 0

@@ -58,6 +58,20 @@ const ork = (home: string, args: readonly string[]) =>
   });
 
 describe("ork decide list filters", () => {
+  it("names the --id form when the run argument is an open decision's id", () => {
+    const done = ork(waiting(), ["r1-1", "approve"]);
+    expect(done.status).toBe(1);
+    expect(done.stderr).toContain(
+      "r1-1 is a decision id, not a run: answer it with `ork decide --id r1-1 --choose approve`",
+    );
+  });
+
+  it("keeps 'No run' for an argument that is no decision id", () => {
+    const done = ork(waiting(), ["zzz-9", "approve"]);
+    expect(done.status).toBe(1);
+    expect(done.stderr).toContain("No run");
+  });
+
   it("--ids prints the ids on one line, with --project all", () => {
     const done = ork(waiting(), ["--project", "all", "--ids"]);
     expect(done.status).toBe(0);

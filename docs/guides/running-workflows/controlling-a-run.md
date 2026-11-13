@@ -29,6 +29,10 @@ open, and the terminal prints
 `ork stop`. In a foreground `ork run`, Ctrl-C stops the run, and the runs it
 called ([attaching to a run](./attaching-to-a-run.md#leaving-ctrl-c)).
 
+`ork stop <run>` waits for the run to end and prints how it ended, marked as the
+run's own summary line is: `✓` succeeded, `✗` failed or crashed, and a yellow
+`!` for any other end, such as `interrupted`.
+
 ## Talk to a node
 
 ```sh

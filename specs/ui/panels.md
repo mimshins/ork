@@ -14,6 +14,7 @@ Notifications, Usage, Context, Feedback, Worktrees and Follow-ups
   - [Runs](./panels-runs-and-monitor.md#runs)
   - [Run workflow](./panels-runs-and-monitor.md#run-workflow)
   - [Monitor](./panels-runs-and-monitor.md#monitor)
+- [Run outputs in the Monitor](./panels-run-outputs.md)
 - [The Builder, Logs and Decisions](./panels-builder-logs-and-decisions.md)
   - [Builder](./panels-builder-logs-and-decisions.md#builder)
   - [Logs](./panels-builder-logs-and-decisions.md#logs)

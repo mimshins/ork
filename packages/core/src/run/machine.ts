@@ -6,7 +6,7 @@
  *   run's too) stands still meanwhile, so a timeout counts from the slot.
  */
 
-import { isHeavy } from "../project/heavy.ts";
+import { isHeavy, isHeavyScript } from "../project/heavy.ts";
 import type { MachinePort } from "../runtime/machine-port.ts";
 import type { HoldPort } from "../runtime/types.ts";
 import type { RunOptions } from "./handle.ts";
@@ -37,8 +37,11 @@ export const machinePort = (
   const { rules, ledger } = machine;
   return {
     priority: rules.priority,
-    slot: async (command, signal) => {
-      if (ledger === undefined || !isHeavy(rules.heavy, command)) return none;
+    slot: async (command, signal, run) => {
+      const heavy =
+        isHeavy(rules.heavy, command) ||
+        (run?.script !== undefined && isHeavyScript(rules.heavy, run.script));
+      if (ledger === undefined || !heavy) return none;
       let waited = false;
       const release = await clock.waitFor(id, () =>
         ledger.take(
@@ -95,11 +98,11 @@ export const slotClock = (
         ? undefined
         : {
             ...machine,
-            slot: async (command, signal) => {
+            slot: async (command, signal, run) => {
               waiting += 1;
               tell();
               try {
-                return await machine.slot(command, signal);
+                return await machine.slot(command, signal, run);
               } finally {
                 waiting -= 1;
                 tell();

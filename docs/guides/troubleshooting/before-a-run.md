@@ -15,6 +15,14 @@ git init && git commit --allow-empty -m "Start"
 **`this file was made by a newer Ork`.** A teammate's Ork wrote it with a higher
 `schemaVersion`. Run `ork upgrade`; an older Ork can't read it.
 
+**`schemaVersion is missing: write schemaVersion: 1`.** A project, workflow or
+settings file has no `schemaVersion`. Add `schemaVersion: 1` as its first line.
+
+**`no workflow file <name>; a file name or path is meant, not a workflow name`.**
+`ork run` and `ork validate` take a workflow's file name (`issues`, or
+`.ork/workflows/issues.ork.yaml`), not the `name:` inside it. The message lists
+this project's workflows by file name, and adds the `name:` when it differs.
+
 **`These instructions, skills or agents have uncommitted changes …`.** Worktrees
 only get committed files, so Ork stops rather than run agents on instructions
 you are not seeing. Commit the listed files, or pass `--allow-dirty` to run with

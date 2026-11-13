@@ -11,7 +11,7 @@ import {
   placeFor,
 } from "@krapht/ork-core";
 
-import { projectScope, readListArgs, resolveRun } from "../list/flags.ts";
+import { projectScope, fail, readListArgs, resolveRun } from "../list/flags.ts";
 import { printList } from "../list/print.ts";
 import { plain, write } from "../output.ts";
 import { chip, CHIP_LABELS, nodeChip } from "../term/chips.ts";
@@ -86,6 +86,14 @@ export const selectDecisions = (
   const named =
     request.filter["run"] ??
     (typeof positional === "string" ? positional : undefined);
+  const hint =
+    named !== undefined && request.filter["run"] === undefined
+      ? decisionHint(store, named)
+      : undefined;
+  if (hint !== undefined) {
+    fail(hint);
+    return undefined;
+  }
   const resolved = resolveRun(
     store,
     named === undefined ? request.filter : { ...request.filter, run: named },
@@ -114,4 +122,19 @@ export const printDecisions = (
   printList(open, decisionListTable, args, shown => {
     for (const line of formatDecisions(shown, workflow)) write(line);
   });
+};
+
+/**
+ * What to say when the positional meant for a run is an open decision's id: the
+ * form that answers it (a run id is the positional; a decision answers with
+ * `--id` and `--choose`).
+ */
+export const decisionHint = (
+  store: EventStore,
+  arg: string,
+): string | undefined => {
+  const decision = store.decision(arg);
+  if (decision === undefined || decision.status !== "open") return undefined;
+  const choice = decision.recommended ?? decision.options[0]?.id ?? "<option>";
+  return `${arg} is a decision id, not a run: answer it with \`ork decide --id ${arg} --choose ${choice}\``;
 };

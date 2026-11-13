@@ -213,6 +213,130 @@ describe("ork run --follow-ups", () => {
   });
 });
 
+/** A run another process is going through: live, as this process is. */
+const beginLive = (w: World, id: string): void => {
+  w.store.begin({
+    id,
+    workflow: "take",
+    file: "take.ork.yaml",
+    project: w.dir,
+  });
+};
+
+/** Marks `f` taken by a run, as an earlier `--follow-ups` would have. */
+const takenBy = (w: World, f: FollowUp, run: string): void => {
+  w.store.putFollowUp({ ...f, takenBy: run });
+};
+
+describe("a follow-up a live run already took", () => {
+  it("is skipped by `due`, with a line saying so, and the rest taken", async () => {
+    const w = world(WITH_BRIEF);
+    const held = await addFollowUp(w, "Add retries");
+    const free = await addFollowUp(w, "Log the failures");
+    beginLive(w, "first1");
+    takenBy(w, held, "first1");
+    const { taking, lines } = await prepared(w, ["due"]);
+    expect(taking?.inputs.join("\n")).not.toContain("Add retries");
+    expect(lines).toEqual([
+      `--follow-ups due: skipped ${held.id}, taken by run first1, still running.`,
+    ]);
+    expect(w.store.followUp(w.dir, free.id)?.takenBy).toBe(taking?.runId);
+    expect(w.store.followUp(w.dir, held.id)?.takenBy).toBe("first1");
+  });
+
+  it("fails `due` with the reason when that leaves nothing", async () => {
+    const w = world(WITH_BRIEF);
+    const held = await addFollowUp(w, "Add retries");
+    beginLive(w, "first1");
+    takenBy(w, held, "first1");
+    const { taking, lines, exitCode } = await prepared(w, ["due"]);
+    expect(taking).toBeUndefined();
+    expect(exitCode).toBe(1);
+    expect(lines.at(-1)).toBe(
+      "--follow-ups due: no agent follow-ups are due. 1 due one is taken by a run still running. `ork follow-ups list` shows them.",
+    );
+  });
+
+  it("is refused by id, and can be taken again once that run ended", async () => {
+    const w = world(WITH_BRIEF);
+    const one = await addFollowUp(w, "Add retries");
+    beginLive(w, "first1");
+    takenBy(w, one, "first1");
+    const refused = await prepared(w, [one.id]);
+    expect(refused.taking).toBeUndefined();
+    expect(refused.lines).toEqual([
+      `--follow-ups: ${one.id}: taken by run first1, still running`,
+    ]);
+    w.store.append("first1", {
+      type: "run.finished",
+      result: {
+        runId: "first1",
+        status: "failed",
+        costUsd: 0,
+        nodes: [],
+        reasons: [],
+        worktrees: [],
+      },
+    });
+    const again = await prepared(w, [one.id]);
+    expect(again.taking).toBeDefined();
+    expect(w.store.followUp(w.dir, one.id)?.takenBy).toBe(again.taking?.runId);
+  });
+
+  it("is only checked, not marked, when the caller marks later (--detach)", async () => {
+    const w = world(WITH_BRIEF);
+    const one = await addFollowUp(w, "Add retries");
+    const taking = await prepareFollowUps(
+      w.store,
+      ["--follow-ups", one.id],
+      undefined,
+      { file: path.join(w.dir, "take.ork.yaml") },
+      undefined,
+      false,
+    );
+    expect(taking).toBeDefined();
+    expect(w.store.followUp(w.dir, one.id)?.takenBy).toBeUndefined();
+  });
+});
+
+/** Makes the mark on a follow-up look `minutes` old. */
+const markedMinutesAgo = (w: World, id: string, minutes: number): void => {
+  const f = w.store.followUp(w.dir, id);
+  if (f === undefined) return;
+  const updatedAt = new Date(Date.now() - minutes * 60_000).toISOString();
+  w.store.putFollowUp({ ...f, updatedAt });
+};
+
+describe("a follow-up marked by a run the store does not know yet", () => {
+  it("is skipped by a second `due` for two minutes, then free again", async () => {
+    const w = world(WITH_BRIEF);
+    const one = await addFollowUp(w, "Add retries");
+    // The first run marks it, and has not been recorded (no `store.begin`).
+    const first = await prepared(w, ["due"]);
+    expect(first.taking?.runId).toBeDefined();
+    const second = await prepared(w, ["due"]);
+    expect(second.taking).toBeUndefined();
+    expect(second.lines[0]).toBe(
+      `--follow-ups due: skipped ${one.id}, taken by run ${first.taking?.runId}, still running.`,
+    );
+    expect(w.store.followUp(w.dir, one.id)?.takenBy).toBe(first.taking?.runId);
+    markedMinutesAgo(w, one.id, 3);
+    const third = await prepared(w, ["due"]);
+    expect(third.taking).toBeDefined();
+    expect(w.store.followUp(w.dir, one.id)?.takenBy).toBe(third.taking?.runId);
+  });
+
+  it("is refused by id for the same two minutes", async () => {
+    const w = world(WITH_BRIEF);
+    const one = await addFollowUp(w, "Add retries");
+    const first = await prepared(w, [one.id]);
+    const again = await prepared(w, [one.id]);
+    expect(again.lines).toEqual([
+      `--follow-ups: ${one.id}: taken by run ${first.taking?.runId}, still running`,
+    ]);
+  });
+});
+
 const NEEDS =
   "--follow-ups needs follow-up ids, or `due` for every due agent follow-up. `ork follow-ups list` shows them.";
 

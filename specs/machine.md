@@ -50,6 +50,16 @@ heavy:
 - **Taking a slot.** A command that matches takes a [slot](#slots) around it: a
   tool node's `command`, a `verify:` and a `before:` step, and a Bash call of a
   session (below).
+- **A shell script's commands.** A tool node whose `script:` runs under a shell
+  (the default `sh -eu`, or a program named `sh`, `bash` or `zsh`) passes the
+  script to `MachinePort.slot` beside its command line, and takes one slot for
+  the whole script when any of its commands matches (`isHeavyScript`). The
+  splitter (`scriptCommands`) drops blank lines and `#` comments, splits at
+  newlines, `;`, `&&`, `||`, `|` and `&` (not the `&` of a redirect such as
+  `2>&1`), trims each piece, and drops a leading `VAR=value` and a `then`, `do`
+  or `else`. It is a heuristic that only decides whether to wait: it cannot see
+  `eval`, a command in a variable, a heredoc or a called script, and a script
+  with another interpreter takes no slot ([L363](./gaps/machine-limits.md)).
 - With no `heavy`, nothing is denied and no slot is taken.
 
 ## Slots

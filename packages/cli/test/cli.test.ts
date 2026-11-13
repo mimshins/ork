@@ -332,7 +332,8 @@ describe("ork validate", () => {
       {
         severity: "error",
         code: "file.read",
-        message: "file not found",
+        message:
+          "no workflow file nope.ork.yaml; a file name or path is meant, not a workflow name (this project has no workflows)",
         path: [],
       },
     ]);

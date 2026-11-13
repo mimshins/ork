@@ -5,7 +5,8 @@
  *   too, with a note saying so, never dropped. A dated one is due on its date;
  *   `after-deploy` only when someone says so (`markDue`). A run that publishes
  *   records its ref on the follow-ups it left (`recordPublished`), and the
- *   `agent` follow-ups it took as its brief are done.
+ *   `agent` follow-ups it took as its brief are done (taking them is
+ *   `take.ts`).
  */
 
 import { field, parseJson } from "@krapht/ork-integrations";
@@ -204,28 +205,6 @@ export const recordPublished = (
       ),
     );
   return { referenced, done };
-};
-
-/**
- * `ork run start --follow-ups <ids>`: the open `agent` follow-ups among `ids`
- * become `run`'s brief; why each other id wasn't taken.
- */
-export const takeFollowUps = (
-  rows: FollowUpRows,
-  taking: { project: string; run: string; ids: readonly string[] },
-  now: () => string = () => new Date().toISOString(),
-): { taken: FollowUp[]; refused: string[] } => {
-  const taken: FollowUp[] = [];
-  const refused: string[] = [];
-  for (const id of taking.ids) {
-    const f = rows.followUp(taking.project, id);
-    if (f === undefined) refused.push(`${id}: there is no such follow-up`);
-    else if (f.for !== "agent") refused.push(`${id}: it is for ${f.for}`);
-    else if (f.status === "done" || f.status === "dropped") {
-      refused.push(`${id}: it is ${f.status}`);
-    } else taken.push(changed(rows, f, { takenBy: taking.run }, now()));
-  }
-  return { taken, refused };
 };
 
 /** Every ten minutes: a pull request's state changes slowly. */

@@ -8,6 +8,7 @@ import {
   type EventStore,
   findRun,
   type GhRunner,
+  outputsText,
   pausedOf,
   type ProjectRecord,
   type RunRecord,
@@ -68,4 +69,22 @@ export const viewOf = (context: ServerContext, run: RunRecord): RunView => {
       ? context.store.controlEvents(run.id).map(stored => stored.event)
       : [];
   return { ...run, live: runStatus(run, events), paused: pausedOf(events) };
+};
+
+/** The run's view plus its last finish's declared outputs, when it has any. */
+export const viewWithOutputs = (
+  context: ServerContext,
+  run: RunRecord,
+): RunView => {
+  const finished = context.store
+    .controlEvents(run.id)
+    .map(stored => stored.event)
+    .findLast(event => event.type === "run.finished");
+  const outputs = outputsText(
+    finished?.type === "run.finished" ? finished.result.outputs : undefined,
+  );
+  return {
+    ...viewOf(context, run),
+    ...(outputs.length === 0 ? {} : { outputs }),
+  };
 };

@@ -158,6 +158,20 @@ export const add = defineCommand({
         `${style("green", "✓")} ${added.merged ? "merged into" : "added"} ${followUp.id}: ${plain(followUp.title)}`,
       );
       if (added.note !== undefined) writeErr(style("dim", added.note));
+      // A duplicate keeps the first draft; say the new text was not kept.
+      if (
+        added.merged &&
+        input.draft !== undefined &&
+        followUp.draft !== undefined &&
+        input.draft.text !== followUp.draft.text
+      ) {
+        write(
+          style(
+            "dim",
+            `  the new --text was not kept: ${followUp.id} keeps its first draft (see \`ork follow-ups show ${followUp.id}\`)`,
+          ),
+        );
+      }
       if (relayed !== undefined) {
         write(
           style(

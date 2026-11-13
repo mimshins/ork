@@ -118,3 +118,15 @@ so a `succeeded` run says what it left out, and names each node that never ran
 with messages nobody read (`unread: [{ node, messages }]`): a branch not taken
 leaves its mail. All three come from the routing a resume replays, so a resumed
 run counts the same; a result recorded before them lacks them.
+
+A resumed run's result also counts `kept`: the nodes whose every result was
+handed back from the run it resumed, which are in `nodes` with their runs but
+did not run again. A node that ran anew at least once (a later round, an item,
+or its whole run) counts as ran. The summary line reads
+`1 ran, 1 kept, 0 skipped`; a run that was not resumed has no `kept`, and its
+line is unchanged.
+
+`ork tree` reads a run's status as `ork ps` does: a `running` run whose process
+is gone is `crashed`, and nothing will end its nodes, so a node started but not
+ended reads `cut off` (not `running`) and one never started `not run`.
+`ork tree --json` keeps the stored states.

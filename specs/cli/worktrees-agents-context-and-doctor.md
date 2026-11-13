@@ -33,7 +33,9 @@ and whether it is ready here:
 `issues runs on claude-code (its model, claude-code.sonnet): <ready detail | not ready: hint>`.
 The driver and model come from the bundled workflow's `defaults.model`, and
 readiness from the same driver checks; a file that is already there is left
-alone and says nothing.
+alone and says nothing. A file it creates also gets the line
+``Commit it before `ork run issues`: the builders' worktrees come from your commits.``
+([issues-step.ts](../../packages/cli/src/project/issues-step.ts)).
 
 ## Worktrees
 
@@ -157,7 +159,9 @@ A ledger check
 ([ledger-checks.ts](../../packages/cli/src/doctor/ledger-checks.ts)) sweeps the
 stale records and tickets of processes that are gone from the machine's
 heavy-command slots (`~/.ork/slots`) and its locks (`~/.ork/locks`), and names
-each one it removed (`run/node (pid …)`). It is silent when there are none, and
+each one it removed (`run/node (pid …)`), and removes the empty `queue/` folders
+the sweep left (one with a live waiter's ticket stays;
+[L366](../gaps/qa-bd542734-limits.md)). It is silent when there are none, and
 never fails the doctor ([machine](../machine.md#slots),
 [integration](../integration.md#the-ledger)).
 

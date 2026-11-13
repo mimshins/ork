@@ -3,7 +3,8 @@
  *   slots run two at once, the third waits until one ends, says who holds the
  *   slots, and records the CPU its command used; the project's priority reaches
  *   the runner. A run's machine reaches its tool nodes, and a step's timeout
- *   starts once its command has a slot.
+ *   starts once its command has a slot. A shell `script:` waits when one of its
+ *   commands is heavy.
  */
 
 import { mkdtempSync } from "node:fs";
@@ -15,6 +16,7 @@ import {
   compileWorkflow,
   type ExecuteContext,
   fileSlotLedger,
+  type MachinePort,
   machinePort,
   type RunEvent,
   type RuntimeEvent,
@@ -26,11 +28,12 @@ import { describe, expect, it, vi } from "vitest";
 import { toolExecutor, type ToolRunner } from "../src/index.ts";
 import { runStep } from "../src/verify.ts";
 
-const node: Node = { type: "tool.shell", command: "pnpm check" };
+const command: Node = { type: "tool.shell", command: "pnpm check" };
 
 const contextFor = (
   id: string,
   machine: ExecuteContext["machine"],
+  node: Node = command,
 ): ExecuteContext & { events: RuntimeEvent[] } => {
   const events: RuntimeEvent[] = [];
   const cwd = mkdtempSync(path.join(tmpdir(), "ork-heavy-"));
@@ -232,5 +235,75 @@ describe("a run's machine", () => {
     );
     await later;
     expect(result.ok).toBe(true);
+  });
+});
+
+/** What a node asks its machine port for, through a port that takes no slot. */
+const askedSlot = async (shell: Node): Promise<unknown> => {
+  let asked: unknown;
+  const port: MachinePort = {
+    priority: "normal",
+    slot: (text, _signal, run) => {
+      asked = { text, ...run };
+      return Promise.resolve(() => {
+        // Nothing was taken.
+      });
+    },
+  };
+  await toolExecutor(okRunner([]))(contextFor("n", port, shell));
+  return asked;
+};
+
+describe("a shell script's slot", () => {
+  it("is asked with the script for a shell interpreter only", async () => {
+    const nodes: Node[] = [
+      { type: "tool.shell", script: "sleep 9151" },
+      { type: "tool.shell", script: "sleep 9151", interpreter: "/bin/bash" },
+      { type: "tool.shell", script: "sleep 9151", interpreter: "node" },
+      { type: "tool.shell", command: "sleep 9151" },
+    ];
+    const asked = await Promise.all(nodes.map(shell => askedSlot(shell)));
+    expect(asked).toEqual([
+      { text: "sh -eu", script: "sleep 9151" },
+      { text: "/bin/bash", script: "sleep 9151" },
+      { text: "node" },
+      { text: "sleep 9151" },
+    ]);
+  });
+
+  it("makes a second run of a heavy script wait for the first", async () => {
+    const { ledger, freeOther } = await takenLedger();
+    const runEvents: RunEvent[] = [];
+    const port = machinePort(
+      {
+        machine: {
+          rules: { heavy: ["sleep 9151"], priority: "normal" },
+          ledger,
+        },
+        onEvent: event => {
+          runEvents.push(event);
+        },
+      },
+      "r1",
+      "s",
+      { waitFor: (_, wait) => wait() },
+    );
+    const started: string[] = [];
+    const runner: ToolRunner = program => {
+      started.push(program);
+      return Promise.resolve({ exitCode: 0, stdout: "", stderr: "" });
+    };
+    const script: Node = { type: "tool.shell", script: "echo a\nsleep 9151" };
+    const run = toolExecutor(runner)(contextFor("s", port, script));
+    await vi.waitFor(() => {
+      expect(runEvents).toEqual([
+        { type: "slot.waiting", id: "s", holders: ["r0/check"] },
+      ]);
+    });
+    expect(started).toEqual([]);
+    freeOther();
+    await run;
+    expect(started).toEqual(["sh"]);
+    expect(runEvents.at(-1)).toEqual({ type: "slot.taken", id: "s" });
   });
 });

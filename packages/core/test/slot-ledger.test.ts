@@ -19,9 +19,11 @@ import {
   type HeldSlot,
   heavySlots,
   isHeavy,
+  isHeavyScript,
   machinePort,
   matchesPattern,
   type RunEvent,
+  scriptCommands,
   slotWaitsOf,
 } from "../src/index.ts";
 
@@ -104,6 +106,44 @@ describe("heavy patterns", () => {
       true,
     );
   });
+
+  it("split a shell script into the commands they are matched against", () => {
+    const script = [
+      "#!/bin/sh",
+      "",
+      "  # a comment",
+      "pnpm install; pnpm build && pnpm lint || exit 1",
+      "pnpm check 2>&1 | tee out.log # keep it",
+      "sleep 1 & wait",
+      "if test -f x; then CI=1 FORCE=yes pnpm test; else echo no; fi",
+      "for f in a b; do echo $f; done",
+    ].join("\n");
+    expect(scriptCommands(script)).toEqual([
+      "pnpm install",
+      "pnpm build",
+      "pnpm lint",
+      "exit 1",
+      "pnpm check 2>&1",
+      "tee out.log",
+      "sleep 1",
+      "wait",
+      "if test -f x",
+      "pnpm test",
+      "echo no",
+      "fi",
+      "for f in a b",
+      "echo $f",
+      "done",
+    ]);
+  });
+
+  it("find a heavy command anywhere in a script, and none without `heavy`", () => {
+    const script = "echo start\nCI=1 pnpm check *.ts && echo done";
+    expect(isHeavyScript(["pnpm check *"], script)).toBe(true);
+    expect(isHeavyScript(["pnpm test"], script)).toBe(false);
+    expect(isHeavyScript([], script)).toBe(false);
+    expect(isHeavyScript(["pnpm test"], "# pnpm test\necho x")).toBe(false);
+  });
 });
 
 describe("a node's machine port", () => {
@@ -143,6 +183,11 @@ describe("a node's machine port", () => {
     ]);
     expect(waitedIn).toEqual(["a", "b"]);
     expect(port("a")?.priority).toBe("low");
+    const script = await port("c")?.slot("sh -eu", signal, {
+      script: "echo go\npnpm check",
+    });
+    expect(ledger.holders().map(held => held.node)).toEqual(["c"]);
+    script?.();
   });
 
   it("is a wait `ork tree`, `ork ps` and the UI show", () => {

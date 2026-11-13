@@ -99,6 +99,9 @@ describe("a resumed run", () => {
     expect(again.result.status).toBe("succeeded");
     expect(again.ran).toEqual(["c", "d"]);
     expect(started(again.events)).toEqual(["c", "j", "d"]);
+    // a and b were handed back whole: kept, not counted as ran.
+    expect(again.result.kept).toBe(2);
+    expect(first.result.kept).toBeUndefined();
     expect(again.result.nodes.map(n => n.id).toSorted()).toEqual([
       "a",
       "b",

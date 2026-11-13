@@ -59,7 +59,9 @@ stop it:
 detached; run 3f2a91c0 keeps going · ork attach 3f2a91c0 · ork stop 3f2a91c0
 ```
 
-This differs from `ork run` in the foreground, where Ctrl-C stops the run.
+`ork attach` exits 0 after a Ctrl-C detach: the run is still going, so there is
+no failure to report. This differs from `ork run` in the foreground, where
+Ctrl-C stops the run.
 
 ## When you start a workflow that calls others
 
@@ -77,8 +79,11 @@ followed up to five seconds more so its end shows. `ork run --detach` and
 
 When stdin is not a terminal (a pipe, CI), `ork attach` follows and prints but
 never asks: it says once `no terminal: answer with ork decide`. A foreground
-`ork run` with no terminal does not answer a called run's questions either; they
-wait in `ork decide` and the Decisions panel of `ork ui`.
+`ork run` with no terminal answers an **agent's question** at once with its
+recommended option (and fails with `no one to ask` when it has none), so CI does
+not hang. A **gate** waits for `ork decide` or `ork ui`; the run says
+`use --detach and answer with ork decide`. Only a terminal's Enter takes the
+recommended option, by your choice. A called run's gates wait the same way.
 
 A program or an agent inside a run cannot use `ork attach` on a terminal in a
 store that run guards: it answers as you, so it refuses there as `ork decide`

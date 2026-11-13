@@ -1,10 +1,11 @@
 /**
- * @file The run summary on the terminal: status, cost, what ran, what was
- *   skipped and which failures an edge handled (G8, L42), branches to look at,
- *   why it did not succeed, and mail to nodes that never ran (L91).
+ * @file The run summary on the terminal: status, cost, what ran, what a resume
+ *   kept, what was skipped and which failures an edge handled (G8, L42),
+ *   branches to look at, why it did not succeed, and mail to nodes that never
+ *   ran (L91).
  */
 
-import type { RunResult } from "@krapht/ork-core";
+import { outputsText, type RunResult } from "@krapht/ork-core";
 
 import { costOf } from "../output.ts";
 import { chip, CHIP_LABELS } from "../term/chips.ts";
@@ -31,6 +32,25 @@ const failuresHandled = (count: number): string =>
   `${String(count)} ${count === 1 ? "failure" : "failures"} handled`;
 
 /**
+ * The workflow's declared outputs, one per key: a one-line value on the key's
+ * line, a longer one under it; a cut value points at the stored full one.
+ */
+const outputLines = (
+  result: RunResult,
+  style: ReturnType<typeof styler>,
+): string[] =>
+  outputsText(result.outputs).flatMap(({ name, text, cut }) => {
+    const key = style("bold", `${name}:`);
+    const tail = cut
+      ? [style("dim", `    … cut; full value: ork logs ${result.runId} --json`)]
+      : [];
+    if (text === "") return [`  ${key} ${style("dim", "(empty)")}`];
+    if (!text.includes("\n")) return [`  ${key} ${text}`].concat(tail);
+    const body = text.split("\n").map(line => `    ${line}`);
+    return [`  ${key}`].concat(body, tail);
+  });
+
+/**
  * The run summary: status, cost, what ran, what was skipped and which failures
  * an edge handled, branches to look at, why, and mail to nodes that never ran.
  */
@@ -44,15 +64,18 @@ export const formatRunResult = (
   const mark = term.rich
     ? chip(term, end.label, end.ok)
     : style(MARK_COLOR[end.ok], end.mark);
-  const ran = result.nodes.filter(n => n.runs > 0).length;
-  const skipped = result.skipped ?? result.nodes.length - ran;
+  // A resumed run's kept nodes have results, but did not run this time.
+  const keptCount = result.kept ?? 0;
+  const ran = result.nodes.filter(n => n.runs > 0).length - keptCount;
+  const skipped = result.skipped ?? result.nodes.length - ran - keptCount;
   const handled = result.failuresHandled ?? 0;
   const lines = [
     "",
     `${mark} run ${result.runId} ${result.status.replace("_", " ")} ${style(
       "dim",
-      `· ${costOf(result.costUsd, result.partial, result.tokens)} · ${String(ran)} ran, ${String(skipped)} skipped${handled === 0 ? "" : `, ${failuresHandled(handled)}`}`,
+      `· ${costOf(result.costUsd, result.partial, result.tokens)} · ${String(ran)} ran, ${keptCount === 0 ? "" : `${String(keptCount)} kept, `}${String(skipped)} skipped${handled === 0 ? "" : `, ${failuresHandled(handled)}`}`,
     )}`,
+    ...outputLines(result, style),
   ];
   for (const kept of result.worktrees) {
     lines.push(

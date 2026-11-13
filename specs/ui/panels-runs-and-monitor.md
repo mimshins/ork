@@ -125,6 +125,9 @@ Its CLI twin is `ork tree <run>`.
   tokens and controls. A node that did not end well adds its end note
   ([design](./design-components-and-copy.md#how-a-node-ended)); a stopped run
   lists such nodes under the stat strip, and a line picks its node.
+- **Outputs:** a run that ended shows its declared `outputs:` in a card under
+  the stat strip, as `ork logs <run>` prints them
+  ([design](./panels-run-outputs.md)); none declared, no card.
 - **Small panels:** the graph keeps a usable height, and the panel scrolls when
   it has less than that, as at 200% zoom (WCAG 1.4.10).
 - **A node not done when its run ended** reads skipped if it never started, and

@@ -33,6 +33,14 @@ const failed = (message: string): void => {
   process.exitCode = 1;
 };
 
+/** The mark of how the run ended, as the run's own summary line has it. */
+const endMark = (status: string): string =>
+  status === "succeeded"
+    ? style("green", "✓")
+    : status === "failed" || status === "crashed"
+      ? style("red", "✗")
+      : style("yellow", "!");
+
 export * from "./decide.ts";
 export * from "./decide-list.ts";
 
@@ -72,7 +80,7 @@ export const stop = defineCommand({
       for (let i = 0; i < 150; i += 1) {
         const [now] = store.lookup(run.id);
         if (now !== undefined && liveStatus(now) !== "running") {
-          write(`${style("green", "✓")} run ${run.id} ${liveStatus(now)}`);
+          write(`${endMark(liveStatus(now))} run ${run.id} ${liveStatus(now)}`);
           return;
         }
         // oxlint-disable-next-line no-await-in-loop -- waiting for the run to finish stopping

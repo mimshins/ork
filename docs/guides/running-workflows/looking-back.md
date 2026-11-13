@@ -15,6 +15,10 @@ ork logs 3f2a --verbose # every failed node's hint and scrubbed details
 ork tree               # the ownership tree: each node's state, tokens and cost
 ```
 
+For a `crashed` run, `ork tree` shows a node that had started but not ended as
+`✗ cut off` and one that never started as `- not run`, as `ork ps` says the run
+crashed (`--json` keeps the stored states).
+
 A failed node says why in one line, as a kind and a message (for a failed tool,
 the last line of its stderr); `--verbose` (on `ork run` too) and
 `ork logs --node` add what to do and the raw text, scrubbed.

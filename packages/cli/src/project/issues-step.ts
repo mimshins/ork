@@ -89,6 +89,12 @@ export const issuesStep = async (
     return;
   }
   write(`${style("green", "created")} ${ISSUES_FILE}`);
+  write(
+    style(
+      "dim",
+      `Commit it before \`ork run issues\`: the builders' worktrees come from your commits.`,
+    ),
+  );
   const line = await issuesDriverLine(checks);
   if (line !== null) write(line);
 };

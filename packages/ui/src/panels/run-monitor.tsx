@@ -1,8 +1,8 @@
 /**
  * @file One run in the Monitor: a stat strip, its graph, its nodes as a table
- *   with what each is doing, why a stopped run stopped, and the selected node's
- *   strip, live from its stream. Pointing at a node in the graph or the table
- *   picks it out in both.
+ *   with what each is doing, why a stopped run stopped, a finished run's
+ *   declared outputs, and the selected node's strip, live from its stream.
+ *   Pointing at a node in the graph or the table picks it out in both.
  */
 
 import { useState } from "react";
@@ -10,9 +10,9 @@ import { useState } from "react";
 import { MonitorError, RunCanvas } from "./monitor-parts.tsx";
 import { NodeSection } from "./node-section.tsx";
 import { OwnershipTree } from "./ownership-tree.tsx";
-import { RunEnds } from "./run-ends.tsx";
 import { RunHeader } from "./run-header.tsx";
 import { RunLinks } from "./run-links.tsx";
+import { RunSummary } from "./run-summary.tsx";
 import { useClock } from "./use-clock.ts";
 import { type RunView, useRunMonitor } from "./use-run-monitor.ts";
 
@@ -49,7 +49,7 @@ export const RunMonitor = ({ run }: { run: RunView }) => {
         waiting={waiting}
       />
       {error === null ? null : <MonitorError error={error} />}
-      <RunEnds
+      <RunSummary
         onSelect={state.selectNode}
         roots={roots}
         run={run}

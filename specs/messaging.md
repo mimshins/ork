@@ -172,7 +172,7 @@ The decision queue ([queue.ts](../packages/core/src/control/queue.ts)):
   document masked as well. `decision.opened` does not carry it, so `ork logs`
   shows the question only and a settled decision's document is read from the
   store. Only `human.gate` sets it for now, not `ask_user`. On a terminal it
-  follows [the picker's rule](./cli/running-and-runs.md#decisions-and-stopping).
+  follows [the picker's rule](./cli/decisions-and-stopping.md).
 - A gate's `timeout` + `default` withdraws the question (`decision.withdrawn`)
   and answers it by itself; so does a stopped run.
 - A run with no terminal (`ork run --detach`) waits for `ork decide`. A run
@@ -186,9 +186,9 @@ The decision queue ([queue.ts](../packages/core/src/control/queue.ts)):
 - A message queued for a node's next session (`ork chat` while it is between
   sessions) is delivered when the node starts again; if the run never runs it
   again, a resume does ([L272](./gaps.md)).
-- `ork decide` (in [CLI](./cli/running-and-runs.md#decisions-and-stopping))
-  lists the open decisions of live runs and answers them; the UI inbox (M2)
-  reads the same table.
+- `ork decide` (in [CLI](./cli/decisions-and-stopping.md)) lists the open
+  decisions of live runs and answers them; the UI inbox (M2) reads the same
+  table.
 
 ## Event store
 
@@ -222,9 +222,8 @@ every second, and at once when woken on its socket.
 
 ## Chat
 
-`ork chat <run> <node>`
-([CLI](./cli/running-and-runs.md#decisions-and-stopping)) talks to a leader or
-worker:
+`ork chat <run> <node>` ([CLI](./cli/decisions-and-stopping.md)) talks to a
+leader or worker:
 
 - **A live run:** the message is a command in the store (`message`, with the
   node and the body, masked), and the run is woken on its socket. The bus pushes

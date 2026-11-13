@@ -181,7 +181,21 @@ describe("ork follow-ups add", () => {
       "agent",
     );
     expect(again.out).toContain("merged into");
+    expect(again.out).not.toContain("was not kept");
     expect(kept(s)).toHaveLength(1);
+  });
+
+  it("says when a duplicate's different --text was not kept", async () => {
+    const s = setup();
+    const args = ["add", "Tell Dana", "--for", "person:Dana"];
+    await ork(...args, "--text", "First");
+    const again = await ork(...args, "--text", "Second");
+    expect(again.out).toContain(`merged into ${idAt(s, 0)}`);
+    expect(again.out).toContain("the new --text was not kept");
+    expect(first(s).draft?.text).toBe("First");
+    expect((await ork(...args, "--text", "First")).out).not.toContain(
+      "was not kept",
+    );
   });
 
   it.each([
@@ -378,6 +392,22 @@ describe("ork follow-ups list and show", () => {
     expect(shown.out).toContain("Draft to Dana (email)");
     expect(shown.out).toContain("  Line one");
     expect(shown.out).toContain("  Line two");
+  });
+
+  it("shows who took it, and stops saying to send a draft once it is done", async () => {
+    const s = setup();
+    await ork("add", "Tell Dana", "--for", "person:Dana", "--text", "Hi");
+    const id = idAt(s, 0);
+    const store = openStore(storePath(s.home));
+    store.putFollowUp({ ...first(s), takenBy: "run42" });
+    store.close();
+    expect((await ork("show", id)).out).toContain("taken by run run42");
+    expect((await ork("list")).out).toContain("taken by run42");
+    expect((await ork("show", id)).out).toContain("copy it, send it");
+    await ork("done", id);
+    const shown = await ork("show", id);
+    expect(shown.out).toContain("Draft to Dana (done)");
+    expect(shown.out).not.toContain("copy it, send it");
   });
 
   it("refuses an id it does not know", async () => {

@@ -22,6 +22,15 @@ with the built-in node types
   so the run belongs to the project and resumes from the text it started with.
   `validate` and `context explain` take the name too; an unknown one is refused,
   naming the built-ins.
+- **A name that is no file:** `<wf>` is a file name or path, never a workflow's
+  `name:`. When it is none, `ork run` and `ork validate` say
+  `no workflow file <wf>; a file name or path is meant, not a workflow name (this project's workflows: …)`,
+  listing the project's workflows by file name, with the `name:` when it differs
+  ([workflows.ts](../../packages/cli/src/workflows.ts)).
+- **A file with no `schemaVersion`** (a workflow, the project file, the
+  settings) is refused with `schemaVersion is missing: write schemaVersion: 1`,
+  by every command that loads it
+  ([issue-messages.ts](../../packages/schema/src/issue-messages.ts)).
 - The workflow and its inputs are checked as for `--node`; nothing starts on an
   error, and warnings print before it starts, with what
   [walking it](../scheduler/walking.md) found. `ork resume` doesn't walk.
@@ -41,10 +50,19 @@ with the built-in node types
   saying its terminal is off), and a fanned node's list in plain words
   (`build │ 5 items`, or `! 12 items, over maxItems 10`; an item's lines carry
   its id, `build.2`); then the run summary: status, total cost, how many nodes
-  ran and were skipped, how many failures an edge handled
-  (`2 ran, 1 skipped, 1 failure handled`), the worktrees left for you (branch,
-  path, why), the reasons it did not succeed, and a warning for each node that
-  never ran with messages nobody read. `--json` prints the
+  ran, were kept from an earlier run (on a resume) and were skipped, how many
+  failures an edge handled (`2 ran, 1 kept, 1 skipped, 1 failure handled`; the
+  kept count is left out when 0), the workflow's declared `outputs:`, one per
+  key under the summary line (`  integrated: #1`; a multi-line value goes
+  indented under its key, an empty one reads `(empty)`, and one over 20 lines or
+  2,000 characters is cut with `… cut; full value: ork logs <run> --json`; the
+  values are scrubbed of escape sequences, as they come from sessions;
+  [outputs-text.ts](../../packages/core/src/run/outputs-text.ts)), the worktrees
+  left for you (branch, path, why), the reasons it did not succeed, and a
+  warning for each node that never ran with messages nobody read. `ork logs` and
+  `ork attach` print the same summary, so the same outputs; a failed or
+  interrupted run prints the outputs it has, and none declared prints none.
+  `--json` prints the
   [run events](../scheduler/resuming-and-events.md#run-events) as JSON lines. A
   failed node's line is `<node> │ ✗ <Label>: <message>`, its kind and Ork's own
   sentence, with `(may pass; ork resume retries)` after a transient kind; never
@@ -150,6 +168,13 @@ first (then the prompt is withdrawn and the transcript shows
   `Note for the run (optional, Enter to skip):` takes one line. While it waits
   the decision is still open, so `ork decide`, the UI or a gate's timeout can
   still answer it.
+- **With no terminal** (stdin is not a TTY, a foreground run) nothing is asked:
+  an agent's question takes its recommended option at once
+  (`no terminal; answered <option>`) or fails with `no one to ask` when it has
+  none. A gate waits for `ork decide` or `ork ui`, and says
+  `no terminal; <node> waits for ork decide or ork ui: use --detach and answer with ork decide`
+  (a detached run leaves out the last clause). Only a terminal's Enter takes the
+  recommended option, by choice.
 - A permission prompt shows the tool and a one-line preview of its input and
   asks `Allow?` as a yes-or-no (`y`, `n`, ←/→, Enter; plain, `Allow? [y/N]`);
   anything but yes denies it, and a denial takes the same optional note line,
@@ -170,6 +195,12 @@ A delegated node whose task had a `description`
 `ork tree`'s label column, and on the node's start line in `ork logs` (after the
 type, as ` · <description>`); `--json` carries it as `description`.
 
+`ork tree` reads a run's status as `ork ps` does. For a `crashed` run, a node
+the event log shows started but not ended reads `✗ cut off`, and one that never
+started reads `- not run`: nothing will end them
+([format.ts](../../packages/cli/src/runs/format.ts)). `--json` and the browser
+view keep the stored states ([L367](../gaps/qa-bd542734-limits.md)).
+
 For a node with `forEach`, `ork tree` lists its items under it, in list order,
 each with its state, time and cost, and `--json` carries them as the node's
 children (with `template` and `startedAt`), and the node's `listed`.
@@ -182,80 +213,6 @@ scrubbed detail, as `--verbose` does for the whole run (there is no
 filter serves `GET /api/runs/<id>/events?node=` in `ork ui`, and
 `GET /api/runs/<id>/tree` is this same nested tree.
 
-## Decisions and stopping
-
-([control.ts](../../packages/cli/src/commands/control.ts),
-[tests](../../packages/cli/test/control.test.ts),
-[documents](../../packages/cli/test/decide-document.test.ts))
-
-- **`ork decide`** lists the open decisions of this project's live runs (`<run>`
-  for one run, `--project all` or a project id), oldest first, and asks each in
-  turn with the same picker as the terminal; the recommended option is the
-  default. The answer goes to the store, first one wins, and the run is woken on
-  its socket. `--list` (or no terminal) only lists them, with `--json`, `--ids`,
-  `--limit` ([filters](./list-filters.md#the-lists));
-  `--id <decision> --choose <option>` answers one without a prompt;
-  `--say <text>` gives that answer its [note](../messaging.md#decisions), which
-  goes to the run, and asking in turn offers the note line after each choice.
-  `--note` and `--rating` keep their meaning: feedback on the decision's node
-  ([feedback](../feedback/capture.md)), not words for the run. An option that is
-  not one of the decision's, or a decision already answered or withdrawn, is
-  refused with the reason. Decisions of crashed runs are not listed. A program
-  or an agent in a run (`ORK_RUN` or `ORK_SESSION` is set) may list them but not
-  answer in a guarded store (it speaks as the user); `ork continue` refuses
-  there too, and `ork ui` withholds its sign-in link
-  ([L80](../messaging/scripts-limits.md)). `--workflow <name>` keeps only the
-  decisions of that workflow's live runs, ANDed with `<run>` (or the project, or
-  `--project all`), for `--list`, `--json` and asking in turn; a workflow with
-  none lists none and says so. `--list` marks a decision with a document
-  `+document`. Asking in turn (and the run's own terminal) prints a
-  [document](../messaging.md#decisions) of 40 lines or fewer before the question
-  and otherwise says `Document: N lines. Type d to read it.`; `d` at the choose
-  prompt prints it and asks again, and an option whose id is `d` wins. Output is
-  the Markdown source. `--id <decision> --document` prints that decision's
-  document, open or settled, and exits 0, or says it has none and exits 1; it
-  only reads, so a run's process may use it.
-- **`ork chat <run> <node>`**
-  ([chat.ts](../../packages/cli/src/commands/chat.ts),
-  [tests](../../packages/cli/test/chat.test.ts)) talks to a leader or worker;
-  any other node is refused, and so is a program or an agent in a run (`ORK_RUN`
-  or `ORK_SESSION` is set) in a guarded store, since it speaks as the user
-  ([L80](../messaging/scripts-limits.md)). Each line typed is a message
-  (`-m <text>` sends one and exits; Ctrl-D leaves):
-  - **In a live run**, the message goes to the store and the run is woken; the
-    run's bus pushes it in full into the node's session at its next step, or
-    keeps it for the node's next session if it is not running
-    ([messaging](../messaging.md#chat)). The node's events stream back until the
-    run ends.
-  - **In a finished run** (or a crashed one), its last session is resumed where
-    it ran, with the run's skills and instructions, the driver it ran with
-    (`--driver` to change it), and the terminal for questions and permissions.
-    The exchange is added to the run's record after `run.finished`, so
-    `ork logs` shows it. A session whose folder is gone (a merged worktree is
-    removed) cannot be resumed, and says so.
-- **`ork send <to> -m <body>`** or **`--stdin`**, from a program in a tool node,
-  writes to a session on its run's bus, up to 64 KiB. It prints nothing when it
-  works, and exits 1 with the reason on stderr when refused
-  ([scripts and rules](../messaging/scripts.md#ork-send)).
-- **`ork stop [<run>]`** asks a live run to stop (this project's newest without
-  `<run>`), wakes it, and waits up to 15 s for it to end; a run that is not
-  running is refused with its status. **`--node <n>`** stops one running node
-  instead: it fails, `stopped by the user`, and the run goes on. A stop reaches
-  the runs a [`workflow.call`](../scheduler/calls.md) started.
-- **`ork pause [<run>] [--node <n>]`** and
-  **`ork continue [<run>] [--node <n>]`**
-  ([pause.ts](../../packages/cli/src/commands/pause.ts)) pause a live run, or
-  one node, and let it go on: nothing new starts, and a running session waits
-  before its next tool call; nothing is cut short
-  ([run control](../run-control.md)). `ork ps` shows `paused`, and `ork tree`
-  marks each held node. A run whose command waits for a machine-wide slot reads
-  `waiting for slot` in `ork ps` ([machine](../machine.md#a-wait-is-shown)); a
-  run whose node waits for a `lock:` reads
-  `waiting for <lock>, held by <run>/<node>`, in `ork tree`'s header too, where
-  each waiting node's row reads `waiting for <lock>`
-  ([listedStatus](../../packages/cli/src/runs/format.ts),
-  [integration](../integration.md#a-wait-is-shown)).
-
 ## Resuming a run
 
 `ork resume [<run>]` ([control.ts](../../packages/cli/src/commands/control.ts),
@@ -265,7 +222,8 @@ the same id and in its own project, from wherever it is called:
 
 - Nodes that finished keep their results; the rest run again, with what they
   feed ([scheduler](../scheduler/resuming-and-events.md#resuming-a-run)). The
-  transcript starts with `▸ resumed: … keep their results`.
+  transcript starts with `▸ resumed: … keep their results`, and the summary
+  counts those as `kept`, apart from what ran again (`1 ran, 1 kept`).
 - A `workflow.call` takes back the runs it started rather than starting them
   again ([calling workflows](../scheduler/calls.md)).
 - It starts with the run's inputs and flags; `--input`, `--driver` and

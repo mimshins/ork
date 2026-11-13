@@ -315,7 +315,7 @@ describe("ork run --node", () => {
     const run = options({ file: "nope.ork.yaml" });
     await runNode(run.value);
     expect(run.err).toEqual([
-      "nope.ork.yaml error file not found (file.read)",
+      "nope.ork.yaml error no workflow file nope.ork.yaml; a file name or path is meant, not a workflow name (this project has no workflows) (file.read)",
       "✗ nope.ork.yaml (1 error, 0 warnings)",
     ]);
   });

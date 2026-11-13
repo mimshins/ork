@@ -7,7 +7,7 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { readProjectTriggers } from "@krapht/ork-core";
+import { readProjectTriggers, type RunEvent } from "@krapht/ork-core";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -20,6 +20,31 @@ import {
 } from "./fixtures.ts";
 
 let fixture: TestServer | undefined;
+
+/** A run's finish with these declared outputs. */
+const finishedWith = (
+  id: string,
+  outputs: Record<string, string>,
+): RunEvent => {
+  const done = finished(id);
+  return done.type === "run.finished"
+    ? { ...done, result: { ...done.result, outputs } }
+    : done;
+};
+
+/** What `GET /api/runs/:id` answers; an error when it is refused. */
+const runData = async (server: TestServer, id: string): Promise<object> => {
+  const answer = await server.client.call("run", { params: { id } });
+  if (!answer.ok) throw new Error(answer.error);
+  return answer.data;
+};
+
+/** The first run `GET /api/runs` lists. */
+const listedData = async (server: TestServer): Promise<object> => {
+  const answer = await server.client.call("runs");
+  if (!answer.ok || answer.data[0] === undefined) throw new Error("no runs");
+  return answer.data[0];
+};
 
 afterEach(async () => {
   await fixture?.close();
@@ -182,6 +207,25 @@ describe("the read routes", () => {
     expect(
       await client.call("runs", { query: { project: "/elsewhere" } }),
     ).toMatchObject({ data: [] });
+  });
+
+  it("serve a finished run's declared outputs on the run, scrubbed, not in the list", async () => {
+    fixture = await startTestServer();
+    liveRun(fixture, "ccc33333");
+    fixture.store.append(
+      "ccc33333",
+      finishedWith("ccc33333", { url: "\u001B[31mhttps://x/1" }),
+    );
+    expect(await runData(fixture, "ccc33333")).toMatchObject({
+      outputs: [{ name: "url", text: "https://x/1", cut: false }],
+    });
+    expect(await listedData(fixture)).not.toHaveProperty("outputs");
+  });
+
+  it("serve no outputs for a run that declared none", async () => {
+    expect(await runData(await withRuns(), "aaa")).not.toHaveProperty(
+      "outputs",
+    );
   });
 
   it("find a run by a unique prefix, with 404 and 400 otherwise", async () => {

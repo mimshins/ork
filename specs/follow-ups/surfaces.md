@@ -45,8 +45,13 @@ ork follow-ups published <ref>                        # inside a run: what it le
   ones.
 - **`post`** without `--confirm` prints what would be posted and where, and
   exits 0 (the preview on stdout, the "Run again with --confirm" hint on
-  stderr); with it, posts through `gh` and marks the follow-up done. It refuses
-  a message that is not drafted for `github`, or is already closed.
+  stderr); with it, posts through `gh` and marks the follow-up done. It posts
+  the draft as stored when `--confirm` runs, with no digest to compare (the
+  panel's dialog and the server's `post` do compare one). It refuses a message
+  that is not drafted for `github`, or is already closed.
+- **`show` and `list`** print `takenBy` (`show`: "taken by run `<id>`"; `list`:
+  a short "taken by `<id>`" after the line). `show` says "copy it, send it, then
+  done" only for an open draft; a done or dropped one reads "Draft to … (done)".
 - **`published`** needs `ORK_RUN`; it is what `build`'s `published` step runs.
 - **`ork run <workflow> --follow-ups <ids|due>`** takes `agent` follow-ups as
   the run's brief; `due` takes every due one, alone or beside ids, and an empty

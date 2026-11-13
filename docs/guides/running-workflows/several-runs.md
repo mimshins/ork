@@ -48,6 +48,12 @@ next one waiting takes it over. With no `heavy` in the project, nothing waits.
 
 - A tool node's `command`, and a node's `verify:` and `before:` steps, when they
   match `heavy`.
+- A tool node's shell `script:` (run by the default `sh -eu`, or by `sh`, `bash`
+  or `zsh`), when any of its commands matches `heavy`. Ork reads each line,
+  skips blank lines and `#` comments, and splits a line at `;`, `&&`, `||`, `|`
+  and `&`. It drops a leading `VAR=value` and a `then`, `do` or `else` before
+  matching. One slot is held for the whole script, and its `timeout` counts from
+  the slot.
 - A Claude Code session's own Bash call that matches `heavy`. Ork holds the call
   before it starts, as it does for a [pause](./controlling-a-run.md), and lets
   it go when a slot is free. The slot is given back when the call ends, on the
@@ -62,6 +68,17 @@ not count towards a `timeout`: a command's clock starts when it gets its slot.
 
 Only the full-suite commands wait. A targeted `vitest run <files>`, a lint or a
 `git status` never does.
+
+A script's commands are read without running a shell, so some heavy commands are
+not seen and take no slot: one run through `eval` or held in a variable
+(`$CHECK`), one inside a heredoc, one in a script the node calls, one after
+`if`, `while`, `time`, `exec`, `!` or `(`, one hidden after a quoted `#`, and
+any command of a script with a non-shell `interpreter:` (such as `node`). The
+`check` node of the [issues workflow](../issues-in-parallel.md) runs
+`eval "$CHECK"`, so it takes no slot; it still runs one at a time under the
+branch's lock. To make such a check wait, put the heavy command in the script
+itself, or in a node's `command:`
+([L363](../../../specs/gaps/machine-limits.md)).
 
 ## Lower priority
 

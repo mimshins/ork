@@ -81,6 +81,13 @@ describe("ork init's issues workflow", () => {
     expect(() => written(refused)).toThrow("ENOENT");
   });
 
+  it("says to commit the workflow once it is written, and not when it was there", async () => {
+    const root = project();
+    const first = await printed(root, true);
+    expect(first).toContain("Commit it before `ork run issues`");
+    expect(await printed(root, true)).not.toContain("Commit it");
+  });
+
   it("names the driver it runs on, and that it is ready", async () => {
     const text = await printed(project(), true);
     expect(text).toContain(

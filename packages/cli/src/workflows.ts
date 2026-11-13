@@ -5,7 +5,7 @@
  *   into the project's run folder.
  */
 
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 import {
@@ -103,4 +103,39 @@ export const workflowArg = (
   );
   const place = projectAt(path.dirname(path.resolve(cwd, file)));
   return { file, place, runDir: runId => runDirOf(place, runId) };
+};
+
+/**
+ * The `name:` line of a workflow file, read without parsing it (it may be
+ * broken).
+ */
+const nameOf = (file: string): string | undefined => {
+  try {
+    return /^name:\s*["']?([^\s"'#]+)/mu.exec(readFileSync(file, "utf8"))?.[1];
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * The text for a workflow argument that is no file: the workflows the project
+ * has, by file name (and `name:` when it differs), and that a file name or path
+ * is what the command takes. Empty-handed when the folder is missing.
+ */
+export const missingWorkflowText = (arg: string, workflows: string): string => {
+  const files = existsSync(workflows)
+    ? readdirSync(workflows)
+        .filter(name => name.endsWith(WORKFLOW_SUFFIX))
+        .toSorted()
+    : [];
+  const listed = files.map(file => {
+    const name = nameOf(path.join(workflows, file));
+    const stem = file.slice(0, -WORKFLOW_SUFFIX.length);
+    return name === undefined || name === stem ? file : `${file} (${name})`;
+  });
+  const have =
+    listed.length === 0
+      ? "this project has no workflows"
+      : `this project's workflows: ${listed.join(", ")}`;
+  return `no workflow file ${arg}; a file name or path is meant, not a workflow name (${have})`;
 };

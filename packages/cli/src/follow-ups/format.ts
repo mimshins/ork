@@ -34,9 +34,15 @@ const linesOf = (text: string): string[] =>
 const when = (f: FollowUp): string =>
   f.ref === undefined ? f.due : `${f.due} ${f.ref}`;
 
-/** One follow-up on one line. */
+/** One follow-up on one line; a short note when a run has taken it. */
 export const followUpLine = (f: FollowUp): string =>
-  `${style("dim", f.id)}  ${f.kind.padEnd(7)} ${plain(f.title)} ${style("dim", `(${plain(when(f))})`)}`;
+  `${style("dim", f.id)}  ${f.kind.padEnd(7)} ${plain(f.title)} ${style("dim", `(${plain(when(f))})`)}${f.takenBy === undefined ? "" : style("dim", ` taken by ${plain(f.takenBy)}`)}`;
+
+/** What to do with a draft: copy and send it, unless it is closed already. */
+const draftHeading = (f: FollowUp, to: string): string =>
+  f.status === "done" || f.status === "dropped"
+    ? `Draft to ${to} (${f.status})`
+    : `Draft to ${to}: copy it, send it, then \`ork follow-ups done ${f.id}\``;
 
 /**
  * The follow-ups grouped by status, then by `for`; the closed ones only with
@@ -77,6 +83,7 @@ export const formatFollowUp = (f: FollowUp): string[] => [
   `${style("bold", plain(f.title))}  ${style("dim", f.id)}`,
   `status ${f.status}${f.note === undefined ? "" : ` (${plain(f.note)})`}, for ${plain(f.for)}, ${f.kind}, due ${plain(f.due)}`,
   ...(f.ref === undefined ? [] : [`waits on ${plain(f.ref)}`]),
+  ...(f.takenBy === undefined ? [] : [`taken by run ${plain(f.takenBy)}`]),
   ...fromLine(f),
   ...(f.where.length === 0
     ? []
@@ -89,7 +96,10 @@ export const formatFollowUp = (f: FollowUp): string[] => [
         "",
         style(
           "bold",
-          `Draft to ${plain(f.draft.to)}${f.draft.channel === undefined ? "" : ` (${plain(f.draft.channel)})`}: copy it, send it, then \`ork follow-ups done ${f.id}\``,
+          draftHeading(
+            f,
+            `${plain(f.draft.to)}${f.draft.channel === undefined ? "" : ` (${plain(f.draft.channel)})`}`,
+          ),
         ),
         ...linesOf(f.draft.text).map(line => `  ${line}`),
       ]),

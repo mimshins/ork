@@ -26,7 +26,11 @@ import { defineCommand } from "citty";
 import { write, writeErr } from "../output.ts";
 import { projectAt, registeredProjects } from "../project/place.ts";
 import { driverArg, driverDiagnostics } from "../run/driver-check.ts";
-import { findWorkflowFiles, refusedBuiltin } from "../workflows.ts";
+import {
+  findWorkflowFiles,
+  missingWorkflowText,
+  refusedBuiltin,
+} from "../workflows.ts";
 import { formatReport, reportLines, warningLines } from "./validate-report.ts";
 
 const hasErrors = (diagnostics: readonly Diagnostic[]): boolean =>
@@ -80,7 +84,7 @@ export const loadWorkflow = (
   } catch (error) {
     const reason =
       error instanceof Error && "code" in error && error.code === "ENOENT"
-        ? "file not found"
+        ? missingWorkflowText(file, placeFiles(place).workflows)
         : "cannot read file";
     return {
       report: {
