@@ -1,5 +1,77 @@
 # @krapht/ork
 
+## 1.0.0-alpha.16
+
+### Minor Changes
+
+- [`66f0e61`](https://github.com/mimshins/ork/commit/66f0e61e189442b122f6b4f55aecee2e09a3144a) Thanks [@mimshins](https://github.com/mimshins)! - Every list command filters the same way. `ork ps`, `usage`, `decide --list`,
+  `follow-ups list`, `feedback list`, `worktrees list`, `agents list` and
+  `projects` take flags made from one field table per list (`--status`, `--kind`,
+  `--severity`, `--for`, `--due`, `--workflow`, `--run`, `--project`, `--source`,
+  `--since`, `--until`), with the allowed values checked and offered by Tab
+  completion; `ork logs` takes `--since`, `--until` and `--limit`. Every list
+  takes `--ids` (the ids, comma-separated on one line, for `$(...)`; not on
+  `usage` or `logs`), `--limit` (a positive whole number; anything else is an
+  error) and `--json`. `--since` and `--until` read an age (`24h`, `30d`, `12w`)
+  or a day (`2026-11-01`) on every list. `--all` is deprecated: use
+  `--project all` or `--status all`; it still works for one release, prints a
+  warning, and is left out of `--help` and Tab completion. `prune --all` is
+  unchanged.
+
+### Patch Changes
+
+- [`72796a4`](https://github.com/mimshins/ork/commit/72796a4576308dbb102355f89c84e74356ee5051) Thanks [@mimshins](https://github.com/mimshins)! - Ork describes itself as an orchestrator of coding agents (Claude Code, OpenCode,
+  Command Code), not of Claude agents only: `ork --help`, the npm description and
+  keywords, and the README now say so, and say that Ork is built with Ork.
+
+- [`2e3b272`](https://github.com/mimshins/ork/commit/2e3b2729490987261b707cfcf8b037b31d8d667d) Thanks [@mimshins](https://github.com/mimshins)! - Budgets and usage report what really happened. A run whose `limits.budgetUsd` or
+  `limits.budgetTokens` runs out while a session is working now ends
+  `budget_exhausted` instead of `failed`: no failure edge fires, and `ork resume`
+  continues that session. A session stopped by `ork stop` or its token cap keeps
+  the tokens it used, so `ork ps`, `ork usage`, the day quota and resume count
+  them. `ork validate` and `ork run` warn (`budget.leader`) when a leader with
+  nodes to delegate to has no cap of its own under a run budget, since it would
+  hold the whole budget and its workers would be refused; the `ork init` starter's
+  leader now has `budgetUsd: 2`. A budget stop reads
+  `reached its budget (used 250 of 200 tokens)`; a budget that is not a whole
+  number above 0 says so; nodes still queued when a run stops count as skipped;
+  `ork usage --clear-plan-limits` says how many it cleared; the Limits line shows
+  both sides of a dollar cap alike; and `ork usage`, `ork tree` and the Usage
+  panel name token figures one way: prompt, out and counted. The guides now say
+  that a node's caps start over on each activation and that a session's tokens
+  show once it ends or is stopped.
+
+- [`f6e63d7`](https://github.com/mimshins/ork/commit/f6e63d7cb5e06dcea8f574e4ef36f1490083891a) Thanks [@mimshins](https://github.com/mimshins)! - A called run's lines in `ork attach` and a foreground `ork run` fit the
+  terminal: they are laid out in the columns the call path (`build › `) leaves, so
+  a long line wraps under its own text instead of spilling to the terminal's first
+  column.
+
+- [`8b3b647`](https://github.com/mimshins/ork/commit/8b3b647dc1df0303e0a5fd00e7995a6879b974da) Thanks [@mimshins](https://github.com/mimshins)! - A failed `verify:` check always gets its retry. The resume that tells the
+  session what failed now gets at least 20 turns, even when the session used all
+  of its `maxTurns` before reporting; before, such a node failed at once with no
+  retry. Budgets still cap it, and `attempts` still bounds how often.
+
+- [`a41bb23`](https://github.com/mimshins/ork/commit/a41bb23880968a12d5bfa44334d54bfb0f7c50be) Thanks [@mimshins](https://github.com/mimshins)! - A leader can label its tasks. `delegate` and `spawn_worker` tasks take an
+  optional `description`, clipped to 80 characters and shown beside the child's id
+  in `ork tree`, `ork logs` and the browser view; a model that added one used to
+  have its first turn rejected. The issues workflow counts `issues=01,1` as one
+  issue, says when every open issue of a label is already in progress, and
+  `ork init --issues` reports an unchecked driver as `unknown`. A resumed session
+  blames the run's dollar budget only for its own turn's spend, and a follow-up
+  action refusal carries its kind (`status` or `draft`).
+
+- [`a484d66`](https://github.com/mimshins/ork/commit/a484d66beddaa13b1989e46892b6f09eb9ab2408) Thanks [@mimshins](https://github.com/mimshins)! - Small fixes from a QA pass. `ork run`, `resume`, `chat` and `feedback apply`
+  list all three drivers in `--driver`'s help, and a `--driver` whose tool isn't
+  found is refused before the run starts, not at its first node.
+  `ork follow-ups add` and `post` refuse a github draft whose `to` isn't an issue
+  or pull request URL (and `add --channel github` no longer fills `to` with a
+  person's name), a step with no text, and a message without `--text`; with `gh`
+  signed out they print one "Can't check PRs" line; `post` without `--confirm`
+  shows the preview and exits 0. The panel's **Post to GitHub…** says why it is
+  disabled. `ork validate` reports a problem in `.ork/project.yaml` at that file's
+  line and column, not at the workflow's first line, and `when: timedOut` on an
+  edge no longer warns that the field is unknown.
+
 ## 1.0.0-alpha.15
 
 ### Minor Changes
