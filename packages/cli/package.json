@@ -1,6 +1,6 @@
 {
   "name": "@krapht/ork",
-  "version": "1.0.0-alpha.15",
+  "version": "1.0.0-alpha.16",
   "description": "Orchestrate coding agents (Claude Code, OpenCode, Command Code) on your machine: hierarchical, serializable workflows with a CLI and a localhost UI.",
   "keywords": [
     "agents",
