@@ -1038,6 +1038,8 @@ nodes:
       1. Each follow-up under the plan's `Follow-ups` section, if it has one.
       2. Each item below the maintainer chose to defer: with take-recommended, the items marked `recommend: defer`; with defer-all, every item; with choose-each, the items their answers mark `defer`. Never add an item marked drop or one that was done.
 
+      When a deferred item and a plan follow-up are the same work, add it once: the plan's follow-up, with what the item adds folded into its body.
+
       Give each its `title`, `body`, `for`, `kind`, `due` and `where` as written. The maintainer chose "{{nodes.decide.output.choice}}": on branch, set `ref` to `{{nodes.publish.output.json.branch}}` so an `after-merge` follow-up becomes due when it merges; on main the change is already merged, so set `due` to `now` for an `after-merge` follow-up; on keep-uncommitted set no `ref`. Say in your summary how many you added and how many merged into one already there.
 
       The items:
