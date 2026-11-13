@@ -7,7 +7,8 @@ Status: **Built** ([command](../../packages/cli/src/commands/mcp.ts),
 [checking and starting](../../packages/server/src/mcp-act.ts),
 [tests](../../packages/server/test/mcp.test.ts),
 [more tests](../../packages/server/test/mcp-act.test.ts),
-[client tests](../../packages/cli/test/mcp.test.ts)). Why:
+[client tests](../../packages/cli/test/mcp.test.ts),
+[shared sentences](../../packages/core/src/list-filters/refusals.ts)). Why:
 [ADR-057](../../decisions/ADR-057-ork-for-claude-code.md). The plugin that runs
 it: [Ork for Claude Code](../claude-code.md).
 
@@ -46,7 +47,15 @@ opens no port, holds no token, and writes nothing but the protocol to stdout.
   `since`, `until` and `limit`; `usage` `workflow`, `project`, `since` (an age,
   a day, an ISO time or `all`) and `until`; `decisions` `workflow`, `run` and
   `project`. A value a table refuses is a tool error in the CLI's words. The
-  tool descriptions name them.
+  tool descriptions name them. These three also check what the CLI checks before
+  reading: a `project` that is neither `all` nor a registered project's id or
+  root is refused with ``No registered project `x`; registered: a, b.`` (`none`
+  when there are none), and `runs` `limit` (a number or text) is checked by
+  core's `parseLimit`, so `0` or `2.5` gets
+  ``--limit takes a positive whole number written in digits, not `0`.`` and not
+  a schema error. Both sentences come from core, as the CLI's do
+  ([list filters](./list-filters.md#refusals)). The HTTP routes still read an
+  unregistered `project` as a root ([L350](../gaps.md#limits)).
 - **Nothing acts for a person.** No tool answers a decision, or stops, pauses,
   continues, resumes or messages a run. The reading tools are built from the
   API's read routes alone, and `start_run` from its start route alone. Every

@@ -6,7 +6,7 @@
  *   and a decision opening while filtered is read again.
  */
 
-import type { DecisionRecord } from "@krapht/ork-server/client";
+import type { DecisionRecord, ProjectRecord } from "@krapht/ork-server/client";
 import { act, cleanup, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,7 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DecisionsPanel } from "../../src/panels/decisions-panel.tsx";
 import { stubWindow } from "../dom.ts";
 import { runView } from "../state/fixtures.ts";
-import { openPanelState, renderPanel } from "./harness.tsx";
+import { openPanelState, project, renderPanel } from "./harness.tsx";
 
 const decision = (id: string, runId: string): DecisionRecord => ({
   id,
@@ -28,9 +28,9 @@ const decision = (id: string, runId: string): DecisionRecord => ({
 });
 
 const RUNS = [
-  { ...runView("aaa11111"), workflow: "feature" },
-  { ...runView("bbb22222"), workflow: "feature" },
-  { ...runView("ccc33333"), workflow: "review" },
+  { ...runView("aaa11111"), workflow: "feature", project: "/repos/shop" },
+  { ...runView("bbb22222"), workflow: "feature", project: "/repos/shop" },
+  { ...runView("ccc33333"), workflow: "review", project: "/repos/shop" },
 ];
 
 const LIST = [
@@ -81,9 +81,15 @@ const decisionsRoute =
     );
   };
 
-const open = async (extra: Partial<Server> = {}) => {
+const open = async (
+  extra: Partial<Server> = {},
+  projects: ProjectRecord[] = [],
+) => {
   const server: Server = { list: LIST, asked: [], ...extra };
-  const opened = openPanelState({ builder: decisionsRoute(server) });
+  const opened = openPanelState({
+    builder: decisionsRoute(server),
+    projects,
+  });
   renderPanel(opened.state, <DecisionsPanel />);
   await act(async () => {
     opened.overview.send("runs", RUNS);
@@ -178,6 +184,60 @@ describe("the filter bar", () => {
         .getByRole("combobox", { name: "Workflow" })
         .getAttribute("aria-invalid"),
     ).toBe("true");
+  });
+
+  it("shows the unfiltered list, the words and the plain command when the first filter is refused", async () => {
+    const words = "--workflow takes a workflow of this project, not nope.";
+    await open({ refuse: { workflow: "nope", words } });
+    await apply("Workflow", "nope");
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(words);
+    expect(asked()).toEqual(["d1", "d2", "d3", "d4"]);
+    expect(
+      screen.getByRole("button", { name: "Copy command (ork decide --list)" }),
+    ).toBeDefined();
+  });
+
+  it("keeps the last good filter's command while a later one is refused", async () => {
+    const words = "--workflow takes a workflow of this project, not nope.";
+    await open({ refuse: { workflow: "nope", words } });
+    await apply("Workflow", "review");
+    await apply("Workflow", "nope");
+    await screen.findByRole("alert");
+    expect(
+      screen.getByRole("button", {
+        name: "Copy command (ork decide --list --workflow review)",
+      }),
+    ).toBeDefined();
+  });
+
+  it("forgets a cleared filter's list when the next filter is refused", async () => {
+    const words = "--workflow takes a workflow of this project, not nope.";
+    await open({ refuse: { workflow: "nope", words } });
+    await apply("Workflow", "review");
+    await userEvent.click(screen.getByRole("button", { name: "Clear filter" }));
+    await apply("Workflow", "nope");
+    await screen.findByRole("alert");
+    expect(asked()).toEqual(["d1", "d2", "d3", "d4"]);
+    expect(
+      screen.getByRole("button", { name: "Copy command (ork decide --list)" }),
+    ).toBeDefined();
+  });
+
+  it("suggests the registered projects as Project with two or more", async () => {
+    await open({}, [project("shop"), project("api")]);
+    await userEvent.click(
+      await screen.findByRole("combobox", { name: "Project" }),
+    );
+    await userEvent.keyboard("{ArrowDown}");
+    expect(await screen.findByRole("option", { name: "api" })).toBeDefined();
+    expect(screen.getByRole("option", { name: "shop" })).toBeDefined();
+  });
+
+  it("shows no Project with one registered project", async () => {
+    await open({}, [project("shop")]);
+    await screen.findByRole("combobox", { name: "Workflow" });
+    expect(screen.queryByRole("combobox", { name: "Project" })).toBeNull();
   });
 
   it("clears the filter, and reads the stream's list again", async () => {

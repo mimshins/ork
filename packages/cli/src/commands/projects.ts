@@ -10,7 +10,7 @@
 import type { ListTable, ProjectRecord } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
-import { filterArgs, readListArgs } from "../list/flags.ts";
+import { filterArgs, readListArgs, refuseUnknownFlags } from "../list/flags.ts";
 import { printList } from "../list/print.ts";
 import { write, writeErr } from "../output.ts";
 import { draftHere } from "../project/draft.ts";
@@ -79,6 +79,7 @@ export const projects = defineCommand({
     name: "projects",
     description: "List the registered projects, in-repo and attached",
   },
+  plugins: [refuseUnknownFlags],
   args: filterArgs(projectListTable),
   subCommands: { forget, move },
   run: ({ args, rawArgs }) => {

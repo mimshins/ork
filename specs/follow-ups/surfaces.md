@@ -41,8 +41,8 @@ ork follow-ups published <ref>                        # inside a run: what it le
   registered project's id or root, or `all`, and refuses one not registered,
   listing those that are. A filter narrows, so `--for agent --kind change` lists
   the agent's changes. `--ids` prints the follow-up ids on one line, and
-  `--limit` keeps the first N after the grouping. `--all` still works, as
-  `--status all`, with a warning on stderr ([L340](../gaps.md#limits)).
+  `--limit` keeps the first N after the grouping. `--status all` adds the closed
+  ones.
 - **`post`** without `--confirm` prints what would be posted and where, and
   exits 0 (the preview on stdout, the "Run again with --confirm" hint on
   stderr); with it, posts through `gh` and marks the follow-up done. It refuses

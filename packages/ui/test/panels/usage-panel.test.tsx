@@ -232,7 +232,7 @@ describe("the Usage panel", () => {
     expect(screen.getByRole("alert").textContent).toContain(
       "the store is locked",
     );
-    screen.getByText("ork usage --all --since 30d");
+    screen.getByText("ork usage --project all --since 30d");
     expect(await violations(container)).toEqual([]);
     const load = vi.spyOn(state.usage, "load");
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
@@ -260,7 +260,7 @@ describe("the Usage panel", () => {
     const flows = screen.getByRole("region", { name: "By workflow" });
     expect(flows.textContent).toContain("And 2 more that cost less");
     expect(flows.textContent).toContain(
-      "ork usage --all --since 30d --by workflow",
+      "ork usage --project all --since 30d --by workflow",
     );
   });
 
@@ -463,7 +463,9 @@ describe("the Usage panel's model", () => {
   });
 
   it("says what the same report is on a terminal", () => {
-    expect(usageCommand(true, "30d")).toBe("ork usage --all --since 30d");
+    expect(usageCommand(true, "30d")).toBe(
+      "ork usage --project all --since 30d",
+    );
     expect(usageCommand(false, "all", "node")).toBe(
       "ork usage --since all --by node",
     );

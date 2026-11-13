@@ -18,12 +18,12 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
-import { allAlias } from "../list/all-alias.ts";
 import {
   filterArgs,
   type ProjectScope,
   projectScope,
   readListArgs,
+  refuseUnknownFlags,
 } from "../list/flags.ts";
 import { printList } from "../list/print.ts";
 import { write, writeErr } from "../output.ts";
@@ -45,6 +45,7 @@ const rootOf = (
 
 export const ps = defineCommand({
   meta: { name: "ps", description: "List this project's runs, newest first" },
+  plugins: [refuseUnknownFlags],
   args: {
     ...filterArgs(runListTable, {
       extra: {
@@ -54,11 +55,10 @@ export const ps = defineCommand({
         },
       },
     }),
-    ...allAlias,
   },
   run: ({ args }) =>
     withStore(store => {
-      const req = readListArgs(runListTable, args, { all: "project" });
+      const req = readListArgs(runListTable, args);
       if (req === undefined) return;
       const scope = projectScope(req.filter, store.projects());
       if (scope === undefined) return;
@@ -106,8 +106,13 @@ export const ps = defineCommand({
             write(line);
           }
         },
-        // The stored records, without the `listed` the filter added.
-        runs => runs.map(run => byId.get(run.id) ?? run),
+        // The stored records, without the `listed` the filter added, and
+        // `live`: the status the table shows (`status` stays as stored).
+        runs =>
+          runs.map(run => {
+            const record = byId.get(run.id) ?? run;
+            return { ...record, live: statusOf(record) };
+          }),
       );
     }),
 });
@@ -120,6 +125,7 @@ const runArg = {
 
 export const logs = defineCommand({
   meta: { name: "logs", description: "Print a run's transcript" },
+  plugins: [refuseUnknownFlags],
   args: {
     run: runArg,
     ...filterArgs(logListTable, { ids: false, json: false, limit: false }),

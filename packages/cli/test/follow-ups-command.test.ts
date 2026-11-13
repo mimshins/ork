@@ -282,6 +282,19 @@ describe("ork follow-ups list and show", () => {
     expect((await ork("list", "--ids", "--for", "person:nobody")).out).toBe("");
   });
 
+  it("checks `--for project:<name>` against the registered projects", async () => {
+    setup();
+    await ork("add", "For me", "--for", "me");
+    const bad = await ork("list", "--for", "project:nope");
+    expect(bad.code).toBe(1);
+    expect(bad.err).toContain("No registered project `nope`; registered: app.");
+    expect(bad.out).toBe("");
+    for (const value of ["project:app", "agent", "me", "person:anyone"]) {
+      // oxlint-disable-next-line no-await-in-loop -- one list at a time
+      expect((await ork("list", "--for", value)).code).toBe(0);
+    }
+  });
+
   it("--ids and --json order rows as the human list does: status, then who it is for", async () => {
     const s = setup();
     await ork("add", "For Dana", "--for", "person:Dana", "--text", "Hi");
@@ -330,18 +343,12 @@ describe("ork follow-ups list and show", () => {
     expect(ghost.err).toContain("registered: app");
   });
 
-  it("takes --project all, and keeps --all as a deprecated --status all", async () => {
+  it("takes --project all with --status all", async () => {
     const s = setup();
     await ork("add", "Mine", "--for", "me");
     await ork("drop", idAt(s, 0));
     const all = await orkRaw("list", "--project", "all", "--status", "all");
     expect(all.out).toContain("Dropped (1)");
-    const old = await ork("list", "--all");
-    expect(old.out).toContain("Dropped (1)");
-    expect(old.err).toContain("--all is deprecated; use --status all.");
-    const wins = await ork("list", "--all", "--status", "due");
-    expect(wins.out).toContain("No follow-ups.");
-    expect(wins.err).toContain("--all is deprecated");
   });
 
   it("shows a draft and steps whole, to copy", async () => {
@@ -396,7 +403,7 @@ describe("closing follow-ups", () => {
     expect((await ork("drop", id)).code).toBe(0);
     expect(first(s).status).toBe("dropped");
     expect((await ork("list")).out).toContain("No follow-ups.");
-    expect((await ork("list", "--all")).out).toContain("Dropped (1)");
+    expect((await ork("list", "--status", "all")).out).toContain("Dropped (1)");
   });
 
   it("makes a waiting follow-up due by id, and all of a run's by run id", async () => {

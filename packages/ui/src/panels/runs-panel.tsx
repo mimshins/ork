@@ -58,7 +58,8 @@ export const RunsPanel = () => {
     [projects, all],
   );
   const { filtered } = answer;
-  const shown = filtered ? answer.rows : runs;
+  // A refused first filter has no rows of its own: the list stays what it was.
+  const shown = filtered ? (answer.rows ?? runs) : runs;
   const rows = shown ?? [];
   const tabStop = rows.some(({ id }) => id === selected)
     ? selected
@@ -97,7 +98,7 @@ export const RunsPanel = () => {
         {shown === null ? (
           <p className={styles["note"]}>Reading runs…</p>
         ) : rows.length === 0 ? (
-          filtered ? (
+          filtered && answer.rows !== null ? (
             <FilterEmpty
               list="runs"
               onClear={() => {

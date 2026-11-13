@@ -73,7 +73,7 @@ export const NODES = [
     summary:
       "Reads the local feedback items: what was reported, how often, in which runs, workflows and models. It is also one of the places you rate or annotate a node's result.",
     facts: [
-      "Built: `list` (newest first; `--all` adds dismissed items), `show <item>` with every record, `dismiss <item>` and `restore <item>`; an item is a prefix of its fingerprint.",
+      "Built: `list` (newest first; `--status all` adds dismissed items), `show <item>` with every record, `dismiss <item>` and `restore <item>`; an item is a prefix of its fingerprint.",
       "Built: `note <run> [<node>] -m <text>` records your note on a run or a node, with `--rating good|bad`; `ork decide --note` notes the node you just answered.",
       "In the browser, **Note…** in the Monitor writes the same note (`POST /api/runs/:id/notes`); all three are checked by one function.",
     ],

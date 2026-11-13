@@ -7,13 +7,15 @@
  */
 
 import type { DecisionRecord } from "@krapht/ork-server/client";
-import { use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import { useValue } from "react-containerized-state";
 
 import { type FilterValues, isFiltered } from "../components/filter-model.ts";
 import { useAppState } from "../state/context.tsx";
 import { WorkspaceContext } from "../workspace/context.ts";
 import { endingOf } from "./decisions-model.ts";
+import { ALL_PROJECTS, projectOptions } from "./project-options.ts";
+import { useProjectList } from "./use-runs-panel.ts";
 
 /** The values that are set, as the query. */
 const queryOf = (values: FilterValues): Record<string, string> =>
@@ -49,6 +51,12 @@ export const useDecisionsRead = (
   const [read, setRead] = useState<Read | null>(null);
   const filtered = isFiltered(values);
   const key = JSON.stringify(queryOf(values));
+  const [wasFiltered, setWasFiltered] = useState(filtered);
+  if (wasFiltered !== filtered) {
+    // A cleared filter forgets its rows, so the next one doesn't show them.
+    setWasFiltered(filtered);
+    if (!filtered) setRead(null);
+  }
 
   useEffect(() => {
     if (!filtered) return () => {};
@@ -77,13 +85,32 @@ export const useDecisionsRead = (
 
   const answered = read !== null && read.key === key;
   return {
-    /** What the list shows; null until a filtered list has come. */
-    rows: filtered ? (read?.rows ?? null) : open,
+    /** What the list shows: the stream's while no filtered answer has come. */
+    rows: filtered ? (read?.rows ?? open) : open,
+    /** Whether `rows` is an accepted answer, so an empty one means the filter. */
+    answered: !filtered || (read?.rows ?? null) !== null,
     /** A filtered read is in flight. */
     busy: filtered && !answered,
     /** The server's refusal of the filter, if it refused. */
     error: filtered && answered ? read.error : null,
   };
+};
+
+/**
+ * The Project field's suggestions: the registered projects, and the projects of
+ * the runs that have an open decision (one may be unregistered by now).
+ */
+export const useProjectSuggestions = (open: readonly DecisionRecord[]) => {
+  const state = useAppState();
+  const runs = useValue(state.runs);
+  const projects = useProjectList(state);
+  return useMemo(() => {
+    const waiting = new Set(open.map(({ runId }) => runId));
+    return projectOptions(
+      projects,
+      (runs ?? []).filter(({ id }) => waiting.has(id)),
+    ).filter(option => option.value !== ALL_PROJECTS);
+  }, [projects, runs, open]);
 };
 
 /** Says aloud how the newest settled decision ended, once. */

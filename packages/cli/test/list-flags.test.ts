@@ -3,7 +3,7 @@
  *   from a field table (enum options, `--ids` only where a list has ids,
  *   `--limit`, `--json`), `--limit` and filter values refused with what they
  *   take, `--project` checked against the registered ones, `--ids` and `--json`
- *   printing, and the hidden `--all` with its one warning.
+ *   printing.
  */
 
 import {
@@ -17,8 +17,6 @@ import {
 } from "@krapht/ork-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { publicArgs } from "../src/command-tree.ts";
-import { allAlias, warnAll } from "../src/list/all-alias.ts";
 import { filterArgs, projectScope, readListArgs } from "../src/list/flags.ts";
 import { printList } from "../src/list/print.ts";
 
@@ -144,47 +142,7 @@ describe("readListArgs", () => {
     expect(result.code).toBe(1);
     expect(result.err).toContain("--ids and --json");
   });
-
-  it("reads --all as the flag it stands for, with one warning", () => {
-    const err = capture(() => {
-      const got = readListArgs(
-        runListTable,
-        { all: true },
-        { all: "project", now: NOW },
-      );
-      expect(got?.filter["project"]).toBe("all");
-    });
-    expect(err.err).toBe("--all is deprecated; use --project all.\n");
-    expect(err.code).toBeUndefined();
-  });
 });
-
-describe("--all", () => {
-  it("is hidden from help and completion", () => {
-    expect(
-      Object.keys(publicArgs({ ...allAlias, x: { type: "boolean" } })),
-    ).toEqual(["x"]);
-    expect(allAlias.all.description.startsWith("Internal:")).toBe(true);
-  });
-
-  it("leaves args alone when not given", () => {
-    const args = { status: "failed" };
-    const result = capture(() => {
-      expect(warnAll(args, "status")).toBe(args);
-    });
-    expect(result.err).toBe("");
-  });
-
-  it("lets the new flag win, and still warns", () => {
-    const result = capture(() => {
-      expect(warnAll({ all: true, status: "done" }, "status")).toMatchObject({
-        status: "done",
-      });
-    });
-    expect(result.err).toBe("--all is deprecated; use --status all.\n");
-  });
-});
-
 describe("projectScope", () => {
   const projects = [
     { id: "ork", root: "/code/ork" },

@@ -9,16 +9,22 @@
 
 import {
   ALL,
+  type EventStore,
+  findRun,
+  limitRefusal,
   type ListField,
   type ListFilter,
   type ListTable,
   parseFilters,
   parseLimit,
+  unknownProjectRefusal,
 } from "@krapht/ork-core";
 import type { ArgDef, ArgsDef } from "citty";
 
 import { writeErr } from "../output.ts";
-import { type AllAlias, warnAll } from "./all-alias.ts";
+
+/** Re-exported so every list command takes its flags and its refusals from here. */
+export { refuseUnknownFlags } from "./known-flags.ts";
 
 /** What `filterArgs` adds or leaves out beside a table's own flags. */
 export type FilterArgsOptions = {
@@ -106,18 +112,15 @@ export type ListRequest = {
 
 /**
  * `args` (a command's parsed flags) read against `table`: the filter, and the
- * limit. `all` names the flag `--all` stands for (`project` or `status`):
- * `--all` fills it when it is not given, with one warning. `undefined` when
- * something was refused (already said, exit code set).
+ * limit. `undefined` when something was refused (already said, exit code set).
  */
 export const readListArgs = <Row>(
   table: ListTable<Row>,
   args: Readonly<Record<string, unknown>>,
-  options: { all?: AllAlias; now?: number } = {},
+  options: { now?: number } = {},
 ): ListRequest | undefined => {
   if (refuseIdsWithJson(args)) return undefined;
-  const given = options.all === undefined ? args : warnAll(args, options.all);
-  const parsed = parseFilters(table, given, options.now ?? Date.now());
+  const parsed = parseFilters(table, args, options.now ?? Date.now());
   if (!parsed.ok) {
     fail(parsed.error);
     return undefined;
@@ -127,7 +130,7 @@ export const readListArgs = <Row>(
     return { filter: parsed.filter, limit: undefined };
   const limit = parseLimit(text);
   if (limit === null) {
-    fail(`--limit takes a positive whole number, not \`${text}\`.`);
+    fail(limitRefusal(text));
     return undefined;
   }
   return { filter: parsed.filter, limit };
@@ -151,9 +154,31 @@ export const projectScope = (
   if (key === ALL) return ALL;
   const found = projects.find(p => p.id === key || p.root === key);
   if (found !== undefined) return { root: found.root };
-  const names = projects.map(p => p.id);
   fail(
-    `No registered project \`${key}\`; registered: ${names.length === 0 ? "none" : names.join(", ")}.`,
+    unknownProjectRefusal(
+      key,
+      projects.map(p => p.id),
+    ),
   );
   return undefined;
+};
+
+/**
+ * `filter` with its `run` (a prefix) made the full id of the run it names, as
+ * `ork decide --run` reads it; an unknown or ambiguous run is refused with
+ * `findRun`'s message (said, exit code set, `undefined`). No `run` (or an empty
+ * one) leaves `filter` as it is.
+ */
+export const resolveRun = (
+  store: EventStore,
+  filter: ListFilter,
+): ListFilter | undefined => {
+  const run = filter["run"];
+  if (run === undefined || run === "") return filter;
+  const found = findRun(store, run, process.cwd());
+  if (!found.ok) {
+    fail(found.error);
+    return undefined;
+  }
+  return { ...filter, run: found.run.id };
 };

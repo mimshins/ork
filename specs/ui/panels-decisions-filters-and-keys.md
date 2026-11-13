@@ -21,16 +21,19 @@ the card, Markdown, folding and the document dialog.
 **Now** it is the shared [filter bar](./design-filter-bar.md) on the `decisions`
 list, always shown: **Workflow** and **Run** as inputs with suggestions
 (`4f2a1c · feature`, from the open decisions), and **Project** once there are
-two to choose from. A filter is read from `GET /api/decisions` with the fields
-(read again when the stream's list changes), keeps the last list while a refused
-value shows the server's words, and says "3 decisions match." aloud; with none
-set the panel shows the stream's open decisions and the bar says how many are
-open. **Clear filter** and the matching `ork decide --list` command show while
-one is set; a filter that leaves none shows "No decisions match the filter." The
-`decisionFilter` preference keeps the values; the Monitor button sets `{ run }`.
-A filter narrows the panel only: the badge, notifications and `ork decide` count
-all. What follows is the earlier two-select design, kept for its rules about the
-badge and the preference.
+two to choose from, suggesting the registered projects (in name order) and the
+projects of the runs with open decisions, as Runs does; with one project it
+shows no Project field. A refused first filter shows the stream's open decisions
+under the alert, not an empty panel. A filter is read from `GET /api/decisions`
+with the fields (read again when the stream's list changes), keeps the last list
+while a refused value shows the server's words, and says "3 decisions match."
+aloud; with none set the panel shows the stream's open decisions and the bar
+says how many are open. **Clear filter** and the matching `ork decide --list`
+command show while one is set; a filter that leaves none shows "No decisions
+match the filter." The `decisionFilter` preference keeps the values; the Monitor
+button sets `{ run }`. A filter narrows the panel only: the badge, notifications
+and `ork decide` count all. What follows is the earlier two-select design, kept
+for its rules about the badge and the preference.
 
 Above the cards, when the open decisions come from **more than one run**, or a
 filter is set (so a stale one can always be cleared). Two selects, **Workflow**

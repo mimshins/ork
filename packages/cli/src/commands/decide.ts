@@ -19,8 +19,7 @@ import {
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
-import { allAlias } from "../list/all-alias.ts";
-import { filterArgs } from "../list/flags.ts";
+import { filterArgs, refuseUnknownFlags } from "../list/flags.ts";
 import { style, write, writeErr } from "../output.ts";
 import { askStored } from "../runs/ask-stored.ts";
 import { canKey } from "../term/mode.ts";
@@ -81,6 +80,7 @@ export const decide = defineCommand({
     name: "decide",
     description: "Answer the open decisions of this project's live runs",
   },
+  plugins: [refuseUnknownFlags],
   args: {
     // Not `run`: a positional of that name would clear the `--run` flag.
     "run-id": {
@@ -90,7 +90,6 @@ export const decide = defineCommand({
     },
     ...filterArgs(decisionListTable, {
       extra: {
-        ...allAlias,
         list: {
           type: "boolean",
           description: "List them without answering",

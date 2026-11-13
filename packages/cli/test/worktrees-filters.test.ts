@@ -43,8 +43,13 @@ const place = () => {
   const lead = path.join(base, "ork-r1-lead");
   git(root, "worktree", "add", "--quiet", "-b", "ork/r1/lead", lead);
   const store = openStore(storePath(home));
-  store.begin({ id: "r1", workflow: "w", file: "/w.ork.yaml", project: root });
-  store.append("r1", {
+  store.begin({
+    id: "r1-long",
+    workflow: "w",
+    file: "/w.ork.yaml",
+    project: root,
+  });
+  store.append("r1-long", {
     type: "worktree",
     id: "lead",
     action: "created",
@@ -81,9 +86,29 @@ describe("ork worktrees list", () => {
     expect(ork(where, "worktrees", "list", "--run", "r1", "--ids").stdout).toBe(
       "ork/r1/lead\n",
     );
-    const none = ork(where, "worktrees", "list", "--run", "r9", "--ids");
-    expect(none.stdout).toBe("");
-    expect(none.status).toBe(0);
+    expect(
+      ork(where, "worktrees", "list", "--run", "r1-long", "--ids").stdout,
+    ).toBe("ork/r1/lead\n");
+  });
+
+  it("refuses an unknown or ambiguous --run, as decide does", () => {
+    const mine = place();
+    const unknown = ork(mine, "worktrees", "list", "--run", "r9", "--ids");
+    expect(unknown.stdout).toBe("");
+    expect(unknown.stderr).toContain("No run `r9`.");
+    expect(unknown.status).toBe(1);
+    const store = openStore(storePath(mine.home));
+    store.begin({
+      id: "r1-other",
+      workflow: "w",
+      file: "/w.ork.yaml",
+      project: mine.root,
+    });
+    store.close();
+    const ambiguous = ork(mine, "worktrees", "list", "--run", "r1", "--ids");
+    expect(ambiguous.stdout).toBe("");
+    expect(ambiguous.stderr).toContain("`r1` matches 2 runs: ");
+    expect(ambiguous.status).toBe(1);
   });
 
   it("scopes by --project: all, a registered id, and an unknown one", () => {
@@ -130,7 +155,7 @@ describe("ork worktrees list", () => {
     const second = path.join(path.dirname(mine.root), "ork-r1-two");
     git(mine.root, "worktree", "add", "--quiet", "-b", "ork/r1/two", second);
     const store = openStore(storePath(mine.home));
-    store.append("r1", {
+    store.append("r1-long", {
       type: "worktree",
       id: "two",
       action: "created",

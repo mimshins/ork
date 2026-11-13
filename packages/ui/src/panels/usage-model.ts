@@ -64,7 +64,7 @@ export const usageCommand = (
 ): string =>
   [
     "ork usage",
-    ...(everyProject ? ["--all"] : []),
+    ...(everyProject ? ["--project", "all"] : []),
     `--since ${since}`,
     ...(by === undefined ? [] : [`--by ${by}`]),
   ].join(" ");

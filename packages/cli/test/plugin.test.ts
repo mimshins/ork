@@ -88,7 +88,7 @@ describe("the hook on Claude Code's shell", () => {
     "ork decide --id=d1 --choose=merge",
     "cd x && ork decide --choose merge",
     "/usr/local/bin/ork decide --id d1",
-    "npx @krapht/ork decide --all --id d1 --choose y",
+    "npx @krapht/ork decide --project all --id d1 --choose y",
     "npx @krapht/ork@0.3.0 decide --id d1 --choose y",
     "pnpm ork decide --id d --choose y",
     "ork decide --list --id d1 --choose merge",
@@ -107,7 +107,7 @@ describe("the hook on Claude Code's shell", () => {
 
   it.each([
     "ork decide",
-    "ork decide --all",
+    "ork decide --project all",
     "ork decide abc123",
     "ork decide --list",
     "ork decide --json",

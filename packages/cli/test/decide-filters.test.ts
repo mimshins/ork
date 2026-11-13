@@ -1,7 +1,7 @@
 /**
  * @file Tests for the list filters of `ork decide` (RFC-017): `--project`,
- *   `--run`, `--ids`, `--limit`, the hidden `--all`, and that `--ids` and
- *   `--limit` list instead of answering.
+ *   `--run`, `--ids`, `--limit`, and that `--ids` and `--limit` list instead of
+ *   answering.
  */
 
 import { spawnSync } from "node:child_process";
@@ -96,16 +96,20 @@ describe("ork decide list filters", () => {
     expect(ork(home, ["r2", "--ids"]).stdout).toBe("r2-1\n");
   });
 
+  it("refuses an unknown or ambiguous --run with findRun's message", () => {
+    const home = waiting();
+    const unknown = ork(home, ["--run", "nope", "--ids"]);
+    expect(unknown.status).toBe(1);
+    expect(unknown.stderr).toContain("No run `nope`.");
+    const ambiguous = ork(home, ["--run", "r", "--ids"]);
+    expect(ambiguous.status).toBe(1);
+    expect(ambiguous.stderr).toContain("`r` matches 2 runs: ");
+  });
+
   it("refuses an unregistered --project, naming the registered ones", () => {
     const done = ork(waiting(), ["--project", "nope", "--ids"]);
     expect(done.status).toBe(1);
     expect(done.stderr).toContain("No registered project `nope`");
-  });
-
-  it("--all still means --project all, with one warning", () => {
-    const done = ork(waiting(), ["--all", "--ids"]);
-    expect(done.stdout).toBe("r1-1,r2-1\n");
-    expect(done.stderr).toBe("--all is deprecated; use --project all.\n");
   });
 });
 

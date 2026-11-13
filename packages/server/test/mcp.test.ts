@@ -26,13 +26,17 @@ afterEach(async () => {
   fixture = undefined;
 });
 
-/** The tools on a store with a finished run `aaa11111` and a live `bbb22222`. */
-const withRuns = async (): Promise<OpenMcp> => {
+/**
+ * The tools on a store with a finished run `aaa11111` and a live `bbb22222`
+ * (and `more` live ones).
+ */
+const withRuns = async (more = 0): Promise<OpenMcp> => {
   fixture = await startTestServer();
   liveRun(fixture, "aaa11111");
   fixture.store.append("aaa11111", finished("aaa11111"));
   liveRun(fixture, "bbb22222");
   openGate(fixture, "bbb22222", "d-live");
+  for (let i = 0; i < more; i += 1) liveRun(fixture, `ccc0000${i}`);
   mcp = openMcp({ version: "9.9.9", home: fixture.home, start: false });
   return mcp;
 };
@@ -98,6 +102,51 @@ describe("ork mcp's tools", () => {
       text: expect.stringContaining("--status takes one of") as unknown,
       isError: true,
     });
+  });
+
+  it("refuses an unregistered project in the CLI's words, on runs, usage and decisions", async () => {
+    await withRuns();
+    const refusal = {
+      text: "No registered project `nope`; registered: demo.",
+      isError: true,
+    };
+    expect(await call("runs", { project: "nope" })).toEqual(refusal);
+    expect(await call("usage", { project: "nope" })).toEqual(refusal);
+    expect(await call("decisions", { project: "nope" })).toEqual(refusal);
+  });
+
+  it("answers a registered project by id or root, and all", async () => {
+    await withRuns();
+    const root = fixture?.project.root;
+    await Promise.all(
+      ["demo", root, "all"].map(async project => {
+        expect(await parsed("runs", { project })).toHaveLength(2);
+        expect((await call("usage", { project })).isError).toBeUndefined();
+        expect(await parsed("decisions", { project })).toMatchObject({
+          open: [{ id: "d-live" }],
+        });
+      }),
+    );
+  });
+
+  it("refuses a limit that is not a positive whole number, in the CLI's words", async () => {
+    await withRuns();
+    await Promise.all(
+      [0, 2.5].map(async limit => {
+        expect(await call("runs", { limit })).toEqual({
+          text: `--limit takes a positive whole number written in digits, not \`${String(limit)}\`.`,
+          isError: true,
+        });
+      }),
+    );
+    expect(await parsed("runs", { limit: 1 })).toHaveLength(1);
+    expect(await parsed("runs", { limit: "1" })).toHaveLength(1);
+  });
+
+  it("gives 10 runs when no limit is asked, and all 11 when asked for 11", async () => {
+    await withRuns(9);
+    expect(await parsed("runs")).toHaveLength(10);
+    expect(await parsed("runs", { limit: 11 })).toHaveLength(11);
   });
 
   it("refuses a run it can't find, in the API's words", async () => {

@@ -10,10 +10,12 @@ import {
   applyFilters,
   followUpListTable,
   type FollowUpStatus,
+  unknownProjectRefusal,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import {
+  fail,
   idArg,
   inProjects,
   json,
@@ -25,8 +27,7 @@ import {
   formatFollowUp,
   formatFollowUps,
 } from "../follow-ups/format.ts";
-import { allAlias } from "../list/all-alias.ts";
-import { filterArgs, readListArgs } from "../list/flags.ts";
+import { filterArgs, readListArgs, refuseUnknownFlags } from "../list/flags.ts";
 import { printList } from "../list/print.ts";
 import { write } from "../output.ts";
 import { closing, due, post, published } from "./follow-ups-act.ts";
@@ -55,15 +56,23 @@ export const followUps = defineCommand({
         name: "list",
         description: "List the follow-ups, due first, then by who they are for",
       },
-      args: { ...filterArgs(followUpListTable), ...allAlias },
+      plugins: [refuseUnknownFlags],
+      args: filterArgs(followUpListTable),
       run: async ({ args }) => {
         const given: Readonly<Record<string, unknown>> = args;
-        const asked = readListArgs(followUpListTable, given, { all: "status" });
+        const asked = readListArgs(followUpListTable, given);
         if (asked === undefined) return;
         const { filter, limit } = asked;
         // No --status shows only the open ones; one given shows what it names.
         const status = filter["status"];
         await inProjects(filter["project"], (store, places) => {
+          // `--for project:<name>` names a registered project, as `--project` does.
+          const target = filter["for"]?.match(/^project:(.*)$/u)?.[1];
+          const ids = store.projects().map(p => p.id);
+          if (target !== undefined && !ids.includes(target)) {
+            fail(unknownProjectRefusal(target, ids));
+            return;
+          }
           const stored = places.flatMap(place => store.followUps(place.root));
           const shown = applyFilters(followUpListTable, stored, filter)
             .filter(f => status !== undefined || OPEN.has(f.status))

@@ -86,6 +86,9 @@ export const FilterBar = ({
   const [cleared, setCleared] = useState(false);
   const words = LIST_WORDS[list];
   const filtered = isFiltered(values);
+  // The last values the server accepted: a refused filter's command is not the list's.
+  const [applied, setApplied] = useState<FilterValues>({});
+  if (error === null && !busy && applied !== values) setApplied(values);
   const refusedField =
     error === null ? undefined : (error.field ?? errorField(error.message));
   const alertId = `${id}-alert`;
@@ -116,7 +119,7 @@ export const FilterBar = ({
       (suggestions["project"]?.length ?? 0) >= 2 ||
       values["project"] !== undefined,
   );
-  const command = filterCommand(list, values);
+  const command = filterCommand(list, error === null ? values : applied);
   const count = cleared
     ? "Filter cleared."
     : busy

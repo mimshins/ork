@@ -30,7 +30,13 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
-import { filterArgs, projectScope, readListArgs } from "../list/flags.ts";
+import {
+  filterArgs,
+  projectScope,
+  readListArgs,
+  refuseUnknownFlags,
+  resolveRun,
+} from "../list/flags.ts";
 import { printList } from "../list/print.ts";
 import { style, write, writeErr } from "../output.ts";
 import { goAhead } from "../project/go-ahead.ts";
@@ -92,6 +98,8 @@ const show = async (args: Readonly<Record<string, unknown>>): Promise<void> => {
   const projects = withStore(store => store.projects());
   const scope = projectScope(request.filter, projects);
   if (scope === undefined) return;
+  const filter = withStore(store => resolveRun(store, request.filter));
+  if (filter === undefined) return;
   let items: OrkWorktree[];
   if (scope === "here") {
     const found = await here(true);
@@ -102,7 +110,7 @@ const show = async (args: Readonly<Record<string, unknown>>): Promise<void> => {
       scope === "all" ? projects.map(p => p.root) : [scope.root],
     );
   }
-  const shown = applyFilters(worktreeListTable, items, request.filter).slice(
+  const shown = applyFilters(worktreeListTable, items, filter).slice(
     0,
     request.limit,
   );
@@ -118,6 +126,7 @@ const list = defineCommand({
     name: "list",
     description: "List Ork's worktrees and branches (the default)",
   },
+  plugins: [refuseUnknownFlags],
   args: listArgs,
   run: ({ args }) => show(args),
 });

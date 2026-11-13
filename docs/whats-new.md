@@ -33,11 +33,14 @@ full: the [changelog](../packages/cli/CHANGELOG.md).
   `2026-11-01`) where they fit, `--limit`, `--json`, and a new `--ids` that
   prints ids on one line for scripts (`ork ps --status failed --ids`). Wrong
   values are refused with the allowed ones, and Tab completion offers them.
-  `--all` meant three things and is deprecated: use `--project all` on `ps`,
-  `usage` and `decide`, and `--status all` on `follow-ups list` and
-  `feedback list`. It still works for one release and warns on stderr;
-  `prune --all` is unchanged ([guide](./guides/filtering-lists.md)). Upgrade:
-  change scripts that use `--all`.
+  `--all` meant three things and is removed from these lists: use
+  `--project all` on `ps`, `usage`, `decide` and `follow-ups list`, and
+  `--status all` on `feedback list`; `prune --all` is unchanged. A list refuses
+  a flag it doesn't have, an argument error prints one line instead of the help,
+  `--run` takes the start of a run id, `ork ps --json` adds `live`, and
+  `ork mcp` refuses an unregistered project and a bad `limit`
+  ([guide](./guides/filtering-lists.md)). Upgrade: change scripts that use
+  `--all` or pass a flag a list doesn't have.
 - **Follow-ups: what a change leaves for later.** A message to a partner, work
   for another project's agent, infra steps and a check after deploy are kept as
   follow-ups, apart from feedback: sessions leave them with a new `follow_up`

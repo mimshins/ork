@@ -61,9 +61,12 @@ const ork = (
 
 describe("ork decide --list", () => {
   it("marks a decision with a document, and only that one", () => {
-    const lines = ork(waiting(), ["decide", "--all", "--list"]).stdout.split(
-      "\n",
-    );
+    const lines = ork(waiting(), [
+      "decide",
+      "--project",
+      "all",
+      "--list",
+    ]).stdout.split("\n");
     expect(lines.find(line => line.includes("r1-1"))).toContain("+document");
     expect(lines.find(line => line.includes("r2-1"))).not.toContain(
       "+document",
@@ -73,7 +76,8 @@ describe("ork decide --list", () => {
   it("filters by workflow", () => {
     const { stdout } = ork(waiting(), [
       "decide",
-      "--all",
+      "--project",
+      "all",
       "--list",
       "--workflow",
       "feature",
@@ -86,7 +90,8 @@ describe("ork decide --list", () => {
     const { stdout } = ork(waiting(), [
       "decide",
       "r2",
-      "--all",
+      "--project",
+      "all",
       "--list",
       "--workflow",
       "feature",
@@ -97,7 +102,8 @@ describe("ork decide --list", () => {
   it("honors the workflow in --json", () => {
     const { stdout } = ork(waiting(), [
       "decide",
-      "--all",
+      "--project",
+      "all",
       "--json",
       "--workflow",
       "other",
@@ -108,7 +114,8 @@ describe("ork decide --list", () => {
   it("says an unknown workflow has none", () => {
     const done = ork(waiting(), [
       "decide",
-      "--all",
+      "--project",
+      "all",
       "--list",
       "--workflow",
       "gone",

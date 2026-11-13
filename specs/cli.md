@@ -49,9 +49,11 @@ Every command takes `--plain` (or `ORK_PLAIN=1`): no color, no redrawn prompts
 Every command that lists (`ps`, `usage`, `decide --list`, `follow-ups list`,
 `feedback list`, `worktrees list`, `agents list`, `projects`, and `logs` for
 time) filters by one field table, with the same `--status`, `--project`,
-`--since`, `--until`, `--ids`, `--limit` and `--json`, and `--all` on the lists
-that had it is a hidden, deprecated alias
-([list filters](./cli/list-filters.md)).
+`--since`, `--until`, `--ids`, `--limit` and `--json`. A list refuses a flag it
+does not have, and the old `--all` of five of them is gone (`--project all` or
+`--status all`); an argument error on any command with no subcommands prints one
+line, not the help ([list filters](./cli/list-filters.md)). `ork mcp`'s list
+tools check `project` and `limit` in the same words.
 
 ```
 ork init [--no-link] [--skills] [--issues]  # scaffold .ork/, .gitignore entries, a starter workflow that names no driver; link tool folders; record the project; Ork's skills for Claude Code; the issues workflow
@@ -76,7 +78,7 @@ ork prune --older-than 90d [--all] [--dry-run] [--yes]  # forget old runs' logs;
 ork decide [<run>] [--project p|all] [--list] [--ids] [--limit n] [--json] [--workflow <name>] [--id <d> --document] [--id <d> --choose <option> [--say <text>] [--note <text>] [--rating good|bad]] [--verbose]  # answer open decisions (a card with arrow keys on a terminal; --verbose shows each question's whole context); --say gives the answer a note for the run, --note notes the decision's node as feedback
 ork chat <run> <node> [-m <text>] [--driver <id>]  # talk to a node, live or by resuming its session
 ork relay <run>/<node> <run>/<node> [--max-messages n]  # let two running nodes of different runs message each other
-ork relay end <a> <b> | ork relay list [run] [--all] [--json]  # relay's `--all` is its own, not the deprecated list one
+ork relay end <a> <b> | ork relay list [run] [--all] [--json]  # ended ones too
 ork once [--as <name>] [--covers <name>]… [--with-head] [--force] -- <command…>  # run a command unless the same check already passed on these files ([check once](./check-once.md))
 ork stop [<run>] [--node n]      # stop a live run from any terminal, or one node (it fails; the run goes on)
 ork pause [<run>] [--node n]     # nothing new starts; sessions wait before their next tool call
@@ -131,7 +133,8 @@ ork completion zsh|bash|fish     # print a tab-completion script; the script run
   - [The table](./cli/list-filters.md#the-table)
   - [Field types](./cli/list-filters.md#field-types)
   - [Flags every list takes](./cli/list-filters.md#flags-every-list-takes)
-  - [Order, defaults and `--all`](./cli/list-filters.md#order-defaults-and---all)
+  - [Order and defaults](./cli/list-filters.md#order-and-defaults)
+  - [Refusals](./cli/list-filters.md#refusals)
   - [The lists](./cli/list-filters.md#the-lists)
 - [Completion and help](./cli/completion.md)
   - [The command tree](./cli/completion.md#the-command-tree)

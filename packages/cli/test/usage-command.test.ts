@@ -152,18 +152,10 @@ describe("ork usage filters", () => {
     expect(err).toBe("");
   });
 
-  it("keeps --all as a deprecated --project all", async () => {
+  it("refuses a given --project that is not registered", async () => {
     setup(0);
-    const { out, err } = await ork("--all");
-    expect(out).toContain("No Claude sessions in every project, since 30d.");
-    expect(err).toContain("--all is deprecated; use --project all.");
-  });
-
-  it("lets a given --project win over --all, and still warns", async () => {
-    setup(0);
-    const { out, err } = await ork("--all", "--project", "nope");
+    const { out, err } = await ork("--project", "nope");
     expect(out).toBe("");
-    expect(err).toContain("--all is deprecated; use --project all.");
     expect(err).toContain("No registered project `nope`");
     expect(process.exitCode).toBe(1);
   });
@@ -177,13 +169,12 @@ describe("ork usage filters", () => {
     expect(process.exitCode).toBe(1);
   });
 
-  it("has no --ids and no --limit, and hides --all", () => {
+  it("has no --ids and no --limit", () => {
     for (const flag of ["workflow", "project", "since", "until", "json"]) {
       expect(usage.args).toHaveProperty(flag);
     }
     expect(usage.args).not.toHaveProperty("ids");
     expect(usage.args).not.toHaveProperty("limit");
-    expect(JSON.stringify(usage.args)).toContain("Internal:");
   });
 });
 

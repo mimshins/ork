@@ -7,8 +7,12 @@
 import { applyFilters, feedbackListTable } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
-import { allAlias } from "../list/all-alias.ts";
-import { filterArgs, readListArgs } from "../list/flags.ts";
+import {
+  filterArgs,
+  readListArgs,
+  refuseUnknownFlags,
+  resolveRun,
+} from "../list/flags.ts";
 import { printList } from "../list/print.ts";
 import { write } from "../output.ts";
 import { formatFeedbackItems } from "../runs/feedback.ts";
@@ -16,13 +20,16 @@ import { withStore } from "../store.ts";
 
 export const list = defineCommand({
   meta: { name: "list", description: "List feedback items, newest first" },
-  args: { ...filterArgs(feedbackListTable), ...allAlias },
+  plugins: [refuseUnknownFlags],
+  args: filterArgs(feedbackListTable),
   run: async ({ args }) => {
     const given: Readonly<Record<string, unknown>> = args;
-    const asked = readListArgs(feedbackListTable, given, { all: "status" });
+    const asked = readListArgs(feedbackListTable, given);
     if (asked === undefined) return;
-    const { filter, limit } = asked;
+    const { limit } = asked;
     await withStore(store => {
+      const filter = resolveRun(store, asked.filter);
+      if (filter === undefined) return;
       const items = applyFilters(
         feedbackListTable,
         store.feedbackItems({ all: filter["status"] !== undefined }),

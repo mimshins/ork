@@ -11,6 +11,7 @@ import {
   type FollowUp,
   placeFor,
   type ProjectPlace,
+  unknownProjectRefusal,
 } from "@krapht/ork-core";
 
 import { style, writeErr } from "../output.ts";
@@ -49,9 +50,11 @@ const placeOf = (
   if (key === undefined) return placeFor(process.cwd(), projects);
   const found = projects.find(p => p.id === key || p.root === key);
   if (found === undefined) {
-    const names = projects.map(p => p.id);
     fail(
-      `No registered project \`${key}\`; registered: ${names.length === 0 ? "none" : names.join(", ")}.`,
+      unknownProjectRefusal(
+        key,
+        projects.map(p => p.id),
+      ),
     );
     return undefined;
   }

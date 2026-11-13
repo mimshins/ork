@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L359, and the next chore is
+closes it. Ids are never reused: the next limit is L363, and the next chore is
 C16 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -348,14 +348,6 @@ RFC-017):
   keeps the ones a filter matches, then cuts to `--limit`. Nothing has measured
   a store large enough for that to be slow. Passing a filter into the store's
   query would close it.
-- **L340 · The deprecated `--all` is still there.** `ps`, `usage`, `decide`,
-  `follow-ups list` and `feedback list` still take `--all`, which warns on
-  stderr and stands for `--project all` or `--status all`. It is removed one
-  release after the one that carries the warning. `prune --all` stays. Still
-  using `--all`, to change with its removal: the UI's usage panel
-  (`usage-model.ts` and its test, `usage --all`), the plugin tests
-  (`packages/cli/test/plugin.test.ts`, lines 91 and 110) and the UI test that
-  runs `ps --all` (`packages/cli/test/ui.test.ts`).
 - **L341 · `ps --ids` is limited to 20 by default.** `ork ps` shows 20 runs
   unless `--limit` says more, `--ids` included, so a script that wants every id
   passes a larger `--limit`. A default that only a terminal list has would close
@@ -367,8 +359,10 @@ Found building the list filters in the server and the UI (L339, closed):
   `usage`, `decisions` and `worktrees` take `project` as a registered project's
   id or root and, as before, any other value as a root; a plan to read only
   registered projects would refuse it (400) and could break callers that pass a
-  root Ork no longer registers. `follow-ups` is named by its path, and a
-  different `project` query lists nothing.
+  root Ork no longer registers. The `ork mcp` tools already refuse an
+  unregistered `project`; only these HTTP routes still read it as a root.
+  `follow-ups` is named by its path, and a different `project` query lists
+  nothing.
 - **L351 · Clean merged… ignores the `run` filter.** The Worktrees panel's Clean
   merged… plans for the project the filter keeps, or every project, never for
   one run's worktrees, so the button can clean merged worktrees the list does
@@ -377,6 +371,29 @@ Found building the list filters in the server and the UI (L339, closed):
   Worktrees panel lists every project, but the `project` field's help line, the
   table's, still says "default: the one you are in" (the CLI's). The filter bar
   shows the table's words unchanged.
+
+Found closing the list QA follow-ups (list filters):
+
+- **L359 · Only the list commands refuse an unknown flag.** `refuseUnknownFlags`
+  is on the nine list leaf commands. Every other command (`run`, `stop`, `once`,
+  `ork worktrees` with no subcommand and its `wt` alias, …) still reads an
+  unknown flag as nothing, because citty's parser is not strict and a parent
+  command would see its subcommands' flags as unknown. Closing it needs a check
+  per command, with `ork once --` and `ork run`'s inputs left out.
+- **L360 · The feedback and worktrees routes take a full run id.**
+  `GET /api/feedback` and `GET /api/worktrees` read `run` as an exact id, while
+  `ork feedback list --run` and `ork worktrees list --run` take a unique start
+  of one and refuse an unknown run. The browser's `run` field takes a full id
+  (the suggestions give it). A prefix check in the shared routes would close it,
+  with L350.
+- **L361 · `feedback list --run` and `worktrees list --run` refuse the full id
+  of a pruned run.** `resolveRun` follows `findRun`, so an id whose run is gone
+  from the store reads as an unknown run, even in full. Reading a pruned run's
+  rows would need the lookup to fall back to the exact id.
+- **L362 · `ork projects --bogus` prints help before the message.** `projects`
+  has subcommands, so citty shows its help and then the unknown-flag line,
+  unlike the other list commands, which print one line. Closing it needs the
+  check to run before citty's help (see L359).
 
 ## Chores
 

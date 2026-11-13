@@ -6,17 +6,27 @@
  *   answer a decision, start, stop, pause or message a run.
  */
 
+import {
+  limitRefusal,
+  parseLimit,
+  unknownProjectRefusal,
+} from "@krapht/ork-core";
 import { z } from "zod";
 
 import { builderRoutes } from "./builder-routes.ts";
-import type { ServerContext } from "./context.ts";
+import { projectOf, type ServerContext } from "./context.ts";
 import {
   DecisionsQuerySchema,
   RunsQuerySchema,
   UsageQuerySchema,
 } from "./contract-lists.ts";
 import { EventsQuerySchema } from "./contract.ts";
-import { formatPart, fromReply, refused } from "./mcp-answers.ts";
+import {
+  formatPart,
+  fromReply,
+  refused,
+  type McpAnswer,
+} from "./mcp-answers.ts";
 import { tool, type McpTool } from "./mcp-tool.ts";
 import { readRoutes } from "./read-routes.ts";
 
@@ -31,6 +41,20 @@ const ANSWERED_BY_A_PERSON =
 
 const project = z.string().min(1).describe("A registered project's id or root");
 const run = z.string().min(1).describe("A run's id, or a unique start of it");
+
+/** An error answer, in the CLI's words, when `project` names none registered. */
+const unknownProject = (
+  context: ServerContext,
+  key: string | undefined,
+): McpAnswer | undefined =>
+  key === undefined || key === "all" || projectOf(context, key) !== undefined
+    ? undefined
+    : refused(
+        unknownProjectRefusal(
+          key,
+          context.store.projects().map(p => p.id),
+        ),
+      );
 
 export const mcpTools = (context: ServerContext): McpTool[] => {
   const read = readRoutes(context);
@@ -69,9 +93,20 @@ export const mcpTools = (context: ServerContext): McpTool[] => {
     tool(
       "runs",
       "Runs, newest first, with their live status and cost. 10 unless a limit is given. Narrow them with `status` (running, paused, crashed, succeeded, failed, … or all), `workflow`, `project` (or all), `since` (24h, 30d, 2026-11-01, all) and `until` (a day).",
-      RunsQuerySchema.shape,
-      args =>
-        fromReply(read.runs({ ...NO_QUERY, query: { limit: 10, ...args } })),
+      // `limit` is read as text too so a bad one is refused in the CLI's words.
+      {
+        ...RunsQuerySchema.shape,
+        limit: z.union([z.number(), z.string()]).optional(),
+      },
+      ({ limit, ...args }) => {
+        const bad = unknownProject(context, args.project);
+        if (bad !== undefined) return bad;
+        const count = limit === undefined ? 10 : parseLimit(String(limit));
+        if (count === null) return refused(limitRefusal(String(limit)));
+        return fromReply(
+          read.runs({ ...NO_QUERY, query: { ...args, limit: count } }),
+        );
+      },
     ),
     tool(
       "run",
@@ -108,13 +143,16 @@ export const mcpTools = (context: ServerContext): McpTool[] => {
       "usage",
       "What runs spent, by workflow and model, and how close the limits are. Narrow it with `workflow`, `project` (or all), `since` and `until`: an age (24h, 30d), a day (2026-11-01) or an ISO time; `since` also takes all.",
       UsageQuerySchema.shape,
-      args => fromReply(read.usage({ ...NO_QUERY, query: args })),
+      args =>
+        unknownProject(context, args.project) ??
+        fromReply(read.usage({ ...NO_QUERY, query: args })),
     ),
     tool(
       "decisions",
       "The decisions open in live runs, waiting on a person. This server can't answer them. Narrow them with `workflow`, `run` (an id or a start of one) and `project` (or all).",
       DecisionsQuerySchema.shape,
       args =>
+        unknownProject(context, args.project) ??
         fromReply(read.decisions({ ...NO_QUERY, query: args }), open => ({
           open,
           answer: ANSWERED_BY_A_PERSON,

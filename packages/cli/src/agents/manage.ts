@@ -15,10 +15,13 @@ import {
 import { type Agent, type AgentSettings, settingsOf } from "@krapht/ork-schema";
 import { stringify } from "yaml";
 
-import { filterArgs, readListArgs } from "../list/flags.ts";
+import { filterArgs, readListArgs, refuseUnknownFlags } from "../list/flags.ts";
 import { printList } from "../list/print.ts";
 import { style, write } from "../output.ts";
 import { agentListTable } from "./table.ts";
+
+/** Re-exported so `agents list` takes it with the agent list flags. */
+export { refuseUnknownFlags };
 
 const whereOf = (agent: CatalogAgent): string =>
   agent.via.length === 0

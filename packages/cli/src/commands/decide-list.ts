@@ -7,12 +7,11 @@ import {
   type DecisionRecord,
   decisionListTable,
   type EventStore,
-  findRun,
   pendingDecisions,
   placeFor,
 } from "@krapht/ork-core";
 
-import { projectScope, readListArgs, fail } from "../list/flags.ts";
+import { projectScope, readListArgs, resolveRun } from "../list/flags.ts";
 import { printList } from "../list/print.ts";
 import { plain, write } from "../output.ts";
 import { chip, CHIP_LABELS, nodeChip } from "../term/chips.ts";
@@ -76,7 +75,7 @@ export const selectDecisions = (
   store: EventStore,
   args: DecideArgs,
 ): { open: DecisionRecord[]; workflow: string | undefined } | undefined => {
-  const request = readListArgs(decisionListTable, args, { all: "project" });
+  const request = readListArgs(decisionListTable, args);
   if (request === undefined) return undefined;
   const scope = projectScope(request.filter, store.projects());
   if (scope === undefined) return undefined;
@@ -84,16 +83,17 @@ export const selectDecisions = (
   const { workflow } = request.filter;
   if (workflow !== undefined) filter.workflow = workflow;
   const positional = args["run-id"];
-  const run =
+  const named =
     request.filter["run"] ??
     (typeof positional === "string" ? positional : undefined);
+  const resolved = resolveRun(
+    store,
+    named === undefined ? request.filter : { ...request.filter, run: named },
+  );
+  if (resolved === undefined) return undefined;
+  const run = resolved["run"];
   if (run !== undefined && run !== "") {
-    const found = findRun(store, run, process.cwd());
-    if (!found.ok) {
-      fail(found.error);
-      return undefined;
-    }
-    filter.runId = found.run.id;
+    filter.runId = run;
   } else if (scope === "here") {
     filter.project = placeFor(process.cwd(), store.projects()).root;
   } else if (scope !== "all") {

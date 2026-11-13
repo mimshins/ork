@@ -182,7 +182,7 @@ describe("ork ui", () => {
     const live = async () =>
       liveOf(await client.call("run", { params: { id: runId } }));
     await expect.poll(live, { timeout: 15_000 }).toBe("succeeded");
-    const ps = await ork(["ps", "--all", "--json"]);
+    const ps = await ork(["ps", "--project", "all", "--json"]);
     expect(ps.stdout).toContain(`"id": "${runId}"`);
 
     ui.child.kill("SIGINT");

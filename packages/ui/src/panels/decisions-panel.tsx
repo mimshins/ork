@@ -21,11 +21,14 @@ import { DecisionsSettled } from "./decisions-settled.tsx";
 import {
   useDecisionFilter,
   useDecisionsRead,
+  useProjectSuggestions,
   useSettledAnnounced,
 } from "./use-decisions.ts";
 import { useKeptFocus } from "./use-kept-focus.ts";
 
 import styles from "./decisions.module.css";
+
+const NO_VALUES = {};
 
 export const DecisionsPanel = () => {
   const state = useAppState();
@@ -40,8 +43,9 @@ export const DecisionsPanel = () => {
       runs?.find(({ id }) => id === run)?.workflow,
     [runs],
   );
+  const projectSuggestions = useProjectSuggestions(open);
   const read = useDecisionsRead(filter.values, open);
-  const shown = read.rows ?? [];
+  const shown = read.rows;
   const { panel, onFocus } = useKeptFocus(
     shown.map(({ id }) => id).join("\n"),
     "[data-decision]",
@@ -62,16 +66,17 @@ export const DecisionsPanel = () => {
       <DecisionsBar
         onChange={filter.set}
         open={open}
+        projects={projectSuggestions}
         read={read}
         values={filter.values}
         workflowOf={workflowOf}
       />
-      {read.rows === null ? null : shown.length === 0 ? (
+      {shown.length === 0 ? (
         <DecisionsEmpty
           onClear={() => {
             filter.set({});
           }}
-          values={filter.values}
+          values={read.answered ? filter.values : NO_VALUES}
         />
       ) : (
         <div className={styles["list"]}>

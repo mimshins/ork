@@ -2,8 +2,8 @@
  * @file Tests for `ork ps` and `ork logs` run through their real commands
  *   against a store in a throwaway home (RFC-017): `ps` filters by status,
  *   workflow, project and start, keeps its limit of 20, prints `--ids`, and
- *   refuses a bad value; `--all` still works with its warning; `logs` filters
- *   events by time and keeps the last `--limit` of them.
+ *   refuses a bad value; `logs` filters events by time and keeps the last
+ *   `--limit` of them.
  */
 
 import { spawnSync } from "node:child_process";
@@ -209,12 +209,9 @@ describe("ork ps", () => {
     expect(await ids("--limit", "2")).toBe("d4,c3");
   });
 
-  it("takes --project all, or --all with a warning", async () => {
+  it("takes --project all", async () => {
     setup(RUNS).close();
     expect(await ids("--project", "all")).toBe("z9,d4,c3,b2,a1");
-    const old = await ork("ps", "--all", "--ids");
-    expect(old.out.trim()).toBe("z9,d4,c3,b2,a1");
-    expect(old.err).toContain("--all is deprecated; use --project all.");
   });
 
   it("shows nothing for --ids on an empty result", async () => {
@@ -243,9 +240,34 @@ describe("ork ps", () => {
     expect(out).not.toContain('"listed"');
   });
 
+  it("adds `live` to the JSON rows: the status the table shows, `status` as stored", async () => {
+    setup([
+      { id: "g7", workflow: "build", ago: HOUR / 3, gone: true },
+      { id: "a1", workflow: "build", ago: 2 * HOUR, status: "succeeded" },
+    ]).close();
+    const rows: unknown = JSON.parse((await ork("ps", "--json")).out);
+    expect(rows).toMatchObject([
+      { id: "g7", status: "running", live: "crashed" },
+      { id: "a1", status: "succeeded", live: "succeeded" },
+    ]);
+  });
+
+  it("says why a --limit in exponent form is refused", async () => {
+    setup(RUNS).close();
+    const ran = await ork("ps", "--limit", "1e21");
+    expect(ran.err).toContain("written in digits, not `1e21`.");
+    expect(ran.code).toBe(1);
+  });
+
   it.each([
-    [["--limit", "0"], "--limit takes a positive whole number, not `0`."],
-    [["--limit", "2.5"], "--limit takes a positive whole number, not `2.5`."],
+    [
+      ["--limit", "0"],
+      "--limit takes a positive whole number written in digits, not `0`.",
+    ],
+    [
+      ["--limit", "2.5"],
+      "--limit takes a positive whole number written in digits, not `2.5`.",
+    ],
     [["--since", "soon"], "--since takes"],
     [["--ids", "--json"], "--ids and --json can't be used together."],
     [["--project", "nope"], "No registered project `nope`"],

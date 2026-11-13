@@ -82,6 +82,22 @@ hover and focus, verbatim, so the UI never rewords the CLI's help.
 | Nothing matches | The panel's empty state: "No runs match the filter." with **Clear filter** and the command as `cli` (see [Copy](#copy)). With no filter set, the panel's own empty state.                                                                                                                                     |
 | Unreachable     | The fields stay as last read. A refetch that cannot reach `ork ui` is the panel's own read failure, not the bar's.                                                                                                                                                                                            |
 
+**A first refused filter** (no filter has worked yet) shows the panel's
+unfiltered list under the alert, never a blank list or "Reading runs…". The same
+rule holds before the first filtered answer arrives: the list stays as it was
+(the unfiltered one) until the answer, as in Refetching. A list that is empty
+because it was never filtered or because the filter was refused shows the
+panel's own empty state, not "No runs match the filter." (that one is for an
+accepted filter that matches nothing). The alert's words are unchanged: the
+unfiltered list is the last filter that worked.
+
+**The command follows the filter that worked.** While the server refuses
+`values`, the shown and copied command is the last values it accepted (the
+**applied** values), so the bar never offers a command the CLI would also
+refuse. With no accepted filter yet it is the list's plain command (`ork ps`).
+**Clear filter** and the Filtered state still follow `values`, so a refused
+filter can be cleared; clearing makes `{}` the applied values.
+
 Counts are not read for the hidden rows: the filtered route answers only what
 matches, so the bar never says how many a filter hides, and a select's options
 carry no counts. (Decided: shown-only.)
@@ -141,8 +157,9 @@ Exact. Nouns: `runs`, `decisions`, `follow-ups`, `feedback items`, `worktrees`,
 - Empty state: title `No runs match the filter.`, body
   `Clear the filter to see the default list.`, **Clear filter**, and `cli` the
   matching command.
-- **The command twin** is built by the pure helper
-  `filterCommand(list, values)`: `ork ps`, `ork usage`, `ork decide --list`,
+- **The command twin** is built by the pure helper `filterCommand(list, values)`
+  (the bar passes `values` when the server accepts them, else the applied
+  values; see [States](#states)): `ork ps`, `ork usage`, `ork decide --list`,
   `ork follow-ups list`, `ork feedback list`, `ork worktrees list`, then each
   set field as `--name value` in the table's order (a value with a space or
   shell character is quoted). A panel default is never written as a flag. It
@@ -195,8 +212,10 @@ type FilterEmptyProps = {
 
 `isFiltered(values)` (any value set) and `filterCommand(list, values)` are
 exported pure functions, tested without React. The bar owns the drafts of
-uncommitted inputs, the count line and the command; the panel owns the applied
-`values`, the fetch and the 400.
+uncommitted inputs, the count line and the command, and remembers the last
+`values` the server accepted (those with no `error` and no `busy`, derived
+during render as `useFilteredRuns` does); the panel owns the current `values`,
+the fetch and the 400.
 
 ## Per panel
 
@@ -204,14 +223,14 @@ Each panel's model passes its `list`; the bar goes first in its tools. Defaults
 and suggestions are the panel's, and the filter lasts for the page's life unless
 noted.
 
-| Panel      | `defaults`                          | `suggestions`                                            | Notes                                                                                                                             |
-| ---------- | ----------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Runs       | the panel's current project         | `project`: registered projects and those of runs shown   | still the 20 newest; `status` values include `paused` and `crashed`, the live statuses its rows show                              |
-| Decisions  | none                                | `workflow`, `run` (`4f2a1c · feature`) of open decisions | the bar always shows; the `decisionFilter` preference keeps its values; the Monitor button sets `{ run }`; no "hidden" count      |
-| Follow-ups | `status`: `open`                    | `for`: each `project:<name>`, `person:<name>` present    | the old Status `Open` is `Default (open)`; a saved `open` is read as unset; the summary stays                                     |
-| Feedback   | `status`: `not dismissed`           | `workflow`, `run`                                        | its **About** select (`ork`, `workflow`, `project`) is not a table field: it stays beside the bar, unchanged                      |
-| Worktrees  | the panel's current project         | `project`                                                | cards still group by project                                                                                                      |
-| Usage      | `since`: `30d`; the panel's project | `project`                                                | replaces the 7, 30, 90 days or all select: `since` offers those as built-in suggestions; a saved `7` or `all` maps to `7d`, `all` |
+| Panel      | `defaults`                          | `suggestions`                                          | Notes                                                                                                                             |
+| ---------- | ----------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| Runs       | the panel's current project         | `project`: registered projects and those of runs shown | still the 20 newest; `status` values include `paused` and `crashed`, the live statuses its rows show                              |
+| Decisions  | none                                | `workflow`, `run` (`4f2a1c · feature`), `project`      | the bar always shows; the `decisionFilter` preference keeps its values; the Monitor button sets `{ run }`; no "hidden" count      |
+| Follow-ups | `status`: `open`                    | `for`: each `project:<name>`, `person:<name>` present  | the old Status `Open` is `Default (open)`; a saved `open` is read as unset; the summary stays                                     |
+| Feedback   | `status`: `not dismissed`           | `workflow`, `run`                                      | its **About** select (`ork`, `workflow`, `project`) is not a table field: it stays beside the bar, unchanged                      |
+| Worktrees  | the panel's current project         | `project`                                              | cards still group by project                                                                                                      |
+| Usage      | `since`: `30d`; the panel's project | `project`                                              | replaces the 7, 30, 90 days or all select: `since` offers those as built-in suggestions; a saved `7` or `all` maps to `7d`, `all` |
 
 ## Tokens
 

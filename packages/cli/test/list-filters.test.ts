@@ -4,8 +4,7 @@
  *   flag exists (an enum's `options` equal the table's values, plus `all`), a
  *   wrong value is refused naming the flag, and Tab completion offers the flag
  *   and its values. `--ids` and `--limit` exist exactly where a list has them,
- *   `--all` is hidden from `--help` and completion but still works with its
- *   warning, and `prune --all` is untouched.
+ *   no list takes `--all`, and `prune --all` is untouched.
  */
 
 import {
@@ -46,8 +45,6 @@ type List = {
   table: AnyTable;
   ids: boolean;
   limit: boolean;
-  /** What `--all` stands for, when the list still takes it. */
-  alias?: "project" | "status";
 };
 
 const LISTS: List[] = [
@@ -58,7 +55,6 @@ const LISTS: List[] = [
     table: runListTable,
     ids: true,
     limit: true,
-    alias: "project",
   },
   {
     name: "usage",
@@ -67,7 +63,6 @@ const LISTS: List[] = [
     table: usageListTable,
     ids: false,
     limit: false,
-    alias: "project",
   },
   {
     name: "decide",
@@ -76,7 +71,6 @@ const LISTS: List[] = [
     table: decisionListTable,
     ids: true,
     limit: true,
-    alias: "project",
   },
   {
     name: "follow-ups list",
@@ -85,7 +79,6 @@ const LISTS: List[] = [
     table: followUpListTable,
     ids: true,
     limit: true,
-    alias: "status",
   },
   {
     name: "feedback list",
@@ -94,7 +87,6 @@ const LISTS: List[] = [
     table: feedbackListTable,
     ids: true,
     limit: true,
-    alias: "status",
   },
   {
     name: "worktrees list",
@@ -248,11 +240,6 @@ const PROJECT_LISTS = LISTS.filter(list =>
   fieldsOf(list).some(field => field.name === "project"),
 );
 
-const ALIAS_LISTS = LISTS.flatMap(list =>
-  list.alias === undefined ? [] : [{ ...list, alias: list.alias }],
-);
-const NO_ALIAS_LISTS = LISTS.filter(list => list.alias === undefined);
-
 afterEach(() => {
   vi.unstubAllEnvs();
   process.exitCode = undefined;
@@ -340,7 +327,7 @@ describe("every list refuses what its table does not take", () => {
     const ran = await ork(list, `--limit=${bad}`);
     expect(ran.code).toBe(1);
     expect(ran.err).toBe(
-      `--limit takes a positive whole number, not \`${bad}\`.\n`,
+      `--limit takes a positive whole number written in digits, not \`${bad}\`.\n`,
     );
   });
 
@@ -397,33 +384,73 @@ describe("Tab completion reads each list's table", () => {
   });
 });
 
-describe("--all is a hidden, deprecated alias", () => {
-  it.each(ALIAS_LISTS)(
-    "$name still takes it, out of help and completion",
-    async list => {
-      const args = await argsAt(list.path);
-      expect(args["all"]?.description).toMatch(/^Internal:/u);
-      const command = await commandAt(list.path);
-      expect(await renderHelp(command, main)).not.toContain("--all");
-      expect(await offers(...list.path, "--")).not.toContain("--all");
-    },
-  );
-
-  it.each(ALIAS_LISTS)("$name warns once naming --$alias all", async list => {
-    const ran = await ork(list, "--all");
-    expect(ran.err.match(/--all is deprecated/gu)).toHaveLength(1);
-    expect(ran.err).toContain(`--all is deprecated; use --${list.alias} all.`);
-  });
-
-  it.each(NO_ALIAS_LISTS)("$name never had it", async list => {
+describe("--all is gone from the lists, and kept by prune", () => {
+  it.each(LISTS)("$name has no --all", async list => {
     expect(await argsAt(list.path)).not.toHaveProperty(["all"]);
   });
 
-  it("leaves prune --all alone: public, in help and completion", async () => {
+  it("keeps prune --all: public, in help and completion", async () => {
     const prune = await commandAt(["prune"]);
     const args = await argsOf(prune);
     expect(args["all"]?.description).toBe("Every project's runs");
     expect(await renderHelp(prune, main)).toContain("--all");
     expect(await offers("prune", "--")).toContain("--all");
+  });
+});
+
+/** A flag the command does not take, and the list it is tried on. */
+const UNKNOWN_FLAGS: [string, string, string[]][] = [
+  ["ps", "--bogus", []],
+  ["usage", "--ids", []],
+  ["usage", "--limit", ["3"]],
+  ["usage", "--status", ["x"]],
+  ["logs", "--status", ["x"]],
+  ["ps", "--all", []],
+  ["decide", "--since", ["24h"]],
+  ["follow-ups list", "--bogus", []],
+  ["feedback list", "--bogus", []],
+  ["worktrees list", "--bogus", []],
+  ["agents list", "--bogus", []],
+  ["projects", "--bogus", []],
+];
+
+/** The list named `name`. */
+const listNamed = (name: string): List => {
+  const found = LISTS.find(list => list.name === name);
+  if (found === undefined) throw new Error(`no list ${name}`);
+  return found;
+};
+
+describe("a list refuses a flag it does not have", () => {
+  it.each(UNKNOWN_FLAGS)("%s %s", async (name, flag, value) => {
+    const ran = await ork(listNamed(name), flag, ...value);
+    expect(ran.code).toBe(1);
+    expect(ran.out).toBe("");
+    expect(ran.err).toBe(`Unknown flag \`${flag}\`.`);
+  });
+
+  /** Words a list takes: a positional, an alias, a negation, either spelling. */
+  const KNOWN: [string, string[]][] = [
+    ["ps", ["--no-json"]],
+    ["ps", ["--ids"]],
+    ["logs", ["-f", "--json"]],
+    ["decide", ["--limit", "3", "--run", "nope"]],
+    ["decide", ["--run-id", "nope"]],
+    ["decide", ["--runId", "nope"]],
+    ["follow-ups list", ["--project", "all"]],
+    ["projects", ["--limit", "3"]],
+  ];
+
+  it.each(KNOWN)("%s takes %j", async (name, words) => {
+    const ran = await ork(listNamed(name), ...words);
+    expect(ran.err).not.toContain("Unknown flag");
+  });
+
+  it("leaves a subcommand's own flags to it: projects forget --yes", async () => {
+    const ran = await ork(
+      { ...listNamed("projects"), base: ["forget"] },
+      "--yes",
+    );
+    expect(ran.err).not.toContain("Unknown flag");
   });
 });

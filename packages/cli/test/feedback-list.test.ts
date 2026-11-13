@@ -2,7 +2,7 @@
  * @file Tests for `ork feedback list` through its real command against a store
  *   in a throwaway home: dismissed items hidden by default, the shared filters
  *   (`--status`, `--kind`, `--severity`, `--workflow`, `--run`), `--ids`,
- *   `--limit`, `--json`, and the deprecated `--all`.
+ *   `--limit`, `--json`.
  */
 
 import { mkdtempSync, realpathSync } from "node:fs";
@@ -55,12 +55,22 @@ const setup = (): Record<string, string> => {
   vi.stubEnv("ORK_PLAIN", "1");
   const store = openStore(storePath(home));
   try {
-    store.begin({ id: "r1", workflow: "review", file: "w.ork.yaml", project });
-    store.begin({ id: "r2", workflow: "build", file: "w.ork.yaml", project });
+    store.begin({
+      id: "r1-full",
+      workflow: "review",
+      file: "w.ork.yaml",
+      project,
+    });
+    store.begin({
+      id: "r2-full",
+      workflow: "build",
+      file: "w.ork.yaml",
+      project,
+    });
     const notes = [
-      { run: "r1", text: "Slow", kind: "friction", severity: "low" },
-      { run: "r1", text: "Crash", kind: "bug", severity: "high" },
-      { run: "r2", text: "Vague", kind: "friction", severity: "medium" },
+      { run: "r1-full", text: "Slow", kind: "friction", severity: "low" },
+      { run: "r1-full", text: "Crash", kind: "bug", severity: "high" },
+      { run: "r2-full", text: "Vague", kind: "friction", severity: "medium" },
     ];
     for (const note of notes) noteRun(store, project, note);
     const ids = Object.fromEntries(
@@ -106,6 +116,19 @@ describe("ork feedback list", () => {
     expect(titles((await ork("list", "--run", "r1")).out)).toEqual(["Crash"]);
   });
 
+  it("takes a prefix for --run, and refuses an unknown or ambiguous run", async () => {
+    setup();
+    expect(titles((await ork("list", "--run", "r2")).out)).toEqual(["Vague"]);
+    const unknown = await ork("list", "--run", "nope");
+    expect(unknown.err).toContain("No run `nope`.");
+    expect(unknown.out).toBe("");
+    expect(unknown.code).toBe(1);
+    const ambiguous = await ork("list", "--run", "r");
+    expect(ambiguous.err).toContain("`r` matches 2 runs: ");
+    expect(ambiguous.out).toBe("");
+    expect(ambiguous.code).toBe(1);
+  });
+
   it("prints --ids on one line, --limit cuts, --json prints rows", async () => {
     const ids = setup();
     const listed = await ork("list", "--ids", "--status", "all");
@@ -138,13 +161,9 @@ describe("ork feedback list", () => {
     expect(both.err).toContain("--ids and --json can't be used together");
   });
 
-  it("keeps --all as a deprecated --status all, and --status wins", async () => {
+  it("takes --status all for every item", async () => {
     setup();
-    const all = await ork("list", "--all");
+    const all = await ork("list", "--status", "all");
     expect(titles(all.out)).toHaveLength(3);
-    expect(all.err).toContain("--all is deprecated; use --status all.");
-    const both = await ork("list", "--all", "--status", "new");
-    expect(titles(both.out).toSorted()).toEqual(["Crash", "Vague"]);
-    expect(both.err).toContain("--all is deprecated");
   });
 });

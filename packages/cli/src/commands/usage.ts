@@ -18,8 +18,12 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
-import { allAlias } from "../list/all-alias.ts";
-import { filterArgs, projectScope, readListArgs } from "../list/flags.ts";
+import {
+  filterArgs,
+  projectScope,
+  readListArgs,
+  refuseUnknownFlags,
+} from "../list/flags.ts";
 import { confirm, style, write, writeErr } from "../output.ts";
 import { limitsHere } from "../run/limits.ts";
 import { formatLimits, formatUsage } from "../runs/usage.ts";
@@ -37,11 +41,11 @@ export const usage = defineCommand({
     name: "usage",
     description: "Show what this project's runs spent over time",
   },
+  plugins: [refuseUnknownFlags],
   args: filterArgs(usageListTable, {
     ids: false,
     limit: false,
     extra: {
-      ...allAlias,
       "clear-plan-limits": {
         type: "boolean",
         description:
@@ -55,11 +59,7 @@ export const usage = defineCommand({
     // Thirty days unless `--since` says otherwise.
     const asked: unknown = args["since"];
     const since = typeof asked === "string" ? asked : "30d";
-    const request = readListArgs(
-      usageListTable,
-      { ...args, since },
-      { all: "project" },
-    );
+    const request = readListArgs(usageListTable, { ...args, since });
     if (request === undefined) return;
     const rawBy: unknown = args["by"];
     const given = typeof rawBy === "string" ? rawBy : undefined;

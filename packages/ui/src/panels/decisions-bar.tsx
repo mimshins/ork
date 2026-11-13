@@ -9,6 +9,7 @@
 import type { DecisionRecord } from "@krapht/ork-server/client";
 
 import { FilterBar } from "../components/filter-bar.tsx";
+import type { Suggestion } from "../components/filter-input.tsx";
 import { refusalOf, type FilterValues } from "../components/filter-model.ts";
 import { openLine, suggestionsOf, type WorkflowOf } from "./decisions-model.ts";
 
@@ -19,6 +20,7 @@ export const DecisionsBar = ({
   onChange,
   open,
   workflowOf,
+  projects,
   read,
 }: {
   values: FilterValues;
@@ -26,9 +28,13 @@ export const DecisionsBar = ({
   /** Every open decision, whatever the filter. */
   open: readonly DecisionRecord[];
   workflowOf: WorkflowOf;
+  /** The registered projects (and those of open decisions' runs), for Project. */
+  projects: readonly Suggestion[];
   /** What the panel's read says of the filtered list. */
   read: {
-    rows: readonly unknown[] | null;
+    rows: readonly unknown[];
+    /** Whether `rows` is an accepted answer, not the list before one. */
+    answered: boolean;
     busy: boolean;
     error: string | null;
   };
@@ -39,8 +45,8 @@ export const DecisionsBar = ({
       error={read.error === null ? null : refusalOf("decisions", read.error)}
       list="decisions"
       onChange={onChange}
-      shown={read.rows === null ? null : read.rows.length}
-      suggestions={suggestionsOf(open, workflowOf)}
+      shown={read.answered ? read.rows.length : null}
+      suggestions={suggestionsOf(open, workflowOf, projects)}
       summary={openLine(open.length)}
       values={values}
     />

@@ -41,7 +41,8 @@ same.
   release as a hidden deprecated alias (an `Internal:` flag, left out of help
   and completion) that prints one line on stderr naming the replacement; when
   both are given the new flag wins and the warning still prints. `prune --all`
-  is not a list and is unchanged. Removing the alias is a later change.
+  is not a list and is unchanged. Removed on 2026-11-13, after alpha.16 carried
+  the warning: `--all` is now an unknown flag on those lists.
 - **Flags exist only where they mean something.** `--ids` is on a list whose
   rows have an id, so not on `usage` (groups) or `logs` (events); `ork projects`
   has only `--ids`, `--limit` and `--json`. `--ids` with `--json` is an error;
@@ -78,14 +79,14 @@ costs one export and lets other surfaces reuse it.
 - One vocabulary across eight lists, one time parser, and
   `$(ork ps --status failed --ids)` in a script. A field with no table row
   cannot be filtered until one is added.
-- Scripts that use `--all` keep working for one release, with a warning.
+- Scripts that used `--all` worked for one release, with a warning, and now fail
+  with an unknown-flag error.
 - `ps --ids` is limited to 20 by default; `--limit` raises it
   ([L341](../specs/gaps.md#limits)).
 - A test derived from the tables keeps every list's flags, validation and
   completion in step with its table.
 - Left simpler, in the [register](../specs/gaps.md): `--where` and operators
-  (L337), filtering in the store (L338), the deprecated `--all` (L340), the
-  `ps --ids` default (L341).
+  (L337), filtering in the store (L338), the `ps --ids` default (L341).
 - The server reads the tables too: its list routes take each table's fields by
   their flag names, `GET /api/list-fields` serves their descriptions, and the
   browser view's one filter bar and the `ork mcp` list tools are built from

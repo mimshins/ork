@@ -129,7 +129,7 @@ describe("ork stop, end to end", () => {
     ]);
 
     const report: unknown = JSON.parse(
-      await ork(live.home, live.dir, "usage", "--all", "--json"),
+      await ork(live.home, live.dir, "usage", "--project", "all", "--json"),
     );
     expect(report).toMatchObject({
       totals: { costUsd: row.costUsd, tokens: spent, runs: 1 },

@@ -45,10 +45,11 @@ marked "not created by Ork"; `clean --force` shows what it would lose and
 [Worktrees: ork worktrees](../worktrees.md#ork-worktrees).
 
 `ork worktrees list` filters as every list does
-([list filters](./list-filters.md)): `--run <id>` keeps one run's worktrees,
-`--project <id>|all` takes a registered project's id or root, or every project's
-(default: the one you are in), `--limit n` keeps the first N, `--ids` prints
-what `ork worktrees remove` takes (the branch, or the path for one with none),
+([list filters](./list-filters.md)): `--run <run>` (an id or a unique start of
+one; an unknown run is refused) keeps one run's worktrees, `--project <id>|all`
+takes a registered project's id or root, or every project's (default: the one
+you are in), `--limit n` keeps the first N, `--ids` prints what
+`ork worktrees remove` takes (the branch, or the path for one with none),
 comma-separated on one line, and `--json` prints them. `clean`'s own `--run` and
 `--all` are unchanged.
 

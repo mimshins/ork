@@ -189,26 +189,26 @@ filter serves `GET /api/runs/<id>/events?node=` in `ork ui`, and
 [documents](../../packages/cli/test/decide-document.test.ts))
 
 - **`ork decide`** lists the open decisions of this project's live runs (`<run>`
-  for one run, `--project all` or a project id; `--all` is the deprecated
-  spelling, [L340](../gaps.md#limits)), oldest first, and asks each in turn with
-  the same picker as the terminal; the recommended option is the default. The
-  answer goes to the store, first one wins, and the run is woken on its socket.
-  `--list` (or no terminal) only lists them, with `--json`, `--ids`, `--limit`
-  ([filters](./list-filters.md#the-lists)); `--id <decision> --choose <option>`
-  answers one without a prompt; `--say <text>` gives that answer its
-  [note](../messaging.md#decisions), which goes to the run, and asking in turn
-  offers the note line after each choice. `--note` and `--rating` keep their
-  meaning: feedback on the decision's node ([feedback](../feedback/capture.md)),
-  not words for the run. An option that is not one of the decision's, or a
-  decision already answered or withdrawn, is refused with the reason. Decisions
-  of crashed runs are not listed. A program or an agent in a run (`ORK_RUN` or
-  `ORK_SESSION` is set) may list them but not answer in a guarded store (it
-  speaks as the user); `ork continue` refuses there too, and `ork ui` withholds
-  its sign-in link ([L80](../messaging/scripts-limits.md)). `--workflow <name>`
-  keeps only the decisions of that workflow's live runs, ANDed with `<run>` (or
-  the project, or `--all`), for `--list`, `--json` and asking in turn; a
-  workflow with none lists none and says so. `--list` marks a decision with a
-  document `+document`. Asking in turn (and the run's own terminal) prints a
+  for one run, `--project all` or a project id), oldest first, and asks each in
+  turn with the same picker as the terminal; the recommended option is the
+  default. The answer goes to the store, first one wins, and the run is woken on
+  its socket. `--list` (or no terminal) only lists them, with `--json`, `--ids`,
+  `--limit` ([filters](./list-filters.md#the-lists));
+  `--id <decision> --choose <option>` answers one without a prompt;
+  `--say <text>` gives that answer its [note](../messaging.md#decisions), which
+  goes to the run, and asking in turn offers the note line after each choice.
+  `--note` and `--rating` keep their meaning: feedback on the decision's node
+  ([feedback](../feedback/capture.md)), not words for the run. An option that is
+  not one of the decision's, or a decision already answered or withdrawn, is
+  refused with the reason. Decisions of crashed runs are not listed. A program
+  or an agent in a run (`ORK_RUN` or `ORK_SESSION` is set) may list them but not
+  answer in a guarded store (it speaks as the user); `ork continue` refuses
+  there too, and `ork ui` withholds its sign-in link
+  ([L80](../messaging/scripts-limits.md)). `--workflow <name>` keeps only the
+  decisions of that workflow's live runs, ANDed with `<run>` (or the project, or
+  `--project all`), for `--list`, `--json` and asking in turn; a workflow with
+  none lists none and says so. `--list` marks a decision with a document
+  `+document`. Asking in turn (and the run's own terminal) prints a
   [document](../messaging.md#decisions) of 40 lines or fewer before the question
   and otherwise says `Document: N lines. Type d to read it.`; `d` at the choose
   prompt prints it and asks again, and an option whose id is `d` wins. Output is

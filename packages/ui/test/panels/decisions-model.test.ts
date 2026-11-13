@@ -64,7 +64,10 @@ const LIST = [
 
 describe("the filter bar's help", () => {
   it("suggests each workflow once, and each run with its workflow", () => {
-    const { workflow, run } = suggestionsOf(LIST, workflowOf);
+    const { workflow, run, project } = suggestionsOf(LIST, workflowOf, [
+      { value: "/a", label: "a" },
+    ]);
+    expect(project).toEqual([{ value: "/a", label: "a" }]);
     expect(workflow).toEqual([
       { value: "feature", label: "feature" },
       { value: "review", label: "review" },
@@ -77,12 +80,12 @@ describe("the filter bar's help", () => {
   });
 
   it("names a run whose workflow is not known by its id alone", () => {
-    expect(suggestionsOf(LIST, run => WORKFLOWS[`${run}-none`]).run[0]).toEqual(
-      {
-        value: "r1",
-        label: "r1",
-      },
-    );
+    expect(
+      suggestionsOf(LIST, run => WORKFLOWS[`${run}-none`], []).run[0],
+    ).toEqual({
+      value: "r1",
+      label: "r1",
+    });
   });
 
   it("says how many are open with no filter", () => {

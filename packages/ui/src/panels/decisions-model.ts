@@ -94,12 +94,18 @@ export type WorkflowOf = (run: string) => string | undefined;
 export const suggestionsOf = (
   open: readonly DecisionRecord[],
   workflowOf: WorkflowOf,
-): { workflow: Suggestion[]; run: Suggestion[] } => {
+  projects: readonly Suggestion[],
+): {
+  workflow: Suggestion[];
+  run: Suggestion[];
+  project: readonly Suggestion[];
+} => {
   const runs = [...new Set(open.map(({ runId }) => runId))];
   const workflows = [
     ...new Set(runs.flatMap(run => workflowOf(run) ?? [])),
   ].toSorted((a, b) => a.localeCompare(b));
   return {
+    project: projects,
     workflow: workflows.map(value => ({ value, label: value })),
     run: runs.map(value => {
       const workflow = workflowOf(value);

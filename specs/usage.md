@@ -11,8 +11,8 @@ Status: **Built**: the ledger, reports, `ork usage`, `ork prune`,
 grouped under their node (built; the Monitor doesn't show them yet), and the
 token side of RFC-015
 ([counted tokens, the day quota in tokens and partial totals](./usage/tokens.md),
-built), and `ork usage`'s filters made from a field table, with `--all`
-deprecated for `--project all` ([list filters](./cli/list-filters.md)). Why:
+built), and `ork usage`'s filters made from a field table, with `--all` removed
+for `--project all` ([list filters](./cli/list-filters.md)). Why:
 [ADR-046](../decisions/ADR-046-usage-ledger-and-prune.md) and
 [ADR-050](../decisions/ADR-050-limits-across-runs.md) and
 [ADR-084](../decisions/ADR-084-budgets-and-quotas-in-tokens.md).
@@ -143,22 +143,21 @@ ork usage [--project <id>|all] [--since 30d|2026-11-01|all] [--until 2026-11-30]
 
 This project's sessions from the last 30 days, or `--project all`'s (or one
 registered project's, by id or root; one not registered is refused, listing the
-registered). `--all` is the deprecated spelling of `--project all`: it warns on
-stderr and is left out of `--help` and Tab ([L340](./gaps.md#limits)). Days and
-weeks in `--since` are whole days counting today, as in the Usage panel; hours
-are exact, and `--since` and `--until` are read by the one parser every list
-uses, in the machine's time zone
-([list filters](./cli/list-filters.md#field-types)). `usage` has no `--ids` (a
-report has no id) and no `--limit`. A report's `runs` counts runs with a
-session, not those that only ran tools. Without `--by` it prints the totals, the
-latest 10 days and the costliest 10 of each of workflow, model and node, then
-any hints; with it, that one table in full. Any limits go first, token caps
-after the dollar ones. `--json` prints the whole report, with `limits`. A dollar
-total that misses sessions on a driver without prices reads `(partial)`, with
-tokens beside it ([partial totals](./usage/tokens.md#partial-totals)).
-`--by node` also has a `TOOL CPU` column: the seconds of CPU (user and system,
-children included) that Ork's tool commands of the node used, from the
-`tool_cpu` table ([machine](./machine.md#cpu)); the other tables don't show it.
+registered). `--all` no longer exists (it was `--project all`). Days and weeks
+in `--since` are whole days counting today, as in the Usage panel; hours are
+exact, and `--since` and `--until` are read by the one parser every list uses,
+in the machine's time zone ([list filters](./cli/list-filters.md#field-types)).
+`usage` has no `--ids` (a report has no id) and no `--limit`. A report's `runs`
+counts runs with a session, not those that only ran tools. Without `--by` it
+prints the totals, the latest 10 days and the costliest 10 of each of workflow,
+model and node, then any hints; with it, that one table in full. Any limits go
+first, token caps after the dollar ones. `--json` prints the whole report, with
+`limits`. A dollar total that misses sessions on a driver without prices reads
+`(partial)`, with tokens beside it
+([partial totals](./usage/tokens.md#partial-totals)). `--by node` also has a
+`TOOL CPU` column: the seconds of CPU (user and system, children included) that
+Ork's tool commands of the node used, from the `tool_cpu` table
+([machine](./machine.md#cpu)); the other tables don't show it.
 
 ## `ork prune`
 

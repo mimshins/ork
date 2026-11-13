@@ -11,6 +11,8 @@
  *   completion runs on every Tab, goes first: no update check, and no citty, so
  *   a typed `--help` is a word to complete. `ork once -- <command>` skips
  *   citty's help scan, so a `--help` or `-h` of the command is the command's.
+ *   An argument error of a command with no subcommands prints its message
+ *   alone, without the help (specs/cli/list-filters.md).
  */
 
 import { clearGitLocalEnv } from "@krapht/ork-core";
@@ -60,6 +62,16 @@ if (argv[0] === COMPLETE_COMMAND) {
       process.exitCode = 1;
     }
   } else {
-    await runMain(main, { rawArgs: argv, showUsage: showHelp });
+    // runMain prints the help before the message of any argument error. A leaf
+    // command's error stands alone; help shows when asked, or for a group.
+    const wantsHelp = argv.some(arg => arg === "--help" || arg === "-h");
+    await runMain(main, {
+      rawArgs: argv,
+      showUsage: async (cmd, parent) => {
+        if (wantsHelp || cmd.subCommands !== undefined) {
+          await showHelp(cmd, parent);
+        }
+      },
+    });
   }
 }

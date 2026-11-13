@@ -9,16 +9,19 @@ and (for time and `--limit`) `ork logs`
 ([machinery](../../packages/core/src/list-filters/types.ts),
 [tables](../../packages/core/src/list-filters/tables.ts),
 [flags](../../packages/cli/src/list/flags.ts),
+[unknown flags](../../packages/cli/src/list/known-flags.ts),
+[shared sentences](../../packages/core/src/list-filters/refusals.ts),
 [output](../../packages/cli/src/list/print.ts),
-[the `--all` alias](../../packages/cli/src/list/all-alias.ts),
 [core tests](../../packages/core/test/list-filters.test.ts),
 [flag tests](../../packages/cli/test/list-flags.test.ts)). The server's list
 routes read the same tables, so the browser view's
 [filter bar](../ui/design-filter-bar.md) and the `ork mcp` list tools filter by
-the CLI's fields ([API](../server/api.md#list-routes)). Not built: a generic
-`--where` and operators, and store-side filtering
-([L337, L338](../gaps.md#limits)). Why:
-[RFC-017](../../rfcs/archived/RFC-017-list-filters.md) (Option A), and
+the CLI's fields ([API](../server/api.md#list-routes)). Also built: the refusals
+below (an unknown flag, one-line argument errors, a `--run` prefix, the `--for`
+and `--project` checks, `live` in `ps --json`). Not built: a generic `--where`
+and operators, store-side filtering ([L337, L338](../gaps.md#limits)), and the
+unknown-flag check on commands that are not lists ([L359](../gaps.md#limits)).
+Why: [RFC-017](../../rfcs/archived/RFC-017-list-filters.md) (Option A), and
 [ADR-088](../../decisions/ADR-088-list-filters.md).
 
 Eight commands list things. Each lists by one **field table**, and the same
@@ -30,7 +33,8 @@ words mean the same on every list: `--status`, `--project`, `--since`,
 - [The table](#the-table)
 - [Field types](#field-types)
 - [Flags every list takes](#flags-every-list-takes)
-- [Order, defaults and `--all`](#order-defaults-and---all)
+- [Order and defaults](#order-and-defaults)
+- [Refusals](#refusals)
 - [The lists](#the-lists)
 
 ## The table
@@ -88,11 +92,13 @@ machine's time zone, and a date that does not exist (`2026-13-45`) is refused.
   `--ids` with `--json` is an error. It is a handle for scripts:
   `ork resume $(ork ps --status failed --limit 1 --ids)`.
 - **`--limit`** shows at most that many, after the filter and the list's order.
-  It takes a positive whole number; `0`, `-1`, `abc` and `2.5` are errors. Only
-  `ork ps` has a default (20), and says so in `--help`; a script that wants
-  every id passes `--limit` large, since `ps --ids` is limited too. `usage` has
-  none.
-- **`--json`** prints the rows as JSON; with `ps` they are the stored records.
+  It takes a positive whole number in digits; `0`, `-1`, `abc`, `2.5` and `1e21`
+  are errors. Only `ork ps` has a default (20), and says so in `--help`; a
+  script that wants every id passes `--limit` large, since `ps --ids` is limited
+  too. `usage` has none.
+- **`--json`** prints the rows as JSON; with `ps` they are the stored records
+  plus `live`, the status the table shows (a running run whose process died says
+  `crashed`); `status` stays as stored, so a script reading it is unaffected.
 - **`--project`** (where a list spans projects: `ps`, `usage`, `decide`,
   `follow-ups list`, `worktrees list`) takes a registered project's id or root,
   or `all`; none is the project you are in. A project not registered is refused,
@@ -103,7 +109,7 @@ machine's time zone, and a date that does not exist (`2026-13-45`) is refused.
 
 A refusal says why on stderr, sets exit code 1 and prints no list.
 
-## Order, defaults and `--all`
+## Order and defaults
 
 **Order.** Filter, then the list's own order (newest first; due first, then
 waiting, for follow-ups; oldest first for decisions), then `--limit`.
@@ -114,14 +120,50 @@ waiting, for follow-ups; oldest first for decisions), then `--limit`.
 `--status all` or `--project all` widens. A follow-up `--status` shows what it
 names, whatever its default, so `--status done` lists the closed ones.
 
-**`--all` is deprecated.** It meant "every project" on `ps`, `usage` and
-`decide` and "the closed ones too" on `follow-ups list` and `feedback list`. It
-now stands for `--project all` on the first three and `--status all` on the
-other two, prints `--all is deprecated; use --project all.` (or `--status all`)
-once on stderr, and is left out of `--help` and Tab completion (its description
-starts `Internal:`). When both `--all` and the new flag are given the new flag
-wins, and the warning still prints. A later release removes it
-([L340](../gaps.md#limits)). `ork prune --all` is not a list and is unchanged.
+**`--all` is gone** from `ps`, `usage`, `decide`, `follow-ups list` and
+`feedback list` (it was `--project all` on the first three and `--status all` on
+the other two). It gets no special message: it is an unknown flag, as below.
+`prune --all`, `worktrees clean --all`, `relay list --all` and
+`feedback export --all` are not lists and are unchanged.
+
+## Refusals
+
+A list says what is wrong in one line on stderr, exits 1 and prints nothing on
+stdout.
+
+- **An unknown flag** is refused on the nine list commands (`ps`, `logs`,
+  `usage`, `decide`, `follow-ups list`, `feedback list`, `worktrees list`,
+  `agents list`, `projects`): ``Unknown flag `--since`.`` (`-x` for a one-letter
+  name). It is a citty plugin, `refuseUnknownFlags`, that runs before the
+  command: citty's parser is not strict and turns an unknown `--since 24h` into
+  `since: true` plus a positional, which `decide` would read as a run id. It
+  skips `help`, `h`, the command's own flags with their aliases, and spellings
+  (`run-id`, `runId`). It goes on leaf commands only: a parent such as
+  `ork worktrees` sees its subcommands' flags as unknown, so
+  `ork worktrees --bogus` and `wt` are not checked ([L359](../gaps.md#limits)).
+  `projects` has subcommands (`forget`, `move`), so the plugin skips it when the
+  first raw argument names one; `ork projects --bogus` is refused, but citty
+  prints help before the message ([L362](../gaps.md#limits)). citty's `runMain`
+  checks `instanceof` its own unexported `CLIError`, so the plugin takes one
+  from a forced failed `parseArgs` and sets its message; a plain `Error` would
+  print a stack.
+- **One line, no help.** An argument error on any leaf command (a wrong enum
+  value, a missing required flag, an unknown flag) prints only its message. Help
+  prints for `--help` or `-h`, and for a group with no command or an unknown one
+  (`ork follow-ups`, `ork nope`). The rule is the help printer `bin.ts` gives
+  citty's `runMain`: it prints nothing for a command with no subcommands.
+- **`--limit`** that is not a positive whole number written in digits:
+  ``--limit takes a positive whole number written in digits, not `1e21`.``
+  (core's `limitRefusal`; `0`, `-1`, `2.5` and `abc` read the same).
+- **`--project`** that is not registered:
+  ``No registered project `x`; registered: a, b.`` (`none` when there are none;
+  core's `unknownProjectRefusal`). `ork mcp` says the same words.
+- **`--run`** (`decide`, `feedback list`, `worktrees list`) takes a run id or a
+  unique start of it and filters by the full id; an unknown or ambiguous run is
+  refused with `findRun`'s message. One helper, `resolveRun`, serves all three.
+- **`follow-ups list --for project:<name>`** is checked against the registered
+  projects (a project's id is its name); `agent`, `me` and `person:<name>` are
+  not.
 
 ## The lists
 
@@ -141,7 +183,7 @@ wins, and the warning still prints. A later release removes it
   `--until` match the run's start;
   `ork ps --status failed --workflow build --since 7d --limit 5 --project all`
   filters by all four and cuts to five. `--ids` is limited too
-  ([L341](../gaps.md#limits)); `--json` prints the stored records.
+  ([L341](../gaps.md#limits)); `--json` prints the stored records and `live`.
 - **`ps --status`** takes the stored status and the live ones `ps` shows:
   `running`, `paused`, `crashed`, `succeeded`, `failed`, `budget_exhausted`,
   `quota_exhausted`, `timed_out`, `interrupted`. A lock or slot wait is

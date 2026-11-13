@@ -24,6 +24,7 @@ import {
   agentListArgs,
   formatAgent,
   listAgents,
+  refuseUnknownFlags,
 } from "../agents/manage.ts";
 import { exec, headWarning } from "../doctor/checks.ts";
 import { style, write, writeErr } from "../output.ts";
@@ -194,6 +195,7 @@ export const agents = defineCommand({
         name: "list",
         description: "Every agent, and where it comes from",
       },
+      plugins: [refuseUnknownFlags],
       args: agentListArgs,
       run: ({ args }) => {
         const catalog = catalogHere();

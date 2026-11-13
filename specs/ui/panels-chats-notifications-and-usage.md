@@ -61,7 +61,9 @@ the shared [filter bar](./design-filter-bar.md) on the `usage` list:
 **Since** (default `30d`; `7d`, `30d`, `90d` and `all` are suggestions, and any
 age or day works, whole days counting today) and **Until**; the values survive a
 change of layout, and a refused value shows the server's words. The bar shows
-the matching `ork usage` command and **Clear filter** while one is set.
+the matching `ork usage` command and **Clear filter** while one is set. The
+report's own CLI hint, when it covers every project, reads
+`ork usage --project all --since 30d` (`--all` no longer exists).
 
 - **Totals, hints, then spend over time:** one bar per day, or per week past 92
   days, up to today so an idle stretch shows, and hatched since that day or week

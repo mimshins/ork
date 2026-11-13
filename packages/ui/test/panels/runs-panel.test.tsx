@@ -332,6 +332,42 @@ describe("the Runs panel's filter bar", () => {
     expect(rowNames()).toHaveLength(1);
   });
 
+  it("shows the unfiltered list, the refusal and the plain command when the first filter is refused", async () => {
+    await openFiltered(
+      refusing("since", "--since takes an age or a day, not `bogus`.", []),
+    );
+    await userEvent.type(
+      await screen.findByRole("combobox", { name: "Since" }),
+      "bogus{Enter}",
+    );
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(
+      "--since takes an age or a day, not bogus.",
+    );
+    expect(screen.queryByText("Reading runs…")).toBeNull();
+    expect(rowNames()).toHaveLength(2);
+    screen.getByRole("button", { name: "Copy command (ork ps)" });
+  });
+
+  it("keeps the last good filter's command while a later one is refused", async () => {
+    await openFiltered(
+      refusing("since", "--since takes an age or a day, not `bogus`.", [
+        runView("bbb22222", "failed"),
+      ]),
+    );
+    await chooseStatus("failed");
+    await screen.findByText("1 run matches.");
+    await userEvent.type(
+      screen.getByRole("combobox", { name: "Since" }),
+      "bogus{Enter}",
+    );
+    await screen.findByRole("alert");
+    expect(rowNames()).toHaveLength(1);
+    screen.getByRole("button", {
+      name: "Copy command (ork ps --status failed)",
+    });
+  });
+
   it("clears the filter, and shows the stream's runs again", async () => {
     const { asked } = await openFiltered(() => [runView("bbb22222", "failed")]);
     await chooseStatus("failed");
