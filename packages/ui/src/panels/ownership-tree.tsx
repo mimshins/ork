@@ -10,14 +10,14 @@
  */
 
 import type { TreeNode, WorkflowGraph } from "@krapht/ork-server/client";
-import { type KeyboardEvent, useMemo, useState } from "react";
+import { type KeyboardEvent, useId, useMemo, useState } from "react";
 
-import { IconChevronDown, IconChevronRight } from "../components/icons.tsx";
 import { UnpricedTokens } from "../components/spend.tsx";
 import { StatusBadge } from "../components/status-badge.tsx";
 import { cliDescription } from "../components/tip.tsx";
 import { formatCost, type NodeFacts, nodeName } from "../graph/facts.ts";
 import { childrenOf, itemIndex, rowsOf } from "./monitor-model.ts";
+import { Chevron, NodeTableHead, useFolded } from "./node-table-head.tsx";
 import { nowLine, timeLine } from "./node-table.ts";
 
 import styles from "./monitor.module.css";
@@ -52,6 +52,8 @@ export const OwnershipTree = ({
   onNodeMenu: (id: string) => void;
 }) => {
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  const [folded, toggleFolded] = useFolded();
+  const treeId = useId();
   const [current, setCurrent] = useState<string | null>(selected);
   const [lastSelected, setLastSelected] = useState(selected);
   if (selected !== lastSelected) {
@@ -132,21 +134,21 @@ export const OwnershipTree = ({
   const nested = rows.some(({ node }) => node.children.length > 0);
 
   return (
-    <div className={styles["table"]}>
-      <div
-        aria-hidden="true"
-        className={styles["tableHead"]}
-      >
-        <span>Node</span>
-        <span className={styles["treeType"]}>Type</span>
-        <span>Status</span>
-        <span>Now</span>
-        <span className={styles["treeTime"]}>Time</span>
-        <span className={styles["treeCost"]}>Cost</span>
-      </div>
+    <div
+      className={styles["table"]}
+      data-folded={folded ? "" : undefined}
+    >
+      <NodeTableHead
+        count={rows.length}
+        folded={folded}
+        onToggle={toggleFolded}
+        treeId={treeId}
+      />
       <div
         aria-label="Ownership tree"
         className={styles["tree"]}
+        hidden={folded}
+        id={treeId}
         role="tree"
       >
         {rows.map(({ node, depth }, index) => {
@@ -225,8 +227,7 @@ export const OwnershipTree = ({
                         : undefined
                     }
                   >
-                    {canOpen && isOpen ? <IconChevronDown /> : null}
-                    {canOpen && !isOpen ? <IconChevronRight /> : null}
+                    {canOpen ? <Chevron open={isOpen} /> : null}
                   </span>
                 ) : null}
                 <span className={styles["treeId"]}>{node.id}</span>

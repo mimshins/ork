@@ -70,6 +70,15 @@
   text-align: start;
 }
 
+/* A select's chosen value stays on one line, cut with an ellipsis. */
+.value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .group:focus-within {
   --field-box-outline: var(--focus-width) solid var(--color-focus);
   --field-box-outline-offset: var(--focus-offset);

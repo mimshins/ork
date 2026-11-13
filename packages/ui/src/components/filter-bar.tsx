@@ -10,7 +10,7 @@
  */
 
 import type { ListName } from "@krapht/ork-server/client";
-import { useId, useRef, useState } from "react";
+import { type ReactNode, useId, useRef, useState } from "react";
 
 import { useListFields } from "../state/list-fields.ts";
 import { Button } from "./button.tsx";
@@ -49,6 +49,10 @@ export type FilterBarProps = {
   defaults?: Partial<Record<string, string>>;
   /** Extra suggestions for `text`, `for` and `project` fields, no counts. */
   suggestions?: Partial<Record<string, readonly Suggestion[]>>;
+  /** The panel's own fields (a local `About`), as more cells of the grid. */
+  extra?: ReactNode;
+  /** The panel's own buttons (`Reload`), at the end of the count's row. */
+  tools?: ReactNode;
 };
 
 const REFUSED =
@@ -76,6 +80,8 @@ export const FilterBar = ({
   summary,
   defaults = NO_DEFAULTS,
   suggestions = NO_SUGGESTIONS,
+  extra,
+  tools,
 }: FilterBarProps) => {
   const read = useListFields();
   const id = useId();
@@ -175,9 +181,15 @@ export const FilterBar = ({
               value={values[field.name]}
             />
           ))}
+          {extra}
         </div>
       ) : null}
-      <output className={styles["count"]}>{count}</output>
+      <div className={styles["status"]}>
+        <output className={styles["count"]}>{count}</output>
+        {tools === undefined ? null : (
+          <div className={styles["tools"]}>{tools}</div>
+        )}
+      </div>
       {error === null ? null : (
         <FilterAlert
           id={alertId}

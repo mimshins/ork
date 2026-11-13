@@ -50,43 +50,47 @@ export const WorktreesTools = ({
 }: ToolsProps) => {
   return (
     <div className={styles["tools"]}>
-      <div className={styles["toolsBar"]}>
-        <FilterBar
-          busy={updating}
-          error={refusal}
-          list="worktrees"
-          onChange={onFilter}
-          shown={items === null ? null : items.length}
-          suggestions={{ project: projects }}
-          summary={items === null ? "" : countWords(items)}
-          values={filter}
-        />
-      </div>
-      <div className={styles["toolsEnd"]}>
-        <Button
-          aria-label={
-            cleanBlocked === null ? undefined : `Clean merged…: ${cleanBlocked}`
-          }
-          cli="ork worktrees clean"
-          disabled={cleanBlocked !== null}
-          focusableWhenDisabled
-          onClick={onClean}
-          ref={cleanButton}
-          tip={
-            cleanBlocked === null ? undefined : `Clean merged…: ${cleanBlocked}`
-          }
-        >
-          Clean merged…
-        </Button>
-        <Button
-          cli="ork worktrees"
-          onClick={onReload}
-          tip="In the project's folder."
-          variant="ghost"
-        >
-          Reload
-        </Button>
-      </div>
+      <FilterBar
+        busy={updating}
+        error={refusal}
+        list="worktrees"
+        onChange={onFilter}
+        shown={items === null ? null : items.length}
+        suggestions={{ project: projects }}
+        summary={items === null ? "" : countWords(items)}
+        tools={
+          <>
+            <Button
+              aria-label={
+                cleanBlocked === null
+                  ? undefined
+                  : `Clean merged…: ${cleanBlocked}`
+              }
+              cli="ork worktrees clean"
+              disabled={cleanBlocked !== null}
+              focusableWhenDisabled
+              onClick={onClean}
+              ref={cleanButton}
+              tip={
+                cleanBlocked === null
+                  ? undefined
+                  : `Clean merged…: ${cleanBlocked}`
+              }
+            >
+              Clean merged…
+            </Button>
+            <Button
+              cli="ork worktrees"
+              onClick={onReload}
+              tip="In the project's folder."
+              variant="ghost"
+            >
+              Reload
+            </Button>
+          </>
+        }
+        values={filter}
+      />
     </div>
   );
 };

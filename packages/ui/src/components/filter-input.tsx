@@ -107,7 +107,7 @@ export const FilterInput = ({
       <Autocomplete.Portal>
         <Autocomplete.Positioner
           align="start"
-          className={styles["positioner"]}
+          className={`${styles["positioner"]} ${styles["suggestions"]}`}
           sideOffset={4}
         >
           <Autocomplete.Popup className={styles["popup"]}>

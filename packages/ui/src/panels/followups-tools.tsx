@@ -52,34 +52,32 @@ export const FollowUpsTools = ({
   return (
     <>
       <div className={styles["tools"]}>
-        <div className={styles["toolsBar"]}>
-          <FilterBar
-            busy={updating}
-            defaults={DEFAULTS}
-            error={refusal}
-            list="follow-ups"
-            onChange={onFilter}
-            shown={read === null ? null : rows.length}
-            suggestions={{
-              for: forSuggestions(rows),
-              project: projects.map(value => ({ value, label: value })),
-            }}
-            summary={read === null ? "" : summaryOf(rows)}
-            values={filter}
-          />
-        </div>
-        <div className={styles["toolsEnd"]}>
-          <Button
-            aria-label={
-              failed ? "Try again: reload follow-ups" : "Reload follow-ups"
-            }
-            cli="ork follow-ups list"
-            onClick={onReload}
-            variant="ghost"
-          >
-            {failed ? "Try again" : "Reload"}
-          </Button>
-        </div>
+        <FilterBar
+          busy={updating}
+          defaults={DEFAULTS}
+          error={refusal}
+          list="follow-ups"
+          onChange={onFilter}
+          shown={read === null ? null : rows.length}
+          suggestions={{
+            for: forSuggestions(rows),
+            project: projects.map(value => ({ value, label: value })),
+          }}
+          summary={read === null ? "" : summaryOf(rows)}
+          tools={
+            <Button
+              aria-label={
+                failed ? "Try again: reload follow-ups" : "Reload follow-ups"
+              }
+              cli="ork follow-ups list"
+              onClick={onReload}
+              variant="ghost"
+            >
+              {failed ? "Try again" : "Reload"}
+            </Button>
+          }
+          values={filter}
+        />
       </div>
       {read === null || read.checker.available ? null : (
         <p className={styles["alert"]}>

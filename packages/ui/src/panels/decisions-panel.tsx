@@ -68,6 +68,7 @@ export const DecisionsPanel = () => {
         open={open}
         projects={projectSuggestions}
         read={read}
+        runs={runs ?? []}
         values={filter.values}
         workflowOf={workflowOf}
       />

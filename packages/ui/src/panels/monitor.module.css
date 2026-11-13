@@ -183,8 +183,43 @@
 }
 
 .tree {
-  display: flex;
+  --monitor-tree-display: flex;
+
+  display: var(--monitor-tree-display);
   flex-direction: column;
+}
+
+.tree[hidden] {
+  --monitor-tree-display: none;
+}
+
+/* The head's first cell folds the table away, so the graph gets its room. */
+.tableFold {
+  --monitor-table-fold-text: inherit;
+  --monitor-table-fold-outline: none;
+
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--monitor-table-fold-text);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: var(--gap-tight);
+  letter-spacing: inherit;
+  min-height: var(--target-min);
+  outline: var(--monitor-table-fold-outline);
+  outline-offset: var(--focus-offset);
+  padding: 0;
+  text-transform: inherit;
+}
+
+.tableFold:hover {
+  --monitor-table-fold-text: var(--color-text);
+}
+
+.tableFold:focus-visible {
+  --monitor-table-fold-outline: var(--focus-width) solid var(--color-focus);
 }
 
 .treeRow {

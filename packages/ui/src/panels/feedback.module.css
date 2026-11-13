@@ -40,9 +40,8 @@
 }
 
 .tools {
-  align-items: flex-end;
   flex: none;
-  flex-wrap: wrap;
+  flex-direction: column;
 }
 
 .card {
@@ -69,22 +68,6 @@
 
 .panel[data-layout="wide"] .body {
   --feedback-columns: minmax(16rem, 2fr) minmax(22rem, 3fr);
-}
-
-.toolsBar {
-  flex: 1 1 16rem;
-  min-width: 0;
-}
-
-.toolsEnd {
-  --feedback-tools-end-gap: var(--gap);
-
-  align-items: center;
-  display: flex;
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-  gap: var(--feedback-tools-end-gap);
-  justify-content: flex-end;
 }
 
 .count,

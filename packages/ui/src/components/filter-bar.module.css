@@ -1,15 +1,15 @@
 /**
- * @file The list filter bar's look: a wrapping row of fields, the count line,
- *   the alert and the command. In a container narrower than 28rem the fields
- *   stack one per line, label above, full width, so nothing is cut at 200%
- *   zoom. The alert has its icon and words, so no state rests on color.
+ * @file The list filter bar's look: a grid of fields of one width (the last
+ *   row's cells don't stretch), the count line with the panel's own buttons at
+ *   its end, the alert and the command. In a container narrower than 28rem the
+ *   fields stack one per line, label above, full width, so nothing is cut at
+ *   200% zoom. The alert has its icon and words, so no state rests on color.
  */
 
 .bar {
   --filter-bar-gap: var(--gap);
   --filter-bar-row-gap: var(--gap-tight);
-  --filter-bar-field-min-width: 10rem;
-  --filter-bar-field-narrow-width: 7rem;
+  --filter-bar-field-min-width: 13rem;
   --filter-bar-count-text: var(--color-text-muted);
   --filter-bar-count-text-size: var(--text-small);
   --filter-bar-error-text: var(--color-danger-text);
@@ -23,25 +23,34 @@
 }
 
 .fields {
-  --filter-bar-fields-direction: row;
+  --filter-bar-fields-columns: repeat(
+    auto-fill,
+    minmax(var(--filter-bar-field-min-width), 1fr)
+  );
 
-  display: flex;
-  flex-direction: var(--filter-bar-fields-direction);
-  flex-wrap: wrap;
+  display: grid;
   gap: var(--filter-bar-gap);
+  grid-template-columns: var(--filter-bar-fields-columns);
 }
 
 .field {
-  --filter-bar-field-basis: var(--filter-bar-field-min-width);
-  --filter-bar-field-width: auto;
-
-  flex: 1 1 var(--filter-bar-field-basis);
   min-width: 0;
-  width: var(--filter-bar-field-width);
 }
 
-.field[data-narrow] {
-  --filter-bar-field-basis: var(--filter-bar-field-narrow-width);
+.status {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--filter-bar-gap);
+  justify-content: space-between;
+}
+
+.tools {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--filter-bar-gap);
+  margin-inline-start: auto;
 }
 
 .count {
@@ -86,12 +95,6 @@
 
 @container (width < 28rem) {
   .fields {
-    --filter-bar-fields-direction: column;
-  }
-
-  .field,
-  .field[data-narrow] {
-    --filter-bar-field-basis: auto;
-    --filter-bar-field-width: 100%;
+    --filter-bar-fields-columns: minmax(0, 1fr);
   }
 }

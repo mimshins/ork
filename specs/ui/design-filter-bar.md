@@ -105,10 +105,15 @@ carry no counts. (Decided: shown-only.)
 ## Layout, keys and names
 
 - **Where:** in the panel's tools card or tools row, first, so the filter reads
-  before the panel's own actions (Reload, Run workflow). A wrapping row; each
-  field `--filter-bar-field-min-width` wide, `since` and `until` narrower. In a
-  container below 28rem the fields stack one per line, label above, full width.
-  At 200% zoom it stacks; nothing is cut or scrolls sideways.
+  before the panel's own actions (Reload, Run workflow). A grid of fields of one
+  width, at least `--filter-bar-field-min-width` (13rem); the last row's fields
+  don't stretch. A panel's own field (Feedback's **About**) is one more cell of
+  the grid (`extra`), and its own buttons (Reload, Clean merged…) sit at the end
+  of the count line (`tools`). A select's value stays on one line, cut with an
+  ellipsis. In a container below 28rem the fields stack one per line, label
+  above, full width. At 200% zoom it stacks; nothing is cut or scrolls sideways.
+- **Suggestions:** an input's list opens only when it has something to show; a
+  field with none, or none matching what is typed, opens no empty box.
 - **Focus order:** the fields in the table's order, **Clear filter**, the
   command's copy button, then the panel's own tools. The alert, count line and
   command text are not tab stops, and an error never moves focus.
@@ -201,6 +206,10 @@ type FilterBarProps = {
   suggestions?: Partial<
     Record<string, readonly { value: string; label: string }[]>
   >;
+  /** The panel's own fields (a local `About`), as more cells of the grid. */
+  extra?: ReactNode;
+  /** The panel's own buttons (`Reload`), at the end of the count's row. */
+  tools?: ReactNode;
 };
 
 type FilterEmptyProps = {
@@ -223,14 +232,14 @@ Each panel's model passes its `list`; the bar goes first in its tools. Defaults
 and suggestions are the panel's, and the filter lasts for the page's life unless
 noted.
 
-| Panel      | `defaults`                          | `suggestions`                                          | Notes                                                                                                                             |
-| ---------- | ----------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| Runs       | the panel's current project         | `project`: registered projects and those of runs shown | still the 20 newest; `status` values include `paused` and `crashed`, the live statuses its rows show                              |
-| Decisions  | none                                | `workflow`, `run` (`4f2a1c · feature`), `project`      | the bar always shows; the `decisionFilter` preference keeps its values; the Monitor button sets `{ run }`; no "hidden" count      |
-| Follow-ups | `status`: `open`                    | `for`: each `project:<name>`, `person:<name>` present  | the old Status `Open` is `Default (open)`; a saved `open` is read as unset; the summary stays                                     |
-| Feedback   | `status`: `not dismissed`           | `workflow`, `run`                                      | its **About** select (`ork`, `workflow`, `project`) is not a table field: it stays beside the bar, unchanged                      |
-| Worktrees  | the panel's current project         | `project`                                              | cards still group by project                                                                                                      |
-| Usage      | `since`: `30d`; the panel's project | `project`                                              | replaces the 7, 30, 90 days or all select: `since` offers those as built-in suggestions; a saved `7` or `all` maps to `7d`, `all` |
+| Panel      | `defaults`                          | `suggestions`                                                                                                            | Notes                                                                                                                               |
+| ---------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Runs       | the panel's current project         | `project`: registered projects and those of runs shown; `workflow`: each workflow of the runs                            | still the 20 newest; `status` values include `paused` and `crashed`, the live statuses its rows show                                |
+| Decisions  | none                                | `run` (`4f2a1c · feature`): those with open decisions first, then the runs the panel knows; their `workflow`s; `project` | the bar always shows; the `decisionFilter` preference keeps its values; the Monitor button sets `{ run }`; no "hidden" count        |
+| Follow-ups | `status`: `open`                    | `for`: each `project:<name>`, `person:<name>` present                                                                    | the old Status `Open` is `Default (open)`; a saved `open` is read as unset; the summary stays                                       |
+| Feedback   | `status`: `not dismissed`           | `workflow`, `run`                                                                                                        | its **About** select (`ork`, `workflow`, `project`) is not a table field: it is a cell of the bar's grid (`extra`), applied locally |
+| Worktrees  | the panel's current project         | `project`                                                                                                                | cards still group by project                                                                                                        |
+| Usage      | `since`: `30d`; the panel's project | `project`                                                                                                                | replaces the 7, 30, 90 days or all select: `since` offers those as built-in suggestions; a saved `7` or `all` maps to `7d`, `all`   |
 
 ## Tokens
 

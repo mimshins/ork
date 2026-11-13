@@ -44,28 +44,12 @@
 }
 
 .tools {
-  align-items: flex-end;
-  flex-wrap: wrap;
+  flex-direction: column;
 }
 
 .card {
   flex-direction: column;
   min-width: 0;
-}
-
-.toolsBar {
-  flex: 1 1 16rem;
-  min-width: 0;
-}
-
-.toolsEnd {
-  --worktrees-tools-end-gap: var(--gap);
-
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--worktrees-tools-end-gap);
-  margin-inline-start: auto;
 }
 
 .count {

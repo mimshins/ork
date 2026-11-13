@@ -87,20 +87,31 @@ export const isJsonContext = (context: string): boolean =>
 /** The runs' workflows by run id, for the decisions' own runs. */
 export type WorkflowOf = (run: string) => string | undefined;
 
+/** A run the panel knows of, as the bar's suggestions read it. */
+export type KnownRun = { id: string; workflow: string };
+
 /**
- * What the filter bar suggests: each workflow, and each run with its workflow
- * (`4f2a1c · feature`), among the open decisions. Help only; any text applies.
+ * What the filter bar suggests: the runs with open decisions first, then every
+ * other run the panel knows of (newest first), each with its workflow (`4f2a1c
+ * · feature`), and each of their workflows once. Help only; any text applies.
+ * With no open decision it still has the runs to offer.
  */
 export const suggestionsOf = (
   open: readonly DecisionRecord[],
   workflowOf: WorkflowOf,
   projects: readonly Suggestion[],
+  known: readonly KnownRun[] = [],
 ): {
   workflow: Suggestion[];
   run: Suggestion[];
   project: readonly Suggestion[];
 } => {
-  const runs = [...new Set(open.map(({ runId }) => runId))];
+  const runs = [
+    ...new Set([
+      ...open.map(({ runId }) => runId),
+      ...known.map(({ id }) => id),
+    ]),
+  ];
   const workflows = [
     ...new Set(runs.flatMap(run => workflowOf(run) ?? [])),
   ].toSorted((a, b) => a.localeCompare(b));

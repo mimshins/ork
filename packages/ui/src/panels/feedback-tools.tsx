@@ -51,34 +51,34 @@ export const FeedbackTools = ({
   onReload,
 }: ToolsProps) => (
   <div className={styles["tools"]}>
-    <div className={styles["toolsBar"]}>
-      <FilterBar
-        busy={updating}
-        defaults={DEFAULTS}
-        error={refusal}
-        list="feedback"
-        onChange={onValues}
-        shown={items === null ? null : count}
-        suggestions={suggestionsOf(items ?? [])}
-        summary={items === null ? "" : itemsWords(count)}
-        values={filter.values}
-      />
-    </div>
-    <Select
-      label="About"
-      onChange={onAbout}
-      options={ABOUT_OPTIONS}
-      value={filter.about}
+    <FilterBar
+      busy={updating}
+      defaults={DEFAULTS}
+      error={refusal}
+      extra={
+        <Select
+          label="About"
+          onChange={onAbout}
+          options={ABOUT_OPTIONS}
+          value={filter.about}
+        />
+      }
+      list="feedback"
+      onChange={onValues}
+      shown={items === null ? null : count}
+      suggestions={suggestionsOf(items ?? [])}
+      summary={items === null ? "" : itemsWords(count)}
+      tools={
+        <Button
+          cli="ork feedback list"
+          onClick={onReload}
+          variant="ghost"
+        >
+          {failed ? "Try again" : "Reload"}
+        </Button>
+      }
+      values={filter.values}
     />
-    <div className={styles["toolsEnd"]}>
-      <Button
-        cli="ork feedback list"
-        onClick={onReload}
-        variant="ghost"
-      >
-        {failed ? "Try again" : "Reload"}
-      </Button>
-    </div>
   </div>
 );
 

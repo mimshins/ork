@@ -53,7 +53,7 @@ export const Select = ({
         className={fields["control"]}
         data-invalid={invalid ? "" : undefined}
       >
-        <BaseSelect.Value />
+        <BaseSelect.Value className={fields["value"]} />
         <BaseSelect.Icon className={fields["icon"]}>
           <IconChevronDown />
         </BaseSelect.Icon>

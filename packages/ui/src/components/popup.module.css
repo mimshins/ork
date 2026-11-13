@@ -213,3 +213,17 @@
     --popup-item-text: GrayText;
   }
 }
+
+/*
+ * A text field's suggestions only help, so with none to show (none given, or
+ * none matching what is typed) no empty box opens over the fields below.
+ */
+.suggestions {
+  --popup-suggestions-display: block;
+
+  display: var(--popup-suggestions-display);
+}
+
+.suggestions[data-empty] {
+  --popup-suggestions-display: none;
+}

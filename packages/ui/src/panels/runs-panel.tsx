@@ -57,6 +57,14 @@ export const RunsPanel = () => {
       ),
     [projects, all],
   );
+  // Each workflow the runs have, once: help for the Workflow field.
+  const workflows = useMemo(
+    () =>
+      [...new Set(all.map(({ workflow }) => workflow))]
+        .toSorted((a, b) => a.localeCompare(b))
+        .map(value => ({ value, label: value })),
+    [all],
+  );
   const { filtered } = answer;
   // A refused first filter has no rows of its own: the list stays what it was.
   const shown = filtered ? (answer.rows ?? runs) : runs;
@@ -76,7 +84,7 @@ export const RunsPanel = () => {
               void state.runFilter.setValue(next);
             }}
             shown={answer.rows?.length ?? null}
-            suggestions={{ project: suggestions }}
+            suggestions={{ project: suggestions, workflow: workflows }}
             values={values}
           />
         </div>

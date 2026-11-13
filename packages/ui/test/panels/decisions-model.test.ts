@@ -88,6 +88,25 @@ describe("the filter bar's help", () => {
     });
   });
 
+  it("still offers the runs it knows of with no open decision", () => {
+    const known = [
+      { id: "r3", workflow: "review" },
+      { id: "r1", workflow: "feature" },
+    ];
+    const { workflow, run } = suggestionsOf([], workflowOf, [], known);
+    expect(workflow.map(({ value }) => value)).toEqual(["feature", "review"]);
+    expect(run.map(({ value }) => value)).toEqual(["r3", "r1"]);
+  });
+
+  it("puts the runs that are asking first, each once", () => {
+    const known = [
+      { id: "r3", workflow: "review" },
+      { id: "r1", workflow: "feature" },
+    ];
+    const { run } = suggestionsOf([open("d1", "r1")], workflowOf, [], known);
+    expect(run.map(({ value }) => value)).toEqual(["r1", "r3"]);
+  });
+
   it("says how many are open with no filter", () => {
     expect(openLine(4)).toBe("4 open decisions.");
     expect(openLine(1)).toBe("1 open decision.");
