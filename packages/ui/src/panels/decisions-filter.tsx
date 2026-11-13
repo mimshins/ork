@@ -38,6 +38,23 @@ export const UnreachableNotice = () => (
   </p>
 );
 
+/**
+ * A read that failed for a reason other than a refused value: said once under
+ * the bar, while the last rows stay shown. A live region, as the bar's alert.
+ */
+export const ReadFailed = ({ error }: { error: string }) => (
+  <p
+    className={styles["readFailed"]}
+    data-read-failed=""
+    role="alert"
+  >
+    <IconAlert aria-hidden="true" />
+    <span>
+      <CodeText text={`Could not read decisions: ${error}`} />
+    </span>
+  </p>
+);
+
 /** What shows when no card does: nothing waits, or the filter hides what does. */
 export const DecisionsEmpty = ({
   values,

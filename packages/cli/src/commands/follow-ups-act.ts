@@ -21,17 +21,23 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
+import { refuseExtraArguments } from "../extra-arguments.ts";
 import {
   fail,
   idArg,
+  eachTarget,
   inProject,
   project,
   withFollowUp,
+  withFollowUps,
 } from "../follow-ups/command.ts";
 import { plain, style, write, writeErr } from "../output.ts";
 import { withStore } from "../store.ts";
 
-/** `done`, `drop` or `reopen`: one change of status, or why it can't be. */
+/**
+ * `done`, `drop` or `reopen`: one change of status for each id given (space or
+ * comma separated), or why one can't be; any refusal changes none.
+ */
 export const closing = (
   action: FollowUpAction,
   description: string,
@@ -39,18 +45,34 @@ export const closing = (
 ) =>
   defineCommand({
     meta: { name: action, description },
-    args: { id: idArg, project },
+    args: {
+      id: {
+        ...idArg,
+        description:
+          "A follow-up's id, or a prefix of one; several allowed, space or comma separated",
+      },
+      project,
+    },
     run: ({ args }) =>
-      withFollowUp(args, (store, _place, followUp) => {
-        const changed = changeFollowUp(store, followUp, action);
-        if (!changed.ok) {
-          fail(changed.error);
-          return;
-        }
-        write(
-          `${style("green", "✓")} ${verb} ${changed.followUp.id}: ${plain(changed.followUp.title)}`,
-        );
-      }),
+      withFollowUps(
+        args,
+        followUp => {
+          const allowed = followUpActions(followUp)[action];
+          return allowed.ok ? undefined : allowed.error;
+        },
+        (store, _place, followUps) => {
+          for (const followUp of followUps) {
+            const changed = changeFollowUp(store, followUp, action);
+            if (!changed.ok) {
+              fail(changed.error);
+              continue;
+            }
+            write(
+              `${style("green", "✓")} ${verb} ${changed.followUp.id}: ${plain(changed.followUp.title)}`,
+            );
+          }
+        },
+      ),
   });
 
 export const due = defineCommand({
@@ -62,26 +84,36 @@ export const due = defineCommand({
   args: {
     target: {
       type: "positional",
-      description: "A follow-up's id (or a prefix), or a run id",
+      description:
+        "A follow-up's id (or a prefix), or a run id; several allowed, space or comma separated",
       required: true,
     },
     project,
   },
   run: ({ args }) =>
     inProject(args.project, (store, place) => {
-      const one = findFollowUp(store, place.root, args.target);
-      const run = findRun(store, args.target, "");
-      const runId = run.ok ? run.run.id : args.target;
-      const key = one.ok ? one.followUp.id : runId;
-      const marked = markDue(store, place.root, key);
-      if (marked.length === 0) {
-        fail(
-          `Nothing waiting under \`${args.target}\`: give a waiting follow-up's id, or a run that left some.`,
-        );
-        return;
-      }
-      for (const f of marked) {
-        write(`${style("green", "✓")} due ${f.id}: ${plain(f.title)}`);
+      // Each target is a follow-up's id, else a run's; none is marked until all resolve.
+      const waiting = eachTarget(args._, target => {
+        const one = findFollowUp(store, place.root, target);
+        const run = findRun(store, target, "");
+        const runId = run.ok ? run.run.id : target;
+        const named = one.ok
+          ? [one.followUp]
+          : store.followUps(place.root).filter(f => f.from.run === runId);
+        const ready = named.filter(f => f.status === "waiting");
+        return ready.length === 0
+          ? {
+              ok: false,
+              error: `Nothing waiting under \`${target}\`: give a waiting follow-up's id, or a run that left some.`,
+            }
+          : { ok: true, followUps: ready };
+      });
+      for (const f of waiting ?? []) {
+        for (const marked of markDue(store, place.root, f.id)) {
+          write(
+            `${style("green", "✓")} due ${marked.id}: ${plain(marked.title)}`,
+          );
+        }
       }
     }),
 });
@@ -92,6 +124,7 @@ export const post = defineCommand({
     description:
       "Post a message drafted for GitHub, as a comment through your own gh, with --confirm; without it, show what would be posted",
   },
+  plugins: [refuseExtraArguments],
   args: {
     id: idArg,
     confirm: {
@@ -138,6 +171,7 @@ export const published = defineCommand({
     description:
       "Record that this run published a pull request or branch (a workflow step calls it): its follow-ups wait on it, and the ones it took are done",
   },
+  plugins: [refuseExtraArguments],
   args: {
     ref: {
       type: "positional",

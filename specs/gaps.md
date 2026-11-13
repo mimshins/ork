@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L368, and the next chore is
+closes it. Ids are never reused: the next limit is L371, and the next chore is
 C16 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -436,6 +436,20 @@ Found closing the list QA follow-ups (list filters):
   has subcommands, so citty shows its help and then the unknown-flag line,
   unlike the other list commands, which print one line. Closing it needs the
   check to run before citty's help (see L359).
+- **L368 · Tab completion offers only the first id of a multi-id `follow-ups`
+  command.** `done`, `drop`, `reopen` and `due` take several ids, but the
+  completer fills the first positional only, not the second and later ones.
+- **L369 · Some commands still accept extra words.** `refuseExtraArguments` is
+  applied per command: `decide` (it takes a trailing choice word), `validate`,
+  `setup`, `worktrees`, `once`, `chat`, `relay`, `run` and `follow-ups add` take
+  trailing words on purpose, and `feedback triage` and `feedback export` declare
+  no positional, so `ork feedback export b` still ignores `b`. citty 0.2.2 has
+  no hook to apply the check to every command; a new command must add the plugin
+  itself.
+- **L370 · The `due` summary line says "still running" for an unrecorded run.**
+  `ork run --follow-ups due` with nothing left reads "N due ones are taken by a
+  run still running" even when each is held as "not started yet"; the per-id
+  skip lines above it say which.
 
 ## Chores
 

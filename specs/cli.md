@@ -46,6 +46,19 @@ start `Internal:`), and `ork --help` lists the commands in groups
 Every command takes `--plain` (or `ORK_PLAIN=1`): no color, no redrawn prompts
 ([terminal](./cli/terminal.md)).
 
+A command that takes one positional refuses a second with
+``Unexpected argument `b`.`` (one stderr line, exit 1, nothing changed). The
+citty plugin `refuseExtraArguments`
+([code](../packages/cli/src/extra-arguments.ts)) does it, applied per command
+like `refuseUnknownFlags`, since citty 0.2.2 has no hook to apply it to all:
+`follow-ups show | post | published | list`, `pause`, `continue`, `attach`,
+`stop`, `resume`,
+`feedback show | note | accept | dismiss | restore | apply | split | publish | import`
+and `projects forget | move`. Not covered ([gaps](./gaps.md)): `decide` (a
+trailing choice word), `validate`, `setup`, `worktrees`, `once`, `chat`,
+`relay`, `run`, `follow-ups add`, which take trailing words, and
+`feedback triage | export`, which declare no positional.
+
 Every command that lists (`ps`, `usage`, `decide --list`, `follow-ups list`,
 `feedback list`, `worktrees list`, `agents list`, `projects`, and `logs` for
 time) filters by one field table, with the same `--status`, `--project`,
@@ -94,7 +107,7 @@ ork feedback triage [--yes] | split <item>   # merge items about the same proble
 ork feedback publish <item> [--hide-names]   # share an item about Ork with its maintainers: redacted, previewed, then y/N, with your own gh
 ork feedback export [--all] [-o <file>] | import <file>  # move feedback records as JSON lines
 ork follow-ups list [--status s|all] [--for <for>] [--kind k] [--due d] [--project p|all] [--limit n] [--ids] [--json] | show <id> | add <title> [--for --kind --due --body --where --ref --to --channel --text --step]  # what shipped changes left for later
-ork follow-ups done <id> | drop <id> | reopen <id> | due <id|run> | post <id> --confirm | published <ref>  # close, drop, bring back, make due, post a github draft, record a publish
+ork follow-ups done <id>… | drop <id>… | reopen <id>… | due <id|run>… | post <id> --confirm | published <ref>  # close, drop, bring back, make due (several ids, space or comma separated; a bad one stops the call), post a github draft, record a publish
 ork upgrade [--check] [--yes]    # a newer version? upgrade the way Ork was installed, after asking
 ork ui [--port <n>] [--no-open]  # the local server (127.0.0.1:4417) and its page; opens the running one
 ork mcp [--expects <version>]    # Ork's tools for Claude Code over stdio (MCP): read, check, start; never decide

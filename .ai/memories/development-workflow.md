@@ -37,3 +37,12 @@ AI or agent attribution line. Do not bypass it with `--no-verify`.
   `packages/nodes/src/claude.ts` and `packages/ui/src/panels/logs-model.ts`: a
   change there goes into a new module (`description.ts`, `claude-plan.ts`,
   `session-line.ts`), not the file.
+- citty turns an unknown flag into a boolean and pushes its value into `_`, so
+  on a command with `refuseExtraArguments` but not `refuseUnknownFlags`,
+  `--bogus value` fails as "Unexpected argument `value`." Test the unknown-flag
+  path with `orkRaw`, not a plain call.
+- `client.call` turns a rejected fetch into `{ok:false, error:"No answer: …"}`,
+  the same path as an HTTP 500, so one failed-read test covers both.
+- oxlint's `max-dependencies` of 10 is why `feedback.ts` wires the plugin as
+  `{...cmd, plugins}` and `useDecisionsRead` holds the read-failure check; put
+  new imports in a sibling module rather than raising the limit.

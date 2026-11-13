@@ -119,19 +119,22 @@ agent follow-up. `ork follow-ups list` shows them." It never reaches the
 `isLive(runId)` and refuses an id whose `takenBy` is another run that is live
 ("`<id>`: taken by run `<run>`, still running"), so the CLI and any caller share
 the check; one taken by a finished, failed or crashed run can be taken again.
-`availableDue` is the same filter over the due `agent` follow-ups: `due` skips
-the held ones, naming each on stderr, and with nothing left exits 1 with the
-no-due message plus the reason. A run is live as `ork ps` decides it: stored as
-running with its process alive (a recycled pid keeps a dead run live, the same
-limit as `ps`). A run marks its follow-ups before its first stored record
-(preflight, or a detached start, takes seconds), so the predicate answers
-`undefined` for a run the store does not know yet, and core holds such a mark
-for two minutes (`UNRECORDED_GRACE_MS`, counted from the follow-up's
-`updatedAt`); a run that never gets recorded frees its follow-ups when the
-window ends ([L365](../gaps/qa-bd542734-limits.md)). A run the store knows as
-finished, failed or crashed is not live. `ork run --detach` runs the check in
-the parent, before the run folder is made, and marks only in the run it starts.
-`ork follow-ups show` and `list` print `takenBy`.
+For a run the store does not know yet, with the mark under two minutes old, the
+note reads "not started yet; free in under 2 minutes" instead (`heldNote` in
+core, used by `takeFollowUps` and by the `due` skip line). That is what a start
+that fails its preflight leaves behind. `availableDue` is the same filter over
+the due `agent` follow-ups: `due` skips the held ones, naming each on stderr,
+and with nothing left exits 1 with the no-due message plus the reason. A run is
+live as `ork ps` decides it: stored as running with its process alive (a
+recycled pid keeps a dead run live, the same limit as `ps`). A run marks its
+follow-ups before its first stored record (preflight, or a detached start, takes
+seconds), so the predicate answers `undefined` for a run the store does not know
+yet, and core holds such a mark for two minutes (`UNRECORDED_GRACE_MS`, counted
+from the follow-up's `updatedAt`); a run that never gets recorded frees its
+follow-ups when the window ends ([L365](../gaps/qa-bd542734-limits.md)). A run
+the store knows as finished, failed or crashed is not live. `ork run --detach`
+runs the check in the parent, before the run folder is made, and marks only in
+the run it starts. `ork follow-ups show` and `list` print `takenBy`.
 
 The run is recorded as each follow-up's `takenBy`. A run that **publishes**
 tells Ork so with `ork follow-ups published <ref>` (called by `build`'s

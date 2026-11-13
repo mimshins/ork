@@ -14,6 +14,7 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
+import { refuseExtraArguments } from "../extra-arguments.ts";
 import {
   fail,
   idArg,
@@ -56,7 +57,7 @@ export const followUps = defineCommand({
         name: "list",
         description: "List the follow-ups, due first, then by who they are for",
       },
-      plugins: [refuseUnknownFlags],
+      plugins: [refuseUnknownFlags, refuseExtraArguments],
       args: filterArgs(followUpListTable),
       run: async ({ args }) => {
         const given: Readonly<Record<string, unknown>> = args;
@@ -91,6 +92,7 @@ export const followUps = defineCommand({
         description:
           "Show a follow-up whole, with its draft and its steps to copy",
       },
+      plugins: [refuseExtraArguments],
       args: { id: idArg, project, json },
       run: ({ args }) =>
         withFollowUp(args, (_store, _place, followUp) => {

@@ -5,8 +5,8 @@
  *   the internal ones, enum and driver values, and the scripts for each shell.
  */
 
-import type { ArgsDef, CommandDef } from "citty";
-import { describe, expect, it } from "vitest";
+import { type ArgsDef, type CommandDef, runCommand } from "citty";
+import { describe, expect, it, vi } from "vitest";
 
 import { SHELL_SCRIPTS } from "../src/completion/scripts.ts";
 import {
@@ -168,6 +168,31 @@ describe("ork completion", () => {
 
   it("says the shell it takes", async () => {
     expect(await descriptionOf(completion)).toContain("zsh, bash, fish");
+  });
+
+  it("ignores an EPIPE on stdout and rethrows any other error", async () => {
+    // Take the guard `writeOut` registers instead of letting it register.
+    const guards: ((error: NodeJS.ErrnoException) => void)[] = [];
+    const on = vi.spyOn(process.stdout, "on").mockImplementation((_, fn) => {
+      guards.push(fn);
+      return process.stdout;
+    });
+    const write = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    try {
+      await runCommand(completion, { rawArgs: ["zsh"] });
+    } finally {
+      on.mockRestore();
+      write.mockRestore();
+    }
+    const [guard] = guards;
+    expect(guards).toHaveLength(1);
+    const fail =
+      (code: string): (() => void) =>
+      () => {
+        guard?.(Object.assign(new Error(code), { code }));
+      };
+    expect(fail("EPIPE")).not.toThrow();
+    expect(fail("EIO")).toThrow("EIO");
   });
 });
 

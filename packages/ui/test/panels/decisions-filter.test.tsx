@@ -52,6 +52,8 @@ type Server = {
   asked: string[];
   /** A value it refuses, with its words. */
   refuse?: { workflow: string; words: string };
+  /** A failure that is not a refused value: the read breaks, with these words. */
+  fail?: string;
 };
 
 const decisionsRoute =
@@ -65,6 +67,11 @@ const decisionsRoute =
     server.asked.push(query.toString());
     const workflow = query.get("workflow");
     const run = query.get("run");
+    if (server.fail !== undefined) {
+      return new Response(JSON.stringify({ error: server.fail }), {
+        status: 500,
+      });
+    }
     if (workflow !== null && workflow === server.refuse?.workflow) {
       return new Response(JSON.stringify({ error: server.refuse.words }), {
         status: 400,
@@ -196,6 +203,33 @@ describe("the filter bar", () => {
     expect(
       screen.getByRole("button", { name: "Copy command (ork decide --list)" }),
     ).toBeDefined();
+  });
+
+  it("says a failed read under the bar and keeps the last list", async () => {
+    const opened = await open();
+    await apply("Workflow", "review");
+    expect(asked()).toEqual(["d4"]);
+    opened.server.fail = "connection reset";
+    await act(async () => {
+      opened.overview.send("decisions", [...LIST, decision("d5", "ccc33333")]);
+      await Promise.resolve();
+    });
+    const alert = await screen.findByText(
+      "Could not read decisions: connection reset",
+    );
+    expect(
+      alert.closest<HTMLElement>("[role=alert]")?.dataset["readFailed"],
+    ).toBe("");
+    expect(asked()).toEqual(["d4"]);
+  });
+
+  it("leaves a refused value to the bar, with no read-failed line", async () => {
+    const words = "--workflow takes a workflow of this project, not nope.";
+    await open({ refuse: { workflow: "nope", words } });
+    await apply("Workflow", "nope");
+    await screen.findByRole("alert");
+    expect(document.querySelector("[data-read-failed]")).toBeNull();
+    expect(screen.queryByText(/Could not read decisions/u)).toBeNull();
   });
 
   it("keeps the last good filter's command while a later one is refused", async () => {

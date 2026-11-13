@@ -7,6 +7,7 @@
 import { openStore } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
+import { refuseExtraArguments } from "../extra-arguments.ts";
 import { style, write, writeErr } from "../output.ts";
 import { relocateProject } from "../project/register.ts";
 
@@ -33,6 +34,7 @@ export const forget = defineCommand({
     name: "forget",
     description: "Forget a registered project; its files and runs are kept",
   },
+  plugins: [refuseExtraArguments],
   args: { id },
   run: ({ args }) => {
     if (withStore(store => store.forgetProject(args.id))) {
@@ -50,6 +52,7 @@ export const move = defineCommand({
     description:
       "Point a registered project at its clone's new place, after moving or renaming it",
   },
+  plugins: [refuseExtraArguments],
   args: {
     id,
     path: {

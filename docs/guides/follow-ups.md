@@ -64,6 +64,7 @@ Every follow-up has an id; the first six characters are enough (`4f2a1c`).
 ork follow-ups list            # due first, then waiting; --status all adds done and dropped
 ork follow-ups show 4f2a1c     # one whole, with its draft or its steps to copy
 ork follow-ups done 4f2a1c     # a message: you sent it. Use drop when it no longer applies
+ork follow-ups drop 4f2a1c 9c1e07  # several ids (or a,b); one bad id changes none
 ork follow-ups reopen 4f2a1c   # bring a done or dropped one back
 ```
 
@@ -102,8 +103,7 @@ run it yourself, then mark the follow-up done.
 A follow-up `for: project:se-frontend` goes into that registered project's list,
 under its own [rule](./project-rules.md#where-follow-ups-are-kept). If a run of
 `se-frontend` is live, its leading agent node is also told, as a notice, and
-acts on it only if it fits its task. An unknown project is refused, with the
-names of the registered ones
+acts on it only if it fits its task. An unknown project is refused
 ([working across projects](./working-across-projects.md)).
 
 ## Having an agent do one
@@ -120,15 +120,16 @@ stops the run and changes nothing. The run is recorded as the one that took them
 `--follow-ups` fills the workflow's `brief` input, so the workflow needs one:
 `start` and `plan` have it, a fresh `ork init` project has none. One that a run
 still going has taken is refused ("taken by run 3f9a, still running"), and `due`
-skips it; one a finished, failed or crashed run took can be taken again.
+skips it; one a finished, failed or crashed run took can be taken again. A start
+that fails its preflight holds them up to 2 minutes ("not started yet; free in
+under 2 minutes").
 
-To take every agent follow-up due in this project, use
-`ork run start --follow-ups due`. It checks pull requests first, as
-`ork follow-ups list` does, and skips follow-ups for someone else. With nothing
-due, the run does not start (with `--detach` too). Mix it with ids
-(`--follow-ups due,6b7c8d`): each is taken once. A bare `--follow-ups` says it
-needs ids or `due`. Tab after it offers `due` and the open agent follow-ups with
-their titles ([tab completion](./tab-completion.md)).
+To take every agent follow-up due here, use `ork run start --follow-ups due`. It
+checks pull requests first, as `ork follow-ups list` does, and skips follow-ups
+for someone else. With nothing due, the run does not start (with `--detach`
+too). Mix it with ids (`--follow-ups due,6b7c8d`): each is taken once. Tab after
+it offers `due` and the open agent follow-ups
+([tab completion](./tab-completion.md)).
 
 ## When one comes due
 
@@ -158,9 +159,9 @@ ork follow-ups add "Tell Dana the API moved" --for person:Dana --channel slack \
 
 A message needs `--text` (its draft), and `--to` says who it is to (default: the
 person). For `--channel github`, `--to` is the issue or pull request URL, and
-`add` refuses one without it. `--step` is `text` or `text :: command`, and a
-step needs its text. Without `--kind`, a person's is a message, an agent's or a
-project's a change, and the rest a task.
+`add` refuses one without it. `--step` is `text` or `text :: command`. Without
+`--kind`, a person's is a message, an agent's or a project's a change, and the
+rest a task.
 
 ## What Ork keeps, and where
 
@@ -175,11 +176,10 @@ each one to a **file** in the repository or a **GitHub issue**.
 > it for what only you should read. The same holds for the issues a `github`
 > store creates in a public repository.
 
-The text of every follow-up, from a session or added by hand, is scrubbed first
-with the same redactor feedback uses (secrets, paths, emails and hosts; a secret
-in your `env:` too), so an address or a host in a draft or a command may be
-taken out; check a draft before you send it. Ork stores no credential: `gh` is
-your own login ([accounts](./accounts.md)).
+The text of every follow-up is scrubbed first with the redactor feedback uses
+(secrets, paths, emails and hosts; a secret in your `env:` too), so an address
+or a host in a draft may be taken out: check it before you send it. Ork stores
+no credential: `gh` is your own login ([accounts](./accounts.md)).
 
 ## In `build`
 

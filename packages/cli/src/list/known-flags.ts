@@ -8,8 +8,9 @@
  *   one-line message and exit code 1 are the same as for a wrong enum value.
  */
 
-import { type CittyPlugin, parseArgs } from "citty";
+import type { CittyPlugin } from "citty";
 
+import { argumentError } from "../argument-error.ts";
 import { argsOf, resolved } from "../command-tree.ts";
 
 /** Names citty reads without the command declaring them. */
@@ -18,22 +19,6 @@ const BUILT_IN = new Set(["_", "help", "h"]);
 /** A flag's name without its spelling: `run-id`, `runId` and `run_id` agree. */
 const spelling = (name: string): string =>
   name.replaceAll(/[-_]/gu, "").toLowerCase();
-
-/**
- * An error citty's `runMain` takes for an argument error (its `CLIError`, which
- * it does not export): a failed parse gives one, and it takes `message`.
- */
-const argumentError = (message: string): Error => {
-  try {
-    parseArgs([], { x: { type: "string", required: true } });
-  } catch (error) {
-    if (error instanceof Error) {
-      error.message = message;
-      return error;
-    }
-  }
-  return new Error(message);
-};
 
 /** How the flag is typed: `--since`, or `-x` for a one-letter name. */
 const written = (name: string): string =>

@@ -10,7 +10,11 @@ import type { DecisionRecord } from "@krapht/ork-server/client";
 import { use, useEffect, useMemo, useRef, useState } from "react";
 import { useValue } from "react-containerized-state";
 
-import { type FilterValues, isFiltered } from "../components/filter-model.ts";
+import {
+  type FilterValues,
+  isFiltered,
+  refusalOf,
+} from "../components/filter-model.ts";
 import { useAppState } from "../state/context.tsx";
 import { WorkspaceContext } from "../workspace/context.ts";
 import { endingOf } from "./decisions-model.ts";
@@ -93,6 +97,14 @@ export const useDecisionsRead = (
     busy: filtered && !answered,
     /** The server's refusal of the filter, if it refused. */
     error: filtered && answered ? read.error : null,
+    /** A failed read that is not a refused value: the bar does not say it. */
+    failure:
+      filtered &&
+      answered &&
+      read.error !== null &&
+      refusalOf("decisions", read.error) === null
+        ? read.error
+        : null,
   };
 };
 

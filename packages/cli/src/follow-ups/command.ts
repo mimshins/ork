@@ -118,3 +118,67 @@ export const withFollowUp = (
     }
     await body(store, place, found.followUp);
   });
+
+/** What `eachTarget`'s `resolve` gives for one word: the follow-ups, or why not. */
+export type Resolved =
+  | { ok: true; followUps: FollowUp[] }
+  | { ok: false; error: string };
+
+/**
+ * The follow-ups several words name (`done a b`, `drop a,b`: a comma splits a
+ * word too), each once, or `undefined` after saying every word that failed and
+ * making the command exit 1; the caller then changes nothing.
+ */
+export const eachTarget = (
+  words: readonly string[],
+  resolve: (word: string) => Resolved,
+): FollowUp[] | undefined => {
+  const named = [
+    ...new Set(
+      words
+        .flatMap(word => word.split(","))
+        .map(word => word.trim())
+        .filter(word => word !== ""),
+    ),
+  ];
+  if (named.length === 0) {
+    fail("Give a follow-up id.");
+    return undefined;
+  }
+  const found = new Map<string, FollowUp>();
+  let failed = false;
+  for (const word of named) {
+    const one = resolve(word);
+    if (one.ok) for (const f of one.followUps) found.set(f.id, f);
+    else {
+      fail(one.error);
+      failed = true;
+    }
+  }
+  return failed ? undefined : [...found.values()];
+};
+
+/**
+ * Like `withFollowUp`, for every id in `args._` (space or comma separated):
+ * `refused` says why one may not be changed, and any refusal stops the call.
+ */
+export const withFollowUps = (
+  args: { _: string[]; project?: string | undefined },
+  refused: (followUp: FollowUp) => string | undefined,
+  body: (
+    store: EventStore,
+    place: ProjectPlace,
+    followUps: FollowUp[],
+  ) => Promise<void> | void,
+): Promise<void> =>
+  inProject(args.project, async (store, place) => {
+    const followUps = eachTarget(args._, word => {
+      const found = findFollowUp(store, place.root, word);
+      if (!found.ok) return found;
+      const why = refused(found.followUp);
+      return why === undefined
+        ? { ok: true, followUps: [found.followUp] }
+        : { ok: false, error: why };
+    });
+    if (followUps !== undefined) await body(store, place, followUps);
+  });

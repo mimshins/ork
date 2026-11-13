@@ -238,6 +238,26 @@
   flex: none;
 }
 
+.readFailed {
+  --decisions-read-failed-text: var(--color-danger-text);
+  --decisions-read-failed-text-size: var(--text-small);
+  --decisions-read-failed-gap: var(--gap-tight);
+  --decisions-read-failed-padding: var(--gap);
+
+  align-items: flex-start;
+  color: var(--decisions-read-failed-text);
+  display: flex;
+  font-size: var(--decisions-read-failed-text-size);
+  gap: var(--decisions-read-failed-gap);
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: var(--decisions-read-failed-padding);
+}
+
+.readFailed svg {
+  flex: none;
+}
+
 .optionText {
   --decisions-option-text-gap: var(--gap-hair);
 

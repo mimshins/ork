@@ -27,20 +27,31 @@ export type RunLive = (runId: string) => boolean | undefined;
 export const UNRECORDED_GRACE_MS = 2 * 60_000;
 
 /**
- * Whether another, live run has taken `f`: it is not free to take again. A run
- * the store does not know counts as live while the mark is recent, so a run
- * that fails its preflight frees its follow-ups when the window ends.
+ * Why `f` is held by the run that took it, as the end of `taken by run <id>,
+ * <note>`; `undefined` when it is free. A run the store does not know counts as
+ * live while the mark is recent, so a run that fails its preflight frees its
+ * follow-ups when the window ends.
  */
+export const heldNote = (
+  f: FollowUp,
+  isLive: RunLive,
+  now: number,
+): string | undefined => {
+  if (f.takenBy === undefined) return undefined;
+  const live = isLive(f.takenBy);
+  if (live !== undefined) return live ? "still running" : undefined;
+  return now - Date.parse(f.updatedAt) < UNRECORDED_GRACE_MS
+    ? "not started yet; free in under 2 minutes"
+    : undefined;
+};
+
+/** Whether another run holds `f`: it is not free to take again. */
 const heldByLive = (
   f: FollowUp,
   run: string,
   isLive: RunLive,
   now: number,
-): boolean => {
-  if (f.takenBy === undefined || f.takenBy === run) return false;
-  const live = isLive(f.takenBy);
-  return live ?? now - Date.parse(f.updatedAt) < UNRECORDED_GRACE_MS;
-};
+): boolean => f.takenBy !== run && heldNote(f, isLive, now) !== undefined;
 
 /**
  * The project's due `agent` follow-ups no live run has taken (`ids`), and those
@@ -81,15 +92,20 @@ export const takeFollowUps = (
 ): { taken: FollowUp[]; refused: string[] } => {
   const taken: FollowUp[] = [];
   const refused: string[] = [];
+  const at = Date.parse(now());
   for (const id of taking.ids) {
     const f = rows.followUp(taking.project, id);
     if (f === undefined) refused.push(`${id}: there is no such follow-up`);
     else if (f.for !== "agent") refused.push(`${id}: it is for ${f.for}`);
     else if (f.status === "done" || f.status === "dropped") {
       refused.push(`${id}: it is ${f.status}`);
-    } else if (heldByLive(f, taking.run, taking.isLive, Date.parse(now()))) {
-      refused.push(`${id}: taken by run ${f.takenBy}, still running`);
-    } else taken.push(put(rows, f, taking.run, now()));
+    } else {
+      // One read of `isLive`: a run ending between two reads would print "undefined".
+      const note =
+        f.takenBy === taking.run ? undefined : heldNote(f, taking.isLive, at);
+      if (note === undefined) taken.push(put(rows, f, taking.run, now()));
+      else refused.push(`${id}: taken by run ${f.takenBy}, ${note}`);
+    }
   }
   return { taken, refused };
 };

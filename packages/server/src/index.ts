@@ -14,6 +14,7 @@ export * from "./contract-worktrees.ts";
 export * from "./contract-update.ts";
 export * from "./graph.ts";
 export * from "./guards.ts";
+export { listFields } from "./list-fields-routes.ts";
 export * from "./mcp.ts";
 export * from "./server.ts";
 export * from "./sign-in-codes.ts";

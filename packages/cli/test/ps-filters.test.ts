@@ -120,8 +120,11 @@ const RUNS: Seed[] = [
 
 type Ran = { out: string; err: string; code: number | string | undefined };
 
-/** Runs `ork <command> <args>` and what it printed. */
-const ork = async (command: "ps" | "logs", ...args: string[]): Promise<Ran> => {
+/**
+ * Starts `ork <command> <args>`: `done` is what it printed once it ends, and
+ * `printed()` what it has written to stdout so far.
+ */
+const start = (command: "ps" | "logs", ...args: string[]) => {
   let out = "";
   let err = "";
   const stdout = vi.spyOn(process.stdout, "write").mockImplementation(text => {
@@ -133,18 +136,25 @@ const ork = async (command: "ps" | "logs", ...args: string[]): Promise<Ran> => {
     return true;
   });
   process.exitCode = undefined;
-  try {
-    await (command === "ps"
-      ? runCommand(ps, { rawArgs: args })
-      : runCommand(logs, { rawArgs: args }));
-  } finally {
-    stdout.mockRestore();
-    stderr.mockRestore();
-  }
-  const code = process.exitCode;
-  process.exitCode = undefined;
-  return { out, err, code };
+  const done = (async (): Promise<Ran> => {
+    try {
+      await (command === "ps"
+        ? runCommand(ps, { rawArgs: args })
+        : runCommand(logs, { rawArgs: args }));
+    } finally {
+      stdout.mockRestore();
+      stderr.mockRestore();
+    }
+    const code = process.exitCode ?? undefined;
+    process.exitCode = undefined;
+    return { out, err, code };
+  })();
+  return { done, printed: (): string => out };
 };
+
+/** Runs `ork <command> <args>` and what it printed. */
+const ork = (command: "ps" | "logs", ...args: string[]): Promise<Ran> =>
+  start(command, ...args).done;
 
 /** The ids `ork ps <args> --ids` prints. */
 const ids = async (...args: string[]): Promise<string> =>
@@ -342,11 +352,6 @@ const finishLater = (store: Store): void => {
 
 const seqOf = (line: string): number => Number(/"seq":(\d+)/u.exec(line)?.[1]);
 
-const sleep = (ms: number): Promise<void> =>
-  new Promise(resolve => {
-    setTimeout(resolve, ms);
-  });
-
 // Known limit: followRun reads the stored events twice (the replay slice, then
 // followEvents), so an event stored between the two reads would print past the
 // limit. A test can't time that without a seam, so none does.
@@ -376,7 +381,9 @@ describe("ork logs", () => {
         home: tmpHome(),
       },
     );
-    await sleep(30);
+    await vi.waitFor(() => {
+      expect(printed).toHaveLength(2);
+    });
     finishLater(store);
     await done;
     expect(printed.map(line => seqOf(line))).toEqual([3, 4, 5, 6, 7]);
@@ -385,10 +392,12 @@ describe("ork logs", () => {
 
   it("does the same through `ork logs --follow --limit`", async () => {
     const store = liveRun();
-    const ran = ork("logs", "L1", "--follow", "--json", "--limit", "2");
-    await sleep(100);
+    const ran = start("logs", "L1", "--follow", "--json", "--limit", "2");
+    await vi.waitFor(() => {
+      expect(ran.printed().trim().split("\n")).toHaveLength(2);
+    });
     finishLater(store);
-    const { out } = await ran;
+    const { out } = await ran.done;
     expect(
       out
         .trim()

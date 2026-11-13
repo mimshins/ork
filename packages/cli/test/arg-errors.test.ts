@@ -45,6 +45,40 @@ describe("an argument error, as a process", () => {
     },
   );
 
+  // Every command that takes a fixed number of words, given its words and one more.
+  it.each([
+    ["follow-ups", "show", "a"],
+    ["follow-ups", "post", "a"],
+    ["follow-ups", "published", "a"],
+    ["follow-ups", "list"],
+    ["pause", "a"],
+    ["continue", "a"],
+    ["attach", "a"],
+    ["stop", "a"],
+    ["resume", "a"],
+    ["feedback", "show", "a"],
+    ["feedback", "note", "-m", "x", "a", "b"],
+    ["feedback", "accept", "a"],
+    ["feedback", "dismiss", "a"],
+    ["feedback", "restore", "a"],
+    ["feedback", "apply", "a"],
+    ["feedback", "split", "a"],
+    ["feedback", "publish", "a"],
+    ["feedback", "import", "a"],
+    ["projects", "forget", "a"],
+    ["projects", "move", "a", "b"],
+  ])("refuses a word too many after %j", (...args) => {
+    const ran = ork(...args, "extra");
+    expect(ran.code).toBe(1);
+    expect(ran.out).toBe("");
+    expect(ran.err.trim()).toBe("Unexpected argument `extra`.");
+  });
+
+  it("still takes trailing words where a command is built for them", () => {
+    const ran = ork("validate", "a.ork.yaml", "b.ork.yaml");
+    expect(ran.err).not.toContain("Unexpected argument");
+  });
+
   it("says what is missing", () => {
     expect(ork("prune").err).toContain("Missing required argument");
   });

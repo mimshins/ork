@@ -16,14 +16,22 @@ ork follow-ups list [--status s|all] [--for <for>] [--kind k] [--due d] [--proje
 ork follow-ups show <id> [--json]                     # one whole: its draft and its steps, to copy
 ork follow-ups add <title> [--for …] [--kind …] [--due …] [--body …] [--where <file>]… [--ref …]
                    [--to … --channel … --text …] [--step "text :: command"]… [--json]
-ork follow-ups done <id> | drop <id> | reopen <id>    # done on a message means sent
-ork follow-ups due <id|run>                           # a waiting one, or all of a run's, due now
+ork follow-ups done <id>… | drop <id>… | reopen <id>…  # done on a message means sent
+ork follow-ups due <id|run>…                           # a waiting one, or all of a run's, due now
 ork follow-ups post <id> [--confirm]                  # a github-channel draft, as a comment, only with --confirm
 ork follow-ups published <ref>                        # inside a run: what it left now waits on <ref>
 ```
 
 - **Ids** are prefixes: a unique one is enough. An unknown or ambiguous one says
   so and names the candidates.
+- **`done`, `drop`, `reopen` and `due`** take several ids, space or comma
+  separated (a follow-up's id or prefix; `due` also a run id), and are
+  all-or-nothing: each is resolved and its action checked first, and if any id
+  is unknown or its action not allowed, nothing changes, one error line per bad
+  id goes to stderr and the exit code is 1. A repeated id, or an id and its
+  prefix, is acted on once; each success prints one line
+  (`✓ dropped <id>: <title>`). The other commands that take one id refuse a
+  second ``Unexpected argument `b`.`` ([the CLI](../cli.md)).
 - **`add`** defaults to `--for me`, `--due now`, and a kind by `--for`
   (`message` for a person, `change` for an agent or a project, `task`
   otherwise). `--text` with `--to` (default: the person's name) makes a

@@ -281,3 +281,37 @@ export const fakeRegistry = (
 export const codeOf = (
   answer: { ok: true; data: { code: string } } | { ok: false },
 ): string => (answer.ok ? answer.data.code : "");
+
+/**
+ * A finished Claude session on node `n` of a run, costing `costUsd`, for the
+ * usage ledger.
+ */
+export const spend = (
+  fixture: TestServer,
+  runId: string,
+  costUsd: number,
+): void => {
+  fixture.store.append(runId, {
+    type: "node.event",
+    id: "n",
+    event: {
+      type: "session.finished",
+      outcome: {
+        subtype: "success",
+        sessionId: "s",
+        report: null,
+        text: "",
+        usage: {
+          costUsd,
+          inputTokens: 1,
+          outputTokens: 1,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          turns: 1,
+          durationMs: 1,
+        },
+        errors: [],
+      },
+    },
+  });
+};

@@ -14,6 +14,7 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
+import { refuseExtraArguments } from "../extra-arguments.ts";
 import { style, write, writeErr } from "../output.ts";
 import { registeredProjects } from "../project/place.ts";
 import {
@@ -63,6 +64,7 @@ export const feedback = defineCommand({
     list,
     show: defineCommand({
       meta: { name: "show", description: "Show an item and its records" },
+      plugins: [refuseExtraArguments],
       args: { item: itemArg, json },
       run: ({ args }) =>
         withItem(args.item, (store, item) => {
@@ -80,6 +82,7 @@ export const feedback = defineCommand({
         description:
           "Note how a run or one of its nodes went; it joins the feedback",
       },
+      plugins: [refuseExtraArguments],
       args: {
         run: {
           type: "positional",
@@ -121,6 +124,7 @@ export const feedback = defineCommand({
         description:
           "Accept an item; with --lesson, every later session of its workflow reads it",
       },
+      plugins: [refuseExtraArguments],
       args: {
         item: itemArg,
         lesson: {
@@ -161,17 +165,19 @@ export const feedback = defineCommand({
           for (const line of rest) write(`  ${line}`);
         }),
     }),
-    apply,
+    // Wired here, not in their files, which are at the import limit.
+    apply: { ...apply, plugins: [refuseExtraArguments] },
     triage,
-    split,
-    publish,
+    split: { ...split, plugins: [refuseExtraArguments] },
+    publish: { ...publish, plugins: [refuseExtraArguments] },
     export: exportFeedback,
-    import: importFeedback,
+    import: { ...importFeedback, plugins: [refuseExtraArguments] },
     dismiss: defineCommand({
       meta: {
         name: "dismiss",
         description: "Dismiss an item: it leaves the list, and stays dismissed",
       },
+      plugins: [refuseExtraArguments],
       args: { item: itemArg },
       run: ({ args }) =>
         withItem(args.item, (store, item) => {
@@ -184,6 +190,7 @@ export const feedback = defineCommand({
         name: "restore",
         description: "Bring a dismissed item back to the list, as new",
       },
+      plugins: [refuseExtraArguments],
       args: { item: itemArg },
       run: ({ args }) =>
         withItem(args.item, (store, item) => {

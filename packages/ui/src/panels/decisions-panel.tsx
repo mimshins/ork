@@ -14,6 +14,7 @@ import { DecisionCard } from "./decision-card.tsx";
 import { DecisionsBar } from "./decisions-bar.tsx";
 import {
   DecisionsEmpty,
+  ReadFailed,
   UnreachableNotice,
   useUnreachable,
 } from "./decisions-filter.tsx";
@@ -46,6 +47,7 @@ export const DecisionsPanel = () => {
   const projectSuggestions = useProjectSuggestions(open);
   const read = useDecisionsRead(filter.values, open);
   const shown = read.rows;
+  const failure = read.failure;
   const { panel, onFocus } = useKeptFocus(
     shown.map(({ id }) => id).join("\n"),
     "[data-decision]",
@@ -72,6 +74,7 @@ export const DecisionsPanel = () => {
         values={filter.values}
         workflowOf={workflowOf}
       />
+      {failure === null ? null : <ReadFailed error={failure} />}
       {shown.length === 0 ? (
         <DecisionsEmpty
           onClear={() => {

@@ -27,13 +27,15 @@ shows no Project field. A refused first filter shows the stream's open decisions
 under the alert, not an empty panel. A filter is read from `GET /api/decisions`
 with the fields (read again when the stream's list changes), keeps the last list
 while a refused value shows the server's words, and says "3 decisions match."
-aloud; with none set the panel shows the stream's open decisions and the bar
-says how many are open. **Clear filter** and the matching `ork decide --list`
-command show while one is set; a filter that leaves none shows "No decisions
-match the filter." The `decisionFilter` preference keeps the values; the Monitor
-button sets `{ run }`. A filter narrows the panel only: the badge, notifications
-and `ork decide` count all. What follows is the earlier two-select design, kept
-for its rules about the badge and the preference.
+aloud; a read that fails for any other reason (the network, a server error) also
+keeps the last list and shows `Could not read decisions: <error>` as an alert
+under the bar; with none set the panel shows the stream's open decisions and the
+bar says how many are open. **Clear filter** and the matching
+`ork decide --list` command show while one is set; a filter that leaves none
+shows "No decisions match the filter." The `decisionFilter` preference keeps the
+values; the Monitor button sets `{ run }`. A filter narrows the panel only: the
+badge, notifications and `ork decide` count all. What follows is the earlier
+two-select design, kept for its rules about the badge and the preference.
 
 Above the cards, when the open decisions come from **more than one run**, or a
 filter is set (so a stale one can always be cleared). Two selects, **Workflow**
@@ -106,6 +108,7 @@ Copy, exact:
 - Fallback: `Could not render this as Markdown: showing the text as written.`
 - Non-link target: `ADR-068 (decisions/ADR-068-document-field.md)`.
 - Image: `image: diagram of the flow`.
+- Failed read (not a refused value): `Could not read decisions: <error>`.
 
 ## When `ork ui` is unreachable
 
@@ -152,6 +155,8 @@ tokens, each declared on its base rule
   (`--color-border-strong`), `max-height` (`60vh`), `min-height` (`8lh`).
 - `--decisions-filter-*`: `gap` (`--gap`), `field-min-width` (`10rem`), the
   count line's `text` (`--color-text-muted`) and `text-size` (`--text-small`).
+- `--decisions-read-failed-*`: `text` (`--color-danger-text`), `text-size`
+  (`--text-small`), `gap` (`--gap-tight`), `padding` (`--gap`).
 
 Forced colors: the quote bar, a code block's edge and the document region's edge
 take `CanvasText`, by token. Reduced motion: nothing animates in these pieces

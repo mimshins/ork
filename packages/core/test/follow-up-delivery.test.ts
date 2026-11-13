@@ -28,12 +28,14 @@ import {
   followUpStore,
   type GhResult,
   type GhRunner,
+  heldNote,
   markDue,
   type NewFollowUp,
   openStore,
   postFollowUpMessage,
   recordPublished,
   type RunEvent,
+  type RunLive,
   startFollowUpChecks,
   takeFollowUps,
 } from "../src/index.ts";
@@ -575,6 +577,14 @@ const unknown = (): undefined => undefined;
 const soon = (): string => new Date(Date.now() + 60_000).toISOString();
 const later = (): string => new Date(Date.now() + 3 * 60_000).toISOString();
 
+/** `heldNote` of the follow-up `id`, for a liveness answer and a clock. */
+const noteOf =
+  (store: EventStore, id: string) =>
+  (isLive: RunLive, now: number): string | undefined => {
+    const f = store.followUp(HERE, id);
+    return f === undefined ? "no such follow-up" : heldNote(f, isLive, now);
+  };
+
 describe("a follow-up a live run took", () => {
   it("is refused by an explicit take, until that run is no longer live", async () => {
     const { store, one } = await heldByLive1();
@@ -618,8 +628,19 @@ describe("a follow-up a live run took", () => {
       soon,
     );
     expect(refused.refused).toEqual([
-      `${one}: taken by run live1, still running`,
+      `${one}: taken by run live1, not started yet; free in under 2 minutes`,
     ]);
+  });
+
+  it("is noted as running, not started yet, or free (heldNote)", async () => {
+    const { store, one } = await heldByLive1();
+    const note = noteOf(store, one);
+    expect(note(live1, Date.now())).toBe("still running");
+    expect(note(unknown, Date.parse(soon()))).toBe(
+      "not started yet; free in under 2 minutes",
+    );
+    expect(note(unknown, Date.parse(later()))).toBeUndefined();
+    expect(note(never, Date.now())).toBeUndefined();
   });
 
   it("is not held against the run that took it", async () => {

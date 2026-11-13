@@ -18,6 +18,7 @@ import {
 import { DRIVER_IDS } from "@krapht/ork-integrations";
 import { defineCommand } from "citty";
 
+import { refuseExtraArguments } from "../extra-arguments.ts";
 import { style, write, writeErr } from "../output.ts";
 import { runWorkflowFile } from "../run/workflow.ts";
 import {
@@ -46,6 +47,7 @@ export * from "./decide-list.ts";
 
 export const stop = defineCommand({
   meta: { name: "stop", description: "Stop a live run, or one of its nodes" },
+  plugins: [refuseExtraArguments],
   args: {
     run: {
       type: "positional",
@@ -102,6 +104,7 @@ export const resume = defineCommand({
     description:
       "Continue a run that didn't succeed (stopped, failed or crashed): finished nodes keep their results",
   },
+  plugins: [refuseExtraArguments],
   args: {
     run: {
       type: "positional",

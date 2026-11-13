@@ -10,6 +10,7 @@ import {
   availableDue,
   type EventStore,
   type GhRunner,
+  heldNote,
   newRunId,
   runGh,
   takeFollowUps,
@@ -125,13 +126,17 @@ export const prepareFollowUps = async (
   // `refreshDue` answers only those that just came due; every due one counts.
   if (values.includes(DUE)) await refreshDue(store, project, writeErr, gh);
   const isLive = runIsLive(store);
+  // One clock for `availableDue` and the notes below.
+  const stamp = new Date().toISOString();
   const { ids: due, held } = values.includes(DUE)
-    ? availableDue(store, project, isLive, runId)
+    ? availableDue(store, project, isLive, runId, () => stamp)
     : { ids: [], held: [] };
   // Two `--follow-ups due` runs at once: the second leaves what the first took.
+  const at = Date.parse(stamp);
   for (const f of held) {
+    const note = heldNote(f, isLive, at) ?? "still running";
     writeErr(
-      `${FLAG} ${DUE}: skipped ${f.id}, taken by run ${f.takenBy}, still running.`,
+      `${FLAG} ${DUE}: skipped ${f.id}, taken by run ${f.takenBy}, ${note}.`,
     );
   }
   if (named.length === 0 && due.length === 0) {

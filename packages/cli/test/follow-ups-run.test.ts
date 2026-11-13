@@ -317,7 +317,7 @@ describe("a follow-up marked by a run the store does not know yet", () => {
     const second = await prepared(w, ["due"]);
     expect(second.taking).toBeUndefined();
     expect(second.lines[0]).toBe(
-      `--follow-ups due: skipped ${one.id}, taken by run ${first.taking?.runId}, still running.`,
+      `--follow-ups due: skipped ${one.id}, taken by run ${first.taking?.runId}, not started yet; free in under 2 minutes.`,
     );
     expect(w.store.followUp(w.dir, one.id)?.takenBy).toBe(first.taking?.runId);
     markedMinutesAgo(w, one.id, 3);
@@ -332,7 +332,7 @@ describe("a follow-up marked by a run the store does not know yet", () => {
     const first = await prepared(w, [one.id]);
     const again = await prepared(w, [one.id]);
     expect(again.lines).toEqual([
-      `--follow-ups: ${one.id}: taken by run ${first.taking?.runId}, still running`,
+      `--follow-ups: ${one.id}: taken by run ${first.taking?.runId}, not started yet; free in under 2 minutes`,
     ]);
   });
 });

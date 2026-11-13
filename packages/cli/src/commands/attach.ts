@@ -7,6 +7,7 @@
 import { type EventStore, findRun } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
+import { refuseExtraArguments } from "../extra-arguments.ts";
 import { createTerminalHuman, type TerminalIO } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
 import { attachRun } from "../runs/attach.ts";
@@ -78,6 +79,7 @@ export const attach = defineCommand({
     description:
       "Follow a run and the runs it called, and answer their questions here; Ctrl-C detaches",
   },
+  plugins: [refuseExtraArguments],
   args: {
     run: {
       type: "positional",

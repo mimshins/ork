@@ -17,6 +17,7 @@ import {
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
+import { refuseExtraArguments } from "../extra-arguments.ts";
 import { style, write, writeErr } from "../output.ts";
 import { continueRefusal } from "./in-a-run.ts";
 
@@ -58,6 +59,7 @@ export const pause = defineCommand({
     name: "pause",
     description: "Pause a live run, or one node, before its next tool call",
   },
+  plugins: [refuseExtraArguments],
   args,
   run: ({ args: given }) =>
     ask(
@@ -75,6 +77,7 @@ export const continueRun = defineCommand({
     name: "continue",
     description: "Let a paused run, or one paused node, go on",
   },
+  plugins: [refuseExtraArguments],
   args,
   run: async ({ args: given }) => {
     const refused = continueRefusal();

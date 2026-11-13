@@ -12,6 +12,7 @@ import {
   finished,
   liveRun,
   openGate,
+  spend,
   startTestServer,
   type TestServer,
 } from "./fixtures.ts";
@@ -39,6 +40,12 @@ const withRuns = async (more = 0): Promise<OpenMcp> => {
   for (let i = 0; i < more; i += 1) liveRun(fixture, `ccc0000${i}`);
   mcp = openMcp({ version: "9.9.9", home: fixture.home, start: false });
   return mcp;
+};
+
+/** A finished session of `runId` in the ledger. */
+const spendOn = (runId: string, costUsd: number): void => {
+  if (fixture === undefined) throw new Error("No fixture");
+  spend(fixture, runId, costUsd);
 };
 
 const call = (name: string, args: unknown = {}) => {
@@ -102,6 +109,20 @@ describe("ork mcp's tools", () => {
       text: expect.stringContaining("--status takes one of") as unknown,
       isError: true,
     });
+  });
+
+  it("answers usage filtered over seeded sessions", async () => {
+    await withRuns();
+    spendOn("aaa11111", 0.5);
+    const one = { totals: { sessions: 1 } };
+    const none = { totals: { sessions: 0 } };
+    expect(await parsed("usage")).toMatchObject(one);
+    expect(
+      await parsed("usage", { since: "24h", workflow: "demo" }),
+    ).toMatchObject(one);
+    expect(await parsed("usage", { workflow: "gone" })).toMatchObject(none);
+    expect(await parsed("usage", { since: "2999-01-01" })).toMatchObject(none);
+    expect(await parsed("usage", { until: "2000-01-01" })).toMatchObject(none);
   });
 
   it("refuses an unregistered project in the CLI's words, on runs, usage and decisions", async () => {

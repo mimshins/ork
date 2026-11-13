@@ -27,6 +27,7 @@ import {
   finished,
   liveRun,
   openGate,
+  spend,
   startTestServer,
   temp,
   type TestServer,
@@ -122,6 +123,13 @@ describe("GET /api/runs filters", () => {
     const server = await seeded();
     expect(await idsOf(server, "/api/runs")).toHaveLength(4);
     expect(await idsOf(server, "/api/runs?limit=1")).toEqual(["ddd44444"]);
+    for (let i = 0; i < 18; i += 1) {
+      liveRun(server, `eee${String(i).padStart(5, "0")}`);
+    }
+    const newest = await idsOf(server, "/api/runs");
+    expect(newest).toHaveLength(20);
+    expect(newest).not.toContain("aaa11111");
+    expect(await idsOf(server, "/api/runs?limit=22")).toHaveLength(22);
   });
 
   it("refuses a wrong value in the CLI's words", async () => {
@@ -147,14 +155,27 @@ describe("GET /api/decisions, /api/usage filters", () => {
 
   it("takes an age or a day, and still an ISO time, for since and until", async () => {
     const server = await seeded();
-    for (const query of [
-      "since=24h",
-      "since=30d&until=2999-01-01",
-      "since=all",
-      "since=2000-01-01T00:00:00.000Z&until=2999-01-01T00:00:00.000Z",
-    ]) {
+    spend(server, "aaa11111", 0.5);
+    const sessions = async (query: string): Promise<number> =>
+      z
+        .object({ totals: z.object({ sessions: z.number() }) })
+        .parse(await (await server.get(`/api/usage?${query}`)).json()).totals
+        .sessions;
+    // A session ended just now: it is in what these ask for, and out of the rest.
+    for (const [query, count] of [
+      ["since=24h", 1],
+      ["since=30d", 1],
+      ["since=all", 1],
+      ["since=30d&until=2999-01-01", 1],
+      ["since=2000-01-01", 1],
+      ["since=2000-01-01T00:00:00.000Z&until=2999-01-01T00:00:00.000Z", 1],
+      ["until=2000-01-01", 0],
+      ["since=2999-01-01", 0],
+      ["since=2999-01-01T00:00:00.000Z", 0],
+      ["since=30d&until=2000-01-01", 0],
+    ] as const) {
       // oxlint-disable-next-line no-await-in-loop -- one request at a time
-      expect((await server.get(`/api/usage?${query}`)).status).toBe(200);
+      expect([query, await sessions(query)]).toEqual([query, count]);
     }
     expect((await server.get("/api/usage?since=yesterday")).status).toBe(400);
     expect((await server.get("/api/usage?since=0d")).status).toBe(400);
@@ -213,6 +234,34 @@ describe("GET /api/feedback filters", () => {
     expect(await titles("?run=aaa11111&workflow=demo")).toHaveLength(2);
     expect(await titles("?status=dismissed")).toEqual([]);
     expect(await titles("?workflow=gone")).toEqual([]);
+  });
+
+  it("filters by severity and by status, dismissed items included on all", async () => {
+    const server = await seeded();
+    for (const [text, severity] of [
+      ["Slow", "low"],
+      ["Wrong", "high"],
+      ["Odd", "high"],
+    ] as const) {
+      server.store.append(
+        "aaa11111",
+        humanNoteEvent({ text, workflow: "demo", kind: "bug", severity }),
+      );
+    }
+    const titles = async (query: string) =>
+      (await titlesAt(server, `/api/feedback${query}`)).toSorted();
+    for (const item of server.store
+      .feedbackItems({ all: true })
+      .filter(each => each.title === "Odd")) {
+      server.store.setFeedbackStatus(item.id, "dismissed");
+    }
+    expect(await titles("?severity=high")).toEqual(["Odd", "Wrong"]);
+    expect(await titles("?severity=low")).toEqual(["Slow"]);
+    expect(await titles("?severity=medium")).toEqual([]);
+    expect(await titles("?status=dismissed")).toEqual(["Odd"]);
+    expect(await titles("?status=new")).toEqual(["Slow", "Wrong"]);
+    expect(await titles("?status=all")).toEqual(["Odd", "Slow", "Wrong"]);
+    expect(await titles("?status=new&severity=high")).toEqual(["Wrong"]);
   });
 });
 

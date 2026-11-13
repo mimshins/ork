@@ -454,6 +454,104 @@ describe("closing follow-ups", () => {
   });
 });
 
+/** Adds one waiting follow-up per title, and gives their ids in order. */
+const addWaiting = async (s: Setup, ...titles: string[]): Promise<string[]> => {
+  for (const title of titles) {
+    // oxlint-disable-next-line no-await-in-loop -- each add reads the store the last one wrote
+    await ork("add", title, "--for", "me", "--due", "after-deploy");
+  }
+  return titles.map(
+    title => kept(s).find(f => f.title === title)?.id ?? "missing",
+  );
+};
+
+const statuses = (s: Setup): string[] => kept(s).map(f => f.status);
+
+describe("closing several follow-ups at once", () => {
+  it("drops every id given, with one line each", async () => {
+    const s = setup();
+    const ids = await addWaiting(s, "Alpha check", "Bravo check", "Charlie");
+    const ran = await ork("drop", ...ids);
+    expect(ran.code).toBe(0);
+    expect(ran.out.trim().split("\n")).toHaveLength(3);
+    expect(ran.out).toContain(": Charlie");
+    expect(statuses(s)).toEqual(["dropped", "dropped", "dropped"]);
+  });
+
+  it("takes ids separated by commas too", async () => {
+    const s = setup();
+    const ids = await addWaiting(s, "Alpha check", "Bravo check");
+    const ran = await ork("done", ids.join(","));
+    expect(ran.code).toBe(0);
+    expect(statuses(s)).toEqual(["done", "done"]);
+  });
+
+  it("changes nothing when one id is unknown, and says each bad id", async () => {
+    const s = setup();
+    const [id = ""] = await addWaiting(s, "Alpha check");
+    const ran = await ork("drop", id, "nope", "nada");
+    expect(ran.code).toBe(1);
+    expect(ran.out).toBe("");
+    expect(ran.err.trim().split("\n")).toHaveLength(2);
+    expect(ran.err).toContain("`nope`");
+    expect(ran.err).toContain("`nada`");
+    expect(statuses(s)).toEqual(["waiting"]);
+  });
+
+  it("changes nothing when one id's action is not allowed", async () => {
+    const s = setup();
+    const [one = "", two = ""] = await addWaiting(s, "Alpha check", "Bravo");
+    await ork("drop", one);
+    const ran = await ork("reopen", one, two);
+    expect(ran.code).toBe(1);
+    expect(ran.err).toContain(`${two} is waiting, so it can't be reopened.`);
+    expect(statuses(s)).toEqual(["dropped", "waiting"]);
+  });
+
+  it("acts once on an id repeated, or given with its prefix", async () => {
+    const s = setup();
+    const [id = ""] = await addWaiting(s, "Alpha check");
+    const ran = await ork("drop", id, id, id.slice(0, 8));
+    expect(ran.code).toBe(0);
+    expect(ran.out.trim().split("\n")).toHaveLength(1);
+    expect(first(s).status).toBe("dropped");
+  });
+
+  it("makes several due, by id and by a run's id", async () => {
+    const s = setup();
+    const [one = ""] = await addWaiting(
+      s,
+      "Alpha check",
+      "Bravo check",
+      "Charlie",
+    );
+    const store = openStore(storePath(s.home));
+    store.begin({
+      id: "run1",
+      workflow: "w",
+      file: "w.ork.yaml",
+      project: s.project,
+    });
+    for (const other of kept(s).filter(f => f.id !== one)) {
+      store.putFollowUp({ ...other, from: { run: "run1", node: "n" } });
+    }
+    store.close();
+    const ran = await ork("due", one, "run1");
+    expect(ran.code).toBe(0);
+    expect(ran.out.trim().split("\n")).toHaveLength(3);
+    expect(statuses(s)).toEqual(["due", "due", "due"]);
+  });
+
+  it("makes none due when one target has nothing waiting", async () => {
+    const s = setup();
+    const [id = ""] = await addWaiting(s, "Alpha check");
+    const ran = await ork("due", id, "nothing");
+    expect(ran.code).toBe(1);
+    expect(ran.out).toBe("");
+    expect(statuses(s)).toEqual(["waiting"]);
+  });
+});
+
 /** Adds a message drafted for a GitHub PR, and gives its id. */
 const draft = async (s: Setup): Promise<string> => {
   await ork(
@@ -648,7 +746,7 @@ describe("ork follow-ups published", () => {
     store2.close();
     vi.stubEnv("ORK_RUN", "r1");
     // The status of a waiting follow-up with no ref: ask for the ref's state later.
-    const ran = await ork("published", "feature");
+    const ran = await orkRaw("published", "feature");
     expect(ran.out).toContain("1 follow-up(s) now wait on feature");
     expect(first(s).ref).toBe("feature");
   });
@@ -665,14 +763,14 @@ describe("ork follow-ups published", () => {
     store2.putFollowUp({ ...first(s), takenBy: "start1" });
     store2.close();
     vi.stubEnv("ORK_RUN", "build1");
-    const ran = await ork("published", "feature");
+    const ran = await orkRaw("published", "feature");
     expect(ran.out).toContain("1 done");
     expect(first(s).status).toBe("done");
   });
 
   it("refuses outside a run", async () => {
     setup();
-    const ran = await ork("published", "feature");
+    const ran = await orkRaw("published", "feature");
     expect(ran.code).toBe(1);
     expect(ran.err).toContain("ORK_RUN is not set");
   });
