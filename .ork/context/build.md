@@ -13,4 +13,6 @@ Every node of `build` reads this file (`layers.context` in
   `pnpm test` and a bare `vitest run` are denied to a node with a check, and Ork
   runs that check before its report counts. While you work, use
   `pnpm check:fast` (format, lint, typecheck, docs) and targeted
-  `vitest run <files>`.
+  `vitest run <files>`. The check on a node is `pnpm check:changed` (the tests
+  its change reaches), or `pnpm check:static` on `docs` (no tests); the full
+  suite runs once, before the push.

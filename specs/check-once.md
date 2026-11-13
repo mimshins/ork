@@ -105,9 +105,15 @@ before. Old files mean the same; `schemaVersion` does not change.
   them, so one pass serves all.
 - CI has no cache (a fresh checkout) and runs the checks it names one by one;
   the canary release runs `pnpm run check:all`.
-- `build`'s docs node verifies with `pnpm check:changed`, so one that edited
-  nothing costs nothing; the leader keeps a full check each round, and the
-  publish its full check, which usually skips.
+- `build` runs the full suite once, in its publish `check`, on the rebased tree
+  that lands. Its leader and `polish` verify with `pnpm check:changed` (the
+  tests the change reaches), as the builders do, and its docs node with
+  `pnpm check:static` (`check:fast` plus the map and benchmarks checks, no
+  tests). Before, the leader each round and `polish` ran the full check too:
+  four full suites in a row near a build's end, 150 to 250 seconds each (six
+  builds on 2026-11-12 and 13), because each step had changed a file or two
+  since the last pass. A failure only the full suite finds now shows at publish,
+  where `repair` takes it.
 - Those `verify:` steps do not set `once: true`: the scripts already go through
   `ork once`, and wrapping them again would key the same files twice.
 

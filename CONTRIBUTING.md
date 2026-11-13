@@ -51,6 +51,7 @@ Requirements: Node.js `>= 24.20` and pnpm (the exact version is pinned in
 pnpm install          # install dependencies and the git hooks
 pnpm check            # format check, lint, typecheck, tests, docs and map checks (skipped when they already passed on the same files)
 pnpm check:fast       # format, lint, typecheck and docs only
+pnpm check:static     # check:fast plus the map and benchmarks checks: everything but the tests
 pnpm format           # fix formatting (oxfmt)
 pnpm lint:fix         # fix what oxlint can fix
 pnpm test             # unit tests (vitest)

@@ -106,7 +106,8 @@ bug fixes need no plan unless they are architectural.
   map check; it must pass before a push (the `pre-push` hook runs it).
 - `pnpm check:fast` runs format, lint, typecheck and the docs check (seconds),
   for while you work; `pnpm check:changed` adds the tests your change reaches.
-  In an Ork run, a checked node runs only `check:fast` and targeted
+  `pnpm check:static` is `check:fast` plus the map and benchmarks checks, with
+  no tests. In an Ork run, a checked node runs only `check:fast` and targeted
   `vitest run <files>`: Ork runs the suites (`heavy` in `.ork/project.yaml`).
 - `pnpm docs:check` checks links, anchors and the hub/chunk layout.
 - `pnpm rfc:close RFC-NNN` marks a shipped RFC Implemented, archives it and
