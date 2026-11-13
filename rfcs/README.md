@@ -82,3 +82,4 @@ and carries an RFC through this lifecycle. `ork run rfc` drafts one with you and
 | [016](./archived/RFC-016-integration-lock.md)                  | A lock that orders integration into a branch                       | Implemented |
 | [017](./archived/RFC-017-list-filters.md)                      | One way to filter every list command                               | Implemented |
 | [018](./active/RFC-018-onboard.md)                             | `ork onboard`: a forward-deployed engineer built into Ork          | Accepted    |
+| [019](./active/RFC-019-ui-sign-in-code.md)                     | `ork ui` signs the browser in with a one-time code                 | Accepted    |
