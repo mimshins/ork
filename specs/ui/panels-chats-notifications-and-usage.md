@@ -55,10 +55,13 @@ bar's bell shows how many are unread and goes to the panel.
 What runs spent over a period
 ([panel](../../packages/ui/src/panels/usage-panel.tsx),
 [tests](../../packages/ui/test/panels/usage-panel.test.tsx)), from
-[`/api/usage`](../usage.md#reports), read again when a run ends. It filters by
-project, in name order, and by the last 7, 30 or 90 days or all time, whole days
-counting today; the filters survive a change of layout. Two projects of the same
-name show their parent folder too.
+[`/api/usage`](../usage.md#reports), read again when a run ends. It filters with
+the shared [filter bar](./design-filter-bar.md) on the `usage` list:
+**Workflow**, **Project** (suggesting the registered projects, in name order),
+**Since** (default `30d`; `7d`, `30d`, `90d` and `all` are suggestions, and any
+age or day works, whole days counting today) and **Until**; the values survive a
+change of layout, and a refused value shows the server's words. The bar shows
+the matching `ork usage` command and **Clear filter** while one is set.
 
 - **Totals, hints, then spend over time:** one bar per day, or per week past 92
   days, up to today so an idle stretch shows, and hatched since that day or week

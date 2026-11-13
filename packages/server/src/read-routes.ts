@@ -9,17 +9,26 @@ import {
   isNodeEvent,
   pendingDecisions,
   activeTree,
+  ALL,
+  applyFilters,
   capsHere,
+  decisionListTable,
   limitsReport,
+  type ListTable,
   nestItems,
   placeFor,
+  runListTable,
   triggersReport,
+  usageListTable,
   usageReport,
 } from "@krapht/ork-core";
 
 import { projectOf, runOf, type ServerContext, viewOf } from "./context.ts";
+import type { RunView } from "./contract.ts";
 import { servedEvent, treeWithEnds } from "./end-view.ts";
 import { runGraph } from "./graph.ts";
+import { listFieldsRoutes } from "./list-fields-routes.ts";
+import { filterOf, projectRootOf } from "./list-query.ts";
 import { fail, type Handlers, ok } from "./router.ts";
 import { projectWorkflows } from "./workflows.ts";
 
@@ -37,10 +46,10 @@ type ReadRoutes = Pick<
   | "decision"
   | "links"
   | "usage"
+  | "listFields"
   | "triggers"
 >;
 
-/** A project filter's root: a registered project's, or the value as a root. */
 /** A registered project's place; caps are only known for one. */
 const placeOf = (context: ServerContext, key: string | undefined) => {
   const known = key === undefined ? undefined : projectOf(context, key);
@@ -49,10 +58,18 @@ const placeOf = (context: ServerContext, key: string | undefined) => {
     : placeFor(known.root, context.store.projects());
 };
 
-const projectRoot = (context: ServerContext, key: string): string =>
-  projectOf(context, key)?.root ?? key;
+/** `ork ps`'s table, matching `--status` on the live status the API shows. */
+const liveRunTable: ListTable<RunView> = {
+  ...runListTable,
+  fields: runListTable.fields.map(field =>
+    field.name === "status"
+      ? Object.assign({}, field, { get: (run: RunView) => run.live })
+      : field,
+  ),
+};
 
 export const readRoutes = (context: ServerContext): ReadRoutes => ({
+  ...listFieldsRoutes(),
   health: () =>
     ok({
       version: context.version,
@@ -68,24 +85,28 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
   links: ({ query }) =>
     ok(context.store.links(query.run === undefined ? {} : { run: query.run })),
 
-  usage: ({ query }) =>
-    ok({
+  usage: ({ query }) => {
+    const read = filterOf(usageListTable, query);
+    if (!read.ok) return read.refusal;
+    const { filter } = read;
+    const { workflow, since, until } = filter;
+    const root = projectRootOf(context, filter);
+    return ok({
       ...usageReport(
         context.store.usage({
-          ...(query.project === undefined
-            ? {}
-            : { project: projectRoot(context, query.project) }),
-          ...(query.workflow === undefined ? {} : { workflow: query.workflow }),
-          ...(query.since === undefined ? {} : { since: query.since }),
-          ...(query.until === undefined ? {} : { until: query.until }),
+          ...(root === undefined ? {} : { project: root }),
+          ...(workflow === undefined ? {} : { workflow }),
+          ...(since === undefined || since === ALL ? {} : { since }),
+          ...(until === undefined ? {} : { until }),
         }),
       ),
       limits: limitsReport(
         context.store,
-        capsHere(context.home, placeOf(context, query.project)),
+        capsHere(context.home, placeOf(context, root)),
         new Date(),
       ),
-    }),
+    });
+  },
 
   workflows: ({ params }) => {
     const project = projectOf(context, params.id);
@@ -94,17 +115,21 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
       : ok(projectWorkflows(project));
   },
 
-  runs: ({ query }) =>
-    ok(
-      context.store
-        .runs({
-          limit: query.limit ?? 20,
-          ...(query.project === undefined
-            ? {}
-            : { project: projectRoot(context, query.project) }),
-        })
-        .map(run => viewOf(context, run)),
-    ),
+  runs: ({ query }) => {
+    const read = filterOf(liveRunTable, query);
+    if (!read.ok) return read.refusal;
+    const root = projectRootOf(context, read.filter);
+    const limit = query.limit ?? 20;
+    // Only a filter on the runs themselves needs more than the newest `limit`.
+    const narrowed = Object.keys(read.filter).some(name => name !== "project");
+    const views = context.store
+      .runs({
+        ...(root === undefined ? {} : { project: root }),
+        ...(narrowed ? {} : { limit }),
+      })
+      .map(run => viewOf(context, run));
+    return ok(applyFilters(liveRunTable, views, read.filter).slice(0, limit));
+  },
 
   run: ({ params }) => {
     const found = runOf(context, params.id);
@@ -147,19 +172,20 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
   },
 
   decisions: ({ query }) => {
-    const workflow =
-      query.workflow === undefined ? {} : { workflow: query.workflow };
-    if (query.run === undefined) {
+    const read = filterOf(decisionListTable, query);
+    if (!read.ok) return read.refusal;
+    const { run, workflow: named } = read.filter;
+    const workflow = named === undefined ? {} : { workflow: named };
+    if (run === undefined) {
+      const root = projectRootOf(context, read.filter);
       return ok(
         pendingDecisions(context.store, {
           ...workflow,
-          ...(query.project === undefined
-            ? {}
-            : { project: projectRoot(context, query.project) }),
+          ...(root === undefined ? {} : { project: root }),
         }),
       );
     }
-    const found = runOf(context, query.run);
+    const found = runOf(context, run);
     if (!found.ok) return found.refusal;
     return ok(
       pendingDecisions(context.store, { ...workflow, runId: found.run.id }),

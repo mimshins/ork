@@ -17,9 +17,6 @@ import { applyChoice, followSystem, type View } from "../design/theme.ts";
 /** What the project filters start at. */
 export const ALL_PROJECTS = "all";
 
-/** What the Usage panel's period starts at. */
-export const DEFAULT_PERIOD = "30";
-
 const PREFERENCES_KEY = "ork.preferences.v1";
 
 export const PreferencesSchema = z.object({
@@ -28,10 +25,8 @@ export const PreferencesSchema = z.object({
   desktopNotifications: z.boolean().default(false),
   /** The new-version banner, hidden for a day for this version. */
   updateDismissed: z.object({ version: z.string(), at: z.string() }).optional(),
-  /** What the Decisions panel is narrowed to; both missing is All. */
-  decisionFilter: z
-    .object({ workflow: z.string().optional(), run: z.string().optional() })
-    .default({}),
+  /** What the Decisions panel is narrowed to, by filter field; none is All. */
+  decisionFilter: z.record(z.string(), z.string()).default({}),
 });
 
 export type Preferences = z.infer<typeof PreferencesSchema>;

@@ -9,21 +9,20 @@
 
 import type { FeedbackDetail, FeedbackItem } from "@krapht/ork-server/client";
 
+import type { Suggestion } from "../components/filter-input.tsx";
+import type { FilterValues } from "../components/filter-model.ts";
+
 /** An item's id as the CLI shows it. */
 export const short = (id: string): string => id.slice(0, 12);
 
-export type FeedbackFilter = { status: string; about: string };
+/**
+ * The panel's filters: the bar's values (the server applies them; no status
+ * means not dismissed, which the panel does) and the About select beside it.
+ */
+export type FeedbackFilter = { values: FilterValues; about: string };
 
-const STATUS_FILTERS = [
-  ["open", "Not dismissed"],
-  ["all", "All"],
-  ["new", "New"],
-  ["triaged", "Triaged"],
-  ["accepted", "Accepted"],
-  ["resolved", "Resolved"],
-  ["published", "Published"],
-  ["dismissed", "Dismissed"],
-] as const;
+/** The feedback list's default for `status`, in the bar's words. */
+export const DEFAULTS = { status: "not dismissed" };
 
 export const ABOUT_OPTIONS = [
   { value: "all", label: "All" },
@@ -32,19 +31,21 @@ export const ABOUT_OPTIONS = [
   { value: "project", label: "project" },
 ];
 
-const hasStatus = (item: FeedbackItem, status: string): boolean => {
-  if (status === "all") return true;
-  return status === "open"
-    ? item.status !== "dismissed"
-    : item.status === status;
-};
+const same = (value: string): Suggestion => ({ value, label: value });
 
-/** The status choices, each with how many of everything read it holds. */
-export const statusOptions = (items: readonly FeedbackItem[]) =>
-  STATUS_FILTERS.map(([value, label]) => ({
-    value,
-    label: `${label} · ${String(items.filter(i => hasStatus(i, value)).length)}`,
-  }));
+/** What the bar suggests: the workflows and runs the items read come from. */
+export const suggestionsOf = (
+  items: readonly FeedbackItem[],
+): { workflow: Suggestion[]; run: Suggestion[] } => {
+  return {
+    workflow: [...new Set(items.flatMap(item => item.workflows))]
+      .toSorted((a, b) => a.localeCompare(b))
+      .map(value => same(value)),
+    run: [...new Set(items.flatMap(item => item.runs))].map(value =>
+      same(value),
+    ),
+  };
+};
 
 /**
  * What the panel shows: both side by side when it's wide. When it's narrow, the
@@ -60,14 +61,19 @@ export const panelShows = (
   return chosen === null ? "list" : showing;
 };
 
-/** What the filters leave, most recently seen first as the server sends. */
+/**
+ * What the filters leave, most recently seen first as the server sends: the
+ * server's answer, less the dismissed ones when no status is asked for, and
+ * only what is about `about`.
+ */
 export const shownItems = (
   items: readonly FeedbackItem[],
-  { status, about }: FeedbackFilter,
+  { values, about }: FeedbackFilter,
 ): FeedbackItem[] =>
   items.filter(
     item =>
-      hasStatus(item, status) && (about === "all" || item.target === about),
+      (values["status"] !== undefined || item.status !== "dismissed") &&
+      (about === "all" || item.target === about),
   );
 
 const counted = (count: number, one: string, many: string): string =>
@@ -97,7 +103,11 @@ const NONE_WITH: Record<string, string> = {
 export const emptyWords = ({
   status,
   about,
-}: FeedbackFilter): { title: string; body: string } => {
+}: {
+  /** The status asked for; `open` is the default, not dismissed. */
+  status: string;
+  about: string;
+}): { title: string; body: string } => {
   const start = NONE_WITH[status] ?? "No items";
   const title =
     status === "open" && about === "all"

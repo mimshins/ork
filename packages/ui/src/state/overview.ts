@@ -16,12 +16,12 @@ import {
 } from "@krapht/ork-server/client";
 import { Container } from "react-containerized-state";
 
+import type { FilterValues } from "../components/filter-model.ts";
 import {
   createFollowUpsFilter,
   NONE_DUE,
   readFollowUps,
 } from "./follow-ups.ts";
-import { ALL_PROJECTS } from "./preferences.ts";
 import { createRead } from "./read.ts";
 import { reconcile } from "./reconcile.ts";
 import {
@@ -51,9 +51,14 @@ export const createOverview = ({
   return {
     version,
     followUpsDue,
-    /** Every project's follow-ups, done ones too: only the due count streams. */
-    followUps: createRead(() => readFollowUps(client)),
-    followUpsFilter: createFollowUpsFilter(ALL_PROJECTS),
+    /**
+     * Every project's follow-ups under the panel's filter: only the due count
+     * streams.
+     */
+    followUps: createRead((filter: FilterValues) =>
+      readFollowUps(client, filter),
+    ),
+    followUpsFilter: createFollowUpsFilter(),
     /** Follows the stream until the link is closed. */
     follow: (handlers: {
       onStatus: (status: LinkStatus) => void;

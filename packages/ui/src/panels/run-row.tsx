@@ -106,19 +106,11 @@ export const RunWorkflowButton = ({ onClick }: { onClick: () => void }) => (
 );
 
 /** What the list says with nothing to show, and the next step. */
-export const NoRuns = ({ filtered }: { filtered: boolean }) =>
-  filtered ? (
-    <EmptyState
-      cli="ork ps"
-      title="No runs in this project."
-    >
-      Among the newest 50. For older ones:
-    </EmptyState>
-  ) : (
-    <EmptyState
-      cli="ork run <workflow>"
-      title="No runs yet."
-    >
-      Start one with Run workflow, or in a terminal:
-    </EmptyState>
-  );
+export const NoRuns = () => (
+  <EmptyState
+    cli="ork run <workflow>"
+    title="No runs yet."
+  >
+    Start one with Run workflow, or in a terminal:
+  </EmptyState>
+);

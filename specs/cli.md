@@ -65,7 +65,7 @@ ork validate [<wf>…] [--paths] [--json] [--driver <id>]   # schema, graph, pro
 ork agents list [--source builtin|user|project] [--limit n] [--ids] [--json] | show <name> [--json]   # the agents nodes can take, and where each comes from
 ork agents add <name> [--description d] [--model m] [--from <agent>] [--user] | rm <name> [--user]
 ork run <wf> [--input k=v] [--driver <id>] [--in-place] [--allow-dirty] [--json] [--detach] [--verbose]  # <wf>: a file, a name in .ork/workflows/, or ork:<name>
-ork run <wf> --follow-ups <ids>  # take open agent follow-ups as the run's `brief` input; done when it publishes
+ork run <wf> --follow-ups <ids|due>  # take open agent follow-ups (ids, or `due` for every due one) as the run's `brief` input; done when it publishes
 ork run <wf> --node <id> [--input k=v] [--driver <id>] [--in-place] [--json] [--verbose]
 ork ps [--status s] [--workflow w] [--project p|all] [--since 7d] [--until day] [--limit n] [--ids] [--json]  # this project's runs, newest first; 20 by default
 ork logs [<run>] [--node n] [--since t] [--until day] [--limit n] [--follow] [--json] [--verbose]   # a run's transcript, replayed or live

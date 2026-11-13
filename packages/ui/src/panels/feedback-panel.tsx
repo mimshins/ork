@@ -6,6 +6,8 @@
  *   place. Choosing an item is the person's act, never done for them.
  */
 
+import { isFiltered } from "../components/filter-model.ts";
+import { FilterEmpty } from "../components/filter-notes.tsx";
 import { ItemDetail } from "./feedback-detail.tsx";
 import { BackToItems } from "./feedback-facts.tsx";
 import { FeedbackList } from "./feedback-list.tsx";
@@ -28,11 +30,22 @@ const ListCard = ({ view }: { view: View }) => {
       role="group"
       tabIndex={-1}
     >
-      {read.status === "failed" ? <ReadFailed error={read.error} /> : null}
+      {read.status === "failed" && view.refusal === null ? (
+        <ReadFailed error={read.error} />
+      ) : null}
       {all === null && read.status !== "failed" ? (
         <p className={styles["message"]}>Reading feedback…</p>
       ) : null}
-      {all !== null && shown.length === 0 ? (
+      {all !== null && shown.length === 0 && isFiltered(filter.values) ? (
+        <FilterEmpty
+          list="feedback"
+          onClear={() => {
+            view.setValues({});
+          }}
+          values={filter.values}
+        />
+      ) : null}
+      {all !== null && shown.length === 0 && !isFiltered(filter.values) ? (
         <NoItems
           anything={items.length > 0}
           filter={filter}
@@ -99,11 +112,13 @@ export const FeedbackPanel = () => {
     >
       <FeedbackTools
         count={shown.length}
-        failed={read.status === "failed"}
+        failed={read.status === "failed" && view.refusal === null}
         filter={filter}
         items={all}
-        onFilter={view.setFilter}
+        onAbout={view.setAbout}
         onReload={view.reload}
+        onValues={view.setValues}
+        refusal={view.refusal}
         updating={read.status === "loading" && all !== null}
       />
       <div className={styles["body"]}>

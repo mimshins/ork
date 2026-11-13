@@ -7,12 +7,11 @@
  *   Nothing is removed without a confirm.
  */
 
-import type { WorktreesProject } from "@krapht/ork-server/client";
-
-import { ALL_PROJECTS } from "./project-options.ts";
+import { isFiltered } from "../components/filter-model.ts";
+import { FilterEmpty } from "../components/filter-notes.tsx";
 import { useKeptFocus } from "./use-kept-focus.ts";
 import { useWorktreesActs } from "./use-worktrees-acts.ts";
-import { useWorktrees } from "./use-worktrees.ts";
+import { useWorktrees, type WorktreesView } from "./use-worktrees.ts";
 import { moveAmongRows, ProjectCard } from "./worktree-card.tsx";
 import { WorktreesDialogs } from "./worktrees-dialogs.tsx";
 import { cleanBlocked, counted } from "./worktrees-model.ts";
@@ -20,11 +19,10 @@ import { NoWorktrees, ReadFailed, WorktreesTools } from "./worktrees-tools.tsx";
 
 import styles from "./worktrees.module.css";
 
+type Project = NonNullable<WorktreesView["shown"]>[number];
+
 /** A project without the rows the server just removed. */
-const without = (
-  project: WorktreesProject,
-  gone: ReadonlySet<string>,
-): WorktreesProject => ({
+const without = (project: Project, gone: ReadonlySet<string>): Project => ({
   ...project,
   items: project.items.filter(item => !gone.has(`${project.root}|${item.key}`)),
 });
@@ -32,7 +30,9 @@ const without = (
 export const WorktreesPanel = () => {
   const view = useWorktrees();
   const { read, shown, filter } = view;
-  const one = filter === ALL_PROJECTS ? null : filter;
+  const failed = read.status === "failed" && view.refusal === null;
+  /** Whether the filter keeps one project, and that project's root. */
+  const scoped = filter["project"] !== undefined && filter["project"] !== "all";
   const listKey = (shown ?? [])
     .flatMap(p => p.items.map(item => `${p.root}|${item.key}`))
     .join("\n");
@@ -44,6 +44,7 @@ export const WorktreesPanel = () => {
   );
   const others = projects.length - cards.length;
   const merged = projects.filter(p => p.items.some(i => i.state === "merged"));
+  const one = scoped ? (projects[0]?.root ?? null) : null;
   return (
     // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- notes where the focus is, and moves it among the rows' buttons
     <div
@@ -59,8 +60,8 @@ export const WorktreesPanel = () => {
       <WorktreesTools
         cleanBlocked={cleanBlocked(
           shown === null ? null : projects,
-          one !== null,
-          read.status === "failed",
+          scoped,
+          failed,
         )}
         cleanButton={acts.cleanButton}
         filter={filter}
@@ -68,18 +69,26 @@ export const WorktreesPanel = () => {
         onClean={acts.openClean}
         onFilter={view.setFilter}
         onReload={() => void view.load()}
-        options={view.options}
+        projects={view.projectSuggestions}
+        refusal={view.refusal}
         updating={read.status === "loading" && shown !== null}
       />
-      {read.status === "failed" ? <ReadFailed error={read.error} /> : null}
-      {shown === null && read.status !== "failed" ? (
+      {failed ? <ReadFailed error={read.error} /> : null}
+      {shown === null && !failed ? (
         <p className={styles["message"]}>Reading worktrees…</p>
       ) : null}
       {shown !== null && cards.length === 0 ? (
-        <NoWorktrees
-          one={one === null ? null : (projects[0]?.name ?? one)}
-          projects={view.all?.length ?? 0}
-        />
+        isFiltered(filter) ? (
+          <FilterEmpty
+            list="worktrees"
+            onClear={() => {
+              view.setFilter({});
+            }}
+            values={filter}
+          />
+        ) : (
+          <NoWorktrees projects={view.known} />
+        )
       ) : null}
       {cards.map(project => (
         <ProjectCard
@@ -88,7 +97,7 @@ export const WorktreesPanel = () => {
           project={project}
         />
       ))}
-      {one === null && cards.length > 0 && others > 0 ? (
+      {!scoped && cards.length > 0 && others > 0 ? (
         <p className={styles["note"]}>
           {`Nothing left in ${counted(others, "other project")}.`}
         </p>

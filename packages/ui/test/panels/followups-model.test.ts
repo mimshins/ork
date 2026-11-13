@@ -1,8 +1,8 @@
 /**
- * @file Tests for the Follow-ups panel's model: what each filter leaves and how
- *   many each option holds, the list grouped by due and then by who it is for,
- *   why a row is due, the summary and empty words, and which buttons an item
- *   has with the CLI each stands for.
+ * @file Tests for the Follow-ups panel's model: what the filter bar suggests
+ *   and when a failed read is the server refusing a filter value, the list
+ *   grouped by due and then by who it is for, why a row is due, the summary
+ *   words, and which buttons an item has with the CLI each stands for.
  */
 
 import type { FollowUp } from "@krapht/ork-server/client";
@@ -17,12 +17,11 @@ import {
 import {
   dueGroupOf,
   type FollowUpRow,
+  forSuggestions,
   groupRows,
-  noMatchWords,
   orderedRows,
+  refusalOf,
   refWords,
-  shownRows,
-  statusOptions,
   summaryOf,
   whyDue,
 } from "../../src/panels/followups-model.ts";
@@ -42,41 +41,26 @@ const ROWS: FollowUpRow[] = [MESSAGE, MIGRATION, RETRIES, DANA, OLD].map(f =>
   asRow(f),
 );
 
-const FILTER = { status: "open", kind: "all", for: "all", project: "all" };
-
-const titles = (rows: readonly { title: string }[]): string[] =>
-  rows.map(f => f.title);
-
 const NOW = new Date(2026, 10, 12, 10, 0, 0);
 
-describe("what the filters leave", () => {
-  it("shows open ones by default, and each status on its own", () => {
-    expect(shownRows(ROWS, FILTER)).toHaveLength(4);
-    expect(titles(shownRows(ROWS, { ...FILTER, status: "done" }))).toEqual([
-      "Old check",
+describe("the filter bar's help", () => {
+  it("suggests the project and person targets the rows have, agent and me being the bar's own", () => {
+    expect(forSuggestions(ROWS).map(s => s.value)).toEqual([
+      "person:acme-ops",
+      "person:dana",
     ]);
-    expect(shownRows(ROWS, { ...FILTER, status: "all" })).toHaveLength(5);
-    expect(shownRows(ROWS, { ...FILTER, status: "due" })).toHaveLength(2);
   });
 
-  it("narrows by kind, for and project", () => {
-    expect(shownRows(ROWS, { ...FILTER, kind: "message" })).toHaveLength(2);
-    expect(shownRows(ROWS, { ...FILTER, for: "agent" })).toHaveLength(1);
-    expect(shownRows(ROWS, { ...FILTER, project: "other" })).toEqual([]);
+  it("reads a message that starts with a table's flag as a refusal of that field", () => {
+    expect(refusalOf("--status takes one of due, waiting, not `x`.")).toEqual({
+      message: "--status takes one of due, waiting, not `x`.",
+      field: "status",
+    });
   });
 
-  it("counts each Status option under the other filters", () => {
-    const counts = statusOptions(ROWS, { ...FILTER, kind: "message" }).map(
-      o => o.label,
-    );
-    expect(counts).toEqual([
-      "Open (2)",
-      "Due (1)",
-      "Waiting (1)",
-      "Done (0)",
-      "Dropped (0)",
-      "All (2)",
-    ]);
+  it("reads anything else as a read that failed", () => {
+    expect(refusalOf("Nothing answers.")).toBeNull();
+    expect(refusalOf("--bogus takes nothing.")).toBeNull();
   });
 });
 
@@ -136,13 +120,10 @@ describe("the words", () => {
     expect(whyDue(asRow(MIGRATION), NOW)).toBeUndefined();
   });
 
-  it("summarises what is open, and what a filter that leaves nothing says", () => {
+  it("summarises what is open", () => {
     expect(summaryOf(ROWS)).toBe("2 due, 2 waiting");
     expect(summaryOf(ROWS.slice(2, 3))).toBe("None due, 1 waiting");
     expect(summaryOf([])).toBe("Nothing open");
-    expect(noMatchWords(ROWS)).toBe(
-      "No follow-ups match. 4 are open, 5 in all. Choose Open or All in Status to see them.",
-    );
   });
 
   it("writes a PR ref as #n and a branch as it is", () => {

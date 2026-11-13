@@ -79,6 +79,25 @@ ids. Add `--limit 500` for more. A bare `ork decide` answers questions; with
 `--ids` or `--limit` it lists instead, on a terminal too, so a script never
 starts answering by accident.
 
+## In the browser and `ork mcp`
+
+The browser view's six list panels (Runs, Decisions, Follow-ups, Feedback,
+Worktrees and Usage) have a filter bar built from the same tables, so a filter
+set there is the same words as the flags: a select for a field with fixed values
+(`--status`, `--kind`, `--severity`, `--due`), an input for the rest
+(`--workflow`, `--run`, `--project`, `--for`, and `--since` and `--until`, which
+take an age such as `24h` or a day such as `2026-11-01`). A value is applied
+when you press `Enter`, leave the field or choose a suggestion; a wrong one
+shows the CLI's message under the bar and the list keeps the last filter that
+worked. While a filter is set the bar shows the matching command, for a
+terminal, and **Clear filter**. A panel keeps its own default (follow-ups: open;
+feedback: not dismissed; usage: the last 30 days), shown in the field until you
+set one.
+
+The `runs`, `usage` and `decisions` tools of `ork mcp` take the same fields, and
+a model asking for `status: "crashed"` or `since: "24h"` gets the CLI's words
+when it is wrong.
+
 ## `--all` is deprecated
 
 `--all` meant three different things on these lists. It still works for one

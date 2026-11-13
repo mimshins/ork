@@ -12,10 +12,10 @@ import { builderRoutes } from "./builder-routes.ts";
 import type { ServerContext } from "./context.ts";
 import {
   DecisionsQuerySchema,
-  EventsQuerySchema,
   RunsQuerySchema,
   UsageQuerySchema,
-} from "./contract.ts";
+} from "./contract-lists.ts";
+import { EventsQuerySchema } from "./contract.ts";
 import { formatPart, fromReply, refused } from "./mcp-answers.ts";
 import { tool, type McpTool } from "./mcp-tool.ts";
 import { readRoutes } from "./read-routes.ts";
@@ -68,7 +68,7 @@ export const mcpTools = (context: ServerContext): McpTool[] => {
     ),
     tool(
       "runs",
-      "Runs, newest first, with their live status and cost. 10 unless a limit is given.",
+      "Runs, newest first, with their live status and cost. 10 unless a limit is given. Narrow them with `status` (running, paused, crashed, succeeded, failed, … or all), `workflow`, `project` (or all), `since` (24h, 30d, 2026-11-01, all) and `until` (a day).",
       RunsQuerySchema.shape,
       args =>
         fromReply(read.runs({ ...NO_QUERY, query: { limit: 10, ...args } })),
@@ -106,13 +106,13 @@ export const mcpTools = (context: ServerContext): McpTool[] => {
     ),
     tool(
       "usage",
-      "What runs spent, by workflow and model, and how close the limits are. `since` and `until` are ISO times.",
+      "What runs spent, by workflow and model, and how close the limits are. Narrow it with `workflow`, `project` (or all), `since` and `until`: an age (24h, 30d), a day (2026-11-01) or an ISO time; `since` also takes all.",
       UsageQuerySchema.shape,
       args => fromReply(read.usage({ ...NO_QUERY, query: args })),
     ),
     tool(
       "decisions",
-      "The decisions open in live runs, waiting on a person. This server can't answer them.",
+      "The decisions open in live runs, waiting on a person. This server can't answer them. Narrow them with `workflow`, `run` (an id or a start of one) and `project` (or all).",
       DecisionsQuerySchema.shape,
       args =>
         fromReply(read.decisions({ ...NO_QUERY, query: args }), open => ({

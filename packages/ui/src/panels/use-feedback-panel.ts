@@ -19,11 +19,11 @@ import {
 } from "react";
 import { useValue } from "react-containerized-state";
 
+import { type FilterValues, refusalOf } from "../components/filter-model.ts";
 import { useAppState } from "../state/context.tsx";
 import { shownOf } from "../state/read.ts";
 import { WorkspaceContext } from "../workspace/context.ts";
 import {
-  type FeedbackFilter,
   itemsWords,
   mergedInto,
   panelShows,
@@ -96,7 +96,7 @@ export const useFeedbackPanel = () => {
   const state = useAppState();
   const workspace = use(WorkspaceContext);
   const filter = useValue(state.feedbackFilter);
-  const { read, load } = useFeedbackList(state);
+  const { read, load } = useFeedbackList(state, filter.values);
   const root = useRef<HTMLDivElement>(null);
   const narrow = useNarrow(root);
   const [chosen, setChosen] = useState<string | null>(null);
@@ -123,6 +123,7 @@ export const useFeedbackPanel = () => {
     narrow,
     choose,
     focus,
+    reloadList: load,
     reloadDetail: detail.reload,
   });
   const { moving } = acts;
@@ -158,6 +159,9 @@ export const useFeedbackPanel = () => {
     root,
     narrow,
     read,
+    /** The server's refusal of the filter, which keeps the last list. */
+    refusal:
+      read.status === "failed" ? refusalOf("feedback", read.error) : null,
     all,
     items,
     shown,
@@ -173,9 +177,14 @@ export const useFeedbackPanel = () => {
       choose(id);
       if (narrow) focus("heading");
     },
-    setFilter: (next: FeedbackFilter): void => {
-      void state.feedbackFilter.setValue(next);
-      workspace?.announce(`${itemsWords(shownItems(items, next).length)}.`);
+    setValues: (values: FilterValues): void => {
+      void state.feedbackFilter.setValue({ ...filter, values });
+    },
+    setAbout: (about: string): void => {
+      void state.feedbackFilter.setValue({ ...filter, about });
+      workspace?.announce(
+        `${itemsWords(shownItems(items, { ...filter, about }).length)}.`,
+      );
     },
     reload: (): void => {
       void load();

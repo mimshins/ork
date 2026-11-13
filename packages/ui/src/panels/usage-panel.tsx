@@ -1,20 +1,22 @@
 /**
  * @file The Usage panel: what runs spent over a period (specs/usage.md), for
- *   one project or all. The totals, spend over time, where it went, and what is
- *   worth a look. It reads the report again when a run ends. The filters live
- *   in the page's state, since a change of layout mounts the panel afresh.
+ *   one project or all, narrowed by the shared filter bar
+ *   (specs/ui/design-filter-bar.md). The totals, spend over time, where it
+ *   went, and what is worth a look. It reads the report again when a run ends.
+ *   The filter lives in the page's state, since a change of layout mounts the
+ *   panel afresh; `since` starts at 30 days, as the CLI's does.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useComputedValue, useValue } from "react-containerized-state";
 
-import { Select } from "../components/select.tsx";
+import { FilterBar } from "../components/filter-bar.tsx";
 import { useAppState } from "../state/context.tsx";
 import { shownOf } from "../state/read.ts";
 import { ALL_PROJECTS, baseName, projectOptions } from "./project-options.ts";
-import { PERIODS, sinceOf, usageCommand } from "./usage-model.ts";
+import { NothingSpent, Refused } from "./usage-empty.tsx";
+import { DEFAULT_SINCE, sinceQuery, usageCommand } from "./usage-model.ts";
 import { Report } from "./usage-report.tsx";
-import { NothingSpent, Refused } from "./usage-tables.tsx";
 
 import styles from "./usage.module.css";
 
@@ -23,8 +25,9 @@ export const UsagePanel = () => {
   const read = useValue(state.usage.state);
   const runs = useValue(state.runs);
   const projects = useValue(state.projects.state);
-  const filter = useValue(state.usageFilter);
-  const { project, period } = filter;
+  const values = useValue(state.usageFilter);
+  const since = values["since"] ?? DEFAULT_SINCE;
+  const { project, workflow, until } = values;
   const [attempt, setAttempt] = useState(0);
   // What was there stays on the page, with what it was read for, meanwhile.
   const shown = shownOf(read);
@@ -41,17 +44,19 @@ export const UsagePanel = () => {
   }, [state]);
   useEffect(() => {
     const now = Date.now();
-    const since = sinceOf(period, now);
+    const start = sinceQuery(since, now);
     void state.usage.load({
       now,
-      period,
+      period: since,
       query: {
-        ...(project === ALL_PROJECTS ? {} : { project }),
-        ...(since === undefined ? {} : { since }),
+        ...(project === undefined ? {} : { project }),
+        ...(workflow === undefined ? {} : { workflow }),
+        ...(start === undefined ? {} : { since: start }),
+        ...(until === undefined ? {} : { until }),
       },
     });
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- `ended` and `attempt` are reasons to read again
-  }, [state, project, period, ended, attempt]);
+  }, [state, project, workflow, since, until, ended, attempt]);
   const options = useMemo(
     () =>
       projectOptions(
@@ -60,28 +65,33 @@ export const UsagePanel = () => {
       ),
     [projects, runs],
   );
-  const everyProject = project === ALL_PROJECTS;
+  const suggestions = useMemo(
+    () => options.filter(option => option.value !== ALL_PROJECTS),
+    [options],
+  );
+  const everyProject = project === undefined || project === ALL_PROJECTS;
+  const refused = read.status === "failed" && read.code === 400;
   return (
     <div className={styles["panel"]}>
       <div className={styles["tools"]}>
-        <div className={styles["projectFilter"]}>
-          <Select
-            label="Project"
-            onChange={value => {
-              void state.usageFilter.setValue({ ...filter, project: value });
+        <div className={styles["filter"]}>
+          <FilterBar
+            busy={read.status === "loading"}
+            defaults={{ since: DEFAULT_SINCE }}
+            error={
+              read.status === "failed" && refused
+                ? { message: read.error }
+                : null
+            }
+            list="usage"
+            onChange={next => {
+              void state.usageFilter.setValue(next);
             }}
-            options={options}
-            value={project}
+            shown={shown?.data.totals.sessions ?? null}
+            suggestions={{ project: suggestions }}
+            values={values}
           />
         </div>
-        <Select
-          label="Period"
-          onChange={value => {
-            void state.usageFilter.setValue({ ...filter, period: value });
-          }}
-          options={PERIODS}
-          value={period}
-        />
       </div>
       <section
         aria-busy={read.status === "loading"}
@@ -91,9 +101,9 @@ export const UsagePanel = () => {
         // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- the keys scroll it
         tabIndex={0}
       >
-        {read.status === "failed" ? (
+        {read.status === "failed" && !refused ? (
           <Refused
-            command={usageCommand(everyProject, period)}
+            command={usageCommand(everyProject, since)}
             error={read.error}
             retry={() => {
               // The button goes while it reads: the keys stay in the panel.
@@ -109,11 +119,18 @@ export const UsagePanel = () => {
         ) : shown.data.totals.sessions === 0 ? (
           <NothingSpent
             limits={shown.data.limits}
+            onClear={() => {
+              void state.usageFilter.setValue({});
+            }}
             period={shown.arg.period}
+            values={values}
           />
         ) : (
           <Report
-            everyProject={shown.arg.query.project === undefined}
+            everyProject={
+              shown.arg.query.project === undefined ||
+              shown.arg.query.project === ALL_PROJECTS
+            }
             now={shown.arg.now}
             period={shown.arg.period}
             projectName={root =>

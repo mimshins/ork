@@ -6,15 +6,24 @@
  *   events by time and keeps the last `--limit` of them.
  */
 
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 
-import { openStore, placeFor, storePath } from "@krapht/ork-core";
+import {
+  openStore,
+  placeFor,
+  type RunEvent,
+  type RunRecord,
+  storePath,
+} from "@krapht/ork-core";
 import { runCommand } from "citty";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { logs, ps } from "../src/commands/runs.ts";
+import { followRun } from "../src/runs/logs.ts";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -29,10 +38,32 @@ type Seed = {
   ago: number;
   status?: "succeeded" | "failed";
   project?: string;
+  /** Its process is gone: the live status reads `crashed`. */
+  gone?: boolean;
+  /** Paused as a whole by `ork pause`. */
+  paused?: boolean;
 };
 
+type Store = ReturnType<typeof openStore>;
+
+/** The `run.finished` event of run `id`. */
+const finishedEvent = (
+  id: string,
+  status: "succeeded" | "failed",
+): RunEvent => ({
+  type: "run.finished",
+  result: {
+    runId: id,
+    status,
+    costUsd: 0,
+    nodes: [],
+    reasons: [],
+    worktrees: [],
+  },
+});
+
 /** Begins `seed` as if `ago` ago, and finishes it unless it has no status. */
-const seedRun = (store: ReturnType<typeof openStore>, seed: Seed): void => {
+const seedRun = (store: Store, seed: Seed): void => {
   vi.setSystemTime(base - seed.ago);
   store.begin({
     id: seed.id,
@@ -41,18 +72,22 @@ const seedRun = (store: ReturnType<typeof openStore>, seed: Seed): void => {
     project: seed.project ?? here,
   });
   if (seed.status !== undefined) {
-    store.append(seed.id, {
-      type: "run.finished",
-      result: {
-        runId: seed.id,
-        status: seed.status,
-        costUsd: 0,
-        nodes: [],
-        reasons: [],
-        worktrees: [],
-      },
-    });
+    store.append(seed.id, finishedEvent(seed.id, seed.status));
   }
+  if (seed.paused === true) {
+    store.append(seed.id, { type: "run.command", command: "pause" });
+  }
+};
+
+/** Gives the runs that are `gone` the id of a process that has exited. */
+const endProcesses = (home: string, seeds: readonly Seed[]): void => {
+  const db = new DatabaseSync(storePath(home));
+  const dead = spawnSync("true").pid;
+  for (const { id, gone } of seeds) {
+    if (gone === true)
+      db.prepare("UPDATE runs SET pid = ? WHERE id = ?").run(dead, id);
+  }
+  db.close();
 };
 
 /** A throwaway home whose store holds `seeds`, oldest listed last. */
@@ -65,6 +100,7 @@ const setup = (seeds: readonly Seed[]) => {
   vi.useFakeTimers({ toFake: ["Date"] });
   for (const seed of seeds) seedRun(store, seed);
   vi.useRealTimers();
+  endProcesses(home, seeds);
   return store;
 };
 
@@ -131,6 +167,18 @@ describe("ork ps", () => {
     expect(await ids("--status", "failed")).toBe("c3,b2");
     expect(await ids("--status", "running")).toBe("d4");
     expect(await ids("--status", "all")).toBe("d4,c3,b2,a1");
+  });
+
+  it("lists a live run by its live status: paused and crashed", async () => {
+    setup([
+      { id: "d4", workflow: "build", ago: HOUR / 2 },
+      { id: "g7", workflow: "build", ago: HOUR / 3, gone: true },
+      { id: "p8", workflow: "build", ago: HOUR / 6, paused: true },
+    ]).close();
+    expect(await ids("--status", "crashed")).toBe("g7");
+    expect(await ids("--status", "paused")).toBe("p8");
+    expect(await ids("--status", "running")).toBe("d4");
+    expect(await ids("--status", "all")).toBe("p8,g7,d4");
   });
 
   it("filters by workflow and by start", async () => {
@@ -235,6 +283,51 @@ const seqs = async (...args: string[]): Promise<number[]> =>
     .filter(line => line !== "")
     .map(line => Number(/"seq":(\d+)/u.exec(line)?.[1]));
 
+/** A live run `L1` that stored 4 events; its process is this one. */
+const liveRun = (): Store => {
+  const store = setup([{ id: "L1", workflow: "w", ago: HOUR }]);
+  for (let i = 0; i < 4; i++) {
+    store.append("L1", {
+      type: "worktree",
+      id: "n",
+      action: "created",
+      path: "/w",
+    });
+  }
+  return store;
+};
+
+const runOf = (store: Store): RunRecord => {
+  const [run] = store.lookup("L1");
+  if (run === undefined) throw new Error("run L1 is not stored");
+  return run;
+};
+
+const tmpHome = (): string => process.env["HOME"] ?? "";
+
+/** Two more events, then the end: what a follower prints after its replay. */
+const finishLater = (store: Store): void => {
+  for (let i = 0; i < 2; i++) {
+    store.append("L1", {
+      type: "worktree",
+      id: "n",
+      action: "created",
+      path: "/w",
+    });
+  }
+  store.append("L1", finishedEvent("L1", "succeeded"));
+};
+
+const seqOf = (line: string): number => Number(/"seq":(\d+)/u.exec(line)?.[1]);
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
+
+// Known limit: followRun reads the stored events twice (the replay slice, then
+// followEvents), so an event stored between the two reads would print past the
+// limit. A test can't time that without a seam, so none does.
 describe("ork logs", () => {
   it("filters events by time and keeps the last --limit", async () => {
     seedLogs();
@@ -244,6 +337,43 @@ describe("ork logs", () => {
     expect(await seqs("--until", day)).toEqual([1, 2]);
     expect(await seqs("--limit", "3")).toEqual([2, 3, 4]);
     expect(await seqs("--since", "7d", "--limit", "1")).toEqual([4]);
+  });
+
+  it("keeps the last --limit of a live run's stored events, then follows", async () => {
+    const store = liveRun();
+    const printed: string[] = [];
+    const done = followRun(
+      store,
+      runOf(store),
+      line => void printed.push(line),
+      {
+        follow: true,
+        json: true,
+        limit: 2,
+        intervalMs: 5,
+        home: tmpHome(),
+      },
+    );
+    await sleep(30);
+    finishLater(store);
+    await done;
+    expect(printed.map(line => seqOf(line))).toEqual([3, 4, 5, 6, 7]);
+    store.close();
+  });
+
+  it("does the same through `ork logs --follow --limit`", async () => {
+    const store = liveRun();
+    const ran = ork("logs", "L1", "--follow", "--json", "--limit", "2");
+    await sleep(100);
+    finishLater(store);
+    const { out } = await ran;
+    expect(
+      out
+        .trim()
+        .split("\n")
+        .map(line => seqOf(line)),
+    ).toEqual([3, 4, 5, 6, 7]);
+    store.close();
   });
 
   it("refuses a bad --limit, and has no --ids", async () => {

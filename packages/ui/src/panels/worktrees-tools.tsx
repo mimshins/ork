@@ -1,9 +1,9 @@
 /**
  * @file The Worktrees panel's tools and what it says with nothing to list: the
- *   project filter, how many worktrees and branches it leaves, Clean merged…
- *   (disabled with its reason when nothing in scope is merged) and Reload, each
- *   with its CLI twin; a failed read; and the empty states, from no projects to
- *   a project with nothing left.
+ *   shared filter bar with how many worktrees and branches it leaves, Clean
+ *   merged… (disabled with its reason when nothing in scope is merged) and
+ *   Reload, each with its CLI twin; a failed read; and the empty states, from
+ *   no projects to a filter that leaves nothing.
  */
 
 import type { WorktreeRow } from "@krapht/ork-server/client";
@@ -13,31 +13,35 @@ import { EmptyState } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
 import { CodeText } from "../components/code-text.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
+import { FilterBar, type FilterBarProps } from "../components/filter-bar.tsx";
 import { IconAlert } from "../components/icons.tsx";
-import { type Option, Select } from "../components/select.tsx";
 import { countWords } from "./worktrees-model.ts";
 
 import styles from "./worktrees.module.css";
 
 export type ToolsProps = {
-  filter: string;
-  options: readonly Option[];
+  filter: FilterBarProps["values"];
+  /** The registered projects, for the bar's `project`. */
+  projects: NonNullable<NonNullable<FilterBarProps["suggestions"]>["project"]>;
   /** What the filter leaves; null before the first answer. */
   items: readonly WorktreeRow[] | null;
   updating: boolean;
+  /** The server's refusal of the filter, if it refused. */
+  refusal: { message: string; field: string } | null;
   /** Why Clean merged… can't be pressed, if it can't. */
   cleanBlocked: string | null;
   cleanButton: RefObject<HTMLButtonElement | null>;
-  onFilter: (next: string) => void;
+  onFilter: FilterBarProps["onChange"];
   onClean: () => void;
   onReload: () => void;
 };
 
 export const WorktreesTools = ({
   filter,
-  options,
+  projects,
   items,
   updating,
+  refusal,
   cleanBlocked,
   cleanButton,
   onFilter,
@@ -46,20 +50,19 @@ export const WorktreesTools = ({
 }: ToolsProps) => {
   return (
     <div className={styles["tools"]}>
-      <Select
-        label="Project"
-        onChange={onFilter}
-        options={options}
-        value={filter}
-      />
+      <div className={styles["toolsBar"]}>
+        <FilterBar
+          busy={updating}
+          error={refusal}
+          list="worktrees"
+          onChange={onFilter}
+          shown={items === null ? null : items.length}
+          suggestions={{ project: projects }}
+          summary={items === null ? "" : countWords(items)}
+          values={filter}
+        />
+      </div>
       <div className={styles["toolsEnd"]}>
-        {items === null ? null : (
-          <span className={styles["count"]}>{countWords(items)}</span>
-        )}
-        {/* A polite status, always there, so the change is heard. */}
-        <output className={styles["count"]}>
-          {updating ? "Updating…" : ""}
-        </output>
         <Button
           aria-label={
             cleanBlocked === null ? undefined : `Clean merged…: ${cleanBlocked}`
@@ -106,12 +109,9 @@ export const ReadFailed = ({ error }: { error: string }) => (
 /** What the panel says with nothing to list, and the next step. */
 export const NoWorktrees = ({
   projects,
-  one,
 }: {
   /** How many projects Ork knows. */
   projects: number;
-  /** The filter's project, when it keeps one. */
-  one: string | null;
 }) => {
   if (projects === 0) {
     return (
@@ -123,16 +123,6 @@ export const NoWorktrees = ({
         <p>In a repository:</p>
         <CopyCommand command="ork init" />
         <p>Or from outside it:</p>
-      </EmptyState>
-    );
-  }
-  if (one !== null) {
-    return (
-      <EmptyState
-        focusable
-        title={`No Ork worktrees or branches in ${one}.`}
-      >
-        Project: All projects shows every project&apos;s.
       </EmptyState>
     );
   }

@@ -4,8 +4,9 @@ _Part of [The panels](./panels.md)._
 
 ## Runs
 
-The newest 50 runs from the [overview stream](./state.md#the-containers),
-filtered by project ([L37](./limits.md)).
+The newest 50 runs from the [overview stream](./state.md#the-containers), and
+with a filter set the server's own list for it: the shared
+[filter bar](./design-filter-bar.md) on the `runs` list ([L37](./limits.md)).
 
 - **A row** has the workflow and its status, as an icon and a word; then the
   run's id, when it started, what it cost, and how many nodes are paused. A
@@ -14,8 +15,16 @@ filtered by project ([L37](./limits.md)).
   an outline as well as its color.
 - **Keys:** the list is one tab stop. The arrow keys, Home and End move through
   it, and Enter or Space chooses.
-- **The filter** lists the registered projects, and the projects of the runs
-  shown, which may be unregistered by now.
+- **The filter** is the shared [filter bar](./design-filter-bar.md) (`runs`):
+  **Status** (with `paused` and `crashed`, the live statuses a row shows),
+  **Workflow**, **Since**, **Until**, and **Project** once there are two to
+  choose from, suggesting the registered projects and the projects of the runs
+  shown, which may be unregistered by now. With none set the panel shows the
+  stream's runs; with one it reads `GET /api/runs` with the fields (the 20
+  newest that match, read again when a run starts, ends or changes), and keeps
+  the last good list while a refused value shows the server's words. The bar
+  shows the matching `ork ps` command and **Clear filter**; a filter that finds
+  none shows "No runs match the filter."
 - **Rendering:** a row re-renders only when its own run changes
   ([what re-renders](./state.md#what-re-renders)).
 

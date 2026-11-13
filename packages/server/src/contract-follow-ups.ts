@@ -21,6 +21,8 @@ import type {
 import type { FollowUpPlace } from "@krapht/ork-schema";
 import { z } from "zod";
 
+import { listShape } from "./contract-lists.ts";
+
 export type {
   FollowUp,
   FollowUpAction,
@@ -34,14 +36,11 @@ export type {
   FollowUpStatus,
 };
 
-/** `open` is due and waiting, the default; `all` adds done and dropped. */
-export const FollowUpsQuerySchema = z.strictObject({
-  status: z
-    .enum(["open", "all", "due", "waiting", "done", "dropped"])
-    .optional(),
-  /** Only those for this: `agent`, `me`, `project:<name>` or `person:<name>`. */
-  for: z.string().min(1).optional(),
-});
+/**
+ * The filters are core's `followUpListTable` fields. `status` is `open` (due
+ * and waiting, the default), `all` (adds done and dropped), or the table's.
+ */
+export const FollowUpsQuerySchema = z.strictObject(listShape("follow-ups"));
 
 export const FollowUpChangeSchema = z.strictObject({
   action: z.enum(["done", "drop", "reopen", "due"]),

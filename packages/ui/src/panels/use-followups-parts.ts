@@ -90,24 +90,26 @@ export const useDetail = (row: FollowUpRow | undefined) => {
 /** Says aloud how many came due on a read, once per read. */
 export const useCameDue = (
   rows: readonly FollowUpRow[] | null,
+  /** The query `rows` answer: another filter's rows are not news. */
+  scope: string,
   announce: (words: string) => void,
   /** Ids the person made due themselves: they are not news. */
   quiet: RefObject<Set<string>>,
 ): void => {
-  const seen = useRef<Set<string> | null>(null);
+  const seen = useRef<{ scope: string; due: Set<string> } | null>(null);
   useEffect(() => {
     if (rows === null) return;
     const due = new Set(rows.filter(f => f.status === "due").map(f => f.id));
     const before = seen.current;
-    seen.current = due;
-    if (before === null) return;
-    const news = [...due].filter(id => !before.has(id));
+    seen.current = { scope, due };
+    if (before === null || before.scope !== scope) return;
+    const news = [...due].filter(id => !before.due.has(id));
     const came = news.filter(id => !quiet.current.has(id)).length;
     for (const id of news) quiet.current.delete(id);
     if (came > 0) {
       announce(`${String(came)} follow-up${came === 1 ? "" : "s"} came due.`);
     }
-  }, [rows, announce, quiet]);
+  }, [rows, scope, announce, quiet]);
 };
 
 /** A toast: what was refused, or what was done. */

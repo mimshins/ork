@@ -26,6 +26,7 @@ module on the tokens, and has a keyboard test and an axe test
 | `CopyCommand`             | Ork     | the code block: full width, a strong edge, its copy button top right                                                                |
 | `Markdown`                | Ork     | untrusted text as a view: a tree mapped to elements, a link allow-list, no HTML ([design](./panels-decisions-readable.md#markdown)) |
 | `FoldedText`              | Ork     | content clipped at 20 lines behind Show all / Show less, measured ([design](./panels-decisions-readable.md#folding))                |
+| `FilterBar`               | Ork     | one bar on the six list panels, made from `GET /api/list-fields` ([design](./design-filter-bar.md)); built                          |
 | icons                     | MDI     | one path each, in the text color; named for what they mean here                                                                     |
 
 - **Icons come from**

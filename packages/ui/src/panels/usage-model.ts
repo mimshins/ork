@@ -6,17 +6,12 @@
 
 import type { UsageReport } from "@krapht/ork-server/client";
 
-import type { Option } from "../components/select.tsx";
 import { atLeast, formatCost, formatTokens } from "../graph/facts.ts";
 
 const ALL_TIME = "all";
 
-export const PERIODS: readonly Option[] = [
-  { value: "7", label: "Last 7 days" },
-  { value: "30", label: "Last 30 days" },
-  { value: "90", label: "Last 90 days" },
-  { value: ALL_TIME, label: "All time" },
-];
+/** What the bar's `since` starts at, in the CLI's words. */
+export const DEFAULT_SINCE = "30d";
 
 /** Whether a period is everything there is. */
 export const isAllTime = (period: string): boolean => period === ALL_TIME;
@@ -35,16 +30,42 @@ export const sinceOf = (period: string, now: number): string | undefined => {
   ).toISOString();
 };
 
+/**
+ * The `since` the bar holds as the query the chart can draw from: an age in
+ * days or weeks or a day as a midnight, counting today (`sinceOf`), hours as a
+ * time, `undefined` for all. Anything else goes as typed, for the server to
+ * read or refuse.
+ */
+export const sinceQuery = (since: string, now: number): string | undefined => {
+  const age = /^(\d+)([dwh])$/u.exec(since);
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(since);
+  if (isAllTime(since)) return undefined;
+  if (age !== null) {
+    const count = Number(age[1]);
+    if (count === 0) return since;
+    return age[2] === "h"
+      ? new Date(now - count * 3_600_000).toISOString()
+      : sinceOf(String(age[2] === "w" ? count * 7 : count), now);
+  }
+  return day === null
+    ? since
+    : new Date(
+        Number(day[1]),
+        Number(day[2]) - 1,
+        Number(day[3]),
+      ).toISOString();
+};
+
 /** The same report on the terminal; a project is the one it is run from. */
 export const usageCommand = (
   everyProject: boolean,
-  period: string,
+  since: string,
   by?: string,
 ): string =>
   [
     "ork usage",
     ...(everyProject ? ["--all"] : []),
-    `--since ${isAllTime(period) ? "all" : `${period}d`}`,
+    `--since ${since}`,
     ...(by === undefined ? [] : [`--by ${by}`]),
   ].join(" ");
 

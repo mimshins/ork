@@ -12,9 +12,12 @@ and (for time and `--limit`) `ork logs`
 [output](../../packages/cli/src/list/print.ts),
 [the `--all` alias](../../packages/cli/src/list/all-alias.ts),
 [core tests](../../packages/core/test/list-filters.test.ts),
-[flag tests](../../packages/cli/test/list-flags.test.ts)). Not built: a generic
-`--where` and operators, store-side filtering, and the UI and `ork mcp` reading
-the tables ([L337, L338, L339](../gaps.md#limits)). Why:
+[flag tests](../../packages/cli/test/list-flags.test.ts)). The server's list
+routes read the same tables, so the browser view's
+[filter bar](../ui/design-filter-bar.md) and the `ork mcp` list tools filter by
+the CLI's fields ([API](../server/api.md#list-routes)). Not built: a generic
+`--where` and operators, and store-side filtering
+([L337, L338](../gaps.md#limits)). Why:
 [RFC-017](../../rfcs/archived/RFC-017-list-filters.md) (Option A), and
 [ADR-088](../../decisions/ADR-088-list-filters.md).
 
@@ -32,8 +35,8 @@ words mean the same on every list: `--status`, `--project`, `--since`,
 
 ## The table
 
-The machinery lives in `@krapht/ork-core` so the CLI, and later the UI and
-`ork mcp`, read the same tables.
+The machinery lives in `@krapht/ork-core` so the CLI and the server, and with it
+the UI and `ork mcp`, read the same tables.
 
 - **`ListField`** is `name` (the flag), `description` (its help line), `type`,
   `values` (an enum's, in the order help and Tab show them), `all` (it takes

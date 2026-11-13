@@ -71,6 +71,11 @@
   --followups-columns: minmax(16rem, 2fr) minmax(22rem, 3fr);
 }
 
+.toolsBar {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
 .toolsEnd {
   --followups-tools-end-gap: var(--gap);
 
@@ -80,17 +85,6 @@
   flex-wrap: wrap;
   gap: var(--followups-tools-end-gap);
   justify-content: flex-end;
-}
-
-.count,
-.updating {
-  --followups-count-text: var(--color-text-muted);
-  --followups-count-font: var(--font-mono);
-  --followups-count-text-size: var(--text-small);
-
-  color: var(--followups-count-text);
-  font-family: var(--followups-count-font);
-  font-size: var(--followups-count-text-size);
 }
 
 .list {

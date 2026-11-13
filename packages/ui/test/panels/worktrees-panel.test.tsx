@@ -1,10 +1,10 @@
 /**
  * @file Tests for the Worktrees panel's list: a card per project with something
  *   left, rows in core's words named for what they'd remove, a project git
- *   can't read with its words, the others counted; the project filter says its
- *   count aloud; Clean merged… says why it can't be pressed; Open run goes to
- *   the Monitor; the arrow keys move among the rows' same buttons; and the
- *   list's states pass axe.
+ *   can't read with its words, the others counted; the filter bar's tests are
+ *   in worktrees-filter.test.tsx; Clean merged… says why it can't be pressed;
+ *   Open run goes to the Monitor; the arrow keys move among the rows' same
+ *   buttons; and the list's states pass axe.
  */
 
 import { cleanup, screen, within } from "@testing-library/react";
@@ -15,12 +15,7 @@ import { violations } from "../axe.ts";
 import { stubWindow } from "../dom.ts";
 import { describedBy } from "./feedback-harness.tsx";
 import { BUILD, DOCS, LEAD, project, row } from "./worktrees-fixtures.ts";
-import {
-  announced,
-  openWorktrees,
-  removeOf,
-  rowOf,
-} from "./worktrees-harness.tsx";
+import { openWorktrees, removeOf, rowOf } from "./worktrees-harness.tsx";
 
 beforeEach(() => {
   localStorage.clear();
@@ -31,11 +26,6 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-
-const pick = async (option: string): Promise<void> => {
-  await userEvent.click(screen.getByRole("combobox", { name: "Project" }));
-  await userEvent.click(await screen.findByRole("option", { name: option }));
-};
 
 describe("the Worktrees panel's list", () => {
   it("shows a card per project, its rows in core's words, and counts the rest", async () => {
@@ -86,13 +76,6 @@ describe("the Worktrees panel's list", () => {
     expect(removeOf("ork/r1/lead").getAttribute("aria-label")).toBe(
       "Remove ork/r1/lead…: run r1 is still going; stop it first",
     );
-  });
-
-  it("filters by project, and says the count aloud", async () => {
-    const opened = await openWorktrees();
-    await pick("app");
-    expect(announced(opened)).toBe("2 worktrees and 1 branch in app.");
-    expect(screen.queryByText(/Nothing left/u)).toBeNull();
   });
 
   it("says why Clean merged… can't be pressed", async () => {

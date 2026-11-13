@@ -13,6 +13,7 @@ import { SHELLS } from "./scripts.ts";
 import {
   type Candidate,
   decisionCandidates,
+  followUpCandidates,
   forCandidates,
   placeOf,
   projectCandidates,
@@ -136,6 +137,15 @@ const forWhom: ValueProvider = {
   values: context => forCandidates(context.store()),
 };
 
+/** `ork run --follow-ups`: `due`, then the project's open agent follow-ups. */
+const followUps: ValueProvider = {
+  group: "follow-ups",
+  values: context => {
+    const store = context.store();
+    return followUpCandidates(store, placeOf(context.cwd, store));
+  },
+};
+
 const drivers: ValueProvider = {
   group: "drivers",
   values: () =>
@@ -161,6 +171,7 @@ export const VALUE_PROVIDERS: Readonly<Record<string, ValueProvider>> = {
   node: nodes,
   input: inputs,
   "decide id": decisions,
+  "run follow-ups": followUps,
   "completion shell": shells,
   driver: drivers,
   project: projects,

@@ -6,7 +6,7 @@
  */
 
 import type { UsageAnswer, UsageReport } from "@krapht/ork-server/client";
-import { act, cleanup, screen, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -15,6 +15,7 @@ import {
   moneyOf,
   seriesOf,
   sinceOf,
+  sinceQuery,
   usageCommand,
 } from "../../src/panels/usage-model.ts";
 import { UsagePanel } from "../../src/panels/usage-panel.tsx";
@@ -83,6 +84,20 @@ const open = async (routes?: FakeRoutes) => {
   return { ...opened, container };
 };
 
+/** A fake answer that refuses a filter naming `param`, and gives `rows` else. */
+const refusing =
+  <T,>(param: string, error: string, rows: T) =>
+  (query: URLSearchParams): T | { error: string } =>
+    query.has(param) ? { error } : rows;
+
+/** Types a `since` into the filter bar and applies it. */
+const setSince = async (text: string): Promise<void> => {
+  await userEvent.type(
+    await screen.findByRole("combobox", { name: "Since" }),
+    `${text}{Enter}`,
+  );
+};
+
 beforeEach(() => {
   stubWindow();
 });
@@ -131,11 +146,10 @@ describe("the Usage panel", () => {
         return report();
       },
     });
-    await userEvent.click(screen.getByRole("combobox", { name: "Period" }));
-    await userEvent.click(
-      await screen.findByRole("option", { name: "All time" }),
-    );
-    expect(asked.at(-1)?.has("since")).toBe(false);
+    await setSince("all");
+    await waitFor(() => {
+      expect(asked.at(-1)?.has("since")).toBe(false);
+    });
   });
 
   it("reads again when a run ends", async () => {
@@ -195,15 +209,20 @@ describe("the Usage panel", () => {
     expect(screen.queryByText("ork run <workflow>")).not.toBeNull();
   });
 
-  it("does not speak of a period under all time", async () => {
+  it("says the filter hides everything, with the way back", async () => {
     await open({
       usage: () => report({ totals: { ...group("", 0), sessions: 0 } }),
     });
-    await userEvent.click(screen.getByRole("combobox", { name: "Period" }));
+    await setSince("all");
+    expect(
+      await screen.findByText("No usage rows match the filter."),
+    ).toBeDefined();
     await userEvent.click(
-      await screen.findByRole("option", { name: "All time" }),
+      within(screen.getByRole("search")).getByRole("button", {
+        name: "Clear filter",
+      }),
     );
-    expect(screen.queryByText("Nothing spent yet.")).not.toBeNull();
+    await screen.findByText("Nothing spent in this period.");
   });
 
   it("says when the server refuses, and tries again", async () => {
@@ -247,15 +266,11 @@ describe("the Usage panel", () => {
 
   it("keeps its filters when the panel is mounted again", async () => {
     const { state } = await open();
-    await userEvent.click(screen.getByRole("combobox", { name: "Period" }));
-    await userEvent.click(
-      await screen.findByRole("option", { name: "All time" }),
-    );
+    await setSince("all");
     cleanup();
     renderPanel(state, <UsagePanel />);
-    expect(
-      screen.getByRole("combobox", { name: "Period" }).textContent,
-    ).toContain("All time");
+    expect(state.usageFilter.getValue()).toEqual({ since: "all" });
+    await screen.findByRole("button", { name: "Clear filter" });
   });
 
   it("lists only the days with spend, newest first, and counts the rest", async () => {
@@ -268,6 +283,88 @@ describe("the Usage panel", () => {
       "2026-11-01",
     ]);
     screen.getByText(/days? with no spend/u);
+  });
+});
+
+describe("the Usage panel's filter bar", () => {
+  it("shows the bar with since's default, and no Clear filter yet", async () => {
+    await open();
+    screen.getByRole("search", { name: "Filter usage" });
+    const since = await screen.findByRole("combobox", { name: "Since" });
+    expect(since.getAttribute("placeholder")).toBe("Default: 30d");
+    expect(screen.queryByRole("button", { name: "Clear filter" })).toBeNull();
+  });
+
+  it("asks the server for the filter, and shows the count and the command", async () => {
+    const asked: URLSearchParams[] = [];
+    await open({
+      usage: query => {
+        asked.push(query);
+        return report();
+      },
+    });
+    await userEvent.type(
+      await screen.findByRole("combobox", { name: "Workflow" }),
+      "ship{Enter}",
+    );
+    await screen.findByText("2 usage rows match.");
+    expect(asked.at(-1)?.get("workflow")).toBe("ship");
+    screen.getByRole("button", {
+      name: "Copy command (ork usage --workflow ship)",
+    });
+  });
+
+  it("asks for a day as a midnight and an age in whole days", async () => {
+    const asked: URLSearchParams[] = [];
+    await open({
+      usage: query => {
+        asked.push(query);
+        return report();
+      },
+    });
+    await setSince("7d");
+    await waitFor(() => {
+      expect(asked.at(-1)?.get("since")).toBe(sinceOf("7", Date.now()));
+    });
+  });
+
+  it("shows the server's refusal inline, not as a failed report", async () => {
+    await open({
+      usage: refusing(
+        "workflow",
+        "--workflow takes a workflow name, not `x y`.",
+        report(),
+      ),
+    });
+    await userEvent.type(
+      await screen.findByRole("combobox", { name: "Workflow" }),
+      "x y{Enter}",
+    );
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(
+      "--workflow takes a workflow name, not x y.",
+    );
+    expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+    expect(screen.getByText("Spend").nextSibling?.textContent).toBe("$12.50");
+  });
+
+  it("clears the filter, and asks for the default again", async () => {
+    const asked: URLSearchParams[] = [];
+    const { state } = await open({
+      usage: query => {
+        asked.push(query);
+        return report();
+      },
+    });
+    await setSince("all");
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Clear filter" }),
+    );
+    expect(state.usageFilter.getValue()).toEqual({});
+    await waitFor(() => {
+      expect(asked.at(-1)?.has("since")).toBe(true);
+    });
+    expect(screen.queryByRole("button", { name: "Clear filter" })).toBeNull();
   });
 });
 
@@ -351,8 +448,22 @@ describe("the Usage panel's model", () => {
     expect([large(0), large(12.5)]).toEqual(["$0.00", "$12.50"]);
   });
 
+  it("reads the bar's since as the chart starts it", () => {
+    expect(sinceQuery("all", NOW)).toBeUndefined();
+    expect(sinceQuery("7d", NOW)).toBe(sinceOf("7", NOW));
+    expect(sinceQuery("2w", NOW)).toBe(sinceOf("14", NOW));
+    expect(sinceQuery("2026-11-01", NOW)).toBe(
+      new Date(2026, 10, 1).toISOString(),
+    );
+    expect(sinceQuery("24h", NOW)).toBe(
+      new Date(NOW - 24 * 3_600_000).toISOString(),
+    );
+    expect(sinceQuery("0d", NOW)).toBe("0d");
+    expect(sinceQuery("banana", NOW)).toBe("banana");
+  });
+
   it("says what the same report is on a terminal", () => {
-    expect(usageCommand(true, "30")).toBe("ork usage --all --since 30d");
+    expect(usageCommand(true, "30d")).toBe("ork usage --all --since 30d");
     expect(usageCommand(false, "all", "node")).toBe(
       "ork usage --since all --by node",
     );

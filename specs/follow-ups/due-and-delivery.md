@@ -97,6 +97,24 @@ flag stops the run before it starts, naming each reason, and no follow-up is
 changed. The brief is each title, id, body and files
 ([L305](../gaps/follow-ups-limits.md)).
 
+`--follow-ups due` takes **every `agent` follow-up that is due** in the current
+project, after the same due check every `ork follow-ups` call runs first (so an
+`after-merge` one whose pull request merged counts). It combines with ids
+(`--follow-ups due,4f2a1c`): the union, each taken once. Follow-ups for someone
+else are skipped silently by `due` (named ids still refuse them), and done and
+dropped ones are not due. With nothing due, the run does not start: it exits 1,
+takes nothing and says on stderr that no agent follow-ups are due, naming
+`ork follow-ups list`. When `gh` cannot check pull requests, `due` still takes
+what is already due, with the one-line warning the due check gives.
+
+`--follow-ups` with no value (`--follow-ups`, `--follow-ups ""`,
+`--follow-ups=`, or a next argument that starts with `--`) exits 1 before the
+workflow loads: "`--follow-ups` needs follow-up ids, or `due` for every due
+agent follow-up. `ork follow-ups list` shows them." It never reaches the
+"missing required input brief" error
+([code](../../packages/cli/src/follow-ups/brief.ts),
+[tests](../../packages/cli/test/follow-ups-run.test.ts)).
+
 The run is recorded as each follow-up's `takenBy`. A run that **publishes**
 tells Ork so with `ork follow-ups published <ref>` (called by `build`'s
 `published` step, with `ORK_RUN` set): the open follow-ups that run left without

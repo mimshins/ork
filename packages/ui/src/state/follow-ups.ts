@@ -14,6 +14,8 @@ import type {
 } from "@krapht/ork-server/client";
 import { Container } from "react-containerized-state";
 
+import type { FilterValues } from "../components/filter-model.ts";
+
 /** A follow-up with the registered project it is in. */
 export type FollowUpRow = FollowUp & {
   /** The project's id, as `ork projects` names it. */
@@ -31,9 +33,23 @@ export type FollowUpsRead = {
 /** The stream's due count before it says anything: none are due. */
 export const NONE_DUE: FollowUpsDue = { count: 0, items: [] };
 
+/** The values that are set, as the routes' query. */
+const queryOf = (values: FilterValues): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(values).flatMap(([name, value]) =>
+      value === undefined || value === "" ? [] : [[name, value]],
+    ),
+  );
+
+/**
+ * Every project's follow-ups under the filter (the server checks it and
+ * defaults to the open ones), one list.
+ */
 export const readFollowUps = async (
   client: Client,
+  filter: FilterValues,
 ): Promise<CallResult<FollowUpsRead>> => {
+  const query = queryOf(filter);
   const projects = await client.call("projects");
   if (!projects.ok) return projects;
   const lists = await Promise.all(
@@ -41,7 +57,7 @@ export const readFollowUps = async (
       project,
       answer: await client.call("followUps", {
         params: { id: project.id },
-        query: { status: "all" },
+        query,
       }),
     })),
   );
@@ -65,6 +81,8 @@ export const readFollowUps = async (
   };
 };
 
-/** The panel's filters, which outlive a change of layout. */
-export const createFollowUpsFilter = (all: string) =>
-  Container.create({ status: "open", kind: "all", for: "all", project: all });
+/**
+ * The panel's filter values (none set is the open ones), which outlive a change
+ * of layout.
+ */
+export const createFollowUpsFilter = () => Container.create<FilterValues>({});

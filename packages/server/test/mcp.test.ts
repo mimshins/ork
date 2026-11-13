@@ -83,6 +83,23 @@ describe("ork mcp's tools", () => {
     });
   });
 
+  it("filters runs and usage by the CLI's fields, and refuses a bad value in its words", async () => {
+    await withRuns();
+    const done = await parsed("runs", { status: "succeeded" });
+    expect(done).toMatchObject([{ id: "aaa11111" }]);
+    expect(done).toHaveLength(1);
+    expect(await parsed("runs", { workflow: "gone" })).toEqual([]);
+    expect(
+      await parsed("usage", { since: "24h", workflow: "demo" }),
+    ).toMatchObject({
+      totals: { sessions: 0 },
+    });
+    expect(await call("runs", { status: "nope" })).toEqual({
+      text: expect.stringContaining("--status takes one of") as unknown,
+      isError: true,
+    });
+  });
+
   it("refuses a run it can't find, in the API's words", async () => {
     await withRuns();
     expect(await call("run", { run: "zzz" })).toEqual({

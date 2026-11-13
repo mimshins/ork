@@ -9,8 +9,10 @@
 
 import {
   acceptItem,
+  applyFilters,
   type EventStore,
   type FeedbackItem,
+  feedbackListTable,
   recordNote,
 } from "@krapht/ork-core";
 
@@ -18,6 +20,7 @@ import { runOf, type ServerContext } from "./context.ts";
 import { applyRoute } from "./feedback-apply.ts";
 import { detailOf } from "./feedback-detail.ts";
 import { previewOf, sendPublish } from "./feedback-publish.ts";
+import { filterOf } from "./list-query.ts";
 import { fail, type Handlers, ok } from "./router.ts";
 
 type FeedbackRoutes = Pick<
@@ -60,7 +63,19 @@ export const feedbackRoutes = (context: ServerContext): FeedbackRoutes => {
       return noted.ok ? ok({ item: noted.item }) : fail(400, noted.error);
     },
 
-    feedbackItems: () => ok(store.feedbackItems({ all: true })),
+    // Every item, dismissed too, unless a filter narrows it: the panel picks its default.
+    feedbackItems: ({ query }) => {
+      const read = filterOf(feedbackListTable, query);
+      return read.ok
+        ? ok(
+            applyFilters(
+              feedbackListTable,
+              store.feedbackItems({ all: true }),
+              read.filter,
+            ),
+          )
+        : read.refusal;
+    },
 
     feedbackItem: ({ params }) => {
       const found = itemOf(store, params.id);

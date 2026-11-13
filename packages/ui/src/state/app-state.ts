@@ -25,11 +25,7 @@ import { createDecisionHistory } from "./decision-history.ts";
 import { createFeeds, isLive } from "./feeds.ts";
 import { createNotifications } from "./notifications.ts";
 import { createOverview } from "./overview.ts";
-import {
-  ALL_PROJECTS,
-  createPreferences,
-  DEFAULT_PERIOD,
-} from "./preferences.ts";
+import { createPreferences } from "./preferences.ts";
 import { createRead } from "./read.ts";
 import type { LinkStatus, OpenSource } from "./stream-link.ts";
 
@@ -102,8 +98,8 @@ export const createAppState = ({
     context.chooseRun(next.run, next.node);
   };
   const preferences = createPreferences(storage);
-  /** The project the Runs panel shows: a root, or "all". */
-  const runFilter = Container.create(ALL_PROJECTS);
+  /** The Runs panel's filter bar values, for the page's life. */
+  const runFilter = Container.create<Partial<Record<string, string>>>({});
   const runDialog = Container.create(false);
   /** What the Run workflow dialog opens on, when something chose for it. */
   const runPreset = Container.create<{
@@ -112,27 +108,36 @@ export const createAppState = ({
   } | null>(null);
   const projects = createRead(() => client.call("projects"));
   const triggers = createRead(() => client.call("triggers"));
+  /** The filter fields of every list: the bars' one read. */
+  const listFields = createRead(() => client.call("listFields"));
   const workflows = createRead((id: string) =>
     client.call("workflows", { params: { id } }),
   );
   /** The Usage panel's filters, which outlive a change of layout. */
-  const usageFilter = Container.create({
-    project: ALL_PROJECTS,
-    period: DEFAULT_PERIOD,
-  });
+  const usageFilter = Container.create<Partial<Record<string, string>>>({});
   /** `now` is when it was asked, which the report's chart runs up to. */
   const usage = createRead(
     ({ query }: { query: QueryOf<"usage">; now: number; period: string }) =>
       client.call("usage", { query }),
   );
-  /** The Feedback panel's filters, for the page's life. */
-  const feedbackFilter = Container.create({ status: "open", about: "all" });
-  /** Every feedback item, dismissed ones too: no stream sends them. */
-  const feedback = createRead(() => client.call("feedbackItems"));
-  /** The Worktrees panel's project, its own, for the page's life. */
-  const worktreesFilter = Container.create(ALL_PROJECTS);
-  /** What `ork worktrees` lists, every project's: no stream sends it. */
-  const worktrees = createRead(() => client.call("worktrees"));
+  /**
+   * The Feedback panel's filters, for the page's life: the bar's values (no
+   * status means not dismissed) and the About select beside it.
+   */
+  const feedbackFilter = Container.create<{
+    values: Partial<Record<string, string>>;
+    about: string;
+  }>({ values: {}, about: "all" });
+  /** The items the bar's query leaves (`filterQuery`); no stream sends them. */
+  const feedback = createRead((query: Record<string, string>) =>
+    client.call("feedbackItems", { query }),
+  );
+  /** The Worktrees panel's filter bar values, for the page's life. */
+  const worktreesFilter = Container.create<Partial<Record<string, string>>>({});
+  /** What `ork worktrees` lists under the bar's query: no stream sends it. */
+  const worktrees = createRead((query: Record<string, string>) =>
+    client.call("worktrees", { query }),
+  );
   const feeds = createFeeds({ client, open });
   const decisionHistory = createDecisionHistory(client);
   const notifications = createNotifications({ runs, decisions, storage });
@@ -181,6 +186,7 @@ export const createAppState = ({
     worktrees,
     worktreesFilter,
     triggers,
+    listFields,
     version,
     /** Asks for a run; it then arrives on the stream like any other. */
     startRun: (body: BodyOf<"start">) => client.call("start", { body }),

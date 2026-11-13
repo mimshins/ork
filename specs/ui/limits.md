@@ -50,11 +50,11 @@ choice. Those the gaps review carried are open work in the
   with a run open use them all, and the next tab's requests wait. HTTP/2 needs
   TLS in a browser; a `SharedWorker` or `BroadcastChannel` could share one
   stream between tabs. ([state](./state.md#a-runs-feed))
-- **L37 · The Runs panel sees the newest 50 runs.** The overview stream sends
-  that many, and the filter narrows them in the page, so an older run, or a
-  quiet project behind busy ones, needs `ork ps`. The panel says so when a
-  filter finds none. The stream's `?project=` and paging on `/api/runs` could
-  reach them. ([panels](./panels-runs-and-monitor.md#runs))
+- **L37 · The Runs panel sees the newest 50 runs, or 20 under a filter.** With
+  no filter the overview stream's 50 show; with one the panel reads
+  `GET /api/runs` for it, which answers its 20 newest matches, so an older run
+  needs `ork ps` with a larger `--limit`. Paging on `/api/runs` and a `limit` in
+  the panel could reach them. ([panels](./panels-runs-and-monitor.md#runs))
 - **L63 · A run's tree is read again, not folded in the browser.** The Monitor
   asks the server for it at most four times a second while the run is busy. That
   is the whole history each time, so a very long run costs more to watch.

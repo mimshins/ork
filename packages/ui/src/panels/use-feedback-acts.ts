@@ -34,6 +34,8 @@ export type ActsOptions = {
   narrow: boolean;
   choose: (id: string | null) => void;
   focus: (target: FocusTarget) => void;
+  /** Reads the list again, under the filter. */
+  reloadList: () => Promise<void>;
   reloadDetail: () => void;
 };
 
@@ -48,7 +50,7 @@ export const useFeedbackActs = (options: ActsOptions) => {
     openRunIn(state, workspace, run, node);
   };
   const reloadAll = async (): Promise<void> => {
-    await state.feedback.load();
+    await options.reloadList();
     options.reloadDetail();
   };
 

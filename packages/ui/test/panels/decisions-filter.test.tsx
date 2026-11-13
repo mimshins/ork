@@ -1,8 +1,9 @@
 /**
- * @file Tests for the Decisions panel's filter bar: each workflow and run with
- *   its count of open decisions, a choice hides the rest and says how many, the
- *   choice survives a reload, a saved value no longer present is dropped once
- *   the list has come, and an empty filter says so, not "nothing waits".
+ * @file Tests for the Decisions panel's filter bar (the shared bar, on the
+ *   `decisions` list): it always shows, a value refetches `GET /api/decisions`
+ *   with the query, a refused value shows the server's words and keeps the
+ *   list, Clear filter resets, the command is the twin, a saved value is kept,
+ *   and a decision opening while filtered is read again.
  */
 
 import type { DecisionRecord } from "@krapht/ork-server/client";
@@ -39,26 +40,69 @@ const LIST = [
   decision("d4", "ccc33333"),
 ];
 
-const open = async (list: DecisionRecord[] = LIST) => {
-  const opened = openPanelState();
+const WORKFLOW_OF: Record<string, string> = {
+  aaa11111: "feature",
+  bbb22222: "feature",
+  ccc33333: "review",
+};
+
+/** What a fake `GET /api/decisions` answers, and what it was asked. */
+type Server = {
+  list: DecisionRecord[];
+  asked: string[];
+  /** A value it refuses, with its words. */
+  refuse?: { workflow: string; words: string };
+};
+
+const decisionsRoute =
+  (server: Server) =>
+  (
+    path: string,
+    _body: unknown,
+    query: URLSearchParams,
+  ): Response | undefined => {
+    if (path !== "/api/decisions") return undefined;
+    server.asked.push(query.toString());
+    const workflow = query.get("workflow");
+    const run = query.get("run");
+    if (workflow !== null && workflow === server.refuse?.workflow) {
+      return new Response(JSON.stringify({ error: server.refuse.words }), {
+        status: 400,
+      });
+    }
+    return new Response(
+      JSON.stringify(
+        server.list.filter(
+          ({ runId }) =>
+            (workflow === null || WORKFLOW_OF[runId] === workflow) &&
+            (run === null || runId === run),
+        ),
+      ),
+    );
+  };
+
+const open = async (extra: Partial<Server> = {}) => {
+  const server: Server = { list: LIST, asked: [], ...extra };
+  const opened = openPanelState({ builder: decisionsRoute(server) });
   renderPanel(opened.state, <DecisionsPanel />);
   await act(async () => {
     opened.overview.send("runs", RUNS);
-    opened.overview.send("decisions", list);
+    opened.overview.send("decisions", server.list);
     await Promise.resolve();
   });
-  return opened;
+  return { ...opened, server };
 };
 
-const choose = async (label: string, option: string): Promise<void> => {
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("combobox", { name: label }));
-  await user.click(await screen.findByRole("option", { name: option }));
+/** Types into a field of the bar and applies it. */
+const apply = async (label: string, text: string): Promise<void> => {
+  const field = await screen.findByRole("combobox", { name: label });
+  await userEvent.clear(field);
+  await userEvent.type(field, `${text}{Enter}`);
 };
 
-/** Presses the first Clear filter there is: the bar's, or the empty state's. */
-const clearFilter = async (): Promise<void> => {
-  const [first] = screen.getAllByRole("button", { name: "Clear filter" });
+/** Presses the first button of that name: the bar's, or the empty state's. */
+const clickFirst = async (name: string): Promise<void> => {
+  const [first] = screen.getAllByRole("button", { name });
   if (first !== undefined) await userEvent.click(first);
 };
 
@@ -78,111 +122,114 @@ afterEach(() => {
 });
 
 describe("the filter bar", () => {
-  it("lists All and each workflow with its open decisions, and no bar for one run", async () => {
+  it("shows for one run too, and says how many are open", async () => {
+    const opened = await open({ list: [decision("d1", "aaa11111")] });
+    expect(
+      screen.getByRole("search", { name: "Filter decisions" }),
+    ).toBeDefined();
+    expect(screen.getByText("1 open decision.")).toBeDefined();
+    expect(opened.server.asked).toEqual([]);
+    expect(
+      await screen.findByRole("combobox", { name: "Workflow" }),
+    ).toBeDefined();
+    expect(screen.getByRole("combobox", { name: "Run" })).toBeDefined();
+  });
+
+  it("suggests the workflows and runs that have open decisions", async () => {
     await open();
-    await choose("Workflow", "feature (3)");
+    await userEvent.click(await screen.findByRole("combobox", { name: "Run" }));
+    await userEvent.keyboard("{ArrowDown}");
+    expect(
+      await screen.findByRole("option", { name: "bbb22222 · feature" }),
+    ).toBeDefined();
+  });
+
+  it("reads the list with the value as a query, and says how many match", async () => {
+    const { server } = await open();
+    await apply("Workflow", "feature");
+    expect(server.asked).toEqual(["workflow=feature"]);
     expect(asked()).toEqual(["d1", "d2", "d3"]);
-    expect(
-      screen.getByText("3 of 4 open decisions shown; 1 hidden by the filter."),
-    ).toBeDefined();
-    cleanup();
-    localStorage.clear();
-    await open([decision("d1", "aaa11111")]);
-    expect(screen.queryByRole("combobox", { name: "Workflow" })).toBeNull();
+    expect(screen.getByText("3 decisions match.")).toBeDefined();
   });
 
-  it("keeps a workflow named all apart from All", async () => {
-    const opened = openPanelState();
-    renderPanel(opened.state, <DecisionsPanel />);
-    await act(async () => {
-      opened.overview.send("runs", [
-        { ...runView("aaa11111"), workflow: "all" },
-        { ...runView("bbb22222"), workflow: "feature" },
-      ]);
-      opened.overview.send("decisions", [
-        decision("d1", "aaa11111"),
-        decision("d2", "bbb22222"),
-      ]);
-      await Promise.resolve();
-    });
-    await choose("Workflow", "all (1)");
-    expect(asked()).toEqual(["d1"]);
-  });
-
-  it("limits the runs to the chosen workflow, and ANDs the two", async () => {
-    await open();
-    await choose("Workflow", "feature (3)");
-    await choose("Run", "bbb22222 · feature (1)");
+  it("sends both fields, and shows the matching command", async () => {
+    const { server } = await open();
+    await apply("Workflow", "feature");
+    await apply("Run", "bbb22222");
+    expect(server.asked.at(-1)).toBe("workflow=feature&run=bbb22222");
     expect(asked()).toEqual(["d3"]);
-    expect(screen.getByText(/1 of 4 open decisions shown/u)).toBeDefined();
+    expect(
+      screen.getByRole("button", {
+        name: "Copy command (ork decide --list --workflow feature --run bbb22222)",
+      }),
+    ).toBeDefined();
   });
 
-  it("says how many are open with no filter, and clears a filter", async () => {
-    const user = userEvent.setup();
-    await open();
-    expect(screen.getByText("4 open decisions.")).toBeDefined();
-    await choose("Workflow", "review (1)");
-    await user.click(screen.getByRole("button", { name: "Clear filter" }));
+  it("says the server's words for a refused value, and keeps the last list", async () => {
+    const words = "--workflow takes a workflow of this project, not nope.";
+    await open({ refuse: { workflow: "nope", words } });
+    await apply("Workflow", "review");
+    await apply("Workflow", "nope");
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(words);
+    expect(asked()).toEqual(["d4"]);
+    expect(
+      screen
+        .getByRole("combobox", { name: "Workflow" })
+        .getAttribute("aria-invalid"),
+    ).toBe("true");
+  });
+
+  it("clears the filter, and reads the stream's list again", async () => {
+    const { server } = await open();
+    await apply("Workflow", "review");
+    expect(asked()).toEqual(["d4"]);
+    await userEvent.click(screen.getByRole("button", { name: "Clear filter" }));
     expect(asked()).toHaveLength(4);
-    expect(document.activeElement).toBe(
-      screen.getByRole("group", { name: "Decisions" }),
-    );
+    expect(screen.getByText("Filter cleared.")).toBeDefined();
+    expect(server.asked).toEqual(["workflow=review"]);
   });
 
-  it("keeps the choice for the next visit", async () => {
+  it("keeps the choice for the next visit, and a value nothing has now", async () => {
     await open();
-    await choose("Workflow", "review (1)");
+    await apply("Workflow", "gone");
     await act(async () => {
-      await Promise.resolve();
       await Promise.resolve();
     });
     cleanup();
     await open();
-    expect(asked()).toEqual(["d4"]);
-  });
-
-  it("drops a saved value that is no longer present, once the list has come", async () => {
-    localStorage.setItem(
-      "ork.preferences.v1",
-      JSON.stringify({
-        value: { decisionFilter: { workflow: "gone" } },
-        timestamp: 0,
-      }),
-    );
-    const opened = openPanelState();
-    renderPanel(opened.state, <DecisionsPanel />);
-    expect(opened.state.preferences.value.getValue().decisionFilter).toEqual({
-      workflow: "gone",
-    });
-    await act(async () => {
-      opened.overview.send("runs", RUNS);
-      opened.overview.send("decisions", LIST);
-      await Promise.resolve();
-    });
-    expect(asked()).toHaveLength(4);
-    expect(opened.state.preferences.value.getValue().decisionFilter).toEqual(
-      {},
-    );
-  });
-
-  it("says the filter, not the queue, is empty", async () => {
-    const { overview } = await open();
-    await choose("Run", "ccc33333 · review (1)");
-    await act(async () => {
-      overview.send("decisions", [
-        decision("d1", "aaa11111"),
-        decision("d2", "bbb22222"),
-      ]);
-      await Promise.resolve();
-    });
-    expect(screen.getByText("No decisions match the filter.")).toBeDefined();
     expect(
-      screen.getByText(/2 open decisions are hidden by it/u),
+      await screen.findByText("No decisions match the filter."),
     ).toBeDefined();
-    await clearFilter();
-    expect(asked()).toEqual(["d1", "d2"]);
-    expect(document.activeElement).toBe(
-      screen.getByRole("group", { name: "Decisions" }),
-    );
+    expect(
+      (
+        await screen.findByRole<HTMLInputElement>("combobox", {
+          name: "Workflow",
+        })
+      ).value,
+    ).toBe("gone");
+  });
+
+  it("says the filter, not the queue, is empty, and clears from there", async () => {
+    await open();
+    await apply("Run", "zzz99999");
+    expect(
+      await screen.findByText("No decisions match the filter."),
+    ).toBeDefined();
+    await clickFirst("Clear filter");
+    expect(asked()).toHaveLength(4);
+  });
+
+  it("reads again when the stream's list changes while filtered", async () => {
+    const { server, overview } = await open();
+    await apply("Workflow", "review");
+    server.list = [...LIST, decision("d5", "ccc33333")];
+    await act(async () => {
+      overview.send("decisions", server.list);
+      await Promise.resolve();
+    });
+    await vi.waitFor(() => {
+      expect(asked()).toEqual(["d4", "d5"]);
+    });
   });
 });

@@ -91,7 +91,7 @@ export const FOLLOW_UPS: FollowUp[] = [MESSAGE, MIGRATION, RETRIES, DANA, OLD];
 
 export type FollowUpsServer = {
   rows: FollowUp[];
-  asked: { route: string; path: string; body?: unknown }[];
+  asked: { route: string; path: string; query?: string; body?: unknown }[];
   /** Why the list can't be read, if it can't. */
   failList?: string | undefined;
   /** Why `gh` can't check the PRs, if it can't. */
@@ -164,23 +164,55 @@ const STATUS_AFTER = {
   due: "due",
 } as const;
 
+const STATUSES = ["due", "waiting", "done", "dropped", "all"];
+
+/** What the list route answers for a query: open by default, as the server does. */
+const listed = (
+  rows: readonly FollowUp[],
+  query: URLSearchParams,
+): FollowUp[] | string => {
+  const status = query.get("status") ?? "open";
+  if (status !== "open" && !STATUSES.includes(status)) {
+    return `--status takes one of ${STATUSES.join(", ")}, not \`${status}\`.`;
+  }
+  const target = query.get("for");
+  if (target?.startsWith("bad") === true) {
+    return `--for takes agent, me or a target, not ${target}.`;
+  }
+  return rows.filter(
+    f =>
+      (status === "all" ||
+        (status === "open"
+          ? f.status === "due" || f.status === "waiting"
+          : f.status === status)) &&
+      (query.get("kind") ?? f.kind) === f.kind &&
+      (query.get("for") ?? f.for) === f.for,
+  );
+};
+
 /** The follow-ups routes of a fake server, in the harness's `builder` hook. */
 export const followUpsRoute =
   (fake: FollowUpsServer) =>
-  (path: string, body: unknown): Response | undefined => {
+  (
+    path: string,
+    body: unknown,
+    query = new URLSearchParams(),
+  ): Response | undefined => {
     const match =
       /^\/api\/projects\/api\/follow-ups(?:\/([^/]+)(\/post)?)?$/u.exec(path);
     if (match === null) return undefined;
     const [, id, post] = match;
     const one = fake.rows.find(f => f.id === id);
     if (id === undefined) {
-      fake.asked.push({ route: "list", path });
+      fake.asked.push({ route: "list", path, query: query.toString() });
       if (fake.failList !== undefined) {
         return json({ error: fake.failList }, 500);
       }
+      const matched = listed(fake.rows, query);
+      if (typeof matched === "string") return json({ error: matched }, 400);
       const list: FollowUpsList = {
         project: "/repos/api",
-        followUps: fake.rows,
+        followUps: matched,
         due: fake.rows.filter(f => f.status === "due").length,
         checker: {
           available: fake.checkerErrors === undefined,

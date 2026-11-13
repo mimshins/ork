@@ -231,16 +231,38 @@ const answerTo = (
   });
 };
 
+/** The list under a `project` filter: a project by its name or root. */
+const inScope = (server: WorktreesServer, query: URLSearchParams) => {
+  const asked = query.get("project");
+  const shown =
+    asked === null || asked === "all"
+      ? server.projects
+      : server.projects.filter(p => p.name === asked || p.root === asked);
+  return { ...server, projects: shown };
+};
+
 export const worktreesRoute =
   (server: WorktreesServer) =>
-  (path: string, body: unknown): Response | undefined => {
+  (
+    path: string,
+    body: unknown,
+    query = new URLSearchParams(),
+  ): Response | undefined => {
     const route = ROUTES[path];
     if (route === undefined) return undefined;
-    server.asked.push({ route, body });
+    // A list read records the query it sent, as the others record their body.
+    server.asked.push({
+      route,
+      body: route === "list" ? Object.fromEntries(query) : body,
+    });
     const refusal = server.refuse?.[route];
     if (refusal !== undefined) {
       delete server.refuse?.[route];
       return json({ error: refusal.error }, refusal.status);
     }
-    return answerTo(server, route, body);
+    return answerTo(
+      route === "list" ? inScope(server, query) : server,
+      route,
+      body,
+    );
   };

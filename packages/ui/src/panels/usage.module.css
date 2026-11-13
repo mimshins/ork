@@ -47,12 +47,12 @@
   padding: var(--usage-tools-padding);
 }
 
-/* A project's name changes its width; the period beside it stays put. */
-.projectFilter {
-  --usage-project-filter-inline-size: 14rem;
+/* The filter bar takes the row. */
+.filter {
+  --usage-filter-basis: 20rem;
 
-  inline-size: var(--usage-project-filter-inline-size);
-  max-inline-size: 100%;
+  flex: 1 1 var(--usage-filter-basis);
+  min-width: 0;
 }
 
 .body {

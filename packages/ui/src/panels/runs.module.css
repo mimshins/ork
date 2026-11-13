@@ -32,6 +32,14 @@
   padding: var(--runs-tools-padding);
 }
 
+/* The filter bar takes the row; Run workflow keeps its size beside it. */
+.filter {
+  --runs-filter-basis: 20rem;
+
+  flex: 1 1 var(--runs-filter-basis);
+  min-width: 0;
+}
+
 .main {
   --runs-main-bg: var(--surface-panel);
   --runs-main-radius: var(--radius-panel);

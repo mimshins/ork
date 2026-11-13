@@ -3,8 +3,9 @@
  *   (never created or migrated; one at another version gives nothing), the
  *   project the folder is in, its workflows and Ork's own, a workflow's nodes
  *   and inputs, runs newest first, a run's nodes and its workflow's inputs, and
- *   open decisions. Only ids, names, statuses and inputs' descriptions: never a
- *   prompt, an output or a secret.
+ *   open decisions, open agent follow-ups. Only ids, names, statuses, inputs'
+ *   descriptions and follow-up titles (one short line): never a prompt, an
+ *   output, a follow-up's body or a secret.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -240,3 +241,40 @@ export const forCandidates = (store: EventStore | undefined): Candidate[] => [
     description: p.root,
   })),
 ];
+
+/** The longest title a menu shows. */
+const TITLE_LIMIT = 60;
+
+/** A title as one short line: first line only, cut with an ellipsis. */
+const shortTitle = (title: string): string => {
+  const line = (title.split("\n")[0] ?? "").trim();
+  return line.length > TITLE_LIMIT
+    ? `${line.slice(0, TITLE_LIMIT - 1)}…`
+    : line;
+};
+
+/**
+ * What `ork run --follow-ups` takes: `due` (every due agent follow-up), then
+ * the project's open agent follow-ups, due before waiting, each described by
+ * its title. Closed and other people's follow-ups are left out; an unreadable
+ * store gives `due` only.
+ */
+export const followUpCandidates = (
+  store: EventStore | undefined,
+  place: ProjectPlace,
+): Candidate[] => {
+  const open = (status: string): Candidate[] => {
+    try {
+      return (store?.followUps(place.root) ?? [])
+        .filter(f => f.for === "agent" && f.status === status)
+        .map(f => ({ value: f.id, description: shortTitle(f.title) }));
+    } catch {
+      return [];
+    }
+  };
+  return [
+    { value: "due", description: "every due agent follow-up" },
+    ...open("due"),
+    ...open("waiting"),
+  ];
+};

@@ -12,6 +12,7 @@ import path from "node:path";
 
 import {
   type EventStore,
+  type GhRunner,
   type HumanChannel,
   type FollowUp,
   followUpStore,
@@ -69,7 +70,12 @@ const world = (workflow: string): World => {
 const addFollowUp = async (
   w: World,
   title: string,
-  patch: { for?: "agent" | "me"; kind?: "change" | "task" } = {},
+  patch: {
+    for?: "agent" | "me";
+    kind?: "change" | "task";
+    due?: "now" | "after-merge";
+    ref?: string;
+  } = {},
 ): Promise<FollowUp> =>
   (
     await followUpStore({ rows: w.store, project: w.dir, home: w.home }).add({
@@ -77,36 +83,50 @@ const addFollowUp = async (
       body: `${title}: the details`,
       for: patch.for ?? "agent",
       kind: patch.kind ?? "change",
-      due: "now",
+      due: patch.due ?? "now",
+      ...(patch.ref === undefined ? {} : { ref: patch.ref }),
       where: ["src/a.ts"],
     })
   ).followUp;
 
-/** What `ork run take.ork.yaml --follow-ups <ids>` printed to stderr. */
-const prepared = (w: World, ids: readonly string[]) => {
+/** A `gh` that can't be reached. */
+const BROKEN_GH: GhRunner = () =>
+  Promise.resolve({ ok: false, stdout: "", stderr: "gh: rate limited" });
+
+/** What `ork run take.ork.yaml <args>` printed to stderr, and its exit code. */
+const preparedWith = async (
+  w: World,
+  args: readonly string[],
+  gh?: GhRunner,
+) => {
   const lines: string[] = [];
   const stderr = vi.spyOn(process.stderr, "write").mockImplementation(text => {
     lines.push(String(text).trimEnd());
     return true;
   });
   try {
-    const taking = prepareFollowUps(
+    const taking = await prepareFollowUps(
       w.store,
-      ["--follow-ups", ids.join(",")],
+      args,
       undefined,
       { file: path.join(w.dir, "take.ork.yaml") },
+      gh,
     );
-    return { taking, lines };
+    return { taking, lines, exitCode: process.exitCode };
   } finally {
     stderr.mockRestore();
     process.exitCode = undefined;
   }
 };
 
-const start = async (w: World, ids: readonly string[]) => {
+/** What `ork run take.ork.yaml --follow-ups <ids>` printed to stderr. */
+const prepared = (w: World, ids: readonly string[], gh?: GhRunner) =>
+  preparedWith(w, ["--follow-ups", ids.join(",")], gh);
+
+const start = async (w: World, ids: readonly string[], gh?: GhRunner) => {
   const out: string[] = [];
   const err: string[] = [];
-  const { taking, lines } = prepared(w, ids);
+  const { taking, lines } = await prepared(w, ids, gh);
   if (taking === undefined) return { exitCode: 1, runId: "", out, err: lines };
   const { exitCode, result } = await runWorkflowFile({
     file: "take.ork.yaml",
@@ -190,6 +210,105 @@ describe("ork run --follow-ups", () => {
     expect(ran.exitCode).toBe(1);
     expect(ran.err.join("\n")).toContain("take has none");
     expect(w.store.followUp(w.dir, one.id)?.takenBy).toBeUndefined();
+  });
+});
+
+const NEEDS =
+  "--follow-ups needs follow-up ids, or `due` for every due agent follow-up. `ork follow-ups list` shows them.";
+
+/** The ids of the follow-ups a run took, in the store's order. */
+const takenIds = (w: World): string[] =>
+  w.store
+    .followUps(w.dir)
+    .filter(f => f.takenBy !== undefined)
+    .map(f => f.id)
+    .toSorted();
+
+describe("ork run --follow-ups due", () => {
+  it("takes every due agent follow-up, and not a waiting or a `me` one", async () => {
+    const w = world(WITH_BRIEF);
+    const one = await addFollowUp(w, "Add retries");
+    const two = await addFollowUp(w, "Log the failures");
+    await addFollowUp(w, "Wait for the merge", {
+      due: "after-merge",
+      ref: "feature",
+    });
+    await addFollowUp(w, "Check the dashboards", { for: "me", kind: "task" });
+    const ran = await start(w, ["due"], BROKEN_GH);
+    expect(ran.exitCode).toBe(0);
+    expect(takenIds(w)).toEqual([one.id, two.id].toSorted());
+  });
+
+  it("takes the union with ids, each once", async () => {
+    const w = world(WITH_BRIEF);
+    const one = await addFollowUp(w, "Add retries");
+    const two = await addFollowUp(w, "Log the failures");
+    const { taking } = await prepared(w, ["due", one.id.slice(0, 4)]);
+    expect(taking?.inputs.join("\n").match(/^## /gmu)).toHaveLength(2);
+    expect(takenIds(w)).toEqual([one.id, two.id].toSorted());
+  });
+
+  it("warns when gh can't check pull requests, and still takes what is due", async () => {
+    const w = world(WITH_BRIEF);
+    const one = await addFollowUp(w, "Add retries");
+    await addFollowUp(w, "Wait for the merge", {
+      due: "after-merge",
+      ref: "feature",
+    });
+    const { taking, lines } = await prepared(w, ["due"], BROKEN_GH);
+    expect(taking).toBeDefined();
+    expect(lines).toEqual([
+      "Can't check PRs: gh failed: gh: rate limited. After-merge follow-ups stay waiting.",
+    ]);
+    expect(takenIds(w)).toEqual([one.id]);
+  });
+
+  it("exits 1 and takes nothing when none is due", async () => {
+    const w = world(WITH_BRIEF);
+    await addFollowUp(w, "Check the dashboards", { for: "me", kind: "task" });
+    const { taking, lines, exitCode } = await prepared(w, ["due"]);
+    expect(taking).toBeUndefined();
+    expect(exitCode).toBe(1);
+    expect(lines).toEqual([
+      "--follow-ups due: no agent follow-ups are due. `ork follow-ups list` shows them.",
+    ]);
+    expect(takenIds(w)).toEqual([]);
+    expect(w.store.runs()).toEqual([]);
+  });
+
+  it("is refused beside --input brief=, as ids are", async () => {
+    const w = world(WITH_BRIEF);
+    await addFollowUp(w, "Add retries");
+    const { taking, lines, exitCode } = await preparedWith(w, [
+      "--follow-ups",
+      "due",
+      "--input",
+      "brief=mine",
+    ]);
+    expect(taking).toBeUndefined();
+    expect(exitCode).toBe(1);
+    expect(lines).toEqual([
+      "--follow-ups and --input brief=… both set the brief.",
+    ]);
+    expect(takenIds(w)).toEqual([]);
+  });
+});
+
+describe("ork run --follow-ups with nothing after it", () => {
+  const empties: [string, string[]][] = [
+    ["no value", ["--follow-ups"]],
+    ["an empty value", ["--follow-ups", ""]],
+    ["an empty =value", ["--follow-ups="]],
+    ["a flag next", ["--follow-ups", "--input", "brief=x"]],
+  ];
+  it.each(empties)("says what it needs for %s", async (_, args) => {
+    const w = world(WITH_BRIEF);
+    await addFollowUp(w, "Add retries");
+    const { taking, lines, exitCode } = await preparedWith(w, args);
+    expect(taking).toBeUndefined();
+    expect(exitCode).toBe(1);
+    expect(lines).toEqual([NEEDS]);
+    expect(takenIds(w)).toEqual([]);
   });
 });
 

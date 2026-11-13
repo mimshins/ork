@@ -1,18 +1,25 @@
 /**
- * @file The Runs panel: the newest runs, filtered by project, and the way to
- *   start one. Choosing a run selects it for the other panels. The list is one
- *   tab stop, and the arrow keys move through it.
+ * @file The Runs panel: the newest runs, narrowed by the shared filter bar
+ *   (specs/ui/design-filter-bar.md), and the way to start one. Unfiltered it
+ *   shows the stream's runs; with a filter set it shows what `GET /api/runs`
+ *   answers for it. Choosing a run selects it for the other panels. The list is
+ *   one tab stop, and the arrow keys move through it.
  */
 
 import { type KeyboardEvent, useMemo } from "react";
 import { useComputedValue, useValue } from "react-containerized-state";
 
-import { Select } from "../components/select.tsx";
+import { FilterBar } from "../components/filter-bar.tsx";
+import { FilterEmpty } from "../components/filter-notes.tsx";
 import { useAppState } from "../state/context.tsx";
 import { ALL_PROJECTS, projectOptions } from "./project-options.ts";
 import { NoRuns, RunRow, RunWorkflowButton } from "./run-row.tsx";
 import { TriggersSection } from "./triggers-section.tsx";
-import { useProjectList, useWaitingRuns } from "./use-runs-panel.ts";
+import {
+  useFilteredRuns,
+  useProjectList,
+  useWaitingRuns,
+} from "./use-runs-panel.ts";
 
 import styles from "./runs.module.css";
 
@@ -37,31 +44,41 @@ const moveFocus = (event: KeyboardEvent<HTMLUListElement>): void => {
 export const RunsPanel = () => {
   const state = useAppState();
   const runs = useValue(state.runs);
-  const filter = useValue(state.runFilter);
+  const values = useValue(state.runFilter);
   const selected = useComputedValue(state.selection, ({ run }) => run);
   const waiting = useWaitingRuns(state);
   const projects = useProjectList(state);
+  const answer = useFilteredRuns(state, values);
   const all = useMemo(() => runs ?? [], [runs]);
-  const options = useMemo(() => projectOptions(projects, all), [projects, all]);
-  const shown = useMemo(
+  const suggestions = useMemo(
     () =>
-      filter === ALL_PROJECTS ? all : all.filter(run => run.project === filter),
-    [all, filter],
+      projectOptions(projects, all).filter(
+        option => option.value !== ALL_PROJECTS,
+      ),
+    [projects, all],
   );
-  const tabStop = shown.some(({ id }) => id === selected)
+  const { filtered } = answer;
+  const shown = filtered ? answer.rows : runs;
+  const rows = shown ?? [];
+  const tabStop = rows.some(({ id }) => id === selected)
     ? selected
-    : shown[0]?.id;
+    : rows[0]?.id;
   return (
     <div className={styles["panel"]}>
       <div className={styles["tools"]}>
-        <Select
-          label="Project"
-          onChange={value => {
-            void state.runFilter.setValue(value);
-          }}
-          options={options}
-          value={filter}
-        />
+        <div className={styles["filter"]}>
+          <FilterBar
+            busy={answer.busy}
+            error={answer.refused === null ? null : { message: answer.refused }}
+            list="runs"
+            onChange={next => {
+              void state.runFilter.setValue(next);
+            }}
+            shown={answer.rows?.length ?? null}
+            suggestions={{ project: suggestions }}
+            values={values}
+          />
+        </div>
         <RunWorkflowButton
           onClick={() => {
             void state.runDialog.setValue(true);
@@ -69,10 +86,28 @@ export const RunsPanel = () => {
         />
       </div>
       <div className={styles["main"]}>
-        {runs === null ? (
+        {answer.failed === null ? null : (
+          <p
+            className={styles["note"]}
+            role="alert"
+          >
+            Cannot read runs: {answer.failed}
+          </p>
+        )}
+        {shown === null ? (
           <p className={styles["note"]}>Reading runs…</p>
-        ) : shown.length === 0 ? (
-          <NoRuns filtered={filter !== ALL_PROJECTS} />
+        ) : rows.length === 0 ? (
+          filtered ? (
+            <FilterEmpty
+              list="runs"
+              onClear={() => {
+                void state.runFilter.setValue({});
+              }}
+              values={values}
+            />
+          ) : (
+            <NoRuns />
+          )
         ) : (
           // A list with its own keys; it stays a list to a screen reader.
           // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the keys move focus between the buttons inside
@@ -81,7 +116,7 @@ export const RunsPanel = () => {
             className={styles["list"]}
             onKeyDown={moveFocus}
           >
-            {shown.map(run => (
+            {rows.map(run => (
               <RunRow
                 key={run.id}
                 onSelect={state.selectRun}

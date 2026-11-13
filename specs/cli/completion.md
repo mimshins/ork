@@ -89,18 +89,19 @@ A provider gives an argument's values, found by the argument's name, or by the
 command's path and the name for one command only. A new command whose argument
 has one of these names gets its values with no change.
 
-| Argument                      | Group     | Values                                                                                                                                                                                                                                    |
-| ----------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `run` (positional, `--run`)   | runs      | Run ids newest first, with workflow and status: the project's, else any project's starting with the prefix, else the newest of any; at most 50                                                                                            |
-| `workflow`, `files`           | workflows | The project's workflows by name, then Ork's own `ork:` ones; `files` also asks for file names                                                                                                                                             |
-| `node` (positional, `--node`) | nodes     | With a `workflow` positional, the nodes of the workflow given (none before it is); else the nodes of the run given, or the project's newest run's                                                                                         |
-| `input` (`--input`)           | inputs    | `name=` for each input: with a `workflow` positional, the workflow given's (none before it is); else the workflow of the run given, or of the project's newest run; described by the input's description, else its type, and `(required)` |
-| `decide id`                   | decisions | Open decisions of live runs: the run given, else the project's; described by kind, run and node                                                                                                                                           |
-| `driver`                      | drivers   | The agent drivers' ids, with their labels                                                                                                                                                                                                 |
-| `project` (`--project`)       | projects  | `all`, then the registered projects' ids, described by their root                                                                                                                                                                         |
-| `for` (`--for`)               | for       | `agent`, `me`, and `project:<id>` for each registered project; `person:<name>` is typed                                                                                                                                                   |
-| `completion shell`            | shells    | The shells there is a script for                                                                                                                                                                                                          |
-| `path`, `file`, `output`      | files     | File names, from the shell                                                                                                                                                                                                                |
+| Argument                      | Group      | Values                                                                                                                                                                                                                                                              |
+| ----------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `run` (positional, `--run`)   | runs       | Run ids newest first, with workflow and status: the project's, else any project's starting with the prefix, else the newest of any; at most 50                                                                                                                      |
+| `workflow`, `files`           | workflows  | The project's workflows by name, then Ork's own `ork:` ones; `files` also asks for file names                                                                                                                                                                       |
+| `node` (positional, `--node`) | nodes      | With a `workflow` positional, the nodes of the workflow given (none before it is); else the nodes of the run given, or the project's newest run's                                                                                                                   |
+| `input` (`--input`)           | inputs     | `name=` for each input: with a `workflow` positional, the workflow given's (none before it is); else the workflow of the run given, or of the project's newest run; described by the input's description, else its type, and `(required)`                           |
+| `decide id`                   | decisions  | Open decisions of live runs: the run given, else the project's; described by kind, run and node                                                                                                                                                                     |
+| `run follow-ups`              | follow-ups | `due` (every due agent follow-up), then the project's open `agent` follow-ups, due before waiting, each as its id described by its title (first line, cut to 60 characters); done, dropped and other people's are not offered; an unreadable store gives `due` only |
+| `driver`                      | drivers    | The agent drivers' ids, with their labels                                                                                                                                                                                                                           |
+| `project` (`--project`)       | projects   | `all`, then the registered projects' ids, described by their root                                                                                                                                                                                                   |
+| `for` (`--for`)               | for        | `agent`, `me`, and `project:<id>` for each registered project; `person:<name>` is typed                                                                                                                                                                             |
+| `completion shell`            | shells     | The shells there is a script for                                                                                                                                                                                                                                    |
+| `path`, `file`, `output`      | files      | File names, from the shell                                                                                                                                                                                                                                          |
 
 The values of a list's filters ([list filters](./list-filters.md)) come two
 ways: `--status`, `--kind`, `--severity`, `--due` and `--source` are citty enum
@@ -127,9 +128,9 @@ a store at another schema version (newer, or older and not yet migrated) gives
 no values; flags and commands are still offered. SQLite refuses every write on
 that connection (it may still create the `-shm` and `-wal` files beside a store
 in WAL mode, as any reader does; the database is not changed). Completion prints
-ids, names, workflow names, statuses and driver labels; never a prompt, a
-question, an output or a secret. It answers in under 300 ms on a store of 500
-runs.
+ids, names, workflow names, statuses, driver labels and follow-up titles (one
+short line, never a body); never a prompt, a question, an output or a secret. It
+answers in under 300 ms on a store of 500 runs.
 
 ## ork --help
 

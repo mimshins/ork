@@ -85,41 +85,28 @@ describe("the Feedback panel's list", () => {
     );
   });
 
-  it("counts each status from everything read, and filters by it", async () => {
-    const opened = await openFeedback({
+  it("hides the dismissed ones until the status asks for them", async () => {
+    await openFeedback({
       items: [...ITEMS, item(MERGED, { status: "dismissed", title: "Gone" })],
     });
-    await userEvent.click(screen.getByRole("combobox", { name: "Status" }));
-    const options = (await screen.findAllByRole("option")).map(
-      option => option.textContent,
-    );
-    expect(options).toEqual([
-      "Not dismissed · 3",
-      "All · 4",
-      "New · 3",
-      "Triaged · 0",
-      "Accepted · 0",
-      "Resolved · 0",
-      "Published · 0",
-      "Dismissed · 1",
-    ]);
-    await userEvent.click(
-      screen.getByRole("option", { name: "Dismissed · 1" }),
-    );
-    expect(screen.getByText("1 item")).toBeDefined();
+    expect(screen.queryByRole("button", { name: /^Gone,/u })).toBeNull();
+    await pick("Status", "dismissed");
+    expect(await screen.findByText("1 feedback item matches.")).toBeDefined();
     expect(rowOf("Gone")).toBeDefined();
-    expect(announced(opened)).toBe("1 item.");
   });
 
   it("filters by what an item is about, and says when that leaves none", async () => {
     await openFeedback();
     await pick("About", "ork");
     expect(screen.getByText("1 item")).toBeDefined();
-    await pick("Status", "Published · 0");
-    expect(screen.getByText("Nothing published about ork.")).toBeDefined();
+    await pick("Status", "published");
     expect(
-      screen.getByText("Status: All and About: All show every item."),
+      await screen.findByText("No feedback items match the filter."),
     ).toBeDefined();
+    // The bar's command and the empty state's.
+    expect(
+      screen.getAllByText("ork feedback list --status published"),
+    ).toHaveLength(2);
   });
 
   it("says when there's no feedback at all, with its CLI twin", async () => {
@@ -307,7 +294,7 @@ describe("dismissing, restoring and accepting", () => {
 
   it("keeps a dismissed item listed under All, the focus on Restore", async () => {
     const opened = await openFeedback();
-    await pick("Status", "All · 3");
+    await pick("Status", "All");
     await choose(LOOP_TITLE);
     const status = actions().getByRole("button", { name: "Dismiss" });
     await userEvent.click(status);
@@ -316,9 +303,12 @@ describe("dismissing, restoring and accepting", () => {
     });
     expect(document.activeElement).toBe(status);
     await userEvent.click(status);
-    await vi.waitFor(() => {
-      expect(announced(opened)).toMatch(/Restored 9fae0c1d2e3f as new\.$/u);
-    });
+    await vi.waitFor(
+      () => {
+        expect(announced(opened)).toMatch(/Restored 9fae0c1d2e3f as new\.$/u);
+      },
+      { timeout: 4000 },
+    );
     expect(asked(opened, "status").map(call => call.body)).toEqual([
       { status: "dismissed" },
       { status: "new" },

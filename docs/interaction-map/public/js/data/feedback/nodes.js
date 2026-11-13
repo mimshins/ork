@@ -100,7 +100,7 @@ export const NODES = [
     pkg: "ui",
     src: "packages/ui/src/panels/feedback-panel.tsx",
     summary:
-      "The browser twin of `ork feedback`: every item, filtered by status and by what it's about; an item's facts and records, with the way to each run; and what you can do with it.",
+      "The browser twin of `ork feedback`: every item, filtered by the shared filter bar (status, kind, severity, workflow, run) and by what it's about; an item's facts and records, with the way to each run; and what you can do with it.",
     facts: [
       "Built: Dismiss, Restore, Accept, Add lesson…, Propose fix…, Publish… and Split. Which ones an item allows, and why not, is the server's answer by the same rule `ork feedback` keeps.",
       "Add lesson… names the lessons file and how full it is before anything is written. Propose fix… names the project and asks, with a choice of driver, starts `ork feedback apply` in the background, and goes to the run in the Monitor.",

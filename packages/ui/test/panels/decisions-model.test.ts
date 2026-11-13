@@ -8,11 +8,9 @@ import type { DecisionRecord } from "@krapht/ork-server/client";
 import { describe, expect, it } from "vitest";
 
 import {
-  countLine,
   endingOf,
-  filterView,
-  listCommand,
-  presentOnly,
+  openLine,
+  suggestionsOf,
 } from "../../src/panels/decisions-model.ts";
 
 const answered = (extra: Partial<DecisionRecord>): DecisionRecord => ({
@@ -64,51 +62,31 @@ const LIST = [
   open("d4", "r3"),
 ];
 
-describe("the filter", () => {
-  it("counts each workflow and run, the runs only of the chosen workflow", () => {
-    const view = filterView(LIST, { workflow: "feature" }, workflowOf);
-    expect(view.workflows.map(({ label }) => label)).toEqual([
-      "All (4)",
-      "feature (3)",
-      "review (1)",
+describe("the filter bar's help", () => {
+  it("suggests each workflow once, and each run with its workflow", () => {
+    const { workflow, run } = suggestionsOf(LIST, workflowOf);
+    expect(workflow).toEqual([
+      { value: "feature", label: "feature" },
+      { value: "review", label: "review" },
     ]);
-    expect(view.runs.map(({ label }) => label)).toEqual([
-      "All (3)",
-      "r1 · feature (2)",
-      "r2 · feature (1)",
+    expect(run).toEqual([
+      { value: "r1", label: "r1 · feature" },
+      { value: "r2", label: "r2 · feature" },
+      { value: "r3", label: "r3 · review" },
     ]);
-    expect(view.shown.map(({ id }) => id)).toEqual(["d1", "d2", "d3"]);
   });
 
-  it("ANDs the workflow and the run", () => {
-    const view = filterView(
-      LIST,
-      { workflow: "review", run: "r1" },
-      workflowOf,
+  it("names a run whose workflow is not known by its id alone", () => {
+    expect(suggestionsOf(LIST, run => WORKFLOWS[`${run}-none`]).run[0]).toEqual(
+      {
+        value: "r1",
+        label: "r1",
+      },
     );
-    expect(view.shown).toEqual([]);
   });
 
-  it("lists a chosen value nothing has now, so the select can show it", () => {
-    const view = filterView(LIST, { run: "gone" }, workflowOf);
-    expect(view.runs.at(-1)).toEqual({ value: "gone", label: "gone (0)" });
-  });
-
-  it("drops only the values no open decision has", () => {
-    expect(
-      presentOnly(LIST, { workflow: "gone", run: "r3" }, workflowOf),
-    ).toEqual({ run: "r3" });
-  });
-
-  it("says how many show and how many it hides, and its CLI twin", () => {
-    expect(countLine(4, 4)).toBe("4 open decisions.");
-    expect(countLine(1, 1)).toBe("1 open decision.");
-    expect(countLine(7, 3)).toBe(
-      "3 of 7 open decisions shown; 4 hidden by the filter.",
-    );
-    expect(listCommand({ workflow: "feature" })).toBe(
-      "ork decide --list --workflow feature",
-    );
-    expect(listCommand({ run: "r1" })).toBe("ork decide r1 --list");
+  it("says how many are open with no filter", () => {
+    expect(openLine(4)).toBe("4 open decisions.");
+    expect(openLine(1)).toBe("1 open decision.");
   });
 });

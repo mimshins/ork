@@ -8,10 +8,11 @@
  */
 
 import { EmptyState } from "../components/bits.tsx";
-import type { FollowUpRow } from "../state/follow-ups.ts";
+import { type FilterValues, isFiltered } from "../components/filter-model.ts";
+import { FilterEmpty } from "../components/filter-notes.tsx";
 import { FollowUpDetailCard } from "./followups-detail.tsx";
 import { FollowUpsList } from "./followups-list.tsx";
-import { noMatchWords, nowMs } from "./followups-model.ts";
+import { nowMs } from "./followups-model.ts";
 import {
   FollowUpsTools,
   projectsWithRows,
@@ -22,21 +23,31 @@ import { useFollowUps, type FollowUpsView } from "./use-followups.ts";
 import styles from "./followups.module.css";
 
 /** What the list says with nothing to show, and the next step. */
-const NoRows = ({ rows }: { rows: readonly FollowUpRow[] }) =>
-  rows.length === 0 ? (
+const NoRows = ({
+  filter,
+  onClear,
+}: {
+  filter: FilterValues;
+  onClear: () => void;
+}) =>
+  isFiltered(filter) ? (
+    <FilterEmpty
+      list="follow-ups"
+      onClear={onClear}
+      values={filter}
+    />
+  ) : (
     <EmptyState
       cli="ork follow-ups add"
-      title="No follow-ups yet."
+      title="No open follow-ups."
     >
       {"A run adds one when a change leaves work for later. Add one yourself:"}
     </EmptyState>
-  ) : (
-    <p className={styles["message"]}>{noMatchWords(rows)}</p>
   );
 
 const ListCard = ({ view }: { view: FollowUpsView }) => {
-  const { read, all, rows, shown, chosen } = view;
-  const failed = read.status === "failed";
+  const { read, all, rows, chosen } = view;
+  const failed = read.status === "failed" && view.refusal === null;
   return (
     <div
       aria-label="Follow-up list"
@@ -52,21 +63,26 @@ const ListCard = ({ view }: { view: FollowUpsView }) => {
           onRetry={view.reload}
         />
       ) : null}
-      {failed && shown.length > 0 ? (
+      {failed && rows.length > 0 ? (
         <p className={styles["note"]}>From the last read</p>
       ) : null}
       {all === null && !failed ? (
         <output className={styles["message"]}>Reading follow-ups…</output>
       ) : null}
-      {all !== null && shown.length === 0 ? <NoRows rows={rows} /> : null}
-      {shown.length === 0 ? null : (
+      {all !== null && rows.length === 0 ? (
+        <NoRows
+          filter={view.filter}
+          onClear={() => {
+            view.setFilter({});
+          }}
+        />
+      ) : null}
+      {rows.length === 0 ? null : (
         <FollowUpsList
           chosen={chosen}
           onChoose={view.choose}
-          rows={shown}
-          showProject={
-            view.filter.project === "all" && projectsWithRows(rows).length > 1
-          }
+          rows={rows}
+          showProject={projectsWithRows(rows).length > 1}
           today={nowMs()}
         />
       )}
@@ -113,11 +129,12 @@ export const FollowUpsPanel = () => {
       tabIndex={-1}
     >
       <FollowUpsTools
-        failed={read.status === "failed"}
+        failed={read.status === "failed" && view.refusal === null}
         filter={filter}
         onFilter={view.setFilter}
         onReload={view.reload}
         read={all}
+        refusal={view.refusal}
         updating={read.status === "loading" && all !== null}
       />
       <div className={styles["body"]}>

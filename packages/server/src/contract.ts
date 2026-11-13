@@ -30,9 +30,15 @@ import {
   type InputDef,
 } from "./contract-builder.ts";
 import { CONTEXT_API, type ContextResponses } from "./contract-context.ts";
-import type { StoredEvent, TreeNode } from "./contract-ends.ts";
-import type { WorkflowGraph } from "./contract-graph.ts";
+import type { StoredEvent, TreeNode, WorkflowGraph } from "./contract-ends.ts";
 import { LINKS_API } from "./contract-links.ts";
+import {
+  DecisionsQuerySchema,
+  LISTS_API,
+  type ListsResponses,
+  RunsQuerySchema,
+  UsageQuerySchema,
+} from "./contract-lists.ts";
 import {
   UPDATE_API,
   type UpdateResponses,
@@ -58,19 +64,6 @@ export type {
 
 const Count = z.coerce.number().int().positive();
 const Seq = z.coerce.number().int().nonnegative();
-export const RunsQuerySchema = z.strictObject({
-  project: z.string().min(1).optional(),
-  limit: Count.optional(),
-});
-
-export const UsageQuerySchema = z.strictObject({
-  project: z.string().min(1).optional(),
-  workflow: z.string().min(1).optional(),
-  /** ISO times: `since` included, `until` not. */
-  since: z.iso.datetime().optional(),
-  until: z.iso.datetime().optional(),
-});
-
 export const EventsQuerySchema = z.strictObject({
   after: Seq.optional(),
   node: z.string().min(1).optional(),
@@ -78,13 +71,6 @@ export const EventsQuerySchema = z.strictObject({
   limit: Count.optional(),
   /** Only the newest this many, still oldest first. */
   last: Count.optional(),
-});
-
-export const DecisionsQuerySchema = z.strictObject({
-  run: z.string().min(1).optional(),
-  project: z.string().min(1).optional(),
-  /** Only runs of this workflow, by name; ANDed with `run` or `project`. */
-  workflow: z.string().min(1).optional(),
 });
 
 /** An answer: the option, and what the person said with it, if anything. */
@@ -163,6 +149,7 @@ export const API = {
   ...CONTEXT_API,
   ...AFTER_API,
   ...WORKTREES_API,
+  ...LISTS_API,
   ...UPDATE_API,
   projects: { method: "GET", path: "/api/projects" },
   workflows: { method: "GET", path: "/api/projects/:id/workflows" },
@@ -210,6 +197,7 @@ export type Responses = BuilderResponses &
   ContextResponses &
   AfterResponses &
   WorktreesResponses &
+  ListsResponses &
   UpdateResponses & {
     health: Health;
     triggers: TriggersReport;

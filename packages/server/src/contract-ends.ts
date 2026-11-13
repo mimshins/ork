@@ -13,6 +13,11 @@ import type {
   TreeNode as CoreTreeNode,
 } from "@krapht/ork-core";
 
+import type { WorkflowGraph } from "./contract-graph.ts";
+
+// Re-exported so contract.ts takes the types it answers with from one module.
+export type { WorkflowGraph };
+
 export type EndView = {
   /** An end kind's id; the UI treats it as opaque text. */
   kind: string;

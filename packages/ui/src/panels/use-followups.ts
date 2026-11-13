@@ -17,10 +17,8 @@ import { WorkspaceContext } from "../workspace/context.ts";
 import { type Act, doneWords, nextAfter } from "./followups-acts.ts";
 import {
   type FollowUpRow,
-  type FollowUpsFilter,
   githubTarget,
-  rowsWords,
-  shownRows,
+  refusalOf,
 } from "./followups-model.ts";
 import { openRunIn } from "./open-run.ts";
 import { useNarrow } from "./use-feedback.ts";
@@ -52,8 +50,7 @@ export const useFollowUps = () => {
   const [showing, setShowing] = useState<"list" | "detail">("list");
   const all = shownOf(read)?.data ?? null;
   const rows = useMemo(() => all?.rows ?? [], [all]);
-  const shown = useMemo(() => shownRows(rows, filter), [rows, filter]);
-  const row = shown.find(f => f.id === chosen);
+  const row = rows.find(f => f.id === chosen);
   const detail = useDetail(row);
   const focus = useFocusSoon(root);
   const announce = useCallback(
@@ -62,7 +59,7 @@ export const useFollowUps = () => {
     },
     [workspace],
   );
-  const load = useCallback(() => state.followUps.load(), [state]);
+  const load = useCallback(() => state.followUps.load(filter), [state, filter]);
 
   useEffect(() => {
     void load();
@@ -74,7 +71,12 @@ export const useFollowUps = () => {
     };
   }, [load]);
   const quiet = useRef(new Set<string>());
-  useCameDue(all === null ? null : rows, announce, quiet);
+  useCameDue(
+    all === null ? null : rows,
+    JSON.stringify(shownOf(read)?.arg ?? {}),
+    announce,
+    quiet,
+  );
 
   const choose = useCallback((id: string | null): void => {
     setChosen(id);
@@ -85,10 +87,10 @@ export const useFollowUps = () => {
 
   /** After the server changed `changed`: read again, then move the choice. */
   const settle = async (changed: FollowUpRow): Promise<FollowUpRow> => {
-    const before = shown;
+    const before = rows;
     await load();
     detail.reload();
-    const after = shownRows(rowsNow(), filter);
+    const after = rowsNow();
     if (after.some(f => f.id === changed.id)) focus("heading");
     else {
       const next = nextAfter(before, after, changed.id);
@@ -141,9 +143,10 @@ export const useFollowUps = () => {
     root,
     narrow,
     read,
+    /** The server's refusal of the filter, which keeps the last list. */
+    refusal: read.status === "failed" ? refusalOf(read.error) : null,
     all,
     rows,
-    shown,
     filter,
     chosen,
     row,
@@ -162,9 +165,8 @@ export const useFollowUps = () => {
       setShowing("list");
       focus(row === undefined ? "list" : { row: row.id });
     },
-    setFilter: (next: FollowUpsFilter): void => {
+    setFilter: (next: typeof filter): void => {
       void state.followUpsFilter.setValue(next);
-      announce(`${rowsWords(shownRows(rows, next).length)}.`);
     },
     reload: (): void => {
       void load();

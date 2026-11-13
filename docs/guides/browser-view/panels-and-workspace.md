@@ -4,13 +4,17 @@ _Part of [The browser view](../browser-view.md)._
 
 ## The panels
 
-**Runs** lists the newest 50 runs, filtered by project if you choose one, with
-each one's status and cost. Choosing a run opens it in the other panels. **Run
-workflow** asks for a project, a workflow and its inputs, shows the command as
-you fill them in, and says why it cannot start yet. Once started, the focus goes
-to the new run in the Monitor. If your projects have
-[triggers](../watching.md#starting-a-run-when-something-happens), they're listed
-under the runs, with whether each is live. Accepting one takes a terminal.
+**Runs** lists the newest 50 runs, with each one's status and cost. Every list
+panel has the same
+[filter bar](../filtering-lists.md#in-the-browser-and-ork-mcp) at its top, with
+the fields of its `ork` command; on Runs it narrows by status (including
+`paused` and `crashed`), workflow, project, since and until. Choosing a run
+opens it in the other panels. **Run workflow** asks for a project, a workflow
+and its inputs, shows the command as you fill them in, and says why it cannot
+start yet. Once started, the focus goes to the new run in the Monitor. If your
+projects have [triggers](../watching.md#starting-a-run-when-something-happens),
+they're listed under the runs, with whether each is live. Accepting one takes a
+terminal.
 
 **Monitor** draws the run as it goes, beside the same nodes as a tree. Each node
 shows its status, cost, tokens and model. A node that
@@ -48,13 +52,13 @@ says who answered what, including from a terminal, and what they said.
 A decision reads as Markdown, never as raw HTML. A code block has a copy button,
 and text past about 20 lines folds behind **Show all**. **Read document** opens
 what a gate gave to read in a dialog of its own; `Escape` closes it and you are
-back on the same card. When decisions come from more than one run, **Workflow**
-and **Run** filters appear, each choice with its count, and a line says how many
-the filter hides; only the panel is filtered, and the filters stay as you left
-them in this browser. In the Monitor, a run with open decisions shows **N
-decisions waiting**, which opens them filtered to that run. If `ork ui` stops
-while you read, the answer buttons turn off and each option shows its
-`ork decide` command.
+back on the same card. The filter bar takes a **Workflow**, a **Run** and a
+**Project**, suggesting the ones with open decisions, and says how many
+decisions match; only the panel is filtered, and the filter stays as you left it
+in this browser. In the Monitor, a run with open decisions shows **N decisions
+waiting**, which opens them filtered to that run. If `ork ui` stops while you
+read, the answer buttons turn off and each option shows its `ork decide`
+command.
 
 **Chats** keeps one thread per leader or worker, with what it said, what you
 said, and what it did in between. While the run is live, `Enter` sends and
@@ -66,9 +70,9 @@ and the bell in the top bar counts what is unread. What you have read is kept
 per browser. Desktop notifications are off until you turn them on here, which
 makes your browser ask.
 
-**Usage** shows what runs spent over a period, for a project or all of them:
-totals, spend per day, and the costliest workflows, models and nodes, with what
-is worth a look. See
+**Usage** shows what runs spent over a period (the last 30 days unless you set
+**Since**), for a project or all of them: totals, spend per day, and the
+costliest workflows, models and nodes, with what is worth a look. See
 [what you spent](../models-and-budgets/driver-and-usage.md#what-you-spent).
 
 **Context** shows what the node you chose last is told, and where each piece
@@ -81,14 +85,16 @@ as they are now, so if one changed after the run started, it names it: what you
 see may not be what the run loaded.
 
 **Feedback** lists what got in your runs' way, from every project, filtered by
-status and by what it's about. Choose an item to read its records, newest first,
-then dismiss or restore it, accept it, make it a lesson for its workflow, have
-Ork propose a fix, or share one about Ork. Each action shows what it will do
-first ([feedback in the browser](../feedback.md#in-the-browser)).
+the bar (status, kind, severity, workflow, run) and by what it's about. Choose
+an item to read its records, newest first, then dismiss or restore it, accept
+it, make it a lesson for its workflow, have Ork propose a fix, or share one
+about Ork. Each action shows what it will do first
+([feedback in the browser](../feedback.md#in-the-browser)).
 
 **Worktrees** lists the worktrees and branches your runs left, for every project
-at once. **Remove…** takes one away and **Clean merged…** tidies what's merged;
-each shows its plan and its command, and asks, twice if work would be lost
+at once unless the bar's **Project** or **Run** narrows them. **Remove…** takes
+one away and **Clean merged…** tidies what's merged; each shows its plan and its
+command, and asks, twice if work would be lost
 ([worktrees in the browser](../worktrees.md#in-the-browser)).
 
 **Follow-ups** lists what your changes left for later, by when it is due and who

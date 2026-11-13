@@ -7,10 +7,16 @@
  *   the person saw. A project takes one write at a time.
  */
 
-import { applyClean, stepActs } from "@krapht/ork-core";
+import {
+  applyClean,
+  applyFilters,
+  stepActs,
+  worktreeListTable,
+} from "@krapht/ork-core";
 
 import type { ServerContext } from "./context.ts";
-import type { CleanDone } from "./contract-worktrees.ts";
+import type { CleanDone, WorktreeRow } from "./contract-worktrees.ts";
+import { filterOf, projectRootOf } from "./list-query.ts";
 import { fail, type Handlers, ok } from "./router.ts";
 import {
   cleanPlanOf,
@@ -80,9 +86,21 @@ export const worktreesRoutes = (context: ServerContext): WorktreesRoutes => {
   };
   return {
     worktrees: async ({ query }) => {
-      const all = await readAll(query.project);
+      const filtered = filterOf(worktreeListTable, query);
+      if (!filtered.ok) return filtered.refusal;
+      const all = await readAll(projectRootOf(context, filtered.filter));
       if (!all.ok) return all.refusal;
-      return ok({ projects: all.reads.map(read => listed(context, read)) });
+      return ok({
+        projects: all.reads.map(read => {
+          const project = listed(context, read);
+          project.items = applyFilters<WorktreeRow>(
+            worktreeListTable,
+            project.items,
+            filtered.filter,
+          );
+          return project;
+        }),
+      });
     },
 
     worktreeRemovePlan: async ({ body }) => {

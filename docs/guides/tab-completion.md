@@ -63,6 +63,10 @@ commands.
   `ork resume <run> --input` the run's. No space follows the `=`, so you type
   the value next (in bash 4 and later; macOS's bash 3.2 adds one).
 - **Open decisions** after `ork decide --id`.
+- **Follow-ups** after `ork run <workflow> --follow-ups`: `due` (every due agent
+  follow-up), then the project's open agent follow-ups by id, with each title
+  (one short line) beside it. Type the next id after a comma yourself, or repeat
+  the flag.
 - **List filters**: each list's flags, the values of `--status`, `--kind`,
   `--severity`, `--due` and `--source`, and your registered projects after
   `--project` and `--for` ([filtering lists](./filtering-lists.md)).

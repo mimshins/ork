@@ -8,6 +8,7 @@ export * from "./contract.ts";
 export * from "./contract-context.ts";
 export * from "./contract-feedback.ts";
 export * from "./contract-follow-ups.ts";
+export * from "./contract-lists.ts";
 export * from "./contract-links.ts";
 export * from "./contract-worktrees.ts";
 export * from "./contract-update.ts";

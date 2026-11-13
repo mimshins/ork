@@ -17,6 +17,7 @@ import {
 } from "react";
 import { useValue } from "react-containerized-state";
 
+import { type FilterValues, filterQuery } from "../components/filter-model.ts";
 import type { AppState } from "../state/app-state.ts";
 
 /** How often the list follows the runs, at most. */
@@ -27,7 +28,7 @@ const WIDE_REM = 48;
 
 const FALLBACK_REM_PX = 16;
 
-export const useFeedbackList = (state: AppState) => {
+export const useFeedbackList = (state: AppState, values: FilterValues) => {
   const read = useValue(state.feedback.state);
   const runs = useValue(state.runs);
   const lastRead = useRef(0);
@@ -35,8 +36,8 @@ export const useFeedbackList = (state: AppState) => {
   const seenRuns = useRef(runs);
   const load = useCallback(async (): Promise<void> => {
     lastRead.current = Date.now();
-    await state.feedback.load();
-  }, [state]);
+    await state.feedback.load(filterQuery(values));
+  }, [state, values]);
   useEffect(() => {
     void load();
     return () => {

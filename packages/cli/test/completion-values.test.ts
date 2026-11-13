@@ -11,7 +11,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-import { openStore } from "@krapht/ork-core";
+import { followUpStore, openStore } from "@krapht/ork-core";
 import type { CommandDef } from "citty";
 import { describe, expect, it, vi } from "vitest";
 
@@ -287,5 +287,70 @@ describe("a list's dynamic values", () => {
         "",
       ),
     ).toEqual(["agent", "me"]);
+  });
+});
+
+/** The seeded store with agent follow-ups: waiting, due, done, and one for me. */
+const withFollowUps = async (): Promise<{
+  seeded: ReturnType<typeof seedStore>;
+  ids: Record<"waiting" | "due" | "done" | "me", string>;
+}> => {
+  const seeded = seedStore();
+  const store = openStore(seeded.storeFile);
+  const follow = followUpStore({
+    rows: store,
+    project: seeded.project,
+    home: tempDir("ork-complete-fu-home-"),
+  });
+  const add = async (
+    title: string,
+    patch: { for?: "agent" | "me"; due?: "now" | "after-merge" },
+  ): Promise<string> =>
+    (
+      await follow.add({
+        title,
+        body: "The body completion never shows",
+        for: patch.for ?? "agent",
+        kind: "change",
+        due: patch.due ?? "now",
+        where: [],
+      })
+    ).followUp.id;
+  const ids = {
+    waiting: await add("Wait for the merge\nsecond line", {
+      due: "after-merge",
+    }),
+    due: await add("Add retries", {}),
+    done: await add("Already done", {}),
+    me: await add("Check the dashboards", { for: "me" }),
+  };
+  for (const f of store.followUps(seeded.project)) {
+    if (f.id === ids.done) store.putFollowUp({ ...f, status: "done" });
+  }
+  store.close();
+  return { seeded, ids };
+};
+
+describe("--follow-ups values of `ork run`", () => {
+  it("offers due first, then the open agent follow-ups with their titles", async () => {
+    const { seeded, ids } = await withFollowUps();
+    expect(await offered(seeded, "run", "start", "--follow-ups", "")).toEqual([
+      "due\tevery due agent follow-up",
+      `${ids.due}\tAdd retries`,
+      `${ids.waiting}\tWait for the merge`,
+    ]);
+  });
+
+  it("offers only due when the store can't be read", async () => {
+    const { seeded } = await withFollowUps();
+    expect(
+      await offered(
+        { ...seeded, storeFile: "/none" },
+        "run",
+        "start",
+        "--follow-ups",
+        "",
+      ),
+    ).toEqual(["due\tevery due agent follow-up"]);
   });
 });

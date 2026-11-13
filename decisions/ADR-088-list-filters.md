@@ -31,12 +31,12 @@ same.
   field and table types, `parseFilters`, `applyFilters`, `parseLimit`, the one
   time parser (moved from `ork usage`), and the tables for runs, feedback items,
   follow-ups, decisions, worktrees and usage. This is a new public export of
-  core, so the UI and `ork mcp` can read the same tables later
-  ([L339](../specs/gaps.md#limits)). A list whose row type lives only in the CLI
-  (`agents`, `projects`, `logs`) declares its table in the CLI with the same
-  machinery. The CLI makes citty flags from a table (`packages/cli/src/list/`),
-  an enum field's values as citty `options`, which `--help` and completion
-  already read.
+  core, so the UI and `ork mcp` read the same tables
+  ([L339](../specs/gaps.md#limits), closed). A list whose row type lives only in
+  the CLI (`agents`, `projects`, `logs`) declares its table in the CLI with the
+  same machinery. The CLI makes citty flags from a table
+  (`packages/cli/src/list/`), an enum field's values as citty `options`, which
+  `--help` and completion already read.
 - **`--all` is folded into `--project all` and `--status all`.** It stays one
   release as a hidden deprecated alias (an `Internal:` flag, left out of help
   and completion) that prints one line on stderr naming the replacement; when
@@ -84,8 +84,13 @@ costs one export and lets other surfaces reuse it.
 - A test derived from the tables keeps every list's flags, validation and
   completion in step with its table.
 - Left simpler, in the [register](../specs/gaps.md): `--where` and operators
-  (L337), filtering in the store (L338), the UI and `ork mcp` not reading the
-  tables (L339), the deprecated `--all` (L340), the `ps --ids` default (L341).
+  (L337), filtering in the store (L338), the deprecated `--all` (L340), the
+  `ps --ids` default (L341).
+- The server reads the tables too: its list routes take each table's fields by
+  their flag names, `GET /api/list-fields` serves their descriptions, and the
+  browser view's one filter bar and the `ork mcp` list tools are built from
+  them, so the UI offers the CLI's fields and words (L339, closed). The server
+  keeps its older parameters (`usage`'s ISO times, follow-ups' `open`).
 - Follow-up `cc84367e` is covered by the `follow-ups list` fields.
 
 Spec: [List filters](../specs/cli/list-filters.md); guide:

@@ -22,6 +22,7 @@ event streams, on loopback only. `ork ui` starts it and opens it.
   - [What it is](./server/what-it-is-and-ork-ui.md#what-it-is)
   - [ork ui](./server/what-it-is-and-ork-ui.md#ork-ui)
 - [API](./server/api.md)
+  - [List routes](./server/api.md#list-routes)
 - [Streams, the contract and security](./server/streams-contract-and-security.md)
   - [Streams](./server/streams-contract-and-security.md#streams)
   - [The contract and the typed client](./server/streams-contract-and-security.md#the-contract-and-the-typed-client)

@@ -6,22 +6,68 @@
  *   checked before any is marked, so a run that doesn't start leaves them be.
  */
 
-import { type EventStore, newRunId, takeFollowUps } from "@krapht/ork-core";
+import {
+  type EventStore,
+  type GhRunner,
+  newRunId,
+  runGh,
+  takeFollowUps,
+} from "@krapht/ork-core";
 
 import { flagValues } from "../commands/run.ts";
 import { loadWorkflow } from "../commands/validate.ts";
 import { writeErr } from "../output.ts";
-import { briefOf, checkTakeable } from "./context.ts";
+import { briefOf, checkTakeable, refreshDue } from "./context.ts";
 
 /** What `ork run` starts with: its inputs, and the id its run is given. */
 export type PreparedRun = { inputs: readonly string[]; runId?: string };
 
-/** The ids `--follow-ups` was given, one per comma or repeat. */
-const idsOf = (rawArgs: readonly string[]): string[] =>
-  flagValues(rawArgs, "--follow-ups")
-    .flatMap(value => value.split(","))
-    .map(id => id.trim())
-    .filter(id => id !== "");
+const FLAG = "--follow-ups";
+
+/** What `--follow-ups` takes besides ids: every due agent follow-up. */
+const DUE = "due";
+
+/**
+ * Each `--follow-ups` value as typed (one per use, still comma-joined), and
+ * whether one is missing: no value, an empty one, or a next argument that is
+ * another flag.
+ */
+const given = (
+  rawArgs: readonly string[],
+): { values: string[]; empty: boolean } => {
+  const values: string[] = [];
+  let empty = false;
+  for (const [index, arg] of rawArgs.entries()) {
+    if (arg !== FLAG && !arg.startsWith(`${FLAG}=`)) continue;
+    const next = rawArgs[index + 1];
+    const value =
+      arg === FLAG
+        ? next === undefined || next.startsWith("--")
+          ? ""
+          : next
+        : arg.slice(FLAG.length + 1);
+    const parts = value
+      .split(",")
+      .map(part => part.trim())
+      .filter(part => part !== "");
+    if (parts.length === 0) empty = true;
+    values.push(...parts);
+  }
+  return { values, empty };
+};
+
+/**
+ * Says what `--follow-ups` needs when it is given with nothing after it, and
+ * fails the command; true when it is fine (or not given).
+ */
+export const followUpsFlagFine = (rawArgs: readonly string[]): boolean => {
+  if (!given(rawArgs).empty) return true;
+  writeErr(
+    `${FLAG} needs follow-up ids, or \`${DUE}\` for every due agent follow-up. \`ork follow-ups list\` shows them.`,
+  );
+  process.exitCode = 1;
+  return false;
+};
 
 /**
  * What stops `--follow-ups` from starting a run, one line each; none when
@@ -47,19 +93,21 @@ const problemsOf = (
  * `--follow-ups`, a `brief` made of the follow-ups with the id of the run that
  * takes them. `undefined` after saying why it can't start.
  */
-export const prepareFollowUps = (
+export const prepareFollowUps = async (
   store: EventStore,
   rawArgs: readonly string[],
   runId: string | undefined,
   target: { file: string },
-): PreparedRun | undefined => {
+  gh: GhRunner = runGh,
+): Promise<PreparedRun | undefined> => {
   const inputs = flagValues(rawArgs, "--input");
-  const ids = idsOf(rawArgs);
   const plain: PreparedRun = {
     inputs,
     ...(runId === undefined ? {} : { runId }),
   };
-  if (ids.length === 0) return plain;
+  if (!followUpsFlagFine(rawArgs)) return undefined;
+  const { values } = given(rawArgs);
+  if (values.length === 0) return plain;
   const loaded = loadWorkflow(
     target.file,
     process.cwd(),
@@ -68,7 +116,24 @@ export const prepareFollowUps = (
   );
   // A workflow that doesn't load is reported by the run itself.
   if (loaded.workflow === null) return plain;
-  const takeable = checkTakeable(store, loaded.place.root, ids);
+  const project = loaded.place.root;
+  const named = values.filter(value => value !== DUE);
+  // `refreshDue` answers only those that just came due; every due one counts.
+  if (values.includes(DUE)) await refreshDue(store, project, writeErr, gh);
+  const due = values.includes(DUE)
+    ? store
+        .followUps(project)
+        .filter(f => f.for === "agent" && f.status === "due")
+        .map(f => f.id)
+    : [];
+  if (named.length === 0 && due.length === 0) {
+    writeErr(
+      `${FLAG} ${DUE}: no agent follow-ups are due. \`ork follow-ups list\` shows them.`,
+    );
+    process.exitCode = 1;
+    return undefined;
+  }
+  const takeable = checkTakeable(store, project, [...named, ...due]);
   const problems = [
     ...problemsOf(loaded, inputs),
     ...(takeable.ok ? [] : takeable.lines),
@@ -78,14 +143,18 @@ export const prepareFollowUps = (
     process.exitCode = 1;
     return undefined;
   }
+  // An id given and also due (or by prefix and in full) is taken once.
+  const followUps = [
+    ...new Map(takeable.followUps.map(f => [f.id, f])).values(),
+  ];
   const taker = runId ?? newRunId(store);
   takeFollowUps(store, {
-    project: loaded.place.root,
+    project,
     run: taker,
-    ids: takeable.followUps.map(f => f.id),
+    ids: followUps.map(f => f.id),
   });
   return {
-    inputs: [...inputs, `brief=${briefOf(takeable.followUps)}`],
+    inputs: [...inputs, `brief=${briefOf(followUps)}`],
     runId: taker,
   };
 };

@@ -4,16 +4,12 @@
  *   them.
  */
 
-import type { LimitsReport, UsageReport } from "@krapht/ork-server/client";
+import type { UsageReport } from "@krapht/ork-server/client";
 import type { ReactNode } from "react";
 
-import { EmptyState } from "../components/bits.tsx";
-import { Button } from "../components/button.tsx";
-import { CodeText } from "../components/code-text.tsx";
 import { CopyCommand } from "../components/copy-command.tsx";
 import { CountedTerm, Dollars, PromptTerm } from "../components/spend.tsx";
-import { UsageLimits } from "./usage-limits.tsx";
-import { isAllTime, money, moneyOf, percent, tokens } from "./usage-model.ts";
+import { money, moneyOf, percent, tokens } from "./usage-model.ts";
 
 import styles from "./usage.module.css";
 
@@ -133,53 +129,6 @@ export const Breakdown = ({
     </section>
   );
 };
-
-export const Refused = ({
-  error,
-  command,
-  retry,
-}: {
-  error: string;
-  command: string;
-  retry: () => void;
-}) => (
-  <div className={styles["section"]}>
-    <p
-      className={styles["refused"]}
-      role="alert"
-    >
-      Cannot read usage: <CodeText text={error} />
-    </p>
-    <div className={styles["retry"]}>
-      <Button onClick={retry}>Try again</Button>
-    </div>
-    <p className={styles["note"]}>On a terminal, the same report:</p>
-    <CopyCommand command={command} />
-  </div>
-);
-
-export const NothingSpent = ({
-  period,
-  limits,
-}: {
-  period: string;
-  limits: LimitsReport;
-}) => (
-  <>
-    <UsageLimits limits={limits} />
-    <EmptyState
-      cli="ork run <workflow>"
-      title={
-        isAllTime(period)
-          ? "Nothing spent yet."
-          : "Nothing spent in this period."
-      }
-    >
-      Claude sessions show here once they finish. Start one with Run workflow,
-      or in a terminal:
-    </EmptyState>
-  </>
-);
 
 export const Totals = ({ report }: { report: UsageReport }) => {
   const { totals } = report;

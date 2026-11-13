@@ -120,6 +120,14 @@ one that took them, and they are done when it publishes. `--follow-ups` fills
 the workflow's `brief` input, so the workflow needs one (`start` and `plan` have
 it).
 
+To take every agent follow-up due in this project, use
+`ork run start --follow-ups due`. It checks pull requests first, as
+`ork follow-ups list` does, and skips follow-ups for someone else. With nothing
+due, the run does not start. Mix it with ids (`--follow-ups due,6b7c8d`): each
+is taken once. A bare `--follow-ups` says it needs ids or `due`. Tab after it
+offers `due` and the open agent follow-ups with their titles
+([tab completion](./tab-completion.md)).
+
 ## When one comes due
 
 - **`after-merge`** waits on the pull request or branch the run published. Ork

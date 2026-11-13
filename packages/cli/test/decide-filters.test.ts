@@ -148,6 +148,8 @@ const onATerminal = async (home: string, args: string[]): Promise<string> => {
   });
   const homeBefore = process.env["HOME"];
   process.env["HOME"] = home;
+  // Forced either way, so the worker's own stdin (a TTY or closed) can't matter.
+  const before = Object.getOwnPropertyDescriptor(process.stdin, "isTTY");
   Object.defineProperty(process.stdin, "isTTY", {
     value: true,
     configurable: true,
@@ -155,10 +157,8 @@ const onATerminal = async (home: string, args: string[]): Promise<string> => {
   try {
     await runCommand(decide, { rawArgs: ["--project", "all", ...args] });
   } finally {
-    Object.defineProperty(process.stdin, "isTTY", {
-      value: undefined,
-      configurable: true,
-    });
+    if (before === undefined) Reflect.deleteProperty(process.stdin, "isTTY");
+    else Object.defineProperty(process.stdin, "isTTY", before);
     process.env["HOME"] = homeBefore;
     out.mockRestore();
   }

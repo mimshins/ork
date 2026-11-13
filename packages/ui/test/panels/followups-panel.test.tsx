@@ -1,10 +1,10 @@
 /**
  * @file Tests for the Follow-ups panel: the list grouped by due and for, a
- *   row's name, the filters and their counts, an item's draft and steps to
- *   copy, each action through the server's routes (nothing optimistic, a
- *   refusal a toast), the focus after one, the Post to GitHub dialog that posts
- *   only the digest it showed, the checker note, the states, and the due count
- *   on the tab.
+ *   row's name, the shared filter bar (a value asks the server, a refusal shows
+ *   inline, Clear filter resets), an item's draft and steps to copy, each
+ *   action through the server's routes (nothing optimistic, a refusal a toast),
+ *   the focus after one, the Post to GitHub dialog that posts only the digest
+ *   it showed, the checker note, the states, and the due count on the tab.
  */
 
 import { cleanup, screen, within } from "@testing-library/react";
@@ -81,30 +81,71 @@ describe("the list", () => {
     expect(document.activeElement).toBe(rows[0]);
   });
 
-  it("says the summary, and counts in the filters' options", async () => {
+  it("says the summary, and shows the shared bar with open as the default", async () => {
     await openFollowUps();
     expect(screen.getByText("2 due, 2 waiting")).toBeDefined();
-    await userEvent.click(screen.getByRole("combobox", { name: "Status" }));
+    const bar = screen.getByRole("search", { name: "Filter follow-ups" });
     expect(
-      await screen.findByRole("option", { name: "Done (1)" }),
-    ).toBeDefined();
+      within(bar).getByRole("combobox", { name: "Status" }).textContent,
+    ).toBe("Default (open)");
+    expect(
+      within(bar).queryByRole("button", { name: "Clear filter" }),
+    ).toBeNull();
   });
 
-  it("filters, and says the count aloud", async () => {
+  it("asks the server for a filter, says the count, and shows the command", async () => {
     const opened = await openFollowUps();
-    await pick("Status", "Done (1)");
-    expect(screen.getByText("Old check")).toBeDefined();
-    expect(screen.queryByText("Run the migration")).toBeNull();
-    expect(announced(opened)).toBe("1 follow-up shown.");
-    await pick("Kind", "message (0)");
+    await pick("Status", "done");
     await vi.waitFor(() => {
-      expect(announced(opened)).toContain("No follow-ups shown.");
+      expect(asked(opened, "list").at(-1)?.query).toBe("status=done");
     });
+    expect(await screen.findByText("Old check")).toBeDefined();
+    expect(screen.queryByText("Run the migration")).toBeNull();
+    expect(screen.getByText("1 follow-up matches.")).toBeDefined();
     expect(
-      screen.getByText(
-        "No follow-ups match. 4 are open, 5 in all. Choose Open or All in Status to see them.",
-      ),
+      screen.getByRole("button", {
+        name: "Copy command (ork follow-ups list --status done)",
+      }),
     ).toBeDefined();
+    await pick("Kind", "message");
+    expect(
+      await screen.findByText("No follow-ups match the filter."),
+    ).toBeDefined();
+    expect(asked(opened, "list").at(-1)?.query).toBe(
+      "status=done&kind=message",
+    );
+  });
+
+  it("says the server's words for a refused value, and keeps the last list", async () => {
+    const opened = await openFollowUps();
+    const field = screen.getByRole("combobox", { name: "For" });
+    await userEvent.type(field, "bad{Enter}");
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(
+      "--for takes agent, me or a target, not bad.",
+    );
+    expect(asked(opened, "list").at(-1)?.query).toBe("for=bad");
+    expect(screen.getByText("Run the migration")).toBeDefined();
+    expect(screen.getByText("4 follow-ups match.")).toBeDefined();
+  });
+
+  it("clears the filter and reads the open ones again", async () => {
+    const opened = await openFollowUps();
+    await pick("Status", "done");
+    await screen.findByText("1 follow-up matches.");
+    await userEvent.click(screen.getByRole("button", { name: "Clear filter" }));
+    await vi.waitFor(() => {
+      expect(asked(opened, "list").at(-1)?.query).toBe("");
+    });
+    expect(await screen.findByText("Run the migration")).toBeDefined();
+    expect(screen.getByText("Filter cleared.")).toBeDefined();
+  });
+
+  it("does not say a follow-up came due when the filter changes", async () => {
+    const opened = await openFollowUps();
+    await pick("Status", "due");
+    await screen.findByText("2 follow-ups match.");
+    expect(announced(opened)).toBe("");
   });
 });
 
@@ -213,7 +254,7 @@ describe("the actions", () => {
     await vi.waitFor(() => {
       expect(announced(opened)).toBe("Dropped: Run the migration.");
     });
-    await pick("Status", "Dropped (1)");
+    await pick("Status", "dropped");
     await choose("Run the migration");
     await userEvent.click(screen.getByRole("button", { name: "Reopen" }));
     await vi.waitFor(() => {
@@ -357,7 +398,7 @@ describe("Post to GitHub", () => {
 describe("the states", () => {
   it("says there are none, with the way to add one", async () => {
     await openFollowUps({ rows: [] });
-    expect(screen.getByText("No follow-ups yet.")).toBeDefined();
+    expect(screen.getByText("No open follow-ups.")).toBeDefined();
     expect(
       screen.getByRole("button", { name: "Copy ork follow-ups add" }),
     ).toBeDefined();

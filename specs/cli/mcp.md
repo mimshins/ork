@@ -39,6 +39,14 @@ opens no port, holds no token, and writes nothing but the protocol to stdout.
 | `explain_context` | What one node's session loads, layer by layer, with tokens                             | `ork context explain` |
 | `start_run`       | Starts a workflow in the background and gives its run id                               | `ork run --detach`    |
 
+- **Lists take the CLI's fields.** `runs`, `usage` and `decisions` take the
+  fields of their core tables as the API's list routes do
+  ([API](../server/api.md#list-routes), [list filters](./list-filters.md)):
+  `runs` `status` (`paused` and `crashed` included), `workflow`, `project`,
+  `since`, `until` and `limit`; `usage` `workflow`, `project`, `since` (an age,
+  a day, an ISO time or `all`) and `until`; `decisions` `workflow`, `run` and
+  `project`. A value a table refuses is a tool error in the CLI's words. The
+  tool descriptions name them.
 - **Nothing acts for a person.** No tool answers a decision, or stops, pauses,
   continues, resumes or messages a run. The reading tools are built from the
   API's read routes alone, and `start_run` from its start route alone. Every

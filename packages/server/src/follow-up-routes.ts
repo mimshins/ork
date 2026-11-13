@@ -14,8 +14,10 @@ import { homedir } from "node:os";
 import {
   changeFollowUp,
   checkFollowUpsDue,
+  applyFilters,
   DEFAULT_FOLLOW_UPS_RULE,
   dueCause,
+  followUpListTable,
   type EventStore,
   findFollowUp,
   type FollowUp,
@@ -35,6 +37,7 @@ import type {
   FollowUpDueItem,
   FollowUpsDue,
 } from "./contract-follow-ups.ts";
+import { filterOf, projectRootOf } from "./list-query.ts";
 import { fail, type Handlers, ok } from "./router.ts";
 
 type FollowUpRoutes = Pick<
@@ -187,13 +190,22 @@ export const followUpRoutes = (context: ServerContext): FollowUpRoutes => {
           error instanceof Error ? error.message : String(error),
         ]);
       const all = store.followUps(root);
-      const status = query.status ?? "open";
-      const shown = all.filter(f => {
-        if (query.for !== undefined && f.for !== query.for) return false;
-        if (status === "all") return true;
-        if (status === "open") return OPEN.some(s => s === f.status);
-        return f.status === status;
+      // `open` is this API's word, and its default; the table has no such status.
+      const open = (query.status ?? "open") === "open";
+      const read = filterOf(followUpListTable, {
+        ...query,
+        ...(open ? { status: "all" } : {}),
       });
+      if (!read.ok) return read.refusal;
+      // The path names the project; another one asked for lists nothing.
+      const other = projectRootOf(context, read.filter);
+      const matched =
+        other === undefined || other === root
+          ? applyFilters(followUpListTable, all, read.filter)
+          : [];
+      const shown = open
+        ? matched.filter(f => OPEN.some(s => s === f.status))
+        : matched;
       return ok({
         project: root,
         followUps: shown,

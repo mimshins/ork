@@ -34,6 +34,7 @@
   --field-box-radius: var(--radius-control);
   --field-box-text: var(--color-text);
   --field-box-min-height: var(--control-height);
+  --field-box-invalid-border: var(--color-danger-text);
 
   align-items: center;
   background: var(--field-box-bg);
@@ -277,6 +278,11 @@
   --field-mark-bg: var(--color-text-disabled);
 }
 
+/* A refused value: the border, besides the alert's words and icon. */
+:is(.control, .group)[data-invalid] {
+  --field-box-border-color: var(--field-box-invalid-border);
+}
+
 .group[data-disabled] :is(.input, .inputButton) {
   --field-input-cursor: not-allowed;
 }
@@ -299,6 +305,10 @@
 
 /* Forced colors take the fills away, and the fills say what is on and off. */
 @media (forced-colors: active) {
+  :is(.control, .group)[data-invalid] {
+    --field-box-invalid-border: ButtonText;
+  }
+
   :is(.box, .switch)[data-checked] {
     --field-box-bg: Highlight;
   }

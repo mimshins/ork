@@ -1,8 +1,8 @@
 /**
- * @file The Feedback panel's tools and what its list card says: the status and
- *   about filters with how many each holds, how many items they leave, Reload
- *   with its CLI twin, and the list's states, from the first read to a failed
- *   one, an empty store and a filter that leaves nothing.
+ * @file The Feedback panel's tools and what its list card says: the shared
+ *   filter bar (not dismissed by default) with the About select beside it and
+ *   the count, Reload with its CLI twin, and the list's states, from the first
+ *   read to a failed one, an empty store and a filter that leaves nothing.
  */
 
 import type { FeedbackItem } from "@krapht/ork-server/client";
@@ -10,14 +10,16 @@ import type { FeedbackItem } from "@krapht/ork-server/client";
 import { EmptyState } from "../components/bits.tsx";
 import { Button } from "../components/button.tsx";
 import { CodeText } from "../components/code-text.tsx";
+import { FilterBar, type FilterBarProps } from "../components/filter-bar.tsx";
 import { IconAlert } from "../components/icons.tsx";
 import { Select } from "../components/select.tsx";
 import {
   ABOUT_OPTIONS,
+  DEFAULTS,
   emptyWords,
   type FeedbackFilter,
   itemsWords,
-  statusOptions,
+  suggestionsOf,
 } from "./feedback-model.ts";
 
 import styles from "./feedback.module.css";
@@ -30,7 +32,10 @@ export type ToolsProps = {
   count: number;
   updating: boolean;
   failed: boolean;
-  onFilter: (next: FeedbackFilter) => void;
+  /** The server's refusal of the filter, if it refused. */
+  refusal: { message: string; field: string } | null;
+  onValues: FilterBarProps["onChange"];
+  onAbout: (about: string) => void;
   onReload: () => void;
 };
 
@@ -40,37 +45,34 @@ export const FeedbackTools = ({
   count,
   updating,
   failed,
-  onFilter,
+  refusal,
+  onValues,
+  onAbout,
   onReload,
 }: ToolsProps) => (
   <div className={styles["tools"]}>
-    <Select
-      label="Status"
-      onChange={status => {
-        onFilter({ ...filter, status });
-      }}
-      options={statusOptions(items ?? [])}
-      value={filter.status}
-    />
+    <div className={styles["toolsBar"]}>
+      <FilterBar
+        busy={updating}
+        defaults={DEFAULTS}
+        error={refusal}
+        list="feedback"
+        onChange={onValues}
+        shown={items === null ? null : count}
+        suggestions={suggestionsOf(items ?? [])}
+        summary={items === null ? "" : itemsWords(count)}
+        values={filter.values}
+      />
+    </div>
     <Select
       label="About"
-      onChange={about => {
-        onFilter({ ...filter, about });
-      }}
+      onChange={onAbout}
       options={ABOUT_OPTIONS}
       value={filter.about}
     />
     <div className={styles["toolsEnd"]}>
-      {items === null ? null : (
-        <span className={styles["count"]}>{itemsWords(count)}</span>
-      )}
-      {updating ? <span className={styles["updating"]}>Updating…</span> : null}
       <Button
-        cli={
-          filter.status === "all" || filter.status === "dismissed"
-            ? "ork feedback list --all"
-            : "ork feedback list"
-        }
+        cli="ork feedback list"
         onClick={onReload}
         variant="ghost"
       >
@@ -101,7 +103,7 @@ export const NoItems = ({
   anything,
   filter,
 }: {
-  /** Whether there is any feedback at all. */
+  /** Whether the read has any feedback at all. */
   anything: boolean;
   filter: FeedbackFilter;
 }) => {
@@ -117,6 +119,6 @@ export const NoItems = ({
       </EmptyState>
     );
   }
-  const { title, body } = emptyWords(filter);
+  const { title, body } = emptyWords({ status: "open", about: filter.about });
   return <EmptyState title={title}>{body}</EmptyState>;
 };

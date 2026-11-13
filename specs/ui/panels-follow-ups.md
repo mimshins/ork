@@ -34,15 +34,20 @@ narrower, the item takes the list's place with **Back to follow-ups** (its
 heading takes the focus, and `Escape` goes back to its row). Below the list's
 least height the whole panel scrolls, so nothing is cut at 200% zoom.
 
-- **Tools card:** **Status**, **For**, **Kind** and, only when more than one
-  project has follow-ups, **Project** (`All projects` or one), all `Select`s
-  (`Combobox` when **For** holds more than a short list); a summary; **Reload**.
-  - **Status:** `Open` (the default: waiting and due, as Feedback's "Not
-    dismissed"), `Due`, `Waiting`, `Done`, `Dropped`, `All`. **Kind:**
-    `All kinds`, `change`, `message`, `task`, `check`. **For:** `All`, `agent`,
-    `me`, then each `project:<name>` and `person:<name>` present. Each option
-    carries how many it holds. Filters last for the page's life, and a change
-    says its count aloud.
+- **Tools card:** the shared [filter bar](./design-filter-bar.md) on the
+  `follow-ups` list (**Status**, **For**, **Kind**, **Due** and, only when more
+  than one project has follow-ups, **Project**), with the summary as its status
+  line, then **Reload**.
+  - **Filters:** **Status** is a select, `Default (open)` (waiting and due, as
+    Feedback's "Not dismissed"), then the table's `waiting`, `due`, `done`,
+    `dropped` and `All`; **Kind** and **Due** are selects of the table's values;
+    **For** is an input suggesting `agent`, `me` and each `project:<name>` and
+    `person:<name>` present. A filter is read from
+    `GET /api/projects/:id/follow-ups` for every project, with the table's
+    fields (the server's `open` word is the default), keeps the last list while
+    a refused value shows the server's words, and lasts for the page's life. The
+    bar says "3 follow-ups match." aloud and shows the matching
+    `ork follow-ups list` command and **Clear filter** while one is set.
   - **Summary** (mono, muted): "3 due, 5 waiting", or "None due, 5 waiting", or
     "Nothing open".
   - **Reload** reads again, which also checks the PRs follow-ups wait on (the
@@ -70,7 +75,7 @@ Grouped as `ork follow-ups` groups: by **due**, then by **for**.
 - **A row** takes 44 px on two lines, as a feedback row: line one is the title
   and the status; line two is the id (short, mono), the kind, the due word, the
   ref (`#142` or the branch) and when it was added; with the project's name
-  first when **Project** is `All projects` and more than one shows.
+  first when no **Project** is set and more than one shows.
   - **Status** is a bare badge: `due` (amber, the waiting glyph, "needs you"),
     `waiting` (neutral, the queued glyph), `done` (phosphor, the succeeded
     glyph), `dropped` (neutral, the skipped glyph). A `message` that is done
@@ -188,7 +193,7 @@ A confirm dialog, wide, opening on **Cancel**, that only posts what it shows.
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Loading          | "Reading follow-ups…" as a polite status, in the list card.                                                                                                                               |
 | None at all      | "No follow-ups yet. A run adds one when a change leaves work for later. Add one yourself:" then `ork follow-ups add` as a code block.                                                     |
-| Filter leaves 0  | "No follow-ups match. 5 are open, 12 in all. Choose Open or All in Status to see them." (names the filter that shows the rest.)                                                           |
+| Filter leaves 0  | "No follow-ups match the filter." with **Clear filter** and the matching `ork follow-ups list` command; with no filter set, "No open follow-ups."                                         |
 | None due         | The summary says "None due, 5 waiting"; the list shows the waiting ones; the tab has no count.                                                                                            |
 | Read failed      | An alert: "Couldn't read follow-ups: <server's words>. Reload, or in a terminal:" then `ork follow-ups list`; **Try again**; the last list stays, dimmed, captioned "From the last read". |
 | Action refused   | A toast: "Couldn't mark done: <server's words>". Never a silent no-op.                                                                                                                    |
@@ -230,7 +235,7 @@ status and the read failure's alert):
 | Dropped           | "Dropped: <title>."                                           |
 | Reopened          | "Reopened: <title>, waiting." or "Reopened: <title>, due."    |
 | Made due          | "Marked due: <title>."                                        |
-| Filter changed    | "7 follow-ups shown." or "No follow-ups shown."               |
+| Filter changed    | The bar's: "7 follow-ups match." or "Filter cleared."         |
 | New due on a read | "2 follow-ups came due." (once per read)                      |
 | Post              | "Posted to acme/se-backend#142. Marked sent." / "Not posted." |
 
@@ -244,10 +249,10 @@ status and the read failure's alert):
   number in amber text, a word-free number that the name spells out; `99+`
   past 99. It reads on page load, every 30 s, and after each action, so it stays
   true with the panel hidden.
-- **Selects** are named "Status", "For", "Kind", "Project". **Reload** is named
-  "Reload follow-ups". **Copy** buttons say what they copy: "Copy message",
-  "Copy command: <command>", "Copy id". The status pill is text, so each row and
-  heading says it in words; no state rests on color.
+- **Fields** are named "Status", "For", "Kind", "Due", "Project" (the bar's).
+  **Reload** is named "Reload follow-ups". **Copy** buttons say what they copy:
+  "Copy message", "Copy command: <command>", "Copy id". The status pill is text,
+  so each row and heading says it in words; no state rests on color.
 - The **Open run** button is named "Open run 4f2a1c, node review".
 
 ## Tokens
@@ -297,5 +302,5 @@ Where the built panel differs from the design above:
   (without `--confirm` the CLI only previews). A failed post stays in the
   dialog, whose confirm button is the retry; the focus is not moved to a
   separate **Try again**.
-- **For** is a `Select` in every size (no `Combobox` yet), and the "Can't check
-  PRs" note names `gh` when any error mentions it, else the server's words.
+- **For** is the bar's input with suggestions, and the "Can't check PRs" note
+  names `gh` when any error mentions it, else the server's words.

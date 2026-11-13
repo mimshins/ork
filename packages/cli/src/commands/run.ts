@@ -119,7 +119,7 @@ export const run = defineCommand({
     "follow-ups": {
       type: "string",
       description:
-        "Follow-up ids an agent does (repeatable or comma-separated): they become the run's brief, done when it publishes",
+        "Follow-up ids an agent does, or `due` for every due one (repeatable or comma-separated): they become the run's brief, done when it publishes",
     },
     driver: {
       type: "string",
@@ -194,8 +194,10 @@ export const run = defineCommand({
       process.exitCode = 1;
       return;
     }
+    const { prepareFollowUps: prepare, followUpsFlagFine: flagFine } =
+      await import("../follow-ups/brief.ts");
     const cwd = process.cwd();
-    if (refusedBuiltin([args.workflow], cwd)) return;
+    if (refusedBuiltin([args.workflow], cwd) || !flagFine(rawArgs)) return;
     const target = workflowArg(args.workflow, cwd);
     const store = openStore();
     if (args.detach) {
@@ -227,9 +229,8 @@ export const run = defineCommand({
       }
       return;
     }
-    const { prepareFollowUps } = await import("../follow-ups/brief.ts");
-    const taking = prepareFollowUps(store, rawArgs, args["run-id"], target);
-    if (taking === undefined) {
+    const taken = await prepare(store, rawArgs, args["run-id"], target);
+    if (taken === undefined) {
       store.close();
       return;
     }
@@ -237,7 +238,7 @@ export const run = defineCommand({
     const common = {
       file: target.file,
       cwd,
-      inputs: taking.inputs,
+      ...taken,
       inPlace: args["in-place"],
       ...(args["machine-claude"] ? { machineClaude: true } : {}),
       json: args.json,
@@ -245,7 +246,6 @@ export const run = defineCommand({
       runtime: loadRuntime,
       store,
       ...(human === undefined ? {} : { human }),
-      ...(taking.runId === undefined ? {} : { runId: taking.runId }),
       out: write,
       err: writeErr,
       ...(args.driver === undefined ? {} : { driver: args.driver }),

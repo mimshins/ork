@@ -13,7 +13,14 @@ export type ReadState<T, A> =
   /** `shown` is what was there, which can stay on the page meanwhile. */
   | { status: "loading"; arg: A; shown?: Shown<T, A> }
   | { status: "ready"; arg: A; data: T }
-  | { status: "failed"; arg: A; error: string; shown?: Shown<T, A> };
+  /** `code` is the HTTP status of a refusal; 400 is a filter the server refused. */
+  | {
+      status: "failed";
+      arg: A;
+      error: string;
+      code?: number;
+      shown?: Shown<T, A>;
+    };
 
 /** An answer, with what it answered. */
 export type Shown<T, A> = { data: T; arg: A };
@@ -56,6 +63,7 @@ export const createRead = <T, A = void>(
               status: "failed",
               arg,
               error: answer.error,
+              code: answer.status,
               ...(shown === undefined ? {} : { shown }),
             },
       );

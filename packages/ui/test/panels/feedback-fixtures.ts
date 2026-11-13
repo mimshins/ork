@@ -221,7 +221,11 @@ const answerTo = (
 /** The fake server's feedback routes, for `openPanelState`'s `builder` hook. */
 export const feedbackRoute =
   (server: FeedbackServer) =>
-  (path: string, body: unknown): Response | undefined => {
+  (
+    path: string,
+    body: unknown,
+    query = new URLSearchParams(),
+  ): Response | undefined => {
     const note = /^\/api\/runs\/([^/]+)\/notes$/u.exec(path)?.[1];
     if (note !== undefined) {
       server.asked.push({ route: "note", id: note, body });
@@ -231,8 +235,21 @@ export const feedbackRoute =
         : json({ error: refusal.error }, refusal.status);
     }
     if (path === "/api/feedback") {
-      server.asked.push({ route: "list", id: "", body });
-      return json(server.items);
+      server.asked.push({
+        route: "list",
+        id: "",
+        body: Object.fromEntries(query),
+      });
+      const refusal = server.refuse?.["list"];
+      if (refusal !== undefined) {
+        return json({ error: refusal.error }, refusal.status);
+      }
+      const status = query.get("status");
+      return json(
+        status === null || status === "all"
+          ? server.items
+          : server.items.filter(other => other.status === status),
+      );
     }
     const [, id = "", named = ""] = ROUTE.exec(path) ?? [];
     if (id === "") return undefined;

@@ -83,6 +83,10 @@ export const UI = {
     "ADR-040: React, Base UI, dockview, containerized-state, our own graph",
   ),
   app: d("packages/ui/src/app/app.tsx", "Code: the app's root"),
+  filterBar: d(
+    "specs/ui/design-filter-bar.md",
+    "Spec: the shared list filter bar, built from the CLI's field tables",
+  ),
   assets: d(
     "packages/server/src/assets.ts",
     "Code: serving the built UI from the CLI's bundle",

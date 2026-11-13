@@ -43,7 +43,8 @@ The workspace's own state (the view, the saved layout, the palette) stays in the
 
 What no stream sends is a one-off read in a container
 ([read.ts](../../packages/ui/src/state/read.ts)): `projects`, a project's
-`workflows`, and `feedback`, every feedback item, which the
+`workflows`, and `listFields` (the filter bar's fields, once per page), and
+`feedback`, the feedback items the filter bar's query asks for, which the
 [Feedback panel](./panels-context-and-feedback.md#feedback) reads again as the
 runs change. When reads overlap the newest wins, so a slow answer about the last
 project chosen cannot replace the answer about this one. `runFilter` and
@@ -151,9 +152,8 @@ render, and a slice of a feed ignores changes outside it.
 [preferences.ts](../../packages/ui/src/state/preferences.ts) saves the theme,
 the density, whether desktop notifications may be sent, the new version whose
 banner was dismissed and when (`updateDismissed`), and the Decisions panel's
-filter (`decisionFilter: { workflow?, run? }`, strings; both missing means All,
-and a value no longer among the open decisions is dropped once the first list
-has come, [design](./panels-decisions-filters-and-keys.md#the-filter-bar)), per
+filter (`decisionFilter`, the bar's values by field name, strings; none means
+All, [design](./panels-decisions-filters-and-keys.md#the-filter-bar)), per
 browser (`ork.preferences.v1`). Values are checked on load: a missing field
 takes its default, and values that do not fit are dropped. The app applies them
 before its first paint. Until its script runs the page follows the system's

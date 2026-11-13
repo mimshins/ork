@@ -71,6 +71,11 @@
   --feedback-columns: minmax(16rem, 2fr) minmax(22rem, 3fr);
 }
 
+.toolsBar {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
 .toolsEnd {
   --feedback-tools-end-gap: var(--gap);
 

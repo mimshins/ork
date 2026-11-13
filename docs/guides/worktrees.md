@@ -151,13 +151,14 @@ terminal, add `--yes`.
 ### In the browser
 
 The **Worktrees** panel in [`ork ui`](./browser-view.md) shows the same list for
-every project at once, with a project filter. **Remove…** on a row shows its
-plan and the matching `ork worktrees remove` command, and asks; if removing it
-would lose work, a second step lists exactly what, and only **Remove and lose
-this work** goes ahead. **Clean merged…** shows each project's
-`ork worktrees clean` plan, merged branches only and never forced, then asks. If
-anything changed after you read a plan, nothing is removed and the new plan is
-shown.
+every project at once, with the
+[filter bar](./filtering-lists.md#in-the-browser-and-ork-mcp) (run and project).
+**Remove…** on a row shows its plan and the matching `ork worktrees remove`
+command, and asks; if removing it would lose work, a second step lists exactly
+what, and only **Remove and lose this work** goes ahead. **Clean merged…** shows
+each project's `ork worktrees clean` plan, merged branches only and never
+forced, then asks. If anything changed after you read a plan, nothing is removed
+and the new plan is shown.
 
 ## Running without worktrees
 

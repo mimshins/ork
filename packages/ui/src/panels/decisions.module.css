@@ -119,36 +119,13 @@
 
 .filter {
   --decisions-filter-gap: var(--gap);
-  --decisions-filter-field-min-width: 10rem;
   --decisions-filter-border: var(--hairline) solid var(--color-border);
-  --decisions-filter-text: var(--color-text-muted);
-  --decisions-filter-text-size: var(--text-small);
 
   border-block-end: var(--decisions-filter-border);
   display: flex;
   flex-direction: column;
   gap: var(--decisions-filter-gap);
   padding: var(--gap);
-}
-
-.filterFields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--decisions-filter-gap);
-}
-
-.filterFields > * {
-  flex: 1 1 var(--decisions-filter-field-min-width);
-  min-width: 0;
-}
-
-.counts {
-  align-items: center;
-  color: var(--decisions-filter-text);
-  display: flex;
-  flex-wrap: wrap;
-  font-size: var(--decisions-filter-text-size);
-  gap: var(--decisions-filter-gap);
 }
 
 .options {

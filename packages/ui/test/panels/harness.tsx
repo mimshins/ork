@@ -10,6 +10,7 @@ import {
   type DecisionRecord,
   type LinkRecord,
   type ProjectRecord,
+  type RunView,
   type StoredEvent,
   type TreeNode,
   type TriggersReport,
@@ -29,6 +30,7 @@ import {
   WorkspaceContext,
 } from "../../src/workspace/context.ts";
 import { openFakeSources } from "../fake-source.ts";
+import { LIST_FIELDS } from "../filter-fields.ts";
 
 export type FakeRoutes = {
   projects?: ProjectRecord[];
@@ -45,11 +47,17 @@ export type FakeRoutes = {
   /** A run's stored events, as read a page at a time. */
   events?: StoredEvent[];
   /** What it reports of usage, given what was asked. */
-  usage?: (query: URLSearchParams) => UsageReport;
+  usage?: (query: URLSearchParams) => UsageReport | { error: string };
+  /** What `GET /api/runs` says for a filter; an `error` is a 400. */
+  runs?: (query: URLSearchParams) => RunView[] | { error: string };
   /** Why it refuses a usage report, if it does. */
   refuseUsage?: string;
   /** The builder's routes, when a test plays them. */
-  builder?: (path: string, body: unknown) => Response | undefined;
+  builder?: (
+    path: string,
+    body: unknown,
+    query: URLSearchParams,
+  ) => Response | undefined;
 };
 
 export type MonitorRoutes = {
@@ -81,19 +89,23 @@ export const openPanelState = (routes: FakeRoutes = {}) => {
   const controlled: { kind: string; run: string; body: unknown }[] = [];
   const answer = (path: string, body: unknown, query = ""): Response => {
     const { monitor } = routes;
-    const built = routes.builder?.(path, body);
+    const built = routes.builder?.(path, body, new URLSearchParams(query));
     if (built !== undefined) return built;
     if (path === "/api/usage") {
-      return routes.refuseUsage === undefined
-        ? json(
-            routes.usage?.(new URLSearchParams(query)) ?? {
-              totals: { sessions: 0 },
-              limits: { problems: [], caps: [], plan: [] },
-              groups: {},
-              hints: [],
-            },
-          )
-        : json({ error: routes.refuseUsage }, 500);
+      const report = routes.usage?.(new URLSearchParams(query)) ?? {
+        totals: { sessions: 0 },
+        limits: { problems: [], caps: [], plan: [] },
+        groups: {},
+        hints: [],
+      };
+      if (routes.refuseUsage !== undefined) {
+        return json({ error: routes.refuseUsage }, 500);
+      }
+      return "error" in report ? json(report, 400) : json(report);
+    }
+    if (path === "/api/runs" && body === undefined) {
+      const rows = routes.runs?.(new URLSearchParams(query)) ?? [];
+      return "error" in rows ? json(rows, 400) : json(rows);
     }
     const decision = /^\/api\/decisions\/(.+)$/u.exec(path)?.[1];
     if (decision !== undefined) {
@@ -134,6 +146,7 @@ export const openPanelState = (routes: FakeRoutes = {}) => {
       return json({ runId: "new11111" }, 202);
     }
     if (path === "/api/projects") return json(routes.projects ?? []);
+    if (path === "/api/list-fields") return json(LIST_FIELDS);
     if (path === "/api/triggers") {
       return json(routes.triggers ?? { broken: [], triggers: [] });
     }

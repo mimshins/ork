@@ -3,29 +3,24 @@
  *   state, so the list is read when the panel shows, after every remove or
  *   clean, on Reload, and when the runs change while it shows (a run that
  *   starts or ends), at most every 5 s; a read asked for while one is in flight
- *   waits for it rather than doubling it. The project filter is the panel's
- *   own, for the page's life, and a change says the count aloud.
+ *   waits for it rather than doubling it. The filter bar's values are the
+ *   panel's own, for the page's life: the server applies them, and a change
+ *   reads again.
  */
 
 import type { WorktreesProject } from "@krapht/ork-server/client";
-import { use, useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useValue } from "react-containerized-state";
 
+import {
+  type FilterValues,
+  filterQuery,
+  refusalOf,
+} from "../components/filter-model.ts";
 import { useAppState } from "../state/context.tsx";
 import { shownOf } from "../state/read.ts";
-import { WorkspaceContext } from "../workspace/context.ts";
 import { ALL_PROJECTS, projectOptions } from "./project-options.ts";
 import { FOLLOW_MS } from "./use-feedback.ts";
-import { countSaid } from "./worktrees-model.ts";
-
-/** The projects a filter keeps, in the filter's name order. */
-const shownIn = (
-  projects: readonly WorktreesProject[],
-  filter: string,
-): WorktreesProject[] =>
-  filter === ALL_PROJECTS
-    ? [...projects]
-    : projects.filter(project => project.root === filter);
 
 /** A project under the name the filter gives it. */
 const renamed = (
@@ -35,25 +30,26 @@ const renamed = (
 
 export const useWorktrees = () => {
   const state = useAppState();
-  const workspace = use(WorkspaceContext);
   const read = useValue(state.worktrees.state);
   const filter = useValue(state.worktreesFilter);
   const runs = useValue(state.runs);
   const projectsRead = useValue(state.projects.state);
   const lastRead = useRef(0);
-  const inFlight = useRef<Promise<void> | null>(null);
+  const inFlight = useRef<{ key: string; reading: Promise<void> } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seenRuns = useRef(runs);
 
+  const key = JSON.stringify(filter);
   const load = useCallback((): Promise<void> => {
-    if (inFlight.current !== null) return inFlight.current;
+    // A read for other values is not the one asked for: it starts its own.
+    if (inFlight.current?.key === key) return inFlight.current.reading;
     lastRead.current = Date.now();
-    const reading = state.worktrees.load().finally(() => {
-      inFlight.current = null;
+    const reading = state.worktrees.load(filterQuery(filter)).finally(() => {
+      if (inFlight.current?.reading === reading) inFlight.current = null;
     });
-    inFlight.current = reading;
+    inFlight.current = { key, reading };
     return reading;
-  }, [state]);
+  }, [state, filter, key]);
 
   useEffect(() => {
     void load();
@@ -90,19 +86,29 @@ export const useWorktrees = () => {
   const ordered = options.flatMap(option =>
     named.filter(project => project.root === option.value),
   );
-  const shown = all === null ? null : shownIn(ordered, filter);
+  const shown = all === null ? null : ordered;
+  const registered = shownOf(projectsRead)?.data ?? [];
+  /** What the bar suggests for `project`: a registered project by its id. */
+  const projectSuggestions = options
+    .filter(option => option.value !== ALL_PROJECTS)
+    .map(option => ({
+      value: registered.find(p => p.root === option.value)?.id ?? option.value,
+      label: option.label,
+    }));
 
   return {
     read,
-    all: all === null ? null : ordered,
+    /** The server's refusal of the filter, which keeps the last list. */
+    refusal:
+      read.status === "failed" ? refusalOf("worktrees", read.error) : null,
+    /** How many projects Ork knows, whatever the filter. */
+    known: Math.max(registered.length, all?.length ?? 0),
     shown,
     filter,
-    options,
+    projectSuggestions,
     load,
-    setFilter: (next: string): void => {
+    setFilter: (next: FilterValues): void => {
       void state.worktreesFilter.setValue(next);
-      const scope = next === ALL_PROJECTS ? null : labelOfRoot(next);
-      workspace?.announce(countSaid(shownIn(ordered, next), scope));
     },
   };
 };

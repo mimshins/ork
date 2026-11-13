@@ -15,14 +15,17 @@ import type {
 } from "@krapht/ork-core";
 import { z } from "zod";
 
+import { listShape } from "./contract-lists.ts";
+
 export type { MergeState, OrkWorktree, PlanLine, StatePart };
 
 const Root = z.string().min(1);
 
-export const WorktreesQuerySchema = z.strictObject({
-  /** A project's root; every project Ork knows without one. */
-  project: Root.optional(),
-});
+/**
+ * The filters are core's `worktreeListTable` fields (`project`: a root; every
+ * project without one).
+ */
+export const WorktreesQuerySchema = z.strictObject(listShape("worktrees"));
 
 export const RemovePlanSchema = z.strictObject({
   project: Root,

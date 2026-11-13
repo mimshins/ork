@@ -22,6 +22,8 @@ export type SelectProps = {
   onChange: (value: string) => void;
   /** The id of what says more about the choice, read out with it. */
   describedBy?: string | undefined;
+  /** The choice is refused: it says so with `aria-invalid` and its border. */
+  invalid?: boolean | undefined;
 };
 
 export const Select = ({
@@ -31,6 +33,7 @@ export const Select = ({
   value,
   onChange,
   describedBy,
+  invalid = false,
 }: SelectProps) => (
   <BaseSelect.Root
     items={options}
@@ -46,7 +49,9 @@ export const Select = ({
       </BaseSelect.Label>
       <BaseSelect.Trigger
         aria-describedby={describedBy}
+        aria-invalid={invalid ? true : undefined}
         className={fields["control"]}
+        data-invalid={invalid ? "" : undefined}
       >
         <BaseSelect.Value />
         <BaseSelect.Icon className={fields["icon"]}>

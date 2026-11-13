@@ -1,9 +1,9 @@
 /**
  * @file Tests for what the Feedback panel and its Note and lesson dialogs work
- *   out: the filters' counts and words with nothing left, where the choice goes
- *   when an item leaves, which buttons an item shows and why each is off (the
- *   server's reason, or that it's still being read), the CLI twins that leave
- *   out what's the default, and the severity a bad rating raises.
+ *   out: what the filters leave and the words with nothing left, where the
+ *   choice goes when an item leaves, which buttons an item shows and why each
+ *   is off (the server's reason, or that it's still being read), the CLI twins
+ *   that leave out what's the default, and the severity a bad rating raises.
  */
 
 import { describe, expect, it } from "vitest";
@@ -16,7 +16,6 @@ import {
   nextAfter,
   panelShows,
   shownItems,
-  statusOptions,
 } from "../../src/panels/feedback-model.ts";
 import { lessonBlocked, lessonCommand } from "../../src/panels/lesson-model.ts";
 import { noteAction } from "../../src/panels/monitor-model.ts";
@@ -41,22 +40,19 @@ import { treeNode } from "./monitor-fixtures.ts";
 const keys = (specs: { key: string }[]): string[] => specs.map(s => s.key);
 
 describe("the Feedback panel's filters", () => {
-  it("count each status from everything read", () => {
+  it("hide the dismissed ones while no status is asked for", () => {
     const items = [...ITEMS, item("aaaa", { status: "dismissed" })];
-    expect(statusOptions(items).map(option => option.label)).toEqual([
-      "Not dismissed · 3",
-      "All · 4",
-      "New · 3",
-      "Triaged · 0",
-      "Accepted · 0",
-      "Resolved · 0",
-      "Published · 0",
-      "Dismissed · 1",
-    ]);
+    expect(shownItems(items, { values: {}, about: "all" })).toHaveLength(3);
+    expect(
+      shownItems(items, { values: { status: "all" }, about: "all" }),
+    ).toHaveLength(4);
+    expect(
+      shownItems(items, { values: { status: "dismissed" }, about: "all" }),
+    ).toHaveLength(4);
   });
 
-  it("leave what matches both the status and what it's about", () => {
-    const shown = shownItems(ITEMS, { status: "new", about: "project" });
+  it("leave what matches what it's about, besides the server's answer", () => {
+    const shown = shownItems(ITEMS, { values: {}, about: "project" });
     expect(shown.map(({ id }) => id)).toEqual([whole(AGENTS)]);
   });
 

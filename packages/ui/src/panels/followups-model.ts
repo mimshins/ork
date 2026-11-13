@@ -1,93 +1,21 @@
 /**
- * @file The Follow-ups panel's model: its filters and what each leaves, the
- *   list grouped as `ork follow-ups` groups it (by due, then by who it is for),
- *   the words a row and a summary use, and which buttons an item has, with the
- *   CLI each one stands for. Pure, so it is tested without a page.
+ * @file The Follow-ups panel's model: the filter bar's help and how it reads a
+ *   refusal, the list grouped as `ork follow-ups` groups it (by due, then by
+ *   who it is for), the words a row and a summary use, and which buttons an
+ *   item has, with the CLI each one stands for. Pure, so it is tested without a
+ *   page.
  */
 
-import type { Option } from "../components/select.tsx";
+import { LIST_FIELD_NAMES } from "@krapht/ork-server/client";
+
+import type { Suggestion } from "../components/filter-input.tsx";
+import { errorField } from "../components/filter-model.ts";
 import type { FollowUpRow } from "../state/follow-ups.ts";
-import { ALL_PROJECTS } from "../state/preferences.ts";
 
 export type { FollowUpRow };
 
-export type FollowUpsFilter = {
-  status: string;
-  kind: string;
-  for: string;
-  project: string;
-};
-
 /** The id as the CLI's twins write it. */
 export const short = (id: string): string => id.slice(0, 6);
-
-const isOpen = (f: FollowUpRow): boolean =>
-  f.status === "due" || f.status === "waiting";
-
-const STATUSES = ["open", "due", "waiting", "done", "dropped", "all"] as const;
-
-const STATUS_WORDS: Record<(typeof STATUSES)[number], string> = {
-  open: "Open",
-  due: "Due",
-  waiting: "Waiting",
-  done: "Done",
-  dropped: "Dropped",
-  all: "All",
-};
-
-const inStatus = (f: FollowUpRow, status: string): boolean => {
-  if (status === "all") return true;
-  if (status === "open") return isOpen(f);
-  return f.status === status;
-};
-
-/** What the filters leave, in the order the list draws it. */
-export const shownRows = (
-  rows: readonly FollowUpRow[],
-  filter: FollowUpsFilter,
-): FollowUpRow[] =>
-  rows.filter(
-    f =>
-      inStatus(f, filter.status) &&
-      (filter.kind === "all" || f.kind === filter.kind) &&
-      (filter.for === "all" || f.for === filter.for) &&
-      (filter.project === ALL_PROJECTS || f.projectId === filter.project),
-  );
-
-const counted = (label: string, count: number): string =>
-  `${label} (${String(count)})`;
-
-/** The Status options, each with how many it holds under the other filters. */
-export const statusOptions = (
-  rows: readonly FollowUpRow[],
-  filter: FollowUpsFilter,
-): Option[] =>
-  STATUSES.map(value => ({
-    value,
-    label: counted(
-      STATUS_WORDS[value],
-      shownRows(rows, { ...filter, status: value }).length,
-    ),
-  }));
-
-const KINDS = ["change", "message", "task", "check"] as const;
-
-export const kindOptions = (
-  rows: readonly FollowUpRow[],
-  filter: FollowUpsFilter,
-): Option[] => [
-  {
-    value: "all",
-    label: counted(
-      "All kinds",
-      shownRows(rows, { ...filter, kind: "all" }).length,
-    ),
-  },
-  ...KINDS.map(value => ({
-    value,
-    label: counted(value, shownRows(rows, { ...filter, kind: value }).length),
-  })),
-];
 
 const FOR_ORDER = ["agent", "project:", "me", "person:"] as const;
 
@@ -99,30 +27,28 @@ const forRank = (value: string): number => {
 const byFor = (a: string, b: string): number =>
   forRank(a) - forRank(b) || a.localeCompare(b);
 
-/** `agent`, `me`, then each `project:<name>` and `person:<name>` present. */
-export const forOptions = (
-  rows: readonly FollowUpRow[],
-  filter: FollowUpsFilter,
-): Option[] => {
-  const present = [...new Set(rows.map(f => f.for))].toSorted((a, b) =>
-    byFor(a, b),
-  );
-  return [
-    {
-      value: "all",
-      label: counted("All", shownRows(rows, { ...filter, for: "all" }).length),
-    },
-    ...present.map(value => ({
-      value,
-      label: counted(value, shownRows(rows, { ...filter, for: value }).length),
-    })),
-  ];
-};
+/**
+ * The `for` values the rows have, as the bar's suggestions (`agent`, `me` are
+ * its own).
+ */
+export const forSuggestions = (rows: readonly FollowUpRow[]): Suggestion[] =>
+  [...new Set(rows.map(f => f.for))]
+    .filter(value => value.includes(":"))
+    .toSorted((a, b) => byFor(a, b))
+    .map(value => ({ value, label: value }));
 
-export const rowsWords = (count: number): string =>
-  count === 0
-    ? "No follow-ups shown"
-    : `${String(count)} follow-up${count === 1 ? "" : "s"} shown`;
+/**
+ * The filter field a server refusal is about, when it is one: the message
+ * starts with its flag (`--status takes …`); anything else is a failed read.
+ */
+export const refusalOf = (
+  error: string,
+): { message: string; field: string } | null => {
+  const field = errorField(error);
+  return field !== undefined && LIST_FIELD_NAMES["follow-ups"].includes(field)
+    ? { message: error, field }
+    : null;
+};
 
 /** "3 due, 5 waiting", "None due, 5 waiting" or "Nothing open". */
 export const summaryOf = (rows: readonly FollowUpRow[]): string => {
@@ -130,12 +56,6 @@ export const summaryOf = (rows: readonly FollowUpRow[]): string => {
   const waiting = rows.filter(f => f.status === "waiting").length;
   if (due + waiting === 0) return "Nothing open";
   return `${due === 0 ? "None" : String(due)} due, ${String(waiting)} waiting`;
-};
-
-/** What the list says when the filters leave nothing but something exists. */
-export const noMatchWords = (rows: readonly FollowUpRow[]): string => {
-  const open = rows.filter(f => isOpen(f)).length;
-  return `No follow-ups match. ${String(open)} ${open === 1 ? "is" : "are"} open, ${String(rows.length)} in all. Choose Open or All in Status to see them.`;
 };
 
 export type DueGroup = {

@@ -1,0 +1,97 @@
+/**
+ * @file The list filter bar's look: a wrapping row of fields, the count line,
+ *   the alert and the command. In a container narrower than 28rem the fields
+ *   stack one per line, label above, full width, so nothing is cut at 200%
+ *   zoom. The alert has its icon and words, so no state rests on color.
+ */
+
+.bar {
+  --filter-bar-gap: var(--gap);
+  --filter-bar-row-gap: var(--gap-tight);
+  --filter-bar-field-min-width: 10rem;
+  --filter-bar-field-narrow-width: 7rem;
+  --filter-bar-count-text: var(--color-text-muted);
+  --filter-bar-count-text-size: var(--text-small);
+  --filter-bar-error-text: var(--color-danger-text);
+  --filter-bar-field-invalid-border: var(--color-danger-text);
+
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--filter-bar-gap);
+  min-width: 0;
+}
+
+.fields {
+  --filter-bar-fields-direction: row;
+
+  display: flex;
+  flex-direction: var(--filter-bar-fields-direction);
+  flex-wrap: wrap;
+  gap: var(--filter-bar-gap);
+}
+
+.field {
+  --filter-bar-field-basis: var(--filter-bar-field-min-width);
+  --filter-bar-field-width: auto;
+
+  flex: 1 1 var(--filter-bar-field-basis);
+  min-width: 0;
+  width: var(--filter-bar-field-width);
+}
+
+.field[data-narrow] {
+  --filter-bar-field-basis: var(--filter-bar-field-narrow-width);
+}
+
+.count {
+  --filter-bar-count-display: block;
+
+  display: var(--filter-bar-count-display);
+  color: var(--filter-bar-count-text);
+  font-size: var(--filter-bar-count-text-size);
+}
+
+.count:empty {
+  --filter-bar-count-display: none;
+}
+
+.note {
+  color: var(--filter-bar-count-text);
+  font-size: var(--filter-bar-count-text-size);
+  margin: 0;
+}
+
+.alert {
+  align-items: flex-start;
+  color: var(--filter-bar-error-text);
+  display: flex;
+  gap: var(--filter-bar-row-gap);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.failed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--filter-bar-row-gap);
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--filter-bar-gap);
+}
+
+@container (width < 28rem) {
+  .fields {
+    --filter-bar-fields-direction: column;
+  }
+
+  .field,
+  .field[data-narrow] {
+    --filter-bar-field-basis: auto;
+    --filter-bar-field-width: 100%;
+  }
+}

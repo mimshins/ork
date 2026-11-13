@@ -32,8 +32,16 @@ so it has no Go to digit; its tab sits after Feedback in the bottom group.
   reason in its name and tooltip, for the main checkout's branch or a run still
   going: the reasons come with the list, by the rule the remove route keeps. ↑ ↓
   Home End move between rows' same buttons; Tab reaches each.
-- **Project filter:** `All projects` or one, the panel's own, for the page's
-  life; a change says the count aloud.
+- **Filter:** the shared [filter bar](./design-filter-bar.md) on the `worktrees`
+  list: **Run** and **Project** (once there are two to choose from, suggesting
+  the registered projects by id). The panel lists every project when none is
+  set; a filter is read from `GET /api/worktrees` with the table's fields (the
+  server filters), keeps the last list while a refused value shows the server's
+  words, and lasts for the page's life. The bar's status line counts "2
+  worktrees · 1 branch", says "3 worktrees match." aloud, and shows the matching
+  `ork worktrees list` command and **Clear filter** while one is set; a filter
+  that leaves none shows "No worktrees match the filter." Clean merged… still
+  plans by project, not by run ([L343](../gaps.md#limits)).
 - **Remove…** opens on Cancel and only reads: the facts (project, run with
   **Open run**, path as text to select, and state as the plan read it), **Also
   delete the branch** (off; described by what deleting it loses), the plan in a

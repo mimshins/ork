@@ -5,6 +5,19 @@ full: the [changelog](../packages/cli/CHANGELOG.md).
 
 ## Next release
 
+- **Take every due follow-up into a run.** `ork run start --follow-ups due`
+  takes each agent follow-up that is due in the project as the run's brief
+  (alone or beside ids; with nothing due the run doesn't start). A bare
+  `--follow-ups` now says it needs ids or `due`, instead of "missing required
+  input brief", and Tab after it offers `due` and the open agent follow-ups with
+  their titles ([guide](./guides/follow-ups.md#having-an-agent-do-one)).
+- **The browser view and `ork mcp` filter like the CLI.** Runs, Decisions,
+  Follow-ups, Feedback, Worktrees and Usage share one filter bar made from the
+  same fields as the flags (`status`, `workflow`, `project`, `since`, `until`,
+  `kind`, `severity`, `due`, `for`, `run`), a wrong value shows the CLI's
+  message, and the bar shows the matching `ork` command. The `runs`, `usage` and
+  `decisions` tools of `ork mcp` take the same fields
+  ([guide](./guides/filtering-lists.md#in-the-browser-and-ork-mcp)).
 - **A leader can label its tasks.** `delegate` and `spawn_worker` tasks take an
   optional `description`, a few words that Ork clips to 80 characters and shows
   beside the child's id in `ork tree`, `ork logs` and the browser view. Before,

@@ -1196,7 +1196,7 @@ export const MILESTONES = [
         title: "Follow-ups: what a change leaves for later",
         status: "active",
         detail:
-          "Built, waiting to land (it becomes done with its commit). A message to a partner, work for another project's agent, infra steps and a check after deploy are kept as follow-ups, apart from feedback: a `follow_up` session tool (30 a session, duplicates merged), a project rule `followUps: { store, file?, label? }` (Ork's store, a file in the repository, or GitHub issues through your own `gh`), `ork follow-ups list | show | add | done | drop | reopen | due | post | published`, `ork run --follow-ups` (an agent's change as a run's brief), a due check that reads the pull request an `after-merge` one waits on (every call, and every 10 minutes under `ork watch` and `ork ui`), delivery to another project's list and live session, drafts Ork never sends (a github-channel comment posts only after you confirm its text), the server's routes and due count, the Follow-ups panel, and `build`'s `followups`, gate, `polish`, `polish-review`, `published` and `declare` steps. Left: L300 to L312 and L325.",
+          "Built, waiting to land (it becomes done with its commit). A message to a partner, work for another project's agent, infra steps and a check after deploy are kept as follow-ups, apart from feedback: a `follow_up` session tool (30 a session, duplicates merged), a project rule `followUps: { store, file?, label? }` (Ork's store, a file in the repository, or GitHub issues through your own `gh`), `ork follow-ups list | show | add | done | drop | reopen | due | post | published`, `ork run --follow-ups` (an agent's change as a run's brief; `due` takes every due agent follow-up, and Tab offers the open ones), a due check that reads the pull request an `after-merge` one waits on (every call, and every 10 minutes under `ork watch` and `ork ui`), delivery to another project's list and live session, drafts Ork never sends (a github-channel comment posts only after you confirm its text), the server's routes and due count, the Follow-ups panel, and `build`'s `followups`, gate, `polish`, `polish-review`, `published` and `declare` steps. Left: L300 to L312 and L325.",
         docs: [
           "decisions/ADR-086-follow-ups.md",
           "specs/follow-ups.md",
@@ -1210,10 +1210,12 @@ export const MILESTONES = [
         title: "One way to filter every list command",
         status: "active",
         detail:
-          "Built, waiting to land (it becomes done with its commit). RFC-017, now Implemented. `ork ps`, `usage`, `decide --list`, `follow-ups list`, `feedback list`, `worktrees list`, `agents list` and `projects` each list by one field table, and the flags, their checks and Tab completion's values are made from it: `--status`, `--kind`, `--severity`, `--for`, `--due`, `--workflow`, `--run`, `--project`, `--since`, `--until`, with `--ids` (comma-separated, for `$(...)`), a strict `--limit` and `--json`, and one time parser (age or day) shared with `ork usage` and `ork logs`. The machinery and the core record types' tables are in `@krapht/ork-core`. `--all` is deprecated for `--project all` and `--status all`, kept one release. Covers follow-up cc84367e. Left: L337 to L341.",
+          "Built, waiting to land (it becomes done with its commit). RFC-017, now Implemented. `ork ps`, `usage`, `decide --list`, `follow-ups list`, `feedback list`, `worktrees list`, `agents list` and `projects` each list by one field table, and the flags, their checks and Tab completion's values are made from it: `--status`, `--kind`, `--severity`, `--for`, `--due`, `--workflow`, `--run`, `--project`, `--since`, `--until`, with `--ids` (comma-separated, for `$(...)`), a strict `--limit` and `--json`, and one time parser (age or day) shared with `ork usage` and `ork logs`. The machinery and the core record types' tables are in `@krapht/ork-core`. `--all` is deprecated for `--project all` and `--status all`, kept one release. Covers follow-up cc84367e. The server's list routes read the same tables, so the browser view's six list panels share one filter bar and `ork mcp`'s `runs`, `usage` and `decisions` tools take the same fields (L339 closed). Left: L337, L338, L340 to L344.",
         docs: [
           "decisions/ADR-088-list-filters.md",
           "specs/cli/list-filters.md",
+          "specs/ui/design-filter-bar.md",
+          "specs/server/api.md",
           "docs/guides/filtering-lists.md",
           "rfcs/archived/RFC-017-list-filters.md",
         ],

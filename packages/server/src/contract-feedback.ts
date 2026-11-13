@@ -20,6 +20,8 @@ import type {
 import type { Driver } from "@krapht/ork-schema";
 import { z } from "zod";
 
+import { listShape } from "./contract-lists.ts";
+
 export type {
   FeedbackActions,
   FeedbackItem,
@@ -85,9 +87,19 @@ export const PublishSchema = z.strictObject({
   digest: z.string().min(1),
 });
 
+/**
+ * The filters are core's `feedbackListTable` fields; with none, every item
+ * comes, dismissed too (the panel hides them itself).
+ */
+export const FeedbackItemsQuerySchema = z.strictObject(listShape("feedback"));
+
 export const FEEDBACK_API = {
   note: { method: "POST", path: "/api/runs/:id/notes", body: NoteSchema },
-  feedbackItems: { method: "GET", path: "/api/feedback" },
+  feedbackItems: {
+    method: "GET",
+    path: "/api/feedback",
+    query: FeedbackItemsQuerySchema,
+  },
   feedbackItem: { method: "GET", path: "/api/feedback/:id" },
   feedbackStatus: {
     method: "POST",

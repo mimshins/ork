@@ -48,9 +48,12 @@ ork follow-ups published <ref>                        # inside a run: what it le
   stderr); with it, posts through `gh` and marks the follow-up done. It refuses
   a message that is not drafted for `github`, or is already closed.
 - **`published`** needs `ORK_RUN`; it is what `build`'s `published` step runs.
-- **`ork run <workflow> --follow-ups <ids>`** takes `agent` follow-ups as the
-  run's brief
-  ([taking them](./due-and-delivery.md#taking-them-as-a-runs-brief)).
+- **`ork run <workflow> --follow-ups <ids|due>`** takes `agent` follow-ups as
+  the run's brief; `due` takes every due one, alone or beside ids, and an empty
+  value is refused with a hint. Tab after the flag offers `due` and the open
+  agent follow-ups' ids with their titles
+  ([taking them](./due-and-delivery.md#taking-them-as-a-runs-brief),
+  [completion](../cli/completion.md#values)).
 - `ork watch` checks every 10 minutes and prints a line for each follow-up that
   came due.
 
