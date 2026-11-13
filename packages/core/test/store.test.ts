@@ -5,7 +5,13 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  statSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -185,6 +191,19 @@ describe("the event store", () => {
       "abc11111",
     ]);
     expect(store.runs({ limit: 1 }).map(r => r.id)).toEqual(["def33333"]);
+  });
+
+  it("keeps Ork's folder and the database for the person alone", () => {
+    const home = path.join(
+      mkdtempSync(path.join(tmpdir(), "ork-home-")),
+      ".ork",
+    );
+    mkdirSync(home, { mode: 0o755 });
+    chmodSync(home, 0o755);
+    const file = path.join(home, "state.db");
+    openStore(file).close();
+    expect(statSync(home).mode & 0o777).toBe(0o700);
+    expect(statSync(file).mode & 0o777).toBe(0o600);
   });
 
   it("keeps runs in a file across opens, migrating once", () => {

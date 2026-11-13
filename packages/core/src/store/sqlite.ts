@@ -8,7 +8,7 @@
  *   changed (SQLite may still add the `-wal` and `-shm` files beside it).
  */
 
-import { mkdirSync } from "node:fs";
+import { chmodSync, mkdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -66,10 +66,24 @@ const openReadOnly = (file: string): DatabaseSync => {
   }
 };
 
+/**
+ * Keeps Ork's folder for the person alone: `~/.ork` holds every run's prompts
+ * and output, its sockets and its locks, so it is made 0700, and one an older
+ * Ork made with the umask's mode is narrowed. A store elsewhere (a test's) only
+ * gets its folder made.
+ */
+const keepPrivate = (dir: string): void => {
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  if (path.basename(dir) !== ".ork") return;
+  if ((statSync(dir).mode & 0o077) !== 0) chmodSync(dir, 0o700);
+};
+
 /** A database opened for writing: created, in WAL mode, migrated. */
 const openWritable = (file: string): DatabaseSync => {
-  if (file !== ":memory:") mkdirSync(path.dirname(file), { recursive: true });
+  if (file !== ":memory:") keepPrivate(path.dirname(file));
   const db = new DatabaseSync(file);
+  // SQLite gives the -wal and -shm files the database's own mode.
+  if (file !== ":memory:") chmodSync(file, 0o600);
   db.exec("PRAGMA busy_timeout = 5000");
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA synchronous = NORMAL");

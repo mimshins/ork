@@ -106,7 +106,7 @@ nodes:
       Your unit (its coverage_id, boundary, starting_paths and block map):
       {{item}}
 
-      Return `candidates`: each a JSON object with fingerprint (matching ^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$, the same for the same root cause, no line number), title, description, claimed_root_cause, trace (ordered; entrypoint first, sink last, propagation between; each entry has kind, file, line, scope, description), evidence (each file, line, description), proposed_verdict (confirmed or needs_validation), and for needs_validation also blockers (a list of strings) and validation_plan ({local, deployment}, at least one non-empty). An empty list when nothing survives the gate. Also `hardening` (concrete non-finding notes, as strings) and `uncovered` (boundaries you met outside your unit: surface, boundary, subsystem, attack_class, starting_paths, reason).
+      Return `candidates`: each a JSON object with fingerprint (matching ^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$, the same for the same root cause, no line number), title, description, claimed_root_cause, trace (in order, the entrypoint first and the sink last, the propagation steps between; each entry has file, line, scope and description, and Ork sets its kind from its place), evidence (each file, line, description), proposed_verdict (confirmed or needs_validation), and for needs_validation also blockers (a list of strings) and validation_plan ({local, deployment}, at least one non-empty). An empty list when nothing survives the gate. Also `hardening` (concrete non-finding notes, as strings) and `uncovered` (boundaries you met outside your unit: surface, boundary, subsystem, attack_class, starting_paths, reason).
     model: claude-code.opus
     context:
       - ../context/read-only-bash.md
@@ -197,7 +197,7 @@ nodes:
       The candidate:
       {{item}}
 
-      Return `decision` (confirmed, needs_validation or rejected) and `records`: a list with exactly one object, the record that matches that decision's branch of report-schema.json exactly (it uses additionalProperties: false: no extra fields, no hunter wrapper fields such as proposed_verdict), including `verdict`.
+      Return `decision` (confirmed, needs_validation or rejected) and `records`: a list with exactly one object, the record that matches that decision's branch of report-schema.json exactly (it uses additionalProperties: false: no extra fields, no hunter wrapper fields such as proposed_verdict), including `verdict`. List its trace in order, the entrypoint first and the sink last: Ork sets each entry's kind from its place.
     model: claude-code.opus
     context:
       - ../context/read-only-bash.md

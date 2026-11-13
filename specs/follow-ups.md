@@ -112,9 +112,9 @@ answer for every action (`followUpActions`).
 - **Text is scrubbed first** with the feedback redactor
   ([redact.ts](../packages/core/src/feedback/redact.ts)): secrets masked, a home
   folder written `~`, the project's paths `<project>/…`, and emails, hosts and
-  IP addresses removed, in the title, body, files, draft and steps, before it is
-  stored, written to a file, relayed or posted
-  ([L303](./gaps/follow-ups-limits.md)).
+  IP addresses removed, in the title, body, files, who it is for, its ref, the
+  draft (its channel too) and steps, before it is stored, written to a file,
+  relayed or posted ([L303](./gaps/follow-ups-limits.md)).
 
 ## Keeping them
 

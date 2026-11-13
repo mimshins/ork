@@ -20,6 +20,7 @@ import { fileFollowUps } from "./file.ts";
 import { githubFollowUps } from "./github.ts";
 import type {
   FollowUp,
+  FollowUpFor,
   FollowUpKept,
   FollowUpPlaceAdapter,
   FollowUpStore,
@@ -76,6 +77,20 @@ export const sameFollowUp = (
   sameFiles(kept.where, input.where) &&
   nearTitle(kept.title, input.title);
 
+/** Who a follow-up is for, its name scrubbed and its kind kept. */
+const scrubFor = (
+  to: FollowUpFor,
+  scrub: (text: string) => string,
+): FollowUpFor => {
+  if (to.startsWith("project:")) {
+    return `project:${scrub(to.slice("project:".length))}`;
+  }
+  if (to.startsWith("person:")) {
+    return `person:${scrub(to.slice("person:".length))}`;
+  }
+  return to;
+};
+
 /** `input` with what shouldn't be kept or leave the machine taken out. */
 export const scrubFollowUp = (
   input: NewFollowUp,
@@ -84,7 +99,9 @@ export const scrubFollowUp = (
   const scrub = (text: string): string => redact(text, options);
   return {
     ...input,
+    for: scrubFor(input.for, scrub),
     title: scrub(input.title),
+    ...(input.ref === undefined ? {} : { ref: scrub(input.ref) }),
     ...(input.body === undefined ? {} : { body: scrub(input.body) }),
     ...(input.where === undefined ? {} : { where: input.where.map(scrub) }),
     ...(input.draft === undefined
@@ -94,6 +111,9 @@ export const scrubFollowUp = (
             ...input.draft,
             to: scrub(input.draft.to),
             text: scrub(input.draft.text),
+            ...(input.draft.channel === undefined
+              ? {}
+              : { channel: scrub(input.draft.channel) }),
           },
         }),
     ...(input.steps === undefined

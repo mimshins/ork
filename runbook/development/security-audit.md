@@ -67,8 +67,9 @@ no OS-enforced sandbox yet, so a lead that needs execution is recorded as
 1. `scan` (free): `pnpm audit` (needs the network), every workflow under
    `.github/workflows` (actions pinned by SHA, `permissions` per job, no
    `pull_request_target` with a checkout), and a secret-pattern scan of tracked
-   files (file, line and pattern name, never the value). It also reads the
-   previous audit.
+   files (file, line and pattern name, never the value; a test's placeholder,
+   such as an alphabet run or a key block's header with no key, is left out). It
+   also reads the previous audit.
 2. `recon` maps the architecture and lists coverage-ledger units, most important
    first. `ledger` writes the ledger and runs `validate-coverage-ledger.cjs`:
    the first 8 (`quick`) or 20 (`standard`) units are hunted, the rest are
@@ -81,7 +82,9 @@ no OS-enforced sandbox yet, so a lead that needs execution is recorded as
 5. `verify`: a fresh Opus verifier per candidate tries to disprove it, and
    returns `confirmed`, `needs_validation` or `rejected`. Only `confirmed`
    records have a severity. The agent that found a candidate never verifies it.
-6. `findings` writes `findings.json` and runs `validate-findings.cjs`. A
+6. `findings` writes `findings.json` and runs `validate-findings.cjs`. Agents
+   list a trace in order and Ork labels each entry's kind from its place (the
+   first `entrypoint`, the last `sink`), so a mislabelled trace costs nothing. A
    verifier record that is missing or invalid is kept out and listed as
    unverified.
 7. `recheck` (`standard` only): a fresh agent per confirmed record. A record it

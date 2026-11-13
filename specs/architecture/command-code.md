@@ -104,9 +104,17 @@ a throwaway `HOME` (no model session), the headless docs
   `tool_search`), which a session needs to load the schema of Ork's `report`.
   Reads (`read_file`, `read_multiple_files`, `read_directory`, `glob`, `grep`)
   need no rule when every path in their input is inside the worktree, as with
-  Claude Code; one reaching outside it needs one. A specifier Ork does not read
-  (a path, a domain) never allows a call and always denies one. An `acceptEdits`
-  node is allowed `Edit`.
+  Claude Code; one reaching outside it needs one. A read's paths are every value
+  of a key with `path`, `file` or `dir` in its name and any other value that
+  starts at `/` or `~` or climbs with `..`; each is checked by its real path,
+  links followed, and one under `~` is always outside. A shell line is checked
+  command by command, split at `;`, `&`, `|`, `&&`, `||` and line breaks outside
+  quotes: every command must be allowed, and a deny that covers any one refuses
+  the line. Output goes only to `/dev/null` or to another stream (`2>&1`); a
+  line with another redirect target, a command or process substitution, or an
+  unclosed quote is one Ork can't read, so only a plain `Bash` rule allows it. A
+  specifier Ork does not read (a path, a domain) never allows a call and always
+  denies one. An `acceptEdits` node is allowed `Edit`.
 - **Context:** Command Code reads `AGENTS.md`, `.commandcode/skills` and
   `.commandcode/agents` in the checkout. **Limits:** the machine's own Command
   Code setup (user skills, memory, installed mods, user and project MCP servers)

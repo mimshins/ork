@@ -8,6 +8,8 @@
  */
 
 import {
+  chmodSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -46,9 +48,26 @@ export const sweepSecretFolders = (root: string): string[] => {
   });
 };
 
+/**
+ * Refuses a root that isn't this user's own folder: in a shared temporary
+ * folder another user could have made it first, or put a link there, to read or
+ * swap what a session loads. One of ours that is open to others is closed.
+ */
+const holdPrivate = (root: string): void => {
+  const held = lstatSync(root);
+  const uid = process.getuid?.();
+  if (!held.isDirectory() || (uid !== undefined && held.uid !== uid)) {
+    throw new Error(
+      `${root} is not a folder of this user's; remove it, or set TMPDIR to a private folder`,
+    );
+  }
+  if ((held.mode & 0o077) !== 0) chmodSync(root, 0o700);
+};
+
 /** A new private folder under `root`, after sweeping the stale ones. */
 export const makeSecretFolder = (root = secretRoot()): SecretFolder => {
   mkdirSync(root, { recursive: true, mode: 0o700 });
+  holdPrivate(root);
   sweepSecretFolders(root);
   // mkdtemp makes the folder 0700.
   const dir = mkdtempSync(path.join(root, `${String(process.pid)}-`));

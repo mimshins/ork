@@ -18,7 +18,9 @@ all views over the same events.
 
 - **`~/.ork/state.db`**: one SQLite database (Node's built-in `node:sqlite`) for
   every project, in WAL mode, so other `ork` processes read while a run writes.
-  Only the run's own process writes its events.
+  Only the run's own process writes its events. `~/.ork` is kept 0700 (one an
+  older Ork left open is narrowed when the store opens) and the database 0600,
+  its `-wal` and `-shm` files with it: it holds every run's prompts and output.
 - **`.ork/runs/<run>/events.jsonl`** in the project (an attached project's
   `~/.ork/projects/<id>/runs/`): a copy of the same events, one JSON line each,
   to read, grep or share without Ork. `.ork/runs/` is gitignored.

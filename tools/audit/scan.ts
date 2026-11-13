@@ -12,7 +12,7 @@ import path from "node:path";
 
 import { checkInputs, resolveScope, type Scope } from "./inputs.ts";
 import { fingerprintOf, type ScannerRecord } from "./records.ts";
-import { SECRET_PATTERNS } from "./secret-patterns.ts";
+import { SECRET_PATTERNS, type SecretPattern } from "./secret-patterns.ts";
 import { outputDir, previousAudit, type PreviousAudit } from "./store.ts";
 import { checkWorkflow } from "./workflow-checks.ts";
 
@@ -106,13 +106,55 @@ export const parsePnpmAudit = (
 
 const MAX_FILE_BYTES = 1_000_000;
 
-/** Secret-pattern hits in `files`: file, line and the pattern's name only. */
+/** How many characters at the end of a token decide if it is a placeholder. */
+const TAIL = 16;
+
+/**
+ * Whether a matched token is a test's placeholder, not a credential: the end of
+ * it runs through the alphabet or the digits in order, or repeats a character
+ * (`ghp_abc…xyz0123456789`, `AKIAABCDEFGHIJKLMNOP`, `sk-ant-xxxx…`). A real
+ * token's characters are random, so its tail breaks such a run many times.
+ */
+export const isPlaceholder = (token: string): boolean => {
+  const tail = token.replaceAll(/[^A-Za-z0-9]/gu, "").slice(-TAIL);
+  if (tail.length < TAIL) return false;
+  let breaks = 0;
+  for (let at = 1; at < tail.length; at += 1) {
+    const step = (tail.codePointAt(at) ?? 0) - (tail.codePointAt(at - 1) ?? 0);
+    if (step !== 0 && step !== 1) breaks += 1;
+  }
+  return breaks <= 2;
+};
+
+/** A key block counts when its key is there: at a line's start, or with a body. */
+const isKeyBlock = (line: string, header: RegExp): boolean => {
+  const at = line.search(header);
+  if (at < 0) return false;
+  const rest = line.slice(at).replace(header, "");
+  return line.slice(0, at).trim() === "" || /[A-Za-z0-9+/]{40,}/u.test(rest);
+};
+
+/** Whether a pattern's hit on `line` is a credential worth reporting. */
+const isSecretHit = (
+  line: string,
+  { name, pattern }: SecretPattern,
+): boolean => {
+  if (name === "private-key-block") return isKeyBlock(line, pattern);
+  const found = pattern.exec(line);
+  return found !== null && !isPlaceholder(found[0]);
+};
+
+/**
+ * Secret-pattern hits in `files`: file, line and the pattern's name only. A
+ * test's placeholder (an ordered run, or a key block's header with no key) is
+ * left out.
+ */
 export const scanSecrets = (
   files: readonly { path: string; text: string }[],
 ): ScannerRecord[] =>
   files.flatMap(file =>
     file.text.split("\n").flatMap((line, index) =>
-      SECRET_PATTERNS.filter(({ pattern }) => pattern.test(line)).map(
+      SECRET_PATTERNS.filter(each => isSecretHit(line, each)).map(
         ({ name }): ScannerRecord => ({
           source: "scanner",
           check: "secret-pattern",

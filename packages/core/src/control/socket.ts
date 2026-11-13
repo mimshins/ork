@@ -95,7 +95,7 @@ export type ServeOptions = {
 
 /** Listens on the run's socket; resolves once it is listening. */
 export const serveRun = async (options: ServeOptions): Promise<RunSocket> => {
-  mkdirSync(path.dirname(options.path), { recursive: true });
+  mkdirSync(path.dirname(options.path), { recursive: true, mode: 0o700 });
   // A socket file left by a crashed run with the same id.
   rmSync(options.path, { force: true });
   const followers = new Set<Socket>();

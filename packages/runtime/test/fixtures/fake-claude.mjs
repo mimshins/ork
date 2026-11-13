@@ -36,7 +36,7 @@
  *   `end:rate_limited` an `API Error: 429` result, …; `ENDS` below).
  */
 
-import { existsSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline";
 
@@ -53,8 +53,10 @@ if (args[0] === "auth" && args[1] === "status") {
   process.exit(0);
 }
 
-const mcp = JSON.parse(flag("--mcp-config")).mcpServers.ork;
-const settings = args.includes("--settings") ? JSON.parse(flag("--settings")) : {};
+// A JSON string or a file's path, as the real CLI takes both.
+const jsonOf = value => JSON.parse(value.trimStart().startsWith("{") ? value : readFileSync(value, "utf8"));
+const mcp = jsonOf(flag("--mcp-config")).mcpServers.ork;
+const settings = args.includes("--settings") ? jsonOf(flag("--settings")) : {};
 const hook = settings.hooks?.PreToolUse?.[0]?.hooks?.[0];
 const out = message => process.stdout.write(`${JSON.stringify(message)}\n`);
 const pending = path.join(process.cwd(), ".fake-deferred");

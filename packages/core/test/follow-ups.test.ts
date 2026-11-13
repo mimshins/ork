@@ -212,6 +212,19 @@ describe("scrubbing", () => {
       { text: "Check", command: "cat ~/.aws/config" },
     ]);
   });
+
+  it("scrubs who it is for, its ref and the draft's channel too", async () => {
+    const store = storeWith();
+    const { followUp } = await store.add({
+      ...message,
+      for: "person:dana@partner.example.com",
+      ref: `${HOME}/notes.md`,
+      draft: { to: "dana", channel: "dana@partner.example.com", text: "hi" },
+    });
+    expect(followUp.for).toBe("person:<email>");
+    expect(followUp.ref).toBe("~/notes.md");
+    expect(followUp.draft?.channel).toBe("<email>");
+  });
 });
 
 describe("the file store", () => {

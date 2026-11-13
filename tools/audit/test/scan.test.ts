@@ -91,6 +91,28 @@ describe("scanSecrets", () => {
     ]);
     expect(JSON.stringify(records)).not.toContain(token);
   });
+
+  it("leaves out a test's placeholders, and a key block's header with no key", () => {
+    const fixtures = [
+      '"token ghp_abcdefghijklmnopqrstuvwxyz0123456789"',
+      '"key sk-ant-api03-abcdefghijklmnopqrstuvwxyz"',
+      '"aws AKIAABCDEFGHIJKLMNOP"',
+      `["a private key", "-----BEGIN OPENSSH PRIVATE KEY-----"],`,
+    ];
+    const records = scanSecrets([
+      { path: "test/a.test.ts", text: fixtures.join("\n") },
+    ]);
+    expect(records).toEqual([]);
+  });
+
+  it("still reports a key block that starts its line", () => {
+    const records = scanSecrets([
+      { path: "id_ed25519", text: "-----BEGIN OPENSSH PRIVATE KEY-----\n" },
+    ]);
+    expect(records.map(record => record.pattern)).toEqual([
+      "private-key-block",
+    ]);
+  });
 });
 
 // The folder's time decides which audit is the newest.

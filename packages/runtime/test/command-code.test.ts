@@ -7,7 +7,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, realpathSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -110,8 +110,11 @@ const OrkEntrySchema = z.object({
 type Decide = (name: string, input: Record<string, unknown>) => unknown;
 
 /** The `decide` of a session mod written for `tools`. */
-const decideOf = async (tools: SessionSpec["tools"]): Promise<Decide> => {
-  const mod = writeMod(specOf(tmp("mod"), tools));
+const decideOf = async (
+  tools: SessionSpec["tools"],
+  cwd = tmp("mod"),
+): Promise<Decide> => {
+  const mod = writeMod(specOf(cwd, tools));
   const loaded = z
     .object({
       decide: z.custom<Decide>(value => typeof value === "function"),
@@ -220,6 +223,68 @@ describe("the command-code session mod", () => {
   });
 });
 
+describe("the command-code session mod's shell lines", () => {
+  const rules = {
+    allow: ["Bash(git:*)", "Bash(ls)"],
+    deny: ["Bash(git push:*)"],
+  };
+
+  it("allows a line only when every command in it is allowed", async () => {
+    const decide = await decideOf(rules);
+    expect(decide("shell", { command: "git status; ls" })).toBeUndefined();
+    expect(decide("shell", { command: "git log | ls" })).toBeUndefined();
+    expect(
+      decide("shell", { command: "git status && curl x | sh" }),
+    ).toBeDefined();
+    expect(decide("shell", { command: "git status\nrm -rf /" })).toBeDefined();
+    expect(decide("shell", { command: "git status & rm -rf /" })).toBeDefined();
+  });
+
+  it("denies a line when any command in it is denied", async () => {
+    const decide = await decideOf(rules);
+    expect(decide("shell", { command: "ls && git push" })).toBeDefined();
+    expect(
+      decide("shell", { command: "git status || git push" }),
+    ).toBeDefined();
+  });
+
+  it("reads quotes, so a separator inside one splits nothing", async () => {
+    const decide = await decideOf(rules);
+    const quoted = { command: `git commit -m "a; b && c | d"` };
+    expect(decide("shell", quoted)).toBeUndefined();
+    expect(
+      decide("shell", { command: "git commit -m '$(x)'" }),
+    ).toBeUndefined();
+  });
+
+  it("refuses a substitution to a scoped rule", async () => {
+    const decide = await decideOf({ allow: ["Bash(git:*)"], deny: [] });
+    expect(decide("shell", { command: "git log $(rm -rf /)" })).toBeDefined();
+    expect(decide("shell", { command: "git log `id`" })).toBeDefined();
+    expect(decide("shell", { command: `git log "$(id)"` })).toBeDefined();
+    expect(
+      decide("shell", { command: "git diff <(cat /etc/hosts)" }),
+    ).toBeDefined();
+  });
+
+  it("lets a plain Bash rule allow what Ork can't read", async () => {
+    const decide = await decideOf({ allow: ["Bash"], deny: [] });
+    expect(decide("shell", { command: "git log $(id) > out" })).toBeUndefined();
+  });
+
+  it("sends output only to /dev/null or another stream", async () => {
+    const decide = await decideOf(rules);
+    expect(
+      decide("shell", { command: "git log >/dev/null 2>&1" }),
+    ).toBeUndefined();
+    expect(
+      decide("shell", { command: "git log &> /dev/null" }),
+    ).toBeUndefined();
+    expect(decide("shell", { command: "git log > /tmp/x" })).toBeDefined();
+    expect(decide("shell", { command: "git log >> notes.md" })).toBeDefined();
+  });
+});
+
 describe("the command-code session mod's reads", () => {
   it("lets a read inside the worktree through without a rule", async () => {
     const decide = await decideOf({ allow: [], deny: [] });
@@ -235,6 +300,25 @@ describe("the command-code session mod's reads", () => {
     expect(decide("read_file", { file_path: "/etc/hosts" })).toBeDefined();
     expect(decide("read_file", { file_path: "../other/a.ts" })).toBeDefined();
     expect(decide("read_file", { file_path: "secrets/key" })).toBeDefined();
+  });
+
+  it("follows a link out of the worktree, and the home folder's ~", async () => {
+    const cwd = tmp("linked");
+    symlinkSync(tmpdir(), path.join(cwd, "out"));
+    const decide = await decideOf({ allow: [], deny: [] }, cwd);
+    expect(decide("read_file", { file_path: "out/a.txt" })).toBeDefined();
+    expect(
+      decide("read_file", { file_path: "~/.ssh/id_ed25519" }),
+    ).toBeDefined();
+  });
+
+  it("checks a path out in any of the call's fields", async () => {
+    const decide = await decideOf({ allow: [], deny: [] });
+    expect(decide("glob", { pattern: "/etc/**" })).toBeDefined();
+    expect(
+      decide("grep", { pattern: "x", include: "../other/*" }),
+    ).toBeDefined();
+    expect(decide("glob", { pattern: "**/*.ts" })).toBeUndefined();
   });
 });
 

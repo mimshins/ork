@@ -10,6 +10,7 @@ import { spawnSync } from "node:child_process";
 import { rmSync } from "node:fs";
 import path from "node:path";
 
+import { labelTrace } from "./findings.ts";
 import { isObject, type Json, objects, str, writeJson } from "./json.ts";
 import { outputDir, readRows, updateMetadata } from "./store.ts";
 
@@ -75,6 +76,9 @@ const verifiedRecords = (
         ? undefined
         : {
             ...record,
+            ...(record["trace"] === undefined
+              ? {}
+              : { trace: labelTrace(record["trace"]) }),
             verdict: record["verdict"] ?? decision,
             fingerprint:
               str(record["fingerprint"]) || str(candidate["fingerprint"]),

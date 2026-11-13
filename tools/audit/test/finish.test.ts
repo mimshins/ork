@@ -61,6 +61,29 @@ describe("findings from the verifiers' answers", () => {
     expect(checked.ok).toBe(true);
   });
 
+  it("labels a record's trace by its order, so a mislabelled one is kept", () => {
+    const { repo, env, dir } = startedRun("quick");
+    const record = confirmed("fp-a");
+    const kinds = record.trace.map(entry => entry.kind).toReversed();
+    const swapped = record.trace.map((entry, at) => ({
+      ...entry,
+      kind: kinds[at],
+    }));
+    const result = runFindings(repo, env, {
+      unique: unique("fp-a"),
+      results: [
+        { decision: "confirmed", records: [{ ...record, trace: swapped }] },
+      ],
+    });
+    expect(result.counts).toEqual({ confirmed: 1 });
+    expect(result.unverified).toBe(0);
+    const checked = validate(
+      "validate-findings.cjs",
+      path.join(dir, "findings.json"),
+    );
+    expect(checked.ok).toBe(true);
+  });
+
   it("marks the run incomplete for candidates past the verifier cap", () => {
     const { repo, env, dir } = startedRun("quick");
     runConsolidate(repo, env, {

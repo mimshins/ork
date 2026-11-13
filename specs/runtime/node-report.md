@@ -20,6 +20,10 @@ A session node ends with a report, held to one JSON Schema:
   type, and an object is taken as JSON Schema.
 - `status`, `summary` and every `output.schema` field are required; no other
   field is allowed.
+- A reported `branch` is kept only when it is a plain branch name git would take
+  (`git check-ref-format --branch`'s rules) with no leading `-`, `:`, `+`, space
+  or control character: it can reach a tool's arguments, so one a command could
+  read as an option or a refspec is dropped.
 - A session without a valid report has `report: null`; the scheduler treats it
   as `fail`.
 

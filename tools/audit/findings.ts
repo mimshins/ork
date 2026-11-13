@@ -36,6 +36,22 @@ const candidatesOf = (hunts: readonly unknown[]): Json[] =>
     return typeof hunt["fingerprint"] === "string" ? [hunt] : [];
   });
 
+/**
+ * `trace` with each entry's kind set by its place, as the skill's validator
+ * requires: the first `entrypoint`, the last `sink`, the ones between
+ * `propagation`, and a one-entry trace `sink`. The agents list a trace in order
+ * and Ork labels it, so a mislabelled entry can't cost a paid record.
+ */
+export const labelTrace = (trace: unknown): unknown => {
+  if (!Array.isArray(trace)) return trace;
+  const last = trace.length - 1;
+  return trace.map((entry: unknown, at) => {
+    if (!isObject(entry)) return entry;
+    const kind = at === last ? "sink" : at === 0 ? "entrypoint" : "propagation";
+    return { ...entry, kind };
+  });
+};
+
 /** The `needs_validation` record for a candidate no verifier got to. */
 export const unreviewedRecord = (candidate: Json, cap: number): Json => ({
   verdict: "needs_validation",
@@ -46,7 +62,7 @@ export const unreviewedRecord = (candidate: Json, cap: number): Json => ({
     candidate["claimed_root_cause"] ??
     candidate["root_cause"] ??
     candidate["description"],
-  trace: candidate["trace"],
+  trace: labelTrace(candidate["trace"]),
   evidence: candidate["evidence"],
   blockers: [
     `Not looked at: more candidates came back than the profile's ${cap} verifier runs allow, so no verifier tried to disprove this one.`,

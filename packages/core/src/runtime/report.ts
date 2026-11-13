@@ -89,6 +89,28 @@ const isStatus = (value: unknown): value is ReportStatus =>
 
 const STANDARD = new Set(["status", "summary", "artifacts", "branch"]);
 
+/**
+ * A name git takes as a branch (`git check-ref-format --branch`'s rules), and
+ * nothing a command would read as an option or a refspec: no leading `-`, no
+ * `:` or `+`, no space or control character. A reported branch reaches tool
+ * arguments, so one that isn't a plain branch name is dropped.
+ */
+const isBranchName = (name: string): boolean =>
+  name !== "" &&
+  name !== "@" &&
+  !name.startsWith("-") &&
+  !name.startsWith("/") &&
+  !name.endsWith("/") &&
+  !name.endsWith(".") &&
+  !name.endsWith(".lock") &&
+  !name.includes("..") &&
+  !name.includes("//") &&
+  !name.includes("@{") &&
+  !name.includes("/.") &&
+  !name.startsWith(".") &&
+  // oxlint-disable-next-line no-control-regex -- control characters are what it refuses
+  !/[\u0000-\u0020\u007F~^:?*[\\+]/u.test(name);
+
 /** Reads a driver's structured output as a report, or `null` if it is not one. */
 export const parseReport = (value: unknown): NodeReport | null => {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
@@ -112,6 +134,7 @@ export const parseReport = (value: unknown): NodeReport | null => {
       Object.entries(record).filter(([key]) => !STANDARD.has(key)),
     ),
   };
-  if (typeof branch === "string" && branch !== "") report.branch = branch;
+  if (typeof branch === "string" && isBranchName(branch))
+    report.branch = branch;
   return report;
 };

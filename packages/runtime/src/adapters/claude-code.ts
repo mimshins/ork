@@ -1,7 +1,8 @@
 /**
  * @file The `claude-code` adapter: the user's own `claude -p` in stream-json
- *   mode. Its Command is `buildCliArgs`, which also carries Ork's MCP endpoint
- *   (`--mcp-config`, the `flag` wiring) and the node's tool rules, with
+ *   mode. Its Command is `buildCliArgs` and the node's tool rules, with Ork's
+ *   MCP endpoint and settings, which carry its token, passed as private files
+ *   (`--mcp-config`, `--settings`, the `flag` wiring), not on the argv, with
  *   permission prompts sent to Ork's `permission` tool. Sessions start clean of
  *   the machine's Claude setup unless the run asks for it (ADR-065). A node
  *   that can be paused gets a `PreToolUse` HTTP hook on the endpoint: a short
@@ -14,22 +15,21 @@ import type { AgentRuntime, SessionSpec } from "@krapht/ork-core";
 import type { CliAdapter, HoldHook, OrkEndpoint } from "../adapter.ts";
 import type { HoldAnswer } from "../hold.ts";
 import { createSessionRuntime, type RunnerOptions } from "../session-runner.ts";
-import { ORK_SERVER, toolId } from "../tools/tool.ts";
+import { toolId } from "../tools/tool.ts";
 import {
   claudeDecoder,
   claudeUsage,
   decodeClaudeLine,
 } from "./claude-code-events.ts";
+import {
+  HOOK_TIMEOUT_S,
+  mcpConfigOf,
+  secretFlags,
+  settingsOf,
+  withoutSecretFlags,
+} from "./claude-code-flags.ts";
 
 export type CliRuntimeOptions = RunnerOptions;
-
-/**
- * Per-request timeout for Ork's MCP server, in ms. The CLI otherwise gives an
- * HTTP server's request 60 seconds and drops a call silent for 5 minutes, and
- * `delegate` waits for whole child sessions (the per-server `timeout` raises
- * both; `MCP_TOOL_TIMEOUT` still caps it).
- */
-export const ORK_TOOL_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 
 /** Claude Code's switch for the one-hour prompt cache. */
 export const PROMPT_CACHE_1H = "ENABLE_PROMPT_CACHING_1H";
@@ -43,9 +43,6 @@ export const NO_AUTO_MEMORY = "CLAUDE_CODE_DISABLE_AUTO_MEMORY";
  */
 export const EXCLUDE_DYNAMIC_SECTIONS =
   "--exclude-dynamic-system-prompt-sections";
-
-/** Claude Code cancels a hook after this; a held call must answer before. */
-export const HOOK_TIMEOUT_S = 600;
 
 /** How long a hook holds a call before it defers it instead. */
 export const HOLD_WINDOW_MS = (HOOK_TIMEOUT_S - 60) * 1000;
@@ -100,44 +97,6 @@ const userLine = (text: string, later = false): string =>
     ...(later ? { priority: "next" } : {}),
   })}\n`;
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-/**
- * The node's `--settings` with Ork's `PreToolUse` HTTP hook added: before every
- * tool call, pre-approved ones included, the session asks whether its node may
- * go on. Its `PostToolUse` hook after a Bash call frees the call's slot.
- */
-export const withHoldHook = (
-  settings: Record<string, unknown> | undefined,
-  holdUrl: string,
-  token: string,
-): Record<string, unknown> => {
-  const hooks = isRecord(settings?.["hooks"]) ? settings["hooks"] : {};
-  const listed = (event: string): unknown[] => {
-    const own: unknown = hooks[event];
-    return Array.isArray(own) ? [...(own as unknown[])] : [];
-  };
-  const hook = {
-    type: "http",
-    url: holdUrl,
-    headers: { Authorization: `Bearer ${token}` },
-    timeout: HOOK_TIMEOUT_S,
-  };
-  return {
-    ...settings,
-    hooks: {
-      ...hooks,
-      PreToolUse: [...listed("PreToolUse"), { matcher: "*", hooks: [hook] }],
-      // Frees a heavy Bash call's slot once the call is done.
-      PostToolUse: [
-        ...listed("PostToolUse"),
-        { matcher: "Bash", hooks: [hook] },
-      ],
-    },
-  };
-};
-
 /** The hook's answer: nothing to say for "go", the deferral otherwise. */
 export const hookOutput = (answer: HoldAnswer): Record<string, unknown> =>
   answer === "go"
@@ -162,17 +121,6 @@ export const buildCliArgs = (
   mcp: OrkEndpoint,
   allowed: readonly string[],
 ): string[] => {
-  const mcpConfig = {
-    mcpServers: {
-      ...spec.mcpServers,
-      [ORK_SERVER]: {
-        type: "http",
-        url: mcp.url,
-        headers: { Authorization: `Bearer ${mcp.token}` },
-        timeout: ORK_TOOL_TIMEOUT_MS,
-      },
-    },
-  };
   const args = [
     "-p",
     "--input-format",
@@ -190,7 +138,7 @@ export const buildCliArgs = (
     "--json-schema",
     JSON.stringify(spec.reportSchema),
     "--mcp-config",
-    JSON.stringify(mcpConfig),
+    JSON.stringify(mcpConfigOf(spec, mcp)),
     "--permission-prompt-tool",
     toolId("permission"),
     "--allowedTools",
@@ -219,10 +167,7 @@ export const buildCliArgs = (
     args.push("--fork-session");
   }
   for (const dir of spec.plugins ?? []) args.push("--plugin-dir", dir);
-  const settings =
-    mcp.holdUrl === undefined
-      ? spec.settings
-      : withHoldHook(spec.settings, mcp.holdUrl, mcp.token);
+  const settings = settingsOf(spec, mcp);
   if (settings !== undefined) {
     args.push("--settings", JSON.stringify(settings));
   }
@@ -234,17 +179,14 @@ export const claudeCodeAdapter: CliAdapter = {
   driver: "claude-code",
   command: {
     bin: "claude",
-    args: (spec, leg) => buildCliArgs(spec, leg.endpoint, leg.allowed),
+    // The token's flags come from the wiring, as files.
+    args: (spec, leg) =>
+      withoutSecretFlags(buildCliArgs(spec, leg.endpoint, leg.allowed)),
     input: userLine,
   },
   decode: decodeClaudeLine,
   legDecoder: claudeDecoder,
-  // The Command writes `--mcp-config` itself.
-  mcp: {
-    kind: "flag",
-    wire: () =>
-      Promise.resolve({ args: [], env: {}, release: () => Promise.resolve() }),
-  },
+  mcp: secretFlags,
   permissions: { kind: "callback", denyByDefault: false },
   usage: claudeUsage,
   context: {

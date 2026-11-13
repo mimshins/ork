@@ -66,12 +66,12 @@ never rewritten.
 | Brief and later input | stream-json lines on stdin; the first result ends stdin                                                                                                                                                                                                                     |
 | System prompt         | `--append-system-prompt`, `--exclude-dynamic-system-prompt-sections`                                                                                                                                                                                                        |
 | Report                | `--json-schema`                                                                                                                                                                                                                                                             |
-| Ork's tools           | Ork's local MCP server, passed with `--mcp-config`; `--strict-mcp-config` unless `machineClaude`                                                                                                                                                                            |
+| Ork's tools           | Ork's local MCP server, passed with `--mcp-config <file>`; `--strict-mcp-config` unless `machineClaude`                                                                                                                                                                     |
 | Permission prompts    | `--permission-prompt-tool mcp__ork__permission` → `HumanChannel.permit`                                                                                                                                                                                                     |
 | Tool rules            | `--allowedTools` (+ Ork's preapproved tools), `--disallowedTools`                                                                                                                                                                                                           |
 | Model and effort      | `--model`, `--effort`                                                                                                                                                                                                                                                       |
 | Ork's skills          | `--plugin-dir`                                                                                                                                                                                                                                                              |
-| Extra settings        | `--settings <json>`                                                                                                                                                                                                                                                         |
+| Extra settings        | `--settings <file>`                                                                                                                                                                                                                                                         |
 | Limits and resume     | `--max-turns`, `--max-budget-usd`, `--resume`; `budgetTokens` is Ork's own ([session ends](./runtime/session-ends.md#the-token-cap))                                                                                                                                        |
 | A leader's cache      | `ENABLE_PROMPT_CACHING_1H=1` in the `claude` process's environment                                                                                                                                                                                                          |
 | Auto-memory           | `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` in the `claude` process's environment unless `machineClaude`                                                                                                                                                                            |
@@ -114,6 +114,13 @@ rules are in [what a session loads](./runtime/what-a-session-loads.md).
   an HTTP request after 60 seconds and drops a call silent for 5 minutes, and
   `delegate` waits for whole child sessions. `MCP_TOOL_TIMEOUT` (about 28 hours
   by default) still caps it.
+- the token kept off the command line: `--mcp-config` (the bearer token) and
+  `--settings` (the hold hook's token) name files in a private folder under the
+  system's temporary folder (`ork-sessions/<pid>-…`, 0700, each file 0600),
+  removed when the session ends, as OpenCode's config is
+  ([its page](./runtime/open-code.md#the-config-file)). A process's arguments
+  can be read by other users of the machine; the root folder must be the user's
+  own, not a link, or the session refuses to start.
 
 ## Usage accounting
 
