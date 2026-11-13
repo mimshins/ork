@@ -67,10 +67,29 @@ export const memoryEnv = (
 ): Record<string, string> =>
   spec.machineClaude === true ? {} : { [NO_AUTO_MEMORY]: "1" };
 
+/** Claude Code's default timeout for a Bash call, in milliseconds. */
+export const BASH_TIMEOUT = "BASH_DEFAULT_TIMEOUT_MS";
+
+/**
+ * Ten minutes, Claude Code's own most for a Bash call. At its default of two, a
+ * longer command (a typecheck of the workspace) moves to the background, and
+ * the session then polls it with `sleep`, `until` or `Monitor`, which ask.
+ */
+export const BASH_TIMEOUT_MS = 10 * 60 * 1000;
+
+/** The variables that let a session's Bash calls run to the end in front. */
+export const bashEnv = (): Record<string, string> => ({
+  [BASH_TIMEOUT]: String(BASH_TIMEOUT_MS),
+});
+
 /** Everything a session adds to its driver's environment. */
 export const driverEnv = (
   spec: Pick<SessionSpec, "promptCache" | "machineClaude">,
-): Record<string, string> => ({ ...cacheEnv(spec), ...memoryEnv(spec) });
+): Record<string, string> => ({
+  ...bashEnv(),
+  ...cacheEnv(spec),
+  ...memoryEnv(spec),
+});
 
 /** A later message goes in at the next step, even mid-turn. */
 const userLine = (text: string, later = false): string =>

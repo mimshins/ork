@@ -75,6 +75,7 @@ never rewritten.
 | Limits and resume     | `--max-turns`, `--max-budget-usd`, `--resume`; `budgetTokens` is Ork's own ([session ends](./runtime/session-ends.md#the-token-cap))                                                                                                                                        |
 | A leader's cache      | `ENABLE_PROMPT_CACHING_1H=1` in the `claude` process's environment                                                                                                                                                                                                          |
 | Auto-memory           | `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` in the `claude` process's environment unless `machineClaude`                                                                                                                                                                            |
+| Bash calls            | `BASH_DEFAULT_TIMEOUT_MS=600000` in the `claude` process's environment: a command runs up to ten minutes in front, not moved to the background at two                                                                                                                       |
 | A failure to start    | a `session.finished` event with `subtype: "error_driver"`, an `end` (`tool_missing` when the program is not installed, `driver_crashed` otherwise) and the last stderr block as its scrubbed detail (banner and stack dropped, capped); `interrupted` on a signal or a stop |
 
 ## Which driver a session uses

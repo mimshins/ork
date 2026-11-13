@@ -18,6 +18,13 @@ starts **clean of the machine's Claude setup**
 - **No auto-memory**: `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` in the session's
   environment, so the machine user's notes under
   `~/.claude/projects/<folder>/memory/` stay out.
+- **Bash calls run in front for up to ten minutes**:
+  `BASH_DEFAULT_TIMEOUT_MS=600000` in every session's environment, with or
+  without `machineClaude`, and in place of the user's own value. At Claude
+  Code's default of two minutes, a longer command (`pnpm check:fast` while other
+  builders run) moved to the background, and the session waited on it with
+  `sleep`, `until` or `Monitor`, which asked the maintainer each time. Ten
+  minutes is Claude Code's own most for a call (`BASH_MAX_TIMEOUT_MS`).
 - **The per-machine prompt sections leave the cached prefix**:
   `--exclude-dynamic-system-prompt-sections` moves the working directory, memory
   path and git status into the first user message. It changes no content, so it

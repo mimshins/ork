@@ -15,6 +15,8 @@ import type { RuntimeEvent, SessionSpec } from "@krapht/ork-core";
 import { describe, expect, it } from "vitest";
 
 import {
+  BASH_TIMEOUT,
+  BASH_TIMEOUT_MS,
   buildCliArgs,
   createCliRuntime,
   driverEnv,
@@ -73,7 +75,7 @@ describe("a clean session", () => {
   });
 
   it("turns auto-memory off in the CLI driver's process", async () => {
-    expect(driverEnv(clean)).toEqual({ [NO_AUTO_MEMORY]: "1" });
+    expect(driverEnv(clean)).toMatchObject({ [NO_AUTO_MEMORY]: "1" });
     expect(await memorySeen(clean)).toBe("1");
   });
 });
@@ -86,8 +88,14 @@ describe("a session with the machine's Claude setup", () => {
   });
 
   it("leaves auto-memory on in the CLI driver's process", async () => {
-    expect(driverEnv(machine)).toEqual({});
+    expect(driverEnv(machine)).not.toHaveProperty(NO_AUTO_MEMORY);
     expect(await memorySeen(machine)).toBe("");
+  });
+
+  it("gives every session's Bash calls ten minutes before they move to the background", () => {
+    expect(BASH_TIMEOUT_MS).toBe(600_000);
+    expect(driverEnv(clean)[BASH_TIMEOUT]).toBe("600000");
+    expect(driverEnv(machine)[BASH_TIMEOUT]).toBe("600000");
   });
 
   it("keeps a spec's own strict MCP, as a leader's question fork asks", () => {

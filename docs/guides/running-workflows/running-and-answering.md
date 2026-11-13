@@ -37,6 +37,11 @@ skills and context. It starts clean of the rest of your machine's Claude setup:
   in `~/.claude/projects/<folder>/memory/`) stays out of the run.
 - Your user-level `~/.claude` settings never load.
 
+A session's Bash commands may run for up to ten minutes before Claude Code moves
+them to the background (Ork sets `BASH_DEFAULT_TIMEOUT_MS`; Claude Code's own
+default is two). A long check then finishes in front, instead of the agent
+polling it and asking you to approve each wait.
+
 When an agent needs an MCP server (a browser, say), define it in your project's
 `.mcp.json` and name it on the node, or on `defaults`, with no credential in the
 file (use `${VAR}`):
