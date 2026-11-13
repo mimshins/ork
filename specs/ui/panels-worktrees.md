@@ -41,7 +41,7 @@ so it has no Go to digit; its tab sits after Feedback in the bottom group.
   worktrees · 1 branch", says "3 worktrees match." aloud, and shows the matching
   `ork worktrees list` command and **Clear filter** while one is set; a filter
   that leaves none shows "No worktrees match the filter." Clean merged… still
-  plans by project, not by run ([L343](../gaps.md#limits)).
+  plans by project, not by run ([L351](../gaps.md#limits)).
 - **Remove…** opens on Cancel and only reads: the facts (project, run with
   **Open run**, path as text to select, and state as the plan read it), **Also
   delete the branch** (off; described by what deleting it loses), the plan in a

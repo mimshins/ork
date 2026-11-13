@@ -169,4 +169,4 @@ parameters keep working and keep their defaults:
   `GET /api/list-fields` test in `list-routes.test.ts` holds them equal to
   core's tables.
 - `project` is a registered project's id or root; any other value is read as a
-  root, as before ([L342](../gaps.md#limits)).
+  root, as before ([L350](../gaps.md#limits)).

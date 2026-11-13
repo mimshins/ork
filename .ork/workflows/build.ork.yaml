@@ -788,6 +788,8 @@ nodes:
       stage() { git show ":$1:$2" > "$3" 2> /dev/null || : > "$3"; }
       change=$(git log -1 --format=%s REBASE_HEAD 2> /dev/null || echo "the commit being replayed")
       printf '%s\n' "$files" > "$tmp/files"
+      # The other files the replayed commit touched: the change's own, which may cite what a resolution renames.
+      git diff --name-only REBASE_HEAD^ REBASE_HEAD 2> /dev/null | grep -Fxv -f "$tmp/files" > "$tmp/others" || true
       : > "$tmp/sides"
       while IFS= read -r f; do
         stage 1 "$f" "$tmp/base"
@@ -802,7 +804,7 @@ nodes:
         } >> "$tmp/sides"
       done < "$tmp/files"
       esc() { tr '\000-\011\013-\037' ' ' | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | awk 'BEGIN { ORS = "\\n" } { print }'; }
-      printf '{"files":"%s","sides":"%s"}\n' "$(esc < "$tmp/files")" "$(esc < "$tmp/sides")"
+      printf '{"files":"%s","others":"%s","sides":"%s"}\n' "$(esc < "$tmp/files")" "$(esc < "$tmp/others")" "$(esc < "$tmp/sides")"
     allow:
       - sh
     cwd: "{{nodes.docs.output.worktree}}"
@@ -810,6 +812,7 @@ nodes:
       format: json
       schema:
         files: string
+        others: string
         sides: string
     lock: branch:main
   resolve:
@@ -818,8 +821,13 @@ nodes:
     prompt: |-
       A rebase stopped on conflicts. Resolve them in this checkout.
 
-      The conflicted files, and only these may be edited:
+      The conflicted files:
       {{nodes.inspect.output.json.files}}
+
+      Edit only those, with one exception. When you give something this change added a new id or name because the upstream took it (a gap id, an ADR number), also update the other files of this change that cite the old one, so no link is left pointing at the upstream's entry. Those files are listed under "the change also touched" below; no other file may be edited.
+
+      The change also touched:
+      {{nodes.inspect.output.json.others}}
 
       What each side did to them. The upstream is what the rebase is going onto; the change is the commit being replayed:
       {{nodes.inspect.output.json.sides}}
@@ -837,16 +845,24 @@ nodes:
           exit 1
         fi
       done < "$tmp/files"
+      printf '%s\n' "$OTHERS" | sed '/^$/d' > "$tmp/others"
       { git diff --name-only; git ls-files --others --exclude-standard -- . ':!.ork'; } > "$tmp/touched"
       while IFS= read -r f; do
-        if ! grep -Fxq -- "$f" "$tmp/files"; then
-          echo "$f was changed but is not in the conflict. The resolver may edit only the conflicted files." >&2
+        if ! grep -Fxq -- "$f" "$tmp/files" && ! grep -Fxq -- "$f" "$tmp/others"; then
+          echo "$f was changed but is neither in the conflict nor a file this change touched. The resolver may edit only those." >&2
           exit 1
         fi
       done < "$tmp/touched"
       while IFS= read -r f; do
         git add -A -- "$f"
       done < "$tmp/files"
+      # A file of the change the resolver updated to follow a renumbered id.
+      while IFS= read -r f; do
+        if grep -Fxq -- "$f" "$tmp/others"; then
+          git add -A -- "$f"
+          echo "$f" >> "$tmp/files"
+        fi
+      done < "$tmp/touched"
       esc() { tr '\000-\011\013-\037' ' ' | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | awk 'BEGIN { ORS = "\\n" } { print }'; }
       : > "$tmp/result"
       while IFS= read -r f; do
@@ -859,6 +875,7 @@ nodes:
     env:
       BEHAVIOUR: "{{nodes.resolve.output.behaviour}}"
       FILES: "{{nodes.inspect.output.json.files}}"
+      OTHERS: "{{nodes.inspect.output.json.others}}"
     output:
       format: json
       schema:
@@ -987,8 +1004,9 @@ nodes:
           gh pr create --base main --head "$BRANCH" --title "$SUBJECT" --body "$BODY"
         fi
       elif [ "$(git branch --show-current)" = main ] && [ -z "$(git status --porcelain)" ]; then
+        # The change is pushed. A checkout that can't take it (it has commits of its own) is left alone.
         git fetch origin main
-        git merge --ff-only FETCH_HEAD
+        git merge --ff-only FETCH_HEAD || echo "Pushed to main. Your checkout has commits of its own, so it was left alone: git pull --rebase when ready."
       else
         echo "Pushed to main. Your checkout has other work or another branch, so it was left alone: git pull when ready."
       fi

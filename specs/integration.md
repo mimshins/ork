@@ -230,6 +230,18 @@ the hold spans from `publish` to `push` and two builds publishing go in turn
   `push` reports `outcome: behind` and goes back to `publish`, which rebases
   again, and `check` runs again, at most 3 times (`maxRounds: 3`). Any other
   push failure fails the run.
+- After a push to `main`, `push` fast-forwards the maintainer's checkout when it
+  is on `main` and clean. A checkout that can't take it (it has commits of its
+  own) is left alone with a line saying so: the change is pushed, so that never
+  fails the run. (It did once: run 815f6136 ended `failed` after its push, and
+  `published` and `declare` were skipped.)
+- `build`'s resolver may edit one more set of files than the group's: when it
+  gives something the change added a new id because the upstream took it (a gap
+  id, an ADR number), it also updates the change's other files that cite the old
+  one. `inspect` lists them (`others`: what the replayed commit touched beyond
+  the conflict), and `settle` stages those it edited and still refuses any other
+  file. Before, those citations were left pointing at the upstream's entry,
+  which `pnpm docs:check` can't see.
 - A failed `check` goes to `repair`, an agent that fixes the rebased checkout
   (often two builds that were each fine alone: a gap id both took, a document
   the two push over 200 lines), with the end of the check's output. It may not
