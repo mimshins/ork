@@ -148,6 +148,47 @@ review:
   `spawn_worker`, and a `report` with a field of the wrong type. Keeping the
   refusal's text (scrubbed) in the evidence, and filing a refused input against
   the workflow rather than against Ork, would close it.
+- **G32 · One session secret for every browser of an `ork ui`, with no expiry.**
+  The cookie holds a secret made once per `ork ui` start and shared by every
+  browser signed in to it, so one browser cannot be signed out or expire alone;
+  stopping `ork ui` is the revoke. Per-browser sessions (RFC-019's option B)
+  need sessions that survive a page-initiated restart, so they are not built.
+  Until a code is redeemed, a process that reads the argv in its 60 s can redeem
+  it first, and the user's own browser then gets a 401.
+  ([ADR-090](../decisions/ADR-090-ork-ui-signs-in-with-a-code.md))
+- **G34 · The `permission` tool stays visible in `tools/list`.** A session sees
+  `mcp__ork__permission`, the CLI's permission-prompt tool, beside the tools it
+  is meant to call. Hiding it was probed on 2026-11-13 with the real `claude`
+  2.1.323: the CLI refuses to start with
+  `--permission-prompt-tool mcp__ork__permission` when `tools/list` omits it
+  ("MCP tool mcp__ork__permission (passed via --permission-prompt-tool) not
+  found. Available MCP tools: ..."), so it is not hidden. That answers the
+  follow-up to probe it with a real login. A session that calls it gets only an
+  allow or deny for a tool use it names; a CLI that resolves the tool without
+  listing it would close it. ([runtime](./runtime.md))
+- **G35 · No leading-`-` guard for `inputs.*` templates.** A tool node's
+  argument that starts with a `nodes.*.output` template and renders to a leading
+  `-` fails the node, but one reading `inputs.*` (or `item`, `env`) is passed as
+  is, so a run's input such as `--output=x` reads as an option of the program.
+  Inputs come from whoever starts the run, not from a session, so they are left
+  out for now; the same check on every template would close it.
+  ([node types](./workflow-format/node-types.md))
+- **G36 · Task labels are counted by code point.** A `description` is clipped to
+  80 code points, so a grapheme cluster (an emoji with a skin tone, a flag, a
+  letter with a combining mark) can be cut in its middle, and `ork tree` pads
+  its label column by code points, so a wide glyph (CJK, most emoji) or a
+  combining mark puts the columns after it out of line. On a graph card about 20
+  characters of the label show before its ellipsis; the whole label is in the
+  card's tooltip, the node table and the node's strip. Clipping by
+  `Intl.Segmenter` and padding by display width would close it.
+  ([delegation](./scheduler.md#delegation))
+- **G37 · A clipped label's tooltip in the node table is hover-only.** The
+  label's `span` in a Monitor table row is not focusable, so a keyboard user
+  cannot open its tooltip. The row's accessible name carries the whole label, so
+  nothing is lost to a screen reader, but a sighted keyboard user sees only the
+  clipped text there (the node's strip shows it whole). Showing the tooltip when
+  the row has focus would close it.
+  ([Monitor](./ui/panels-runs-and-monitor.md#monitor))
 
 ## Limits
 

@@ -2,17 +2,20 @@
  * @file `ork ui`'s process model (ADR-060): the command in the terminal only
  *   supervises; its server runs in a child, the launcher the user ran
  *   (`process.argv[1]` as given, so after an upgrade it is the new install's)
- *   with `ui --serve`. The port and the token go over the child's IPC channel.
- *   When the page asks for a restart, the child says so and exits, and the
- *   supervisor starts the launcher again on the same port with the same token,
- *   so the open tab stays signed in. There is only ever one child; Ctrl-C (or
- *   SIGTERM) stops it and then the supervisor, which exits with its code. The
- *   child may wait for an upgrade to finish first; a second Ctrl-C (or SIGTERM)
- *   kills it and exits at once.
+ *   with `ui --serve`. The port, the token and the session secret (made here,
+ *   once) go over the child's IPC channel. When the page asks for a restart,
+ *   the child says so and exits, and the supervisor starts the launcher again
+ *   on the same port with the same token and session secret, so the open tab
+ *   stays signed in. There is only ever one child; Ctrl-C (or SIGTERM) stops it
+ *   and then the supervisor, which exits with its code. The child may wait for
+ *   an upgrade to finish first; a second Ctrl-C (or SIGTERM) kills it and exits
+ *   at once.
  */
 
 import { spawn } from "node:child_process";
 import { constants } from "node:os";
+
+import { newToken } from "@krapht/ork-server";
 
 import { childMessage, type StartMessage } from "./ui-protocol.ts";
 
@@ -56,6 +59,8 @@ const signalled = (signal: NodeJS.Signals): number =>
 export const supervise = (options: SuperviseOptions): Promise<number> =>
   new Promise(resolve => {
     const { token, say, sayErr } = options;
+    // Made once, so a restart keeps the open tab's cookie good (RFC-019).
+    const session = newToken();
     let port = options.port;
     let stopping = false;
     let ended = false;
@@ -101,7 +106,7 @@ export const supervise = (options: SuperviseOptions): Promise<number> =>
       child.onMessage(raw => {
         const message = childMessage(raw);
         if (message?.type === "ork-ui-hello") {
-          child.send({ type: "ork-ui-start", port, token });
+          child.send({ type: "ork-ui-start", port, token, session });
         } else if (message?.type === "ork-ui-ready") {
           ready = true;
           ({ port } = message);

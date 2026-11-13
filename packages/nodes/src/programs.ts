@@ -9,15 +9,16 @@ import path from "node:path";
 
 import {
   calledWorkflows,
+  type Environ,
   envReadsOf,
   type ProjectPlace,
+  readEnv,
 } from "@krapht/ork-core";
 import { integrationFor } from "@krapht/ork-integrations";
 import { isToolNode, programsRunBy, type Workflow } from "@krapht/ork-schema";
 
 import { mcpProblems } from "./mcp-servers.ts";
 import { commandLineOf, tokenize } from "./tool-command.ts";
-import { type Environ, readEnv } from "./tool-env.ts";
 
 export type NeededProgram = { node: string; type: string; program: string };
 

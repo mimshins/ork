@@ -14,7 +14,7 @@ import { type KeyboardEvent, useId, useMemo, useState } from "react";
 
 import { UnpricedTokens } from "../components/spend.tsx";
 import { StatusBadge } from "../components/status-badge.tsx";
-import { cliDescription } from "../components/tip.tsx";
+import { cliDescription, Tip } from "../components/tip.tsx";
 import { formatCost, type NodeFacts, nodeName } from "../graph/facts.ts";
 import { childrenOf, itemIndex, rowsOf } from "./monitor-model.ts";
 import { Chevron, NodeTableHead, useFolded } from "./node-table-head.tsx";
@@ -233,9 +233,12 @@ export const OwnershipTree = ({
                 <span className={styles["treeId"]}>{node.id}</span>
                 {node.description === undefined ||
                 node.description === "" ? null : (
-                  <span className={styles["treeLabel"]}>
-                    {node.description}
-                  </span>
+                  // Hover only: the row's own name already says the label.
+                  <Tip label={node.description}>
+                    <span className={styles["treeLabel"]}>
+                      {node.description}
+                    </span>
+                  </Tip>
                 )}
               </span>
               <span className={styles["treeType"]}>{node.type}</span>

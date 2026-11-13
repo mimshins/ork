@@ -7,6 +7,8 @@
  *   records Ork's notice (`link.notice`).
  */
 
+import { maskSecrets } from "../store/mask.ts";
+import { scrubFollowUp } from "./store.ts";
 import type { FollowUpPort, FollowUpSink } from "./types.ts";
 
 /** Follow-ups one session may leave. */
@@ -15,15 +17,21 @@ export const FOLLOW_UP_CAP = 30;
 export const createFollowUps = ({
   runId,
   sink,
+  scrub,
 }: {
   runId: string;
   sink: FollowUpSink;
+  /**
+   * The run's env-value scrubber, applied after `maskSecrets` before the sink,
+   * so no place it is delivered to sees the values.
+   */
+  scrub?: ((text: string) => string) | undefined;
 }) => ({
   /** One session's port. */
   port: (node: string, cwd: string): FollowUpPort => {
     let left = FOLLOW_UP_CAP;
     return {
-      add: async input => {
+      add: async raw => {
         if (left === 0) {
           return {
             ok: false,
@@ -32,6 +40,10 @@ export const createFollowUps = ({
         }
         // Taken before the wait, so calls at the same time can't pass the cap.
         left -= 1;
+        const input =
+          scrub === undefined
+            ? raw
+            : scrubFollowUp(raw, text => scrub(maskSecrets(text)));
         const result = await sink(
           { ...input, from: { run: runId, node } },
           { node, cwd },

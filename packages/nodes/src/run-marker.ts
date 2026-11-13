@@ -8,9 +8,7 @@
 import { realpathSync } from "node:fs";
 import path from "node:path";
 
-import { storePath } from "@krapht/ork-core";
-
-import type { Environ } from "./environ.ts";
+import { type Environ, storePath } from "@krapht/ork-core";
 
 /** Set for a program in a run. */
 export const RUN_ENV = "ORK_RUN";

@@ -149,6 +149,7 @@ export const factsOf = (
           costUsd: node.costUsd === 0 ? undefined : node.costUsd,
           progress: progressOf(node),
           cli: `ork logs ${runId} --node ${node.id}`,
+          description: node.description ?? "",
         },
       ];
     }),

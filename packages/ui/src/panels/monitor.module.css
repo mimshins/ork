@@ -144,7 +144,7 @@
 .table {
   --monitor-table-bg: var(--surface-panel);
   --monitor-table-radius: var(--radius-panel);
-  --monitor-table-columns: minmax(6rem, 1.2fr) 7.5rem 8.5rem minmax(0, 3fr)
+  --monitor-table-columns: minmax(10rem, 2.4fr) 7.5rem 8.5rem minmax(0, 2fr)
     3.5rem 4.5rem;
   --monitor-table-gap: var(--gap);
   --monitor-table-inset: var(--gap);
@@ -293,8 +293,11 @@
 
 .treeId {
   --monitor-tree-id-weight: var(--weight-medium);
+  --monitor-tree-id-max-width: 60%;
 
+  flex: none;
   font-weight: var(--monitor-tree-id-weight);
+  max-width: var(--monitor-tree-id-max-width);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -374,7 +377,7 @@
 
 @container (max-width: 44rem) {
   .table {
-    --monitor-table-columns: minmax(5rem, 1fr) 8.5rem minmax(0, 2fr) 4.5rem;
+    --monitor-table-columns: minmax(7rem, 1.6fr) 8.5rem minmax(0, 1.6fr) 4.5rem;
   }
 
   .treeType {

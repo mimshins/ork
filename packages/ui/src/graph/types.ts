@@ -104,7 +104,8 @@ export const loopRoom = (label: string | undefined): number => {
 };
 
 export const NODE_WIDTH = 152;
-export const NODE_HEIGHT = 46;
+/** Room for a card's head, its task label and its status, one line each. */
+export const NODE_HEIGHT = 60;
 /** The space between ranks, where edges turn. */
 export const RANK_GAP = 48;
 /** The space between nodes of a rank. */

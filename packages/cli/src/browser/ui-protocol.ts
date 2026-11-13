@@ -10,11 +10,16 @@
 /** The child is listening. */
 export type HelloMessage = { type: "ork-ui-hello" };
 
-/** What the child serves with: the port, and the sign-in token. */
+/**
+ * What the child serves with: the port, the API token, and the session secret
+ * the browser's cookie holds (RFC-019). `session` is optional: a supervisor
+ * older than the server sends none, and the server makes its own.
+ */
 export type StartMessage = {
   type: "ork-ui-start";
   port: number;
   token: string;
+  session?: string;
 };
 
 /** The child serves, on this port, as this version. */
@@ -67,5 +72,12 @@ export const startMessage = (value: unknown): StartMessage | null =>
   value["type"] === "ork-ui-start" &&
   typeof value["port"] === "number" &&
   typeof value["token"] === "string"
-    ? { type: "ork-ui-start", port: value["port"], token: value["token"] }
+    ? {
+        type: "ork-ui-start",
+        port: value["port"],
+        token: value["token"],
+        ...(typeof value["session"] === "string"
+          ? { session: value["session"] }
+          : {}),
+      }
     : null;

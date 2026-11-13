@@ -57,6 +57,7 @@ export const NodeCard = memo(
     onHover,
   }: NodeCardProps) => {
     const { id, type, x, y, width, height } = node;
+    const description = facts.description ?? "";
     const card = (
       <button
         {...cliDescription(facts.cli, connections)}
@@ -113,22 +114,34 @@ export const NodeCard = memo(
             </span>
           ) : null}
         </span>
+        {description === "" ? null : (
+          <span className={styles["cardLabel"]}>{description}</span>
+        )}
         <StatusBadge
           status={facts.status}
           word={facts.word ?? facts.progress}
         />
       </button>
     );
-    return facts.cli === undefined ? (
-      card
-    ) : (
+    if (facts.cli === undefined && description === "") return card;
+    // The card shows the progress in place of the status word.
+    const status =
+      facts.progress === undefined
+        ? undefined
+        : `${facts.word ?? statusWord(facts.status)} · ${facts.progress}`;
+    return (
       <Tip
         cli={facts.cli}
-        // The card shows the progress in place of the status word.
         label={
-          facts.progress === undefined
-            ? undefined
-            : `${facts.word ?? statusWord(facts.status)} · ${facts.progress}`
+          description === ""
+            ? status
+            : [
+                description,
+                facts.word ?? statusWord(facts.status),
+                facts.progress,
+              ]
+                .filter(part => part !== undefined)
+                .join(" · ")
         }
       >
         {card}

@@ -1,14 +1,19 @@
 /**
- * @file What the server lets in (ADR-039,
+ * @file What the server lets in (ADR-039, RFC-019,
  *   specs/server/streams-contract-and-security.md#security): only its own
- *   loopback `Host` (against DNS rebinding); only with its token, from the
- *   session cookie or an `Authorization: Bearer` header; and, for a write sent
- *   with the cookie, only from its own `Origin` (against CSRF). The token in
- *   `?token=` is swapped once for the cookie, with a redirect that takes it out
- *   of the address bar. Pure: it reads the request's parts and decides.
+ *   loopback `Host` (against DNS rebinding); only with the token in an
+ *   `Authorization: Bearer` header (scripts, `ork mcp`) or the session secret
+ *   in the cookie (the browser); and, for a write sent with the cookie, only
+ *   from its own `Origin` (against CSRF). A single-use code in `?code=` is
+ *   swapped once for the cookie, with a redirect that takes it out of the
+ *   address bar; the token itself never reaches a browser. It reads the
+ *   request's parts and decides; its only state is the code store it spends
+ *   from.
  */
 
 import { randomBytes, timingSafeEqual } from "node:crypto";
+
+import type { SignInCodes } from "./sign-in-codes.ts";
 
 export type GuardRequest = {
   method: string;
@@ -17,15 +22,27 @@ export type GuardRequest = {
   headers: Readonly<Record<string, string | string[] | undefined>>;
 };
 
-export type GuardContext = { port: number; token: string };
+export type GuardContext = {
+  port: number;
+  /** The API token: what a bearer header holds. */
+  token: string;
+  /** The session secret: what the cookie holds. */
+  session: string;
+  codes: SignInCodes;
+};
 
 export type Verdict =
-  | { kind: "pass" }
+  /** `via`: how the request signed in; the sign-in route takes only a bearer. */
+  | { kind: "pass"; via: "bearer" | "cookie" }
   /** Set the session cookie and redirect to `location`. */
   | { kind: "exchange"; cookie: string; location: string }
   | { kind: "refuse"; status: 401 | 403 | 415; error: string };
 
 const WRITES = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/** What a used, expired or wrong code all get, so none tells them apart. */
+const BAD_CODE =
+  "That sign-in link is not valid any more; open it again with `ork ui`.";
 
 /** A new token: 32 random bytes. */
 export const newToken = (): string => randomBytes(32).toString("base64url");
@@ -33,7 +50,7 @@ export const newToken = (): string => randomBytes(32).toString("base64url");
 /** The session cookie's name; one per port, as cookies ignore ports. */
 export const cookieName = (port: number): string => `ork_ui_${String(port)}`;
 
-/** Whether `given` is the token, compared in constant time. */
+/** Whether `given` is the token (or session secret), compared in constant time. */
 export const sameToken = (given: string, token: string): boolean => {
   const a = Buffer.from(given);
   const b = Buffer.from(token);
@@ -66,30 +83,28 @@ const bearer = (request: GuardRequest): string | undefined => {
   return match?.[1];
 };
 
-/** The session cookie that holds `token`. */
-export const sessionCookie = (port: number, token: string): string =>
-  `${cookieName(port)}=${token}; HttpOnly; SameSite=Strict; Path=/`;
+/** The session cookie that holds the session secret. */
+export const sessionCookie = (port: number, session: string): string =>
+  `${cookieName(port)}=${session}; HttpOnly; SameSite=Strict; Path=/`;
 
 const exchange = (
   request: GuardRequest,
   context: GuardContext,
 ): Verdict | null => {
-  const url = new URL(request.url, "http://127.0.0.1");
-  const given = url.searchParams.get("token");
+  // Parsed as a path, never as `//host/…`; `/.//host` still leaves a leading
+  // `//` in the pathname, which the redirect below collapses.
+  const url = new URL(request.url.replace(/^[/\\]+/u, "/"), "http://127.0.0.1");
+  const given = url.searchParams.get("code");
   if (given === null || request.method !== "GET") return null;
-  if (!sameToken(given, context.token)) {
-    return {
-      kind: "refuse",
-      status: 401,
-      error:
-        "That link's token is not this server's; open it again with `ork ui`.",
-    };
+  if (!context.codes.redeem(given)) {
+    return { kind: "refuse", status: 401, error: BAD_CODE };
   }
-  url.searchParams.delete("token");
+  url.searchParams.delete("code");
   return {
     kind: "exchange",
-    cookie: sessionCookie(context.port, context.token),
-    location: `${url.pathname}${url.search}`,
+    cookie: sessionCookie(context.port, context.session),
+    // A leading `//` would make the redirect go to another host.
+    location: `${url.pathname.replace(/^\/+/u, "/")}${url.search}`,
   };
 };
 
@@ -111,20 +126,22 @@ export const guard = (
 
   const fromBearer = bearer(request);
   const fromCookie = cookieValue(request, cookieName(context.port));
+  const via = fromBearer === undefined ? "cookie" : "bearer";
   const given = fromBearer ?? fromCookie;
-  if (given === undefined || !sameToken(given, context.token)) {
+  const secret = via === "bearer" ? context.token : context.session;
+  if (given === undefined || !sameToken(given, secret)) {
     return {
       kind: "refuse",
       status: 401,
       error: "Not signed in; open the UI with `ork ui`.",
     };
   }
-  if (!WRITES.has(request.method)) return { kind: "pass" };
+  if (!WRITES.has(request.method)) return { kind: "pass", via };
 
   const origin = header(request, "origin");
   // A browser sends the cookie on its own, so a write with it must come from
   // this server's page; a bearer token is never sent by a browser on its own.
-  const checked = fromBearer === undefined || origin !== undefined;
+  const checked = via === "cookie" || origin !== undefined;
   if (
     checked &&
     (origin === undefined || !ownOrigins(context.port).includes(origin))
@@ -143,5 +160,5 @@ export const guard = (
       error: "Send JSON (Content-Type: application/json).",
     };
   }
-  return { kind: "pass" };
+  return { kind: "pass", via };
 };

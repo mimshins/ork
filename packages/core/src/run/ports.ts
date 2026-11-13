@@ -40,6 +40,7 @@ export const createRunPorts = ({
     runId,
     sink: options.followUps,
     onEvent,
+    scrub,
   });
   const send = bus.rule;
   const rules = createRules({ graph, send, scope, stopping, scrub });

@@ -8,7 +8,6 @@ import path from "node:path";
 
 import {
   type AgentRuntime,
-  createFeedback,
   createRecorder,
   createSignals,
   type DriverNeeds,
@@ -44,7 +43,7 @@ import {
   oneNodeNotes,
   oneNodeResult,
 } from "./node-notes.ts";
-import { feedbackOrigin, nodeFollowUps } from "./origin.ts";
+import { feedbackOrigin, nodeReports } from "./origin.ts";
 import {
   checksHere,
   chooseReadyDriver,
@@ -253,10 +252,10 @@ export const runNode = async (
     { ...plan.spec, ...servers.value },
     {
       human: control.human,
-      ...(graph === null
-        ? {}
-        : { feedback: createFeedback({ graph, onEvent: record }).port(id) }),
-      followUps: nodeFollowUps({ ...options, place, runId, id, cwd }),
+      ...nodeReports(
+        { ...options, place, runId, id, cwd },
+        { workflow, graph, record },
+      ),
     },
   );
   started.resolve(session);

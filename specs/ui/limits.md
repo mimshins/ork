@@ -21,10 +21,13 @@ choice. Those the gaps review carried are open work in the
 - **L27 · The overview stream polls.** It compares the newest 50 runs and the
   open decisions every second; only a run's own stream is pushed, over its
   socket. ([server](../server/streams-contract-and-security.md#streams))
-- **L28 · One local user.** The server binds loopback only, with one token per
-  start; there is no remote access, TLS, or second user, and anything that can
-  read `~/.ork/ui.json` as the user can drive it, as it can drive `ork`.
-  ([ADR-039](../../decisions/ADR-039-local-server.md))
+- **L28 · One local user.** The server binds loopback only, with a token (a
+  bearer) and a session secret (the cookie) per start; there is no remote
+  access, TLS, or second user, every browser of one `ork ui` shares the session
+  secret, and anything that can read `~/.ork/ui.json` as the user can drive it,
+  as it can drive `ork`. ([ADR-039](../../decisions/ADR-039-local-server.md),
+  [ADR-090](../../decisions/ADR-090-ork-ui-signs-in-with-a-code.md),
+  [G32](../gaps.md))
 - **L32 · A theme chosen against the system shows the system's for a moment.**
   The page's policy allows no inline script, so a chosen theme is set when the
   app's module runs; until then the page follows the system, so dark chosen on a

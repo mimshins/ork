@@ -1,12 +1,15 @@
 /**
- * @file Masking a secret in what a program prints. A plain search, so a value
- *   of any size or shape takes time in step with the text: it looks in the text
- *   as it is, and with JSON's escapes decoded once and twice, so that it does
- *   not matter which characters an encoder chose to escape. It masks the value,
- *   and the pieces programs print on their own: each line, and each value of a
- *   JSON document. Other encodings, such as base64, are out of its reach
- *   (L81).
+ * @file Masking the values of the user's secret variables in text Ork stores:
+ *   what a tool node's program prints, and a run's own messages. A plain
+ *   search, so a value of any size or shape takes time in step with the text:
+ *   it looks in the text as it is, and with JSON's escapes decoded once and
+ *   twice, so that it does not matter which characters an encoder chose to
+ *   escape. It masks the value, and the pieces programs print on their own:
+ *   each line, and each value of a JSON document. Other encodings, such as
+ *   base64, are out of its reach (L81).
  */
+
+import { type Environ, readEnv } from "../project/environ.ts";
 
 /** Shorter values than this would mask ordinary text: `1`, `true`, a word. */
 const MIN_SECRET_LENGTH = 8;
@@ -171,3 +174,17 @@ export const scrubberOf = (values: readonly string[]) => {
     return parts.join("");
   };
 };
+
+/** The values of the variables named that are set. */
+export const envValuesOf = (
+  names: readonly string[],
+  environ: Environ,
+): string[] =>
+  names.flatMap(name => {
+    const value = readEnv(environ, name);
+    return value === undefined ? [] : [value];
+  });
+
+/** What a run masks in a message of its own: the named variables' values. */
+export const runScrubber = (names: readonly string[], environ: Environ) =>
+  scrubberOf(envValuesOf(names, environ));

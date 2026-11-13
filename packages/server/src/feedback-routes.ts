@@ -59,7 +59,8 @@ export const feedbackRoutes = (context: ServerContext): FeedbackRoutes => {
     note: ({ params, body }) => {
       const found = runOf(context, params.id);
       if (!found.ok) return found.refusal;
-      const noted = recordNote(store, found.run, body);
+      const scrub = context.noteScrub?.(found.run, store.projects());
+      const noted = recordNote(store, found.run, body, "", scrub);
       return noted.ok ? ok({ item: noted.item }) : fail(400, noted.error);
     },
 

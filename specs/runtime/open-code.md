@@ -69,7 +69,9 @@ whole rule set every session, never `--auto`. The last matching rule wins:
    `websearch`, `subagent`, `skill`, `todowrite`; `mcp__<server>__<tool>` as
    `<server>_<tool>`. A tool with no OpenCode action is left out, so denied.
    With `only`, a built-in tool outside it is left out.
-4. `ork_*` allow.
+4. One allow per registered Ork tool, by its exact name (`ork_report`,
+   `ork_delegate`, …), from the tool registry. Not `ork_*`: a repo server named
+   `ork_evil` would map to `ork_evil_<tool>` and match it.
 5. `read *.env` deny, after any read allow.
 6. In `plan` mode, `edit` and `shell` deny.
 7. The node's denies.

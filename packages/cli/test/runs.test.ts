@@ -27,6 +27,7 @@ import {
   ago,
   duration,
   followRun,
+  formatEvent,
   formatRuns,
   formatRunEvent,
   formatTree,
@@ -141,6 +142,10 @@ const spentNode = (id: string, extra: Partial<TreeNode>): TreeNode => ({
 const named = (id: string, description?: string): TreeNode =>
   spentNode(id, description === undefined ? {} : { description });
 
+/** The code-point column where a tree line's node type starts. */
+const typeColumn = (line = ""): number =>
+  Array.from(line.slice(0, line.indexOf("agent.worker"))).length;
+
 /** What `ork tree` prints for a run, as one text. */
 const view = (run: RunRecord, events: RunEvent[]) =>
   formatTreeView(run, events, nestItems(runTree(events))).join("\n");
@@ -217,6 +222,45 @@ describe("a recorded run", () => {
       expect(second?.indexOf("agent.worker")).toBe(
         first?.indexOf("agent.worker"),
       );
+    });
+
+    it("pads the label column by code points, so an emoji label aligns", () => {
+      const [first, second] = formatTree([
+        named("a", "ship it 🚀"),
+        named("bb"),
+      ]);
+      expect(first).toContain("a  ship it 🚀  agent.worker");
+      expect(typeColumn(second)).toBe(typeColumn(first));
+    });
+
+    it("masks a secret in a label: tree, node.started and the delegate call", () => {
+      const label = "use ghp_abcdefghijklmnopqrstuvwxyz0123";
+      expect(formatTree([named("a", label)])[0]).toContain("use [masked]");
+      const started = formatRunEvent(
+        {
+          type: "node.started",
+          id: "w",
+          nodeType: "agent.worker",
+          round: 1,
+          description: label,
+        },
+        4,
+        new Map(),
+      ).join("");
+      expect(started).toContain("· use [masked]");
+      expect(started).not.toContain("ghp_");
+      const call = formatEvent(
+        "lead",
+        {
+          type: "tool.called",
+          id: "t1",
+          name: "mcp__ork__delegate",
+          input: { tasks: [{ node: "w", description: label }] },
+        },
+        new Map(),
+      ).join("");
+      expect(call).toContain("use [masked]");
+      expect(call).not.toContain("ghp_");
     });
 
     it("leaves a node without one exactly as before", () => {

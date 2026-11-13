@@ -86,6 +86,7 @@ describe("the Monitor's model", () => {
       tokens: 15,
       costUsd: 0.5,
       cli: "ork logs r1 --node a",
+      description: "",
     });
     expect(facts.get("b")).toMatchObject({
       tokens: undefined,

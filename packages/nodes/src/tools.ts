@@ -14,9 +14,7 @@ import {
   declaredProblem,
   type ExecuteContext,
   type NodeExecutor,
-  parseTemplate,
-  renderTemplate,
-  runScope,
+  scrubberOf,
 } from "@krapht/ork-core";
 import { integrationFor } from "@krapht/ork-integrations";
 import { isToolNode, markValue, type ToolNode } from "@krapht/ork-schema";
@@ -28,6 +26,7 @@ import {
   type ToolRun,
   type ToolRunner,
 } from "./tool-command.ts";
+import { renderArg } from "./tool-dash.ts";
 import { exitEnd, failed, invalidOutput, skippedCheck } from "./tool-ends.ts";
 import {
   identityOf,
@@ -47,7 +46,6 @@ import {
   removeOutputFile,
   writeScriptFile,
 } from "./tool-output.ts";
-import { scrubberOf } from "./tool-scrub.ts";
 import { prepareStateFile } from "./tool-state.ts";
 
 /** How much of stdout and stderr a node's output keeps. */
@@ -69,21 +67,6 @@ export const isAllowed = (
     return words.every((word, i) => args[i] === word);
   });
 
-const render = (
-  text: string,
-  context: ExecuteContext,
-): { ok: true; value: string } | { ok: false; error: string } => {
-  const template = parseTemplate(text);
-  if (!template.ok) return { ok: false, error: template.message };
-  return {
-    ok: true,
-    value: renderTemplate(
-      template.parts,
-      runScope(context.inputs, context.outputs, context.runId, context.item),
-    ),
-  };
-};
-
 /** The program and arguments a tool node runs, before the allow check. */
 export const commandOf = (
   node: ToolNode,
@@ -98,13 +81,15 @@ export const commandOf = (
   const tokens = tokenize(line);
   if (!tokens.ok) return tokens;
   const args: string[] = [];
+  let afterSeparator = false;
   for (const token of tokens.args) {
     // What runs a script takes no templates, however it was written.
     if (node.script !== undefined) {
       args.push(token);
       continue;
     }
-    const rendered = render(token, context);
+    const rendered = renderArg(token, context, !afterSeparator);
+    afterSeparator ||= token === "--";
     if (!rendered.ok) return rendered;
     args.push(rendered.value);
   }
@@ -170,7 +155,7 @@ export const toolExecutor =
     }
     let cwd = context.cwd;
     if (node.cwd !== undefined) {
-      const rendered = render(node.cwd, context);
+      const rendered = renderArg(node.cwd, context);
       if (!rendered.ok) return failed(rendered.error);
       cwd = path.resolve(context.cwd, rendered.value);
     }

@@ -78,7 +78,10 @@ export type RunOptions = {
   timeoutGraceMs?: number;
   /** For tests: the wait between looks of a `watch:`, under its floor. */
   watchEveryMs?: number;
-  /** Masks what the run was told to in a message a `notify:` writes. */
+  /**
+   * Masks what the run was told to in a message a `notify:` writes, and in its
+   * sessions' feedback and follow-ups.
+   */
   scrub?: (text: string) => string;
   /**
    * The machine the run shares: the project's `heavy` and `priority`, and the

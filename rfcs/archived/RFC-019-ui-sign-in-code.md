@@ -1,9 +1,10 @@
 # RFC-019 — `ork ui` signs the browser in with a one-time code
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-13
 - **Supersedes:** —
 - **Superseded by:** —
+- **ADR:** [ADR-090](../../decisions/ADR-090-ork-ui-signs-in-with-a-code.md)
 
 ## Context
 

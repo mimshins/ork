@@ -124,7 +124,11 @@ const runArg = {
 } as const;
 
 export const logs = defineCommand({
-  meta: { name: "logs", description: "Print a run's transcript" },
+  meta: {
+    name: "logs",
+    description:
+      "Print a run's transcript. A delegated task shows its task label: the lead's short description, whitespace folded, clipped to 80 characters, secrets masked",
+  },
   plugins: [refuseUnknownFlags],
   args: {
     run: runArg,
@@ -195,7 +199,8 @@ export const logs = defineCommand({
 export const tree = defineCommand({
   meta: {
     name: "tree",
-    description: "Show a run's ownership tree with status, tokens and cost",
+    description:
+      "Show a run's ownership tree with status, tokens and cost. A delegated task shows its task label: the lead's short description, whitespace folded, clipped to 80 characters, secrets masked",
   },
   args: {
     run: runArg,

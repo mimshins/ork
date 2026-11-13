@@ -59,7 +59,17 @@ const FACTS = new Map<string, NodeFacts>([
       cli: "ork logs 4f2a1c --node builder",
     },
   ],
-  ["security", { status: "paused", model: "opus", tokens: 3120 }],
+  [
+    "security",
+    {
+      status: "paused",
+      model: "opus",
+      tokens: 3120,
+      // An 80-character task label, to see the card's line clip.
+      description:
+        "audit the session cookie handling in the sign-in flow and report each finding now",
+    },
+  ],
   ["ux", { status: "waiting", model: "sonnet", tokens: 980 }],
   [
     "code",

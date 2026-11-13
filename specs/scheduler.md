@@ -161,20 +161,29 @@ list of tasks, run them in parallel, and return when every child has reported:
   field and ids read from the schema.
 - **`description`** is an optional few words naming a task, in either tool. A
   blank one counts as absent; runs of whitespace and control characters fold to
-  one space; one over 80 characters is accepted and clipped to 80, once, when
+  one space; secrets are masked (`maskSecrets`), before the clip so a
+  half-clipped token cannot slip past a pattern; one over 80 code points is
+  accepted and clipped to 80 code points (never a lone surrogate), once, when
   Ownership takes the task
   ([`DESCRIPTION_MAX`](../packages/core/src/runtime/description.ts)). It rides
   on the child's `node.started` and is shown as its label beside the id in
   `ork tree`, `ork logs` and the browser view, and nowhere else. It does not
   change the child's own workflow `description`, and the child's session never
-  sees it. Core's `jobOf` is the one place that normalizes it (fold, trim,
-  clip), so a surface shows the clipped text as is. A tree node's label is
-  replaced only by a `node.started` that carries a description; a later start
-  without one keeps the earlier label.
+  sees it. Core's `jobOf` is the one place that normalizes it (fold, trim, mask,
+  clip), so a surface shows the clipped text as is. `ork tree` pads its label
+  column by code points (G36 in [gaps](./gaps.md)), and the CLI masks a label
+  again where it shows it (the live stream, the lead's `delegate` tool-call
+  line, `ork tree`, `ork logs`), so an older stored one is masked too. A tree
+  node's label is replaced only by a `node.started` that carries a description;
+  a later start without one keeps the earlier label.
 - A task is refused, with the reason in its report, when its child is already
-  running (in the flow or for another call), or no workers are left. A child the
-  leader does not own is not a refused task: it is a wrong argument, so the
-  whole call fails at its arguments, with the valid ids, and no task runs.
+  running (in the flow or for another call), or no workers are left. `delegate`
+  reserves each accepted child synchronously, before any await, and frees it
+  when that child's run settles, so two concurrent calls for one child start it
+  exactly once and the other gets `already running`; a repeat in one call is
+  refused the same way. A child the leader does not own is not a refused task:
+  it is a wrong argument, so the whole call fails at its arguments, with the
+  valid ids, and no task runs.
 - A delegated run reports only to its leader: it follows none of the child's
   edges. A child with incoming edges still runs when they are taken (ADR-008).
 - **Reports.** Each is the child's output (`status`, `summary`, `artifacts`,

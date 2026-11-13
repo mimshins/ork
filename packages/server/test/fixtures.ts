@@ -84,7 +84,7 @@ const project = (store: EventStore) => {
 export const startTestServer = async (
   options: { ui?: readonly string[]; gh?: GhRunner } & Pick<
     ServerOptions,
-    "update" | "restart"
+    "update" | "restart" | "sessionSecret" | "noteScrub"
   > = {},
 ) => {
   const home = temp("ork-srv-home-");
@@ -276,3 +276,8 @@ export const fakeRegistry = (
   };
   return { fetch, asked };
 };
+
+/** The code of a minted sign-in, or "" when it was refused. */
+export const codeOf = (
+  answer: { ok: true; data: { code: string } } | { ok: false },
+): string => (answer.ok ? answer.data.code : "");

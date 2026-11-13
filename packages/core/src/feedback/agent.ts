@@ -25,18 +25,22 @@ export type AgentFeedback = {
 export const createFeedback = ({
   graph,
   onEvent,
+  scrub = text => text,
 }: {
   graph: CompiledGraph;
   onEvent: (event: RunEvent) => void;
+  /** The run's env-value scrubber, applied after `maskSecrets`. */
+  scrub?: ((text: string) => string) | undefined;
 }): AgentFeedback => {
   const seen = new Set<string>();
+  const clean = (text: string): string => scrub(maskSecrets(text));
   return {
     port: (id, template) => {
       let left = FEEDBACK_CAP;
       const nodeType = graph.nodes.get(template ?? id)?.node.type;
       return {
         report: draft => {
-          const title = maskSecrets(draft.title.trim()).slice(0, MAX_TITLE);
+          const title = clean(draft.title.trim()).slice(0, MAX_TITLE);
           if (title === "") return { ok: false, error: "the title is empty" };
           if (left === 0) {
             return {
@@ -55,10 +59,10 @@ export const createFeedback = ({
             target,
             severity: draft.severity ?? "medium",
             title,
-            body: maskSecrets(draft.body?.trim() ?? "").slice(0, MAX_BODY),
+            body: clean(draft.body?.trim() ?? "").slice(0, MAX_BODY),
             evidence: (draft.evidence ?? [])
               .slice(0, MAX_EVIDENCE)
-              .map(e => maskSecrets(e)),
+              .map(e => clean(e)),
             fingerprint: print,
             origin: nodeType === undefined ? {} : { nodeType },
           };

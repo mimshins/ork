@@ -28,11 +28,19 @@ ork ui [--port <n>] [--no-open]
 - Serves on `127.0.0.1:4417`, or `--port` (0 picks a free port). A port in use
   fails with a message that suggests `--port`; it never picks another itself, so
   the browser keeps its cookie.
-- Prints the address, then opens the sign-in link (`/?token=…`) in the browser
+- Prints the address, then opens the sign-in link (`/?code=…`) in the browser
   through the first opener that starts: `open` on macOS, `wslview` then
   `xdg-open` under WSL, `xdg-open` on Linux
   ([open.ts](../../packages/cli/src/browser/open.ts)). With `--no-open`, without
-  a terminal, or when none starts, it prints the link instead.
+  a terminal, or when none starts, it prints the link instead. The code is
+  single use and good for 60 s: `ork ui` gets it from `POST /api/sign-in` with
+  the token as a bearer, on the first start and when it finds a running server,
+  after its check that it is not in a guarded run
+  ([L80](../messaging/scripts-limits.md)), so the token is never in the opener's
+  argv or the printed text. When the server gives none (an older Ork has no such
+  route, or is gone), `ork ui` says "The running UI is from an older Ork; stop
+  it and run `ork ui`." and prints no link
+  ([ADR-090](../../decisions/ADR-090-ork-ui-signs-in-with-a-code.md)).
 - Records `{ port, pid, token, startedAt }` in `~/.ork/ui.json`, mode 0600. A
   second `ork ui` finds the running server there (a record whose pid is gone
   counts as none), opens it, and exits 0.
@@ -43,15 +51,19 @@ ork ui [--port <n>] [--no-open]
 - **It supervises the server in a child**
   ([ADR-060](../../decisions/ADR-060-ork-ui-supervises-its-server.md)): the
   launcher it was run as (`process.argv[1]` as given) with `ui --serve`, on the
-  same terminal. The port and the token go over the child's IPC channel, never
-  argv or the environment; the child writes `ui.json` with its own pid. When the
-  page asks for a restart after an upgrade, the child closes and exits, and
-  `ork ui` starts the launcher again, now the new install, on the bound port
-  with the same token, so the open tab stays signed in; whether the child asked
-  for a restart is decided once its channel has closed, so a message that comes
-  after its exit still counts. One child at a time; Ctrl-C stops it and then
-  `ork ui`, with its exit code. Each Ctrl-C reaches the child twice (from the
-  terminal, and passed on), so forcing is `ork ui`'s job: it kills the child on
-  the second. A child whose `ork ui` is gone closes too, and a signal after that
-  stops it at once. A new server that doesn't start is reported on the terminal
-  with `ork ui --port <n>`. `ork ui --serve` run by hand refuses.
+  same terminal. The port, the token and the session secret (made once with
+  `newToken()`) go over the child's IPC channel, never argv or the environment;
+  the child writes `ui.json` with its own pid, and the token only. When the page
+  asks for a restart after an upgrade, the child closes and exits, and `ork ui`
+  starts the launcher again, now the new install, on the bound port with the
+  same token and session secret, so the open tab stays signed in (a supervisor
+  from before the session secret sends none, and the server makes its own: the
+  open tab's cookie stops working once, and `ork ui` signs it in again); whether
+  the child asked for a restart is decided once its channel has closed, so a
+  message that comes after its exit still counts. One child at a time; Ctrl-C
+  stops it and then `ork ui`, with its exit code. Each Ctrl-C reaches the child
+  twice (from the terminal, and passed on), so forcing is `ork ui`'s job: it
+  kills the child on the second. A child whose `ork ui` is gone closes too, and
+  a signal after that stops it at once. A new server that doesn't start is
+  reported on the terminal with `ork ui --port <n>`. `ork ui --serve` run by
+  hand refuses.

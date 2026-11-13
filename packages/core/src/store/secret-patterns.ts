@@ -1,9 +1,11 @@
 /**
- * @file The secret patterns `scan` looks for in tracked files: well-known
- *   credential formats, kept in the repo as data so a new one is one line.
- *   Provider formats only; a generic "password = …" rule would flag every test
- *   fixture. A hit is reported by file, line and the pattern's `name`, never
- *   the matched text.
+ * @file The well-known credential formats, kept as data so a new one is one
+ *   line: `maskSecrets` masks them before anything is stored, and the
+ *   repository's security audit (`tools/audit`) looks for them in tracked
+ *   files. Provider formats only, at the audit's thresholds; a generic
+ *   "password = …" rule would flag every test fixture, so the masker adds its
+ *   own generic forms. A hit is reported by the pattern's `name`, never the
+ *   matched text.
  */
 
 export type SecretPattern = { name: string; pattern: RegExp };

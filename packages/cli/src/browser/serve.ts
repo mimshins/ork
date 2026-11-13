@@ -10,6 +10,7 @@
 
 import { constants } from "node:os";
 
+import { scrubberOfRun } from "@krapht/ork-nodes";
 import { type RunningServer, startServer } from "@krapht/ork-server";
 
 import { ORK_NAME, ORK_VERSION } from "../__build_info__.ts";
@@ -116,11 +117,14 @@ const serve = async (
       version: ORK_VERSION,
       port: start.port,
       token: start.token,
+      // An older supervisor sends none; the server then makes its own.
+      ...(start.session === undefined ? {} : { sessionSecret: start.session }),
       ui: uiFolders(),
       update: { name: ORK_NAME },
       restart: () => {
         void send({ type: "ork-ui-restart" }).then(end);
       },
+      noteScrub: (run, registered) => scrubberOfRun(run, registered),
     });
   } catch (error) {
     await send({

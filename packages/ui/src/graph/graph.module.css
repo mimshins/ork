@@ -303,6 +303,20 @@
   font-size: var(--graph-card-cost-text-size);
 }
 
+.cardLabel {
+  --graph-card-label-text: var(--color-text-muted);
+  --graph-card-label-text-size: var(--text-small);
+  --graph-card-label-weight: var(--weight-regular);
+
+  color: var(--graph-card-label-text);
+  font-size: var(--graph-card-label-text-size);
+  font-weight: var(--graph-card-label-weight);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .controls {
   --graph-controls-bg: var(--surface-raised);
   --graph-controls-border: var(--hairline) solid var(--color-border-strong);

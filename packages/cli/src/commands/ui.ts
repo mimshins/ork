@@ -1,13 +1,14 @@
 /**
  * @file `ork ui`: starts the local server (ADR-039) on loopback and opens it in
- *   the browser, signed in with the server's token; or, when one is already
- *   running (`~/.ork/ui.json`), opens that one. The command supervises the
- *   server in a child process, so the page can restart it onto a newly
- *   installed `ork` (ADR-060). The server runs nothing: runs it starts keep
- *   running when it stops, and the CLI works without it.
+ *   the browser, signed in with a single-use code the server mints (RFC-019);
+ *   or, when one is already running (`~/.ork/ui.json`), opens that one. The
+ *   command supervises the server in a child process, so the page can restart
+ *   it onto a newly installed `ork` (ADR-060). The server runs nothing: runs it
+ *   starts keep running when it stops, and the CLI works without it.
  */
 
 import {
+  createClient,
   DEFAULT_PORT,
   newToken,
   runningServer,
@@ -26,9 +27,39 @@ import {
 import { style, write, writeErr } from "../output.ts";
 import { mayShowSignIn } from "./in-a-run.ts";
 
-/** The link that signs the browser in; the server swaps it for a cookie. */
-export const signInLink = (port: number, token: string): string =>
-  `http://127.0.0.1:${String(port)}/?token=${token}`;
+/** The link that signs the browser in; the server swaps its code for a cookie. */
+export const signInLink = (port: number, code: string): string =>
+  `http://127.0.0.1:${String(port)}/?code=${code}`;
+
+/** What `ork ui` says when it can't get a sign-in code from the server. */
+export const MINT_FAILED_OLDER =
+  "The running UI is from an older Ork; stop it and run `ork ui`.";
+
+/**
+ * Gets a single-use sign-in code from the server with the API token, and
+ * returns the link for it, or the reason there is none. The token only goes in
+ * this request's header, never in a link or an argument.
+ */
+export const mintSignInLink = async (
+  port: number,
+  token: string,
+  fetchFn?: typeof fetch,
+): Promise<{ link: string } | { failure: string }> => {
+  const client = createClient({
+    base: `http://127.0.0.1:${String(port)}`,
+    token,
+    ...(fetchFn === undefined ? {} : { fetch: fetchFn }),
+  });
+  const answer = await client.call("signIn");
+  if (answer.ok) return { link: signInLink(port, answer.data.code) };
+  // An older server has no such route (404), or is gone (no answer).
+  return {
+    failure:
+      answer.status === 404 || answer.status === 0
+        ? MINT_FAILED_OLDER
+        : `Could not get a sign-in code: ${answer.error}`,
+  };
+};
 
 /** `--port`: 0 to 65535 (0 picks a free port); `null` when invalid. */
 export const portArg = (value?: string): number | null => {
@@ -37,15 +68,26 @@ export const portArg = (value?: string): number | null => {
   return Number.isInteger(port) && port >= 0 && port <= 65_535 ? port : null;
 };
 
-/** Opens the link, or prints it when there is no browser to open. */
-const show = async (link: string, open: boolean): Promise<void> => {
-  // The link acts as the user, so a program or an agent in a run does not get it.
+/** Opens the sign-in link, or prints it when there is no browser to open. */
+const show = async (
+  port: number,
+  token: string,
+  open: boolean,
+): Promise<void> => {
+  // The link acts as the user, so a program or an agent in a run does not get
+  // it, and no code is minted for one.
   if (!mayShowSignIn()) {
     writeErr(
       "A program or an agent in a run does not get the sign-in link, which acts as you. Run `ork ui` in your own terminal.",
     );
     return;
   }
+  const minted = await mintSignInLink(port, token);
+  if ("failure" in minted) {
+    writeErr(minted.failure);
+    return;
+  }
+  const { link } = minted;
   const opened = open && process.stdout.isTTY && (await openInBrowser(link));
   if (!opened) write(`Open it with this link, which signs you in: ${link}`);
 };
@@ -68,7 +110,7 @@ const ready = async (
       "Runs keep running when it stops, and every ork command works without it. Ctrl-C stops it.",
     ),
   );
-  await show(signInLink(port, token), open);
+  await show(port, token, open);
 };
 
 export const ui = defineCommand({
@@ -110,7 +152,7 @@ export const ui = defineCommand({
       write(
         `Ork's UI is already running at http://127.0.0.1:${String(running.port)} (process ${String(running.pid)}).`,
       );
-      await show(signInLink(running.port, running.token), args.open);
+      await show(running.port, running.token, args.open);
       return;
     }
     const token = newToken();

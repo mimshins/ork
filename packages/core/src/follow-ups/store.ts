@@ -91,12 +91,15 @@ const scrubFor = (
   return to;
 };
 
-/** `input` with what shouldn't be kept or leave the machine taken out. */
+/**
+ * `input` with what shouldn't be kept or leave the machine taken out: each text
+ * passed through `scrub` (the store's redactor, or a run's env-value
+ * scrubber).
+ */
 export const scrubFollowUp = (
   input: NewFollowUp,
-  options: { roots: readonly string[]; home: string },
+  scrub: (text: string) => string,
 ): NewFollowUp => {
-  const scrub = (text: string): string => redact(text, options);
   return {
     ...input,
     for: scrubFor(input.for, scrub),
@@ -183,7 +186,9 @@ export const followUpStore = (options: FollowUpStoreOptions): FollowUpStore => {
   return {
     place: adapter.place,
     add: async raw => {
-      const input = scrubFollowUp(raw, { roots: [project, worktree], home });
+      const input = scrubFollowUp(raw, text =>
+        redact(text, { roots: [project, worktree], home }),
+      );
       const where = input.where ?? [];
       const at = now();
       const kept = list().find(f => sameFollowUp(f, { ...input, where }));

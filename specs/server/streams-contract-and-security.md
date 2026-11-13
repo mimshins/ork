@@ -47,12 +47,34 @@ global `fetch` on each call unless one is passed.
 ## Security
 
 - **Loopback only:** it binds `127.0.0.1`, with no option for another address.
-- **Token:** 32 random bytes per `ork ui`, kept across its restarts, in
-  `ui.json` (0600), never logged, stored in events, or put in a process's argv
-  or environment. The link's `?token=` is swapped for an
-  `ork_ui_<port>=<token>; HttpOnly; SameSite=Strict; Path=/` cookie with a 302
-  that drops it from the address; scripts send `Authorization: Bearer <token>`.
-  It is compared in constant time. Without it: 401.
+- **Token and session secret**
+  ([ADR-090](../../decisions/ADR-090-ork-ui-signs-in-with-a-code.md)): two
+  secrets of 32 random bytes per `ork ui`, both kept across its restarts. The
+  **token** is in `ui.json` (0600), never logged, stored in events, or put in a
+  process's argv or environment, and is only a bearer:
+  `Authorization: Bearer <token>`, for `ork mcp`, scripts and a second `ork ui`.
+  The **session secret** is only a cookie,
+  `ork_ui_<port>=<session>; HttpOnly; SameSite=Strict; Path=/`. The supervisor
+  makes it and sends it to the server in the start IPC message (the optional
+  `session` field); it is never in argv, the environment or on disk, and a
+  server that gets none (an older supervisor) makes its own. Each is compared in
+  constant time against its own secret only: a cookie that holds the token, or a
+  bearer that holds the session secret, is 401, and `?token=` no longer signs
+  in. Without either: 401.
+- **Sign-in code:** `POST /api/sign-in` (bearer only, with a JSON body type; a
+  cookie, or the session secret as a bearer, is refused and mints nothing)
+  answers `{ code, expiresIn: 60 }`. The code is 32 random bytes, single use,
+  good for 60 s, and held in server memory only (a restart drops the unused
+  ones); expired codes are pruned on each mint
+  ([sign-in-codes.ts](../../packages/server/src/sign-in-codes.ts)). The route
+  does not check `mayShowSignIn`: the server cannot tell an agent from the user,
+  as both hold the token, so `ork ui` checks before it mints
+  ([L80](../messaging/scripts-limits.md)). `GET /?code=<code>` redeems it once:
+  a 302 that sets the session cookie and drops `code` from the address. A used,
+  expired or wrong code all get the same 401, "That sign-in link is not valid
+  any more; open it again with `ork ui`." The redirect's path has its leading
+  slashes collapsed (`//evil.com/x` goes to `/evil.com/x`), so it is never a
+  protocol-relative address.
 - **Host:** anything but `127.0.0.1:<port>` or `localhost:<port>` is 403 (DNS
   rebinding).
 - **Writes:** one signed in with the cookie needs the server's own `Origin`; a

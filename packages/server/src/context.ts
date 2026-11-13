@@ -17,6 +17,7 @@ import {
 
 import type { RunView } from "./contract.ts";
 import { fail } from "./router.ts";
+import type { SignInCodes } from "./sign-in-codes.ts";
 import type { Updates } from "./updates.ts";
 
 export type ServerContext = {
@@ -37,8 +38,19 @@ export type ServerContext = {
   gh?: GhRunner;
   /** The record of versions, the daily check, and the one upgrade. */
   updates: Updates;
+  /** The single-use sign-in codes `POST /api/sign-in` mints. */
+  codes: SignInCodes;
   /** Restarts `ork ui` onto the installed `ork`, when `ork ui` started it. */
   restart?: () => void;
+  /**
+   * The env-value scrubber of a run, for a person's note on it; `ork ui` sets
+   * it (the server can't read a workflow's secrets), and without it, or when it
+   * returns none, a note is masked by pattern only.
+   */
+  noteScrub?: (
+    run: RunRecord,
+    registered: readonly ProjectRecord[],
+  ) => ((text: string) => string) | undefined;
 };
 
 type Refusal = { status: 400 | 404 | 409; error: string };

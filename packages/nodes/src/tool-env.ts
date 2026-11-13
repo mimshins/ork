@@ -5,22 +5,32 @@
  *   command, and those values are scrubbed from what the program prints.
  */
 
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import {
   calledWorkflows,
+  type Environ,
   envReadsOf,
+  envValuesOf,
   type ExecuteContext,
   parseTemplate,
+  placeFor,
   type ProjectPlace,
+  readEnv,
   renderTemplate,
+  type RunRecord,
   runScope,
+  runScrubber,
+  scrubberOf,
 } from "@krapht/ork-core";
 import {
+  parseWorkflow,
   programsRunBy,
   type ToolNode,
   type Workflow,
 } from "@krapht/ork-schema";
 
-import { type Environ, readEnv } from "./environ.ts";
 import { mcpVariablesOf } from "./mcp-servers.ts";
 import {
   GUARDED_STORES_ENV,
@@ -29,9 +39,6 @@ import {
   SESSION_ENV,
 } from "./run-marker.ts";
 import type { ToolRunner } from "./tool-command.ts";
-import { scrubberOf } from "./tool-scrub.ts";
-
-export { type Environ, readEnv };
 
 /** The file a node with `output: { format: json }` may write its result to. */
 export const OUTPUT_ENV = "ORK_OUTPUT";
@@ -166,6 +173,31 @@ export const maskedNamesOfRun = (
 ];
 
 /**
+ * The env-value scrubber of a recorded run, from its workflow file as it is
+ * now, for what is written to it from outside the run (a person's note);
+ * `undefined` when the file is gone or no longer parses.
+ */
+export const scrubberOfRun = (
+  run: Pick<RunRecord, "file">,
+  registered: readonly ProjectPlace[],
+  environ: Environ = process.env,
+): ((text: string) => string) | undefined => {
+  let text: string;
+  try {
+    text = readFileSync(run.file, "utf8");
+  } catch {
+    return undefined;
+  }
+  const parsed = parseWorkflow(text);
+  if (!parsed.ok) return undefined;
+  const own = placeFor(path.dirname(run.file), registered);
+  return runScrubber(
+    maskedNamesOfRun(parsed.workflow, own, registered, environ),
+    environ,
+  );
+};
+
+/**
  * A program learns the names too, never their values: `ork send` masks with
  * them before it writes to the store, and a run the program starts passes them
  * on.
@@ -178,19 +210,9 @@ export const namesToMask = (
   ...new Set([...secretNamesOf(workflow), ...also, ...inheritedNames(environ)]),
 ];
 
-const valuesOf = (names: readonly string[], environ: Environ): string[] =>
-  names.flatMap(name => {
-    const value = readEnv(environ, name);
-    return value === undefined ? [] : [value];
-  });
-
 /** What a process in a program masks: what its run told it to. */
 export const inheritedScrubber = (environ: Environ) =>
-  scrubberOf(valuesOf(inheritedNames(environ), environ));
-
-/** What a run masks in a message of its own: the same names' values. */
-export const runScrubber = (names: readonly string[], environ: Environ) =>
-  scrubberOf(valuesOf(names, environ));
+  scrubberOf(envValuesOf(inheritedNames(environ), environ));
 
 /** What a run tells a run it calls: names, never values. */
 export const maskedEnv = (names: readonly string[]): Record<string, string> =>
@@ -201,7 +223,7 @@ export const secretsOf = (
   workflow: Workflow,
   environ: Environ,
   also: readonly string[] = [],
-): string[] => valuesOf(namesToMask(workflow, environ, also), environ);
+): string[] => envValuesOf(namesToMask(workflow, environ, also), environ);
 
 /** A node's `env:`, rendered. */
 export const renderEnv = (

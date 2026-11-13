@@ -5,13 +5,13 @@
  *   read them back.
  */
 
-import { mkdtempSync, realpathSync, writeFileSync } from "node:fs";
+import { mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { type HumanChannel, openStore } from "@krapht/ork-core";
 import { createCliRuntime } from "@krapht/ork-runtime";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, onTestFinished, vi } from "vitest";
 
 import {
   feedbackOrigin,
@@ -170,5 +170,37 @@ describe("a person's feedback", () => {
     expect(store.feedbackItems()).toEqual([]);
     store.setFeedbackStatus(item.id, "new");
     expect(store.feedbackItems().map(i => i.id)).toEqual([item.id]);
+  });
+
+  it("masks the value of an env: secret the run's workflow reads", () => {
+    const secret = "plain-words-but-secret";
+    vi.stubEnv("ORK_TEST_NOTE_SECRET", secret);
+    const store = openStore(":memory:");
+    const project = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-fb-")));
+    onTestFinished(() => {
+      vi.unstubAllEnvs();
+      rmSync(project, { recursive: true, force: true });
+    });
+    const file = path.join(project, "deploy.ork.yaml");
+    writeFileSync(
+      file,
+      [
+        "schemaVersion: 1",
+        "name: deploy",
+        "nodes:",
+        "  ship:",
+        "    type: tool.shell",
+        "    command: ./ship",
+        '    env: { KEY: "{{env.ORK_TEST_NOTE_SECRET}}" }',
+        "",
+      ].join("\n"),
+    );
+    store.begin({ id: "r1", workflow: "deploy", file, project });
+    expect(
+      noteRun(store, project, { run: "r1", text: `It printed ${secret}` }),
+    ).toMatchObject({ ok: true });
+    const record = only(store.feedbackRecords(only(store.feedbackItems()).id));
+    expect(JSON.stringify(record)).not.toContain(secret);
+    expect(record.feedback.title).toBe("It printed [masked]");
   });
 });

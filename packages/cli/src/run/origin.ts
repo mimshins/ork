@@ -1,20 +1,27 @@
 /**
  * @file Where a run's feedback comes from, beyond what its events say: Ork's
  *   version (bound from the CLI's `package.json`) and the workflow file's
- *   content hash; and the `follow_up` port of the one node `ork run --node`
- *   runs.
+ *   content hash; and the feedback and `follow_up` ports of the one node `ork
+ *   run --node` runs.
  */
 
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 import {
+  type CompiledGraph,
+  createFeedback,
   createFollowUps,
   type EventStore,
+  type FeedbackPort,
   type FollowUpPort,
   type ProjectPlace,
+  type RunEvent,
+  runScrubber,
   type SignalOptions,
 } from "@krapht/ork-core";
+import { maskedNamesOfRun } from "@krapht/ork-nodes";
+import type { Workflow } from "@krapht/ork-schema";
 
 import { ORK_VERSION } from "../__build_info__.ts";
 import { followUpSink } from "../follow-ups/context.ts";
@@ -36,16 +43,44 @@ export const feedbackOrigin = (workflowFile: string): SignalOptions => {
   return origin;
 };
 
-/** The `follow_up` port of node `id`, kept as the project's rule says. */
-export const nodeFollowUps = (options: {
-  store: EventStore;
-  place: ProjectPlace;
-  home?: string | undefined;
-  runId: string;
-  id: string;
-  cwd: string;
-}): FollowUpPort =>
-  createFollowUps({ runId: options.runId, sink: followUpSink(options) }).port(
-    options.id,
-    options.cwd,
+/**
+ * Node `id`'s feedback port (with a graph) and `follow_up` port, kept as the
+ * project's rule says; both mask the values of what its run masks.
+ */
+export const nodeReports = (
+  options: {
+    store: EventStore;
+    place: ProjectPlace;
+    home?: string | undefined;
+    runId: string;
+    id: string;
+    cwd: string;
+  },
+  {
+    workflow,
+    graph,
+    record,
+  }: {
+    workflow: Workflow;
+    graph: CompiledGraph | null;
+    record: (event: RunEvent) => void;
+  },
+): { feedback?: FeedbackPort; followUps: FollowUpPort } => {
+  const { place, id } = options;
+  const scrub = runScrubber(
+    maskedNamesOfRun(workflow, place, options.store.projects()),
+    process.env,
   );
+  const sink = followUpSink(options);
+  return {
+    ...(graph === null
+      ? {}
+      : {
+          feedback: createFeedback({ graph, onEvent: record, scrub }).port(id),
+        }),
+    followUps: createFollowUps({ runId: options.runId, sink, scrub }).port(
+      id,
+      options.cwd,
+    ),
+  };
+};

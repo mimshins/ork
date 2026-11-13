@@ -1,6 +1,7 @@
 # ADR-039 — A local server that is one more client of the store, on `node:http`
 
-- **Status:** Accepted
+- **Status:** Accepted; its guards paragraph (5) is superseded in part by
+  [ADR-090](./ADR-090-ork-ui-signs-in-with-a-code.md)
 - **Date:** 2026-11-02
 - **Topic:** server / UI / security
 - **RFC:** waived — the author chose these options over the others below
@@ -37,12 +38,14 @@ another process, without a server.
    `@krapht/ork-server`. The server's handlers are checked against it, and a
    small typed `fetch` client built from it is exported for the UI. Both sides
    are TypeScript in this repository, so no code generation is needed.
-5. **Guards.** Loopback only, with no option for another address. A random token
-   per start: `ork ui` opens the page with it once, and the server swaps it for
-   an `HttpOnly`, `SameSite=Strict` cookie and redirects; scripts may send it as
-   a bearer token. It is compared in constant time. A `Host` that is not the
-   server's loopback address gets 403 (DNS rebinding); a write needs the
-   server's own `Origin` and a JSON body (CSRF); no CORS headers are sent.
+5. **Guards** (the token-in-the-link and cookie part is superseded by
+   [ADR-090](./ADR-090-ork-ui-signs-in-with-a-code.md)). Loopback only, with no
+   option for another address. A random token per start: `ork ui` opens the page
+   with it once, and the server swaps it for an `HttpOnly`, `SameSite=Strict`
+   cookie and redirects; scripts may send it as a bearer token. It is compared
+   in constant time. A `Host` that is not the server's loopback address gets 403
+   (DNS rebinding); a write needs the server's own `Origin` and a JSON body
+   (CSRF); no CORS headers are sent.
 
 ## Options considered
 

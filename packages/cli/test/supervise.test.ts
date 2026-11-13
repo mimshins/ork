@@ -16,6 +16,7 @@ import {
   type ServerChild,
   supervise,
 } from "../src/browser/supervise.ts";
+import { startMessage } from "../src/browser/ui-protocol.ts";
 
 const ignore = (): void => {};
 
@@ -61,6 +62,10 @@ const fakeChild = (): FakeChild => {
   };
   return fake;
 };
+
+/** The session secret in the `start` a child was sent. */
+const sessionOf = (sent: unknown[]): string | undefined =>
+  startMessage(sent[0])?.session;
 
 /** A supervisor on fake children, and what it said and did. */
 const supervised = (port = 4417) => {
@@ -119,9 +124,10 @@ describe("ork ui's supervisor", () => {
     const ui = supervised(0);
     expect(ui.nth(0).sent).toEqual([]);
     ui.serves(0, 51_234);
-    expect(ui.nth(0).sent).toEqual([
+    expect(ui.nth(0).sent).toMatchObject([
       { type: "ork-ui-start", port: 0, token: "secret-token" },
     ]);
+    expect(typeof sessionOf(ui.nth(0).sent)).toBe("string");
     expect(ui.readies).toEqual([
       { port: 51_234, version: "0.3.0", restarted: false },
     ]);
@@ -139,9 +145,12 @@ describe("ork ui's supervisor", () => {
     ui.nth(0).ends(0);
     expect(ui.children).toHaveLength(2);
     ui.serves(1, 51_234, "0.4.0");
-    expect(ui.nth(1).sent).toEqual([
+    expect(ui.nth(1).sent).toMatchObject([
       { type: "ork-ui-start", port: 51_234, token: "secret-token" },
     ]);
+    // The same session secret, so the open tab's cookie still works.
+    expect(sessionOf(ui.nth(1).sent)).toBe(sessionOf(ui.nth(0).sent));
+    expect(sessionOf(ui.nth(0).sent)).not.toBe("secret-token");
     expect(ui.readies.at(-1)).toEqual({
       port: 51_234,
       version: "0.4.0",

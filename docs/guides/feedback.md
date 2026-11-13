@@ -193,8 +193,8 @@ To note how a run or node went, use **Note…** in the Monitor.
 
 ## What stays on your machine
 
-Feedback lives in `~/.ork/state.db` with your runs, with secrets masked before
-anything is written. Nothing is sent anywhere unless you publish an item, and
-then only what you read and confirmed
+Feedback lives in `~/.ork/state.db` with your runs, with secrets (and the values
+of your `env:` secrets) masked before anything is written. Nothing is sent
+anywhere unless you publish an item, and then only what you read and confirmed
 ([where Ork keeps things](./where-ork-keeps-things.md)). For the full rules:
 [feedback and self-improvement](../../specs/feedback.md).

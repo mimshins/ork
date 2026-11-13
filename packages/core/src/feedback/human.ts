@@ -33,9 +33,15 @@ export type HumanNote = {
 
 const MAX_TITLE = 120;
 
-/** The run event a note becomes; its title is the note's first line. */
-export const humanNoteEvent = (note: HumanNote): RunEvent => {
-  const text = maskSecrets(note.text.trim());
+/**
+ * The run event a note becomes; its title is the note's first line. `scrub` (an
+ * env-value scrubber) runs after `maskSecrets`.
+ */
+export const humanNoteEvent = (
+  note: HumanNote,
+  scrub: (text: string) => string = text => text,
+): RunEvent => {
+  const text = scrub(maskSecrets(note.text.trim()));
   const [first = ""] = text.split("\n");
   const title = first.slice(0, MAX_TITLE);
   const kind = note.kind ?? "friction";
@@ -131,6 +137,7 @@ export const recordNote = (
   run: Pick<RunRecord, "id" | "workflow">,
   ask: NoteAsk,
   flag = "",
+  scrub?: (text: string) => string,
 ): Noted => {
   const note = checkNote(ask, flag);
   if (!note.ok) return note;
@@ -140,14 +147,17 @@ export const recordNote = (
   if (ask.node !== undefined && !ran) {
     return { ok: false, error: `No node ${ask.node} ran in run ${run.id}.` };
   }
-  const event = humanNoteEvent({
-    text: ask.text,
-    workflow: run.workflow,
-    ...(ask.node === undefined ? {} : { node: ask.node }),
-    ...(note.kind === undefined ? {} : { kind: note.kind }),
-    ...(note.severity === undefined ? {} : { severity: note.severity }),
-    ...(note.rating === undefined ? {} : { rating: note.rating }),
-  });
+  const event = humanNoteEvent(
+    {
+      text: ask.text,
+      workflow: run.workflow,
+      ...(ask.node === undefined ? {} : { node: ask.node }),
+      ...(note.kind === undefined ? {} : { kind: note.kind }),
+      ...(note.severity === undefined ? {} : { severity: note.severity }),
+      ...(note.rating === undefined ? {} : { rating: note.rating }),
+    },
+    scrub,
+  );
   store.append(run.id, event);
   const recorded =
     event.type === "feedback.recorded" ? event.feedback.fingerprint : "";

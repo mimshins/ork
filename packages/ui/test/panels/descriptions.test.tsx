@@ -114,6 +114,22 @@ describe("a description in the Monitor", () => {
     );
   });
 
+  it("keeps an 80-character label in its cell, its name and its tip", async () => {
+    const label = `fix ${"a".repeat(76)}`;
+    await openMonitor([
+      treeNode("build.2", { state: "running", description: label }),
+    ]);
+    const cell = within(row()).getByText(label);
+    expect(cell.className).toContain("treeLabel");
+    expect(row().getAttribute("aria-label")).toContain(label);
+    const before = screen.getAllByText(label).length;
+    await userEvent.setup().hover(cell);
+    // The tip is one more copy of the label, in a popup.
+    await vi.waitFor(() => {
+      expect(screen.getAllByText(label).length).toBe(before + 1);
+    });
+  });
+
   it("leaves a node without one as it was", async () => {
     await openMonitor([treeNode("build.2", { state: "running" })]);
     expect(row().getAttribute("aria-label")).toMatch(/^build\.2, running, /u);

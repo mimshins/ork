@@ -10,9 +10,13 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
+// The package's entry point by path: `tools/` has no workspace link to it.
+import {
+  SECRET_PATTERNS,
+  type SecretPattern,
+} from "../../packages/core/src/index.ts";
 import { checkInputs, resolveScope, type Scope } from "./inputs.ts";
 import { fingerprintOf, type ScannerRecord } from "./records.ts";
-import { SECRET_PATTERNS, type SecretPattern } from "./secret-patterns.ts";
 import { outputDir, previousAudit, type PreviousAudit } from "./store.ts";
 import { checkWorkflow } from "./workflow-checks.ts";
 

@@ -222,6 +222,51 @@ describe("delegation", () => {
     ]);
   });
 
+  it("masks a secret in a description, then clips by code point", async () => {
+    const token = `ghp_${"A".repeat(36)}`;
+    const { executor } = team(own =>
+      own.delegate([
+        { child: "fix", brief: "a", description: `${"a".repeat(79)}😀tail` },
+        { child: "check", brief: "b", description: `push with ${token}` },
+      ]),
+    );
+    const { events } = await run(compile(TEAM), executor);
+
+    const label = (id: string) =>
+      described(events).find(([n]) => n === id)?.[1];
+    const clipped = String(label("fix"));
+    expect(Array.from(clipped)).toHaveLength(DESCRIPTION_MAX);
+    expect(clipped).toBe(`${"a".repeat(79)}😀`);
+    expect(clipped.isWellFormed()).toBe(true);
+    expect(label("check")).toBe("push with [masked]");
+  });
+
+  it("refuses a child a concurrent delegate call already took, and frees it once it reports", async () => {
+    const calls: Delegation[] = [];
+    const { executor } = team(async own => {
+      calls.push(
+        ...(await Promise.all([
+          own.delegate([{ child: "check", brief: "one" }]),
+          own.delegate([{ child: "check", brief: "two" }]),
+        ])),
+      );
+      return own.delegate([{ child: "check", brief: "again" }]);
+    });
+    const { result, events } = await run(compile(TEAM), executor);
+
+    expect(result.status).toBe("succeeded");
+    expect(calls.map(c => c.reports.map(r => [r.ok, r.error]))).toEqual([
+      [[true, undefined]],
+      [[false, "already running; use spawn_worker for another instance"]],
+    ]);
+    expect(started(events)).toEqual([
+      "lead",
+      "check for lead",
+      "check for lead",
+      "after",
+    ]);
+  });
+
   it("runs the children of one call in parallel", async () => {
     const { executor, peak } = team(own =>
       own.delegate([

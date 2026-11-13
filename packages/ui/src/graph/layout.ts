@@ -164,7 +164,8 @@ export const layoutGraph = (input: GraphInput): GraphLayout => {
     chains,
     centers,
     space,
-    reach: ROW_GAP,
+    // Cards are taller, so lining two up past a lane moves one further.
+    reach: NODE_HEIGHT / 2,
   });
 
   // A curve carries its condition in the gap it crosses, so it must fit. On a

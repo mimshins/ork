@@ -190,10 +190,10 @@ first (then the prompt is withdrawn and the transcript shows
 run of that one node. Their [filters](./list-filters.md#the-lists) come from a
 field table.
 
-A delegated node whose task had a `description`
-([delegation](../scheduler.md#delegation)) shows it dim after the id: in
-`ork tree`'s label column, and on the node's start line in `ork logs` (after the
-type, as ` · <description>`); `--json` carries it as `description`.
+A [task label](../scheduler.md#delegation) shows dim after the id in `ork tree`
+(padded by code points) and after the type of `ork logs`'s start line
+(` · <label>`), masked again there, in the live stream and in the lead's
+`delegate` call; `--json` has it as stored. Both `--help` texts describe it.
 
 `ork tree` reads a run's status as `ork ps` does. For a `crashed` run, a node
 the event log shows started but not ended reads `✗ cut off`, and one that never

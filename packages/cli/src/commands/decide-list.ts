@@ -11,13 +11,30 @@ import {
   placeFor,
 } from "@krapht/ork-core";
 
-import { projectScope, fail, readListArgs, resolveRun } from "../list/flags.ts";
+import {
+  fail,
+  filterArgs,
+  projectScope,
+  readListArgs,
+  resolveRun,
+} from "../list/flags.ts";
 import { printList } from "../list/print.ts";
 import { plain, write } from "../output.ts";
 import { chip, CHIP_LABELS, nodeChip } from "../term/chips.ts";
 import { cut } from "../term/layout.ts";
 import { type Term, termOf } from "../term/mode.ts";
 import { bold } from "../term/theme.ts";
+
+/** `ork decide`'s filter flags, with `--list`. */
+export const listArgs = filterArgs(decisionListTable, {
+  extra: {
+    list: {
+      type: "boolean",
+      description: "List them without answering",
+      default: false,
+    },
+  },
+});
 
 /**
  * One line per open decision, for `--list`: on a terminal an ASK chip and the

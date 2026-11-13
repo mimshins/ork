@@ -53,6 +53,13 @@ Edges are SVG and cards are buttons, in one layer that pans and zooms
 ([graph-view.tsx](../../packages/ui/src/graph/graph-view.tsx)). Cards are HTML
 so they are real controls and share the status badge.
 
+- **A card** is 152 × 60 px ([types.ts](../../packages/ui/src/graph/types.ts))
+  and has three lines: its head (type, id, cost), the task label a delegating
+  leader gave it (`description`, muted, one line with an ellipsis; about 20
+  characters show, [gaps](../gaps.md)), and its status. A card with no label
+  leaves that line out. The whole label, with the status, is in the card's
+  tooltip.
+
 - **Moving it:** drag the canvas, scroll, or the arrow keys on the canvas. Zoom
   with a pinch, `⌘` or `Ctrl` and scroll, `+` and `-`, or the buttons. `0` or
   the fit button fits the drawing, which is never drawn bigger than life. Until

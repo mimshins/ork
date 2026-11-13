@@ -15,21 +15,25 @@ in. Running `ork ui` again opens the one that is running. Ctrl-C stops it; your
 runs keep running, and every `ork` command works without it. It uses your own
 accounts and asks for none of them.
 
-The sign-in link acts as you, so a program or an agent in a run never gets it in
-a store that run guards, `--no-open` included: there `ork ui` says to run it in
-your own terminal
+The sign-in link acts as you, so a program or an agent in a run never gets one
+in a store that run guards, `--no-open` included: there `ork ui` says to run it
+in your own terminal
 ([ADR-047](../../../decisions/ADR-047-script-identity-env-json.md),
 [ADR-089](../../../decisions/ADR-089-guarded-stores-in-run-identity.md)).
 
 ## How it keeps other sites out
 
 It listens only on `127.0.0.1`, and only your browser gets in: `ork ui` opens it
-with a one-time link that becomes a cookie, and the server refuses any other
-site, any other host name, and any request without it. The link's token is kept
-in `~/.ork/ui.json`, readable only by you, and changes each time you start
-`ork ui` (a restart from the page keeps it, so the tab stays signed in). If
+with a one-time link whose code works once and lapses after a minute, the server
+swaps it for a cookie of its own, and it refuses any other site, any other host
+name, and any request without that cookie. The key that `ork mcp` and scripts
+use is kept in `~/.ork/ui.json`, readable only by you, and is never in the link,
+the browser or the command that opens it. Both change each time you start
+`ork ui` (a restart from the page keeps them, so the tab stays signed in). If
 `ork ui` cannot open a browser (on a server, or without `open` or `xdg-open`),
-it prints the link for you to open.
+it prints the link for you to open; open it within a minute, or run `ork ui`
+again for a new one. Every browser you sign in this way shares the cookie, so
+the way to sign them all out is to stop `ork ui`.
 
 ## What you can do, and the command for it
 

@@ -13,6 +13,7 @@ import { ProjectSchema } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
 import {
+  createFollowUps,
   type FollowUpStoreOptions,
   followUpStore,
   type GhResult,
@@ -20,6 +21,7 @@ import {
   nearTitle,
   type NewFollowUp,
   openStore,
+  runScrubber,
 } from "../src/index.ts";
 
 const PROJECT = "/work/se-backend";
@@ -224,6 +226,27 @@ describe("scrubbing", () => {
     expect(followUp.for).toBe("person:<email>");
     expect(followUp.ref).toBe("~/notes.md");
     expect(followUp.draft?.channel).toBe("<email>");
+  });
+
+  it("masks a run's configured env secret before a session's follow-up is kept", async () => {
+    const store = storeWith();
+    const scrub = runScrubber(["DB_PASSWORD"], {
+      DB_PASSWORD: "hunter2-and-more",
+    });
+    const port = createFollowUps({
+      runId: "r1",
+      sink: async input => ({ ok: true, added: await store.add(input) }),
+      scrub,
+    }).port("build", PROJECT);
+    await port.add({
+      ...message,
+      title: "Rotate hunter2-and-more",
+      draft: { to: "Dana", text: "the password is hunter2-and-more" },
+    });
+    expect(store.get("fu1")).toMatchObject({
+      title: "Rotate [masked]",
+      draft: { text: "the password is [masked]" },
+    });
   });
 });
 

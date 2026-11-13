@@ -108,5 +108,15 @@ ork ui --port 4500
 ork ui --no-open
 ```
 
+**The page says "That sign-in link is not valid any more".** A sign-in link
+works once and lapses after a minute, so a second use, a link opened late, or an
+old `?token=` link from an earlier Ork is refused. Run `ork ui` again: it opens
+a new one, or prints it with `--no-open`. A browser that was signed in before
+you upgraded Ork shows the same once.
+
+**`The running UI is from an older Ork; stop it and run ork ui`.** The `ork ui`
+that is running was started by a version without one-time links. Press Ctrl-C in
+its terminal (your runs keep going), then run `ork ui`.
+
 **The page says it's from an older Ork.** `ork ui` was restarted on a new
 version while the tab was open. Choose **Reload**.

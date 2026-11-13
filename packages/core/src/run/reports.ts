@@ -15,15 +15,18 @@ export const createSessionReports = ({
   runId,
   sink,
   onEvent,
+  scrub,
 }: {
   graph: CompiledGraph;
   runId: string;
   sink: FollowUpSink | undefined;
   onEvent: (event: RunEvent) => void;
+  /** The run's env-value scrubber (`runScrubber`), for both. */
+  scrub?: ((text: string) => string) | undefined;
 }) => {
-  const feedback = createFeedback({ graph, onEvent });
+  const feedback = createFeedback({ graph, onEvent, scrub });
   const followUps =
-    sink === undefined ? undefined : createFollowUps({ runId, sink });
+    sink === undefined ? undefined : createFollowUps({ runId, sink, scrub });
   return {
     /** One session's ports; `template` is a spawned worker's node. */
     port: (

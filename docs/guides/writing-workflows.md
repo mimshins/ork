@@ -136,9 +136,14 @@ deploy:
 ```
 
 There is no shell: each `{{ }}` value stays one argument, so a value can't
-inject a command. With `allow`, the command must start with one of its prefixes
-or the node fails first. A tool node outputs `exitCode`, `stdout` and `stderr`,
-and can return [JSON](./scripts.md); long output goes to `.ork/runs/`.
+inject a command. An argument that starts with a `{{nodes.<id>.output…}}` value
+which turns out to begin with `-` would read as an option, so the node fails
+("argument from nodes.a.output starts with `-`; put `--` before it in the
+command"); write `git show -- {{nodes.a.output.ref}}` when such a value may
+appear. A literal `-x` and `--flag={{…}}` are not affected. With `allow`, the
+command must start with one of its prefixes or the node fails first. A tool node
+outputs `exitCode`, `stdout` and `stderr`, and can return [JSON](./scripts.md);
+long output goes to `.ork/runs/`.
 
 ### Gates
 

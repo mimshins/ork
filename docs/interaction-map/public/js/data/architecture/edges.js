@@ -69,7 +69,7 @@ export const EDGES = [
     kind: "net",
     label: "`ork ui` runs it as a child",
     detail:
-      "`ork ui` starts the server as a child (`ork ui --serve`), hands it the port and the token over IPC, and opens it, signed in, or opens the one `~/.ork/ui.json` names. On the page's Restart it starts the launcher again on the same port with the same token, so an upgraded install serves the same tab (ADR-060). Every other command works without it: both read and write the same store.",
+      "`ork ui` starts the server as a child (`ork ui --serve`), hands it the port, the token and a session secret over IPC, gets a one-time code with the token, and opens `/?code=…` (the token is never in the link), or opens the one `~/.ork/ui.json` names. On the page's Restart it starts the launcher again on the same port with the same token and session secret, so an upgraded install serves the same tab (ADR-060). Every other command works without it: both read and write the same store.",
     status: "built",
     docs: [
       SERVER.command,

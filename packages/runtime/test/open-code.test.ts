@@ -33,6 +33,7 @@ import {
   type CliAdapter,
   createOpenCodeAdapter,
   createSessionRuntime,
+  ORK_TOOLS,
   openCodeArgs,
   permissionRules,
 } from "../src/index.ts";
@@ -257,14 +258,46 @@ const rules = (
   mode: SessionSpec["permissionMode"] = "default",
 ) => permissionRules({ ...specOf("/w", tools), permissionMode: mode });
 
+/**
+ * The allow rules whose action pattern matches `action`, `*` as any run (an
+ * action holds only `[A-Za-z0-9_*-]`, so nothing else needs escaping).
+ */
+const allowedActions = (
+  written: readonly { action: string; effect: string }[],
+  action: string,
+): string[] =>
+  written
+    .filter(r => r.effect === "allow")
+    .filter(r =>
+      new RegExp(`^${r.action.replaceAll("*", ".*")}$`, "u").test(action),
+    )
+    .map(r => r.action);
+
+/** One allow per registered Ork tool, by its OpenCode name `ork_<tool>`. */
+const ORK_ALLOWS = ORK_TOOLS.map(tool => ({
+  action: `ork_${tool.name}`,
+  resource: "*",
+  effect: "allow",
+}));
+
 describe("the open-code permission rules", () => {
   it("deny everything first, then open the worktree's reads and Ork's tools", () => {
     expect(rules({ allow: [], deny: [] })).toEqual([
       { action: "*", resource: "*", effect: "deny" },
       { action: "read", resource: "*", effect: "allow" },
-      { action: "ork_*", resource: "*", effect: "allow" },
+      ...ORK_ALLOWS,
       { action: "read", resource: "*.env", effect: "deny" },
     ]);
+  });
+
+  it("open Ork's tools by exact name, not a repo server named `ork_<x>`", () => {
+    const written = permissionRules({
+      ...specOf("/w", { allow: [], deny: [] }),
+      mcpServers: { ork_evil: { command: "evil" } },
+    });
+    expect(allowedActions(written, "ork_evil_run")).toEqual([]);
+    expect(allowedActions(written, "ork_report")).toEqual(["ork_report"]);
+    expect(allowedActions(written, "ork_ask_user")).toEqual(["ork_ask_user"]);
   });
 
   it("write the node's allows in OpenCode's words, and its denies last", () => {
@@ -311,7 +344,7 @@ describe("the open-code permission rules", () => {
     expect(written.map(r => `${r.action}:${r.effect}`)).toEqual([
       "*:deny",
       "grep:allow",
-      "ork_*:allow",
+      ...ORK_ALLOWS.map(r => `${r.action}:allow`),
       "read:deny",
       "edit:deny",
       "shell:deny",

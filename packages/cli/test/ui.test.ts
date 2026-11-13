@@ -21,7 +21,13 @@ import {
 } from "@krapht/ork-server";
 import { afterAll, describe, expect, it } from "vitest";
 
-import { portArg, signInLink, uiFolders } from "../src/index.ts";
+import {
+  MINT_FAILED_OLDER,
+  mintSignInLink,
+  portArg,
+  signInLink,
+  uiFolders,
+} from "../src/index.ts";
 
 const BIN = path.resolve(import.meta.dirname, "../src/bin.ts");
 
@@ -131,13 +137,56 @@ const startUi = () => {
   return { child, printed: () => out.join(""), exited };
 };
 
+/** The code in the link `ork ui` printed, or "". */
+const codeOf = (printed: string): string =>
+  /signs you in: \S+\?code=(\S+)/u.exec(printed)?.[1] ?? "";
+
+/** A fake `fetch` that answers `status` with `body`, noting each request. */
+const answeringWith =
+  (seen: { url: string; auth: string | null }[]) =>
+  (status: number, body: unknown): typeof fetch =>
+  (url, init) => {
+    seen.push({
+      url: new Request(url).url,
+      auth: new Headers(init?.headers).get("authorization"),
+    });
+    return Promise.resolve(Response.json(body, { status }));
+  };
+
+const refusing: typeof fetch = () =>
+  Promise.reject(new Error("connect ECONNREFUSED"));
+
 describe("ork ui", () => {
   it("checks --port", () => {
     expect(portArg()).toBe(4417);
     expect(portArg("0")).toBe(0);
     expect(portArg("70000")).toBeNull();
     expect(portArg("http")).toBeNull();
-    expect(signInLink(4417, "t")).toBe("http://127.0.0.1:4417/?token=t");
+    expect(signInLink(4417, "c")).toBe("http://127.0.0.1:4417/?code=c");
+  });
+
+  it("gets a code with the token in a header, and says when it can't", async () => {
+    const seen: { url: string; auth: string | null }[] = [];
+    const answering = answeringWith(seen);
+    expect(
+      await mintSignInLink(
+        4417,
+        "tok",
+        answering(200, { code: "abc", expiresIn: 60 }),
+      ),
+    ).toEqual({ link: "http://127.0.0.1:4417/?code=abc" });
+    expect(seen).toEqual([
+      { url: "http://127.0.0.1:4417/api/sign-in", auth: "Bearer tok" },
+    ]);
+    expect(
+      await mintSignInLink(4417, "tok", answering(404, { error: "No." })),
+    ).toEqual({ failure: MINT_FAILED_OLDER });
+    expect(await mintSignInLink(4417, "tok", refusing)).toEqual({
+      failure: MINT_FAILED_OLDER,
+    });
+    expect(
+      await mintSignInLink(4417, "tok", answering(403, { error: "Nope." })),
+    ).toEqual({ failure: "Could not get a sign-in code: Nope." });
   });
 
   it("serves only for `ork ui`, which supervises it", async () => {
@@ -156,11 +205,24 @@ describe("ork ui", () => {
       .poll(ui.printed, { timeout: 10_000 })
       .toContain("signs you in: ");
     const { port, token, base, client } = signedIn();
-    expect(ui.printed()).toContain(`signs you in: ${signInLink(port, token)}`);
+    // A code, never the token: the link is single use and short lived.
+    const code = codeOf(ui.printed());
+    expect(code).not.toBe("");
+    expect(ui.printed()).not.toContain(token);
+    const redeemed = await fetch(signInLink(port, code), {
+      redirect: "manual",
+    });
+    expect(redeemed.status).toBe(302);
+    expect(redeemed.headers.get("set-cookie")).not.toContain(token);
+    expect((await fetch(signInLink(port, code))).status).toBe(401);
 
     const again = await ork(["ui", "--no-open"]);
     expect(again.code).toBe(0);
     expect(again.stdout).toContain(`already running at ${base}`);
+    // The running server gives this path a code too, and the token stays out.
+    expect(again.stdout).toContain("?code=");
+    expect(codeOf(again.stdout)).not.toBe("");
+    expect(again.stdout).not.toContain(token);
 
     const started = await client.call("start", {
       body: { project: "e2e", workflow: "gated", inPlace: true },

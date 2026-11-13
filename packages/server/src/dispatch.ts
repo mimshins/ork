@@ -1,14 +1,14 @@
 /**
  * @file One request through the server (ADR-039): the guards first (a refusal,
- *   or the token's swap for the session cookie), then the event streams, the
- *   JSON routes, and the page (the built UI, or the placeholder).
+ *   or a sign-in code's swap for the session cookie), then the event streams,
+ *   the JSON routes, and the page (the built UI, or the placeholder).
  */
 
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { apiRoutes } from "./api-routes.ts";
 import type { ServerContext } from "./context.ts";
-import { STREAMS } from "./contract.ts";
+import { API, STREAMS } from "./contract.ts";
 import { guard } from "./guards.ts";
 import { BASE_HEADERS, sendError } from "./http.ts";
 import { sendNotice, sendPage } from "./page.ts";
@@ -25,7 +25,12 @@ const RUN_STREAM = compilePath(STREAMS.run);
 
 export const createDispatch = (
   context: ServerContext,
-  access: { port: () => number; token: string; shutdown: AbortSignal },
+  access: {
+    port: () => number;
+    token: string;
+    session: string;
+    shutdown: AbortSignal;
+  },
 ): Dispatch => {
   const handlers = apiRoutes(context, access.port);
   return async (req, res) => {
@@ -34,7 +39,12 @@ export const createDispatch = (
     const api = url.pathname.startsWith("/api/");
     const verdict = guard(
       { method, url: req.url ?? "/", headers: req.headers },
-      { port: access.port(), token: access.token },
+      {
+        port: access.port(),
+        token: access.token,
+        session: access.session,
+        codes: context.codes,
+      },
     );
     if (verdict.kind === "refuse") {
       if (api) sendError(res, verdict.status, verdict.error);
@@ -49,6 +59,11 @@ export const createDispatch = (
           "set-cookie": verdict.cookie,
         })
         .end();
+      return;
+    }
+    // A page holds the cookie, so a script in it could mint codes for ever.
+    if (url.pathname === API.signIn.path && verdict.via !== "bearer") {
+      sendError(res, 403, "Sign-in codes are minted with the API token only.");
       return;
     }
     const streamed = RUN_STREAM.pattern.exec(url.pathname);

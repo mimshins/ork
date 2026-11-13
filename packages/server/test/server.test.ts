@@ -1,6 +1,6 @@
 /**
  * @file Tests for the server over HTTP: the guards on real requests, the link's
- *   token swapped for a cookie that then works, the page and its content
+ *   code swapped for a cookie that then works, the page and its content
  *   security policy, `ui.json` while the server runs, and a port in use.
  */
 
@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { readUiFile, startServer, uiFilePath } from "../src/index.ts";
 import {
+  codeOf,
   rawGet,
   sessionOf,
   startTestServer,
@@ -15,6 +16,8 @@ import {
   type TestServer,
   text,
 } from "./fixtures.ts";
+
+const SESSION = "session-secret-of-the-test";
 
 let fixture: TestServer | undefined;
 
@@ -52,15 +55,26 @@ describe("the server", () => {
     expect(answer.status).toBe(403);
   });
 
-  it("swaps the link's token for a cookie, which then signs requests in", async () => {
-    const { server } = await serve();
-    const link = await fetch(`${server.url}/?token=${server.token}`, {
+  it("swaps a minted code for a cookie, once, which then signs requests in", async () => {
+    fixture = await startTestServer({ sessionSecret: SESSION });
+    const { client, server } = fixture;
+    const minted = await client.call("signIn");
+    expect(minted).toMatchObject({ ok: true, data: { expiresIn: 60 } });
+    const code = codeOf(minted);
+    const link = await fetch(`${server.url}/?code=${code}`, {
       redirect: "manual",
     });
     expect(link.status).toBe(302);
     expect(link.headers.get("location")).toBe("/");
-    expect(link.headers.getSetCookie()[0]).toContain(
-      "HttpOnly; SameSite=Strict",
+    expect(link.headers.getSetCookie()[0]).toBe(
+      `ork_ui_${String(server.port)}=${SESSION}; HttpOnly; SameSite=Strict; Path=/`,
+    );
+    const again = await fetch(`${server.url}/?code=${code}`, {
+      redirect: "manual",
+    });
+    expect(again.status).toBe(401);
+    expect(await again.text()).toContain(
+      "That sign-in link is not valid any more",
     );
     const session = sessionOf(link);
     expect(
@@ -76,6 +90,46 @@ describe("the server", () => {
       body: "{}",
     });
     expect(write.status).toBe(403);
+  });
+
+  it("mints codes for the bearer token only, never for the page or the session secret", async () => {
+    fixture = await startTestServer({ sessionSecret: SESSION });
+    const { server } = fixture;
+    const attempt = (headers: Record<string, string>) =>
+      fetch(`${server.url}/api/sign-in`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: server.url,
+          ...headers,
+        },
+        body: "{}",
+      });
+    const cookie = `ork_ui_${String(server.port)}=${SESSION}`;
+    expect((await attempt({ cookie })).status).toBe(403);
+    expect((await attempt({ authorization: `Bearer ${SESSION}` })).status).toBe(
+      401,
+    );
+    expect(
+      (
+        await fetch(`${server.url}/api/health`, {
+          headers: { cookie: `ork_ui_${String(server.port)}=${server.token}` },
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      (await attempt({ authorization: `Bearer ${server.token}` })).status,
+    ).toBe(200);
+  });
+
+  it("keeps a redirect on its own host when the path starts with slashes", async () => {
+    const { client, server } = await serve();
+    const minted = await client.call("signIn");
+    const code = codeOf(minted);
+    const link = await fetch(`${server.url}//evil.com/x?code=${code}`, {
+      redirect: "manual",
+    });
+    expect(link.headers.get("location")).toBe("/evil.com/x");
   });
 
   it("serves the page under a strict content security policy", async () => {

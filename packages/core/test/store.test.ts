@@ -27,8 +27,25 @@ import {
   type RunRecord,
   type RunResult,
   runTree,
+  SECRET_PATTERNS,
   type SessionUsage,
 } from "../src/index.ts";
+
+/** One placeholder per shared pattern, built so the repo's audit skips it. */
+const SECRET_SAMPLES: [string, string][] = [
+  ["aws-access-key-id", "AKIAABCDEFGHIJKLMNOP"],
+  ["github-token", `ghp_${"a".repeat(36)}`],
+  ["github-fine-grained-token", `github_pat_${"a".repeat(50)}`],
+  ["anthropic-api-key", `sk-ant-${"a".repeat(30)}`],
+  ["openai-api-key", `sk-proj-${"a".repeat(40)}`],
+  ["openai-api-key", `sk-${"a".repeat(48)}`],
+  ["npm-token", `npm_${"a".repeat(36)}`],
+  ["slack-token", `xoxb-${"a".repeat(12)}`],
+  ["google-api-key", `AIza${"a".repeat(35)}`],
+  ["stripe-live-key", `sk_live_${"a".repeat(24)}`],
+  ["stripe-live-key", `rk_live_${"a".repeat(24)}`],
+  ["private-key-block", "-----BEGIN EC PRIVATE KEY-----"],
+];
 
 const usage = (costUsd: number): SessionUsage => ({
   costUsd,
@@ -287,6 +304,55 @@ describe("the recorder", () => {
       "aws_secret_access_key = [masked]",
       "plain words stay",
     ]);
+  });
+
+  it.each(SECRET_SAMPLES)("masks a %s from the shared list", (name, sample) => {
+    expect(SECRET_PATTERNS.map(p => p.name)).toContain(name);
+    expect(maskSecrets(`got ${sample} here`)).not.toContain(sample);
+    expect(maskSecrets(`got ${sample} here`)).toContain("[masked]");
+  });
+
+  it("has a sample for every shared pattern", () => {
+    expect(
+      [...new Set(SECRET_SAMPLES.map(([name]) => name))].toSorted(),
+    ).toEqual(SECRET_PATTERNS.map(p => p.name).toSorted());
+  });
+
+  it("masks the whole of a private key block", () => {
+    const block = [
+      "-----BEGIN RSA PRIVATE KEY-----",
+      "MIIEowIBAAKCAQEAinner",
+      "-----END RSA PRIVATE KEY-----",
+    ].join("\n");
+    expect(maskSecrets(`a ${block} b`)).toBe("a [masked] b");
+  });
+
+  it.each([
+    ["password=hunter2hunter2", "password=[masked]"],
+    ["passwd: correct-horse", "passwd: [masked]"],
+    ["token: abcdefgh1234", "token: [masked]"],
+    ["GITHUB_TOKEN=abcdefgh1234", "GITHUB_TOKEN=[masked]"],
+    ["api_key = 'k3y-value-long'", "api_key = '[masked]'"],
+    ["api-key:longvalue1", "api-key:[masked]"],
+    ['{"password": "s3cret-pass"}', '{"password": "[masked]"}'],
+    ['{"secret":"0123456789","n":1}', '{"secret":"[masked]","n":1}'],
+    [
+      "https://x.test/?token=abcdefgh1&page=2",
+      "https://x.test/?token=[masked]&page=2",
+    ],
+  ])("masks the value in %s", (text, masked) => {
+    expect(maskSecrets(text)).toBe(masked);
+  });
+
+  it.each([
+    "password=short",
+    "token: 1234567",
+    "tokens: 12345678",
+    "the token is fine",
+    "secret santa party",
+    '{"TOKEN":"{{env.MY_TOKEN}}"}',
+  ])("leaves %s alone", text => {
+    expect(maskSecrets(text)).toBe(text);
   });
 });
 

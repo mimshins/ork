@@ -18,6 +18,7 @@ import {
   labelHeight,
   labelLines,
   MARGIN,
+  NODE_HEIGHT,
   type PlacedNode,
   type Point,
 } from "../../src/graph/types.ts";
@@ -187,6 +188,21 @@ const selfLoopLabel = (
 };
 
 describe("the layout", () => {
+  it("gives every card the one height, room for its label line", () => {
+    const layout = layoutGraph({
+      nodes: [
+        { id: "a", type: "agent.worker" },
+        { id: "b", type: "agent.worker" },
+      ],
+      edges: [{ from: "a", to: "b" }],
+    });
+    expect(layout.nodes.map(node => node.height)).toEqual([
+      NODE_HEIGHT,
+      NODE_HEIGHT,
+    ]);
+    expect(NODE_HEIGHT).toBe(60);
+  });
+
   it("leaves loops out of the ranking, and draws them going back", () => {
     const layout = layoutGraph({
       nodes: [

@@ -12,6 +12,7 @@ import { actingTools } from "./mcp-act.ts";
 import { answer, type McpAnswer, refused } from "./mcp-answers.ts";
 import { type McpTool, tool } from "./mcp-tool.ts";
 import { mcpTools } from "./mcp-tools.ts";
+import { createSignInCodes } from "./sign-in-codes.ts";
 import { createUpdates } from "./updates.ts";
 import { workflowFile } from "./write-routes.ts";
 
@@ -51,6 +52,8 @@ export const openMcp = (options: {
     ...(options.script === undefined ? {} : { script: options.script }),
     // No check and no upgrade: those are `ork ui`'s.
     updates: createUpdates({ version: options.version }),
+    // `ork mcp` serves no sign-in; the store only fills the context.
+    codes: createSignInCodes(),
   };
   return {
     tools: [

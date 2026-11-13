@@ -94,12 +94,13 @@ Its CLI twin is `ork tree <run>`.
   come to an end (and, once it ends, what it skipped and which failures an edge
   handled: `5 / 7 · 2 skipped · 1 failure handled`), how long it has taken, and
   how it stands, as a pill. Its controls are at the end.
-- **Each card** shows its type, id, cost and status (a node on a driver with no
-  prices shows its counted tokens where the cost would be, and a partial total
-  reads `≥ $1.20`, [tokens](../usage/tokens.md#partial-totals)), small enough
-  for a long run to fit. The rest is in its accessible name, the table and the
-  node's strip. The drawing changes only when the run's nodes do, so a busy run
-  does not move it, and a view the user has moved stays where it is.
+- **Each card** shows its type, id, cost, its task label (`description`) when it
+  has one, and status (a node on a driver with no prices shows its counted
+  tokens where the cost would be, and a partial total reads `≥ $1.20`,
+  [tokens](../usage/tokens.md#partial-totals)), small enough for a long run to
+  fit. The rest is in its accessible name, the table and the node's strip. The
+  drawing changes only when the run's nodes do, so a busy run does not move it,
+  and a view the user has moved stays where it is.
 - **The node table** is the graph's twin: an ARIA tree of the same nodes, whose
   rows line up in columns: node, type, status, now, time and cost. It is one tab
   stop. Up and down go through its rows, right opens a node or goes to its first
@@ -109,10 +110,11 @@ Its CLI twin is `ork tree <run>`.
   type and time columns. The head's first cell folds the whole table away to a
   `› Nodes (n)` line, so the graph gets its room (a button with
   `aria-expanded`); this browser remembers it for every run. A node started by a
-  task that named it (`description`, at most 80 characters) shows that after its
-  id, small and muted, clipped with an ellipsis before the id is; the strip
-  shows it under the id in full, the Logs line for `node.started` ends with
-  `· <description>` in muted text, and the row's accessible name is
+  task that named it (`description`, at most 80 characters, masked of secrets)
+  shows that after its id, small and muted, on one line clipped with an ellipsis
+  (the id keeps up to 60% of the cell), with the whole label in a hover tooltip;
+  the strip shows it under the id in full, the Logs line for `node.started` ends
+  with `· <description>` in muted text, and the row's accessible name is
   `id, description, status, …`. The id always shows; a node without one reads as
   before.
 - **Now** says what a node is doing or last did, in a line: its last tool and

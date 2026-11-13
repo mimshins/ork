@@ -12,6 +12,7 @@ import path from "node:path";
 import type { SessionSpec } from "@krapht/ork-core";
 
 import type { OrkEndpoint } from "../adapter.ts";
+import { ORK_TOOLS } from "../tools/registry.ts";
 import { ORK_SERVER } from "../tools/tool.ts";
 
 export type Rule = {
@@ -130,7 +131,12 @@ export const permissionRules = (spec: SessionSpec): Rule[] => {
   return [
     { action: "*", resource: "*", effect: "deny" },
     ...allows,
-    { action: `${ORK_SERVER}_*`, resource: "*", effect: "allow" },
+    // Exact names: `ork_*` would also open a repo server named `ork_<x>`.
+    ...ORK_TOOLS.map((tool): Rule => ({
+      action: mcpAction(ORK_SERVER, tool.name),
+      resource: "*",
+      effect: "allow",
+    })),
     { action: "read", resource: "*.env", effect: "deny" },
     ...(spec.permissionMode === "plan"
       ? (["edit", "shell"] as const).map((action): Rule => ({

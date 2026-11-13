@@ -70,7 +70,13 @@ signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
 - Each record is also a `feedback.recorded` event in the run's stream, so logs
   and the UI show it in context.
 - Secrets are masked when a record is written, with the same patterns the
-  publish redaction uses. The local database never holds a token either.
+  publish redaction uses, and then the run's env-value scrubber, so a configured
+  `env:` secret's value in a record the run files is stored `[masked]`
+  ([masking](../event-store.md#masking)). The local database never holds a token
+  either. A note typed with `ork feedback note`, `ork decide --note` or in the
+  browser is scrubbed with the env values the run's workflow file names now
+  (`scrubberOfRun`; `ork ui` hands it to the server), and by pattern only when
+  that file is gone or no longer parses.
 - Records carry a `feedbackVersion` so the format can evolve. An imported line
   with a higher one was made by a newer Ork, and is left out with that reason
   and `ork upgrade` as the fix. There are no migrations yet: the first arrives

@@ -8,10 +8,13 @@
  *   it.
  */
 
-import { type CpuTime, type ExecuteContext, runOnce } from "@krapht/ork-core";
+import {
+  type CpuTime,
+  type Environ,
+  type ExecuteContext,
+  runOnce,
+} from "@krapht/ork-core";
 import type { Priority, ToolNode } from "@krapht/ork-schema";
-
-import type { Environ } from "./environ.ts";
 
 /** What runs a `script:` with no `interpreter:`: it stops at the first failure. */
 export const DEFAULT_INTERPRETER = "sh -eu";

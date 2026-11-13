@@ -17,5 +17,4 @@ export * from "./run-marker.ts";
 export * from "./tool-env.ts";
 export { clearOutputFiles } from "./tool-output.ts";
 export { clearStateFiles } from "./tool-state.ts";
-export * from "./tool-scrub.ts";
 export * from "./tools.ts";

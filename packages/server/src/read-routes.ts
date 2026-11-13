@@ -36,11 +36,13 @@ import { runGraph } from "./graph.ts";
 import { listFieldsRoutes } from "./list-fields-routes.ts";
 import { filterOf, projectRootOf } from "./list-query.ts";
 import { fail, type Handlers, ok } from "./router.ts";
+import { CODE_LIFETIME_SECONDS } from "./sign-in-codes.ts";
 import { projectWorkflows } from "./workflows.ts";
 
 type ReadRoutes = Pick<
   Handlers,
   | "health"
+  | "signIn"
   | "projects"
   | "workflows"
   | "runs"
@@ -82,6 +84,10 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
       pid: context.pid,
       startedAt: context.startedAt,
     }),
+
+  // The guards let only the bearer token reach this (dispatch.ts).
+  signIn: () =>
+    ok({ code: context.codes.mint(), expiresIn: CODE_LIFETIME_SECONDS }),
 
   projects: () => ok(context.store.projects()),
 

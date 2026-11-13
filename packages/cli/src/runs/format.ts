@@ -10,6 +10,7 @@ import {
   type LockWait,
   lockWaitLine,
   lockWaitsOf,
+  maskSecrets,
   type NodeState,
   type RunEvent,
   type RunRecord,
@@ -21,6 +22,7 @@ import {
 import { cost, costOf, shortCount, style } from "../output.ts";
 import { nodeVerdict } from "../run/verdict.ts";
 import { statusChip } from "../term/chips.ts";
+import { widthOf } from "../term/layout.ts";
 import { type Term, termOf } from "../term/mode.ts";
 import { type Cell, type Column, header, table } from "../term/table.ts";
 
@@ -196,7 +198,11 @@ export const formatTree = (
   crashed = false,
 ): string[] => {
   const lines: { label: string; node: TreeNode }[] = [];
-  const walk = (node: TreeNode, lead: string, branch: string) => {
+  const walk = (raw: TreeNode, lead: string, branch: string) => {
+    const node =
+      raw.description === undefined
+        ? raw
+        : { ...raw, description: maskSecrets(raw.description) };
     // The description is part of the label column, so its width counts.
     const named = node.description === undefined ? "" : `  ${node.description}`;
     lines.push({ label: `${lead}${branch}${node.id}${named}`, node });
@@ -206,7 +212,7 @@ export const formatTree = (
     });
   };
   for (const root of roots) walk(root, "", "");
-  const label = Math.max(...lines.map(l => l.label.length));
+  const label = Math.max(...lines.map(l => widthOf(l.label)));
   const type = Math.max(...lines.map(l => l.node.type.length));
   return lines.map(({ label: text, node }) => {
     const usage = worth(node);
@@ -232,7 +238,7 @@ export const formatTree = (
       node.description === undefined
         ? text
         : `${text.slice(0, text.length - node.description.length)}${dim(node.description)}`;
-    return `${shown}${" ".repeat(label - text.length)}  ${style("dim", node.type.padEnd(type))}  ${state}${spent}${usage}`;
+    return `${shown}${" ".repeat(label - widthOf(text))}  ${style("dim", node.type.padEnd(type))}  ${state}${spent}${usage}`;
   });
 };
 

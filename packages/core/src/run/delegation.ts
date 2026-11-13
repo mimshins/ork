@@ -15,6 +15,7 @@ import type {
   Ownership,
   SpawnTask,
 } from "../runtime/types.ts";
+import { maskSecrets } from "../store/mask.ts";
 import { endFor, failedWith, stoppedEnd } from "./ended.ts";
 import { forEachOf } from "./fan-out.ts";
 import type { Activation } from "./handle.ts";
@@ -111,10 +112,12 @@ const jobOf = (
   const job: Job = { id, brief: task.brief };
   if (template !== undefined) job.template = template;
   // Whitespace and control characters (newline, ANSI escape) fold to one space so a label stays on one line.
-  const description = task.description
-    ?.replaceAll(/[\s\p{Cc}]+/gu, " ")
-    .trim()
-    .slice(0, DESCRIPTION_MAX);
+  const folded = task.description?.replaceAll(/[\s\p{Cc}]+/gu, " ").trim();
+  // Mask before the clip, so a half-clipped token cannot slip past the pattern; clip by code point, so no lone surrogate.
+  const description =
+    folded === undefined
+      ? undefined
+      : Array.from(maskSecrets(folded)).slice(0, DESCRIPTION_MAX).join("");
   if (description !== undefined && description !== "") {
     job.description = description;
   }
@@ -143,9 +146,22 @@ export const createOwnership = (hooks: DelegationHooks): Ownership => {
   const maxWorkers =
     leaderNode?.type === "agent.leader" ? (leaderNode.maxWorkers ?? 0) : 0;
   const spawned: string[] = [];
+  // Children a `delegate` call accepted; `isRunning` only turns true once a child starts, after an await.
+  const reserved = new Set<string>();
+
+  /** Runs the accepted jobs, then frees the children it reserved. */
+  const runJobs = async (jobs: (Job | ChildReport)[]): Promise<Delegation> => {
+    try {
+      return await runAccepted(jobs);
+    } finally {
+      for (const job of jobs) if ("brief" in job) reserved.delete(job.id);
+    }
+  };
 
   /** Runs the accepted jobs in parallel; the slot goes to them meanwhile. */
-  const runJobs = async (jobs: (Job | ChildReport)[]): Promise<Delegation> => {
+  const runAccepted = async (
+    jobs: (Job | ChildReport)[],
+  ): Promise<Delegation> => {
     const accepted = jobs.filter((j): j is Job => "brief" in j);
     const notes: string[] = [];
     if (accepted.length > 0) {
@@ -182,7 +198,6 @@ export const createOwnership = (hooks: DelegationHooks): Ownership => {
   };
 
   const delegate = (tasks: DelegateTask[]): Promise<Delegation> => {
-    const seen = new Set<string>();
     const jobs = tasks.map((task): Job | ChildReport => {
       if (!children.some(c => c.id === task.child)) {
         const names = children.map(c => c.id).join(", ");
@@ -191,7 +206,8 @@ export const createOwnership = (hooks: DelegationHooks): Ownership => {
           `not one of your children (${names === "" ? "you have none" : names})`,
         );
       }
-      if (seen.has(task.child) || hooks.isRunning(task.child)) {
+      // Reserved covers a repeat in this call and a concurrent call.
+      if (reserved.has(task.child) || hooks.isRunning(task.child)) {
         return rejected(
           task.child,
           templates.includes(task.child) && maxWorkers > 0
@@ -199,7 +215,7 @@ export const createOwnership = (hooks: DelegationHooks): Ownership => {
             : "already running",
         );
       }
-      seen.add(task.child);
+      reserved.add(task.child);
       return jobOf(task.child, task);
     });
     return runJobs(jobs);

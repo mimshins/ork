@@ -15,10 +15,10 @@ import {
   storePath,
 } from "@krapht/ork-core";
 
+import { type Access, createAccess } from "./access.ts";
 import { hasUi } from "./assets.ts";
 import type { ServerContext } from "./context.ts";
 import { createDispatch } from "./dispatch.ts";
-import { newToken } from "./guards.ts";
 import { sendError } from "./http.ts";
 import { removeUiFile, uiFilePath, writeUiFile } from "./ui-file.ts";
 import { createUpdates, type UpdateOptions } from "./updates.ts";
@@ -55,12 +55,25 @@ export type ServerOptions = {
    */
   token?: string;
   /**
+   * The secret the browser's cookie holds (default: a new one), apart from the
+   * token so the token never reaches a browser. The supervisor hands the same
+   * one to the server it restarts, so the open tab stays signed in.
+   */
+  sessionSecret?: string;
+  /**
+   * The sign-in code store (default: a new one; tests pass one with a fake
+   * clock).
+   */
+  codes?: Access["codes"];
+  /**
    * The new-version check and the upgrade; without it the server reports the
    * check off and offers no upgrade.
    */
   update?: UpdateOptions;
   /** Restarts `ork ui` onto the installed `ork`; only `ork ui` knows how. */
   restart?: () => void;
+  /** The env-value scrubber for a note on a run (default: none). */
+  noteScrub?: ServerContext["noteScrub"];
 };
 
 export type RunningServer = {
@@ -113,7 +126,15 @@ export const startServer = async (
     ...(options.home === undefined ? {} : { home: options.home }),
     ...(options.update === undefined ? {} : { options: options.update }),
   });
+  const { token, session, codes } = createAccess({
+    ...(options.token === undefined ? {} : { token: options.token }),
+    ...(options.sessionSecret === undefined
+      ? {}
+      : { session: options.sessionSecret }),
+    ...(options.codes === undefined ? {} : { codes: options.codes }),
+  });
   const context: ServerContext = {
+    codes,
     store,
     version: options.version,
     pid: process.pid,
@@ -124,8 +145,10 @@ export const startServer = async (
     ...(options.gh === undefined ? {} : { gh: options.gh }),
     updates,
     ...(options.restart === undefined ? {} : { restart: options.restart }),
+    ...(options.noteScrub === undefined
+      ? {}
+      : { noteScrub: options.noteScrub }),
   };
-  const token = options.token ?? newToken();
   const shutdown = new AbortController();
   const log =
     options.log ??
@@ -137,6 +160,7 @@ export const startServer = async (
   const handle = createDispatch(context, {
     port: () => port,
     token,
+    session,
     shutdown: shutdown.signal,
   });
 

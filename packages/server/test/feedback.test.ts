@@ -63,4 +63,19 @@ describe("noting a run's node", () => {
     expect((await note(server, { text: "x" }, "nope")).status).toBe(404);
     expect(server.store.feedbackItems()).toEqual([]);
   });
+
+  it("scrubs the note with the run's env scrubber `ork ui` hands it", async () => {
+    const seen: string[] = [];
+    fixture = await startTestServer({
+      noteScrub: run => {
+        seen.push(run.id);
+        return text => text.replaceAll("hunter2-value", "[masked]");
+      },
+    });
+    liveRun(fixture, "run12345");
+    await note(fixture, { text: "It printed hunter2-value" });
+    const [item] = fixture.store.feedbackItems();
+    expect(seen).toEqual(["run12345"]);
+    expect(item?.title).toBe("It printed [masked]");
+  });
 });

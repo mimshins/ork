@@ -10,20 +10,24 @@
 import {
   answerDecision,
   checkNote,
-  decisionListTable,
   type EventStore,
   type Noted,
   openStore,
-  recordNote,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
 import { createTerminalHuman } from "../human.ts";
-import { filterArgs, refuseUnknownFlags } from "../list/flags.ts";
+import { refuseUnknownFlags } from "../list/flags.ts";
 import { style, write, writeErr } from "../output.ts";
 import { askStored } from "../runs/ask-stored.ts";
+import { noteOn } from "../runs/feedback.ts";
 import { canKey } from "../term/mode.ts";
-import { asksForList, printDecisions, selectDecisions } from "./decide-list.ts";
+import {
+  asksForList,
+  listArgs,
+  printDecisions,
+  selectDecisions,
+} from "./decide-list.ts";
 import { decideRefusal } from "./in-a-run.ts";
 
 const failed = (message: string): void => {
@@ -47,16 +51,11 @@ export const noteDecision = (
   if (decision === undefined || run === undefined) {
     return { ok: false, error: `No decision ${id} to note.` };
   }
-  return recordNote(
-    store,
-    run,
-    {
-      text: note ?? `Rated ${rating ?? ""} at ${decision.question}`,
-      node: decision.node,
-      rating,
-    },
-    "--",
-  );
+  return noteOn(store, run, {
+    text: note ?? `Rated ${rating ?? ""} at ${decision.question}`,
+    node: decision.node,
+    rating,
+  });
 };
 
 /** Why a note given with an answer can't be recorded, before answering. */
@@ -88,15 +87,7 @@ export const decide = defineCommand({
       description: "Only this run's decisions (an id or a prefix)",
       required: false,
     },
-    ...filterArgs(decisionListTable, {
-      extra: {
-        list: {
-          type: "boolean",
-          description: "List them without answering",
-          default: false,
-        },
-      },
-    }),
+    ...listArgs,
     document: {
       type: "boolean",
       description: "Print the document of the decision --id names",

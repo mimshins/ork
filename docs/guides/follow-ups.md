@@ -176,10 +176,10 @@ each one to a **file** in the repository or a **GitHub issue**.
 > store creates in a public repository.
 
 The text of every follow-up, from a session or added by hand, is scrubbed first
-with the same redactor feedback uses (secrets, paths, emails and hosts), so an
-address or a host in a draft or a command may be taken out; check a draft before
-you send it. Ork stores no credential: `gh` is your own login
-([accounts](./accounts.md)).
+with the same redactor feedback uses (secrets, paths, emails and hosts; a secret
+in your `env:` too), so an address or a host in a draft or a command may be
+taken out; check a draft before you send it. Ork stores no credential: `gh` is
+your own login ([accounts](./accounts.md)).
 
 ## In `build`
 

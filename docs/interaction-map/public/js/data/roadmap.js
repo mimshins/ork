@@ -1232,6 +1232,21 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "ui-sign-in-code",
+        title: "`ork ui` signs in with a one-time code",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). RFC-019, now Implemented. `ork ui` gets a single-use code (60 s) from `POST /api/sign-in` with the token as a bearer and opens `/?code=…`; the cookie holds a separate session secret that the supervisor makes and sends over IPC, so a restart keeps the tab signed in. The API token is no longer on the opener's argv or in the browser, and the exchange redirect collapses leading slashes. Also: `maskSecrets` knows npm, `sk-proj-`, Google, Stripe live and `password=`/`token:` forms, one provider list in core is shared with the audit, and feedback, follow-ups and a person's notes also mask the run's env values (ADR-091). With it, agent-facing hardening: a tool argument fed by `nodes.*.output` that starts with `-` fails the node unless `--` comes before it, `delegate` reserves a child before any await so two calls start it once, and OpenCode allows Ork's tools by exact name, not `ork_*`. Task labels are masked before an 80-code-point clip, masked again where the CLI shows them, and shown on the Monitor's table (ellipsis and tooltip) and on a graph card's third line. Left: one session secret for every browser (G32), the `permission` tool still listed because the real `claude` refuses to start without it (G34), no `-` guard for `inputs.*` (G35), labels counted by code point (G36), a hover-only table tooltip (G37).",
+        docs: [
+          "decisions/ADR-090-ork-ui-signs-in-with-a-code.md",
+          "decisions/ADR-091-shared-secret-patterns-and-scrubber-in-core.md",
+          "specs/server/streams-contract-and-security.md",
+          "rfcs/archived/RFC-019-ui-sign-in-code.md",
+          "specs/workflow-format/node-types.md",
+          "specs/scheduler.md#delegation",
+        ],
+      },
+      {
         id: "security-audit",
         title: "A security audit workflow",
         status: "active",

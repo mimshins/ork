@@ -37,6 +37,14 @@ _Part of [Workflow file format](../workflow-format.md)._
     default `sh -eu`; the text is written to the run's private folder for that
     go and passed as the last argument, so `allow:` checks the interpreter
     ([RFC-006](../../rfcs/archived/RFC-006-steps-around-a-session.md)).
+  - `command:` runs with no shell, each rendered token one argument. A token
+    that starts with a template reading `nodes.*.output` and renders to a
+    leading `-` fails the node, since the program would read it as an option:
+    "argument from nodes.a.output starts with `-`; put `--` before it in the
+    command". The check is skipped once an earlier token is exactly `--`; a
+    literal `-x` and `--flag={{…}}` are not checked, nor are `inputs.*`
+    templates ([gaps](../gaps.md))
+    ([tool-dash.ts](../../packages/nodes/src/tool-dash.ts)).
   - `env:` sets the program's variables. Values are templates, and only they may
     read the user's own variables, as `{{env.NAME}}`. Keys starting `ORK_` are
     refused; those are [Ork's own](../scheduler.md#built-in-node-types).

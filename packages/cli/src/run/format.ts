@@ -4,7 +4,12 @@
  *   `format-tool.ts`'s and the run summary `format-result.ts`'s.
  */
 
-import type { AnsweredBy, RunEvent, RuntimeEvent } from "@krapht/ork-core";
+import {
+  type AnsweredBy,
+  maskSecrets,
+  type RunEvent,
+  type RuntimeEvent,
+} from "@krapht/ork-core";
 
 import { chip, CHIP_LABELS, nodeChip } from "../term/chips.ts";
 import { widthOf } from "../term/layout.ts";
@@ -132,7 +137,9 @@ export const formatRunEvent = (
     const round = event.round > 1 ? ` (round ${String(event.round)})` : "";
     const owner = event.owner === undefined ? "" : `, for ${event.owner}`;
     const named =
-      event.description === undefined ? "" : ` · ${event.description}`;
+      event.description === undefined
+        ? ""
+        : ` · ${maskSecrets(event.description)}`;
     return [
       `${tag(event.id)} ${style("dim", `${event.nodeType}${round}${owner}${named}`)}`,
     ];

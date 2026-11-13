@@ -14,8 +14,10 @@ import {
   type CompiledGraph,
   type FeedbackReport,
   fingerprint,
+  humanNoteEvent,
   openStore,
   type RunEvent,
+  runScrubber,
   targetOf,
 } from "../src/index.ts";
 
@@ -30,6 +32,9 @@ const compile = (lines: string[]): CompiledGraph => {
 };
 
 const GRAPH = compile(["nodes:", "  fix: { type: agent.worker, prompt: f }"]);
+
+/** A run's env-value scrubber with one secret set. */
+const SCRUB = runScrubber(["DB_PASSWORD"], { DB_PASSWORD: "hunter2-and-more" });
 
 /** The feedback records among `events`. */
 const reports = (events: readonly RunEvent[]): FeedbackReport[] =>
@@ -105,6 +110,39 @@ describe("the agents' port", () => {
       feedback.port("fix").report({ kind: "idea", title: "five" }),
     ).toMatchObject({ ok: true });
     expect(reports(events)).toHaveLength(4);
+  });
+
+  it("masks a run's configured env secret in an agent's report", () => {
+    const events: RunEvent[] = [];
+    const port = createFeedback({
+      graph: GRAPH,
+      onEvent: event => {
+        events.push(event);
+      },
+      scrub: SCRUB,
+    }).port("fix");
+    port.report({
+      kind: "bug",
+      title: "Login fails with hunter2-and-more",
+      body: "DB_PASSWORD=hunter2-and-more was refused",
+      evidence: ["log: hunter2-and-more"],
+    });
+    expect(reports(events)[0]).toMatchObject({
+      title: "Login fails with [masked]",
+      body: "DB_PASSWORD=[masked] was refused",
+      evidence: ["log: [masked]"],
+    });
+  });
+
+  it("masks a configured env secret in a person's note", () => {
+    const event = humanNoteEvent(
+      { text: "It printed hunter2-and-more", workflow: "w" },
+      SCRUB,
+    );
+    expect(reports([event])[0]).toMatchObject({
+      title: "It printed [masked]",
+      body: "It printed [masked]",
+    });
   });
 });
 

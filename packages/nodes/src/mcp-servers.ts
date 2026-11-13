@@ -8,14 +8,14 @@
  */
 
 import {
+  type Environ,
   MCP_FILE,
   mcpNotText,
+  readEnv,
   serversIn,
   type SessionSpec,
 } from "@krapht/ork-core";
 import type { Workflow } from "@krapht/ork-schema";
-
-import { type Environ, readEnv } from "./environ.ts";
 
 const VARIABLE = /\$\{([A-Za-z_]\w*)(?::-([^}]*))?\}/gu;
 

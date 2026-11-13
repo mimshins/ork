@@ -140,3 +140,15 @@ describe("ork --help, grouped", () => {
     );
   });
 });
+
+describe("ork tree --help and ork logs --help", () => {
+  it.each(["tree", "logs"])("%s explains task labels", async name => {
+    const text = (await help(await subcommandNamed(name), main)).replaceAll(
+      /\s+/gu,
+      " ",
+    );
+    expect(text).toContain("task label");
+    expect(text).toContain("clipped to 80 characters");
+    expect(text).toContain("secrets masked");
+  });
+});

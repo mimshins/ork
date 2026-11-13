@@ -6,7 +6,8 @@
  *   `plain()` first.
  */
 
-import { TOOL_INPUT_KEYS } from "@krapht/ork-core";
+import { maskReplacer, TOOL_INPUT_KEYS } from "@krapht/ork-core";
+import { z } from "zod";
 
 import { previewInput } from "../human.ts";
 import { plain } from "../output.ts";
@@ -32,6 +33,15 @@ export const wrapped = (text: string, room: number): string[] => {
     .map(line => `  ${line}`);
 };
 
+/** Ork's `delegate` tool, as each driver names it (`mcp__ork__…`, `ork_…`). */
+const DELEGATE = /(?:^|_)delegate$/u;
+
+/** The input with every string in it masked. */
+const maskedInput = (input: Record<string, unknown>): Record<string, unknown> =>
+  z
+    .record(z.string(), z.unknown())
+    .parse(JSON.parse(JSON.stringify(input, maskReplacer)));
+
 /** A tool's input as the call says it: the key that names its target, whole. */
 const toolText = (input: Record<string, unknown>, root?: string): string => {
   const key = TOOL_INPUT_KEYS.find(k => typeof input[k] === "string");
@@ -48,12 +58,14 @@ const toolText = (input: Record<string, unknown>, root?: string): string => {
  */
 export const toolLines = (
   name: string,
-  input: Record<string, unknown>,
+  raw: Record<string, unknown>,
   view: View,
   room: number,
   verbose: boolean,
   node: string,
 ): string[] => {
+  // A delegate call's task labels are masked, as its children's are; before any cut.
+  const input = DELEGATE.test(name) ? maskedInput(raw) : raw;
   const { term } = view;
   const style = styler(term);
   if (!term.rich && !verbose) {

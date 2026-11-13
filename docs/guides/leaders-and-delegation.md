@@ -53,11 +53,11 @@ runs. A child with [`forEach`](./writing-workflows/running-per-item.md) is left
 out of both lists, since a wrong name fails the whole call: it runs from its
 edges only, and `delegate` says so. To have the leader decide how many to run,
 let it use `spawn_worker` on a plain worker, up to `maxWorkers`. A task is
-refused, with the reason in its report, when its child is already running or no
-workers are left.
+refused, with the reason in its report, when its child is already running (two
+`delegate` calls at once for one child start it once) or no workers are left.
 
-A task may carry a `description`, a few words that label the child: the first 80
-characters show beside its id in `ork tree`, `ork logs` and the browser view.
+A task's `description` labels the child in `ork tree`, `ork logs` and the
+browser view: whitespace folds, secrets are masked, clipped to 80 characters.
 
 ## What comes back
 

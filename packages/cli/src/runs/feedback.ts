@@ -10,9 +10,12 @@ import {
   type FeedbackRecord,
   type FeedbackSeverity,
   findRun,
+  type NoteAsk,
   type Noted,
   recordNote,
+  type RunRecord,
 } from "@krapht/ork-core";
+import { scrubberOfRun } from "@krapht/ork-nodes";
 
 import { style } from "../output.ts";
 import { chip } from "../term/chips.ts";
@@ -150,5 +153,16 @@ export const noteRun = (
 ): Noted => {
   const found = findRun(store, args.run, cwd);
   if (!found.ok) return found;
-  return recordNote(store, found.run, args, "--");
+  return noteOn(store, found.run, args);
 };
+
+/**
+ * Records a person's note on `run`, masked with the env values its workflow
+ * file names (by pattern only when the file is gone or no longer parses).
+ */
+export const noteOn = (
+  store: EventStore,
+  run: RunRecord,
+  ask: NoteAsk,
+): Noted =>
+  recordNote(store, run, ask, "--", scrubberOfRun(run, store.projects()));

@@ -138,6 +138,9 @@ export type WorkflowView = {
 
 export type Health = { version: string; pid: number; startedAt: string };
 
+/** A single-use sign-in code and the seconds it stays good. */
+export type SignIn = { code: string; expiresIn: number };
+
 /** What a start, resume, stop, pause, continue or message did. */
 export type Accepted = { runId: string };
 
@@ -151,6 +154,8 @@ export type Route = {
 /** Every JSON route; the two event streams are in {@link STREAMS}. */
 export const API = {
   health: { method: "GET", path: "/api/health" },
+  /** Bearer token only (RFC-019): mints a single-use code for `/?code=`. */
+  signIn: { method: "POST", path: "/api/sign-in" },
   ...BUILDER_API,
   ...CONTEXT_API,
   ...AFTER_API,
@@ -206,6 +211,7 @@ export type Responses = BuilderResponses &
   ListsResponses &
   UpdateResponses & {
     health: Health;
+    signIn: SignIn;
     triggers: TriggersReport;
     projects: ProjectRecord[];
     workflows: WorkflowView[];
