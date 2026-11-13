@@ -1,5 +1,87 @@
 # @krapht/ork
 
+## 1.0.0-alpha.19
+
+### Minor Changes
+
+- [`09cba0c`](https://github.com/mimshins/ork/commit/09cba0c04de28cc1c8bc0e6f7042769332f71d1d) Thanks [@mimshins](https://github.com/mimshins)! - The list commands now do what the filtering guide says. `--all` is removed from
+  `ork ps`, `usage`, `decide`, `follow-ups list` and `feedback list` (it is
+  refused like any unknown flag): use `--project all` on the first four and
+  `--status all` on `feedback list`; `prune --all`, `worktrees clean --all`,
+  `relay list --all` and `feedback export --all` are unchanged. The nine list
+  commands refuse a flag they don't have (``Unknown flag `--since`.``), and an
+  argument error on any command with no subcommands prints one line instead of the
+  help. `--run` on `feedback list` and `worktrees list` takes the start of a run
+  id and refuses an unknown one, as `decide` does;
+  `follow-ups list --for project:<name>` is checked against the registered
+  projects; `--limit 1e21` says the number must be written in digits;
+  `ork ps --json` rows carry `live`, the status the table shows. `ork mcp`'s
+  `runs`, `usage` and `decisions` refuse an unregistered `project`, and `runs` a
+  bad `limit`, in the CLI's words. In the browser view a refused first filter
+  shows the unfiltered list, the filter bar's command is the last filter that
+  worked, the Usage hint says `--project all`, and the Decisions bar suggests
+  projects.
+
+### Patch Changes
+
+- [`4435027`](https://github.com/mimshins/ork/commit/443502727481d44dcc12f1e983c37b32eabf6c57) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` signs the browser in with a one-time code: it gets a single-use code
+  (good for 60 seconds) from the server and opens `/?code=…`, so the API token is
+  no longer on the browser opener's command line or in the browser's cookie, which
+  now holds a separate session secret. A used, expired or wrong code is refused
+  with one message, and a path that begins with `//` no longer redirects off the
+  server. Upgrade: a tab signed in before, and an old `?token=` link, stop working
+  once; run `ork ui` again.
+
+- [`4435027`](https://github.com/mimshins/ork/commit/443502727481d44dcc12f1e983c37b32eabf6c57) Thanks [@mimshins](https://github.com/mimshins)! - Task labels (a leader's task `description`) are masked of secrets before they
+  are clipped to 80 characters, and clipped by code point so an emoji is never cut
+  in half; `ork tree` lines its columns up by code point. The live run stream, the
+  lead's `delegate` tool-call line, `ork tree` and `ork logs` mask them too, and
+  `ork tree --help` and `ork logs --help` describe them. In `ork ui`, the
+  Monitor's node table shows the whole label on hover, and a graph card shows it
+  on a third line (cards are now 60 px tall).
+
+- [`40f6ed1`](https://github.com/mimshins/ork/commit/40f6ed1af40a1f00c3403e5499e887caa8a9fb25) Thanks [@mimshins](https://github.com/mimshins)! - Tab completion and worktrees fixes. Bash completion strips through the last `=`
+  as well as `:`, so `--input task=` no longer doubles the key; `--input=`,
+  `--node=` and `--driver=` complete their values; `ork completion zsh | head -1`
+  exits quietly. A clean detached worktree already on the current branch counts as
+  merged, so `ork worktrees clean` removes it. The Worktrees panel counts read
+  `2 worktrees · 4 branches without a worktree`, and the not-a-git-repo message
+  names the project root and the right verb.
+
+- [`4435027`](https://github.com/mimshins/ork/commit/443502727481d44dcc12f1e983c37b32eabf6c57) Thanks [@mimshins](https://github.com/mimshins)! - A tool node's argument that starts with a `{{nodes.<id>.output…}}` value which
+  begins with `-` now fails the node ("argument from nodes.a.output starts with
+  `-`; put `--` before it in the command") unless a `--` comes before it, so a
+  node's output can't pass an option to the program. Two `delegate` calls at once
+  for the same child start it once, and the other is told `already running`. On
+  OpenCode, Ork allows its own tools by their exact names, so a project MCP server
+  named `ork_<something>` no longer inherits that allow. Upgrade: a tool node
+  whose output-fed argument can start with `-` needs a `--` before it.
+
+- [`6d98161`](https://github.com/mimshins/ork/commit/6d981619776571a61753a7157a2d92617c6f7cc8) Thanks [@mimshins](https://github.com/mimshins)! - Make runs, follow-ups and the issues flow do what the docs say. A shell
+  `script:` takes a heavy-command slot when one of its commands matches `heavy`. A
+  follow-up a live run has taken is refused (or skipped by `--follow-ups due`),
+  `follow-ups show` and `list` say which run took it, and a `--detach` start that
+  takes none leaves no run folder. A finished run's declared `outputs:` print
+  under its summary in `ork run`, `ork logs` and `ork attach`, and show on the run
+  page of `ork ui`. `ork tree` shows a crashed run's nodes as cut off or not run,
+  a resume counts the nodes it kept, `ork stop` marks an interrupted end, and
+  `ork doctor` removes the empty `queue/` folders it leaves. A missing
+  `schemaVersion`, an unknown workflow file, a decision id given to `ork decide`
+  and a gate with no terminal each say what to do.
+
+- [`4f33111`](https://github.com/mimshins/ork/commit/4f331116ba4cdd67d9dbde32cc05f65be4ec654c) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui`: the filter bars' suggestion lists offer what they should (the Runs
+  panel's workflows, and in Decisions every run it knows of, not only those
+  asking) and no longer open an empty box over the next field. The bars lay their
+  fields out as an even grid, with a panel's own field (Feedback's About) in the
+  grid and its Reload at the end of the count line, and a select's value no longer
+  wraps. The Monitor's nodes table folds away to give the graph its room, and the
+  browser remembers it.
+
+- [`4435027`](https://github.com/mimshins/ork/commit/443502727481d44dcc12f1e983c37b32eabf6c57) Thanks [@mimshins](https://github.com/mimshins)! - Wider secret masking: stored events, feedback and follow-ups now mask npm
+  tokens, `sk-proj-` and Google keys, Stripe live keys, and the value after
+  `password`, `token`, `secret` or `api_key` (8 characters or more), and feedback
+  and follow-ups also mask the values of the run's configured `env:` secrets.
+
 ## 1.0.0-alpha.18
 
 ### Patch Changes
