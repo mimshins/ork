@@ -1,0 +1,419 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
+schemaVersion: 1
+name: audit
+description: "A security audit of this repository: free scanners first (pnpm audit, workflow pinning and permissions, secret patterns), then the phases of the security-audit skill (.ai/skills/security-audit) as nodes: recon builds a coverage ledger, one hunter per unit, a coverage critic, a fresh verifier per candidate, validated findings, and (standard only) a fresh recheck of each confirmed record. Profiles: quick (the default; 8 hunters, at most $29) or standard (20 hunters, at most $72); the cap is kept by counting, since a run cap can't follow an input. Every agent node is read-only and no audited code is run. The report is written to ~/.ork/audits/<project>/<run-id>/, outside the checkout, and the repository is public: never commit, post or publish it. You decide at the end whether to keep it."
+inputs:
+  profile:
+    type: string
+    default: quick
+    description: quick (8 hunters, at most $29, partial coverage) or standard (20 hunters, at most $72). The scan step fails on any other value before a token is spent.
+  scope:
+    type: string
+    default: all
+    description: all, one or more repository paths separated by spaces, or diff:<ref> for the files changed since a git ref.
+layers:
+  project:
+    instructions: inherit
+    skills: ignore
+defaults:
+  model: claude-code.sonnet
+  effort: medium
+  budgetUsd: 2
+limits:
+  budgetUsd: 80
+  timeout: 8h
+nodes:
+  scan:
+    type: tool.shell
+    script: node tools/audit/cli.ts scan
+    allow:
+      - sh
+    timeout: 10m
+    env:
+      PROFILE: "{{inputs.profile}}"
+      SCOPE: "{{inputs.scope}}"
+    output:
+      format: json
+      schema:
+        findings:
+          list: {}
+        notes:
+          list: {}
+        previousDir: string
+        previousText: string
+  recon:
+    type: agent.worker
+    prompt: |-
+      You are the reconnaissance step of a security audit of this repository, profile {{inputs.profile}}, scope {{inputs.scope}}. Read .ai/skills/security-audit/SKILL.md (the sections "Run profiles and scope" and "Core principles") and .ai/skills/security-audit/RECONNAISSANCE.md, then do what its Phase 1 asks, yourself: the four agents' questions (1a product and local operation, 1b principals and controls, 1c entry surfaces and sinks, 1d local execution and deployment visibility) are your checklist. Read only; run nothing from the repository. Nothing here can be executed safely (there is no OS sandbox), so treat every lead that would need execution as a needs_validation candidate for later.
+
+      Return:
+      - `architecture`: the architecture summary RECONNAISSANCE.md describes ("Architecture summary and companion selection"), at most 1,000 words, ending with the companion-selection summary.
+      - `units`: the coverage ledger's units, MOST IMPORTANT FIRST (HUNTING.md's ranking: lowest-trust entry surfaces first, then the boundaries that protect the most valuable resources, then prior-run gaps and changed source). Only the first 8 (quick) or 20 (standard) will be hunted; the rest are recorded as deferred, so put your best units first and keep the list to at most 40. Each unit is one JSON object: surface, boundary, subsystem, attack_class (each a stable source-derived reference as RECONNAISSANCE.md describes, never a slug of a label), starting_paths (repository-relative, non-empty), ordinary_attack_class_block (a "ATTACK-CLASSES.md#<exact class name>" reference), selected_companion_blocks (a list of "FILE.md#section"), excluded_blocks (a list of {block, reason}) and prior_status (new, none or a prior_* value from RECONNAISSANCE.md). Under the quick profile, the subsystem of every unit is exactly `profile/quick/all-in-scope-subsystems`. Honour the scope: a unit outside it is left out.
+
+      Scanner results and the notes of the free scanners (already run; do not repeat them):
+      {{nodes.scan.output.json.notes}}
+
+      The previous audit of this project, from its folder under ~/.ork/audits (null when there is none). Its `ledger` lists each unit's coverage_id and status: `planned` means a hunter was assigned and its outcome was not recorded; `deferred` means it was not hunted, so rank deferred units first. Its `findings` lists fingerprints, verdicts and titles. A prior confirmed or needs_validation finding is priority input, never a reason to skip a unit; read SKILL.md's "Coverage and prior runs" for how to use it.
+      {{nodes.scan.output.json.previousText}}
+    model: claude-code.opus
+    context:
+      - ../context/read-only-bash.md
+    isolation: readonly
+    budgetUsd: 4
+    maxTurns: 60
+    timeout: 45m
+    output:
+      schema:
+        architecture: string
+        units:
+          list: {}
+  ledger:
+    type: tool.shell
+    script: |-
+      export AUDIT_INPUT="{\"units\":$UNITS}"
+      unset UNITS
+      out=$(node tools/audit/cli.ts ledger)
+      dir=$(printf '%s' "$out" | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).outputDir')
+      node .ai/skills/security-audit/validate-coverage-ledger.cjs "$dir/coverage-ledger.json" >&2
+      printf '%s\n' "$out"
+    allow:
+      - sh
+    timeout: 5m
+    env:
+      PROFILE: "{{inputs.profile}}"
+      SCOPE: "{{inputs.scope}}"
+      UNITS: "{{nodes.recon.output.units}}"
+    output:
+      format: json
+      schema:
+        outputDir: string
+        planned: number
+        deferred: number
+        hunt:
+          list: {}
+  hunt:
+    type: agent.worker
+    prompt: |-
+      You are one hunter of a security audit of this repository (profile {{inputs.profile}}). Your goal is to find source-grounded security invariant failures in your assigned unit, and you must return the structured result at the end. Other hunters work the other units at the same time, so stay on yours.
+
+      Read, from .ai/skills/security-audit: HUNTING.md ("Defensive vulnerability-finding method", "Core validation rules" (the candidate gate) and "Local validation boundaries"); ATTACK-CLASSES.md, the block named by the unit's ordinary_attack_class_block; and, for each of the unit's selected_companion_blocks, that companion file's `Core discipline`, the chosen class subsection, `Universal moves` and `Validation rules`. Read the code at depth, as HUNTING.md says.
+
+      Ork has no OS sandbox, so run nothing from this repository: read only. A lead that would need the code to run, or a deployment fact the source can't show, is a needs_validation candidate with the exact blocker and the skill's safe local and owner-observed plan (never a request to probe a live system). Candidates need a complete repository-relative source trace and evidence; a missing best practice with no affected principal is hardening, not a candidate. Never assign a severity here.
+
+      The architecture, from reconnaissance:
+      {{nodes.recon.output.architecture}}
+
+      Your unit (its coverage_id, boundary, starting_paths and block map):
+      {{item}}
+
+      Return `candidates`: each a JSON object with fingerprint (matching ^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$, the same for the same root cause, no line number), title, description, claimed_root_cause, trace (ordered; entrypoint first, sink last, propagation between; each entry has kind, file, line, scope, description), evidence (each file, line, description), proposed_verdict (confirmed or needs_validation), and for needs_validation also blockers (a list of strings) and validation_plan ({local, deployment}, at least one non-empty). An empty list when nothing survives the gate. Also `hardening` (concrete non-finding notes, as strings) and `uncovered` (boundaries you met outside your unit: surface, boundary, subsystem, attack_class, starting_paths, reason).
+    model: claude-code.opus
+    context:
+      - ../context/read-only-bash.md
+    isolation: readonly
+    budgetUsd: 2
+    maxTurns: 45
+    timeout: 40m
+    output:
+      schema:
+        candidates:
+          list: {}
+        hardening:
+          list: {}
+        uncovered:
+          list: {}
+    forEach:
+      from: "{{nodes.ledger.output.json.hunt}}"
+      maxItems: 20
+      maxParallel: 3
+  critic:
+    type: agent.worker
+    prompt: |-
+      You are the coverage critic of a security audit of this repository (profile {{inputs.profile}}). Read .ai/skills/security-audit/HUNTING.md, section "Coverage-critic waves", and do what it asks of the post-wave critic, in read-only mode: you read source but write and run nothing. You propose coverage, never findings. This workflow runs no second hunter wave: every gap you accept is recorded, as deferred, for a later audit.
+
+      The architecture:
+      {{nodes.recon.output.architecture}}
+
+      The units that were hunted (the rest, {{nodes.ledger.output.json.deferred}} of them, were deferred by the profile):
+      {{nodes.ledger.output.json.hunt}}
+
+      What the hunters returned (candidates, hardening notes, uncovered boundaries; an empty object is a hunter that failed):
+      {{nodes.hunt.output.results}}
+
+      Return `gaps`: one {coverage_id, reason} per hunted unit above that did not close (a hunter that failed or returned nothing for it, or whose closing is unjustified), the coverage_id exactly as listed, with a source-backed reason. Return `missing_units`: units the ledger lacks (unmapped entry points, unchecked parallel paths, selected companion classes with no unit), each as in HUNTING.md's critic contract with a source-backed reason. And `stop`: true only when you accept no gaps and no missing units.
+    context:
+      - ../context/read-only-bash.md
+    isolation: readonly
+    budgetUsd: 1.5
+    maxTurns: 25
+    timeout: 20m
+    output:
+      schema:
+        gaps:
+          list:
+            coverage_id: string
+            reason: string
+        missing_units:
+          list: {}
+        stop: boolean
+  consolidate:
+    type: tool.shell
+    script: |-
+      export AUDIT_INPUT="{\"hunts\":$HUNTS,\"gaps\":${GAPS:-[]}}"
+      unset HUNTS GAPS
+      node tools/audit/cli.ts consolidate
+    allow:
+      - sh
+    timeout: 5m
+    env:
+      PROFILE: "{{inputs.profile}}"
+      SCOPE: "{{inputs.scope}}"
+      HUNTS: "{{nodes.hunt.output.results}}"
+      GAPS: "{{nodes.critic.output.gaps}}"
+    output:
+      format: json
+      schema:
+        outputDir: string
+        total: number
+        duplicates: number
+        unique:
+          list: {}
+        unreviewed:
+          list: {}
+        hardening:
+          list: {}
+  verify:
+    type: agent.worker
+    prompt: |-
+      You did not write this candidate. Try to refute it from the repository's source. You are one fresh verifier of a security audit (profile {{inputs.profile}}); read .ai/skills/security-audit/VALIDATION-AND-REPORTING.md, "Phase 3" (the candidate-verifier prompt and the paragraphs after it) and "Phase 4" (the record contracts), and the `confirmed`, `needs_validation` and `rejected` branches of .ai/skills/security-audit/report-schema.json. Read only: Ork has no OS sandbox, so run nothing from this repository and contact nothing. Re-read every cited trace and evidence location in the current source yourself.
+
+      Evidence bar, as the skill sets it: confirm only when the source alone establishes the whole path and a concrete result across a trust boundary, with no unresolved runtime or deployment fact; then say in observed_result that it was established by reading the code, not by running it. When a decisive fact is outside source (a deployment setting, or a behaviour only running the code would show), keep needs_validation with the exact blocker and the skill's safe local and owner-observed plan. Reject when source, a visible control, missing impact or an impossible prerequisite refutes it. Keep the fingerprint for the same root cause. Only a confirmed record has a severity, and severity never exceeds the demonstrated impact. A corrected record replaces the hunter's wording.
+
+      The run's profile is {{inputs.profile}}. Under `quick` you are also the Phase 5 verifier: do VALIDATION-AND-REPORTING.md's Phase 5 checks of your own record (it is the only independent review this record gets).
+
+      The architecture, for interpreting the path:
+      {{nodes.recon.output.architecture}}
+
+      The candidate:
+      {{item}}
+
+      Return `decision` (confirmed, needs_validation or rejected) and `records`: a list with exactly one object, the record that matches that decision's branch of report-schema.json exactly (it uses additionalProperties: false: no extra fields, no hunter wrapper fields such as proposed_verdict), including `verdict`.
+    model: claude-code.opus
+    context:
+      - ../context/read-only-bash.md
+    isolation: readonly
+    budgetUsd: 0.5
+    maxTurns: 25
+    timeout: 20m
+    output:
+      schema:
+        decision:
+          - confirmed
+          - needs_validation
+          - rejected
+        records:
+          list: {}
+    forEach:
+      from: "{{nodes.consolidate.output.json.unique}}"
+      maxItems: 30
+      maxParallel: 3
+  findings:
+    type: tool.shell
+    script: |-
+      export AUDIT_INPUT="{\"results\":${RESULTS:-[]},\"unique\":${UNIQUE:-[]}}"
+      unset RESULTS UNIQUE
+      out=$(node tools/audit/cli.ts findings)
+      dir=$(printf '%s' "$out" | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).outputDir')
+      node .ai/skills/security-audit/validate-findings.cjs "$dir/findings.json" >&2
+      printf '%s\n' "$out"
+    allow:
+      - sh
+    timeout: 5m
+    env:
+      PROFILE: "{{inputs.profile}}"
+      SCOPE: "{{inputs.scope}}"
+      RESULTS: "{{nodes.verify.output.results}}"
+      UNIQUE: "{{nodes.consolidate.output.json.unique}}"
+    output:
+      format: json
+      schema:
+        outputDir: string
+        total: number
+        unverified: number
+        unreviewed: number
+        confirmed:
+          list: {}
+  recheck:
+    type: agent.worker
+    prompt: |-
+      You are one fresh Phase 5 verifier of a security audit. You did not hunt this record or verify it. Read .ai/skills/security-audit/VALIDATION-AND-REPORTING.md, "Phase 5", and check this `confirmed` record against the current source, as its list for `confirmed` says. Read only: Ork has no OS sandbox, so run nothing from this repository. You check the structured record, not any write-up of it.
+
+      The record:
+      {{item}}
+
+      Return `fingerprint` (the record's), `decision` (verified, or replace when the record is wrong or overstates), and `reason` (why, in a sentence; empty when verified). With `replace`, `records` holds exactly one corrected record in the schema's shape; with verified it is an empty list. A replacement is never applied by this run: it only removes the record from the findings and lists it as disputed for the maintainer.
+    context:
+      - ../context/read-only-bash.md
+    isolation: readonly
+    budgetUsd: 0.5
+    maxTurns: 20
+    timeout: 20m
+    output:
+      schema:
+        fingerprint: string
+        decision:
+          - verified
+          - replace
+        reason: string
+        records:
+          list: {}
+    forEach:
+      from: "{{nodes.findings.output.json.confirmed}}"
+      maxItems: 20
+      maxParallel: 3
+  finalize:
+    type: tool.shell
+    script: |-
+      export AUDIT_INPUT="{\"rechecks\":${RECHECKS:-[]}}"
+      unset RECHECKS
+      out=$(node tools/audit/cli.ts finalize)
+      dir=$(printf '%s' "$out" | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).outputDir')
+      node .ai/skills/security-audit/validate-findings.cjs "$dir/findings.json" >&2
+      node .ai/skills/security-audit/validate-coverage-ledger.cjs "$dir/coverage-ledger.json" >&2
+      printf '%s\n' "$out"
+    allow:
+      - sh
+    timeout: 5m
+    env:
+      PROFILE: "{{inputs.profile}}"
+      SCOPE: "{{inputs.scope}}"
+      RECHECKS: "{{nodes.recheck.output.results}}"
+    output:
+      format: json
+      schema:
+        outputDir: string
+        countsText: string
+        unreviewed: number
+        unverified: number
+        confirmed:
+          list: {}
+        needsValidation:
+          list: {}
+        disputed:
+          list: {}
+  report:
+    type: agent.worker
+    prompt: |-
+      You write the prose of a security audit's report. The tables, the findings and their details, the coverage and the run's limits are written by a program from the final records; you write only a short posture summary and two lists of notes, and you never change a verdict, severity, blocker or impact.
+
+      The audit's profile is {{inputs.profile}} and its scope {{inputs.scope}}. Say plainly in the posture that a quick profile or a scoped run is a partial pass, and that one run finds only part of what is there. If anything below is unreviewed, unverified or disputed, say the run is incomplete and why.
+
+      Confirmed (fingerprint, title, severity): {{nodes.finalize.output.json.confirmed}}
+      Needs validation: {{nodes.finalize.output.json.needsValidation}}
+      Disputed after recheck (not findings): {{nodes.finalize.output.json.disputed}}
+      Candidates no verifier looked at: {{nodes.finalize.output.json.unreviewed}}; with no usable verifier record: {{nodes.finalize.output.json.unverified}}
+      The architecture: {{nodes.recon.output.architecture}}
+      The hunters' hardening notes: {{nodes.consolidate.output.json.hardening}}
+      The coverage critic's gaps: {{nodes.critic.output.gaps}}; missing units: {{nodes.critic.output.missing_units}}
+      Free scanner results (already listed by the program; do not repeat them): {{nodes.scan.output.json.findings}}
+
+      Return `posture` (one short paragraph, at most 150 words), `hardening` (the hunters' notes that are concrete and worth keeping, merged and deduplicated, at most 12, as strings) and `positive` (source patterns the architecture or notes show are done well, at most 6, as strings; leave empty rather than invent).
+    context:
+      - ../context/read-only-bash.md
+    isolation: readonly
+    budgetUsd: 1.5
+    maxTurns: 10
+    timeout: 15m
+    output:
+      schema:
+        posture: string
+        hardening:
+          list: {}
+        positive:
+          list: {}
+  write:
+    type: tool.shell
+    script: |-
+      AUDIT_INPUT=$(node -e 'const e = process.env; const list = text => (text ? JSON.parse(text) : []); console.log(JSON.stringify({ posture: e.POSTURE, hardening: list(e.HARDENING), positive: list(e.POSITIVE), scanner: list(e.SCANNER), notes: list(e.NOTES), previous: e.PREVIOUS || null }))')
+      export AUDIT_INPUT
+      unset POSTURE HARDENING POSITIVE SCANNER NOTES PREVIOUS
+      node tools/audit/cli.ts report
+    allow:
+      - sh
+    timeout: 5m
+    env:
+      PROFILE: "{{inputs.profile}}"
+      SCOPE: "{{inputs.scope}}"
+      POSTURE: "{{nodes.report.output.posture}}"
+      HARDENING: "{{nodes.report.output.hardening}}"
+      POSITIVE: "{{nodes.report.output.positive}}"
+      SCANNER: "{{nodes.scan.output.json.findings}}"
+      NOTES: "{{nodes.scan.output.json.notes}}"
+      PREVIOUS: "{{nodes.scan.output.json.previousDir}}"
+    output:
+      format: json
+      schema:
+        outputDir: string
+        files:
+          list: {}
+  review:
+    type: human.gate
+    question: |-
+      The security audit of {{inputs.scope}} (profile {{inputs.profile}}) is written to {{nodes.write.output.json.outputDir}}: read REPORT.md first, then FINDINGS-DETAIL.md and NEEDS-VALIDATION.md. That folder is outside the checkout, and this repository is public, so nothing here is ever committed, posted, attached to an issue or pull request, or published; this gate has no option that does. A real finding goes to a private GitHub security advisory, as the runbook's security section says.
+
+      This run's record under ~/.ork also holds the candidates and findings, so make no benchmark and no feedback item from run {{run.id}}, and never run pnpm benchmark:publish on it.
+
+      done keeps the folder. discard deletes it (the run's record stays).
+    document: |-
+      ## Findings
+
+      {{nodes.finalize.output.json.countsText}}
+
+      ## Confirmed
+
+      {{nodes.finalize.output.json.confirmed}}
+
+      ## Needs validation
+
+      {{nodes.finalize.output.json.needsValidation}}
+
+      ## Disputed after the recheck
+
+      {{nodes.finalize.output.json.disputed}}
+    options:
+      - done
+      - discard
+    recommended: done
+  discard:
+    type: tool.shell
+    script: node tools/audit/cli.ts discard
+    allow:
+      - sh
+    timeout: 1m
+edges:
+  - scan -> recon
+  - recon -> ledger
+  - ledger -> hunt
+  - from: hunt
+    to: critic
+    when: ok || !ok
+  - critic -> consolidate
+  - consolidate -> verify
+  - from: verify
+    to: findings
+    when: ok || !ok
+  - from: findings
+    to: recheck
+    when: ok && inputs.profile == 'standard'
+  - from: findings
+    to: finalize
+    when: ok && inputs.profile == 'quick'
+  - from: recheck
+    to: finalize
+    when: ok || !ok
+  - finalize -> report
+  - report -> write
+  - write -> review
+  - from: review
+    to: discard
+    when: choice == 'discard'

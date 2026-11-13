@@ -10,7 +10,12 @@ import path from "node:path";
 
 /** Source files the check reads; generated and vendored files are skipped. */
 export const SOURCE = /\.(?:[cm]?[jt]sx?|d\.ts)$/u;
-export const SKIPPED = [/(?:^|\/)node_modules\//u, /(?:^|\/)dist\//u];
+export const SKIPPED = [
+  /(?:^|\/)node_modules\//u,
+  /(?:^|\/)dist\//u,
+  // A third-party skill kept byte for byte (see its PROVENANCE.md).
+  /^\.ai\/skills\/security-audit\//u,
+];
 
 /**
  * Whether `text` opens with a `/** … *\/` block containing `@file`, after an

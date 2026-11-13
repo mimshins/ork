@@ -17,6 +17,8 @@ export const SKIPPED = [
   ".git",
   ".ai/plans",
   "docs/interaction-map/public",
+  // A third-party skill kept byte for byte (see its PROVENANCE.md).
+  ".ai/skills/security-audit",
 ] as const;
 
 /** Folders with their own layout: links are checked, structure is not. */

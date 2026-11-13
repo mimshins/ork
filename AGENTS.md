@@ -94,6 +94,7 @@ bug fixes need no plan unless they are architectural.
 | Accepted decisions and why (ADRs)            | [decisions/](./decisions/README.md)                       |
 | Proposals (RFCs)                             | [rfcs/](./rfcs/README.md)                                 |
 | Procedures: docs, releases                   | [runbook/](./runbook/development/release.md)              |
+| Security audit: run it, read it, report it   | [security audit](./runbook/development/security-audit.md) |
 | How the parts fit together                   | [docs/interaction-map/](./docs/interaction-map/README.md) |
 | Agent orientation, skills, agents, templates | [.ai/](./.ai/README.md)                                   |
 | Local-only plans (gitignored)                | `.ai/plans/`                                              |

@@ -181,6 +181,14 @@ holds its rules, and [.ork/workflows/](./.ork/workflows) its workflows. Each of
   folder under the temp dir that holds a kit root or a `.tgz`, so it still goes
   when every tester failed before setup), whether the testers passed or failed.
   It shows you what every surface found, and says which failed.
+- **`audit`** audits the repository's security: free scanners first
+  (`pnpm audit`, the workflows' pinning and permissions, secret patterns), then
+  the security-audit skill's phases as read-only nodes (recon, one hunter per
+  unit, a critic, a fresh verifier per candidate, a recheck under `standard`).
+  `quick` (the default) costs at most $29 and is a partial pass; `standard` at
+  most $72. The report stays outside the checkout, in `~/.ork/audits`, and is
+  never committed or posted: see the
+  [runbook](./runbook/development/security-audit.md).
 
 Run them with a released Ork installed globally (`1.0.0-alpha.0` or later), not
 with `pnpm ork` from this checkout. A run starts more `ork` processes as it goes
@@ -220,9 +228,10 @@ gate lists those ADRs, so you check them before you keep the change.
 - **Runs are paid.** Each session spends on your own account, through the driver
   that's ready on your machine (your `claude` login or an API key; `ork run`
   says which). Each session has a budget, each run a cap (`start` $70, `build`
-  $50, `qa-pass` $14) and the project a daily quota ($100). Runs are measured
-  for Ork's [benchmarks](./benchmarks/README.md), so start them only on the
-  maintainer's go and keep their run ids (`ork tree <run>`, `ork usage`).
+  $50, `qa-pass` $14, `audit` at most $29 or $72) and the project a daily quota
+  ($100). Runs are measured for Ork's [benchmarks](./benchmarks/README.md), so
+  start them only on the maintainer's go and keep their run ids
+  (`ork tree <run>`, `ork usage`).
 - **Ork commits nothing here.** The work stays uncommitted in a worktree beside
   your clone. When you keep it, the gate's next step applies it to your
   checkout, uncommitted, and you commit and push it as below.

@@ -110,6 +110,9 @@ export default defineConfig({
     // The interaction map's browser code and data: plain ES modules with JSDoc
     // types, ported as is and validated by docs/interaction-map/tools/check.mjs.
     "docs/interaction-map/public/**",
+    // A third-party skill kept byte for byte (see its PROVENANCE.md).
+    ".ai/skills/security-audit/**",
+    ".claude/skills/security-audit/**",
   ],
   rules: {
     "typescript/no-explicit-any": "error",

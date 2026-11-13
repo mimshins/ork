@@ -74,6 +74,9 @@ Load only what the task needs.
 - [`benchmark-run`](./skills/benchmark-run/SKILL.md) — save a benchmark of a
   finished run and its called runs, with an estimate of the same change in plain
   Claude Code sessions (`pnpm benchmark`, `pnpm benchmark:control`).
+- [`security-audit`](./skills/security-audit/SKILL.md) — Cloudflare's
+  third-party security-audit skill, pinned and kept byte for byte (see its
+  `PROVENANCE.md`); the `audit` workflow runs its phases as nodes.
 
 ### Agents (`agents/`)
 

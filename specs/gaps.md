@@ -14,8 +14,8 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L353, and the next chore is
-C15 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
+closes it. Ids are never reused: the next limit is L359, and the next chore is
+C16 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
 carried to a roadmap item, or to none yet (unplanned).
@@ -54,6 +54,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 - [Limits found building the `issues` workflow](./gaps/issues-limits.md)
 - [Limits found building follow-ups](./gaps/follow-ups-limits.md)
 - [Limits found closing the blind spots of QA run c9c908b9](./gaps/qa-c9c908b9-limits.md)
+- [Limits found building the `audit` workflow](./gaps/audit-limits.md)
 
 ## Gaps
 
@@ -413,3 +414,12 @@ Found building the list filters in the server and the UI (L339, closed):
 
 - **C13 · No `fix` workflow.** A bug has to go through `plan`'s gate. A shorter
   path would reproduce it, write a failing test, fix it and review it.
+- **C15 · The `audit` workflow hasn't run on a real driver.** The first `quick`
+  audit of Ork (`ork run audit`, at most $29) is paid and left to the
+  maintainer. Check that the read-only agents never stop to ask permission for a
+  command they are meant to run, that each node stays inside its budget (a
+  hunter that runs out of its $2 fails and loses its work), that the
+  `{ list: {} }` outputs come back in the shapes the shell steps read, and that
+  the report is written under `~/.ork/audits` with `git status` clean. Carried,
+  unplanned: it waits on the maintainer's go.
+  ([the runbook](../runbook/development/security-audit.md))

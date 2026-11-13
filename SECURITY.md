@@ -12,6 +12,10 @@ Use **GitHub private vulnerability reporting**: open the
 [Security tab](https://github.com/mimshins/ork/security) of this repository and
 choose "Report a vulnerability". Your report is visible only to the maintainers.
 
+The maintainers' own findings (for example from the `audit` workflow, see the
+[runbook](./runbook/development/security-audit.md)) take the same private path:
+a draft security advisory, never a public issue or pull request.
+
 **Do not** put exploit details, proof-of-concept code, keys, tokens, or other
 secrets in a public issue, pull request, or comment. This repository is public:
 anything posted there is visible to everyone and cannot be taken back.

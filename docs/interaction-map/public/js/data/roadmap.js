@@ -1232,6 +1232,18 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "security-audit",
+        title: "A security audit workflow",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). `ork run audit` runs free scanners (`pnpm audit`, workflow pinning and permissions, secret patterns), then Cloudflare's security-audit skill, vendored and pinned in `.ai/skills/security-audit/`, as read-only nodes: recon and a coverage ledger, one hunter per unit, a critic, a fresh verifier per candidate, validated findings, and (standard) a recheck. `quick` costs at most $29 and is partial coverage; `standard` at most $72. The report is written to `~/.ork/audits/`, outside the public repository. Left: the first paid run, on the maintainer's go (C15), then shipping it as `ork:security-audit`.",
+        docs: [
+          "runbook/development/security-audit.md",
+          "specs/gaps/audit-limits.md",
+          ".ork/workflows/audit.ork.yaml",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",
