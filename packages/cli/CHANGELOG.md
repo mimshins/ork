@@ -1,5 +1,17 @@
 # @krapht/ork
 
+## 1.0.0-alpha.18
+
+### Patch Changes
+
+- [`ea144fe`](https://github.com/mimshins/ork/commit/ea144fe45729c10565d27a7a1d11bea5a20e324f) Thanks [@mimshins](https://github.com/mimshins)! - Harden what a session and other local users can reach. The `command-code` driver
+  checks a shell line command by command (every one must be allowed; a
+  substitution or a redirect to a file needs a plain `Bash` rule) and checks reads
+  by their real path. `claude-code` sessions get Ork's token in private files, not
+  on the command line. `~/.ork` is kept 0700 and its database 0600. A reported
+  branch that isn't a plain branch name is dropped, and follow-ups scrub who they
+  are for, their ref and the draft's channel.
+
 ## 1.0.0-alpha.17
 
 ### Minor Changes
