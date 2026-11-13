@@ -88,7 +88,7 @@ signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
   `dismissed`, `published`, `resolved`, or `all`), `--kind`, `--severity`,
   `--workflow` and `--run` filter it ([list filters](../cli/list-filters.md));
   `--status all` adds the dismissed ones (`--all` still does, deprecated,
-  [L336](../gaps.md#limits)), `--ids` prints the item ids on one line,
+  [L340](../gaps.md#limits)), `--ids` prints the item ids on one line,
   `--limit n` keeps the first N, and `--json` prints them.
   `ork feedback show <item>` prints an item and each of its records;
   `ork feedback dismiss <item>` dismisses it, and `ork feedback restore <item>`

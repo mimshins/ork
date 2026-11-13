@@ -14,7 +14,7 @@ and (for time and `--limit`) `ork logs`
 [core tests](../../packages/core/test/list-filters.test.ts),
 [flag tests](../../packages/cli/test/list-flags.test.ts)). Not built: a generic
 `--where` and operators, store-side filtering, and the UI and `ork mcp` reading
-the tables ([L333, L334, L335](../gaps.md#limits)). Why:
+the tables ([L337, L338, L339](../gaps.md#limits)). Why:
 [RFC-017](../../rfcs/archived/RFC-017-list-filters.md) (Option A), and
 [ADR-088](../../decisions/ADR-088-list-filters.md).
 
@@ -118,7 +118,7 @@ other two, prints `--all is deprecated; use --project all.` (or `--status all`)
 once on stderr, and is left out of `--help` and Tab completion (its description
 starts `Internal:`). When both `--all` and the new flag are given the new flag
 wins, and the warning still prints. A later release removes it
-([L336](../gaps.md#limits)). `ork prune --all` is not a list and is unchanged.
+([L340](../gaps.md#limits)). `ork prune --all` is not a list and is unchanged.
 
 ## The lists
 
@@ -138,7 +138,7 @@ wins, and the warning still prints. A later release removes it
   `--until` match the run's start;
   `ork ps --status failed --workflow build --since 7d --limit 5 --project all`
   filters by all four and cuts to five. `--ids` is limited too
-  ([L337](../gaps.md#limits)); `--json` prints the stored records.
+  ([L341](../gaps.md#limits)); `--json` prints the stored records.
 - **`ps --status`** takes the stored status and the live ones `ps` shows:
   `running`, `paused`, `crashed`, `succeeded`, `failed`, `budget_exhausted`,
   `quota_exhausted`, `timed_out`, `interrupted`. A lock or slot wait is

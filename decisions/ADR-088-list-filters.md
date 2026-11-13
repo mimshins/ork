@@ -25,14 +25,14 @@ same.
   completion offers are all made from it, so a field added to a table shows up
   in all of them. No generic `--where` and no operators (`!=`, `>`, `~`); the
   tables can drive them later without changing the flags
-  ([L333](../specs/gaps.md#limits)).
+  ([L337](../specs/gaps.md#limits)).
 - **The machinery and the tables for the record types that live in core are in
   `packages/core`** (`list-filters/`, exported from `@krapht/ork-core`): the
   field and table types, `parseFilters`, `applyFilters`, `parseLimit`, the one
   time parser (moved from `ork usage`), and the tables for runs, feedback items,
   follow-ups, decisions, worktrees and usage. This is a new public export of
   core, so the UI and `ork mcp` can read the same tables later
-  ([L335](../specs/gaps.md#limits)). A list whose row type lives only in the CLI
+  ([L339](../specs/gaps.md#limits)). A list whose row type lives only in the CLI
   (`agents`, `projects`, `logs`) declares its table in the CLI with the same
   machinery. The CLI makes citty flags from a table (`packages/cli/src/list/`),
   an enum field's values as citty `options`, which `--help` and completion
@@ -51,7 +51,7 @@ same.
   one.
 - **Filters apply after the store read**, then the list's own order, then
   `--limit`. Nothing was measured on a large store
-  ([L334](../specs/gaps.md#limits)).
+  ([L338](../specs/gaps.md#limits)).
 
 ## Options considered
 
@@ -80,12 +80,12 @@ costs one export and lets other surfaces reuse it.
   cannot be filtered until one is added.
 - Scripts that use `--all` keep working for one release, with a warning.
 - `ps --ids` is limited to 20 by default; `--limit` raises it
-  ([L337](../specs/gaps.md#limits)).
+  ([L341](../specs/gaps.md#limits)).
 - A test derived from the tables keeps every list's flags, validation and
   completion in step with its table.
 - Left simpler, in the [register](../specs/gaps.md): `--where` and operators
-  (L333), filtering in the store (L334), the UI and `ork mcp` not reading the
-  tables (L335), the deprecated `--all` (L336), the `ps --ids` default (L337).
+  (L337), filtering in the store (L338), the UI and `ork mcp` not reading the
+  tables (L339), the deprecated `--all` (L340), the `ps --ids` default (L341).
 - Follow-up `cc84367e` is covered by the `follow-ups list` fields.
 
 Spec: [List filters](../specs/cli/list-filters.md); guide:

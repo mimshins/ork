@@ -144,7 +144,7 @@ ork usage [--project <id>|all] [--since 30d|2026-11-01|all] [--until 2026-11-30]
 This project's sessions from the last 30 days, or `--project all`'s (or one
 registered project's, by id or root; one not registered is refused, listing the
 registered). `--all` is the deprecated spelling of `--project all`: it warns on
-stderr and is left out of `--help` and Tab ([L336](./gaps.md#limits)). Days and
+stderr and is left out of `--help` and Tab ([L340](./gaps.md#limits)). Days and
 weeks in `--since` are whole days counting today, as in the Usage panel; hours
 are exact, and `--since` and `--until` are read by the one parser every list
 uses, in the machine's time zone
