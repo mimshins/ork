@@ -56,6 +56,11 @@ refuses another name, saying which there are. Ork never installs it.
   4), falling back to `-opc` (fish 3). A `:files` answer adds
   `__fish_complete_path`.
 
+Each script only asks `ork __complete`, so a new command, flag or value needs no
+new script. A change to a script does: a user who saved it to a file keeps the
+old one. A test pins each script's hash and fails until the change adds an
+"Upgrade:" line to What's new saying to run `ork completion <shell>` again.
+
 ## Answering the shell
 
 ```

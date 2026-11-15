@@ -48,8 +48,11 @@ echo 'source ~/.ork-completion.bash' >> ~/.bashrc
 ork completion fish > ~/.config/fish/completions/ork.fish
 ```
 
-Run the same command again after `ork upgrade`, so the script keeps up with the
-commands.
+The script asks `ork` for every candidate as you type, so new commands, flags
+and values complete as soon as you upgrade. Only a change to the script itself
+needs a new copy: [What's new](../whats-new.md) says so with an "Upgrade:" line,
+and then you run the command that saved it again. The `eval` and `source <(…)`
+lines load the new script in your next shell on their own.
 
 ## What it completes
 
