@@ -26,6 +26,7 @@ For the full rules: [the machine spec](../../../specs/machine.md).
 Name your project's full-suite commands in `.ork/project.yaml`:
 
 ```yaml
+schemaVersion: 1
 heavy:
   - pnpm check
   - pnpm test
@@ -42,7 +43,9 @@ export ORK_HEAVY_SLOTS=3
 
 Anything that is not a positive whole number is ignored and the default stays.
 Slots go first come, first served. If a run is killed while it holds one, the
-next one waiting takes it over. With no `heavy` in the project, nothing waits.
+next one waiting takes it over, and the killed run's command is ended within
+about 2 seconds, so for that moment the two may overlap. With no `heavy` in the
+project, nothing waits.
 
 ## What waits
 

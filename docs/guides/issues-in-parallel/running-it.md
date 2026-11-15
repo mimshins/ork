@@ -68,7 +68,10 @@ If the run fails before its pull request (no builder passes, no review passes,
 no integration finishes, `gh pr create` fails, and so on), an `unmark` step
 takes `in-progress` off every issue it listed and says so: "The run stopped
 before its pull request; took in-progress off #12, #13." The run still ends
-`failed`, and its first `✗` in the transcript is the cause.
+`failed`, and its first `✗` in the transcript is the cause. When no issue was
+built at all, that is the `gather` step, whose line names each issue and why:
+`No issue was built: #1 its builder changed nothing; #2 …`. The outputs of a run
+that never reached its pull request print as `(empty)`.
 
 ### If a run stops
 

@@ -119,3 +119,12 @@ measure and record first, since ending a called run changes what resume adopts:
   (`intervalMs`) to find new live runs; everything else is pushed. A new run is
   seen up to a second late, and each pass reads every run of the scope. A store
   change feed or a project socket would replace it if the poll costs.
+- **L380 · A killed slot holder's command can overlap the next one's for up to 2
+  s.** When `ork` is killed while it holds a check slot, the orphan guard sends
+  its command's group SIGTERM, then SIGKILL after `KILL_AFTER_MS` (2 s); the
+  [slot ledger](../../packages/core/src/machine/slot-ledger.ts) sweeps the
+  record as soon as the holder's pid is gone and hands the slot on. A command
+  that outlives SIGTERM runs beside the next for those seconds. QA run 26ac8acf
+  saw it once; on 2026-11-15 it did not reproduce (the group was gone within 5
+  s). Closing it means recording the command's process group with the slot and
+  sweeping only once that group is gone.

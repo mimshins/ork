@@ -27,5 +27,9 @@ _Part of [What's new](../whats-new.md)._
   follows only that workflow's live runs and the runs they call, as the guide
   said (the flag was refused). The Runs panel of `ork ui` keeps the last filter
   that worked after you maximize or restore it, where it showed every run
+  `ork tree` names who holds the check slot a node waits for, and when the
+  `issues` workflow builds no issue, its failed step names every issue and why,
+  where it showed only the last
   ([looking back](../guides/running-workflows/looking-back.md#follow-every-live-run),
-  [filtering lists](../guides/filtering-lists.md)).
+  [filtering lists](../guides/filtering-lists.md),
+  [issues](../guides/issues-in-parallel/running-it.md)).

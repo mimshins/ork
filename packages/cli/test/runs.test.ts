@@ -322,6 +322,21 @@ describe("a recorded run", () => {
       expect(text).toMatch(/push .*waiting for branch:main/u);
     });
 
+    it("names who holds the check slot a node waits for", () => {
+      const events: RunEvent[] = [
+        started,
+        { type: "node.started", id: "build", nodeType: "tool.shell", round: 1 },
+        { type: "slot.waiting", id: "build", holders: ["r1/check"] },
+      ];
+      const text = view(live, events);
+      expect(text).toMatch(
+        /build .*waiting for a check slot, held by r1\/check/u,
+      );
+      expect(
+        view(live, [...events, { type: "slot.taken", id: "build" }]),
+      ).not.toContain("check slot");
+    });
+
     it("says neither once the lock is taken", () => {
       const events: RunEvent[] = [
         ...waiting("push"),

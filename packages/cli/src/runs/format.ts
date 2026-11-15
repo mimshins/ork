@@ -7,7 +7,6 @@
 import {
   isItem,
   liveStatus,
-  type LockWait,
   lockWaitLine,
   lockWaitsOf,
   maskSecrets,
@@ -15,6 +14,8 @@ import {
   type RunEvent,
   type RunRecord,
   runStatus,
+  slotWaitingOf,
+  slotWaitLine,
   slotWaitsOf,
   type TreeNode,
   yoloOf,
@@ -191,16 +192,19 @@ const crashedState = (node: TreeNode): string | null => {
   return null;
 };
 
+/** A node of a live run that waits, and how its line says so. */
+export type TreeWait = { id: string; line: string };
+
 /**
  * The ownership tree, one line per node, children under their owner. A node in
- * `waits` (a live run's `lockWaitsOf`) reads `waiting for <lock>`, an item too.
- * In a `crashed` run, a node started but not ended reads `cut off` and one not
+ * `waits` (a live run's lock and slot waits) reads its line, an item too. In a
+ * `crashed` run, a node started but not ended reads `cut off` and one not
  * started `not run`: nothing will end them.
  */
 export const formatTree = (
   roots: readonly TreeNode[],
   now: number = Date.now(),
-  waits: readonly LockWait[] = [],
+  waits: readonly TreeWait[] = [],
   crashed = false,
 ): string[] => {
   const lines: { label: string; node: TreeNode }[] = [];
@@ -222,15 +226,15 @@ export const formatTree = (
   const type = Math.max(...lines.map(l => l.node.type.length));
   return lines.map(({ label: text, node }) => {
     const usage = worth(node);
-    const lock = waits.find(wait => wait.id === node.id)?.lock;
+    const wait = waits.find(each => each.id === node.id)?.line;
     const cut = crashed ? crashedState(node) : null;
     const state =
       cut ??
       (node.held === true
         ? `${style("yellow", "‖")} paused`
-        : lock === undefined
+        : wait === undefined
           ? `${STATE_MARK[node.state]()} ${stateText(node)}`
-          : `${STATE_MARK.waiting()} waiting for ${lock}`);
+          : `${STATE_MARK.waiting()} ${wait}`);
     // A cut-off item has no end: its time would grow on every look.
     const spent =
       isItem(node) && node.startedAt !== undefined && cut === null
@@ -260,7 +264,20 @@ export const formatTreeView = (
   now: number = Date.now(),
 ): string[] => {
   const status = runStatus(run, events);
-  const waits = status === "running" ? lockWaitsOf(events) : [];
+  // A live run's waits: a lock, or a check slot and who holds it.
+  const waits: TreeWait[] =
+    status === "running"
+      ? [
+          ...lockWaitsOf(events).map(({ id, lock }) => ({
+            id,
+            line: `waiting for ${lock}`,
+          })),
+          ...slotWaitingOf(events).map(({ id, holders }) => ({
+            id,
+            line: slotWaitLine(holders),
+          })),
+        ]
+      : [];
   // A live yolo run says so: nobody is asked about its tools.
   const yolo =
     status === "running" && yoloOf(events) ? style("yellow", " · yolo") : "";

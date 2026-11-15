@@ -205,15 +205,23 @@ export const runTree = (events: readonly RunEvent[]): TreeNode[] => {
 };
 
 /** The nodes of a run waiting for a machine-wide slot now. */
-export const slotWaitsOf = (events: readonly RunEvent[]): string[] => {
-  const waiting = new Set<string>();
+export const slotWaitsOf = (events: readonly RunEvent[]): string[] =>
+  slotWaitingOf(events).map(({ id }) => id);
+
+/** A node of a run waiting for a check slot now, and who held them as it asked. */
+export type SlotWait = { id: string; holders: string[] };
+
+/** The nodes of a run waiting for a check slot now, with the holders. */
+export const slotWaitingOf = (events: readonly RunEvent[]): SlotWait[] => {
+  const waiting = new Map<string, SlotWait>();
   for (const event of events) {
-    if (event.type === "slot.waiting") waiting.add(event.id);
-    else if (event.type === "slot.taken" || event.type === "node.finished") {
+    if (event.type === "slot.waiting") {
+      waiting.set(event.id, { id: event.id, holders: event.holders });
+    } else if (event.type === "slot.taken" || event.type === "node.finished") {
       waiting.delete(event.id);
     }
   }
-  return [...waiting];
+  return [...waiting.values()];
 };
 
 /** A node of a run waiting for a lock now, and who held it when it asked. */
@@ -236,10 +244,7 @@ export const lockWaitsOf = (events: readonly RunEvent[]): LockWait[] => {
 /** What is paused in a run: the whole run, and the nodes paused by name. */
 export type Paused = { run: boolean; nodes: string[] };
 
-/**
- * Whether the run's latest start was yolo (`--yolo`): each start or resume
- * records its own `run.started`, so a resume without it is not.
- */
+/** Whether the run's latest start had `--yolo` (each start records its own). */
 export const yoloOf = (events: readonly RunEvent[]): boolean => {
   const started = events.findLast(event => event.type === "run.started");
   return started?.type === "run.started" && started.settings?.yolo === true;

@@ -195,7 +195,8 @@ nodes:
       });
       process.stdout.write(JSON.stringify({ ready, skipped }));
       if (ready.length === 0) {
-        process.stderr.write("No issue was built:\n" + skipped.map(s => "#" + s.number + " " + s.reason).join("\n") + "\n");
+        // One line: the transcript shows a failed tool's last stderr line.
+        process.stderr.write("No issue was built: " + skipped.map(s => "#" + s.number + " " + s.reason).join("; ") + "\n");
         process.exit(1);
       }
     interpreter: node
