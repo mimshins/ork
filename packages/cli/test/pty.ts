@@ -19,6 +19,8 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { expect, vi } from "vitest";
+
 const BIN = path.resolve(import.meta.dirname, "../src/bin.ts");
 
 /** Whether this platform can run `ork` on a pty through `script`. */
@@ -36,6 +38,8 @@ const scriptArgs = (command: readonly string[]): string[] =>
         `exec ${command.map(word => quoted(word)).join(" ")}`,
         "/dev/null",
       ];
+
+const CTRL_C = "\u0003";
 
 export type PtyOrk = {
   child: ChildProcess;
@@ -75,4 +79,17 @@ export const orkOnPty = (
   const output = (): string =>
     existsSync(screen) ? readFileSync(screen, "utf8") : "";
   return { child, keys, output, exited };
+};
+
+/**
+ * Presses Ctrl-C, then, once the terminal shows it (`^C`), closes the input:
+ * Linux's `script` waits for its input to end before it exits, even after the
+ * command has.
+ */
+export const pressCtrlC = async (pty: PtyOrk): Promise<void> => {
+  pty.keys.write(CTRL_C);
+  await vi.waitFor(() => {
+    expect(pty.output()).toContain("^C");
+  });
+  pty.keys.end();
 };

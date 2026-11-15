@@ -12,9 +12,7 @@ import path from "node:path";
 import { type EventStore, openStore, storePath } from "@krapht/ork-core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { hasPty, orkOnPty, type PtyOrk } from "./pty.ts";
-
-const CTRL_C = "\u0003";
+import { hasPty, orkOnPty, pressCtrlC, type PtyOrk } from "./pty.ts";
 
 /** A run recorded by this process, so it reads as live, with a gate open. */
 const liveRunAsking = (store: EventStore): void => {
@@ -81,7 +79,7 @@ describe.skipIf(!hasPty)("Ctrl-C on a terminal", () => {
       },
       { timeout: 15_000 },
     );
-    follow.keys.write(CTRL_C);
+    await pressCtrlC(follow);
 
     await expect(follow.exited).resolves.toBe(0);
     expect(follow.output()).toContain(
@@ -98,7 +96,7 @@ describe.skipIf(!hasPty)("Ctrl-C on a terminal", () => {
       },
       { timeout: 15_000 },
     );
-    logs.keys.write(CTRL_C);
+    await pressCtrlC(logs);
 
     await expect(logs.exited).resolves.toBe(0);
   });
