@@ -343,6 +343,33 @@ describe("worktrees", () => {
     expect(cwds).toEqual({ review: worktreePath(root, "r1", "lead") });
   });
 
+  it("resumes a fanned readonly node in the worktree its replayed input left", async () => {
+    const root = repo();
+    const graph = compile(
+      [
+        "schemaVersion: 1",
+        "name: review",
+        "nodes:",
+        "  lead: { type: agent.leader }",
+        "  review: { type: agent.worker, isolation: readonly, forEach: { items: [a, b] } }",
+        "  after: { type: agent.worker, isolation: readonly }",
+        "edges:",
+        "  - lead -> review",
+        "  - review -> after",
+      ].join("\n"),
+    );
+    const { executor } = working({ lead: { files: { "src/a.ts": "a\n" } } });
+    // The run stops after lead, before its reviewers ran (as a budget does).
+    const first = await runIn(root, graph, failingNode("review.0", executor));
+    expect(first.result.status).toBe("failed");
+
+    const { executor: second, cwds } = working({});
+    const again = await runIn(root, graph, second, first.events);
+    expect(again.result.status).toBe("succeeded");
+    const lead = worktreePath(root, "r1", "lead");
+    expect(cwds).toMatchObject({ "review.0": lead, after: lead });
+  });
+
   it("resumes a continue node in the worktree a replayed readonly node used", async () => {
     const root = repo();
     const graph = compile(
