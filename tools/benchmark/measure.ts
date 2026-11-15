@@ -33,10 +33,16 @@ import { loadTree, type Tree } from "./tree.ts";
 const git = (repo: string, ...args: string[]): string =>
   execFileSync("git", ["-C", repo, ...args], { encoding: "utf8" });
 
-/** A file at a commit, or null when it was not there. */
+/**
+ * A file at a commit, or null when it was not there (an agent defined in the
+ * workflow itself has no file of its own), with git's complaint kept quiet.
+ */
 const fileAt = (repo: string, commit: string, file: string): string | null => {
   try {
-    return git(repo, "show", `${commit}:${file}`);
+    return execFileSync("git", ["-C", repo, "show", `${commit}:${file}`], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
   } catch {
     return null;
   }
