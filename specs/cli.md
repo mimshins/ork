@@ -17,9 +17,10 @@ new-version notice ([updates](./cli/updates.md)), `ork ui`
 ([server](./server.md)), `ork mcp` ([mcp](./cli/mcp.md)),
 `ork completion zsh|bash|fish` and the hidden `ork __complete`
 ([completion](./cli/completion.md)), `ork once` ([check once](./check-once.md)),
-`ork decide --follow` and `ork logs -f --all` (several live runs at once), and
-`ork logs <run>` printing the runs it called inline, and `ork send`, which a
-tool node's program runs ([scripts](./messaging/scripts.md#ork-send))
+`ork decide --follow` and `ork logs -f --all` (several live runs at once, their
+events in the order stored, each up to one poll late), and `ork logs <run>`
+printing the runs it called inline, and `ork send`, which a tool node's program
+runs ([scripts](./messaging/scripts.md#ork-send))
 ([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts),
 [attach tests](../packages/cli/test/attach-command.test.ts),

@@ -1,9 +1,10 @@
 /**
  * @file Following a run and every run it called on a terminal, and answering
  *   their open decisions there (`ork attach`, and a foreground `ork run` that
- *   calls workflows; specs/cli.md, specs/scheduler/calls.md). Each run has its
- *   own log printer behind its call path; a decision opened in any of them is
- *   asked through one `TerminalHuman`, withdrawn when it closes elsewhere.
+ *   calls workflows; specs/cli.md, specs/scheduler/calls.md). The runs' events
+ *   come in store order, each one poll late; each run has its own log printer
+ *   behind its call path; a decision opened in any of them is asked through one
+ *   `TerminalHuman`, withdrawn when it closes elsewhere.
  */
 
 import {
@@ -114,6 +115,9 @@ export const attachRun = async (
         ? {}
         : { intervalMs: options.intervalMs }),
       ...(options.signal === undefined ? {} : { signal: options.signal }),
+      // The runs' events in store order, so the earliest opened decision is
+      // asked first even with no card up (RFC-020).
+      ordered: true,
     },
   );
 

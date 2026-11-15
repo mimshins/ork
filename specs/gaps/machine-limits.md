@@ -119,14 +119,24 @@ measure and record first, since ending a called run changes what resume adopts:
   (`intervalMs`) to find new live runs; everything else is pushed. A new run is
   seen up to a second late, and each pass reads every run of the scope. A store
   change feed or a project socket would replace it if the poll costs.
-- **L383 · `ork decide --follow` and `ork attach` order runs' decisions only
-  under a card.** Each run is followed apart, so decisions reach it in poll
-  order. The prompts both commands share
-  ([`createPrompts`](../cli/decisions-and-stopping.md)) hold those that arrive
-  while a card is up and ask the earliest opened next. With no card up, the
-  first to arrive is asked at once, though another run may have opened one
-  earlier within the same poll (250 ms for a run with no socket). Closing it
-  means `followRuns` passing events on in store order across runs.
+- **L384 · The store order across runs is held for one window, not exact.**
+  [`followRuns`](../scheduler/calls.md) (and `followRunTree` with `ordered`)
+  hold each event for `intervalMs ?? 250` ms and release them sorted by
+  `(at, run, seq)`
+  ([ADR-095](../../decisions/ADR-095-follow-runs-in-store-order.md)), so
+  `ork decide --follow`, `ork attach` and `ork logs -f --all` show events in the
+  order stored. Three limits remain. An event stored further apart than the
+  window from an earlier one of another run can still arrive after it, as when a
+  poll of a run with no socket is delayed past the window on a busy machine; it
+  is then delivered in arrival order; so is a run found late by the run-list
+  poll, whose first events are read after others were released. An abort drops
+  up to one window of events already read. The sort compares `at` across runs
+  and relies on `at` being non-decreasing within a run (one clock, the store's):
+  a clock step backwards on the machine could reverse two events of one run; a
+  per-run k-way merge would close it, if it is ever seen. And `--limit` of
+  `ork logs -f --all` keeps the last N events overall in the order the runs are
+  read (a run's events, called runs after their `call.started`), not in time
+  order.
 - **L380 · A killed slot holder's command can overlap the next one's for up to 2
   s.** When `ork` is killed while it holds a check slot, the orphan guard sends
   its command's group SIGTERM, then SIGKILL after `KILL_AFTER_MS` (2 s); the

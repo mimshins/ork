@@ -2,6 +2,20 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **Lines and questions of several runs come in the order they were stored.**
+  `ork logs -f --all`, `ork decide --follow` and `ork attach` now hold each
+  event for one poll (about 250 ms) and pass them on sorted by when they were
+  stored, so with no card up `ork decide --follow` asks the question that opened
+  first, not the one whose run was read first, and `ork attach`'s replay of the
+  runs a run called is mixed in by time. Before, events came in the order they
+  were read, run by run. Every line and first question appears up to one poll
+  later. Events stored further apart than a poll can still arrive in the order
+  they were read. Upgrade: `ork logs -f --all` lists the stored events of all
+  runs by time, not run by run, and `ork attach` no longer prints a called run's
+  earlier lines right after the call that started it (`ork logs <run>` still
+  does); a script that reads that output by run order needs `--json` per run
+  ([attach](../guides/running-workflows/attaching-to-a-run.md#what-it-shows),
+  [logs](../guides/running-workflows/looking-back.md#follow-every-live-run)).
 - **A card answered elsewhere says so before the next card.** On a plain
   terminal (`NO_COLOR`, `--plain`), `ork decide --follow` and `ork attach` used
   to print `<id> answered elsewhere: <answer> (<by>)` after the next card's

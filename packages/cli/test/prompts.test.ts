@@ -4,7 +4,8 @@
  *   order they opened, a card withdrawn elsewhere prints its line before the
  *   next card is drawn, a held decision closed elsewhere is said and never
  *   drawn, a held decision no longer open is dropped (no leak), and the first
- *   decision to arrive with no card up is asked at once (specs/gaps L383).
+ *   decision to arrive with no card up is asked at once (the followers deliver
+ *   in store order, specs/gaps L384).
  */
 
 import { mkdtempSync, rmSync } from "node:fs";

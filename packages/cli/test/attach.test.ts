@@ -3,8 +3,9 @@
  *   called before attaching too), a called run's decision answered on the
  *   terminal, a prompt withdrawn when the decision closes elsewhere, a late
  *   answer refused, two called runs' decisions asked in the order they opened,
- *   no terminal, an ended run, a called run still running, and a detach that
- *   closes nothing.
+ *   a caller's and a called run's decisions asked in store order with no card
+ *   up, no terminal, an ended run, a called run still running, and a detach
+ *   that closes nothing.
  */
 
 import { spawnSync } from "node:child_process";
@@ -46,6 +47,32 @@ const called = (node: string, run: string): RunEvent => ({
   project: "/p",
 });
 
+/**
+ * `store` as followed (`timed`), and `appendAt`, which stores an event that
+ * reads as stored `ms` after this was made: an event read first can read as
+ * stored later, as when another run is polled later (RFC-020).
+ */
+const stampedStore = (store: EventStore) => {
+  const base = Date.now();
+  /** A stamped event's `at`, by `run:seq`. */
+  const stamps = new Map<string, string>();
+  const timed: EventStore = {
+    ...store,
+    events: (run, after) =>
+      // Each read is a fresh copy from the store, so stamping it in place is safe.
+      store.events(run, after).map(stored =>
+        Object.assign(stored, {
+          at: stamps.get(`${run}:${String(stored.seq)}`) ?? stored.at,
+        }),
+      ),
+  };
+  const appendAt = (run: string, event: RunEvent, ms: number): void => {
+    const { seq } = store.append(run, event);
+    stamps.set(`${run}:${String(seq)}`, new Date(base + ms).toISOString());
+  };
+  return { timed, appendAt };
+};
+
 describe("attachRun", () => {
   let store: EventStore;
   let term: FakeTerm;
@@ -61,6 +88,9 @@ describe("attachRun", () => {
     run: string,
     id: string,
     question = "Approve the spec?",
+    append: (run: string, event: RunEvent) => void = (r, e) => {
+      store.append(r, e);
+    },
   ): void => {
     store.openDecision({
       id,
@@ -70,7 +100,7 @@ describe("attachRun", () => {
       question,
       options: [{ id: "approve" }, { id: "revise" }],
     });
-    store.append(run, {
+    append(run, {
       type: "decision.opened",
       node: "gate",
       decision: id,
@@ -336,6 +366,36 @@ describe("attachRun", () => {
       expect(store.decisions({ status: "open" })).toEqual([]);
     },
   );
+
+  it("asks the earliest opened of a caller's and a called run's decisions first, though the other arrives first", async () => {
+    begin("root0000");
+    const { timed, appendAt } = stampedStore(store);
+    const done = attachRun(
+      timed,
+      "root0000",
+      line => {
+        lines.push(stripVTControlCharacters(line));
+      },
+      { intervalMs: 5, human: human() },
+    );
+    // One read of the root's events brings its decision, then the call that
+    // finds the plan, whose decision opened before the root's.
+    store.begin({ id: "plan0000", workflow: "w", file: "f", project: "/p" });
+    appendAt("plan0000", started("plan0000"), 10);
+    open("root0000", "root0000-1", "Approve root0000?", (run, event) => {
+      appendAt(run, event, 30);
+    });
+    appendAt("root0000", called("plan", "plan0000"), 35);
+    open("plan0000", "plan0000-1", "Approve plan0000?", (run, event) => {
+      appendAt(run, event, 20);
+    });
+
+    await answerCard("plan0000", ["root0000"]);
+    await answerCard("root0000", []);
+    for (const id of ["plan0000", "root0000"]) store.append(id, finished(id));
+    await done;
+    expect(store.decisions({ status: "open" })).toEqual([]);
+  });
 
   it("says what ork logs says and exits 1 when the root's process is gone", async () => {
     begin("root0000");

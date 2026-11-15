@@ -125,9 +125,11 @@ Nothing is cut short. What happens depends on what the paused part is doing:
 ## Detaching from a run
 
 - **`ork attach <run>`** follows a run and the runs it called, and asks their
-  open decisions on the terminal ([CLI](./cli.md)). A called run's decision that
-  arrives while a card is up is held and comes next in the order it opened (the
-  store's order), as in
+  open decisions on the terminal ([CLI](./cli.md)). It follows with `ordered`,
+  so the caller's and the called runs' events arrive in the store's order, up to
+  one poll late ([calls](./scheduler/calls.md)): with no card up the earliest
+  opened decision is asked first, and a called run's decision that arrives while
+  a card is up is held and comes next in the order it opened, as in
   [`ork decide --follow`](./cli/decisions-and-stopping.md).
 - **Ctrl-C there detaches; it never stops.** The first Ctrl-C, at a prompt too
   (the kit's `interrupt` hook), ends following and prints

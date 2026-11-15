@@ -4,12 +4,12 @@
  *   decision answered elsewhere withdrawing its prompt with the attach line,
  *   Ctrl-C and `--until-idle` ending it without closing anything, `q` leaving a
  *   decision open, and the refusals (no terminal, flags that list or answer).
- *   With several live runs: one card at a time across them, what they open
- *   under a card asked once each in the order opened, `q` on one run, another
- *   run's decision answered or withdrawn elsewhere before its card, one that
- *   closed with no event seen dropped, the workflow and run filters,
- *   `--until-idle` past one run's end, and an ended run's open decision counted
- *   after Ctrl-C.
+ *   With several live runs: one card at a time across them, the earlier opened
+ *   of two asked first with no card up, what they open under a card asked once
+ *   each in the order opened, `q` on one run, another run's decision answered
+ *   or withdrawn elsewhere before its card, one that closed with no event seen
+ *   dropped, the workflow and run filters, `--until-idle` past one run's end,
+ *   and an ended run's open decision counted after Ctrl-C.
  */
 
 import { spawnSync } from "node:child_process";
@@ -101,7 +101,14 @@ const begin = (
   });
 };
 
-const open = (store: EventStore, run: string, id: string): void => {
+const open = (
+  store: EventStore,
+  run: string,
+  id: string,
+  append: (run: string, event: RunEvent) => void = (r, e) => {
+    store.append(r, e);
+  },
+): void => {
   const options = [{ id: "approve" }, { id: "revise" }];
   store.openDecision({
     id,
@@ -111,7 +118,7 @@ const open = (store: EventStore, run: string, id: string): void => {
     question: `Approve ${id}?`,
     options,
   });
-  store.append(run, {
+  append(run, {
     type: "decision.opened",
     node: "gate",
     decision: id,
@@ -121,6 +128,32 @@ const open = (store: EventStore, run: string, id: string): void => {
   });
 };
 
+/**
+ * `store` as followed (`timed`), and `appendAt`, which stores an event that
+ * reads as stored `ms` after this was made: an event read first can read as
+ * stored later, as when another run is polled later (RFC-020).
+ */
+const stampedStore = (store: EventStore) => {
+  const base = Date.now();
+  /** A stamped event's `at`, by `run:seq`. */
+  const stamps = new Map<string, string>();
+  const timed: EventStore = {
+    ...store,
+    events: (run, after) =>
+      // Each read is a fresh copy from the store, so stamping it in place is safe.
+      store.events(run, after).map(stored =>
+        Object.assign(stored, {
+          at: stamps.get(`${run}:${String(stored.seq)}`) ?? stored.at,
+        }),
+      ),
+  };
+  const appendAt = (run: string, event: RunEvent, ms: number): void => {
+    const { seq } = store.append(run, event);
+    stamps.set(`${run}:${String(seq)}`, new Date(base + ms).toISOString());
+  };
+  return { timed, appendAt };
+};
+
 describe("ork decide --follow, in process", () => {
   let store: EventStore;
   let term: FakeTerm;
@@ -128,8 +161,12 @@ describe("ork decide --follow, in process", () => {
   let controller: AbortController;
   let home: string;
 
-  const follow = (untilIdle = false, filter: FollowFilter = {}) =>
-    followDecisions(store, pendingDecisions(store, filter), filter, {
+  const follow = (
+    untilIdle = false,
+    filter: FollowFilter = {},
+    followed = store,
+  ) =>
+    followDecisions(followed, pendingDecisions(store, filter), filter, {
       out: line => {
         lines.push(stripVTControlCharacters(line));
       },
@@ -334,7 +371,14 @@ describe("ork decide --follow, in process", () => {
     const A = "live0000";
     const B = "bbbb0000";
     const C = "cccc0000";
-    const WORKFLOW: Record<string, string> = { [A]: "w", [B]: "wb", [C]: "wc" };
+    /** A run A calls, begun only by the test that needs it. */
+    const D = "dddd0000";
+    const WORKFLOW: Record<string, string> = {
+      [A]: "w",
+      [B]: "wb",
+      [C]: "wc",
+      [D]: "wd",
+    };
 
     beforeEach(() => {
       begin(store, B, WORKFLOW[B]);
@@ -391,6 +435,55 @@ describe("ork decide --follow, in process", () => {
         "decide",
       ]);
       expect(lines).toContain("stopped following; 0 decision(s) still open");
+    });
+
+    it("with no card up, asks first the decision opened earlier, though another run's arrives first", async () => {
+      const { timed, appendAt } = stampedStore(store);
+      const done = follow(false, {}, timed);
+      // One read of A's events brings its decision, then the call that finds
+      // D, whose decision opened before A's.
+      store.begin({
+        id: D,
+        workflow: "wd",
+        file: "f",
+        project: "/p",
+        parent: A,
+      });
+      appendAt(
+        D,
+        {
+          type: "run.started",
+          runId: D,
+          workflow: "wd",
+          entries: [],
+          nodes: [],
+        },
+        10,
+      );
+      open(store, A, "a-1", (run, event) => {
+        appendAt(run, event, 30);
+      });
+      appendAt(
+        A,
+        {
+          type: "call.started",
+          node: "gate",
+          run: D,
+          workflow: "wd",
+          project: "/p",
+        },
+        35,
+      );
+      open(store, D, "d-1", (run, event) => {
+        appendAt(run, event, 20);
+      });
+      await answer([
+        [D, "d-1"],
+        [A, "a-1"],
+      ]);
+      controller.abort();
+
+      await expect(done).resolves.toBe("aborted");
     });
 
     it("queues what the other runs open while a card is up, each asked once, in order", async () => {

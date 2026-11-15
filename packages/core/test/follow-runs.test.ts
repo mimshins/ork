@@ -20,6 +20,7 @@ import {
   type RunEvent,
   type RunsEvent,
 } from "../src/index.ts";
+import type { StoredEvent } from "../src/store/types.ts";
 
 const started = (runId: string, workflow: string): RunEvent => ({
   type: "run.started",
@@ -56,8 +57,24 @@ const nodeStarted = (id: string): RunEvent => ({
   round: 1,
 });
 
+/** The store, but reading `failing`'s events throws `error`. */
+const failingOn = (
+  base: EventStore,
+  failing: string,
+  error: Error,
+): EventStore => ({
+  ...base,
+  events: (run, after) => {
+    if (run === failing) throw error;
+    return base.events(run, after);
+  },
+});
+
 /** The project the tests' runs start in. */
 const here: FollowRunsScope = { project: "/p" };
+
+/** The time a stamped event's `at` counts from. */
+const BASE = Date.UTC(2026, 0, 1);
 
 describe("followRuns", () => {
   let dir: string;
@@ -65,6 +82,36 @@ describe("followRuns", () => {
   /** What was seen, as `run workflow path|type`, in order. */
   let lines: string[];
   let controller: AbortController;
+  /** A stamped event's `at`, as ms after `BASE`, by `run:seq`. */
+  let stamps: Map<string, number>;
+
+  /** The event as read: with its stamped `at`, if it has one. */
+  const stamp = (stored: StoredEvent): StoredEvent => {
+    const ms = stamps.get(`${stored.runId}:${stored.seq}`);
+    return ms === undefined
+      ? stored
+      : { ...stored, at: new Date(BASE + ms).toISOString() };
+  };
+  /** The store as followed: its events carry their stamped `at`. */
+  const timed = (): EventStore => ({
+    ...store,
+    events: (run, after) =>
+      store.events(run, after).map(stored => stamp(stored)),
+  });
+  /** Stores `event` as if at `ms` after `BASE`. */
+  const appendAt = (run: string, event: RunEvent, ms: number): void => {
+    stamps.set(`${run}:${store.append(run, event).seq}`, ms);
+  };
+  /** A running run whose `run.started` is stamped at `ms`. */
+  const beginAt = (
+    id: string,
+    workflow: string,
+    ms: number,
+    more: { parent?: string } = {},
+  ): void => {
+    store.begin({ id, workflow, file: "f", project: "/p", ...more });
+    appendAt(id, started(id, workflow), ms);
+  };
 
   const record = ({ run, workflow, path: at, stored }: RunsEvent): void => {
     const { event } = stored;
@@ -82,10 +129,14 @@ describe("followRuns", () => {
     store.append(id, started(id, workflow));
   };
 
-  const follow = (scope: FollowRunsScope = here, untilIdle = false) =>
-    followRuns(store, scope, record, {
+  const follow = (
+    scope: FollowRunsScope = here,
+    untilIdle = false,
+    intervalMs = 5,
+  ) =>
+    followRuns(timed(), scope, record, {
       home: dir,
-      intervalMs: 5,
+      intervalMs,
       signal: controller.signal,
       untilIdle,
     });
@@ -101,6 +152,7 @@ describe("followRuns", () => {
     store = openStore(":memory:");
     lines = [];
     controller = new AbortController();
+    stamps = new Map();
   });
   afterEach(() => {
     controller.abort();
@@ -147,10 +199,10 @@ describe("followRuns", () => {
   });
 
   it("shows a called run once, under its caller's call path", async () => {
-    begin("aaaa0000", "start");
-    begin("plan0000", "plan", { parent: "aaaa0000" });
-    store.append("aaaa0000", called("plan", "plan0000", "plan"));
-    store.append("plan0000", nodeStarted("spec"));
+    beginAt("aaaa0000", "start", 0);
+    beginAt("plan0000", "plan", 20, { parent: "aaaa0000" });
+    appendAt("aaaa0000", called("plan", "plan0000", "plan"), 10);
+    appendAt("plan0000", nodeStarted("spec"), 30);
     const following = follow();
     await seen(4);
     // Several discovery passes, none of which may follow the called run again.
@@ -167,9 +219,9 @@ describe("followRuns", () => {
   });
 
   it("follows a called run on after its caller ends, without repeating it", async () => {
-    begin("aaaa0000", "start");
-    begin("plan0000", "plan", { parent: "aaaa0000" });
-    store.append("aaaa0000", called("plan", "plan0000", "plan"));
+    beginAt("aaaa0000", "start", 0);
+    beginAt("plan0000", "plan", 20, { parent: "aaaa0000" });
+    appendAt("aaaa0000", called("plan", "plan0000", "plan"), 10);
     const following = follow({ project: "/p" }, true);
     await seen(3);
     store.append("aaaa0000", finished("aaaa0000"));
@@ -255,5 +307,139 @@ describe("followRuns", () => {
       "aaaa0000 start |run.started",
       "qqqq0000 start |run.started",
     ]);
+  });
+
+  it("delivers two runs' live events in store order, whatever order they arrive in", async () => {
+    beginAt("aaaa0000", "start", 0);
+    beginAt("bbbb0000", "build", 10);
+    const following = follow(here, false, 40);
+    await seen(2);
+    // A's is stored, so read, first or with B's, but stamped later than B's.
+    appendAt("aaaa0000", nodeStarted("late"), 30);
+    appendAt("bbbb0000", nodeStarted("early"), 20);
+    await seen(4);
+    controller.abort();
+
+    await following;
+    expect(lines).toEqual([
+      "aaaa0000 start |run.started",
+      "bbbb0000 build |run.started",
+      "bbbb0000 build |node.started:early",
+      "aaaa0000 start |node.started:late",
+    ]);
+  });
+
+  it("breaks a tie on at by run id, then seq", async () => {
+    beginAt("bbbb0000", "build", 0);
+    appendAt("bbbb0000", nodeStarted("b"), 0);
+    beginAt("aaaa0000", "start", 0);
+    appendAt("aaaa0000", nodeStarted("a"), 0);
+    const following = follow();
+    await seen(4);
+    controller.abort();
+
+    await following;
+    expect(lines).toEqual([
+      "aaaa0000 start |run.started",
+      "aaaa0000 start |node.started:a",
+      "bbbb0000 build |run.started",
+      "bbbb0000 build |node.started:b",
+    ]);
+  });
+
+  it("delivers the stored backlog of several runs sorted, not run by run", async () => {
+    beginAt("aaaa0000", "start", 0);
+    beginAt("bbbb0000", "build", 10);
+    appendAt("aaaa0000", nodeStarted("a"), 20);
+    appendAt("bbbb0000", nodeStarted("b"), 30);
+    const following = follow();
+    await seen(4);
+    controller.abort();
+
+    await following;
+    expect(lines).toEqual([
+      "aaaa0000 start |run.started",
+      "bbbb0000 build |run.started",
+      "aaaa0000 start |node.started:a",
+      "bbbb0000 build |node.started:b",
+    ]);
+  });
+
+  it("merges a caller's and its called run's events by when they were stored", async () => {
+    beginAt("aaaa0000", "start", 0);
+    appendAt("aaaa0000", called("plan", "plan0000", "plan"), 10);
+    beginAt("plan0000", "plan", 20, { parent: "aaaa0000" });
+    appendAt("aaaa0000", nodeStarted("after"), 30);
+    appendAt("plan0000", nodeStarted("spec"), 40);
+    const following = follow();
+    await seen(5);
+    controller.abort();
+
+    await following;
+    expect(lines).toEqual([
+      "aaaa0000 start |run.started",
+      "aaaa0000 start |call.started",
+      "plan0000 plan plan|run.started",
+      "aaaa0000 start |node.started:after",
+      "plan0000 plan plan|node.started:spec",
+    ]);
+  });
+
+  it("delivers what it still holds when it ends idle", async () => {
+    beginAt("aaaa0000", "start", 0);
+    const following = follow(here, true, 100);
+    appendAt("aaaa0000", finished("aaaa0000"), 10);
+
+    // The run's end is still held when no tree is left: only a flush shows it.
+    await expect(following).resolves.toBe("idle");
+    expect(lines).toEqual([
+      "aaaa0000 start |run.started",
+      "aaaa0000 start |run.finished",
+    ]);
+  });
+
+  it("drops what it holds once aborted", async () => {
+    beginAt("aaaa0000", "start", 0);
+    const following = follow(here, false, 100);
+    await sleep(20);
+    controller.abort();
+
+    await expect(following).resolves.toBe("aborted");
+    await sleep(150);
+    expect(lines).toEqual([]);
+  });
+
+  it("delivers nothing it holds when a follower fails", async () => {
+    beginAt("aaaa0000", "start", 0);
+    beginAt("bbbb0000", "build", 10);
+    const boom = new Error("boom");
+    const failing = failingOn(timed(), "bbbb0000", boom);
+
+    // A's first event is held when B's read throws; both happen at once.
+    await expect(
+      followRuns(failing, here, record, {
+        home: dir,
+        intervalMs: 5,
+        signal: controller.signal,
+      }),
+    ).rejects.toBe(boom);
+    await sleep(30);
+    expect(lines).toEqual([]);
+  });
+
+  it("rejects, after halting, when onEvent throws on a held event's release", async () => {
+    beginAt("aaaa0000", "start", 0);
+    const boom = new Error("boom");
+
+    await expect(
+      followRuns(
+        timed(),
+        here,
+        () => {
+          throw boom;
+        },
+        { home: dir, intervalMs: 5, signal: controller.signal },
+      ),
+    ).rejects.toBe(boom);
   });
 });

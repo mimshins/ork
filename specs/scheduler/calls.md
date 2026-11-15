@@ -82,14 +82,24 @@ holds no session and no worktree.
   live, the called run too, at any depth, each once. Every event comes with its
   run and its call path, the call node ids from the root (`[]`, `["plan"]`,
   `["build", "review.1"]`). A called run's stored events come right after the
-  `call.started` that started it; live events come as they arrive. A run
-  attached to again after its caller was resumed is found by the `call.started`
-  stored before the resume. Following ends when the root ends (a run resumed
-  after an end, its own or a called one, is followed to its new end) or the
-  caller's signal aborts: it then reads what the called runs stored before the
-  root ended, unless aborted, and names those still running (a `wait: none`
-  call). With `follow: false` it only drains what is stored, at any depth, and
-  returns. No events are added; the reader decides what to show and ask.
+  `call.started` that started it; live events come as they arrive. With the
+  opt-in `ordered` option (`ork attach` passes it) every event, stored or live,
+  goes through one hold-and-sort buffer instead
+  ([code](../../packages/core/src/remote/order-events.ts)): each is held for
+  `intervalMs ?? 250` ms and released sorted by `(at, run, seq)`, so the
+  caller's and the called runs' events are merged by time and a called run's
+  stored events are no longer grouped after their `call.started`. Held events
+  are all delivered, in order, when following ends by itself, and dropped when
+  `signal` aborts or a follower fails; a throw from `onEvent` while the timer
+  releases fails the follow like one from a pushed event. `ork logs <run>` and
+  `--no-calls` do not set `ordered`. A run attached to again after its caller
+  was resumed is found by the `call.started` stored before the resume. Following
+  ends when the root ends (a run resumed after an end, its own or a called one,
+  is followed to its new end) or the caller's signal aborts: it then reads what
+  the called runs stored before the root ended, unless aborted, and names those
+  still running (a `wait: none` call). With `follow: false` it only drains what
+  is stored, at any depth, and returns. No events are added; the reader decides
+  what to show and ask.
 - **Following many runs.** `followRuns(store, scope, onEvent, options)`
   ([code](../../packages/core/src/remote/follow-runs.ts),
   [tests](../../packages/core/test/follow-runs.test.ts)) serves
@@ -97,17 +107,31 @@ holds no session and no worktree.
   are the live runs in scope with no `parent`, each followed with
   `followRunTree`, so a called run is reached through its caller and seen once.
   `onEvent` gets each tree event with the run's workflow and whether it was
-  stored: stored events first, then live ones. A root's end does not end the
-  watch. No socket announces a run that does not exist yet, so the run list is
-  read every second (`intervalMs`, the one poll; the same option sets how often
-  each tree polls a run with no socket) and a live run not followed yet gets a
-  follower. That pass also adopts a called run whose caller ended or is out of
-  scope, as a root, without repeating events already passed on. `scope.workflow`
-  and `scope.run` choose the roots only (called runs follow their caller
-  whatever their workflow; `scope.run` needs a whole id, not a prefix);
-  `scope.project` is one project's root or `"all"`. With `untilIdle` it returns
-  `"idle"` once every follower has ended and no live run is left in scope;
-  otherwise only the `signal` ends it (`"aborted"`). The one-second poll is
+  stored, in store order across all its runs: every event of every tree, a
+  caller's and its called runs' too, and the stored backlog as much as live
+  events, goes through one buffer that holds it `intervalMs ?? 250` ms and
+  releases it sorted by `(at, run, seq)`
+  ([ADR-095](../../decisions/ADR-095-follow-runs-in-store-order.md)). On each
+  release the buffer sorts all it holds and passes on the prefix through the
+  last event held a full window (a younger event that sorts before it goes too);
+  the rest stay. So the first event of a run in scope is passed on up to one
+  window late, and with no one else holding a card the first decision asked is
+  the earliest opened. When it ends by itself (`"idle"`) it passes on all it
+  holds, in order, before it returns; an abort or a failed follower drops it (no
+  more `onEvent`). A throw from `onEvent` fails it as a pushed event's does.
+  Events stored further apart than the window can still arrive in arrival order,
+  and the sort relies on a non-decreasing `at` within a run
+  ([L384](../gaps/machine-limits.md)). A root's end does not end the watch. No
+  socket announces a run that does not exist yet, so the run list is read every
+  second (`intervalMs`, the one poll; the same option sets how often each tree
+  polls a run with no socket) and a live run not followed yet gets a follower.
+  That pass also adopts a called run whose caller ended or is out of scope, as a
+  root, without repeating events already passed on. `scope.workflow` and
+  `scope.run` choose the roots only (called runs follow their caller whatever
+  their workflow; `scope.run` needs a whole id, not a prefix); `scope.project`
+  is one project's root or `"all"`. With `untilIdle` it returns `"idle"` once
+  every follower has ended and no live run is left in scope; otherwise only the
+  `signal` ends it (`"aborted"`). The one-second poll is
   [L373](../gaps/machine-limits.md).
 - **In `ork logs`.** `ork logs <run>` prints the runs it called inline, under
   the `<call node> › ` gutter a foreground caller shows (the `workflow.call`

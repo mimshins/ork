@@ -45,12 +45,15 @@ _Part of [The ork CLI](../cli.md)._
   time, on one terminal, for every live run in scope, a called run and a run
   that starts later included ([following many runs](../scheduler/calls.md)). The
   card names the run and its workflow (`run <id> · <workflow>`), also on plain
-  output. Each run is followed apart, so decisions reach it in poll order: one
-  that arrives while a card is up is held, and when the card settles the
-  earliest opened (the store's order) of those held and still open is asked
-  next; with no card up, the first to arrive is asked at once. A decision
-  answered elsewhere (`ork ui`, `ork attach`, another `ork decide`) withdraws
-  its card, or leaves the held ones at once, and prints
+  output. Decisions reach it in the store's order across runs (`followRuns`
+  holds each event one poll and sorts by `(at, run, seq)`), so with no card up
+  the first asked is the earliest opened, up to one poll (250 ms for a run with
+  no socket) after it opened; one that arrives while a card is up is held, and
+  when the card settles the earliest opened of those held and still open is
+  asked next. Events stored further apart than a poll can still arrive in
+  arrival order ([L384](../gaps/machine-limits.md)). A decision answered
+  elsewhere (`ork ui`, `ork attach`, another `ork decide`) withdraws its card,
+  or leaves the held ones at once, and prints
   `<id> answered elsewhere: <answer> (<by>)`, as `ork attach` does, before the
   next card starts. The held queue is in
   [prompts.ts](../../packages/cli/src/runs/prompts.ts), so `ork attach` orders

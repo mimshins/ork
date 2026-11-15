@@ -26,8 +26,12 @@ ork attach 3f2a                 # follow it here, and answer its questions
 `ork logs` would, then each new event until the run ends. It does the same for
 every run that run called, at any depth, including runs it called before you
 attached. A called run's lines start with the path of the calls that led to it.
-Questions from several called runs that open while a card is up wait and come
-next in the order they opened:
+The lines of the run and the runs it called are in the order they were stored,
+each up to one poll (about 250 ms) late, so the replay of a called run is mixed
+in by time, not printed right after the call that started it (`ork logs <run>`
+still prints it there). Questions from several runs that open together come in
+the order they opened, and ones that open while a card is up wait and come next
+in that order:
 
 ```text
 plan › spec │ agent.worker
@@ -95,10 +99,13 @@ ork decide --follow --until-idle    # stop when no live run is left
 
 It asks every question open now, one at a time, then each new one as it opens,
 including one from a run that started after you did, or a `build` that a `plan`
-called. The card names the run: `run 3f2a91c0 · start`. Questions that open
-while a card is up, in any run, wait and come next in the order they opened. A
-question answered elsewhere (`ork ui`, `ork attach`, another `ork decide`) goes
-away, even one still waiting, and says
+called. The card names the run: `run 3f2a91c0 · start`. With no card up, the
+first one asked is the one that opened first, in any run, up to one poll (about
+250 ms) after it opened. Questions that open while a card is up, in any run,
+wait and come next in the order they opened. If two runs' questions opened
+further apart than a poll but reached `ork` in the other order, they can still
+come in that order. A question answered elsewhere (`ork ui`, `ork attach`,
+another `ork decide`) goes away, even one still waiting, and says
 `<id> answered elsewhere: <answer> (<by>)`. Your answer goes to the run as
 `decide`. `q` or Esc leaves a question open: it is not asked again until the
 next `--follow`. `--run`, `--workflow`, `--project` and the run id narrow what

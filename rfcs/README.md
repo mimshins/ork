@@ -83,4 +83,4 @@ and carries an RFC through this lifecycle. `ork run rfc` drafts one with you and
 | [017](./archived/RFC-017-list-filters.md)                      | One way to filter every list command                               | Implemented |
 | [018](./active/RFC-018-onboard.md)                             | `ork onboard`: a forward-deployed engineer built into Ork          | Accepted    |
 | [019](./archived/RFC-019-ui-sign-in-code.md)                   | `ork ui` signs the browser in with a one-time code                 | Implemented |
-| [020](./active/RFC-020-follow-runs-in-store-order.md)          | Following many runs in store order                                 | Accepted    |
+| [020](./archived/RFC-020-follow-runs-in-store-order.md)        | Following many runs in store order                                 | Implemented |

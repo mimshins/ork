@@ -1,6 +1,6 @@
 # RFC-020 — Following many runs in store order
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-15
 - **Supersedes:** —
 - **Superseded by:** —

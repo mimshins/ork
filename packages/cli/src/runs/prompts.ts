@@ -2,12 +2,13 @@
  * @file The prompts a terminal command owns while it follows runs (`ork
  *   attach`, `ork decide --follow`): one prompt per open decision, one card at
  *   a time through a single `TerminalHuman`, withdrawn when the decision closes
- *   elsewhere, with the "answered elsewhere" line a person sees then. Runs are
- *   followed apart, so decisions arrive in poll order: those that arrive while
- *   a card is up are held and asked in the order they opened (the store's
- *   order), the line of a card withdrawn elsewhere printing before the next
- *   card. A decision arriving with no card up is asked at once (specs/gaps
- *   L383). The command feeds it each decision to ask and each event seen.
+ *   elsewhere, with the "answered elsewhere" line a person sees then. Decisions
+ *   that arrive while a card is up are held and asked in the order they opened
+ *   (the store's order), the line of a card withdrawn elsewhere printing before
+ *   the next card. A decision arriving with no card up is asked at once: the
+ *   followers deliver events in store order, so it is the earliest opened, up
+ *   to one poll late (specs/gaps L384). The command feeds it each decision to
+ *   ask and each event seen.
  */
 
 import type { DecisionRecord, EventStore, RunEvent } from "@krapht/ork-core";
@@ -102,9 +103,9 @@ export const createPrompts = (
   /** The card on screen (at most one). */
   const prompts = new Map<string, Prompt>();
   /**
-   * Decisions waiting for the card on screen to settle. Runs are followed
-   * apart, so they arrive in poll order; held, they are asked in the order they
-   * opened.
+   * Decisions waiting for the card on screen to settle. They can arrive in a
+   * different order than they opened (specs/gaps L384); held, they are asked in
+   * the order they opened.
    */
   const held = new Map<string, PromptPlace>();
   /** Decisions answered here: their `decision.answered` line is the card's. */

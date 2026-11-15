@@ -8,6 +8,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -55,6 +56,19 @@ const nodeStarted = (id: string): RunEvent => ({
   id,
   nodeType: "agent.worker",
   round: 1,
+});
+
+/** The store, but reading `failing`'s events throws `error`. */
+const failingOn = (
+  base: EventStore,
+  failing: string,
+  error: Error,
+): EventStore => ({
+  ...base,
+  events: (run, after) => {
+    if (run === failing) throw error;
+    return base.events(run, after);
+  },
 });
 
 describe("followRunTree", () => {
@@ -287,5 +301,87 @@ describe("followRunTree", () => {
       "plan|run.finished",
       "|run.finished",
     ]);
+  });
+
+  /** The store as followed, each event's `at` its seq's ms after a base. */
+  const stamped = (ms: Record<string, number>): EventStore => ({
+    ...store,
+    events: (run, after) =>
+      // Each read is a fresh copy from the store, so stamping it in place is safe.
+      store.events(run, after).map(stored =>
+        Object.assign(stored, {
+          at: new Date(
+            Date.UTC(2026, 0, 1) + (ms[`${run}:${stored.seq}`] ?? 0),
+          ).toISOString(),
+        }),
+      ),
+  });
+
+  it("with ordered, merges a caller's and a called run's events by when they were stored", async () => {
+    store.append("root0000", called("plan", "plan0000"));
+    begin("plan0000");
+    store.append("root0000", nodeStarted("after"));
+    store.append("plan0000", nodeStarted("spec"));
+    store.append("plan0000", finished("plan0000"));
+    store.append("root0000", finished("root0000"));
+    const timed = stamped({
+      "root0000:1": 0,
+      "root0000:2": 10,
+      "plan0000:1": 20,
+      "root0000:3": 30,
+      "plan0000:2": 40,
+      "plan0000:3": 50,
+      "root0000:4": 60,
+    });
+
+    // A long hold: what it delivers, it delivers once following has ended.
+    await expect(
+      followRunTree(timed, "root0000", record, {
+        home: dir,
+        intervalMs: 60_000,
+        ordered: true,
+      }),
+    ).resolves.toEqual({ end: "finished", stillRunning: [] });
+    expect(lines).toEqual([
+      "|run.started",
+      "|call.started:plan",
+      "plan|run.started",
+      "|node.started:after",
+      "plan|node.started:spec",
+      "plan|run.finished",
+      "|run.finished",
+    ]);
+  });
+
+  it("with ordered, delivers nothing it holds when a called run's follower fails", async () => {
+    store.append("root0000", called("plan", "plan0000"));
+    store.append("root0000", finished("root0000"));
+    const boom = new Error("boom");
+    const failing = failingOn(store, "plan0000", boom);
+
+    await expect(
+      followRunTree(failing, "root0000", record, {
+        home: dir,
+        intervalMs: 5,
+        ordered: true,
+      }),
+    ).rejects.toBe(boom);
+    await sleep(30);
+    expect(lines).toEqual([]);
+  });
+
+  it("with ordered, rejects when onEvent throws on a held event's release", async () => {
+    const boom = new Error("boom");
+
+    await expect(
+      followRunTree(
+        store,
+        "root0000",
+        () => {
+          throw boom;
+        },
+        { home: dir, intervalMs: 5, ordered: true },
+      ),
+    ).rejects.toBe(boom);
   });
 });

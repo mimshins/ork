@@ -10,6 +10,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 import type { EventStore, RunRecord } from "../store/types.ts";
 import { liveStatus } from "../store/view.ts";
 import { followRunTree, type TreeEvent } from "./follow-tree.ts";
+import { createOrdered } from "./order-events.ts";
 
 export type FollowRunsScope = {
   /** One project's runs (its root, absolute); `"all"` or absent: every one. */
@@ -41,9 +42,12 @@ export type FollowRunsEnd = "aborted" | "idle";
 
 /**
  * Calls `onEvent` for each event of the live runs in `scope` and of the runs
- * they call, once each: stored events first, then live ones. Roots are the live
- * runs with no `parent`, and a called run whose caller is not followed (out of
- * scope, or ended while it runs on). A root's end does not end the watch.
+ * they call, once each, in store order `(at, run, seq)`: each is held
+ * `intervalMs` (default 250 ms) so an earlier event polled later catches up.
+ * Held events are delivered on `untilIdle`'s end, never once `signal` aborted
+ * or a follower failed. Roots are the live runs with no `parent`, and a called
+ * run whose caller is not followed (out of scope, or ended while it runs on). A
+ * root's end does not end the watch.
  */
 export const followRuns = async (
   store: EventStore,
@@ -64,6 +68,12 @@ export const followRuns = async (
     options.signal === undefined
       ? halt.signal
       : AbortSignal.any([options.signal, halt.signal]);
+  /** One hold over every tree, so all runs' events come in store order. */
+  const order = createOrdered(onEvent, options.intervalMs ?? 250, error => {
+    failure.error ??= error;
+    halt.abort();
+  });
+  signal.addEventListener("abort", order.drop, { once: true });
   const { project } = scope;
   const filter = project === undefined || project === "all" ? {} : { project };
   /** What each tree takes: `untilIdle` is the watch's, not a tree's. */
@@ -92,7 +102,14 @@ export const followRuns = async (
         runs.add(event.run);
         if (event.stored.seq <= (seqs.get(event.run) ?? 0)) return;
         seqs.set(event.run, event.stored.seq);
-        onEvent({ ...event, workflow: workflowOf(event.run) });
+        if (signal.aborted) return;
+        const { at, seq } = event.stored;
+        order.push(
+          { ...event, workflow: workflowOf(event.run) },
+          at,
+          event.run,
+          seq,
+        );
       },
       { ...poll, signal },
     )
@@ -133,7 +150,11 @@ export const followRuns = async (
     if (signal.aborted) break;
     discover();
     // No tree left means no follower left; a failure aborted `signal` above.
-    if (untilIdle === true && trees.size === 0) return "idle";
+    if (untilIdle === true && trees.size === 0) {
+      order.flush();
+      if ("error" in failure) throw failure.error;
+      return "idle";
+    }
     try {
       // oxlint-disable-next-line no-await-in-loop -- the one poll: no socket announces a new run
       await sleep(options.intervalMs ?? 1000, undefined, { signal });

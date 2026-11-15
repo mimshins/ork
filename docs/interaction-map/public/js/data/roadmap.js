@@ -1153,13 +1153,27 @@ export const MILESTONES = [
         commits: ["267a314"],
         date: "2026-11-15",
         detail:
-          "Shipped. `ork decide --follow` asks every open decision, then each new one as it opens across the live runs (a called `build` after its `plan`, a new `ork run`), with the run and workflow on the card; an answer given elsewhere withdraws the prompt, and Ctrl-C leaves everything open. Decisions that arrive while a card is up are held and asked in the order they opened, by a queue `ork attach` shares, so called runs' questions are ordered the same way. `ork logs -f --all` interleaves every live run under a short id and workflow prefix, and `--until-idle` ends both when no live run is left. `ork logs <run>` now prints the runs it called inline under their call node's id (`--no-calls` turns it off). One core follower, `followRuns`, serves both; it finds runs that start later by one 1 s poll. Tests also pin what outlives a SIGKILLed `ork` (a called run, a git command) and record it as limits. Left: the poll is not a push, a called run and git outlive a killed caller, and with no card up the first decision to arrive is asked at once even if another run opened one earlier (L383).",
+          "Shipped. `ork decide --follow` asks every open decision, then each new one as it opens across the live runs (a called `build` after its `plan`, a new `ork run`), with the run and workflow on the card; an answer given elsewhere withdraws the prompt, and Ctrl-C leaves everything open. Decisions that arrive while a card is up are held and asked in the order they opened, by a queue `ork attach` shares, so called runs' questions are ordered the same way. `ork logs -f --all` interleaves every live run under a short id and workflow prefix, and `--until-idle` ends both when no live run is left. `ork logs <run>` now prints the runs it called inline under their call node's id (`--no-calls` turns it off). One core follower, `followRuns`, serves both; it finds runs that start later by one 1 s poll. Tests also pin what outlives a SIGKILLed `ork` (a called run, a git command) and record it as limits. Left: the poll is not a push, a called run and git outlive a killed caller. The order across runs came next (below).",
         docs: [
           "docs/guides/running-workflows/attaching-to-a-run.md",
           "docs/guides/running-workflows/looking-back.md",
           "specs/cli.md",
           "specs/scheduler/calls.md",
           "specs/gaps.md#limits",
+        ],
+      },
+      {
+        id: "follow-order",
+        title: "Follow several runs in store order",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). RFC-020, Option A. `followRuns` (and `followRunTree` with the opt-in `ordered`, which `ork attach` passes) holds each event for one poll (`intervalMs ?? 250` ms) and passes them on sorted by `(at, run, seq)`, the stored backlog and live events alike. With no card up, `ork decide --follow` and `ork attach` ask the earliest opened decision first, and `ork logs -f --all` prints lines in the order stored, each up to one poll later; `ork logs <run>` is unchanged. Held events are all passed on when following ends by itself and dropped on abort. Left (L384): events stored further apart than the window can still arrive in arrival order, the sort relies on a non-decreasing `at` within a run, and `--limit` counts in read order, not time order.",
+        docs: [
+          "decisions/ADR-095-follow-runs-in-store-order.md",
+          "docs/guides/running-workflows/attaching-to-a-run.md",
+          "docs/guides/running-workflows/looking-back.md",
+          "specs/scheduler/calls.md",
+          "specs/gaps/machine-limits.md",
         ],
       },
       {

@@ -2,8 +2,8 @@
  * @file Tests for `ork logs` over several runs: called runs inline (default in
  *   text, `--no-calls`, `--calls` for JSON, `--node`, `--limit` overall, the
  *   runs still running when following ends), `--all` interleaving every live
- *   run behind its id and workflow (a later run, a called run once, `--json`,
- *   `--until-idle`), and the flags it refuses.
+ *   run behind its id and workflow (in store order, a later run, a called run
+ *   once, `--json`, `--until-idle`), and the flags it refuses.
  */
 
 import { stripVTControlCharacters } from "node:util";
@@ -115,6 +115,32 @@ const startOrk = (...words: string[]): { out: string[]; ran: Promise<Ran> } => {
 
 /** What `ork logs <words>` printed, in this process. */
 const ork = (...words: string[]): Promise<Ran> => startOrk(...words).ran;
+
+/**
+ * `store` as followed (`timed`), and `appendAt`, which stores an event that
+ * reads as stored `ms` after this was made: an event stored first can read as
+ * stored later, as when another run was polled later (RFC-020).
+ */
+const stampedStore = (store: EventStore) => {
+  const base = Date.now();
+  /** A stamped event's `at`, by `run:seq`. */
+  const stamps = new Map<string, string>();
+  const timed: EventStore = {
+    ...store,
+    events: (run, after) =>
+      // Each read is a fresh copy from the store, so stamping it in place is safe.
+      store.events(run, after).map(stored =>
+        Object.assign(stored, {
+          at: stamps.get(`${run}:${String(stored.seq)}`) ?? stored.at,
+        }),
+      ),
+  };
+  const appendAt = (run: string, event: RunEvent, ms: number): void => {
+    const { seq } = store.append(run, event);
+    stamps.set(`${run}:${String(seq)}`, new Date(base + ms).toISOString());
+  };
+  return { timed, appendAt };
+};
 
 /** The runs the JSON lines in `out` belong to. */
 const runsOf = (out: string[]) => new Set(out.map(l => runIdOf(l)));
@@ -366,6 +392,31 @@ describe("ork logs over several runs", () => {
       const text = plain(lines);
       expect(text.some(l => l.startsWith("aaaa plan › "))).toBe(true);
       expect(text.every(l => /^(aaaa plan|bbbb build) › /u.test(l))).toBe(true);
+    });
+
+    it("prints two runs' lines in the order stored, not run by run", async () => {
+      begin("aaaa1111", "plan");
+      begin("bbbb2222", "build");
+      const { timed, appendAt } = stampedStore(store);
+      // A's step is stored first but stamped after B's.
+      appendAt("aaaa1111", stepStarted, 30);
+      appendAt("bbbb2222", stepStarted, 20);
+      const lines: string[] = [];
+      const stop = new AbortController();
+      const done = printAllOf(timed, lines, {}, stop.signal);
+      await printed(lines, "aaaa plan › ");
+      await vi.waitFor(() => {
+        expect(plain(lines).filter(line => line.includes("step"))).toHaveLength(
+          2,
+        );
+      });
+      stop.abort();
+      await done;
+      expect(
+        plain(lines)
+          .filter(line => line.includes("step"))
+          .map(line => line.slice(0, 4)),
+      ).toEqual(["bbbb", "aaaa"]);
     });
 
     it("follows only one workflow's runs with --workflow", async () => {

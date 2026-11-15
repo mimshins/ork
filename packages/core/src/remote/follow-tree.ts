@@ -7,6 +7,7 @@
 import type { EventStore, StoredEvent } from "../store/types.ts";
 import { liveStatus } from "../store/view.ts";
 import { type FollowEnd, followEvents } from "./follow.ts";
+import { createOrdered } from "./order-events.ts";
 
 export type TreeEvent = {
   /** The run that stored the event. */
@@ -27,6 +28,12 @@ export type FollowRunTreeOptions = {
   /** `~`, for the runs' sockets; tests pass a folder. */
   home?: string;
   signal?: AbortSignal;
+  /**
+   * Hold each event `intervalMs` (default 250 ms) and deliver the runs' events
+   * in store order, `(at, run, seq)` (default false). With it, a called run's
+   * stored events are no longer grouped after their `call.started`.
+   */
+  ordered?: boolean;
 };
 
 export type FollowTreeEnd = {
@@ -39,8 +46,10 @@ export type FollowTreeEnd = {
 /**
  * Calls `onEvent` for each event of `root` and of the runs it called, once
  * each. A called run's stored events come right after the `call.started` that
- * started it; live events as they arrive. Ends when the root ends or `signal`
- * aborts; with `follow: false`, once the stored events are read.
+ * started it; live events as they arrive; with `ordered`, all in store order.
+ * Ends when the root ends or `signal` aborts; with `follow: false`, once the
+ * stored events are read. Events still held then are delivered, unless `signal`
+ * aborted or following failed.
  */
 export const followRunTree = async (
   store: EventStore,
@@ -54,18 +63,38 @@ export const followRunTree = async (
   const seqs = new Map<string, number>();
   const followers: Promise<FollowEnd>[] = [];
   const live = options.follow ?? true;
+  /** Ends the root's following once a held event's delivery has failed. */
+  const fail = new AbortController();
+  const failure: { error?: unknown } = {};
+  const rootSignal =
+    options.signal === undefined
+      ? fail.signal
+      : AbortSignal.any([options.signal, fail.signal]);
   /** Ends the called runs' following once the root's has ended. */
   const halt = new AbortController();
-  const signal =
-    options.signal === undefined
-      ? halt.signal
-      : AbortSignal.any([options.signal, halt.signal]);
+  const signal = AbortSignal.any([rootSignal, halt.signal]);
+  const order =
+    options.ordered === true
+      ? createOrdered(onEvent, options.intervalMs ?? 250, error => {
+          failure.error ??= error;
+          fail.abort();
+        })
+      : undefined;
+  if (order !== undefined) {
+    rootSignal.addEventListener("abort", order.drop, { once: true });
+  }
+  const deliver = (event: TreeEvent): void => {
+    if (order === undefined) onEvent(event);
+    else if (!rootSignal.aborted) {
+      order.push(event, event.stored.at, event.run, event.stored.seq);
+    }
+  };
 
   const handle =
     (run: string, path: readonly string[]) =>
     (stored: StoredEvent): void => {
       seqs.set(run, stored.seq);
-      onEvent({ run, path, stored });
+      deliver({ run, path, stored });
       const { event } = stored;
       if (event.type === "call.started" && !paths.has(event.run)) {
         follow(event.run, [...path, event.node]);
@@ -90,25 +119,36 @@ export const followRunTree = async (
     }
   };
 
-  const end = await followEvents(store, root, handle(root, []), {
-    ...options,
-    follow: live,
-  });
-  halt.abort();
-  await settle();
-  // What the called runs stored before the root ended but their following had
-  // not yet read: a halted follower drains the store once and returns.
-  if (end !== "aborted") {
-    for (const [run, path] of [...paths].slice(1)) {
-      followers.push(
-        followEvents(store, run, handle(run, path), {
-          follow: false,
-          after: seqs.get(run) ?? 0,
-        }),
-      );
-    }
+  const followAll = async (): Promise<FollowEnd> => {
+    const end = await followEvents(store, root, handle(root, []), {
+      ...options,
+      follow: live,
+      signal: rootSignal,
+    });
+    halt.abort();
     await settle();
-  }
+    // What the called runs stored before the root ended but their following
+    // had not yet read: a halted follower drains the store once and returns.
+    if (end !== "aborted") {
+      for (const [run, path] of [...paths].slice(1)) {
+        followers.push(
+          followEvents(store, run, handle(run, path), {
+            follow: false,
+            after: seqs.get(run) ?? 0,
+          }),
+        );
+      }
+      await settle();
+    }
+    return end;
+  };
+  const end = await followAll().catch((error: unknown) => {
+    order?.drop();
+    throw error;
+  });
+  if (end === "aborted") order?.drop();
+  else order?.flush();
+  if ("error" in failure) throw failure.error;
   const stillRunning = [...paths.keys()].slice(1).filter(id => {
     const [run] = store.lookup(id);
     return run !== undefined && liveStatus(run) === "running";

@@ -232,15 +232,19 @@ ends when the root ends, and names those still running
 (`↳ run <id> still running · ork attach <id>`). `ork logs -f --all`
 ([code](../../packages/cli/src/commands/logs.ts),
 [tests](../../packages/cli/test/logs-many.test.ts)) follows every live run of
-the project (`--project all`: of every project), the stored events of each
-first, then new ones, with each line prefixed `<4-char run id> <workflow> › `; a
-run that starts while it follows joins, and a called run prints once, as its own
-run, not twice. `--json` prints the stored events as they are, with no prefix.
-`--until-idle` ends it (exit 0) once no live run is left; Ctrl-C ends it too.
-Refused, one line each: `--all` without `-f` (`--all needs -f.`), with a run
-(`--all can't be used with a run.`) or with `--calls`/`--no-calls`; `--project`
-or `--until-idle` without `--all`. With `--node`, a run without that node prints
-nothing for it, not an error.
+the project (`--project all`: of every project), with each line prefixed
+`<4-char run id> <workflow> › `. Lines are in the order stored across runs
+(sorted by time, then run, then position), the stored events and new ones alike,
+each up to one poll (250 ms) later than it happened
+([calls](../scheduler/calls.md); [L384](../gaps/machine-limits.md)); `--limit`
+still keeps the last N events overall in the order the runs are read, not in
+time order. A run that starts while it follows joins, and a called run prints
+once, as its own run, not twice. `--json` prints the stored events as they are,
+with no prefix. `--until-idle` ends it (exit 0) once no live run is left; Ctrl-C
+ends it too. Refused, one line each: `--all` without `-f` (`--all needs -f.`),
+with a run (`--all can't be used with a run.`) or with `--calls`/`--no-calls`;
+`--project` or `--until-idle` without `--all`. With `--node`, a run without that
+node prints nothing for it, not an error.
 
 `ork logs --node` always shows a failed node's hint and scrubbed detail, as
 `--verbose` does for the whole run (there is no `ork runs show`; the browser
