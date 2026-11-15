@@ -2,6 +2,25 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **Follow every live run at once.** `ork decide --follow` (or `--watch`) stays
+  open and asks each open decision, then each new one, across your live runs,
+  and `ork logs -f --all` interleaves their lines under a `<id> <workflow> ›`
+  prefix; both pick up runs that start later, and `--until-idle` ends them when
+  nothing is left. `ork logs <run>` now prints the runs it called inline under
+  `call ›`; `--no-calls` turns that off, and `--json` includes them only with
+  `--calls`
+  ([decide](../guides/running-workflows/attaching-to-a-run.md#answering-for-several-runs-ork-decide---follow),
+  [logs](../guides/running-workflows/looking-back.md#follow-every-live-run)).
+- **Close several follow-ups at once.** `ork follow-ups done`, `drop`, `reopen`
+  and `due` take several ids, by spaces or commas, and change none if one is
+  unknown or can't take the action. Commands that take one id now refuse a
+  second one instead of ignoring it
+  ([guide](../guides/follow-ups.md#reading-and-closing-them)).
+- **`ork once --on` keys a check by the files it reads.** `--on <pathspec>`
+  (repeatable) hashes only the files the git pathspecs match, so an edit
+  elsewhere still reuses the pass; a pathspec git refuses stops before the
+  command runs. Repeated `--covers` now records every name
+  ([guide](../guides/running-workflows/several-runs.md#run-a-check-once-ork-once)).
 - **A watched trigger's MCP server program is accepted too.** The hash behind
   `ork watch --accept` now covers a file in your project that an `mcp.call`
   check's stdio server runs (its `command` or an argument, also

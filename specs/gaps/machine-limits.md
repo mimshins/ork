@@ -68,18 +68,17 @@ processes end with `ork`):
   fast-forward only, so the next holder's is rejected and nothing is lost; a
   workflow that force-pushes could lose work. Its guard test
   (`orphan-guard.test.ts`, with `spawn.test.ts` and
-  `session-leg-orphan.test.ts`) is unconfirmed on Linux: the `ubuntu-24.04`
-  `unit` job's log was not read (`gh` was denied), and `orphanGuard` behaved the
-  same under a local `dash`. The tests are POSIX-only (`skipIf(win32)`), so CI
-  runs them.
+  `session-leg-orphan.test.ts`) passes on Linux: the `ubuntu-24.04` `unit` job
+  on 2026-11-15 ran all three, with `call-orphan.test.ts` and
+  `git-orphan.test.ts`. The tests are POSIX-only (`skipIf(win32)`).
 - **L319 · Native Windows nodes outlive a killed `ork`.** The guard needs `sh`
   and POSIX process groups. WSL 2 is the supported path; native Windows would
   need Job Objects, a native dependency and its own ADR.
 - **L320 · Claude Code's own children may escape the group.** A session's group
   is ended with `ork`, and a fake-driver test shows its children go too. What
   Claude Code does with its own background Bash children is unchecked; it needs
-  a real session (a paid run). The three guard test files passing on Linux
-  (`dash` as `sh`) is likewise unconfirmed, as under L318.
+  a real session (a paid run). The guard's test files pass on Linux (`dash` as
+  `sh`), as under L318.
 - **L321 · A stop's SIGTERM also kills the watcher.** The group's SIGTERM from a
   stop reaches the `sh` watcher too, so a program that ignores SIGTERM survives
   if `ork` is SIGKILLed before its own SIGKILL follows.

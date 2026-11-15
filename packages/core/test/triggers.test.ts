@@ -660,15 +660,19 @@ const mcpProject = (entry: unknown, server = "s") => {
   return place;
 };
 
-/** Whether the hash changes once `file` (in the project) holds new text. */
+/** Whether the hash changes once `file` (in the project) holds new content. */
 const hashAfterWriting = (
   place: ReturnType<typeof project>,
   file: string,
+  [first, second]: readonly [string | Uint8Array, string | Uint8Array] = [
+    "one",
+    "two",
+  ],
 ): boolean => {
   const target = path.join(place.root, file);
-  writeFileSync(target, "one");
+  writeFileSync(target, first);
   const before = hashOf(place);
-  writeFileSync(target, "two");
+  writeFileSync(target, second);
   return hashOf(place) !== before;
 };
 
@@ -738,6 +742,17 @@ describe("reading a project", () => {
       expect(hashAfterWriting(place, file)).toBe(true);
     },
   );
+
+  it("hashes a named program's bytes, not its text", () => {
+    // Both bytes are invalid UTF-8, so as text they'd read the same.
+    const place = mcpProject({ command: "./tool.bin", args: [] });
+    expect(
+      hashAfterWriting(place, "tool.bin", [
+        Uint8Array.of(0x41, 0xff),
+        Uint8Array.of(0x41, 0xfe),
+      ]),
+    ).toBe(true);
+  });
 
   it.each([
     ["a word that is no file", "node", ["--verbose", "serve"]],

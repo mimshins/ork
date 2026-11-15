@@ -28,8 +28,9 @@ between looks, once L125, is part of [L55](./calls-limits.md).
   `--flag=./file`); not hashed are a program outside the project (`npx`, a
   global binary), a path built from an environment variable (`${VAR}` is not
   expanded, the literal word is checked), a missing file, an http server, and
-  what an in-repo program itself imports or reads. Files are hashed as utf8
-  text, so a swap of invalid bytes in a binary goes unnoticed.
+  what an in-repo program itself imports or reads. A named file goes in as a
+  digest of its bytes, so a binary that changes only in bytes that aren't UTF-8
+  still turns the trigger off.
 - **L120 · `trigger.untrusted` reads prompts and instructions only.** A value a
   session reaches another way, through a tool's output or a `before:` step,
   isn't warned of. Only `tools: { only }` limited to `Read`, `Grep` and `Glob`

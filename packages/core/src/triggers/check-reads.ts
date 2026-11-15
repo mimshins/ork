@@ -4,9 +4,11 @@
  *   command, interpreter or server program names (`--config=./x.json` names
  *   `./x.json`). What those files read in turn, a program outside the project
  *   and a path built from an env variable are not in it. Only files inside the
- *   project are read, and their text goes into the hash, never anywhere else.
+ *   project are read, and what goes into the hash is the text of `.mcp.json`
+ *   and a digest of each named file's bytes, never anything else.
  */
 
+import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
@@ -31,14 +33,17 @@ const isFile = (file: string): boolean =>
   statSync(file, { throwIfNoEntry: false })?.isFile() === true;
 
 /**
- * What a word names, if it is a file in the project: the word and the file's
- * text. A file outside the project, a missing one and a word that is no file
- * add nothing.
+ * What a word names, if it is a file in the project: the word and a digest of
+ * the file's bytes, not its text, so a compiled program that differs only in
+ * bytes that aren't UTF-8 still changes the hash. A file outside the project, a
+ * missing one and a word that is no file add nothing.
  */
 const fileRead = (root: string, from: string, word: string): string[] => {
   const file = path.resolve(from, word.replace(/^-{1,2}[^=\s]+=/u, ""));
   return word !== "" && inside(root, file) && isFile(file)
-    ? [`${word}\0${readFileSync(file, "utf8")}`]
+    ? [
+        `${word}\0${createHash("sha256").update(readFileSync(file)).digest("hex")}`,
+      ]
     : [];
 };
 
