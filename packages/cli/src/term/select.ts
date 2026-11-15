@@ -9,6 +9,7 @@
  *   when the prompt takes one.
  */
 
+import { barred } from "./card-bar.ts";
 import { readKeys } from "./keys.ts";
 import { cut, widthOf, wrap } from "./layout.ts";
 import { interrupt, readLine, withdrawn } from "./line.ts";
@@ -194,12 +195,12 @@ export const select = (
       const detail = shown.map(line => paint(t, "muted", `   ${line}`));
       const lines = [...above, ...detail, keyLine(t)];
       if (editing === undefined) {
-        region.draw(lines);
+        region.draw(barred(t, lines));
         return;
       }
       const lead = ` ${paint(t, "accent", "✎")} Note › `;
       const { line, column } = showLine(lead, editing, t.width, 10);
-      region.draw([...lines, line], column);
+      region.draw(barred(t, [...lines, line]), column);
     };
 
     const finish = (

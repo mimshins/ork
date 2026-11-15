@@ -6,6 +6,7 @@
  *   line), and a closed input is no.
  */
 
+import { barred } from "./card-bar.ts";
 import { readKeys } from "./keys.ts";
 import { cut, hang } from "./layout.ts";
 import { interrupt, readLine, withdrawn } from "./line.ts";
@@ -57,10 +58,12 @@ export const confirmOrStop = async (
       const pick = (label: string, on: boolean): string =>
         on ? apply(t, "inverse", ` ${label} `) : ` ${label} `;
       const keys = paint(t, "muted", "y/n · ←/→ · Enter");
-      region.draw([
-        ...asked,
-        `   ${pick("Yes", yes)} ${pick("No", !yes)}  ${keys}`,
-      ]);
+      region.draw(
+        barred(t, [
+          ...asked,
+          `   ${pick("Yes", yes)} ${pick("No", !yes)}  ${keys}`,
+        ]),
+      );
     };
     const finish = (answer: boolean): void => {
       stop();

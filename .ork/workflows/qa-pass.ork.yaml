@@ -77,6 +77,7 @@ nodes:
     tools:
       allow:
         - Bash
+        - Read
         - Write
         - Edit
     output:

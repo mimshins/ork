@@ -9,10 +9,11 @@
 import type { HumanQuestion } from "@krapht/ork-core";
 
 import { plain } from "./output.ts";
-import { chip, CHIP_LABELS, nodeChip } from "./term/chips.ts";
+import { BAR } from "./term/card-bar.ts";
+import { askChip, nodeChip } from "./term/chips.ts";
 import { cut, wrap } from "./term/layout.ts";
 import type { Term } from "./term/mode.ts";
-import { bold, paint } from "./term/theme.ts";
+import { apply, bold, paint } from "./term/theme.ts";
 
 /**
  * Where a question sits in `ork decide` or `ork attach`: its run and workflow,
@@ -75,7 +76,7 @@ export const cardLines = (
   return {
     lines: [
       "",
-      ` ${chip(t, CHIP_LABELS.ask, "accent")} ${nodeChip(t, plain(q.nodeId))}${where}`,
+      ` ${askChip(t)} ${nodeChip(t, plain(q.nodeId))}${where}`,
       ...wrap(clean(q.question), t.width - 1).map(l => ` ${bold(t, l)}`),
       ...body.map(l => paint(t, "muted", `   ${l}`)),
       ...(cutShort
@@ -103,7 +104,7 @@ export const permitLine = (
   if (!t.rich) return `? ${node} wants to run ${what}`;
   // The chips and words before the preview take 12 columns and the node's id.
   const room = Math.max(20, t.width - node.length - 24);
-  return ` ${chip(t, CHIP_LABELS.ask, "accent")} ${nodeChip(t, node)} wants to run ${cut(what, room)}`;
+  return `${apply(t, "greenBright", BAR)}${askChip(t)} ${nodeChip(t, node)} wants to run ${cut(what, room)}`;
 };
 
 /**

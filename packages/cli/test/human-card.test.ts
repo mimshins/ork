@@ -39,13 +39,13 @@ describe("the terminal channel's card", () => {
     await term.press();
     expect(term.screen()).toEqual([
       "",
-      "  ASK   gate",
-      " Merge the change into main now?",
-      "   line one",
-      "   line two",
-      "   1. Merge (yes)",
-      " ❯ 2. no (recommended)",
-      " ↑/↓ move · Enter choose",
+      "▌ ASK   gate",
+      "▌Merge the change into main now?",
+      "▌  line one",
+      "▌  line two",
+      "▌  1. Merge (yes)",
+      "▌❯ 2. no (recommended)",
+      "▌↑/↓ move · Enter choose",
     ]);
     await term.press(KEY.up, KEY.enter);
     expect(await asked).toBe("yes");
@@ -61,7 +61,7 @@ describe("the terminal channel's card", () => {
       total: 3,
     });
     await term.press();
-    expect(term.screen()[1]).toBe("  ASK   gate   run 509da722 · 1 of 3");
+    expect(term.screen()[1]).toBe("▌ ASK   gate   run 509da722 · 1 of 3");
     await term.press(KEY.enter);
     expect(await asked).toBe("no");
     expect(term.screen()).toEqual([" ✓ 509da722-1 · no"]);
@@ -75,7 +75,7 @@ describe("the terminal channel's card", () => {
       decision: "509da722-1",
     });
     await term.press();
-    expect(term.screen()[1]).toBe("  ASK   gate   run 509da722 · build");
+    expect(term.screen()[1]).toBe("▌ ASK   gate   run 509da722 · build");
     await term.press(KEY.enter);
     expect(await asked).toBe("no");
   });
@@ -107,12 +107,12 @@ describe("the terminal channel's card", () => {
     );
     await term.press();
     expect(term.screen().slice(2, 5)).toEqual([
-      " Should the change that rewrites the whole",
-      " exporter be merged into main now?",
-      "   line one",
+      "▌Should the change that rewrites the whole",
+      "▌exporter be merged into main now?",
+      "▌  line one",
     ]);
     expect(term.screen().at(-1)).toBe(
-      " ↑/↓ move · Enter choose · n note · q later",
+      "▌↑/↓ move · Enter choose · n note · q later",
     );
     await term.press(KEY.enter);
     await asked;
@@ -127,10 +127,10 @@ describe("the terminal channel's card", () => {
     const term = fakeTerm({ columns: 60, rows: 40 });
     const asked = humanOn(term).ask(long);
     await term.press();
-    expect(term.screen().filter(line => line.startsWith("   context"))).toEqual(
-      Array.from({ length: 6 }, (_, i) => `   context ${String(i + 1)}`),
+    expect(term.screen().filter(line => line.startsWith("▌  context"))).toEqual(
+      Array.from({ length: 6 }, (_, i) => `▌  context ${String(i + 1)}`),
     );
-    expect(term.screen()).toContain("   … 4 more lines (d)");
+    expect(term.screen()).toContain("▌  … 4 more lines (d)");
     expect(term.screen().join("\n")).not.toContain("the whole document");
     await term.press("d");
     expect(term.screen().join("\n")).toContain("context 10");
@@ -180,7 +180,7 @@ describe("the terminal channel's card", () => {
     await term.press();
     expect(term.screen().slice(0, 2)).toEqual([
       "",
-      "  ASK   worker  wants to run Bash command: rm -rf dist",
+      "▌ ASK   worker  wants to run Bash command: rm -rf dist",
     ]);
     await term.press("n", "w", "h", "y", KEY.enter);
     expect(await permit).toEqual({

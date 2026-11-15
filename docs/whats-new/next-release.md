@@ -9,7 +9,9 @@ _Part of [What's new](../whats-new.md)._
   `ork run plan -d -i brief="…"` now work, and `--help` shows each letter. The
   help showed `ork decide`'s `--watch` as `-watch`, which never worked; it now
   says "also --watch" ([short flags](../guides/tab-completion.md#short-flags)).
-- **A question's options read by their label.** The arrow-key list showed an
-  option as `allow Allow`; it now shows `Allow (allow)`, with the id that
-  `ork decide --choose` takes dimmed, and plain output prints `1) Allow (allow)`
+- **Questions are easier to spot and read.** A question's card, and a permission
+  prompt, now has a bright green bar down its left edge and a green `ASK` chip,
+  so it stands out among a run's output. An option shows its label first and its
+  id dimmed in parentheses (`Allow (allow)`, where it read `allow Allow`); plain
+  output prints `1) Allow (allow)`
   ([the terminal](../guides/terminal.md#questions)).

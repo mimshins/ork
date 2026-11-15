@@ -9,23 +9,26 @@ the colors and chips, and how to turn all of it off.
 `ork decide`, an agent's `ask_user` and a gate show a card, then the options:
 
 ```
- ASK  reviewer  run 5e0c9b2a · 1 of 2
- Ship the CSV export?
-   The tests pass; the README is not updated.
-
-   1. ship (recommended)
-      Merge it into the leader's branch.
- ❯ 2. revise
-      Send it back with a note.
-   3. stop
- ↑/↓ move · Enter choose · n note · d show details · q later
+▌ ASK  reviewer  run 5e0c9b2a · 1 of 2
+▌Ship the CSV export?
+▌  The tests pass; the README is not updated.
+▌
+▌  1. Ship (ship) (recommended)
+▌     Merge it into the leader's branch.
+▌❯ 2. Revise (revise)
+▌     Send it back with a note.
+▌  3. stop
+▌↑/↓ move · Enter choose · n note · d show details · q later
 ```
 
-The card has an `ASK` chip, the node's chip, the run and "n of m", the question
-in bold and wrapped, and the context dimmed and indented. A long context is cut
-to a few lines; `d` shows all of it (or a gate's document), `d` again hides it,
-and `ork decide --verbose` always shows it all. The recommended option is marked
-and chosen to start.
+A bright green bar runs down the card's left edge, and the `ASK` chip is the
+same green, so a question stands out among a run's output. The card has the
+node's chip, the run and "n of m", the question in bold and wrapped, and the
+context dimmed and indented. An option shows its label, then its id dimmed in
+parentheses (the id is what `ork decide --choose` takes), or only its id when it
+has no label. A long context is cut to a few lines; `d` shows all of it (or a
+gate's document), `d` again hides it, and `ork decide --verbose` always shows it
+all. The recommended option is marked and chosen to start.
 
 | Key             | What it does                                      |
 | --------------- | ------------------------------------------------- |

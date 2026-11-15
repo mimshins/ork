@@ -45,7 +45,12 @@ when used, never in a module-level constant. `ork --help`, every command's
   background is one of six, by a hash of the node id, so a node has the same
   color on every line and in every run. Plain, a chip is `[ASK]`, `[node-id]`.
   Nothing is said by color alone: a chip has words, a mark a symbol (`✓`, `✗`,
-  `❯`).
+  `❯`). The `ASK` chip is bright green (`askChip`), unlike every other chip.
+- **The card's bar** (`card-bar.ts`): while a question or a permission prompt is
+  drawn, its lines carry a bright green `▌` in the first column, the blank each
+  card line starts with, so widths don't change; the permission line above a y/n
+  prompt keeps it. The line a card collapses to has none, and plain mode draws
+  none.
 - **Layout** (`layout.ts`): `wrap` at spaces to a width, `cut` to one line with
   `…`, `hang` under a lead, `widthOf` and `rowsOf`; the width comes from the
   stream (80 with none, never under 20).

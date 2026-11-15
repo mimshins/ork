@@ -179,8 +179,8 @@ describe("confirm, on a terminal", () => {
     const result = confirm(term.io, { question: "Allow Bash?" });
     await term.press();
     expect(term.screen()).toEqual([
-      " ? Allow Bash?",
-      "    Yes   No   y/n · ←/→ · Enter",
+      "▌? Allow Bash?",
+      "▌   Yes   No   y/n · ←/→ · Enter",
     ]);
     await term.press(KEY.enter);
     expect(await result).toBe(false);
@@ -220,8 +220,8 @@ describe("confirm, on a terminal", () => {
     });
     await term.press();
     expect(term.screen().slice(0, 2)).toEqual([
-      " ? Remove every worktree",
-      "   Ork made?",
+      "▌? Remove every worktree",
+      "▌  Ork made?",
     ]);
     await term.press("n");
     await result;

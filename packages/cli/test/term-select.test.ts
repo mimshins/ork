@@ -47,13 +47,13 @@ describe("select, on a terminal", () => {
     const result = open(term);
     await term.press();
     expect(term.screen()).toEqual([
-      " Ship it?",
-      "   1. Alpha (a)",
-      "      The first one",
-      " ❯ 2. b (recommended)",
-      "      The second one",
-      "   3. c",
-      " ↑/↓ move · Enter choose",
+      "▌Ship it?",
+      "▌  1. Alpha (a)",
+      "▌     The first one",
+      "▌❯ 2. b (recommended)",
+      "▌     The second one",
+      "▌  3. c",
+      "▌↑/↓ move · Enter choose",
     ]);
     expect(term.rawMode()).toBe(true);
     expect(term.hidden()).toBe(true);
@@ -100,8 +100,8 @@ describe("select, on a terminal", () => {
     const result = open(term);
     await term.press(KEY.up);
     expect(term.screen()[0]).toBe("before");
-    expect(term.screen().filter(line => line.startsWith(" ❯"))).toEqual([
-      " ❯ 1. Alpha (a)",
+    expect(term.screen().filter(line => line.startsWith("▌❯"))).toEqual([
+      "▌❯ 1. Alpha (a)",
     ]);
     expect(term.raw()).not.toContain("\u001B[2J");
     await term.press(KEY.enter);
@@ -112,9 +112,9 @@ describe("select, on a terminal", () => {
     const term = fakeTerm();
     const result = open(term, { note: true });
     await term.press("n");
-    expect(term.screen().at(-1)).toBe(" ✎ Note ›");
+    expect(term.screen().at(-1)).toBe("▌✎ Note ›");
     await term.press("h", "i", KEY.enter);
-    expect(term.screen()).toContain(" note: hi");
+    expect(term.screen()).toContain("▌note: hi");
     await term.press(KEY.enter);
     expect(await result).toEqual({ kind: "chosen", id: "b", note: "hi" });
   });
@@ -139,7 +139,7 @@ describe("select, on a terminal", () => {
     const term = fakeTerm();
     const result = open(term);
     await term.press("n");
-    expect(term.screen().at(-1)).toBe(" ↑/↓ move · Enter choose");
+    expect(term.screen().at(-1)).toBe("▌↑/↓ move · Enter choose");
     await term.press(KEY.enter);
     expect(await result).toEqual({ kind: "chosen", id: "b" });
   });
@@ -149,7 +149,7 @@ describe("select, on a terminal", () => {
     const result = open(term, { details: "line one\nline two" });
     expect(term.screen().at(-1)).toContain("d show details");
     await term.press("d");
-    expect(term.screen()).toContain("   line two");
+    expect(term.screen()).toContain("▌  line two");
     expect(term.screen().at(-1)).toContain("d hide details");
     await term.press("d");
     expect(term.screen().join("\n")).not.toContain("line two");
@@ -206,9 +206,9 @@ describe("select, on a terminal", () => {
       options: [{ id: "a-long-option-id", label: "with a long label here" }],
     });
     await term.press();
-    expect(term.screen()[1]).toBe(" ❯ 1. with a long label here (a-long-o…");
+    expect(term.screen()[1]).toBe("▌❯ 1. with a long label here (a-long-o…");
     term.resize(24);
-    expect(term.screen()[1]).toBe(" ❯ 1. with a long labe…");
+    expect(term.screen()[1]).toBe("▌❯ 1. with a long labe…");
     await term.press(KEY.enter);
     await result;
   });
@@ -247,13 +247,13 @@ describe("select, with lines printed meanwhile", () => {
     expect(term.screen()).toEqual([
       "before",
       "transcript line",
-      " Ship it?",
-      "   1. Alpha (a)",
-      "      The first one",
-      "   2. b (recommended)",
-      "      The second one",
-      " ❯ 3. c",
-      " ↑/↓ move · Enter choose",
+      "▌Ship it?",
+      "▌  1. Alpha (a)",
+      "▌     The first one",
+      "▌  2. b (recommended)",
+      "▌     The second one",
+      "▌❯ 3. c",
+      "▌↑/↓ move · Enter choose",
     ]);
     await term.press(KEY.enter);
     await result;
@@ -268,7 +268,7 @@ describe("select, with lines printed meanwhile", () => {
     printAbove("two");
     await term.press(KEY.up);
     expect(term.screen().slice(0, 2)).toEqual(["one", "two"]);
-    expect(term.screen().filter(line => line.startsWith(" Ship"))).toHaveLength(
+    expect(term.screen().filter(line => line.startsWith("▌Ship"))).toHaveLength(
       1,
     );
     await term.press(KEY.enter);

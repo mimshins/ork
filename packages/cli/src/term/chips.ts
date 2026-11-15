@@ -49,6 +49,15 @@ export const statusChip = (status: string): { label: string; role: Role } => {
   return { label, role };
 };
 
+/**
+ * The ASK chip of a question card, in the bright green of the card's bar, so a
+ * question reads apart from a run's other chips; `[ASK]` when plain.
+ */
+export const askChip = (term: Term): string =>
+  term.rich
+    ? apply(term, ["bgGreenBright", "black"], ` ${CHIP_LABELS.ask} `)
+    : `[${CHIP_LABELS.ask}]`;
+
 /** A chip: ` LABEL ` on the role's background; `[LABEL]` when plain. */
 export const chip = (term: Term, label: string, role: Role): string =>
   term.rich ? apply(term, CHIP[role], ` ${label} `) : `[${label}]`;
