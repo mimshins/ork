@@ -96,6 +96,8 @@ export const due = defineCommand({
       const waiting = eachTarget(args._, target => {
         const one = findFollowUp(store, place.root, target);
         const run = findRun(store, target, "");
+        // Neither a follow-up nor a run: say so, as done and drop do.
+        if (!one.ok && !run.ok) return { ok: false, error: one.error };
         const runId = run.ok ? run.run.id : target;
         const named = one.ok
           ? [one.followUp]

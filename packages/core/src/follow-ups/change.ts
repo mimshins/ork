@@ -28,6 +28,12 @@ export const findFollowUp = (
       ? []
       : rows.followUps(project).filter(f => f.id.startsWith(prefix));
   const [only, other] = matches;
+  if (only === undefined && /[\s,]/u.test(prefix)) {
+    return {
+      ok: false,
+      error: `\`${prefix}\` is several ids; this command takes one.`,
+    };
+  }
   if (only === undefined) {
     return { ok: false, error: `No follow-up \`${prefix}\` in this project.` };
   }

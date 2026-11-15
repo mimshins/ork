@@ -35,6 +35,10 @@ export const signInLink = (port: number, code: string): string =>
 export const MINT_FAILED_OLDER =
   "The running UI is from an older Ork; stop it and run `ork ui`.";
 
+/** What it says when the UI's process is there but nothing answers its port. */
+export const MINT_FAILED_GONE =
+  "The UI recorded as running does not answer on its port; stop its process and run `ork ui` again.";
+
 /**
  * Gets a single-use sign-in code from the server with the API token, and
  * returns the link for it, or the reason there is none. The token only goes in
@@ -52,12 +56,14 @@ export const mintSignInLink = async (
   });
   const answer = await client.call("signIn");
   if (answer.ok) return { link: signInLink(port, answer.data.code) };
-  // An older server has no such route (404), or is gone (no answer).
+  // An older server has no such route (404); no answer at all is not one.
   return {
     failure:
-      answer.status === 404 || answer.status === 0
+      answer.status === 404
         ? MINT_FAILED_OLDER
-        : `Could not get a sign-in code: ${answer.error}`,
+        : answer.status === 0
+          ? MINT_FAILED_GONE
+          : `Could not get a sign-in code: ${answer.error}`,
   };
 };
 
@@ -85,6 +91,7 @@ const show = async (
   const minted = await mintSignInLink(port, token);
   if ("failure" in minted) {
     writeErr(minted.failure);
+    process.exitCode = 1;
     return;
   }
   const { link } = minted;

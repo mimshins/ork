@@ -416,6 +416,15 @@ describe("ork follow-ups list and show", () => {
     expect(ran.code).toBe(1);
     expect(ran.err).toContain("No follow-up `nope`");
   });
+
+  it("says a one-id command takes one when given several joined by a comma", async () => {
+    setup();
+    const ran = await ork("show", "aaaa,bbbb");
+    expect(ran.code).toBe(1);
+    expect(ran.err).toContain(
+      "`aaaa,bbbb` is several ids; this command takes one.",
+    );
+  });
 });
 
 describe("closing follow-ups", () => {
@@ -449,8 +458,12 @@ describe("closing follow-ups", () => {
     const { id } = first(s);
     expect((await ork("due", id)).out).toContain("due");
     expect(first(s).status).toBe("due");
-    expect((await ork("due", id)).code).toBe(1);
-    expect((await ork("due", "nothing")).err).toContain("Nothing waiting");
+    const again = await ork("due", id);
+    expect(again.code).toBe(1);
+    expect(again.err).toContain("Nothing waiting");
+    expect((await ork("due", "nothing")).err).toContain(
+      "No follow-up `nothing` in this project.",
+    );
   });
 });
 

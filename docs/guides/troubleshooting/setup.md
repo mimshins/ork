@@ -118,5 +118,10 @@ you upgraded Ork shows the same once.
 that is running was started by a version without one-time links. Press Ctrl-C in
 its terminal (your runs keep going), then run `ork ui`.
 
+**`The UI recorded as running does not answer on its port`.** Its process is
+still there, but nothing serves the port (it hangs, or another program took the
+process id). Stop that process (`ork ui` names it on the line above), then run
+`ork ui` again. Both messages end `ork ui` with exit 1.
+
 **The page says it's from an older Ork.** `ork ui` was restarted on a new
 version while the tab was open. Choose **Reload**.

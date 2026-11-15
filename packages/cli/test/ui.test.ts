@@ -22,6 +22,7 @@ import {
 import { afterAll, describe, expect, it } from "vitest";
 
 import {
+  MINT_FAILED_GONE,
   MINT_FAILED_OLDER,
   mintSignInLink,
   portArg,
@@ -182,7 +183,7 @@ describe("ork ui", () => {
       await mintSignInLink(4417, "tok", answering(404, { error: "No." })),
     ).toEqual({ failure: MINT_FAILED_OLDER });
     expect(await mintSignInLink(4417, "tok", refusing)).toEqual({
-      failure: MINT_FAILED_OLDER,
+      failure: MINT_FAILED_GONE,
     });
     expect(
       await mintSignInLink(4417, "tok", answering(403, { error: "Nope." })),

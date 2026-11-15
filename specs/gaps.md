@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L382, and the next chore is
+closes it. Ids are never reused: the next limit is L383, and the next chore is
 C17 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -471,6 +471,11 @@ Found closing the list QA follow-ups (list filters):
   `feedback export` declare no positional, so `ork feedback export b` still
   ignores `b`. citty 0.2.2 has no hook to apply the check to every command; a
   new command must add the plugin itself.
+- **L382 · `ork follow-ups list --due` can't take a day.**
+  `add --due 2026-12-01` keeps a day, but the list's `--due` is an enum (`now`,
+  `after-merge`, `after-deploy`, `date` for any dated one), so a day is refused
+  and one day's follow-ups can't be listed. Taking a day needs a field type that
+  is a word or a day, in the CLI, the filter bar and completion.
 - **L381 · An unreadable store is a stack trace for most commands.** The
   commands that open `~/.ork/state.db` through `withStore` (`ps`, `logs`,
   `tree`, the lists) say in one line that it can't be opened and to move it

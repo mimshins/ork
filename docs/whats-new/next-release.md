@@ -44,7 +44,10 @@ _Part of [What's new](../whats-new.md)._
   `ork logs -f --all` piped to `head` ends quietly, and so does every command
   whose reader closes early. `ork decide`'s plain prompt takes `q`, or the end
   of its input, as "later", where it crashed. `ork logs` refuses `--calls` with
-  `--no-calls`. The guides now say a called run's lines sit under its call
-  node's id (`plan › `), not `call › `. Upgrade: if you saved the zsh completion
-  script to a file, run `ork completion zsh` into it again
+  `--no-calls`. `ork follow-ups show a,b` says it takes one id, and `due` with
+  an unknown id says there's no such follow-up. `ork ui` says so when the UI it
+  found doesn't answer (not that it is "older"), and exits 1 when it prints no
+  link. The guides now say a called run's lines sit under its call node's id
+  (`plan › `), not `call › `. Upgrade: if you saved the zsh completion script to
+  a file, run `ork completion zsh` into it again
   ([tab completion](../guides/tab-completion.md)).
