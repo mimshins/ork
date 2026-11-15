@@ -2,11 +2,13 @@
  * @file Tests for `attachRun`: a call chain printed under its call paths (runs
  *   called before attaching too), a called run's decision answered on the
  *   terminal, a prompt withdrawn when the decision closes elsewhere, a late
- *   answer refused, no terminal, an ended run, a called run still running, and
- *   a detach that closes nothing.
+ *   answer refused, two called runs' decisions asked in the order they opened,
+ *   no terminal, an ended run, a called run still running, and a detach that
+ *   closes nothing.
  */
 
 import { spawnSync } from "node:child_process";
+import { setTimeout as sleep } from "node:timers/promises";
 import { stripVTControlCharacters } from "node:util";
 
 import { type EventStore, openStore, type RunEvent } from "@krapht/ork-core";
@@ -55,13 +57,17 @@ describe("attachRun", () => {
     store.append(id, started(id));
   };
   /** A decision of `run`'s node `gate`, opened and announced as the run does. */
-  const open = (run: string, id: string): void => {
+  const open = (
+    run: string,
+    id: string,
+    question = "Approve the spec?",
+  ): void => {
     store.openDecision({
       id,
       runId: run,
       node: "gate",
       kind: "question",
-      question: "Approve the spec?",
+      question,
       options: [{ id: "approve" }, { id: "revise" }],
     });
     store.append(run, {
@@ -69,7 +75,7 @@ describe("attachRun", () => {
       node: "gate",
       decision: id,
       kind: "question",
-      question: "Approve the spec?",
+      question,
       options: [{ id: "approve" }, { id: "revise" }],
     });
   };
@@ -129,6 +135,19 @@ describe("attachRun", () => {
     vi.waitFor(() => {
       expect(lines.join("\n")).toContain(text);
     });
+
+  /** Answers the card `Approve <run>?` with Enter; none of `later` is up yet. */
+  const answerCard = async (run: string, later: readonly string[]) => {
+    await screenHas(`Approve ${run}?`);
+    const screen = term.screen().join("\n");
+    expect(later.filter(other => screen.includes(`Approve ${other}?`))).toEqual(
+      [],
+    );
+    await term.press(KEY.enter);
+    await vi.waitFor(() => {
+      expect(store.decision(`${run}-1`)?.status).toBe("answered");
+    });
+  };
 
   beforeEach(() => {
     store = openStore(":memory:");
@@ -283,6 +302,40 @@ describe("attachRun", () => {
     expect(store.decision("spec-1")?.answer).toBe("approve");
     expect(store.decision("spec-2")?.answer).toBe("revise");
   });
+
+  // Whichever of the two called runs is polled first, one order is the
+  // opposite of the order they opened in.
+  it.each([
+    ["plan0000", "spec0000"],
+    ["spec0000", "plan0000"],
+  ])(
+    "asks what two called runs open under a card in the order they opened (%s, then %s)",
+    async (...runs) => {
+      begin("root0000");
+      store.append("root0000", called("plan", "plan0000"));
+      store.append("root0000", called("spec", "spec0000"));
+      begin("plan0000");
+      begin("spec0000");
+      open("root0000", "root-1", "Approve root?");
+      const done = attach({ human: human() });
+      await screenHas("Approve root?");
+      for (const run of runs) open(run, `${run}-1`, `Approve ${run}?`);
+      // Both reach attach, in poll order, under root-1's card.
+      await sleep(100);
+      await term.press(KEY.enter);
+
+      for (const [i, run] of runs.entries()) {
+        // oxlint-disable-next-line no-await-in-loop -- one card at a time
+        await answerCard(run, runs.slice(i + 1));
+      }
+      for (const id of ["spec0000", "plan0000", "root0000"]) {
+        store.append(id, finished(id));
+      }
+
+      await done;
+      expect(store.decisions({ status: "open" })).toEqual([]);
+    },
+  );
 
   it("says what ork logs says and exits 1 when the root's process is gone", async () => {
     begin("root0000");

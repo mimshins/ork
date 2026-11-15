@@ -1149,9 +1149,11 @@ export const MILESTONES = [
       {
         id: "follow-many",
         title: "Follow several runs: `decide --follow`, `logs -f --all`",
-        status: "active",
+        status: "done",
+        commits: ["267a314"],
+        date: "2026-11-15",
         detail:
-          "Built, waiting to land (it becomes done with its commit). `ork decide --follow` asks every open decision, then each new one as it opens across the live runs (a called `build` after its `plan`, a new `ork run`), with the run and workflow on the card; an answer given elsewhere withdraws the prompt, and Ctrl-C leaves everything open. `ork logs -f --all` interleaves every live run under a short id and workflow prefix, and `--until-idle` ends both when no live run is left. `ork logs <run>` now prints the runs it called inline under their call node's id (`--no-calls` turns it off). One core follower, `followRuns`, serves both; it finds runs that start later by one 1 s poll. Tests also pin what outlives a SIGKILLed `ork` (a called run, a git command) and record it as limits. Left: the poll is not a push, and a called run and git outlive a killed caller.",
+          "Shipped. `ork decide --follow` asks every open decision, then each new one as it opens across the live runs (a called `build` after its `plan`, a new `ork run`), with the run and workflow on the card; an answer given elsewhere withdraws the prompt, and Ctrl-C leaves everything open. Decisions that arrive while a card is up are held and asked in the order they opened, by a queue `ork attach` shares, so called runs' questions are ordered the same way. `ork logs -f --all` interleaves every live run under a short id and workflow prefix, and `--until-idle` ends both when no live run is left. `ork logs <run>` now prints the runs it called inline under their call node's id (`--no-calls` turns it off). One core follower, `followRuns`, serves both; it finds runs that start later by one 1 s poll. Tests also pin what outlives a SIGKILLed `ork` (a called run, a git command) and record it as limits. Left: the poll is not a push, a called run and git outlive a killed caller, and with no card up the first decision to arrive is asked at once even if another run opened one earlier (L383).",
         docs: [
           "docs/guides/running-workflows/attaching-to-a-run.md",
           "docs/guides/running-workflows/looking-back.md",

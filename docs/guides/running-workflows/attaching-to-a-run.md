@@ -25,7 +25,9 @@ ork attach 3f2a                 # follow it here, and answer its questions
 `ork attach <run>` (an id or a prefix of one, from any project) prints what
 `ork logs` would, then each new event until the run ends. It does the same for
 every run that run called, at any depth, including runs it called before you
-attached. A called run's lines start with the path of the calls that led to it:
+attached. A called run's lines start with the path of the calls that led to it.
+Questions from several called runs that open while a card is up wait and come
+next in the order they opened:
 
 ```text
 plan › spec │ agent.worker

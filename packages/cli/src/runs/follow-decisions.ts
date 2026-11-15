@@ -2,10 +2,10 @@
  * @file `ork decide --follow`: ask the open decisions of the live runs in scope
  *   on this terminal, then each one a run opens later, one prompt at a time
  *   (specs/cli.md). Runs are followed with core's `followRuns`, so a run
- *   started after this one, and a called run, are found; what arrives while a
- *   card is up is held and asked in the order it opened; a decision answered
- *   elsewhere withdraws its prompt. Ctrl-C and `--until-idle` end it; no
- *   decision is closed by either.
+ *   started after this one, and a called run, are found; the shared prompts
+ *   (`prompts.ts`) hold what arrives while a card is up and ask it in the order
+ *   it opened; a decision answered elsewhere withdraws its prompt. Ctrl-C and
+ *   `--until-idle` end it; no decision is closed by either.
  */
 
 import {
@@ -19,8 +19,7 @@ import {
 import { createTerminalHuman, type TerminalIO } from "../human.ts";
 import { styler } from "../run/view.ts";
 import { termOf } from "../term/mode.ts";
-import { printUnder } from "./gutter.ts";
-import { closedLine, createPrompts } from "./prompts.ts";
+import { createPrompts } from "./prompts.ts";
 
 /** What `ork decide`'s filters chose, as a run scope and as a decision filter. */
 export type FollowFilter = {
@@ -93,40 +92,20 @@ export const followDecisions = async (
    * asked again.
    */
   const asked = new Set<string>();
-  /**
-   * Decisions waiting for the card on screen to settle. Runs are followed
-   * apart, so they arrive in poll order; held, they are asked in the order they
-   * opened.
-   */
-  const held = new Map<string, { run: string; path?: readonly string[] }>();
   const workflowOf = (run: string): string | undefined =>
     store.lookup(run).find(r => r.id === run)?.workflow;
-  /** Asks the earliest opened of the held decisions, once no card is up. */
-  const askHeld = (): void => {
-    if (stop.signal.aborted || prompts.open() > 0) return;
-    const first = store
-      .decisions({ status: "open" })
-      .find(d => held.has(d.id))?.id;
-    const place = first === undefined ? undefined : held.get(first);
-    if (first === undefined || place === undefined) return;
-    held.delete(first);
-    const workflow = workflowOf(place.run);
-    prompts.ask(
-      {
-        run: place.run,
-        ...(workflow === undefined ? {} : { workflow }),
-        ...(place.path === undefined ? {} : { path: place.path }),
-      },
-      first,
-    );
-    // One card at a time, so this settles once that card does.
-    void prompts.settled().then(askHeld, () => {});
-  };
   const ask = (run: string, decision: string, path?: readonly string[]) => {
     if (asked.has(decision)) return;
     asked.add(decision);
-    held.set(decision, { run, ...(path === undefined ? {} : { path }) });
-    askHeld();
+    const workflow = workflowOf(run);
+    prompts.ask(
+      {
+        run,
+        ...(workflow === undefined ? {} : { workflow }),
+        ...(path === undefined ? {} : { path }),
+      },
+      decision,
+    );
   };
 
   try {
@@ -140,17 +119,6 @@ export const followDecisions = async (
         ({ run, workflow, path, stored }) => {
           const { event } = stored;
           if (prompts.seen(event)) return;
-          // A held decision closed elsewhere: never shown, but said.
-          if (
-            (event.type === "decision.answered" ||
-              event.type === "decision.withdrawn") &&
-            held.delete(event.decision)
-          ) {
-            printUnder(session.out, term, path, [
-              say("dim", closedLine(event.decision, event)),
-            ]);
-            return;
-          }
           // The stored events of a run live at start come first: only a
           // decision still open is asked.
           if (
@@ -173,7 +141,6 @@ export const followDecisions = async (
           signal: stop.signal,
         },
       );
-      askHeld();
       if (end === "aborted" || prompts.open() === 0) break;
       // Idle, but a question is still on the screen: finish it, then look again.
       // oxlint-disable-next-line no-await-in-loop -- one question at a time

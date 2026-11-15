@@ -1,13 +1,16 @@
 /**
  * @file The prompts a terminal command owns while it follows runs (`ork
- *   attach`, `ork decide --follow`): one prompt per open decision, asked
- *   through a single `TerminalHuman` (which keeps them in order, one at a
- *   time), withdrawn when the decision closes elsewhere, with the "answered
- *   elsewhere" line a person sees then. The command feeds it each decision to
- *   ask and each event seen.
+ *   attach`, `ork decide --follow`): one prompt per open decision, one card at
+ *   a time through a single `TerminalHuman`, withdrawn when the decision closes
+ *   elsewhere, with the "answered elsewhere" line a person sees then. Runs are
+ *   followed apart, so decisions arrive in poll order: those that arrive while
+ *   a card is up are held and asked in the order they opened (the store's
+ *   order), the line of a card withdrawn elsewhere printing before the next
+ *   card. A decision arriving with no card up is asked at once (specs/gaps
+ *   L383). The command feeds it each decision to ask and each event seen.
  */
 
-import type { EventStore, RunEvent } from "@krapht/ork-core";
+import type { DecisionRecord, EventStore, RunEvent } from "@krapht/ork-core";
 
 import type { TerminalHuman } from "../human.ts";
 import { ANSWERED_BY } from "../run/format.ts";
@@ -51,24 +54,29 @@ export type PromptPlace = {
 };
 
 export type Prompts = {
-  /** Starts asking `decision` (queued behind the prompts before it). */
+  /**
+   * Holds `decision` and asks it as soon as no card is up: the earliest opened
+   * of those held comes first. A decision held, in flight or answered here is
+   * not asked again.
+   */
   ask: (place: PromptPlace, decision: string) => void;
-  /** Whether `decision` is being asked or has been asked here. */
+  /** Whether `decision` is held, being asked, or has been answered here. */
   has: (decision: string) => boolean;
   /**
    * Handles an event the caller saw: closes the prompt of a decision answered
-   * or withdrawn elsewhere (printing the line) and says `true`, so the caller
-   * prints nothing of its own; a decision answered here says `true` too (its
-   * card is the line). Any other event says `false`.
+   * or withdrawn elsewhere, or drops it from the held ones (printing the line
+   * either way) and says `true`, so the caller prints nothing of its own; a
+   * decision answered here says `true` too (its card is the line). Any other
+   * event says `false`.
    */
   seen: (event: RunEvent) => boolean;
-  /** Prompts in flight now. */
+  /** The card on screen and the decisions held behind it. */
   open: () => number;
-  /** Aborts every prompt in flight (following is over). */
+  /** Aborts the card on screen and drops the held ones (following is over). */
   abort: () => void;
   /**
-   * Resolves when every prompt has settled; throws the first unexpected
-   * failure.
+   * Resolves when no card is in flight and none is held; throws the first
+   * unexpected failure.
    */
   settled: () => Promise<void>;
 };
@@ -91,65 +99,97 @@ export const createPrompts = (
 ): Prompts => {
   const { term, out } = options;
   const say = styler(term);
+  /** The card on screen (at most one). */
   const prompts = new Map<string, Prompt>();
+  /**
+   * Decisions waiting for the card on screen to settle. Runs are followed
+   * apart, so they arrive in poll order; held, they are asked in the order they
+   * opened.
+   */
+  const held = new Map<string, PromptPlace>();
   /** Decisions answered here: their `decision.answered` line is the card's. */
   const mine = new Set<string>();
-  const asks: Promise<void>[] = [];
-  /**
-   * The last prompt's settling: the next waits for it, so a withdrawn card's
-   * line is printed before the next card.
-   */
-  let last: Promise<void> = Promise.resolve();
+  /** The card in flight, up to the next one's start. */
+  let running: Promise<void> | undefined;
   // Changed from callbacks, so not narrowed by the checks below.
-  const state: { failure?: { error: unknown } } = {};
+  const state: { failure?: { error: unknown }; over?: true } = {};
 
   const show = (path: readonly string[], lines: readonly string[]): void => {
     printUnder(out, term, path, lines);
   };
 
-  const ask: Prompts["ask"] = ({ run, path = [], workflow }, id) => {
-    const decision = store.decision(id);
-    if (decision === undefined) return;
+  /** Asks `decision` on the card, and says what came of it. */
+  const card = async (
+    decision: DecisionRecord,
+    { run, path = [], workflow }: PromptPlace,
+  ): Promise<void> => {
+    const { id } = decision;
     const prompt: Prompt = { controller: new AbortController() };
     prompts.set(id, prompt);
-    const previous = last;
-    const settle = async (): Promise<void> => {
-      await previous;
-      try {
-        const asked = await askStored(store, human, decision, {
-          by: options.by ?? "terminal",
-          signal: prompt.controller.signal,
-          place: {
-            run,
-            decision: id,
-            ...(workflow === undefined ? {} : { workflow }),
-            ...(path.length === 0 ? {} : { path: callPathOf(path) }),
-          },
-          ...(options.home === undefined ? {} : { home: options.home }),
-        });
-        prompts.delete(id);
-        const { closed } = prompt;
-        if (asked.kind === "answered") {
-          mine.add(id);
-          if (!term.rich)
-            show(path, [`${say("green", "✓")} ${id}: ${asked.choice}`]);
-        } else if (asked.kind === "refused") {
-          show(path, [paint(term, "warn", `! ${asked.message}`)]);
-        } else if (asked.kind === "withdrawn" && closed !== undefined) {
-          show(path, [say("dim", closedLine(id, closed))]);
-        }
-      } catch (error) {
-        prompts.delete(id);
-        state.failure ??= { error };
+    try {
+      const asked = await askStored(store, human, decision, {
+        by: options.by ?? "terminal",
+        signal: prompt.controller.signal,
+        place: {
+          run,
+          decision: id,
+          ...(workflow === undefined ? {} : { workflow }),
+          ...(path.length === 0 ? {} : { path: callPathOf(path) }),
+        },
+        ...(options.home === undefined ? {} : { home: options.home }),
+      });
+      prompts.delete(id);
+      const { closed } = prompt;
+      if (asked.kind === "answered") {
+        mine.add(id);
+        if (!term.rich)
+          show(path, [`${say("green", "✓")} ${id}: ${asked.choice}`]);
+      } else if (asked.kind === "refused") {
+        show(path, [paint(term, "warn", `! ${asked.message}`)]);
+      } else if (asked.kind === "withdrawn" && closed !== undefined) {
+        show(path, [say("dim", closedLine(id, closed))]);
       }
+    } catch (error) {
+      prompts.delete(id);
+      state.failure ??= { error };
+      // Say so now: the drain stops, and settled() only throws after following ends.
+      const message = error instanceof Error ? error.message : String(error);
+      show(path, [paint(term, "warn", `! ${id}: ${message}`)]);
+    }
+  };
+
+  /**
+   * Asks the earliest opened of the held decisions, once no card is up; drops a
+   * held decision that is no longer open (its close event was not seen). Runs
+   * again when the card settles, after the card's own line is printed.
+   */
+  const drain = (): void => {
+    if (running !== undefined || state.over || state.failure !== undefined) {
+      return;
+    }
+    const opened = store.decisions({ status: "open" });
+    for (const id of held.keys()) {
+      if (!opened.some(d => d.id === id)) held.delete(id);
+    }
+    const next = opened.find(d => held.has(d.id));
+    const place = next === undefined ? undefined : held.get(next.id);
+    if (next === undefined || place === undefined) return;
+    held.delete(next.id);
+    const run = async (): Promise<void> => {
+      await card(next, place);
+      running = undefined;
+      drain();
     };
-    last = settle();
-    asks.push(last);
+    running = run();
   };
 
   return {
-    ask,
-    has: id => prompts.has(id) || mine.has(id),
+    ask: (place, id) => {
+      if (state.over || held.has(id) || prompts.has(id) || mine.has(id)) return;
+      held.set(id, place);
+      drain();
+    },
+    has: id => prompts.has(id) || held.has(id) || mine.has(id),
     seen: event => {
       if (
         event.type !== "decision.answered" &&
@@ -163,14 +203,26 @@ export const createPrompts = (
         prompt.controller.abort();
         return true;
       }
+      const place = held.get(event.decision);
+      if (place !== undefined) {
+        held.delete(event.decision);
+        show(place.path ?? [], [say("dim", closedLine(event.decision, event))]);
+        return true;
+      }
       return event.type === "decision.answered" && mine.has(event.decision);
     },
-    open: () => prompts.size,
+    open: () => prompts.size + held.size,
     abort: () => {
+      state.over = true;
+      held.clear();
       for (const prompt of prompts.values()) prompt.controller.abort();
     },
     settled: async () => {
-      await Promise.all(asks);
+      // The next card starts when this one settles.
+      for (let current = running; current !== undefined; current = running) {
+        // oxlint-disable-next-line no-await-in-loop -- one card at a time
+        await current;
+      }
       if (state.failure !== undefined) throw state.failure.error;
     },
   };

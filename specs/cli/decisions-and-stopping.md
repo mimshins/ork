@@ -52,14 +52,16 @@ _Part of [The ork CLI](../cli.md)._
   answered elsewhere (`ork ui`, `ork attach`, another `ork decide`) withdraws
   its card, or leaves the held ones at once, and prints
   `<id> answered elsewhere: <answer> (<by>)`, as `ork attach` does, before the
-  next card starts (each prompt waits for the one before it to settle, in
-  [prompts.ts](../../packages/cli/src/runs/prompts.ts)). The answer is
-  `by: "decide"`. `q` ("later") leaves a decision open and not asked again until
-  the next `--follow`. `<run>`, `--workflow` and `--project` narrow what is
-  watched as they narrow the list. Ctrl-C ends it with exit 0 and closes no
-  decision, saying `stopped following; N decision(s) still open`; `--until-idle`
-  ends it with exit 0 and `no live runs` once no live run is left in scope and
-  no card is in flight. Refused, one line each: no terminal
+  next card starts. The held queue is in
+  [prompts.ts](../../packages/cli/src/runs/prompts.ts), so `ork attach` orders
+  the decisions of the runs it called the same way; a held decision that is no
+  longer open is dropped unasked. The answer is `by: "decide"`. `q` ("later")
+  leaves a decision open and not asked again until the next `--follow`. `<run>`,
+  `--workflow` and `--project` narrow what is watched as they narrow the list.
+  Ctrl-C ends it with exit 0 and closes no decision, saying
+  `stopped following; N decision(s) still open`; `--until-idle` ends it with
+  exit 0 and `no live runs` once no live run is left in scope and no card or
+  held decision is in flight. Refused, one line each: no terminal
   (`--follow needs a terminal to answer on; ork decide --list shows what is open.`;
   [`decideRefusal`](../../packages/cli/src/commands/in-a-run.ts) in a run);
   `--list`, `--json`, `--ids`, `--limit`, `--id`, `--choose`, `--document`,

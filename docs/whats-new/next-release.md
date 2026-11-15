@@ -13,6 +13,11 @@ _Part of [What's new](../whats-new.md)._
   happened to be polled. A waiting question answered elsewhere now says
   `<id> answered elsewhere: …` at once, not after the card on screen
   ([decide](../guides/running-workflows/attaching-to-a-run.md#answering-for-several-runs-ork-decide---follow)).
+- **`ork attach` asks several runs' questions in the order they opened.** When
+  the runs a run called open questions while a card is up, the next card is the
+  one that opened first, as in `ork decide --follow`, not the one whose run was
+  polled first
+  ([attach](../guides/running-workflows/attaching-to-a-run.md#what-it-shows)).
 - **A conflict resolver's stray file no longer fails the run.** In the `issues`
   and `resolve-conflict` examples, and this repository's `build` workflow, an
   agent that resolved a conflict but also left a new file outside it (a scratch

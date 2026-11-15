@@ -6,9 +6,10 @@
  *   decision open, and the refusals (no terminal, flags that list or answer).
  *   With several live runs: one card at a time across them, what they open
  *   under a card asked once each in the order opened, `q` on one run, another
- *   run's decision answered elsewhere before its card, the workflow and run
- *   filters, `--until-idle` past one run's end, and an ended run's open
- *   decision counted after Ctrl-C.
+ *   run's decision answered or withdrawn elsewhere before its card, one that
+ *   closed with no event seen dropped, the workflow and run filters,
+ *   `--until-idle` past one run's end, and an ended run's open decision counted
+ *   after Ctrl-C.
  */
 
 import { spawnSync } from "node:child_process";
@@ -342,13 +343,19 @@ describe("ork decide --follow, in process", () => {
 
     /**
      * Answers `run`'s card for `id` with Enter: it names its run and workflow,
-     * and `next` is not up before it is answered.
+     * and none of the `rest` (not yet answered) is up before it is answered.
      */
-    const answerOne = async (run: string, id: string, next?: string) => {
+    const answerOne = async (
+      run: string,
+      id: string,
+      rest: readonly string[] = [],
+    ) => {
       await onScreen(`Approve ${id}?`);
       const screen = term.screen().join("\n");
       expect(screen).toContain(`run ${run} · ${WORKFLOW[run]}`);
-      expect(screen).not.toContain(`Approve ${next}?`);
+      expect(
+        rest.filter(other => screen.includes(`Approve ${other}?`)),
+      ).toEqual([]);
       await term.press(KEY.enter);
       await vi.waitFor(() => {
         expect(store.decision(id)?.status).toBe("answered");
@@ -358,7 +365,11 @@ describe("ork decide --follow, in process", () => {
     const answer = async (cards: readonly (readonly [string, string])[]) => {
       for (const [i, [run, id]] of cards.entries()) {
         // oxlint-disable-next-line no-await-in-loop -- one card at a time
-        await answerOne(run, id, cards[i + 1]?.[1]);
+        await answerOne(
+          run,
+          id,
+          cards.slice(i + 1).map(([, other]) => other),
+        );
       }
     };
 
@@ -453,6 +464,54 @@ describe("ork decide --follow, in process", () => {
 
       expect(drawn("b-1")).toBe(false);
       expect(store.decision("b-1")?.answeredBy).toBe("ui");
+    });
+
+    it("withdraws another run's decision withdrawn before it is shown, saying so", async () => {
+      openAll([
+        [A, "a-1"],
+        [B, "b-1"],
+        [C, "c-1"],
+      ]);
+      const done = follow();
+      await onScreen("Approve a-1?");
+      store.withdrawDecision("b-1");
+      store.append(B, {
+        type: "decision.withdrawn",
+        node: "gate",
+        decision: "b-1",
+      });
+      await printed("b-1 withdrawn");
+      await answer([
+        [A, "a-1"],
+        [C, "c-1"],
+      ]);
+      controller.abort();
+      await done;
+
+      expect(drawn("b-1")).toBe(false);
+      expect(store.decision("b-1")?.status).toBe("withdrawn");
+    });
+
+    it("drops a held decision that closed with no event seen, never asking it, and still ends idle", async () => {
+      openAll([
+        [A, "a-1"],
+        [B, "b-1"],
+        [C, "c-1"],
+      ]);
+      const done = follow(true);
+      await onScreen("Approve a-1?");
+      // Answered elsewhere, but no `decision.answered` reaches `ork decide`.
+      await answerDecision(store, "b-1", "revise", home, "ui");
+      await answer([
+        [A, "a-1"],
+        [C, "c-1"],
+      ]);
+      for (const run of [A, B, C]) store.append(run, finished(run));
+
+      // Held and never dropped, b-1 would keep it from ending.
+      await expect(done).resolves.toBe("idle");
+      expect(drawn("b-1")).toBe(false);
+      expect(lines.filter(line => line.includes("b-1"))).toEqual([]);
     });
 
     it.each([
