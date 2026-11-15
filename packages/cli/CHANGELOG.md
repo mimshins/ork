@@ -1,5 +1,54 @@
 # @krapht/ork
 
+## 1.0.0-alpha.21
+
+### Minor Changes
+
+- [`38e1091`](https://github.com/mimshins/ork/commit/38e10917f9974873ec978aa2b563522e823ddf8b) Thanks [@mimshins](https://github.com/mimshins)! - A question's card and a permission prompt get a bright green bar down their left
+  edge and a green `ASK` chip, so a question stands out among a run's output.
+
+- [`8929488`](https://github.com/mimshins/ork/commit/8929488e076be4f55f1e464f003ab7374cc0c28a) Thanks [@mimshins](https://github.com/mimshins)! - Short flags mean the same in every command: `-a --all`, `-d --detach`,
+  `-f --follow`, `-i --input`, `-m --message`, `-n --limit`, `-o --output`,
+  `-p --project` and `-y --yes`, from one table, so `ork decide -f` and
+  `ork ps -p all -n 5` work. Help shows a long alias as "also --watch". A
+  question's options show their label first and the id dimmed in parentheses
+  (`Allow (allow)`).
+
+- [`336bab6`](https://github.com/mimshins/ork/commit/336bab6a2c9c93ea706607b568fc38cff613cd64) Thanks [@mimshins](https://github.com/mimshins)! - `ork run --yolo` and `ork resume --yolo` run with no permission prompts: every
+  tool a node's deny list doesn't refuse is allowed, on every driver, after a
+  warning and a y/N (`--yes` agrees without it). Called runs inherit it, a resume
+  needs it again, and `ork ps`, `ork tree`, the run's first line and `ork ui` show
+  it while the run is live.
+
+### Patch Changes
+
+- [`5a225a3`](https://github.com/mimshins/ork/commit/5a225a317d5330852a16c4757a9c76197e6e46f1) Thanks [@mimshins](https://github.com/mimshins)! - A reader that closes stdout early (`ork logs -f --all | head`) ends `ork`
+  quietly; `ork decide`'s plain prompt takes `q` or the end of input as "later";
+  `ork logs` refuses `--calls` with `--no-calls`; an unreadable store is one line
+  for the list commands; zsh completion drops the stray `--` after plain values.
+
+- [`ea11dae`](https://github.com/mimshins/ork/commit/ea11dae8c3165b95a1b8032342dac130b36a1998) Thanks [@mimshins](https://github.com/mimshins)! - When claude-code isn't ready and other drivers are, `ork run` and `ork init` say
+  so instead of naming another driver as first. A detached run no longer passes
+  `ORK_DETACHED` to its nodes, so an `ork run --detach` they start detaches. The
+  QA kit puts a fake `opencode` on its PATH.
+
+- [`61b5cd3`](https://github.com/mimshins/ork/commit/61b5cd3892b1f45a9e212ed9804dd481ba533869) Thanks [@mimshins](https://github.com/mimshins)! - `ork logs -f --all --workflow <name>` follows only that workflow's live runs and
+  the runs they call. The Runs panel of `ork ui` keeps the last filter that worked
+  when it is drawn again (maximized or restored).
+
+- [`682db2a`](https://github.com/mimshins/ork/commit/682db2ab305fde81a971bcda5b93c841f2d4b25e) Thanks [@mimshins](https://github.com/mimshins)! - `ork follow-ups show a,b` says it takes one id; `ork follow-ups due` with an
+  unknown id says there is no such follow-up; `ork ui` tells a UI that doesn't
+  answer from an older one, and exits 1 when it prints no link.
+
+- [`b0e819d`](https://github.com/mimshins/ork/commit/b0e819db8aabd1604d17be75ef889494d7c61deb) Thanks [@mimshins](https://github.com/mimshins)! - `ork tree` names who holds the check slot a node waits for. When the `issues`
+  workflow builds no issue, its `gather` step names every issue and why on the
+  line the transcript shows.
+
+- [`c872ac1`](https://github.com/mimshins/ork/commit/c872ac1a578f0eb3bb46d4386dd69bf52db06ab2) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui`: a filter field's hint stays out of the way while you type in it, the
+  Decisions filter treats an unknown run as a refused value, and the Logs panel's
+  Follow is on only for a live run. `ork logs` of a crashed run ends with a line
+  saying it crashed.
+
 ## 1.0.0-alpha.20
 
 ### Minor Changes
