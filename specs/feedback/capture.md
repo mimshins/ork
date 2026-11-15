@@ -63,10 +63,13 @@ signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
   - its content: kind, target, severity, title, body, evidence;
   - its fingerprint, and the signal's code for a system signal.
 - Each fingerprint is an item in `feedback_items`, which holds its status:
-  `new → triaged → accepted | dismissed`, then `published` or `resolved`. A
-  dismissed item stays dismissed when it recurs. An item triage merged into
-  another keeps its row with `merged_into` set: its records, and any it gets
-  later, list under that item, which names it as merged; `split` clears it.
+  `new → triaged → accepted | dismissed`, then `published` or `resolved`
+  (`ork feedback apply` keeping a fix, or `ork feedback resolve` for one fixed
+  by hand). A dismissed item stays dismissed when it recurs; a resolved one goes
+  back to `new` on a record newer than its resolving (an older, imported record
+  leaves it resolved). An item triage merged into another keeps its row with
+  `merged_into` set: its records, and any it gets later, list under that item,
+  which names it as merged; `split` clears it.
 - Each record is also a `feedback.recorded` event in the run's stream, so logs
   and the UI show it in context.
 - Secrets are masked when a record is written, with the same patterns the
@@ -90,14 +93,19 @@ signal sets its own (an Ork tool's error is `ork`, the rest `workflow`).
   models it was seen in. A thousand records become a short list.
 - **Reading them:** `ork feedback list` prints the items, most recently seen
   first (id, count, target and kind, title, when last seen); with no flag it
-  hides the dismissed ones, and `--status` (`new`, `triaged`, `accepted`,
-  `dismissed`, `published`, `resolved`, or `all`), `--kind`, `--severity`,
-  `--workflow` and `--run` (an id or a unique start of one) filter it
-  ([list filters](../cli/list-filters.md)); `--status all` adds the dismissed
-  ones, `--ids` prints the item ids on one line, `--limit n` keeps the first N,
-  and `--json` prints them. `ork feedback show <item>` prints an item and each
-  of its records; `ork feedback dismiss <item>` dismisses it, and
+  hides the dismissed and resolved ones, and `--status` (`new`, `triaged`,
+  `accepted`, `dismissed`, `published`, `resolved`, or `all`), `--kind`,
+  `--severity`, `--workflow` and `--run` (an id or a unique start of one) filter
+  it ([list filters](../cli/list-filters.md)); `--status all` adds them, `--ids`
+  prints the item ids on one line, `--limit n` keeps the first N, and `--json`
+  prints them. `ork feedback show <item>` prints an item and each of its
+  records; `ork feedback dismiss <item>` dismisses it, and
   `ork feedback restore <item>` brings it back as `new`.
+  `ork feedback resolve <item>…` (several ids, space or comma separated) marks
+  items fixed outside `apply` resolved, and changes none when one is unknown,
+  dismissed, or resolved or published already
+  ([feedback-resolve.ts](../../packages/cli/src/commands/feedback-resolve.ts)).
+  The fixing commit isn't stored: it is in the repository's history.
 - **Human notes:** `ork feedback note <run> [<node>] -m <text>` records a
   person's note on a run, or one node of it, as a `feedback.recorded` event of
   that run with source `human` (a run that ended takes it too). Its first line

@@ -154,7 +154,15 @@ export const feedbackQueries = (
      VALUES (?, 'new', ?) ON CONFLICT (fingerprint) DO NOTHING`,
   );
   const shown = db.prepare(
-    `${ITEMS} WHERE r.status != 'dismissed' GROUP BY r.fingerprint ORDER BY last_seen DESC`,
+    `${ITEMS} WHERE r.status NOT IN ('dismissed', 'resolved') GROUP BY r.fingerprint ORDER BY last_seen DESC`,
+  );
+  // A resolved item seen again after it was resolved is open again: the fix
+  // didn't hold. An older record (an import) leaves it resolved.
+  const reopen = db.prepare(
+    `UPDATE feedback_items SET status = 'new', updated_at = ?
+     WHERE fingerprint = (
+       SELECT COALESCE(merged_into, fingerprint) FROM feedback_items WHERE fingerprint = ?
+     ) AND status = 'resolved' AND updated_at < ?`,
   );
   const every = db.prepare(
     `${ITEMS} GROUP BY r.fingerprint ORDER BY last_seen DESC`,
@@ -226,6 +234,7 @@ export const feedbackQueries = (
       FEEDBACK_VERSION,
     );
     insertItem.run(feedback.fingerprint, at);
+    reopen.run(at, feedback.fingerprint, at);
   };
 
   return {

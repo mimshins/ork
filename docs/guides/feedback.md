@@ -38,6 +38,7 @@ about, then what kind it is. What it is about decides who should act on it:
 ork feedback list            # items, most recently seen first (filters: --kind, --severity, …)
 ork feedback show 9fae0      # one item and every record of it
 ork feedback dismiss 9fae0   # done with it: it leaves the list (restore brings it back)
+ork feedback resolve 9fae0   # fixed by hand: it leaves the list, and opens again if it recurs
 ork feedback note 3f2a check -m "Missed the failing test" --rating bad
 ```
 
@@ -54,11 +55,10 @@ with your answer, use `--say`
 ([answering questions](./running-workflows/running-and-answering.md#answering-questions)).
 
 Records about the same thing, from any run of any project, form one **item**, so
-`list` stays short: each line has the item's id, how many times it was seen,
-what it is about, and when it was last seen. `show` adds the runs, workflows and
-models it came from, and each record's details. An item is named by its id or
-the first few characters of it. A dismissed item stays dismissed when it happens
-again; `list --status all` still shows it.
+`list` stays short: each line has the item's id, its count, what it is about,
+and when it was last seen. `show` adds the runs, workflows and models, and each
+record. An item is named by its id or its first few characters. A dismissed item
+stays dismissed when it recurs; a resolved one opens again.
 
 ## Merging the same problem
 

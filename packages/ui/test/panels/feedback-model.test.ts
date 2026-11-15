@@ -40,15 +40,19 @@ import { treeNode } from "./monitor-fixtures.ts";
 const keys = (specs: { key: string }[]): string[] => specs.map(s => s.key);
 
 describe("the Feedback panel's filters", () => {
-  it("hide the dismissed ones while no status is asked for", () => {
-    const items = [...ITEMS, item("aaaa", { status: "dismissed" })];
+  it("hide the dismissed and resolved ones while no status is asked for", () => {
+    const items = [
+      ...ITEMS,
+      item("aaaa", { status: "dismissed" }),
+      item("bbbb", { status: "resolved" }),
+    ];
     expect(shownItems(items, { values: {}, about: "all" })).toHaveLength(3);
     expect(
       shownItems(items, { values: { status: "all" }, about: "all" }),
-    ).toHaveLength(4);
+    ).toHaveLength(5);
     expect(
-      shownItems(items, { values: { status: "dismissed" }, about: "all" }),
-    ).toHaveLength(4);
+      shownItems(items, { values: { status: "resolved" }, about: "all" }),
+    ).toHaveLength(5);
   });
 
   it("leave what matches what it's about, besides the server's answer", () => {
@@ -66,7 +70,7 @@ describe("the Feedback panel's filters", () => {
       body: "About: All shows every item.",
     });
     expect(emptyWords({ status: "open", about: "all" }).title).toBe(
-      "Every item is dismissed.",
+      "Every item is dismissed or resolved.",
     );
   });
 });
@@ -125,6 +129,7 @@ describe("an item's buttons", () => {
         lesson: { ok: true },
         apply: { ok: true },
         publish: refused("only feedback about Ork is shared"),
+        resolve: { ok: true },
       },
       project: { ok: false, error: "The project is gone." },
     });

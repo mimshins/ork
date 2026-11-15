@@ -200,6 +200,7 @@ describe("an item's detail", () => {
             lesson: { ok: true },
             apply: refused("dismissed; restore it first"),
             publish: refused("only feedback about Ork is shared"),
+            resolve: { ok: true },
           },
         },
       },

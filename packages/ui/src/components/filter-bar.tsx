@@ -45,7 +45,7 @@ export type FilterBarProps = {
   shown?: number | null;
   /** The panel's status line while unfiltered ("3 due, 5 waiting"). */
   summary?: string;
-  /** The panel's default for a field, in its words ("not dismissed"). */
+  /** The panel's default for a field, in its words ("open"). */
   defaults?: Partial<Record<string, string>>;
   /** Extra suggestions for `text`, `for` and `project` fields, no counts. */
   suggestions?: Partial<Record<string, readonly Suggestion[]>>;

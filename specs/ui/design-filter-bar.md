@@ -52,9 +52,9 @@ hover and focus, verbatim, so the UI never rewords the CLI's help.
 | `since`, `until` | input with suggestions | an age (`24h`, `30d`), a day (`2026-11-01`), and `all` where the table has it |
 
 - **A select's first option** is the unset value. With a panel default for the
-  field it reads `Default (not dismissed)`; without, `Any`. A field with `all`
-  and a panel default adds **All** last, which widens past that default. A field
-  with `all` and no default gets no **All** (it would equal `Any`).
+  field it reads `Default (open)`; without, `Any`. A field with `all` and a
+  panel default adds **All** last, which widens past that default. A field with
+  `all` and no default gets no **All** (it would equal `Any`).
 - **An input** is built on Base UI's `Autocomplete` (free text with a list; the
   `Combobox` only picks). Its placeholder is `Default: 30d` when the panel has a
   default for it, otherwise an example: `workflow name`, `run id or prefix`,
@@ -203,7 +203,7 @@ type FilterBarProps = {
   shown?: number | null;
   /** The panel's status line while unfiltered ("3 due, 5 waiting"). */
   summary?: string;
-  /** The panel's default for a field, in its words ("not dismissed"). */
+  /** The panel's default for a field, in its words ("open"). */
   defaults?: Partial<Record<string, string>>;
   /** Extra suggestions for `text`, `for` and `project` fields, no counts. */
   suggestions?: Partial<
@@ -240,7 +240,7 @@ noted.
 | Runs       | the panel's current project         | `project`: registered projects and those of runs shown; `workflow`: each workflow of the runs                            | still the 20 newest; `status` values include `paused` and `crashed`, the live statuses its rows show                                |
 | Decisions  | none                                | `run` (`4f2a1c · feature`): those with open decisions first, then the runs the panel knows; their `workflow`s; `project` | the bar always shows; the `decisionFilter` preference keeps its values; the Monitor button sets `{ run }`; no "hidden" count        |
 | Follow-ups | `status`: `open`                    | `for`: each `project:<name>`, `person:<name>` present                                                                    | the old Status `Open` is `Default (open)`; a saved `open` is read as unset; the summary stays                                       |
-| Feedback   | `status`: `not dismissed`           | `workflow`, `run`                                                                                                        | its **About** select (`ork`, `workflow`, `project`) is not a table field: it is a cell of the bar's grid (`extra`), applied locally |
+| Feedback   | `status`: `open`                    | `workflow`, `run`                                                                                                        | its **About** select (`ork`, `workflow`, `project`) is not a table field: it is a cell of the bar's grid (`extra`), applied locally |
 | Worktrees  | the panel's current project         | `project`                                                                                                                | cards still group by project                                                                                                        |
 | Usage      | `since`: `30d`; the panel's project | `project`                                                                                                                | replaces the 7, 30, 90 days or all select: `since` offers those as built-in suggestions; a saved `7` or `all` maps to `7d`, `all`   |
 

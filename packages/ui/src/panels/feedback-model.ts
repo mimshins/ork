@@ -17,12 +17,13 @@ export const short = (id: string): string => id.slice(0, 12);
 
 /**
  * The panel's filters: the bar's values (the server applies them; no status
- * means not dismissed, which the panel does) and the About select beside it.
+ * means open: not dismissed or resolved, which the panel does) and the About
+ * select beside it.
  */
 export type FeedbackFilter = { values: FilterValues; about: string };
 
 /** The feedback list's default for `status`, in the bar's words. */
-export const DEFAULTS = { status: "not dismissed" };
+export const DEFAULTS = { status: "open" };
 
 export const ABOUT_OPTIONS = [
   { value: "all", label: "All" },
@@ -63,8 +64,8 @@ export const panelShows = (
 
 /**
  * What the filters leave, most recently seen first as the server sends: the
- * server's answer, less the dismissed ones when no status is asked for, and
- * only what is about `about`.
+ * server's answer, less the dismissed and resolved ones when no status is asked
+ * for, and only what is about `about`.
  */
 export const shownItems = (
   items: readonly FeedbackItem[],
@@ -72,7 +73,8 @@ export const shownItems = (
 ): FeedbackItem[] =>
   items.filter(
     item =>
-      (values["status"] !== undefined || item.status !== "dismissed") &&
+      (values["status"] !== undefined ||
+        (item.status !== "dismissed" && item.status !== "resolved")) &&
       (about === "all" || item.target === about),
   );
 
@@ -104,14 +106,14 @@ export const emptyWords = ({
   status,
   about,
 }: {
-  /** The status asked for; `open` is the default, not dismissed. */
+  /** The status asked for; `open` is the default: not dismissed or resolved. */
   status: string;
   about: string;
 }): { title: string; body: string } => {
   const start = NONE_WITH[status] ?? "No items";
   const title =
     status === "open" && about === "all"
-      ? "Every item is dismissed."
+      ? "Every item is dismissed or resolved."
       : `${start}${about === "all" ? "" : ` about ${about}`}.`;
   const widen = [
     status === "all" ? [] : ["Status: All"],

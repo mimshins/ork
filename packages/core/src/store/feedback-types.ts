@@ -58,7 +58,10 @@ export type FeedbackItem = {
 };
 
 export type FeedbackStore = {
-  /** Items, most recently seen first; without `all`, not the dismissed ones. */
+  /**
+   * Items, most recently seen first; without `all`, not the dismissed or
+   * resolved ones.
+   */
   feedbackItems: (filter?: { all?: boolean }) => FeedbackItem[];
   /** The items whose fingerprint starts with `prefix`. */
   findFeedback: (prefix: string) => FeedbackItem[];

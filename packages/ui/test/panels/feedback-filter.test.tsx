@@ -1,9 +1,9 @@
 /**
  * @file Tests for the Feedback panel's filter bar: the shared bar on the
- *   `feedback` list with its default (not dismissed) and About beside it; a
- *   field's change reads again with the table's query; a value the server
- *   refuses shows its words inline and keeps the list; Clear filter resets; the
- *   matching command shows while a filter is set.
+ *   `feedback` list with its default (open: not dismissed or resolved) and
+ *   About beside it; a field's change reads again with the table's query; a
+ *   value the server refuses shows its words inline and keeps the list; Clear
+ *   filter resets; the matching command shows while a filter is set.
  */
 
 import { cleanup, screen, within } from "@testing-library/react";
@@ -59,7 +59,7 @@ describe("the Feedback panel's filter bar", () => {
     ).toBeDefined();
     expect(
       screen.getByRole("combobox", { name: "Status" }).textContent,
-    ).toContain("Default (not dismissed)");
+    ).toContain("Default (open)");
     for (const name of ["Kind", "Severity", "Workflow", "Run", "About"]) {
       expect(screen.getByRole("combobox", { name })).toBeDefined();
     }

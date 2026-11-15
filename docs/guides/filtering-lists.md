@@ -45,8 +45,8 @@ row must match all of them.
 
 Two lists hide some rows until you ask. `ork follow-ups list` shows the `due`
 and `waiting` ones, and `--status all` adds `done` and `dropped`.
-`ork feedback list` hides dismissed items, and `--status all` shows them. A
-`--status` you name shows exactly that status.
+`ork feedback list` hides dismissed and resolved items, and `--status all` shows
+them. A `--status` you name shows exactly that status.
 
 ## Times
 
@@ -103,8 +103,8 @@ one shows the CLI's message under the bar and the list keeps the last filter
 that worked (the unfiltered list, if none has). While a filter is set the bar
 shows the matching command, for a terminal (the last one that worked, never the
 refused one), and **Clear filter**. A panel keeps its own default (follow-ups:
-open; feedback: not dismissed; usage: the last 30 days), shown in the field
-until you set one.
+open; feedback: open, not dismissed or resolved; usage: the last 30 days), shown
+in the field until you set one.
 
 The `runs`, `usage` and `decisions` tools of `ork mcp` take the same fields, and
 a model asking for `status: "crashed"` or `since: "24h"` gets the CLI's words

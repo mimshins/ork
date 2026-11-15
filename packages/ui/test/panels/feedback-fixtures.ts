@@ -96,6 +96,7 @@ export const ALLOWED: FeedbackActions = {
   lesson: OK,
   apply: OK,
   publish: OK,
+  resolve: OK,
 };
 
 export const refused = (why: string) => ({

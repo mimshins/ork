@@ -2,7 +2,7 @@
  * @file Tests for `ork feedback list` through its real command against a store
  *   in a throwaway home: dismissed items hidden by default, the shared filters
  *   (`--status`, `--kind`, `--severity`, `--workflow`, `--run`), `--ids`,
- *   `--limit`, `--json`.
+ *   `--limit`, `--json`, and `resolve` taking items out of it.
  */
 
 import { mkdtempSync, realpathSync } from "node:fs";
@@ -165,5 +165,39 @@ describe("ork feedback list", () => {
     setup();
     const all = await ork("list", "--status", "all");
     expect(titles(all.out)).toHaveLength(3);
+  });
+});
+
+describe("ork feedback resolve", () => {
+  it("resolves several items, which leave the list and show under --status resolved", async () => {
+    const ids = setup();
+    const done = await ork(
+      "resolve",
+      `${String(ids["Crash"])},${String(ids["Vague"]).slice(0, 6)}`,
+    );
+    expect(done.code).toBe(0);
+    expect(done.out).toContain("resolved");
+    expect(titles((await ork("list")).out)).toEqual([]);
+    expect(
+      titles((await ork("list", "--status", "resolved")).out).toSorted(),
+    ).toEqual(["Crash", "Vague"]);
+  });
+
+  it("changes none when one id is unknown or can't be resolved", async () => {
+    const ids = setup();
+    const unknown = await ork("resolve", String(ids["Crash"]), "zzzz");
+    expect(unknown.code).toBe(1);
+    expect(unknown.err).toContain("No feedback item zzzz");
+    const dismissed = await ork(
+      "resolve",
+      String(ids["Crash"]),
+      String(ids["Slow"]),
+    );
+    expect(dismissed.code).toBe(1);
+    expect(dismissed.err).toContain("is dismissed; restore it first");
+    expect(titles((await ork("list")).out).toSorted()).toEqual([
+      "Crash",
+      "Vague",
+    ]);
   });
 });

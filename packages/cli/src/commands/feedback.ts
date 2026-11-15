@@ -1,10 +1,10 @@
 /**
  * @file `ork feedback`: the feedback every run recorded, grouped into items
  *   (specs/feedback.md): list and show them, note a run, dismiss and restore an
- *   item, and accept one, as a lesson its workflow reads from then on. What
- *   closes the loop further (apply, triage, split) is in `feedback-loop.ts`,
- *   and what moves feedback off the machine (publish, export, import) in
- *   `feedback-share.ts`.
+ *   item, accept one, as a lesson its workflow reads from then on, and resolve
+ *   ones fixed by hand (`feedback-resolve.ts`). What closes the loop further
+ *   (apply, triage, split) is in `feedback-loop.ts`, and what moves feedback
+ *   off the machine (publish, export, import) in `feedback-share.ts`.
  */
 
 import {
@@ -24,7 +24,7 @@ import {
 } from "../runs/feedback.ts";
 import { withStore } from "../store.ts";
 import { list } from "./feedback-list.ts";
-import { apply, split, triage } from "./feedback-loop.ts";
+import { apply, resolve, split, triage } from "./feedback-loop.ts";
 import { exportFeedback, importFeedback, publish } from "./feedback-share.ts";
 
 /** Runs `body` on the item `prefix` names, or says why there's none. */
@@ -58,7 +58,7 @@ export const feedback = defineCommand({
   meta: {
     name: "feedback",
     description:
-      "What got in the way in your runs, grouped: list, show, note, dismiss, restore, accept, apply, triage, split, publish, export, import",
+      "What got in the way in your runs, grouped: list, show, note, dismiss, restore, accept, resolve, apply, triage, split, publish, export, import",
   },
   subCommands: {
     list,
@@ -165,6 +165,7 @@ export const feedback = defineCommand({
           for (const line of rest) write(`  ${line}`);
         }),
     }),
+    resolve,
     // Wired here, not in their files, which are at the import limit.
     apply: { ...apply, plugins: [refuseExtraArguments] },
     triage,

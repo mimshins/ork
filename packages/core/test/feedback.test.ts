@@ -353,4 +353,37 @@ describe("stored feedback", () => {
     expect(store.feedbackItems({ all: true })).toHaveLength(7);
     store.close();
   });
+
+  it("hides a resolved item, and opens it again when it recurs after", () => {
+    const store = openStore(":memory:");
+    const record = (seq: number, at: string) =>
+      store.importFeedback({
+        runId: "r1",
+        seq,
+        at,
+        feedback: {
+          source: "system",
+          kind: "workflow",
+          target: "workflow",
+          severity: "low",
+          title: "build reached its turn limit",
+          body: "",
+          evidence: [],
+          fingerprint: "turns",
+          origin: {},
+        },
+      });
+    record(1, "2026-01-01T00:00:00.000Z");
+    expect(store.setFeedbackStatus("turns", "resolved")).toBe(true);
+    expect(store.feedbackItems()).toEqual([]);
+    expect(store.feedbackItems({ all: true })[0]?.status).toBe("resolved");
+    // A record from before it was resolved (an import) leaves it resolved.
+    record(2, "2026-01-02T00:00:00.000Z");
+    expect(store.feedbackItems()).toEqual([]);
+    record(3, "2099-01-01T00:00:00.000Z");
+    expect(store.feedbackItems().map(i => [i.id, i.status])).toEqual([
+      ["turns", "new"],
+    ]);
+    store.close();
+  });
 });

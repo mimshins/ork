@@ -2,7 +2,8 @@
  * @file The `ork feedback` subcommands that close the loop (ADR-059): `apply`
  *   runs Ork's own workflow to propose a fix for an item, `triage` merges items
  *   about the same problem by rules after asking, and `split` takes a merge
- *   apart.
+ *   apart. `resolve` (marking items fixed by hand) is passed on from its own
+ *   file.
  */
 
 import { openStore } from "@krapht/ork-core";
@@ -150,3 +151,5 @@ export const split = defineCommand({
       );
     }),
 });
+
+export { resolve } from "./feedback-resolve.ts";

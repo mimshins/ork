@@ -66,17 +66,17 @@ has no Go to digit; its tab sits after Usage in the bottom group.
   rather than the one last focused; the arrow keys, `Home` and `End` move
   through it. Nothing is chosen for the person.
 - **Filters:** the shared [filter bar](./design-filter-bar.md) on the `feedback`
-  list: **Status** (`Default (not dismissed)`, as `ork feedback list` does, the
-  table's statuses and `All`), **Kind**, **Severity**, **Workflow** and **Run**;
-  and, beside it, **About** (`ork`, `workflow` or `project`), which is not a
-  table field and narrows in the page. A filter is read from `GET /api/feedback`
-  with the table's fields (unfiltered, the server answers every item and the
-  panel hides the dismissed ones), keeps the last list while a refused value
-  shows the server's words, and lasts for the page's life. The bar says "3
-  feedback items match." aloud and shows the matching `ork feedback list`
-  command and **Clear filter** while one is set; a filter that leaves nothing
-  shows "No feedback items match the filter.", and with none set the list's own
-  empty states stay.
+  list: **Status** (`Default (open)`: not dismissed or resolved, as
+  `ork feedback list` does, the table's statuses and `All`), **Kind**,
+  **Severity**, **Workflow** and **Run**; and, beside it, **About** (`ork`,
+  `workflow` or `project`), which is not a table field and narrows in the page.
+  A filter is read from `GET /api/feedback` with the table's fields (unfiltered,
+  the server answers every item and the panel hides the dismissed ones), keeps
+  the last list while a refused value shows the server's words, and lasts for
+  the page's life. The bar says "3 feedback items match." aloud and shows the
+  matching `ork feedback list` command and **Clear filter** while one is set; a
+  filter that leaves nothing shows "No feedback items match the filter.", and
+  with none set the list's own empty states stay.
 - **An item** shows its title (its heading), its status as a pill, its facts (id
   with a copy of the whole fingerprint, about, kind, severity, seen, first and
   last seen, workflows, models, sources, and the items merged into it with

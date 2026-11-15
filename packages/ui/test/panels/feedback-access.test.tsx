@@ -54,7 +54,9 @@ describe("the Feedback panel, wide", () => {
     await vi.waitFor(() => {
       expect(document.activeElement?.getAttribute("aria-label")).toBe("Items");
     });
-    expect(screen.getByText("Every item is dismissed.")).toBeDefined();
+    expect(
+      screen.getByText("Every item is dismissed or resolved."),
+    ).toBeDefined();
   });
 });
 

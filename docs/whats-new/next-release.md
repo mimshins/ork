@@ -42,3 +42,9 @@ _Part of [What's new](../whats-new.md)._
   refused before any has worked says "Nothing is filtered yet." rather than that
   the list shows the last filter that worked
   ([filtering lists](../guides/filtering-lists.md#in-the-browser-and-ork-mcp)).
+- **Resolve feedback you fixed by hand.** `ork feedback resolve <item>…` marks
+  items resolved (several ids, space or comma separated; none change if one
+  can't be). `ork feedback list` and the Feedback panel now hide resolved items
+  as well as dismissed ones (the panel's Status reads `Default (open)`), and a
+  resolved item seen again opens as `new`
+  ([guide](../guides/feedback.md#reading-it)).

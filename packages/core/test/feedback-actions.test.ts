@@ -55,6 +55,7 @@ describe("which actions an item allows", () => {
       lesson: "ok",
       apply: "ok",
       publish: "only feedback about Ork is shared",
+      resolve: "ok",
     });
   });
 
@@ -64,6 +65,7 @@ describe("which actions an item allows", () => {
       lesson: "about Ork itself",
       apply: "about Ork itself",
       publish: "ok",
+      resolve: "ok",
     });
   });
 
@@ -79,10 +81,15 @@ describe("which actions an item allows", () => {
       lesson: "no workflow recorded, so no lessons file",
       apply: "resolved already",
       publish: "only feedback about Ork is shared",
+      resolve: "resolved already",
     });
     expect(reasons(item("ork", "published"))["publish"]).toBe(
       "published already",
     );
+    expect(reasons(item("ork", "published"))["resolve"]).toBe(
+      "published already",
+    );
+    expect(reasons(item("workflow", "accepted"))["resolve"]).toBe("ok");
   });
 
   it("starts no second fix beside a running one", () => {

@@ -22,6 +22,8 @@ export type FeedbackActions = {
   apply: ActionCheck;
   /** Share it with Ork's maintainers. */
   publish: ActionCheck;
+  /** Mark it resolved: fixed by hand, outside `apply`. */
+  resolve: ActionCheck;
 };
 
 const ALLOWED: ActionCheck = { ok: true };
@@ -51,7 +53,13 @@ export const feedbackActions = (
   const isOrk = item.target === "ork";
   if (item.status === "dismissed") {
     const check = dismissed(short);
-    return { accept: check, lesson: check, apply: check, publish: check };
+    return {
+      accept: check,
+      lesson: check,
+      apply: check,
+      publish: check,
+      resolve: check,
+    };
   }
   const settled = item.status === "resolved" || item.status === "published";
   const accept =
@@ -93,7 +101,8 @@ export const feedbackActions = (
   } else if (item.status === "published") {
     publish = already(short, item.status);
   }
-  return { accept, lesson, apply, publish };
+  const resolve = settled ? already(short, item.status) : ALLOWED;
+  return { accept, lesson, apply, publish, resolve };
 };
 
 /** What a run of `ork:feedback-apply` is named: its file's `name:`. */
