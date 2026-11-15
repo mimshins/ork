@@ -35,8 +35,10 @@ origin, so its `branch:` lock is shared with no other run; `ork run` says so.
 
 If an issue's change conflicts with what the branch already has, an agent
 resolves it in the integration worktree. It edits only the conflicted files,
-keeps what each side meant to do, and says what it kept. Then your check runs
-again before the push. The lock is held the whole time.
+keeps what each side meant to do, and says what it kept. A file it creates
+anyway is moved out of the way (to `ork-strays/` in the worktree's git folder)
+rather than committed or failing the issue, and the run's log says where. Then
+your check runs again before the push. The lock is held the whole time.
 
 You are asked **only when the resolution changes what a reviewed change does**:
 the same logic was edited on both sides, and the agent chose, merged or rewrote

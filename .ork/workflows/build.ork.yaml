@@ -39,13 +39,11 @@ agents:
     tools:
       allow:
         - Edit
-        - Write
       only:
         - Read
         - Grep
         - Glob
         - Edit
-        - Write
     output:
       schema:
         behaviour:
@@ -852,6 +850,16 @@ nodes:
         fi
       done < "$tmp/files"
       printf '%s\n' "$OTHERS" | sed '/^$/d' > "$tmp/others"
+      # The resolver may not create files: a new one is set aside, out of the commit, rather than failing the run.
+      aside="$(git rev-parse --absolute-git-dir)/ork-strays"
+      git ls-files --others --exclude-standard -- . ':!.ork' > "$tmp/new"
+      while IFS= read -r f; do
+        if ! grep -Fxq -- "$f" "$tmp/files" && ! grep -Fxq -- "$f" "$tmp/others"; then
+          mkdir -p "$aside/$(dirname -- "$f")"
+          mv -- "$f" "$aside/$f"
+          echo "$f is new and outside the conflict, so it was set aside: $aside/$f" >&2
+        fi
+      done < "$tmp/new"
       { git diff --name-only; git ls-files --others --exclude-standard -- . ':!.ork'; } > "$tmp/touched"
       while IFS= read -r f; do
         if ! grep -Fxq -- "$f" "$tmp/files" && ! grep -Fxq -- "$f" "$tmp/others"; then

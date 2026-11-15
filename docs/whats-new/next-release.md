@@ -13,3 +13,13 @@ _Part of [What's new](../whats-new.md)._
   happened to be polled. A waiting question answered elsewhere now says
   `<id> answered elsewhere: …` at once, not after the card on screen
   ([decide](../guides/running-workflows/attaching-to-a-run.md#answering-for-several-runs-ork-decide---follow)).
+- **A conflict resolver's stray file no longer fails the run.** In the `issues`
+  and `resolve-conflict` examples, and this repository's `build` workflow, an
+  agent that resolved a conflict but also left a new file outside it (a scratch
+  file it has no tool to delete) failed the run at the last step. That file is
+  now moved to `ork-strays/` in the checkout's git folder, out of the commit,
+  and the log says where; an edit to a tracked file outside the conflict is
+  still refused. The resolver no longer has the `Write` tool. Upgrade: to get
+  this in a project that took `issues` from `ork init --issues`, run it again,
+  or download the example again
+  ([conflicts](../guides/issues-in-parallel/locks-and-conflicts.md#a-conflict)).

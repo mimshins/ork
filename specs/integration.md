@@ -136,13 +136,17 @@ nor sit under its lock ([L286](./gaps/conflict-resolver-limits.md)). The steps:
 1. **`inspect`** (a script) refuses when no rebase is underway, lists the
    conflicted files, and shows what each side did: the upstream's diff against
    the base, and the replayed change's.
-2. **`resolve`** (an agent `conflict-resolver`, tools `Read`, `Grep`, `Glob`,
-   `Edit`, `Write`; its edits need no prompt, as `stage` checks them) edits only
-   those files, never drops one side silently, and reports `behaviour`
-   (`unchanged` or `changed`) and `kept` (what it kept from each side). It runs
-   no git and does not finish the rebase.
-3. **`stage`** (a script) fails on a conflict marker left, or on a file changed
-   that is not conflicted, then stages the files and shows the result.
+2. **`resolve`** (an agent `conflict-resolver`, tools `Read`, `Grep`, `Glob` and
+   `Edit`, and no `Write`, as it never creates a file; its edits need no prompt,
+   as `stage` checks them) edits only those files, never drops one side
+   silently, and reports `behaviour` (`unchanged` or `changed`) and `kept` (what
+   it kept from each side). It runs no git and does not finish the rebase.
+3. **`stage`** (a script) fails on a conflict marker left, or on a tracked file
+   changed that is not conflicted. A new file outside the conflict (a resolver's
+   scratch file, which it cannot delete) doesn't fail it: the file is moved to
+   `ork-strays/` in the checkout's git folder, out of the commit, and a line on
+   stderr says where. Then it stages the files and shows the result. The `build`
+   workflow's `settle` step does the same.
 4. **`ask`**, only when `behaviour` is `changed`: a `human.gate` shows both
    sides, what was kept and the result, and asks to `keep` or `stop`. "Changed"
    means the same logic was edited on both sides and the resolver chose, merged

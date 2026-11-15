@@ -3,8 +3,8 @@
  *   stopped mid-rebase, with a fake resolver session: its tool steps are the
  *   shipped scripts. A clean resolution finishes with no question, a changed
  *   behaviour asks with both sides and the result shown, a failing check or a
- *   `stop` answer leaves the work in the checkout, and an edit outside the
- *   conflict is refused.
+ *   `stop` answer leaves the work in the checkout, an edit to a tracked file
+ *   outside the conflict is refused, and a new file is set aside.
  */
 
 import { execFileSync } from "node:child_process";
@@ -71,6 +71,9 @@ const stopped = (sides: Sides, rebase = true) => {
   git(cwd, "config", "user.name", "t");
   git(cwd, "config", "user.email", "t@example.com");
   git(cwd, "config", "commit.gpgsign", "false");
+  // A tracked file neither side changes.
+  writeFileSync(path.join(cwd, "notes.txt"), "notes\n");
+  git(cwd, "add", "notes.txt");
   commit(cwd, "app.txt", sides.base, "base");
   git(cwd, "checkout", "-q", "-b", "feature");
   commit(cwd, "app.txt", sides.change, "the change");
@@ -100,6 +103,17 @@ const LIMIT: Sides = {
 
 /** What the fake resolver does in the checkout, and reports. */
 type Resolver = { write: Record<string, string>; report: NodeOutput };
+
+/** A clean resolution of `ADDS` that also writes `extra`. */
+const resolvedWith = (extra: Record<string, string>): Resolver => ({
+  write: { "app.txt": "one\ntwo\nup\nmine\n", ...extra },
+  report: {
+    status: "pass",
+    summary: "x",
+    kept: "both",
+    behaviour: "unchanged",
+  },
+});
 
 const merged = (text: string, behaviour: string): Resolver => ({
   write: { "app.txt": text },
@@ -229,20 +243,35 @@ describe("resolving a stopped rebase", () => {
     );
   });
 
-  it("refuses a file edited outside the conflict", async () => {
+  it("refuses a tracked file edited outside the conflict", async () => {
     const cwd = stopped(ADDS);
-    const { result, ran } = await run(cwd, {
-      write: { "app.txt": "one\ntwo\nup\nmine\n", "extra.txt": "stray\n" },
-      report: {
-        status: "pass",
-        summary: "x",
-        kept: "both",
-        behaviour: "unchanged",
-      },
-    });
+    const { result, ran } = await run(
+      cwd,
+      resolvedWith({ "notes.txt": "edited\n" }),
+    );
     expect(result.status).toBe("failed");
     expect(ran).toEqual(["inspect", "resolve", "stage"]);
     expect(inProgress(cwd)).toBe(true);
+  });
+
+  it("sets a new file aside, out of the commit, and finishes", async () => {
+    const cwd = stopped(ADDS);
+    const { result, ran } = await run(
+      cwd,
+      resolvedWith({ "stray.md.new": "x\n" }),
+    );
+    expect(result.status).toBe("succeeded");
+    expect(ran).toEqual(["inspect", "resolve", "stage", "finish", "check"]);
+    expect(existsSync(path.join(cwd, "stray.md.new"))).toBe(false);
+    expect(
+      readFileSync(
+        path.join(cwd, ".git", "ork-strays", "stray.md.new"),
+        "utf8",
+      ),
+    ).toBe("x\n");
+    expect(git(cwd, "show", "--name-only", "--format=", "HEAD").trim()).toBe(
+      "app.txt",
+    );
   });
 
   it("refuses a conflict marker left behind", async () => {
