@@ -15,7 +15,7 @@ where it applies; this register is the list to decide from.
 
 Add an entry in the change that finds it, and remove it in the change that
 closes it. Ids are never reused: the next limit is L380, and the next chore is
-C16 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
+C17 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
 carried to a roadmap item, or to none yet (unplanned).
@@ -528,4 +528,10 @@ Found closing the list QA follow-ups (list filters):
   `{ list: {} }` outputs come back in the shapes the shell steps read, and that
   the report is written under `~/.ork/audits` with `git status` clean. Carried,
   unplanned: it waits on the maintainer's go.
+- **C16 · A push whose `pre-push` check runs the tests can fail with SIGPIPE.**
+  Git opens the connection to GitHub before the hook, and a full `pnpm check`
+  (minutes, when the tests run) lets it go idle and drop: the push exits 141
+  after every check passed. A second push gets through, as `ork once` reuses the
+  passed tests. Run `pnpm check` before `git push` until the hook can run before
+  git connects (or push with a keepalive).
   ([the runbook](../runbook/development/security-audit.md))
