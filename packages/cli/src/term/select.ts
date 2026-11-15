@@ -11,6 +11,7 @@
  */
 
 import { barred } from "./card-bar.ts";
+import { fitSelect } from "./fit.ts";
 import { readKeys } from "./keys.ts";
 import { cut, widthOf, wrap } from "./layout.ts";
 import { interrupt, readLine, withdrawn } from "./line.ts";
@@ -137,8 +138,12 @@ export const select = (
     let note: string | undefined;
     let editing: LineState | undefined;
 
-    const optionLines = (t: Term): string[] =>
-      o.options.flatMap((option, i) => {
+    /**
+     * Each option's lines; `compact`, only the chosen one keeps its
+     * description, for a terminal too short for them all.
+     */
+    const optionBlocks = (t: Term, compact: boolean): string[][] =>
+      o.options.map((option, i) => {
         const selected = i === cursor;
         const number = i < 9 ? `${String(i + 1)}.` : "  ";
         const mark = option.id === o.recommended ? " (recommended)" : "";
@@ -157,6 +162,7 @@ export const select = (
         const lines = [
           ` ${pointer} ${text}${mark === "" ? "" : paint(t, "ok", mark)}`,
         ];
+        if (compact && !selected) return lines;
         for (const line of wrap(option.description ?? "", t.width - 7)) {
           if (line !== "") lines.push(paint(t, "muted", `      ${line}`));
         }
@@ -179,29 +185,29 @@ export const select = (
       return paint(t, "muted", cut(` ${keys.join(" · ")}`, t.width));
     };
 
+    /**
+     * The card, options, note, details and key line, in the rows the terminal
+     * has: when they don't fit, only the chosen option keeps its description,
+     * the options show as a window around it, and the card is cut.
+     */
     const render = (): void => {
       const t = term();
-      const head = o.header?.(t) ?? [];
-      const body = optionLines(t);
+      const muted = (text: string): string => paint(t, "muted", text);
       const noteLine =
-        note === undefined
-          ? []
-          : [paint(t, "muted", cut(` note: ${note}`, t.width))];
-      const above = [...head, ...body, ...noteLine];
-      const room = Math.max(3, t.rows - above.length - 3);
-      const all =
-        showDetails && o.details !== undefined
-          ? wrap(o.details.trimEnd(), t.width - 3)
-          : [];
-      const shown =
-        all.length > room
-          ? [
-              ...all.slice(0, room - 1),
-              `… ${String(all.length - room + 1)} more lines`,
-            ]
-          : all;
-      const detail = shown.map(line => paint(t, "muted", `   ${line}`));
-      const lines = [...above, ...detail, keyLine(t)];
+        note === undefined ? [] : [muted(cut(` note: ${note}`, t.width))];
+      const { head, body, detail } = fitSelect(t, {
+        head: o.header?.(t) ?? [],
+        blocks: compact => optionBlocks(t, compact),
+        cursor,
+        details:
+          showDetails && o.details !== undefined
+            ? wrap(o.details.trimEnd(), t.width - 3)
+            : [],
+        hasDetails: o.details !== undefined,
+        tail: noteLine.length + 1 + (editing === undefined ? 0 : 1),
+        muted,
+      });
+      const lines = [...head, ...body, ...noteLine, ...detail, keyLine(t)];
       if (editing === undefined) {
         region.draw(barred(t, lines));
         return;

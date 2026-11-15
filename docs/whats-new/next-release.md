@@ -28,3 +28,10 @@ _Part of [What's new](../whats-new.md)._
   this in a project that took `issues` from `ork init --issues`, run it again,
   or download the example again
   ([conflicts](../guides/issues-in-parallel/locks-and-conflicts.md#a-conflict)).
+- **Questions fit a short terminal.** In a pane shorter than a question's card
+  (a quarter-screen tmux pane, say), each key press printed the card again below
+  the last, so the list filled the pane with copies and the highlighted option
+  scrolled out of sight. A question now keeps to the rows the terminal has: only
+  the highlighted option keeps its description, the list scrolls around it, and
+  the card is cut with "… N more lines" (`d` shows them)
+  ([the terminal](../guides/terminal.md#questions)).

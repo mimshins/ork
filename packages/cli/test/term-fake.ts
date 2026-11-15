@@ -68,6 +68,8 @@ export const fakeTerm = (options: FakeOptions = {}): FakeTerm => {
   let hidden = false;
   let rawMode = false;
   let interrupts = 0;
+  /** The first line on screen: the last `rows` lines are what it shows. */
+  const viewTop = (): number => Math.max(0, rows.length - (options.rows ?? 24));
   const put = (char: string): void => {
     const line = rows[row] ?? "";
     rows[row] =
@@ -78,7 +80,8 @@ export const fakeTerm = (options: FakeOptions = {}): FakeTerm => {
     const n = Number(params) || 1;
     if (params === "?25" && final === "l") hidden = true;
     else if (params === "?25" && final === "h") hidden = false;
-    else if (final === "A") row = Math.max(0, row - n);
+    // A real terminal stops the cursor at the top of what it shows.
+    else if (final === "A") row = Math.max(viewTop(), row - n);
     else if (final === "C") col += n;
     else if (final === "G") col = n - 1;
     else if (final === "J") {

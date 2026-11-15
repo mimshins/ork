@@ -394,3 +394,50 @@ describe("select, plain", () => {
     expect(strict.raw()).toContain("Type an option's number or id.");
   });
 });
+
+/** Six options with descriptions long enough to wrap, under a long card. */
+const TALL: SelectOptions = {
+  options: ["a", "b", "c", "d", "e", "f"].map(id => ({
+    id,
+    description: `Option ${id}: a description long enough to wrap onto a second and a third line here.`,
+  })),
+  header: () => [
+    "",
+    " The question, bold",
+    ...Array.from({ length: 8 }, (_, i) => `   context line ${String(i + 1)}`),
+  ],
+};
+
+describe("select, in a terminal shorter than its card", () => {
+  it("fits the screen, keeps the options and keys, and moves without piling up copies", async () => {
+    const term = fakeTerm({ rows: 12 });
+    const result = select(term.io, TALL);
+    await term.press(KEY.down, KEY.down, KEY.down);
+    const screen = term.screen();
+    expect(screen.length).toBeLessThanOrEqual(11);
+    expect(screen.filter(line => line.includes("The question"))).toHaveLength(
+      1,
+    );
+    expect(screen.some(line => line.includes("❯ 4. d"))).toBe(true);
+    expect(screen.at(-1)).toContain("Enter choose");
+    await term.press(KEY.enter);
+    expect(await result).toEqual({ kind: "chosen", id: "d" });
+  });
+
+  it("scrolls a list longer than the screen around the chosen option", async () => {
+    const term = fakeTerm({ rows: 8 });
+    const options = Array.from({ length: 15 }, (_, i) => ({
+      id: `o${String(i + 1)}`,
+    }));
+    const result = select(term.io, { options, header: () => [" Pick one"] });
+    await term.press(KEY.end);
+    const screen = term.screen();
+    expect(screen.length).toBeLessThanOrEqual(7);
+    expect(screen.some(line => line.includes("❯    o15"))).toBe(true);
+    expect(screen.some(line => /↑ \d+ more/u.test(line))).toBe(true);
+    await term.press(KEY.home);
+    expect(term.screen().some(line => /↓ \d+ more/u.test(line))).toBe(true);
+    await term.press(KEY.enter);
+    expect(await result).toEqual({ kind: "chosen", id: "o1" });
+  });
+});

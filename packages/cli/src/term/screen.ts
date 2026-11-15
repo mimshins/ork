@@ -6,7 +6,10 @@
  *   restored by {@link Region.finish}. While a region is open, a line another
  *   part of the program prints (a run's transcript, from parallel nodes) goes
  *   through {@link printAbove}, which erases the region, prints the line and
- *   draws the region again, so the rows the region counts stay true.
+ *   draws the region again, so the rows the region counts stay true. A region
+ *   is never drawn taller than the screen (its first lines are left out), as
+ *   one the cursor can't climb back over would be printed again below itself at
+ *   each redraw.
  */
 
 import { rowsOf } from "./layout.ts";
@@ -58,11 +61,18 @@ export const createRegion = (out: TermStream, term: () => Term): Region => {
     column: undefined,
   };
   const erase = (): string => `${UP(up)}${CLEAR_DOWN}`;
-  const draw = (lines: readonly string[], column?: number): void => {
+  const draw = (all: readonly string[], column?: number): void => {
     open.add(region);
-    const width = term().width;
-    last = { lines, column };
-    const rows = lines.reduce((sum, line) => sum + rowsOf(line, width), 0);
+    const { width, rows: height } = term();
+    last = { lines: all, column };
+    // Never taller than the screen: the cursor can't go back up past its top.
+    const lines = [...all];
+    const rowsIn = (some: readonly string[]): number =>
+      some.reduce((sum, line) => sum + rowsOf(line, width), 0);
+    while (lines.length > 1 && rowsIn(lines) > Math.max(1, height - 1)) {
+      lines.shift();
+    }
+    const rows = rowsIn(lines);
     const placed =
       column === undefined
         ? HIDE

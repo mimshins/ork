@@ -61,7 +61,10 @@ All three take a `PromptIO` (input, output, env, and optionally the caller's own
 line reader and its Ctrl-C hook), draw only their own lines (cursor up, clear
 down, never the screen), hide the cursor while open, redraw on a resize,
 collapse to one line when answered, and restore raw mode and the cursor on every
-exit. A withdrawn prompt (`AbortSignal`) rejects.
+exit. A withdrawn prompt (`AbortSignal`) rejects. A prompt is never drawn taller
+than the screen less one row (`term/fit.ts`; the region leaves its first lines
+out as a last resort): the cursor can't move up past the screen's top, so a
+taller one would be printed again below itself at each redraw.
 
 While a prompt is drawn, any line `write` or `writeErr` (`output.ts`) prints to
 a terminal goes through the open region (`printAbove`): it erases the card,
@@ -78,7 +81,11 @@ counts.
   It resolves `{ kind: "chosen", id, note? }`, `{ kind: "later" }` or
   `{ kind: "interrupted" }`. An option with a label shows it first and its id
   after it in parentheses, dimmed (`Allow (allow)`); one without shows its id.
-  Plain, it prints `1) label (id) - description (recommended)` and asks
+  In a terminal too short for all of it, only the chosen option keeps its
+  description, the options show as a window around it with `↑ N more` and
+  `↓ N more`, and the card is cut from the end with "… N more lines" (and `(d)`
+  when `d` shows them), its blank first line going first; the key line always
+  shows. Plain, it prints `1) label (id) - description (recommended)` and asks
   `Choose [n]: `, taking a number, an id, or Enter for the recommended one, `d`
   for the details, and then asks the note's line.
 - **`readText`**: one line edited in place (arrows, `Home`/`End`, `Backspace`,
@@ -113,8 +120,6 @@ print what they always did: no chip, no cut, no escape code.
 ## Limits
 
 - **L249** A code point counts as one column ([gaps](../gaps.md)).
-- **L250** A select with more options than the screen has rows is not scrolled
-  ([gaps](../gaps.md)).
 - **L251** `SIGKILL` and `SIGTERM` can leave the cursor hidden
   ([gaps](../gaps.md)).
 - **L252** Only tool lines are cut to the screen width ([gaps](../gaps.md)).

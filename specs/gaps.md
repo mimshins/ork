@@ -333,9 +333,6 @@ Found removing the Agent SDK driver
   character (CJK, an emoji) can make a line one column too long, which wraps it.
   Width by `Intl.Segmenter` and an East Asian width table waits for a report.
   See [terminal](./cli/terminal.md#limits).
-- **L250 · A select taller than the screen is not scrolled.** A list of more
-  options than the terminal has rows redraws wrongly; the details are cut to
-  fit, the options are not.
 - **L251 · A killed process can leave the cursor hidden.** A prompt restores the
   cursor and raw mode on every exit it can see (an answer, Esc, Ctrl-C, a
   withdrawal), not on `SIGKILL` or `SIGTERM`; `reset` or the next prompt shows

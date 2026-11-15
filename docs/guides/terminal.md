@@ -30,6 +30,11 @@ has no label. A long context is cut to a few lines; `d` shows all of it (or a
 gate's document), `d` again hides it, and `ork decide --verbose` always shows it
 all. The recommended option is marked and chosen to start.
 
+In a short terminal (a tmux pane, say) the question still fits: only the
+highlighted option keeps its description, the list scrolls with `↑ N more` and
+`↓ N more` lines, and the card is cut with "… N more lines", which `d` shows
+when it has them.
+
 | Key             | What it does                                      |
 | --------------- | ------------------------------------------------- |
 | ↑ ↓, or `k` `j` | Move                                              |
