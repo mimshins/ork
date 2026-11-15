@@ -85,7 +85,7 @@ ork run <wf> --follow-ups <ids|due>  # take open agent follow-ups (ids, or `due`
 ork run <wf> --node <id> [--input k=v] [--driver <id>] [--in-place] [--json] [--verbose]
 ork ps [--status s] [--workflow w] [--project p|all] [--since 7d] [--until day] [--limit n] [--ids] [--json]  # this project's runs, newest first; 20 by default
 ork logs [<run>] [--node n] [--since t] [--until day] [--limit n] [--follow] [--calls | --no-calls] [--json] [--verbose]   # a run's transcript, replayed or live, with the runs it called inline
-ork logs -f --all [--project p|all] [--until-idle] [--node n] [--since t] [--until day] [--limit n] [--json] [--verbose]   # every live run of the project, interleaved, each line prefixed with its run id and workflow
+ork logs -f --all [--project p|all] [--workflow w] [--until-idle] [--node n] [--since t] [--until day] [--limit n] [--json] [--verbose]   # every live run of the project, interleaved, each line prefixed with its run id and workflow
 ork attach <run>                 # follow a run and the runs it called, and answer their questions here; Ctrl-C detaches ([run control](./run-control.md#detaching-from-a-run))
 ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node; a delegated node's task description after its id
 ork usage [--project p|all] [--since 30d|day|all] [--until day] [--by day|workflow|model|…] [--workflow w] [--json]  # what runs spent over time

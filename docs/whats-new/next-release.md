@@ -23,3 +23,9 @@ _Part of [What's new](../whats-new.md)._
   the run's first line and `ork ui` say so while it runs. Questions, gates and
   budgets still stop it
   ([guide](../guides/running-workflows/running-and-answering.md#with-no-permission-prompts---yolo)).
+- **Fixes from the alpha.20 QA pass.** `ork logs -f --all --workflow <name>`
+  follows only that workflow's live runs and the runs they call, as the guide
+  said (the flag was refused). The Runs panel of `ork ui` keeps the last filter
+  that worked after you maximize or restore it, where it showed every run
+  ([looking back](../guides/running-workflows/looking-back.md#follow-every-live-run),
+  [filtering lists](../guides/filtering-lists.md)).

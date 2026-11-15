@@ -79,6 +79,7 @@ export const RunsPanel = () => {
           <FilterBar
             busy={answer.busy}
             error={answer.refused === null ? null : { message: answer.refused }}
+            worked={answer.worked}
             list="runs"
             onChange={next => {
               void state.runFilter.setValue(next);

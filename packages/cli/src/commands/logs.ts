@@ -32,6 +32,7 @@ const logsRefusal = (args: {
   follow: boolean;
   run?: string | undefined;
   project?: string | undefined;
+  workflow?: string | undefined;
   "until-idle": boolean;
   calls?: boolean | undefined;
   json: boolean;
@@ -44,6 +45,7 @@ const logsRefusal = (args: {
     return null;
   }
   if (args.project !== undefined) return "--project needs --all.";
+  if (args.workflow !== undefined) return "--workflow needs --all.";
   if (args["until-idle"]) return "--until-idle needs --all.";
   return null;
 };
@@ -91,6 +93,11 @@ export const logs = defineCommand({
       description:
         "With --all: a registered project (id or root), or all (default: this one)",
     },
+    workflow: {
+      type: "string",
+      description:
+        "With --all: only this workflow's live runs, and the runs they call",
+    },
     "until-idle": {
       type: "boolean",
       description: "With --all: end once no live run is left",
@@ -124,7 +131,12 @@ export const logs = defineCommand({
         if (scope === undefined) return;
         await printAll(
           store,
-          scope === ALL ? {} : { project: rootOf(scope, store.projects()) },
+          {
+            ...(scope === ALL
+              ? {}
+              : { project: rootOf(scope, store.projects()) }),
+            ...(args.workflow === undefined ? {} : { workflow: args.workflow }),
+          },
           write,
           {
             json: args.json,

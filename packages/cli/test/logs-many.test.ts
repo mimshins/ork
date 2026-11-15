@@ -130,10 +130,11 @@ const printAllOf = (
   lines: string[],
   extra: Partial<Parameters<typeof printAll>[3]> = {},
   signal?: AbortSignal,
+  workflow?: string,
 ): Promise<void> =>
   printAll(
     store,
-    { project: "/p" },
+    { project: "/p", ...(workflow === undefined ? {} : { workflow }) },
     line => {
       lines.push(line);
     },
@@ -301,6 +302,7 @@ describe("ork logs over several runs", () => {
       ],
       [["--until-idle"], "--until-idle needs --all."],
       [["--project", "all"], "--project needs --all."],
+      [["--workflow", "plan"], "--workflow needs --all."],
     ])("refuses %j", async (words, message) => {
       const ran = await ork(...words);
       expect(ran.err.trim()).toBe(message);
@@ -360,6 +362,21 @@ describe("ork logs over several runs", () => {
       const text = plain(lines);
       expect(text.some(l => l.startsWith("aaaa plan › "))).toBe(true);
       expect(text.every(l => /^(aaaa plan|bbbb build) › /u.test(l))).toBe(true);
+    });
+
+    it("follows only one workflow's runs with --workflow", async () => {
+      begin("aaaa1111", "plan");
+      store.append("aaaa1111", stepStarted);
+      begin("bbbb2222", "build");
+      store.append("bbbb2222", stepStarted);
+      const lines: string[] = [];
+      const stop = new AbortController();
+      const done = printAllOf(store, lines, {}, stop.signal, "build");
+      await printed(lines, "bbbb build › ");
+      stop.abort();
+      await done;
+      const text = plain(lines).filter(l => l !== "");
+      expect(text.every(l => l.startsWith("bbbb build › "))).toBe(true);
     });
 
     it("picks up a run that starts later, from its first event", async () => {

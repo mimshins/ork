@@ -100,6 +100,8 @@ export const createAppState = ({
   const preferences = createPreferences(storage);
   /** The Runs panel's filter bar values, for the page's life. */
   const runFilter = Container.create<Partial<Record<string, string>>>({});
+  /** The last Runs filter the server accepted, so a remounted panel keeps it. */
+  const runFilterWorked = Container.create<Partial<Record<string, string>>>({});
   const runDialog = Container.create(false);
   /** What the Run workflow dialog opens on, when something chose for it. */
   const runPreset = Container.create<{
@@ -169,6 +171,7 @@ export const createAppState = ({
     builder: context.builder,
     preferences,
     runFilter,
+    runFilterWorked,
     runDialog,
     runPreset,
     client,

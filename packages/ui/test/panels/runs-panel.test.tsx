@@ -341,6 +341,33 @@ describe("the Runs panel's filter bar", () => {
     expect(rowNames()).toHaveLength(1);
   });
 
+  it("keeps the last good rows and command when the panel is drawn again", async () => {
+    const opened = await openFiltered(
+      refusing("workflow", "--workflow takes a workflow name, not `x y`.", [
+        runView("bbb22222", "failed"),
+      ]),
+    );
+    await chooseStatus("failed");
+    await screen.findByText("1 run matches.");
+    await userEvent.type(
+      screen.getByRole("combobox", { name: "Workflow" }),
+      "x y{Enter}",
+    );
+    await screen.findByRole("alert");
+    cleanup();
+    renderPanel(opened.state, <RunsPanel />);
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain(
+      "The list shows the last filter that worked.",
+    );
+    await vi.waitFor(() => {
+      expect(rowNames()).toEqual([expect.stringContaining("bbb22222")]);
+    });
+    screen.getByRole("button", {
+      name: "Copy command (ork ps --status failed)",
+    });
+  });
+
   it("shows the unfiltered list, the refusal and the plain command when the first filter is refused", async () => {
     await openFiltered(
       refusing("since", "--since takes an age or a day, not `bogus`.", []),

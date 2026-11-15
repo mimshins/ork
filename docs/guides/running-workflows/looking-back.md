@@ -38,8 +38,9 @@ ork logs -f --all --workflow start --until-idle
 Each line starts with the run's first four id characters and its workflow:
 `3f2a start › plan │ ✓ pass: Drafted the spec`. Stored events of the live runs
 print first, then new ones. A run that starts later joins within about a second,
-and a called run prints once. `--all` needs `-f` and takes no run id; `--since`,
-`--until`, `--limit`, `--node`, `--workflow` and `--json` work as for one run
+and a called run prints once. `--all` needs `-f` and takes no run id;
+`--workflow` keeps only that workflow's runs and the runs they call, and
+`--since`, `--until`, `--limit`, `--node` and `--json` work as for one run
 (`--json` prints the stored events, which carry `runId`, with no prefix). Ctrl-C
 ends it, and so does `--until-idle` when no live run is left. Both exit 0. To
 answer the questions of those runs, use

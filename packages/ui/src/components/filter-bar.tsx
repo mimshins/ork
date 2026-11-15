@@ -41,6 +41,11 @@ export type FilterBarProps = {
   error?: { message: string; field?: string } | null;
   /** A refetch is in flight. */
   busy?: boolean;
+  /**
+   * The last values the server accepted, when the panel keeps them across a
+   * remount; without it the bar remembers its own.
+   */
+  worked?: FilterValues;
   /** Rows the filtered list shows; null before the first read. */
   shown?: number | null;
   /** The panel's status line while unfiltered ("3 due, 5 waiting"). */
@@ -77,6 +82,7 @@ export const FilterBar = ({
   onChange,
   error = null,
   busy = false,
+  worked,
   shown = null,
   summary,
   defaults = NO_DEFAULTS,
@@ -94,8 +100,9 @@ export const FilterBar = ({
   const words = LIST_WORDS[list];
   const filtered = isFiltered(values);
   // The last values the server accepted: a refused filter's command is not the list's.
-  const [applied, setApplied] = useState<FilterValues>({});
-  if (error === null && !busy && applied !== values) setApplied(values);
+  const [remembered, setApplied] = useState<FilterValues>({});
+  if (error === null && !busy && remembered !== values) setApplied(values);
+  const applied = worked ?? remembered;
   const refusedField =
     error === null ? undefined : (error.field ?? errorField(error.message));
   const alertId = `${id}-alert`;

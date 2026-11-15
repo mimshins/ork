@@ -198,9 +198,23 @@ export const printAll = async (
   const { term } = options.view ?? createView();
   const matches = matcher(options);
   const { project } = scope;
-  const live = store
-    .runs(project === undefined || project === "all" ? {} : { project })
-    .filter(run => liveStatus(run) === "running");
+  const listed = store.runs(
+    project === undefined || project === "all" ? {} : { project },
+  );
+  // With --workflow: its runs, and the runs they call, as followRuns takes.
+  const kept = new Set(
+    listed
+      .filter(
+        r => scope.workflow === undefined || r.workflow === scope.workflow,
+      )
+      .map(r => r.id),
+  );
+  for (const run of listed.toReversed()) {
+    if (run.parent !== undefined && kept.has(run.parent)) kept.add(run.id);
+  }
+  const live = listed.filter(
+    run => kept.has(run.id) && liveStatus(run) === "running",
+  );
   const dropped = droppedBy(
     store,
     live.map(run => run.id),

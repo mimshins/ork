@@ -25,9 +25,11 @@ with a filter set the server's own list for it: the shared
   stream's runs; with one it reads `GET /api/runs` with the fields (the 20
   newest that match, read again when a run starts, ends or changes), and keeps
   the last good list while a refused value shows the server's words (before any
-  filter has worked, the stream's runs, not "Reading runs…"). The bar shows the
-  matching `ork ps` command and **Clear filter**; a filter that finds none shows
-  "No runs match the filter."
+  filter has worked, the stream's runs, not "Reading runs…"). The last filter
+  that worked is kept in the page's state (`runFilterWorked`), so a panel drawn
+  again (maximized, restored) reads its list back. The bar shows the matching
+  `ork ps` command and **Clear filter**; a filter that finds none shows "No runs
+  match the filter."
 - **Rendering:** a row re-renders only when its own run changes
   ([what re-renders](./state.md#what-re-renders)).
 

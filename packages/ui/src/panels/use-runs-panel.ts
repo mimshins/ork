@@ -45,10 +45,12 @@ export type FilteredRuns = {
   refused: string | null;
   /** Any other failure of the read. */
   failed: string | null;
+  /** The last filter the server accepted, kept across a remount. */
+  worked: FilterValues;
 };
 
 /** What the server said, and the values it said it for. */
-type Answer = Omit<FilteredRuns, "busy" | "filtered"> & {
+type Answer = Omit<FilteredRuns, "busy" | "filtered" | "worked"> & {
   values: FilterValues;
 };
 
@@ -74,6 +76,7 @@ export const useFilteredRuns = (
     list => list?.map(run => `${run.id}:${run.live}`).join() ?? "",
   );
   const [answer, setAnswer] = useState<Answer>(NO_ANSWER);
+  const worked = useValue(state.runFilterWorked);
   const [wasFiltered, setWasFiltered] = useState(filtered);
   if (wasFiltered !== filtered) {
     // A cleared filter forgets its rows, so the next one doesn't show them.
@@ -88,14 +91,26 @@ export const useFilteredRuns = (
       });
       if (!current) return;
       const refused = !result.ok && result.status === 400;
+      if (result.ok) void state.runFilterWorked.setValue(values);
+      // A remounted panel has no rows for a refused filter: read the last that worked.
+      const kept = state.runFilterWorked.getValue();
+      const earlier =
+        refused && isFiltered(kept)
+          ? await state.client.call("runs", { query: runsQuery(kept) })
+          : undefined;
+      if (!current) return;
       setAnswer(before => ({
         values,
-        rows: result.ok ? result.data : before.rows,
+        rows: result.ok
+          ? result.data
+          : (before.rows ?? (earlier?.ok === true ? earlier.data : null)),
         refused: refused ? result.error : null,
         failed: result.ok || refused ? null : result.error,
       }));
     };
+    // A cleared filter forgets the last one that worked too.
     if (filtered) void read();
+    else void state.runFilterWorked.setValue({});
     return () => {
       current = false;
     };
@@ -107,5 +122,6 @@ export const useFilteredRuns = (
     busy: filtered && answer.values !== values,
     refused: filtered ? answer.refused : null,
     failed: filtered ? answer.failed : null,
+    worked,
   };
 };
