@@ -96,7 +96,6 @@ export const feedback = defineCommand({
         },
         message: {
           type: "string",
-          alias: "m",
           description: "The note; its first line is the title",
           required: true,
         },
@@ -135,7 +134,6 @@ export const feedback = defineCommand({
         },
         message: {
           type: "string",
-          alias: "m",
           description: "The lesson's words (default: the item's title)",
         },
         workflow: {

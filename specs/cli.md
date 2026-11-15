@@ -159,3 +159,4 @@ ork completion zsh|bash|fish     # print a tab-completion script; the script run
     - [Values](./cli/completion.md#values)
     - [What it reads](./cli/completion.md#what-it-reads)
   - [ork --help](./cli/completion.md#ork---help)
+  - [Short flags](./cli/completion.md#short-flags)

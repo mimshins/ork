@@ -17,7 +17,7 @@ import { defineCommand } from "citty";
 import { fail, inProject, json, project } from "../follow-ups/command.ts";
 import { followUpsRule } from "../follow-ups/context.ts";
 import { plain, style, write, writeErr } from "../output.ts";
-import { flagValues } from "./run.ts";
+import { flagValues } from "../short-flags.ts";
 
 /** `text :: command` as a step; the command is optional. */
 const stepOf = (raw: string): FollowUpStep => {
@@ -111,13 +111,13 @@ export const add = defineCommand({
         );
         return;
       }
-      const steps = flagValues(rawArgs, "--step").map(raw => stepOf(raw));
+      const steps = flagValues(rawArgs, "step").map(raw => stepOf(raw));
       const input: NewFollowUp = {
         title: args.title,
         for: recipient,
         kind,
         due,
-        where: flagValues(rawArgs, "--where"),
+        where: flagValues(rawArgs, "where"),
         ...(args.body === undefined ? {} : { body: args.body }),
         ...(args.ref === undefined ? {} : { ref: args.ref }),
         ...(args.text === undefined

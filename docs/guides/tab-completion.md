@@ -54,6 +54,28 @@ needs a new copy: [What's new](../whats-new.md) says so with an "Upgrade:" line,
 and then you run the command that saved it again. The `eval` and `source <(…)`
 lines load the new script in your next shell on their own.
 
+## Short flags
+
+Nine flags have a one-letter form, and a letter means the same flag in every
+command that has it:
+
+| Short | Flag        | For example                     |
+| ----- | ----------- | ------------------------------- |
+| `-a`  | `--all`     | `ork logs -f -a`                |
+| `-d`  | `--detach`  | `ork run build -d`              |
+| `-f`  | `--follow`  | `ork logs -f`, `ork decide -f`  |
+| `-i`  | `--input`   | `ork run plan -i brief="…"`     |
+| `-m`  | `--message` | `ork chat <run> <node> -m "…"`  |
+| `-n`  | `--limit`   | `ork ps -n 5`                   |
+| `-o`  | `--output`  | `ork feedback export -o f.json` |
+| `-p`  | `--project` | `ork ps -p all`                 |
+| `-y`  | `--yes`     | `ork upgrade -y`                |
+
+`-h` is help and `-v` the version. Booleans combine (`ork logs -fa`), and a
+value can follow its letter directly (`-n5`). Every other flag is long only;
+`ork <command> --help` shows each command's letters beside its flags. Tab
+completes the long names; type a letter yourself.
+
 ## What it completes
 
 - **Commands**, nested ones too (`ork worktrees remove`, `ork feedback apply`).

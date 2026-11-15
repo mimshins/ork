@@ -45,8 +45,9 @@ runs and worktrees in plain words.
   download it, and how to run it.
 - [The terminal](./guides/terminal.md): keys in questions, colors and chips,
   `--verbose`, and plain output (`--plain`, `NO_COLOR`) for screen readers.
-- [Tab completion](./guides/tab-completion.md): commands, flags, run ids and
-  node ids completed in zsh, bash and fish.
+- [Tab completion and short flags](./guides/tab-completion.md): commands, flags,
+  run ids and node ids completed in zsh, bash and fish, and the one-letter flags
+  (`-f`, `-p`, `-n`, …) that mean the same in every command.
 
 ### Writing workflows
 

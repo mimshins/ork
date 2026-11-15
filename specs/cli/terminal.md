@@ -71,10 +71,11 @@ counts.
   screen with "N more lines"), `q` or `Esc` leaves the question for later (when
   allowed), `Ctrl-C` restores the terminal and stops. A key line names the keys.
   It resolves `{ kind: "chosen", id, note? }`, `{ kind: "later" }` or
-  `{ kind: "interrupted" }`. Plain, it prints
-  `1) id label - description (recommended)` and asks `Choose [n]: `, taking a
-  number, an id, or Enter for the recommended one, `d` for the details, and then
-  asks the note's line.
+  `{ kind: "interrupted" }`. An option with a label shows it first and its id
+  after it in parentheses, dimmed (`Allow (allow)`); one without shows its id.
+  Plain, it prints `1) label (id) - description (recommended)` and asks
+  `Choose [n]: `, taking a number, an id, or Enter for the recommended one, `d`
+  for the details, and then asks the note's line.
 - **`readText`**: one line edited in place (arrows, `Home`/`End`, `Backspace`,
   `Delete`, `Ctrl-U`), scrolled when long; `Enter` sends, `Esc` leaves. Plain,
   it asks ` message:`.

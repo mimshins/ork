@@ -7,6 +7,7 @@
 import { detachRun, type EventStore, newRunId } from "@krapht/ork-core";
 
 import { detachHint, style, write, writeErr } from "../output.ts";
+import { isFlag } from "../short-flags.ts";
 
 /** Starts the run in the background; `rawArgs` are `ork run`'s own, as typed. */
 export const startDetached = async (
@@ -40,7 +41,7 @@ export const startDetached = async (
     runId,
     args: [
       "run",
-      ...rawArgs.filter(arg => arg !== "--detach"),
+      ...rawArgs.filter(arg => !isFlag(arg, "detach")),
       "--run-id",
       runId,
     ],

@@ -98,7 +98,6 @@ export const send = defineCommand({
     },
     message: {
       type: "string",
-      alias: "m",
       description: "The message",
     },
     stdin: {

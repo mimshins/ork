@@ -99,7 +99,6 @@ export const exportFeedback = defineCommand({
     },
     output: {
       type: "string",
-      alias: "o",
       description: "A file to write (default: the terminal)",
     },
   },

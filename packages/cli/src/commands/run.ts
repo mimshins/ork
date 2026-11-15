@@ -5,38 +5,23 @@
  */
 
 import { type AgentRuntime, DETACHED_ENV, openStore } from "@krapht/ork-core";
-import { AGENT_DRIVERS, DRIVER_IDS } from "@krapht/ork-integrations";
 import { sessionEnv } from "@krapht/ork-nodes";
-import { type Driver, retiredDriverHint } from "@krapht/ork-schema";
 import { defineCommand } from "citty";
 
 import { callsShown, createTerminalHuman } from "../human.ts";
 import { style, write, writeErr } from "../output.ts";
+import {
+  badDriver,
+  DRIVER_CHOICES,
+  type Driver,
+  isDriver,
+} from "../run/drivers.ts";
 import { runNode } from "../run/node.ts";
 import { runWorkflowFile } from "../run/workflow.ts";
+import { flagValues } from "../short-flags.ts";
 import { refusedBuiltin, workflowArg } from "../workflows.ts";
 
-export const flagValues = (
-  rawArgs: readonly string[],
-  flag: string,
-): string[] => {
-  const values: string[] = [];
-  for (const [index, arg] of rawArgs.entries()) {
-    if (arg.startsWith(`${flag}=`)) values.push(arg.slice(flag.length + 1));
-    else if (arg === flag) {
-      const value = rawArgs[index + 1];
-      if (value !== undefined) values.push(value);
-    }
-  }
-  return values;
-};
-
-export const isDriver = (value: string): value is Driver =>
-  AGENT_DRIVERS.some(d => d.id === value);
-
-/** Why `--driver` refuses a value: a retired id names its replacement. */
-export const badDriver = (value: string): string =>
-  `--${retiredDriverHint(value) ?? `driver must be one of ${AGENT_DRIVERS.map(d => d.id).join(", ")}, got \`${value}\``}`;
+export { badDriver, isDriver };
 
 /** Loads the drivers only when a run starts, so other commands stay fast. */
 export const loadRuntime = async (
@@ -117,7 +102,7 @@ export const run = defineCommand({
     },
     driver: {
       type: "string",
-      description: `${DRIVER_IDS.join(", ")} (default: the driver ready here)`,
+      description: `${DRIVER_CHOICES} (default: the driver ready here)`,
     },
     "in-place": {
       type: "boolean",
@@ -194,7 +179,8 @@ export const run = defineCommand({
     if (refusedBuiltin([args.workflow], cwd) || !flagFine(rawArgs)) return;
     const target = workflowArg(args.workflow, cwd);
     const store = openStore();
-    if (args.detach) {
+    // The detached copy runs with ORK_DETACHED=1, and never detaches again.
+    if (args.detach && process.env[DETACHED_ENV] !== "1") {
       try {
         const { startDetached } = await import("../run/detached.ts");
         await startDetached(store, {
@@ -251,7 +237,7 @@ export const run = defineCommand({
                 ? {}
                 : {
                     trigger: args.trigger,
-                    untrusted: flagValues(rawArgs, "--untrusted"),
+                    untrusted: flagValues(rawArgs, "untrusted"),
                   }),
               // A person at the terminal answers the called runs' questions too.
               ...(human === undefined

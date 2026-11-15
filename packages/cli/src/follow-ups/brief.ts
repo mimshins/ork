@@ -16,9 +16,9 @@ import {
   takeFollowUps,
 } from "@krapht/ork-core";
 
-import { flagValues } from "../commands/run.ts";
 import { loadWorkflow } from "../commands/validate.ts";
 import { writeErr } from "../output.ts";
+import { flagValues } from "../short-flags.ts";
 import { briefOf, checkTakeable, refreshDue, runIsLive } from "./context.ts";
 
 /** What `ork run` starts with: its inputs, and the id its run is given. */
@@ -105,7 +105,7 @@ export const prepareFollowUps = async (
   gh: GhRunner = runGh,
   mark = true,
 ): Promise<PreparedRun | undefined> => {
-  const inputs = flagValues(rawArgs, "--input");
+  const inputs = flagValues(rawArgs, "input");
   const plain: PreparedRun = {
     inputs,
     ...(runId === undefined ? {} : { runId }),

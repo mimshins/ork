@@ -8,6 +8,7 @@
 import { setTimeout as sleep } from "node:timers/promises";
 
 import {
+  DETACHED_ENV,
   detachResume,
   findRun,
   liveStatus,
@@ -21,13 +22,8 @@ import { defineCommand } from "citty";
 import { refuseExtraArguments } from "../extra-arguments.ts";
 import { style, write, writeErr } from "../output.ts";
 import { runWorkflowFile } from "../run/workflow.ts";
-import {
-  badDriver,
-  flagValues,
-  isDriver,
-  loadRuntime,
-  terminalHuman,
-} from "./run.ts";
+import { flagValues, isFlag } from "../short-flags.ts";
+import { badDriver, isDriver, loadRuntime, terminalHuman } from "./run.ts";
 
 const failed = (message: string): void => {
   writeErr(message);
@@ -163,8 +159,11 @@ export const resume = defineCommand({
         failed(ready.ok ? "" : ready.error);
         return;
       }
-      if (args.detach) {
-        const flags = rawArgs.filter(a => a !== "--detach" && a !== args.run);
+      // The detached copy runs with ORK_DETACHED=1, and never detaches again.
+      if (args.detach && process.env[DETACHED_ENV] !== "1") {
+        const flags = rawArgs.filter(
+          a => !isFlag(a, "detach") && a !== args.run,
+        );
         const detached = await detachResume(store, found.run, flags);
         if (detached.ok)
           write(`▸ run ${found.run.id} resumed in the background`);
@@ -174,7 +173,7 @@ export const resume = defineCommand({
       const { exitCode } = await runWorkflowFile({
         file: found.run.file,
         cwd: found.run.project,
-        inputs: flagValues(rawArgs, "--input"),
+        inputs: flagValues(rawArgs, "input"),
         inPlace: ready.inPlace,
         allowDirty: args["allow-dirty"],
         json: args.json,

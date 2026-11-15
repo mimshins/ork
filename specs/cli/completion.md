@@ -16,6 +16,8 @@ its live values, and the grouped `ork --help`
 [tests](../../packages/cli/test/completion.test.ts),
 [value tests](../../packages/cli/test/completion-values.test.ts),
 [help tests](../../packages/cli/test/help.test.ts),
+[short flags](../../packages/cli/src/short-flags.ts),
+[short flag tests](../../packages/cli/test/short-flags.test.ts),
 [list flag tests](../../packages/cli/test/list-flags.test.ts),
 [read-only store tests](../../packages/core/test/store-read-only.test.ts)). The
 user guide: [tab completion](../../docs/guides/tab-completion.md).
@@ -171,4 +173,18 @@ the description and a docs link. Below: `Usage: ork <command> [flags]`,
 
 A command with subcommands (`worktrees`, `projects`, `context`, `feedback`,
 `agents`) shows `ork <name> <command> [flags]` in its usage line instead of
-citty's list of names.
+citty's list of names. A long alias is named in its flag's description
+(`; also --watch`), as citty would print it `-watch`.
+
+## Short flags
+
+One table (`SHORT_FLAGS`) gives nine flags a letter, the same in every command
+that has the flag ([ADR-093](../../decisions/ADR-093-short-flags-table.md)):
+`-a --all`, `-d --detach`, `-f --follow`, `-i --input`, `-m --message`,
+`-n --limit`, `-o --output`, `-p --project`, `-y --yes`. `-h` and `-v` are help
+and version. `withShortFlags` wraps the root command, so every command, loaded
+on use or not, gets them, and no command declares a letter itself: a test walks
+the tree and fails on a letter the table does not give. The raw readers match
+both spellings (`flagValues` for `--input`, `isFlag` for the `--detach` a
+detached run drops); the detached copy runs with `ORK_DETACHED=1` and never
+detaches again, so a bundled `-fd` cannot start a second one.

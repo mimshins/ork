@@ -115,7 +115,6 @@ export const chat = defineCommand({
     },
     message: {
       type: "string",
-      alias: "m",
       description: "Send this one message instead of chatting",
     },
     driver: {

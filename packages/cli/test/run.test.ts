@@ -22,7 +22,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   createTerminalHuman,
-  flagValues,
   previewInput,
   resolveWorkflowArg,
   type RunNodeOptions,
@@ -322,15 +321,6 @@ describe("ork run --node", () => {
 });
 
 describe("arguments", () => {
-  it("collects a repeatable flag", () => {
-    expect(
-      flagValues(
-        ["wf", "--input", "a=1", "--input=b=2", "--node", "x"],
-        "--input",
-      ),
-    ).toEqual(["a=1", "b=2"]);
-  });
-
   it("finds a workflow by name in .ork/workflows", () => {
     const dir = project();
     expect(resolveWorkflowArg("review.ork.yaml", dir)).toBe("review.ork.yaml");

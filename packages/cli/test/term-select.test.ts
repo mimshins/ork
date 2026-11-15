@@ -48,7 +48,7 @@ describe("select, on a terminal", () => {
     await term.press();
     expect(term.screen()).toEqual([
       " Ship it?",
-      "   1. a Alpha",
+      "   1. Alpha (a)",
       "      The first one",
       " ❯ 2. b (recommended)",
       "      The second one",
@@ -101,7 +101,7 @@ describe("select, on a terminal", () => {
     await term.press(KEY.up);
     expect(term.screen()[0]).toBe("before");
     expect(term.screen().filter(line => line.startsWith(" ❯"))).toEqual([
-      " ❯ 1. a Alpha",
+      " ❯ 1. Alpha (a)",
     ]);
     expect(term.raw()).not.toContain("\u001B[2J");
     await term.press(KEY.enter);
@@ -206,9 +206,9 @@ describe("select, on a terminal", () => {
       options: [{ id: "a-long-option-id", label: "with a long label here" }],
     });
     await term.press();
-    expect(term.screen()[1]).toBe(" ❯ 1. a-long-option-id with a long lab…");
+    expect(term.screen()[1]).toBe(" ❯ 1. with a long label here (a-long-o…");
     term.resize(24);
-    expect(term.screen()[1]).toBe(" ❯ 1. a-long-option-id…");
+    expect(term.screen()[1]).toBe(" ❯ 1. with a long labe…");
     await term.press(KEY.enter);
     await result;
   });
@@ -248,7 +248,7 @@ describe("select, with lines printed meanwhile", () => {
       "before",
       "transcript line",
       " Ship it?",
-      "   1. a Alpha",
+      "   1. Alpha (a)",
       "      The first one",
       "   2. b (recommended)",
       "      The second one",
@@ -321,7 +321,7 @@ describe("select, plain", () => {
     expect(term.raw()).toBe(
       [
         " Ship it?",
-        "  1) a Alpha - The first one",
+        "  1) Alpha (a) - The first one",
         "  2) b - The second one (recommended)",
         "  3) c",
         "  Choose [2]: ",

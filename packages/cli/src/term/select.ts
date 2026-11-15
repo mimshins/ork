@@ -4,24 +4,28 @@
  *   in place), `d` shows or hides the details (a document), `q` or Esc leaves
  *   the question for later, Ctrl-C stops. It redraws only its own lines,
  *   follows a resize, and collapses to one line once answered. Plain mode
- *   prints the options as `1) id label - description` and asks `Choose [n]: `,
- *   as `ork decide` always did; there a note is asked for after the choice when
- *   the prompt takes one.
+ *   prints the options as `1) label (id) - description` and asks `Choose [n]:
+ *   `, as `ork decide` always did; there a note is asked for after the choice
+ *   when the prompt takes one.
  */
 
 import { readKeys } from "./keys.ts";
-import { cut, wrap } from "./layout.ts";
+import { cut, widthOf, wrap } from "./layout.ts";
 import { interrupt, readLine, withdrawn } from "./line.ts";
 import { canKey, type PromptIO, type Term, termOf } from "./mode.ts";
+import {
+  asIs,
+  type Look,
+  nameOf,
+  pickOption,
+  plainOptions,
+  type SelectOption,
+} from "./option-name.ts";
 import { createRegion } from "./screen.ts";
 import { type LineState, editLine, readText, showLine } from "./text.ts";
 import { apply, paint } from "./theme.ts";
 
-export type SelectOption = {
-  id: string;
-  label?: string;
-  description?: string;
-};
+export { plainOptions, type SelectOption };
 
 export type SelectResult =
   | { kind: "chosen"; id: string; note?: string }
@@ -57,24 +61,6 @@ export type SelectOptions = {
 
 const NOTE_PROMPT = "Note for the run (optional, Enter to skip)";
 
-/** The option an answer names: its number, or its id; empty is `recommended`. */
-export const pickOption = (
-  answer: string,
-  options: readonly SelectOption[],
-  recommended: string | undefined,
-): string | undefined => {
-  const value = answer.trim();
-  if (value === "") return recommended;
-  const index = Number(value);
-  if (Number.isInteger(index) && index >= 1 && index <= options.length) {
-    return options[index - 1]?.id;
-  }
-  return options.find(o => o.id === value)?.id;
-};
-
-const label = (option: SelectOption): string =>
-  option.label === undefined ? option.id : `${option.id} ${option.label}`;
-
 const defaultDone =
   (options: readonly SelectOption[]) =>
   (
@@ -85,24 +71,12 @@ const defaultDone =
       return ` ${paint(term, "muted", "·")} left for later`;
     }
     const option = options.find(o => o.id === result.id);
-    return cut(
-      ` ${paint(term, "ok", "✓")} ${option === undefined ? result.id : label(option)}`,
-      term.width,
-    );
+    const name =
+      option === undefined
+        ? cut(result.id, term.width - 3)
+        : nameOf(term, option, term.width - 3);
+    return ` ${paint(term, "ok", "✓")} ${name}`;
   };
-
-/** The numbered option lines of a plain prompt: ` 1) id label - description`. */
-export const plainOptions = (
-  options: readonly SelectOption[],
-  recommended: string | undefined,
-): string[] =>
-  options.map((option, i) => {
-    const description =
-      option.description === undefined ? "" : ` - ${option.description}`;
-    const mark = option.id === recommended ? " (recommended)" : "";
-    const name = option.label === undefined ? "" : ` ${option.label}`;
-    return `  ${String(i + 1)}) ${option.id}${name}${description}${mark}`;
-  });
 
 /** The plain prompt: numbered options, then `Choose [n]: ` until one fits. */
 const selectPlain = (io: PromptIO, o: SelectOptions): Promise<SelectResult> => {
@@ -159,11 +133,17 @@ export const select = (
         const selected = i === cursor;
         const number = i < 9 ? `${String(i + 1)}.` : "  ";
         const mark = option.id === o.recommended ? " (recommended)" : "";
-        const head = cut(
-          `${number} ${label(option)}`,
-          t.width - 4 - mark.length,
-        );
-        const text = selected ? apply(t, ["bold", "cyan"], head) : head;
+        const look: Look = selected
+          ? text => apply(t, ["bold", "cyan"], text)
+          : asIs;
+        const room = t.width - 4 - mark.length;
+        const prefix = cut(`${number} `, room);
+        const text = `${look(prefix)}${nameOf(
+          t,
+          option,
+          room - widthOf(prefix),
+          look,
+        )}`;
         const pointer = selected ? paint(t, "accent", "❯") : " ";
         const lines = [
           ` ${pointer} ${text}${mark === "" ? "" : paint(t, "ok", mark)}`,

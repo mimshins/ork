@@ -66,7 +66,6 @@ export const logs = defineCommand({
     node: { type: "string", description: "Only this node's events" },
     follow: {
       type: "boolean",
-      alias: "f",
       description: "Keep printing a live run's events until it ends",
       default: false,
     },

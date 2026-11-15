@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L378, and the next chore is
+closes it. Ids are never reused: the next limit is L380, and the next chore is
 C16 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -475,6 +475,14 @@ Found closing the list QA follow-ups (list filters):
   `ork run --follow-ups due` with nothing left reads "N due ones are taken by a
   run still running" even when each is held as "not started yet"; the per-id
   skip lines above it say which.
+- **L378 · Most commands ignore a flag they don't have.** Only the nine list
+  commands refuse one (`refuseUnknownFlags`); `ork tree -s` or `ork run x -s`
+  drops the `-s` without a word, so a short form typed on a command that lacks
+  its flag does nothing. Closing it means applying the check to every command
+  (see L369 for why citty makes that per command).
+- **L379 · `ork watch --status` is a boolean.** Every other `--status` takes a
+  value (`ps`, `feedback list`, `follow-ups list`); `watch` uses it to mean
+  "show the status". A subcommand (`ork watch status`) would match the others.
 
 ## Chores
 

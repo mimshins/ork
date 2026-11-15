@@ -43,7 +43,7 @@ describe("the terminal channel's card", () => {
       " Merge the change into main now?",
       "   line one",
       "   line two",
-      "   1. yes Merge",
+      "   1. Merge (yes)",
       " ❯ 2. no (recommended)",
       " ↑/↓ move · Enter choose",
     ]);

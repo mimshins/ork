@@ -21,6 +21,7 @@ import { logs } from "../src/commands/logs.ts";
 import { readListArgs } from "../src/list/flags.ts";
 import { printAll, printCalls } from "../src/runs/logs-many.ts";
 import { logListTable } from "../src/runs/logs.ts";
+import { withShortFlags } from "../src/short-flags.ts";
 import { tempDir } from "./fixtures/completion.ts";
 
 const started = (runId: string, workflow: string): RunEvent => ({
@@ -99,7 +100,7 @@ const startOrk = (...words: string[]): { out: string[]; ran: Promise<Ran> } => {
     return true;
   });
   process.exitCode = undefined;
-  const ran = runCommand(logs, { rawArgs: words })
+  const ran = runCommand(withShortFlags(logs), { rawArgs: words })
     .then(() => {
       const code = process.exitCode;
       process.exitCode = undefined;

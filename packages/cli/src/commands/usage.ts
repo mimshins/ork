@@ -142,7 +142,6 @@ export const prune = defineCommand({
     },
     yes: {
       type: "boolean",
-      alias: "y",
       description: "Do not ask",
       default: false,
     },

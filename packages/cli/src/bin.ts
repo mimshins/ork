@@ -56,7 +56,8 @@ if (argv[0] === COMPLETE_COMMAND) {
     // after `--`, and the wrapped check would never run.
     try {
       const { once } = await import("./commands/once.ts");
-      await runCommand(once, { rawArgs: argv.slice(1) });
+      const { withShortFlags } = await import("./short-flags.ts");
+      await runCommand(withShortFlags(once), { rawArgs: argv.slice(1) });
     } catch (error) {
       console.error(error);
       process.exitCode = 1;
