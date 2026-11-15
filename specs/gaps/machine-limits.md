@@ -119,6 +119,13 @@ measure and record first, since ending a called run changes what resume adopts:
   (`intervalMs`) to find new live runs; everything else is pushed. A new run is
   seen up to a second late, and each pass reads every run of the scope. A store
   change feed or a project socket would replace it if the poll costs.
+- **L383 · `ork decide --follow` orders runs' decisions only under a card.**
+  Each run is followed apart, so decisions reach it in poll order.
+  [`followDecisions`](../cli/decisions-and-stopping.md) holds those that arrive
+  while a card is up and asks the earliest opened next. With no card up, the
+  first to arrive is asked at once, though another run may have opened one
+  earlier within the same poll (250 ms for a run with no socket). Closing it
+  means `followRuns` passing events on in store order across runs.
 - **L380 · A killed slot holder's command can overlap the next one's for up to 2
   s.** When `ork` is killed while it holds a check slot, the orphan guard sends
   its command's group SIGTERM, then SIGKILL after `KILL_AFTER_MS` (2 s); the

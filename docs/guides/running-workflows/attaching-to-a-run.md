@@ -93,8 +93,10 @@ ork decide --follow --until-idle    # stop when no live run is left
 
 It asks every question open now, one at a time, then each new one as it opens,
 including one from a run that started after you did, or a `build` that a `plan`
-called. The card names the run: `run 3f2a91c0 · start`. A question answered
-elsewhere (`ork ui`, `ork attach`, another `ork decide`) goes away and says
+called. The card names the run: `run 3f2a91c0 · start`. Questions that open
+while a card is up, in any run, wait and come next in the order they opened. A
+question answered elsewhere (`ork ui`, `ork attach`, another `ork decide`) goes
+away, even one still waiting, and says
 `<id> answered elsewhere: <answer> (<by>)`. Your answer goes to the run as
 `decide`. `q` or Esc leaves a question open: it is not asked again until the
 next `--follow`. `--run`, `--workflow`, `--project` and the run id narrow what

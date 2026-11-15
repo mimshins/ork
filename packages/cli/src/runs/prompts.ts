@@ -73,7 +73,8 @@ export type Prompts = {
   settled: () => Promise<void>;
 };
 
-const closedLine = (id: string, closed: DecisionClosed): string => {
+/** The line a person sees when `id` closes elsewhere. */
+export const closedLine = (id: string, closed: DecisionClosed): string => {
   if (closed.type === "decision.withdrawn") return `${id} withdrawn`;
   const by =
     closed.by === "owner"

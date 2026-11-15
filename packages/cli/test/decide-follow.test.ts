@@ -4,6 +4,11 @@
  *   decision answered elsewhere withdrawing its prompt with the attach line,
  *   Ctrl-C and `--until-idle` ending it without closing anything, `q` leaving a
  *   decision open, and the refusals (no terminal, flags that list or answer).
+ *   With several live runs: one card at a time across them, what they open
+ *   under a card asked once each in the order opened, `q` on one run, another
+ *   run's decision answered elsewhere before its card, the workflow and run
+ *   filters, `--until-idle` past one run's end, and an ended run's open
+ *   decision counted after Ctrl-C.
  */
 
 import { spawnSync } from "node:child_process";
@@ -33,14 +38,38 @@ import { fakeTerm, type FakeTerm, KEY } from "./term-fake.ts";
 
 const BIN = path.resolve(import.meta.dirname, "../src/bin.ts");
 
-// `followRuns` as it is, watched: a test can wait for a pass to end idle.
+/** The decisions whose `decision.opened` `followRuns` has passed on. */
+const delivered = vi.hoisted(() => new Set<string>());
+
+// `followRuns` as it is, watched: a test can wait for a pass to end idle, or
+// for a decision to have reached `ork decide`.
 vi.mock("@krapht/ork-core", async importOriginal => {
   const core = await importOriginal<typeof Core>();
   return {
     ...core,
-    followRuns: vi.fn<typeof core.followRuns>(core.followRuns),
+    followRuns: vi.fn<typeof core.followRuns>(
+      (store, scope, onEvent, options) =>
+        core.followRuns(
+          store,
+          scope,
+          event => {
+            const { event: e } = event.stored;
+            if (e.type === "decision.opened") delivered.add(e.decision);
+            onEvent(event);
+          },
+          options,
+        ),
+    ),
   };
 });
+
+/** How many passes of `followRuns` have ended idle so far. */
+const idlePasses = () =>
+  vi
+    .mocked(followRuns)
+    .mock.settledResults.filter(
+      r => r.type === "fulfilled" && r.value === "idle",
+    ).length;
 
 const finished = (runId: string): RunEvent => ({
   type: "run.finished",
@@ -122,6 +151,13 @@ describe("ork decide --follow, in process", () => {
     vi.waitFor(() => {
       expect(lines.join("\n")).toContain(text);
     });
+  /** Opens each `[run, decision]` in order. */
+  const openAll = (decisions: readonly (readonly [string, string])[]) => {
+    for (const [run, id] of decisions) open(store, run, id);
+  };
+  /** Whether the terminal ever drew `decision`'s card. */
+  const drawn = (id: string) =>
+    stripVTControlCharacters(term.raw()).includes(`Approve ${id}?`);
 
   beforeEach(() => {
     store = openStore(":memory:");
@@ -129,6 +165,7 @@ describe("ork decide --follow, in process", () => {
     lines = [];
     controller = new AbortController();
     home = mkdtempSync(path.join(tmpdir(), "ork-decide-follow-"));
+    delivered.clear();
     begin(store, "live0000");
   });
   afterEach(() => {
@@ -289,6 +326,224 @@ describe("ork decide --follow, in process", () => {
 
     await expect(follow(true)).resolves.toBe("idle");
     expect(lines).toEqual(["no live runs"]);
+  });
+
+  describe("ork decide --follow, several runs", () => {
+    // Run A is `live0000` (workflow `w`); B and C start beside it.
+    const A = "live0000";
+    const B = "bbbb0000";
+    const C = "cccc0000";
+    const WORKFLOW: Record<string, string> = { [A]: "w", [B]: "wb", [C]: "wc" };
+
+    beforeEach(() => {
+      begin(store, B, WORKFLOW[B]);
+      begin(store, C, WORKFLOW[C]);
+    });
+
+    /**
+     * Answers `run`'s card for `id` with Enter: it names its run and workflow,
+     * and `next` is not up before it is answered.
+     */
+    const answerOne = async (run: string, id: string, next?: string) => {
+      await onScreen(`Approve ${id}?`);
+      const screen = term.screen().join("\n");
+      expect(screen).toContain(`run ${run} · ${WORKFLOW[run]}`);
+      expect(screen).not.toContain(`Approve ${next}?`);
+      await term.press(KEY.enter);
+      await vi.waitFor(() => {
+        expect(store.decision(id)?.status).toBe("answered");
+      });
+    };
+    /** Answers each `[run, decision]` card, in this order. */
+    const answer = async (cards: readonly (readonly [string, string])[]) => {
+      for (const [i, [run, id]] of cards.entries()) {
+        // oxlint-disable-next-line no-await-in-loop -- one card at a time
+        await answerOne(run, id, cards[i + 1]?.[1]);
+      }
+    };
+
+    it("asks each run's open decision, one card at a time, answering as decide", async () => {
+      const cards = [
+        [A, "a-1"],
+        [B, "b-1"],
+        [C, "c-1"],
+      ] as const;
+      openAll(cards);
+      const done = follow();
+      await answer(cards);
+      controller.abort();
+      await expect(done).resolves.toBe("aborted");
+
+      expect(cards.map(([, id]) => store.decision(id)?.answeredBy)).toEqual([
+        "decide",
+        "decide",
+        "decide",
+      ]);
+      expect(lines).toContain("stopped following; 0 decision(s) still open");
+    });
+
+    it("queues what the other runs open while a card is up, each asked once, in order", async () => {
+      openAll([[A, "a-1"]]);
+      const done = follow();
+      await onScreen("Approve a-1?");
+      const later = [
+        [B, "b-1"],
+        [C, "c-1"],
+        [A, "a-2"],
+        [B, "b-2"],
+      ] as const;
+      openAll(later);
+      // Each run is polled apart: all four reach `ork decide` under a-1's card.
+      await vi.waitFor(() => {
+        expect([...delivered]).toEqual(
+          expect.arrayContaining(later.map(([, id]) => id)),
+        );
+      });
+      await answer([[A, "a-1"], ...later]);
+      // Asked twice, a decision would be up before this one.
+      openAll([[C, "c-2"]]);
+      await answer([[C, "c-2"]]);
+      controller.abort();
+      await done;
+
+      expect(store.decisions({ status: "open" })).toEqual([]);
+    });
+
+    it("leaves one run's decision open on q, asks the others, and counts it", async () => {
+      openAll([
+        [A, "a-1"],
+        [B, "b-1"],
+        [C, "c-1"],
+      ]);
+      const done = follow();
+      await answer([[A, "a-1"]]);
+      await onScreen("Approve b-1?");
+      await term.press("q");
+      await answer([[C, "c-1"]]);
+      controller.abort();
+      await expect(done).resolves.toBe("aborted");
+
+      expect(store.decision("b-1")?.status).toBe("open");
+      expect(lines.at(-1)).toBe("stopped following; 1 decision(s) still open");
+    });
+
+    it("withdraws another run's decision answered elsewhere before it is shown", async () => {
+      openAll([
+        [A, "a-1"],
+        [B, "b-1"],
+        [C, "c-1"],
+      ]);
+      const done = follow();
+      await onScreen("Approve a-1?");
+      await answerDecision(store, "b-1", "revise", home, "ui");
+      store.append(B, {
+        type: "decision.answered",
+        node: "gate",
+        decision: "b-1",
+        answer: "revise",
+        by: "ui",
+      });
+      await printed("b-1 answered elsewhere: revise (ork ui)");
+      await answer([
+        [A, "a-1"],
+        [C, "c-1"],
+      ]);
+      controller.abort();
+      await done;
+
+      expect(drawn("b-1")).toBe(false);
+      expect(store.decision("b-1")?.answeredBy).toBe("ui");
+    });
+
+    it.each([
+      ["workflow", { workflow: "wc" }, C, "c", ["a-1", "a-2", "b-1", "b-2"]],
+      ["run", { runId: B }, B, "b", ["a-1", "a-2", "c-1", "c-2"]],
+    ] satisfies [string, FollowFilter, string, string, string[]][])(
+      "asks only the runs the %s filter keeps",
+      async (_name, filter, run, letter, out) => {
+        openAll([
+          [A, "a-1"],
+          [B, "b-1"],
+          [C, "c-1"],
+        ]);
+        const done = follow(false, filter);
+        await onScreen(`Approve ${letter}-1?`);
+        // Out of scope, a decision drawn would be up before the last one.
+        openAll([
+          [A, "a-2"],
+          [B, "b-2"],
+          [C, "c-2"],
+        ]);
+        await answer([
+          [run, `${letter}-1`],
+          [run, `${letter}-2`],
+        ]);
+        controller.abort();
+        await done;
+
+        expect(
+          store
+            .decisions({ status: "open" })
+            .map(d => d.id)
+            .toSorted(),
+        ).toEqual(out);
+        expect(out.filter(id => drawn(id))).toEqual([]);
+      },
+    );
+
+    it("with --until-idle follows on after one run ends, until the last ends and its card settles", async () => {
+      openAll([
+        [A, "a-1"],
+        [B, "b-1"],
+      ]);
+      const ended = vi.fn<(end: string) => void>();
+      const done = follow(true).then(end => {
+        ended(end);
+        return end;
+      });
+      await onScreen("Approve a-1?");
+      store.append(A, finished(A));
+      store.append(C, finished(C));
+      await answer([
+        [A, "a-1"],
+        [B, "b-1"],
+      ]);
+      // B is still live: what it opens next is asked.
+      openAll([[B, "b-2"]]);
+      await onScreen("Approve b-2?");
+      const before = idlePasses();
+      store.append(B, finished(B));
+      // Following has gone idle; the card on screen is all that is left.
+      await vi.waitFor(() => {
+        expect(idlePasses()).toBeGreaterThan(before);
+      });
+      expect(ended).not.toHaveBeenCalled();
+      await term.press(KEY.enter);
+
+      await expect(done).resolves.toBe("idle");
+      expect(store.decision("b-2")?.status).toBe("answered");
+      expect(lines.at(-1)).toBe("no live runs");
+    });
+
+    it("counts a decision an ended run left open after Ctrl-C, and does not ask it again", async () => {
+      openAll([
+        [A, "a-1"],
+        [B, "b-1"],
+      ]);
+      const done = follow();
+      await onScreen("Approve a-1?");
+      await term.press("q");
+      store.append(A, finished(A));
+      await answer([[B, "b-1"]]);
+      // Asked again, a-1 would be up before this one.
+      openAll([[B, "b-2"]]);
+      await onScreen("Approve b-2?");
+      await term.press(KEY.ctrlC);
+
+      await expect(done).resolves.toBe("aborted");
+      expect(store.decision("a-1")?.status).toBe("open");
+      expect(lines.at(-1)).toBe("stopped following; 2 decision(s) still open");
+    });
   });
 });
 
