@@ -33,6 +33,7 @@ export const ANSWERED_BY: Record<AnsweredBy, string> = {
   decide: "ork decide",
   ui: "ork ui",
   owner: "its owner",
+  yolo: "yolo: not asked",
 };
 
 /** The transcript lines for one event; tool names come from `tools`. */
@@ -117,10 +118,11 @@ export const formatRunEvent = (
     lines.map((line, i) => `${i === 0 ? tag(id) : blank(id)} ${line}`);
   if (event.type === "run.started") {
     const starts = `starts at ${event.entries.join(", ")}`;
+    const yolo = event.settings?.yolo === true ? " · yolo" : "";
     return [
       term.rich
-        ? `${chip(term, CHIP_LABELS.run, "accent")} run ${style("bold", event.runId)} of ${event.workflow} ${style("dim", starts)}`
-        : style("dim", `▸ run ${event.runId} of ${event.workflow} (${starts})`),
+        ? `${chip(term, CHIP_LABELS.run, "accent")} run ${style("bold", event.runId)} of ${event.workflow} ${style("dim", starts)}${style("yellow", yolo)}`
+        : `${style("dim", `▸ run ${event.runId} of ${event.workflow} (${starts})`)}${yolo}`,
       ...(event.settings?.trigger === undefined
         ? []
         : [
@@ -155,8 +157,7 @@ export const formatRunEvent = (
         `${tag(event.id)} ${fork}${style("dim", `${inner.model}, session ${inner.sessionId}${why}`)}`,
       ];
     }
-    // The tag's width and its space are not the body's; its 2-column indent is.
-    // A fork's `fork · ` prefix (7 columns) is on each line too.
+    // The body's width: not the tag, its space or a `fork · `; its indent is.
     const room =
       term.width -
       widthOf(tag(event.id)) -

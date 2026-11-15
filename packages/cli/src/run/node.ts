@@ -64,6 +64,8 @@ export type RunNodeOptions = {
   inPlace: boolean;
   /** The session loads the machine's Claude setup (ADR-065). */
   machineClaude?: boolean;
+  /** `--yolo`, agreed to: no permission prompts. */
+  yolo?: boolean;
   /** Print the runtime events as JSON lines instead of a transcript. */
   json: boolean;
   /** A failed node's hint and scrubbed detail in the transcript. */
@@ -71,10 +73,7 @@ export type RunNodeOptions = {
   runtime: (driver: Driver, runs?: string) => Promise<AgentRuntime>;
   /** The drivers' checks, when the node names none (default: the real ones). */
   driverChecks?: DriverChecks;
-  /**
-   * The driver descriptors the node is checked against (default: the real
-   * ones).
-   */
+  /** The driver descriptors it is checked against (default: the real ones). */
   drivers?: readonly DriverNeeds[];
   /** The terminal; it races `ork decide`. None: questions wait for `ork decide`. */
   human?: HumanChannel;
@@ -209,6 +208,7 @@ export const runNode = async (
       })();
     },
     ...(options.human === undefined ? {} : { local: options.human }),
+    ...(options.yolo === true ? { yolo: true } : {}),
     ...(options.home === undefined ? {} : { home: options.home }),
   });
   const signals = createSignals(
@@ -240,14 +240,16 @@ export const runNode = async (
     workflow: workflow.name,
     entries: [id],
     nodes: [{ id, type: nodeType }],
-    ...(options.machineClaude === true
-      ? { settings: { machineClaude: true } }
-      : {}),
+    settings: {
+      ...(options.machineClaude === true ? { machineClaude: true } : {}),
+      ...(options.yolo === true ? { yolo: true } : {}),
+    },
   });
   record({ type: "node.started", id, nodeType, round: 1 });
 
   const runtime = await options.runtime(driver, placeFiles(place).runs);
   if (options.machineClaude === true) plan.spec.machineClaude = true;
+  if (options.yolo === true) plan.spec.yolo = true;
   const session = runtime.start(
     { ...plan.spec, ...servers.value },
     {
@@ -295,5 +297,3 @@ export const runNode = async (
   await control.close();
   return { exitCode: succeeded(outcome) ? 0 : 1, outcome };
 };
-
-/** Every value of a repeatable flag: `--input a=1 --input=b=2`. */

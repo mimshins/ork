@@ -288,7 +288,13 @@ describe("the open-code adapter", () => {
 const rules = (
   tools: ToolRules,
   mode: SessionSpec["permissionMode"] = "default",
-) => permissionRules({ ...specOf("/w", tools), permissionMode: mode });
+  yolo = false,
+) =>
+  permissionRules({
+    ...specOf("/w", tools),
+    permissionMode: mode,
+    ...(yolo ? { yolo } : {}),
+  });
 
 /**
  * The allow rules whose action pattern matches `action`, `*` as any run (an
@@ -366,6 +372,30 @@ describe("the open-code permission rules", () => {
       resource: "*.env",
       effect: "deny",
     });
+  });
+
+  it("allow everything first for a yolo run, its denies and `.env` still last", () => {
+    const written = rules({ allow: [], deny: ["Bash(rm:*)"] }, "default", true);
+    expect(written.at(0)).toEqual({
+      action: "*",
+      resource: "*",
+      effect: "allow",
+    });
+    expect(written.slice(-2)).toEqual([
+      { action: "read", resource: "*.env", effect: "deny" },
+      { action: "shell", resource: "rm *", effect: "deny" },
+    ]);
+  });
+
+  it("keep a yolo run's built-ins to its `only`", () => {
+    const written = rules(
+      { allow: [], deny: [], only: ["Grep"] },
+      "default",
+      true,
+    );
+    const denied = written.filter(r => r.effect === "deny").map(r => r.action);
+    expect(denied).toEqual(expect.arrayContaining(["shell", "edit", "read"]));
+    expect(denied).not.toContain("grep");
   });
 
   it("drop built-in allows outside `only`, and refuse edits and shell in plan mode", () => {

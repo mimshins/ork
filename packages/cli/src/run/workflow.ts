@@ -166,6 +166,7 @@ export const runWorkflowFile = async (
     ...liveHandlers(started.promise),
     onControl: liveControl(live),
     ...(options.human === undefined ? {} : { local: options.human }),
+    ...(options.yolo === true ? { yolo: true } : {}),
     ...(options.home === undefined ? {} : { home: options.home }),
     ...(options.intervalMs === undefined
       ? {}
@@ -211,6 +212,7 @@ export const runWorkflowFile = async (
     inPlace: options.inPlace,
     maskedNames,
     store: storePath(options.home),
+    ...(options.yolo === true ? { yolo: true } : {}),
   };
   if (options.driver !== undefined) executorOptions.driver = options.driver;
   if (ready.readyDriver !== undefined) {
@@ -240,9 +242,7 @@ export const runWorkflowFile = async (
     emit: onEvent,
   });
   // Recorded with the run, so a resume and its called runs load it too.
-  if (ports.settings.machineClaude === true) {
-    executorOptions.machineClaude = true;
-  }
+  executorOptions.machineClaude = ports.settings.machineClaude === true;
   clearOutputFiles(runDir, options.err);
   const handle = startRun({
     graph: ports.graph,

@@ -125,6 +125,10 @@ would have been asked about on `claude-code` is refused here, and the session
 sees the refusal and goes on without it. Give the node the tools it needs in its
 `allow` list.
 
+`ork run --yolo` turns this around for one run, on every driver: nothing is
+asked, and every tool is allowed but what a node's `deny` list refuses
+([with no permission prompts](./running-workflows/running-and-answering.md#with-no-permission-prompts---yolo)).
+
 On `command-code`, the rules read as Claude Code's do. A shell line is checked
 command by command: `git status && pnpm test` needs both `Bash(git:*)` and
 `Bash(pnpm:*)` (or rules like them), and a deny on either refuses the line.

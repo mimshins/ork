@@ -137,6 +137,18 @@ export const resume = defineCommand({
       description: "Resume in the background; answer with ork decide",
       default: false,
     },
+    yolo: {
+      type: "boolean",
+      description:
+        "Ask no permission this time, as ork run --yolo does (a yolo run's resume asks again)",
+      default: false,
+    },
+    yes: {
+      type: "boolean",
+      description:
+        "With --yolo: agree without the y/N (needed with no terminal)",
+      default: false,
+    },
   },
   run: async ({ args, rawArgs }) => {
     if (args.driver !== undefined && !isDriver(args.driver)) {
@@ -159,11 +171,24 @@ export const resume = defineCommand({
         failed(ready.ok ? "" : ready.error);
         return;
       }
+      // Loaded only for --yolo, which asks before anything resumes.
+      const yoloKit = args.yolo ? await import("../run/yolo.ts") : undefined;
+      if (
+        yoloKit !== undefined &&
+        !(await yoloKit.agreedToYolo({
+          yes: args.yes,
+          terminal: process.stdin.isTTY && process.stderr.isTTY,
+        }))
+      ) {
+        process.exitCode = 1;
+        return;
+      }
       // The detached copy runs with ORK_DETACHED=1, and never detaches again.
       if (args.detach && process.env[DETACHED_ENV] !== "1") {
-        const flags = rawArgs.filter(
+        const kept = rawArgs.filter(
           a => !isFlag(a, "detach") && a !== args.run,
         );
+        const flags = yoloKit === undefined ? kept : yoloKit.withYes(kept);
         const detached = await detachResume(store, found.run, flags);
         if (detached.ok)
           write(`▸ run ${found.run.id} resumed in the background`);
@@ -174,6 +199,7 @@ export const resume = defineCommand({
         file: found.run.file,
         cwd: found.run.project,
         inputs: flagValues(rawArgs, "input"),
+        ...(yoloKit === undefined ? {} : { yolo: true }),
         inPlace: ready.inPlace,
         allowDirty: args["allow-dirty"],
         json: args.json,

@@ -138,6 +138,18 @@ export const run = defineCommand({
         "Run in the background; follow it with ork logs -f, answer with ork decide",
       default: false,
     },
+    yolo: {
+      type: "boolean",
+      description:
+        "Ask no permission: allow every tool call a node's deny list doesn't refuse (warns, then asks y/N)",
+      default: false,
+    },
+    yes: {
+      type: "boolean",
+      description:
+        "With --yolo: agree without the y/N (needed with no terminal)",
+      default: false,
+    },
     "run-id": {
       type: "string",
       description: "Internal: the id `--detach` picked for the run",
@@ -178,13 +190,23 @@ export const run = defineCommand({
     const cwd = process.cwd();
     if (refusedBuiltin([args.workflow], cwd) || !flagFine(rawArgs)) return;
     const target = workflowArg(args.workflow, cwd);
+    // Loaded only for --yolo, which asks before anything starts.
+    const yoloKit = args.yolo ? await import("../run/yolo.ts") : undefined;
+    const terminal = process.stdin.isTTY && process.stderr.isTTY;
+    if (
+      yoloKit !== undefined &&
+      !(await yoloKit.agreedToYolo({ yes: args.yes, terminal }))
+    ) {
+      process.exitCode = 1;
+      return;
+    }
     const store = openStore();
     // The detached copy runs with ORK_DETACHED=1, and never detaches again.
     if (args.detach && process.env[DETACHED_ENV] !== "1") {
       try {
         const { startDetached } = await import("../run/detached.ts");
         await startDetached(store, {
-          rawArgs,
+          rawArgs: yoloKit === undefined ? rawArgs : yoloKit.withYes(rawArgs),
           cwd,
           target,
           node: args.node,
@@ -206,6 +228,7 @@ export const run = defineCommand({
       ...taken,
       inPlace: args["in-place"],
       ...(args["machine-claude"] ? { machineClaude: true } : {}),
+      ...(yoloKit === undefined ? {} : { yolo: true }),
       json: args.json,
       verbose: args.verbose,
       runtime: loadRuntime,

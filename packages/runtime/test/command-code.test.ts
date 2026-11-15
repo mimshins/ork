@@ -113,8 +113,9 @@ type Decide = (name: string, input: Record<string, unknown>) => unknown;
 const decideOf = async (
   tools: SessionSpec["tools"],
   cwd = tmp("mod"),
+  yolo = false,
 ): Promise<Decide> => {
-  const mod = writeMod(specOf(cwd, tools));
+  const mod = writeMod({ ...specOf(cwd, tools), ...(yolo ? { yolo } : {}) });
   const loaded = z
     .object({
       decide: z.custom<Decide>(value => typeof value === "function"),
@@ -195,6 +196,23 @@ describe("the command-code session mod", () => {
     expect(decide("mcp__github__issue", {})).toBeDefined();
     expect(decide("mcp__ork__report", {})).toBeUndefined();
     expect(decide("search_tools", { query: "report" })).toBeUndefined();
+  });
+
+  it("allows a yolo run what its deny and only don't refuse", async () => {
+    const decide = await decideOf(
+      { allow: [], deny: ["Bash(rm:*)"] },
+      tmp("mod"),
+      true,
+    );
+    expect(decide("shell", { command: "git push" })).toBeUndefined();
+    expect(decide("read_file", { path: "/etc/hosts" })).toBeUndefined();
+    expect(decide("shell", { command: "rm -rf /" })).toBeDefined();
+    const only = await decideOf(
+      { allow: [], deny: [], only: ["Read"] },
+      tmp("mod"),
+      true,
+    );
+    expect(only("shell", { command: "ls" })).toBeDefined();
   });
 
   it("allows what the node allowed, in Claude Code's words; a deny wins", async () => {

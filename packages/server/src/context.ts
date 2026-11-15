@@ -13,6 +13,7 @@ import {
   type ProjectRecord,
   type RunRecord,
   runStatus,
+  yoloOf,
 } from "@krapht/ork-core";
 
 import type { RunView } from "./contract.ts";
@@ -80,7 +81,12 @@ export const viewOf = (context: ServerContext, run: RunRecord): RunView => {
     run.status === "running"
       ? context.store.controlEvents(run.id).map(stored => stored.event)
       : [];
-  return { ...run, live: runStatus(run, events), paused: pausedOf(events) };
+  return {
+    ...run,
+    live: runStatus(run, events),
+    paused: pausedOf(events),
+    ...(yoloOf(events) ? { yolo: true as const } : {}),
+  };
 };
 
 /** The run's view plus its last finish's declared outputs, when it has any. */

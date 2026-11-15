@@ -84,14 +84,16 @@ a throwaway `HOME` (no model session), the headless docs
   `success`, `max_turns` (exit code 8) and `error` become `success`,
   `error_max_turns` and `error_during_execution`; usage is tokens, never
   dollars. Its report comes through Ork's `report` tool.
-- **Deny by default:** Command Code reads permission rules only from settings
-  files (`~/.commandcode/settings.json`, and `.commandcode/settings.json` and
-  `settings.local.json` in the checkout; no flag or variable), and in `dont-ask`
-  mode it still runs read-only shell commands and the user's own allow rules. In
-  `-p` mode it also adds its own gate refusing edits, writes and shell, which
-  only `--dangerously-skip-permissions` (`--yolo`) lifts;
-  `--permission-mode yolo` alone does not. So Ork passes both and loads a mod
-  written for the session
+- **Deny by default** (a yolo run, `ork run --yolo`, allows what the node's
+  `deny` and `only` don't refuse;
+  [ADR-094](../../decisions/ADR-094-yolo-runs.md)): Command Code reads
+  permission rules only from settings files (`~/.commandcode/settings.json`, and
+  `.commandcode/settings.json` and `settings.local.json` in the checkout; no
+  flag or variable), and in `dont-ask` mode it still runs read-only shell
+  commands and the user's own allow rules. In `-p` mode it also adds its own
+  gate refusing edits, writes and shell, which only
+  `--dangerously-skip-permissions` (`--yolo`) lifts; `--permission-mode yolo`
+  alone does not. So Ork passes both and loads a mod written for the session
   ([command-code-mod.ts](../../packages/runtime/src/adapters/command-code-mod.ts),
   maintainer's choice): a JavaScript file in a fresh 0700 folder under the
   system's temp folder (0600, no secret, removed after the session) whose

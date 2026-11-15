@@ -58,7 +58,10 @@ outside the decoded events.
 it rejects. With no rules at all a shell call runs, so the adapter writes the
 whole rule set every session, never `--auto`. The last matching rule wins:
 
-1. `* *` deny.
+1. `* *` deny; on a yolo run (`ork run --yolo`,
+   [ADR-094](../../decisions/ADR-094-yolo-runs.md)) `* *` allow instead, then a
+   deny for each built-in tool outside `only`, so only the rules after it
+   refuse.
 2. `read *` allow, as `claude` reads without asking; under `acceptEdits`,
    `edit *` too. A path is matched relative to the worktree, and one outside it
    is `external_directory`, which rule 1 denies.

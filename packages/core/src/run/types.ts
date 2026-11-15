@@ -219,11 +219,10 @@ export type RunSettings = {
   driver?: Driver;
   /** The driver ready when the run started, for nodes that name none. */
   readyDriver?: Driver;
-  /**
-   * Its Claude sessions load the machine's MCP servers and auto-memory
-   * (`--machine-claude`, ADR-065); absent, they start clean.
-   */
+  /** Sessions load the machine's MCP and memory (`--machine-claude`, ADR-065). */
   machineClaude?: boolean;
+  /** `--yolo`: no permission prompts (a resume needs it again; calls inherit). */
+  yolo?: boolean;
   /** The rules turned links off: this run's nodes cannot be linked. */
   links?: "off";
   /** A caller capped this run's budget to what it had left (RFC-004). */

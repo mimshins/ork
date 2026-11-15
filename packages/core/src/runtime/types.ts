@@ -120,11 +120,12 @@ export type SessionSpec = {
    */
   promptCache?: "1h";
   /**
-   * Load the machine's own Claude setup: its MCP servers and Claude Code's
-   * auto-memory (`ork run --machine-claude`, ADR-065). Unset, a session loads
-   * only Ork's MCP server, and no memory.
+   * Load the machine's MCP servers and auto-memory (`--machine-claude`,
+   * ADR-065); unset, only Ork's MCP server and no memory.
    */
   machineClaude?: boolean;
+  /** `ork run --yolo`: allow, with no prompt, every tool its lists don't deny. */
+  yolo?: boolean;
   /**
    * The named servers' `.mcp.json` entries as written, by name, that load
    * beside Ork's (`mcp:` on a node or `defaults`). Unset means none. Passed to

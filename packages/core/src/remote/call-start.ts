@@ -33,6 +33,8 @@ export type StartOptions = {
   env?: Readonly<Record<string, string>> | undefined;
   /** The caller's sessions load the machine's Claude setup, so its calls' do. */
   machineClaude?: boolean | undefined;
+  /** The caller runs with `--yolo`, so its calls do, with no second question. */
+  yolo?: boolean | undefined;
 };
 
 export type Started =
@@ -96,6 +98,7 @@ const argsOf = (
   caller: string,
   request: CallRequest,
   machineClaude: boolean,
+  yolo: boolean,
 ): string[] => [
   "run",
   file,
@@ -112,6 +115,7 @@ const argsOf = (
     : ["--budget-cap", String(request.budgetLeftUsd)]),
   ...(request.ref === undefined ? [] : ["--base-ref", request.ref]),
   ...(machineClaude ? ["--machine-claude"] : []),
+  ...(yolo ? ["--yolo", "--yes"] : []),
 ];
 
 /** Why the target's `calls.accept` shuts this project out, or `null`. */
@@ -189,6 +193,7 @@ export const startCall = async (
       `${runId}/${request.callId}`,
       request,
       options.machineClaude === true,
+      options.yolo === true,
     ),
     cwd: target.root,
     runDir: runDirOf(target, id),

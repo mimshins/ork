@@ -1,8 +1,9 @@
 /**
  * @file The rows of the Runs panel, and what it says with none. One row is a
  *   run: its workflow and status, then its id, when it started, what it cost,
- *   and what is paused in it. A row re-renders only when its own run changes,
- *   since a run that did not change keeps its object.
+ *   what is paused in it, and, live, that it runs with `--yolo`. A row
+ *   re-renders only when its own run changes, since a run that did not change
+ *   keeps its object.
  */
 
 import type { RunView } from "@krapht/ork-server/client";
@@ -84,6 +85,11 @@ export const RunRow = memo(
               )}
             </span>
             {held === null ? null : <span>{held}</span>}
+            {run.yolo === true && run.live === "running" ? (
+              <span className={styles["yolo"]}>
+                yolo: no permission prompts
+              </span>
+            ) : null}
           </span>
         </button>
       </li>

@@ -5,7 +5,9 @@
  *   tools would pass for Ork's); a dedicated `ork` agent carrying the turn cap;
  *   and the full permission rule set, written every session because OpenCode
  *   runs a shell call when no rule says otherwise. The rules deny everything
- *   first, then open what the node allowed (last match wins).
+ *   first, then open what the node allowed (last match wins); a yolo run (`ork
+ *   run --yolo`) allows everything first instead, so only the denies (and
+ *   `only`) refuse.
  */
 
 import path from "node:path";
@@ -110,10 +112,22 @@ const worktree = (action: string): Rule => ({
 });
 
 /**
- * The session's rules, in order: deny everything; read in the worktree (as
- * Claude Code reads without asking); edits there under `acceptEdits`; the
- * node's allows (only its `only` tools, if it names them); Ork's tools; then
- * `.env` reads, plan mode's edits and shell, and the node's denies, refused.
+ * A yolo session's refusals of the built-in tools its `only` leaves out, as
+ * `--tools` would; none without `only`.
+ */
+const outsideOnly = (only: ReadonlySet<string> | undefined): Rule[] =>
+  only === undefined
+    ? []
+    : [...BUILT_IN]
+        .filter(action => !only.has(action))
+        .map((action): Rule => ({ action, resource: "*", effect: "deny" }));
+
+/**
+ * The session's rules, in order: deny everything (a yolo run: allow it, then
+ * refuse the built-ins its `only` leaves out); read in the worktree (as Claude
+ * Code reads without asking); edits there under `acceptEdits`; the node's
+ * allows (only its `only` tools, if it names them); Ork's tools; then `.env`
+ * reads, plan mode's edits and shell, and the node's denies, refused.
  */
 export const permissionRules = (spec: SessionSpec): Rule[] => {
   const { cwd, tools } = spec;
@@ -130,7 +144,12 @@ export const permissionRules = (spec: SessionSpec): Rule[] => {
     ...rulesOf(tools.allow, "allow", cwd),
   ].filter(rule => inOnly(rule));
   return [
-    { action: "*", resource: "*", effect: "deny" },
+    ...(spec.yolo === true
+      ? [
+          { action: "*", resource: "*", effect: "allow" } satisfies Rule,
+          ...outsideOnly(only),
+        ]
+      : [{ action: "*", resource: "*", effect: "deny" } satisfies Rule]),
     ...allows,
     // Exact names: `ork_*` would also open a repo server named `ork_<x>`.
     ...ORK_TOOLS.map((tool): Rule => ({

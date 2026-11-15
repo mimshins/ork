@@ -33,7 +33,7 @@ const QUESTION = {
 };
 
 /** A store with run `r1`, a control for it, and what it emitted. */
-const setup = async (local?: HumanChannel) => {
+const setup = async (local?: HumanChannel, yolo = false) => {
   const store: EventStore = openStore(":memory:");
   store.begin({ id: "r1", workflow: "w", file: "/w", project: "/p" });
   const home = mkdtempSync(path.join(tmpdir(), "ork-ctl-"));
@@ -55,6 +55,7 @@ const setup = async (local?: HumanChannel) => {
       messages.push(`${node}: ${body}`);
     },
     ...(local === undefined ? {} : { local }),
+    ...(yolo ? { yolo } : {}),
   });
   return { store, home, events, control, messages, stops: () => stops };
 };
@@ -221,6 +222,35 @@ describe("the decision queue", () => {
     store.answerDecision("r1-1", "deny", "decide");
     control.check();
     expect(await permit).toMatchObject({ allow: false });
+    await control.close();
+  });
+
+  it("allows a yolo run's permission prompt itself, recorded as answered by yolo", async () => {
+    const { store, events, control } = await setup(terminal().human, true);
+    expect(
+      await control.human.permit({
+        nodeId: "fix",
+        toolName: "Bash",
+        input: { command: "rm -rf build" },
+      }),
+    ).toEqual({ allow: true });
+    expect(store.decision("r1-1")).toMatchObject({
+      kind: "permission",
+      context: "rm -rf build",
+      status: "answered",
+      answer: "allow",
+      answeredBy: "yolo",
+    });
+    expect(events.map(e => e.type)).toEqual([
+      "decision.opened",
+      "decision.answered",
+    ]);
+    await control.close();
+  });
+
+  it("still asks a yolo run's questions", async () => {
+    const { control } = await setup(terminal("merge").human, true);
+    expect(await control.human.ask(QUESTION)).toBe("merge");
     await control.close();
   });
 });

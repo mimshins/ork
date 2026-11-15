@@ -132,6 +132,15 @@ describe("the Runs panel", () => {
     expect(rowNames()[0]).toContain("2 nodes paused");
   });
 
+  it("says a live run runs with --yolo, and not once it ended", async () => {
+    await open([
+      { ...runView("aaa11111"), yolo: true },
+      { ...runView("bbb22222"), yolo: true, live: "succeeded" },
+    ]);
+    expect(rowNames()[0]).toContain("yolo: no permission prompts");
+    expect(rowNames()[1]).not.toContain("yolo");
+  });
+
   it("selects a run for the other panels, and marks it", async () => {
     const { state } = await open();
     await userEvent.click(screen.getByRole("button", { name: /bbb22222/u }));

@@ -236,6 +236,15 @@ export const lockWaitsOf = (events: readonly RunEvent[]): LockWait[] => {
 /** What is paused in a run: the whole run, and the nodes paused by name. */
 export type Paused = { run: boolean; nodes: string[] };
 
+/**
+ * Whether the run's latest start was yolo (`--yolo`): each start or resume
+ * records its own `run.started`, so a resume without it is not.
+ */
+export const yoloOf = (events: readonly RunEvent[]): boolean => {
+  const started = events.findLast(event => event.type === "run.started");
+  return started?.type === "run.started" && started.settings?.yolo === true;
+};
+
 /** Folds a run's `ork pause` and `ork continue` commands (ADR-041). */
 export const pausedOf = (events: readonly RunEvent[]): Paused => {
   let run = false;

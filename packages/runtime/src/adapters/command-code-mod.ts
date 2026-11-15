@@ -11,7 +11,8 @@
  *   (`Bash(git:*)`, `Read`, `mcp__github`); a specifier Ork does not read never
  *   allows a call and always denies one. A shell line is checked command by
  *   command: each must be allowed, and one with a substitution Ork can't read
- *   is allowed only by a plain `Bash` rule.
+ *   is allowed only by a plain `Bash` rule. A yolo run (`ork run --yolo`)
+ *   allows every call the node's `deny` and `only` don't refuse.
  */
 
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -28,6 +29,8 @@ export type ModRules = {
   allow: string[];
   deny: string[];
   only?: string[];
+  /** `ork run --yolo`: what deny and only don't refuse is allowed. */
+  yolo?: boolean;
 };
 
 /** The rules of a session: an `acceptEdits` node may edit without a rule. */
@@ -39,6 +42,7 @@ export const modRules = (spec: SessionSpec): ModRules => ({
   ],
   deny: spec.tools.deny,
   ...(spec.tools.only === undefined ? {} : { only: spec.tools.only }),
+  ...(spec.yolo === true ? { yolo: true } : {}),
 });
 
 /**
@@ -204,6 +208,7 @@ export const decide = (name, input) => {
   if (RULES.only !== undefined && !allCovered(RULES.only, name, calls)) {
     return "not one of this node's tools";
   }
+  if (RULES.yolo === true) return undefined;
   if (READS.has(name) && inside(input)) return undefined;
   if (allCovered(RULES.allow, name, calls)) return undefined;
   return "not allowed for this node";

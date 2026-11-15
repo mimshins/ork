@@ -85,7 +85,8 @@ export type DecisionKind = "question" | "permission";
  * Who answered: the run's own terminal, `ork decide`, the UI (`ork ui`), or the
  * asker's owner, a leader that takes its children's questions (ADR-063).
  */
-export type AnsweredBy = "terminal" | "decide" | "ui" | "owner";
+/** Who answered: a person somewhere, a leader (ADR-063), or a yolo run itself. */
+export type AnsweredBy = "terminal" | "decide" | "ui" | "owner" | "yolo";
 
 export type DecisionRecord = {
   /** `<run>-<n>`. */

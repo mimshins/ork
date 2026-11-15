@@ -10,7 +10,9 @@ with a filter set the server's own list for it: the shared
 
 - **A row** has the workflow and its status, as an icon and a word; then the
   run's id, when it started, what it cost, and how many nodes are paused. A
-  running run with an open decision reads "waiting on you".
+  running run with an open decision reads "waiting on you"; a live yolo run
+  (`ork run --yolo`) adds "yolo: no permission prompts" in the danger text
+  color.
 - **Choosing a row** selects the run for the other panels. The selected row has
   an outline as well as its color.
 - **Keys:** the list is one tab stop. The arrow keys, Home and End move through

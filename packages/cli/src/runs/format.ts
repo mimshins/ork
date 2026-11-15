@@ -17,6 +17,7 @@ import {
   runStatus,
   slotWaitsOf,
   type TreeNode,
+  yoloOf,
 } from "@krapht/ork-core";
 
 import { cost, costOf, shortCount, style } from "../output.ts";
@@ -90,6 +91,8 @@ export const formatRuns = (
   now: number = Date.now(),
   statusOf: (run: RunRecord) => string = liveStatus,
   term: Term = termOf(process.stdout),
+  /** A live run started with `--yolo`: its workflow says so, in yellow. */
+  yolo: (run: RunRecord) => boolean = () => false,
 ): string[] => {
   if (runs.length === 0) return ["No runs."];
   const rows = runs.map(run => {
@@ -97,7 +100,8 @@ export const formatRuns = (
     const end = run.finishedAt === undefined ? now : Date.parse(run.finishedAt);
     return {
       id: run.id,
-      workflow: run.workflow,
+      workflow: yolo(run) ? `${run.workflow} · yolo` : run.workflow,
+      yolo: yolo(run),
       status,
       when: `${ago(run.startedAt, now)} · ${duration(end - Date.parse(run.startedAt))}`,
       // A called run's spend is in its caller's too (L54): said, not added.
@@ -112,7 +116,9 @@ export const formatRuns = (
   const rowOf = (r: (typeof rows)[number]): Cell[] => {
     const cells: Cell[] = [
       { text: r.id, look: s => style("bold", s) },
-      { text: r.workflow },
+      r.yolo
+        ? { text: r.workflow, look: s => style("yellow", s) }
+        : { text: r.workflow },
       {
         text: r.status,
         chip: statusChip(r.status),
@@ -255,8 +261,11 @@ export const formatTreeView = (
 ): string[] => {
   const status = runStatus(run, events);
   const waits = status === "running" ? lockWaitsOf(events) : [];
+  // A live yolo run says so: nobody is asked about its tools.
+  const yolo =
+    status === "running" && yoloOf(events) ? style("yellow", " · yolo") : "";
   return [
-    `${style("bold", `run ${run.id}`)} ${dim(`of ${run.workflow} · ${listedStatus(run, events)} · ${cost(run.costUsd)}`)}`,
+    `${style("bold", `run ${run.id}`)} ${dim(`of ${run.workflow} · ${listedStatus(run, events)} · ${cost(run.costUsd)}`)}${yolo}`,
     ...formatTree(roots, now, waits, status === "crashed"),
   ];
 };

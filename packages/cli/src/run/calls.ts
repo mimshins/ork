@@ -56,6 +56,8 @@ export type CallPortsOptions = Pick<
   budgetCap?: number | undefined;
   baseRef?: string | undefined;
   machineClaude?: boolean | undefined;
+  /** `--yolo` for this start only: never read back from a resumed run. */
+  yolo?: boolean | undefined;
   resume?: ResumeState | undefined;
   detach?: StartOptions["detach"];
 };
@@ -79,6 +81,7 @@ export type CallPorts = {
     | "trigger"
     | "untrusted"
     | "machineClaude"
+    | "yolo"
   >;
 };
 
@@ -119,6 +122,7 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
       adopt: adoptedCalls(store, runId),
       newId: () => newRunId(store),
       machineClaude,
+      yolo: options.yolo === true,
       detach: options.detach,
       env: maskedEnv(
         maskedNamesOfRun(graph.workflow, options.place, store.projects()),
@@ -162,6 +166,7 @@ export const callPorts = (options: CallPortsOptions): CallPorts => {
       ...(trigger === undefined ? {} : { trigger }),
       ...(untrusted === undefined ? {} : { untrusted }),
       ...(machineClaude ? { machineClaude } : {}),
+      ...(options.yolo === true ? { yolo: true } : {}),
     },
   };
 };

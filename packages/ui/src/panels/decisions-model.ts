@@ -32,6 +32,7 @@ const BY: Readonly<Record<NonNullable<DecisionRecord["answeredBy"]>, string>> =
     decide: "with `ork decide`",
     ui: "in `ork ui`",
     owner: "by its owner",
+    yolo: "by the run itself, as it runs with --yolo",
   };
 
 /** A sentence on how it ended, with who gave the answer. */

@@ -21,6 +21,8 @@ export type ControlOptions = {
   runId: string;
   /** The run's own terminal; none for a detached run. */
   local?: HumanChannel;
+  /** The run allows every permission prompt itself (`ork run --yolo`). */
+  yolo?: boolean;
   /** Records an event (the run's recorder). */
   emit: (event: RunEvent) => void;
   /** `ork stop` arrived for the whole run. */
@@ -134,6 +136,7 @@ export const startControl = async (
       return promise;
     },
     ...(options.local === undefined ? {} : { local: options.local }),
+    ...(options.yolo === true ? { yolo: true } : {}),
   });
 
   return {

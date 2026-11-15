@@ -62,6 +62,8 @@ export type ClaudeExecutorOptions = {
   readyDriver?: Driver;
   /** Sessions load the machine's Claude setup (`--machine-claude`, ADR-065). */
   machineClaude?: boolean;
+  /** `ork run --yolo`: sessions allow what their lists don't deny. */
+  yolo?: boolean;
   /** Runs `worktree` nodes in the project checkout instead of worktrees. */
   inPlace: boolean;
   /** What runs a node's `verify:`: the tool nodes' executor. */
@@ -121,6 +123,7 @@ export const claudeExecutor =
     if (!servers.ok) return notStarted("invalid_node", servers.error);
     const spec = { ...specFor(plan.spec, context), ...servers.value };
     if (options.machineClaude === true) spec.machineClaude = true;
+    if (options.yolo === true) spec.yolo = true;
     const driver = sessionDriverOf(context, plan, options);
     if (typeof driver !== "string") return driver;
     const runtime = await options.runtimeFor(driver);

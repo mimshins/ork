@@ -270,6 +270,23 @@ describe("calling a workflow", () => {
     expect(seen[1]?.args).not.toContain("--machine-claude");
   });
 
+  it("starts the called run yolo, agreed to, when the caller is", async () => {
+    const port = portFor(
+      id => {
+        store.append(id, finishedWith(id));
+      },
+      placeAt("own"),
+      { yolo: true },
+    );
+    await port.invoke(request(), signal());
+    expect(seen[0]?.args.slice(-2)).toEqual(["--yolo", "--yes"]);
+    const careful = portFor(id => {
+      store.append(id, finishedWith(id));
+    });
+    await careful.invoke(request(), signal());
+    expect(seen[1]?.args).not.toContain("--yolo");
+  });
+
   it("counts what the called run spent, once", async () => {
     const port = portFor(id => {
       store.append(id, {

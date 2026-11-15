@@ -15,6 +15,7 @@ For the full rules: [the CLI spec](../../specs/cli/running-and-runs.md),
   - [What a session loads](./running-workflows/running-and-answering.md#what-a-session-loads)
   - [Reading the transcript](./running-workflows/running-and-answering.md#reading-the-transcript)
   - [Answering questions](./running-workflows/running-and-answering.md#answering-questions)
+  - [With no permission prompts (`--yolo`)](./running-workflows/running-and-answering.md#with-no-permission-prompts---yolo)
   - [In the background](./running-workflows/running-and-answering.md#in-the-background)
 - [Attaching to a run](./running-workflows/attaching-to-a-run.md)
   - [What it shows](./running-workflows/attaching-to-a-run.md#what-it-shows)

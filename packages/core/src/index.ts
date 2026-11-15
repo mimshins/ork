@@ -18,6 +18,7 @@ export * from "./context/resolve.ts";
 export * from "./context/session.ts";
 export * from "./context/skills.ts";
 export * from "./control/control.ts";
+export { TOOL_INPUT_KEYS } from "./control/permission-prompt.ts";
 export * from "./control/queue.ts";
 export * from "./control/socket.ts";
 export * from "./expr/condition.ts";

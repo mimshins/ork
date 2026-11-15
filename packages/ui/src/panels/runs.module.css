@@ -292,3 +292,10 @@
   display: block;
   margin-top: var(--runs-trigger-command-margin-top);
 }
+
+/* A live yolo run: nobody is asked about its tools. */
+.yolo {
+  --runs-row-yolo-text: var(--color-danger-text);
+
+  color: var(--runs-row-yolo-text);
+}

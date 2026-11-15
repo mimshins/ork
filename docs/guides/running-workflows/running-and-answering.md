@@ -193,6 +193,31 @@ and an agent's question takes its recommended option at once, or fails with
 run says `use --detach and answer with ork decide`. Only a terminal's Enter
 takes the recommended option, and that is your choice.
 
+## With no permission prompts (`--yolo`)
+
+A long run can stop every few minutes to ask whether an agent may read a file or
+run a command. `--yolo` lets one run go without asking:
+
+```sh
+ork run build --yolo         # warns, then asks once: Run with no permission prompts? [y/N]
+ork run build --yolo --yes   # agrees without the question (-y works too)
+```
+
+Every tool call is allowed except what a node's `deny` list refuses, on every
+driver. Agents can then edit, delete and run anything your user account can, so
+use it on a branch or a machine you can afford to have changed. Questions,
+gates, budgets and turn limits still stop the run as usual.
+
+- With no terminal (a script, CI), only `--yes` agrees; without it Ork starts
+  nothing. `--detach` asks before it goes to the background.
+- The runs it calls with `workflow.call` are yolo too, without asking again.
+- `ork resume` is yolo again only with `--yolo` again.
+- While it runs, `ork ps`, `ork tree`, the run's first line (`· yolo`) and
+  `ork ui` say so. Each prompt it skipped is in its record as answered by
+  `yolo`, so `ork logs` shows what ran.
+- `ork ui`, `ork mcp` and triggers can't start a yolo run: nobody would be there
+  to agree.
+
 ## In the background
 
 ```sh

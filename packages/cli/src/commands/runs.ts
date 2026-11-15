@@ -13,6 +13,7 @@ import {
   runListTable,
   type RunRecord,
   runStatus,
+  yoloOf,
 } from "@krapht/ork-core";
 import { defineCommand } from "citty";
 
@@ -83,6 +84,10 @@ export const ps = defineCommand({
             ? store.events(run.id).map(s => s.event)
             : [],
         );
+      // Only a live run's yolo matters: a finished one asks nobody anything.
+      const yolo = (run: RunRecord): boolean =>
+        run.status === "running" &&
+        yoloOf(store.controlEvents(run.id).map(s => s.event));
       printList(
         shown,
         runListTable,
@@ -93,6 +98,8 @@ export const ps = defineCommand({
             scope === ALL,
             Date.now(),
             statusOf,
+            undefined,
+            yolo,
           )) {
             write(line);
           }
@@ -102,7 +109,11 @@ export const ps = defineCommand({
         runs =>
           runs.map(run => {
             const record = byId.get(run.id) ?? run;
-            return { ...record, live: statusOf(record) };
+            return {
+              ...record,
+              live: statusOf(record),
+              ...(yolo(record) ? { yolo: true } : {}),
+            };
           }),
       );
     }),

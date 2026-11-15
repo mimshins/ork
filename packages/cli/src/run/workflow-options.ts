@@ -29,6 +29,8 @@ export type RunWorkflowOptions = {
    * reads it from the run's settings.
    */
   machineClaude?: boolean;
+  /** `--yolo`, agreed to: no permission prompts (never taken from a resume). */
+  yolo?: boolean;
   /** Run even when agent files have uncommitted changes (ADR-020). */
   allowDirty?: boolean;
   /** Print the run's events as JSON lines instead of a transcript. */

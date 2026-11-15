@@ -5,8 +5,10 @@
  *   other terminal. An answer may carry the person's note, which is stored with
  *   it and handed to whoever asked. A withdrawn question (a gate's timeout) is
  *   closed unanswered. A child's question its leader answered first is recorded
- *   as answered by that owner, with its note (ADR-063). A resumed run's ids go
- *   on from the ones stored, and what its last process left open is withdrawn.
+ *   as answered by that owner, with its note (ADR-063). A yolo run (`ork run
+ *   --yolo`) allows each permission prompt itself, recorded as answered by
+ *   `yolo`, so nobody is asked. A resumed run's ids go on from the ones stored,
+ *   and what its last process left open is withdrawn.
  */
 
 import type { RunEvent } from "../run/types.ts";
@@ -18,6 +20,12 @@ import type {
   DecisionStore,
   NewDecision,
 } from "../store/types.ts";
+import {
+  allowedByYolo,
+  DENIED,
+  deniedMessage,
+  permissionDecision,
+} from "./permission-prompt.ts";
 
 export type DecisionQueueOptions = {
   store: DecisionStore;
@@ -25,45 +33,17 @@ export type DecisionQueueOptions = {
   /** The run's own terminal; none for a detached run. */
   local?: HumanChannel;
   emit: (event: RunEvent) => void;
+  /** The run allows every permission prompt itself (`ork run --yolo`). */
+  yolo?: boolean;
   /** Resolves when the decision is no longer open; rejects when `signal` aborts. */
   waitFor: (id: string, signal: AbortSignal) => Promise<DecisionRecord>;
 };
-
-const PERMISSION_OPTIONS = [
-  { id: "allow", label: "Allow" },
-  { id: "deny", label: "Deny" },
-];
-
-const DENIED = "The user did not allow this tool.";
 
 /** What came back: the choice, who gave it, and their note if any. */
 type Settled = { answer: string; by: AnsweredBy; note?: string };
 
 /** The terminal's side of a decision: its choice, and its note if any. */
 type LocalAnswer = { answer: string; note?: string };
-
-/** The deny message a session gets, with the person's words when given. */
-const deniedMessage = (note: string | undefined): string =>
-  note === undefined ? DENIED : `${DENIED} They said: ${note}`;
-
-/** The input fields that say what a tool will do, the first one present. */
-export const TOOL_INPUT_KEYS = [
-  "command",
-  "file_path",
-  "path",
-  "url",
-  "pattern",
-] as const;
-
-/** A tool's input for the decision's context: as written, cut at `max`. */
-const inputContext = (input: Record<string, unknown>, max = 4000): string => {
-  const key = TOOL_INPUT_KEYS.find(k => typeof input[k] === "string");
-  const text =
-    key === undefined
-      ? JSON.stringify(input, undefined, 2)
-      : String(input[key]);
-  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
-};
 
 export const createDecisionQueue = (
   options: DecisionQueueOptions,
@@ -254,16 +234,20 @@ export const createDecisionQueue = (
     },
 
     permit: async request => {
+      if (options.yolo === true) {
+        count += 1;
+        allowedByYolo(
+          store,
+          emit,
+          { id: `${runId}-${String(count)}`, runId },
+          request,
+        );
+        return { allow: true };
+      }
       const { local } = options;
       let localMessage = DENIED;
       const { answer, note } = await decide(
-        {
-          node: request.nodeId,
-          kind: "permission",
-          question: `Allow ${request.toolName}?`,
-          options: PERMISSION_OPTIONS,
-          context: inputContext(request.input),
-        },
+        permissionDecision(request),
         local === undefined
           ? undefined
           : signal => {
