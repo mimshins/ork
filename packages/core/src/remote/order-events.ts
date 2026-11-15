@@ -5,10 +5,12 @@
  *   stored (RFC-020).
  */
 
+import type { StoredEvent } from "../store/types.ts";
+
 type Held<T> = {
   item: T;
   at: string;
-  run: string;
+  runId: string;
   seq: number;
   /** When it was pushed, on the monotonic clock. */
   arrived: number;
@@ -28,8 +30,11 @@ const text = (a: string, b: string): number => Number(a > b) - Number(a < b);
 // shortcut: compares `at` across runs and relies on `at` never decreasing
 // within a run (one clock, ADR-024); a clock step backwards could reverse two
 // events of one run. Upgrade to a per-run k-way merge if that is ever seen.
-const storeOrder = <T>(a: Held<T>, b: Held<T>): number =>
-  text(a.at, b.at) || text(a.run, b.run) || a.seq - b.seq;
+/** Store order `(at, run, seq)`: how followed lines print and `--limit` counts. */
+export const compareStoreOrder = (
+  a: Pick<StoredEvent, "at" | "runId" | "seq">,
+  b: Pick<StoredEvent, "at" | "runId" | "seq">,
+): number => text(a.at, b.at) || text(a.runId, b.runId) || a.seq - b.seq;
 
 /**
  * Holds what `push` gets for `windowMs`, then calls `deliver` in store order.
@@ -67,7 +72,7 @@ export const createOrdered = <T>(
   const tick = (): void => {
     timer = undefined;
     const due = performance.now() - windowMs;
-    const sorted = held.toSorted(storeOrder);
+    const sorted = held.toSorted(compareStoreOrder);
     const count = sorted.findLastIndex(h => h.arrived <= due) + 1;
     const ready = sorted.slice(0, count);
     const out = new Set(ready);
@@ -83,11 +88,11 @@ export const createOrdered = <T>(
 
   return {
     push: (item, at, run, seq) => {
-      held.push({ item, at, run, seq, arrived: performance.now() });
+      held.push({ item, at, runId: run, seq, arrived: performance.now() });
       arm();
     },
     flush: () => {
-      const ready = held.toSorted(storeOrder);
+      const ready = held.toSorted(compareStoreOrder);
       drop();
       release(ready);
     },

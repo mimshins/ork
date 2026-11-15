@@ -2,6 +2,14 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **`ork logs -f --all --limit` keeps the last N lines in the order they
+  print.** It used to count run by run, so with several live runs the kept lines
+  could differ from the last N you see in time order. It now counts in the
+  stored order the lines print in. Only the kept set changes, and only with
+  several live runs; one run, `ork logs <run>` and `ork logs -f <run>` are
+  unchanged
+  ([logs](../guides/running-workflows/looking-back.md#follow-every-live-run)).
+
 - **Lines and questions of several runs come in the order they were stored.**
   `ork logs -f --all`, `ork decide --follow` and `ork attach` now hold each
   event for one poll (about 250 ms) and pass them on sorted by when they were

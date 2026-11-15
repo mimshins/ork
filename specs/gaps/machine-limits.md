@@ -134,9 +134,9 @@ measure and record first, since ending a called run changes what resume adopts:
   and relies on `at` being non-decreasing within a run (one clock, the store's):
   a clock step backwards on the machine could reverse two events of one run; a
   per-run k-way merge would close it, if it is ever seen. And `--limit` of
-  `ork logs -f --all` keeps the last N events overall in the order the runs are
-  read (a run's events, called runs after their `call.started`), not in time
-  order.
+  `ork logs -f --all` counts in exact stored order over the events present at
+  start, so where the window printed a line out of order, the lines kept and the
+  order printed can differ by an event or two.
 - **L380 · A killed slot holder's command can overlap the next one's for up to 2
   s.** When `ork` is killed while it holds a check slot, the orphan guard sends
   its command's group SIGTERM, then SIGKILL after `KILL_AFTER_MS` (2 s); the

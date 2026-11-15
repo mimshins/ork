@@ -54,6 +54,7 @@ B and C change the store and the event format for a delay of one poll.
 - The order is exact for events stored more than about one drain apart or whose
   arrival lag is within the window. Events further apart than that can still be
   delivered in arrival order; the sort relies on `at` not decreasing within a
-  run; `--limit` of `logs -f --all` counts in read order
-  ([L384](../specs/gaps/machine-limits.md)).
+  run ([L384](../specs/gaps/machine-limits.md)). `--limit` of `logs -f --all`
+  first counted in read order; it now counts in store order too, through the
+  same `compareStoreOrder`.
 - Reversible: no stored data or format changes.

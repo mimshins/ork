@@ -483,6 +483,63 @@ describe("ork logs over several runs", () => {
       await expect(done).resolves.toBeUndefined();
     });
 
+    it("counts --limit in store order, not run by run", async () => {
+      begin("aaaa1111", "plan");
+      begin("bbbb2222", "build");
+      const { timed, appendAt } = stampedStore(store);
+      // Run by run, the last two are B's; by time they are B@25 and A@30.
+      appendAt("aaaa1111", stepStarted, 10);
+      appendAt("bbbb2222", stepStarted, 20);
+      appendAt("bbbb2222", { ...stepStarted, id: "step-b2" }, 25);
+      appendAt("aaaa1111", { ...stepStarted, id: "step-a2" }, 30);
+      const lines: string[] = [];
+      const stop = new AbortController();
+      const done = printAllOf(timed, lines, { limit: 2 }, stop.signal);
+      await printed(lines, "aaaa plan › ");
+      await vi.waitFor(() => {
+        expect(plain(lines).filter(line => line.includes("step"))).toHaveLength(
+          2,
+        );
+      });
+      stop.abort();
+      await done;
+      expect(
+        plain(lines)
+          .filter(line => line.includes("step"))
+          .map(line => line.slice(0, 4)),
+      ).toEqual(["bbbb", "aaaa"]);
+      expect(
+        plain(lines).filter(line => line.includes("step-b2")),
+      ).toHaveLength(1);
+      expect(
+        plain(lines).filter(line => line.includes("step-a2")),
+      ).toHaveLength(1);
+    });
+
+    it("breaks a --limit tie on equal times by run id, then seq", async () => {
+      begin("aaaa1111", "plan");
+      begin("bbbb2222", "build");
+      const { timed, appendAt } = stampedStore(store);
+      // All stamped alike: store order is run id, then seq, not append order.
+      appendAt("bbbb2222", { ...stepStarted, id: "step-b1" }, 10);
+      appendAt("aaaa1111", { ...stepStarted, id: "step-a1" }, 10);
+      appendAt("aaaa1111", { ...stepStarted, id: "step-a2" }, 10);
+      const lines: string[] = [];
+      const stop = new AbortController();
+      const done = printAllOf(timed, lines, { limit: 2 }, stop.signal);
+      await printed(lines, "aaaa plan › ");
+      await vi.waitFor(() => {
+        expect(plain(lines).filter(line => line.includes("step"))).toHaveLength(
+          2,
+        );
+      });
+      stop.abort();
+      await done;
+      const kept = plain(lines).filter(line => line.includes("step"));
+      expect(kept[0]).toContain("step-a2");
+      expect(kept[1]).toContain("step-b1");
+    });
+
     it("keeps the last --limit stored events of the live runs, not later ones", async () => {
       begin("aaaa1111", "plan");
       store.append("aaaa1111", stepStarted);

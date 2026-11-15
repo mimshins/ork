@@ -91,6 +91,7 @@ export * from "./remote/follow.ts";
 export * from "./remote/follow-runs.ts";
 export * from "./remote/follow-tree.ts";
 export * from "./remote/links.ts";
+export { compareStoreOrder } from "./remote/order-events.ts";
 export * from "./remote/relay.ts";
 export * from "./remote/resume.ts";
 export * from "./remote/send.ts";

@@ -6,6 +6,7 @@
  */
 
 import {
+  compareStoreOrder,
   type EventStore,
   followRuns,
   followRunTree,
@@ -31,7 +32,10 @@ export type ManyLogOptions = FilterOptions & {
   json: boolean;
   /** A failed node's hint and scrubbed detail. */
   verbose?: boolean;
-  /** Print only the last this many stored events, overall (not per run). */
+  /**
+   * Print only the last this many stored events, overall (not per run), in the
+   * order they print: by time (store order) for `printAll`.
+   */
   limit?: number;
   /** How lines are drawn (default: stdout's), for tests. */
   view?: View;
@@ -69,18 +73,21 @@ const treeEvents = (
 const keyOf = (stored: StoredEvent): string => `${stored.runId}:${stored.seq}`;
 
 /**
- * The stored events (in print order, over all of `roots`' runs) that `--limit`
- * cuts: all but the last `limit` that pass the filters. Events stored after
- * this read are not in it, so they always print.
+ * The stored events (over all of `roots`' runs) that `--limit` cuts: all but
+ * the last `limit` that pass the filters, in the order they print: tree order,
+ * or with `byTime` store order `(at, run, seq)`, as `--all` prints. Events
+ * stored after this read are not in it, so they always print.
  */
 const droppedBy = (
   store: EventStore,
   roots: readonly string[],
   options: ManyLogOptions,
+  byTime: boolean,
 ): Set<string> => {
   if (options.limit === undefined) return new Set();
   const matches = matcher(options);
-  const kept = treeEvents(store, roots).filter(stored => matches(stored));
+  const passed = treeEvents(store, roots).filter(stored => matches(stored));
+  const kept = byTime ? passed.toSorted(compareStoreOrder) : passed;
   return new Set(kept.slice(0, -options.limit).map(stored => keyOf(stored)));
 };
 
@@ -149,7 +156,7 @@ export const printCalls = async (
   const { term } = options.view ?? createView();
   const say = styler(term);
   const matches = matcher(options);
-  const dropped = droppedBy(store, [root.id], options);
+  const dropped = droppedBy(store, [root.id], options, false);
   const printers = new Map<string, Printer>();
   const { end, stillRunning } = await followRunTree(
     store,
@@ -214,6 +221,7 @@ export const printAll = async (
     store,
     live.map(run => run.id),
     options,
+    true,
   );
   const printers = new Map<string, Printer>();
   await followRuns(
