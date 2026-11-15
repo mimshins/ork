@@ -18,7 +18,9 @@ a `kill -9` of the caller, and a failed called run retried by resuming its
 caller. With real sessions, for $0.036: two sessions in two repositories talking
 over a channel by name, a conversation resuming an ended session with both costs
 counted, a cap ending a session, `ref` starting a worktree from a branch, and a
-stop ending a resumed session within a second. A guide:
+stop ending a resumed session within a second. Built since: following many runs
+(`followRuns`), `ork logs` printing called runs inline, and tests of what a
+SIGKILLed caller leaves of a called run (below). A guide:
 [Working across projects](../../docs/guides/working-across-projects.md).
 
 A `workflow.call` node starts a workflow as a separate run, in this project or
@@ -86,7 +88,42 @@ holds no session and no worktree.
   after an end, its own or a called one, is followed to its new end) or the
   caller's signal aborts: it then reads what the called runs stored before the
   root ended, unless aborted, and names those still running (a `wait: none`
-  call). No events are added; the reader decides what to show and ask.
+  call). With `follow: false` it only drains what is stored, at any depth, and
+  returns. No events are added; the reader decides what to show and ask.
+- **Following many runs.** `followRuns(store, scope, onEvent, options)`
+  ([code](../../packages/core/src/remote/follow-runs.ts),
+  [tests](../../packages/core/test/follow-runs.test.ts)) serves
+  `ork logs -f --all` and `ork decide --follow` ([CLI](../cli.md)). Its roots
+  are the live runs in scope with no `parent`, each followed with
+  `followRunTree`, so a called run is reached through its caller and seen once.
+  `onEvent` gets each tree event with the run's workflow and whether it was
+  stored: stored events first, then live ones. A root's end does not end the
+  watch. No socket announces a run that does not exist yet, so the run list is
+  read every second (`intervalMs`, the one poll; the same option sets how often
+  each tree polls a run with no socket) and a live run not followed yet gets a
+  follower. That pass also adopts a called run whose caller ended or is out of
+  scope, as a root, without repeating events already passed on. `scope.workflow`
+  and `scope.run` choose the roots only (called runs follow their caller
+  whatever their workflow; `scope.run` needs a whole id, not a prefix);
+  `scope.project` is one project's root or `"all"`. With `untilIdle` it returns
+  `"idle"` once every follower has ended and no live run is left in scope;
+  otherwise only the `signal` ends it (`"aborted"`). The one-second poll is
+  [L373](../gaps/machine-limits.md).
+- **In `ork logs`.** `ork logs <run>` prints the runs it called inline, under
+  the `call › ` gutter a foreground caller shows, right after the `call.started`
+  that started each. `--no-calls` prints the caller alone; `--json` includes
+  called runs only with `--calls`, each line with its own `runId`;
+  `ork logs -f <run>` follows them live and, when the root ends, lists those
+  still running (`↳ run <id> still running · ork attach <id>`)
+  ([CLI](../cli/running-and-runs.md#runs)).
+- **A killed caller.** A called run is detached, in its own process group, and
+  is not under the orphan guard
+  ([ADR-087](../../decisions/ADR-087-node-processes-end-with-ork.md)): after a
+  SIGKILL of the caller it runs on, and the caller reads as `crashed`
+  ([L371](../gaps/machine-limits.md)). The caller's `ork resume` then attaches
+  to it if it still runs, or resumes it as the same run (a new pid, a
+  `run.resumed`) if it ended, as Resuming says
+  ([test](../../packages/core/test/call-orphan.test.ts)).
 - **On the caller's terminal.** A foreground `ork run` (not `--detach`, not
   `--json`) shows each run it calls, at any depth, as `ork attach` does
   ([code](../../packages/cli/src/run/show-calls.ts),

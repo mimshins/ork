@@ -78,7 +78,9 @@ character, quote or `$(…)`. A description is kept to one line.
   their short lines; below it under `commands`), then the values of the
   positional at that place.
 - **At a word starting `-`:** the command's flags with their descriptions, and
-  `--help`.
+  `--help`. A long alias of a flag (not a one-letter one such as `-f`) is its
+  own candidate, described "Same as --<flag>" (`--watch` for `decide`), and
+  `--no-calls` is offered for `logs` through the flag's `negativeDescription`.
 - **After a flag that takes a value:** an enum flag's options, else the values
   of the flag's provider, else nothing.
 - **At a word `--flag=text`** whose flag takes a value: the same values,

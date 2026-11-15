@@ -15,6 +15,36 @@ ork logs 3f2a --verbose # every failed node's hint and scrubbed details
 ork tree               # the ownership tree: each node's state, tokens and cost
 ```
 
+## Runs a run called
+
+`ork logs <run>` prints the runs a `workflow.call` started right after the
+`call.started` line that started them, at any depth, under the same `call › `
+gutter a foreground run shows, so a `start` run's log reads as one transcript.
+`--no-calls` prints the caller only. With `--json` the called runs are left out
+unless you add `--calls`; their lines carry their own `runId`. `--node`,
+`--since` and `--until` apply to every run printed, and `--limit` keeps the last
+lines overall, not per run. `ork logs -f <run>` follows called runs live, ends
+when the run ends, and lists called runs still going:
+`↳ run 86d5fe37 still running · ork attach 86d5fe37`.
+
+## Follow every live run
+
+```sh
+ork logs -f --all                  # every live run of this project, interleaved
+ork logs -f --all --project all    # every project
+ork logs -f --all --workflow start --until-idle
+```
+
+Each line starts with the run's first four id characters and its workflow:
+`3f2a start › plan │ ✓ pass: Drafted the spec`. Stored events of the live runs
+print first, then new ones. A run that starts later joins within about a second,
+and a called run prints once. `--all` needs `-f` and takes no run id; `--since`,
+`--until`, `--limit`, `--node`, `--workflow` and `--json` work as for one run
+(`--json` prints the stored events, which carry `runId`, with no prefix). Ctrl-C
+ends it, and so does `--until-idle` when no live run is left. Both exit 0. To
+answer the questions of those runs, use
+[`ork decide --follow`](./attaching-to-a-run.md#answering-for-several-runs-ork-decide---follow).
+
 For a `crashed` run, `ork tree` shows a node that had started but not ended as
 `✗ cut off` and one that never started as `- not run`, as `ork ps` says the run
 crashed (`--json` keeps the stored states).

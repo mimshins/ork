@@ -10,17 +10,13 @@ import {
   type EventStore,
   followRunTree,
   pendingDecisions,
-  type RunEvent,
 } from "@krapht/ork-core";
 
 import type { TerminalHuman } from "../human.ts";
-import { ANSWERED_BY } from "../run/format.ts";
 import { createView, styler, type View } from "../run/view.ts";
-import { widthOf } from "../term/layout.ts";
-import { MIN_WIDTH } from "../term/mode.ts";
-import { paint } from "../term/theme.ts";
-import { askStored } from "./ask-stored.ts";
-import { createLogPrinter } from "./logs.ts";
+import { printerFor, printUnder } from "./gutter.ts";
+import type { createLogPrinter } from "./logs.ts";
+import { createPrompts } from "./prompts.ts";
 
 export type AttachOptions = {
   /** Asks the open decisions; none given, none is asked (no one is there). */
@@ -46,21 +42,6 @@ export type Attached = {
   exitCode: 0 | 1;
 };
 
-const where = (path: readonly string[]): string => path.join(" › ");
-
-/** The gutter before a called run's lines: its call path, then ` › `. */
-const gutterOf = (path: readonly string[]): string =>
-  path.length === 0 ? "" : `${where(path)} › `;
-
-/** A prompt in flight, and the event that closed its decision elsewhere. */
-type Prompt = {
-  controller: AbortController;
-  closed?: Extract<
-    RunEvent,
-    { type: "decision.answered" | "decision.withdrawn" }
-  >;
-};
-
 /**
  * Prints the events of `root` and of the runs it called until the root ends or
  * `signal` aborts, and asks each open decision with `options.human`.
@@ -75,88 +56,24 @@ export const attachRun = async (
   const { term } = options.view ?? createView();
   const say = styler(term);
   const printers = new Map<string, ReturnType<typeof createLogPrinter>>();
-  const prompts = new Map<string, Prompt>();
-  /** Decisions answered here: their `decision.answered` line is the card's. */
-  const mine = new Set<string>();
-  const asks: Promise<void>[] = [];
   // Changed from callbacks, so not narrowed by the checks below.
-  const seen: {
-    failure?: { error: unknown };
-    hinted: boolean;
-    succeeded: boolean;
-  } = { hinted: false, succeeded: false };
+  const seen: { hinted: boolean; succeeded: boolean } = {
+    hinted: false,
+    succeeded: false,
+  };
 
   const show = (path: readonly string[], lines: readonly string[]): void => {
-    const gutter = gutterOf(path);
-    const prefix = gutter === "" ? "" : paint(term, "muted", gutter);
-    for (const line of lines) out(line === "" ? line : `${prefix}${line}`);
+    printUnder(out, term, path, lines);
   };
 
-  /**
-   * A run's printer, laid out in the columns its gutter leaves, so a line fits
-   * the terminal with the gutter before it and a wrapped line goes on under its
-   * own text, not at the terminal's first column.
-   */
-  const printerFor = (path: readonly string[]) =>
-    createLogPrinter({
-      json: false,
-      view: {
-        term: {
-          ...term,
-          width: Math.max(MIN_WIDTH, term.width - widthOf(gutterOf(path))),
-        },
-        roots: new Map(),
-      },
-    });
-
-  const ask = (run: string, path: readonly string[], id: string): void => {
-    const decision = store.decision(id);
-    if (human === undefined || decision === undefined) return;
-    const prompt: Prompt = { controller: new AbortController() };
-    prompts.set(id, prompt);
-    const settle = async (): Promise<void> => {
-      try {
-        const asked = await askStored(store, human, decision, {
-          by: "terminal",
-          signal: prompt.controller.signal,
-          place: {
-            run,
-            decision: id,
-            ...(path.length === 0 ? {} : { path: where(path) }),
-          },
+  const prompts =
+    human === undefined
+      ? undefined
+      : createPrompts(store, human, {
+          out,
+          term,
           ...(options.home === undefined ? {} : { home: options.home }),
         });
-        prompts.delete(id);
-        const { closed } = prompt;
-        if (asked.kind === "answered") {
-          mine.add(id);
-          if (!term.rich)
-            show(path, [`${say("green", "✓")} ${id}: ${asked.choice}`]);
-        } else if (asked.kind === "refused") {
-          show(path, [paint(term, "warn", `! ${asked.message}`)]);
-        } else if (asked.kind === "withdrawn" && closed !== undefined) {
-          const by =
-            closed.type === "decision.answered"
-              ? closed.by === "owner"
-                ? (closed.owner ?? ANSWERED_BY.owner)
-                : ANSWERED_BY[closed.by]
-              : "";
-          show(path, [
-            say(
-              "dim",
-              closed.type === "decision.answered"
-                ? `${id} answered elsewhere: ${closed.answer} (${by})`
-                : `${id} withdrawn`,
-            ),
-          ]);
-        }
-      } catch (error) {
-        prompts.delete(id);
-        seen.failure ??= { error };
-      }
-    };
-    asks.push(settle());
-  };
 
   const { end, stillRunning } = await followRunTree(
     store,
@@ -167,19 +84,7 @@ export const attachRun = async (
       if (event.type === "run.finished" && below.length === 0) {
         seen.succeeded = event.result.status === "succeeded";
       }
-      if (
-        event.type === "decision.answered" ||
-        event.type === "decision.withdrawn"
-      ) {
-        const prompt = prompts.get(event.decision);
-        if (prompt !== undefined) {
-          prompt.closed = event;
-          prompt.controller.abort();
-          return;
-        }
-        if (event.type === "decision.answered" && mine.has(event.decision))
-          return;
-      }
+      if (prompts?.seen(event) === true) return;
       if (
         event.type === "decision.opened" &&
         event.owner === undefined &&
@@ -187,8 +92,8 @@ export const attachRun = async (
           d => d.id === event.decision,
         )
       ) {
-        if (human !== undefined) {
-          ask(run, path, event.decision);
+        if (prompts !== undefined) {
+          prompts.ask({ run, path }, event.decision);
           return;
         }
         if (options.hintNoTerminal === true && !seen.hinted) {
@@ -198,7 +103,7 @@ export const attachRun = async (
       }
       let print = printers.get(run);
       if (print === undefined) {
-        print = printerFor(path);
+        print = printerFor(term, path);
         printers.set(run, print);
       }
       show(path, print(stored));
@@ -213,9 +118,8 @@ export const attachRun = async (
   );
 
   // Following is over: a prompt still open has no run to answer.
-  for (const prompt of prompts.values()) prompt.controller.abort();
-  await Promise.all(asks);
-  if (seen.failure !== undefined) throw seen.failure.error;
+  prompts?.abort();
+  await prompts?.settled();
   if (end === "crashed") {
     show(basePath, [
       say("red", `run ${root} stopped without finishing (its process is gone)`),

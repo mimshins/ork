@@ -37,6 +37,34 @@ _Part of [The ork CLI](../cli.md)._
   the Markdown source. `--id <decision> --document` prints that decision's
   document, open or settled, and exits 0, or says it has none and exits 1; it
   only reads, so a run's process may use it.
+- **`ork decide --follow`** (alias `--watch`;
+  [code](../../packages/cli/src/runs/follow-decisions.ts),
+  [tests](../../packages/cli/test/decide-follow.test.ts)) asks the decisions
+  open now, then each one as it opens, one card at a time, on one terminal, for
+  every live run in scope, a called run and a run that starts later included
+  ([following many runs](../scheduler/calls.md)). The card names the run and its
+  workflow (`run <id> · <workflow>`), also on plain output. A decision answered
+  elsewhere (`ork ui`, `ork attach`, another `ork decide`) withdraws its card
+  and prints `<id> answered elsewhere: <answer> (<by>)`, as `ork attach` does.
+  The answer is `by: "decide"`. `q` ("later") leaves a decision open and not
+  asked again until the next `--follow`. `<run>`, `--workflow` and `--project`
+  narrow what is watched as they narrow the list. Ctrl-C ends it with exit 0 and
+  closes no decision, saying `stopped following; N decision(s) still open`;
+  `--until-idle` ends it with exit 0 and `no live runs` once no live run is left
+  in scope and no card is in flight. Refused, one line each: no terminal
+  (`--follow needs a terminal to answer on; ork decide --list shows what is open.`;
+  [`decideRefusal`](../../packages/cli/src/commands/in-a-run.ts) in a run);
+  `--list`, `--json`, `--ids`, `--limit`, `--id`, `--choose`, `--document`,
+  `--say`, `--note` or `--rating` with it
+  (`--follow asks decisions as they open; it can't go with --list, ….`); and
+  `--until-idle` without `--follow` (`--until-idle goes with --follow.`). Two
+  facts shape its stop. The `parked(signal)` helper of
+  [human.ts](../../packages/cli/src/human.ts) does not reject on a signal that
+  is already aborted, so a prompt parked after the abort stays open: the abort
+  fires one `setTimeout` tick after the stop signal, once the prompt has
+  subscribed. And `pendingDecisions` drops the decisions of finished runs, so
+  the `still open` count also includes decisions asked here that the store still
+  holds open.
 - **`ork chat <run> <node>`**
   ([chat.ts](../../packages/cli/src/commands/chat.ts),
   [tests](../../packages/cli/test/chat.test.ts)) talks to a leader or worker;

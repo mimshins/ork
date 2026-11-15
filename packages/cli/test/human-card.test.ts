@@ -67,6 +67,19 @@ describe("the terminal channel's card", () => {
     expect(term.screen()).toEqual([" ✓ 509da722-1 · no"]);
   });
 
+  it("names the run's workflow after its id", async () => {
+    const term = fakeTerm({ columns: 60 });
+    const asked = humanOn(term).askAt(ask, {
+      run: "509da722",
+      workflow: "build",
+      decision: "509da722-1",
+    });
+    await term.press();
+    expect(term.screen()[1]).toBe("  ASK   gate   run 509da722 · build");
+    await term.press(KEY.enter);
+    expect(await asked).toBe("no");
+  });
+
   it("leaves a question for later with q", async () => {
     const term = fakeTerm();
     const asked = humanOn(term).askAt(ask, {

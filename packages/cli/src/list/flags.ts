@@ -17,6 +17,8 @@ import {
   type ListTable,
   parseFilters,
   parseLimit,
+  placeFor,
+  type ProjectRecord,
   unknownProjectRefusal,
 } from "@krapht/ork-core";
 import type { ArgDef, ArgsDef } from "citty";
@@ -138,6 +140,13 @@ export const readListArgs = <Row>(
 
 /** Where `--project` points: `all`, one registered root, or where you are. */
 export type ProjectScope = "all" | "here" | { root: string };
+
+/** The project root a scope other than `all` names. */
+export const rootOf = (
+  scope: Exclude<ProjectScope, "all">,
+  projects: readonly ProjectRecord[],
+): string =>
+  scope === "here" ? placeFor(process.cwd(), projects).root : scope.root;
 
 /**
  * The scope the filter's `project` names, checked against the registered

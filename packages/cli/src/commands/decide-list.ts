@@ -83,6 +83,14 @@ export const asksForList = (args: DecideArgs): boolean =>
   args["ids"] === true ||
   args["limit"] !== undefined;
 
+/** What `selectDecisions` chose: the decisions, and the filters that chose them. */
+export type SelectedDecisions = {
+  open: DecisionRecord[];
+  workflow: string | undefined;
+  /** The project, run and workflow the decisions were filtered by. */
+  filter: { runId?: string; project?: string; workflow?: string };
+};
+
 /**
  * The open decisions `args` ask for (filter, then the store's order, then
  * `--limit`), and the workflow filter given. `undefined` when a flag was
@@ -91,7 +99,7 @@ export const asksForList = (args: DecideArgs): boolean =>
 export const selectDecisions = (
   store: EventStore,
   args: DecideArgs,
-): { open: DecisionRecord[]; workflow: string | undefined } | undefined => {
+): SelectedDecisions | undefined => {
   const request = readListArgs(decisionListTable, args);
   if (request === undefined) return undefined;
   const scope = projectScope(request.filter, store.projects());
@@ -127,7 +135,7 @@ export const selectDecisions = (
   const pending = pendingDecisions(store, filter);
   const open =
     request.limit === undefined ? pending : pending.slice(0, request.limit);
-  return { open, workflow };
+  return { open, workflow, filter };
 };
 
 /** Prints `open` as `--ids`, `--json` or the lines of `formatDecisions`. */
@@ -154,4 +162,33 @@ export const decisionHint = (
   if (decision === undefined || decision.status !== "open") return undefined;
   const choice = decision.recommended ?? decision.options[0]?.id ?? "<option>";
   return `${arg} is a decision id, not a run: answer it with \`ork decide --id ${arg} --choose ${choice}\``;
+};
+
+/** The flags that list or answer one decision, which `--follow` can't take. */
+const NOT_WITH_FOLLOW = [
+  "list",
+  "json",
+  "ids",
+  "limit",
+  "id",
+  "choose",
+  "document",
+  "say",
+  "note",
+  "rating",
+] as const;
+
+/** Why the flags can't follow decisions, or `undefined` when they can. */
+export const followRefusal = (args: DecideArgs): string | undefined => {
+  if (args["follow"] !== true) {
+    return args["until-idle"] === true
+      ? "--until-idle goes with --follow."
+      : undefined;
+  }
+  const given = NOT_WITH_FOLLOW.filter(
+    name => args[name] !== undefined && args[name] !== false,
+  );
+  return given.length === 0
+    ? undefined
+    : `--follow asks decisions as they open; it can't go with ${given.map(name => `--${name}`).join(", ")}.`;
 };

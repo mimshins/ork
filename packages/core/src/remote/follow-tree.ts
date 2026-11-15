@@ -17,6 +17,11 @@ export type TreeEvent = {
 };
 
 export type FollowRunTreeOptions = {
+  /**
+   * Keep going while the root is live (default true); false replays what the
+   * runs have stored and returns (`ork logs <run>`).
+   */
+  follow?: boolean;
   /** How often to poll a run that has no socket (default 250 ms). */
   intervalMs?: number;
   /** `~`, for the runs' sockets; tests pass a folder. */
@@ -35,7 +40,7 @@ export type FollowTreeEnd = {
  * Calls `onEvent` for each event of `root` and of the runs it called, once
  * each. A called run's stored events come right after the `call.started` that
  * started it; live events as they arrive. Ends when the root ends or `signal`
- * aborts.
+ * aborts; with `follow: false`, once the stored events are read.
  */
 export const followRunTree = async (
   store: EventStore,
@@ -48,6 +53,7 @@ export const followRunTree = async (
   /** Each run's last event seen, for the catch-up once the root ends. */
   const seqs = new Map<string, number>();
   const followers: Promise<FollowEnd>[] = [];
+  const live = options.follow ?? true;
   /** Ends the called runs' following once the root's has ended. */
   const halt = new AbortController();
   const signal =
@@ -70,7 +76,7 @@ export const followRunTree = async (
     followers.push(
       followEvents(store, run, handle(run, path), {
         ...options,
-        follow: true,
+        follow: live,
         after: seqs.get(run) ?? 0,
         signal,
       }),
@@ -86,7 +92,7 @@ export const followRunTree = async (
 
   const end = await followEvents(store, root, handle(root, []), {
     ...options,
-    follow: true,
+    follow: live,
   });
   halt.abort();
   await settle();

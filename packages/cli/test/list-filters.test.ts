@@ -385,9 +385,13 @@ describe("Tab completion reads each list's table", () => {
 });
 
 describe("--all is gone from the lists, and kept by prune", () => {
-  it.each(LISTS)("$name has no --all", async list => {
-    expect(await argsAt(list.path)).not.toHaveProperty(["all"]);
-  });
+  // `logs --all` follows every live run: it is not a list filter.
+  it.each(LISTS.filter(list => list.name !== "logs"))(
+    "$name has no --all",
+    async list => {
+      expect(await argsAt(list.path)).not.toHaveProperty(["all"]);
+    },
+  );
 
   it("keeps prune --all: public, in help and completion", async () => {
     const prune = await commandAt(["prune"]);

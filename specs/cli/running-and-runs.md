@@ -207,11 +207,34 @@ children (with `template` and `startedAt`), and the node's `listed`.
 `ork logs --node` on a node or item the run never named and never declared is an
 error, unless `--follow` is on a live run, which may still start it.
 `ork logs --node build` keeps the node's events and its items'; `--node build.2`
-keeps one item's. `ork logs --node` always shows a failed node's hint and
-scrubbed detail, as `--verbose` does for the whole run (there is no
-`ork runs show`; the browser view's Details button names this command). The same
-filter serves `GET /api/runs/<id>/events?node=` in `ork ui`, and
-`GET /api/runs/<id>/tree` is this same nested tree.
+keeps one item's.
+
+`ork logs <run>` prints the runs it called inline
+([calls](../scheduler/calls.md)): in text, each called run's events right after
+its `call.started` line under the `call › ` gutter, as `ork attach` does;
+`--no-calls` prints the run alone; `--json` prints one run unless `--calls` adds
+the called ones, each line with its own `runId`. `--node`, `--since` and
+`--until` apply to every printed run, and `--limit` keeps the last N events
+overall, not per run. `ork logs -f <run>` follows called runs live, ends when
+the root ends, and names those still running
+(`↳ run <id> still running · ork attach <id>`). `ork logs -f --all`
+([code](../../packages/cli/src/commands/logs.ts),
+[tests](../../packages/cli/test/logs-many.test.ts)) follows every live run of
+the project (`--project all`: of every project), the stored events of each
+first, then new ones, with each line prefixed `<4-char run id> <workflow> › `; a
+run that starts while it follows joins, and a called run prints once, as its own
+run, not twice. `--json` prints the stored events as they are, with no prefix.
+`--until-idle` ends it (exit 0) once no live run is left; Ctrl-C ends it too.
+Refused, one line each: `--all` without `-f` (`--all needs -f.`), with a run
+(`--all can't be used with a run.`) or with `--calls`/`--no-calls`; `--project`
+or `--until-idle` without `--all`. With `--node`, a run without that node prints
+nothing for it, not an error.
+
+`ork logs --node` always shows a failed node's hint and scrubbed detail, as
+`--verbose` does for the whole run (there is no `ork runs show`; the browser
+view's Details button names this command). The same filter serves
+`GET /api/runs/<id>/events?node=` in `ork ui`, and `GET /api/runs/<id>/tree` is
+this same nested tree.
 
 ## Resuming a run
 

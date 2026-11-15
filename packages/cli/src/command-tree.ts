@@ -46,7 +46,10 @@ export type FlagInfo = {
   aliases: string[];
   /** An enum flag's values. */
   options: string[];
-  /** A boolean on by default, which `--no-<name>` turns off. */
+  /**
+   * A boolean on by default, or one with a `negativeDescription`, which
+   * `--no-<name>` turns off.
+   */
   negatable: boolean;
 };
 
@@ -80,7 +83,9 @@ const flagOf = (name: string, def: ArgDef): FlagInfo => ({
   takesValue: def.type === "string" || def.type === "enum",
   aliases: "alias" in def ? listOf(def.alias) : [],
   options: def.type === "enum" ? (def.options ?? []) : [],
-  negatable: def.type === "boolean" && def.default === true,
+  negatable:
+    def.type === "boolean" &&
+    (def.default === true || def.negativeDescription !== undefined),
 });
 
 /** A command's public flags and positionals, in the order it defines them. */

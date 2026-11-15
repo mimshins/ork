@@ -17,6 +17,7 @@ ork attach 3f2a                 # follow it here, and answer its questions
 - [Answering](#answering)
 - [Leaving: Ctrl-C](#leaving-ctrl-c)
 - [When you start a workflow that calls others](#when-you-start-a-workflow-that-calls-others)
+- [Answering for several runs: `ork decide --follow`](#answering-for-several-runs-ork-decide---follow)
 - [Without a terminal](#without-a-terminal)
 
 ## What it shows
@@ -37,7 +38,10 @@ called runs included, and asks nothing. When the run ends while a run it called
 is still going (a call with `wait: none`), it says so:
 `↳ run 86d5fe37 still running · ork attach 86d5fe37`.
 
-`ork logs -f` stays read-only: it prints one run and never asks.
+`ork logs -f` stays read-only: it follows runs and never asks. It follows a
+run's called runs too, and
+[`ork logs -f --all`](./looking-back.md#follow-every-live-run) follows every
+live run at once.
 
 ## Answering
 
@@ -74,6 +78,34 @@ run that is still going gets the line
 `↳ run <id> still running · ork attach <id>`, and one that was stopped is
 followed up to five seconds more so its end shows. `ork run --detach` and
 `--json` show no called runs, and a foreground `ork resume` does not yet.
+
+## Answering for several runs: `ork decide --follow`
+
+With several runs going at once (each `start` calling `plan`, then `build`),
+`ork attach` takes one run. One terminal can answer them all:
+
+```sh
+ork decide --follow                 # alias --watch: ask what is open, then each new question
+ork decide 3f2a --follow            # only that run, and the runs it called
+ork decide --follow --workflow feature --project all
+ork decide --follow --until-idle    # stop when no live run is left
+```
+
+It asks every question open now, one at a time, then each new one as it opens,
+including one from a run that started after you did, or a `build` that a `plan`
+called. The card names the run: `run 3f2a91c0 · start`. A question answered
+elsewhere (`ork ui`, `ork attach`, another `ork decide`) goes away and says
+`<id> answered elsewhere: <answer> (<by>)`. Your answer goes to the run as
+`decide`. `q` or Esc leaves a question open: it is not asked again until the
+next `--follow`. `--run`, `--workflow`, `--project` and the run id narrow what
+it watches, as they narrow `ork decide --list`.
+
+Ctrl-C ends it with exit 0 and closes nothing:
+`stopped following; 2 decision(s) still open`. With `--until-idle` it ends by
+itself, saying `no live runs`, once no live run is left in scope and no question
+is waiting. It needs a terminal, and refuses `--list`, `--json`, `--ids`,
+`--limit`, `--id` and `--choose`. Runs that start while it follows are found
+within a second.
 
 ## Without a terminal
 

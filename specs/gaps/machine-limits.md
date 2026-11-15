@@ -66,14 +66,20 @@ processes end with `ork`):
   ms), while the node's watcher gives the group 2 seconds of SIGTERM before
   SIGKILL. A push in flight may land in that window. The shipped pushes are
   fast-forward only, so the next holder's is rejected and nothing is lost; a
-  workflow that force-pushes could lose work.
+  workflow that force-pushes could lose work. Its guard test
+  (`orphan-guard.test.ts`, with `spawn.test.ts` and
+  `session-leg-orphan.test.ts`) is unconfirmed on Linux: the `ubuntu-24.04`
+  `unit` job's log was not read (`gh` was denied), and `orphanGuard` behaved the
+  same under a local `dash`. The tests are POSIX-only (`skipIf(win32)`), so CI
+  runs them.
 - **L319 · Native Windows nodes outlive a killed `ork`.** The guard needs `sh`
   and POSIX process groups. WSL 2 is the supported path; native Windows would
   need Job Objects, a native dependency and its own ADR.
 - **L320 · Claude Code's own children may escape the group.** A session's group
   is ended with `ork`, and a fake-driver test shows its children go too. What
   Claude Code does with its own background Bash children is unchecked; it needs
-  a real session (a paid run).
+  a real session (a paid run). The three guard test files passing on Linux
+  (`dash` as `sh`) is likewise unconfirmed, as under L318.
 - **L321 · A stop's SIGTERM also kills the watcher.** The group's SIGTERM from a
   stop reaches the `sh` watcher too, so a program that ignores SIGTERM survives
   if `ork` is SIGKILLed before its own SIGKILL follows.
@@ -83,3 +89,34 @@ processes end with `ork`):
 - **L323 · Ctrl-Z no longer pauses running sessions.** A session is `detached`,
   in its own process group, so the terminal's SIGTSTP does not reach it. Use
   `ork pause`.
+
+Found checking what outlives a killed `ork` (follow-ups 39d51bfa, ee3f927e,
+06b28de4). Measured by tests that run in CI, not fixed: the maintainer chose to
+measure and record first, since ending a called run changes what resume adopts:
+
+- **L371 · A called run outlives a SIGKILLed caller.** A `workflow.call`'s run
+  is started with `detachRun`, in its own process group, and is not under the
+  orphan guard, so after `kill -9` of the caller it runs on, with its caller
+  read as `crashed`. The caller's `ork resume` attaches to it if it still runs
+  (same pid, no `run.resumed`), and resumes it as the same run (a new pid, a
+  `run.resumed`) if it ended, as [calls](../scheduler/calls.md) "Resuming" says.
+  Nothing ends a called run nobody resumes. Measured by
+  [call-orphan.test.ts](../../packages/core/test/call-orphan.test.ts). Whether
+  to put called runs under the guard is a follow-up decision (an amendment to
+  [ADR-087](../../decisions/ADR-087-node-processes-end-with-ork.md)).
+- **L372 · `git` commands of `git.ts` are outside the orphan guard.** They run
+  through `execFile` in `ork`'s own group, with no watcher
+  ([git.ts](../../packages/core/src/worktree/git.ts)), so after `kill -9` of
+  `ork` a `git` and its hook run on, and a commit may still land. Measured: a
+  `git commit -m` does not hold `.git/index.lock` during its hook (git releases
+  it before running hooks), so this path leaves no stale lock; killed mid-hook
+  it leaves no lock and no commit, only the staged change. A slow `git add -A`
+  does hold the lock; that case is not measured. ADR-087's "may leave
+  `index.lock`" is therefore only true for such a step. Measured by
+  [git-orphan.test.ts](../../packages/core/test/git-orphan.test.ts).
+- **L373 · `followRuns` finds a new run by polling the run list.** No socket or
+  change feed announces a run that does not exist yet, so
+  [`followRuns`](../scheduler/calls.md) reads the whole run list every second
+  (`intervalMs`) to find new live runs; everything else is pushed. A new run is
+  seen up to a second late, and each pass reads every run of the scope. A store
+  change feed or a project socket would replace it if the poll costs.

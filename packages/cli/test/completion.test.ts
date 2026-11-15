@@ -110,6 +110,32 @@ describe("ork __complete", () => {
     expect(await values("logs", "--f")).toEqual(["--follow"]);
   });
 
+  it("offers the follow flags only on the commands that have them", async () => {
+    const flags = async (...words: string[]): Promise<string[]> =>
+      (await values(...words, "--")).filter(value => value.startsWith("--"));
+    expect(await flags("decide")).toEqual(
+      expect.arrayContaining(["--follow", "--watch", "--until-idle"]),
+    );
+    expect(await flags("decide")).not.toContain("--all");
+    expect(await flags("logs")).toEqual(
+      expect.arrayContaining([
+        "--follow",
+        "--all",
+        "--until-idle",
+        "--calls",
+        "--no-calls",
+        "--project",
+      ]),
+    );
+    expect(await flags("logs")).not.toContain("--watch");
+    expect(await values("decide", "--w")).toEqual(["--workflow", "--watch"]);
+    expect(await values("logs", "--no-c")).toEqual(["--no-calls"]);
+    // `-f` is logs' short for --follow: it takes no value, so a flag follows it.
+    expect(await values("logs", "-f", "--al")).toEqual(["--all"]);
+    expect(await flags("ps")).not.toContain("--until-idle");
+    expect(await flags("attach")).not.toContain("--until-idle");
+  });
+
   it("completes a flag's values: drivers, and nothing for a free value", async () => {
     expect(await values("run", "--driver", "")).toEqual([
       "claude-code",
@@ -139,7 +165,10 @@ describe("ork __complete", () => {
       "--driver",
       "--detach",
     ]);
-    expect(await values("logs", "--follow", "--n")).toEqual(["--node"]);
+    expect(await values("logs", "--follow", "--n")).toEqual([
+      "--node",
+      "--no-calls",
+    ]);
   });
 
   it("offers the shells, and asks for files where a path goes", async () => {

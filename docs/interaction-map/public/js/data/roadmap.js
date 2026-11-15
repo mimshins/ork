@@ -1146,6 +1146,20 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "follow-many",
+        title: "Follow several runs: `decide --follow`, `logs -f --all`",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). `ork decide --follow` asks every open decision, then each new one as it opens across the live runs (a called `build` after its `plan`, a new `ork run`), with the run and workflow on the card; an answer given elsewhere withdraws the prompt, and Ctrl-C leaves everything open. `ork logs -f --all` interleaves every live run under a short id and workflow prefix, and `--until-idle` ends both when no live run is left. `ork logs <run>` now prints the runs it called inline under the `call › ` gutter (`--no-calls` turns it off). One core follower, `followRuns`, serves both; it finds runs that start later by one 1 s poll. Tests also pin what outlives a SIGKILLed `ork` (a called run, a git command) and record it as limits. Left: the poll is not a push, and a called run and git outlive a killed caller.",
+        docs: [
+          "docs/guides/running-workflows/attaching-to-a-run.md",
+          "docs/guides/running-workflows/looking-back.md",
+          "specs/cli.md",
+          "specs/scheduler/calls.md",
+          "specs/gaps.md#limits",
+        ],
+      },
+      {
         id: "agent-types",
         title: "A format for several drivers: `agent.*` and `<driver>.<model>`",
         status: "active",

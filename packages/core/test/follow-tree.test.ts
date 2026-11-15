@@ -1,8 +1,8 @@
 /**
  * @file Tests for following a run and the runs it called (`followRunTree`):
- *   replay order across a call chain, live events and runs found live, a root
- *   that ends while a called run still runs, an abort, and a run resumed after
- *   it had ended.
+ *   replay order across a call chain, a replay that does not follow, live
+ *   events and runs found live, a root that ends while a called run still runs,
+ *   an abort, and a run resumed after it had ended.
  */
 
 import { mkdtempSync, rmSync } from "node:fs";
@@ -145,6 +145,24 @@ describe("followRunTree", () => {
     );
 
     expect(runs.at(-2)).toEqual(["rev00000", ["build", "review.1"]]);
+  });
+
+  it("with follow off, replays what the live runs stored and returns", async () => {
+    store.append("root0000", called("plan", "plan0000"));
+    begin("plan0000");
+    store.append("plan0000", nodeStarted("spec"));
+    store.append("root0000", nodeStarted("after"));
+
+    await expect(
+      followRunTree(store, "root0000", record, { home: dir, follow: false }),
+    ).resolves.toEqual({ end: "stored", stillRunning: ["plan0000"] });
+    expect(lines).toEqual([
+      "|run.started",
+      "|call.started:plan",
+      "plan|run.started",
+      "plan|node.started:spec",
+      "|node.started:after",
+    ]);
   });
 
   it("follows stored events first, then live ones as they come", async () => {

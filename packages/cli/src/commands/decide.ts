@@ -19,11 +19,11 @@ import { defineCommand } from "citty";
 import { createTerminalHuman } from "../human.ts";
 import { refuseUnknownFlags } from "../list/flags.ts";
 import { style, write, writeErr } from "../output.ts";
-import { askStored } from "../runs/ask-stored.ts";
 import { noteOn } from "../runs/feedback.ts";
-import { canKey } from "../term/mode.ts";
+import { askOpen, followCommand, saidLine } from "./decide-ask.ts";
 import {
   asksForList,
+  followRefusal,
   listArgs,
   printDecisions,
   selectDecisions,
@@ -68,12 +68,6 @@ export const noteProblem = (
   return checked.ok ? undefined : checked.error;
 };
 
-/** What the answer said, as stored (masked), after the answer's line. */
-export const saidLine = (store: EventStore, id: string): string => {
-  const note = store.decision(id)?.note;
-  return note === undefined ? "" : style("dim", ` · said: ${note}`);
-};
-
 export const decide = defineCommand({
   meta: {
     name: "decide",
@@ -111,8 +105,29 @@ export const decide = defineCommand({
       description: "Show each question's whole context, not its first lines",
       default: false,
     },
+    follow: {
+      type: "boolean",
+      alias: ["watch"],
+      description:
+        "Ask the open decisions, then each new one of any live run (Ctrl-C stops)",
+      default: false,
+    },
+    "until-idle": {
+      type: "boolean",
+      description: "With --follow, stop once no live run is left",
+      default: false,
+    },
   },
   run: async ({ args }) => {
+    const conflict = followRefusal(args);
+    if (conflict !== undefined) {
+      failed(conflict);
+      return;
+    }
+    if (args.follow) {
+      await followCommand(args);
+      return;
+    }
     // Any flag that shapes a list means listing, so a terminal never starts
     // answering by accident.
     const listing = asksForList(args);
@@ -194,28 +209,7 @@ export const decide = defineCommand({
         printDecisions(open, args, workflow);
         return;
       }
-      // A card collapses to the line that says what was chosen; only plain
-      // output needs the answer's line as well.
-      const collapses = canKey(process.stdin, process.stdout);
-      for (const [index, d] of open.entries()) {
-        // oxlint-disable-next-line no-await-in-loop -- one question at a time
-        const asked = await askStored(store, human, d, {
-          by: "decide",
-          place: {
-            run: d.runId,
-            decision: d.id,
-            index: index + 1,
-            total: open.length,
-          },
-        });
-        if (asked.kind === "refused")
-          write(`${style("yellow", "!")} ${asked.message}\n`);
-        else if (asked.kind === "answered" && !collapses) {
-          write(
-            `${style("green", "✓")} ${d.id}: ${asked.choice}${saidLine(store, d.id)}\n`,
-          );
-        }
-      }
+      await askOpen(store, human, open);
     } finally {
       human?.close();
       store.close();

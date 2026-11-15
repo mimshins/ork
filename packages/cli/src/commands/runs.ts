@@ -9,8 +9,6 @@ import {
   applyFilters,
   findRun,
   nestItems,
-  placeFor,
-  type ProjectRecord,
   type RunListRow,
   runListTable,
   type RunRecord,
@@ -20,28 +18,21 @@ import { defineCommand } from "citty";
 
 import {
   filterArgs,
-  type ProjectScope,
   projectScope,
   readListArgs,
   refuseUnknownFlags,
+  rootOf,
 } from "../list/flags.ts";
 import { printList } from "../list/print.ts";
 import { write, writeErr } from "../output.ts";
 import { formatRuns, formatTreeView, listedStatus } from "../runs/format.ts";
-import { followRun, logListTable, unknownNode } from "../runs/logs.ts";
 import { withStore } from "../store.ts";
 
 export { feedback } from "./feedback.ts";
+export { logs } from "./logs.ts";
 
 /** How many runs `ork ps` shows without `--limit`. */
 const PS_LIMIT = 20;
-
-/** The project root a scope other than `all` names. */
-const rootOf = (
-  scope: Exclude<ProjectScope, "all">,
-  projects: readonly ProjectRecord[],
-): string =>
-  scope === "here" ? placeFor(process.cwd(), projects).root : scope.root;
 
 export const ps = defineCommand({
   meta: { name: "ps", description: "List this project's runs, newest first" },
@@ -122,79 +113,6 @@ const runArg = {
   description: "A run id or a prefix of one (default: this project's newest)",
   required: false,
 } as const;
-
-export const logs = defineCommand({
-  meta: {
-    name: "logs",
-    description:
-      "Print a run's transcript. A delegated task shows its task label: the lead's short description, whitespace folded, clipped to 80 characters, secrets masked",
-  },
-  plugins: [refuseUnknownFlags],
-  args: {
-    run: runArg,
-    ...filterArgs(logListTable, { ids: false, json: false, limit: false }),
-    limit: {
-      type: "string",
-      description:
-        "Print only the last this many stored events, a positive whole number (a live follow goes on past it)",
-    },
-    node: { type: "string", description: "Only this node's events" },
-    follow: {
-      type: "boolean",
-      alias: "f",
-      description: "Keep printing a live run's events until it ends",
-      default: false,
-    },
-    json: {
-      type: "boolean",
-      description: "Print the stored events as JSON lines",
-      default: false,
-    },
-    verbose: {
-      type: "boolean",
-      description:
-        "Show each tool call whole, and why each failed node stopped, with its scrubbed details (always on with --node)",
-      default: false,
-    },
-  },
-  run: ({ args }) =>
-    withStore(async store => {
-      const req = readListArgs(logListTable, args);
-      if (req === undefined) return;
-      const found = findRun(store, args.run, process.cwd());
-      if (!found.ok) {
-        writeErr(found.error);
-        process.exitCode = 1;
-        return;
-      }
-      const problem =
-        args.node === undefined
-          ? null
-          : unknownNode(
-              store.events(found.run.id),
-              args.node,
-              args.follow && found.run.status === "running",
-            );
-      if (problem !== null) {
-        writeErr(problem);
-        process.exitCode = 1;
-        return;
-      }
-      const abort = new AbortController();
-      process.once("SIGINT", () => {
-        abort.abort();
-      });
-      await followRun(store, found.run, write, {
-        follow: args.follow,
-        json: args.json,
-        verbose: args.verbose,
-        filter: req.filter,
-        ...(req.limit === undefined ? {} : { limit: req.limit }),
-        signal: abort.signal,
-        ...(args.node === undefined ? {} : { node: args.node }),
-      });
-    }),
-});
 
 export const tree = defineCommand({
   meta: {

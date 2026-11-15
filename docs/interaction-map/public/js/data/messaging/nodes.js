@@ -102,6 +102,7 @@ export const NODES = [
       "`ork decide <run>` limits it to one run, `--project all` to every project; `--id … --choose …` answers without a prompt.",
       "The first answer wins, whether from here or the run's own terminal, or an `ork attach`.",
       "`ork attach <run>` is the same card for one run and every run it called, followed live; Ctrl-C detaches and leaves the run going.",
+      "`--follow` (alias `--watch`) asks the open decisions, then each new one of every live run, including a called run and a run started later; Ctrl-C leaves all open, `--until-idle` ends it when no live run is left.",
       "`--say <text>` gives the answer a note, which goes to the run with it.",
       "`--note <text>` and `--rating good|bad` note how the node did, as your feedback, once the answer is taken.",
       "`--list` shows a question a leader passed on as `<node> via <leader>`.",

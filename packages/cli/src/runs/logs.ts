@@ -92,6 +92,20 @@ export const logListTable: ListTable<StoredEvent> = {
   ],
 };
 
+export type FilterOptions = {
+  /** `--since` and `--until`, checked: only the events they match print. */
+  filter?: ListFilter;
+  /** Only this node's events. */
+  node?: string;
+};
+
+/** Whether an event is one `--since`, `--until` and `--node` let through. */
+export const matcher =
+  (options: FilterOptions) =>
+  (stored: StoredEvent): boolean =>
+    applyFilters(logListTable, [stored], options.filter ?? {}).length > 0 &&
+    (options.node === undefined || isNodeEvent(stored.event, options.node));
+
 export type FollowOptions = LogOptions & {
   /** `--since` and `--until`, checked: only the events they match print. */
   filter?: ListFilter;
@@ -124,9 +138,7 @@ export const followRun = async (
   options: FollowOptions,
 ): Promise<void> => {
   const print = createLogPrinter(options);
-  const matches = (stored: StoredEvent): boolean =>
-    applyFilters(logListTable, [stored], options.filter ?? {}).length > 0 &&
-    (options.node === undefined || isNodeEvent(stored.event, options.node));
+  const matches = matcher(options);
   // The replayed events past the last `limit`; every event still goes through
   // the printer, which keeps the state later lines need.
   const replayed =

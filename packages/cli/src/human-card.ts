@@ -15,11 +15,14 @@ import type { Term } from "./term/mode.ts";
 import { bold, paint } from "./term/theme.ts";
 
 /**
- * Where a question sits in `ork decide` or `ork attach`: its run, "n of m" when
- * a list is being worked through, and the call path of a called run.
+ * Where a question sits in `ork decide` or `ork attach`: its run and workflow,
+ * "n of m" when a list is being worked through, and the call path of a called
+ * run.
  */
 export type AskPlace = {
   run: string;
+  /** The run's workflow, when the command knows it. */
+  workflow?: string;
   decision: string;
   index?: number;
   total?: number;
@@ -52,7 +55,7 @@ export const cardLines = (
       ...(place === undefined
         ? []
         : [
-            `run ${place.run}${place.path === undefined ? "" : ` · ${place.path}`} · decision ${place.decision}`,
+            `${[`run ${place.run}`, place.workflow, place.path].filter(part => part !== undefined).join(" · ")} · decision ${place.decision}`,
           ]),
       ...(document === undefined ? [] : [document]),
       `? ${plain(q.nodeId)} asks: ${clean(q.question)}`,
@@ -68,7 +71,7 @@ export const cardLines = (
   const where =
     place === undefined
       ? ""
-      : `  ${paint(t, "muted", [`run ${place.run}`, place.path, place.index === undefined || place.total === undefined ? undefined : `${String(place.index)} of ${String(place.total)}`].filter(part => part !== undefined).join(" · "))}`;
+      : `  ${paint(t, "muted", [`run ${place.run}`, place.workflow, place.path, place.index === undefined || place.total === undefined ? undefined : `${String(place.index)} of ${String(place.total)}`].filter(part => part !== undefined).join(" · "))}`;
   return {
     lines: [
       "",

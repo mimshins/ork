@@ -51,6 +51,13 @@ const flagSection = (position: Position): Section => ({
   candidates: [
     ...position.flags.flatMap(flag => [
       { value: `--${flag.name}`, description: brief(flag.description) },
+      // A one-letter alias (`-f`) is typed, not completed; a longer one is offered.
+      ...flag.aliases
+        .filter(alias => alias.length > 1)
+        .map(alias => ({
+          value: `--${alias}`,
+          description: `Same as --${flag.name}`,
+        })),
       ...(flag.negatable
         ? [
             {

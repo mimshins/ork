@@ -17,8 +17,9 @@ new-version notice ([updates](./cli/updates.md)), `ork ui`
 ([server](./server.md)), `ork mcp` ([mcp](./cli/mcp.md)),
 `ork completion zsh|bash|fish` and the hidden `ork __complete`
 ([completion](./cli/completion.md)), `ork once` ([check once](./check-once.md)),
-and `ork send`, which a tool node's program runs
-([scripts](./messaging/scripts.md#ork-send))
+`ork decide --follow` and `ork logs -f --all` (several live runs at once), and
+`ork logs <run>` printing the runs it called inline, and `ork send`, which a
+tool node's program runs ([scripts](./messaging/scripts.md#ork-send))
 ([code](../packages/cli/src/main.ts), [tests](../packages/cli/test/cli.test.ts),
 [run tests](../packages/cli/test/run.test.ts),
 [attach tests](../packages/cli/test/attach-command.test.ts),
@@ -83,12 +84,14 @@ ork run <wf> [--input k=v] [--driver <id>] [--in-place] [--allow-dirty] [--json]
 ork run <wf> --follow-ups <ids|due>  # take open agent follow-ups (ids, or `due` for every due one) as the run's `brief` input; done when it publishes
 ork run <wf> --node <id> [--input k=v] [--driver <id>] [--in-place] [--json] [--verbose]
 ork ps [--status s] [--workflow w] [--project p|all] [--since 7d] [--until day] [--limit n] [--ids] [--json]  # this project's runs, newest first; 20 by default
-ork logs [<run>] [--node n] [--since t] [--until day] [--limit n] [--follow] [--json] [--verbose]   # a run's transcript, replayed or live
+ork logs [<run>] [--node n] [--since t] [--until day] [--limit n] [--follow] [--calls | --no-calls] [--json] [--verbose]   # a run's transcript, replayed or live, with the runs it called inline
+ork logs -f --all [--project p|all] [--until-idle] [--node n] [--since t] [--until day] [--limit n] [--json] [--verbose]   # every live run of the project, interleaved, each line prefixed with its run id and workflow
 ork attach <run>                 # follow a run and the runs it called, and answer their questions here; Ctrl-C detaches ([run control](./run-control.md#detaching-from-a-run))
 ork tree [<run>] [--json]        # ownership tree with status, tokens, $ per node; a delegated node's task description after its id
 ork usage [--project p|all] [--since 30d|day|all] [--until day] [--by day|workflow|model|…] [--workflow w] [--json]  # what runs spent over time
 ork prune --older-than 90d [--all] [--dry-run] [--yes]  # forget old runs' logs; what they spent stays
 ork decide [<run>] [--project p|all] [--list] [--ids] [--limit n] [--json] [--workflow <name>] [--id <d> --document] [--id <d> --choose <option> [--say <text>] [--note <text>] [--rating good|bad]] [--verbose]  # answer open decisions (a card with arrow keys on a terminal; --verbose shows each question's whole context); --say gives the answer a note for the run, --note notes the decision's node as feedback
+ork decide [<run>] --follow|--watch [--until-idle] [--workflow <name>] [--project p|all] [--verbose]  # ask the open decisions, then each new one of any live run, one card at a time; Ctrl-C stops (exit 0), --until-idle stops when no live run is left
 ork chat <run> <node> [-m <text>] [--driver <id>]  # talk to a node, live or by resuming its session
 ork relay <run>/<node> <run>/<node> [--max-messages n]  # let two running nodes of different runs message each other
 ork relay end <a> <b> | ork relay list [run] [--all] [--json]  # ended ones too

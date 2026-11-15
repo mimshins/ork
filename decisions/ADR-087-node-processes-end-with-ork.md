@@ -78,7 +78,10 @@ sessions, and by the same path the heavy-check slots.
   means a native dependency and its own ADR. Recorded as a gap; WSL 2 is the
   supported path.
 - **A killed git step may leave `index.lock`** in the crashed run's own
-  worktree. A resume re-runs the locked nodes from the first.
+  worktree. A resume re-runs the locked nodes from the first. Measured later: a
+  `git commit` does not hold the lock during its hook, and `git.ts`'s commands
+  and a called run are outside the guard
+  ([L371, L372](../specs/gaps/machine-limits.md)).
 - A ledger record is still alive while its pid is, so a reused pid keeps a dead
   holder's lock. Recorded as a gap, not fixed here.
 
