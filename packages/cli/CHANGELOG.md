@@ -1,5 +1,63 @@
 # @krapht/ork
 
+## 1.0.0-alpha.20
+
+### Minor Changes
+
+- [`913bc83`](https://github.com/mimshins/ork/commit/913bc83c41d2f52c5663107eeb1066ef3585181d) Thanks [@mimshins](https://github.com/mimshins)! - `ork feedback resolve <item>…` marks feedback items fixed by hand resolved,
+  taking several ids (space or comma separated) and changing none when one is
+  unknown, dismissed, or resolved or published already. `ork feedback list` and
+  the Feedback panel hide resolved items by default, as they hide dismissed ones,
+  and a resolved item that is seen again after it was resolved goes back to `new`.
+
+- [`03c5af1`](https://github.com/mimshins/ork/commit/03c5af126f539380ac81a0e8a1bee138712f2e05) Thanks [@mimshins](https://github.com/mimshins)! - `ork decide --follow` (alias `--watch`) asks every open decision, then each new
+  one as it opens across all live runs, including a called `build` and runs that
+  start later; the card names `run <id> · <workflow>`. Ctrl-C ends it with exit 0
+  and closes nothing; `--until-idle` ends it when no live run is left. It needs a
+  terminal and refuses `--list`, `--json`, `--ids`, `--limit`, `--id` and
+  `--choose`. `ork logs -f --all` interleaves every live run (`--project all` for
+  every project) under a `<id> <workflow> › ` prefix, and takes `--until-idle`.
+  `ork logs <run>` now prints the runs it called inline under the `call › `
+  gutter; `--no-calls` prints the caller only, and `--json` includes called runs
+  only with `--calls`. `ork logs -f <run>` follows called runs and lists those
+  still running. Tab completion offers the new flags.
+
+- [`d54cb88`](https://github.com/mimshins/ork/commit/d54cb8804968f26a331ca275d05e66c64dcb6857) Thanks [@mimshins](https://github.com/mimshins)! - A watched trigger's accepted hash now covers the in-project files an `mcp.call`
+  check's server runs (its `command` or an argument, also `--config=./x.json`) and
+  a tool check's `--flag=./file`, so a pulled edit to one turns the trigger off. A
+  trigger already accepted that names such a file turns off once: run
+  `ork watch --accept`. OpenCode now fails a node that names an MCP server named
+  `ork` or starting with `ork_`, naming the server, instead of letting its tools
+  pass for Ork's own.
+
+- [`a8eecf0`](https://github.com/mimshins/ork/commit/a8eecf078434827a836031cf858375ff25e84bd5) Thanks [@mimshins](https://github.com/mimshins)! - `ork once --on <pathspec>` (repeatable) keys a check by only the files the git
+  pathspecs match, so an edit elsewhere still hits; a pathspec git rejects stops
+  with git's message and exit 1 before the command runs. Repeating `--covers` now
+  records a pass for every name, not only the last.
+
+### Patch Changes
+
+- [`b6ed13c`](https://github.com/mimshins/ork/commit/b6ed13cdf78ed867227880430511710a817dc420) Thanks [@mimshins](https://github.com/mimshins)! - `ork once --on` refuses pathspecs that match no file, and `--on` or `--covers`
+  with no value (`--on --force`), before the command runs. A prompt withdrawn
+  before it parks is withdrawn at once, so `ork decide --follow` ends the prompt
+  that took a Ctrl-C without waiting a tick. In `ork ui`, a filter refused before
+  any has worked says "Nothing is filtered yet." Internal: the tests fail when
+  they read a file the tests' `--on` list leaves out, Ctrl-C on a real terminal is
+  tested for `decide --follow` and `logs -f --all`, and the audit consolidates
+  after a failed coverage critic and marks the run incomplete.
+
+- [`2e0d6a7`](https://github.com/mimshins/ork/commit/2e0d6a7a3a6101c64b2a85ad62c9d21cab647903) Thanks [@mimshins](https://github.com/mimshins)! - A watched trigger's hash now takes a digest of the bytes of each in-project file
+  its check names, not the file read as UTF-8 text, so a binary that changes only
+  in bytes that aren't UTF-8 turns the trigger off too.
+
+- [`b7e3c06`](https://github.com/mimshins/ork/commit/b7e3c06baae8fc0c40abe02d820f0a0ced664788) Thanks [@mimshins](https://github.com/mimshins)! - `ork follow-ups done`, `drop`, `reopen` and `due` take several ids, space or
+  comma separated, and change none of them if any id is unknown or can't take the
+  action. The other commands that take one id (`follow-ups show`, `post`,
+  `published` and `list`, `pause`, `continue`, `attach`, `stop`, `resume`, most of
+  `feedback` and `projects forget | move`) refuse a second one with "Unexpected
+  argument". A follow-up held by a run the store doesn't know yet now reads "not
+  started yet; free in under 2 minutes" instead of "still running".
+
 ## 1.0.0-alpha.19
 
 ### Minor Changes
