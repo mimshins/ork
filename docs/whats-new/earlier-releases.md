@@ -2,6 +2,11 @@
 
 _Part of [What's new](../whats-new.md)._
 
+## 1.0.0-alpha.5 to 1.0.0-alpha.12
+
+These releases have no notes here; the
+[changelog](../../packages/cli/CHANGELOG.md) has each change.
+
 ## 1.0.0-alpha.4
 
 - **A node names the MCP servers it needs.** `mcp: [chrome-devtools]` on a node,

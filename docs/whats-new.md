@@ -6,7 +6,15 @@ full: the [changelog](../packages/cli/CHANGELOG.md).
 ## Contents
 
 - [Next release](./whats-new/next-release.md)
+- [1.0.0-alpha.19](./whats-new/1.0.0-alpha.19.md)
+- [1.0.0-alpha.18](./whats-new/1.0.0-alpha.18.md)
+- [1.0.0-alpha.17](./whats-new/1.0.0-alpha.17.md)
+- [1.0.0-alpha.16](./whats-new/1.0.0-alpha.16.md)
+- [1.0.0-alpha.15](./whats-new/1.0.0-alpha.15.md)
+- [1.0.0-alpha.14](./whats-new/1.0.0-alpha.14.md)
+- [1.0.0-alpha.13](./whats-new/1.0.0-alpha.13.md)
 - [Earlier releases](./whats-new/earlier-releases.md)
+  - [1.0.0-alpha.5 to 1.0.0-alpha.12](./whats-new/earlier-releases.md#100-alpha5-to-100-alpha12)
   - [1.0.0-alpha.4](./whats-new/earlier-releases.md#100-alpha4)
   - [1.0.0-alpha.2](./whats-new/earlier-releases.md#100-alpha2)
   - [1.0.0-alpha.1](./whats-new/earlier-releases.md#100-alpha1)

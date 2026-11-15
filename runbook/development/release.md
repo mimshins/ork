@@ -47,7 +47,11 @@ without one
    ([ADR-058](../../decisions/ADR-058-plugin-expects-oldest-ork.md)). A plugin
    or skill change that needs something new in Ork raises it to the first Ork
    that has it, and lands only once that Ork is on npm, as Claude Code reads the
-   plugin from `main`.
+   plugin from `main`. Last, [whats-new.ts](../../tools/release/whats-new.ts)
+   cuts [What's new](../../docs/whats-new.md): Next release's notes move to a
+   page named for the new version, the hub lists it first, and Next release
+   starts empty. Read that page in the release pull request: it is what users
+   see of the release.
 3. A maintainer reviews and merges the release pull request.
 4. The workflow runs again with no changesets left and publishes:
    `pnpm run release` builds the bundle and runs `changeset publish`, which

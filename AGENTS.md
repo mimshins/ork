@@ -61,9 +61,14 @@ bug fixes need no plan unless they are architectural.
 
 - **Keep specs true.** A behavior change updates its spec in `specs/` in the
   same change; a spec's Status line says what is built.
-- **Keep the user docs true.** A change users can see updates its guide in
-  [docs/](./docs/README.md) (installation, quickstart, guides) in the same
-  change; the README stays a short entry point that links to them.
+- **Keep the user docs true.** A change users can see (a command, a flag, an
+  output, the browser view, a driver's behavior, what Ork keeps or sends)
+  updates its guide in [docs/](./docs/README.md) (installation, quickstart,
+  guides) and adds a bullet to [Next release](./docs/whats-new/next-release.md)
+  (what changed, with an "Upgrade:" line when something a user relies on
+  breaks), in the same change. This holds for a change made by hand as much as
+  for one an Ork run makes. The README stays a short entry point that links to
+  them; update it when it names what changed.
 - **Record decisions.** A hard-to-reverse choice (including any new runtime
   dependency) gets an ADR in [decisions/](./decisions/README.md); an RFC that
   ships gets one too, and moves to `rfcs/archived/`.

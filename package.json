@@ -32,7 +32,7 @@
     "changesets:create": "changeset add",
     "changesets:empty": "changeset add --empty",
     "changesets:status": "node tools/release/check-changeset.ts",
-    "changesets:version": "changeset version && node tools/release/build-info.ts",
+    "changesets:version": "changeset version && node tools/release/build-info.ts && node tools/release/whats-new.ts",
     "release": "pnpm run build && changeset publish && node tools/release/latest-tag.ts"
   },
   "engines": {

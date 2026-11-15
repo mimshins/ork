@@ -125,6 +125,15 @@ would have been asked about on `claude-code` is refused here, and the session
 sees the refusal and goes on without it. Give the node the tools it needs in its
 `allow` list.
 
+On `command-code`, the rules read as Claude Code's do. A shell line is checked
+command by command: `git status && pnpm test` needs both `Bash(git:*)` and
+`Bash(pnpm:*)` (or rules like them), and a deny on either refuses the line.
+Output may go only to `/dev/null` or another stream (`2>&1`); a line Ork can't
+read, with another redirect, a `$(…)` or backtick substitution, or an unclosed
+quote, runs only under a plain `Bash` rule. Reading inside the worktree needs no
+rule; a path outside it (after links are followed, and anything under `~`) needs
+a `Read` rule.
+
 ## Command Code runs one session per checkout
 
 Command Code keeps Ork's connection in a per-folder setting, so two sessions in

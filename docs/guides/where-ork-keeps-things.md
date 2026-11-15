@@ -46,6 +46,13 @@ the files, the check's name, a time and who ran it
 | `sockets/`                       | one socket per live run, so commands reach it at once                                                                        |
 | `watch/`                         | `ork watch`'s own files, when you use it                                                                                     |
 
+`~/.ork/` is readable only by you: Ork creates it, and the sockets folder, with
+mode `0700`, and `state.db` with `0600`, and tightens an older `~/.ork/` that
+others could read the next time it opens the store. A `claude-code` session's
+MCP servers and settings go to it in files in a private temporary folder, not on
+its command line where other users' `ps` could see them, and the files are
+removed when the session ends.
+
 The browser keeps its own few things for `ork ui`: your layout, theme, what
 you've read, and a banner you dismissed.
 

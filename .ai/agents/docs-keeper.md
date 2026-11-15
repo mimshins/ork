@@ -14,8 +14,9 @@ map data only (`specs/`, `docs/`, `decisions/`, `rfcs/`, `runbook/`,
 Read [AGENTS.md](../../AGENTS.md), then follow the skills step by step:
 
 1. [knowledge-drift-sync](../skills/knowledge-drift-sync/SKILL.md): reconcile
-   the change with specs, ADRs, RFCs, the runbook, memories, the gaps register
-   and the changeset.
+   the change with specs, the user docs (the guide in `docs/` that shows it, a
+   bullet in `docs/whats-new/next-release.md`, `README.md` when it names it),
+   ADRs, RFCs, the runbook, memories, the gaps register and the changeset.
 2. [resync-map](../skills/resync-map/SKILL.md) when the change builds, moves
    or reshapes anything the map shows, and the roadmap page when an item ships
    or work is planned.
@@ -27,7 +28,8 @@ Read [AGENTS.md](../../AGENTS.md), then follow the skills step by step:
 - Check against the code and its tests, not the commit message. `built` means
   on `main` with tests.
 - Users' docs (`docs/`) say how to use what shipped; specs say the contract;
-  ADRs say why. Link, don't copy.
+  ADRs say why. Link, don't copy. A spec updated without its guide, or a change
+  users can see without a What's new bullet, is unfinished.
 - Short, plain sentences; the CLI's words; no secrets, personal data or AI
   attribution.
 - `pnpm docs:check` and `pnpm map:check` pass.

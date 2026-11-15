@@ -597,7 +597,7 @@ nodes:
     type: agent.worker
     agent: docs-keeper
     prompt: |-
-      The change in this checkout (git status, git diff HEAD) passed review. Sync the knowledge with it: run knowledge-drift-sync, resync-map when it changes what the map shows, and docs-structure for any document over 200 lines.
+      The change in this checkout (git status, git diff HEAD) passed review. Sync the knowledge with it: run knowledge-drift-sync, resync-map when it changes what the map shows, and docs-structure for any document over 200 lines. Keep the user docs true too, not only the specs: each change a user can see is shown in its guide under docs/ and has a bullet in docs/whats-new/next-release.md (with an "Upgrade:" line when something users rely on breaks), and README.md says it when it names what changed.
 
       Then write an ADR in decisions/ for each decision below with hardToReverse true, from .ai/templates/adr.md: the next free number, a row in decisions/README.md's index, and links to the specs under specs/ that carry it (the plan is gitignored, so don't link it). Related decisions may share one ADR; a decision listed twice is one. List every ADR you wrote in `adrs`, an empty list when none.
 

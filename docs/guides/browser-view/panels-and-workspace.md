@@ -17,13 +17,14 @@ they're listed under the runs, with whether each is live. Accepting one takes a
 terminal.
 
 **Monitor** draws the run as it goes, beside the same nodes as a tree. Each node
-shows its status, cost, tokens and model. A node that
-[runs once per item](../writing-workflows/running-per-item.md) is one card, and
-its status line says how far it is, such as `3 of 8, 1 failed`; its items are
-rows under it in the tree, `build.0` to `build.7`, and open and close with the
-node. Select an item for its own controls and logs. Select a node for its own
-controls. Stopping asks first and says what will happen: a stopped node fails,
-and the workflow's failure rules apply; a stopped run can be resumed.
+shows its status, cost, tokens and model. The tree's heading folds it away to
+**Nodes (n)** and opens it again, and the browser remembers which you chose. A
+node that [runs once per item](../writing-workflows/running-per-item.md) is one
+card, and its status line says how far it is, such as `3 of 8, 1 failed`; its
+items are rows under it in the tree, `build.0` to `build.7`, and open and close
+with the node. Select an item for its own controls and logs. Select a node for
+its own controls. Stopping asks first and says what will happen: a stopped node
+fails, and the workflow's failure rules apply; a stopped run can be resumed.
 **Resume…**, on a run that stopped, failed or crashed, asks first, shows the
 `ork resume` command it stands for, and picks the run up where it left off, in
 the background. A node that called another workflow links to that run, and one
@@ -53,12 +54,12 @@ A decision reads as Markdown, never as raw HTML. A code block has a copy button,
 and text past about 20 lines folds behind **Show all**. **Read document** opens
 what a gate gave to read in a dialog of its own; `Escape` closes it and you are
 back on the same card. The filter bar takes a **Workflow**, a **Run** and a
-**Project**, suggesting the ones with open decisions, and says how many
-decisions match; only the panel is filtered, and the filter stays as you left it
-in this browser. In the Monitor, a run with open decisions shows **N decisions
-waiting**, which opens them filtered to that run. If `ork ui` stops while you
-read, the answer buttons turn off and each option shows its `ork decide`
-command.
+**Project**, suggesting the ones with open decisions first and then the other
+runs it knows, and says how many decisions match; only the panel is filtered,
+and the filter stays as you left it in this browser. In the Monitor, a run with
+open decisions shows **N decisions waiting**, which opens them filtered to that
+run. If `ork ui` stops while you read, the answer buttons turn off and each
+option shows its `ork decide` command.
 
 **Chats** keeps one thread per leader or worker, with what it said, what you
 said, and what it did in between. While the run is live, `Enter` sends and

@@ -100,7 +100,9 @@ their public entry point. oxlint enforces this.
   real wait, and one that needs a git repository copies a shared fixture where
   there is one ([check once](./specs/check-once.md#a-cheaper-suite)).
 - A behavior change updates its spec in [specs/](./specs/README.md) and the user
-  guide that covers it; a hard-to-reverse choice gets an ADR.
+  guide that covers it, and a change users can see adds a bullet to
+  [Next release](./docs/whats-new/next-release.md), which becomes the version's
+  What's new page when it ships; a hard-to-reverse choice gets an ADR.
 - After a schema change, run `pnpm --dir packages/schema gen:json-schema` and
   commit `workflow.schema.json`.
 - Keep `examples/*.ork.yaml` in canonical form; they are formatted by Ork's own
