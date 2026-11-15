@@ -47,9 +47,6 @@ simpler, or could not be checked.
   edge is `ok || !ok`, so it is always taken, and `decide` is skipped when no
   tester passed (count 0). The run then ends `succeeded` where it ended `failed`
   before. Revisit with a `!ok` path that still fails the run.
-- **L348 · `stop` finds processes with `ps -axo`, checked only on macOS.** Its
-  output format on Linux (procps) is unchecked, so on Linux `stop` may miss a
-  process or match the wrong column. Revisit when a QA pass runs on Linux.
 - **L349 · The kit assumes one `TMPDIR`.** `setup` puts the root beside the
   tarball inside pack's `mktemp` folder, and `commit` and `stop` compare it to
   `os.tmpdir()`. If pack and the tester's session have different `TMPDIR`s,
