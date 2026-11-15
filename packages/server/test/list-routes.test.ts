@@ -150,7 +150,11 @@ describe("GET /api/decisions, /api/usage filters", () => {
     ]);
     expect(await idsOf(server, "/api/decisions?workflow=gone")).toEqual([]);
     expect(await idsOf(server, "/api/decisions?run=bbb")).toEqual(["d-live"]);
-    expect((await server.get("/api/decisions?run=zzz")).status).toBe(404);
+    const unknown = await server.get("/api/decisions?run=zzz");
+    expect(unknown.status).toBe(400);
+    expect(await unknown.json()).toEqual({
+      error: "--run finds no run: No run `zzz`.",
+    });
   });
 
   it("takes an age or a day, and still an ISO time, for since and until", async () => {

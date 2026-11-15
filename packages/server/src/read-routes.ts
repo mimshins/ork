@@ -198,7 +198,10 @@ export const readRoutes = (context: ServerContext): ReadRoutes => ({
       );
     }
     const found = runOf(context, run);
-    if (!found.ok) return found.refusal;
+    // A run that isn't there is a refused filter value, named by its flag.
+    if (!found.ok) {
+      return fail(400, `--run finds no run: ${found.refusal.error}`);
+    }
     return ok(
       pendingDecisions(context.store, { ...workflow, runId: found.run.id }),
     );

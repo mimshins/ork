@@ -170,12 +170,7 @@ export const printCalls = async (
     { follow: options.follow, ...pollOf(options) },
   );
   if (end === "crashed") {
-    out(
-      style(
-        "red",
-        `run ${root.id} stopped without finishing (its process is gone)`,
-      ),
-    );
+    out(style("red", `run ${root.id} crashed: its process is gone`));
   }
   if (!options.follow || options.json) return;
   for (const id of stillRunning) {

@@ -258,8 +258,13 @@ export const countsLine = (
       : `${String(shown)} of ${String(loaded)} loaded`
   }${latest > loaded ? `, ${String(latest)} in the run` : ""}`;
 
-export const logsCommand = (runId: string, node: string | null): string =>
-  `ork logs ${runId}${node === null ? "" : ` --node ${node}`} --follow`;
+/** The `ork logs` that shows the same: `--follow` only while the run is live. */
+export const logsCommand = (
+  runId: string,
+  node: string | null,
+  live = true,
+): string =>
+  `ork logs ${runId}${node === null ? "" : ` --node ${node}`}${live ? " --follow" : ""}`;
 
 export const timeOf = (iso: string): string =>
   new Date(iso).toLocaleTimeString(undefined, {

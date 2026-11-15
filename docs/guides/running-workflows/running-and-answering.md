@@ -103,8 +103,10 @@ read.
 A workflow that declares `outputs:` has them printed under the summary line, one
 per key (`integrated: #1`); `ork logs` and `ork attach` print the same, and the
 run's page in `ork ui` shows them in a card. A value of more than 20 lines or
-2,000 characters is cut, with `… cut; full value: ork logs <run> --json`. A
-resumed run's line counts the nodes it kept from the earlier run on their own:
+2,000 characters is cut, with `… cut; full value: ork logs <run> --json`.
+Outputs are text: a number a node reported is `"3"` in `--json`, and a key whose
+node never ran (a run that failed before it) prints as `(empty)`. A resumed
+run's line counts the nodes it kept from the earlier run on their own:
 `1 ran, 1 kept, 0 skipped`.
 
 The summary starts with an `OK`, `FAIL` or `WAIT` chip (`WAIT` is a run that

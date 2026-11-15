@@ -18,13 +18,14 @@ terminal.
 
 **Monitor** draws the run as it goes, beside the same nodes as a tree. Each node
 shows its status, cost, tokens and model. The tree's heading folds it away to
-**Nodes (n)** and opens it again, and the browser remembers which you chose. A
-node that [runs once per item](../writing-workflows/running-per-item.md) is one
-card, and its status line says how far it is, such as `3 of 8, 1 failed`; its
-items are rows under it in the tree, `build.0` to `build.7`, and open and close
-with the node. Select an item for its own controls and logs. Select a node for
-its own controls. Stopping asks first and says what will happen: a stopped node
-fails, and the workflow's failure rules apply; a stopped run can be resumed.
+**Nodes (n)**, n being how many nodes the run has, and opens it again, and the
+browser remembers which you chose. A node that
+[runs once per item](../writing-workflows/running-per-item.md) is one card, and
+its status line says how far it is, such as `3 of 8, 1 failed`; its items are
+rows under it in the tree, `build.0` to `build.7`, and open and close with the
+node. Select an item for its own controls and logs. Select a node for its own
+controls. Stopping asks first and says what will happen: a stopped node fails,
+and the workflow's failure rules apply; a stopped run can be resumed.
 **Resume…**, on a run that stopped, failed or crashed, asks first, shows the
 `ork resume` command it stands for, and picks the run up where it left off, in
 the background. A node that called another workflow links to that run, and one

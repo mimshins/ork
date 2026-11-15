@@ -43,10 +43,12 @@ export type TipProps = {
   cli?: string | undefined;
   /** The keys that do the same, one entry per key. */
   keys?: readonly string[] | undefined;
+  /** Shows nothing while set (a field being typed in needs no hint over it). */
+  disabled?: boolean | undefined;
 };
 
-export const Tip = ({ children, label, cli, keys }: TipProps) => (
-  <Tooltip.Root>
+export const Tip = ({ children, label, cli, keys, disabled }: TipProps) => (
+  <Tooltip.Root disabled={disabled === true}>
     <Tooltip.Trigger render={children} />
     <Tooltip.Portal>
       <Tooltip.Positioner

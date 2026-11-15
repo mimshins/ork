@@ -96,15 +96,15 @@ set there is the same words as the flags: a select for a field with fixed values
 (`--workflow`, `--run`, `--project`, `--for`, and `--since` and `--until`, which
 take an age such as `24h` or a day such as `2026-11-01`). In Runs and Decisions,
 **Workflow**, **Run** and **Project** suggest the values the panel knows, and
-the fields sit in a grid that wraps to one column in a narrow panel. **Project**
-shows when the list holds more than one project, registered or not. A value is
-applied when you press `Enter`, leave the field or choose a suggestion; a wrong
-one shows the CLI's message under the bar and the list keeps the last filter
-that worked (the unfiltered list, if none has). While a filter is set the bar
-shows the matching command, for a terminal (the last one that worked, never the
-refused one), and **Clear filter**. A panel keeps its own default (follow-ups:
-open; feedback: open, not dismissed or resolved; usage: the last 30 days), shown
-in the field until you set one.
+the fields sit in a grid that follows the panel's width, not the window's, down
+to one column in a narrow panel. **Project** shows when the list holds more than
+one project, registered or not. A value is applied when you press `Enter`, leave
+the field or choose a suggestion; a wrong one shows the CLI's message under the
+bar and the list keeps the last filter that worked (the unfiltered list, if none
+has). While a filter is set the bar shows the matching command, for a terminal
+(the last one that worked, never the refused one), and **Clear filter**. A panel
+keeps its own default (follow-ups: open; feedback: open, not dismissed or
+resolved; usage: the last 30 days), shown in the field until you set one.
 
 The `runs`, `usage` and `decisions` tools of `ork mcp` take the same fields, and
 a model asking for `status: "crashed"` or `since: "24h"` gets the CLI's words

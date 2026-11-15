@@ -286,6 +286,10 @@ const openFiltered = async (
   return { ...opened, asked };
 };
 
+/** How many times the Since field's hint shows: its hidden help, and its tip. */
+const hints = (): number =>
+  screen.queryAllByText(/^Only runs started since/u).length;
+
 const chooseStatus = async (name: string): Promise<void> => {
   await userEvent.click(
     await screen.findByRole("combobox", { name: "Status" }),
@@ -339,6 +343,24 @@ describe("the Runs panel's filter bar", () => {
       "--workflow takes a workflow name, not x y.",
     );
     expect(rowNames()).toHaveLength(1);
+  });
+
+  it("shows a field's hint on hover, and not while it is typed in", async () => {
+    await openFiltered(() => []);
+    const since = await screen.findByRole("combobox", { name: "Since" });
+    expect(hints()).toBe(1);
+    await userEvent.hover(since);
+    await vi.waitFor(() => {
+      expect(hints()).toBe(2);
+    });
+    await userEvent.click(since);
+    await userEvent.keyboard("7d");
+    await vi.waitFor(() => {
+      expect(hints()).toBe(1);
+    });
+    await userEvent.unhover(since);
+    await userEvent.hover(since);
+    expect(hints()).toBe(1);
   });
 
   it("keeps the last good rows and command when the panel is drawn again", async () => {

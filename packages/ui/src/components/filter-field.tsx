@@ -6,6 +6,7 @@
  */
 
 import type { ListFieldInfo } from "@krapht/ork-server/client";
+import { type FocusEvent, useState } from "react";
 
 import { FilterInput, type Suggestion } from "./filter-input.tsx";
 import { labelOf } from "./filter-model.ts";
@@ -100,10 +101,23 @@ export const FilterField = ({
   const help = `${idPrefix}-${name}-help`;
   const refused = alertId !== undefined;
   const describedBy = refused ? `${help} ${alertId}` : help;
+  // While focus is in the field, its hint would only cover the next field.
+  const [inside, setInside] = useState(false);
   return (
-    <Tip label={field.description}>
+    <Tip
+      disabled={inside}
+      label={field.description}
+    >
       <div
         className={styles["field"]}
+        onBlur={(event: FocusEvent<HTMLDivElement>) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setInside(false);
+          }
+        }}
+        onFocus={() => {
+          setInside(true);
+        }}
         data-narrow={
           field.type === "since" || field.type === "until" ? "" : undefined
         }

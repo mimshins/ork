@@ -64,7 +64,8 @@ question left open when the run stopped is asked again. The run keeps its id,
 its inputs and its flags, and picks up the worktrees it left. It reads the
 workflow file again, so you can fix a step before resuming. A run that ran out
 of budget counts what it already spent: raise `limits.budgetUsd` (or
-`limits.budgetTokens`) first.
+`limits.budgetTokens`) first. A node that runs again counts as its next round,
+so `ork tree` and the transcript show it as `running (round 2)`.
 
 ## One node on its own
 

@@ -121,9 +121,7 @@ export const attachRun = async (
   prompts?.abort();
   await prompts?.settled();
   if (end === "crashed") {
-    show(basePath, [
-      say("red", `run ${root} stopped without finishing (its process is gone)`),
-    ]);
+    show(basePath, [say("red", `run ${root} crashed: its process is gone`)]);
   }
   for (const id of stillRunning) {
     out(say("dim", `↳ run ${id} still running · ork attach ${id}`));

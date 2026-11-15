@@ -9,6 +9,7 @@ import {
   type EventStore,
   followEvents,
   isNodeEvent,
+  liveStatus,
   type ListFilter,
   type ListTable,
   type RunRecord,
@@ -167,12 +168,8 @@ export const followRun = async (
       ...(options.signal === undefined ? {} : { signal: options.signal }),
     },
   );
-  if (end === "crashed") {
-    out(
-      style(
-        "red",
-        `run ${run.id} stopped without finishing (its process is gone)`,
-      ),
-    );
+  // Read back, not followed, a crashed run ends on its last event: say so too.
+  if (end === "crashed" || (!options.follow && liveStatus(run) === "crashed")) {
+    out(style("red", `run ${run.id} crashed: its process is gone`));
   }
 };

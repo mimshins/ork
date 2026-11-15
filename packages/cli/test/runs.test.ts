@@ -641,3 +641,35 @@ describe("run lookup and formatting", () => {
     ]);
   });
 });
+
+/** A process that has exited: a run it held reads as crashed. */
+const exitedPid = (): number => spawnSync("true").pid ?? 0;
+
+describe("ork logs of a crashed run, read back", () => {
+  it("ends with the line that says it crashed", async () => {
+    const store = openStore(":memory:");
+    const begun = store.begin({
+      id: "r9",
+      workflow: "w",
+      file: "/p/w.ork.yaml",
+      project: "/p",
+    });
+    store.append("r9", {
+      type: "node.started",
+      id: "a",
+      nodeType: "tool.shell",
+      round: 1,
+    });
+    const crashed = { ...begun, pid: exitedPid() };
+    const lines: string[] = [];
+    await followRun(
+      store,
+      crashed,
+      line => {
+        lines.push(line);
+      },
+      { follow: false, json: false },
+    );
+    expect(lines.at(-1)).toContain("run r9 crashed: its process is gone");
+  });
+});

@@ -4,7 +4,7 @@
  */
 
 import { use, useEffect, useMemo, useRef, useState } from "react";
-import { useValue } from "react-containerized-state";
+import { useComputedValue, useValue } from "react-containerized-state";
 
 import { useAppState } from "../state/context.tsx";
 import { WorkspaceContext } from "../workspace/context.ts";
@@ -30,6 +30,11 @@ export const RunLogs = ({
   const feed = useMemo(() => state.feedOf(runId), [state, runId]);
   useEffect(() => state.retainRun(runId), [state, runId]);
   const events = useValue(feed.state);
+  // An ended run has nothing to follow: Follow only jumps to its newest events.
+  const live = useComputedValue(state.runs, list => {
+    const status = list?.find(run => run.id === runId)?.live;
+    return status === undefined || status === "running" || status === "paused";
+  });
   const [type, setType] = useState<string | null>(null);
   const [text, setText] = useState("");
   const shown = useMemo(
@@ -66,9 +71,10 @@ export const RunLogs = ({
       />
       <div className={styles["main"]}>
         <LogStatus
-          cli={logsCommand(runId, node)}
+          cli={logsCommand(runId, node, live)}
           events={events}
           feed={feed}
+          live={live}
           shown={shown.length}
         />
         {events.error === null ? null : <LogError error={events.error} />}

@@ -303,9 +303,7 @@ describe("attachRun", () => {
         { intervalMs: 5 },
       ),
     ).resolves.toMatchObject({ exitCode: 1 });
-    expect(lines).toContain(
-      "run root0000 stopped without finishing (its process is gone)",
-    );
+    expect(lines).toContain("run root0000 crashed: its process is gone");
   });
 
   it("exits 1 when the root was stopped without finishing", async () => {

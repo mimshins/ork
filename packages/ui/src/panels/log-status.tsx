@@ -18,10 +18,13 @@ export const LogStatus = ({
   shown,
   feed,
   cli,
+  live = true,
 }: {
   events: RunEvents;
   shown: number;
   feed: RunFeed;
+  /** The run is running or paused: Follow reads as on only then. */
+  live?: boolean;
   /** The command that shows the same. */
   cli: string;
 }) => {
@@ -43,7 +46,7 @@ export const LogStatus = ({
         Load older
       </Button>
       <Button
-        aria-pressed={events.following}
+        aria-pressed={events.following && live}
         cli={cli}
         onClick={() => {
           if (events.following) feed.hold();
@@ -51,7 +54,7 @@ export const LogStatus = ({
         }}
         variant="ghost"
       >
-        {events.following ? <IconCheck /> : null}
+        {events.following && live ? <IconCheck /> : null}
         Follow{behind > 0 ? ` (${String(behind)} new)` : ""}
       </Button>
     </div>

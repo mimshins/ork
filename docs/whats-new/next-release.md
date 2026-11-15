@@ -51,3 +51,10 @@ _Part of [What's new](../whats-new.md)._
   (`plan › `), not `call › `. Upgrade: if you saved the zsh completion script to
   a file, run `ork completion zsh` into it again
   ([tab completion](../guides/tab-completion.md)).
+- **`ork ui` and crashed runs, from the same QA pass.** A filter field's hint no
+  longer covers the next field while you type in it. The Decisions filter shows
+  an unknown run as a refused value, keeping the last command that worked. The
+  Logs panel shows Follow on only for a live run, and its command has no
+  `--follow` for an ended one. `ork logs` of a crashed run ends with
+  `run <id> crashed: its process is gone`, as `ork logs -f` and `ork attach` now
+  say too ([looking back](../guides/running-workflows/looking-back.md)).
