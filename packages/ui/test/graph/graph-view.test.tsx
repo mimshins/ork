@@ -81,6 +81,8 @@ describe("the graph", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    // A failing test must not leave its spies to the next file in the worker.
+    vi.restoreAllMocks();
   });
 
   it("names each node with its id, status, cost, tokens, model and type", () => {
@@ -221,7 +223,6 @@ describe("the graph", () => {
     await vi.waitFor(async () => {
       await expect(transformOf(layer)).resolves.not.toBe(before);
     });
-    vi.restoreAllMocks();
   });
 
   it("says each node's edges in words", () => {

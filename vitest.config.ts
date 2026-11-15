@@ -68,6 +68,13 @@ export default defineConfig({
           testTimeout: 15_000,
           include: ["packages/ui/test/**/*.test.{ts,tsx}"],
           environment: "jsdom",
+          // The files of a worker share one module graph (React, dockview and
+          // the app are imported once, not per file) and the jsdom window.
+          // Measured: the UI project's CPU fell from ~160 to ~65 s. A file
+          // that stubs a global or leaves DOM behind must undo it: no UI test
+          // mocks a module, and the suite passes shuffled.
+          isolate: false,
+          unstubGlobals: true,
         },
       },
     ],

@@ -58,7 +58,9 @@ describe("Remove…", () => {
     expect(
       screen.getByRole("dialog", { name: "Remove ork/4f2a1c/build" }),
     ).toBeDefined();
-    expect(document.activeElement?.textContent).toBe("Cancel");
+    await vi.waitFor(() => {
+      expect(document.activeElement?.textContent).toBe("Cancel");
+    });
     expect(
       dialog().getByText(
         "cd /code/app && ork worktrees remove ork/4f2a1c/build",

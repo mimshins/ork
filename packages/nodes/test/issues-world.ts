@@ -9,6 +9,7 @@
 import { execFileSync } from "node:child_process";
 import {
   chmodSync,
+  cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -111,8 +112,7 @@ type WorldOptions = {
   noCommit?: boolean;
 };
 
-export const world = (options: WorldOptions = {}): World => {
-  const base = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-issues-")));
+const buildWorld = (base: string, options: WorldOptions): World => {
   const remote = path.join(base, "remote.git");
   const project = path.join(base, "app");
   const gh = path.join(base, "gh");
@@ -142,6 +142,30 @@ export const world = (options: WorldOptions = {}): World => {
   writeFileSync(bin, FAKE_GH);
   chmodSync(bin, 0o755);
   return { base, project, remote, gh };
+};
+
+const tempBase = (): string =>
+  realpathSync(mkdtempSync(path.join(tmpdir(), "ork-issues-")));
+
+/** The default world, built once per worker and copied for each test. */
+let template: World | undefined;
+
+export const world = (options: WorldOptions = {}): World => {
+  const base = tempBase();
+  if (options.noOrigin === true || options.noCommit === true) {
+    return buildWorld(base, options);
+  }
+  template ??= buildWorld(tempBase(), {});
+  cpSync(template.base, base, { recursive: true });
+  const remote = path.join(base, "remote.git");
+  // The copy's `origin` still names the template's remote.
+  git(path.join(base, "app"), "remote", "set-url", "origin", remote);
+  return {
+    base,
+    project: path.join(base, "app"),
+    remote,
+    gh: path.join(base, "gh"),
+  };
 };
 
 /** The issues the fake `gh` knows, as `gh` would print them. */

@@ -1,10 +1,11 @@
 /**
  * @file Tests for checks run once (`ork once`): the key is the working tree's
  *   files, a pass is kept in the common git folder for every worktree, only a
- *   pass on identical files skips a check, and passes are pruned.
+ *   pass on identical files skips a check, pathspecs (`on`) narrow the files
+ *   that count, and passes are pruned.
  */
 
-import { mkdtempSync, readdirSync, realpathSync } from "node:fs";
+import { mkdtempSync, readdirSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -13,6 +14,7 @@ import { describe, expect, it } from "vitest";
 import {
   findPass,
   onceDirOf,
+  OncePathspecError,
   prunePasses,
   recordPass,
   runOnce,
@@ -156,6 +158,90 @@ describe("runOnce", () => {
     const check = counting();
     await once(folder, check);
     await once(folder, check);
+    expect(check.runs).toBe(2);
+  });
+});
+
+describe("runOnce with pathspecs (on)", () => {
+  const on = ["src", ":(exclude)src/docs"];
+
+  it("hits after an edit outside the pathspecs", async () => {
+    const root = repo();
+    const check = counting();
+    await once(root, check, { on });
+    write(root, "CLAUDE.md", "# Edited\n");
+    write(root, "src/docs/guide.md", "excluded\n");
+    const second = await once(root, check, { on });
+    expect(second.skipped).toBe(true);
+    expect(check.runs).toBe(1);
+  });
+
+  it("misses after an edit, a new untracked file or a deletion inside them", async () => {
+    const root = repo();
+    const check = counting();
+    await once(root, check, { on });
+    write(root, "src/app.ts", "export const edited = 1;\n");
+    await once(root, check, { on });
+    write(root, "src/other.ts", "export {};\n");
+    await once(root, check, { on });
+    rmSync(path.join(root, "src/app.ts"));
+    const deleted = await once(root, check, { on });
+    expect(deleted.skipped).toBe(false);
+    expect(check.runs).toBe(4);
+  });
+
+  it("does not share a pass between different pathspec lists or the whole tree", async () => {
+    const root = repo();
+    const check = counting();
+    await once(root, check, { on });
+    await once(root, check, { on: ["src"] });
+    await once(root, check);
+    await once(root, check, { on: ["src"] });
+    expect(check.runs).toBe(3);
+  });
+
+  it("keys the files the pathspecs match, not the tree", async () => {
+    const root = repo();
+    const before = await treeKeyOf(root, { on });
+    write(root, "CLAUDE.md", "# Edited\n");
+    const after = await treeKeyOf(root, { on });
+    expect(after.files).toBe(before.files);
+    expect(after.tree).not.toBe(before.tree);
+    expect((await treeKeyOf(root)).files).toBeUndefined();
+  });
+
+  it("records nothing when a matched file changes while the check runs", async () => {
+    const root = repo();
+    const result = await once(
+      root,
+      {
+        run: () => {
+          write(root, "src/app.ts", "export const late = 1;\n");
+          return Promise.resolve(0);
+        },
+      },
+      { on },
+    );
+    expect(result.pass).toBeUndefined();
+  });
+
+  it("rejects a pathspec git rejects, without running the check", async () => {
+    const root = repo();
+    const check = counting();
+    await expect(
+      once(root, check, { on: [":(bogus)src"] }),
+    ).rejects.toBeInstanceOf(OncePathspecError);
+    await expect(once(root, check, { on: ["../outside"] })).rejects.toThrow(
+      /outside repository/u,
+    );
+    expect(check.runs).toBe(0);
+  });
+
+  it("always runs outside a git repository", async () => {
+    const folder = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-once-")));
+    const check = counting();
+    await once(folder, check, { on });
+    await once(folder, check, { on });
     expect(check.runs).toBe(2);
   });
 });

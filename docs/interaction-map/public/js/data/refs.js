@@ -795,6 +795,10 @@ export const CHECK_ONCE = {
     "decisions/ADR-082-check-once-keyed-by-files.md",
     "ADR-082: checks keyed by the files, passes in the git folder",
   ),
+  adrOn: d(
+    "decisions/ADR-092-check-once-on-pathspecs.md",
+    "ADR-092: `--on`, a check keyed by the files it reads",
+  ),
 };
 
 export const TIMEOUTS = {

@@ -8,7 +8,7 @@
 
 import { spawn } from "node:child_process";
 
-import { runOnce } from "@krapht/ork-core";
+import { OncePathspecError, runOnce } from "@krapht/ork-core";
 import { defineCommand, parseArgs } from "citty";
 
 import { style, write, writeErr } from "../output.ts";
@@ -22,6 +22,11 @@ const args = {
   covers: {
     type: "string",
     description: "Also record the pass for this name (repeat for more)",
+  },
+  on: {
+    type: "string",
+    description:
+      "A git pathspec the check depends on; only matching files key it (repeat for more)",
   },
   "with-head": {
     type: "boolean",
@@ -47,10 +52,20 @@ const exitCodeOf = (command: readonly string[]): Promise<number> =>
     });
   });
 
-const listOf = (value: unknown): string[] =>
-  [value]
-    .flat()
-    .filter((item): item is string => typeof item === "string" && item !== "");
+/**
+ * Every use of a repeatable flag, `--flag v` or `--flag=v`: citty keeps only
+ * the last. Not `run.ts`'s `flagValues`, which would load the run command's
+ * imports on every `ork once`.
+ */
+const listOf = (before: readonly string[], flag: string): string[] =>
+  before.flatMap((arg, index) => {
+    const value = arg.startsWith(`${flag}=`)
+      ? arg.slice(flag.length + 1)
+      : arg === flag
+        ? before[index + 1]
+        : undefined;
+    return value === undefined || value === "" ? [] : [value];
+  });
 
 export const once = defineCommand({
   meta: {
@@ -64,26 +79,37 @@ export const once = defineCommand({
     const command = split === -1 ? [] : rawArgs.slice(split + 1);
     if (command.length === 0) {
       writeErr(
-        "Say what to run after --: ork once [--as <name>] [--covers <name>] [--with-head] [--force] -- <command…>",
+        "Say what to run after --: ork once [--as <name>] [--covers <name>]… [--on <pathspec>]… [--with-head] [--force] -- <command…>",
       );
       process.exitCode = 1;
       return;
     }
     // citty must not read the command's own flags as ours.
-    const given = parseArgs(rawArgs.slice(0, split), args);
+    const before = rawArgs.slice(0, split);
+    const given = parseArgs(before, args);
     const run = process.env["ORK_RUN"];
     const node = process.env["ORK_NODE"];
     const result = await runOnce({
       cwd: process.cwd(),
       name: given["as"] ?? command.join(" "),
-      covers: listOf(given["covers"]),
+      covers: listOf(before, "--covers"),
+      on: listOf(before, "--on"),
       withHead: given["with-head"] === true,
       force: given["force"] === true,
       ...(run === undefined || node === undefined
         ? {}
         : { who: `${run}/${node}` }),
       run: () => exitCodeOf(command),
+    }).catch((error: unknown) => {
+      // A bad pathspec is a usage error: the command did not run.
+      if (!(error instanceof OncePathspecError)) throw error;
+      writeErr(error.message);
+      return null;
     });
+    if (result === null) {
+      process.exitCode = 1;
+      return;
+    }
     if (result.skipped) {
       write(
         `${style("green", "✓")} check already passed on these files · ${ago(result.pass.at)} · ${result.pass.who}`,

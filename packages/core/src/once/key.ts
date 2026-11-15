@@ -4,9 +4,10 @@
  *   written through a temporary index so the real one is untouched, with `HEAD`
  *   and the repository's common git folder, where passes are kept for every
  *   worktree. The key is the files, not the commit: a commit or a no-op rebase
- *   keeps it.
+ *   keeps it. With pathspecs (`--on`), only the files they match count.
  */
 
+import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -20,14 +21,40 @@ export type TreeKey = {
   head: string | null;
   /** The repository's common git folder, shared by its worktrees. */
   commonDir: string;
+  /**
+   * With pathspecs: the sha256 of the files they match (`git ls-files -s`),
+   * used in place of `tree`. Absent without them.
+   */
+  files?: string;
+  /** The pathspecs `files` was taken on; absent or empty for the whole tree. */
+  on?: readonly string[];
 };
+
+export type TreeKeyOptions = {
+  /** Git pathspecs, relative to `cwd`, the check depends on. */
+  on?: readonly string[];
+};
+
+/** Git rejected the pathspecs: a usage error, never a silent hit. */
+export class OncePathspecError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OncePathspecError";
+  }
+}
+
+/** The part of the key a pass is matched on: the files, else the tree. */
+export const filesOf = (key: TreeKey): string => key.files ?? key.tree;
 
 /**
  * The key of the files in the worktree at `cwd`. Rejects outside a git
- * repository. Starts from a copy of the real index, so git hashes only the
- * files whose stat changed.
+ * repository, and with `OncePathspecError` when git rejects `on`. Starts from a
+ * copy of the real index, so git hashes only the files whose stat changed.
  */
-export const treeKeyOf = async (cwd: string): Promise<TreeKey> => {
+export const treeKeyOf = async (
+  cwd: string,
+  { on = [] }: TreeKeyOptions = {},
+): Promise<TreeKey> => {
   const [commonDir = "", index = ""] = (
     await gitOk(cwd, ["rev-parse", "--git-common-dir", "--git-path", "index"])
   )
@@ -40,11 +67,25 @@ export const treeKeyOf = async (cwd: string): Promise<TreeKey> => {
     await gitOk(cwd, ["add", "-A"], env);
     const tree = (await gitOk(cwd, ["write-tree"], env)).trim();
     const head = await git(cwd, ["rev-parse", "--verify", "-q", "HEAD"]);
-    return {
+    const key: TreeKey = {
       tree,
       head: head.code === 0 ? head.stdout.trim() : null,
       commonDir,
     };
+    if (on.length === 0) return key;
+    // Full names, so the same pathspec from two folders never lists alike.
+    const listed = await git(
+      cwd,
+      ["ls-files", "-s", "-z", "--full-name", "--", ...on],
+      env,
+    );
+    if (listed.code !== 0) {
+      throw new OncePathspecError(
+        `git rejected the pathspecs ${on.join(" ")}: ${listed.stderr.trim()}`,
+      );
+    }
+    const files = createHash("sha256").update(listed.stdout).digest("hex");
+    return { ...key, files, on: [...on] };
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }

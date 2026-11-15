@@ -105,6 +105,49 @@ left for other runs, went down by about 47%.
 | `packages/core/test/watch.test.ts` (fake timers)          |  9.7 s | 0.3 s |
 | `packages/core/test/walk-fuzz.test.ts` (100 runs locally) |  7.6 s | 1.4 s |
 
+### The UI project, before and after sharing the DOM
+
+`vitest run --project ui` (112 files, 1,953 tests), on the same 12-core laptop
+with 4 workers, lightly loaded (other work running, load about 4 to 10). Wall is
+`real`; CPU is user plus system from `/usr/bin/time -l`. The split is Vitest's
+own (`Duration` line), a share of the wall time.
+
+| What ran                                              | Wall                   |      CPU-s | Tests | Import | Environment |
+| ----------------------------------------------------- | ---------------------- | ---------: | ----: | -----: | ----------: |
+| Before: every file in its own module graph and window | 35.0 s, 35.6 s         |   151, 162 |   48% |    26% |         25% |
+| After: `isolate: false` for the UI project            | 14.7 s, 15.1 s, 14.7 s | 49, 51, 49 |   49% |     3% |         48% |
+
+Wall time fell by about 58% and CPU by about 68%. The time spent inside the
+tests (the sum of their own durations) fell only 14%, from 59 s to 51 s: the
+saving is the import each file paid again (React, dockview and the app, about a
+quarter of the wall time before). The jsdom environment still starts per file.
+The slowest file is `panels/followups-panel.test.tsx` at 4.6 s before and 4.8 s
+after; no UI file is near 15 s.
+
+What `isolate: false` needs, and what was tried:
+
+- No UI test mocks a module, so a shared module graph is safe; a file's DOM,
+  stubbed globals (`unstubGlobals: true` undoes them after each test) and timers
+  are the state that can reach the next file. Two files showed races under
+  shuffle (one of them also without sharing): `feedback-arrival` cancels the
+  frame it asked for and lets Open run's frame pass before moving the focus;
+  `worktrees-dialogs` waits for the focus to land on Cancel. Their assertions
+  are unchanged.
+- The UI project passed 8 runs in a row with `--sequence.shuffle`, and 4
+  without.
+- `--pool=threads` measured the same as forks (14.4 s); `vmThreads` fails 5
+  Builder tests, so the pool stays as it was.
+- Not changed, for no measured gain or no need: the Node project (no file is
+  over 15 s alone; the slowest, `packages/nodes/test/issues-example.test.ts`,
+  took 14.6 s in a loaded full run) and `packages/cli/test/once.test.ts`
+  (copying one repository per test instead of `git init` saved about 4% of its
+  CPU, 8.4 s against 8.8 s, so it stays as it was). The `issues` example's world
+  is copied from one template per worker: that file's CPU fell from 8.8 s to 7.6
+  s (about 14%).
+
+The Node project's before numbers, on the same day: 313 files, 4,845 tests, 74 s
+wall, 258 CPU-s (tests 83%, import 15%).
+
 ### A build measured again
 
 Ork's checks in three build runs, from the CPU each tool command records (user

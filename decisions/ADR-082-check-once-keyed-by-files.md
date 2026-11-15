@@ -5,6 +5,8 @@
 - **Topic:** CLI, workflow format, core, project rules
 - **RFC:** waived — the maintainer decided this directly in discussion on
   2026-11-11 (plan "Check once")
+- **Related:** [ADR-092](./ADR-092-check-once-on-pathspecs.md) adds `--on`, a
+  key by some files
 
 ## Context
 

@@ -18,12 +18,13 @@ import {
 } from "node:fs";
 import path from "node:path";
 
-import type { TreeKey } from "./key.ts";
+import { filesOf, type TreeKey } from "./key.ts";
 
 /** A check that passed on these files. */
 export type OncePass = {
   /** The check's name (`--as`, or a name it covers). */
   name: string;
+  /** The tree's id, or the hash of the files the pathspecs matched. */
   tree: string;
   head: string | null;
   /** Node's version when it ran (`process.version`). */
@@ -41,11 +42,18 @@ export const ONCE_MAX_ENTRIES = 500;
 export const onceDirOf = (commonDir: string): string =>
   path.join(commonDir, "ork-once");
 
-const fileOf = (dir: string, name: string, tree: string, node: string) =>
+/** Without pathspecs the name key is unchanged, so earlier passes still hit. */
+const fileOf = (dir: string, name: string, key: TreeKey, node: string) =>
   path.join(
     dir,
     `${createHash("sha256")
-      .update(JSON.stringify([name, tree, node]))
+      .update(
+        JSON.stringify(
+          key.on === undefined || key.on.length === 0
+            ? [name, key.tree, node]
+            : [name, filesOf(key), node, key.on],
+        ),
+      )
       .digest("hex")}.json`,
   );
 
@@ -96,8 +104,8 @@ export const findPass = ({
   withHead = false,
   node = process.version,
 }: OnceLookup): OncePass | null => {
-  const pass = read(fileOf(onceDirOf(key.commonDir), name, key.tree, node));
-  if (pass === null || pass.tree !== key.tree || pass.node !== node) {
+  const pass = read(fileOf(onceDirOf(key.commonDir), name, key, node));
+  if (pass === null || pass.tree !== filesOf(key) || pass.node !== node) {
     return null;
   }
   return withHead && pass.head !== key.head ? null : pass;
@@ -126,7 +134,7 @@ export const recordPass = ({
   mkdirSync(dir, { recursive: true });
   const pass: OncePass = {
     name,
-    tree: key.tree,
+    tree: filesOf(key),
     head: key.head,
     node,
     at: at.toISOString(),
@@ -136,7 +144,7 @@ export const recordPass = ({
     // Write then rename, so a reader never sees half a file.
     const temp = path.join(dir, `.${randomUUID()}.tmp`);
     writeFileSync(temp, `${JSON.stringify({ ...pass, name: each })}\n`);
-    renameSync(temp, fileOf(dir, each, pass.tree, node));
+    renameSync(temp, fileOf(dir, each, key, node));
   }
   prunePasses(key.commonDir, { now: at });
   return pass;

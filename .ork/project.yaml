@@ -32,6 +32,8 @@ permissions:
     - Bash(pnpm check)
     - Bash(pnpm check:fast)
     - Bash(pnpm run check:fast)
+    - Bash(pnpm check:quick)
+    - Bash(pnpm run check:quick)
     - Bash(pnpm check:changed)
     - Bash(pnpm run check:changed)
     - Bash(pnpm format)

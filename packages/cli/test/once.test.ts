@@ -8,6 +8,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   appendFileSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
@@ -125,6 +126,13 @@ describe("ork once", () => {
     expect(runs()).toBe(2);
   });
 
+  it("records a pass for every --covers name", () => {
+    ork(["once", "--covers", "p", "--covers=q", ...counting()]);
+    expect(ork(["once", "--as", "p", ...counting()]).stdout).toMatch(HIT);
+    expect(ork(["once", "--as", "q", ...counting()]).stdout).toMatch(HIT);
+    expect(runs()).toBe(1);
+  });
+
   it("names a check by its command text by default", () => {
     const other = [
       "--",
@@ -171,6 +179,58 @@ describe("ork once", () => {
     expect(none.status).toBe(1);
     expect(none.stderr).toContain("after --");
     expect(ork(["once", "--"]).status).toBe(1);
+  });
+
+  describe("--on", () => {
+    const ON = ["--on", "src", "--on", ":(exclude)src/skip"];
+
+    beforeEach(() => {
+      mkdirSync(path.join(repo, "src/skip"), { recursive: true });
+      writeFileSync(path.join(repo, "src/a.txt"), "one\n");
+      writeFileSync(path.join(repo, "src/skip/s.txt"), "one\n");
+      git("add", "-A");
+      git("commit", "-q", "-m", "src");
+    });
+
+    it("hits after an edit outside the pathspecs", () => {
+      ork(["once", ...ON, ...counting()]);
+      appendFileSync(path.join(repo, "a.txt"), "two\n");
+      appendFileSync(path.join(repo, "src/skip/s.txt"), "two\n");
+      expect(ork(["once", ...ON, ...counting()]).stdout).toMatch(HIT);
+      expect(runs()).toBe(1);
+    });
+
+    it("misses after an edit, a new file or a deleted file inside them", () => {
+      ork(["once", ...ON, ...counting()]);
+      appendFileSync(path.join(repo, "src/a.txt"), "two\n");
+      expect(ork(["once", ...ON, ...counting()]).stdout).toBe("");
+      writeFileSync(path.join(repo, "src/new.txt"), "new\n");
+      expect(ork(["once", ...ON, ...counting()]).stdout).toBe("");
+      rmSync(path.join(repo, "src/a.txt"));
+      expect(ork(["once", ...ON, ...counting()]).stdout).toBe("");
+      expect(runs()).toBe(4);
+    });
+
+    it("does not share a pass with a different list", () => {
+      ork(["once", ...ON, ...counting()]);
+      expect(ork(["once", "--on", "src", ...counting()]).stdout).toBe("");
+      expect(ork(["once", ...ON, ...counting()]).stdout).toMatch(HIT);
+      expect(runs()).toBe(2);
+    });
+
+    it("keys the whole tree without --on", () => {
+      ork(["once", ...counting()]);
+      appendFileSync(path.join(repo, "a.txt"), "two\n");
+      expect(ork(["once", ...counting()]).stdout).toBe("");
+      expect(runs()).toBe(2);
+    });
+
+    it("rejects a bad pathspec with git's message and does not run", () => {
+      const bad = ork(["once", "--on", ":(nope)x", ...counting()]);
+      expect(bad.status).toBe(1);
+      expect(bad.stderr).toMatch(/pathspec magic 'nope'/u);
+      expect(runs()).toBe(0);
+    });
   });
 
   it("is in --help and in completion", () => {

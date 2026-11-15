@@ -41,6 +41,10 @@ AI or agent attribution line. Do not bypass it with `--no-verify`.
   on a command with `refuseExtraArguments` but not `refuseUnknownFlags`,
   `--bogus value` fails as "Unexpected argument `value`." Test the unknown-flag
   path with `orkRaw`, not a plain call.
+- citty keeps only the last value of a repeated flag, so repeated `--on` and
+  `--covers` are read from the raw args (`packages/cli/src/commands/once.ts`).
+- `oxfmt` exits 2 when every given file is ignored, unless
+  `--no-error-on-unmatched-pattern` is passed (`tools/check/quick.ts`).
 - `client.call` turns a rejected fetch into `{ok:false, error:"No answer: …"}`,
   the same path as an HTTP 500, so one failed-read test covers both.
 - oxlint's `max-dependencies` of 10 is why `feedback.ts` wires the plugin as

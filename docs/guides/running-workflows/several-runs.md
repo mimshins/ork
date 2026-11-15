@@ -105,8 +105,11 @@ without `verify:` are not limited.
 In this repository, builders and the docs node verify with `pnpm check:changed`
 (formatting, lint, types, docs and `vitest run --changed`), and the leader and
 the publish step run the full `pnpm check`. Both go through `ork once` (below),
-so a check that already passed on the same files doesn't run again. Vitest uses
-at most a third of your cores, in a run or not.
+so a check that already passed on the same files doesn't run again; the test
+step is keyed only by the files tests read, so an edit to a spec or to most
+guides reruns the static checks but not the tests. Between edits, builders run
+`pnpm check:quick` (format and lint on the changed files, then types). Vitest
+uses at most a third of your cores, in a run or not.
 
 ## Run a check once: `ork once`
 
@@ -125,6 +128,15 @@ ork once --as check --covers check:changed -- pnpm check
   (repeatable) records the pass for other names too: a full check covers a
   quicker one. `--with-head` adds `HEAD` to the key, for checks relative to it,
   such as `vitest --changed`.
+- `--on <pathspec>` (repeatable) keys the check by only the files the git
+  pathspecs match, relative to where you run it, so an edit elsewhere still
+  hits. Use it for a check that reads some of your files, such as a test run
+  that never reads your docs:
+  `ork once --as tests --on . --on ':(exclude)docs' -- pnpm test`. A new or
+  deleted file inside the pathspecs counts as an edit. A pathspec git rejects
+  stops with git's message (exit 1) and the command does not run. List what the
+  check does not read with `exclude`, so a new folder runs it again. Without
+  `--on`, every file counts.
 - A hit prints one line and exits 0:
   `✓ check already passed on these files · 5m ago · you`. The last part is `you`
   from a terminal, or the run and node that ran it.

@@ -26,9 +26,16 @@ cheaper suite beside it. What was left simpler:
   versions.
 - **L267 · Some tests still wait on real time or build their own repository.**
   The heavy-slot tests and the streams, control and heavy-hook tests wait on
-  real clocks, and the CLI and server fixtures make a repository per test.
-- **L268 · The UI's jsdom setup is not reduced.** Its files still pay jsdom's
-  start for each.
+  real clocks, and the CLI and server fixtures make a repository per test (the
+  `issues` example's now copies one; `once.test.ts` was measured and saves about
+  4%, so it stays).
+- **L268 · The UI's jsdom environment still starts per file.** The UI project
+  shares one module graph and window per worker (`isolate: false`; wall 35 to 15
+  s, CPU about 160 to 50 s,
+  [numbers](../../benchmarks/method.md#the-ui-project-before-and-after-sharing-the-dom)),
+  but Vitest still sets the environment up for each file (about half of the wall
+  time left). A file that leaves DOM, a global or a timer behind can break the
+  next one in its worker; nothing checks for it except the shuffled run.
 - **L269 · The suite is not measured idle.** On a loaded 12-core machine the
   full suite went from 571 to 303 CPU-s
   ([numbers](../../benchmarks/method.md#the-suites-cost)); the plan's target,
@@ -42,3 +49,19 @@ cheaper suite beside it. What was left simpler:
 - **L271 · The key leaves loose objects behind.** `git add -A` into the
   temporary index writes the changed files as unreachable loose objects, which
   stay until `git gc` removes them.
+- **L374 · Nothing enforces the tests' exclude list.** The `--on` list on
+  `check:all`'s test step was audited against the tests as they are
+  ([spec](../check-once.md#in-this-repository)); a test added later that reads
+  an excluded path (`specs/`, `decisions/`, a root README, most of `docs/`)
+  would be skipped wrongly on an edit there. A follow-up is open to add a check
+  that fails when a test file reads one.
+- **L375 · The `docs/guides` carve-out is a glob.** Two tests read a guide, and
+  a pathspec exclude cannot put one file back, so the list excludes the guides
+  whose names start with another letter than `i` or `w` (`docs/guides/[!iw]*`).
+  A new guide starting with `i` or `w` stays in the tests' key and an edit to it
+  reruns the tests; it is safe, only slower.
+- **L376 · `check:quick` can pass what `check:fast` fails.** It skips the docs,
+  map and benchmarks checks, and checks only the files that changed, so a lint
+  error in an unchanged file that depends on a changed one shows later. It never
+  records an `ork once` pass. Its typecheck is not incremental: the gain was not
+  measured to be worth a `tsbuildinfo` and a false pass.

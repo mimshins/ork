@@ -50,14 +50,33 @@ const Monitor = () => (
 /** Go to does as the dock does: it focuses the panel's tab on the next frame. */
 const likeTheDock = (opened: Awaited<ReturnType<typeof openFeedback>>) => {
   opened.goTo.mockImplementation(() => {
-    requestAnimationFrame(() => {
-      screen.getByRole("button", { name: "Monitor tab" }).focus();
-    });
+    frames.push(
+      requestAnimationFrame(() => {
+        screen.getByRole("button", { name: "Monitor tab" }).focus();
+      }),
+    );
   });
 };
 
+/**
+ * The frames a test asked for: the window is shared by the UI's files, so a
+ * frame must not outlive its test.
+ */
+const frames: number[] = [];
+
 const heading = (run: string): HTMLElement | null =>
   document.querySelector<HTMLElement>(`[data-run-heading="${run}"]`);
+
+/**
+ * Past the frame Open run asked for, so its focus can't land after the test
+ * moved the focus.
+ */
+const frame = (): Promise<void> =>
+  new Promise(resolve => {
+    requestAnimationFrame(() => {
+      resolve();
+    });
+  });
 
 const redraw = async (): Promise<void> => {
   await act(async () => {
@@ -71,6 +90,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  for (const id of frames.splice(0)) cancelAnimationFrame(id);
   cleanup();
   vi.unstubAllGlobals();
 });
@@ -92,6 +112,7 @@ describe("showing a run from the Feedback panel", () => {
     await vi.waitFor(() => {
       expect(document.activeElement).toBe(heading("4f2a1c00"));
     });
+    await frame();
     rowOf(LOOP_TITLE).focus();
     await redraw();
     expect(document.activeElement).toBe(rowOf(LOOP_TITLE));
@@ -125,6 +146,7 @@ describe("showing a run from the Feedback panel", () => {
     await vi.waitFor(() => {
       expect(document.activeElement).toBe(heading("fix11111"));
     });
+    await frame();
     rowOf(LOOP_TITLE).focus();
     await redraw();
     expect(document.activeElement).toBe(rowOf(LOOP_TITLE));

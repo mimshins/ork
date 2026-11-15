@@ -510,6 +510,7 @@ export const NODES = [
       CHECK_ONCE.tests,
       CHECK_ONCE.guide,
       CHECK_ONCE.adr,
+      CHECK_ONCE.adrOn,
       DESIGN.scheduler,
     ],
   },
