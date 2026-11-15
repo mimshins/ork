@@ -165,13 +165,28 @@ review:
   found. Available MCP tools: ..."), so it is not hidden. That answers the
   follow-up to probe it with a real login. A session that calls it gets only an
   allow or deny for a tool use it names; a CLI that resolves the tool without
-  listing it would close it. ([runtime](./runtime.md))
-- **G35 · No leading-`-` guard for `inputs.*` templates.** A tool node's
-  argument that starts with a `nodes.*.output` template and renders to a leading
-  `-` fails the node, but one reading `inputs.*` (or `item`, `env`) is passed as
-  is, so a run's input such as `--output=x` reads as an option of the program.
-  Inputs come from whoever starts the run, not from a session, so they are left
-  out for now; the same check on every template would close it.
+  listing it would close it. Probed again on 2026-11-15 with `claude` 2.1.325,
+  to label a prompt a model started rather than the permission flow: no CLI-only
+  marker exists. Every `tools/call` (the permission flow, or a direct call to
+  another tool) carries `params._meta` of `claudecode/toolUseId` and
+  `progressToken`, and nothing outside `arguments` differs, so no label was
+  built. On 2.1.325 with `--permission-prompt-tool mcp__ork__permission`, the
+  model is listed only the other tools (the tool is in the server's
+  `tools/list`, but a search for it finds nothing and the model says it can't
+  call it), so a direct call did not happen there; 2.1.323 and earlier were not
+  probed again, and a later `claude` that lists the tool again would bring the
+  risk back. ([runtime](./runtime.md))
+- **G35 · The leading-`-` guard covers one template form.** A tool node's
+  argument is refused when its first part is a plain `nodes.<id>.output…` path
+  (`nodes.a.output`, `nodes.a.output.ref`) and it renders to a leading `-`, even
+  with text after it (`{{nodes.a.output}}x`). Not guarded: an argument that
+  starts with literal text (`--flag={{…}}` is meant to pass), a `nodes.*.output`
+  read inside a larger expression (a function call such as
+  `{{len(nodes.a.output)}}`, a comparison), and one reading `inputs.*`, `item`
+  or `env`, which is passed as is, so a run's input such as `--output=x` reads
+  as an option of the program. Inputs come from whoever starts the run, not from
+  a session, so they are left out for now; the same check on the rendered value
+  of every template would close it.
   ([node types](./workflow-format/node-types.md))
 - **G36 · Task labels are counted by code point.** A `description` is clipped to
   80 code points, so a grapheme cluster (an emoji with a skin tone, a flag, a
@@ -189,6 +204,15 @@ review:
   clipped text there (the node's strip shows it whole). Showing the tooltip when
   the row has focus would close it.
   ([Monitor](./ui/panels-runs-and-monitor.md#monitor))
+- **G38 · A person's note is scrubbed with the workflow file as it is now.** A
+  note typed with `ork feedback note`, `ork decide --note` or in the browser is
+  masked with the `env:` values of the run's workflow file as it reads when the
+  note is saved (`scrubberOfRun`), not a copy recorded when the run started. If
+  the file has since changed an `env:` entry, the current values are used, so a
+  secret value the file no longer names can be kept. When the file is gone or
+  invalid, only the patterns apply. Recording the workflow's text with the run
+  and scrubbing with that would close it.
+  ([event store](./event-store.md#masking))
 
 ## Limits
 

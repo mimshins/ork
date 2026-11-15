@@ -639,6 +639,39 @@ const reportOf = () => {
 const hashOf = (place: ReturnType<typeof project>, id = "t") =>
   readProjectTriggers(place).triggers.find(item => item.id === id)?.hash;
 
+const writeTriggers = (
+  place: ReturnType<typeof project>,
+  check: unknown,
+): void => {
+  writeFileSync(
+    path.join(place.dir, "triggers.yaml"),
+    `schemaVersion: 1\ntriggers:\n  t: { every: 1m, run: triage, check: ${JSON.stringify(check)} }\n`,
+  );
+};
+
+/** A project whose trigger's MCP check calls `server`, defined as `entry`. */
+const mcpProject = (entry: unknown, server = "s") => {
+  const place = project();
+  writeFileSync(
+    path.join(place.root, ".mcp.json"),
+    JSON.stringify({ mcpServers: { s: entry } }),
+  );
+  writeTriggers(place, { type: "mcp.call", server, tool: "t" });
+  return place;
+};
+
+/** Whether the hash changes once `file` (in the project) holds new text. */
+const hashAfterWriting = (
+  place: ReturnType<typeof project>,
+  file: string,
+): boolean => {
+  const target = path.join(place.root, file);
+  writeFileSync(target, "one");
+  const before = hashOf(place);
+  writeFileSync(target, "two");
+  return hashOf(place) !== before;
+};
+
 describe("reading a project", () => {
   it("turns a trigger off when its workflow changes", () => {
     const place = project();
@@ -679,6 +712,58 @@ describe("reading a project", () => {
     const before = hashOf(place);
     writeFileSync(servers, '{"mcpServers":{}}');
     expect(hashOf(place)).not.toBe(before);
+  });
+
+  it.each([
+    ["command", { type: "tool.shell", command: "run --cfg=./x.json" }],
+    [
+      "interpreter",
+      { type: "tool.shell", script: "echo", interpreter: "sh --rc=./x.json" },
+    ],
+  ])("hashes a tool check's --flag=file in its %s", (_where, check) => {
+    const place = project();
+    writeTriggers(place, check);
+    expect(hashAfterWriting(place, "x.json")).toBe(true);
+  });
+
+  it.each([
+    ["the command", "./tool.mjs", ["serve"], "tool.mjs"],
+    ["an argument", "node", ["./tool.mjs"], "tool.mjs"],
+    ["a --flag=file", "node", ["--config=./x.json"], "x.json"],
+    ["a -f=file", "node", ["-c=./x.json"], "x.json"],
+  ])(
+    "turns an MCP check off when %s names a file that changes",
+    (_w, command, args, file) => {
+      const place = mcpProject({ command, args });
+      expect(hashAfterWriting(place, file)).toBe(true);
+    },
+  );
+
+  it.each([
+    ["a word that is no file", "node", ["--verbose", "serve"]],
+    ["a missing file", "node", ["--config=./missing.json"]],
+  ])("leaves an MCP check's hash when it names %s", (_w, command, args) => {
+    const place = mcpProject({ command, args });
+    expect(hashAfterWriting(place, "other.json")).toBe(false);
+  });
+
+  it("does not hash a file outside the project", () => {
+    const outside = path.join(
+      mkdtempSync(path.join(tmpdir(), "ork-outside-")),
+      "tool.mjs",
+    );
+    writeFileSync(outside, "one");
+    const place = mcpProject({ command: "node", args: [outside] });
+    const before = hashOf(place);
+    writeFileSync(outside, "two");
+    expect(hashOf(place)).toBe(before);
+  });
+
+  it("adds nothing for an http server or a server that isn't there", () => {
+    const http = mcpProject({ url: "http://localhost:1/mcp" });
+    const gone = mcpProject({ command: "node" }, "other");
+    expect(hashAfterWriting(http, "other.json")).toBe(false);
+    expect(hashAfterWriting(gone, "other.json")).toBe(false);
   });
 
   it("says a file it can't read is broken, rather than throwing", () => {

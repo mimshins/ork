@@ -119,7 +119,8 @@ written ([mask.ts](../packages/core/src/store/mask.ts)): Anthropic, OpenAI
 `token` or `api_key` written `key=value`, `key: value` or JSON `"key": "value"`,
 when it is 8 characters or more. The provider formats are one list
 ([secret-patterns.ts](../packages/core/src/store/secret-patterns.ts)) that the
-repository's security audit reads too
+repository's security audit reads too; an entry takes no `g` or `y` flag, which
+a test checks
 ([ADR-091](../decisions/ADR-091-shared-secret-patterns-and-scrubber-in-core.md)).
 The terminal shows the unmasked transcript, which is the user's own; a gate's
 `question`, `context` and `document` reach the terminal masked, as stored.
@@ -128,7 +129,8 @@ scrubber (`scrubberOf`, which masks the value of each `env:` entry the run
 masks), so a configured secret's value is stored `[masked]` wherever it appears
 in them. A person's note (`ork feedback note`, `ork decide --note`, the browser)
 takes the scrubber built from the run's workflow file as it is now
-(`scrubberOfRun`), or patterns only when that file is gone or invalid.
+(`scrubberOfRun`), or patterns only when that file is gone or invalid, not a
+copy recorded with the run ([G38](./gaps.md)).
 
 ## Reading runs
 

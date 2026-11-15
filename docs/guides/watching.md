@@ -118,7 +118,7 @@ change it, so `ork watch` runs only what you accepted on this machine. These
 turn it off until you accept it again:
 
 - a change to the trigger, or to the workflow it starts
-- a change to what its check runs: the files its command names, or `.mcp.json`
+- a change to what its check runs: a project file it names, or `.mcp.json`
 - the project moving to another folder
 
 `ork watch --accept` says whether each is new or changed, and shows what it
@@ -126,9 +126,9 @@ looks with and the workflow's nodes. It can't show you what changed, so read the
 diff before you say yes.
 
 **It doesn't cover everything a run reads.** A change to a skill, an agent in
-its own file, a script the workflow calls, a workflow it calls or `project.yaml`
-doesn't turn it off. If a stranger can get a branch onto this checkout, pulling
-it can still change what runs.
+its own file, a script or workflow it calls, `project.yaml`, a program outside
+the project (`npx`), a path built from an environment variable or what a program
+reads doesn't turn it off. A pulled branch can still change what runs.
 
 Accepting takes a terminal, so a browser tab can't do it, and a program in a run
 is refused in a store that run guards. That stops accidents, not a wall: a

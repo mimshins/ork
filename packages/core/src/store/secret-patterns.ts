@@ -5,7 +5,8 @@
  *   files. Provider formats only, at the audit's thresholds; a generic
  *   "password = …" rule would flag every test fixture, so the masker adds its
  *   own generic forms. A hit is reported by the pattern's `name`, never the
- *   matched text.
+ *   matched text. A pattern takes no `g` or `y` flag (a test checks): the
+ *   masker adds `g` itself, and the audit's `.test()` is stateful with either.
  */
 
 export type SecretPattern = { name: string; pattern: RegExp };

@@ -5,18 +5,15 @@
  *   rather than running as it was.
  */
 
-import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 import {
   type Diagnostic,
   parseTriggers,
   type Trigger,
-  type TriggerCheck,
   type Workflow,
 } from "@krapht/ork-schema";
 
-import { inside } from "../context/files.ts";
 import { error as errorAt } from "../graph/diagnostics.ts";
 import { checkWorkflowText } from "../project/check.ts";
 import {
@@ -25,48 +22,10 @@ import {
   type ProjectRecord,
   workflowDirOf,
 } from "../project/place.ts";
+import { checkReads, readText } from "./check-reads.ts";
 import { checkTrigger } from "./check.ts";
 import { triggerHash, workflowTextHash } from "./trust.ts";
 import type { DeclaredTrigger } from "./watcher.ts";
-
-/** A file's text; `undefined` only when it isn't there. Anything else throws. */
-const readText = (file: string): string | undefined => {
-  try {
-    return readFileSync(file, "utf8");
-  } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      return undefined;
-    }
-    throw error;
-  }
-};
-
-const isFile = (file: string): boolean =>
-  statSync(file, { throwIfNoEntry: false })?.isFile() === true;
-
-/**
- * What a check runs beyond its own words, for what a person accepts: the
- * `.mcp.json` its server comes from, or the project's files its command names.
- */
-const checkReads = (
-  root: string,
-  check: TriggerCheck | undefined,
-): string[] => {
-  if (check === undefined) return [];
-  if (check.type === "mcp.call") {
-    return [readText(path.join(root, ".mcp.json")) ?? ""];
-  }
-  const from = path.resolve(root, check.cwd ?? ".");
-  return [check.command, check.interpreter]
-    .join(" ")
-    .split(/\s+/u)
-    .flatMap(word => {
-      const file = path.resolve(from, word);
-      return word !== "" && inside(root, file) && isFile(file)
-        ? [`${word}\0${readFileSync(file, "utf8")}`]
-        : [];
-    });
-};
 
 /** Where a project's workflow of this name is. */
 export const workflowFileOf = (place: ProjectPlace, name: string): string =>

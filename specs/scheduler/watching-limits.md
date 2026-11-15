@@ -23,7 +23,13 @@ between looks, once L125, is part of [L55](./calls-limits.md).
   the workflow's nodes use or `project.yaml` doesn't turn the trigger off, nor
   does a file a check's `script:` runs, as Ork can't tell what a program reads.
   A check's `.mcp.json` is hashed whole, so a change to another server turns it
-  off too.
+  off too. An `mcp.call` check's stdio server program is hashed when it is a
+  file in the project, named by the server's `command` or an argument (also
+  `--flag=./file`); not hashed are a program outside the project (`npx`, a
+  global binary), a path built from an environment variable (`${VAR}` is not
+  expanded, the literal word is checked), a missing file, an http server, and
+  what an in-repo program itself imports or reads. Files are hashed as utf8
+  text, so a swap of invalid bytes in a binary goes unnoticed.
 - **L120 · `trigger.untrusted` reads prompts and instructions only.** A value a
   session reaches another way, through a tool's output or a `before:` step,
   isn't warned of. Only `tools: { only }` limited to `Read`, `Grep` and `Glob`

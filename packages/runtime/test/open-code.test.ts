@@ -2,8 +2,9 @@
  * @file The `open-code` adapter beyond the contract suite: deny by default, the
  *   worktree as the working folder, the config file holding the token (0600,
  *   outside the checkout, gone after the session and after a crash), the
- *   project's own config left alone, the token kept out of events, and the
- *   rules and arguments it writes.
+ *   project's own config left alone, the token kept out of events, a repo
+ *   server named `ork` or `ork_<x>` refused, and the rules and arguments it
+ *   writes.
  */
 
 import { spawnSync } from "node:child_process";
@@ -74,7 +75,7 @@ const RecordSchema = z.object({
   configFile: z.string(),
   config: z.object({
     mcp: z.object({
-      servers: z.object({
+      servers: z.looseObject({
         ork: z.object({ headers: z.object({ Authorization: z.string() }) }),
       }),
     }),
@@ -110,6 +111,7 @@ const run = (
   scenario: string,
   tools = NOTHING_ALLOWED,
   wrap = (adapter: CliAdapter): CliAdapter => adapter,
+  mcpServers: SessionSpec["mcpServers"] = {},
 ) => {
   const cwd = temp("ork-oc-");
   const secrets = temp("ork-oc-secrets-");
@@ -124,7 +126,7 @@ const run = (
         FAKE_OPENCODE_RECORD: record,
       },
     },
-  ).start(specOf(cwd, tools), { human });
+  ).start({ ...specOf(cwd, tools), mcpServers }, { human });
   return {
     cwd,
     root: path.join(secrets, "root"),
@@ -220,6 +222,36 @@ describe("the open-code adapter", () => {
       errors: ["model not found"],
     });
   });
+
+  it.each(["ork", "ork_x"])(
+    "fails before the session starts on a repo server named `%s`, whose tools would pass for Ork's",
+    async name => {
+      const started = run("", NOTHING_ALLOWED, undefined, {
+        [name]: { command: "x", env: { TOKEN: "secret-value" } },
+      });
+      const outcome = outcomeOf(await collect(started.session));
+      expect(outcome.subtype).toBe("error_driver");
+      expect(outcome.errors.join(" ")).toContain(`\`${name}\``);
+      expect(outcome.errors.join(" ")).toContain("`ork_` are reserved");
+      expect(JSON.stringify(outcome)).not.toContain("secret-value");
+      // The fake records on start: nothing recorded, nothing started.
+      expect(() => started.recorded()).toThrow("ENOENT");
+    },
+  );
+
+  it.each(["orkish", "my_ork_x"])(
+    "starts with a repo server named `%s`",
+    async name => {
+      const started = run("", NOTHING_ALLOWED, undefined, {
+        [name]: { command: "x" },
+      });
+      const outcome = outcomeOf(await collect(started.session));
+      expect(outcome.subtype).toBe("success");
+      expect(Object.keys(started.recorded().config.mcp.servers)).toContain(
+        name,
+      );
+    },
+  );
 
   it("continues and forks a session by id, the message last", () => {
     const spec = {

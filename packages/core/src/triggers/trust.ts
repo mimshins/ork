@@ -3,8 +3,10 @@
  *   what its check runs beyond its own words, and the folder it was accepted
  *   in. A branch can change any of them and so what runs here with nobody
  *   there, so a change to one turns the trigger off until someone accepts it
- *   again. It can't cover all a run reads: skills, agents, scripts and called
- *   workflows aren't in it.
+ *   again. That includes the project's files a check's command or an MCP
+ *   check's server program names. It can't cover all a run reads: skills,
+ *   agents, what a script or server program itself reads, programs outside the
+ *   project and called workflows aren't in it.
  */
 
 import { createHash } from "node:crypto";

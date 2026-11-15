@@ -1,10 +1,11 @@
 /**
  * @file The `open-code` adapter's session config (RFC-014, open questions 1 and
  *   3): Ork's MCP server with Code Mode off, so its tools reach the model as
- *   `ork_<tool>`; the node's MCP servers; a dedicated `ork` agent carrying the
- *   turn cap; and the full permission rule set, written every session because
- *   OpenCode runs a shell call when no rule says otherwise. The rules deny
- *   everything first, then open what the node allowed (last match wins).
+ *   `ork_<tool>`; the node's MCP servers (none named `ork` or `ork_<x>`, whose
+ *   tools would pass for Ork's); a dedicated `ork` agent carrying the turn cap;
+ *   and the full permission rule set, written every session because OpenCode
+ *   runs a shell call when no rule says otherwise. The rules deny everything
+ *   first, then open what the node allowed (last match wins).
  */
 
 import path from "node:path";
@@ -166,6 +167,21 @@ const serverOf = (entry: Record<string, unknown>): Record<string, unknown> => {
     : { type: "remote", url, oauth: false, codemode: false, headers };
 };
 
+/**
+ * The node's servers, refusing one named `ork` or `ork_<x>`: OpenCode names a
+ * tool `<server>_<tool>`, so its tools could pass for Ork's `ork_<tool>`. The
+ * error names the server only, never its env or headers.
+ */
+const nodeServers = (spec: SessionSpec): [string, Record<string, unknown>][] =>
+  Object.entries(spec.mcpServers ?? {}).map(([name, entry]) => {
+    if (name === ORK_SERVER || name.startsWith(`${ORK_SERVER}_`)) {
+      throw new Error(
+        `the MCP server \`${name}\` can't load under OpenCode: the name \`${ORK_SERVER}\` and the prefix \`${ORK_SERVER}_\` are reserved for Ork's tools; rename it in .mcp.json`,
+      );
+    }
+    return [name, serverOf(entry)];
+  });
+
 /** The whole config file for one session. */
 export const sessionConfig = (
   spec: SessionSpec,
@@ -175,12 +191,7 @@ export const sessionConfig = (
   instructions: [instructions],
   mcp: {
     servers: {
-      ...Object.fromEntries(
-        Object.entries(spec.mcpServers ?? {}).map(([name, entry]) => [
-          name,
-          serverOf(entry),
-        ]),
-      ),
+      ...Object.fromEntries(nodeServers(spec)),
       [ORK_SERVER]: {
         type: "remote",
         url: endpoint.url,

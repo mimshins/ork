@@ -2,6 +2,21 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **A watched trigger's MCP server program is accepted too.** The hash behind
+  `ork watch --accept` now covers a file in your project that an `mcp.call`
+  check's stdio server runs (its `command` or an argument, also
+  `--config=./x.json`), and a tool check's `--flag=./file` in its command or
+  interpreter. Editing one turns the trigger off until you accept it again. Not
+  covered: a program outside the project (`npx`, a global binary), a path built
+  from an environment variable, and what a program itself reads. Upgrade: a
+  trigger you accepted that names such a file turns off once; run
+  `ork watch --accept` ([guide](../guides/watching.md),
+  [limits](../../specs/scheduler/watching-limits.md)).
+- **OpenCode refuses `ork` and `ork_*` server names.** A node on `open-code`
+  that names an MCP server `ork` or `ork_<x>` fails before its session starts,
+  naming the server, because OpenCode would call its tools `ork_<tool>` like
+  Ork's own. Rename the server; `orkish` is fine
+  ([guide](../guides/drivers.md)).
 - **Task labels show everywhere, masked.** A leader's task `description` folds
   whitespace to one space, has secrets masked (such as a `ghp_…` token) before
   it is clipped to 80 characters, counted by code point so an emoji is never cut

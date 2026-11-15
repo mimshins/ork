@@ -160,12 +160,19 @@ keeps a hash of:
 - the text of the workflow it starts;
 - the project's folder, so another repository with the same name and files
   doesn't inherit it;
-- what its check reads: `.mcp.json` for an MCP check, and any file under the
-  project that a tool's `command` or `interpreter` names.
+- what its check reads: `.mcp.json` for an MCP check and, for a stdio server,
+  any file under the project that the server's `command` or an argument names;
+  and for a tool check, any file under the project that its `command` or
+  `interpreter` names. A `--flag=./file` or `-c=./file` word counts by its path,
+  and paths resolve from the project's folder
+  ([triggers/check-reads.ts](../../packages/core/src/triggers/check-reads.ts)).
+  A program outside the project, a path built from `${VAR}`, a missing file and
+  an http server add nothing.
 
 A change to any of them turns it off, and `ork watch --accept` asks about each,
 saying whether it's new or changed. Forgetting a project forgets what was
-accepted for it.
+accepted for it. A trigger accepted before the hash covered these files, and
+that names one, turns off once and is accepted again with `ork watch --accept`.
 
 **What runs is what was accepted.** A run starts from the workflow file's whole
 path, so a file a branch adds at the project's root can't stand in for it, and

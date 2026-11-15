@@ -150,3 +150,9 @@ your other entries as they were.
 Ork's and the ones the node names. Command Code still loads your own skills,
 memory and MCP servers; Ork blocks the calls a node did not allow, but those
 servers start. A project's own `.mcp.json` is never touched.
+
+On `open-code`, a node can't load a server named `ork` or starting with `ork_`.
+OpenCode names a tool `<server>_<tool>`, so its tools could pass for Ork's own
+`ork_<tool>`. The node fails before its session starts, with an error that names
+the server; rename it in `.mcp.json`. A name such as `orkish` or `my_ork_x` is
+fine.
