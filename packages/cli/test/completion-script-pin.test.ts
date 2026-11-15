@@ -18,7 +18,7 @@ import { SHELL_SCRIPTS } from "../src/completion/scripts.ts";
  * docs/whats-new/next-release.md, then set its new hash here.
  */
 const PINNED = {
-  zsh: "0aa06a53582617e2",
+  zsh: "b80af16443ae77af",
   bash: "376b45163690e3ae",
   fish: "0ccb2afbbae48ad3",
 };

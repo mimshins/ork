@@ -110,11 +110,12 @@ holds no session and no worktree.
   otherwise only the `signal` ends it (`"aborted"`). The one-second poll is
   [L373](../gaps/machine-limits.md).
 - **In `ork logs`.** `ork logs <run>` prints the runs it called inline, under
-  the `call › ` gutter a foreground caller shows, right after the `call.started`
-  that started each. `--no-calls` prints the caller alone; `--json` includes
-  called runs only with `--calls`, each line with its own `runId`;
-  `ork logs -f <run>` follows them live and, when the root ends, lists those
-  still running (`↳ run <id> still running · ork attach <id>`)
+  the `<call node> › ` gutter a foreground caller shows (the `workflow.call`
+  node's id), right after the `call.started` that started each. `--no-calls`
+  prints the caller alone; `--json` includes called runs only with `--calls`,
+  each line with its own `runId`; `ork logs -f <run>` follows them live and,
+  when the root ends, lists those still running
+  (`↳ run <id> still running · ork attach <id>`)
   ([CLI](../cli/running-and-runs.md#runs)).
 - **A killed caller.** A called run is detached, in its own process group, and
   is not under the orphan guard

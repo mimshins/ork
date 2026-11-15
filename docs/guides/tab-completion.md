@@ -3,8 +3,9 @@
 Press Tab after `ork` to complete commands, flags and the values you would
 otherwise copy from `ork ps`: workflow names, run ids, node ids and the ids of
 open decisions. It works in zsh, bash and fish. Ork prints the script; you put
-it where your shell loads it. Ork never edits your shell's files. `--plain`
-(plain output, [the terminal](./terminal.md)) completes with every command.
+it where your shell loads it. Ork never edits your shell's files. The global
+`--plain` flag (plain output, [the terminal](./terminal.md)) is offered after
+every command, as it works with each.
 
 ## Turn it on
 
@@ -48,11 +49,11 @@ echo 'source ~/.ork-completion.bash' >> ~/.bashrc
 ork completion fish > ~/.config/fish/completions/ork.fish
 ```
 
-The script asks `ork` for every candidate as you type, so new commands, flags
-and values complete as soon as you upgrade. Only a change to the script itself
-needs a new copy: [What's new](../whats-new.md) says so with an "Upgrade:" line,
-and then you run the command that saved it again. The `eval` and `source <(…)`
-lines load the new script in your next shell on their own.
+The script asks `ork` for the candidates each time you press Tab, so new
+commands, flags and values complete as soon as you upgrade. Only a change to the
+script itself needs a new copy: [What's new](../whats-new.md) says so with an
+"Upgrade:" line, and then you run the command that saved it again. An `eval` or
+zsh's `source <(…)` line loads the new script in your next shell on its own.
 
 ## Short flags
 

@@ -145,11 +145,11 @@ another terminal or a gate's timeout can still answer it.
 
 You can also answer from **any other terminal** with `ork decide`: it lists the
 open questions of this project's running runs and asks them in turn, each as the
-card above (`n of m` says where you are). `q` or Esc leaves a question for
-later, and `--verbose` shows each question's whole context. Whichever answers
-first wins; the other prompt goes away, and the transcript says who answered.
-`ork attach <run>` asks them for one run and the runs it called
-([attaching to a run](./attaching-to-a-run.md)).
+card above (`n of m` says where you are). `q` or Esc leaves a question for later
+(in plain output, `q` or the end of input, Ctrl-D), and `--verbose` shows each
+question's whole context. Whichever answers first wins; the other prompt goes
+away, and the transcript says who answered. `ork attach <run>` asks them for one
+run and the runs it called ([attaching to a run](./attaching-to-a-run.md)).
 
 ```sh
 ork decide                          # answer them one by one

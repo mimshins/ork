@@ -6,7 +6,8 @@
  *   follows a resize, and collapses to one line once answered. Plain mode
  *   prints the options as `1) label (id) - description` and asks `Choose [n]:
  *   `, as `ork decide` always did; there a note is asked for after the choice
- *   when the prompt takes one.
+ *   when the prompt takes one, and `q` or an ended input leaves the question
+ *   for later where it may wait.
  */
 
 import { barred } from "./card-bar.ts";
@@ -92,9 +93,16 @@ const selectPlain = (io: PromptIO, o: SelectOptions): Promise<SelectResult> => {
   const hint = at === -1 ? "" : ` [${String(at + 1)}]`;
   const ask = async (): Promise<SelectResult> => {
     const answer = await readLine(io, `  Choose${hint}: `, o.signal);
-    if (answer === undefined) throw new Error("input ended");
-    // Picked first, so an option named `d` wins over showing the details.
+    // Where it may wait, an ended input leaves it open, as `q` does.
+    if (answer === undefined) {
+      if (o.later === true) return { kind: "later" };
+      throw new Error("input ended");
+    }
+    // Picked first, so an option named `d` or `q` wins over what they do.
     const id = pickOption(answer, o.options, o.recommended);
+    if (id === undefined && o.later === true && answer.trim() === "q") {
+      return { kind: "later" };
+    }
     if (id === undefined) {
       if (o.details !== undefined && answer.trim() === "d") say(o.details);
       else say("  Type an option's number or id.");

@@ -12,7 +12,8 @@
  *   a typed `--help` is a word to complete. `ork once -- <command>` skips
  *   citty's help scan, so a `--help` or `-h` of the command is the command's.
  *   An argument error of a command with no subcommands prints its message
- *   alone, without the help (specs/cli/list-filters.md).
+ *   alone, without the help (specs/cli/list-filters.md). A reader that closes
+ *   stdout early (`ork logs -f --all | head`) ends it quietly, with exit 0.
  */
 
 import { clearGitLocalEnv } from "@krapht/ork-core";
@@ -31,6 +32,12 @@ import {
 } from "./update/notify.ts";
 
 clearGitLocalEnv();
+
+// `| head` closed the pipe: what is left has nobody to read it.
+process.stdout.on("error", (error: NodeJS.ErrnoException) => {
+  if (error.code !== "EPIPE") throw error;
+  process.exit(0);
+});
 
 // The global `--plain` becomes `ORK_PLAIN=1`, which the term kit reads.
 const argv = takePlainFlag(process.argv.slice(2));

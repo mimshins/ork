@@ -223,12 +223,12 @@ keeps one item's.
 
 `ork logs <run>` prints the runs it called inline
 ([calls](../scheduler/calls.md)): in text, each called run's events right after
-its `call.started` line under the `call › ` gutter, as `ork attach` does;
-`--no-calls` prints the run alone; `--json` prints one run unless `--calls` adds
-the called ones, each line with its own `runId`. `--node`, `--since` and
-`--until` apply to every printed run, and `--limit` keeps the last N events
-overall, not per run. `ork logs -f <run>` follows called runs live, ends when
-the root ends, and names those still running
+its `call.started` line under its call node's id (`plan › `), as `ork attach`
+does; `--no-calls` prints the run alone; `--json` prints one run unless
+`--calls` adds the called ones, each line with its own `runId`. `--node`,
+`--since` and `--until` apply to every printed run, and `--limit` keeps the last
+N events overall, not per run. `ork logs -f <run>` follows called runs live,
+ends when the root ends, and names those still running
 (`↳ run <id> still running · ork attach <id>`). `ork logs -f --all`
 ([code](../../packages/cli/src/commands/logs.ts),
 [tests](../../packages/cli/test/logs-many.test.ts)) follows every live run of

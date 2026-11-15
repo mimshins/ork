@@ -303,6 +303,10 @@ describe("ork logs over several runs", () => {
       [["--until-idle"], "--until-idle needs --all."],
       [["--project", "all"], "--project needs --all."],
       [["--workflow", "plan"], "--workflow needs --all."],
+      [
+        ["root0000", "--no-calls", "--calls"],
+        "Give --calls or --no-calls, not both.",
+      ],
     ])("refuses %j", async (words, message) => {
       const ran = await ork(...words);
       expect(ran.err.trim()).toBe(message);

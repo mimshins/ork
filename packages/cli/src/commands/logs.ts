@@ -110,9 +110,13 @@ export const logs = defineCommand({
       negativeDescription: "Print the run alone, without the runs it called",
     },
   },
-  run: ({ args }) =>
+  run: ({ args, rawArgs }) =>
     withStore(async store => {
-      const refusal = logsRefusal(args);
+      const both =
+        rawArgs.includes("--calls") && rawArgs.includes("--no-calls");
+      const refusal = both
+        ? "Give --calls or --no-calls, not both."
+        : logsRefusal(args);
       if (refusal !== null) {
         fail(refusal);
         return;

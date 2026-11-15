@@ -374,4 +374,23 @@ describe("select, plain", () => {
     term.end();
     await expect(result).rejects.toThrow("input ended");
   });
+
+  it("leaves the question for later when the input ends where it may wait", async () => {
+    const term = fakeTerm({ tty: false });
+    const result = select(term.io, { options: OPTIONS, later: true });
+    term.end();
+    expect(await result).toEqual({ kind: "later" });
+  });
+
+  it("takes q for later where it may wait, and as an answer elsewhere", async () => {
+    const term = fakeTerm({ tty: false });
+    const result = select(term.io, { options: OPTIONS, later: true });
+    await term.press("q\n");
+    expect(await result).toEqual({ kind: "later" });
+    const strict = fakeTerm({ tty: false });
+    const asked = select(strict.io, { options: OPTIONS });
+    await strict.press("q\n", "1\n");
+    expect(await asked).toEqual({ kind: "chosen", id: "a" });
+    expect(strict.raw()).toContain("Type an option's number or id.");
+  });
 });

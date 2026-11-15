@@ -39,3 +39,12 @@ _Part of [What's new](../whats-new.md)._
   read as if open-code came first. An `ork run --detach` started by a node of a
   detached run goes to the background again, and no longer says "detached run"
   when run in the foreground there ([drivers](../guides/drivers.md)).
+- **Smaller fixes from the QA pass.** zsh's completion menu no longer ends a
+  list of plain values (`ork ps --status `) with a stray `--`.
+  `ork logs -f --all` piped to `head` ends quietly, and so does every command
+  whose reader closes early. `ork decide`'s plain prompt takes `q`, or the end
+  of its input, as "later", where it crashed. `ork logs` refuses `--calls` with
+  `--no-calls`. The guides now say a called run's lines sit under its call
+  node's id (`plan › `), not `call › `. Upgrade: if you saved the zsh completion
+  script to a file, run `ork completion zsh` into it again
+  ([tab completion](../guides/tab-completion.md)).

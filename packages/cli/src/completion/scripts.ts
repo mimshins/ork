@@ -17,7 +17,7 @@ const ZSH = `#compdef ork
 
 _ork() {
   local -a lines cands opens
-  local line group=commands files=0 n=0 ret=1
+  local line value said group=commands files=0 n=0 ret=1
   lines=("\${(@f)$("\${words[1]}" ${COMPLETE_COMMAND} -- "\${(@)words[2,CURRENT]}" 2>/dev/null)}")
   # A last group line offers what the last group gathered.
   lines+=(":group end")
@@ -35,8 +35,13 @@ _ork() {
         cands=() opens=()
         group=\${line#:group }
         ;;
-      (*=$'\\t'*) opens+=("\${\${line%%$'\\t'*}//:/\\\\:}:\${line#*$'\\t'}") ;;
-      (?*) cands+=("\${\${line%%$'\\t'*}//:/\\\\:}:\${line#*$'\\t'}") ;;
+      (?*)
+        value=\${\${line%%$'\\t'*}//:/\\\\:}
+        said=\${line#*$'\\t'}
+        # No description: the value alone, or zsh shows an empty one as --.
+        [[ $said == "$line" || -z $said ]] || value+=":$said"
+        if [[ $line == *=$'\\t'* ]]; then opens+=("$value"); else cands+=("$value"); fi
+        ;;
     esac
   done
   if (( files )); then

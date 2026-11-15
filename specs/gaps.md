@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L381, and the next chore is
+closes it. Ids are never reused: the next limit is L382, and the next chore is
 C17 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -471,6 +471,12 @@ Found closing the list QA follow-ups (list filters):
   `feedback export` declare no positional, so `ork feedback export b` still
   ignores `b`. citty 0.2.2 has no hook to apply the check to every command; a
   new command must add the plugin itself.
+- **L381 · An unreadable store is a stack trace for most commands.** The
+  commands that open `~/.ork/state.db` through `withStore` (`ps`, `logs`,
+  `tree`, the lists) say in one line that it can't be opened and to move it
+  aside; the 19 that call `openStore()` themselves (`run`, `decide`, `doctor`,
+  …) still print the SQLite error with its stack. Closing it means one opener
+  for every command.
 - **L370 · The `due` summary line says "still running" for an unrecorded run.**
   `ork run --follow-ups due` with nothing left reads "N due ones are taken by a
   run still running" even when each is held as "not started yet"; the per-id

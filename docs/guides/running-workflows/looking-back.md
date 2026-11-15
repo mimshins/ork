@@ -18,8 +18,9 @@ ork tree               # the ownership tree: each node's state, tokens and cost
 ## Runs a run called
 
 `ork logs <run>` prints the runs a `workflow.call` started right after the
-`call.started` line that started them, at any depth, under the same `call › `
-gutter a foreground run shows, so a `start` run's log reads as one transcript.
+`call.started` line that started them, at any depth, under the same
+`<call node> › ` gutter a foreground run shows (the id of the `workflow.call`
+node, `plan › ` for `start`'s), so a `start` run's log reads as one transcript.
 `--no-calls` prints the caller only. With `--json` the called runs are left out
 unless you add `--calls`; their lines carry their own `runId`. `--node`,
 `--since` and `--until` apply to every run printed, and `--limit` keeps the last
