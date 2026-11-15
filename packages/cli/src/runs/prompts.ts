@@ -94,6 +94,11 @@ export const createPrompts = (
   /** Decisions answered here: their `decision.answered` line is the card's. */
   const mine = new Set<string>();
   const asks: Promise<void>[] = [];
+  /**
+   * The last prompt's settling: the next waits for it, so a withdrawn card's
+   * line is printed before the next card.
+   */
+  let last: Promise<void> = Promise.resolve();
   // Changed from callbacks, so not narrowed by the checks below.
   const state: { failure?: { error: unknown } } = {};
 
@@ -106,7 +111,9 @@ export const createPrompts = (
     if (decision === undefined) return;
     const prompt: Prompt = { controller: new AbortController() };
     prompts.set(id, prompt);
+    const previous = last;
     const settle = async (): Promise<void> => {
+      await previous;
       try {
         const asked = await askStored(store, human, decision, {
           by: options.by ?? "terminal",
@@ -135,7 +142,8 @@ export const createPrompts = (
         state.failure ??= { error };
       }
     };
-    asks.push(settle());
+    last = settle();
+    asks.push(last);
   };
 
   return {
