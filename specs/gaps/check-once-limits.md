@@ -49,12 +49,12 @@ cheaper suite beside it. What was left simpler:
 - **L271 · The key leaves loose objects behind.** `git add -A` into the
   temporary index writes the changed files as unreachable loose objects, which
   stay until `git gc` removes them.
-- **L374 · Nothing enforces the tests' exclude list.** The `--on` list on
-  `check:all`'s test step was audited against the tests as they are
-  ([spec](../check-once.md#in-this-repository)); a test added later that reads
-  an excluded path (`specs/`, `decisions/`, a root README, most of `docs/`)
-  would be skipped wrongly on an edit there. A follow-up is open to add a check
-  that fails when a test file reads one.
+- **L377 · The read guard doesn't see a child process.** A test run fails when a
+  test reads a file the tests' `--on` list leaves out
+  ([spec](../check-once.md#in-this-repository)), but only reads through
+  `node:fs` in the test's own worker are seen: a CLI, git or script the test
+  starts can read an excluded file unnoticed. Today the CLI the tests start
+  reads its own package and the test's temporary folders.
 - **L375 · The `docs/guides` carve-out is a glob.** Two tests read a guide, and
   a pathspec exclude cannot put one file back, so the list excludes the guides
   whose names start with another letter than `i` or `w` (`docs/guides/[!iw]*`).

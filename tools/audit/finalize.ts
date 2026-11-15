@@ -14,7 +14,7 @@ import path from "node:path";
 
 import { checkInputs } from "./inputs.ts";
 import { isObject, str, writeJson } from "./json.ts";
-import { outputDir, readRows, updateMetadata } from "./store.ts";
+import { outputDir, readObject, readRows, updateMetadata } from "./store.ts";
 
 type Env = Record<string, string | undefined>;
 
@@ -93,6 +93,10 @@ export const runFinalize = (
     row =>
       !unverifiedRows.some(item => item["fingerprint"] === row["fingerprint"]),
   ).length;
+  const critiqueMissing =
+    readObject(path.join(dir, "run-metadata.json"))[
+      "coverage_critique_missing"
+    ] === true;
   const incompleteReason =
     unreviewed > 0
       ? "validation_budget_exhausted"
@@ -100,7 +104,9 @@ export const runFinalize = (
         ? "candidate_validation_incomplete"
         : disputed.length > 0
           ? "final_verification_unresolved"
-          : null;
+          : critiqueMissing
+            ? "coverage_critique_missing"
+            : null;
   updateMetadata(
     dir,
     incompleteReason === null

@@ -233,7 +233,7 @@ describe("a text field", () => {
 describe("a refused value", () => {
   const MESSAGE = "--since takes an age, a day or all, not `soon`.";
 
-  it("says it inline, marks the field the message names, and keeps focus", async () => {
+  it("says it inline, says nothing is filtered yet, marks the field the message names, and keeps focus", async () => {
     await draw({
       list: "runs",
       start: { since: "soon" },
@@ -241,7 +241,7 @@ describe("a refused value", () => {
     });
     const alert = screen.getByRole("alert");
     expect(alert.textContent).toBe(
-      `${MESSAGE.replaceAll("`", "")} The list shows the last filter that worked. Fix the value, or clear the filter.`,
+      `${MESSAGE.replaceAll("`", "")} Nothing is filtered yet. Fix the value, or clear the filter.`,
     );
     const since = screen.getByRole("combobox", { name: "Since" });
     expect(since.getAttribute("aria-invalid")).toBe("true");

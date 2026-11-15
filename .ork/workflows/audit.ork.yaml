@@ -159,8 +159,11 @@ nodes:
   consolidate:
     type: tool.shell
     script: |-
-      export AUDIT_INPUT="{\"hunts\":$HUNTS,\"gaps\":${GAPS:-[]}}"
-      unset HUNTS GAPS
+      # A critic that failed reports no `stop`: consolidate goes on without its gaps.
+      critiqued=false
+      [ -n "$CRITIC_STOP" ] && critiqued=true
+      export AUDIT_INPUT="{\"hunts\":$HUNTS,\"gaps\":${GAPS:-[]},\"critiqued\":$critiqued}"
+      unset HUNTS GAPS CRITIC_STOP
       node tools/audit/cli.ts consolidate
     allow:
       - sh
@@ -170,6 +173,7 @@ nodes:
       SCOPE: "{{inputs.scope}}"
       HUNTS: "{{nodes.hunt.output.results}}"
       GAPS: "{{nodes.critic.output.gaps}}"
+      CRITIC_STOP: "{{nodes.critic.output.stop}}"
     output:
       format: json
       schema:
@@ -397,7 +401,9 @@ edges:
   - from: hunt
     to: critic
     when: ok || !ok
-  - critic -> consolidate
+  - from: critic
+    to: consolidate
+    when: ok || !ok
   - consolidate -> verify
   - from: verify
     to: findings

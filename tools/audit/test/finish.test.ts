@@ -234,3 +234,28 @@ describe("finalize", () => {
     });
   });
 });
+
+describe("a run whose coverage critic failed", () => {
+  it("is incomplete, and the report says first that the critique is missing", () => {
+    const { repo, env, dir } = startedRun("quick");
+    runConsolidate(repo, env, { hunts: [], critiqued: false });
+    runFindings(repo, env, { records: [] });
+    expect(runFinalize(repo, env, {}).incompleteReason).toBe(
+      "coverage_critique_missing",
+    );
+    runReport(repo, env, {});
+    const report = readFileSync(path.join(dir, "REPORT.md"), "utf8");
+    const caveat = report.indexOf("**The coverage critique is missing.**");
+    expect(caveat).toBeGreaterThan(-1);
+    expect(report.indexOf("**This is a partial pass.**")).toBeGreaterThan(
+      caveat,
+    );
+  });
+
+  it("is complete when the critic answered", () => {
+    const { repo, env } = startedRun("quick");
+    runConsolidate(repo, env, { hunts: [], critiqued: true });
+    runFindings(repo, env, { records: [] });
+    expect(runFinalize(repo, env, {}).incompleteReason).toBeNull();
+  });
+});

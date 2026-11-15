@@ -35,7 +35,10 @@ export type TreeKeyOptions = {
   on?: readonly string[];
 };
 
-/** Git rejected the pathspecs: a usage error, never a silent hit. */
+/**
+ * Git rejected the pathspecs, or they match no file: a usage error, never a
+ * silent hit.
+ */
 export class OncePathspecError extends Error {
   constructor(message: string) {
     super(message);
@@ -48,8 +51,9 @@ export const filesOf = (key: TreeKey): string => key.files ?? key.tree;
 
 /**
  * The key of the files in the worktree at `cwd`. Rejects outside a git
- * repository, and with `OncePathspecError` when git rejects `on`. Starts from a
- * copy of the real index, so git hashes only the files whose stat changed.
+ * repository, and with `OncePathspecError` when git rejects `on` or it matches
+ * no file. Starts from a copy of the real index, so git hashes only the files
+ * whose stat changed.
  */
 export const treeKeyOf = async (
   cwd: string,
@@ -82,6 +86,12 @@ export const treeKeyOf = async (
     if (listed.code !== 0) {
       throw new OncePathspecError(
         `git rejected the pathspecs ${on.join(" ")}: ${listed.stderr.trim()}`,
+      );
+    }
+    // A key on no file would pass for ever after the first run: a typo, likely.
+    if (listed.stdout === "") {
+      throw new OncePathspecError(
+        `the pathspecs ${on.join(" ")} match no file: check them, or drop --on to key every file`,
       );
     }
     const files = createHash("sha256").update(listed.stdout).digest("hex");

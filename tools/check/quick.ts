@@ -26,22 +26,23 @@ export const changedFiles = (cwd: string): string[] => {
   ];
 };
 
+const ROOT = path.resolve(import.meta.dirname, "../..");
+
 /** The workspace's own tool, so no `pnpm exec` start. */
-const tool = (cwd: string, bin: string): string =>
-  path.join(cwd, "node_modules/.bin", bin);
+const tool = (bin: string): string => path.join(ROOT, "node_modules/.bin", bin);
 
 /**
  * Runs `bin args` from `cwd`; the exit code of the tool, 1 when it did not
  * start.
  */
 const run = (cwd: string, bin: string, args: string[]): number =>
-  spawnSync(tool(cwd, bin), args, { cwd, stdio: "inherit" }).status ?? 1;
+  spawnSync(tool(bin), args, { cwd, stdio: "inherit" }).status ?? 1;
 
 /** Oxlint exits 1 with this line when every given path is ignored (`*.md`). */
 const NO_FILES = "No files found to lint";
 
 const lint = (cwd: string, files: string[]): number => {
-  const result = spawnSync(tool(cwd, "oxlint"), ["--", ...files], {
+  const result = spawnSync(tool("oxlint"), ["--", ...files], {
     cwd,
     encoding: "utf8",
     stdio: ["inherit", "pipe", "inherit"],
@@ -50,25 +51,29 @@ const lint = (cwd: string, files: string[]): number => {
   return result.stdout.includes(NO_FILES) ? 0 : (result.status ?? 1);
 };
 
+/**
+ * The exit codes of `oxfmt --check` and `oxlint` on `files`, run from `cwd`:
+ * none for no file, as both would then check the whole tree. A file either tool
+ * ignores passes it.
+ */
+export const checkFiles = (cwd: string, files: readonly string[]): number[] =>
+  files.length === 0
+    ? []
+    : [
+        run(cwd, "oxfmt", [
+          "--check",
+          "--no-error-on-unmatched-pattern",
+          "--",
+          ...files,
+        ]),
+        lint(cwd, [...files]),
+      ];
+
 const main = (): number => {
-  const cwd = path.resolve(import.meta.dirname, "../..");
-  const files = changedFiles(cwd);
-  // With no file, oxfmt and oxlint would check the whole tree.
-  const statuses =
-    files.length === 0
-      ? []
-      : [
-          run(cwd, "oxfmt", [
-            "--check",
-            "--no-error-on-unmatched-pattern",
-            "--",
-            ...files,
-          ]),
-          lint(cwd, files),
-        ];
+  const statuses = checkFiles(ROOT, changedFiles(ROOT));
   const typecheck = [
-    run(cwd, "tsc", ["-p", "tsconfig.json"]),
-    run(cwd, "tsc", ["-p", "packages/ui"]),
+    run(ROOT, "tsc", ["-p", "tsconfig.json"]),
+    run(ROOT, "tsc", ["-p", "packages/ui"]),
   ];
   return [...statuses, ...typecheck].every(s => s === 0) ? 0 : 1;
 };

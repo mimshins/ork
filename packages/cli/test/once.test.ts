@@ -231,6 +231,18 @@ describe("ork once", () => {
       expect(bad.stderr).toMatch(/pathspec magic 'nope'/u);
       expect(runs()).toBe(0);
     });
+
+    it.each([
+      [["--on", "srcc"], /the pathspecs srcc match no file/u],
+      [["--on", "--force"], /--on needs a pathspec/u],
+      [["--on="], /--on needs a pathspec/u],
+      [["--covers", "--on", "src"], /--covers needs a name/u],
+    ])("refuses %j and does not run", (flags, message) => {
+      const bad = ork(["once", ...flags, ...counting()]);
+      expect(bad.status).toBe(1);
+      expect(bad.stderr).toMatch(message);
+      expect(runs()).toBe(0);
+    });
   });
 
   it("is in --help and in completion", () => {

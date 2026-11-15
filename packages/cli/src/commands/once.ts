@@ -57,15 +57,28 @@ const exitCodeOf = (command: readonly string[]): Promise<number> =>
  * the last. Not `run.ts`'s `flagValues`, which would load the run command's
  * imports on every `ork once`.
  */
-const listOf = (before: readonly string[], flag: string): string[] =>
+const valuesOf = (
+  before: readonly string[],
+  flag: string,
+): (string | undefined)[] =>
   before.flatMap((arg, index) => {
-    const value = arg.startsWith(`${flag}=`)
-      ? arg.slice(flag.length + 1)
-      : arg === flag
-        ? before[index + 1]
-        : undefined;
-    return value === undefined || value === "" ? [] : [value];
+    if (arg.startsWith(`${flag}=`)) return [arg.slice(flag.length + 1)];
+    if (arg !== flag) return [];
+    // `--on --force` gives --on no value; it doesn't make `--force` a pathspec.
+    const next = before[index + 1];
+    return [next === undefined || next.startsWith("--") ? undefined : next];
   });
+
+/** The values of `flag`, or `undefined` when one of its uses has none. */
+const listOf = (
+  before: readonly string[],
+  flag: string,
+): string[] | undefined => {
+  const values = valuesOf(before, flag);
+  return values.every(value => value !== undefined && value !== "")
+    ? values.filter(value => value !== undefined)
+    : undefined;
+};
 
 export const once = defineCommand({
   meta: {
@@ -87,13 +100,22 @@ export const once = defineCommand({
     // citty must not read the command's own flags as ours.
     const before = rawArgs.slice(0, split);
     const given = parseArgs(before, args);
+    const covers = listOf(before, "--covers");
+    const on = listOf(before, "--on");
+    if (covers === undefined || on === undefined) {
+      writeErr(
+        `${covers === undefined ? "--covers needs a name" : "--on needs a pathspec"}: ork once [--covers <name>]… [--on <pathspec>]… -- <command…>`,
+      );
+      process.exitCode = 1;
+      return;
+    }
     const run = process.env["ORK_RUN"];
     const node = process.env["ORK_NODE"];
     const result = await runOnce({
       cwd: process.cwd(),
       name: given["as"] ?? command.join(" "),
-      covers: listOf(before, "--covers"),
-      on: listOf(before, "--on"),
+      covers,
+      on,
       withHead: given["with-head"] === true,
       force: given["force"] === true,
       ...(run === undefined || node === undefined

@@ -93,12 +93,20 @@ export const previewInput = (
     : `${toolName} ${line}`;
 };
 
-/** Never answers, until `signal` withdraws it: what a stopped prompt leaves. */
-const parked = (signal: AbortSignal | undefined): Promise<never> =>
+/** Never answers until `signal` withdraws it, at once if it already has. */
+export const parked = (signal: AbortSignal | undefined): Promise<never> =>
   new Promise((_, reject) => {
-    signal?.addEventListener("abort", () => {
+    if (signal?.aborted === true) {
       reject(withdrawn(signal));
-    });
+      return;
+    }
+    signal?.addEventListener(
+      "abort",
+      () => {
+        reject(withdrawn(signal));
+      },
+      { once: true },
+    );
   });
 
 /**

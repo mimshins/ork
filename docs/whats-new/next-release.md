@@ -18,8 +18,10 @@ _Part of [What's new](../whats-new.md)._
   ([guide](../guides/follow-ups.md#reading-and-closing-them)).
 - **`ork once --on` keys a check by the files it reads.** `--on <pathspec>`
   (repeatable) hashes only the files the git pathspecs match, so an edit
-  elsewhere still reuses the pass; a pathspec git refuses stops before the
-  command runs. Repeated `--covers` now records every name
+  elsewhere still reuses the pass. A pathspec git refuses, pathspecs that match
+  no file (most often a typo, which would otherwise pass for ever) and `--on`
+  with no value stop before the command runs. Repeated `--covers` now records
+  every name
   ([guide](../guides/running-workflows/several-runs.md#run-a-check-once-ork-once)).
 - **A watched trigger's MCP server program is accepted too.** The hash behind
   `ork watch --accept` now covers a file in your project that an `mcp.call`
@@ -36,3 +38,7 @@ _Part of [What's new](../whats-new.md)._
   naming the server, because OpenCode would call its tools `ork_<tool>` like
   Ork's own. Rename the server; `orkish` is fine
   ([guide](../guides/drivers.md)).
+- **A first refused filter says nothing is filtered yet.** In `ork ui`, a filter
+  refused before any has worked says "Nothing is filtered yet." rather than that
+  the list shows the last filter that worked
+  ([filtering lists](../guides/filtering-lists.md#in-the-browser-and-ork-mcp)).

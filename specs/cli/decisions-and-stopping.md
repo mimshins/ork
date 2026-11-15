@@ -57,13 +57,14 @@ _Part of [The ork CLI](../cli.md)._
   `--list`, `--json`, `--ids`, `--limit`, `--id`, `--choose`, `--document`,
   `--say`, `--note` or `--rating` with it
   (`--follow asks decisions as they open; it can't go with --list, ….`); and
-  `--until-idle` without `--follow` (`--until-idle goes with --follow.`). Two
-  facts shape its stop. The `parked(signal)` helper of
-  [human.ts](../../packages/cli/src/human.ts) does not reject on a signal that
-  is already aborted, so a prompt parked after the abort stays open: the abort
-  fires one `setTimeout` tick after the stop signal, once the prompt has
-  subscribed. And `pendingDecisions` drops the decisions of finished runs, so
-  the `still open` count also includes decisions asked here that the store still
+  `--until-idle` without `--follow` (`--until-idle goes with --follow.`). Its
+  stop aborts the prompts at once: the `parked(signal)` helper of
+  [human.ts](../../packages/cli/src/human.ts) rejects on a signal already
+  aborted, so a prompt that parks after the Ctrl-C ends too. Ctrl-C on a real
+  terminal ends it, and `logs -f --all`, with exit 0
+  ([test](../../packages/cli/test/follow-ctrl-c.test.ts), run on a pty with
+  `script`). And `pendingDecisions` drops the decisions of finished runs, so the
+  `still open` count also includes decisions asked here that the store still
   holds open.
 - **`ork chat <run> <node>`**
   ([chat.ts](../../packages/cli/src/commands/chat.ts),

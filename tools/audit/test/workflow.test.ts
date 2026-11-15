@@ -24,7 +24,7 @@ import {
   PROFILES,
   type ProfileName,
 } from "../profiles.ts";
-import { auditEnv, cleanUp } from "./kit.ts";
+import { auditEnv, cleanUp, readJson, reconUnits } from "./kit.ts";
 
 const load = () => {
   const text = readFileSync(
@@ -170,6 +170,39 @@ describe("audit.ork.yaml", () => {
       undefined,
     ]);
   });
+
+  it.each([
+    ["failed", "", true],
+    ["answered", "false", undefined],
+  ])(
+    "consolidates after a critic that %s, marking a missing critique",
+    (_how, stop, missing) => {
+      expect(whensTo("critic")).toEqual(["ok || !ok"]);
+      const env = auditEnv({ PROFILE: "quick", SCOPE: "all" });
+      const ledger = runScript("ledger", {
+        ...env,
+        UNITS: JSON.stringify(reconUnits(2)),
+      });
+      expect(ledger.status).toBe(0);
+      const result = runScript("consolidate", {
+        ...env,
+        HUNTS: "[]",
+        GAPS: "",
+        CRITIC_STOP: stop,
+      });
+      expect(result.status).toBe(0);
+      const printed: unknown = JSON.parse(result.stdout);
+      const outputDir = String(
+        Reflect.get(Object.assign({}, printed), "outputDir"),
+      );
+      expect(
+        Reflect.get(
+          Object.assign({}, readJson(outputDir, "run-metadata.json")),
+          "coverage_critique_missing",
+        ),
+      ).toBe(missing);
+    },
+  );
 
   it("has no script that swallows a failure", () => {
     const names = Object.keys(workflow.nodes);

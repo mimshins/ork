@@ -134,9 +134,10 @@ ork once --as check --covers check:changed -- pnpm check
   that never reads your docs:
   `ork once --as tests --on . --on ':(exclude)docs' -- pnpm test`. A new or
   deleted file inside the pathspecs counts as an edit. A pathspec git rejects
-  stops with git's message (exit 1) and the command does not run. List what the
-  check does not read with `exclude`, so a new folder runs it again. Without
-  `--on`, every file counts.
+  stops with git's message (exit 1) and the command does not run, and so do
+  pathspecs that match no file, which is most often a typo. List what the check
+  does not read with `exclude`, so a new folder runs it again. Without `--on`,
+  every file counts.
 - A hit prints one line and exits 0:
   `✓ check already passed on these files · 5m ago · you`. The last part is `you`
   from a terminal, or the run and node that ran it.

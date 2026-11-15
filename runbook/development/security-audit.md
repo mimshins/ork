@@ -75,7 +75,9 @@ no OS-enforced sandbox yet, so a lead that needs execution is recorded as
    the first 8 (`quick`) or 20 (`standard`) units are hunted, the rest are
    written as `deferred`.
 3. `hunt`: one Opus hunter per unit, three at a time. `critic` looks for gaps;
-   no second wave runs, so each gap it accepts is recorded `deferred`.
+   no second wave runs, so each gap it accepts is recorded `deferred`. If the
+   critic fails, the run goes on without its gaps, so the hunters' work is still
+   verified, and the run is marked incomplete (`coverage_critique_missing`).
 4. `consolidate` dedupes candidates by fingerprint and passes on at most 12
    (`quick`) or 30 (`standard`). The rest are written as `needs_validation`
    saying they were **not looked at**, and the run is marked incomplete.
@@ -124,7 +126,9 @@ says what the run could not do.
 units and defers the rest, and one run finds only part of what is there. A run
 is also marked incomplete when candidates went unreviewed past the verifier cap,
 had no usable verifier record, or were disputed at the recheck; the report lists
-their fingerprints, and none of them is a finding.
+their fingerprints, and none of them is a finding. When the critic failed, the
+report's first caveat says the coverage critique is missing: nobody checked
+which hunted units closed.
 
 **How the run stops.** The two skill validators run in `tool.shell` nodes with
 the default `sh -eu`, so a non-zero exit fails the node: they need no `|| true`

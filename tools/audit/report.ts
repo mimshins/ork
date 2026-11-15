@@ -101,6 +101,11 @@ export const runReport = (
     `- Run status: ${str(metadata["run_status"])}${incomplete ? ` (${str(metadata["incomplete_reason"])})` : ""}`,
   ];
   const caveats: string[] = [];
+  if (metadata["coverage_critique_missing"] === true) {
+    caveats.push(
+      "**The coverage critique is missing.** The coverage critic failed, so nobody checked which hunted units closed: the coverage is unchecked and the audit is incomplete. What the hunters found was still verified.",
+    );
+  }
   if (metadata["partial_coverage"] === true) {
     caveats.push(
       "**This is a partial pass.** The profile or scope bounds it: units not hunted are `deferred` in the ledger, and one run never exhausts the target.",

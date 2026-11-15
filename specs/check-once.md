@@ -83,9 +83,12 @@ version, and, with `--with-head`, `HEAD`:
   listing, and the stat cache is kept. The hash is stored in the pass's `tree`
   field, and the pass's file name hashes `[name, files, node, on]`, so a
   different list never shares a pass. Without `--on` the name is hashed as
-  before, so earlier passes stay valid. A git failure on the pathspecs rejects
-  (`OncePathspecError`) before the command runs. The key taken after the run
-  swallows errors and records nothing, as for any key that changed.
+  before, so earlier passes stay valid. A git failure on the pathspecs, or
+  pathspecs that match no file (a key on nothing would hit for ever after the
+  first run), rejects (`OncePathspecError`) before the command runs. `--on` or
+  `--covers` with no value (`--on --force`) is refused too, never read as the
+  next flag. The key taken after the run swallows errors and records nothing, as
+  for any key that changed.
 - **The key is the files, not the commit.** A commit, or a rebase that changes
   no file, keeps a hit. Nothing is assumed from a parent tree.
 - A pass counts only for the files it ran on: an edit while the command ran
@@ -129,9 +132,13 @@ before. Old files mean the same; `schemaVersion` does not change.
   an **exclude** list, so a new folder reruns the tests: `specs`, `decisions`,
   `rfcs`, `runbook`, `benchmarks`, `.changeset`, most of `docs` (not the guides
   two tests read, and not the `docs/guides` entries starting with `i` or `w`),
-  and the root READMEs and policy files. The exact list is in `package.json`; it
-  was audited against `packages/*/test` and `tools/*/test`: no test reads a path
-  on it ([L374 and L375](./gaps/check-once-limits.md)).
+  and the root READMEs and policy files. The exact list is in `package.json`. A
+  test run fails when a test reads a path the list leaves out
+  ([read-guard.ts](../tools/vitest/read-guard.ts) records each test worker's
+  reads of the repository through `node:fs`,
+  [read-guard-check.ts](../tools/vitest/read-guard-check.ts) asks git which the
+  pathspecs keep when the run ends), so the list can't go stale
+  ([L375 and L377](./gaps/check-once-limits.md)).
 - `pnpm check:quick` ([tools/check/quick.ts](../tools/check/quick.ts)) is the
   loop between edits: `oxfmt --check` and `oxlint` on the files changed since
   `HEAD` (and untracked ones), then both typechecks. It never records a pass and

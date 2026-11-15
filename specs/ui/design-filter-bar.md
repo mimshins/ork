@@ -71,16 +71,16 @@ hover and focus, verbatim, so the UI never rewords the CLI's help.
 
 ## States
 
-| State           | What shows                                                                                                                                                                                                                                                                                                    |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Fields loading  | "Reading filters…" as a polite status in place of the fields; the list reads as it does today.                                                                                                                                                                                                                |
-| Fields failed   | An alert: "Couldn't read the filter fields: <server's words>. The list shows without filters." with **Try again** and the list's `--help` command as a block. The list stays usable.                                                                                                                          |
-| No filter       | The fields, none set. The panel's `summary` (such as "3 due, 5 waiting") is the status line. No **Clear filter**, no command.                                                                                                                                                                                 |
-| Filtered        | The count line says "3 runs match." (`<output>`, polite); **Clear filter** and the matching `ork` command as a block (below) appear.                                                                                                                                                                          |
-| Refetching      | The count line says "Updating…"; the fields stay enabled and the list stays as it was until the answer.                                                                                                                                                                                                       |
-| Value refused   | HTTP 400: an alert under the fields with the server's words and "The list shows the last filter that worked. Fix the value, or clear the filter." The named field is `aria-invalid`, its border takes the danger text color, and the alert is its description. The list keeps its last good rows, not dimmed. |
-| Nothing matches | The panel's empty state: "No runs match the filter." with **Clear filter** and the command as `cli` (see [Copy](#copy)). With no filter set, the panel's own empty state.                                                                                                                                     |
-| Unreachable     | The fields stay as last read. A refetch that cannot reach `ork ui` is the panel's own read failure, not the bar's.                                                                                                                                                                                            |
+| State           | What shows                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Fields loading  | "Reading filters…" as a polite status in place of the fields; the list reads as it does today.                                                                                                                                                                                                                                                                                                               |
+| Fields failed   | An alert: "Couldn't read the filter fields: <server's words>. The list shows without filters." with **Try again** and the list's `--help` command as a block. The list stays usable.                                                                                                                                                                                                                         |
+| No filter       | The fields, none set. The panel's `summary` (such as "3 due, 5 waiting") is the status line. No **Clear filter**, no command.                                                                                                                                                                                                                                                                                |
+| Filtered        | The count line says "3 runs match." (`<output>`, polite); **Clear filter** and the matching `ork` command as a block (below) appear.                                                                                                                                                                                                                                                                         |
+| Refetching      | The count line says "Updating…"; the fields stay enabled and the list stays as it was until the answer.                                                                                                                                                                                                                                                                                                      |
+| Value refused   | HTTP 400: an alert under the fields with the server's words and "The list shows the last filter that worked. Fix the value, or clear the filter." (before any filter has worked: "Nothing is filtered yet. Fix the value, or clear the filter.") The named field is `aria-invalid`, its border takes the danger text color, and the alert is its description. The list keeps its last good rows, not dimmed. |
+| Nothing matches | The panel's empty state: "No runs match the filter." with **Clear filter** and the command as `cli` (see [Copy](#copy)). With no filter set, the panel's own empty state.                                                                                                                                                                                                                                    |
+| Unreachable     | The fields stay as last read. A refetch that cannot reach `ork ui` is the panel's own read failure, not the bar's.                                                                                                                                                                                                                                                                                           |
 
 **A first refused filter** (no filter has worked yet) shows the panel's
 unfiltered list under the alert, never a blank list or "Reading runs…". The same
@@ -88,8 +88,9 @@ rule holds before the first filtered answer arrives: the list stays as it was
 (the unfiltered one) until the answer, as in Refetching. A list that is empty
 because it was never filtered or because the filter was refused shows the
 panel's own empty state, not "No runs match the filter." (that one is for an
-accepted filter that matches nothing). The alert's words are unchanged: the
-unfiltered list is the last filter that worked.
+accepted filter that matches nothing). The alert says so: "Nothing is filtered
+yet." in place of "The list shows the last filter that worked.", as nothing has
+worked yet.
 
 **The command follows the filter that worked.** While the server refuses
 `values`, the shown and copied command is the last values it accepted (the
@@ -156,7 +157,9 @@ Exact. Nouns: `runs`, `decisions`, `follow-ups`, `feedback items`, `worktrees`,
 - Fields failed:
   `Couldn't read the filter fields: <server's words>. The list shows without filters.`
 - Refused:
-  `<server's words> The list shows the last filter that worked. Fix the value, or clear the filter.`
+  `<server's words> The list shows the last filter that worked. Fix the value, or clear the filter.`,
+  or, before any filter has worked,
+  `<server's words> Nothing is filtered yet. Fix the value, or clear the filter.`
   The server's words are Ork's own, so they go through `CodeText`:
   ``--status takes one of …, not `x`.``
 - Empty state: title `No runs match the filter.`, body

@@ -1,4 +1,8 @@
-/** @file Tests for the file list `pnpm check:quick` hands to the linters. */
+/**
+ * @file Tests for `pnpm check:quick`: the file list it hands to the linters,
+ *   and what `oxfmt --check` and `oxlint` (spawned) make of it: nothing for no
+ *   file, a pass for files both ignore, a failure for a file either rejects.
+ */
 
 import { execFileSync } from "node:child_process";
 import {
@@ -13,7 +17,9 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { changedFiles } from "../quick.ts";
+import { changedFiles, checkFiles } from "../quick.ts";
+
+const ROOT = path.resolve(import.meta.dirname, "../../..");
 
 const roots: string[] = [];
 
@@ -81,5 +87,45 @@ describe("changedFiles", () => {
     const cwd = repo();
     writeFileSync(path.join(cwd, "my file.ts"), "export {};\n");
     expect(changedFiles(cwd)).toEqual(["my file.ts"]);
+  });
+});
+
+/** A repository with its own format and lint settings, and `files` in it. */
+const configured = (files: Record<string, string>): string => {
+  const cwd = repo();
+  writeFileSync(path.join(cwd, ".oxfmtrc.json"), "{}\n");
+  writeFileSync(
+    path.join(cwd, ".oxlintrc.json"),
+    '{ "rules": { "no-debugger": "error" } }\n',
+  );
+  for (const [name, text] of Object.entries(files)) {
+    writeFileSync(path.join(cwd, name), text);
+  }
+  return cwd;
+};
+
+describe("checkFiles", () => {
+  it("runs neither tool for no file", () => {
+    expect(checkFiles(ROOT, [])).toEqual([]);
+  });
+
+  it("passes a change of only files both tools ignore", () => {
+    // oxfmt.config.ts ignores workflow files (exit 2 without
+    // --no-error-on-unmatched-pattern); oxlint finds no file to lint (exit 1).
+    expect(checkFiles(ROOT, [".ork/workflows/build.ork.yaml"])).toEqual([0, 0]);
+  });
+
+  it("passes well-formed files and fails a misformatted one", () => {
+    const cwd = configured({
+      "good.ts": "export const a = 1;\n",
+      "ugly.ts": "const  a=1\nexport {a}\n",
+    });
+    expect(checkFiles(cwd, ["good.ts"])).toEqual([0, 0]);
+    expect(checkFiles(cwd, ["ugly.ts"])[0]).not.toBe(0);
+  });
+
+  it("fails a file the linter rejects", () => {
+    const cwd = configured({ "lint.ts": "debugger;\nexport {};\n" });
+    expect(checkFiles(cwd, ["lint.ts"])).toEqual([0, 1]);
   });
 });

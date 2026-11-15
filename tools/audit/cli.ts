@@ -70,6 +70,7 @@ const commands: Record<string, (cwd: string) => unknown> = {
     return runConsolidate(cwd, process.env, {
       hunts,
       gaps: asArray(input["gaps"]),
+      critiqued: input["critiqued"] !== false,
     });
   },
   findings: cwd => {

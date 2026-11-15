@@ -55,8 +55,9 @@ export type FilterBarProps = {
   tools?: ReactNode;
 };
 
-const REFUSED =
-  "The list shows the last filter that worked. Fix the value, or clear the filter.";
+/** What the list shows under a refusal: the last filter that worked, if any. */
+const refusedText = (worked: boolean): string =>
+  `${worked ? "The list shows the last filter that worked." : "Nothing is filtered yet."} Fix the value, or clear the filter.`;
 
 const NO_DEFAULTS: Partial<Record<string, string>> = {};
 const NO_SUGGESTIONS: Partial<Record<string, readonly Suggestion[]>> = {};
@@ -193,7 +194,7 @@ export const FilterBar = ({
       {error === null ? null : (
         <FilterAlert
           id={alertId}
-          text={`${error.message} ${REFUSED}`}
+          text={`${error.message} ${refusedText(isFiltered(applied))}`}
         />
       )}
       {filtered ? (

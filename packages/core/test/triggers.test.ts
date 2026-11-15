@@ -754,12 +754,25 @@ describe("reading a project", () => {
     ).toBe(true);
   });
 
-  it.each([
-    ["a word that is no file", "node", ["--verbose", "serve"]],
-    ["a missing file", "node", ["--config=./missing.json"]],
-  ])("leaves an MCP check's hash when it names %s", (_w, command, args) => {
-    const place = mcpProject({ command, args });
-    expect(hashAfterWriting(place, "other.json")).toBe(false);
+  it("reads a file an MCP check names once it exists, and nothing before", () => {
+    const place = mcpProject({
+      command: "node",
+      args: ["--verbose", "--config=./missing.json"],
+    });
+    const before = hashOf(place);
+    expect(hashOf(place)).toBe(before);
+    writeFileSync(path.join(place.root, "missing.json"), "{}");
+    expect(hashOf(place)).not.toBe(before);
+  });
+
+  it("resolves an MCP server's words from the project root, not .ork/", () => {
+    const place = mcpProject({ command: "node", args: ["./tool.mjs"] });
+    writeFileSync(path.join(place.root, "tool.mjs"), "one");
+    const before = hashOf(place);
+    writeFileSync(path.join(place.dir, "tool.mjs"), "beside the triggers");
+    expect(hashOf(place)).toBe(before);
+    writeFileSync(path.join(place.root, "tool.mjs"), "two");
+    expect(hashOf(place)).not.toBe(before);
   });
 
   it("does not hash a file outside the project", () => {
@@ -774,11 +787,14 @@ describe("reading a project", () => {
     expect(hashOf(place)).toBe(before);
   });
 
-  it("adds nothing for an http server or a server that isn't there", () => {
-    const http = mcpProject({ url: "http://localhost:1/mcp" });
-    const gone = mcpProject({ command: "node" }, "other");
-    expect(hashAfterWriting(http, "other.json")).toBe(false);
-    expect(hashAfterWriting(gone, "other.json")).toBe(false);
+  it("reads no file for an http server, even a url that names one", () => {
+    const http = mcpProject({ url: "./served.json" });
+    expect(hashAfterWriting(http, "served.json")).toBe(false);
+  });
+
+  it("reads no file for a server the check doesn't call", () => {
+    const other = mcpProject({ command: "node", args: ["./tool.mjs"] }, "gone");
+    expect(hashAfterWriting(other, "tool.mjs")).toBe(false);
   });
 
   it("says a file it can't read is broken, rather than throwing", () => {

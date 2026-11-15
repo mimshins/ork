@@ -237,6 +237,15 @@ describe("runOnce with pathspecs (on)", () => {
     expect(check.runs).toBe(0);
   });
 
+  it("rejects pathspecs that match no file, without running the check", async () => {
+    const root = repo();
+    const check = counting();
+    await expect(once(root, check, { on: ["srcc"] })).rejects.toThrow(
+      /the pathspecs srcc match no file/u,
+    );
+    expect(check.runs).toBe(0);
+  });
+
   it("always runs outside a git repository", async () => {
     const folder = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-once-")));
     const check = counting();

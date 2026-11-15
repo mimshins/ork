@@ -12,9 +12,11 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { stripVTControlCharacters } from "node:util";
 
+import type * as Core from "@krapht/ork-core";
 import {
   answerDecision,
   type EventStore,
+  followRuns,
   openStore,
   pendingDecisions,
   type RunEvent,
@@ -30,6 +32,15 @@ import {
 import { fakeTerm, type FakeTerm, KEY } from "./term-fake.ts";
 
 const BIN = path.resolve(import.meta.dirname, "../src/bin.ts");
+
+// `followRuns` as it is, watched: a test can wait for a pass to end idle.
+vi.mock("@krapht/ork-core", async importOriginal => {
+  const core = await importOriginal<typeof Core>();
+  return {
+    ...core,
+    followRuns: vi.fn<typeof core.followRuns>(core.followRuns),
+  };
+});
 
 const finished = (runId: string): RunEvent => ({
   type: "run.finished",
@@ -204,8 +215,11 @@ describe("ork decide --follow, in process", () => {
     await onScreen("Approve live-1?");
     store.append("live0000", finished("live0000"));
     // Following has gone idle; the prompt on screen is all that is left.
-    await new Promise<void>(resolve => {
-      setTimeout(resolve, 50);
+    await vi.waitFor(() => {
+      expect(vi.mocked(followRuns).mock.settledResults).toContainEqual({
+        type: "fulfilled",
+        value: "idle",
+      });
     });
     await term.press(KEY.ctrlC);
 

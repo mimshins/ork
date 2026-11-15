@@ -82,13 +82,9 @@ export const followDecisions = async (
     ...(session.home === undefined ? {} : { home: session.home }),
   });
   // Ctrl-C ends the prompt on screen too: it has its own signal, which
-  // `followRuns`' signal does not reach once that has returned "idle". Aborted
-  // a tick later: the prompt that took the Ctrl-C parks on its signal, and a
-  // signal already aborted by then would never reject it (`parked`, human.ts).
+  // `followRuns`' signal does not reach once that has returned "idle".
   stop.signal.addEventListener("abort", () => {
-    setTimeout(() => {
-      prompts.abort();
-    }, 0);
+    prompts.abort();
   });
   /**
    * Every decision put to the person: one that was left (`q`) isn't asked

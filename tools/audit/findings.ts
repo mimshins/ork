@@ -15,7 +15,7 @@ import path from "node:path";
 import { checkInputs, type Inputs } from "./inputs.ts";
 import { isObject, type Json, objects, str, writeJson } from "./json.ts";
 import { PROFILES } from "./profiles.ts";
-import { outputDir, readRows } from "./store.ts";
+import { outputDir, readRows, updateMetadata } from "./store.ts";
 
 type Env = Record<string, string | undefined>;
 
@@ -108,10 +108,20 @@ const listsOf = (hunts: readonly unknown[], key: string): unknown[] =>
 export const runConsolidate = (
   cwd: string,
   env: Env,
-  input: { hunts?: readonly unknown[]; gaps?: readonly unknown[] | undefined },
+  input: {
+    hunts?: readonly unknown[];
+    gaps?: readonly unknown[] | undefined;
+    /** False when the coverage critic returned nothing (it failed). */
+    critiqued?: boolean;
+  },
 ): ConsolidateResult => {
   const { profile }: Inputs = checkInputs(env["PROFILE"], env["SCOPE"]);
   const dir = outputDir(cwd, env["ORK_RUN"] ?? "", env);
+  // Without a critique nobody checked which hunted units closed: finalize marks
+  // the run incomplete, and the report says so first.
+  if (input.critiqued === false) {
+    updateMetadata(dir, { coverage_critique_missing: true });
+  }
   const cap = PROFILES[profile].verifiers;
 
   const all = candidatesOf(input.hunts ?? []);

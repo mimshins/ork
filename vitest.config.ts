@@ -3,7 +3,8 @@
  *   UI's tests (`.tsx`) run in a DOM (jsdom); the rest run in Node. `HOME` is a
  *   temp folder, so no test reaches the developer's own `~/.ork/state.db`, and
  *   the caller's `ORK_PLAIN` and `NO_COLOR` are dropped. The Node tests' child
- *   Node processes share one compile cache, so a CLI start costs half.
+ *   Node processes share one compile cache, so a CLI start costs half. A run
+ *   fails if its tests read a file the tests' `ork once --on` list leaves out.
  */
 
 import { mkdtempSync, rmSync } from "node:fs";
@@ -15,6 +16,10 @@ import { defineConfig } from "vitest/config";
 const HOME = mkdtempSync(path.join(tmpdir(), "ork-test-home-"));
 // The Node tests' children share one compile cache (tools/vitest/compile-cache.ts).
 process.env["ORK_TEST_COMPILE_CACHE"] = path.join(HOME, "compile-cache");
+// What the tests read of the repository, checked against the tests' `--on`
+// list when the run ends (tools/vitest/read-guard.ts and read-guard-check.ts).
+const READ_LOG = path.join(HOME, "reads");
+process.env["ORK_TEST_READ_LOG"] = READ_LOG;
 
 // The caller's terminal settings stay out of the tests: an `ork run --plain`
 // (or NO_COLOR) around `pnpm check` would change what the CLI's tests see.
@@ -39,13 +44,17 @@ const workers = Math.max(1, Math.floor(availableParallelism() / 3));
 export default defineConfig({
   test: {
     maxWorkers: workers,
-    env: { HOME },
+    env: { HOME, ORK_TEST_READ_LOG: READ_LOG },
+    globalSetup: ["tools/vitest/read-guard-check.ts"],
     projects: [
       {
         test: {
           name: "node",
           expect,
-          setupFiles: ["tools/vitest/compile-cache.ts"],
+          setupFiles: [
+            "tools/vitest/compile-cache.ts",
+            "tools/vitest/read-guard.ts",
+          ],
           // Many tests start the CLI, git or a child process: 2.5-3.5 s in a
           // full run, past Vitest's 5 s default on a busy machine (a pre-push
           // check while a run's sessions work). A test that needs longer still
@@ -67,6 +76,7 @@ export default defineConfig({
           // lower priority, on half the cores).
           testTimeout: 15_000,
           include: ["packages/ui/test/**/*.test.{ts,tsx}"],
+          setupFiles: ["tools/vitest/read-guard.ts"],
           environment: "jsdom",
           // The files of a worker share one module graph (React, dockview and
           // the app are imported once, not per file) and the jsdom window.
