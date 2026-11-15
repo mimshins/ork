@@ -154,7 +154,13 @@ describe("the driver for nodes that name none", () => {
       "both are ready",
       readyOnly("open-code", "claude-code"),
       "claude-code",
-      "more than one is ready, and a run takes claude-code first",
+      "more than one is ready, and claude-code comes first",
+    ],
+    [
+      "several are ready but claude-code",
+      readyOnly("open-code", "command-code"),
+      "open-code",
+      "claude-code isn't ready, so open-code is next (`ork doctor` says why)",
     ],
   ])(
     "is the one ready when %s, said in one line",
@@ -184,6 +190,7 @@ describe("the driver for nodes that name none", () => {
       "No agent driver is ready here, and write, review name none.",
       "Get the open-code driver ready.",
       "Get the claude-code driver ready.",
+      "Get the command-code driver ready.",
       "See `ork doctor`.",
     ]);
   });

@@ -26,7 +26,7 @@ export const readyOnly =
   (...ready: DriverId[]): DriverChecks =>
   () =>
     Promise.resolve(
-      (["open-code", "claude-code"] as const).map(id => check(id, ready.includes(id))),
+      (["open-code", "claude-code", "command-code"] as const).map(id => check(id, ready.includes(id))),
     );
 
 /**

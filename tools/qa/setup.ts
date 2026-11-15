@@ -152,6 +152,11 @@ export const setupKit = (
     path.join(FIXTURES, "fake-command.mjs"),
     path.join(root, "bin", "cmd"),
   );
+  // A real `opencode` on the tester's PATH would be ready, and could be used.
+  copyExecutable(
+    path.join(FIXTURES, "fake-opencode.mjs"),
+    path.join(root, "bin", "opencode"),
+  );
   const gh = path.join(root, "bin", "gh");
   writeFileSync(
     gh,

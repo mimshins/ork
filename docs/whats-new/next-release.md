@@ -33,3 +33,9 @@ _Part of [What's new](../whats-new.md)._
   ([looking back](../guides/running-workflows/looking-back.md#follow-every-live-run),
   [filtering lists](../guides/filtering-lists.md),
   [issues](../guides/issues-in-parallel/running-it.md)).
+- **Clearer driver choice, and runs started inside a detached run detach.** When
+  `claude-code` isn't ready and several other drivers are, `ork run` and
+  `ork init` now say `claude-code isn't ready, so open-code is next`, where they
+  read as if open-code came first. An `ork run --detach` started by a node of a
+  detached run goes to the background again, and no longer says "detached run"
+  when run in the foreground there ([drivers](../guides/drivers.md)).

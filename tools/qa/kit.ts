@@ -5,16 +5,16 @@
  *   holds `.ork-qa-root` (the marker that makes a folder a kit root), `home/`
  *   (the tester's `HOME`, so its `ork` store is `home/.ork`), `prefix/` (the
  *   tarball installed, `prefix/node_modules/.bin/ork`), `bin/` (the stand-ins
- *   `claude` and `cmd`, copies of the runtime's fixtures, and `gh`, which logs
- *   its argv to `gh.log` in the root and exits 1), `repos/starter` (a git repo
- *   with one commit) and `env.sh` (sets `HOME`, `PATH` and
- *   `ORK_NO_UPDATE_CHECK=1`, unsets the paid-provider variables; start every
- *   Bash call with `. <root>/env.sh &&`). Each subcommand is one entry of
- *   `COMMANDS`: it returns the text to print or throws an `Error` whose message
- *   is printed. A wrapper a tester puts in front of a stand-in must stream
- *   stdin through, never read it to the end: Ork's driver keeps stdin open
- *   until the first result (`STDIN_NOTE`, printed with the usage). The
- *   subcommands:
+ *   `claude`, `cmd` and `opencode`, copies of the runtime's fixtures, so no
+ *   real driver is ever reached, and `gh`, which logs its argv to `gh.log` in
+ *   the root and exits 1), `repos/starter` (a git repo with one commit) and
+ *   `env.sh` (sets `HOME`, `PATH` and `ORK_NO_UPDATE_CHECK=1`, unsets the
+ *   paid-provider variables; start every Bash call with `. <root>/env.sh &&`).
+ *   Each subcommand is one entry of `COMMANDS`: it returns the text to print or
+ *   throws an `Error` whose message is printed. A wrapper a tester puts in
+ *   front of a stand-in must stream stdin through, never read it to the end:
+ *   Ork's driver keeps stdin open until the first result (`STDIN_NOTE`, printed
+ *   with the usage). The subcommands:
  *
  *   - `setup <tarball> <name>` (`setup.ts`): builds a root.
  *   - `commit <repo> [message]` (`commit.ts`): commits everything in a repo with

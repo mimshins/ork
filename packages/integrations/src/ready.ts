@@ -61,3 +61,15 @@ export const readyDriver = (checks: readonly DriverCheck[]): ReadyDriver => {
     ready: ready.length,
   };
 };
+
+/**
+ * Why the ready driver was taken, in a few words: the only one ready (its
+ * detail), the preferred one of several, or the next when the preferred one
+ * isn't ready, so a run never reads as if it put another before it.
+ */
+export const whyReady = (ready: Extract<ReadyDriver, { ok: true }>): string => {
+  if (ready.ready === 1) return ready.detail;
+  return ready.driver === PREFERRED_DRIVER
+    ? `more than one is ready, and ${PREFERRED_DRIVER} comes first`
+    : `${PREFERRED_DRIVER} isn't ready, so ${ready.driver} is next (\`ork doctor\` says why)`;
+};

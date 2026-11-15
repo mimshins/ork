@@ -10,6 +10,7 @@ import path from "node:path";
 
 import {
   calledWorkflows,
+  DETACHED_ENV,
   type Environ,
   envReadsOf,
   envValuesOf,
@@ -65,6 +66,8 @@ const IDENTITY_KEYS = new Set([
   STATE_ENV,
   "ORK_ITEM",
   "ORK_INDEX",
+  // A detached run's own marker: an `ork` its nodes start is not detached.
+  DETACHED_ENV,
 ]);
 
 /**

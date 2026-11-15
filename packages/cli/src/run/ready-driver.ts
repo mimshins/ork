@@ -19,6 +19,7 @@ import {
   type DriverCheck,
   driverChecks,
   readyDriver,
+  whyReady,
 } from "@krapht/ork-integrations";
 import type { Driver, Workflow } from "@krapht/ork-schema";
 
@@ -101,7 +102,7 @@ export const chooseReadyDriver = (
   const why =
     ready.ready === 1
       ? `the one ready here (${ready.detail})`
-      : `more than one is ready, and a run takes ${ready.driver} first`;
+      : whyReady(ready);
   return {
     ok: true,
     driver: ready.driver,

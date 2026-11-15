@@ -99,6 +99,14 @@ describe("setupKit", () => {
     });
   });
 
+  it("puts the fake opencode in bin/, ahead of a real one", () => {
+    const root = makeRoot();
+    expect(run(root, "opencode", ["--version"])).toEqual({
+      status: 0,
+      stdout: "2.1.0\n",
+    });
+  });
+
   it("makes a gh stand-in that logs its argv and exits 1", () => {
     const root = makeRoot();
     expect(run(root, "gh", ["issue", "list", "--limit", "5"]).status).toBe(1);

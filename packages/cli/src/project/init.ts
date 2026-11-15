@@ -24,6 +24,7 @@ import {
   type Exec,
   PREFERRED_DRIVER,
   readyDriver,
+  whyReady,
 } from "@krapht/ork-integrations";
 import { serializeWorkflow, type Workflow } from "@krapht/ork-schema";
 
@@ -94,11 +95,7 @@ export const driverLine = (
   }
   const ready = readyDriver(checks);
   if (ready.ok) {
-    const why =
-      ready.ready === 1
-        ? ready.detail
-        : `more than one is ready, and ${ready.driver} comes first`;
-    return `Runs use the driver that's ready when they start: ${ready.driver} here (${why}).`;
+    return `Runs use the driver that's ready when they start: ${ready.driver} here (${whyReady(ready)}).`;
   }
   const hint = checks.find(({ id }) => id === PREFERRED_DRIVER)?.result.hint;
   return `Runs use the driver that's ready when they start, and none is ready here yet: ${hint ?? "see `ork doctor`."}`;

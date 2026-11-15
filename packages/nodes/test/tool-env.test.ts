@@ -1000,4 +1000,10 @@ describe("a tool node's item", () => {
       withoutIdentity({ ORK_ITEM: "x", ORK_INDEX: "1", KEEP: "1" }),
     ).toEqual({ KEEP: "1" });
   });
+
+  it("does not pass a detached run's marker on, so an ork its nodes start can detach", () => {
+    expect(withoutIdentity({ ORK_DETACHED: "1", KEEP: "1" })).toEqual({
+      KEEP: "1",
+    });
+  });
 });

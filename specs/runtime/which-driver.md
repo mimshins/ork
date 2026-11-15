@@ -67,7 +67,10 @@ model names another driver than its leader's is refused too.
   ([ready.ts](../../packages/integrations/src/ready.ts)): `claude-code` is ready
   when `claude` is installed and logged in, or `ANTHROPIC_API_KEY` or
   `CLAUDE_CODE_USE_BEDROCK`/`_VERTEX`/`_FOUNDRY=1` is set. With more than one
-  ready, a run takes `claude-code`.
+  ready, a run takes `claude-code`; when it isn't ready, the first ready one in
+  registry order, and the line says so
+  (`claude-code isn't ready, so open-code is next (\`ork doctor\` says
+  why)`; `whyReady`, which `ork init` uses too).
 - **`ork run` looks once, before anything starts**, and only when a session node
   names no driver and `--driver` isn't given
   ([ready-driver.ts](../../packages/cli/src/run/ready-driver.ts)). It says so in
