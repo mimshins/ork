@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
 schemaVersion: 1
-name: audit
-description: "A security audit of this repository: free scanners first (pnpm audit, workflow pinning and permissions, secret patterns), then the phases of the security-audit skill (.ai/skills/security-audit) as nodes: recon builds a coverage ledger, one hunter per unit, a coverage critic, a fresh verifier per candidate, validated findings, and (standard only) a fresh recheck of each confirmed record. Profiles: quick (the default; 8 hunters, at most $29) or standard (20 hunters, at most $72); the cap is kept by counting, since a run cap can't follow an input. Every agent node is read-only and no audited code is run. The report is written to ~/.ork/audits/<project>/<run-id>/, outside the checkout, and the repository is public: never commit, post or publish it. You decide at the end whether to keep it."
+name: ork-security-audit
+description: "A security audit of this project: free scanners first (pnpm audit or npm audit by lockfile, GitHub workflow pinning and permissions, secret patterns), then the phases of the bundled security-audit skill as nodes: recon builds a coverage ledger, one hunter per unit, a coverage critic, a fresh verifier per candidate, validated findings, and (standard only) a fresh recheck of each confirmed record. Profiles: quick (the default; 8 hunters, at most $29) or standard (20 hunters, at most $72); the cap is kept by counting, since a run cap can't follow an input. Every agent node is read-only and no audited code is run. The report is written to ~/.ork/audits/<project>/<run-id>/, outside the checkout; it may be sensitive: do not commit or post it. You decide at the end whether to keep it. Needs a project set up with ork init."
 inputs:
   profile:
     type: string
@@ -25,7 +25,7 @@ limits:
 nodes:
   scan:
     type: tool.shell
-    script: node tools/audit/cli.ts scan
+    script: node "__ORK_BUNDLE_DIR__/security-audit/cli.ts" scan
     allow:
       - sh
     timeout: 10m
@@ -44,11 +44,11 @@ nodes:
   recon:
     type: agent.worker
     prompt: |-
-      You are the reconnaissance step of a security audit of this repository, profile {{inputs.profile}}, scope {{inputs.scope}}. Read .ai/skills/security-audit/SKILL.md (the sections "Run profiles and scope" and "Core principles") and .ai/skills/security-audit/RECONNAISSANCE.md, then do what its Phase 1 asks, yourself: the four agents' questions (1a product and local operation, 1b principals and controls, 1c entry surfaces and sinks, 1d local execution and deployment visibility) are your checklist. Read only; run nothing from the repository. Nothing here can be executed safely (there is no OS sandbox), so treat every lead that would need execution as a needs_validation candidate for later.
+      You are the reconnaissance step of a security audit of this project, profile {{inputs.profile}}, scope {{inputs.scope}}. The audit's skill is in __ORK_BUNDLE_DIR__/security-audit/skill. Read its SKILL.md (the sections "Run profiles and scope" and "Core principles") and RECONNAISSANCE.md, then do what its Phase 1 asks, yourself: the four agents' questions (1a product and local operation, 1b principals and controls, 1c entry surfaces and sinks, 1d local execution and deployment visibility) are your checklist. Read only; run nothing from the project. Nothing here can be executed safely (there is no OS sandbox), so treat every lead that would need execution as a needs_validation candidate for later.
 
       Return:
       - `architecture`: the architecture summary RECONNAISSANCE.md describes ("Architecture summary and companion selection"), at most 1,000 words, ending with the companion-selection summary.
-      - `units`: the coverage ledger's units, MOST IMPORTANT FIRST (HUNTING.md's ranking: lowest-trust entry surfaces first, then the boundaries that protect the most valuable resources, then prior-run gaps and changed source). Only the first 8 (quick) or 20 (standard) will be hunted; the rest are recorded as deferred, so put your best units first and keep the list to at most 40. Each unit is one JSON object: surface, boundary, subsystem, attack_class (each a stable source-derived reference as RECONNAISSANCE.md describes, never a slug of a label), starting_paths (repository-relative, non-empty), ordinary_attack_class_block (a "ATTACK-CLASSES.md#<exact class name>" reference), selected_companion_blocks (a list of "FILE.md#section"), excluded_blocks (a list of {block, reason}) and prior_status (new, none or a prior_* value from RECONNAISSANCE.md). Under the quick profile, the subsystem of every unit is exactly `profile/quick/all-in-scope-subsystems`. Honour the scope: a unit outside it is left out.
+      - `units`: the coverage ledger's units, MOST IMPORTANT FIRST (HUNTING.md's ranking: lowest-trust entry surfaces first, then the boundaries that protect the most valuable resources, then prior-run gaps and changed source). Only the first 8 (quick) or 20 (standard) will be hunted; the rest are recorded as deferred, so put your best units first and keep the list to at most 40. Each unit is one JSON object: surface, boundary, subsystem, attack_class (each a stable source-derived reference as RECONNAISSANCE.md describes, never a slug of a label), starting_paths (repository-relative, non-empty), ordinary_attack_class_block (a "ATTACK-CLASSES.md#<exact class name>" reference), selected_companion_blocks (a list of "FILE.md#section"), excluded_blocks (a list of {block, reason}) and prior_status (new, none or a prior_* value from RECONNAISSANCE.md). Under the quick profile, the subsystem of every unit is exactly `profile/quick/all-in-scope-subsystems`. Honour the scope: a unit outside it is left out. The audit's own files under .ork/runs are not part of the project: no unit covers them.
 
       Scanner results and the notes of the free scanners (already run; do not repeat them):
       {{nodes.scan.output.json.notes}}
@@ -57,7 +57,7 @@ nodes:
       {{nodes.scan.output.json.previousText}}
     model: claude-code.opus
     context:
-      - ../context/read-only-bash.md
+      - ./security-audit/context/read-only-bash.md
     isolation: readonly
     budgetUsd: 4
     maxTurns: 60
@@ -72,9 +72,9 @@ nodes:
     script: |-
       export AUDIT_INPUT="{\"units\":$UNITS}"
       unset UNITS
-      out=$(node tools/audit/cli.ts ledger)
+      out=$(node "__ORK_BUNDLE_DIR__/security-audit/cli.ts" ledger)
       dir=$(printf '%s' "$out" | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).outputDir')
-      node .ai/skills/security-audit/validate-coverage-ledger.cjs "$dir/coverage-ledger.json" >&2
+      node "__ORK_BUNDLE_DIR__/security-audit/skill/validate-coverage-ledger.cjs" "$dir/coverage-ledger.json" >&2
       printf '%s\n' "$out"
     allow:
       - sh
@@ -94,11 +94,11 @@ nodes:
   hunt:
     type: agent.worker
     prompt: |-
-      You are one hunter of a security audit of this repository (profile {{inputs.profile}}). Your goal is to find source-grounded security invariant failures in your assigned unit, and you must return the structured result at the end. Other hunters work the other units at the same time, so stay on yours.
+      You are one hunter of a security audit of this project (profile {{inputs.profile}}). Your goal is to find source-grounded security invariant failures in your assigned unit, and you must return the structured result at the end. Other hunters work the other units at the same time, so stay on yours.
 
-      Read, from .ai/skills/security-audit: HUNTING.md ("Defensive vulnerability-finding method", "Core validation rules" (the candidate gate) and "Local validation boundaries"); ATTACK-CLASSES.md, the block named by the unit's ordinary_attack_class_block; and, for each of the unit's selected_companion_blocks, that companion file's `Core discipline`, the chosen class subsection, `Universal moves` and `Validation rules`. Read the code at depth, as HUNTING.md says.
+      Read, from the audit's skill in __ORK_BUNDLE_DIR__/security-audit/skill: HUNTING.md ("Defensive vulnerability-finding method", "Core validation rules" (the candidate gate) and "Local validation boundaries"); ATTACK-CLASSES.md, the block named by the unit's ordinary_attack_class_block; and, for each of the unit's selected_companion_blocks, that companion file's `Core discipline`, the chosen class subsection, `Universal moves` and `Validation rules`. Read the code at depth, as HUNTING.md says.
 
-      Ork has no OS sandbox, so run nothing from this repository: read only. A lead that would need the code to run, or a deployment fact the source can't show, is a needs_validation candidate with the exact blocker and the skill's safe local and owner-observed plan (never a request to probe a live system). Candidates need a complete repository-relative source trace and evidence; a missing best practice with no affected principal is hardening, not a candidate. Never assign a severity here.
+      Ork has no OS sandbox, so run nothing from this project: read only. A lead that would need the code to run, or a deployment fact the source can't show, is a needs_validation candidate with the exact blocker and the skill's safe local and owner-observed plan (never a request to probe a live system). Candidates need a complete repository-relative source trace and evidence; a missing best practice with no affected principal is hardening, not a candidate. Never assign a severity here.
 
       The architecture, from reconnaissance:
       {{nodes.recon.output.architecture}}
@@ -109,7 +109,7 @@ nodes:
       Return `candidates`: each a JSON object with fingerprint (matching ^[A-Za-z0-9][A-Za-z0-9._:/@+-]*$, the same for the same root cause, no line number), title, description, claimed_root_cause, trace (in order, the entrypoint first and the sink last, the propagation steps between; each entry has file, line, scope and description, and Ork sets its kind from its place), evidence (each file, line, description), proposed_verdict (confirmed or needs_validation), and for needs_validation also blockers (a list of strings) and validation_plan ({local, deployment}, at least one non-empty). An empty list when nothing survives the gate. Also `hardening` (concrete non-finding notes, as strings) and `uncovered` (boundaries you met outside your unit: surface, boundary, subsystem, attack_class, starting_paths, reason).
     model: claude-code.opus
     context:
-      - ../context/read-only-bash.md
+      - ./security-audit/context/read-only-bash.md
     isolation: readonly
     budgetUsd: 2
     maxTurns: 45
@@ -129,7 +129,7 @@ nodes:
   critic:
     type: agent.worker
     prompt: |-
-      You are the coverage critic of a security audit of this repository (profile {{inputs.profile}}). Read .ai/skills/security-audit/HUNTING.md, section "Coverage-critic waves", and do what it asks of the post-wave critic, in read-only mode: you read source but write and run nothing. You propose coverage, never findings. This workflow runs no second hunter wave: every gap you accept is recorded, as deferred, for a later audit.
+      You are the coverage critic of a security audit of this project (profile {{inputs.profile}}). Read __ORK_BUNDLE_DIR__/security-audit/skill/HUNTING.md, section "Coverage-critic waves", and do what it asks of the post-wave critic, in read-only mode: you read source but write and run nothing. You propose coverage, never findings. This workflow runs no second hunter wave: every gap you accept is recorded, as deferred, for a later audit.
 
       The architecture:
       {{nodes.recon.output.architecture}}
@@ -142,7 +142,7 @@ nodes:
 
       Return `gaps`: one {coverage_id, reason} per hunted unit above that did not close (a hunter that failed or returned nothing for it, or whose closing is unjustified), the coverage_id exactly as listed, with a source-backed reason. Return `missing_units`: units the ledger lacks (unmapped entry points, unchecked parallel paths, selected companion classes with no unit), each as in HUNTING.md's critic contract with a source-backed reason. And `stop`: true only when you accept no gaps and no missing units.
     context:
-      - ../context/read-only-bash.md
+      - ./security-audit/context/read-only-bash.md
     isolation: readonly
     budgetUsd: 1.5
     maxTurns: 25
@@ -164,7 +164,7 @@ nodes:
       [ -n "$CRITIC_STOP" ] && critiqued=true
       export AUDIT_INPUT="{\"hunts\":$HUNTS,\"gaps\":${GAPS:-[]},\"critiqued\":$critiqued}"
       unset HUNTS GAPS CRITIC_STOP
-      node tools/audit/cli.ts consolidate
+      node "__ORK_BUNDLE_DIR__/security-audit/cli.ts" consolidate
     allow:
       - sh
     timeout: 5m
@@ -189,7 +189,7 @@ nodes:
   verify:
     type: agent.worker
     prompt: |-
-      You did not write this candidate. Try to refute it from the repository's source. You are one fresh verifier of a security audit (profile {{inputs.profile}}); read .ai/skills/security-audit/VALIDATION-AND-REPORTING.md, "Phase 3" (the candidate-verifier prompt and the paragraphs after it) and "Phase 4" (the record contracts), and the `confirmed`, `needs_validation` and `rejected` branches of .ai/skills/security-audit/report-schema.json. Read only: Ork has no OS sandbox, so run nothing from this repository and contact nothing. Re-read every cited trace and evidence location in the current source yourself.
+      You did not write this candidate. Try to refute it from the project's source. You are one fresh verifier of a security audit (profile {{inputs.profile}}); read __ORK_BUNDLE_DIR__/security-audit/skill/VALIDATION-AND-REPORTING.md, "Phase 3" (the candidate-verifier prompt and the paragraphs after it) and "Phase 4" (the record contracts), and the `confirmed`, `needs_validation` and `rejected` branches of __ORK_BUNDLE_DIR__/security-audit/skill/report-schema.json. Read only: Ork has no OS sandbox, so run nothing from this project and contact nothing. Re-read every cited trace and evidence location in the current source yourself.
 
       Evidence bar, as the skill sets it: confirm only when the source alone establishes the whole path and a concrete result across a trust boundary, with no unresolved runtime or deployment fact; then say in observed_result that it was established by reading the code, not by running it. When a decisive fact is outside source (a deployment setting, or a behaviour only running the code would show), keep needs_validation with the exact blocker and the skill's safe local and owner-observed plan. Reject when source, a visible control, missing impact or an impossible prerequisite refutes it. Keep the fingerprint for the same root cause. Only a confirmed record has a severity, and severity never exceeds the demonstrated impact. A corrected record replaces the hunter's wording.
 
@@ -204,7 +204,7 @@ nodes:
       Return `decision` (confirmed, needs_validation or rejected) and `records`: a list with exactly one object, the record that matches that decision's branch of report-schema.json exactly (it uses additionalProperties: false: no extra fields, no hunter wrapper fields such as proposed_verdict), including `verdict`. List its trace in order, the entrypoint first and the sink last: Ork sets each entry's kind from its place.
     model: claude-code.opus
     context:
-      - ../context/read-only-bash.md
+      - ./security-audit/context/read-only-bash.md
     isolation: readonly
     budgetUsd: 0.5
     maxTurns: 25
@@ -226,9 +226,9 @@ nodes:
     script: |-
       export AUDIT_INPUT="{\"results\":${RESULTS:-[]},\"unique\":${UNIQUE:-[]}}"
       unset RESULTS UNIQUE
-      out=$(node tools/audit/cli.ts findings)
+      out=$(node "__ORK_BUNDLE_DIR__/security-audit/cli.ts" findings)
       dir=$(printf '%s' "$out" | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).outputDir')
-      node .ai/skills/security-audit/validate-findings.cjs "$dir/findings.json" >&2
+      node "__ORK_BUNDLE_DIR__/security-audit/skill/validate-findings.cjs" "$dir/findings.json" >&2
       printf '%s\n' "$out"
     allow:
       - sh
@@ -250,14 +250,14 @@ nodes:
   recheck:
     type: agent.worker
     prompt: |-
-      You are one fresh Phase 5 verifier of a security audit. You did not hunt this record or verify it. Read .ai/skills/security-audit/VALIDATION-AND-REPORTING.md, "Phase 5", and check this `confirmed` record against the current source, as its list for `confirmed` says. Read only: Ork has no OS sandbox, so run nothing from this repository. You check the structured record, not any write-up of it.
+      You are one fresh Phase 5 verifier of a security audit. You did not hunt this record or verify it. Read __ORK_BUNDLE_DIR__/security-audit/skill/VALIDATION-AND-REPORTING.md, "Phase 5", and check this `confirmed` record against the current source, as its list for `confirmed` says. Read only: Ork has no OS sandbox, so run nothing from this project. You check the structured record, not any write-up of it.
 
       The record:
       {{item}}
 
-      Return `fingerprint` (the record's), `decision` (verified, or replace when the record is wrong or overstates), and `reason` (why, in a sentence; empty when verified). With `replace`, `records` holds exactly one corrected record in the schema's shape; with verified it is an empty list. A replacement is never applied by this run: it only removes the record from the findings and lists it as disputed for the maintainer.
+      Return `fingerprint` (the record's), `decision` (verified, or replace when the record is wrong or overstates), and `reason` (why, in a sentence; empty when verified). With `replace`, `records` holds exactly one corrected record in the schema's shape; with verified it is an empty list. A replacement is never applied by this run: it only removes the record from the findings and lists it as disputed for the person who started the audit.
     context:
-      - ../context/read-only-bash.md
+      - ./security-audit/context/read-only-bash.md
     isolation: readonly
     budgetUsd: 0.5
     maxTurns: 20
@@ -280,10 +280,10 @@ nodes:
     script: |-
       export AUDIT_INPUT="{\"rechecks\":${RECHECKS:-[]}}"
       unset RECHECKS
-      out=$(node tools/audit/cli.ts finalize)
+      out=$(node "__ORK_BUNDLE_DIR__/security-audit/cli.ts" finalize)
       dir=$(printf '%s' "$out" | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).outputDir')
-      node .ai/skills/security-audit/validate-findings.cjs "$dir/findings.json" >&2
-      node .ai/skills/security-audit/validate-coverage-ledger.cjs "$dir/coverage-ledger.json" >&2
+      node "__ORK_BUNDLE_DIR__/security-audit/skill/validate-findings.cjs" "$dir/findings.json" >&2
+      node "__ORK_BUNDLE_DIR__/security-audit/skill/validate-coverage-ledger.cjs" "$dir/coverage-ledger.json" >&2
       printf '%s\n' "$out"
     allow:
       - sh
@@ -323,7 +323,7 @@ nodes:
 
       Return `posture` (one short paragraph, at most 150 words), `hardening` (the hunters' notes that are concrete and worth keeping, merged and deduplicated, at most 12, as strings) and `positive` (source patterns the architecture or notes show are done well, at most 6, as strings; leave empty rather than invent).
     context:
-      - ../context/read-only-bash.md
+      - ./security-audit/context/read-only-bash.md
     isolation: readonly
     budgetUsd: 1.5
     maxTurns: 10
@@ -341,7 +341,7 @@ nodes:
       AUDIT_INPUT=$(node -e 'const e = process.env; const list = text => (text ? JSON.parse(text) : []); console.log(JSON.stringify({ posture: e.POSTURE, hardening: list(e.HARDENING), positive: list(e.POSITIVE), scanner: list(e.SCANNER), notes: list(e.NOTES), previous: e.PREVIOUS || null }))')
       export AUDIT_INPUT
       unset POSTURE HARDENING POSITIVE SCANNER NOTES PREVIOUS
-      node tools/audit/cli.ts report
+      node "__ORK_BUNDLE_DIR__/security-audit/cli.ts" report
     allow:
       - sh
     timeout: 5m
@@ -363,9 +363,9 @@ nodes:
   review:
     type: human.gate
     question: |-
-      The security audit of {{inputs.scope}} (profile {{inputs.profile}}) is written to {{nodes.write.output.json.outputDir}}: read REPORT.md first, then FINDINGS-DETAIL.md and NEEDS-VALIDATION.md. That folder is outside the checkout, and this repository is public, so nothing here is ever committed, posted, attached to an issue or pull request, or published; this gate has no option that does. A real finding goes to a private GitHub security advisory, as the runbook's security section says.
+      The security audit of {{inputs.scope}} (profile {{inputs.profile}}) is written to {{nodes.write.output.json.outputDir}}: read REPORT.md first, then FINDINGS-DETAIL.md and NEEDS-VALIDATION.md. That folder is outside the checkout, and the report may be sensitive: do not commit or post it, or attach it to an issue or pull request; this gate has no option that does. Report a real finding privately, as the project's security policy says.
 
-      This run's record under ~/.ork also holds the candidates and findings, so make no benchmark and no feedback item from run {{run.id}}, and never run pnpm benchmark:publish on it.
+      This run's record under ~/.ork also holds the candidates and findings, so make no benchmark and no feedback item from run {{run.id}}.
 
       done keeps the folder. discard deletes it (the run's record stays).
     document: |-
@@ -390,7 +390,7 @@ nodes:
     recommended: done
   discard:
     type: tool.shell
-    script: node tools/audit/cli.ts discard
+    script: node "__ORK_BUNDLE_DIR__/security-audit/cli.ts" discard
     allow:
       - sh
     timeout: 1m

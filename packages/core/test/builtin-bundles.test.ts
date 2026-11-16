@@ -1,0 +1,122 @@
+/**
+ * @file Tests for a built-in bundle: companion files are written beside the
+ *   workflow under one hash of them all, carry the bundle's folder relative to
+ *   the project root, are left alone when unchanged, and a link on any of their
+ *   paths is refused with nothing written.
+ */
+
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+import { describe, expect, it, vi } from "vitest";
+
+import {
+  builtinProblem,
+  builtinWorkflowFile,
+  BUNDLE_DIR_PLACEHOLDER,
+  inRepoPlace,
+} from "../src/index.ts";
+import { BUILTIN_WORKFLOWS } from "../src/project/builtin-workflows.ts";
+
+/** The companions `ork:feedback-apply` gets here; a test may change one. */
+const companions = vi.hoisted(() => ({
+  "skill/phase.md": "Read the phase.\n",
+  "tools/run.ts": "node __ORK_BUNDLE_DIR__/tools/run.ts\n",
+}));
+
+vi.mock("../src/project/builtin-bundles.ts", () => ({
+  BUILTIN_FILES: { "feedback-apply": companions },
+}));
+
+const NAME = "ork:feedback-apply";
+
+/** A project with a git folder, in a fresh temporary folder. */
+const project = () => {
+  const base = realpathSync(mkdtempSync(path.join(tmpdir(), "ork-bundle-")));
+  const root = path.join(base, "app");
+  mkdirSync(path.join(root, ".git"), { recursive: true });
+  return { base, root, place: inRepoPlace(root) };
+};
+
+/** The bundle's written folder in a new project, failing when none is. */
+const written = () => {
+  const { root, place } = project();
+  const file = builtinWorkflowFile(place, NAME);
+  if (file === undefined) throw new Error("No bundle written.");
+  const folder = path.dirname(file);
+  return { root, place, file, folder };
+};
+
+describe("a built-in bundle", () => {
+  it("writes the workflow and every companion into one hash folder", () => {
+    const { root, file, folder } = written();
+    expect(path.relative(root, folder)).toMatch(
+      /^\.ork\/runs\/\.builtin\/[0-9a-f]{12}$/u,
+    );
+    expect(readFileSync(file, "utf8")).toBe(
+      BUILTIN_WORKFLOWS["feedback-apply"],
+    );
+    expect(readFileSync(path.join(folder, "skill/phase.md"), "utf8")).toBe(
+      "Read the phase.\n",
+    );
+  });
+
+  it("replaces the placeholder with the folder relative to the root", () => {
+    const { root, folder } = written();
+    const shown = path.relative(root, folder);
+    expect(BUNDLE_DIR_PLACEHOLDER).toBe("__ORK_BUNDLE_DIR__");
+    expect(readFileSync(path.join(folder, "tools/run.ts"), "utf8")).toBe(
+      `node ${shown}/tools/run.ts\n`,
+    );
+  });
+
+  it("gives a new folder when a companion changes", () => {
+    const { root, folder } = written();
+    const before = companions["skill/phase.md"];
+    companions["skill/phase.md"] = "Read the new phase.\n";
+    const changed = written();
+    companions["skill/phase.md"] = before;
+    expect(path.relative(changed.root, changed.folder)).not.toBe(
+      path.relative(root, folder),
+    );
+  });
+
+  it("doesn't rewrite an unchanged file, and rewrites a changed one", () => {
+    const { place, file, folder } = written();
+    const phase = path.join(folder, "skill/phase.md");
+    const inode = statSync(phase).ino;
+    expect(builtinWorkflowFile(place, NAME)).toBe(file);
+    expect(statSync(phase).ino).toBe(inode);
+    writeFileSync(phase, "changed by hand\n");
+    expect(builtinWorkflowFile(place, NAME)).toBe(file);
+    expect(readFileSync(phase, "utf8")).toBe("Read the phase.\n");
+  });
+
+  it("refuses a link on a companion's path, and writes nothing", () => {
+    const { root, folder } = written();
+    const at = project();
+    const elsewhere = path.join(at.base, "elsewhere");
+    mkdirSync(elsewhere);
+    const there = path.join(at.root, path.relative(root, folder));
+    mkdirSync(there, { recursive: true });
+    symlinkSync(elsewhere, path.join(there, "skill"));
+    expect(builtinProblem(at.place, NAME)).toMatch(
+      /^`\.ork\/runs\/\.builtin\/[0-9a-f]{12}\/skill\/phase\.md` is a link, or behind one/u,
+    );
+    expect(builtinWorkflowFile(at.place, NAME)).toBeUndefined();
+    expect(existsSync(path.join(there, "feedback-apply.ork.yaml"))).toBe(false);
+    expect(existsSync(path.join(there, "tools"))).toBe(false);
+    expect(readdirSync(elsewhere)).toEqual([]);
+  });
+});

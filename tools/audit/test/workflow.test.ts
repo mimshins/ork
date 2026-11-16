@@ -1,13 +1,14 @@
 /**
- * @file Tests `.ork/workflows/audit.ork.yaml` against the plan: it loads with
- *   Ork's schema, every agent node is `readonly` and reads the read-only Bash
- *   rule, the node budgets times each profile's counts stay under that
- *   profile's cap (and the file's numbers are the ones `profiles.ts` sums), the
- *   `forEach` caps cover the profiles' counts, the description shows the sums,
- *   `recheck` runs only under `standard`, the edges out of `findings` need `ok`
- *   (so a failing validator ends the run), the validators run in `tool.shell`
- *   nodes under the default `sh -eu`, and a bad recon payload stops `ledger`.
- *   The workflow also compiles as `ork validate` does.
+ * @file Tests the built-in `security-audit.ork.yaml` (the source in
+ *   `packages/core/workflows/`) against the plan: it loads with Ork's schema,
+ *   every agent node is `readonly` and reads the read-only Bash rule, the node
+ *   budgets times each profile's counts stay under that profile's cap (and the
+ *   file's numbers are the ones `profiles.ts` sums), the `forEach` caps cover
+ *   the profiles' counts, the description shows the sums, `recheck` runs only
+ *   under `standard`, the edges out of `findings` need `ok` (so a failing
+ *   validator ends the run), the validators run in `tool.shell` nodes under the
+ *   default `sh -eu`, and a bad recon payload stops `ledger`. The workflow also
+ *   compiles as `ork validate` does.
  */
 
 import { spawnSync } from "node:child_process";
@@ -16,7 +17,10 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { compileWorkflow } from "../../../packages/core/src/index.ts";
+import {
+  BUNDLE_DIR_PLACEHOLDER,
+  compileWorkflow,
+} from "../../../packages/core/src/index.ts";
 import { parseWorkflow } from "../../../packages/schema/src/index.ts";
 import {
   maxSpendUsd,
@@ -24,15 +28,24 @@ import {
   PROFILES,
   type ProfileName,
 } from "../profiles.ts";
-import { auditEnv, cleanUp, readJson, reconUnits } from "./kit.ts";
+import {
+  auditEnv,
+  bundleProject,
+  cleanUp,
+  readJson,
+  reconUnits,
+} from "./kit.ts";
 
 const load = () => {
   const text = readFileSync(
-    path.resolve(import.meta.dirname, "../../../.ork/workflows/audit.ork.yaml"),
+    path.resolve(
+      import.meta.dirname,
+      "../../../packages/core/workflows/security-audit.ork.yaml",
+    ),
     "utf8",
   );
   const result = parseWorkflow(text);
-  if (!result.ok) throw new Error("audit.ork.yaml does not load");
+  if (!result.ok) throw new Error("security-audit.ork.yaml does not load");
   return result.workflow;
 };
 
@@ -73,21 +86,34 @@ const whensTo = (from: string): string[] =>
     return source === from && typeof when === "string" ? [when] : [];
   });
 
-/** Runs a node's script as Ork does by default (`sh -eu`), from the checkout. */
-const runScript = (name: string, env: Record<string, string>) =>
-  spawnSync("sh", ["-eu", "-c", scriptOf(name)], {
-    cwd: path.resolve(import.meta.dirname, "../../.."),
-    encoding: "utf8",
-    env: { ...process.env, ...env },
-  });
+/**
+ * Runs a node's script as Ork does by default (`sh -eu`), from the root of a
+ * project that has the bundle written into it, with the placeholder replaced as
+ * Ork does when it writes the workflow.
+ */
+const runScript = (
+  name: string,
+  env: Record<string, string>,
+  project = bundleProject(),
+) => {
+  return spawnSync(
+    "sh",
+    [
+      "-eu",
+      "-c",
+      scriptOf(name).replaceAll(BUNDLE_DIR_PLACEHOLDER, project.relative),
+    ],
+    { cwd: project.repo, encoding: "utf8", env: { ...process.env, ...env } },
+  );
+};
 
-describe("audit.ork.yaml", () => {
-  it("has agent nodes that are all readonly and read the read-only Bash rule", () => {
+describe("security-audit.ork.yaml", () => {
+  it("has agent nodes that are all readonly and read the bundled read-only Bash rule", () => {
     expect(agents().length).toBeGreaterThan(0);
     for (const [, node] of agents()) {
       expect(Reflect.get(node, "isolation")).toBe("readonly");
       expect(Reflect.get(node, "context")).toContain(
-        "../context/read-only-bash.md",
+        "./security-audit/context/read-only-bash.md",
       );
     }
   });
@@ -179,17 +205,18 @@ describe("audit.ork.yaml", () => {
     (_how, stop, missing) => {
       expect(whensTo("critic")).toEqual(["ok || !ok"]);
       const env = auditEnv({ PROFILE: "quick", SCOPE: "all" });
-      const ledger = runScript("ledger", {
-        ...env,
-        UNITS: JSON.stringify(reconUnits(2)),
-      });
+      const project = bundleProject();
+      const ledger = runScript(
+        "ledger",
+        { ...env, UNITS: JSON.stringify(reconUnits(2)) },
+        project,
+      );
       expect(ledger.status).toBe(0);
-      const result = runScript("consolidate", {
-        ...env,
-        HUNTS: "[]",
-        GAPS: "",
-        CRITIC_STOP: stop,
-      });
+      const result = runScript(
+        "consolidate",
+        { ...env, HUNTS: "[]", GAPS: "", CRITIC_STOP: stop },
+        project,
+      );
       expect(result.status).toBe(0);
       const printed: unknown = JSON.parse(result.stdout);
       const outputDir = String(

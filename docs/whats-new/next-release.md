@@ -9,6 +9,19 @@ _Part of [What's new](../whats-new.md)._
   to ask with `ask_user` (the leader answers if it takes its children's
   questions, otherwise you do), or to decide and say so in its report
   ([messages between nodes](../guides/leaders-and-delegation.md#messages-between-nodes)).
+- **`ork run ork:security-audit`: a security audit that ships with Ork.** Run it
+  in any project set up with `ork init`. It checks your dependencies
+  (`pnpm audit` or `npm audit`, by your lockfile), your GitHub workflow files
+  and tracked files for credential formats, then read-only agents look for
+  problems, a fresh agent tries to disprove each, and the report goes to
+  `~/.ork/audits/<project>/<run-id>/`, outside your project. `quick` (the
+  default) costs at most $29 and is a partial pass; `--input profile=standard`
+  at most $72. A project attached with `ork register` is not supported yet: the
+  first step stops with a message naming `ork init`, before anything is spent.
+  Upgrade: in this repository, `ork run audit` (and
+  `.ork/workflows/audit.ork.yaml`, now deleted) becomes
+  `ork run ork:security-audit`. The report now says it may be sensitive and must
+  not be committed or posted ([guide](../guides/security-audit.md)).
 - **`ork logs -f --all --limit` keeps the last N lines in the order they
   print.** It used to count run by run, so with several live runs the kept lines
   could differ from the last N you see in time order. It now counts in the

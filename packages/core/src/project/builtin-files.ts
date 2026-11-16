@@ -4,13 +4,16 @@
  *   so a built-in is written into the project's gitignored run folder, under
  *   its content's hash: `.ork/runs/.builtin/<hash>/<name>.ork.yaml`. The file
  *   is in the project, so the run belongs to it, and a run started before Ork
- *   changed a built-in resumes from the text it started with.
+ *   changed a built-in resumes from the text it started with. A built-in can be
+ *   a bundle: companion files (`builtin-bundles.ts`) written beside the
+ *   workflow, under one hash of them all (ADR-059, extended by ADR-096).
  */
 
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
+import { BUILTIN_FILES } from "./builtin-bundles.ts";
 import { BUILTIN_WORKFLOWS } from "./builtin-workflows.ts";
 import { placeFiles, type ProjectPlace } from "./place.ts";
 import { guardedBase, plainPathInside, writePlainFile } from "./plain-files.ts";
@@ -43,23 +46,83 @@ export const unknownBuiltin = (arg: string): string | undefined =>
         .join(", ")}`
     : undefined;
 
-/** Where the built-in `arg` names goes in `place`, written or not. */
-const builtinPath = (place: ProjectPlace, arg: string): string | undefined => {
-  const name = arg.slice(BUILTIN_PREFIX.length);
-  const text = textOf(name);
-  if (!isBuiltinArg(arg) || text === undefined) return undefined;
-  const hash = createHash("sha256").update(text).digest("hex").slice(0, 12);
-  return path.join(
-    placeFiles(place).runs,
-    ".builtin",
-    hash,
-    `${name}.ork.yaml`,
-  );
+/**
+ * What a built-in's texts carry for its bundle's folder, relative to the
+ * project root (`.ork/runs/.builtin/<hash>`); replaced when they are written.
+ */
+export const BUNDLE_DIR_PLACEHOLDER = "__ORK_BUNDLE_DIR__";
+
+/** One file of a written bundle: where it goes, and its text there. */
+type BundleFile = { file: string; text: string };
+
+/**
+ * The hash of a built-in's whole bundle, taken before the placeholder is
+ * replaced; a built-in with no companions hashes its workflow text alone.
+ */
+const bundleHash = (
+  workflow: string,
+  files: Readonly<Record<string, string>>,
+): string => {
+  const hash = createHash("sha256").update(workflow);
+  for (const [file, text] of Object.entries(files).toSorted(([a], [b]) =>
+    a < b ? -1 : 1,
+  )) {
+    hash.update(JSON.stringify([file, text]));
+  }
+  return hash.digest("hex").slice(0, 12);
 };
 
 /**
- * Why `arg` can't be run in `place`: no such built-in, or its file's place is a
- * link a cloned repository could aim at the person's own files.
+ * The files the built-in `arg` names writes in `place`, the workflow first,
+ * written or not; `undefined` for an unknown name.
+ */
+const bundleFiles = (
+  place: ProjectPlace,
+  arg: string,
+): { folder: string; files: BundleFile[] } | undefined => {
+  const name = arg.slice(BUILTIN_PREFIX.length);
+  const workflow = textOf(name);
+  if (!isBuiltinArg(arg) || workflow === undefined) return undefined;
+  const companions =
+    (Object.hasOwn(BUILTIN_FILES, name) ? BUILTIN_FILES[name] : undefined) ??
+    {};
+  const folder = path.join(
+    placeFiles(place).runs,
+    ".builtin",
+    bundleHash(workflow, companions),
+  );
+  const shown = path.relative(place.root, folder).replaceAll(path.sep, "/");
+  const fill = (text: string): string =>
+    text.replaceAll(BUNDLE_DIR_PLACEHOLDER, shown);
+  return {
+    folder,
+    files: [
+      { file: path.join(folder, `${name}.ork.yaml`), text: fill(workflow) },
+      ...Object.entries(companions).map(([file, text]) => ({
+        file: path.join(folder, file),
+        text: fill(text),
+      })),
+    ],
+  };
+};
+
+/**
+ * The first file of the bundle `arg` names whose path has a link on it (or
+ * leaves the bundle's folder), or `undefined` when every path is plain.
+ */
+const linkedFile = (place: ProjectPlace, arg: string): string | undefined => {
+  const bundle = bundleFiles(place, arg);
+  if (bundle === undefined) return undefined;
+  const base = guardedBase(place);
+  return bundle.files.find(
+    ({ file }) =>
+      !plainPathInside(base, file) || !plainPathInside(bundle.folder, file),
+  )?.file;
+};
+
+/**
+ * Why `arg` can't be run in `place`: no such built-in, or one of its files'
+ * place is a link a cloned repository could aim at the person's own files.
  */
 export const builtinProblem = (
   place: ProjectPlace,
@@ -67,26 +130,30 @@ export const builtinProblem = (
 ): string | undefined => {
   const unknown = unknownBuiltin(arg);
   if (unknown !== undefined) return unknown;
-  const file = builtinPath(place, arg);
-  return file === undefined || plainPathInside(guardedBase(place), file)
+  const file = linkedFile(place, arg);
+  return file === undefined
     ? undefined
     : `\`${path.relative(place.root, file)}\` is a link, or behind one: Ork writes its own workflows only to plain files in the project, so it wrote nothing.`;
 };
 
 /**
  * The file of the built-in `arg` names (`ork:<name>`) in `place`'s run folder,
- * written when it isn't there yet, by a rename that never follows a link;
- * `undefined` for an unknown name, or a path with a link on it.
+ * with its companion files beside it, each written when it isn't there as it
+ * should be, by a rename that never follows a link; `undefined` for an unknown
+ * name, or when any file's path has a link on it (then nothing is written).
  */
 export const builtinWorkflowFile = (
   place: ProjectPlace,
   arg: string,
 ): string | undefined => {
-  const file = builtinPath(place, arg);
-  const text = textOf(arg.slice(BUILTIN_PREFIX.length));
-  if (file === undefined || text === undefined) return undefined;
+  const bundle = bundleFiles(place, arg);
+  if (bundle === undefined || linkedFile(place, arg) !== undefined) {
+    return undefined;
+  }
   const base = guardedBase(place);
-  if (!plainPathInside(base, file)) return undefined;
-  if (existsSync(file) && readFileSync(file, "utf8") === text) return file;
-  return writePlainFile(base, file, text).ok ? file : undefined;
+  for (const { file, text } of bundle.files) {
+    if (existsSync(file) && readFileSync(file, "utf8") === text) continue;
+    if (!writePlainFile(base, file, text).ok) return undefined;
+  }
+  return bundle.files[0]?.file;
 };

@@ -19,6 +19,8 @@ machine, and how to remove Ork cleanly.
 
 A run's folder, `.ork/runs/<run>/`, holds long tool output, the output of a run
 started with `--detach`, and `events.jsonl`, a copy of the run's events.
+`.ork/runs/.builtin/` holds the workflows Ork ships, such as
+`ork:security-audit`, with their files, written when you run one.
 
 A project you attached with `ork register` keeps the same files in
 `~/.ork/projects/<id>/` instead, and Ork writes nothing into its repository
@@ -40,6 +42,7 @@ the files, the check's name, a time and who ran it
 | `state.db`                       | every run's record, your feedback and [follow-ups](./follow-ups.md), usage, the Builder's drafts, and the projects Ork knows |
 | `settings.yaml`                  | your own settings, such as [quotas](./models-and-budgets/across-runs-and-time.md#limits-across-runs)                         |
 | `agents/`, `skills/`, `context/` | your own agents, skills and notes, for every project                                                                         |
+| `audits/`                        | the reports of [`ork:security-audit`](./security-audit.md), one folder per project and run; may be sensitive                 |
 | `projects/`                      | projects attached with `ork register`                                                                                        |
 | `ui.json`                        | `ork ui`'s address and sign-in token while it runs, readable only by you                                                     |
 | `update-check.json`              | when Ork last asked for a newer version, and the answer                                                                      |

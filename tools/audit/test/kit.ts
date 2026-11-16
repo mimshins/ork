@@ -11,12 +11,17 @@ import {
   mkdirSync,
   readFileSync,
   mkdtempSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import {
+  builtinWorkflowFile,
+  inRepoPlace,
+} from "../../../packages/core/src/index.ts";
 import { type ReconUnit, runLedger } from "../ledger.ts";
 
 const made: string[] = [];
@@ -155,8 +160,9 @@ export const skillPresent = (): boolean =>
 export const validate = (
   script: "validate-coverage-ledger.cjs" | "validate-findings.cjs",
   file: string,
+  skill: string = skillDir(),
 ): { ok: boolean; output: string } => {
-  const run = spawnSync("node", [path.join(skillDir(), script), file], {
+  const run = spawnSync("node", [path.join(skill, script), file], {
     cwd: tmpdir(),
     encoding: "utf8",
   });
@@ -184,3 +190,66 @@ export const mediumRecord = (fingerprint: string) => ({
     overall_severity: "medium",
   },
 });
+
+/**
+ * A git repo with the built-in security-audit bundle written into it, as `ork
+ * run` does.
+ */
+export type BundleProject = {
+  repo: string;
+  /** The bundle's folder, absolute. */
+  folder: string;
+  /** The same folder relative to the repo, as the workflow's scripts name it. */
+  relative: string;
+  /** The bundled copy of the skill (its validators). */
+  skill: string;
+};
+
+export const bundleProject = (): BundleProject => {
+  const repo = realpathSync(gitRepo({ "a.txt": "x" }));
+  const file = builtinWorkflowFile(inRepoPlace(repo), "ork:security-audit");
+  if (file === undefined) throw new Error("the bundle was not written");
+  const folder = path.dirname(file);
+  return {
+    repo,
+    folder,
+    relative: path.relative(repo, folder),
+    skill: path.join(folder, "security-audit", "skill"),
+  };
+};
+
+/**
+ * Runs `node <bundle>/security-audit/cli.ts <command>` from `cwd` (the project
+ * root by default), with `input` as `AUDIT_INPUT`, as the workflow's scripts
+ * do.
+ */
+export const bundleCli = (
+  project: BundleProject,
+  command: string,
+  env: Record<string, string>,
+  input?: unknown,
+  cwd: string = project.repo,
+) => {
+  const run = spawnSync(
+    "node",
+    [path.join(project.folder, "security-audit", "cli.ts"), command],
+    {
+      cwd,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        ...env,
+        AUDIT_INPUT: JSON.stringify(input ?? {}),
+      },
+    },
+  );
+  return { status: run.status, stderr: run.stderr, stdout: run.stdout };
+};
+
+/** What a successful `bundleCli` printed, as an object. */
+export const printed = (stdout: string): Record<string, unknown> => {
+  const data: unknown = JSON.parse(stdout);
+  return typeof data === "object" && data !== null
+    ? Object.fromEntries(Object.entries(data))
+    : {};
+};

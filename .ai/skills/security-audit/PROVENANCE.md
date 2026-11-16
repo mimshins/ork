@@ -11,9 +11,10 @@ This folder is a third-party skill, kept byte for byte. Do not edit it in place.
 - **Not checked by** oxlint, oxfmt, the `@file` lint or the docs check
   (`.ai/skills/security-audit/` is in each skip list).
 
-`PROVENANCE.md` is the only file here that is not from upstream. The
-`audit` workflow (`.ork/workflows/audit.ork.yaml`) reads the phase files by
-path.
+`PROVENANCE.md` is the only file here that is not from upstream. The built-in
+`ork:security-audit` workflow (`packages/core/workflows/security-audit.ork.yaml`)
+reads the phase files by path, from a copy of this folder (without
+`PROVENANCE.md` and the tests) that the generator bundles into core.
 
 ## Update
 
@@ -26,6 +27,8 @@ An update is a deliberate change that re-pins the commit:
    the whole diff. Look for changed phases, new files, changed validator
    scripts and anything that runs code.
 3. Copy the files over, and copy the clone's `LICENSE` if it changed.
-4. Change the commit above, and check that the `audit` workflow's prompts still
-   match the phase files.
-5. Add a changeset (`pnpm changesets:empty` for internal-only work).
+4. Change the commit above, and check that the `ork:security-audit` workflow's
+   prompts still match the phase files.
+5. Regenerate the bundle (`node tools/release/builtin-workflows.ts`); a test
+   fails when the generated module is stale.
+6. Add a changeset (`pnpm changesets:empty` for internal-only work).

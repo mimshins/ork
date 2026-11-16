@@ -43,6 +43,9 @@ runs and worktrees in plain words.
   per node, limits, and what you spent.
 - [The example workflows](./guides/examples.md): what each one does, how to
   download it, and how to run it.
+- [Auditing your project's security](./guides/security-audit.md):
+  `ork run ork:security-audit`, a read-only audit that ships with Ork: its
+  profiles and cost, the report and where it is.
 - [The terminal](./guides/terminal.md): keys in questions, colors and chips,
   `--verbose`, and plain output (`--plain`, `NO_COLOR`) for screen readers.
 - [Tab completion and short flags](./guides/tab-completion.md): commands, flags,

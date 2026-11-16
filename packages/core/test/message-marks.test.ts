@@ -21,7 +21,8 @@ const QUOTED = /["']\$\{|[a-z] \$\{JSON\.stringify\(/iu;
  * The page served before the UI is built is HTML, whose quotes are its own;
  * `ork --help`'s footer quotes a command the way kubectl's does, on a terminal
  * only. `issues-workflow.ts` is the `issues` example's YAML, shell quotes and
- * all.
+ * all; `builtin-bundles.ts` holds a built-in's companion files (scripts and a
+ * vendored skill) as text.
  */
 const NOT_MESSAGES = new Set([
   "server/src/placeholder.ts",
@@ -29,6 +30,7 @@ const NOT_MESSAGES = new Set([
   "schema/src/edit-values.ts",
   "cli/src/help-root.ts",
   "cli/src/project/issues-workflow.ts",
+  "core/src/project/builtin-bundles.ts",
 ]);
 
 const PACKAGES = [

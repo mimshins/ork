@@ -140,6 +140,8 @@ export const runReport = (
   const report = [
     "# Security audit report",
     "",
+    "This report may be sensitive: do not commit or post it.",
+    "",
     ...section("Run", [...status, "", ...caveats]),
     ...section(
       "Posture",

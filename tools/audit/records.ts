@@ -6,6 +6,7 @@
 
 export type ScannerCheck =
   | "pnpm-audit"
+  | "npm-audit"
   | "unpinned-action"
   | "missing-permissions"
   | "pull-request-target-checkout"

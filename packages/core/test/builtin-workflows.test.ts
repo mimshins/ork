@@ -60,18 +60,22 @@ const canonical = (text: string): string => {
 
 describe("the built-in workflows", () => {
   it("has some, each named with `ork:`", () => {
-    expect(builtinWorkflowNames()).toContain("ork:feedback-apply");
+    expect(builtinWorkflowNames()).toEqual([
+      "ork:feedback-apply",
+      "ork:security-audit",
+    ]);
   });
 
   it.each(BUILTINS)("%s is canonical", (_name, text) => {
     expect(canonical(text)).toBe(text);
   });
 
-  it.each(BUILTINS)("%s checks with no error or warning", (_name, text) => {
-    const place = project();
-    const { diagnostics } = checkWorkflowText(text, {
+  it.each(BUILTINS)("%s checks with no error or warning", name => {
+    // As written, beside its companion files, which its `context:` refs name.
+    const { place, file } = fileOf(`ork:${name}`);
+    const { diagnostics } = checkWorkflowText(readFileSync(file, "utf8"), {
       place,
-      workflowDir: place.dir,
+      workflowDir: path.dirname(file),
       registered: [],
     });
     expect(diagnostics).toEqual([]);
@@ -101,7 +105,7 @@ describe("an `ork:` name", () => {
   it("that names no built-in is refused, naming those there are", () => {
     expect(builtinWorkflowFile(project(), "ork:nope")).toBeUndefined();
     expect(unknownBuiltin("ork:nope")).toBe(
-      "`ork:nope` isn't one of Ork's workflows: `ork:feedback-apply`",
+      "`ork:nope` isn't one of Ork's workflows: `ork:feedback-apply`, `ork:security-audit`",
     );
     expect(unknownBuiltin("ork:feedback-apply")).toBeUndefined();
     expect(unknownBuiltin("hello")).toBeUndefined();

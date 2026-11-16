@@ -76,7 +76,7 @@ Load only what the task needs.
   Claude Code sessions (`pnpm benchmark`, `pnpm benchmark:control`).
 - [`security-audit`](./skills/security-audit/SKILL.md) — Cloudflare's
   third-party security-audit skill, pinned and kept byte for byte (see its
-  `PROVENANCE.md`); the `audit` workflow runs its phases as nodes.
+  `PROVENANCE.md`); the `ork:security-audit` built-in runs its phases as nodes.
 
 ### Agents (`agents/`)
 

@@ -1,7 +1,7 @@
 /**
  * @file Where an audit's files live: `~/.ork/audits/<project-name>/<run-id>/`,
- *   outside the checkout (the repository is public, and an audit's report,
- *   ledger and findings must never reach it). `ORK_AUDIT_HOME` replaces
+ *   outside the checkout (an audit's report, ledger and findings may be
+ *   sensitive and must never reach the repository). `ORK_AUDIT_HOME` replaces
  *   `~/.ork/audits` (the tests use it); `ORK_AUDIT_PROJECT` replaces the
  *   project's name. Also reads the previous audit, so runs build on each
  *   other.

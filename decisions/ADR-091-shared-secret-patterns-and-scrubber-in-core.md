@@ -1,6 +1,7 @@
 # ADR-091 — The secret patterns and the env-value scrubber live in core
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-096](./ADR-096-built-in-bundles.md) (the
+  audit bundle carries a copy of `secret-patterns.ts`)
 - **Date:** 2026-11-13
 - **Topic:** `packages/core` public exports, `packages/nodes`, `tools/audit`,
   masking
@@ -29,6 +30,10 @@ call it, and a configured secret's value reached them unmasked.
    entry point (`../../packages/core/src/index.ts`): `tools/` has no workspace
    link to `@krapht/ork-core`, and a root dependency would change the lockfile.
    `tools/audit/secret-patterns.ts` is gone; its tests keep their thresholds.
+   The audit shipped as the built-in `ork:security-audit` cannot import core, so
+   its bundle carries a copy of `secret-patterns.ts` with the import rewritten
+   to the sibling file ([ADR-096](./ADR-096-built-in-bundles.md)); the source
+   stays this one file.
 3. **The scrubber moves to core.** `scrubberOf`, `runScrubber`, `envValuesOf`,
    `Environ` and `readEnv` move from `packages/nodes` to core (public entry
    point); nodes imports them from there, as the dependency direction allows.

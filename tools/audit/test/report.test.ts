@@ -49,6 +49,7 @@ describe("the report", () => {
     expect(files).toHaveLength(3);
     expect(files.every(file => file.startsWith(fixtureAudits(env)))).toBe(true);
     expect(existsSync(path.join(repo, "REPORT.md"))).toBe(false);
+    expect(text("REPORT.md")).toContain("do not commit or post it");
     expect(text("REPORT.md")).toContain("This is a partial pass");
     expect(text("REPORT.md")).toContain("Mostly sound.");
     expect(text("REPORT.md")).toContain("an action by tag");

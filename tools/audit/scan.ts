@@ -1,13 +1,14 @@
 /**
- * @file The audit's `scan` step: checks the inputs, then runs the free,
- *   deterministic scanners (`pnpm audit`, the workflow checks, the secret
+ * @file The audit's `scan` step: checks the inputs and that the audit's files
+ *   are inside the checkout, then runs the free, deterministic scanners (`pnpm
+ *   audit` or `npm audit` by lockfile, the workflow checks, the secret
  *   patterns) and reads the previous audit. It costs no tokens. Its result is
  *   one JSON document; the scanner findings are `scanner` records for the
  *   report.
  */
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync, realpathSync, statSync } from "node:fs";
 import path from "node:path";
 
 // The package's entry point by path: `tools/` has no workspace link to it.
@@ -15,21 +16,19 @@ import {
   SECRET_PATTERNS,
   type SecretPattern,
 } from "../../packages/core/src/index.ts";
+import {
+  type Advisories,
+  type AuditRunner,
+  chooseScanner,
+  parseNpmAudit,
+  parsePnpmAudit,
+} from "./advisories.ts";
 import { checkInputs, resolveScope, type Scope } from "./inputs.ts";
 import { fingerprintOf, type ScannerRecord } from "./records.ts";
 import { outputDir, previousAudit, type PreviousAudit } from "./store.ts";
 import { checkWorkflow } from "./workflow-checks.ts";
 
 type Env = Record<string, string | undefined>;
-
-export type AuditRun = {
-  status: number | null;
-  stdout: string;
-  stderr: string;
-};
-
-/** Runs `pnpm audit --json`; its exit code is data, never a failure here. */
-export type AuditRunner = (cwd: string) => AuditRun;
 
 export type ScanResult = {
   profile: string;
@@ -42,71 +41,30 @@ export type ScanResult = {
   previous: PreviousAudit | null;
 };
 
-const SEVERITIES = ["info", "low", "moderate", "high", "critical"] as const;
-
-const severityOf = (value: unknown): ScannerRecord["severity"] =>
-  SEVERITIES.find(item => item === value) ?? "info";
-
-const text = (value: unknown, fallback: string): string =>
-  typeof value === "string" && value !== "" ? value : fallback;
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-/** Advisories from `pnpm audit --json`, as records, or a note on why not. */
-export const parsePnpmAudit = (
-  run: AuditRun,
-): { records: ScannerRecord[]; notes: string[] } => {
-  // pnpm exits non-zero when there are advisories: the JSON, not the code, says.
-  let parsed: unknown;
+/** The real path of `target`, or `target` itself when it cannot be resolved. */
+const resolved = (target: string): string => {
   try {
-    parsed = JSON.parse(run.stdout);
+    return realpathSync(target);
   } catch {
-    const why = run.stderr.trim().split("\n")[0] ?? "";
-    return {
-      records: [],
-      notes: [
-        `pnpm audit could not run${why === "" ? "" : `: ${why.slice(0, 200)}`} (exit ${run.status ?? "none"}); dependency advisories were not checked.`,
-      ],
-    };
+    return path.resolve(target);
   }
-  const advisories: unknown =
-    typeof parsed === "object" && parsed !== null && "advisories" in parsed
-      ? parsed.advisories
-      : undefined;
-  const list: unknown[] = Array.isArray(advisories)
-    ? advisories
-    : typeof advisories === "object" && advisories !== null
-      ? Object.values(advisories)
-      : [];
-  const records = list.flatMap((item): ScannerRecord[] => {
-    if (!isRecord(item)) return [];
-    const advisory = item;
-    const name = text(advisory["module_name"], "unknown package");
-    const rawId = advisory["id"];
-    const id =
-      typeof rawId === "string" || typeof rawId === "number"
-        ? String(rawId)
-        : text(advisory["title"], "advisory");
-    return [
-      {
-        source: "scanner",
-        check: "pnpm-audit",
-        fingerprint: fingerprintOf("scanner", "pnpm-audit", name, id),
-        title: `${name}: ${text(advisory["title"], "advisory")}`,
-        severity: severityOf(advisory["severity"]),
-        detail: [
-          `vulnerable ${text(advisory["vulnerable_versions"], "?")}`,
-          `patched ${text(advisory["patched_versions"], "?")}`,
-          text(advisory["url"], ""),
-        ]
-          .filter(part => part !== "")
-          .join("; "),
-      },
-    ];
-  });
-  return { records, notes: [] };
 };
+
+/**
+ * Whether the audit's own folder is outside the project root (`ork register`
+ * keeps Ork's files outside the checkout; the agents there cannot read it).
+ */
+export const bundleOutsideRoot = (root: string, bundleDir: string): boolean => {
+  const relative = path.relative(resolved(root), resolved(bundleDir));
+  return (
+    relative === ".." ||
+    relative.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relative)
+  );
+};
+
+export const OUTSIDE_ROOT_MESSAGE =
+  "the audit needs its files inside the checkout; use ork init (ork register keeps Ork's files outside it)";
 
 const MAX_FILE_BYTES = 1_000_000;
 
@@ -206,8 +164,8 @@ const trackedFiles = (cwd: string): { path: string; text: string }[] =>
       }
     });
 
-const realAudit: AuditRunner = cwd => {
-  const result = spawnSync("pnpm", ["audit", "--json"], {
+const realAudit: AuditRunner = (cwd, tool) => {
+  const result = spawnSync(tool, ["audit", "--json"], {
     cwd,
     encoding: "utf8",
     maxBuffer: 1 << 28,
@@ -223,15 +181,25 @@ export type ScanOptions = {
   cwd: string;
   env: Env;
   audit?: AuditRunner;
+  /** The folder the audit's scripts are in; when set, it must be inside `cwd`. */
+  bundleDir?: string;
 };
 
-/** Checks the inputs first, then runs every scanner. Throws on a bad input. */
+/**
+ * Checks the inputs, then that the bundle is inside the checkout, then runs
+ * every scanner. Throws on a bad input or an outside bundle, before anything is
+ * run or made.
+ */
 export const runScan = ({
   cwd,
   env,
   audit = realAudit,
+  bundleDir,
 }: ScanOptions): ScanResult => {
   const inputs = checkInputs(env["PROFILE"], env["SCOPE"]);
+  if (bundleDir !== undefined && bundleOutsideRoot(cwd, bundleDir)) {
+    throw new Error(OUTSIDE_ROOT_MESSAGE);
+  }
   const runId = env["ORK_RUN"] ?? "";
   const dir = outputDir(cwd, runId, env);
 
@@ -240,7 +208,16 @@ export const runScan = ({
       .split("\n")
       .filter(name => name !== ""),
   );
-  const pnpm = parsePnpmAudit(audit(cwd));
+  const tool = chooseScanner(cwd);
+  const advisories: Advisories =
+    tool === null
+      ? {
+          records: [],
+          notes: [
+            "no pnpm-lock.yaml or package-lock.json; dependency advisories were not checked.",
+          ],
+        }
+      : (tool === "pnpm" ? parsePnpmAudit : parseNpmAudit)(audit(cwd, tool));
   const files = trackedFiles(cwd);
   const workflows = files
     .filter(
@@ -254,8 +231,8 @@ export const runScan = ({
     scope,
     runId,
     outputDir: dir,
-    findings: [...pnpm.records, ...workflows, ...scanSecrets(files)],
-    notes: pnpm.notes,
+    findings: [...advisories.records, ...workflows, ...scanSecrets(files)],
+    notes: advisories.notes,
     previous: previousAudit(cwd, runId, env),
   };
 };

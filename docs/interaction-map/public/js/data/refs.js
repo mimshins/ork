@@ -354,7 +354,11 @@ export const FEEDBACK = {
   ),
   builtins: d(
     "packages/core/src/project/builtin-files.ts",
-    "Code: built-in workflows by their `ork:` names",
+    "Code: built-in workflows by their `ork:` names, and a bundle's companion files",
+  ),
+  bundleAdr: d(
+    "decisions/ADR-096-built-in-bundles.md",
+    "ADR-096: a built-in workflow with companion files",
   ),
   builtinTests: d(
     "packages/core/test/builtin-workflows.test.ts",

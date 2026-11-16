@@ -317,6 +317,7 @@ export const NODES = [
       FEEDBACK.builtins,
       FEEDBACK.builtinTests,
       FEEDBACK.loopAdr,
+      FEEDBACK.bundleAdr,
     ],
   },
   {

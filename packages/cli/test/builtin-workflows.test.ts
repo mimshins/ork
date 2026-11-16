@@ -4,12 +4,13 @@
  *   runs beside the project's own, and an unknown name is refused.
  */
 
-import { mkdirSync, mkdtempSync, realpathSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { explainNode } from "../src/commands/context.ts";
 import { loadWorkflow } from "../src/commands/validate.ts";
 import { refusedBuiltin, workflowArg } from "../src/workflows.ts";
 
@@ -30,6 +31,12 @@ const project = (): string => {
   const root = path.join(base, "app");
   mkdirSync(path.join(root, ".git"), { recursive: true });
   return root;
+};
+
+/** The names of the context files `ork context explain` lists for a node. */
+const explainedFiles = (file: string, node: string, root: string): string => {
+  const result = explainNode(file, node, root, path.join(base, "home"));
+  return result.ok ? result.explanation.files.map(f => f.name).join(" ") : "";
 };
 
 describe("an `ork:` workflow argument", () => {
@@ -64,10 +71,36 @@ describe("an `ork:` workflow argument", () => {
       false,
     );
     expect(refusedBuiltin(["ork:nope"], base)).toBe(true);
-    expect(String(errors.mock.calls.at(-1)?.[0])).toContain(
-      "`ork:nope` isn't one of Ork's workflows",
-    );
+    const message = String(errors.mock.calls.at(-1)?.[0]);
+    expect(message).toContain("`ork:nope` isn't one of Ork's workflows");
+    expect(message).toContain("`ork:feedback-apply`");
+    expect(message).toContain("`ork:security-audit`");
     expect(process.exitCode).toBe(1);
     errors.mockRestore();
+  });
+
+  it("writes the security audit's bundle beside its workflow, and validates it", () => {
+    const root = project();
+    const { file } = workflowArg("ork:security-audit", root);
+    expect(file).toMatch(
+      /^\.ork\/runs\/\.builtin\/[0-9a-f]{12}\/security-audit\.ork\.yaml$/u,
+    );
+    const folder = path.join(root, path.dirname(file));
+    expect(existsSync(path.join(folder, "security-audit", "cli.ts"))).toBe(
+      true,
+    );
+    expect(
+      existsSync(path.join(folder, "security-audit", "skill", "SKILL.md")),
+    ).toBe(true);
+    const loaded = loadWorkflow(file, root, path.join(base, "home"), []);
+    expect(loaded.report.diagnostics).toEqual([]);
+    expect(loaded.workflow?.name).toBe("ork-security-audit");
+    expect(refusedBuiltin(["ork:security-audit"], root)).toBe(false);
+  });
+
+  it("explains a node of the security audit, reading its bundled rule", () => {
+    const root = project();
+    const { file } = workflowArg("ork:security-audit", root);
+    expect(explainedFiles(file, "recon", root)).toContain("read-only-bash.md");
   });
 });

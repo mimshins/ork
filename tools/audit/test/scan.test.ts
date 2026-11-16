@@ -1,8 +1,9 @@
 /**
- * @file Tests the scanners and the previous-audit reader: `pnpm audit`
- *   advisories parsed from output with a non-zero exit (and an offline run as a
- *   note), a secret hit reported without its value, the previous audit read
- *   tolerantly, and `scan` refusing a bad input before it runs anything.
+ * @file Tests the scanners and the previous-audit reader: `pnpm audit` and `npm
+ *   audit` advisories parsed from output with a non-zero exit (and an offline
+ *   run as a note), the scanner chosen by lockfile, a secret hit reported
+ *   without its value, the previous audit read tolerantly, and `scan` refusing
+ *   a bad input or a bundle outside the checkout before it runs anything.
  */
 
 import { existsSync, mkdirSync, utimesSync, writeFileSync } from "node:fs";
@@ -10,7 +11,8 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { parsePnpmAudit, runScan, scanSecrets } from "../scan.ts";
+import { chooseScanner, parseNpmAudit, parsePnpmAudit } from "../advisories.ts";
+import { bundleOutsideRoot, runScan, scanSecrets } from "../scan.ts";
 import { previousAudit } from "../store.ts";
 import {
   auditEnv,
@@ -71,6 +73,109 @@ describe("parsePnpmAudit", () => {
     expect(notes[0]).toMatch(
       /pnpm audit could not run: ERR_PNPM_AUDIT_BAD_RESPONSE/u,
     );
+  });
+});
+
+const NPM_ADVISORIES = JSON.stringify({
+  vulnerabilities: {
+    "left-pad": {
+      name: "left-pad",
+      via: [
+        {
+          source: 1234,
+          name: "left-pad",
+          title: "Prototype pollution",
+          url: "https://example.com/advisory/1234",
+          severity: "high",
+          range: "<1.3.0",
+        },
+      ],
+    },
+    app: { name: "app", via: ["left-pad"] },
+    other: {
+      name: "other",
+      via: [
+        {
+          source: 1234,
+          name: "left-pad",
+          title: "Prototype pollution",
+          severity: "high",
+          range: "<1.3.0",
+        },
+      ],
+    },
+  },
+});
+
+describe("parseNpmAudit", () => {
+  it("reads advisories once, and skips a package that is only named as a path", () => {
+    const { records, notes } = parseNpmAudit({
+      status: 1,
+      stdout: NPM_ADVISORIES,
+      stderr: "",
+    });
+    expect(notes).toEqual([]);
+    expect(records).toMatchObject([
+      {
+        source: "scanner",
+        check: "npm-audit",
+        severity: "high",
+        title: "left-pad: Prototype pollution",
+        fingerprint: "scanner:npm-audit:left-pad:1234",
+      },
+    ]);
+  });
+
+  it("finds nothing in a clean report", () => {
+    expect(
+      parseNpmAudit({
+        status: 0,
+        stdout: '{"vulnerabilities":{}}',
+        stderr: "",
+      }),
+    ).toEqual({ records: [], notes: [] });
+  });
+
+  it("notes, not crashes, on npm's error document or no output", () => {
+    const offline = parseNpmAudit({
+      status: 1,
+      stdout: '{"error":{"code":"ENOTFOUND","summary":"request failed"}}',
+      stderr: "",
+    });
+    expect(offline.records).toEqual([]);
+    expect(offline.notes[0]).toMatch(
+      /npm audit could not run: request failed/u,
+    );
+    const none = parseNpmAudit({ status: 1, stdout: "", stderr: "boom" });
+    expect(none.notes[0]).toMatch(/npm audit could not run: boom/u);
+  });
+});
+
+describe("chooseScanner", () => {
+  it.each([
+    [{ "pnpm-lock.yaml": "x" }, "pnpm"],
+    [{ "package-lock.json": "{}" }, "npm"],
+    [{ "pnpm-lock.yaml": "x", "package-lock.json": "{}" }, "pnpm"],
+    [{ "yarn.lock": "x" }, null],
+  ])("by lockfile %j", (files, expected) => {
+    expect(chooseScanner(gitRepo({ "a.txt": "x", ...files }))).toBe(expected);
+  });
+});
+
+describe("bundleOutsideRoot", () => {
+  it("accepts a folder inside the root, even a hidden run folder", () => {
+    const root = gitRepo({ "a.txt": "x" });
+    const inside = path.join(root, ".ork/runs/.builtin/abc");
+    mkdirSync(inside, { recursive: true });
+    expect(bundleOutsideRoot(root, inside)).toBe(false);
+  });
+
+  it("refuses a folder beside or above the root", () => {
+    const root = gitRepo({ "a.txt": "x" });
+    expect(bundleOutsideRoot(root, path.join(root, "..", "elsewhere"))).toBe(
+      true,
+    );
+    expect(bundleOutsideRoot(root, path.dirname(root))).toBe(true);
   });
 });
 
@@ -192,8 +297,38 @@ describe("runScan", () => {
     expect(existsSync(fixtureAudits(env))).toBe(false);
   });
 
+  it("refuses a bundle outside the checkout before it runs anything or makes a folder", () => {
+    const repo = gitRepo({ "pnpm-lock.yaml": "x" });
+    const env = auditEnv();
+    const outside = path.join(path.dirname(repo), "bundle");
+    expect(() =>
+      runScan({ cwd: repo, env, audit: neverRuns, bundleDir: outside }),
+    ).toThrow(/use ork init \(ork register keeps Ork's files outside it\)/u);
+    expect(existsSync(fixtureAudits(env))).toBe(false);
+  });
+
+  it("runs the scanner its lockfile names, and notes when there is no lockfile", () => {
+    const called: string[] = [];
+    const audit = (_cwd: string, tool: string): typeof offline => {
+      called.push(tool);
+      return offline;
+    };
+    const run = (files: Record<string, string>): string[] =>
+      runScan({ cwd: gitRepo(files), env: auditEnv(), audit }).notes;
+    expect(run({ "package-lock.json": "{}" })[0]).toMatch(
+      /^npm audit could not run/u,
+    );
+    expect(run({ "pnpm-lock.yaml": "x" })[0]).toMatch(
+      /^pnpm audit could not run/u,
+    );
+    expect(called).toEqual(["npm", "pnpm"]);
+    expect(run({ "a.txt": "x" })[0]).toMatch(/advisories were not checked/u);
+    expect(called).toHaveLength(2);
+  });
+
   it("joins the scanners' findings and notes", () => {
     const repo = gitRepo({
+      "pnpm-lock.yaml": "x",
       "src/a.ts": `export const t = "${fakeGithubToken()}";\n`,
       ".github/workflows/t.yml":
         "on: push\njobs:\n  a:\n    runs-on: x\n    steps:\n      - uses: actions/checkout@v4\n",

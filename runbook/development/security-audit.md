@@ -8,11 +8,17 @@
 - An audit has finished and you need to read its report, or turn a real finding
   into a private advisory.
 
-The `audit` workflow (`.ork/workflows/audit.ork.yaml`) is this repository's own;
-it is not shipped. It runs free scanners first, then the six phases of the
-vendored [security-audit skill](../../.ai/skills/security-audit/SKILL.md)
-(pinned, see its [PROVENANCE.md](../../.ai/skills/security-audit/PROVENANCE.md))
-as Ork nodes. What it leaves simpler for now is in
+The built-in `ork:security-audit` (source
+[`packages/core/workflows/security-audit.ork.yaml`](../../packages/core/workflows/security-audit.ork.yaml),
+[ADR-096](../../decisions/ADR-096-built-in-bundles.md)) ships with Ork and runs
+in any `ork init` project; this repository audits itself with it. It runs free
+scanners first, then the six phases of the vendored
+[security-audit skill](../../.ai/skills/security-audit/SKILL.md) (pinned, see
+its [PROVENANCE.md](../../.ai/skills/security-audit/PROVENANCE.md)) as Ork
+nodes. Ork writes the workflow, the skill, the read-only rule and the
+`tools/audit` scripts into `.ork/runs/.builtin/<hash>/` of the project, where
+the agents read them; `scan` refuses an attached project (`ork register`), with
+nothing spent. What it leaves simpler for now is in
 [the audit's limits](../../specs/gaps/audit-limits.md).
 
 ## Run it
@@ -22,10 +28,10 @@ Run it with a released Ork, as the other workflows
 maintainer's go: a run is paid.
 
 ```sh
-ork run audit                                      # quick, the whole repository
-ork run audit --input profile=standard             # a wider pass
-ork run audit --input scope="packages/server packages/runtime"
-ork run audit --input scope=diff:v0.3.0            # the files changed since a ref
+ork run ork:security-audit                         # quick, the whole repository
+ork run ork:security-audit --input profile=standard    # a wider pass
+ork run ork:security-audit --input scope="packages/server packages/runtime"
+ork run ork:security-audit --input scope=diff:v0.3.0   # the files changed since a ref
 ```
 
 | Input     | Values                                                       | Default |
@@ -59,17 +65,17 @@ true. Models: Opus for `recon`, `hunt` and `verify`; Sonnet for the rest.
 ## What runs
 
 Every agent node is `readonly`, reads
-[the read-only Bash rule](../../.ork/context/read-only-bash.md), and only
-`tool.shell` nodes touch the output folder. **Nothing audited is run**: Ork has
-no OS-enforced sandbox yet, so a lead that needs execution is recorded as
-`needs_validation` with the skill's safe plan.
+[the read-only Bash rule](../../packages/core/workflows/security-audit/context/read-only-bash.md),
+and only `tool.shell` nodes touch the output folder. **Nothing audited is run**:
+Ork has no OS-enforced sandbox yet, so a lead that needs execution is recorded
+as `needs_validation` with the skill's safe plan.
 
-1. `scan` (free): `pnpm audit` (needs the network), every workflow under
-   `.github/workflows` (actions pinned by SHA, `permissions` per job, no
-   `pull_request_target` with a checkout), and a secret-pattern scan of tracked
-   files (file, line and pattern name, never the value; a test's placeholder,
-   such as an alphabet run or a key block's header with no key, is left out). It
-   also reads the previous audit.
+1. `scan` (free): `pnpm audit` or `npm audit` by lockfile (needs the network),
+   every workflow under `.github/workflows` (actions pinned by SHA,
+   `permissions` per job, no `pull_request_target` with a checkout), and a
+   secret-pattern scan of tracked files (file, line and pattern name, never the
+   value; a test's placeholder, such as an alphabet run or a key block's header
+   with no key, is left out). It also reads the previous audit.
 2. `recon` maps the architecture and lists coverage-ledger units, most important
    first. `ledger` writes the ledger and runs `validate-coverage-ledger.cjs`:
    the first 8 (`quick`) or 20 (`standard`) units are hunted, the rest are

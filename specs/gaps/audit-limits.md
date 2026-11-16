@@ -1,11 +1,11 @@
-# Limits found building the `audit` workflow
+# Limits found building the `ork:security-audit` workflow
 
 _Part of [Known gaps and limits](../gaps.md)._
 
 Status: **Open**: to decide at the next review, as the register's other entries.
 
-Found building the `audit` workflow
-([the workflow](../../.ork/workflows/audit.ork.yaml),
+Found building the `ork:security-audit` built-in
+([the workflow](../../packages/core/workflows/security-audit.ork.yaml),
 [its scripts](../../tools/audit/cli.ts), the runbook's
 [security audit](../../runbook/development/security-audit.md)). What was left
 simpler, or could not be checked:
@@ -48,3 +48,19 @@ simpler, or could not be checked:
   and a replacement it asks for is never applied: the record leaves
   `findings.json` and is listed as disputed, because no further fresh verifier
   runs.
+- **L388 · The audit works only in an `ork init` project.** The agents are
+  `readonly` and read the bundle's files (the skill, the read-only rule) from
+  `.ork/runs/.builtin/<hash>/` in the project. In an `ork register` project that
+  folder is outside the checkout, where a read-only agent cannot read, so `scan`
+  (the first node, free) exits 1 naming `ork init` before any agent starts.
+  Ruled out for now: a driver read grant for another folder, and writing the
+  bundle into the repository
+  ([ADR-096](../../decisions/ADR-096-built-in-bundles.md)). A resume and
+  `ork validate` are unaffected.
+- **L389 · The advisory scanner reads two lockfiles.** `scan` runs
+  `pnpm audit --json` when `pnpm-lock.yaml` exists and `npm audit --json` when
+  `package-lock.json` does (pnpm first when both do); with neither, it notes
+  that advisories were not checked. Yarn, pip, cargo and go are not read, and a
+  scanner that fails or is offline is a note, not a failure. The npm parser
+  reads the npm 7+ `audit --json` shape only, and it dedupes by advisory name
+  and source, so the per-package vulnerable path is lost.

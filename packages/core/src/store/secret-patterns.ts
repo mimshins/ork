@@ -1,12 +1,13 @@
 /**
  * @file The well-known credential formats, kept as data so a new one is one
- *   line: `maskSecrets` masks them before anything is stored, and the
- *   repository's security audit (`tools/audit`) looks for them in tracked
- *   files. Provider formats only, at the audit's thresholds; a generic
- *   "password = …" rule would flag every test fixture, so the masker adds its
- *   own generic forms. A hit is reported by the pattern's `name`, never the
- *   matched text. A pattern takes no `g` or `y` flag (a test checks): the
- *   masker adds `g` itself, and the audit's `.test()` is stateful with either.
+ *   line: `maskSecrets` masks them before anything is stored, and Ork's
+ *   security audit (`ork:security-audit`, which bundles a copy of this file)
+ *   looks for them in tracked files. Provider formats only, at the audit's
+ *   thresholds; a generic "password = …" rule would flag every test fixture, so
+ *   the masker adds its own generic forms. A hit is reported by the pattern's
+ *   `name`, never the matched text. A pattern takes no `g` or `y` flag (a test
+ *   checks): the masker adds `g` itself, and the audit's `.test()` is stateful
+ *   with either.
  */
 
 export type SecretPattern = { name: string; pattern: RegExp };

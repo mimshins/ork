@@ -84,7 +84,7 @@ export const run = defineCommand({
     workflow: {
       type: "positional",
       description:
-        "A workflow file, the name of one in the project's workflows (.ork/workflows/), or one of Ork's own (ork:feedback-apply)",
+        "A workflow file, the name of one in the project's workflows (.ork/workflows/), or one of Ork's own (ork:feedback-apply, ork:security-audit)",
       required: true,
     },
     node: {

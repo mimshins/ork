@@ -1,11 +1,11 @@
 /**
- * @file The command line the `audit` workflow's `tool.shell` nodes call: `node
- *   tools/audit/cli.ts <subcommand>`. Scalars come from the environment
- *   (`PROFILE`, `SCOPE`, `ORK_RUN`; `ORK_AUDIT_HOME` and `ORK_AUDIT_PROJECT`
- *   move the output folder); a subcommand that takes structured data reads one
- *   JSON object from `AUDIT_INPUT`, or from stdin when that is unset. Each
- *   prints one JSON document on stdout. A failure prints its message on stderr
- *   and exits 1, with nothing on stdout.
+ * @file The command line the security-audit workflow's `tool.shell` nodes call:
+ *   `node <bundle folder>/cli.ts <subcommand>`. Scalars come from the
+ *   environment (`PROFILE`, `SCOPE`, `ORK_RUN`; `ORK_AUDIT_HOME` and
+ *   `ORK_AUDIT_PROJECT` move the output folder); a subcommand that takes
+ *   structured data reads one JSON object from `AUDIT_INPUT`, or from stdin
+ *   when that is unset. Each prints one JSON document on stdout. A failure
+ *   prints its message on stderr and exits 1, with nothing on stdout.
  *
  *   - `check-inputs`: `{ profile, scope }`, or fails naming the allowed values.
  *   - `scan`: the inputs, the free scanners' `findings`, and the previous audit.
@@ -49,7 +49,11 @@ const commands: Record<string, (cwd: string) => unknown> = {
   "check-inputs": () =>
     checkInputs(process.env["PROFILE"], process.env["SCOPE"]),
   scan: cwd => {
-    const result = runScan({ cwd, env: process.env });
+    const result = runScan({
+      cwd,
+      env: process.env,
+      bundleDir: import.meta.dirname,
+    });
     // A declared output holds no object, so the previous audit also comes as text.
     return {
       ...result,
@@ -119,7 +123,7 @@ const main = (): void => {
   const command = commands[process.argv[2] ?? ""];
   if (command === undefined) {
     process.stderr.write(
-      `Usage: node tools/audit/cli.ts <${Object.keys(commands).join("|")}>\n`,
+      `Usage: node cli.ts <${Object.keys(commands).join("|")}>\n`,
     );
     process.exitCode = 2;
     return;

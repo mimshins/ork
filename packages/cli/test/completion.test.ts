@@ -180,7 +180,10 @@ describe("ork __complete", () => {
   });
 
   it("offers Ork's own workflows outside a project", async () => {
-    expect(await values("run", "ork:")).toEqual(["ork:feedback-apply"]);
+    expect(await values("run", "ork:")).toEqual([
+      "ork:feedback-apply",
+      "ork:security-audit",
+    ]);
   });
 });
 

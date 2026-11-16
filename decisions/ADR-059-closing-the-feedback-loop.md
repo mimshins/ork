@@ -1,6 +1,7 @@
 # ADR-059 — Closing the feedback loop: built-in workflows, rule-based triage, previewed publishing
 
-- **Status:** Accepted
+- **Status:** Accepted; amended by [ADR-096](./ADR-096-built-in-bundles.md) (a
+  built-in may carry companion files)
 - **Date:** 2026-11-06
 - **Topic:** feedback / CLI / workflows
 - **RFC:** waived — the maintainer chose among the options below directly, while
