@@ -33,17 +33,19 @@ could not be checked:
   so a cloned project's hook runs in an onboarding session as in any run.
 - **L395 · The writer is held to `.ork/` by a check, not a sandbox.** `finish`
   refuses a change outside `.ork/workflows/*.ork.yaml` and `.ork/project.yaml`
-  that lands in the writer's worktree; a bare `Edit` or `Write` allow is not
-  held to the worktree (G14), so a write elsewhere is not seen. The gate says
-  so.
+  that lands in the writer's worktree, ignored paths included (`--ignored`),
+  except an ignored file Ork copied into the worktree that is unchanged from the
+  project root's (so a copied file rewritten with identical bytes is not seen);
+  a bare `Edit` or `Write` allow is not held to the worktree (G14), so a write
+  outside the worktree is still not seen. The gate says so.
 - **L396 · Cited feedback ids are not checked.** A suggestion's `feedback` ids
-  pass `filter` unchecked and are only listed when kept; none is resolved.
+  pass the filter unchecked and are only listed when kept; none is resolved.
 - **L397 · `ork init`'s `.gitignore` edit stays outside the branch.** When
   `ork onboard` sets `.ork/` up, the `.gitignore` entry is left uncommitted in
   the working tree, and the closing text says to commit it with the branch.
 - **L398 · A suggestion can't be declared field by field.** An agent's list item
-  holds only scalars (L358), so the proposer reports `{ list: {} }` and only
-  `filter` holds each item to `SuggestionSchema`; the driver sees no item shape.
+  holds only scalars (L358), so the proposer reports `{ list: {} }` and only the
+  filter holds each item to `SuggestionSchema`; the driver sees no item shape.
 - **L399 · The proposer's reads are not held to the project.**
   `ork:onboard-propose` allows `Read`, `Grep` and `Glob` by bare name, since
   OpenCode refuses `grep` and `glob` unless allowed (L236). On `claude-code` and
@@ -58,14 +60,55 @@ could not be checked:
   `warning N uncommitted change(s) in this checkout are not in the worktrees`.
   It is harmless, since the writer only adds files, but it reads as a problem.
   Committing the set-up first, or leaving it out of the warning, would close it.
-- **L401 · `filter` skips a package script behind a flag.** A drafted line whose
-  first word after the manager is a flag (`pnpm -r nope`, `npm --silent run x`)
-  is not checked against `package.json`'s scripts, since `filter` cannot tell
-  the flag's value from the script name; its program is still checked. Parsing
-  each manager's flags would close it.
+- **L401 · The filter skips a package script behind a flag.** A drafted line
+  whose first word after the manager is a flag (`pnpm -r nope`,
+  `npm --silent run x`) is not checked against `package.json`'s scripts, since
+  the filter cannot tell the flag's value from the script name; its program is
+  still checked. Parsing each manager's flags would close it.
 - **L402 · `.ork/project.yaml` may set a `driver` or `model` for every
   workflow.** `defaults.driver` and `defaults.model` there apply to every
   workflow, so the rule that written workflows name neither also holds for the
   project file. `finish` checks the workflow files for it and only lists the
   project file's `defaults` at the gate, so a `driver` or `model` there is
   shown, not refused. Refusing it in `finish` would close it.
+- **L403 · A crash inside `finish` exits 1 and loops like a problem.** The
+  `finish -> write` edge fires on `exitCode == 1`, which is what `finish` exits
+  when it finds problems and also what an uncaught Node error exits. A bug in
+  `finish` reads as the writer's mistake and costs up to three more rounds. A
+  distinct exit code for a crash would close it.
+- **L404 · A hook that rewrites the canonical commit fails the run after 3
+  rounds.** `finish` commits the serialized workflows with the repository's
+  hooks running, then reads them again; a hook that reformats them is a problem
+  the writer cannot fix, so the writer is sent back three times and the run ends
+  failed. Hooks keep running (no `--no-verify`); the person sees which file a
+  hook rewrote.
+- **L405 · Standalone `ork:onboard-propose` returns the unfiltered list.** Only
+  `ork onboard` checks the proposer's `suggestions` (evidence, commands, names)
+  now, in its own process. `ork run ork:onboard-propose` returns the list as the
+  model wrote it, with nothing dropped.
+- **L406 · The survey's lists are capped without a count.** Scripts keep 30,
+  test and check commands 20 each, CI files 20 and the names under `.ork/` 20,
+  with no `and N more`; only the agent and skill folders say how many were left
+  out. The proposer cannot tell a short list from a cut one.
+- **L407 · The survey text is cut from the end.** `surveyText` stops at 6,000
+  characters, so a crowded repository loses the last lines first, and the
+  `.ork/` line, which review mode needs, is the last. It cuts by UTF-16 unit and
+  can split a surrogate pair. Trimming each list, or keeping `.ork/` first,
+  would close it.
+- **L408 · The survey reads only the root `package.json`, and treats manifests
+  as lockfiles.** A workspace's own scripts, `pyproject.toml`, `tox` and
+  `pytest` commands are not read, so `uv`, `poetry`, `maven`, `gradle` and
+  `bundler` name a manager and give no test or check command. `Cargo.toml`,
+  `pom.xml` and `build.gradle` are manifests, not lockfiles, and name their
+  manager anyway.
+- **L409 · Makefile targets are matched by exact name.** Only `test`, `tests`,
+  `check`, `lint`, `ci` and `verify` count: `test-unit:` does not. A repository
+  with a `package.json` and no lockfile or `packageManager` is assumed to use
+  `npm`.
+- **L410 · CI detection knows a fixed list of files.** GitHub workflows, GitLab,
+  CircleCI, Jenkins, Azure, Buildkite and Bitbucket are found, `.travis.yml`,
+  `appveyor.yml` and `.drone.yml` are not; and a folder named `Jenkinsfile`
+  counts as one.
+- **L411 · A few `.ork/` facts are read loosely.** A `.ork/` that is a link out
+  of the repository reports `exists: true` while holding nothing, and a folder
+  named `project.yaml` counts as the project file.

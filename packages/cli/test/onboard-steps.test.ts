@@ -5,7 +5,7 @@
  *   when the write run's branch is kept, discarded or never finished.
  */
 
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -87,43 +87,52 @@ const result = (
   worktrees: [],
 });
 
+/** A propose run whose `propose` node reported `suggestions`. */
+const proposal = (suggestions: unknown): RunResult =>
+  result([{ id: "propose", ok: true, output: { suggestions } }]);
+
+/** A project folder holding `README.md`, the one file the evidence cites. */
+const project = (): string => {
+  const root = mkdtempSync(path.join(tmpdir(), "ork-proposed-"));
+  writeFileSync(path.join(root, "README.md"), "# App\n");
+  return root;
+};
+
 describe("proposedOf", () => {
-  it("reads kept and dropped from the filter node's json", () => {
+  const cited = { ...suggestion, evidence: [{ path: "README.md" }] };
+
+  it("checks the propose node's suggestions against the project", () => {
+    const missing = {
+      ...cited,
+      workflow: "gone",
+      evidence: [{ path: "nope.md" }],
+    };
     const proposed = proposedOf(
-      result([
-        {
-          id: "filter",
-          ok: true,
-          output: {
-            json: {
-              kept: [suggestion, { workflow: "Not A Slug" }],
-              dropped: [{ index: 1, workflow: "x", reasons: ["no such file"] }],
-            },
-          },
-        },
-      ]),
+      proposal([cited, { workflow: "Not A Slug" }, missing]),
+      project(),
     );
     expect(proposed.kept.map(s => s.workflow)).toEqual(["triage"]);
-    expect(proposed.dropped).toEqual([
-      { index: 1, workflow: "x", reasons: ["no such file"] },
+    expect(proposed.dropped.map(d => [d.index, d.workflow])).toEqual([
+      [1, "Not A Slug"],
+      [2, "gone"],
     ]);
+    expect(proposed.dropped[1]?.reasons[0]).toContain("nope.md");
   });
 
-  it("falls back to stdout, and to nothing when it is not JSON", () => {
-    const fromStdout = proposedOf(
-      result([
-        {
-          id: "filter",
-          ok: true,
-          output: { stdout: JSON.stringify({ kept: [suggestion] }) },
-        },
-      ]),
-    );
-    expect(fromStdout.kept).toHaveLength(1);
-    const junk = proposedOf(
-      result([{ id: "filter", ok: true, output: { stdout: "nope" } }]),
-    );
-    expect(junk).toEqual({ kept: [], dropped: [] });
+  it("reads a missing or non-list suggestions value as an empty list", () => {
+    const root = project();
+    const empty = { kept: [], dropped: [] };
+    expect(proposedOf(result([]), root)).toEqual(empty);
+    expect(proposedOf(proposal(null), root)).toEqual(empty);
+    expect(proposedOf(proposal("[1]"), root)).toEqual(empty);
+    expect(proposedOf(proposal({ kept: [] }), root)).toEqual(empty);
+  });
+
+  it("checks a suggestions list of 300 KB in this process", () => {
+    const huge = { ...cited, workflow: "big", why: "x".repeat(300_000) };
+    const proposed = proposedOf(proposal([cited, huge]), project());
+    expect(proposed.kept).toHaveLength(1);
+    expect(proposed.dropped[0]).toMatchObject({ index: 1, workflow: "big" });
   });
 
   it("shows a suggestion's workflow, why, who decides, caps and evidence", () => {
@@ -203,7 +212,10 @@ describe("settleWrite", () => {
         {
           id: "finish",
           ok: false,
-          output: { stdout: "a.ork.yaml: no budgetUsd\n\nb.ork.yaml: bad" },
+          output: {
+            exitCode: 1,
+            stdout: "a.ork.yaml: no budgetUsd\n\nb.ork.yaml: bad",
+          },
         },
       ],
       "failed",
@@ -218,5 +230,19 @@ describe("settleWrite", () => {
     expect(text).toContain("run run-1");
     expect(text).toContain("ork resume run-1");
     expect(text).toContain("a.ork.yaml: no budgetUsd");
+  });
+
+  it("takes a finish that could not start for no problems found", () => {
+    const out = result(
+      [
+        {
+          id: "finish",
+          ok: false,
+          output: { exitCode: 127, stdout: "sh: ork: not found" },
+        },
+      ],
+      "failed",
+    );
+    expect(finishProblems(out)).toEqual([]);
   });
 });

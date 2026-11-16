@@ -1,8 +1,8 @@
 /**
  * @file Tests for a built-in bundle: companion files are written beside the
  *   workflow under one hash of them all, carry the bundle's folder relative to
- *   the project root, are left alone when unchanged, and a link on any of their
- *   paths is refused with nothing written.
+ *   the project root, are left alone when unchanged, and a link or a folder on
+ *   any of their paths is refused with nothing written or removed.
  */
 
 import {
@@ -12,6 +12,7 @@ import {
   readdirSync,
   readFileSync,
   realpathSync,
+  rmSync,
   statSync,
   symlinkSync,
   writeFileSync,
@@ -118,5 +119,22 @@ describe("a built-in bundle", () => {
     expect(existsSync(path.join(there, "feedback-apply.ork.yaml"))).toBe(false);
     expect(existsSync(path.join(there, "tools"))).toBe(false);
     expect(readdirSync(elsewhere)).toEqual([]);
+  });
+
+  it("refuses a folder at a companion's path, and removes nothing", () => {
+    const { root, place, folder } = written();
+    const run = path.join(folder, "tools/run.ts");
+    rmSync(run);
+    mkdirSync(run);
+    writeFileSync(path.join(run, "mine.txt"), "keep\n");
+    writeFileSync(path.join(folder, "skill/phase.md"), "changed by hand\n");
+    expect(builtinProblem(place, NAME)).toBe(
+      `\`${path.relative(root, run)}\` is a folder, not a file: Ork writes its own workflow there, so it wrote nothing.`,
+    );
+    expect(builtinWorkflowFile(place, NAME)).toBeUndefined();
+    expect(readFileSync(path.join(run, "mine.txt"), "utf8")).toBe("keep\n");
+    expect(readFileSync(path.join(folder, "skill/phase.md"), "utf8")).toBe(
+      "changed by hand\n",
+    );
   });
 });

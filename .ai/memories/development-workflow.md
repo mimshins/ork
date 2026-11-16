@@ -58,3 +58,12 @@ AI or agent attribution line. Do not bypass it with `--no-verify`.
   (about 1 in 4), since the hold window releases the first poll's events alone.
   Each file keeps its own `at`-stamping store wrapper, because a shared fixture
   would pass the 10-import lint limit.
+- Onboard test traps: the 300 KB `E2BIG` case only reproduces on Linux; a pty
+  from `script` has no size, so the card header is not drawn (wait for the
+  hidden-cursor escape); the Ctrl-C pty fixture passes a no-op `interrupt`,
+  since a self-`SIGINT` would kill the process before it reports.
+- `finish`'s scope check exempts an ignored worktree file when the project root
+  has the same path with identical bytes (what `createWorktree` copies in). It
+  cannot tell a copy from a writer's identical rewrite, which changes nothing.
+  `readFileSync` follows links, so a link to the identical root file is exempt
+  too; harmless.

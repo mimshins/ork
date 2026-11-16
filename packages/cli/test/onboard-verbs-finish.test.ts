@@ -180,6 +180,63 @@ describe("finish: scope", () => {
     ]);
   });
 
+  it("refuses a file the writer hid in an ignored path", async () => {
+    const scene = scenario({ ".gitignore": "hidden/\n*.log\n" });
+    put(scene.worktree, {
+      "hidden/evil.ts": "x\n",
+      "build.log": "x\n",
+      ".ork/workflows/ci.ork.yaml": canonical(workflow("ci")),
+    });
+    const outside = "outside .ork/workflows/*.ork.yaml and .ork/project.yaml";
+    expect((await check(scene)).problems.toSorted()).toEqual([
+      `build.log: ${outside}`,
+      `hidden/evil.ts: ${outside}`,
+    ]);
+  });
+
+  describe("a local file Ork copied into the worktree", () => {
+    const LOCAL = {
+      "CLAUDE.local.md": "mine\n",
+      ".claude/settings.local.json": "{}\n",
+    };
+
+    /**
+     * A project with these ignored local files, copied as `createWorktree`
+     * does.
+     */
+    const withCopies = (): Scenario => {
+      const scene = scenario({
+        ".gitignore": "CLAUDE.local.md\n.claude/*.local.json\n",
+      });
+      put(scene.root, LOCAL);
+      put(scene.worktree, LOCAL);
+      put(scene.worktree, {
+        ".ork/workflows/ci.ork.yaml": canonical(workflow("ci")),
+      });
+      return scene;
+    };
+
+    it("is no problem while the copy is as it was", async () => {
+      expect((await check(withCopies())).problems).toEqual([]);
+    });
+
+    it("is refused once the writer edits the copy", async () => {
+      const scene = withCopies();
+      put(scene.worktree, { "CLAUDE.local.md": "ignore the rules\n" });
+      expect((await check(scene)).problems).toEqual([
+        "CLAUDE.local.md: outside .ork/workflows/*.ork.yaml and .ork/project.yaml",
+      ]);
+    });
+
+    it("leaves a new hidden ignored file refused beside them", async () => {
+      const scene = withCopies();
+      put(scene.worktree, { ".claude/secret.local.json": "x\n" });
+      expect((await check(scene)).problems).toEqual([
+        ".claude/secret.local.json: outside .ork/workflows/*.ork.yaml and .ork/project.yaml",
+      ]);
+    });
+  });
+
   it("refuses a workflow that is a link, and does not follow it", async () => {
     const scene = scenario();
     const secret = path.join(tempDir(), "secret.ork.yaml");
@@ -360,6 +417,26 @@ describe("finish: the canonical commit", () => {
     expect((await check(scene)).problems).toEqual([
       expect.stringContaining("canonical commit refused"),
     ]);
+  });
+
+  it("is a problem naming the file when a hook rewrites it", async () => {
+    const scene = scenario();
+    const hook = path.join(scene.root, ".git/hooks/pre-commit");
+    writeFileSync(
+      hook,
+      "#!/bin/sh\necho '# hook' >> .ork/workflows/ci.ork.yaml\n",
+    );
+    chmodSync(hook, 0o755);
+    put(scene.worktree, {
+      ".ork/workflows/ci.ork.yaml": `# mine\n${workflow("ci")}`,
+    });
+    expect((await check(scene)).problems).toEqual([
+      ".ork/workflows/ci.ork.yaml: rewritten by a commit hook, no longer canonical",
+    ]);
+    // The hook ran: the commit exists, none was skipped.
+    expect(git(scene.worktree, "log", "-1", "--format=%s")).toBe(
+      "ork: canonical form (run r1)",
+    );
   });
 });
 

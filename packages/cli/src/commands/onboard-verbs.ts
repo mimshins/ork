@@ -1,23 +1,21 @@
 /**
  * @file The hidden `ork __onboard <verb>`: what the tool nodes of the built-in
- *   `ork:onboard-propose` and `ork:onboard-write` workflows run (`format`,
- *   `canon`, `filter`, `finish`). Left out of `ork --help` and tab completion
- *   like `ork __complete`, documented only in specs/cli/onboard-verbs.md, and
- *   free to change without notice. A usage error is one stderr line and exit 2.
+ *   `ork:onboard-write` workflow run (`format`, `canon`, `finish`). Left out of
+ *   `ork --help` and tab completion like `ork __complete`, documented only in
+ *   specs/cli/onboard-verbs.md, and free to change without notice. A usage
+ *   error is one stderr line and exit 2.
  */
 
-import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 
 import { defineCommand } from "citty";
 
 import { canonFiles } from "../onboard/verbs-canon.ts";
-import { filterText } from "../onboard/verbs-filter.ts";
 import { finish, finishText } from "../onboard/verbs-finish.ts";
 import { formatBrief } from "../onboard/verbs-format.ts";
 import { write, writeErr } from "../output.ts";
 
-const VERBS = ["format", "canon", "filter", "finish"];
+const VERBS = ["format", "canon", "finish"];
 
 const usage = (message: string): void => {
   writeErr(`ork __onboard: ${message}`);
@@ -25,7 +23,6 @@ const usage = (message: string): void => {
 };
 
 const options = {
-  file: { type: "string" },
   worktree: { type: "string" },
   branch: { type: "string" },
 } as const;
@@ -36,7 +33,7 @@ const parsed = (
 ): {
   verb: string;
   words: string[];
-  values: { file?: string; worktree?: string; branch?: string };
+  values: { worktree?: string; branch?: string };
 } | null => {
   const [verb = "", ...rest] = args;
   if (!VERBS.includes(verb)) {
@@ -68,17 +65,6 @@ const runCanon = (files: readonly string[]): void => {
       process.exitCode = 1;
     } else write(`${result.status} ${result.file}`);
   }
-};
-
-const runFilter = (file: string | undefined): void => {
-  let text: string;
-  try {
-    text = readFileSync(file ?? 0, "utf8");
-  } catch (error) {
-    usage(error instanceof Error ? error.message : String(error));
-    return;
-  }
-  write(JSON.stringify(filterText(text, process.cwd())));
 };
 
 const runFinish = async (
@@ -114,7 +100,6 @@ export const onboardVerbs = defineCommand({
       if (brief.ok) process.stdout.write(brief.text);
       else usage(brief.error);
     } else if (verb === "canon") runCanon(words);
-    else if (verb === "filter") runFilter(values.file);
     else await runFinish(values.worktree, values.branch);
   },
 });

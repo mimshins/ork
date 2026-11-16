@@ -1,12 +1,12 @@
 /**
- * @file Tests for `ork __onboard filter`: a suggestion that cites a file or
- *   commit that is not there, drafts a command whose program or package script
- *   does not exist, repeats a workflow or is past the tenth is dropped with its
- *   reasons; the rest are kept; malformed entries and input are tolerated
- *   (G21); and nothing the model drafted runs.
+ * @file Tests for the check `ork onboard` runs on the proposer's list: a
+ *   suggestion that cites a file or commit that is not there, drafts a command
+ *   whose program or package script does not exist, repeats a workflow or is
+ *   past the tenth is dropped with its reasons; the rest are kept; malformed
+ *   entries and input are tolerated (G21); and nothing the model drafted runs.
  */
 
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import {
   chmodSync,
   existsSync,
@@ -20,9 +20,7 @@ import path from "node:path";
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { filterSuggestions, filterText } from "../src/onboard/verbs-filter.ts";
-
-const BIN = path.resolve(import.meta.dirname, "../src/bin.ts");
+import { filterSuggestions } from "../src/onboard/verbs-filter.ts";
 
 const PATH_BEFORE = process.env["PATH"];
 
@@ -237,15 +235,9 @@ describe("filter", () => {
     ]);
   });
 
-  it("reads input that is not a JSON list as one drop", () => {
+  it("keeps and drops nothing for an empty list", () => {
     const { root } = repo();
-    for (const text of ["", "not json", "{}", '"x"']) {
-      const result = filterText(text, root);
-      expect(result.kept).toEqual([]);
-      expect(result.dropped).toHaveLength(1);
-      expect(result.dropped[0]).toMatchObject({ index: -1, workflow: null });
-    }
-    expect(filterText("[]", root)).toEqual({ kept: [], dropped: [] });
+    expect(filterSuggestions([], root)).toEqual({ kept: [], dropped: [] });
   });
 
   it("runs nothing it was given", () => {
@@ -256,37 +248,5 @@ describe("filter", () => {
       root,
     );
     expect(existsSync(path.join(parent, "ran"))).toBe(false);
-  });
-});
-
-const run = (cwd: string, input: string, ...extra: string[]) =>
-  spawnSync(process.execPath, [BIN, "__onboard", "filter", ...extra], {
-    cwd,
-    input,
-    encoding: "utf8",
-    env: { PATH: process.env["PATH"] ?? "", HOME: cwd },
-  });
-
-describe("ork __onboard filter (the program)", () => {
-  it("reads stdin or --file and prints kept and dropped, exit 0", () => {
-    const { root } = repo();
-    const text = JSON.stringify([entry(), { workflow: 1 }]);
-    const out = run(root, text);
-    expect(out.status).toBe(0);
-    expect(JSON.parse(out.stdout)).toMatchObject({
-      kept: [{ workflow: "ci" }],
-      dropped: [{ index: 1, workflow: null }],
-    });
-    writeFileSync(path.join(root, "in.json"), text);
-    expect(run(root, "", "--file", "in.json").stdout).toBe(out.stdout);
-  });
-
-  it("exits 0 for garbage and 2 for a usage error, with one stderr line", () => {
-    const { root } = repo();
-    expect(run(root, "oops").status).toBe(0);
-    const bad = run(root, "[]", "--bogus");
-    expect(bad.status).toBe(2);
-    expect(bad.stderr.trim().split("\n")).toHaveLength(1);
-    expect(run(root, "[]", "--file", "missing.json").status).toBe(2);
   });
 });

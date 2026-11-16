@@ -26,13 +26,14 @@ line ([the terminal](./terminal.md)).
 1. **Checks.** No terminal, an attached project (`ork register`) or no commit
    each print one line and stop, with nothing written and nothing spent. An
    attached project is not supported yet: run `ork init` in the repository.
-2. **Sets up `.ork/`** like `ork init` when it is missing (the starter, the
+2. **Picks the driver.** `--driver <id>` skips the question; one ready driver is
+   used; several show a list; none prints how to log in and stops, before
+   anything is written: your project folder is as it was.
+3. **Sets up `.ork/`** like `ork init` when it is missing (the starter, the
    `.gitignore` entry). That `.gitignore` edit stays in your working tree,
    uncommitted: commit it with the branch. On a first visit the runs then print
    `warning N uncommitted change(s) in this checkout are not in the worktrees`;
    that is expected, since the writer only adds files.
-3. **Picks the driver.** `--driver <id>` skips the question; one ready driver is
-   used; several show a list; none prints how to log in and stops.
 4. **Surveys the project** with no model: package manager, scripts, the test and
    check commands, CI files, the base branch, whether `gh` is usable (never its
    output), the agent and skill folders, `AGENTS.md` and `CLAUDE.md`, and what
@@ -88,16 +89,20 @@ by tokens. `ork usage` adds the runs up like any others.
   follow-up questions. For each workflow it gives why, where a person decides,
   its caps, evidence (a file or a commit) and, optionally, the commands it would
   run.
-- **Filter:** Ork drops a suggestion that cites a file or commit that does not
-  exist, or drafts a command whose program is not on your `PATH` or whose
-  package script is not in your `package.json`. Nothing the agent drafted runs.
+- **Filter:** `ork onboard` drops a suggestion that cites a file or commit that
+  does not exist, or drafts a command whose program is not on your `PATH` or
+  whose package script is not in your `package.json`. Nothing the agent drafted
+  runs. (`ork run ork:onboard-propose` on its own returns the agent's list
+  unfiltered; the filter is part of `ork onboard`.)
 - **Pick:** the survivors are listed with their evidence; a pick-several prompt
   takes any number (Space toggles, Enter confirms, or `1,3` with `--plain`).
   Picking none ends cleanly with nothing written.
 - **Write** (`ork:onboard-write`): a writer with no shell works in its own
   worktree. Ork then checks its work (below) and sends problems back to the
   writer, up to 3 rounds. Out of rounds, the run ends failed and the command
-  prints the problems and the run id (`ork resume <run>` resumes that run).
+  prints the problems and the run id (`ork resume <run>` resumes that run). If
+  the check itself cannot start (`ork` is not found, say), the run ends failed
+  at once with that error and the writer is not run again.
 
 Every written workflow carries a dollar and a token cap, names no `driver` or
 `model` (the machine running it picks), and uses only the built-in
@@ -125,10 +130,11 @@ Checked in code, not by a prompt:
 
 - Evidence, drafted commands and workflow names (the filter).
 - That the writer changed only `.ork/workflows/*.ork.yaml` and
-  `.ork/project.yaml`, that each workflow has both caps, names no `driver` or
-  `model`, uses only the two built-in agents, is in Ork's canonical form, and
-  passes `ork validate` and `ork validate --driver <id>` for every driver ready
-  on the machine.
+  `.ork/project.yaml` (a file it left in an ignored path counts, unless it is an
+  unchanged copy Ork put there, byte-identical to the project root's), that each
+  workflow has both caps, names no `driver` or `model`, uses only the two
+  built-in agents, is in Ork's canonical form, and passes `ork validate` and
+  `ork validate --driver <id>` for every driver ready on the machine.
 
 Held only by a prompt:
 

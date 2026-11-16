@@ -94,9 +94,13 @@ const rewritten = (file: string, text: string): string =>
     return done.replaceAll(from, to);
   }, text);
 
-/** The files of `dir` and its subfolders, as paths relative to it. */
+/**
+ * The files of `dir` and its subfolders, as paths relative to it, without a
+ * dotfile or a file in a dot folder (`.DS_Store` is not part of a bundle).
+ */
 const filesUnder = (dir: string): string[] =>
   readdirSync(dir, { recursive: true, encoding: "utf8" })
+    .filter(name => !name.split(path.sep).some(part => part.startsWith(".")))
     .filter(name => statSync(path.join(dir, name)).isFile())
     .map(name => name.split(path.sep).join("/"));
 
@@ -121,7 +125,7 @@ export const companionsOf = (
     }
     for (const file of readdirSync(source).toSorted()) {
       const at = path.join(source, file);
-      if (keep(file) && statSync(at).isFile()) {
+      if (!file.startsWith(".") && keep(file) && statSync(at).isFile()) {
         files.push([`${to}/${file}`, readFileSync(at, "utf8")]);
       }
     }

@@ -1,8 +1,8 @@
 /**
  * @file What `ork:onboard-propose` suggests, one workflow per entry
  *   (specs/cli/onboard-verbs.md#suggestions). The model drafts these from
- *   untrusted text and the driver may not enforce their shape (G21), so the
- *   `filter` verb parses each entry itself with this schema.
+ *   untrusted text and the driver may not enforce their shape (G21), so `ork
+ *   onboard` parses each entry itself with this schema.
  */
 
 import { z } from "zod";

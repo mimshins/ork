@@ -50,7 +50,7 @@ export const runOnboard = async (o: OnboardOptions): Promise<number> => {
   if (proposed.result.status !== "succeeded") {
     return stop(failedLines("the proposing run", proposed.result), 1);
   }
-  const suggestions = proposedOf(proposed.result);
+  const suggestions = proposedOf(proposed.result, ready.place.root);
   const picks = await pickSuggestions(o.io, suggestions, out);
   if (picks === null) return INTERRUPTED;
   if (picks.length === 0) {

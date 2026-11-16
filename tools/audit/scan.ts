@@ -164,7 +164,11 @@ const trackedFiles = (cwd: string): { path: string; text: string }[] =>
       }
     });
 
-const realAudit: AuditRunner = (cwd, tool) => {
+// `tool` is a plain string so a test can run `echo` in place of the scanner.
+export const realAudit = (
+  cwd: string,
+  tool: string,
+): ReturnType<AuditRunner> => {
   const result = spawnSync(tool, ["audit", "--json"], {
     cwd,
     encoding: "utf8",

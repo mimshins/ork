@@ -1,10 +1,10 @@
 /**
- * @file `ork __onboard filter`: checks what the proposer suggested against the
- *   project (G21: the driver may not hold the shape). An entry is dropped, with
- *   every reason, when it is malformed, cites a file or commit that is not
- *   there, drafts a command whose program or package script does not exist, or
- *   repeats a workflow or is past the tenth. It runs nothing the model drafted
- *   (specs/cli/onboard-verbs.md#filter).
+ * @file The check `ork onboard` runs in-process on what the proposer suggested,
+ *   against the project (G21: the driver may not hold the shape). An entry is
+ *   dropped, with every reason, when it is malformed, cites a file or commit
+ *   that is not there, drafts a command whose program or package script does
+ *   not exist, or repeats a workflow or is past the tenth. It runs nothing the
+ *   model drafted (specs/cli/onboard-verbs.md#the-filter).
  */
 
 import { execFileSync } from "node:child_process";
@@ -109,26 +109,4 @@ export const filterSuggestions = (
     else dropped.push({ index, workflow: suggestion.workflow, reasons });
   }
   return { kept, dropped };
-};
-
-/** Checks the proposer's output text: a JSON list, or one drop saying it is not. */
-export const filterText = (text: string, root: string): Filtered => {
-  let data: unknown;
-  try {
-    data = JSON.parse(text);
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    return {
-      kept: [],
-      dropped: [
-        { index: -1, workflow: null, reasons: [`not JSON: ${reason}`] },
-      ],
-    };
-  }
-  return Array.isArray(data)
-    ? filterSuggestions(data, root)
-    : {
-        kept: [],
-        dropped: [{ index: -1, workflow: null, reasons: ["not a JSON list"] }],
-      };
 };

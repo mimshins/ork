@@ -1,7 +1,9 @@
 /**
- * @file What `ork onboard` does with the proposer's answer: reads the `filter`
- *   node's result out of the run, shows the surviving suggestions and the ones
- *   dropped with why, and takes the picks with a `multiselect`
+ * @file What `ork onboard` does with the proposer's answer: reads the `propose`
+ *   node's `suggestions` out of the run and checks them against the project in
+ *   this process (`filterSuggestions`; no tool node, so a long list never meets
+ *   an argument or environment limit), shows the surviving suggestions and the
+ *   ones dropped with why, and takes the picks with a `multiselect`
  *   (specs/cli/onboard-flow.md#proposing-and-picking). Everything shown came
  *   from a model reading untrusted files, so it is stripped of escape sequences
  *   first.
@@ -12,53 +14,22 @@ import type { RunResult } from "@krapht/ork-core";
 import { plain, shortCount, style } from "../output.ts";
 import type { PromptIO } from "../term/mode.ts";
 import { multiselect } from "../term/multiselect.ts";
-import { type Suggestion, SuggestionSchema } from "./suggestion.ts";
-import type { Dropped } from "./verbs-filter.ts";
+import type { Suggestion } from "./suggestion.ts";
+import { type Dropped, filterSuggestions } from "./verbs-filter.ts";
 
 export type Proposed = { kept: Suggestion[]; dropped: Dropped[] };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const record = (value: unknown): Record<string, unknown> =>
-  isRecord(value) ? value : {};
-
-/** The filter node's result: `output.json`, else its stdout parsed. */
-const filterJson = (result: RunResult): Record<string, unknown> => {
-  const output = record(result.nodes.find(n => n.id === "filter")?.output);
-  if ("json" in output) return record(output["json"]);
-  try {
-    const stdout = output["stdout"];
-    return record(JSON.parse(typeof stdout === "string" ? stdout : ""));
-  } catch {
-    return {};
-  }
+/** The `propose` node's `suggestions`; a missing or non-list value is empty. */
+const suggestionsOf = (result: RunResult): readonly unknown[] => {
+  const value = result.nodes.find(n => n.id === "propose")?.output?.[
+    "suggestions"
+  ];
+  return Array.isArray(value) ? value : [];
 };
 
-/**
- * The survivors and the drops of a propose run; each survivor is parsed again,
- * so nothing the run's output holds is trusted for its shape.
- */
-export const proposedOf = (result: RunResult): Proposed => {
-  const json = filterJson(result);
-  const kept = Array.isArray(json["kept"]) ? json["kept"] : [];
-  const dropped = Array.isArray(json["dropped"]) ? json["dropped"] : [];
-  return {
-    kept: kept.flatMap(item => {
-      const parsed = SuggestionSchema.safeParse(item);
-      return parsed.success ? [parsed.data] : [];
-    }),
-    dropped: dropped.map((item, index) => {
-      const d = record(item);
-      const reasons = Array.isArray(d["reasons"]) ? d["reasons"] : [];
-      return {
-        index: typeof d["index"] === "number" ? d["index"] : index,
-        workflow: typeof d["workflow"] === "string" ? d["workflow"] : null,
-        reasons: reasons.map(String),
-      };
-    }),
-  };
-};
+/** The survivors and the drops of a propose run, checked against `root`. */
+export const proposedOf = (result: RunResult, root: string): Proposed =>
+  filterSuggestions(suggestionsOf(result), root);
 
 const evidenceOf = (e: Suggestion["evidence"][number]): string =>
   "path" in e ? e.path : `commit ${e.commit.slice(0, 12)}`;

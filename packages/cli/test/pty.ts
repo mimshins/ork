@@ -51,16 +51,16 @@ export type PtyOrk = {
   exited: Promise<number | null>;
 };
 
-/** `ork <args>` on a pty, with `env` as its whole environment. */
-export const orkOnPty = (
-  args: readonly string[],
-  env: NodeJS.ProcessEnv,
-): PtyOrk => {
+/**
+ * `command` (a program and its words) on a pty, with `env` as its whole
+ * environment.
+ */
+const onPty = (command: readonly string[], env: NodeJS.ProcessEnv): PtyOrk => {
   const folder = mkdtempSync(path.join(tmpdir(), "ork-pty-"));
   const fifo = path.join(folder, "keys");
   const screen = path.join(folder, "screen");
   spawnSync("mkfifo", [fifo]);
-  const script = ["script", ...scriptArgs([process.execPath, BIN, ...args])];
+  const script = ["script", ...scriptArgs(command)];
   // `cat` turns the FIFO into a pipe: macOS's `script` refuses a FIFO too.
   const child = spawn(
     "bash",
@@ -80,6 +80,22 @@ export const orkOnPty = (
     existsSync(screen) ? readFileSync(screen, "utf8") : "";
   return { child, keys, output, exited };
 };
+
+/** `ork <args>` on a pty, with `env` as its whole environment. */
+export const orkOnPty = (
+  args: readonly string[],
+  env: NodeJS.ProcessEnv,
+): PtyOrk => onPty([process.execPath, BIN, ...args], env);
+
+/**
+ * A TypeScript file Node runs (a test fixture) on a pty, as `orkOnPty` runs
+ * `ork`.
+ */
+export const scriptOnPty = (
+  file: string,
+  args: readonly string[],
+  env: NodeJS.ProcessEnv,
+): PtyOrk => onPty([process.execPath, file, ...args], env);
 
 /**
  * Presses Ctrl-C, then, once the terminal shows it (`^C`), closes the input:

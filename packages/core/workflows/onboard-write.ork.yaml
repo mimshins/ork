@@ -103,7 +103,7 @@ edges:
   - write -> finish
   - from: finish
     to: write
-    when: "!ok"
+    when: exitCode == 1
     maxRounds: 3
   - from: finish
     to: changes

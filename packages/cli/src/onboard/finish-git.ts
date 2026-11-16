@@ -1,12 +1,15 @@
 /**
  * @file The git side of `ork __onboard finish`: which paths the writer changed
- *   (committed on its branch, or still uncommitted in its worktree), which of
- *   them the writer may change, a file's text at `HEAD`, and the commit of the
- *   canonical rewrite. Every argument is Ork's or validated; nothing the model
- *   drafted is run.
+ *   (committed on its branch, or still uncommitted or ignored in its worktree;
+ *   a write outside the worktree is not seen, nor a local file Ork copied in
+ *   and the writer left as it was), which of them the writer may change, a
+ *   file's text at `HEAD`, and the commit of the canonical rewrite. Every
+ *   argument is Ork's or validated; nothing the model drafted is run.
  */
 
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 export type Kind = "added" | "modified" | "deleted" | "other";
 
@@ -25,7 +28,7 @@ const git = (cwd: string, args: readonly string[]): string =>
   });
 
 const kindOf = (letter: string): Kind => {
-  if (letter === "A" || letter === "?") return "added";
+  if (letter === "A" || letter === "?" || letter === "!") return "added";
   if (letter === "M") return "modified";
   return letter === "D" ? "deleted" : "other";
 };
@@ -43,11 +46,31 @@ const fromDiff = (out: string): Change[] => {
   return changes;
 };
 
-/** `git status --porcelain=v1 -z` entries: `XY path`. */
-const fromStatus = (out: string): Change[] =>
+/**
+ * Whether an ignored file of the worktree is the one `createWorktree` copied
+ * from the project root (`CLAUDE.local.md`, what `.worktreeinclude` lists):
+ * same path, same bytes. An edited copy, or any other ignored file, is not.
+ */
+const copiedUnchanged = (
+  root: string,
+  worktree: string,
+  file: string,
+): boolean => {
+  try {
+    return readFileSync(path.join(root, file)).equals(
+      readFileSync(path.join(worktree, file)),
+    );
+  } catch {
+    return false;
+  }
+};
+
+/** `git status --porcelain=v1 -z` entries: `XY path`, minus copied files. */
+const fromStatus = (out: string, same: (file: string) => boolean): Change[] =>
   out
     .split("\0")
     .filter(entry => entry.length > 3)
+    .filter(entry => !(entry.startsWith("!!") && same(entry.slice(3))))
     .map(entry => {
       const letters = entry.slice(0, 2);
       const kind = letters.includes("D")
@@ -82,7 +105,10 @@ export const changesOf = (
       "--porcelain=v1",
       "-z",
       "-uall",
+      // A file the writer hid in an ignored path is still a change.
+      "--ignored",
     ]),
+    file => copiedUnchanged(root, worktree, file),
   ),
 ];
 

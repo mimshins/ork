@@ -5,6 +5,8 @@
  *   a choice among several.
  */
 
+import { PassThrough } from "node:stream";
+
 import type { ProjectPlace } from "@krapht/ork-core";
 import { describe, expect, it } from "vitest";
 
@@ -118,13 +120,22 @@ describe("pickDriver", () => {
     });
   });
 
-  it("asks when several are ready, and stops with the hints when none is", async () => {
+  it("asks which driver when several are ready, and takes the answer", async () => {
+    const card = new PassThrough();
     const asked = await pickDriver(
-      quietIO,
+      { ...quietIO, output: card },
       undefined,
       readyOnly("claude-code", "open-code"),
     );
-    expect(asked.kind).toBe("driver");
+    const shown = String(card.read());
+    expect(shown).toContain("Which driver should both onboarding runs use?");
+    expect(shown).toContain("claude-code");
+    expect(shown).toContain("open-code");
+    // The checks list open-code first, and `quietIO` answers "2".
+    expect(asked).toEqual({ kind: "driver", driver: "claude-code" });
+  });
+
+  it("stops with the hints when none is ready", async () => {
     const none = await pickDriver(quietIO, undefined, readyOnly());
     expect(none).toMatchObject({ kind: "stop", code: 1 });
     expect(linesOf(none)).toContain("Get the claude-code driver ready.");

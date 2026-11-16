@@ -98,7 +98,8 @@ const RUNNERS = new Set(["pnpm", "yarn", "bun", "npm"]);
 const TEST_SCRIPT = /^(test|tests|e2e|spec)(:|$)/u;
 const CHECK_SCRIPT =
   /^(check|lint|typecheck|type-check|tsc|build|verify|ci|validate|format)(:|$)/u;
-const MAKE_TARGET = /^(test|tests|check|lint|ci|verify)\s*:/gmu;
+// `(?!=)`: `lint := x` assigns a variable, it is no target.
+const MAKE_TARGET = /^(test|tests|check|lint|ci|verify)\s*:(?!=)/gmu;
 
 type PackageJson = { scripts: Record<string, unknown>; manager?: string };
 
@@ -118,7 +119,7 @@ const readPackage = (root: string): PackageJson => {
           ? Object.fromEntries(Object.entries(scripts))
           : {},
       ...(typeof manager === "string"
-        ? { manager: manager.split("@")[0] ?? "" }
+        ? { manager: oneLine(manager.split("@")[0] ?? "", 60) }
         : {}),
     };
   } catch {

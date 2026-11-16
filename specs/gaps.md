@@ -14,8 +14,8 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L402, and the next chore is
-C17 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
+closes it. Ids are never reused: the next limit is L412, and the next chore is
+C18 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
 carried to a roadmap item, or to none yet (unplanned).
@@ -559,3 +559,6 @@ Found closing the list QA follow-ups (list filters):
   passed tests. Run `pnpm check` before `git push` until the hook can run before
   git connects (or push with a keepalive).
   ([the runbook](../runbook/development/security-audit.md))
+- **C17 · The vitest HOME exit hook once failed with `ENOTEMPTY`.** A `.npm`
+  folder appeared in the shared test `HOME` while the hook was removing it. Seen
+  once while running the CLI tests, not reproduced. Look at it if it comes back.

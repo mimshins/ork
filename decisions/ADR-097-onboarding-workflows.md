@@ -21,18 +21,25 @@ that two of their nodes run.
 1. **Two built-in workflows, `ork:onboard-propose` and `ork:onboard-write`**
    (sources in `packages/core/workflows/`, bundled as in
    [ADR-096](./ADR-096-built-in-bundles.md)). `propose` is one read-only session
-   (`tools.only`: Read, Grep, Glob) and a `filter` tool node; `write` is a
-   `format` tool node, a worktree writer with no shell, a `finish` tool node
-   that loops back to the writer while it fails (`maxRounds: 3`), a `changes`
-   diff and a `keep` gate. The workflow format is unchanged.
-2. **A hidden command, `ork __onboard <verb>`,** with `format`, `canon`,
-   `filter` and `finish`, left out of help and completion like `__complete`. The
-   tool nodes run `"${ORK_BIN:-ork}" __onboard …`; a program Ork wrote checks
-   what a model drafted, so the checks are code, not prompts: evidence, drafted
-   commands and names (`filter`); scope, caps, no `driver` or `model`, agents,
-   canonical form and validation under every ready driver (`finish`). The verbs
-   validate in-process, not by spawning `ork validate`. `canon` is the one way
-   the CLI reaches `serializeWorkflow` (G18 stays open for users).
+   (`tools.only`: Read, Grep, Glob) and nothing else; `write` is a `format` tool
+   node, a worktree writer with no shell, a `finish` tool node that loops back
+   to the writer when it exits 1 (`when: exitCode == 1`, `maxRounds: 3`), a
+   `changes` diff and a `keep` gate. The workflow format is unchanged.
+   _Amended:_ `propose` first had a `filter` tool node after it, which passed
+   the suggestions in an environment variable; a long list could overflow it
+   (`E2BIG`), so `ork onboard` now filters the run's `suggestions` in its own
+   process and the node is gone. The loop edge first read `when: "!ok"`, which
+   also sent the writer back (and paid) when `finish` could not start.
+2. **A hidden command, `ork __onboard <verb>`,** with `format`, `canon` and
+   `finish` (a `filter` verb was part of it until the in-process filter, see the
+   amendment above), left out of help and completion like `__complete`. The tool
+   nodes run `"${ORK_BIN:-ork}" __onboard …`; a program Ork wrote checks what a
+   model drafted, so the checks are code, not prompts: evidence, drafted
+   commands and names (the filter, in `ork onboard`); scope, caps, no `driver`
+   or `model`, agents, canonical form and validation under every ready driver
+   (`finish`). The verbs validate in-process, not by spawning `ork validate`.
+   `canon` is the one way the CLI reaches `serializeWorkflow` (G18 stays open
+   for users).
 3. **Caps, chosen by the maintainer:** `ork:onboard-propose` $3 and 600,000
    tokens; `ork:onboard-write` $6 and 1,200,000 tokens (its `defaults` are $2
    and 400,000 per session, so the first go and the three rounds fit). The

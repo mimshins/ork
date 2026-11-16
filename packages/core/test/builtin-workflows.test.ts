@@ -288,23 +288,20 @@ describe("ork:onboard-write", () => {
   });
 });
 
-/** `ork:onboard-propose`'s nodes: a proposal, then the filter's result. */
-const proposeScript: Script = id => ({
+/** `ork:onboard-propose`'s one node: a proposal. */
+const proposeScript: Script = () => ({
   ok: true,
-  output:
-    id === "propose"
-      ? { status: "done", summary: "One.", suggestions: [] }
-      : { exitCode: 0, stdout: '{"kept":[],"dropped":[]}', stderr: "" },
+  output: { status: "done", summary: "One.", suggestions: [] },
 });
 
 describe("ork:onboard-propose", () => {
-  it("proposes, then filters what was proposed", async () => {
+  it("proposes, and nothing else", async () => {
     const { result, ran } = await runBuiltin(
       "ork:onboard-propose",
       { survey: "pnpm", answers: "Q: a\nA: b" },
       proposeScript,
     );
-    expect(ran).toEqual(["propose", "filter"]);
+    expect(ran).toEqual(["propose"]);
     expect(result.status).toBe("succeeded");
   });
 });

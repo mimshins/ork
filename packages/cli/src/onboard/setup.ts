@@ -1,6 +1,6 @@
 /**
  * @file The free steps of `ork onboard` that come before any question: the
- *   refusals, `ork init`'s file steps when `.ork/` is missing, the driver, and
+ *   refusals, the driver, `ork init`'s file steps when `.ork/` is missing, and
  *   the overview (specs/cli/onboard-flow.md). Nothing here starts a session or
  *   spends.
  */
@@ -33,6 +33,12 @@ export const prepare = async (o: OnboardOptions): Promise<Prepared> => {
   const refused = await refusal({ ...o, registered: store.projects() });
   if (refused !== null) return { kind: "stop", lines: refused, code: 1 };
 
+  // The driver first: with none ready, nothing is written.
+  const picked = await pickDriver(o.io, o.driver, o.checks);
+  if (picked.kind === "stop") {
+    return { kind: "stop", lines: picked.lines, code: picked.code };
+  }
+
   let gitignored = false;
   let place = placeFor(o.cwd, store.projects());
   // Set up at the project's root, which is not `cwd` in a subfolder.
@@ -46,10 +52,6 @@ export const prepare = async (o: OnboardOptions): Promise<Prepared> => {
     place = placeFor(o.cwd, store.projects());
   }
 
-  const picked = await pickDriver(o.io, o.driver, o.checks);
-  if (picked.kind === "stop") {
-    return { kind: "stop", lines: picked.lines, code: picked.code };
-  }
   return {
     kind: "ready",
     place,

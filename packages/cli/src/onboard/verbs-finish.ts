@@ -137,24 +137,34 @@ const canonicalize = (
   reads: readonly Read[],
   problems: string[],
 ): void => {
-  const changed: string[] = [];
+  const changed: { file: string; text: string }[] = [];
   for (const { file, workflow } of reads) {
     const text = serializeWorkflow(workflow);
     const now = readInWorktree(options.worktree, file);
     if ("text" in now && now.text === text) continue;
     const absolute = path.join(options.worktree, file);
     const written = writePlainFile(options.worktree, absolute, text, file);
-    if (written.ok) changed.push(file);
+    if (written.ok) changed.push({ file, text });
     else problems.push(`${file}: ${written.error}`);
   }
   if (changed.length === 0) return;
   const run = options.run === undefined ? "" : ` (run ${options.run})`;
   const refused = commitIn(
     options.worktree,
-    changed,
+    changed.map(({ file }) => file),
     `ork: canonical form${run}`,
   );
-  if (refused !== null) problems.push(`canonical commit refused: ${refused}`);
+  if (refused !== null) {
+    problems.push(`canonical commit refused: ${refused}`);
+    return;
+  }
+  // A commit hook may have rewritten a file the serializer just wrote.
+  for (const { file, text } of changed) {
+    const after = readInWorktree(options.worktree, file);
+    if (!("text" in after) || after.text !== text) {
+      problems.push(`${file}: rewritten by a commit hook, no longer canonical`);
+    }
+  }
 };
 
 /** `ork validate`'s errors, plain and under each ready driver. */

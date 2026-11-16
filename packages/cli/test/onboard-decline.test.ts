@@ -133,6 +133,22 @@ describe("ork onboard, before the paid part", () => {
     expect(seen.err.join("\n")).toContain("Get the claude-code driver ready.");
     expect(seen.asked).toEqual([]);
     expect(options.store.runs()).toEqual([]);
+    expect(existsSync(path.join(cwd, ".ork"))).toBe(false);
+    expect(existsSync(path.join(cwd, ".gitignore"))).toBe(false);
+    expect(seen.out.join("\n")).not.toContain("created");
+  });
+
+  it("writes nothing when --driver names one that is not ready", async () => {
+    const cwd = repository();
+    const seen: Seen = { out: [], err: [], asked: [] };
+    const options = {
+      ...setup(cwd, [], seen, readyOnly()),
+      driver: "opencode",
+    };
+    expect(await runOnboard(options)).toBe(1);
+    expect(existsSync(path.join(cwd, ".ork"))).toBe(false);
+    expect(existsSync(path.join(cwd, ".gitignore"))).toBe(false);
+    expect(seen.out.join("\n")).not.toContain("created");
   });
 
   it("refuses --review with --fresh before touching the project", async () => {

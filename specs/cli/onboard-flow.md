@@ -25,23 +25,11 @@ Each is one stderr line and exit 1, before anything is written or spent:
 - Then [doctor](./worktrees-agents-context-and-doctor.md#doctor)'s required
   checks (Node, git): a failed one stops with its detail and hint.
 
-## Setting up
-
-With no `.ork/`, the command records the project in-repo (`initRecorded`) and
-runs `ork init`'s file steps (`ork init` run from a subfolder targets the git
-root, and `prepare` reads the place again afterwards): the starter workflow and
-the `.gitignore` entry, asking nothing else (`--no-skills`, `--no-issues`,
-`--no-link`). The `.gitignore` edit stays in the working tree, uncommitted; the
-closing text says to commit it with the branch. With an `.ork/`, nothing is
-changed before the gate's keep.
-
-The files that step writes are uncommitted, so on a first visit each of the two
-runs prints
-`warning N uncommitted change(s) in this checkout are not in the worktrees`. It
-is expected: the writer's worktree branches from `HEAD`, lacks the starter, and
-only adds files ([L400](../gaps/onboard-limits.md)).
-
 ## The driver
+
+Picked right after the refusals and before anything is written, so a stop here
+leaves the project folder as it was (no `.ork/`, no `.gitignore` edit, no
+`created` line):
 
 - `--driver <id>`: used as given; an id that is not a driver is refused with the
   known ids, one that is not ready with its login hint (exit 1).
@@ -53,28 +41,46 @@ only adds files ([L400](../gaps/onboard-limits.md)).
 
 Both built-in runs get `--driver <id>`, so they agree.
 
+## Setting up
+
+With a driver and no `.ork/`, the command records the project in-repo
+(`initRecorded`) and runs `ork init`'s file steps (`ork init` run from a
+subfolder targets the git root, and `prepare` reads the place again afterwards):
+the starter workflow and the `.gitignore` entry, asking nothing else
+(`--no-skills`, `--no-issues`, `--no-link`). The `.gitignore` edit stays in the
+working tree, uncommitted; the closing text says to commit it with the branch.
+With an `.ork/`, nothing is changed before the gate's keep.
+
+The files that step writes are uncommitted, so on a first visit each of the two
+runs prints
+`warning N uncommitted change(s) in this checkout are not in the worktrees`. It
+is expected: the writer's worktree branches from `HEAD`, lacks the starter, and
+only adds files ([L400](../gaps/onboard-limits.md)).
+
 ## The survey
 
 `packages/cli/src/onboard/survey.ts` reads the project with no model and returns
 a `Survey`:
 
-| Field            | What it holds                                                                                                                                            |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packageManager` | from the lockfile (`pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`, `bun.lock[b]`), else `packageManager` in `package.json`, else `null`              |
-| `scripts`        | `package.json`'s script names and commands, at most 40, each command cut to 120 characters                                                               |
-| `checks`         | the scripts named `test`, `check`, `lint`, `typecheck`, `build` or starting with one of them and a `:`, as the command a node would run (`pnpm test`, …) |
-| `ci`             | files under `.github/workflows/`, `.gitlab-ci.yml`, `.circleci/config.yml`, `azure-pipelines.yml`, `Jenkinsfile`, at most 20 paths                       |
-| `baseBranch`     | `origin/HEAD`'s branch, else the current branch, else `null`                                                                                             |
-| `gh`             | `true` when `gh auth status` exits 0, else `false`; its output is never read or kept                                                                     |
-| `agents`         | agent folders that exist: `.claude/agents`, `.opencode/agents`, `.commandcode/agents`, `.ork/agents`, with their file names, at most 30                  |
-| `skills`         | skill folders that exist (`.claude/skills`, `.opencode/skills`, `.commandcode/skills`, `.ork/skills`, `.agents/skills`), skill names, at most 30         |
-| `instructions`   | which of `AGENTS.md`, `CLAUDE.md` exist at the root, and their sizes in lines                                                                            |
-| `ork`            | `.ork/workflows/*.ork.yaml` names, whether `.ork/project.yaml` exists, the starter's presence                                                            |
+| Field              | What it holds                                                                                                                                                                           |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packageManagers`  | `packageManager` in `package.json` (one line, at most 60 characters), then one per lockfile or manifest found (`pnpm-lock.yaml`, `Cargo.toml`, `go.mod`, …)                             |
+| `scripts`          | `package.json`'s scripts, the first 30, each name cut to 60 and command to 100 characters, on one line                                                                                  |
+| `testCommands`     | scripts named `test`, `tests`, `e2e` or `spec` (or starting with one and `:`), `make` targets `test`/`tests`, `cargo test`, `go test ./...`; at most 20                                 |
+| `checkCommands`    | scripts named `check`, `lint`, `typecheck`, `build`, `verify`, `ci`, `validate`, `format` (or starting with one and `:`), other `make` targets; at most 20                              |
+| `ciFiles`          | `.github/workflows/*.yml\|yaml` and a fixed list of other CI files (`.gitlab-ci.yml`, `.circleci/config.yml`, `Jenkinsfile`, …); at most 20                                             |
+| `baseBranch`       | `origin/HEAD`'s branch, else `main`, `master`, `trunk` or `develop` if it exists, else the current branch, else `null`                                                                  |
+| `ghUsable`         | `true` when `ork doctor`'s `gh` check says logged in, else `false`; its detail is never read or kept                                                                                    |
+| `instructionFiles` | which of `AGENTS.md`, `CLAUDE.md` exist at the root                                                                                                                                     |
+| `agentFolders`     | the agent and skill folders of `.ork/`, `.claude/`, `.agents/`, `.opencode/` and `.ai/` that hold something, 20 names each with `and N more`; a folder linked to `.ork/` is listed once |
+| `ork`              | whether `.ork/` and `.ork/project.yaml` exist, and the names of its workflows (`*.ork.yaml`), agents and skills, at most 20 each                                                        |
 
-Files are read as plain files inside the root (no link followed out of it). Its
-text form (`surveyText`) is the one `survey` input of both built-ins and is
-printed compactly before the questions; it is at most 12 KiB, every list cut
-with `… N more`.
+Files are read as plain files inside the root (no link followed out of it, none
+over 256 KiB), and every name is cut to one line of at most 60 or 100
+characters. Its text form (`surveyText`) is the one `survey` input of both
+built-ins and is at most 6,000 characters, cut at the end with `…`. The lists
+are capped without a note, and where the limits bite, see
+[L406 to L411](../gaps/onboard-limits.md).
 
 ## Mode
 
@@ -132,8 +138,12 @@ since it reports no dollars.
 1. `ork:onboard-propose` runs with inputs `survey`, `answers` and `history`, all
    passed as untrusted (`untrusted:` on `runWorkflowFile`). Its questions
    (`ask_user`) are asked on this terminal, as `ork run`'s are.
-2. Its `filter` node's stdout is the [filter result](./onboard-verbs.md#filter);
-   the command reads it from the node's output in the store.
+2. The run has one node, `propose`. The command reads its `suggestions` from the
+   run's result (a missing or non-list value is an empty list) and checks them
+   in this process, against the project root, with
+   [the filter](./onboard-verbs.md#the-filter); no tool node or argument carries
+   the list, so its size is not limited by one. Run alone, the workflow returns
+   the proposer's list unfiltered ([L405](../gaps/onboard-limits.md)).
 3. The survivors are shown, each with its workflow name, why, where a person
    decides, its caps and its evidence; dropped ones with their reasons, dimmed.
 4. A [`multiselect`](./terminal.md#prompts) takes any number. Picking none ends
@@ -146,9 +156,13 @@ since it reports no dollars.
 
 1. `ork:onboard-write` runs with `picks` (the picked suggestions as a JSON
    array), `survey` and `answers`, untrusted. Its nodes: `format`, the `write`
-   worker in its own worktree, `finish`, looping back to `write` while `finish`
-   fails, at most 3 rounds, then the gate. The writer therefore runs at most 4
-   sessions: the first go and `maxRounds: 3`.
+   worker in its own worktree, `finish`, looping back to `write` when `finish`
+   exits 1 (`when: exitCode == 1`: it found problems), at most 3 rounds, then
+   the gate. The writer therefore runs at most 4 sessions: the first go and
+   `maxRounds: 3`. Any other exit of `finish` (127 when `ork` cannot be found, a
+   timeout, a signal) takes no edge: the run ends failed with the tool's own
+   error and the writer is not run again. A Node crash inside `finish` exits 1
+   and still loops ([L403](../gaps/onboard-limits.md)).
 2. Out of rounds, the run asks as any loop does (stop, one more round, onward);
    stop or onward ends the run failed, and the command prints the problems
    `finish` last printed and the run id. A failed run keeps its worktree and

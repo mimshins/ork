@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mimshins/ork/main/packages/schema/workflow.schema.json
 schemaVersion: 1
 name: ork-onboard-propose
-description: The first paid step of `ork onboard`. One read-only session reads the project, the survey, the person's answers and, on a return visit, what past runs showed, may ask up to three follow-up questions, and proposes workflows that fit; a step Ork wrote then drops every suggestion whose evidence or commands do not exist. It writes nothing and runs nothing the model drafted. `ork onboard` starts it and reads the result.
+description: The first paid step of `ork onboard`. One read-only session reads the project, the survey, the person's answers and, on a return visit, what past runs showed, may ask up to three follow-up questions, and proposes workflows that fit. It writes nothing and runs nothing the model drafted. `ork onboard` starts it, then drops every suggestion whose evidence or commands do not exist.
 inputs:
   survey:
     type: string
@@ -63,20 +63,3 @@ nodes:
       schema:
         suggestions:
           list: {}
-  filter:
-    type: tool.shell
-    script: printf '%s' "$SUGGESTIONS" | "${ORK_BIN:-ork}" __onboard filter
-    allow:
-      - sh
-    timeout: 2m
-    env:
-      SUGGESTIONS: "{{nodes.propose.output.suggestions}}"
-    output:
-      format: json
-      schema:
-        kept:
-          list: {}
-        dropped:
-          list: {}
-edges:
-  - propose -> filter

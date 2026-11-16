@@ -10,7 +10,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { BUILTIN_FILES } from "./builtin-bundles.ts";
@@ -120,9 +120,26 @@ const linkedFile = (place: ProjectPlace, arg: string): string | undefined => {
   )?.file;
 };
 
+/** Whether something other than a plain file (a folder, say) is at `file`. */
+const isNonFile = (file: string): boolean => {
+  try {
+    return !lstatSync(file).isFile();
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * The first file of the bundle `arg` names whose path holds a folder (or other
+ * non-file); checked after `linkedFile`, so a link never reaches it.
+ */
+const folderAtFile = (place: ProjectPlace, arg: string): string | undefined =>
+  bundleFiles(place, arg)?.files.find(({ file }) => isNonFile(file))?.file;
+
 /**
  * Why `arg` can't be run in `place`: no such built-in, or one of its files'
- * place is a link a cloned repository could aim at the person's own files.
+ * place is a link a cloned repository could aim at the person's own files, or a
+ * folder (never removed).
  */
 export const builtinProblem = (
   place: ProjectPlace,
@@ -130,24 +147,33 @@ export const builtinProblem = (
 ): string | undefined => {
   const unknown = unknownBuiltin(arg);
   if (unknown !== undefined) return unknown;
-  const file = linkedFile(place, arg);
-  return file === undefined
+  const linked = linkedFile(place, arg);
+  if (linked !== undefined) {
+    return `\`${path.relative(place.root, linked)}\` is a link, or behind one: Ork writes its own workflows only to plain files in the project, so it wrote nothing.`;
+  }
+  const folder = folderAtFile(place, arg);
+  return folder === undefined
     ? undefined
-    : `\`${path.relative(place.root, file)}\` is a link, or behind one: Ork writes its own workflows only to plain files in the project, so it wrote nothing.`;
+    : `\`${path.relative(place.root, folder)}\` is a folder, not a file: Ork writes its own workflow there, so it wrote nothing.`;
 };
 
 /**
  * The file of the built-in `arg` names (`ork:<name>`) in `place`'s run folder,
  * with its companion files beside it, each written when it isn't there as it
  * should be, by a rename that never follows a link; `undefined` for an unknown
- * name, or when any file's path has a link on it (then nothing is written).
+ * name, or when any file's path has a link or a folder on it (then nothing is
+ * written, and nothing is removed).
  */
 export const builtinWorkflowFile = (
   place: ProjectPlace,
   arg: string,
 ): string | undefined => {
   const bundle = bundleFiles(place, arg);
-  if (bundle === undefined || linkedFile(place, arg) !== undefined) {
+  if (
+    bundle === undefined ||
+    linkedFile(place, arg) !== undefined ||
+    folderAtFile(place, arg) !== undefined
+  ) {
     return undefined;
   }
   const base = guardedBase(place);

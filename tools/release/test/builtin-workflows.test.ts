@@ -5,7 +5,9 @@
  *   points into this repository.
  */
 
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -56,5 +58,36 @@ describe("the bundled built-in workflows", () => {
       ...companionsOf("security-audit").map(([, text]) => text),
     ];
     expect(texts.filter(text => REPO_PATHS.test(text))).toEqual([]);
+  });
+
+  it("skip dotfiles and dot folders in a built-in's folder and its sources", () => {
+    const root = mkdtempSync(path.join(tmpdir(), "ork-bundle-src-"));
+    const put = (file: string): void => {
+      mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      writeFileSync(path.join(root, file), "x\n");
+    };
+    for (const file of [
+      "workflows/security-audit/context/a.md",
+      "workflows/security-audit/.DS_Store",
+      "workflows/security-audit/.cache/b.md",
+      ".ai/skills/security-audit/SKILL.md",
+      ".ai/skills/security-audit/.DS_Store",
+      "tools/audit/cli.ts",
+      "tools/audit/.hidden.ts",
+      "packages/core/src/store/secret-patterns.ts",
+    ]) {
+      put(file);
+    }
+    const files = companionsOf(
+      "security-audit",
+      path.join(root, "workflows"),
+      root,
+    ).map(([file]) => file);
+    expect(files).toEqual([
+      "security-audit/cli.ts",
+      "security-audit/context/a.md",
+      "security-audit/secret-patterns.ts",
+      "security-audit/skill/SKILL.md",
+    ]);
   });
 });

@@ -13,8 +13,8 @@ picks on a branch, and ends at a gate that shows the diff. Run again in a
 project that has workflows and runs, it reviews what the runs showed and may
 change an existing workflow.
 
-The command does the free steps itself (preconditions, `ork init`'s file steps,
-the driver, a survey of the repository, the questions, a digest of past runs,
+The command does the free steps itself (preconditions, the driver, `ork init`'s
+file steps, a survey of the repository, the questions, a digest of past runs,
 the cost preview) and runs two workflows Ork ships between them,
 `ork:onboard-propose` and `ork:onboard-write`, on whichever of the three drivers
 is ready. Each paid step has its own cap, and Ork never merges.
@@ -48,10 +48,10 @@ the picks.
 - [Built-ins, verbs and trust](./onboard-verbs.md)
   - [The two built-in workflows](./onboard-verbs.md#the-two-built-in-workflows)
   - [Suggestions](./onboard-verbs.md#suggestions)
+  - [The filter](./onboard-verbs.md#the-filter)
   - [ork \_\_onboard](./onboard-verbs.md#ork-__onboard)
     - [format](./onboard-verbs.md#format)
     - [canon](./onboard-verbs.md#canon)
-    - [filter](./onboard-verbs.md#filter)
     - [finish](./onboard-verbs.md#finish)
   - [Trust model](./onboard-verbs.md#trust-model)
   - [What each driver adds](./onboard-verbs.md#what-each-driver-adds)

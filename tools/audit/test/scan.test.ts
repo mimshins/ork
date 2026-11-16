@@ -12,7 +12,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { chooseScanner, parseNpmAudit, parsePnpmAudit } from "../advisories.ts";
-import { bundleOutsideRoot, runScan, scanSecrets } from "../scan.ts";
+import { bundleOutsideRoot, realAudit, runScan, scanSecrets } from "../scan.ts";
 import { previousAudit } from "../store.ts";
 import {
   auditEnv,
@@ -346,5 +346,12 @@ describe("runScan", () => {
       runId: "run-1",
       previous: null,
     });
+  });
+});
+
+describe("realAudit", () => {
+  it("runs the tool with `audit --json`", () => {
+    const result = realAudit(process.cwd(), "echo");
+    expect(result).toEqual({ status: 0, stdout: "audit --json\n", stderr: "" });
   });
 });

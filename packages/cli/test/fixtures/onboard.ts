@@ -92,15 +92,41 @@ const repository = (): string => {
   return dir;
 };
 
-/** A file that runs the `ork` of these sources, for the tool nodes' `ORK_BIN`. */
-const orkWrapper = (): string => {
+/**
+ * A repository whose committed `.gitignore` lists the local agent files a
+ * Claude Code user keeps, with those files present (and so copied into every
+ * worktree Ork makes).
+ */
+export const repositoryWithLocalFiles = (): string => {
+  const dir = repository();
+  writeFileSync(
+    path.join(dir, ".gitignore"),
+    "CLAUDE.local.md\n.claude/settings.local.json\n",
+  );
+  git(dir, "add", ".gitignore");
+  git(dir, "commit", "-q", "-m", "ignore local files");
+  writeFileSync(path.join(dir, "CLAUDE.local.md"), "my notes\n");
+  mkdirSync(path.join(dir, ".claude"));
+  writeFileSync(path.join(dir, ".claude/settings.local.json"), "{}\n");
+  return dir;
+};
+
+/**
+ * A file that runs the `ork` of these sources, for the tool nodes' `ORK_BIN`;
+ * `missing` names a verb it cannot find, as a shell says it (exit 127).
+ */
+const orkWrapper = (missing?: string): string => {
   const file = path.join(
     realpathSync(mkdtempSync(path.join(tmpdir(), "ork-bin-"))),
     "ork",
   );
+  const lost =
+    missing === undefined
+      ? ""
+      : `[ "\$2" = "${missing}" ] && { echo "ork: command not found" >&2; exit 127; }\n`;
   writeFileSync(
     file,
-    `#!/bin/sh\nORK_NO_UPDATE_CHECK=1 exec "${process.execPath}" "${BIN}" "$@"\n`,
+    `#!/bin/sh\n${lost}ORK_NO_UPDATE_CHECK=1 exec "${process.execPath}" "${BIN}" "$@"\n`,
   );
   chmodSync(file, 0o755);
   return file;
@@ -150,6 +176,8 @@ export type Case = {
   root?: string;
   store?: EventStore;
   review?: boolean;
+  /** A `__onboard` verb the tool nodes' `ORK_BIN` cannot run: exit 127. */
+  missing?: string;
 };
 
 const ANSWERS = ["slow tests", "weekly", "a PR", "y", "1"];
@@ -188,7 +216,7 @@ export const onboard = async (c: Case): Promise<Flow> => {
     },
     permit: () => Promise.resolve({ allow: false, message: "no" }),
   };
-  const bin = orkWrapper();
+  const bin = orkWrapper(c.missing);
   const checks = readyOnly(c.driver);
   seen.code = await runOnboard({
     cwd: root,

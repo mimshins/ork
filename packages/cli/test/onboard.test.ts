@@ -22,6 +22,7 @@ import {
   keptBranch,
   onboard,
   orkFiles,
+  repositoryWithLocalFiles,
   runIdOf,
   SCRIPT,
   startedOf,
@@ -217,6 +218,41 @@ describe("ork onboard, the ways it ends", () => {
     expect(flow.out).not.toContain("kept the workflows");
     // The failed run's worktree and branch stay, for `ork resume`.
     expect(branches(flow.root)).toHaveLength(1);
+  });
+
+  it("does not send the writer back when `finish` cannot start, and says why", async () => {
+    const flow = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      missing: "finish",
+    });
+    expect(flow.code).toBe(1);
+    expect(flow.specs.filter(spec => spec.nodeId === "write")).toHaveLength(1);
+    expect(flow.err).toContain("finish: sh exited with 127");
+    expect(flow.err).not.toContain("after 3 rounds");
+    expect(flow.out).not.toContain("kept the workflows");
+  });
+
+  it("keeps the branch when the project has gitignored local agent files Ork copies into the worktree", async () => {
+    const flow = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      root: repositoryWithLocalFiles(),
+    });
+    expect(flow.code).toBe(0);
+    expect(flow.specs.filter(spec => spec.nodeId === "write")).toHaveLength(1);
+    expect(keptBranch(flow.root)).toContain("ork/");
+  });
+
+  it("filters a suggestions list of 300 KB without failing the run", async () => {
+    const huge = { ...SUGGESTION, workflow: "big", why: "x".repeat(300_000) };
+    const flow = await onboard({
+      driver: "claude-code",
+      script: { ...SCRIPT, suggestions: [SUGGESTION, huge] },
+    });
+    expect(flow.code).toBe(0);
+    expect(flow.out).toContain("dropped big");
+    expect(keptBranch(flow.root)).toContain("ork/");
   });
 
   it("takes a second round that fixes what the first got wrong", async () => {

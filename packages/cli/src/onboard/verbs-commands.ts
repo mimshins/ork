@@ -1,8 +1,8 @@
 /**
- * @file What `filter` checks about a command line a suggestion drafted: that
+ * @file What the filter checks about a command line a suggestion drafted: that
  *   its program exists here and that a package script it names is in the
  *   project's `package.json`. Nothing is run; the line is only read
- *   (specs/cli/onboard-verbs.md#filter).
+ *   (specs/cli/onboard-verbs.md#the-filter).
  */
 
 import { accessSync, constants, readFileSync, statSync } from "node:fs";

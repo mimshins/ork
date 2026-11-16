@@ -15,6 +15,30 @@ _Part of [What's new](../whats-new.md)._
   `claude-code` ignores your project's own instructions and skills in these
   sessions; `open-code` and `command-code` still load `AGENTS.md`
   ([guide](../guides/onboarding.md)). `ork init`'s closing line points at it.
+- **`ork onboard` stops before writing `.ork/` when no driver is ready.** It now
+  picks the driver right after its checks, so with none ready (or a `--driver`
+  that is not ready) it prints the login hints and leaves the project folder as
+  it was: no `.ork/`, no `.gitignore` edit
+  ([guide](../guides/onboarding.md#what-it-does-in-order)).
+- **`ork onboard`'s writer is no longer re-run when its check cannot start.**
+  `ork:onboard-write` sent the writer back for another paid round on any failure
+  of the check, so a missing `ork` program cost three more rounds. It now loops
+  only when the check found problems (exit 1); any other failure ends the run
+  failed at once, with the error shown.
+- **`ork onboard` refuses a file the writer hides in an ignored path.** The
+  check on the writer's worktree now sees files in gitignored paths too, and
+  reports any outside `.ork/workflows/*.ork.yaml` and `.ork/project.yaml`.
+- **`ork onboard` reports a commit hook that rewrites a workflow.** After the
+  canonical commit, each written workflow is read again; one your repository's
+  hook changed is reported by file name as no longer canonical. Hooks still run.
+- **`ork:onboard-propose` run alone returns unfiltered suggestions.** The filter
+  that drops a suggestion with a missing file or commit, or a command that does
+  not exist, moved from a node of that workflow into `ork onboard`, so a long
+  list of suggestions no longer fails the run. Upgrade: if you run
+  `ork run ork:onboard-propose` yourself, it returns the agent's list as it
+  wrote it; use `ork onboard` to get it filtered. The hidden
+  `ork __onboard filter` is gone
+  ([guide](../guides/onboarding.md#proposing-picking-writing)).
 - **A child no longer waits for a reply its leader can't send.** A leader inside
   `delegate` reads nothing until its children report, so a child that messaged
   it a question and waited for the answer sat out its whole wait (up to an

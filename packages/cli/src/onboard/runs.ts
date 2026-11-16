@@ -119,10 +119,13 @@ export const runWrite = (
 const text = (value: unknown): string =>
   typeof value === "string" ? value : "";
 
-/** What `finish` last printed when it failed the run: the writer's problems. */
+/**
+ * What `finish` last printed when it exited 1: the writer's problems. Any other
+ * exit (127, a timeout) means it could not check, so there are none to show.
+ */
 export const finishProblems = (result: RunResult): string[] => {
   const finish = result.nodes.find(n => n.id === "finish");
-  if (finish?.ok !== false) return [];
+  if (finish?.ok !== false || finish.output?.["exitCode"] !== 1) return [];
   const out = text(finish.output?.["stdout"]) || (finish.error ?? "");
   return out
     .split("\n")
