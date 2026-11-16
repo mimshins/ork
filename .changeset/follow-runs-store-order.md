@@ -1,5 +1,4 @@
 ---
-"@krapht/ork-core": patch
 "@krapht/ork": patch
 ---
 

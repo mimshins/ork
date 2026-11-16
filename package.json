@@ -17,7 +17,7 @@
     "check:changed:run": "pnpm run format:check && pnpm run lint && pnpm run typecheck && vitest run --changed --passWithNoTests && pnpm run docs:check && pnpm run map:check && pnpm run benchmarks:check",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
-    "lint": "oxlint && node tools/lint/file-overview.ts && node tools/lint/entry-points.ts",
+    "lint": "oxlint && node tools/lint/file-overview.ts && node tools/lint/entry-points.ts && node tools/release/changeset-names.ts",
     "lint:fix": "oxlint --fix",
     "typecheck": "tsc -p tsconfig.json && tsc -p packages/ui",
     "test": "vitest run",
