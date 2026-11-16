@@ -262,7 +262,8 @@ export const usageQueries = (
       Number(
         (project === undefined
           ? spent[unit].all.get(since)
-          : spent[unit].here.get(since, project))?.["spent"] ?? 0,
+          : spent[unit].here.get(since, project)
+        )?.["spent"] ?? 0,
       ),
     usage: (filter = {}) => {
       const { sql, values } = whereOf(filter);

@@ -58,6 +58,6 @@
     "@krapht/ork-schema": "workspace:*",
     "@krapht/ork-server": "workspace:*",
     "@krapht/ork-ui": "workspace:*",
-    "tsdown": "0.23.4"
+    "tsdown": "0.23.7"
   }
 }
