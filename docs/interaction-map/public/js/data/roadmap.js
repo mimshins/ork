@@ -1280,9 +1280,11 @@ export const MILESTONES = [
       {
         id: "security-audit",
         title: "A security audit workflow",
-        status: "active",
+        status: "done",
+        commits: ["da61e3f"],
+        date: "2026-11-16",
         detail:
-          "Built and shipped with Ork, waiting to land (it becomes done with its commit). `ork run ork:security-audit` is a built-in bundle (ADR-096: the workflow plus the vendored skill, a read-only rule and the audit's scripts, written under `.ork/runs/.builtin/<hash>/`), so it runs in any `ork init` project. It runs free scanners (`pnpm audit` or `npm audit` by lockfile, workflow pinning and permissions, secret patterns), then Cloudflare's security-audit skill, pinned in `.ai/skills/security-audit/`, as read-only nodes: recon and a coverage ledger, one hunter per unit, a critic, a fresh verifier per candidate, validated findings, and (standard) a recheck. `quick` costs at most $29 and is partial coverage; `standard` at most $72. The report is written to `~/.ork/audits/`, outside the project; it may be sensitive. Left: the first paid run, on the maintainer's go (C15); an `ork register` project is refused by `scan` (L388); only pnpm and npm lockfiles are read (L389).",
+          "Built and shipped with Ork. `ork run ork:security-audit` is a built-in bundle (ADR-096: the workflow plus the vendored skill, a read-only rule and the audit's scripts, written under `.ork/runs/.builtin/<hash>/`), so it runs in any `ork init` project. It runs free scanners (`pnpm audit` or `npm audit` by lockfile, workflow pinning and permissions, secret patterns), then Cloudflare's security-audit skill, pinned in `.ai/skills/security-audit/`, as read-only nodes: recon and a coverage ledger, one hunter per unit, a critic, a fresh verifier per candidate, validated findings, and (standard) a recheck. `quick` costs at most $29 and is partial coverage; `standard` at most $72. The report is written to `~/.ork/audits/`, outside the project; it may be sensitive. Left: the first paid run, on the maintainer's go (C15); an `ork register` project is refused by `scan` (L388); only pnpm and npm lockfiles are read (L389).",
         docs: [
           "docs/guides/security-audit.md",
           "runbook/development/security-audit.md",
@@ -1294,9 +1296,11 @@ export const MILESTONES = [
       {
         id: "onboard",
         title: "`ork onboard`: workflows that fit the project",
-        status: "active",
+        status: "done",
+        commits: ["ca789e8", "b4399cb"],
+        date: "2026-11-16",
         detail:
-          "Built, waiting to land (it becomes done with its commit). RFC-018, now Implemented (Option B, ADR-097). `ork onboard` does the free steps itself (refusals, the driver, `ork init`'s file steps, a survey of the repository with no model, three fixed questions, a digest of past runs in review mode, the worst-case cost) and runs two built-ins between them, `ork:onboard-propose` (reading tools only) and `ork:onboard-write` (a writer in a worktree), on whichever driver is ready. The command filters the proposer's list in its own process (a suggestion whose evidence or drafted command does not exist is dropped), and a hidden `ork __onboard finish` holds the writer to `.ork/workflows` and `.ork/project.yaml` (ignored paths included), to both caps, to no `driver` or `model`, and to `ork validate` on every ready driver. The gate shows the diff and every new permission; Ork never merges. Left: attached projects are refused (L390), an interrupted flow starts over (L391), the follow-up cap is a prompt (L392), `layers.project: ignore` applies only on `claude-code` (L393), the writer is held by a check and not a sandbox (L395), a crash in `finish` loops like a problem (L403), a hook that rewrites the canonical commit fails the run (L404), standalone `ork:onboard-propose` is unfiltered (L405), the survey's limits (L406 to L411), and the first paid trial on three drivers.",
+          "Built. RFC-018, now Implemented (Option B, ADR-097). `ork onboard` does the free steps itself (refusals, the driver, `ork init`'s file steps, a survey of the repository with no model, three fixed questions, a digest of past runs in review mode, the worst-case cost) and runs two built-ins between them, `ork:onboard-propose` (reading tools only) and `ork:onboard-write` (a writer in a worktree), on whichever driver is ready. The command filters the proposer's list in its own process (a suggestion whose evidence or drafted command does not exist is dropped), and a hidden `ork __onboard finish` holds the writer to `.ork/workflows` and `.ork/project.yaml` (ignored paths included), to both caps, to no `driver` or `model`, and to `ork validate` on every ready driver. The gate shows the diff and every new permission; Ork never merges. Left: attached projects are refused (L390), an interrupted flow starts over (L391), the follow-up cap is a prompt (L392), `layers.project: ignore` applies only on `claude-code` (L393), the writer is held by a check and not a sandbox (L395), a crash in `finish` loops like a problem (L403), a hook that rewrites the canonical commit fails the run (L404), standalone `ork:onboard-propose` is unfiltered (L405), the survey's limits (L406 to L411), and the first paid trial on three drivers.",
         docs: [
           "docs/guides/onboarding.md",
           "decisions/ADR-097-onboarding-workflows.md",

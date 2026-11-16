@@ -1,0 +1,600 @@
+{
+  "benchmark": "onboard",
+  "ork": {
+    "versions": ["1.0.0-alpha.21"],
+    "from": "run events"
+  },
+  "run": "f7f49775",
+  "status": "succeeded",
+  "runs": [
+    {
+      "id": "f7f49775",
+      "workflow": "build",
+      "parent": null,
+      "status": "succeeded",
+      "started": "2026-11-16T09:52:43.422Z",
+      "finished": "2026-11-16T11:10:43.816Z",
+      "cost_usd": 21.7688
+    }
+  ],
+  "started": "2026-11-16T09:52:43.422Z",
+  "finished": "2026-11-16T11:10:43.816Z",
+  "cost_usd": 21.7688,
+  "tokens": {
+    "input_tokens": 1230,
+    "output_tokens": 408035,
+    "cache_read_tokens": 65597153,
+    "cache_write_tokens": 1675589,
+    "all_tokens": 67682007
+  },
+  "turns": 828,
+  "sessions": 25,
+  "failed_sessions": 0,
+  "minutes": {
+    "working": 73.7,
+    "waiting_on_maintainer": 4.3,
+    "wall": 78
+  },
+  "decisions": 11,
+  "permission_requests": 6,
+  "by_node": {
+    "build.implement-3": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 11,
+      "input_tokens": 18,
+      "output_tokens": 10420,
+      "cache_read_tokens": 442441,
+      "cache_write_tokens": 48295,
+      "cost_usd": 0.3417
+    },
+    "build.implement-2": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 40,
+      "input_tokens": 72,
+      "output_tokens": 40391,
+      "cache_read_tokens": 2934084,
+      "cache_write_tokens": 108994,
+      "cost_usd": 1.1334
+    },
+    "build.engine-2": {
+      "model": "claude-opus-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 83,
+      "input_tokens": 130,
+      "output_tokens": 43002,
+      "cache_read_tokens": 5982165,
+      "cache_write_tokens": 127281,
+      "cost_usd": 3.0752
+    },
+    "build.implement-4": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 85,
+      "input_tokens": 128,
+      "output_tokens": 62424,
+      "cache_read_tokens": 7507742,
+      "cache_write_tokens": 154302,
+      "cost_usd": 1.9925
+    },
+    "build.engine-3": {
+      "model": "claude-opus-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 98,
+      "input_tokens": 146,
+      "output_tokens": 47331,
+      "cache_read_tokens": 8240584,
+      "cache_write_tokens": 148229,
+      "cost_usd": 3.7812
+    },
+    "build.implement": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 3,
+      "failed": 0,
+      "turns": 166,
+      "input_tokens": 262,
+      "output_tokens": 80917,
+      "cache_read_tokens": 23557524,
+      "cache_write_tokens": 249438,
+      "cost_usd": 4.1632
+    },
+    "build.implement-6": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 64,
+      "input_tokens": 88,
+      "output_tokens": 19031,
+      "cache_read_tokens": 3709801,
+      "cache_write_tokens": 98325,
+      "cost_usd": 0.9548
+    },
+    "build.implement-5": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 54,
+      "input_tokens": 84,
+      "output_tokens": 29450,
+      "cache_read_tokens": 4344624,
+      "cache_write_tokens": 134794,
+      "cost_usd": 1.2683
+    },
+    "build.build": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 2,
+      "failed": 0,
+      "turns": 14,
+      "input_tokens": 24,
+      "output_tokens": 13526,
+      "cache_read_tokens": 642645,
+      "cache_write_tokens": 56925,
+      "cost_usd": 0.4273
+    },
+    "build.review.1": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 2,
+      "failed": 0,
+      "turns": 45,
+      "input_tokens": 48,
+      "output_tokens": 14294,
+      "cache_read_tokens": 1890079,
+      "cache_write_tokens": 113117,
+      "cost_usd": 0.7845
+    },
+    "build.review.2": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 2,
+      "failed": 0,
+      "turns": 36,
+      "input_tokens": 62,
+      "output_tokens": 10397,
+      "cache_read_tokens": 1832838,
+      "cache_write_tokens": 85032,
+      "cost_usd": 0.6275
+    },
+    "build.review.0": {
+      "model": "claude-opus-5-5",
+      "sessions": 2,
+      "failed": 0,
+      "turns": 67,
+      "input_tokens": 90,
+      "output_tokens": 20880,
+      "cache_read_tokens": 3229628,
+      "cache_write_tokens": 115944,
+      "cost_usd": 1.9914
+    },
+    "build.followups": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 2,
+      "input_tokens": 2,
+      "output_tokens": 1816,
+      "cache_read_tokens": 0,
+      "cache_write_tokens": 32501,
+      "cost_usd": 0.1482
+    },
+    "build.polish": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 2,
+      "failed": 0,
+      "turns": 18,
+      "input_tokens": 22,
+      "output_tokens": 3911,
+      "cache_read_tokens": 385140,
+      "cache_write_tokens": 44194,
+      "cost_usd": 0.2544
+    },
+    "build.polish-review": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 13,
+      "input_tokens": 16,
+      "output_tokens": 3150,
+      "cache_read_tokens": 222077,
+      "cache_write_tokens": 31492,
+      "cost_usd": 0.1797
+    },
+    "build.docs": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 16,
+      "input_tokens": 24,
+      "output_tokens": 3345,
+      "cache_read_tokens": 490920,
+      "cache_write_tokens": 48288,
+      "cost_usd": 0.2757
+    },
+    "build.repair": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 6,
+      "input_tokens": 8,
+      "output_tokens": 881,
+      "cache_read_tokens": 110449,
+      "cache_write_tokens": 37900,
+      "cost_usd": 0.1715
+    },
+    "build.declare": {
+      "model": "claude-sonnet-5-5",
+      "sessions": 1,
+      "failed": 0,
+      "turns": 10,
+      "input_tokens": 6,
+      "output_tokens": 2869,
+      "cache_read_tokens": 74412,
+      "cache_write_tokens": 40538,
+      "cost_usd": 0.1983
+    }
+  },
+  "activations": [
+    {
+      "run": "f7f49775",
+      "node": "implement-3",
+      "round": 1,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-16T09:53:05.075Z",
+      "minutes": 1.5
+    },
+    {
+      "run": "f7f49775",
+      "node": "implement-2",
+      "round": 1,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-16T09:53:05.073Z",
+      "minutes": 5.3
+    },
+    {
+      "run": "f7f49775",
+      "node": "engine-2",
+      "round": 1,
+      "agent": "engine",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-16T09:53:05.072Z",
+      "minutes": 7.7
+    },
+    {
+      "run": "f7f49775",
+      "node": "implement-4",
+      "round": 1,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-16T10:01:06.755Z",
+      "minutes": 8.3
+    },
+    {
+      "run": "f7f49775",
+      "node": "engine-3",
+      "round": 1,
+      "agent": "engine",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-16T10:01:06.758Z",
+      "minutes": 11.5
+    },
+    {
+      "run": "f7f49775",
+      "node": "implement",
+      "round": 1,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-16T10:12:47.037Z",
+      "minutes": 15.1
+    },
+    {
+      "run": "f7f49775",
+      "node": "implement-6",
+      "round": 1,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-16T10:27:58.918Z",
+      "minutes": 5.8
+    },
+    {
+      "run": "f7f49775",
+      "node": "implement-5",
+      "round": 1,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-16T10:27:58.916Z",
+      "minutes": 11.9
+    },
+    {
+      "run": "f7f49775",
+      "node": "implement",
+      "round": 2,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-16T10:40:00.417Z",
+      "minutes": 5.8
+    },
+    {
+      "run": "f7f49775",
+      "node": "build",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T09:52:43.431Z",
+      "minutes": 53.3
+    },
+    {
+      "run": "f7f49775",
+      "node": "review.1",
+      "round": 1,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T10:46:02.722Z",
+      "minutes": 1.8
+    },
+    {
+      "run": "f7f49775",
+      "node": "review.2",
+      "round": 1,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T10:46:02.723Z",
+      "minutes": 3.3
+    },
+    {
+      "run": "f7f49775",
+      "node": "review.0",
+      "round": 1,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T10:46:02.721Z",
+      "minutes": 3.4
+    },
+    {
+      "run": "f7f49775",
+      "node": "review",
+      "round": 1,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T10:46:02.720Z",
+      "minutes": 3.4
+    },
+    {
+      "run": "f7f49775",
+      "node": "implement",
+      "round": 3,
+      "agent": "implementer",
+      "owner": "build",
+      "ok": true,
+      "start": "2026-11-16T10:49:46.522Z",
+      "minutes": 6.7
+    },
+    {
+      "run": "f7f49775",
+      "node": "build",
+      "round": 2,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T10:49:29.464Z",
+      "minutes": 7.1
+    },
+    {
+      "run": "f7f49775",
+      "node": "review.2",
+      "round": 2,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T10:56:37.043Z",
+      "minutes": 0.1
+    },
+    {
+      "run": "f7f49775",
+      "node": "review.1",
+      "round": 2,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T10:56:37.042Z",
+      "minutes": 0.2
+    },
+    {
+      "run": "f7f49775",
+      "node": "review.0",
+      "round": 2,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T10:56:37.041Z",
+      "minutes": 0.6
+    },
+    {
+      "run": "f7f49775",
+      "node": "review",
+      "round": 2,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T10:56:37.040Z",
+      "minutes": 0.6
+    },
+    {
+      "run": "f7f49775",
+      "node": "followups",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T10:57:10.201Z",
+      "minutes": 0.2
+    },
+    {
+      "run": "f7f49775",
+      "node": "polish",
+      "round": 1,
+      "agent": "implementer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T10:57:27.438Z",
+      "minutes": 6.6
+    },
+    {
+      "run": "f7f49775",
+      "node": "polish-review",
+      "round": 1,
+      "agent": "reviewer",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T11:04:01.270Z",
+      "minutes": 0.5
+    },
+    {
+      "run": "f7f49775",
+      "node": "docs",
+      "round": 1,
+      "agent": "docs-keeper",
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T11:04:35.487Z",
+      "minutes": 0.8
+    },
+    {
+      "run": "f7f49775",
+      "node": "stage",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T11:05:22.966Z",
+      "minutes": 0
+    },
+    {
+      "run": "f7f49775",
+      "node": "publish",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T11:05:27.111Z",
+      "minutes": 0.1
+    },
+    {
+      "run": "f7f49775",
+      "node": "check",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": false,
+      "start": "2026-11-16T11:05:35.336Z",
+      "minutes": 2.1
+    },
+    {
+      "run": "f7f49775",
+      "node": "repair",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T11:07:42.580Z",
+      "minutes": 0.2
+    },
+    {
+      "run": "f7f49775",
+      "node": "amend",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T11:07:56.992Z",
+      "minutes": 0
+    },
+    {
+      "run": "f7f49775",
+      "node": "check",
+      "round": 2,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T11:07:57.119Z",
+      "minutes": 2.2
+    },
+    {
+      "run": "f7f49775",
+      "node": "push",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T11:10:06.820Z",
+      "minutes": 0.2
+    },
+    {
+      "run": "f7f49775",
+      "node": "published",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T11:10:15.993Z",
+      "minutes": 0
+    },
+    {
+      "run": "f7f49775",
+      "node": "declare",
+      "round": 1,
+      "agent": null,
+      "owner": null,
+      "ok": true,
+      "start": "2026-11-16T11:10:16.193Z",
+      "minutes": 0.3
+    }
+  ],
+  "agents": [
+    {
+      "name": "engine",
+      "source": "project",
+      "where": ".ai/agents/engine.md",
+      "hash": "d377815e266a"
+    },
+    {
+      "name": "implementer",
+      "source": "project",
+      "where": ".ai/agents/implementer.md",
+      "hash": "45648a2a3081"
+    },
+    {
+      "name": "reviewer",
+      "source": "project",
+      "where": ".ai/agents/reviewer.md",
+      "hash": "de63cac60734"
+    },
+    {
+      "name": "docs-keeper",
+      "source": "project",
+      "where": ".ai/agents/docs-keeper.md",
+      "hash": "c332d7025bc1"
+    }
+  ],
+  "workflow_commit": "da61e3ff3e355579b6424c9500ef0210e7efcc12",
+  "result_commits": ["ca789e8"]
+}

@@ -14,25 +14,25 @@ Code by hand, are here too.
 
 ## What they show so far
 
-Eight runs, 2026-11-08 to 2026-11-12, Ork 1.0.0-alpha.1 to alpha.14: seven that
-built a change, together 37,476 changed lines, and one QA pass that changed none
-($2.26 for eight surfaces in 28 minutes). The figures below are the seven
+Nine runs, 2026-11-08 to 2026-11-16, Ork 1.0.0-alpha.1 to alpha.21: eight that
+built a change, together 44,895 changed lines, and one QA pass that changed none
+($2.26 for eight surfaces in 28 minutes). The figures below are the eight
 builds':
 
-- **Large changes cost less, or the same.** Of the four changes over 4,000
-  lines, three cost 32–45% less than the same change is estimated to cost in a
+- **Large changes cost less, or the same.** Of the five changes over 4,000
+  lines, four cost 32–45% less than the same change is estimated to cost in a
   plain Claude Code session, and one (11,097 lines) cost about the same, after
-  three Ork bugs that were fixed afterwards. Across all seven, Ork spent $132.42
-  against a manual median of $169.60, 22% less.
+  three Ork bugs that were fixed afterwards. Across all eight, Ork spent $154.19
+  against a manual median of $203.18, 24% less.
 - **Small changes cost more.** Under about 1,200 changed lines, Ork's spec,
   review and docs steps are a fixed cost that a quick manual session skips: it
   spent 15–37% more there, though still inside the manual range.
 - **The minutes are unattended.** Ork's working time was below the manual
-  estimate's (461 against 520 minutes), and a manual session needs someone at
+  estimate's (535 against 682 minutes), and a manual session needs someone at
   the keyboard throughout. An Ork run needs the maintainer only at its gates and
-  questions: outside the first run, 26 minutes in all. The first run waited over
+  questions: outside the first run, 31 minutes in all. The first run waited over
   two hours, on 33 permission prompts that later versions removed.
-- **The review earns its keep.** Five of the seven runs had their first build
+- **The review earns its keep.** Six of the eight runs had their first build
   sent back by Ork's reviewer, with findings up to a feature that never actually
   loaded and a deadlock that validation only warned about; each was fixed before
   anything shipped.
@@ -54,18 +54,19 @@ side.
 
 | Benchmark                                            | Ork            | Status    | Changed lines | Ork cost | Manual cost: median (p25–p75) | Ork working min | Manual min: median (p25–p75) |
 | ---------------------------------------------------- | -------------- | --------- | ------------: | -------: | ----------------------------: | --------------: | ---------------------------: |
-| [canary-experiments](./canary-experiments/README.md) | 1.0.0-alpha.1  | failed    |           960 |    $5.94 |           $4.34 ($2.84–$6.54) |              29 |                    13 (8–35) |
-| [node-mcp](./node-mcp/README.md)                     | 1.0.0-alpha.3  | succeeded |         1,115 |    $5.79 |           $5.05 ($3.30–$7.60) |              29 |                   16 (10–40) |
-| [readable-gates](./readable-gates/README.md)         | 1.0.0-alpha.4  | failed    |         4,294 |   $11.75 |        $19.43 ($12.71–$29.27) |              71 |                  60 (38–155) |
-| [leader-fixes](./leader-fixes/README.md)             | 1.0.0-alpha.5  | succeeded |           755 |    $4.30 |           $3.42 ($2.23–$5.15) |              24 |                    11 (7–27) |
-| [for-each-run-1](./for-each-run-1/README.md)         | 1.0.0-alpha.6  | succeeded |         8,065 |   $20.07 |        $36.50 ($23.87–$54.97) |              61 |                 112 (71–292) |
-| [cli-drivers-only](./cli-drivers-only/README.md)     | 1.0.0-alpha.9  | failed    |        11,097 |   $50.32 |        $50.22 ($32.84–$75.63) |             150 |                 154 (97–401) |
-| [follow-ups](./follow-ups/README.md)                 | 1.0.0-alpha.14 | succeeded |        11,190 |   $34.26 |        $50.64 ($33.12–$76.27) |              98 |                 155 (98–405) |
+| [canary-experiments](./canary-experiments/README.md) | 1.0.0-alpha.1  | failed    |           960 |    $5.94 |           $4.34 ($2.84–$6.72) |              29 |                    15 (9–37) |
+| [node-mcp](./node-mcp/README.md)                     | 1.0.0-alpha.3  | succeeded |         1,115 |    $5.79 |           $5.05 ($3.30–$7.81) |              29 |                   17 (10–43) |
+| [readable-gates](./readable-gates/README.md)         | 1.0.0-alpha.4  | failed    |         4,294 |   $11.75 |        $19.43 ($12.71–$30.06) |              71 |                  65 (38–167) |
+| [leader-fixes](./leader-fixes/README.md)             | 1.0.0-alpha.5  | succeeded |           755 |    $4.30 |           $3.42 ($2.23–$5.29) |              24 |                    12 (7–29) |
+| [for-each-run-1](./for-each-run-1/README.md)         | 1.0.0-alpha.6  | succeeded |         8,065 |   $20.07 |        $36.50 ($23.87–$56.47) |              61 |                 123 (71–314) |
+| [cli-drivers-only](./cli-drivers-only/README.md)     | 1.0.0-alpha.9  | failed    |        11,097 |   $50.32 |        $50.22 ($32.84–$77.69) |             150 |                 169 (98–431) |
+| [follow-ups](./follow-ups/README.md)                 | 1.0.0-alpha.14 | succeeded |        11,190 |   $34.26 |        $50.64 ($33.12–$78.34) |              98 |                 170 (99–435) |
 | [qa-alpha-14](./qa-alpha-14/README.md)               | 1.0.0-alpha.14 | succeeded |             — |    $2.26 |                             — |              28 |                            — |
+| [onboard](./onboard/README.md)                       | 1.0.0-alpha.21 | succeeded |         7,419 |   $21.77 |        $33.58 ($21.96–$51.94) |              74 |                 113 (65–288) |
 
-The manual columns apply a rate measured over 111 pushes in 4 plain Claude Code
-sessions on this repository (178 commits, 185,087 changed lines): $4.53
-($2.96–$6.82) and 14 (9–36) working minutes per 1,000 changed lines.
+The manual columns apply a rate measured over 147 pushes in 5 plain Claude Code
+sessions on this repository (220 commits, 194,244 changed lines): $4.53
+($2.96–$7.00) and 15 (9–39) working minutes per 1,000 changed lines.
 [How](./method.md#the-manual-baseline).
 
 <!-- results:end -->
