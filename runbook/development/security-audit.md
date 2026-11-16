@@ -90,6 +90,9 @@ as `needs_validation` with the skill's safe plan.
 5. `verify`: a fresh Opus verifier per candidate tries to disprove it, and
    returns `confirmed`, `needs_validation` or `rejected`. Only `confirmed`
    records have a severity. The agent that found a candidate never verifies it.
+   A `verify:` step on the node runs `cli.ts check-record` on `$ORK_REPORT` (the
+   record, scrubbed) and sends the verifier back with what the schema found, up
+   to 3 tries.
 6. `findings` writes `findings.json` and runs `validate-findings.cjs`. Agents
    list a trace in order and Ork labels each entry's kind from its place (the
    first `entrypoint`, the last `sink`), so a mislabelled trace costs nothing. A
@@ -116,14 +119,14 @@ there.
 Under `~/.ork/audits/<project>/<run-id>/`, outside the checkout (`<project>` is
 the main checkout's folder name):
 
-| File                   | Holds                                                              |
-| ---------------------- | ------------------------------------------------------------------ |
-| `REPORT.md`            | Run, posture, confirmed findings, leads, scanner results, coverage |
-| `FINDINGS-DETAIL.md`   | Each confirmed finding of medium severity or above, in full        |
-| `NEEDS-VALIDATION.md`  | Each lead with its blocker and bounded plan; no severity           |
-| `findings.json`        | The final records, in the skill's schema                           |
-| `coverage-ledger.json` | The units, and whether each was hunted or deferred                 |
-| `run-metadata.json`    | Profile, scope, source ref, `run_status` and why it is incomplete  |
+| File                   | Holds                                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `REPORT.md`            | Run, posture, confirmed findings, leads, scanner results, coverage                                                       |
+| `FINDINGS-DETAIL.md`   | Each confirmed finding of medium severity or above, in full                                                              |
+| `NEEDS-VALIDATION.md`  | Each lead with its blocker and bounded plan; no severity                                                                 |
+| `findings.json`        | The final records, in the skill's schema                                                                                 |
+| `coverage-ledger.json` | The units, and whether each was hunted or deferred                                                                       |
+| `run-metadata.json`    | Profile, scope, source ref, `run_status`, why it is incomplete, `prior_run_paths` (the previous audit's folder, or none) |
 
 `git status` stays clean after a run. Read `REPORT.md` first: its first section
 says what the run could not do.
@@ -140,8 +143,8 @@ which hunted units closed.
 the default `sh -eu`, so a non-zero exit fails the node: they need no `|| true`
 and no `interpreter`. Every edge out of `findings` is gated on `ok`, so a failed
 validator stops the run. Both validators ignore `run-metadata.json`, so marking
-a run incomplete does not break them. No test makes the skill's own validator
-reject a record; a stub validator override would close that.
+a run incomplete does not break them. `check-record.test.ts` makes the skill's
+own validator reject a record.
 
 ## Runs build on each other
 

@@ -176,6 +176,8 @@ export type Case = {
   root?: string;
   store?: EventStore;
   review?: boolean;
+  /** `--fresh`. */
+  fresh?: boolean;
   /** A `__onboard` verb the tool nodes' `ORK_BIN` cannot run: exit 127. */
   missing?: string;
 };
@@ -234,7 +236,7 @@ export const onboard = async (c: Case): Promise<Flow> => {
     exec: () => Promise.resolve({ ok: true, stdout: "git version 2.40" }),
     nodeVersion: "24.20.0",
     review: c.review ?? false,
-    fresh: false,
+    fresh: c.fresh ?? false,
     checks,
     driverChecks: checks,
     drivers: standInDrivers,

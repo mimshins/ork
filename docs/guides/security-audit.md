@@ -50,8 +50,11 @@ run could not do, such as leads left unreviewed past the cap.
    other.
 2. **Agents, all read-only.** One agent maps the project and lists the parts to
    look at. One hunter per part looks for problems, a critic looks for gaps, and
-   a fresh verifier per candidate tries to disprove it. Under `standard`, a
-   fresh agent checks each confirmed finding again.
+   a fresh verifier per candidate tries to disprove it. A check then runs the
+   skill's validator on each verifier's record, and sends the verifier back with
+   what it found (up to 3 tries), so a record that breaks the report schema is
+   fixed before it is accepted. Under `standard`, a fresh agent checks each
+   confirmed finding again.
 3. **A report**, then a question: keep it (`done`) or delete it (`discard`).
 
 Nothing audited is run. Ork has no sandbox for that yet, so a lead that needs
@@ -76,14 +79,14 @@ on and the report notes it.
 In `~/.ork/audits/<project>/<run-id>/`, outside your project, so `git status`
 stays clean (`<project>` is the main checkout's folder name):
 
-| File                   | Holds                                                              |
-| ---------------------- | ------------------------------------------------------------------ |
-| `REPORT.md`            | Run, posture, confirmed findings, leads, scanner results, coverage |
-| `FINDINGS-DETAIL.md`   | Each confirmed finding of medium severity or above, in full        |
-| `NEEDS-VALIDATION.md`  | Each lead with what blocks it and a bounded plan; no severity      |
-| `findings.json`        | The final records                                                  |
-| `coverage-ledger.json` | The parts looked at, and whether each was hunted or deferred       |
-| `run-metadata.json`    | Profile, scope, source ref, and why a run is incomplete            |
+| File                   | Holds                                                                                                    |
+| ---------------------- | -------------------------------------------------------------------------------------------------------- |
+| `REPORT.md`            | Run, posture, confirmed findings, leads, scanner results, coverage                                       |
+| `FINDINGS-DETAIL.md`   | Each confirmed finding of medium severity or above, in full                                              |
+| `NEEDS-VALIDATION.md`  | Each lead with what blocks it and a bounded plan; no severity                                            |
+| `findings.json`        | The final records                                                                                        |
+| `coverage-ledger.json` | The parts looked at, and whether each was hunted or deferred                                             |
+| `run-metadata.json`    | Profile, scope, source ref, why a run is incomplete, and the previous audit's folder (`prior_run_paths`) |
 
 Read `REPORT.md` first. **The report may be sensitive: do not commit or post
 it.** It describes weaknesses in your code. A real finding belongs in a private

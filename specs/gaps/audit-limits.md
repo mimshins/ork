@@ -64,3 +64,11 @@ simpler, or could not be checked:
   scanner that fails or is offline is a note, not a failure. The npm parser
   reads the npm 7+ `audit --json` shape only, and it dedupes by advisory name
   and source, so the per-package vulnerable path is lost.
+- **L413 · The verify check reads a scrubbed copy of the record, and checks its
+  shape only.** The `verify` node's `verify:` step runs `check-record` on
+  `$ORK_REPORT`, which Ork writes with secret-like strings masked
+  ([steps](../scheduler/steps.md#checks-on-a-report)), so a field holding one
+  reads `[masked]` to the check. It holds the record to `report-schema.json`
+  (three tries), not to the facts: a well-formed record can still be wrong. A
+  record the session cannot fix fails the node, and `finalize` marks the audit
+  incomplete as before.

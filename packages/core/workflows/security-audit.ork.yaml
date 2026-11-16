@@ -83,6 +83,7 @@ nodes:
       PROFILE: "{{inputs.profile}}"
       SCOPE: "{{inputs.scope}}"
       UNITS: "{{nodes.recon.output.units}}"
+      PREVIOUS: "{{nodes.scan.output.json.previousDir}}"
     output:
       format: json
       schema:
@@ -202,6 +203,8 @@ nodes:
       {{item}}
 
       Return `decision` (confirmed, needs_validation or rejected) and `records`: a list with exactly one object, the record that matches that decision's branch of report-schema.json exactly (it uses additionalProperties: false: no extra fields, no hunter wrapper fields such as proposed_verdict), including `verdict`. List its trace in order, the entrypoint first and the sink last: Ork sets each entry's kind from its place.
+
+      A check runs the skill's validator on your record before your report is accepted, and sends you back what it found. The usual mistakes: a trace entry without `scope` (every entry needs file, line, scope and description), a `scope_note` field (not in the schema), `execution.instructions` as one string (it is a list of strings), and `remediation.fixes` (remediation holds `strategy` and, if any, `code_changes`).
     model: claude-code.opus
     context:
       - ./security-audit/context/read-only-bash.md
@@ -221,6 +224,10 @@ nodes:
       from: "{{nodes.consolidate.output.json.unique}}"
       maxItems: 30
       maxParallel: 3
+    verify:
+      script: node "__ORK_BUNDLE_DIR__/security-audit/cli.ts" check-record
+      timeout: 2m
+      attempts: 3
   findings:
     type: tool.shell
     script: |-

@@ -16,6 +16,7 @@ import { modeLine, modeOf } from "../src/onboard/mode.ts";
 import { proposedOf, suggestionLines } from "../src/onboard/pick.ts";
 import { answersText, questionsFor } from "../src/onboard/questions.ts";
 import { finishProblems, settleWrite } from "../src/onboard/runs.ts";
+import { initNote } from "../src/onboard/setup.ts";
 
 describe("modeOf", () => {
   const flags = { review: false, fresh: false };
@@ -244,5 +245,21 @@ describe("settleWrite", () => {
       "failed",
     );
     expect(finishProblems(out)).toEqual([]);
+  });
+});
+
+describe("initNote", () => {
+  it("names the files `ork init` made as not in the writer's worktree", () => {
+    const note = initNote([
+      ".ork/workflows/hello.ork.yaml",
+      ".gitignore (.ork/runs/)",
+    ]);
+    expect(note).toContain("Not in your worktree");
+    expect(note).toContain(".ork/workflows/hello.ork.yaml");
+    expect(note).toContain(".gitignore (.ork/runs/)");
+  });
+
+  it("is empty when `.ork/` was there and `ork init` made nothing", () => {
+    expect(initNote([])).toBe("");
   });
 });

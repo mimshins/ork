@@ -71,8 +71,11 @@ directly, which a test's `bin.ts` and the installed `bin.mjs` both do.
 Each agent node names a rule file from its bundle in `context:`
 (`onboard-propose/context/suggestions.md`, `onboard-write/context/writing.md`):
 what is data, the question cap, the shape of a suggestion, and what a written
-workflow holds. The `write` node names no agent: `ork-implementer`'s role says
-to follow the project's own rules, which here are data.
+workflow holds. The `write` node also names `onboard-write/context/format.md`, a
+reference for the workflow format: node types, ownership (`isolation`), edges
+and `maxRounds`, gates, the entry node, caps, and one minimal valid workflow.
+The `write` node names no agent: `ork-implementer`'s role says to follow the
+project's own rules, which here are data.
 
 ## Suggestions
 
@@ -178,8 +181,12 @@ the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
    an ignored file reads as added), except an ignored file Ork itself copied
    into the worktree (`CLAUDE.local.md`, `.claude/settings.local.json`, what
    `.worktreeinclude` lists) whose bytes still equal the same path in the
-   project root: an edited copy, or any other ignored file, is refused. Each
-   must be an added or modified `.ork/workflows/<name>.ork.yaml` (one level) or
+   project root: an edited copy, or any other ignored file, is refused; and
+   except `.commandcode/taste/taste.md`, the file `command-code` leaves in the
+   folder it runs in, when it is new in the worktree, a regular file (not a
+   link, nor behind one) and empty: the exact path only, so a non-empty file, a
+   link, a committed one or any other path there is refused. Each must be an
+   added or modified `.ork/workflows/<name>.ork.yaml` (one level) or
    `.ork/project.yaml`; any other path, or a deletion or rename, is a problem. A
    write outside the worktree is still not seen
    ([L395](../gaps/onboard-limits.md)).
@@ -208,7 +215,18 @@ the `finish -> write` edge loops only on exit 1, so a `finish` that cannot start
    `tools.allow` entry, on a node, an agent, `defaults` or in
    `.ork/project.yaml`'s rules; each new tool node `env:` entry; each new
    network reach: a `tool.gh`, `tool.aws` or `mcp.call` node, an `mcp:` server,
-   or a `WebFetch` or `WebSearch` allow.
+   or a `WebFetch` or `WebSearch` allow. Reading is the only thing dropped, and
+   by tool name: a rule whose name is `Read`, `Glob`, `Grep`, `LS` or
+   `NotebookRead` (with or without arguments) is not listed; every other name,
+   `Bash(…)` rules included, and every rule of a shape Ork cannot parse, is. A
+   change to one of these fields is listed as
+   `<where> changes <field> to <value>` when its value is new or differs from
+   `HEAD` (a field `HEAD` set and the file no longer does reads
+   `<where> removes <field>`): on a node `context`, `isolation` and
+   `tools.only`; in a workflow `context` (`layers.context`), `rules.git`,
+   `rules.links` and `defaults.isolation`; in `.ork/project.yaml` `context`,
+   `heavy`, `calls.accept`, `followUps.file`, `git`, `links` and
+   `defaults.isolation`.
 
 ## Trust model
 

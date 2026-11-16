@@ -237,6 +237,64 @@ describe("finish: scope", () => {
     });
   });
 
+  describe("the empty taste file command-code leaves", () => {
+    const TASTE = ".commandcode/taste/taste.md";
+    const outside = "outside .ork/workflows/*.ork.yaml and .ork/project.yaml";
+
+    it("is no problem when new, a regular file and empty", async () => {
+      expect(await problemsOf({ [TASTE]: "" })).toEqual([]);
+    });
+
+    it("is no problem when the folder ignores it", async () => {
+      const scene = scenario({ ".gitignore": ".commandcode/\n" });
+      put(scene.worktree, { [TASTE]: "" });
+      expect((await check(scene)).problems).toEqual([]);
+    });
+
+    it("is refused once it holds anything", async () => {
+      expect(await problemsOf({ [TASTE]: "x" })).toEqual([
+        `${TASTE}: ${outside}`,
+      ]);
+    });
+
+    it("is refused when it is a link", async () => {
+      const scene = scenario();
+      mkdirSync(path.join(scene.worktree, ".commandcode/taste"), {
+        recursive: true,
+      });
+      const target = path.join(tempDir(), "empty.md");
+      writeFileSync(target, "");
+      symlinkSync(target, path.join(scene.worktree, TASTE));
+      expect((await check(scene)).problems).toEqual([`${TASTE}: ${outside}`]);
+    });
+
+    it("is refused behind a linked folder", async () => {
+      const scene = scenario();
+      const elsewhere = tempDir();
+      put(elsewhere, { "taste.md": "" });
+      mkdirSync(path.join(scene.worktree, ".commandcode"));
+      symlinkSync(elsewhere, path.join(scene.worktree, ".commandcode/taste"));
+      expect((await check(scene)).problems).not.toEqual([]);
+    });
+
+    it("exempts no other empty file, nor a committed one", async () => {
+      expect(
+        await problemsOf({
+          ".commandcode/taste/other.md": "",
+          ".commandcode/taste.md": "",
+        }),
+      ).toEqual([
+        `.commandcode/taste.md: ${outside}`,
+        `.commandcode/taste/other.md: ${outside}`,
+      ]);
+      const scene = scenario();
+      put(scene.worktree, { [TASTE]: "" });
+      git(scene.worktree, "add", "-f", TASTE);
+      git(scene.worktree, "commit", "-q", "-m", "taste");
+      expect((await check(scene)).problems).toEqual([`${TASTE}: ${outside}`]);
+    });
+  });
+
   it("refuses a workflow that is a link, and does not follow it", async () => {
     const scene = scenario();
     const secret = path.join(tempDir(), "secret.ork.yaml");
@@ -333,6 +391,9 @@ describe("finish: each workflow", () => {
   });
 });
 
+const heavyAt = (value: string): string =>
+  `schemaVersion: 1\nheavy:\n  - ${value}\n`;
+
 describe("finish: needs your eye", () => {
   it("lists each new allow rule, env entry and network reach", async () => {
     const node = `    tools:
@@ -369,6 +430,157 @@ describe("finish: needs your eye", () => {
         ".ork/workflows/ci.ork.yaml: node run sets env `CI_TOKEN`",
       ].toSorted(),
     );
+  });
+
+  it("drops a plain read tool and lists every other name", async () => {
+    const node = `    tools:
+      allow:
+        - Read
+        - Glob
+        - Grep
+        - LS
+        - NotebookRead
+        - Read(src/**)
+        - Bash(cat:*)
+        - Edit
+        - "???"
+`;
+    const scene = scenario();
+    put(scene.worktree, {
+      ".ork/workflows/ci.ork.yaml": workflow("ci", "", node),
+      ".ork/project.yaml":
+        "schemaVersion: 1\npermissions:\n  allow:\n    - Read\n    - Write\n",
+    });
+    expect((await check(scene)).eye.toSorted()).toEqual(
+      [
+        ".ork/project.yaml: project rules allows `Write`",
+        ".ork/workflows/ci.ork.yaml: node build allows `Bash(cat:*)`",
+        ".ork/workflows/ci.ork.yaml: node build allows `Edit`",
+        ".ork/workflows/ci.ork.yaml: node build allows `???`",
+      ].toSorted(),
+    );
+  });
+
+  it("lists a node's context, isolation and tools.only", async () => {
+    const node = `    context:
+      - docs/extra.md
+    isolation: shared
+    tools:
+      only:
+        - Read
+        - Bash
+`;
+    const scene = scenario();
+    put(scene.worktree, {
+      ".ork/workflows/ci.ork.yaml": workflow("ci", "", node),
+    });
+    expect((await check(scene)).eye.toSorted()).toEqual([
+      '.ork/workflows/ci.ork.yaml: node build changes `context` to `["docs/extra.md"]`',
+      '.ork/workflows/ci.ork.yaml: node build changes `isolation` to `"shared"`',
+      '.ork/workflows/ci.ork.yaml: node build changes `tools.only` to `["Read","Bash"]`',
+    ]);
+  });
+
+  it("lists a workflow's context, rules.git, rules.links and isolation default", async () => {
+    const extra = `layers:
+  context:
+    - docs/x.md
+rules:
+  git:
+    commit: never
+  links: "off"
+defaults:
+  isolation: shared
+`;
+    const scene = scenario();
+    put(scene.worktree, {
+      ".ork/workflows/ci.ork.yaml": workflow("ci", extra),
+    });
+    expect((await check(scene)).eye.toSorted()).toEqual([
+      '.ork/workflows/ci.ork.yaml: workflow changes `context` to `["docs/x.md"]`',
+      '.ork/workflows/ci.ork.yaml: workflow changes `defaults.isolation` to `"shared"`',
+      '.ork/workflows/ci.ork.yaml: workflow changes `rules.git` to `{"commit":"never"}`',
+      '.ork/workflows/ci.ork.yaml: workflow changes `rules.links` to `"off"`',
+    ]);
+  });
+
+  it("lists the project's context, heavy, calls, follow-ups file, git, links and isolation", async () => {
+    const scene = scenario();
+    put(scene.worktree, {
+      ".ork/project.yaml": `schemaVersion: 1
+context:
+  - docs/c.md
+heavy:
+  - pnpm check
+calls:
+  accept:
+    - other
+followUps:
+  store: file
+  file: notes.md
+git:
+  commit: never
+links: "off"
+defaults:
+  isolation: shared
+`,
+    });
+    expect((await check(scene)).eye.toSorted()).toEqual(
+      [
+        '.ork/project.yaml: project changes `context` to `["docs/c.md"]`',
+        '.ork/project.yaml: project changes `heavy` to `["pnpm check"]`',
+        '.ork/project.yaml: project changes `calls.accept` to `["other"]`',
+        '.ork/project.yaml: project changes `followUps.file` to `"notes.md"`',
+        '.ork/project.yaml: project changes `rules.git` to `{"commit":"never"}`',
+        '.ork/project.yaml: project changes `rules.links` to `"off"`',
+        '.ork/project.yaml: project changes `defaults.isolation` to `"shared"`',
+      ].toSorted(),
+    );
+  });
+
+  it("lists such a field again only when its value differs from HEAD", async () => {
+    const same = scenario({ ".ork/project.yaml": heavyAt("pnpm check") });
+    put(same.worktree, { ".ork/project.yaml": heavyAt("pnpm check") });
+    expect((await check(same)).eye).toEqual([]);
+    const changed = scenario({ ".ork/project.yaml": heavyAt("pnpm check") });
+    put(changed.worktree, { ".ork/project.yaml": heavyAt("pnpm test") });
+    expect((await check(changed)).eye).toEqual([
+      '.ork/project.yaml: project changes `heavy` to `["pnpm test"]`',
+    ]);
+  });
+
+  it("lists a field that HEAD set and the writer removed", async () => {
+    const node =
+      "    isolation: readonly\n    tools:\n      only:\n        - Read\n";
+    const scene = scenario({
+      ".ork/workflows/ci.ork.yaml": canonical(workflow("ci", "", node)),
+      ".ork/project.yaml": heavyAt("pnpm check"),
+    });
+    put(scene.worktree, {
+      ".ork/workflows/ci.ork.yaml": workflow("ci"),
+      ".ork/project.yaml": "schemaVersion: 1\n",
+    });
+    expect((await check(scene)).eye.toSorted()).toEqual([
+      ".ork/project.yaml: project removes `heavy`",
+      ".ork/workflows/ci.ork.yaml: node build removes `isolation`",
+      ".ork/workflows/ci.ork.yaml: node build removes `tools.only`",
+    ]);
+  });
+
+  it("does not list a removed allow rule or env entry (it narrows rights)", async () => {
+    const node = `    tools:
+      allow:
+        - Bash(pnpm test:*)
+    before:
+      script: echo hi
+      env:
+        TOKEN: "{{env.TOKEN}}"
+`;
+    const scene = scenario({
+      ".ork/workflows/ci.ork.yaml": canonical(workflow("ci", "", node)),
+    });
+    put(scene.worktree, { ".ork/workflows/ci.ork.yaml": workflow("ci") });
+    expect((await check(scene)).eye).toEqual([]);
   });
 
   it("lists a project-wide default driver and model", async () => {

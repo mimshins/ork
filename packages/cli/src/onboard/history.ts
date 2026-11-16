@@ -70,7 +70,7 @@ export const EMPTY_HISTORY: History = {
 };
 
 /** A run of one of Ork's built-in workflows: written under `.ork/runs/.builtin`. */
-const isBuiltinRun = (run: RunRecord): boolean =>
+export const isBuiltinRun = (run: RunRecord): boolean =>
   run.file.replaceAll("\\", "/").includes("/.ork/runs/.builtin/");
 
 const SEVERITY_RANK = { high: 0, medium: 1, low: 2 } as const;

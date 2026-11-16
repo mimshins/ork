@@ -51,13 +51,14 @@ nodes:
 
       {{inputs.answers}}
 
-      The workflow format, field by field (`*` is required):
+      What the pieces of the format mean (node types, `isolation`, edges and `maxRounds`, gates, the entry node, caps) is in your context, "The workflow format", with one minimal valid workflow. The fields, one by one (`*` is required):
 
       {{nodes.format.output.stdout}}
 
       Read .ork/workflows and .ork/project.yaml first. Write each pick as .ork/workflows/<workflow>.ork.yaml and change nothing else. You can read and edit files but not run commands: leave the change in the files, and Ork commits and checks it. Say in your summary what you wrote and why.
     context:
       - ./onboard-write/context/writing.md
+      - ./onboard-write/context/format.md
     isolation: worktree
     maxTurns: 40
     tools:

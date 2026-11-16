@@ -24,8 +24,20 @@ export type Prepared =
       driver: Driver;
       /** `ork init` changed `.gitignore`, which the branch does not hold. */
       gitignored: boolean;
+      /**
+       * What `ork init` made in the project root just now, which the writer's
+       * worktree (cut from `HEAD`) does not hold; empty when `.ork/` was
+       * there.
+       */
+      fromInit: string[];
     } & Overview)
   | { kind: "stop"; lines: readonly string[]; code: number };
+
+/** The line the writer is told about files `ork init` made, or "" for none. */
+export const initNote = (fromInit: readonly string[]): string =>
+  fromInit.length === 0
+    ? ""
+    : `Not in your worktree: \`ork onboard\` just set .ork/ up in the project folder and made ${fromInit.join(", ")}. They are uncommitted, so your worktree does not hold them; do not look for them or recreate them.`;
 
 /** Everything up to the questions, or why to stop. */
 export const prepare = async (o: OnboardOptions): Promise<Prepared> => {
@@ -40,6 +52,7 @@ export const prepare = async (o: OnboardOptions): Promise<Prepared> => {
   }
 
   let gitignored = false;
+  let fromInit: string[] = [];
   let place = placeFor(o.cwd, store.projects());
   // Set up at the project's root, which is not `cwd` in a subfolder.
   if (!existsSync(place.dir)) {
@@ -48,6 +61,7 @@ export const prepare = async (o: OnboardOptions): Promise<Prepared> => {
     for (const item of made.created) {
       out(`${style("green", "created")} ${item}`);
     }
+    fromInit = made.created;
     gitignored = made.created.some(item => item.startsWith(".gitignore"));
     place = placeFor(o.cwd, store.projects());
   }
@@ -57,6 +71,7 @@ export const prepare = async (o: OnboardOptions): Promise<Prepared> => {
     place,
     driver: picked.driver,
     gitignored,
+    fromInit,
     ...(await overview(store, place.root, o, out)),
   };
 };

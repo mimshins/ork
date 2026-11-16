@@ -57,30 +57,42 @@ runs prints
 is expected: the writer's worktree branches from `HEAD`, lacks the starter, and
 only adds files ([L400](../gaps/onboard-limits.md)).
 
+When this command set `.ork/` up, `prepare` keeps what `ork init` made in
+`Prepared.fromInit` (the starter file and the `.gitignore` line), and `runWrite`
+adds one note to the writer's `survey` input (`initNote`): those files are
+uncommitted, so they are not in its worktree, and it should neither look for nor
+recreate them. With an `.ork/` already there `fromInit` is empty and the survey
+is sent as it is.
+
 ## The survey
 
 `packages/cli/src/onboard/survey.ts` reads the project with no model and returns
 a `Survey`:
 
-| Field              | What it holds                                                                                                                                                                           |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packageManagers`  | `packageManager` in `package.json` (one line, at most 60 characters), then one per lockfile or manifest found (`pnpm-lock.yaml`, `Cargo.toml`, `go.mod`, …)                             |
-| `scripts`          | `package.json`'s scripts, the first 30, each name cut to 60 and command to 100 characters, on one line                                                                                  |
-| `testCommands`     | scripts named `test`, `tests`, `e2e` or `spec` (or starting with one and `:`), `make` targets `test`/`tests`, `cargo test`, `go test ./...`; at most 20                                 |
-| `checkCommands`    | scripts named `check`, `lint`, `typecheck`, `build`, `verify`, `ci`, `validate`, `format` (or starting with one and `:`), other `make` targets; at most 20                              |
-| `ciFiles`          | `.github/workflows/*.yml\|yaml` and a fixed list of other CI files (`.gitlab-ci.yml`, `.circleci/config.yml`, `Jenkinsfile`, …); at most 20                                             |
-| `baseBranch`       | `origin/HEAD`'s branch, else `main`, `master`, `trunk` or `develop` if it exists, else the current branch, else `null`                                                                  |
-| `ghUsable`         | `true` when `ork doctor`'s `gh` check says logged in, else `false`; its detail is never read or kept                                                                                    |
-| `instructionFiles` | which of `AGENTS.md`, `CLAUDE.md` exist at the root                                                                                                                                     |
-| `agentFolders`     | the agent and skill folders of `.ork/`, `.claude/`, `.agents/`, `.opencode/` and `.ai/` that hold something, 20 names each with `and N more`; a folder linked to `.ork/` is listed once |
-| `ork`              | whether `.ork/` and `.ork/project.yaml` exist, and the names of its workflows (`*.ork.yaml`), agents and skills, at most 20 each                                                        |
+| Field              | What it holds                                                                                                                                                                                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packageManagers`  | `packageManager` in `package.json` (one line, at most 60 characters), then one per lockfile or manifest found (`pnpm-lock.yaml`, `Cargo.toml`, `go.mod`, …)                                                                                                   |
+| `scripts`          | `package.json`'s scripts, the first 30, each name cut to 60 and command to 100 characters, on one line                                                                                                                                                        |
+| `testCommands`     | scripts named `test`, `tests`, `e2e` or `spec` (or starting with one and `:`), `make` targets `test`/`tests`, `cargo test`, `go test ./...`; at most 20                                                                                                       |
+| `checkCommands`    | scripts named `check`, `lint`, `typecheck`, `build`, `verify`, `ci`, `validate`, `format` (or starting with one and `:`), other `make` targets; at most 20                                                                                                    |
+| `ciFiles`          | `.github/workflows/*.yml\|yaml` and a fixed list of other CI files (`.gitlab-ci.yml`, `.circleci/config.yml`, `Jenkinsfile`, …); at most 20                                                                                                                   |
+| `baseBranch`       | `origin/HEAD`'s branch, else `main`, `master`, `trunk` or `develop` if it exists, else the current branch, else `null`                                                                                                                                        |
+| `ghUsable`         | `true` when `ork doctor`'s `gh` check says logged in, else `false`; its detail is never read or kept                                                                                                                                                          |
+| `instructionFiles` | which of `AGENTS.md`, `CLAUDE.md` exist at the root                                                                                                                                                                                                           |
+| `agentFolders`     | the agent and skill folders of `.ork/`, `.claude/`, `.agents/`, `.opencode/` and `.ai/` that hold something, 20 names each with `and N more`; a folder linked to `.ork/` is listed once                                                                       |
+| `ork`              | whether `.ork/` and `.ork/project.yaml` exist, and the names of its workflows (`*.ork.yaml`), agents and skills, at most 20 each                                                                                                                              |
+| `history`          | the git digest (`survey-git.ts`): the last 20 commit subjects (`git log -n 20 --format=%s`), the newest 10 tags, and the 10 paths changed most in the last 200 commits; `null` ("unavailable") when `git log` fails. Subjects only: no author, email or hash. |
 
 Files are read as plain files inside the root (no link followed out of it, none
 over 256 KiB), and every name is cut to one line of at most 60 or 100
 characters. Its text form (`surveyText`) is the one `survey` input of both
-built-ins and is at most 6,000 characters, cut at the end with `…`. The lists
-are capped without a note, and where the limits bite, see
-[L406 to L411](../gaps/onboard-limits.md).
+built-ins and is at most 6,000 characters, cut at the end with `…`. The history
+line is last, after `.ork/`, so a cut takes the digest first. Each digest line
+goes through the shared secret scrubber
+([ADR-091](../../decisions/ADR-091-shared-secret-patterns-and-scrubber-in-core.md))
+before it is kept, since commit subjects, tags and paths go to the model
+provider with the rest of the survey. The lists are capped without a note, and
+where the limits bite, see [L406 to L412](../gaps/onboard-limits.md).
 
 ## Mode
 
@@ -129,9 +141,21 @@ The most this can spend: $<usd> or <tokens> tokens (propose $<a>, <n> tokens; wr
 Start? [y/N]
 ```
 
+A driver that reports no dollars (its `price` capability, from
+`@krapht/ork-integrations`; today `command-code`) gets the tokens alone, with no
+dollar figure and no price table:
+
+```
+The most this can spend: <tokens> tokens (this driver reports no dollars, so only the token caps hold; propose <n>, write <m>).
+```
+
+`claude-code` and `open-code` report dollars and keep the first line. On a
+no-dollars driver `ork validate` warns (`driver.budget`) that `budgetUsd` and
+`limits.budgetUsd` cannot see its sessions, and each session stops at its
+`budgetTokens`.
+
 Only a yes starts. No ends with exit 0: the survey already printed, nothing
-written, no run in the store. A `command-code` run is held by the tokens cap,
-since it reports no dollars.
+written, no run in the store.
 
 ## Proposing and picking
 
@@ -151,6 +175,44 @@ since it reports no dollars.
    with exit 0 and `Nothing to write: no suggestion survived the checks.`, with
    no prompt. Either way nothing is written and the propose run stays in the
    store.
+5. Ctrl-C at the pick stops with exit 130, nothing written, and prints the
+   propose run's id, what it spent (dollars where the driver reports them,
+   tokens always, from the run's result) and
+   ``Run `ork onboard` again to pick from it.`` The run stays in the store; the
+   next visit [offers it](#a-saved-proposal).
+
+## A saved proposal
+
+`ork onboard` keeps nothing of its own between visits: the proposal a person
+left at the pick is found in the store (`packages/cli/src/onboard/saved.ts`).
+After the survey and the mode line, and before any question, the command looks
+for the newest succeeded `ork:onboard-propose` run of this project (a built-in
+run recorded under its root, matched by its name and the `.ork/runs/.builtin/`
+path, so a user's workflow of the same name never matches) that no
+`ork:onboard-write` run followed. A found run is offered, with its age and id:
+
+```
+A proposal from <age> is saved (run <id>); it was read from the files as they were then.
+Use it, and skip the questions and the proposing run? Writing then costs at most <write cap>. [y/N]
+```
+
+- **Yes** skips the questions, the cost preview and the paid propose run. The
+  `survey` and `answers` are the ones the run started with (its `run.started`
+  inputs, stored with secrets masked as every event is); the suggestions are the
+  `propose` node's output in its result, checked again by
+  [the filter](./onboard-verbs.md#the-filter) against the files as they are now,
+  so a suggestion whose evidence is gone is dropped and shown with its reason.
+  The pick and the write run go on as above. The write cap is the one the
+  question names; there is no second "Start?".
+- **No**, or `--fresh`, starts as a visit with no saved proposal: the questions,
+  the preview, a new propose run.
+- Ctrl-C at the offer stops with exit 130.
+
+Nothing is offered when there is no such run, a write run (of any outcome)
+started after it, the project is another one, or no suggestion survives today's
+checks. An unfinished or failed propose run is not offered; it keeps
+`ork resume <run>` ([L391](../gaps/onboard-limits.md)). No file, state or event
+type is added for this.
 
 ## Writing and the gate
 

@@ -186,6 +186,11 @@ const blockedAfterFirst = () => {
 
 const PASS = reportOf("pass");
 
+const withFields = (fields: Record<string, unknown>): NodeReport => ({
+  ...PASS,
+  fields,
+});
+
 describe("verify:", () => {
   it("accepts a report whose check passes, in one session", async () => {
     const { result, specs, stepNodes } = await runVerified({
@@ -392,6 +397,43 @@ describe("verify:", () => {
     expect(kept("fix.1.before-1.stdout.txt")).toContain("setup line 0");
     expect(String(specs[1]?.prompt)).toContain("fix.1.verify-1.txt");
     expect(String(specs[2]?.prompt)).toContain("fix.1.verify-2.txt");
+  });
+
+  it("gives each check, and no other step, the scrubbed report it checks", async () => {
+    // Assembled, so this file holds no credential-shaped text.
+    const token = ["gh", "p_", "aB3d".repeat(9)].join("");
+    const { result, specs, runDir } = await runVerified({
+      reports: [
+        withFields({ fixed: false, note: `x ${token} plain-value-42 y` }),
+        withFields({ fixed: true }),
+      ],
+      checks: [],
+      steps: toolExecutor(spawnTool, {
+        environ: { PLAIN_SECRET: "plain-value-42" },
+        maskedNames: ["PLAIN_SECRET"],
+      }),
+      fields: { before: { script: 'test -z "${ORK_REPORT:-}"' } },
+      program: {
+        attempts: 1,
+        script:
+          'grep -q "\\"fixed\\": true" "$ORK_REPORT" || { echo "not fixed in $ORK_REPORT"; exit 1; }',
+      },
+    });
+    expect(result.ok).toBe(true);
+    expect(specs).toHaveLength(2);
+    const first = path.join(runDir, "fix.1.verify-1.report.json");
+    expect(String(specs[1]?.prompt)).toContain(`not fixed in ${first}`);
+    const kept: unknown = JSON.parse(readFileSync(first, "utf8"));
+    expect(kept).toEqual({
+      fixed: false,
+      note: "x [masked] [masked] y",
+      status: "pass",
+      summary: "reported pass",
+      artifacts: {},
+    });
+    expect(
+      readFileSync(path.join(runDir, "fix.1.verify-2.report.json"), "utf8"),
+    ).toContain('"fixed": true');
   });
 
   it("does not send a session a huge line as its reason", async () => {

@@ -26,6 +26,11 @@ builder:
   what's left of the node's `maxTurns`, but at least 20 turns, so a session that
   used its turns still gets to fix what failed. The session gets the last 8 KiB
   of what it printed and the path of a file with all of it.
+- **It can read the report.** In a `verify:` step, `$ORK_REPORT` is a JSON file
+  holding the session's report (`status`, `summary`, its fields, `artifacts`,
+  `branch`), with anything that looks like a secret masked. Ork writes it
+  outside the checkout, one file per try, so a read-only node stays read-only.
+  `before:` steps don't get it.
 - **A message that comes during a check that passes** gets one more turn, and
   the check then runs again.
 - **What it writes counts.** A check runs in the node's checkout, and a file it

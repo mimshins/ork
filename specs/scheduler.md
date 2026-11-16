@@ -228,14 +228,16 @@ From `@krapht/ork-nodes` ([builtins.ts](../packages/nodes/src/builtins.ts)):
     ([ADR-047](../decisions/ADR-047-script-identity-env-json.md)). An item of a
     `forEach` node also gets `ORK_ITEM` (a string as it is, anything else as
     JSON) and `ORK_INDEX`; the scheduler starts items with them
-    ([RFC-013](../rfcs/archived/RFC-013-for-each.md)). Then the node's `env:`,
-    rendered. A variable that is not set stops `ork run` before anything starts;
-    for a workflow it calls by name, it warns, and the call fails if reached
-    ([L86](./messaging/scripts-limits.md)). Events record `env:` names only.
-    Values read from `{{env.*}}` by the workflow, by those it calls by name, or
-    by its callers (told as names in `ORK_MASKED`), except those in `plainEnv`,
-    are scrubbed from every tool node's output, in any form a JSON encoder
-    writes them, including JSON keys and numbers
+    ([RFC-013](../rfcs/archived/RFC-013-for-each.md)). A `verify:` step also
+    gets `ORK_REPORT`, the report it checks
+    ([steps.md](./scheduler/steps.md#checks-on-a-report)). Then the node's
+    `env:`, rendered. A variable that is not set stops `ork run` before anything
+    starts; for a workflow it calls by name, it warns, and the call fails if
+    reached ([L86](./messaging/scripts-limits.md)). Events record `env:` names
+    only. Values read from `{{env.*}}` by the workflow, by those it calls by
+    name, or by its callers (told as names in `ORK_MASKED`), except those in
+    `plainEnv`, are scrubbed from every tool node's output, in any form a JSON
+    encoder writes them, including JSON keys and numbers
     ([L81](./messaging/scripts-limits.md)). A Claude session inherits the user's
     variables like any program, without these, and also gets `ORK_SESSION=1`. A
     detached run's programs and sessions also see `ORK_DETACHED=1`. Both also

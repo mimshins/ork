@@ -25,6 +25,14 @@ show in the node's events.
 
 - **When:** on a report that is not `fail` or `changes_requested`. `done`
   counts, so a session cannot report its way past a check.
+- **What it reads:** `ORK_REPORT`, set for a `verify:` step only, names a JSON
+  file Ork writes before each try: the report as the node's output holds it (its
+  fields, `status`, `summary`, `artifacts`, `branch`), every key and string
+  scrubbed (`maskSecrets`, then the run's env values, ADR-091), at
+  `<run>/<node>.<round>.verify-<try>.report.json`. Ork writes it, outside the
+  checkout, so a `readonly` node stays read-only, and each try keeps its own.
+  Nothing new is stored, so replay and resume are unchanged; every driver gets
+  it, as the check runs in the node's executor.
 - **On a failure:** the same session resumes with the reason, cut to 1 KiB, and
   the last 8 KiB of what it printed, past the 64 KiB a node's output keeps, with
   all of it in `<run>/<node>.<round>.verify-<try>.txt` when there is more (each

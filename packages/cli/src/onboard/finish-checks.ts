@@ -32,6 +32,29 @@ const textsOf = (value: unknown): string[] =>
 const allowText = (rule: string): string =>
   `allows \`${rule}\`${/^Web(?:Fetch|Search)\b/u.test(rule) ? " (network)" : ""}`;
 
+/** The built-in tools that only read the project; every other name is listed. */
+const READ_TOOLS = new Set(["Read", "Glob", "Grep", "LS", "NotebookRead"]);
+
+/** Whether an allow rule is a read-only tool; a rule of unknown shape is not. */
+const readsOnly = (rule: string): boolean => {
+  const name = /^([A-Za-z]+)(?:\(.*\))?$/u.exec(rule.trim())?.[1];
+  return name !== undefined && READ_TOOLS.has(name);
+};
+
+const allowsOf = (value: unknown): string[] =>
+  textsOf(fieldsOf(value)["allow"]).filter(rule => !readsOnly(rule));
+
+/** One line per field that is set; a changed value reads as a new line. */
+const fieldChanges = (
+  at: string,
+  fields: readonly (readonly [string, unknown])[],
+): string[] =>
+  fields.flatMap(([name, value]) =>
+    value === undefined
+      ? []
+      : [`${at} changes \`${name}\` to \`${JSON.stringify(value)}\``],
+  );
+
 /** The messages for a workflow's missing caps, `driver`, `model` and agents. */
 export const workflowProblems = (workflow: Workflow): string[] => {
   const problems: string[] = [];
@@ -80,20 +103,33 @@ export const workflowProblems = (workflow: Workflow): string[] => {
 /** What a workflow gives a session beyond reading: allows, env and network. */
 export const eyeOfWorkflow = (workflow: Workflow): string[] => {
   const items: string[] = [];
-  for (const rule of textsOf(
-    fieldsOf(fieldsOf(workflow.rules)["permissions"])["allow"],
-  )) {
+  for (const rule of allowsOf(fieldsOf(workflow.rules)["permissions"])) {
     items.push(`rules ${allowText(rule)}`);
   }
+  items.push(
+    ...fieldChanges("workflow", [
+      ["context", workflow.layers?.context],
+      ["rules.git", workflow.rules?.git],
+      ["rules.links", workflow.rules?.links],
+      ["defaults.isolation", workflow.defaults?.isolation],
+    ]),
+  );
   for (const server of textsOf(workflow.defaults?.mcp)) {
     items.push(`defaults load MCP server \`${server}\``);
   }
   for (const [id, node] of Object.entries(workflow.nodes)) {
     const fields = fieldsOf(node);
     const at = `node ${id}`;
-    for (const rule of textsOf(fieldsOf(fields["tools"])["allow"])) {
+    for (const rule of allowsOf(fields["tools"])) {
       items.push(`${at} ${allowText(rule)}`);
     }
+    items.push(
+      ...fieldChanges(at, [
+        ["context", fields["context"]],
+        ["isolation", fields["isolation"]],
+        ["tools.only", fieldsOf(fields["tools"])["only"]],
+      ]),
+    );
     for (const key of Object.keys(fieldsOf(fields["env"]))) {
       items.push(`${at} sets env \`${key}\``);
     }
@@ -114,9 +150,18 @@ export const eyeOfWorkflow = (workflow: Workflow): string[] => {
 
 /** What `.ork/project.yaml` gives every workflow beyond reading. */
 export const eyeOfProject = (project: Project): string[] => [
-  ...textsOf(fieldsOf(project.permissions)["allow"]).map(
+  ...allowsOf(project.permissions).map(
     rule => `project rules ${allowText(rule)}`,
   ),
+  ...fieldChanges("project", [
+    ["context", project.context],
+    ["heavy", project.heavy],
+    ["calls.accept", project.calls?.accept],
+    ["followUps.file", project.followUps?.file],
+    ["rules.git", project.git],
+    ["rules.links", project.links],
+    ["defaults.isolation", project.defaults?.isolation],
+  ]),
   ...["driver", "model"].flatMap(key => {
     const value = fieldsOf(project.defaults)[key];
     return value === undefined
@@ -133,3 +178,18 @@ export const newItems = (
   now: readonly string[],
   before: readonly string[],
 ): string[] => [...new Set(now)].filter(item => !before.includes(item));
+
+/** A field `before` set (`X changes \`f\` to …`) that `now` no longer sets. */
+export const removedItems = (
+  now: readonly string[],
+  before: readonly string[],
+): string[] => [
+  ...new Set(
+    before.flatMap(item => {
+      const head = /^(.* changes `[^`]+`) to /u.exec(item)?.[1];
+      return head === undefined || now.some(i => i.startsWith(`${head} to `))
+        ? []
+        : [head.replace(" changes ", " removes ")];
+    }),
+  ),
+];

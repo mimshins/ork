@@ -12,7 +12,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -32,6 +32,7 @@ import {
   auditEnv,
   bundleProject,
   cleanUp,
+  confirmed,
   readJson,
   reconUnits,
 } from "./kit.ts";
@@ -230,6 +231,52 @@ describe("security-audit.ork.yaml", () => {
       ).toBe(missing);
     },
   );
+
+  it("holds each verifier's record to the schema with a verify: step", () => {
+    const verify = Object.assign({}, field("verify", "verify"));
+    expect(Reflect.get(verify, "attempts")).toBe(3);
+    const script = String(Reflect.get(verify, "script"));
+    expect(script).toContain('cli.ts" check-record');
+    // The resumes it sends spend the node's own cap, which the sums count.
+    expect(budgetOf("verify")).toBe(0.5);
+    const project = bundleProject();
+    const record = confirmed("fp-1");
+    const run = (report: unknown) => {
+      const file = path.join(project.repo, "..", "verify.1.report.json");
+      writeFileSync(file, JSON.stringify(report));
+      return spawnSync(
+        "sh",
+        [
+          "-eu",
+          "-c",
+          script.replaceAll(BUNDLE_DIR_PLACEHOLDER, project.relative),
+        ],
+        {
+          cwd: project.repo,
+          encoding: "utf8",
+          env: {
+            ...process.env,
+            ...auditEnv({ ORK_REPORT: file }),
+          },
+        },
+      );
+    };
+    const bad = run({
+      decision: "confirmed",
+      records: [{ ...record, scope_note: "x" }],
+    });
+    expect(bad.status).not.toBe(0);
+    expect(bad.stderr).toContain("`scope_note`");
+    const fixed = run({ decision: "confirmed", records: [record] });
+    expect(fixed.stderr).toBe("");
+    expect(fixed.status).toBe(0);
+  });
+
+  it("tells ledger the previous audit's folder scan found", () => {
+    expect(
+      Reflect.get(Object.assign({}, field("ledger", "env")), "PREVIOUS"),
+    ).toBe("{{nodes.scan.output.json.previousDir}}");
+  });
 
   it("has no script that swallows a failure", () => {
     const names = Object.keys(workflow.nodes);

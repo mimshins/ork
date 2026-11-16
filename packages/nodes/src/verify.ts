@@ -17,7 +17,6 @@ import {
   type NodeResult,
   type SessionOutcome,
   slotClock,
-  type StepRun,
 } from "@krapht/ork-core";
 import { type Step, timeoutMs, type Verify } from "@krapht/ork-schema";
 
@@ -58,12 +57,30 @@ export const isAcceptance = (outcome: SessionOutcome): boolean =>
   outcome.report.status !== "fail" &&
   outcome.report.status !== "changes_requested";
 
+/**
+ * A report as the node's output holds it (its fields, `status`, `summary`,
+ * `artifacts`, and `branch`), for a check to read; `undefined` with none.
+ */
+export const checkedReport = (
+  outcome: SessionOutcome,
+): Record<string, unknown> | undefined => {
+  const { report } = outcome;
+  if (report === null) return undefined;
+  return {
+    ...report.fields,
+    status: report.status,
+    summary: report.summary,
+    artifacts: report.artifacts,
+    ...(report.branch === undefined ? {} : { branch: report.branch }),
+  };
+};
+
 /** Runs a step as a one-off tool node, in the node's checkout, as the node. */
 export const runStep = async (
   tool: NodeExecutor,
   given: ExecuteContext,
   { timeout, ...fields }: Step,
-  step: StepRun,
+  step: NonNullable<ExecuteContext["step"]>,
 ): Promise<NodeResult> => {
   const node = { type: "tool.shell" as const, ...fields };
   const ms = timeoutMs(timeout);
@@ -158,7 +175,8 @@ export const checkReport = (given: {
   verify: Verify;
   first: SessionOutcome;
   signal: AbortSignal;
-  check: () => Promise<NodeResult>;
+  /** Checks `outcome`'s report. */
+  check: (outcome: SessionOutcome) => Promise<NodeResult>;
   /** Resumes the session to fix this; `null` when it could not, or no budget. */
   resume: (
     outcome: SessionOutcome,
@@ -183,7 +201,7 @@ export const checkReport = (given: {
           output: {},
           error: "the node was stopped before its check finished",
         } satisfies NodeResult)
-      : await given.check();
+      : await given.check(outcome);
     if (check.ok && !readLate && !given.signal.aborted) {
       const later = (await given.late?.(outcome)) ?? null;
       if (later !== null) {

@@ -21,7 +21,8 @@
  *   `--mod <file>` as Command Code does, and a call the mod's
  *   `beforeToolCall` blocks ends in a `tool_hook_blocked` frame. With
  *   `--resume <id> --fork-session` its session is `fork-of-<id>`.
- *   `FAKE_CMD_FAIL_ADD=1` makes `mcp add` fail and print its arguments, so a
+ *   It leaves an empty `.commandcode/taste/taste.md` in its folder, as the real
+ *   one does. `FAKE_CMD_FAIL_ADD=1` makes `mcp add` fail and print its arguments, so a
  *   test can check the token never leaks.
  */
 
@@ -109,6 +110,9 @@ if (ork === undefined) {
   process.exit(1);
 }
 if (process.env.FAKE_ENDPOINT_FILE !== undefined) writeFileSync(process.env.FAKE_ENDPOINT_FILE, ork.url);
+// The real `cmd -p` leaves an empty taste file in the folder it runs in.
+mkdirSync(path.join(process.cwd(), ".commandcode", "taste"), { recursive: true });
+writeFileSync(path.join(process.cwd(), ".commandcode", "taste", "taste.md"), "");
 
 // node:http, not fetch: fetch gives up after 300 s with no response headers,
 // and an ask_user waits as long as the user takes to answer.

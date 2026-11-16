@@ -40,6 +40,17 @@ export const capsOfOnboard = (): Caps => {
 const usd = (n: number): string => `$${String(n)}`;
 const count = (n: number): string => n.toLocaleString("en-US");
 
-/** The preview's line, as the spec words it. */
-export const previewLine = (caps: Caps): string =>
-  `The most this can spend: ${usd(caps.usd)} or ${count(caps.tokens)} tokens (propose ${usd(caps.propose.usd)}, ${count(caps.propose.tokens)} tokens; write ${usd(caps.write.usd)}, ${count(caps.write.tokens)} tokens).`;
+/** The most the write run alone can spend, for a saved proposal's question. */
+export const writeCap = (caps: Caps, priced: boolean): string =>
+  priced
+    ? `${usd(caps.write.usd)} or ${count(caps.write.tokens)} tokens`
+    : `${count(caps.write.tokens)} tokens (this driver reports no dollars)`;
+
+/**
+ * The preview's line, as the spec words it. A driver that reports no dollars
+ * (`priced` false) gets the token caps only: no price table, no dollar figure.
+ */
+export const previewLine = (caps: Caps, priced: boolean): string =>
+  priced
+    ? `The most this can spend: ${usd(caps.usd)} or ${count(caps.tokens)} tokens (propose ${usd(caps.propose.usd)}, ${count(caps.propose.tokens)} tokens; write ${usd(caps.write.usd)}, ${count(caps.write.tokens)} tokens).`
+    : `The most this can spend: ${count(caps.tokens)} tokens (this driver reports no dollars, so only the token caps hold; propose ${count(caps.propose.tokens)}, write ${count(caps.write.tokens)}).`;

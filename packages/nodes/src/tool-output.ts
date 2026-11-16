@@ -5,7 +5,8 @@
  *   value, and one too large to keep in an event is never cut. What a program
  *   wrote is not yet scrubbed, so these files live in a private folder that a
  *   run clears when it starts and ends. A long field is kept in the run's
- *   files, named for the node, its round, and its step and try.
+ *   files, named for the node, its round, and its step and try, as is the
+ *   scrubbed report a `verify:` try checks.
  */
 
 import {
@@ -93,6 +94,21 @@ export const keepFile =
     writeFileSync(file, text);
     return file;
   };
+
+/**
+ * Writes the report a `verify:` try checks, already scrubbed, to the run's
+ * files beside what the try prints (`review.1.verify-2.report.json`). Ork
+ * writes it, outside the node's checkout, so a `readonly` node stays so.
+ */
+export const writeReportFile = (
+  context: KeptWhere,
+  report: unknown,
+): string => {
+  mkdirSync(context.runDir, { recursive: true });
+  const file = path.join(context.runDir, `${keptStem(context)}.report.json`);
+  writeFileSync(file, `${JSON.stringify(report, null, 2)}\n`);
+  return file;
+};
 
 /** Writes a node's `script:` where the run can start it, for this go only. */
 export const writeScriptFile = (

@@ -13,6 +13,7 @@ import path from "node:path";
 import {
   declaredProblem,
   type ExecuteContext,
+  maskSecrets,
   type NodeExecutor,
   scrubberOf,
 } from "@krapht/ork-core";
@@ -34,6 +35,7 @@ import {
   namesToMask,
   OUTPUT_ENV,
   renderEnv,
+  REPORT_ENV,
   safeRunner,
   secretsOf,
   STATE_ENV,
@@ -44,6 +46,8 @@ import {
   prepareOutputFile,
   readJsonOutput,
   removeOutputFile,
+  scrubbed,
+  writeReportFile,
   writeScriptFile,
 } from "./tool-output.ts";
 import { prepareStateFile } from "./tool-state.ts";
@@ -166,11 +170,20 @@ export const toolExecutor =
       node.output?.format === "json"
         ? prepareOutputFile(context.runDir, context.id, context.round)
         : undefined;
+    const report = context.step?.report;
+    const reportFile =
+      report === undefined
+        ? undefined
+        : writeReportFile(
+            context,
+            scrubbed(report, text => scrub(maskSecrets(text))),
+          );
     const env = {
       ...nodeEnv.values,
       ...identityOf(context, options.orkBin, environ, options.store),
       ...maskedEnv(namesToMask(context.workflow, environ, options.maskedNames)),
       ...(outputFile === undefined ? {} : { [OUTPUT_ENV]: outputFile }),
+      ...(reportFile === undefined ? {} : { [REPORT_ENV]: reportFile }),
       ...(node.watch === undefined
         ? {}
         : { [STATE_ENV]: prepareStateFile(context.runDir, context.id) }),

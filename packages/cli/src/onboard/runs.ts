@@ -15,7 +15,7 @@ import {
 } from "@krapht/ork-core";
 import type { Driver } from "@krapht/ork-schema";
 
-import { plain } from "../output.ts";
+import { cost, plain, shortCount } from "../output.ts";
 import { runWorkflowFile, type RunWorkflowOptions } from "../run/workflow.ts";
 import {
   type ApplyOutcome,
@@ -55,6 +55,33 @@ export type Ran =
 export const failedLines = (what: string, result: RunResult): string[] => [
   `${what} didn't finish (${result.status}), run ${result.runId}: \`ork resume ${result.runId}\` continues that run.`,
   ...result.reasons.map(plain),
+];
+
+/**
+ * What a run spent: dollars where the driver reports them, tokens always (when
+ * counted). A run on a driver with no dollars shows its tokens alone.
+ */
+export const spentLine = (spent: {
+  costUsd: number;
+  tokens?: number | undefined;
+  partial?: true | undefined;
+}): string =>
+  [
+    spent.partial === true && spent.costUsd === 0
+      ? ""
+      : `${cost(spent.costUsd)}${spent.partial === true ? " (partial)" : ""}`,
+    spent.tokens === undefined ? "" : `${shortCount(spent.tokens)} tokens`,
+  ]
+    .filter(part => part !== "")
+    .join(" · ") || "nothing";
+
+/** What Ctrl-C at the pick says: which run holds the proposal, and the way back. */
+export const interruptedLines = (run: {
+  id: string;
+  spent: string;
+}): string[] => [
+  `Stopped at the pick. The proposing run ${run.id} spent ${run.spent}.`,
+  "Run `ork onboard` again to pick from it.",
 ];
 
 const runBuiltin = async (
@@ -100,17 +127,22 @@ export const runPropose = (
     ["survey", "answers", "history"],
   );
 
-/** Runs `ork:onboard-write` for the picks. */
+/** Runs `ork:onboard-write` for the picks; `note` joins the survey when set. */
 export const runWrite = (
   options: RunOptions,
-  input: { picks: readonly Suggestion[]; survey: string; answers: string },
+  input: {
+    picks: readonly Suggestion[];
+    survey: string;
+    answers: string;
+    note: string;
+  },
 ): Promise<Ran> =>
   runBuiltin(
     options,
     WRITE,
     [
       `picks=${JSON.stringify(input.picks)}`,
-      `survey=${input.survey}`,
+      `survey=${input.note === "" ? input.survey : `${input.survey}\n\n${input.note}`}`,
       `answers=${input.answers}`,
     ],
     ["picks", "survey", "answers"],

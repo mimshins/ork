@@ -2,4 +2,45 @@
 
 _Part of [What's new](../whats-new.md)._
 
-Nothing yet: what lands on `main` is listed here until it ships.
+- **`ork onboard`'s gate lists less, and more of what matters.** The "needs your
+  eye" list no longer names plain reads (`Read`, `Glob`, `Grep`, `LS`,
+  `NotebookRead`); any other tool name is listed, and so is a rule Ork cannot
+  read. It now also lists a change, against what is committed, to `context`,
+  `heavy`, `calls.accept`, `followUps.file`, `git`, `links`, `isolation`,
+  `tools.only` and `rules.git`, and a field the writer removed that the
+  committed file set had (`removes <field>`)
+  ([guide](../guides/onboarding/the-gate-and-its-checks.md#the-gate)).
+- **`ork onboard`'s survey includes recent history.** The last 20 commit
+  subjects, the newest 10 release tags and the 10 most-changed paths of the last
+  200 commits, with no author names, emails or hashes. They go to the model
+  provider with the rest of the survey, with anything that looks like a secret
+  masked; `unavailable` when git cannot read them
+  ([guide](../guides/onboarding.md#what-it-does-in-order)).
+- **`ork onboard` shows tokens only on a driver that reports no dollars.** On
+  Command Code the cost line gives the token caps and says no dollars are
+  reported, instead of a dollar figure the driver cannot hold
+  ([guide](../guides/onboarding.md#what-it-costs)).
+- **`ork onboard` offers the proposal you left at the pick.** Ctrl-C at the pick
+  now prints the proposing run's id, what it spent and to run `ork onboard`
+  again. The next visit in that project shows the saved proposal's age and asks
+  to use it: yes skips the questions and the paid proposing run, no or `--fresh`
+  starts as before ([guide](../guides/onboarding.md#a-saved-proposal)).
+- **`ork onboard`'s writer knows the workflow format and what `ork init` made.**
+  It gets a reference (node types, ownership, edges and `maxRounds`, gates, the
+  entry node, caps, one valid workflow) and is told the starter and `.gitignore`
+  line `ork onboard` just made are not in its worktree, so it stops looking for
+  them.
+- **`ork onboard` no longer fails on Command Code's empty `taste.md`.** The
+  check on the writer's worktree ignores `.commandcode/taste/taste.md` when it
+  is a new, regular, empty file; anything else there still counts as a change
+  outside `.ork/`.
+- **`ork:security-audit` holds each verifier's record to the report schema.** A
+  check runs the skill's validator on the record and sends the verifier back
+  with what it found, up to 3 tries, so a record with a missing `scope`, an
+  extra field or `remediation.fixes` is fixed before it is accepted. The
+  report's `run-metadata.json` now lists the previous audit's folder in
+  `prior_run_paths` ([guide](../guides/security-audit.md)).
+- **A `verify:` step can read the session's report.** `$ORK_REPORT` names a JSON
+  file with the report, written by Ork outside the checkout with secrets masked,
+  so a read-only node can be checked without a place to write
+  ([guide](../guides/scripts/steps.md)).

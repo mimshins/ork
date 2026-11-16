@@ -26,7 +26,18 @@ process.env["ORK_TEST_READ_LOG"] = READ_LOG;
 delete process.env["ORK_PLAIN"];
 delete process.env["NO_COLOR"];
 process.once("exit", () => {
-  rmSync(HOME, { recursive: true, force: true });
+  // A test's straggling child (an `npm` writing its cache) can still add files
+  // as the run ends: retry, and never fail a passed run over a temp folder.
+  try {
+    rmSync(HOME, {
+      recursive: true,
+      force: true,
+      maxRetries: 5,
+      retryDelay: 100,
+    });
+  } catch {
+    // The OS clears the temp folder.
+  }
 });
 
 /**

@@ -23,6 +23,7 @@ import {
   orkOf,
   readText,
 } from "./survey-files.ts";
+import { digestLine, type GitDigest, readGitDigest } from "./survey-git.ts";
 import { capped, oneLine } from "./text.ts";
 
 const MAX_SCRIPTS = 30;
@@ -47,6 +48,11 @@ export type Survey = {
   /** The tools' agent and skill folders that exist and hold something. */
   agentFolders: AgentFolder[];
   ork: OrkHolds;
+  /**
+   * Recent commit subjects, tags and most-changed paths; `null` when git
+   * failed.
+   */
+  history: GitDigest | null;
 };
 
 /** What the survey asks of the machine; tests give their own. */
@@ -188,9 +194,10 @@ export const readSurvey = async (
     ...scripts.filter(s => CHECK_SCRIPT.test(s.name)).map(s => run(s.name)),
     ...make.filter(c => !c.includes("test")),
   ];
-  const [baseBranch, usable] = await Promise.all([
+  const [baseBranch, usable, history] = await Promise.all([
     baseBranchOf(git),
     ghUsable(),
+    readGitDigest(git),
   ]);
   return {
     packageManagers: [...managers],
@@ -205,6 +212,7 @@ export const readSurvey = async (
     ),
     agentFolders: agentFoldersOf(root),
     ork: orkOf(root),
+    history,
   };
 };
 
@@ -230,6 +238,8 @@ export const surveyText = (survey: Survey): string => {
     ork.exists
       ? `.ork/: project.yaml ${ork.projectFile ? "yes" : "no"}; workflows ${list(ork.workflows)}; agents ${list(ork.agents)}; skills ${list(ork.skills)}`
       : ".ork/: not there",
+    // Last, so the cut below takes the digest before the .ork/ line.
+    digestLine(survey.history),
   ];
   const text = lines.join("\n");
   return text.length > MAX_TEXT ? `${text.slice(0, MAX_TEXT - 1)}…` : text;

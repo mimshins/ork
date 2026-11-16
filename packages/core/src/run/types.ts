@@ -133,8 +133,8 @@ export type ExecuteContext = {
   emit: (event: RuntimeEvent) => void;
   /** Aborted when the run is interrupted, or this node is stopped. */
   signal: AbortSignal;
-  /** A Claude node's `before:` or `verify:` step and try: its own files. */
-  step?: StepRun;
+  /** A Claude node's step and try: its files, and a check's `$ORK_REPORT`. */
+  step?: StepRun & { report?: NodeOutput };
   /** The machine the run shares: its priority and the slots of heavy commands. */
   machine?: NonNullable<SessionPorts["machine"]>;
   /** Records that a `once: true` check was skipped (`verify.skipped`). */

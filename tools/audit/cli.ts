@@ -13,6 +13,8 @@
  *     `coverage-ledger.json`; prints the `hunt` list.
  *   - `consolidate`: `{ hunts, gaps? }` in; prints `unique` (to the verifiers)
  *     and `unreviewed` (`needs_validation` records).
+ *   - `check-record`: the `verify` node's `verify:` check of the report at
+ *     `$ORK_REPORT`; fails with the reasons its record would not pass.
  *   - `findings`: `{ results, unique }` (the verifiers' answers and the
  *     candidates they got), or `{ records }`, in; writes `findings.json`.
  *   - `finalize`: `{ rechecks }` in; applies the Phase 5 answers.
@@ -24,6 +26,7 @@
 
 import { readFileSync, rmSync } from "node:fs";
 
+import { runCheckRecord } from "./check-record.ts";
 import { runFinalize } from "./finalize.ts";
 import { runConsolidate } from "./findings.ts";
 import { checkInputs } from "./inputs.ts";
@@ -77,6 +80,7 @@ const commands: Record<string, (cwd: string) => unknown> = {
       critiqued: input["critiqued"] !== false,
     });
   },
+  "check-record": cwd => runCheckRecord(cwd, process.env),
   findings: cwd => {
     const input = structuredInput();
     const records = asArray(input["records"]);

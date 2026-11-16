@@ -3,7 +3,12 @@
  *   limits, the total is their sum, and the line says each part.
  */
 
-import { builtinWorkflowText } from "@krapht/ork-core";
+import {
+  budgetWarnings,
+  builtinWorkflowText,
+  driverRefusals,
+} from "@krapht/ork-core";
+import { AGENT_DRIVERS } from "@krapht/ork-integrations";
 import { parseWorkflow } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
 
@@ -19,6 +24,9 @@ const limitsOf = (name: string) => {
   return parsed.ok ? parsed.workflow.limits : undefined;
 };
 
+const priced = (id: string) =>
+  AGENT_DRIVERS.find(d => d.id === id)?.capabilities.price;
+
 describe("capsOfOnboard", () => {
   it("sums both built-ins' limits", () => {
     const caps = capsOfOnboard();
@@ -32,16 +40,31 @@ describe("capsOfOnboard", () => {
     expect(caps.tokens).toBeGreaterThan(0);
   });
 
+  const caps = {
+    propose: { usd: 3, tokens: 600000 },
+    write: { usd: 6, tokens: 1200000 },
+    usd: 9,
+    tokens: 1800000,
+  };
+
   it("words the preview with the total and each part", () => {
-    const caps = {
-      propose: { usd: 3, tokens: 600000 },
-      write: { usd: 6, tokens: 1200000 },
-      usd: 9,
-      tokens: 1800000,
-    };
-    expect(previewLine(caps)).toBe(
+    expect(previewLine(caps, true)).toBe(
       "The most this can spend: $9 or 1,800,000 tokens (propose $3, 600,000 tokens; write $6, 1,200,000 tokens).",
     );
+  });
+
+  it("shows tokens only, no dollars, for a driver that reports none", () => {
+    const line = previewLine(caps, false);
+    expect(line).toBe(
+      "The most this can spend: 1,800,000 tokens (this driver reports no dollars, so only the token caps hold; propose 600,000, write 1,200,000).",
+    );
+    expect(line).not.toContain("$");
+  });
+
+  it("reads which drivers report dollars from their descriptors", () => {
+    expect(priced("claude-code")).toBe(true);
+    expect(priced("open-code")).toBe(true);
+    expect(priced("command-code")).toBe(false);
   });
 });
 
@@ -68,4 +91,38 @@ describe("the built-ins name no model or driver", () => {
   it.each([PROPOSE, WRITE])("%s", name => {
     expect(namedModelsOf(name)).toEqual([]);
   });
+});
+
+/** What `ork validate --driver <driver>` finds on a built-in's session nodes. */
+const driverFindings = (name: string, driver: "open-code" | "command-code") => {
+  const parsed = parseWorkflow(builtinWorkflowText(name) ?? "");
+  if (!parsed.ok) throw new Error(`${name} does not parse`);
+  const choice = { override: driver };
+  return {
+    refused: driverRefusals(parsed.workflow, AGENT_DRIVERS, choice),
+    warned: budgetWarnings(parsed.workflow, AGENT_DRIVERS, choice),
+  };
+};
+
+describe("the built-ins on drivers other than claude-code", () => {
+  it.each([PROPOSE, WRITE])(
+    "%s runs on command-code with a no-dollars warning, never a refusal",
+    name => {
+      const { refused, warned } = driverFindings(name, "command-code");
+      expect(refused).toEqual([]);
+      expect(warned.length).toBeGreaterThan(0);
+      expect(warned.every(w => w.message.includes("reports no dollars"))).toBe(
+        true,
+      );
+    },
+  );
+
+  it.each([PROPOSE, WRITE])(
+    "%s runs on open-code with no warning, as it reports dollars",
+    name => {
+      const { refused, warned } = driverFindings(name, "open-code");
+      expect(refused).toEqual([]);
+      expect(warned).toEqual([]);
+    },
+  );
 });

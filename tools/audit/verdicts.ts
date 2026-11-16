@@ -37,9 +37,17 @@ export const skillDir = (env: Env): string =>
   env["AUDIT_SKILL_DIR"] ??
   path.resolve(import.meta.dirname, "../../.ai/skills/security-audit");
 
-/** What the skill's validator says about `records`, or "" when they pass. */
-const validatorError = (dir: string, env: Env, records: Json[]): string => {
-  const file = path.join(dir, "check-one.json");
+/**
+ * What the skill's validator says about `records`, or "" when they pass. `name`
+ * is the scratch file's, in `dir`: steps that run at once each need their own.
+ */
+export const validatorError = (
+  dir: string,
+  env: Env,
+  records: Json[],
+  name = "check-one.json",
+): string => {
+  const file = path.join(dir, name);
   writeJson(file, records);
   const run = spawnSync(
     process.execPath,
@@ -50,6 +58,38 @@ const validatorError = (dir: string, env: Env, records: Json[]): string => {
   return run.status === 0
     ? ""
     : `${run.stdout}${run.stderr}`.trim().slice(0, 400);
+};
+
+/**
+ * A verifier's record as `findings.json` takes it: Ork's trace kinds, and the
+ * verdict and fingerprint filled from the decision and the candidate.
+ */
+export const finalRecord = (
+  record: Json,
+  decision: string,
+  fingerprint: unknown,
+): Json => ({
+  ...record,
+  ...(record["trace"] === undefined
+    ? {}
+    : { trace: labelTrace(record["trace"]) }),
+  verdict: record["verdict"] ?? decision,
+  fingerprint: str(record["fingerprint"]) || str(fingerprint),
+});
+
+/** Why `findings` would refuse a final record, or "" when it takes it. */
+export const recordError = (
+  dir: string,
+  env: Env,
+  final: Json,
+  decision: string,
+  name?: string,
+): string => {
+  if (final["verdict"] !== decision) {
+    return "the record's verdict disagrees with the verifier's decision";
+  }
+  const error = validatorError(dir, env, [final], name);
+  return error && `the record fails the skill's validator: ${error}`;
 };
 
 /**
@@ -74,22 +114,11 @@ const verifiedRecords = (
     const final =
       record === undefined
         ? undefined
-        : {
-            ...record,
-            ...(record["trace"] === undefined
-              ? {}
-              : { trace: labelTrace(record["trace"]) }),
-            verdict: record["verdict"] ?? decision,
-            fingerprint:
-              str(record["fingerprint"]) || str(candidate["fingerprint"]),
-          };
-    const error = final === undefined ? "" : validatorError(dir, env, [final]);
+        : finalRecord(record, decision, candidate["fingerprint"]);
     const reason =
       final === undefined
         ? "no verifier record came back"
-        : final.verdict === decision
-          ? error && `the record fails the skill's validator: ${error}`
-          : "the record's verdict disagrees with the verifier's decision";
+        : recordError(dir, env, final, decision);
     if (final !== undefined && reason === "") {
       records.push(final);
     } else {

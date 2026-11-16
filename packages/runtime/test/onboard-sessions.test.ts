@@ -148,6 +148,34 @@ describe("ork:onboard-propose's session", () => {
   );
 });
 
+describe("the token caps of the built-ins on drivers that report no dollars", () => {
+  // `ork onboard` shows only the token caps for such a driver, so a session
+  // there must stop at its `budgetTokens` with no dollar cap beside it.
+  const noDollars = CONTRACT.filter(entry => !entry.capabilities.price);
+
+  it("covers command-code and open-code's fake tools", () => {
+    expect(CONTRACT.map(entry => entry.driver)).toEqual(
+      expect.arrayContaining(["command-code", "open-code"]),
+    );
+    expect(noDollars.map(entry => entry.driver)).toEqual(["command-code"]);
+  });
+
+  it.each(CONTRACT.filter(entry => entry.driver !== "claude-code"))(
+    "stops $driver's propose session at its budgetTokens, tokens only",
+    async entry => {
+      const { tools } = propose();
+      const outcome = outcomeOf(
+        await collect(
+          start(entry, "spend", entry.fakeTool, { tools, budgetTokens: 300 })
+            .session,
+        ),
+      );
+      expect(outcome.end?.kind).toBe("budget_limit");
+      expect(outcome.end?.message).toContain("of 300 tokens)");
+    },
+  );
+});
+
 describe("ork:onboard-write's session", () => {
   it("can read and edit, with no shell", () => {
     const spec = write();

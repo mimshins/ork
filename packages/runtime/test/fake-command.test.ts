@@ -7,7 +7,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { lstatSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,7 +23,7 @@ const FAKE = fileURLToPath(
 const run = (
   scenario: string,
   extra: string[] = [],
-): { status: number | null; lines: unknown[] } => {
+): { status: number | null; lines: unknown[]; cwd: string } => {
   const cwd = mkdtempSync(path.join(tmpdir(), "ork-fake-cmd-"));
   const env = { ...process.env, HOME: cwd, FAKE_SCENARIO: scenario };
   spawnSync(FAKE, ["mcp", "add", "--scope", "local", "ork", "http://x/mcp"], {
@@ -45,6 +45,7 @@ const run = (
   );
   return {
     status: done.status,
+    cwd,
     lines: done.stdout
       .trim()
       .split("\n")
@@ -57,6 +58,12 @@ describe("the fake cmd", () => {
     const done = spawnSync(FAKE, ["--version"], { encoding: "utf8" });
     expect(done.status).toBe(0);
     expect(done.stdout).toBe("1.88.5\n");
+  });
+
+  it("leaves an empty .commandcode/taste/taste.md in its folder, as the real cmd does", () => {
+    const { cwd } = run("max-turns");
+    const stat = lstatSync(path.join(cwd, ".commandcode/taste/taste.md"));
+    expect([stat.isFile(), stat.size]).toEqual([true, 0]);
   });
 
   it("ends a session out of turns with a max_turns result and exit code 8", () => {

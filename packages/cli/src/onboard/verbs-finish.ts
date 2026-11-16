@@ -26,6 +26,7 @@ import {
   eyeOfProject,
   eyeOfWorkflow,
   newItems,
+  removedItems,
   workflowProblems,
 } from "./finish-checks.ts";
 import {
@@ -207,7 +208,8 @@ const eyeList = (
     const old = textAtHead(options.root, file);
     const parsed = old === null ? null : parseWorkflow(old);
     const before = parsed?.ok === true ? eyeOfWorkflow(parsed.workflow) : [];
-    return newItems(eyeOfWorkflow(workflow), before).map(
+    const now = eyeOfWorkflow(workflow);
+    return [...newItems(now, before), ...removedItems(now, before)].map(
       item => `${file}: ${item}`,
     );
   });
@@ -218,9 +220,10 @@ const eyeList = (
   const old = textAtHead(options.root, PROJECT_FILE);
   const parsed = old === null ? null : parseProject(old);
   const before = parsed?.ok === true ? eyeOfProject(parsed.project) : [];
+  const eye = eyeOfProject(now.project);
   return [
     ...items,
-    ...newItems(eyeOfProject(now.project), before).map(
+    ...[...newItems(eye, before), ...removedItems(eye, before)].map(
       item => `${PROJECT_FILE}: ${item}`,
     ),
   ];

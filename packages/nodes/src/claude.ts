@@ -43,6 +43,7 @@ import {
 } from "./session-turns.ts";
 import { runCapsOf, startBudgets } from "./start-budgets.ts";
 import {
+  checkedReport,
   checkedResult,
   checkFailedMessage,
   checkReport,
@@ -243,9 +244,13 @@ export const claudeExecutor =
       verify,
       first: outcome,
       signal: context.signal,
-      check: () => {
+      check: current => {
         tries += 1;
-        return runStep(options.steps ?? noSteps, context, verify, step());
+        const report = checkedReport(current);
+        return runStep(options.steps ?? noSteps, context, verify, {
+          ...step(),
+          ...(report === undefined ? {} : { report }),
+        });
       },
       late: lateTurn,
       resume: async (current, check) => {

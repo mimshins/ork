@@ -47,6 +47,9 @@ export const OUTPUT_ENV = "ORK_OUTPUT";
 /** A file a `watch:` node's program keeps between looks (RFC-011). */
 export const STATE_ENV = "ORK_STATE";
 
+/** The report a `verify:` step checks, scrubbed, as a JSON file. */
+export const REPORT_ENV = "ORK_REPORT";
+
 /** The variables a caller's run reads, for a run it calls to mask too. */
 const MASKED_ENV = "ORK_MASKED";
 
@@ -64,6 +67,7 @@ const IDENTITY_KEYS = new Set([
   "ORK_BIN",
   OUTPUT_ENV,
   STATE_ENV,
+  REPORT_ENV,
   "ORK_ITEM",
   "ORK_INDEX",
   // A detached run's own marker: an `ork` its nodes start is not detached.

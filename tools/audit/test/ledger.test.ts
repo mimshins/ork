@@ -106,6 +106,30 @@ describe("the profile's counts", () => {
   );
 });
 
+/** `prior_run_paths` of a ledger written with `PREVIOUS` set to `previous`. */
+const priorPaths = (previous: string): unknown => {
+  const env = auditEnv({ PROFILE: "quick", PREVIOUS: previous });
+  const { outputDir } = runLedger(gitRepo({ "a.txt": "x" }), env, {
+    units: reconUnits(1),
+  });
+  const metadata: unknown = JSON.parse(
+    readFileSync(path.join(outputDir, "run-metadata.json"), "utf8"),
+  );
+  return Reflect.get(Object.assign({}, metadata), "prior_run_paths");
+};
+
+describe("run-metadata.json", () => {
+  it("lists the previous audit's folder scan found", () => {
+    expect(priorPaths("/home/me/.ork/audits/p/run-0")).toEqual([
+      "/home/me/.ork/audits/p/run-0",
+    ]);
+  });
+
+  it("lists none when scan found none", () => {
+    expect(priorPaths("")).toEqual([]);
+  });
+});
+
 describe("consolidate", () => {
   it("dedupes by fingerprint and passes on at most 12 under quick", () => {
     const result = consolidate("quick", hunts(15, 3));

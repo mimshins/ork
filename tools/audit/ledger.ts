@@ -261,7 +261,8 @@ export const runLedger = (
     selected_companion_files: [
       ...new Set(ledger.flatMap(unit => unit.selected_companion_blocks)),
     ],
-    prior_run_paths: [],
+    // The folder `scan` found the previous audit in, passed on as `PREVIOUS`.
+    prior_run_paths: [env["PREVIOUS"] ?? ""].filter(found => found !== ""),
     shared_file_owners: {},
     // The skill requires a partial-coverage statement in the report.
     partial_coverage: profile === "quick" || deferred > 0,

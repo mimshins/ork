@@ -140,6 +140,7 @@ A program also sees:
 | `ORK_INDEX`    | In a node with `forEach`, the item's place, from 0                           |
 | `ORK_OUTPUT`   | With `output: { format: json }`, the file above                              |
 | `ORK_STATE`    | With [`watch:`](./watching.md), a file kept between looks                    |
+| `ORK_REPORT`   | In a [`verify:`](./scripts/steps.md) step, the session's report, as JSON     |
 | `ORK_MASKED`   | The names of the variables to mask, never values                             |
 
 These say who a program is but don't limit what it can do: it runs as you. A

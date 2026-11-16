@@ -25,7 +25,8 @@ ork onboard [--driver <id>] [--review | --fresh]
 
 - `--driver <id>`: the driver both built-in runs use; skips the question.
 - `--review`: review mode even when the project holds nothing to review.
-- `--fresh`: first-visit mode even when it does. With `--review`, refused.
+- `--fresh`: first-visit mode even when it does, and it ignores a saved
+  proposal. With `--review`, refused.
 - The global `--plain` applies, as everywhere ([terminal](./terminal.md)).
 
 `ork onboard` needs a terminal: it asks, and it has no flags for the answers or
@@ -43,6 +44,7 @@ the picks.
   - [The questions](./onboard-flow.md#the-questions)
   - [The cost preview](./onboard-flow.md#the-cost-preview)
   - [Proposing and picking](./onboard-flow.md#proposing-and-picking)
+  - [A saved proposal](./onboard-flow.md#a-saved-proposal)
   - [Writing and the gate](./onboard-flow.md#writing-and-the-gate)
   - [Errors](./onboard-flow.md#errors)
 - [Built-ins, verbs and trust](./onboard-verbs.md)

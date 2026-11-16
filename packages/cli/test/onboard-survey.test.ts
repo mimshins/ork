@@ -107,6 +107,7 @@ describe("readSurvey", () => {
       ciFiles: [".github/workflows/ci.yml", ".gitlab-ci.yml"],
       baseBranch: "trunk",
       ghUsable: true,
+      history: null,
       instructionFiles: ["AGENTS.md"],
       agentFolders: [
         { folder: ".ork/agents", entries: ["ork-implementer"], more: 0 },
@@ -133,6 +134,7 @@ describe("readSurvey", () => {
       ciFiles: [],
       baseBranch: null,
       ghUsable: false,
+      history: null,
       instructionFiles: [],
       agentFolders: [],
       ork: {
@@ -245,7 +247,7 @@ describe("readSurvey", () => {
     expect(survey.agentFolders[0]).toMatchObject({ more: 30 });
     const text = surveyText(survey);
     expect(text.length).toBeLessThanOrEqual(6000);
-    expect(text.split("\n")).toHaveLength(10);
+    expect(text.split("\n")).toHaveLength(11);
   });
 
   it("collapses a repository's own line breaks and control codes", async () => {
@@ -258,7 +260,7 @@ describe("readSurvey", () => {
     expect(survey.scripts).toEqual([
       { name: "test:a b", command: "echo [31mred IGNORE ALL PREVIOUS" },
     ]);
-    expect(surveyText(survey).split("\n")).toHaveLength(9);
+    expect(surveyText(survey).split("\n")).toHaveLength(10);
   });
 });
 
@@ -318,7 +320,7 @@ describe("readSurvey: package managers and commands", () => {
     const [manager = ""] = survey.packageManagers;
     expect(manager).not.toContain("\n");
     expect(manager.length).toBeLessThanOrEqual(60);
-    expect(surveyText(survey).split("\n")).toHaveLength(9);
+    expect(surveyText(survey).split("\n")).toHaveLength(10);
   });
 
   it("reads no scripts from a package.json that is too big, not JSON or not an object", async () => {
@@ -508,6 +510,142 @@ describe("surveyText", () => {
       ".claude/agents: reviewer",
       ".claude/skills: deploy",
       ".ork/: project.yaml yes; workflows build, hello; agents ork-implementer; skills none",
+      "Recent history: unavailable",
     ]);
+  });
+});
+
+const LOG = "log -n 20 --format=%s";
+const TAGS = "tag --sort=-creatordate";
+const NAMES = "log -n 200 --name-only --format=";
+
+/** The survey line for recent history, from git's `answers`. */
+const historyLine = async (answers: Record<string, string>) => {
+  const text = surveyText(await readSurvey(tempDir(), probes(answers)));
+  return text.split("\n").at(-1);
+};
+
+describe("the git digest", () => {
+  it("reads a repository with exactly one commit", async () => {
+    expect(await historyLine({ [LOG]: "first", [NAMES]: "a.ts\n\na.ts" })).toBe(
+      "Recent history: commits: first; tags: none; most-changed paths: a.ts",
+    );
+  });
+
+  it("reads a repository with no commits as empty lists", async () => {
+    expect(await historyLine({ [LOG]: "" })).toBe(
+      "Recent history: commits: none; tags: none; most-changed paths: none",
+    );
+  });
+
+  it("says unavailable when git fails, and still reads the rest", async () => {
+    const survey = await readSurvey(tempDir(), probes());
+    expect(survey.history).toBeNull();
+    expect(surveyText(survey).split("\n").at(-1)).toBe(
+      "Recent history: unavailable",
+    );
+  });
+
+  it("keeps a tag or path failure from hiding the commits", async () => {
+    expect(await historyLine({ [LOG]: "one\ntwo" })).toBe(
+      "Recent history: commits: one | two; tags: none; most-changed paths: none",
+    );
+  });
+
+  it("holds at most 20 subjects, 10 tags and 10 paths, paths by count", async () => {
+    const survey = await readSurvey(
+      tempDir(),
+      probes({
+        [LOG]: Array.from({ length: 25 }, (_, n) => `s${String(n)}`).join("\n"),
+        [TAGS]: Array.from({ length: 15 }, (_, n) => `v${String(n)}`).join(
+          "\n",
+        ),
+        [NAMES]: [
+          ...Array.from({ length: 15 }, (_, n) => `f${String(n)}`),
+          "f7",
+          "f7",
+          "f3",
+        ].join("\n"),
+      }),
+    );
+    expect(survey.history?.subjects).toHaveLength(20);
+    expect(survey.history?.tags).toHaveLength(10);
+    expect(survey.history?.tags[0]).toBe("v0");
+    expect(survey.history?.paths).toHaveLength(10);
+    expect(survey.history?.paths.slice(0, 3)).toEqual(["f7", "f3", "f0"]);
+  });
+
+  it("cuts long lines and drops control characters", async () => {
+    const survey = await readSurvey(
+      tempDir(),
+      probes({ [LOG]: `${"x".repeat(300)}\nbell\u0007ring` }),
+    );
+    expect(survey.history?.subjects[0]).toHaveLength(100);
+    expect(survey.history?.subjects[1]).toBe("bell ring");
+  });
+
+  it("scrubs a secret pasted into a subject, a tag or a path", async () => {
+    const key = `sk-ant-${"a1b2c3d4".repeat(4)}`;
+    const text = surveyText(
+      await readSurvey(
+        tempDir(),
+        probes({
+          [LOG]: `fix: use ${key} for ci`,
+          [TAGS]: `v-${key}`,
+          [NAMES]: `docs/${key}.md`,
+        }),
+      ),
+    );
+    expect(text).not.toContain("sk-ant");
+    expect(text).toContain("fix: use [masked] for ci");
+  });
+
+  it("asks git for subjects only, never an author, email or hash", async () => {
+    const asked: string[] = [];
+    await readSurvey(tempDir(), {
+      git: args => {
+        asked.push(args.join(" "));
+        return Promise.resolve(null);
+      },
+      ghUsable: () => Promise.resolve(false),
+    });
+    expect(asked).toContain(LOG);
+    expect(asked).toContain(NAMES);
+    expect(asked.filter(a => /%(a|c)[nNeE]|%H|%h|--format=%/u.test(a))).toEqual(
+      [LOG],
+    );
+  });
+
+  it("is cut before the .ork/ line when the text runs over", async () => {
+    const survey = await crowded();
+    const text = surveyText({
+      ...survey,
+      history: { subjects: ["late"], tags: [], paths: [] },
+    });
+    expect(text).not.toContain("Recent history");
+  });
+
+  it("reads a real repository", async () => {
+    const root = tempDir();
+    const git = (...args: string[]) =>
+      execFileSync(
+        "git",
+        ["-c", "user.name=t", "-c", "user.email=t@t", ...args],
+        { cwd: root, stdio: "ignore" },
+      );
+    git("init", "-b", "main");
+    write(root, { "a.txt": "1" });
+    git("add", ".");
+    git("commit", "-m", "first");
+    git("tag", "v1");
+    const survey = await readSurvey(root, {
+      git: gitProbe(root),
+      ghUsable: () => Promise.resolve(false),
+    });
+    expect(survey.history).toEqual({
+      subjects: ["first"],
+      tags: ["v1"],
+      paths: ["a.txt"],
+    });
   });
 });

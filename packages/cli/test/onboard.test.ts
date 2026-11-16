@@ -33,6 +33,13 @@ import {
   WRITTEN,
 } from "./fixtures/onboard.ts";
 
+/** What the preview says: dollars and tokens, or tokens only with no dollars. */
+const PREVIEW = {
+  "claude-code": "The most this can spend: $",
+  "open-code": "The most this can spend: $",
+  "command-code": "reports no dollars, so only the token caps hold",
+} as const;
+
 describe.each(DRIVERS)("ork onboard on %s", driver => {
   it("goes from survey to a kept branch holding a canonical, valid workflow", async () => {
     const flow = await onboard({ driver, script: SCRIPT });
@@ -44,7 +51,7 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
     for (const line of [
       "What Ork read of this project:",
       "Mode: first visit",
-      "The most this can spend: $",
+      "The most this can spend: ",
       "▸ proposing workflows",
       "1. check-on-change",
       "▸ writing 1 workflow(s)",
@@ -78,6 +85,21 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
         .map(run => run.workflow)
         .toSorted(),
     ).toEqual(["ork-onboard-propose", "ork-onboard-write"]);
+  });
+
+  it("words the preview by whether the driver reports dollars", async () => {
+    const { out } = await onboard({ driver, script: SCRIPT });
+    expect(out).toContain(PREVIEW[driver]);
+  });
+
+  it("tells the writer the files `ork init` made are not in its worktree", async () => {
+    const { store } = await onboard({ driver, script: SCRIPT });
+    const survey = String(
+      startedOf(store, "ork-onboard-write").inputs["survey"],
+    );
+    expect(survey).toContain("Not in your worktree:");
+    expect(survey).toContain("hello.ork.yaml");
+    expect(survey).toContain(".gitignore");
   });
 
   it("starts each built-in with every input marked untrusted", async () => {
@@ -150,6 +172,27 @@ describe.each(DRIVERS)("ork onboard on %s", driver => {
     });
     const { inputs } = startedOf(store, "ork-onboard-propose");
     expect(String(inputs["history"])).toContain("check-on-change");
+  });
+});
+
+describe("ork onboard, the writer's note about `ork init`", () => {
+  it("is not sent when .ork/ was there before", async () => {
+    const first = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      gate: "discard",
+    });
+    const second = await onboard({
+      driver: "claude-code",
+      script: SCRIPT,
+      root: first.root,
+    });
+    const survey = String(
+      startedOf(second.store, "ork-onboard-write").inputs["survey"],
+    );
+    expect(second.code).toBe(0);
+    expect(survey).toContain(".ork/:");
+    expect(survey).not.toContain("Not in your worktree");
   });
 });
 
