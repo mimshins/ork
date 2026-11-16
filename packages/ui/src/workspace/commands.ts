@@ -214,47 +214,52 @@ const layoutCommands = (
   ];
 };
 
-const THEMES: readonly { theme: Preferences["theme"]; title: string }[] = [
-  { theme: "system", title: "Follow the system" },
-  { theme: "dark", title: "Dark" },
-  { theme: "light", title: "Light" },
-];
+type ViewKey = "theme" | "density" | "motion";
 
-const DENSITIES: readonly {
-  density: Preferences["density"];
-  title: string;
-}[] = [
-  { density: "compact", title: "Compact" },
-  { density: "comfortable", title: "Comfortable" },
-];
+/** One View preference's commands: each sets it, the one in use says so. */
+const choicesOf =
+  (workspace: Workspace, preferences: PreferenceStore, chosen: Preferences) =>
+  <K extends ViewKey>(
+    key: K,
+    word: string,
+    choices: readonly (readonly [Preferences[K], string])[],
+  ): Command[] =>
+    choices.map(([value, title]) => ({
+      id: `${key}-${value}`,
+      title: `${word}: ${title}`,
+      group: "View",
+      run: () => {
+        preferences.update({ [key]: value });
+        workspace.announce(`${word}: ${title}.`);
+      },
+      disabled:
+        chosen[key] === value
+          ? `This is the ${word.toLowerCase()} now.`
+          : undefined,
+    }));
 
 const viewCommands = (
   workspace: Workspace,
   preferences: PreferenceStore,
   chosen: Preferences,
-): Command[] => [
-  ...THEMES.map(({ theme, title }): Command => ({
-    id: `theme-${theme}`,
-    title: `Theme: ${title}`,
-    group: "View",
-    run: () => {
-      preferences.update({ theme });
-      workspace.announce(`Theme: ${title}.`);
-    },
-    disabled: chosen.theme === theme ? "This is the theme now." : undefined,
-  })),
-  ...DENSITIES.map(({ density, title }): Command => ({
-    id: `density-${density}`,
-    title: `Density: ${title}`,
-    group: "View",
-    run: () => {
-      preferences.update({ density });
-      workspace.announce(`Density: ${title}.`);
-    },
-    disabled:
-      chosen.density === density ? "This is the density now." : undefined,
-  })),
-];
+): Command[] => {
+  const of = choicesOf(workspace, preferences, chosen);
+  return [
+    ...of("theme", "Theme", [
+      ["system", "Follow the system"],
+      ["dark", "Dark"],
+      ["light", "Light"],
+    ]),
+    ...of("density", "Density", [
+      ["compact", "Compact"],
+      ["comfortable", "Comfortable"],
+    ]),
+    ...of("motion", "Motion", [
+      ["system", "Follow the system"],
+      ["reduce", "Reduce"],
+    ]),
+  ];
+};
 
 const orkCommands = (state: AppState): Command[] => [
   {

@@ -45,6 +45,17 @@ const tabsBeside = (name: string): string[] =>
       ?.querySelectorAll('[role="tab"]') ?? []),
   ].map(tab => tab.getAttribute("aria-label") ?? "");
 
+/** The first tab of a group that has more than one, where an arrow moves. */
+const firstOfSharedGroup = (): HTMLElement => {
+  const shared = Array.from(
+    document.querySelectorAll('[role="tablist"]'),
+    list => list.querySelectorAll<HTMLElement>('[role="tab"]'),
+  ).find(tabs => tabs.length > 1);
+  const tab = shared?.item(0);
+  if (tab === undefined || tab === null) throw new Error("no shared group");
+  return tab;
+};
+
 const focused = () => document.activeElement?.getAttribute("aria-label");
 
 const reload = async (first: ReturnType<typeof openShell>) => {
@@ -217,6 +228,16 @@ describe("the dock", () => {
 
   // Which group is the neighbor depends on drawn positions, which jsdom lacks:
   // here the panel takes the workspace's edge, and the tab case is a browser check.
+  it("keeps focus on a tab its group is resized from", async () => {
+    openShell();
+    const focusedTab = firstOfSharedGroup();
+    act(() => {
+      focusedTab.focus();
+    });
+    await keys().keyboard("{Alt>}{Shift>}{ArrowRight}{/Shift}{/Alt}");
+    expect(document.activeElement).toBe(focusedTab);
+  });
+
   it("moves a panel by keyboard and says so", async () => {
     const { workspace } = openShell();
     act(() => {
@@ -395,5 +416,19 @@ describe("the saved layout", () => {
     );
     await reload(first);
     expect(tabNames()).toEqual(ALL);
+  });
+});
+
+describe("the Follow-ups tab", () => {
+  it("is named with the due count it shows", async () => {
+    const { state } = openShell();
+    await act(async () => {
+      await state.followUpsDue.setValue({ count: 3, items: [] });
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("tab", { name: "Follow-ups, 3 due" }),
+      ).toBeDefined();
+    });
   });
 });

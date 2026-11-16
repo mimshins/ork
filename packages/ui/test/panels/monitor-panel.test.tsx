@@ -208,12 +208,12 @@ describe("the Monitor", () => {
     });
   });
 
-  it("goes to a node's controls with the menu key", async () => {
+  it("goes to a node's controls with the menu key, on the group not Pause", async () => {
     await open();
     fireEvent.keyDown(graphCard("kid"), { key: "ContextMenu" });
     await vi.waitFor(() => {
       expect(document.activeElement).toBe(
-        screen.getByRole("button", { name: "Pause kid" }),
+        screen.getByRole("group", { name: "Controls for kid" }),
       );
     });
   });

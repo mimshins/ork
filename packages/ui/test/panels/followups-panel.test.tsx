@@ -43,7 +43,7 @@ describe("the list", () => {
   it("groups by due, then by for, with a heading each", async () => {
     await openFollowUps();
     const headings = screen
-      .getAllByRole("heading", { level: 4 })
+      .getAllByRole("heading", { level: 3 })
       .map(h => h.textContent);
     expect(headings).toEqual([
       "Now · 1",

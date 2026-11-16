@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L385, and the next chore is
+closes it. Ids are never reused: the next limit is L388, and the next chore is
 C17 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -491,6 +491,19 @@ Found closing the list QA follow-ups (list filters):
 - **L379 · `ork watch --status` is a boolean.** Every other `--status` takes a
   value (`ps`, `feedback list`, `follow-ups list`); `watch` uses it to mean
   "show the status". A subcommand (`ork watch status`) would match the others.
+- **L385 · Graph cards' names hold more than they show, in axe's terms.** A
+  card's name ("build, running, claude-sonnet-5-5, leader") starts with what it
+  shows, but a cost drawn as `$0.42` is `$0.4181` in the name, so axe reports
+  `label-content-name-mismatch` (WCAG 2.5.3). Every drawn string, as drawn,
+  should be in the name in order (found by the 2026-11-16 accessibility pass).
+- **L386 · Notifications and Worktrees take a tab stop per control.** 99 stops
+  in Notifications (48 of them disabled "Mark read" on read items) and 44 in
+  Worktrees. Both work by keyboard; one roving stop per list, as the runs list
+  and the ownership tree have, and the word "Read" in place of a disabled
+  button, would cut them.
+- **L387 · Graph zoom and pan buttons don't declare their keys.** Their tips
+  show `+`, `-`, `0` and the arrows, but `IconButton` sets no
+  `aria-keyshortcuts` from its `keys`, as the panel buttons do.
 
 ## Chores
 

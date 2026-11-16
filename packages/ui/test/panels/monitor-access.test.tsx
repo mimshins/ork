@@ -125,17 +125,17 @@ describe("the Monitor, for assistive tech", () => {
     expect(document.activeElement?.tagName).not.toBe("H2");
   });
 
-  it("goes back to the node from its controls with Escape", async () => {
+  it("opens the controls on their group, not on Pause, and goes back with one Escape", async () => {
     const user = userEvent.setup();
     await open();
     treeRow("kit").focus();
     await user.keyboard("{Shift>}{F10}{/Shift}");
-    const section = await screen.findByRole("region", { name: "Node kit" });
-    await vi.waitFor(() => {
-      expect(section.contains(document.activeElement)).toBe(true);
+    const group = await screen.findByRole("group", {
+      name: "Controls for kit",
     });
-    // The first closes the tip that focus opened, as a tip's Escape should.
-    await user.keyboard("{Escape}");
+    await vi.waitFor(() => {
+      expect(document.activeElement).toBe(group);
+    });
     await user.keyboard("{Escape}");
     expect(document.activeElement).toBe(treeRow("kit"));
   });

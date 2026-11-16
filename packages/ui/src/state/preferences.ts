@@ -1,11 +1,11 @@
 /**
- * @file What a browser keeps of the user's choices: the theme, the density,
- *   whether desktop notifications may be sent, which the notification center
- *   reads, which new version's banner was dismissed, and when, and the
- *   Decisions panel's filter. Saved values are checked before use, since they
- *   may come from an older Ork; a field that is missing takes its default, and
- *   values that do not fit are dropped. `followPreferences` keeps the page's
- *   look on them.
+ * @file What a browser keeps of the user's choices: the theme, the density, the
+ *   motion (the system's, or reduced whatever it says), whether desktop
+ *   notifications may be sent, which the notification center reads, which new
+ *   version's banner was dismissed, and when, and the Decisions panel's filter.
+ *   Saved values are checked before use, since they may come from an older Ork;
+ *   a field that is missing takes its default, and values that do not fit are
+ *   dropped. `followPreferences` keeps the page's look on them.
  */
 
 import { PersistentContainer } from "containerized-state-plugin-persistence";
@@ -22,6 +22,8 @@ const PREFERENCES_KEY = "ork.preferences.v1";
 export const PreferencesSchema = z.object({
   theme: z.enum(["system", "dark", "light"]).default("system"),
   density: z.enum(["compact", "comfortable"]).default("compact"),
+  /** `reduce` stops what blinks or moves, as the system setting would. */
+  motion: z.enum(["system", "reduce"]).default("system"),
   desktopNotifications: z.boolean().default(false),
   /** The new-version banner, hidden for a day for this version. */
   updateDismissed: z.object({ version: z.string(), at: z.string() }).optional(),
@@ -34,6 +36,7 @@ export type Preferences = z.infer<typeof PreferencesSchema>;
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: "system",
   density: "compact",
+  motion: "system",
   desktopNotifications: false,
   decisionFilter: {},
 };
@@ -68,6 +71,7 @@ export const followPreferences = (
   const root = view.document.documentElement;
   const setDensity = (): void => {
     root.dataset["density"] = value.getValue().density;
+    root.dataset["motion"] = value.getValue().motion;
   };
   setDensity();
   const stopSystem = followSystem(view, () => value.getValue().theme);

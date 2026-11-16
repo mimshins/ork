@@ -34,9 +34,9 @@ const openState = () =>
     storage: localStorage,
   });
 
-export const renderShell = (workspace: Workspace) =>
+export const renderShell = (workspace: Workspace, state = openState()) =>
   render(
-    <AppStateProvider value={openState()}>
+    <AppStateProvider value={state}>
       <TipProvider>
         <Toasts>
           <Shell workspace={workspace} />
@@ -48,7 +48,8 @@ export const renderShell = (workspace: Workspace) =>
 /** Opens a workspace on the storage and draws it. */
 export const openShell = (options: Partial<WorkspaceOptions> = {}) => {
   const workspace = openWorkspace(options);
-  return { workspace, ...renderShell(workspace) };
+  const state = openState();
+  return { workspace, state, ...renderShell(workspace, state) };
 };
 
 /** The tabs in the dock, by name. */

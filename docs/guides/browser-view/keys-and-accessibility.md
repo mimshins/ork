@@ -28,8 +28,9 @@ which is often quicker with a screen reader.
 
 The UI is built to WCAG 2.2 AA: every action works by keyboard, status is never
 color alone, and text and focus rings meet its contrast in both themes. It
-follows your system's reduced-motion, more-contrast and forced-colors settings.
-Changes are announced through one polite live region.
+follows your system's reduced-motion, more-contrast and forced-colors settings,
+and **Motion: Reduce** in the command palette stops what blinks or moves
+whatever the system says. Changes are announced through one polite live region.
 
 It has been audited with axe and by keyboard in Chrome, but not yet with a real
 screen reader or by touch. If something does not work for you, please

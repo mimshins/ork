@@ -139,7 +139,7 @@ describe("the commands", () => {
     );
   });
 
-  it("offers each theme and density, and says which is in use", () => {
+  it("offers each theme, density and motion, and says which is in use", () => {
     const view = commands().filter(command => command.group === "View");
     expect(view.map(({ title }) => title)).toEqual([
       "Theme: Follow the system",
@@ -147,9 +147,15 @@ describe("the commands", () => {
       "Theme: Light",
       "Density: Compact",
       "Density: Comfortable",
+      "Motion: Follow the system",
+      "Motion: Reduce",
     ]);
     expect(view.filter(({ disabled }) => disabled !== undefined)).toMatchObject(
-      [{ id: "theme-system" }, { id: "density-compact" }],
+      [
+        { id: "theme-system" },
+        { id: "density-compact" },
+        { id: "motion-system" },
+      ],
     );
   });
 

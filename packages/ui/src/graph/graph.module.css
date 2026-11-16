@@ -151,6 +151,10 @@
   }
 }
 
+:global([data-motion="reduce"]) .packet {
+  --graph-packet-animation: none;
+}
+
 @keyframes packet {
   to {
     stroke-dashoffset: -1;

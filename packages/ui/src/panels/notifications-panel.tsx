@@ -89,7 +89,10 @@ export const NotificationsPanel = () => {
             Decisions, and runs that end, crash or pause, land here.
           </EmptyState>
         ) : (
-          <ul className={styles["list"]}>
+          <ul
+            aria-label="Notifications"
+            className={styles["list"]}
+          >
             {items.map(item => (
               <NotificationRow
                 item={item}

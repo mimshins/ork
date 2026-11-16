@@ -14,10 +14,10 @@ import {
 } from "dockview-react";
 
 import "dockview-react/dist/styles/dockview.css";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { EmptyState } from "../components/bits.tsx";
-import { FollowUpsCount } from "../panels/followups-count.tsx";
+import { FollowUpsCount, useDueName } from "../panels/followups-count.tsx";
 import { DockButtons } from "./dock-buttons.tsx";
 import { isPanelId, PANELS, panelOf } from "./panels.tsx";
 import type { Workspace } from "./workspace.ts";
@@ -28,8 +28,20 @@ const GROUP_GAP = 6;
 
 const Tab = ({ api }: IDockviewPanelHeaderProps) => {
   const Icon = isPanelId(api.id) ? panelOf(api.id).Icon : null;
+  const ref = useRef<HTMLSpanElement>(null);
+  const due = useDueName(api.title ?? "");
+  const name = api.id === "followups" ? due : undefined;
+  // dockview names the tab by its title alone, which would hide the due count
+  // the tab shows: the name carries it ("Follow-ups, 3 due").
+  useEffect(() => {
+    if (name === undefined) return;
+    ref.current?.closest('[role="tab"]')?.setAttribute("aria-label", name);
+  }, [name]);
   return (
-    <span className={styles["tab"]}>
+    <span
+      className={styles["tab"]}
+      ref={ref}
+    >
       {Icon === null ? null : <Icon />}
       {api.title}
       {api.id === "followups" ? <FollowUpsCount /> : null}

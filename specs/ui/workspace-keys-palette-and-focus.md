@@ -5,9 +5,11 @@ _Part of [The workspace](./workspace.md)._
 ## Keys
 
 Every combination holds a modifier, so plain typing never fires one (WCAG
-2.1.4). They match the physical key, because Option changes the character a key
-types on a Mac. The Mac's keys are shown there; elsewhere ⌘ reads Ctrl, ⌥ reads
-Alt, ⇧ reads Shift and ⌃ reads Ctrl.
+2.1.4). The workspace takes its keys first (a capture-phase listener) and stops
+one it runs, so a focused tab strip doesn't also read `⌥⇧` + an arrow as a move
+to the next tab (WCAG 2.4.3). They match the physical key, because Option
+changes the character a key types on a Mac. The Mac's keys are shown there;
+elsewhere ⌘ reads Ctrl, ⌥ reads Alt, ⇧ reads Shift and ⌃ reads Ctrl.
 
 | Keys            | What it does                               |
 | --------------- | ------------------------------------------ |

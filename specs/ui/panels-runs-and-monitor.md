@@ -48,9 +48,11 @@ closed.
 
 - **Project and workflow** come from one-off reads each time it opens. With only
   one to choose from, it is chosen. Typing filters the list and highlights the
-  first match, for Enter to take. The workflow field waits for a project and
-  says so, and a project with no workflows, or whose workflows cannot be read,
-  says that as the reason it cannot start.
+  first match, for Enter to take; an emptied field highlights nothing, and Enter
+  there clears the choice (every combobox, the Logs filters among them). The
+  workflow field waits for a project and says so, and a project with no
+  workflows, or whose workflows cannot be read, says that as the reason it
+  cannot start.
 - **Inputs** follow the workflow's declarations: a checkbox for a boolean, a
   number field for a number, and a text field otherwise, with each one's
   description.

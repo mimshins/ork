@@ -1,14 +1,15 @@
 /**
  * @file A combobox, on Base UI's: one choice from a list long enough to filter,
  *   such as projects and workflows. Typing filters the list and highlights its
- *   first match, for Enter to take; the arrow keys move through it while focus
- *   stays in the input, and an empty result says so. The input and the list are
- *   named as well as labelled, since an open list hides the label from a screen
- *   reader.
+ *   first match, for Enter to take; an emptied input highlights nothing, and
+ *   Enter there clears the choice, as the person meant. The arrow keys move
+ *   through the list while focus stays in the input, and an empty result says
+ *   so. The input and the list are named as well as labelled, since an open
+ *   list hides the label from a screen reader.
  */
 
 import { Combobox as BaseCombobox } from "@base-ui/react/combobox";
-import { useId } from "react";
+import { useId, useState } from "react";
 
 import { IconCheck, IconChevronDown } from "./icons.tsx";
 import type { Option } from "./select.tsx";
@@ -42,13 +43,18 @@ export const Combobox = ({
   disabled = false,
 }: ComboboxProps) => {
   const inputId = useId();
+  const [typed, setTyped] = useState("");
+  const [open, setOpen] = useState(false);
   return (
     <BaseCombobox.Root
-      autoHighlight
+      autoHighlight={typed.trim() !== ""}
       disabled={disabled}
       isItemEqualToValue={sameOption}
       itemToStringLabel={labelOf}
       items={options}
+      onInputValueChange={setTyped}
+      onOpenChange={setOpen}
+      open={open}
       onValueChange={next => {
         onChange(next?.value ?? null);
       }}
@@ -66,6 +72,16 @@ export const Combobox = ({
             aria-label={label}
             className={fields["input"]}
             id={inputId}
+            onKeyDown={event => {
+              const input = event.currentTarget;
+              if (event.key === "Enter" && input.value.trim() === "") {
+                // Not the highlighted suggestion: an empty field means none.
+                event.preventBaseUIHandler();
+                event.preventDefault();
+                setOpen(false);
+                onChange(null);
+              }
+            }}
             placeholder={placeholder}
           />
           <BaseCombobox.Trigger

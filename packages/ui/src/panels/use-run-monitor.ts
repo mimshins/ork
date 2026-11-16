@@ -40,6 +40,8 @@ export const useRunMonitor = (run: RunView) => {
   const nodeControls = useRef<HTMLElement>(null);
   /** Where the menu keys were pressed, for Escape to go back to. */
   const cameFrom = useRef<HTMLElement | null>(null);
+  /** The node the controls were asked for, to find its card again. */
+  const cameFromNode = useRef<string | null>(null);
 
   const roots = useMemo(() => tree ?? [], [tree]);
   const runEnded = run.live !== "running" && run.live !== "paused";
@@ -77,9 +79,14 @@ export const useRunMonitor = (run: RunView) => {
       const { activeElement } = document;
       cameFrom.current =
         activeElement instanceof HTMLElement ? activeElement : null;
+      cameFromNode.current = id;
       state.selectNode(id);
+      // The group, not its first button: that is Pause, one Enter from
+      // pausing a live node, and its tip would take the first Escape.
       requestAnimationFrame(() => {
-        nodeControls.current?.querySelector("button")?.focus();
+        nodeControls.current
+          ?.querySelector<HTMLElement>("[data-node-controls]")
+          ?.focus();
       });
     },
     [state],
@@ -87,8 +94,19 @@ export const useRunMonitor = (run: RunView) => {
 
   /** Escape in the node's controls: back to the node they were asked from. */
   const closeControls = useCallback((): void => {
-    cameFrom.current?.focus({ preventScroll: true });
+    const node = cameFromNode.current;
+    // Selecting the node may have drawn its card or row anew.
+    const back =
+      cameFrom.current?.isConnected === true
+        ? cameFrom.current
+        : node === null
+          ? null
+          : document.querySelector<HTMLElement>(
+              `[data-graph-node="${CSS.escape(node)}"], [data-tree-row="${CSS.escape(node)}"]`,
+            );
+    back?.focus({ preventScroll: true });
     cameFrom.current = null;
+    cameFromNode.current = null;
   }, []);
 
   return {

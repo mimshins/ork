@@ -245,10 +245,11 @@ status and the read failure's alert):
   `group` named "Follow-ups" (where the focus lands when the list empties); due
   and for groups are headings; the item card's heading is the `<h3>`.
 - **The tab and the rail button** are named "Follow-ups" when none is due and
-  "Follow-ups, 3 due" otherwise. The count shows after the title as a mono
-  number in amber text, a word-free number that the name spells out; `99+`
-  past 99. It reads on page load, every 30 s, and after each action, so it stays
-  true with the panel hidden.
+  "Follow-ups, 3 due" otherwise. dockview names a tab by its title alone, so the
+  tab's name is set on its `role="tab"` element as the count changes. The count
+  shows after the title as a mono number in amber text, a word-free number that
+  the name spells out; `99+` past 99. It reads on page load, every 30 s, and
+  after each action, so it stays true with the panel hidden.
 - **Fields** are named "Status", "For", "Kind", "Due", "Project" (the bar's).
   **Reload** is named "Reload follow-ups". **Copy** buttons say what they copy:
   "Copy message", "Copy command: <command>", "Copy id". The status pill is text,

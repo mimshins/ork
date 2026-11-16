@@ -61,9 +61,15 @@ describe("the preferences", () => {
     const stop = followPreferences(window, preferences);
     expect(root.dataset["theme"]).toBe("dark");
     expect(root.dataset["density"]).toBe("compact");
-    preferences.update({ theme: "light", density: "comfortable" });
+    expect(root.dataset["motion"]).toBe("system");
+    preferences.update({
+      theme: "light",
+      density: "comfortable",
+      motion: "reduce",
+    });
     expect(root.dataset["theme"]).toBe("light");
     expect(root.dataset["density"]).toBe("comfortable");
+    expect(root.dataset["motion"]).toBe("reduce");
     stop();
     preferences.update({ theme: "dark" });
     expect(root.dataset["theme"]).toBe("light");

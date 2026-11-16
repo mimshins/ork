@@ -150,16 +150,18 @@ render, and a slice of a feed ignores changes outside it.
 ## Preferences
 
 [preferences.ts](../../packages/ui/src/state/preferences.ts) saves the theme,
-the density, whether desktop notifications may be sent, the new version whose
-banner was dismissed and when (`updateDismissed`), and the Decisions panel's
-filter (`decisionFilter`, the bar's values by field name, strings; none means
-All, [design](./panels-decisions-filters-and-keys.md#the-filter-bar)), per
-browser (`ork.preferences.v1`). Values are checked on load: a missing field
-takes its default, and values that do not fit are dropped. The app applies them
-before its first paint. Until its script runs the page follows the system's
-theme ([themes](./design-tokens-and-type.md#themes)), so only a theme chosen
-against the system shows the other for that moment ([L32](./limits.md)).
+the density, the motion (`system` or `reduce`, on the root as `data-motion`),
+whether desktop notifications may be sent, the new version whose banner was
+dismissed and when (`updateDismissed`), and the Decisions panel's filter
+(`decisionFilter`, the bar's values by field name, strings; none means All,
+[design](./panels-decisions-filters-and-keys.md#the-filter-bar)), per browser
+(`ork.preferences.v1`). Values are checked on load: a missing field takes its
+default, and values that do not fit are dropped. The app applies them before its
+first paint. Until its script runs the page follows the system's theme
+([themes](./design-tokens-and-type.md#themes)), so only a theme chosen against
+the system shows the other for that moment ([L32](./limits.md)).
 
-The palette's **View** group sets the theme (follow the system, dark, light) and
-the density (compact, comfortable); the one in use stays listed and says so. The
-Notifications panel asks the browser before turning desktop notifications on.
+The palette's **View** group sets the theme (follow the system, dark, light),
+the density (compact, comfortable) and the motion (follow the system, reduce);
+the one in use stays listed and says so. The Notifications panel asks the
+browser before turning desktop notifications on.

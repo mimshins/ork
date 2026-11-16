@@ -120,7 +120,10 @@ The canvas is one tab stop and the cards are another, with a roving tabindex.
 - On a card, the arrow keys move along its edges; up and down also reach the
   card above or below on its rank. Moving there brings it into view.
 - `Enter` or `Space` selects. The context-menu key, `Shift+F10` or a right click
-  asks for the node's controls. `Escape` goes back to the canvas.
+  asks for the node's controls: focus lands on their group ("Controls for
+  <node>"), not on Pause, so no single key pauses a live node, and `Escape`
+  there goes back to the card or tree row it came from, found again by its id
+  when selecting drew it anew. `Escape` on a card goes back to the canvas.
 - Each card's accessible name says its id, status, model, tokens, cost and type,
   with what the card shows first, so the name holds what is on screen (WCAG
   2.5.3). A status has an icon and a word as well as its color.

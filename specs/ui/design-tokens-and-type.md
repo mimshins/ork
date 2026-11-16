@@ -109,5 +109,7 @@ The page's root carries `data-theme` and `data-contrast`
   stays: the selected run, node and tab and an unread item keep an outline in
   `Highlight`, the highlighted list item takes `Highlight`, and disabled
   controls use `GrayText`.
-- **Motion** is brief, and none when `prefers-reduced-motion: reduce` is set.
-  What repeats moves in steps, not smoothly: a running status's glyph blinks.
+- **Motion** is brief, and none when `prefers-reduced-motion: reduce` is set or
+  the palette's **Motion: Reduce** is chosen (`data-motion="reduce"`), so the
+  page itself can stop what blinks or moves (WCAG 2.2.2). What repeats moves in
+  steps, not smoothly: a running status's glyph blinks.

@@ -190,6 +190,20 @@ describe("the Logs panel", () => {
     expect(rows()).toHaveLength(2);
   });
 
+  it("clears the node filter when its field is emptied and Enter pressed", async () => {
+    const { state } = await open();
+    await filterBy("Node", "first");
+    expect(rows()).toHaveLength(2);
+    const user = userEvent.setup();
+    await user.click(screen.getByLabelText("Node"));
+    // Typed and deleted, so the list is open over an empty field.
+    await user.keyboard("la{Backspace}{Backspace}");
+    await user.keyboard("{Backspace}".repeat(8));
+    await user.keyboard("{Enter}");
+    expect(state.selection.getValue().node).toBeNull();
+    expect(rows()).toHaveLength(3);
+  });
+
   it("filters by event type", async () => {
     await open();
     await filterBy("Event", "edge");

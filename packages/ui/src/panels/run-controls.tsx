@@ -147,8 +147,11 @@ export const RunControls = ({
           node === undefined ? "Run controls" : `Controls for ${node}`
         }
         className={styles["controls"]}
+        data-node-controls=""
         // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a fieldset is for form fields, and these are actions
         role="group"
+        // Asked for from a node, focus lands on the group, not on Pause.
+        tabIndex={-1}
       >
         <IconButton
           cli={`ork pause ${runId}${flag}`}

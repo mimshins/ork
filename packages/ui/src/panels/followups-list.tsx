@@ -125,10 +125,10 @@ FollowUpRowButton.displayName = "FollowUpRowButton";
 
 /** A group's caption: the words upper case, a date as the value it is. */
 const Caption = ({ group, count }: { group: Group; count: number }) => (
-  <h4 className={styles["groupCaption"]}>
+  <h3 className={styles["groupCaption"]}>
     <span className={styles["captionValue"]}>{group.label}</span>
     {` · ${String(count)}`}
-  </h4>
+  </h3>
 );
 
 export const FollowUpsList = ({

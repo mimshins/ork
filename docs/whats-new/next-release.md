@@ -57,3 +57,19 @@ _Part of [What's new](../whats-new.md)._
   the highlighted option keeps its description, the list scrolls around it, and
   the card is cut with "… N more lines" (`d` shows them)
   ([the terminal](../guides/terminal.md#questions)).
+- **`ork ui` accessibility fixes.** An accessibility pass in a real browser
+  (WCAG 2.2 AA) found these, now fixed:
+  - At 400% zoom (320 px wide) the page no longer scrolls sideways; the Usage
+    chart's peak line wraps.
+  - A screen reader now hears the Follow-ups tab as "Follow-ups, 3 due", not
+    only "Follow-ups".
+  - Resizing a panel from its tab (`⌥⇧` + an arrow) keeps focus on that tab.
+  - **Motion: Reduce** in the command palette stops what blinks or moves (the
+    running glyph, the graph's packets), whatever the system says.
+  - The Follow-ups list's group headings are one level under the panel's.
+  - Asking for a graph node's controls (`Shift+F10`) puts focus on the group,
+    not on Pause, and one `Escape` goes back to the node.
+  - Emptying a filter such as Logs' Node and pressing `Enter` clears it, where
+    it took the first suggestion; why a palette command is unavailable is
+    readable; the Notifications list has a name
+    ([keys and accessibility](../guides/browser-view/keys-and-accessibility.md)).

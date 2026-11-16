@@ -190,27 +190,44 @@
 .chartHead {
   --usage-chart-head-flex-direction: initial;
   --usage-chart-head-gap: var(--gap);
+  --usage-chart-head-flex-wrap: wrap;
 
   align-items: baseline;
   display: flex;
+  flex-wrap: var(--usage-chart-head-flex-wrap);
   gap: var(--usage-chart-head-gap);
   justify-content: space-between;
   flex-direction: var(--usage-chart-head-flex-direction, revert);
 }
 
-/* One line, always, so that what it says never moves the chart. */
+/*
+ * One line, so that what it says never moves the chart; on a phone-narrow
+ * screen two, as one line there would hold every panel wider than the screen
+ * (WCAG 1.4.10). `min-width: 0` lets it shrink inside the head.
+ */
 .readout {
   --usage-readout-text: var(--color-text-muted);
   --usage-readout-font: var(--font-mono);
   --usage-readout-text-size: var(--text-mono);
+  --usage-readout-white-space: nowrap;
+  --usage-readout-min-block-size: auto;
 
   color: var(--usage-readout-text);
   font-family: var(--usage-readout-font);
   font-size: var(--usage-readout-text-size);
   margin: 0;
+  min-block-size: var(--usage-readout-min-block-size);
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: var(--usage-readout-white-space);
+}
+
+@media (max-width: 30rem) {
+  .readout {
+    --usage-readout-white-space: normal;
+    --usage-readout-min-block-size: 2lh;
+  }
 }
 
 .chart {

@@ -3,7 +3,9 @@
  *   the command a key combination names, and opens the palette. Every
  *   combination holds a modifier, so plain typing never triggers one (WCAG
  *   2.1.4). A disabled command's key does nothing but say why, and no key works
- *   behind a modal.
+ *   behind a modal. It listens in the capture phase and stops a key it runs, so
+ *   a tab strip under focus doesn't also take `⌥⇧` + an arrow as a move to the
+ *   next tab (WCAG 2.4.3).
  */
 
 import { useEffect } from "react";
@@ -29,6 +31,7 @@ export const useWorkspaceKeys = (
       if (!inPalette && aModalIsOpen()) return;
       if (matches(event, SHORTCUTS.palette, mac)) {
         event.preventDefault();
+        event.stopPropagation();
         void workspace.palette.setValue(!inPalette);
         return;
       }
@@ -39,12 +42,13 @@ export const useWorkspaceKeys = (
       );
       if (command === undefined) return;
       event.preventDefault();
+      event.stopPropagation();
       if (command.disabled === undefined) command.run();
       else workspace.announce(command.disabled);
     };
-    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
     return () => {
-      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keydown", onKeyDown, true);
     };
   }, [workspace, commands]);
 };
