@@ -128,7 +128,17 @@ describe("ork --help, grouped", () => {
     expect(text).toMatch(/\n {2}worktrees +\S.*\(alias: wt\)\n/u);
     expect(text).not.toMatch(/\n {2}wt /u);
     expect(text).not.toContain("__complete");
+    expect(text).not.toContain("__onboard");
     expect(text).not.toContain(INTERNAL);
+  });
+
+  it("lists onboard under Get started, with its three flags", async () => {
+    const text = await help(main);
+    expect(text).toMatch(/\n {2}onboard +\S/u);
+    const onboard = await help(await subcommandNamed("onboard"), main);
+    for (const flag of ["--driver", "--review", "--fresh"]) {
+      expect(onboard).toContain(flag);
+    }
   });
 
   it("gives a command with subcommands a short usage line", async () => {

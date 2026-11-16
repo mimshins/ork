@@ -2,6 +2,19 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **`ork onboard`: workflows that fit your project, written on a branch.** It
+  reads your project with no model (package manager, scripts, CI, agent and
+  skill folders, what `.ork/` holds), asks three questions, shows the most the
+  paid part can spend and starts only on a yes. Two built-in workflows,
+  `ork:onboard-propose` and `ork:onboard-write`, propose workflows with
+  evidence, then write the ones you pick on a branch and end at a gate that
+  shows the diff and every new permission; Ork never merges. Run again in a
+  project with workflows and runs, it is a review (`--review`, `--fresh`
+  override) that reads how the runs ended and may change a workflow. It needs a
+  terminal; a project attached with `ork register` is refused for now. Only
+  `claude-code` ignores your project's own instructions and skills in these
+  sessions; `open-code` and `command-code` still load `AGENTS.md`
+  ([guide](../guides/onboarding.md)). `ork init`'s closing line points at it.
 - **A child no longer waits for a reply its leader can't send.** A leader inside
   `delegate` reads nothing until its children report, so a child that messaged
   it a question and waited for the answer sat out its whole wait (up to an

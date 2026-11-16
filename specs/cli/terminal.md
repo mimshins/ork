@@ -3,8 +3,8 @@
 _Part of [The ork CLI](../cli.md)._
 
 Status: **Built**: the kit (mode, theme, chips, layout, keys, and the select,
-text and confirm prompts) and the global `--plain` flag are built. `ork run`'s
-transcript and summary ([code](../../packages/cli/src/run/view.ts),
+text, confirm and multiselect prompts) and the global `--plain` flag are built.
+`ork run`'s transcript and summary ([code](../../packages/cli/src/run/view.ts),
 [tests](../../packages/cli/test/run-transcript.test.ts)), `ork decide` (its
 card, its `--list` rows and `--verbose`), the permission prompts, every
 yes-or-no question (`output.ts`'s `confirm`) and `ork chat`'s message line ask
@@ -57,9 +57,9 @@ when used, never in a module-level constant. `ork --help`, every command's
 
 ## Prompts
 
-All three take a `PromptIO` (input, output, env, and optionally the caller's own
-line reader and its Ctrl-C hook), draw only their own lines (cursor up, clear
-down, never the screen), hide the cursor while open, redraw on a resize,
+All of them take a `PromptIO` (input, output, env, and optionally the caller's
+own line reader and its Ctrl-C hook), draw only their own lines (cursor up,
+clear down, never the screen), hide the cursor while open, redraw on a resize,
 collapse to one line when answered, and restore raw mode and the cursor on every
 exit. A withdrawn prompt (`AbortSignal`) rejects. A prompt is never drawn taller
 than the screen less one row (`term/fit.ts`; the region leaves its first lines
@@ -88,6 +88,18 @@ counts.
   shows. Plain, it prints `1) label (id) - description (recommended)` and asks
   `Choose [n]: `, taking a number, an id, or Enter for the recommended one, `d`
   for the details, and then asks the note's line.
+- **`multiselect`** (for
+  [`ork onboard`](./onboard-flow.md#proposing-and-picking);
+  `term/multiselect.ts`): options as `select` draws them, each with a `[ ]` or
+  `[x]` box, none checked at first. ↑/↓ and `j`/`k` move, `Home`/`End`, `1`–`9`
+  jump, `Space` toggles the option under the cursor, `Enter` confirms (none
+  checked is a valid answer), `q` or `Esc` leaves, `Ctrl-C` restores the
+  terminal and stops, as `select` does. It resolves `{ kind: "chosen", ids }`
+  (in the options' order), `{ kind: "later" }` or `{ kind: "interrupted" }`.
+  Plain, it prints `1) label (id) - description` lines and asks
+  `Choose, e.g. 1,3 (Enter for none): `, taking numbers or ids split by commas
+  or spaces; an unknown one asks again, and `q` and a closed input are `later`
+  where the caller allows it (`later: true`, as `ork onboard` does).
 - **`readText`**: one line edited in place (arrows, `Home`/`End`, `Backspace`,
   `Delete`, `Ctrl-U`), scrolled when long; `Enter` sends, `Esc` leaves. Plain,
   it asks ` message:`.

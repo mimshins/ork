@@ -42,6 +42,10 @@ Two ways in:
   any MCP client) installs Ork, sets up your project and writes a first
   workflow, asking you before each change.
 
+After `ork init`, `ork onboard` reads your project, asks what slows you down,
+and writes the workflows you pick on a branch. It shows the most it can spend
+first, and Ork never merges ([Onboarding](./docs/guides/onboarding.md)).
+
 You need Node 24.20+, git, and one agent driver: your own `claude` login, or an
 API key, Bedrock, Vertex or Foundry. Your own `opencode` or Command Code's `cmd`
 work too ([Drivers](./docs/guides/drivers.md)). `gh` and `aws` are optional,
@@ -53,6 +57,7 @@ npm install --global @krapht/ork
 ork doctor                                   # checks Node, git, your agent logins
 ork init                                     # a starter workflow in .ork/workflows/
 ork validate                                 # checks the workflow
+ork onboard                                  # workflows that fit your project, on a branch you review
 ork run hello --input task="add a README"    # leader, worker, then your approval
 ork worktrees                                # the branches it left
 ork worktrees clean                          # removes the merged ones; asks first

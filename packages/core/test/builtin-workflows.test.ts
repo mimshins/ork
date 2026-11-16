@@ -2,7 +2,9 @@
  * @file Tests for Ork's built-in workflows: each is canonical and checks clean,
  *   an `ork:` name is written into the project's run folder under its text's
  *   hash (and written again if someone changed it), an unknown one is named as
- *   such, and `ork:feedback-apply` asks to keep a fix only when one was made.
+ *   such, `ork:feedback-apply` asks to keep a fix only when one was made, and
+ *   `ork:onboard-write` loops its checker back to the writer for at most three
+ *   rounds before its gate.
  */
 
 import {
@@ -62,6 +64,8 @@ describe("the built-in workflows", () => {
   it("has some, each named with `ork:`", () => {
     expect(builtinWorkflowNames()).toEqual([
       "ork:feedback-apply",
+      "ork:onboard-propose",
+      "ork:onboard-write",
       "ork:security-audit",
     ]);
   });
@@ -105,7 +109,7 @@ describe("an `ork:` name", () => {
   it("that names no built-in is refused, naming those there are", () => {
     expect(builtinWorkflowFile(project(), "ork:nope")).toBeUndefined();
     expect(unknownBuiltin("ork:nope")).toBe(
-      "`ork:nope` isn't one of Ork's workflows: `ork:feedback-apply`, `ork:security-audit`",
+      "`ork:nope` isn't one of Ork's workflows: `ork:feedback-apply`, `ork:onboard-propose`, `ork:onboard-write`, `ork:security-audit`",
     );
     expect(unknownBuiltin("ork:feedback-apply")).toBeUndefined();
     expect(unknownBuiltin("hello")).toBeUndefined();
@@ -172,5 +176,135 @@ describe("ork:feedback-apply", () => {
     });
     expect(ran).toEqual(["fix"]);
     expect(result.status).toBe("failed");
+  });
+});
+
+/** A node's result in a scripted run: the `n`th time it runs (from 1). */
+type Script = (id: string, n: number) => { ok: boolean; output: NodeOutput };
+
+/** Runs the built-in `name` with each node's result from `script`. */
+const runBuiltin = async (
+  name: string,
+  inputs: Record<string, string>,
+  script: Script,
+) => {
+  const { place, file } = fileOf(name);
+  const { graph } = checkWorkflowText(readFileSync(file, "utf8"), {
+    place,
+    workflowDir: path.dirname(file),
+    registered: [],
+  });
+  if (graph === null) throw new Error("The built-in doesn't compile.");
+  const ran: string[] = [];
+  const executor: NodeExecutor = ({ id }) => {
+    ran.push(id);
+    return Promise.resolve(script(id, ran.filter(r => r === id).length));
+  };
+  const { done } = startRun({
+    graph,
+    inputs,
+    cwd: place.root,
+    executors: {
+      "agent.worker": executor,
+      "tool.shell": executor,
+      "tool.git": executor,
+      "human.gate": executor,
+    },
+    human,
+    onEvent: () => {
+      // What ran is enough here.
+    },
+  });
+  return { result: await done, ran };
+};
+
+const WRITE_INPUTS = { picks: "[]", survey: "pnpm", answers: "Q: a\nA: b" };
+
+/** `ork:onboard-write`'s nodes, with `finish` failing its first `fails` runs. */
+const writeScript =
+  (fails: number): Script =>
+  (id, n) => {
+    const outputs: Record<string, NodeOutput> = {
+      format: { exitCode: 0, stdout: "schemaVersion*: 1", stderr: "" },
+      write: { status: "done", summary: "Wrote ci.", branch: "ork/r1/write" },
+      finish: {
+        exitCode: n > fails ? 0 : 1,
+        stdout: "problems:\n- none",
+        stderr: "",
+      },
+      changes: {
+        exitCode: 0,
+        stdout: " .ork/workflows/ci.ork.yaml",
+        stderr: "",
+      },
+      keep: { choice: "keep", answeredBy: "terminal" },
+    };
+    return {
+      ok: id !== "finish" || n > fails,
+      output: outputs[id] ?? {},
+    };
+  };
+
+describe("ork:onboard-write", () => {
+  it("writes, checks, shows the change and asks whether to keep it", async () => {
+    const { result, ran } = await runBuiltin(
+      "ork:onboard-write",
+      WRITE_INPUTS,
+      writeScript(0),
+    );
+    expect(ran).toEqual(["format", "write", "finish", "changes", "keep"]);
+    expect(result.status).toBe("succeeded");
+  });
+
+  it("sends finish's problems back to the writer until they pass", async () => {
+    const { result, ran } = await runBuiltin(
+      "ork:onboard-write",
+      WRITE_INPUTS,
+      writeScript(2),
+    );
+    expect(ran).toEqual([
+      "format",
+      "write",
+      "finish",
+      "write",
+      "finish",
+      "write",
+      "finish",
+      "changes",
+      "keep",
+    ]);
+    expect(result.status).toBe("succeeded");
+  });
+
+  it("ends failed, never at the gate, when the rounds run out", async () => {
+    const { result, ran } = await runBuiltin(
+      "ork:onboard-write",
+      WRITE_INPUTS,
+      writeScript(Number.POSITIVE_INFINITY),
+    );
+    expect(ran.filter(id => id === "write")).toHaveLength(4);
+    expect(ran).not.toContain("keep");
+    expect(result.status).toBe("failed");
+  });
+});
+
+/** `ork:onboard-propose`'s nodes: a proposal, then the filter's result. */
+const proposeScript: Script = id => ({
+  ok: true,
+  output:
+    id === "propose"
+      ? { status: "done", summary: "One.", suggestions: [] }
+      : { exitCode: 0, stdout: '{"kept":[],"dropped":[]}', stderr: "" },
+});
+
+describe("ork:onboard-propose", () => {
+  it("proposes, then filters what was proposed", async () => {
+    const { result, ran } = await runBuiltin(
+      "ork:onboard-propose",
+      { survey: "pnpm", answers: "Q: a\nA: b" },
+      proposeScript,
+    );
+    expect(ran).toEqual(["propose", "filter"]);
+    expect(result.status).toBe("succeeded");
   });
 });

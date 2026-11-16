@@ -18,6 +18,10 @@ export const HELP_GROUPS: readonly HelpGroup[] = [
     title: "Get started",
     commands: [
       { name: "init", short: "Set up Ork in this repository, in .ork/" },
+      {
+        name: "onboard",
+        short: "Have Ork read this project and write workflows that fit",
+      },
       { name: "doctor", short: "Check Node, git and your own logins" },
       { name: "ui", short: "Open Ork's local UI in the browser" },
     ],

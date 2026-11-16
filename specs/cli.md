@@ -36,13 +36,14 @@ runs ([scripts](./messaging/scripts.md#ork-send))
 [init driver tests](../packages/cli/test/init-driver.test.ts),
 [ready driver tests](../packages/cli/test/ready-driver.test.ts),
 [help tests](../packages/cli/test/help.test.ts),
-[list flag tests](../packages/cli/test/list-flags.test.ts)). The terminal kit,
-the global `--plain` flag, and the commands that print or ask through the kit
-(every one that asked or listed) are built ([terminal](./cli/terminal.md)).
-`--help` leaves out the flags only Ork passes to itself (their descriptions
-start `Internal:`), and `ork --help` lists the commands in groups
-([completion and help](./cli/completion.md#ork---help)). Published as
-`@krapht/ork` ([release](../runbook/development/release.md),
+[list flag tests](../packages/cli/test/list-flags.test.ts)). **Built:**
+`ork onboard` and its hidden `ork __onboard` ([onboard](./cli/onboard.md),
+RFC-018). The terminal kit, the global `--plain` flag, and the commands that
+print or ask through the kit (every one that asked or listed) are built
+([terminal](./cli/terminal.md)). `--help` leaves out the flags only Ork passes
+to itself (their descriptions start `Internal:`), and `ork --help` lists the
+commands in groups ([completion and help](./cli/completion.md#ork---help)).
+Published as `@krapht/ork` ([release](../runbook/development/release.md),
 [ADR-015](../decisions/ADR-015-changesets-and-one-bundled-cli.md)).
 
 Every command takes `--plain` (or `ORK_PLAIN=1`): no color, no redrawn prompts
@@ -72,6 +73,7 @@ tools check `project` and `limit` in the same words.
 
 ```
 ork init [--no-link] [--skills] [--issues]  # scaffold .ork/, .gitignore entries, a starter workflow that names no driver; link tool folders; record the project; Ork's skills for Claude Code; the issues workflow
+ork onboard [--driver <id>] [--review | --fresh]  # survey the project, ask what hurts, propose workflows, write the picked ones on a branch behind a gate; capped, never merged
 ork register [path] [--id <id>] [--json]  # attach a project from outside: its files in ~/.ork/projects/<id>/, nothing in the repo
 ork projects [--limit n] [--ids] [--json] | forget <id> | move <id> <path>  # the registered projects; follow a moved clone
 ork migrate [--agents] [--dry-run] [--yes]  # attached → .ork/; --agents: agents and skills under .ork/, tool folders relinked; renames old `claude.*` node types to `agent.*` in the project's workflows; commits nothing
@@ -129,6 +131,9 @@ ork completion zsh|bash|fish     # print a tab-completion script; the script run
 - [Built-in workflows](./cli/built-in-workflows.md)
   - [Ork's own workflows](./cli/built-in-workflows.md#orks-own-workflows)
   - [Bundles](./cli/built-in-workflows.md#bundles)
+- [`ork onboard`](./cli/onboard.md)
+  - [The flow](./cli/onboard-flow.md)
+  - [Built-ins, verbs and trust](./cli/onboard-verbs.md)
 - [Decisions and stopping](./cli/decisions-and-stopping.md)
 - [The terminal kit and `--plain`](./cli/terminal.md)
   - [Mode](./cli/terminal.md#mode)

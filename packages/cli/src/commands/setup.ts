@@ -94,7 +94,7 @@ export const init = defineCommand({
     const noCommit = await headWarning(exec);
     if (noCommit !== null) write(style("yellow", `\n! git: ${noCommit}`));
     write(
-      `\nNext: edit ${WORKFLOW_DIR}/, then run ${style("bold", "ork validate")}.`,
+      `\nNext: ${style("bold", "ork onboard")} writes workflows that fit this project; or edit ${WORKFLOW_DIR}/, then run ${style("bold", "ork validate")}.`,
     );
   },
 });

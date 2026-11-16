@@ -1,6 +1,6 @@
 # RFC-018 — `ork onboard`: a forward-deployed engineer built into Ork
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Date:** 2026-11-13
 - **Supersedes:** —
 - **Superseded by:** —

@@ -73,7 +73,12 @@ by where you run, and asking before each change to a config:
 
 ## 4. A first workflow
 
-Offer to write one for a task they name. Follow `/ork:write`, check each draft
+For workflows that fit their project, point them at `ork onboard`. It asks
+questions and has no flags for the answers, so they run it in their own
+terminal; don't run it for them. It shows the most it can spend and asks before
+any spend, writes only on a branch, and never merges.
+
+Or offer to write one for a task they name. Follow `/ork:write`, check each draft
 (the `check` tool, or `ork validate <file>`) until it has no error, then save
 it. Don't start it: a run spends their money. Start it only when they say so,
 in the background with its inputs (`start_run`, or

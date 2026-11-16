@@ -116,6 +116,7 @@ export const NODES = [
       "The `ork` command. It validates and runs workflows with the engine in its own process (one process per run), reaches other runs through the store and their sockets, and starts the local server with `ork ui`.",
     facts: [
       "Built: `ork register` attaches a project from outside its repository (its files in `~/.ork/projects/<id>/`, nothing in the repo); `ork projects` lists them, `forget` drops one, and `move` follows a moved or renamed clone with its runs.",
+      "Built: `ork onboard` reads the project with no model, asks three questions, shows the most it can spend, and runs the built-ins `ork:onboard-propose` and `ork:onboard-write` on a ready driver; the writer works in a worktree, `ork __onboard filter` and `finish` check its evidence, scope, caps and validity in code, and the gate shows the diff. Ork never merges. Attached projects are refused for now.",
       "Built: `ork migrate` moves an attached project into `.ork/`, and `--agents` its agents and skills, relinking the tools' folders; it shows the plan and commits nothing. `--from-agents` drafts a gated workflow from the project's agents.",
       "Built: `ork init` scaffolds `.ork/` with a starter that names no driver, says which driver runs would use here, and never overwrites a file; `ork validate` prints schema, graph and skill or context reference diagnostics with file, line and column; `ork doctor` reports your own logins and never prints a token or your email.",
       "Built: `ork run <wf>` runs a whole workflow through the scheduler, and `--node <id>` one agent node; questions and permission prompts are answered on the terminal. When nothing names a driver, it takes the one `ork doctor` finds ready, says so in one line, and records it for `ork resume`; with none ready, no session starts. `--machine-claude` loads the machine's MCP servers and Claude's memory into the run's sessions, which otherwise start clean.",
@@ -139,6 +140,10 @@ export const NODES = [
       RUN_IDENTITY.adr,
       CLI.init,
       CLI.doctor,
+      CLI.onboard,
+      CLI.onboardSpec,
+      CLI.onboardGuide,
+      CLI.onboardAdr,
       CLI.experiments,
       CLI.experimentsSpec,
       CLI.experimentsAdr,

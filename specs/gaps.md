@@ -14,7 +14,7 @@ where it applies; this register is the list to decide from.
 - A **chore** is upkeep on the repository rather than on Ork.
 
 Add an entry in the change that finds it, and remove it in the change that
-closes it. Ids are never reused: the next limit is L390, and the next chore is
+closes it. Ids are never reused: the next limit is L402, and the next chore is
 C17 (`pnpm docs:check` fails on an id defined twice, as two changes made at once
 can each take the next one). At a review, each open entry is closed (built or
 fixed, then removed), kept (moved into its area's spec, then removed here), or
@@ -56,6 +56,7 @@ id: [running, resuming and stopping](./scheduler/limits.md),
 - [Limits found closing the blind spots of QA run c9c908b9](./gaps/qa-c9c908b9-limits.md)
 - [Limits found fixing QA run bd542734](./gaps/qa-bd542734-limits.md)
 - [Limits found building the `ork:security-audit` workflow](./gaps/audit-limits.md)
+- [Limits found building `ork onboard`](./gaps/onboard-limits.md)
 
 ## Gaps
 
@@ -89,7 +90,9 @@ review:
   `before:` step only, so a gate such as `pnpm check` repeats on each node.
 - **G18 · No command writes a workflow in canonical form.** The serializer is
   only reachable from the schema package, so a hand-written file can't be
-  normalized from the CLI.
+  normalized from the CLI. `ork onboard` reaches it through the hidden
+  `ork __onboard canon` and `finish` ([verbs](./cli/onboard-verbs.md#canon)); no
+  public command does.
 - **G20 · The walk calls a loop "out of rounds" after two.** It stops walking a
   loop after two rounds whatever its `maxRounds`, and labels the path as if the
   rounds ran out.

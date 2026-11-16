@@ -240,6 +240,13 @@ export const CLI = {
   validate: d("packages/cli/src/commands/validate.ts", "Code: `ork validate`"),
   init: d("packages/cli/src/commands/setup.ts", "Code: `ork init`"),
   doctor: d("packages/cli/src/doctor/checks.ts", "Code: `ork doctor`'s checks"),
+  onboard: d("packages/cli/src/commands/onboard.ts", "Code: `ork onboard`"),
+  onboardSpec: d("specs/cli/onboard.md", "Spec: `ork onboard`"),
+  onboardGuide: d("docs/guides/onboarding.md", "Guide: onboarding"),
+  onboardAdr: d(
+    "decisions/ADR-097-onboarding-workflows.md",
+    "ADR-097: the onboarding built-ins and the hidden verbs",
+  ),
   experiments: d(
     "packages/core/src/experiments.ts",
     "Code: the experiments registry and opt-in",

@@ -50,6 +50,8 @@ AI or agent attribution line. Do not bypass it with `--no-verify`.
 - oxlint's `max-dependencies` of 10 is why `feedback.ts` wires the plugin as
   `{...cmd, plugins}` and `useDecisionsRead` holds the read-failure check; put
   new imports in a sibling module rather than raising the limit.
+- A test that picks a run with `store.runs()[0]` depends on store order; select
+  the run by id.
 - Tests of following several runs in store order (`followRuns`,
   `ork decide --follow`, `ork attach`, `ork logs -f --all`) put both runs'
   events in one read: polling the runs apart made the decision tests flaky

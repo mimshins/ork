@@ -78,10 +78,17 @@ export type ApplyOutcome =
 const text = (value: unknown): string =>
   typeof value === "string" ? value : "";
 
-/** What a run of `ork:feedback-apply` ended with. */
-export const outcomeOf = (result: RunResult | null): ApplyOutcome => {
+/**
+ * What a run of a built-in that proposes a change on a branch ended with:
+ * `ork:feedback-apply` (worker `fix`), or `ork:onboard-write` (`write`). Both
+ * end at a `keep` gate.
+ */
+export const outcomeOf = (
+  result: RunResult | null,
+  worker = "fix",
+): ApplyOutcome => {
   const node = (id: string) => result?.nodes.find(n => n.id === id);
-  const fix = node("fix");
+  const fix = node(worker);
   const choice = text(node("keep")?.output?.["choice"]);
   const branch = text(fix?.output?.["branch"]);
   const summary = text(fix?.output?.["summary"]);
@@ -125,6 +132,20 @@ export const commitsAhead = async (
     .filter(item => item.runId === runId)
     .reduce((sum, item) => sum + item.ahead, 0);
 
+/**
+ * Whether a kept run's branch holds anything to keep. With no commit ahead the
+ * run's worktree and branch are removed, and `removed` says what went.
+ */
+export const keptBranch = async (
+  store: EventStore,
+  root: string,
+  runId: string,
+  ahead: typeof commitsAhead = commitsAhead,
+): Promise<{ kept: true } | { kept: false; removed: string[] }> =>
+  (await ahead(store, root, runId)) > 0
+    ? { kept: true }
+    : { kept: false, removed: await discardRun(store, root, runId) };
+
 export type ApplyOptions = Pick<
   RunWorkflowOptions,
   | "runtime"
@@ -160,12 +181,11 @@ const settle = async (
   const short = item.id.slice(0, 12);
   switch (outcome.kind) {
     case "kept": {
-      const ahead = await (options.ahead ?? commitsAhead)(store, root, runId);
-      if (ahead === 0) {
-        const done = await discardRun(store, root, runId);
+      const branch = await keptBranch(store, root, runId, options.ahead);
+      if (!branch.kept) {
         return [
           `the fix's branch holds no commits, so there's nothing to keep; ${short} stays accepted`,
-          ...done,
+          ...branch.removed,
         ];
       }
       store.setFeedbackStatus(item.id, "resolved");

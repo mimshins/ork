@@ -41,7 +41,9 @@ When it has installed `ork`, restart Claude Code, or reconnect `ork` in `/mcp`,
 so the tools start. If no agent driver is ready, it tells you how to log in; you
 do that yourself (see [below](#what-an-agent-cant-do-for-you)).
 
-Then ask it things such as:
+For workflows that fit your project, run `ork onboard` yourself, in a terminal:
+it asks you questions, so an agent can't answer for you
+([Onboarding](../guides/onboarding.md)). Then ask it things such as:
 
 ```
 Write a workflow that runs the tests and asks me before it pushes.

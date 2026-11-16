@@ -2,7 +2,10 @@
 
 _Part of [The ork CLI](../cli.md)._
 
-Status: **Built**: `ork:feedback-apply` and, as a bundle, `ork:security-audit`
+Status: **Built**: `ork:feedback-apply`, `ork:onboard-propose` and
+`ork:onboard-write` (run by [`ork onboard`](./onboard-verbs.md), where each has
+its own caps; [ADR-097](../../decisions/ADR-097-onboarding-workflows.md)) and,
+as a bundle, `ork:security-audit`
 ([registry](../../packages/core/src/project/builtin-files.ts),
 [bundles](../../packages/core/src/project/builtin-bundles.ts),
 [tests](../../packages/core/test/builtin-workflows.test.ts),
@@ -14,11 +17,12 @@ Status: **Built**: `ork:feedback-apply` and, as a bundle, `ork:security-audit`
 `ork run <wf>` takes `ork:<name>`, one of the workflows Ork ships
 ([sources](../../packages/core/workflows/),
 [ADR-059](../../decisions/ADR-059-closing-the-feedback-loop.md)): today
-`ork:feedback-apply` and `ork:security-audit`. Ork writes it into the project's
-gitignored run folder, `.ork/runs/.builtin/<hash>/<name>.ork.yaml`, and runs
-that file, so the run belongs to the project and resumes from the text it
-started with. `validate` and `context explain` take the name too; an unknown one
-is refused, naming the built-ins, and `ork:` completes to them.
+`ork:feedback-apply`, `ork:onboard-propose`, `ork:onboard-write` and
+`ork:security-audit`. Ork writes it into the project's gitignored run folder,
+`.ork/runs/.builtin/<hash>/<name>.ork.yaml`, and runs that file, so the run
+belongs to the project and resumes from the text it started with. `validate` and
+`context explain` take the name too; an unknown one is refused, naming the
+built-ins, and `ork:` completes to them.
 
 ## Bundles
 

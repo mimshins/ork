@@ -1,17 +1,20 @@
 /**
  * @file Tests for `ork:` names in the CLI: a built-in resolves to its file in
  *   the project's run folder, loads clean as that project's workflow with its
- *   runs beside the project's own, and an unknown name is refused.
+ *   runs beside the project's own, and an unknown name is refused; `ork
+ *   onboard`'s two built-ins validate on every driver.
  */
 
 import { existsSync, mkdirSync, mkdtempSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import type { DriverId } from "@krapht/ork-integrations";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { explainNode } from "../src/commands/context.ts";
 import { loadWorkflow } from "../src/commands/validate.ts";
+import { driverDiagnostics } from "../src/run/driver-check.ts";
 import { refusedBuiltin, workflowArg } from "../src/workflows.ts";
 
 let base = "";
@@ -102,5 +105,55 @@ describe("an `ork:` workflow argument", () => {
     const root = project();
     const { file } = workflowArg("ork:security-audit", root);
     expect(explainedFiles(file, "recon", root)).toContain("read-only-bash.md");
+  });
+});
+
+/**
+ * The errors `ork validate --driver <driver>` gives built-in `name`. A warning
+ * passes: `command-code` reports no dollars, so the dollar cap can't see its
+ * sessions, and the tokens cap holds them.
+ */
+const validated = async (name: string, driver: DriverId) => {
+  const root = project();
+  const loaded = loadWorkflow(
+    workflowArg(name, root).file,
+    root,
+    path.join(base, "home"),
+    [],
+  );
+  const found = [
+    ...loaded.report.diagnostics,
+    ...(loaded.workflow === null
+      ? []
+      : await driverDiagnostics(loaded.workflow, { override: driver })),
+  ];
+  return found.filter(d => d.severity === "error");
+};
+
+const ONBOARD = ["ork:onboard-propose", "ork:onboard-write"];
+
+describe("ork onboard's built-ins", () => {
+  it.each(
+    ONBOARD.flatMap(name =>
+      (["claude-code", "open-code", "command-code"] as const).map(
+        driver => [name, driver] as const,
+      ),
+    ),
+  )("%s validates on %s", async (name, driver) => {
+    expect(await validated(name, driver)).toEqual([]);
+  });
+
+  it("explain each node's bundled rule", () => {
+    const root = project();
+    const propose = workflowArg("ork:onboard-propose", root).file;
+    const write = workflowArg("ork:onboard-write", root).file;
+    expect(explainedFiles(propose, "propose", root)).toContain(
+      "suggestions.md",
+    );
+    expect(explainedFiles(write, "write", root)).toContain("writing.md");
+  });
+
+  it("are refused by no name check", () => {
+    expect(refusedBuiltin(ONBOARD, project())).toBe(false);
   });
 });

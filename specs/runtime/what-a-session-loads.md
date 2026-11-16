@@ -2,8 +2,8 @@
 
 _Part of [Runtime: the agent drivers](../runtime.md)._
 
-Every Claude session of a run (workers, leaders, a leader's question fork)
-starts **clean of the machine's Claude setup**
+Every Claude session of a run (workers, leaders, a leader's question fork) on
+the `claude-code` driver starts **clean of the machine's Claude setup**
 ([claude-code.ts](../../packages/runtime/src/adapters/claude-code.ts),
 [tests](../../packages/runtime/test/clean.test.ts), ADR-065):
 
@@ -49,3 +49,21 @@ else loads. Naming a server adds `mcp__<name>` to the node's allow list (deny
 rules win). `${VAR}` stays text: `claude` expands it. The sessions the CLI
 starts itself (`ork run --node`, `ork chat`) load them too. A leader's question
 fork loads none.
+
+## The project layer on each driver
+
+A workflow's `layers.project` (`instructions: ignore`, `skills: ignore`,
+[context](../context.md)) reaches the session through Claude Code settings
+(`sessionSettings` in [session.ts](../../packages/core/src/context/session.ts)),
+which only the `claude-code` driver passes. Checked by reading the drivers for
+[`ork onboard`](../cli/onboard-verbs.md#what-each-driver-adds), whose sessions
+read untrusted repositories:
+
+| Driver         | With `layers.project: { instructions: ignore, skills: ignore }`                                                                                                                                                                                              |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `claude-code`  | Off: `claudeMdExcludes` drops every `CLAUDE.md`, `CLAUDE.local.md` and `.claude/rules` in the checkout, the AGENTS.md plugin reads `CLAUDE.md` only, and `skillOverrides` switches the project's skills off. `.claude/settings*.json` still load, hooks too. |
+| `open-code`    | Not applied: the repository's `AGENTS.md` loads. `.claude/`, `CLAUDE.md`, the checkout's `opencode.json` and the user's `~/.config/opencode` stay out, as always ([OpenCode](./open-code.md#what-a-session-loads)).                                          |
+| `command-code` | Not applied: `AGENTS.md`, `.commandcode/skills` and `.commandcode/agents` load, and the machine's own skills, memory, mods and MCP servers too ([Command Code](../architecture/command-code.md)).                                                            |
+
+`ork validate --driver` does not warn about it. Both are limits
+([L393, L394](../gaps/onboard-limits.md)).

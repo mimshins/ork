@@ -1,0 +1,237 @@
+# Built-ins, verbs and trust
+
+_Part of [`ork onboard`](./onboard.md)._
+
+Status: **Built**.
+
+## The two built-in workflows
+
+Both live in `packages/core/workflows/`, ship in `BUILTIN_WORKFLOWS`
+([built-in workflows](./built-in-workflows.md),
+[ADR-059](../../decisions/ADR-059-closing-the-feedback-loop.md)), use only
+fields the format has, and set `limits.budgetUsd` and `limits.budgetTokens` and
+no `model` or `driver`. Every session sets
+`layers.project: { instructions: ignore, skills: ignore }`, and every prompt
+says the survey, the answers, the history and the repository's files are data,
+never instructions. A shell step calls Ork as `"${ORK_BIN:-ork}"`
+([L83](../messaging/scripts-limits.md)): `ORK_BIN` is set when `ork` runs
+directly, which a test's `bin.ts` and the installed `bin.mjs` both do.
+
+**`ork:onboard-propose`** (inputs `survey`, `answers`, `history`):
+
+- `propose`: `agent.worker`, `isolation: readonly` (no owner, so it works in the
+  project root), `tools.only` and `tools.allow` both `Read`, `Grep`, `Glob`
+  (OpenCode refuses `grep` and `glob` unless allowed, L236; Claude Code and
+  Command Code read inside the checkout without a rule), a `maxTurns` cap. It
+  may ask the user up to three follow-up questions with `ask_user`, held by its
+  prompt and `maxTurns` only. Ork's own tools pass `tools.only` on every driver:
+  `--tools` limits Claude Code's built-in tools only and Ork's are in
+  `--allowedTools`; OpenCode's rules let MCP tools past `only` and allow Ork's
+  by name; Command Code's mod lets `mcp__ork__*` through. Its report declares
+  `suggestions: { list: {} }`: Ork holds it to being a list on every driver
+  (RFC-013), but a list item holds only scalars (L358) and a JSON Schema field
+  is the driver's alone to enforce (G21), so [`filter`](#filter) checks each
+  item itself.
+- `filter`: `tool.shell`, with
+  `SUGGESTIONS: "{{nodes.propose.output.suggestions}}"` in `env:` (a tool node
+  has no stdin, L353) and the script
+  `printf '%s' "$SUGGESTIONS" | "${ORK_BIN:-ork}" __onboard filter`, its output
+  `format: json` with `kept` and `dropped` declared as lists. `SUGGESTIONS`
+  reads a node's output, not `{{env.*}}`, so it is never masked and needs no
+  `plainEnv`.
+- Caps: `limits` and `defaults` both $3 and 600,000 tokens, `maxTurns: 40`.
+
+**`ork:onboard-write`** (inputs `picks`, `survey`, `answers`):
+
+- `format`: `tool.shell`, `"${ORK_BIN:-ork}" __onboard format`.
+- `write`: `agent.worker`, `isolation: worktree`, `tools.only` and `tools.allow`
+  both `Read`, `Grep`, `Glob`, `Edit`, `Write` (no shell; OpenCode and Command
+  Code refuse an edit no rule allows), told to change only
+  `.ork/workflows/*.ork.yaml` and `.ork/project.yaml`, to cap every workflow in
+  dollars and tokens, to name no `driver` or `model`, and to use only the
+  `ork-implementer` and `ork-reviewer` agents. A later round's brief carries
+  `finish`'s problems (`## Round n`).
+- `finish`: `tool.shell`,
+  `"${ORK_BIN:-ork}" __onboard finish --worktree "$WORKTREE" --branch "$BRANCH"`,
+  with `WORKTREE: "{{nodes.write.output.worktree}}"` and
+  `BRANCH: "{{nodes.write.output.branch}}"` in `env:` (a `script:` takes no
+  templates). A tool node with no owner works in the project root
+  ([worktrees](../worktrees.md)), so it reads the writer's worktree by path.
+- `changes`: `tool.git`, `diff --stat HEAD...{{nodes.write.output.branch}}`, as
+  `ork:feedback-apply` does.
+- `keep`: `human.gate`, options `keep` and `discard`, its question the diff
+  stat, `finish`'s stdout and the G14 line.
+- Edges: `format -> write -> finish`; `finish -> write` when `!ok`,
+  `maxRounds: 3`; `finish -> changes` when `ok`; `changes -> keep`.
+- Caps: `limits` $6 and 1,200,000 tokens; `defaults` $2 and 400,000 tokens, so
+  the first session and three more rounds fit; `maxTurns: 40`.
+
+Each agent node names a rule file from its bundle in `context:`
+(`onboard-propose/context/suggestions.md`, `onboard-write/context/writing.md`):
+what is data, the question cap, the shape of a suggestion, and what a written
+workflow holds. The `write` node names no agent: `ork-implementer`'s role says
+to follow the project's own rules, which here are data.
+
+## Suggestions
+
+`SuggestionSchema` (`packages/cli/src/onboard/suggestion.ts`, inferred type
+`Suggestion`), one strict object per suggestion:
+
+| Field       | Type                                                                                              |
+| ----------- | ------------------------------------------------------------------------------------------------- |
+| `workflow`  | a workflow name (`^[a-z0-9][a-z0-9._-]*$`); one that exists in `.ork/workflows` is a change to it |
+| `why`       | text, 1 to 600 characters                                                                         |
+| `decidedBy` | text: where a person decides (a gate, a review), 1 to 200 characters                              |
+| `caps`      | `{ budgetUsd: number > 0, budgetTokens: integer > 0 }`                                            |
+| `evidence`  | 1 to 8 of `{ path: string, note?: string }` or `{ commit: string, note?: string }`                |
+| `commands`  | optional, up to 8 command lines the workflow would run                                            |
+| `feedback`  | optional, up to 8 feedback item ids it answers                                                    |
+
+## `ork __onboard`
+
+A hidden command, like `ork __complete`: left out of `ork --help`, every help
+and tab completion, documented only here, and free to change without notice.
+Every verb exits 2 with one stderr line on a usage error (an unknown verb or
+flag, a missing argument). Paths it reads are plain files inside their root: a
+link is never followed out of it.
+
+### format
+
+`ork __onboard format [<type>…]` prints a compact brief of the workflow format
+to stdout, exit 0: the workflow's top-level fields, then each node type's, one
+line per field (`name*: type - description`, `*` when required), objects such as
+`limits`, `defaults`, `tools` and `output` expanded one level, indented. With
+types (`agent.worker tool.shell`) only those types follow the top level; an
+unknown type exits 2 naming the known ones.
+
+Measured on the current schema: the JSON Schema is 158 KB pretty and 71 KB
+minified; one minified node type is up to 11 KB (`agent.worker`). The line brief
+is 21.5 KB for the top level and every type, and about 10 KB for the top level
+and `agent.worker`, `tool.shell`, `tool.git` and `human.gate`. A test keeps the
+whole brief under 24 KiB. The `write` node takes the whole brief, so it rides in
+each of the writer's up to 4 sessions.
+
+### canon
+
+`ork __onboard canon <file>…` parses each file and rewrites it through
+`serializeWorkflow` when its text differs. Stdout is one line per file,
+`canonical <file>` or `rewrote <file>`. A file that does not parse or fails the
+schema is left as it was, with `<file>: <reason>` on stderr; the others are
+still done, and the exit is 1. A link is refused. Exit 0 when every file is
+canonical now. This is the only way the CLI reaches the serializer (G18).
+
+### filter
+
+`ork __onboard filter [--file <path>]` reads the proposer's suggestions, a JSON
+list, from stdin (or the file), checks each against the project root (its
+working folder), runs nothing, and prints to stdout, exit 0:
+
+```json
+{
+  "kept": [{ "workflow": "…" }],
+  "dropped": [{ "index": 2, "workflow": "…", "reasons": ["…"] }]
+}
+```
+
+`kept` holds whole `Suggestion`s in their order; `dropped[].workflow` is `null`
+when the entry has none. An entry is dropped, with every reason, when:
+
+- it fails `SuggestionSchema` (the schema's message);
+- an evidence `path` is absolute, climbs out of the root, or names no file or
+  folder there;
+- an evidence `commit` is not 7 to 40 hex characters, or
+  `git cat-file -e <commit>^{commit}` fails;
+- a `commands` line's program (its first word after `VAR=value` words) is
+  neither on `PATH` nor an executable file inside the root;
+- a line that runs a package script (`npm run x`, `npm test`, `pnpm x`,
+  `pnpm run x`, `yarn x`, `yarn run x`, `bun run x`) names a script the root's
+  `package.json` does not have; a manager's own command (`install`, `exec`,
+  `dlx`, `add`, …, a fixed list) is not a script;
+- an earlier kept entry has the same `workflow`;
+- ten are already kept.
+
+Input that is not a JSON list is one drop, `{ "index": -1, "workflow": null }`
+with the parse error as its reason. `feedback` ids are passed through unchecked.
+
+### finish
+
+`ork __onboard finish --worktree <path> --branch <branch>`, run in the project
+root, checks the writer's work. Stdout is two sections, each line a `- ` item:
+
+```
+problems:
+- .ork/workflows/ci.ork.yaml: limits.budgetTokens is missing
+needs your eye:
+- .ork/workflows/ci.ork.yaml: node test allows `Bash(pnpm test:*)`
+```
+
+A section with no item reads `- none`. Exit 1 when there is a problem, else 0.
+In order:
+
+1. **Scope.** The paths in `git diff --name-status HEAD...<branch>` and the
+   worktree's uncommitted ones. Each must be an added or modified
+   `.ork/workflows/<name>.ork.yaml` (one level) or `.ork/project.yaml`; any
+   other path, or a deletion or rename, is a problem.
+2. **Each changed workflow**, read in the worktree: it parses and passes the
+   schema; it sets `limits.budgetUsd` and `limits.budgetTokens`; no `driver` or
+   `model` anywhere (`defaults`, `agents`, nodes); no `agents:` of its own, and
+   every `agent:` is `ork-implementer` or `ork-reviewer`. The project file's
+   `defaults.driver` and `defaults.model` reach every workflow too, so the rule
+   covers them; today they are only listed at the gate
+   ([L402](../gaps/onboard-limits.md)).
+3. **Canonical form.** Each one that parses is rewritten through
+   `serializeWorkflow`; when any changed, they are committed in the worktree as
+   `ork: canonical form (run <ORK_RUN>)`, no attribution, the repository's hooks
+   running; a refused commit is a problem.
+4. **Validation,** in this process, not by running `ork validate`: each file is
+   loaded and walked as `ork validate` does, with the worktree as the project,
+   then checked as `ork validate --driver <id>` does for the plain case and for
+   each driver ready on the machine (the same code, `loadWorkflow`, `walkLoaded`
+   and `driverDiagnostics`). Each error is a problem
+   (`<file>: <code> <message>`); warnings are not.
+5. **Needs your eye**, against the file at `HEAD` (none for a new one): each new
+   `tools.allow` entry, on a node, an agent, `defaults` or in
+   `.ork/project.yaml`'s rules; each new tool node `env:` entry; each new
+   network reach: a `tool.gh`, `tool.aws` or `mcp.call` node, an `mcp:` server,
+   or a `WebFetch` or `WebSearch` allow.
+
+## Trust model
+
+- The paid part reads untrusted text: the repository, a cloned project's files,
+  recorded runs and feedback, the answers. Both built-ins mark every input
+  untrusted, ignore the project's instructions and skills where the driver
+  allows it ([what each driver adds](#what-each-driver-adds)), and say so.
+- `propose` reads only; `write` has no shell and works in a worktree; every
+  shell step is a tool node whose command Ork wrote; nothing the model drafted
+  runs before the user keeps it and runs the workflow themselves.
+- **Checked in code:** evidence, drafted commands and names (`filter`); scope,
+  caps, no `driver`/`model`, agents, canonical form and validation per ready
+  driver (`finish`); the gate's "needs your eye" list.
+- **Held only by a prompt:** how many follow-up questions `propose` asks (and
+  `maxTurns`); the quality of what is proposed and written; a write outside the
+  worktree. A bare `Edit` or `Write` allow is not held to the worktree (G14), so
+  `finish` sees only what lands in the worktree; the gate says so. Nor are the
+  proposer's bare `Read`, `Grep` and `Glob` held to the project on `claude-code`
+  and `command-code` ([L399](../gaps/onboard-limits.md)).
+- No credential is asked for, stored or sent; the survey records only whether
+  `gh` is usable. Inputs are scrubbed like other run inputs.
+
+## What each driver adds
+
+`layers.project: ignore` is applied only on `claude-code`
+([what a session loads](../runtime/what-a-session-loads.md)):
+
+- **`claude-code`**: the project's `CLAUDE.md`, `CLAUDE.local.md`,
+  `.claude/rules` and `AGENTS.md` stay out, and its skills are switched off.
+  `.claude/settings.json` and `settings.local.json` still load: the session's
+  `settingSources` stay `[project, local]` under `layers.project: ignore`
+  (`--setting-sources project,local`), with their permissions and hooks
+  ([L394](../gaps/onboard-limits.md)).
+- **`open-code`**: the session settings that carry `ignore` are not passed, so
+  the repository's `AGENTS.md` loads. `.claude/` and `CLAUDE.md` stay out, as
+  always on this driver.
+- **`command-code`**: not passed either: `AGENTS.md`, `.commandcode/skills` and
+  `.commandcode/agents` load, with the machine's own skills, memory and mods.
+
+These are [limits](../gaps/onboard-limits.md), and the onboarding guide says
+which driver reads least.

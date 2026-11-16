@@ -32,7 +32,7 @@ created .gitignore (.ork/runs/)
 Runs use the driver that's ready when they start: claude-code here (2.1.314 (Claude Code), logged in (claude.ai, firstParty)).
 Ork's skills for Claude Code: add them here with `ork init --skills`, or install Ork's plugin in Claude Code (/plugin marketplace add mimshins/ork, then /plugin install ork@ork).
 
-Next: edit .ork/workflows/, then run ork validate.
+Next: ork onboard writes workflows that fit this project; or edit .ork/workflows/, then run ork validate.
 ```
 
 `ork init` never overwrites a file. It adds `.ork/runs/` to `.gitignore` under
@@ -189,12 +189,12 @@ ork worktrees clean --run <run> --all --branches --force
 
 ## Where next
 
-- [The browser view](../guides/browser-view.md): your runs, their questions, and
-  the Builder, in `ork ui`.
+- [Onboarding](../guides/onboarding.md): `ork onboard`, workflows that fit.
+- [The browser view](../guides/browser-view.md): runs, questions, the Builder.
 - `ork context explain hello lead`: what a node's session loads, layer by layer.
 - [Writing workflows](../guides/writing-workflows.md): node types, edges,
   conditions and loops.
 - [Leaders and delegation](../guides/leaders-and-delegation.md): owners,
   children, and spawned workers.
-- [The example workflows](../guides/examples.md): bigger ones, such as
-  `software-factory` and `pr-review`.
+- [The example workflows](../guides/examples.md): `software-factory`,
+  `pr-review`.

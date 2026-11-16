@@ -71,6 +71,8 @@ describe("completion values", () => {
     expect(valuesOf(await offered(seeded, "run", ""))).toEqual([
       "hello",
       "ork:feedback-apply",
+      "ork:onboard-propose",
+      "ork:onboard-write",
       "ork:security-audit",
     ]);
     expect(valuesOf(await offered(seeded, "validate", "h"))).toEqual(["hello"]);

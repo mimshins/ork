@@ -49,6 +49,11 @@ Both folders hold the same things:
   workflow, which works GitHub issues in parallel into one pull request
   (`--issues`, `--no-issues`, or asked once on a terminal; it never overwrites
   `.ork/workflows/issues.ork.yaml`).
+- **`ork onboard`** ([onboard](./cli/onboard-flow.md#setting-up)) runs
+  `ork init`'s file steps itself when `.ork/` is missing (records the project
+  in-repo, writes the starter and the `.gitignore` entry, asks nothing else),
+  and refuses an attached project, naming `ork init`. `ork init`'s closing line
+  points at it.
 - **`ork projects [--json]`** lists registered projects: id, mode, root (marked
   missing when it is gone), and Ork's folder. **`ork projects forget <id>`**
   drops the record; the files and runs stay. **`ork projects move <id> <path>`**

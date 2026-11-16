@@ -63,9 +63,12 @@ describe("the command tree", () => {
     ]);
   });
 
-  it("marks __complete hidden and nothing else", async () => {
+  it("marks __complete and __onboard hidden and nothing else", async () => {
     const hidden = (await subcommandsOf(main)).filter(entry => entry.hidden);
-    expect(hidden.map(entry => entry.name)).toEqual(["__complete"]);
+    expect(hidden.map(entry => entry.name)).toEqual([
+      "__complete",
+      "__onboard",
+    ]);
   });
 
   it("leaves out every internal flag", async () => {
@@ -82,7 +85,15 @@ describe("ork __complete", () => {
     expect(all).toContain(":group Steer a running run");
     expect(all).toContain("run\tRun a workflow, or one node of it");
     expect(await values("")).not.toContain("__complete");
+    expect(await values("")).not.toContain("__onboard");
     expect(await values("")).not.toContain("wt");
+  });
+
+  it("offers onboard and its flags, and never __onboard", async () => {
+    expect(await values("onb")).toEqual(["onboard"]);
+    expect(await values("onboard", "--")).toEqual(
+      expect.arrayContaining(["--driver", "--review", "--fresh"]),
+    );
   });
 
   it("completes a prefix", async () => {
@@ -182,6 +193,8 @@ describe("ork __complete", () => {
   it("offers Ork's own workflows outside a project", async () => {
     expect(await values("run", "ork:")).toEqual([
       "ork:feedback-apply",
+      "ork:onboard-propose",
+      "ork:onboard-write",
       "ork:security-audit",
     ]);
   });

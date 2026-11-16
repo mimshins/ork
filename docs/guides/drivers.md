@@ -164,6 +164,19 @@ Ork's and the ones the node names. Command Code still loads your own skills,
 memory and MCP servers; Ork blocks the calls a node did not allow, but those
 servers start. A project's own `.mcp.json` is never touched.
 
+## What the onboarding sessions read
+
+[`ork onboard`](./onboarding.md) runs two built-in workflows on the driver you
+pick, and its sessions read your repository, which may not be yours. They ask
+the session to ignore your project's instructions and skills, and only
+`claude-code` does: it drops `CLAUDE.md`, `.claude/rules`, `AGENTS.md` and the
+project's skills (not `.claude/settings.json`, hooks included). `open-code`
+still loads the repository's `AGENTS.md`. `command-code` still loads
+`AGENTS.md`, `.commandcode/skills` and `.commandcode/agents`, and your own
+skills, memory and mods. Nothing warns about it. The proposer's `Read`, `Grep`
+and `Glob` stay in your project by its prompt alone on `claude-code` and
+`command-code`.
+
 On `open-code`, a node can't load a server named `ork` or starting with `ork_`.
 OpenCode names a tool `<server>_<tool>`, so its tools could pass for Ork's own
 `ork_<tool>`. The node fails before its session starts, with an error that names

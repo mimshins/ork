@@ -43,6 +43,9 @@ runs and worktrees in plain words.
   per node, limits, and what you spent.
 - [The example workflows](./guides/examples.md): what each one does, how to
   download it, and how to run it.
+- [Onboarding](./guides/onboarding.md): `ork onboard` reads your project, asks
+  three questions and writes the workflows you pick on a branch; its cost cap,
+  the gate, and what is checked.
 - [Auditing your project's security](./guides/security-audit.md):
   `ork run ork:security-audit`, a read-only audit that ships with Ork: its
   profiles and cost, the report and where it is.

@@ -1292,6 +1292,23 @@ export const MILESTONES = [
         ],
       },
       {
+        id: "onboard",
+        title: "`ork onboard`: workflows that fit the project",
+        status: "active",
+        detail:
+          "Built, waiting to land (it becomes done with its commit). RFC-018, now Implemented (Option B, ADR-097). `ork onboard` does the free steps itself (refusals, `ork init`'s file steps, the driver, a survey of the repository with no model, three fixed questions, a digest of past runs in review mode, the worst-case cost) and runs two built-ins between them, `ork:onboard-propose` (reading tools only) and `ork:onboard-write` (a writer in a worktree), on whichever driver is ready. A hidden `ork __onboard` holds the checks in code: `filter` drops a suggestion whose evidence or drafted command does not exist, and `finish` holds the writer to `.ork/workflows` and `.ork/project.yaml`, to both caps, to no `driver` or `model`, and to `ork validate` on every ready driver. The gate shows the diff and every new permission; Ork never merges. Left: attached projects are refused (L390), an interrupted flow starts over (L391), the follow-up cap is a prompt (L392), `layers.project: ignore` applies only on `claude-code` (L393), the writer is held by a check and not a sandbox (L395), and the first paid trial on three drivers.",
+        docs: [
+          "docs/guides/onboarding.md",
+          "decisions/ADR-097-onboarding-workflows.md",
+          "rfcs/archived/RFC-018-onboard.md",
+          "specs/cli/onboard.md",
+          "specs/gaps/onboard-limits.md",
+          "packages/cli/src/commands/onboard.ts",
+          "packages/core/workflows/onboard-propose.ork.yaml",
+          "packages/core/workflows/onboard-write.ork.yaml",
+        ],
+      },
+      {
         id: "benchmark",
         title: "Prove it costs less",
         status: "planned",

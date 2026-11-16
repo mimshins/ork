@@ -15,9 +15,9 @@ with the built-in node types
 ([workflow.ts](../../packages/cli/src/run/workflow.ts)):
 
 - **Ork's own workflows:** `<wf>` can be `ork:<name>`, one of the workflows Ork
-  ships (`ork:feedback-apply`, `ork:security-audit`): Ork writes it into the
-  project's gitignored run folder and runs that file
-  ([built-in workflows](./built-in-workflows.md)).
+  ships (`ork:feedback-apply`, `ork:onboard-propose`, `ork:onboard-write`,
+  `ork:security-audit`): Ork writes it into the project's gitignored run folder
+  and runs that file ([built-in workflows](./built-in-workflows.md)).
 - **A name that is no file:** `<wf>` is a file name or path, never a workflow's
   `name:`. When it is none, `ork run` and `ork validate` say
   `no workflow file <wf>; a file name or path is meant, not a workflow name (this project's workflows: …)`,

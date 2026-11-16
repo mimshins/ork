@@ -502,3 +502,31 @@ describe("a yes-or-no question", () => {
     expect(await confirmTyping("yes\n")).toBe(true);
   });
 });
+/** `ork init` for real, in a new git repository with its own `~`. */
+const initBare = () => {
+  const dir = tempProject();
+  execFileSync("git", ["init", "-q"], { cwd: dir });
+  return spawnSync(
+    process.execPath,
+    [BIN, "init", "--no-skills", "--no-issues", "--no-link", "--plain"],
+    {
+      cwd: dir,
+      encoding: "utf8",
+      env: {
+        PATH: process.env["PATH"] ?? "",
+        HOME: dir,
+        ORK_NO_UPDATE_CHECK: "1",
+      },
+    },
+  );
+};
+
+describe("ork init's closing line", () => {
+  it("points at ork onboard and ork validate", () => {
+    const { status, stdout } = initBare();
+    expect(status).toBe(0);
+    expect(stdout).toContain(
+      "Next: ork onboard writes workflows that fit this project; or edit .ork/workflows/, then run ork validate.",
+    );
+  });
+});

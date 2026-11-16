@@ -21,6 +21,9 @@ export const main: CommandDef = withShortFlags(
     meta: ORK_META,
     subCommands: {
       init,
+      // Loaded on use: it reads the repository and starts runs.
+      onboard: () =>
+        import("./commands/onboard.ts").then(module => module.onboard),
       register,
       projects,
       migrate,
@@ -77,6 +80,11 @@ export const main: CommandDef = withShortFlags(
       __complete: (): Promise<CommandDef> =>
         import("./commands/completion.ts").then(module =>
           module.completeCommand(main),
+        ),
+      // Hidden: what the onboarding workflows' tool nodes run.
+      __onboard: () =>
+        import("./commands/onboard-verbs.ts").then(
+          module => module.onboardVerbs,
         ),
     },
   }),
