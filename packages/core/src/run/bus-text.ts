@@ -1,6 +1,7 @@
 /**
  * @file What the message bus says to a session: the notice of unread messages,
- *   the user's own words, and a question for an owner.
+ *   the user's own words, a question for an owner, and why a message was not
+ *   sent.
  */
 
 import type { InboxMessage } from "../runtime/types.ts";
@@ -44,3 +45,10 @@ export const notAContact = (to: string, peers: readonly string[]): string =>
   peers.length === 0
     ? "you have no one to message in this run"
     : `\`${to}\` is not one of your contacts; you can message \`${peers.join("`, `")}\` (your owner, the nodes you own, and your declared channels)`;
+
+/**
+ * Why a node may not write to its owner while the owner waits on it: the owner
+ * reads nothing until its children have reported, so a reply can't come.
+ */
+export const ownerWaits = (owner: string): string =>
+  `\`${owner}\` is waiting for you to finish and reads nothing until your report reaches it, so it can't reply. Put what it needs to know in your report. If you need a decision before you go on, ask with ask_user (your owner answers if it takes your questions, otherwise the user does); if it isn't one, decide yourself and say what you chose in your report`;

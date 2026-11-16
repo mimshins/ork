@@ -374,3 +374,33 @@ describe("delegation", () => {
     ]);
   });
 });
+
+/** A leader that delegates to `fix`, which writes to it; `sent` gets the result. */
+const askingChild =
+  (sent: unknown[]): NodeExecutor =>
+  async context => {
+    if (context.ownership !== undefined && context.brief === undefined) {
+      await context.ownership.delegate([{ child: "fix", brief: "go" }]);
+      return passing("led");
+    }
+    if (context.id === "fix") {
+      sent.push(context.mailbox?.send("lead", "may I?"));
+    }
+    return passing("did");
+  };
+
+describe("a child's message to its waiting leader", () => {
+  it("is refused while the leader waits in delegate", async () => {
+    const sent: unknown[] = [];
+    const { result, events } = await run(compile(TEAM), askingChild(sent));
+
+    expect(result.status).toBe("succeeded");
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({ ok: false });
+    expect(sent[0]).toHaveProperty(
+      "error",
+      expect.stringContaining("`lead` is waiting for you to finish"),
+    );
+    expect(events.some(e => e.type === "message.sent")).toBe(false);
+  });
+});

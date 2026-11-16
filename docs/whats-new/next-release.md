@@ -2,6 +2,13 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **A child no longer waits for a reply its leader can't send.** A leader inside
+  `delegate` reads nothing until its children report, so a child that messaged
+  it a question and waited for the answer sat out its whole wait (up to an
+  hour), with the run stalled. Ork now refuses that message and tells the child
+  to ask with `ask_user` (the leader answers if it takes its children's
+  questions, otherwise you do), or to decide and say so in its report
+  ([messages between nodes](../guides/leaders-and-delegation.md#messages-between-nodes)).
 - **`ork logs -f --all --limit` keeps the last N lines in the order they
   print.** It used to count run by run, so with several live runs the kept lines
   could differ from the last N you see in time order. It now counts in the

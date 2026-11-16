@@ -60,7 +60,10 @@ or tighten what the reviewers ask for.
 
 **A message was not sent.** `send_message` reaches only a node's owner, the
 nodes it owns, and its channels; the refusal lists whom it can reach. Add a
-`messages` channel to the workflow to connect two others.
+`messages` channel to the workflow to connect two others. A child's message to
+its leader is also refused while the leader waits on it in `delegate` or
+`spawn_worker`, since the leader reads nothing until the child reports; the
+child asks with `ask_user` instead, or decides.
 
 **A node fails and I don't know why.** Its line says a kind and a message, for
 example `✗ Turn limit: reached its turn limit (8)`. Every kind, who acts on it

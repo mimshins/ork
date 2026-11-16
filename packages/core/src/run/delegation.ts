@@ -42,6 +42,8 @@ export type DelegationHooks = {
   releaseClaims: () => string[];
   /** Lends the leader's session slot to its children while it waits. */
   lend: () => void;
+  /** Marks the leader as waiting on its children until the returned call. */
+  awaits: () => () => void;
   reclaim: () => Promise<void>;
 };
 
@@ -179,6 +181,7 @@ export const createOwnership = (hooks: DelegationHooks): Ownership => {
       }
     }
     hooks.lend();
+    const waited = hooks.awaits();
     try {
       const results = await Promise.all(
         jobs.map(async job => {
@@ -193,6 +196,7 @@ export const createOwnership = (hooks: DelegationHooks): Ownership => {
       );
       return { reports: results, notes };
     } finally {
+      waited();
       await hooks.reclaim();
     }
   };

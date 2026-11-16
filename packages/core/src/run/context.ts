@@ -129,6 +129,7 @@ export const nodeContext = (
         return held;
       },
       lend: deps.slots.release,
+      awaits: () => deps.ports.bus.awaits(id),
       reclaim: deps.slots.take,
     });
   }

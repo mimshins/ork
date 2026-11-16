@@ -105,10 +105,10 @@ messages:
   - between: [security, code]
 ```
 
-Anyone else is refused, and the agent is told whom it can write to. The
-recipient gets a one-line notice at its next step, even in the middle of a task,
-and reads the message with `read_inbox`; a node that is not running sees it when
-it next starts. So a reviewer can warn the coder about something before its
+Anyone else is refused, and so is a child writing to a leader that waits on it
+in `delegate` (it asks with `ask_user` or decides); the agent is told why. The
+recipient gets a notice at its next step and reads it with `read_inbox`; a node
+not running sees it when it starts. So a reviewer can warn the coder before its
 report, without the leader passing it on.
 
 ## Claims: parallel writers stay apart

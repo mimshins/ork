@@ -14,10 +14,16 @@ import type {
   MessageVia,
   RelayPort,
 } from "../runtime/types.ts";
+import { createAwaiting } from "./awaiting.ts";
 import { createCallRoutes } from "./bus-calls.ts";
 import type { Mail, OwnerQuestion } from "./bus-events.ts";
 import { createOwnerQuestions } from "./bus-questions.ts";
-import { inboxNotice, notAContact, userMessageText } from "./bus-text.ts";
+import {
+  inboxNotice,
+  notAContact,
+  ownerWaits,
+  userMessageText,
+} from "./bus-text.ts";
 import { contactsOf, declaredNodes, hearsFromScripts } from "./contacts.ts";
 import type { Slots } from "./slots.ts";
 import type { RunEvent } from "./types.ts";
@@ -43,6 +49,12 @@ export type Bus = {
   rule: (from: string, to: string, body: string) => void;
   /** How many messages, the user's queued ones too, each node has not read. */
   unread: () => Map<string, number>;
+  /**
+   * `leader` waits on its children (`delegate`, `spawn_worker`) until the
+   * returned function is called. Meanwhile it reads nothing, so a message from
+   * a node it owns is refused: no reply could come before that node ends.
+   */
+  awaits: (leader: string) => () => void;
 };
 
 const SESSION_TYPES = new Set(["agent.leader", "agent.worker"]);
@@ -82,6 +94,7 @@ export const createBus = ({
   });
   /** Sessions in `wait`: called when a message arrives or the session ends. */
   const waiters = new Map<string, () => void>();
+  const awaiting = createAwaiting();
 
   const declared = (id: string) => graph.nodes.get(templates.get(id) ?? id);
   const hasSession = (id: string) =>
@@ -157,6 +170,9 @@ export const createBus = ({
     return {
       peers: () => peersOf(id),
       send: (to, body) => {
+        if (to === declared(id)?.node.parent && awaiting.waits(to)) {
+          return { ok: false, error: ownerWaits(to) };
+        }
         const peers = peersOf(id);
         if (peers.includes(to) && calls.hold(to, id, body)) {
           return { ok: true, delivered: "queued" };
@@ -279,5 +295,6 @@ export const createBus = ({
       }
       return new Map([...counts].filter(([, count]) => count > 0));
     },
+    awaits: awaiting.awaits,
   };
 };

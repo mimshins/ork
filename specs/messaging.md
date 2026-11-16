@@ -69,6 +69,13 @@ ports. It reaches other runs through [links](./messaging/links.md).
   and channels, both ways. Anything else is refused with the reason and the list
   of whom the node can reach. A node's system prompt names whom it can write to.
   A [program or a rule](./messaging/scripts.md) can write to a session too.
+- **Not to a leader waiting on you:** while a leader is inside `delegate` or
+  `spawn_worker`, it reads nothing until every child has reported, so a message
+  from a node it owns is refused (`Not sent: \`build\` is waiting for you to
+  finish
+  …`) and nothing is recorded. The refusal says to put what the leader needs in the report, to ask with `ask_user`for a decision (a leader that takes its children's questions answers it through a fork, ADR-063), or to decide and say so in the report. Without it, a child that asked and then waited for a reply waited out its whole`wait_for_messages`
+  timeout ([awaiting.ts](../packages/core/src/run/awaiting.ts)). Its children
+  may still write to each other, and the leader's channels are unchanged.
 - **Notice, then pull:** a message lands in the recipient's inbox
   (`message.sent` in the run's events, masked like every event). A live session
   gets a one-line notice,

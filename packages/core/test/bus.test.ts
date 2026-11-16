@@ -102,6 +102,41 @@ describe("addressing", () => {
   });
 });
 
+describe("a leader waiting on its children", () => {
+  it("refuses its children's messages until it stops waiting", () => {
+    const { bus, events } = setup();
+    const done = bus.awaits("lead");
+    const refused = bus.mailbox("code").send("lead", "fix them?");
+    expect(refused).toMatchObject({ ok: false });
+    expect(refused).toHaveProperty(
+      "error",
+      expect.stringContaining("`lead` is waiting for you to finish"),
+    );
+    expect(bus.mailbox("code-2", "code").send("lead", "?")).toMatchObject({
+      ok: false,
+    });
+    // Its children may still write to each other, and it to them.
+    expect(bus.mailbox("docs").send("code", "hi")).toMatchObject({ ok: true });
+    expect(bus.mailbox("lead").send("code", "go")).toMatchObject({ ok: true });
+    expect(events.map(e => e.type)).toEqual(["message.sent", "message.sent"]);
+    done();
+    expect(bus.mailbox("code").send("lead", "done")).toMatchObject({
+      ok: true,
+    });
+  });
+
+  it("waits while any of its calls does, and counts each end once", () => {
+    const { bus } = setup();
+    const first = bus.awaits("lead");
+    const second = bus.awaits("lead");
+    first();
+    first();
+    expect(bus.mailbox("code").send("lead", "?")).toMatchObject({ ok: false });
+    second();
+    expect(bus.mailbox("code").send("lead", "?")).toMatchObject({ ok: true });
+  });
+});
+
 describe("delivery", () => {
   it("puts a notice into a live session; the body waits in the inbox", () => {
     const { bus, events, session } = setup();
