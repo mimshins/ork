@@ -1,5 +1,84 @@
 # @krapht/ork
 
+## 1.0.0-alpha.22
+
+### Minor Changes
+
+- [`ca789e8`](https://github.com/mimshins/ork/commit/ca789e889b197b682f2baf6df0a5833971b01c9d) Thanks [@mimshins](https://github.com/mimshins)! - New `ork onboard`: reads your project (package manager, scripts, test and check
+  commands, CI, agents and skills), asks three questions about what slows you
+  down, proposes workflows that fit with the evidence for each, writes the ones
+  you pick on a branch, and stops at a gate that shows the diff and every new
+  permission. Ork shows the most it can spend before it starts and never merges.
+  Run again in a project that has workflows and runs, it reviews what the runs
+  showed. It uses whichever of Claude Code, OpenCode or Command Code is ready
+  (`--driver` picks one; `--review` and `--fresh` set the mode). Two built-in
+  workflows, `ork:onboard-propose` and `ork:onboard-write`, do the paid steps.
+
+- [`da61e3f`](https://github.com/mimshins/ork/commit/da61e3ff3e355579b6424c9500ef0210e7efcc12) Thanks [@mimshins](https://github.com/mimshins)! - `ork run ork:security-audit` is a security audit that ships with Ork and works
+  in any project set up with `ork init`: free scanners (`pnpm audit` or
+  `npm audit` by your lockfile, GitHub workflow pinning and permissions,
+  credential formats), then read-only agents hunt and verify, and the report goes
+  to `~/.ork/audits/<project>/<run-id>/`, outside the project, marked as possibly
+  sensitive. `quick` costs at most $29 and `standard` at most $72. A built-in
+  workflow can now carry companion files, written beside it under
+  `.ork/runs/.builtin/<hash>/`. A project attached with `ork register` is refused
+  by the first step, naming `ork init`. This repository's `ork run audit` is now
+  `ork run ork:security-audit`.
+
+### Patch Changes
+
+- [`c0af4eb`](https://github.com/mimshins/ork/commit/c0af4eb8df02cf00b20549f1175562138595259d) Thanks [@mimshins](https://github.com/mimshins)! - `ork attach`: questions that open in several called runs while a card is up now
+  come next in the order they opened, as in `ork decide --follow`, not in the
+  order each run was polled.
+
+- [`0f5ab8a`](https://github.com/mimshins/ork/commit/0f5ab8a01c626ec01a2eaf558b7aab7efcfd398d) Thanks [@mimshins](https://github.com/mimshins)! - The `issues` workflow `ork init --issues` writes: a new file the conflict
+  resolver leaves outside the conflict is set aside out of the commit, rather than
+  failing the issue, and the resolver no longer has the `Write` tool.
+
+- [`267a314`](https://github.com/mimshins/ork/commit/267a3143986c549e382201de706e569d6ef98ee2) Thanks [@mimshins](https://github.com/mimshins)! - `ork decide --follow`: questions that open in several runs while a card is up
+  now come next in the order they opened, not in the order each run was polled,
+  and a waiting question answered elsewhere says so at once.
+
+- [`7ad5336`](https://github.com/mimshins/ork/commit/7ad533640aa2513808170a3ad72bb20871f59584) Thanks [@mimshins](https://github.com/mimshins)! - `ork decide --follow` and `ork attach` print a card's `answered elsewhere` line
+  before the next card, not under the next card's `Choose:` prompt on a plain
+  terminal.
+
+- [`a03f79a`](https://github.com/mimshins/ork/commit/a03f79a7f53d5e3ba0c0d959c548f51201df1f04) Thanks [@mimshins](https://github.com/mimshins)! - `ork logs -f --all`, `ork decide --follow` and `ork attach` now deliver the
+  events of several runs in the order they were stored (by time, then run, then
+  sequence), within about one poll, each up to one poll later. With no card up,
+  `ork decide --follow` asks the earliest opened question first. `ork attach` (and
+  the called-run view of a foreground `ork run`) interleaves a caller's and its
+  called runs' events by time; `ork logs <run>` is unchanged.
+
+- [`eb8a6b0`](https://github.com/mimshins/ork/commit/eb8a6b0e2405be090127205b94cb6722097bd7b4) Thanks [@mimshins](https://github.com/mimshins)! - `ork logs -f --all --limit N` keeps the last N lines in the order they print
+  (stored order: time, then run, then sequence), not run by run. Core exports
+  `compareStoreOrder`, the one comparator for both.
+
+- [`b4399cb`](https://github.com/mimshins/ork/commit/b4399cb8c6d716255fdcecd6e8999b02a5a55b80) Thanks [@mimshins](https://github.com/mimshins)! - `ork onboard` is safer to run: it picks the driver before it writes anything, so
+  with none ready your project is left as it was; the writer is no longer re-run
+  when its check cannot start (only when the check finds problems); a file the
+  writer hides in an ignored path is refused; and a commit hook that rewrites a
+  written workflow is reported. The proposer's suggestions are now checked inside
+  `ork onboard`, so a long list no longer fails the run; `ork:onboard-propose` run
+  alone returns them unfiltered, and the hidden `ork __onboard filter` is gone.
+  Built-in workflows also refuse a folder where Ork would write one of their
+  files, and the survey keeps `packageManager` to one line.
+
+- [`8517563`](https://github.com/mimshins/ork/commit/8517563cca4f736e831a43bc5fb72acce6744192) Thanks [@mimshins](https://github.com/mimshins)! - A child's `send_message` to a leader that is waiting on it in `delegate` or
+  `spawn_worker` is refused, with a note to ask with `ask_user` or decide, instead
+  of leaving the child waiting for a reply that can't come.
+
+- [`d4d23f3`](https://github.com/mimshins/ork/commit/d4d23f355754329b65891d48f3d87ce27eee711e) Thanks [@mimshins](https://github.com/mimshins)! - A question fits a terminal shorter than its card: only the highlighted option
+  keeps its description, the options scroll around it, the card is cut, and no
+  prompt is ever drawn taller than the screen.
+
+- [`847ee0a`](https://github.com/mimshins/ork/commit/847ee0a9288fe4d22e8f16e363c6ba89d24bf2b7) Thanks [@mimshins](https://github.com/mimshins)! - `ork ui` accessibility fixes from a WCAG 2.2 AA pass: no sideways scrolling at
+  320 px, the Follow-ups tab's name carries its due count, resizing from a tab
+  keeps focus there, a Motion: Reduce palette command, heading levels in
+  Follow-ups, node controls opened on their group, an emptied filter clears on
+  Enter, readable reasons on unavailable palette commands, and a named
+  Notifications list.
+
 ## 1.0.0-alpha.21
 
 ### Minor Changes
