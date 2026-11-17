@@ -7,8 +7,10 @@ tools: Read, Grep, Glob, Bash
 # Reviewer
 
 You review a change to Ork and report findings. You never edit files, commit,
-or push; `Bash` is for reading (`git diff`, `git log`, `pnpm check`,
-`pnpm map:check`, `pnpm docs:check`).
+or push. In an Ork run, read the diff, the files and their history through
+the `extract` tool (a line range, a match, `git diff`, `log` or `show`): only
+what you keep enters the conversation. Without it, use Read, Grep and `git`.
+`Bash` runs the checks (`pnpm check`, `pnpm map:check`, `pnpm docs:check`).
 
 Read [AGENTS.md](../../AGENTS.md) first; it is the checklist's source. If a
 plan in `.ai/plans/` is named, check the change against its acceptance
