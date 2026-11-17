@@ -1,5 +1,44 @@
 # @krapht/ork
 
+## 1.0.0-alpha.23
+
+### Minor Changes
+
+- [`b5b8db9`](https://github.com/mimshins/ork/commit/b5b8db9284b0b9cdad28ba9b7a99694946630b07) Thanks [@mimshins](https://github.com/mimshins)! - `ork run ork:security-audit` works in a project attached with `ork register`.
+  Ork runs the audit in a git worktree of `HEAD` beside the clone, which holds the
+  audit's files, and removes it when the run ends. The audit sees `HEAD`, not
+  uncommitted changes, and its report names the audited commit.
+
+- [`3195072`](https://github.com/mimshins/ork/commit/31950721765c12fc53d84d5da069a40599df460c) Thanks [@mimshins](https://github.com/mimshins)! - Sessions get an `extract` tool that reads a range of lines, searches, or shows a
+  `git` diff, `show` or `log`, cuts the text with `head`, `tail` or `match`, and
+  returns only that (16,000 characters at most, with a count footer), so a whole
+  file or a long diff does not stay in the conversation. It refuses paths outside
+  the session's folder and secret-looking files, and Ork's notes to every node
+  tell it to prefer `extract` over `cat`, `sed` and `rg`. `pnpm benchmark` also
+  writes `carried.json`, the carried weight by role and kind.
+
+### Patch Changes
+
+- [`3a7e909`](https://github.com/mimshins/ork/commit/3a7e909a52b8a78bd710d3ae4542d96564647b16) Thanks [@mimshins](https://github.com/mimshins)! - `ork onboard` tells an attached project to run `ork migrate`, not `ork init`.
+
+- [`549a04b`](https://github.com/mimshins/ork/commit/549a04b8ee196a69a08cd11e1badd7b14d9984dc) Thanks [@mimshins](https://github.com/mimshins)! - `ork onboard` offers the proposal you left at the pick (Ctrl-C there now says
+  what the proposing run spent), its survey adds a bounded, secret-masked digest
+  of recent commit subjects, tags and most-changed paths, its cost line shows
+  tokens only on a driver that reports no dollars, its gate lists changes to more
+  settings and no plain reads, its writer gets a workflow-format reference and a
+  note about the files `ork init` made, and the check on the writer ignores
+  Command Code's empty `taste.md`. `ork:security-audit` holds each verifier's
+  record to the report schema and lists the previous audit in `prior_run_paths`. A
+  `verify:` step reads the session's report from `$ORK_REPORT`.
+
+- [`a14df97`](https://github.com/mimshins/ork/commit/a14df978180cdbb28a53a142c23944b452eea2fb) Thanks [@mimshins](https://github.com/mimshins)! - `ork onboard` offers to resume a proposing run that failed, was stopped or
+  crashed, instead of starting over. Its gate lists a deleted node as one
+  `node <id> removed` line and no longer misreads a field value that contains
+  "changes … to". Its survey says `no commits` for a repository with none.
+
+- [`b7c73b9`](https://github.com/mimshins/ork/commit/b7c73b9d761272ffdacf2c6b5ef1866f930cd859) Thanks [@mimshins](https://github.com/mimshins)! - A question's options wrap onto the next lines instead of being cut at the
+  terminal's edge.
+
 ## 1.0.0-alpha.22
 
 ### Minor Changes
