@@ -48,10 +48,13 @@ in `carried.json` from `pnpm benchmark`, or alone from
   `tail`, `nl`, `less`, `bat`, `awk`), searches (`rg`, `grep`, `find`, `ls`,
   `fd`, `tree`, Grep, Glob), `git diff`/`show`/`log`, tests and checks, Read,
   Ork's tools, `extract`, other.
-- **The 87%:** the RFC's 88 sessions in four build runs: shell reads 53%,
-  searches 14% and git reads 10% make 77%, with the Read tool's 10%, 87%. That
-  is the weight an extract tool could reach, not what it saves: what it returns
-  is carried too.
+- **The baseline:** this script on the RFC's four build runs (`f7f49775`,
+  `8d0a6287`, `3867d943`, `aedbdc3d`): 55 sessions; shell reads 57%, searches
+  17%, the Read tool 9% and git reads 9% make 92%. That is the weight an extract
+  tool could reach, not what it saves: what it returns is carried too. Turns per
+  session by run: mean 17–34, median 13–28. The RFC's hand count (88 sessions,
+  87%, mean 97 and median 66 turns) counted a resumed session once per start and
+  each content block of a message as a turn; compare against these figures.
 - **Heuristic kinds:** a shell command is named by its first real command
   (leading `cd`, `export` and assignments skipped; a pipeline by its first
   command). A compound one can land in the wrong kind; that moves weight between
