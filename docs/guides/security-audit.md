@@ -94,11 +94,12 @@ channel, such as your repository's private security advisories.
 
 ## Limits
 
-- **`ork init` projects only.** The audit's agents read the workflow's files
-  from `.ork/runs/.builtin/<hash>/` in your project. In a project attached with
-  `ork register`, Ork's files live outside the checkout, so the first step stops
-  with `the audit needs its files inside the checkout; use ork init`, before any
-  agent starts and with nothing spent ([projects](./projects.md)).
+- **In-repo projects only, for now.** The audit's agents read the workflow's
+  files from `.ork/runs/.builtin/<hash>/` in your project. In a project attached
+  with `ork register`, Ork's files live outside the checkout, so the first step
+  stops with `the audit needs its files inside the checkout; run ork migrate…`,
+  before any agent starts and with nothing spent. `ork migrate` moves them into
+  the repository's `.ork/` ([projects](./projects.md)).
 - A run writes about 350 KB into the project's gitignored `.ork/runs/`. If that
   folder, or `.ork/runs/.builtin`, is a link, Ork refuses to write there.
 - The skill it follows is Cloudflare's

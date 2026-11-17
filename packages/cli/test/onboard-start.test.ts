@@ -42,7 +42,7 @@ describe("refusal", () => {
     ]);
   });
 
-  it("refuses an attached project, naming ork init", async () => {
+  it("refuses an attached project, naming ork migrate", async () => {
     const attached: ProjectPlace = {
       root: "/nowhere",
       mode: "attached",
@@ -51,7 +51,7 @@ describe("refusal", () => {
     const lines = await refusal(input({ registered: [attached] }));
     expect(lines).toHaveLength(1);
     expect(lines?.[0]).toContain("is attached");
-    expect(lines?.[0]).toContain("ork init");
+    expect(lines?.[0]).toContain("ork migrate");
   });
 
   it("stops with headWarning's text when there is no commit", async () => {

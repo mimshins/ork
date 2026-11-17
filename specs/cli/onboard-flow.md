@@ -17,8 +17,10 @@ Each is one stderr line and exit 1, before anything is written or spent:
 - **No terminal** (stdin or stderr is not a TTY):
   `ork onboard asks questions: run it in a terminal.` It has no flags for
   answers or picks.
-- **An attached project** (`ork register`): it says to run `ork init` in the
-  repository instead (attached projects are a [gap](../gaps/onboard-limits.md)).
+- **An attached project** (`ork register`): it says to run `ork migrate`, which
+  moves Ork's files into the repository's `.ork/`, then `ork onboard`
+  ([ADR-099](../../decisions/ADR-099-onboard-refuses-attached-projects.md);
+  attached projects are a [gap](../gaps/onboard-limits.md)).
 - **No commit**: `headWarning`'s text, as `ork init` prints it; no run starts,
   since `ork:onboard-write` needs a worktree.
 - **`--review` with `--fresh`**: `--review and --fresh can't be used together.`

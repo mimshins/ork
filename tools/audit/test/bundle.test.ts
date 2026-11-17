@@ -155,7 +155,7 @@ describe("the written security-audit bundle", () => {
     }
   });
 
-  it("makes scan fail, naming ork init, when the bundle is outside the project", () => {
+  it("makes scan fail, naming ork migrate, when the bundle is outside the project", () => {
     const project = bundleProject();
     const attached = gitRepo({ "b.txt": "y" });
     const run = bundleCli(
@@ -167,6 +167,6 @@ describe("the written security-audit bundle", () => {
     );
     expect(run.status).toBe(1);
     expect(run.stdout).toBe("");
-    expect(run.stderr).toContain("ork init");
+    expect(run.stderr).toContain("ork migrate");
   });
 });

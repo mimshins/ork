@@ -1,6 +1,6 @@
 # RFC-022 — `ork onboard` in attached projects
 
-- **Status:** Draft
+- **Status:** Implemented
 - **Date:** 2026-11-16
 - **Supersedes:** —
 - **Superseded by:** —
@@ -119,11 +119,13 @@ the repository.
 
 ## Decision
 
-_Proposed, not decided._ Recommend **Option C now**, and **Option D** if
-attached users want onboarding: it is the only one of the three building options
-that gives the writer the repository to read with no new read or write grant
-outside the checkout. A needs the grant and a baseline; B loses the writer's
-reads or needs the same grant.
+**Option C**, decided by the maintainer on 2026-11-17: `ork onboard` keeps
+refusing an attached project and names `ork migrate`
+([ADR-099](../../decisions/ADR-099-onboard-refuses-attached-projects.md)).
+**Option D** is kept for when attached users want onboarding: it is the only one
+of the three building options that gives the writer the repository to read with
+no new read or write grant outside the checkout. A needs the grant and a
+baseline; B loses the writer's reads or needs the same grant.
 
 What each option lets an agent reach outside the checkout:
 

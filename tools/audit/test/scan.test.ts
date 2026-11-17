@@ -303,7 +303,9 @@ describe("runScan", () => {
     const outside = path.join(path.dirname(repo), "bundle");
     expect(() =>
       runScan({ cwd: repo, env, audit: neverRuns, bundleDir: outside }),
-    ).toThrow(/use ork init \(ork register keeps Ork's files outside it\)/u);
+    ).toThrow(
+      /run ork migrate to move this attached project's files into \.ork\//u,
+    );
     expect(existsSync(fixtureAudits(env))).toBe(false);
   });
 

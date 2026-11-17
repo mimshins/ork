@@ -2,6 +2,12 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **An attached project is told to run `ork migrate`, not `ork init`.**
+  `ork onboard` and `ork:security-audit` refuse a project attached with
+  `ork register`; their refusals named `ork init`, which refuses an attached
+  project too. They now name `ork migrate`, which moves Ork's files into the
+  repository's `.ork/` ([onboarding](../guides/onboarding.md),
+  [security audit](../guides/security-audit.md)).
 - **Sessions get an `extract` tool, so a read does not stay in the
   conversation.** It reads a range of lines, searches, or shows a `git` diff,
   `show` or `log`, then cuts the text with `head`, `tail` or `match`, and

@@ -52,10 +52,12 @@ simpler, or could not be checked:
   `readonly` and read the bundle's files (the skill, the read-only rule) from
   `.ork/runs/.builtin/<hash>/` in the project. In an `ork register` project that
   folder is outside the checkout, where a read-only agent cannot read, so `scan`
-  (the first node, free) exits 1 naming `ork init` before any agent starts.
-  Ruled out for now: a driver read grant for another folder, and writing the
-  bundle into the repository
-  ([ADR-096](../../decisions/ADR-096-built-in-bundles.md)). A resume and
+  (the first node, free) exits 1 naming `ork migrate` before any agent starts.
+  Writing the bundle into the repository stays ruled out
+  ([ADR-096](../../decisions/ADR-096-built-in-bundles.md)). The fix is
+  [RFC-021](../../rfcs/active/RFC-021-audit-in-attached-projects.md), Accepted:
+  a per-run worktree holding only the files the agents read, or, if a read-only
+  chain cannot follow one, a single-folder read grant. A resume and
   `ork validate` are unaffected.
 - **L389 · The advisory scanner reads two lockfiles.** `scan` runs
   `pnpm audit --json` when `pnpm-lock.yaml` exists and `npm audit --json` when

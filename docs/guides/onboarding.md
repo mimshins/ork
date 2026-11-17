@@ -37,7 +37,8 @@ line ([the terminal](./terminal.md)).
 
 1. **Checks.** No terminal, an attached project (`ork register`) or no commit
    each print one line and stop, with nothing written and nothing spent. An
-   attached project is not supported yet: run `ork init` in the repository.
+   attached project is not supported: run `ork migrate` to move Ork's files into
+   the repository's `.ork/`, then `ork onboard`.
 2. **Picks the driver.** `--driver <id>` skips the question; one ready driver is
    used; several show a list; none prints how to log in and stops, before
    anything is written: your project folder is as it was.

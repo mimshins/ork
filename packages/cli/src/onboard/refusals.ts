@@ -32,7 +32,7 @@ export const refusal = async (o: RefusalInput): Promise<string[] | null> => {
   const place = placeFor(o.cwd, o.registered);
   if (place.mode === "attached") {
     return [
-      `${place.root} is attached, and ork onboard writes into a repository: run \`ork init\` in the repository, then \`ork onboard\` there.`,
+      `${place.root} is attached, and ork onboard writes into a repository: run \`ork migrate\` to move Ork's files into its .ork/, then \`ork onboard\`.`,
     ];
   }
   const noCommit = await headWarning(o.exec);

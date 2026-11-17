@@ -9,9 +9,11 @@ Found planning and building [`ork onboard`](../cli/onboard.md)
 could not be checked:
 
 - **L390 · An attached project is refused.** `ork onboard` stops in a project
-  `ork register` attached and names `ork init`, since its writer works on a
-  branch of the repository and attached workflows live outside it. Supporting
-  them needs another way to write into the attached folder and show the diff.
+  `ork register` attached and names `ork migrate`, since its writer works on a
+  branch of the repository and attached workflows live outside it. Kept by
+  [ADR-099](../../decisions/ADR-099-onboard-refuses-attached-projects.md): if
+  attached users ask, the writer gets a worktree seeded with the attached files
+  and Ork copies the result back on keep (RFC-022's option D).
 - **L391 · A crash inside the survey or the three questions starts over.** A
   proposal left at the pick, and a propose run that failed, stopped or crashed,
   are found again in the store

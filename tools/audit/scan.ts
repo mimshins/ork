@@ -64,7 +64,7 @@ export const bundleOutsideRoot = (root: string, bundleDir: string): boolean => {
 };
 
 export const OUTSIDE_ROOT_MESSAGE =
-  "the audit needs its files inside the checkout; use ork init (ork register keeps Ork's files outside it)";
+  "the audit needs its files inside the checkout; run ork migrate to move this attached project's files into .ork/, then audit again";
 
 const MAX_FILE_BYTES = 1_000_000;
 

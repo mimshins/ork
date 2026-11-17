@@ -1,6 +1,6 @@
 # RFC-021 — `ork:security-audit` in attached projects
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Date:** 2026-11-16
 - **Supersedes:** —
 - **Superseded by:** —
@@ -103,9 +103,12 @@ it when the run ends.
 
 ## Decision
 
-_Proposed, not decided._ Recommend **Option C**, if the spike shows a readonly
-chain can follow a worktree Ork makes for the run; otherwise **Option A**,
-narrowed to a single folder per driver, with its ADR.
+**Option C**, decided by the maintainer on 2026-11-17, if the spike shows a
+readonly chain can follow a worktree Ork makes for the run; otherwise **Option
+A**, narrowed to a single folder per driver, with its ADR. Auditing `HEAD` is
+accepted for an attached project (open question 3), with the audited commit
+named in the report. The `ork init` advice was fixed first, on its own (open
+question 4): the refusal and the guide now name `ork migrate`.
 
 Reasoning: C is the only option that widens neither what an agent can read nor
 what Ork writes into the user's repository (the class G14 and L399 describe). A
@@ -130,9 +133,8 @@ What each option lets an agent reach outside the checkout:
   [security audit guide](../../docs/guides/security-audit.md) ("Limits") and
   ADR-096 item 6 change. A new ADR supersedes item 6 (A, B) or records C. Tests
   need an attached project fixture.
-- **Now, with no decision:** the refusal text and the guide say `ork init`,
-  which an attached project cannot use; they should say `ork migrate`. That is a
-  one-line fix that this RFC does not wait for.
+- **Done before the build:** the refusal text and the guide said `ork init`,
+  which an attached project cannot use; they now say `ork migrate`.
 - **A:** `SessionSpec` and the three adapters change; the runtime port spec
   changes with them.
 - **C:** the report records the audited commit; an uncommitted-changes warning

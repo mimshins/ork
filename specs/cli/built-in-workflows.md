@@ -46,7 +46,7 @@ a read-only rule and the `tools/audit` scripts.
   it is stale.
 - **Inside the project only.** The folder must be inside the project root for a
   read-only agent to read it. `ork:security-audit`'s first node, `scan`, refuses
-  a folder outside it (an `ork register` project), naming `ork init`, before
+  a folder outside it (an `ork register` project), naming `ork migrate`, before
   anything is spent ([audit limits](../gaps/audit-limits.md)). Resume and
   `validate` are unaffected.
 
