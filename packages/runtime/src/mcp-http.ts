@@ -84,6 +84,9 @@ export const handleRpc = async (
             name: t.name,
             description: t.description,
             inputSchema: z.toJSONSchema(t.schema),
+            ...(t.alwaysLoad
+              ? { _meta: { "anthropic/alwaysLoad": true } }
+              : {}),
           })),
         },
       };

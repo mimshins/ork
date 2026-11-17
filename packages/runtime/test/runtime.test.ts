@@ -18,6 +18,7 @@ import {
 } from "@krapht/ork-core";
 import { isClaudeNode, NodeSchema } from "@krapht/ork-schema";
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import {
   buildCliArgs,
@@ -136,7 +137,34 @@ describe("normalize", () => {
   });
 });
 
+/** The `tools/list` entry named `name`. */
+const ListSchema = z.object({
+  result: z.object({ tools: z.array(z.record(z.string(), z.unknown())) }),
+});
+const listed = (list: unknown, name: string): Record<string, unknown> =>
+  ListSchema.parse(list).result.tools.find(t => t["name"] === name) ?? {};
+
 describe("Ork's MCP server", () => {
+  it("asks for extract up front and leaves the other tools deferred", async () => {
+    const { human } = recordingHuman();
+    const tools = orkTools({
+      nodeId: "n",
+      driver: "claude-code",
+      ports: { human },
+      cwd: process.cwd(),
+    });
+    const list = await handleRpc(tools, {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/list",
+    });
+    expect(listed(list, "extract")).toHaveProperty("_meta", {
+      "anthropic/alwaysLoad": true,
+    });
+    expect(listed(list, "ask_user")).toHaveProperty("name", "ask_user");
+    expect(listed(list, "ask_user")).not.toHaveProperty("_meta");
+  });
+
   it("lists and calls tools over JSON-RPC", async () => {
     const { human, asked } = recordingHuman();
     const tools = orkTools({

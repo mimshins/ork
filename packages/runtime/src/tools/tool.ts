@@ -52,6 +52,12 @@ export type BoundTool = {
   schema: z.ZodType;
   /** Allowed without a permission prompt. */
   preapproved: boolean;
+  /**
+   * Shown to the model up front, not deferred behind a tool search
+   * (`_meta["anthropic/alwaysLoad"]` in `tools/list`, which Claude Code reads
+   * and other drivers ignore): for a tool meant to replace a built-in one.
+   */
+  alwaysLoad: boolean;
   call: (args: unknown) => Promise<ToolText>;
 };
 
@@ -112,6 +118,8 @@ export const defineTool = <S extends z.ZodRawShape>(definition: {
   shape: S | ((context: ToolContext) => S);
   /** Default: preapproved. */
   preapproved?: boolean;
+  /** Default: deferred, as the driver chooses. */
+  alwaysLoad?: boolean;
   /** Default: every session. */
   available?: (context: ToolContext) => boolean;
   run: (
@@ -136,6 +144,7 @@ export const defineTool = <S extends z.ZodRawShape>(definition: {
       shape,
       schema,
       preapproved: definition.preapproved ?? true,
+      alwaysLoad: definition.alwaysLoad ?? false,
       call: args => {
         const parsed = schema.safeParse(args, { reportInput: true });
         return parsed.success

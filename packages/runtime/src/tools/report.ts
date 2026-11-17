@@ -56,6 +56,7 @@ const bound = (report: NonNullable<ToolContext["report"]>): BoundTool => {
     shape: schema instanceof z.ZodObject ? schema.shape : {},
     schema,
     preapproved: true,
+    alwaysLoad: false,
     call: args => {
       const parsed = schema.safeParse(args, { reportInput: true });
       if (!parsed.success) {

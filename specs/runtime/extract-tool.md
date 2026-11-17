@@ -33,6 +33,15 @@ line in `ORK_TOOLS`, and the three drivers serve it as they serve every Ork tool
 instructions name it in one line; this repository's `.ork/context/build.md` adds
 a stronger rule for its build nodes.
 
+**Loaded up front.** Claude Code defers MCP tools behind a tool search, and a
+session that has not searched for `extract` reads with Read and the shell
+instead: on 2026-11-17, 7 of the first 8 sessions on 1.0.0-alpha.23 made no
+`extract` call, and the one that loaded it made 36. So `tools/list` marks
+`extract` with `_meta: { "anthropic/alwaysLoad": true }` (`alwaysLoad` on the
+bound tool; Claude Code v2.1.285 or later), which puts it in the session's tools
+from the first turn. The other drivers ignore `_meta`; Ork's other tools stay
+deferred.
+
 **Pause.** A paused run or node holds an `extract` call as it holds any tool
 call: the driver's hook (Claude Code's `PreToolUse`, matcher `*`; Command Code's
 mod; OpenCode's rules) does it, and the tool has no code for it

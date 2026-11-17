@@ -130,7 +130,7 @@ const paged = (whole: string, from: number, read: number): string => {
 
 export const extractTool = defineTool({
   name: "extract",
-  description: `Read part of a file, search, or see a git diff in your folder, and get back only the extract. Steps run in order: first one producer (read: numbered lines from–to; search: git grep -E; git: diff, show or log), then up to ${String(MAX_STEPS - 1)} cuts of its output (head, tail: lines; match: lines with a literal substring). Returns up to ${EXTRACT_CAP.toLocaleString("en-US")} characters from \`from\`.`,
+  description: `Use instead of Read, cat, sed, grep or rg to read part of a file, search, or see a git diff in your folder: only what you keep enters the conversation and is reread on every later turn. Steps run in order: first one producer (read: numbered lines from–to; search: git grep -E; git: diff, show or log), then up to ${String(MAX_STEPS - 1)} cuts of its output (head, tail: lines; match: lines with a literal substring). Cut to what you need: a match or a line range, not a whole file. Returns up to ${EXTRACT_CAP.toLocaleString("en-US")} characters from \`from\`.`,
   shape: {
     steps: StepsSchema,
     from: count
@@ -138,6 +138,9 @@ export const extractTool = defineTool({
       .describe("The character of the result to start at. Default: 0."),
   },
   available: ({ cwd }) => cwd !== undefined,
+  // Deferred, sessions read with their built-in tools instead (0 calls in 7
+  // of 8 sessions measured on 2026-11-17).
+  alwaysLoad: true,
   run: async ({ cwd = "", denyRead }, { steps, from }): Promise<ToolText> => {
     const [first, ...cuts] = steps;
     if (

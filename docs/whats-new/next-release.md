@@ -21,3 +21,8 @@ _Part of [What's new](../whats-new.md)._
   `ork init` just made, the writer is told about uncommitted files under `.ork/`
   and `.gitignore` of your project, so it does not look for them
   ([onboarding](../guides/onboarding.md)).
+- **Sessions see `extract` from their first turn.** Claude Code had deferred it
+  behind its tool search with Ork's other tools, so sessions read with Read and
+  the shell instead. Ork now asks Claude Code to load it up front, and its
+  description says to cut a read to a match or a line range
+  ([guide](../guides/skills-and-context.md#reading-part-of-a-file-extract)).
