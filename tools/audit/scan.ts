@@ -145,11 +145,14 @@ export const realAudit = (
   cwd: string,
   tool: string,
 ): ReturnType<AuditRunner> => {
-  const result = spawnSync(tool, ["audit", "--json"], {
-    cwd,
-    encoding: "utf8",
-    maxBuffer: 1 << 28,
-  });
+  // npm and pnpm are `.cmd` shims on Windows, which Node runs only through a
+  // shell; the command line is fixed, so the shell sees nothing from the project.
+  const windows = process.platform === "win32";
+  const result = spawnSync(
+    windows ? `${tool} audit --json` : tool,
+    windows ? [] : ["audit", "--json"],
+    { cwd, encoding: "utf8", maxBuffer: 1 << 28, shell: windows },
+  );
   return {
     status: result.status,
     stdout: result.stdout ?? "",

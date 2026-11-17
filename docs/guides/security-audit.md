@@ -76,7 +76,8 @@ The step looks for a lockfile in the project root:
   advisories were not checked.
 
 Both need the network. When the scanner fails or you are offline, the run goes
-on and the report notes it.
+on and the report notes it. On Windows, npm and pnpm run through a shell, as
+their `.cmd` shims need.
 
 ## Where the report is
 

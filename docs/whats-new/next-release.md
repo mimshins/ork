@@ -2,6 +2,11 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **The audit checks npm and pnpm advisories on Windows.** The scanner started
+  `npm` and `pnpm` directly, which Windows refuses for their `.cmd` shims, so
+  the report only noted that advisories were not checked. It now starts them
+  through a shell there
+  ([the audit](../guides/security-audit.md#which-scanner-checks-dependencies)).
 - **`ork logs -f --all`, `ork decide --follow` and `ork attach` see a resumed
   called run.** Resuming a run whose called run had ended brought that run back
   under its id, but a follower already watching had stopped at its old end, so

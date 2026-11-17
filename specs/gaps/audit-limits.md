@@ -54,7 +54,9 @@ simpler, or could not be checked:
   that advisories were not checked. Yarn, pip, cargo and go are not read, and a
   scanner that fails or is offline is a note, not a failure. The npm parser
   reads the npm 7+ `audit --json` shape only, and it dedupes by advisory name
-  and source, so the per-package vulnerable path is lost.
+  and source, so the per-package vulnerable path is lost. On Windows the scanner
+  runs through a shell (npm and pnpm are `.cmd` shims); CI's Windows job runs a
+  real `npm audit` through it, and nothing else of the audit is tested there.
 - **L413 · The verify check reads a scrubbed copy of the record, and checks its
   shape only.** The `verify` node's `verify:` step runs `check-record` on
   `$ORK_REPORT`, which Ork writes with secret-like strings masked
