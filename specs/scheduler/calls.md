@@ -95,11 +95,13 @@ holds no session and no worktree.
   `--no-calls` do not set `ordered`. A run attached to again after its caller
   was resumed is found by the `call.started` stored before the resume. Following
   ends when the root ends (a run resumed after an end, its own or a called one,
-  is followed to its new end) or the caller's signal aborts: it then reads what
-  the called runs stored before the root ended, unless aborted, and names those
-  still running (a `wait: none` call). With `follow: false` it only drains what
-  is stored, at any depth, and returns. No events are added; the reader decides
-  what to show and ask.
+  is followed to its new end; a called run that ended while the root runs on is
+  watched until the root ends, and followed again when a resume brings it back,
+  since that stores no new `call.started`) or the caller's signal aborts: it
+  then reads what the called runs stored before the root ended, unless aborted,
+  and names those still running (a `wait: none` call). With `follow: false` it
+  only drains what is stored, at any depth, and returns. No events are added;
+  the reader decides what to show and ask.
 - **Following many runs.** `followRuns(store, scope, onEvent, options)`
   ([code](../../packages/core/src/remote/follow-runs.ts),
   [tests](../../packages/core/test/follow-runs.test.ts)) serves

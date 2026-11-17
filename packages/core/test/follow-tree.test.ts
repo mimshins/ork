@@ -303,6 +303,30 @@ describe("followRunTree", () => {
     ]);
   });
 
+  it("follows a called run again when it is resumed after its follower ended", async () => {
+    store.append("root0000", called("build", "build000"));
+    begin("build000");
+    store.append("build000", finished("build000", "failed"));
+    const following = follow();
+    await seen(4);
+    // Its caller's resume brings it back under its id, with no new call.started.
+    store.reopen("build000");
+    store.append("build000", started("build000"));
+    store.append("build000", nodeStarted("review"));
+    await seen(6);
+    store.append("build000", finished("build000"));
+    await seen(7);
+    store.append("root0000", finished("root0000"));
+
+    await following;
+    expect(lines.slice(4)).toEqual([
+      "build|run.started",
+      "build|node.started:review",
+      "build|run.finished",
+      "|run.finished",
+    ]);
+  });
+
   /** The store as followed, each event's `at` its seq's ms after a base. */
   const stamped = (ms: Record<string, number>): EventStore => ({
     ...store,

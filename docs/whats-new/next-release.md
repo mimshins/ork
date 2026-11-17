@@ -2,6 +2,11 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **`ork logs -f --all`, `ork decide --follow` and `ork attach` see a resumed
+  called run.** Resuming a run whose called run had ended brought that run back
+  under its id, but a follower already watching had stopped at its old end, so
+  its events and questions showed only after you restarted the command. Now the
+  called run is followed again when it comes back.
 - **A reviewer after a tool step reads the right worktree.** A `readonly` node
   with no owner works where its input came from, but a tool node in between
   (`build -> stat -> review`, with `stat` running in the build's worktree

@@ -1,8 +1,11 @@
 /**
  * @file Following a run and every run it called, at any depth (`ork attach`, a
  *   foreground caller): each run's events through `followEvents`, a called run
- *   found by the `call.started` that started it, stored or live.
+ *   found by the `call.started` that started it, stored or live, and followed
+ *   again when a resumed caller brings it back after it ended.
  */
+
+import { setTimeout as sleep } from "node:timers/promises";
 
 import type { EventStore, StoredEvent } from "../store/types.ts";
 import { liveStatus } from "../store/view.ts";
@@ -100,16 +103,43 @@ export const followRunTree = async (
         follow(event.run, [...path, event.node]);
       }
     };
-  const follow = (run: string, path: readonly string[]): void => {
-    paths.set(run, path);
-    followers.push(
-      followEvents(store, run, handle(run, path), {
+  /** Whether `run` is running again before the root ends: resumed. */
+  const resumedAgain = async (run: string): Promise<boolean> => {
+    for (;;) {
+      const [now] = store.lookup(run);
+      if (now !== undefined && liveStatus(now) === "running") return true;
+      try {
+        // oxlint-disable-next-line no-await-in-loop -- polls the run's status until the root ends
+        await sleep(options.intervalMs ?? 250, undefined, { signal });
+      } catch {
+        return false;
+      }
+    }
+  };
+  /**
+   * Follows a called run to its end, and again each time it is resumed while
+   * the root runs on: a resumed caller brings it back under its id with no new
+   * `call.started`.
+   */
+  const followCalled = async (
+    run: string,
+    path: readonly string[],
+  ): Promise<FollowEnd> => {
+    for (;;) {
+      // oxlint-disable-next-line no-await-in-loop -- one go of the run, then the next
+      const end = await followEvents(store, run, handle(run, path), {
         ...options,
         follow: live,
         after: seqs.get(run) ?? 0,
         signal,
-      }),
-    );
+      });
+      // oxlint-disable-next-line no-await-in-loop -- waits for a resume
+      if (!live || end === "aborted" || !(await resumedAgain(run))) return end;
+    }
+  };
+  const follow = (run: string, path: readonly string[]): void => {
+    paths.set(run, path);
+    followers.push(followCalled(run, path));
   };
   /** Waits for every follower, including those started while waiting. */
   const settle = async (): Promise<void> => {
