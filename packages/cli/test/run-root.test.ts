@@ -13,11 +13,14 @@
  */
 
 import {
+  cpSync,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   rmSync,
   symlinkSync,
+  writeFileSync,
 } from "node:fs";
 import path from "node:path";
 
@@ -222,6 +225,21 @@ const attached = () => {
   };
 };
 
+/** A copy of the audit's bundle under another hash, as an older Ork wrote it. */
+const startedBy = (file: string, hash: string): string => {
+  const from = path.dirname(file);
+  const to = path.join(path.dirname(from), hash);
+  cpSync(from, to, { recursive: true });
+  const files = readdirSync(to, { recursive: true, withFileTypes: true })
+    .filter(entry => entry.isFile())
+    .map(entry => path.join(entry.parentPath, entry.name));
+  for (const at of files) {
+    const text = readFileSync(at, "utf8");
+    writeFileSync(at, text.replaceAll(path.basename(from), hash));
+  }
+  return path.join(to, path.basename(file));
+};
+
 /** The audit's workflow file, written into the in-repo project at `root`. */
 const inRepoAudit = (root: string): string =>
   builtinWorkflowFile(inRepoPlace(root), "ork:security-audit") ?? "";
@@ -304,6 +322,23 @@ describe("an attached audit's run root", () => {
     ]);
     expect(existsSync(worktree)).toBe(false);
     expect(checkoutNow(s.root).branches).toBe("");
+  });
+
+  it("resumes with the bundle the run started with, not this Ork's", async () => {
+    const s = attached();
+    const older = runner(
+      s.root,
+      s.home,
+      s.store,
+      startedBy(s.file, "0123abcd4567"),
+    );
+    await older.run();
+    const record = onlyRun(s.store);
+    await older.run({
+      runId: record.id,
+      resume: readyToResume(s.store, record),
+    });
+    expect(older.seen.map(seen => seen.skillReadable)).toEqual([true, true]);
   });
 
   it("lists a crash's leftover by its run, adopts it on resume, and discard removes it", async () => {

@@ -10,7 +10,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { BUILTIN_FILES } from "./builtin-bundles.ts";
@@ -212,4 +212,57 @@ export const builtinBundleUnder = (
   return file === undefined
     ? { ok: false, error: `Ork could not write \`${arg}\` under \`${root}\`.` }
     : { ok: true, file };
+};
+
+/**
+ * Copies a bundle folder a run started from (`<hash>/` under the project's
+ * `runs/.builtin/`, written by the Ork that started it) under `root` at the
+ * same `.ork/runs/.builtin/<hash>/`, for a resumed run whose worktree was
+ * opened again: the run goes on with the files it started with, not the running
+ * Ork's, whose hash differs after an upgrade. Plain files only, written through
+ * the same link guard; anything else in the folder refuses the copy.
+ */
+export const startedBundleUnder = (
+  root: string,
+  folder: string,
+): { ok: true; file: string } | { ok: false; error: string } => {
+  if (lstatSync(root).isSymbolicLink()) {
+    return {
+      ok: false,
+      error: `\`${root}\` is a link: Ork writes its own workflow only to plain folders, so it wrote nothing.`,
+    };
+  }
+  const place = inRepoPlace(root);
+  const base = guardedBase(place);
+  const target = path.join(
+    placeFiles(place).runs,
+    ".builtin",
+    path.basename(folder),
+  );
+  const entries = readdirSync(folder, { recursive: true, withFileTypes: true });
+  const odd = entries.find(e => !e.isFile() && !e.isDirectory());
+  if (odd !== undefined) {
+    return {
+      ok: false,
+      error: `\`${path.join(odd.parentPath, odd.name)}\` is not a plain file, so Ork copied nothing.`,
+    };
+  }
+  let workflow: string | undefined;
+  for (const entry of entries.filter(e => e.isFile())) {
+    const relative = path.relative(
+      folder,
+      path.join(entry.parentPath, entry.name),
+    );
+    const file = path.join(target, relative);
+    const text = readFileSync(path.join(folder, relative), "utf8");
+    const same = existsSync(file) && readFileSync(file, "utf8") === text;
+    const written = same ? undefined : writePlainFile(base, file, text);
+    if (written?.ok === false) return { ok: false, error: written.error };
+    if (!relative.includes(path.sep) && relative.endsWith(".ork.yaml")) {
+      workflow = file;
+    }
+  }
+  return workflow === undefined
+    ? { ok: false, error: `\`${folder}\` holds no workflow.` }
+    : { ok: true, file: workflow };
 };

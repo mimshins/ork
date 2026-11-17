@@ -2,6 +2,12 @@
 
 _Part of [What's new](../whats-new.md)._
 
+- **An audit started before an Ork upgrade resumes.** In an attached project,
+  `ork resume` of a security audit an older Ork started failed at once with
+  "read-only-bash.md does not exist": the run's worktree got the new Ork's
+  bundle, under another folder than the one the run's workflow names. It now
+  gets the bundle the run started with
+  ([the audit](../guides/security-audit.md)).
 - **Ork's own workflows and agents no longer steer reading away from
   `extract`.** `ork onboard`'s proposer was told to "Read the files", the
   security audit to "Read" whole skill documents and to use `cat`, `grep` or

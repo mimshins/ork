@@ -22,9 +22,10 @@ no run root and work as before.
   rendered with no inputs). It is named by the project's
   [git rules](../project-rules.md) like any node's, beside the clone
   (`../<clone>-worktrees/ork-<run>-audit-root` on branch `ork/<run>/audit-root`;
-  detached under `commit: never`). Then the bundle is written into it as
-  `.ork/runs/.builtin/<hash>/`, with the placeholder replaced by that folder
-  relative to the worktree, through the same link guard as any bundle. A
+  detached under `commit: never`). Then the bundle the workflow file sits in
+  (`runs/.builtin/<hash>/` under `~/.ork/projects/<id>/`) is copied into it as
+  `.ork/runs/.builtin/<hash>/`, plain files only, through the same link guard as
+  any bundle; its placeholder already names that folder relative to a root. A
   failure, such as no git repository, a failed `git worktree add` or a refused
   path, stops `ork run` with exit 1 before any node, naming the cause.
 - **No ignored local files.** `createWorktree` takes `copyLocal` (default true);
@@ -46,8 +47,10 @@ no run root and work as before.
   is listed by `ork worktrees` and removed by `ork worktrees clean`, matched by
   its run id.
 - **Resume.** `ork resume` re-creates the worktree at the **recorded** commit,
-  so the audited commit is the same, and writes the bundle again; if the folder
-  is still there it is adopted.
+  so the audited commit is the same, and copies the same bundle again: the one
+  the run started with, so a run started before an Ork upgrade resumes with its
+  own files, not the newer Ork's (whose hash differs). If the folder is still
+  there it is adopted.
 - **What it does not hold.** The worktree is a clean checkout, so uncommitted
   changes and the untracked or ignored files of the checkout (`.env`, keys) are
   not in it. A `post-checkout` hook of the repository runs when it is checked

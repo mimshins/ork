@@ -4,8 +4,9 @@
  *   project's commit beside the clone, writes the bundle into it, and runs
  *   every node there, so read-only agents read the bundle inside their own
  *   folder and the user's checkout is never written to. A resume re-opens it at
- *   the recorded commit; every end of the run closes it. In-repo projects and
- *   built-ins without companion files have none.
+ *   the recorded commit, with the bundle the run started with (an upgraded
+ *   Ork's has another hash); every end of the run closes it. In-repo projects
+ *   and built-ins without companion files have none.
  */
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -14,7 +15,6 @@ import path from "node:path";
 import {
   applyProject,
   BUILTIN_PREFIX,
-  builtinBundleUnder,
   gitRulesOf,
   loadProject,
   openRunRoot,
@@ -26,13 +26,20 @@ import {
   type RunEvent,
   type RunRoot,
   runRootEvent,
+  startedBundleUnder,
 } from "@krapht/ork-core";
 import { parseWorkflow, type ResolvedGitRules } from "@krapht/ork-schema";
 
 import type { RunWorkflowOptions } from "./workflow-options.ts";
 
 /** The built-in a workflow file is, when it needs a run root. */
-type Trigger = { place: ProjectPlace; arg: string; rules: ResolvedGitRules };
+type Trigger = {
+  place: ProjectPlace;
+  arg: string;
+  rules: ResolvedGitRules;
+  /** The bundle folder the file is in, written when the run started. */
+  folder: string;
+};
 
 /**
  * The attached project's built-in with companion files that `options.file` is
@@ -67,7 +74,7 @@ const triggerOf = (options: RunWorkflowOptions): Trigger | undefined => {
     project === undefined ? {} : { project },
   );
   const arg = `${BUILTIN_PREFIX}${path.basename(absolute, ".ork.yaml")}`;
-  return { place, arg, rules: gitRulesOf(effective) };
+  return { place, arg, rules: gitRulesOf(effective), folder };
 };
 
 const messageOf = (error: unknown): string =>
@@ -77,7 +84,7 @@ const messageOf = (error: unknown): string =>
 const openFor = async (
   options: RunWorkflowOptions,
   runId: string,
-  { place, arg, rules }: Trigger,
+  { place, arg, rules, folder }: Trigger,
 ): Promise<RunRoot> => {
   if ((await repoRoot(place.root)) === null) {
     throw new Error(
@@ -96,7 +103,9 @@ const openFor = async (
       (await resolveBase(place.root, rules, {})),
     known: options.resume !== undefined,
   });
-  const written = builtinBundleUnder(root.path, arg);
+  // The bundle the workflow file is in, so a resume goes on with the files it
+  // started with: an upgraded Ork's own bundle has another hash.
+  const written = startedBundleUnder(root.path, folder);
   if (!written.ok) {
     await root.close();
     throw new Error(written.error);
